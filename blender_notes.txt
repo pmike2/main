@@ -1,0 +1,68 @@
+Modelling :
+https://www.youtube.com/watch?v=DiIoWrOlIRw
+
+
+intersection :  select mesh et Ctrl+F
+shift + middle mouse : strafe
+définir le centre de rotation de la vue : click gauche pour mettre le curseur 3D et View/Align View/Center view to cursor
+alt+ home : center to 3D cursor
+center to center of mass, puis alt + G : centre le modèle sur son centre de gravité
+n : properties panel ; permet de régler quand on voie l'image de face / de profil
+numpad 1 / numpad 3 : vues de face / profil
+shift + c : center 3d cursor
+shift + a : fenetre de création de formes
+f : création de face ou edge
+tab : passage en edit mode
+ctrl + tab : sélection vertex / edge / face
+ctrl + r : loopcut ; right-click : reste au centre
+z : wireframe mode / solid mode
+b : boxing
+x : delete
+deformer mirror : option clipping permet de n'avoir qu'un seul sommet à la frontière
+a : select all
+g : move shape
+o : après une sélection permet de faire du proportional editing avec un cercle d'influence
+g sur 1 vertex + ctrl appuyé -> snap ; choix du type de snap dans le menu en bas
+e : extrude
+alt + right click : select loop
+s : scale ; x , y , z ensuite pour spécifier l'axe ; 0 ensuite pour aplatir
+alt + s : shrink / fatten
+ctrl + e : menu ; edge slide
+ctrl + left click : extrude
+w : ouvre un menu ;	remove double permet de supprimer les vertices surimposés
+ctrl + j : merge objects
+c : sélection par cercle avec rayon ajustable
+shift + d : duplicate selection
+p : separate by selection
+h : hide selection ; alt + h unhide ; shift + h : hide all except selection
+ctrl + n : recalcul des normales
+
+
+Texturing :
+https://www.youtube.com/watch?v=JYBPXTful2g
+
+ctrl + e menu ; mark seam : sépare les objets le long de la sélection d'edges
+u : unwrap selection
+alt + z : show material color
+
+
+Rigging :
+en object mode : Ctrl + tab : passage en pose mode pour manipuler les bones
+dupliquer fenetre : passer en dope sheet window
+action editor
+new action
+click icone 'F' pour sauvegarder
+selectionner LocRot et click sur icone clef pour insérer keyframes
+select all bones avec 'a' puis 'i' pour insérer un keyframe
+copy pose puis paste x-flipped pose permet de copier une version miroir (d'ou l'interet de faire regarder le perso vers Y en bind pose)
+t : permet de choisir le mode d'interpolation
+pour faire une marche : dupliquer puis inverser toutes les poses
+mettre end à 32 et pas 33 si dernier keyframe a position 33
+
+Reset :
+Select all the bones, in pose mode with A . Then, hit:
+ALT R to reset all rotations,
+ALT G to reset all translations,
+ALT S to reset all scales.
+
+NLA editor : move strip : G

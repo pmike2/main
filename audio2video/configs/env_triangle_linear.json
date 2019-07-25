@@ -1,0 +1,8 @@
+{
+	"attack" : 0.5,
+	"release" : 0.5,
+	"rest_value" : 0.0,
+	"stimulated_value" : 1.0,
+	"attack_power" : 1.0,
+	"release_power" : 1.0
+}

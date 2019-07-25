@@ -1,0 +1,110 @@
+<a2v>
+	<track_1>
+		<note_on>
+			
+			<action>
+				<type>load</type>
+				<group>subgroup_1</group>
+				<object>sphere.obj</object>
+				<material>sphere.mat</material>
+				<translation>
+					<x>3.4</x>
+					<y>-3.4</y>
+					<z>0.4</z>
+				</translation>
+				<rotation>
+					<axe>
+						<x>0.5</x>
+						<y>-0.5</y>
+						<z>0.0</z>
+					</axe>
+					<angle>0.8</angle>
+				</rotation>
+				<scale>
+					<x>1.0</x>
+					<y>1.5</y>
+					<z>0.5</z>
+				</scale>
+				<translation>
+					<x>2.0</x>
+					<y>-2.0</y>
+					<z>2.0</z>
+				</translation>
+			</action>
+
+			<action>
+				<type>load</type>
+				<id>torus_1</id>
+				<object>torus.obj</object>
+				<material>torus.mat</material>
+				<translation>
+					<x>2.0</x>
+					<y>2.0</y>
+					<z>0.4</z>
+				</translation>
+			</action>
+			
+			<action>
+				<type>light</type>
+				<color>
+					<r>0.2</r>
+					<g>0.7</g>
+					<b>0.4</b>
+				</color>
+				<position>
+					<x>2.0</x>
+					<y>2.0</y>
+					<z>-1.0</z>
+				</position>
+				<direction>
+					<x>-2.0</x>
+					<y>-2.0</y>
+					<z>1.0</z>
+				</direction>
+			</action>
+			
+			<action>
+				<type>transform</type>
+				<target>sugroup_1</target>
+				<rotation>
+					<axe>
+						<x>0.5</x>
+						<y>-0.5</y>
+						<z>0.0</z>
+					</axe>
+					<angle>1.2</angle>
+				</rotation>
+				<scale>
+					<x>1.0</x>
+					<y>1.5</y>
+					<z>0.5</z>
+				</scale>
+			</action>
+			
+		</note_on>
+		
+		<note_off>
+			<action>
+				<type>kill</type>
+				<target>torus_1</target>
+			</action>
+		</note_off>
+		
+		<cc>
+			<action>
+				<val_min>-3.5</val_min>
+				<val_max>5.5</val_max>
+				<target>subgroup1</target>
+				<parameter>amplitude</parameter>
+			</action>
+
+			<action>
+				<val_min>0.1</val_min>
+				<val_max>0.8</val_max>
+				<target>light1</target>
+				<parameter>position.x</parameter>
+			</action>
+		</cc>
+		
+	</track_1>
+</a2v>

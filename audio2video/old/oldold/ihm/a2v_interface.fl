@@ -1,0 +1,279 @@
+# data file for the Fltk User Interface Designer (fluid)
+version 1.0303 
+header_name {.h} 
+code_name {.cpp}
+decl {\#include "a2v_interface_extend.h"} {public global
+} 
+
+class A2VInterface {open
+} {
+  Function {A2VInterface()} {open
+  } {
+    Fl_Window main_window {
+      label A2V open
+      xywh {547 284 868 486} type Double align 80 visible
+    } {
+      Fl_Tree tree_a2v {
+        xywh {10 160 165 275}
+      }
+      Fl_Button load_a2v {
+        label {Load A2V}
+        xywh {10 5 70 25}
+      }
+      Fl_Check_Button active {
+        label Active
+        xywh {572 89 70 30} down_box DOWN_BOX
+      }
+      Fl_Button delete_action {
+        label {Delete Action}
+        xywh {185 95 90 25}
+      }
+      Fl_Input_Choice add_action_choice {open
+        xywh {90 95 90 25}
+      } {}
+      Fl_Button add_action {
+        label {Add Action}
+        xywh {10 95 75 25}
+      }
+      Fl_Button randomize_a2v {
+        label {Random A2V}
+        xywh {170 5 90 25}
+      }
+      Fl_Button randomize_channel {
+        label {Random Channel}
+        xywh {210 35 115 25}
+      }
+      Fl_Button load_channel {
+        label {Load Channel}
+        xywh {10 35 95 25}
+      }
+      Fl_Button save_channel {
+        label {Save Channel}
+        xywh {110 35 95 25}
+      }
+      Fl_Button load_action {
+        label {Load Action}
+        xywh {10 65 85 25}
+      }
+      Fl_Button save_action {
+        label {Save Action}
+        xywh {100 65 85 25}
+      }
+      Fl_Button randomize_action {
+        label {Random Action}
+        xywh {190 65 105 25}
+      }
+      Fl_Button save_a2v {
+        label {Save A2V}
+        xywh {85 5 80 25}
+      }
+      Fl_Group group_model_obj {
+        label {Model Obj} open selected
+        xywh {180 135 670 340} box UP_BOX hide
+      } {
+        Fl_Scroll model_obj_init_values_model2world {
+          label Model2World open
+          xywh {185 202 315 100} box UP_BOX
+          class Table4X4
+        } {}
+        Fl_Scroll model_obj_init_values_ambient {
+          label Ambient open
+          xywh {190 359 80 74} box UP_BOX
+          class Vec3
+        } {}
+        Fl_Scroll model_obj_init_values_diffuse {
+          label Diffuse open
+          xywh {290 359 80 74} box UP_BOX
+          class Vec3
+        } {}
+        Fl_Scroll model_obj_final_values_model2world {
+          label Model2World open
+          xywh {520 202 320 100} box UP_BOX
+          class Table4X4
+        } {}
+        Fl_Scroll model_obj_final_values_ambient {
+          label Ambient open
+          xywh {523 360 80 74} box UP_BOX
+          class Vec3
+        } {}
+        Fl_Scroll model_obj_final_values_diffuse {
+          label Diffuse open
+          xywh {625 359 80 74} box UP_BOX
+          class Vec3
+        } {}
+        Fl_Input_Choice model_obj_init_values_transfo_choice {open
+          xywh {186 311 105 25}
+        } {}
+        Fl_Value_Input model_obj_init_values_transfo_value {
+          xywh {301 311 65 25}
+          class Fl_Float_Input
+        }
+        Fl_Input_Choice model_obj_final_values_transfo_choice {open
+          xywh {521 309 105 25}
+        } {}
+        Fl_Value_Input model_obj_final_values_transfo_value {
+          xywh {636 309 65 25}
+          class Fl_Float_Input
+        }
+        Fl_Button model_obj_init_values_transfo_ok {
+          label OK
+          xywh {376 311 25 25}
+        }
+        Fl_Button model_obj_final_values_transfo_ok {
+          label OK
+          xywh {711 309 25 25}
+        }
+        Fl_Input_Choice model_obj_ch_obj {
+          label ch_obj open
+          xywh {230 145 210 25}
+        } {}
+        Fl_Input_Choice model_obj_ch_mat {
+          label ch_mat open
+          xywh {505 145 210 25}
+        } {}
+        Fl_Tile model_obj_alpha_graph {
+          label Alpha open
+          xywh {380 370 130 65} box UP_BOX
+          class TimeGraph
+        } {}
+        Fl_Button model_obj_alpha_graph_ok {
+          label OK
+          xywh {485 440 25 25}
+        }
+        Fl_Value_Slider model_obj_init_values_shininess {
+          label Shininess
+          xywh {190 435 145 25} type Horizontal when 4 maximum 100 step 1 value 20
+        }
+        Fl_Value_Slider model_obj_final_values_shininess {
+          label Shininess
+          xywh {525 435 145 25} type Horizontal when 4 maximum 100 step 1 value 20
+        }
+      }
+      Fl_Group group_light {
+        label Light
+        xywh {180 135 435 230} box UP_BOX hide
+      } {
+        Fl_Scroll light_init_values_color {
+          label Color open
+          xywh {195 153 80 75} box UP_BOX
+          class Vec3
+        } {}
+        Fl_Scroll light_init_values_position_world {
+          label PositionWorld open
+          xywh {195 250 80 100} box UP_BOX
+          class Vec4
+        } {}
+        Fl_Scroll light_init_values_spot_cone_direction_world {
+          label SpotDirection open
+          xywh {295 275 80 75} box UP_BOX
+          class Vec3
+        } {}
+        Fl_Scroll light_final_values_color {
+          label Color open
+          xywh {420 154 80 76} box UP_BOX
+          class Vec3
+        } {}
+        Fl_Scroll light_final_values_position_world {
+          label PositionWorld open
+          xywh {420 251 80 99} box UP_BOX
+          class Vec4
+        } {}
+        Fl_Scroll light_final_values_spot_cone_direction_world {
+          label SpotDirection open
+          xywh {518 275 80 75} box UP_BOX
+          class Vec3
+        } {}
+      }
+      Fl_Group group_vmat {
+        label VMat
+        xywh {185 138 675 299} box UP_BOX hide
+      } {
+        Fl_Scroll vmat_init_values_mat {
+          label Mat open
+          xywh {195 163 320 100} box UP_BOX
+          class Table4X4
+        } {}
+        Fl_Scroll vmat_final_values_mat {
+          label Mat open
+          xywh {528 163 317 100} box UP_BOX
+          class Table4X4
+        } {}
+        Fl_Input_Choice vmat_init_values_transfo_choice {open
+          xywh {196 275 105 25}
+        } {}
+        Fl_Value_Input vmat_init_values_transfo_value {
+          xywh {311 275 65 25}
+          class Fl_Float_Input
+        }
+        Fl_Button vmat_init_values_transfo_ok {
+          label OK
+          xywh {384 275 25 25}
+        }
+        Fl_Input_Choice vmat_final_values_transfo_choice {open
+          xywh {529 275 105 25}
+        } {}
+        Fl_Value_Input vmat_final_values_transfo_value {
+          xywh {644 275 65 25}
+          class Fl_Float_Input
+        }
+        Fl_Button vmat_final_values_transfo_ok {
+          label OK
+          xywh {716 274 25 25}
+        }
+        Fl_Tile vmat_alpha_graph {
+          label Alpha open
+          xywh {195 320 130 65} box UP_BOX
+          class TimeGraph
+        } {}
+        Fl_Button vmat_alpha_graph_ok {
+          label OK
+          xywh {330 356 25 29}
+        }
+      }
+      Fl_Button defaultize_action {
+        label {Default Action}
+        xywh {300 65 95 25}
+      }
+      Fl_Button defaultize_channel {
+        label {Default Channel}
+        xywh {330 35 115 25}
+      }
+      Fl_Button defaultize_a2v {
+        label {Default A2V}
+        xywh {265 5 90 25}
+      }
+      Fl_Button copy_init2final {
+        label {init -> final}
+        xywh {768 90 80 27}
+      }
+      Fl_Tile morph_graph {
+        label Morph open
+        xywh {685 20 130 65} box UP_BOX
+        class TimeGraph
+      } {}
+      Fl_Button morph_graph_ok {
+        label OK
+        xywh {820 20 25 25}
+      }
+      Fl_Input_Choice enable_all_choice {open
+        xywh {120 125 55 25}
+      } {}
+      Fl_Button enable_all {
+        label Enable
+        xywh {10 125 50 25}
+      }
+      Fl_Button disable_all {
+        label Disable
+        xywh {65 125 50 25}
+      }
+      Fl_Check_Button retrig {
+        label Retrig
+        xywh {570 60 70 30} down_box DOWN_BOX
+      }
+      Fl_Value_Slider lifetime {
+        label Lifetime
+        xywh {635 90 125 25} type Horizontal when 4 minimum 10 maximum 10000 step 10 value 1000
+      }
+    }
+  }
+} 

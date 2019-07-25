@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<anim_cfg xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<rot_0>
+		<angle>4.71238898038469</angle> <!-- 3* PI/ 2 -->
+		<axis>0.0 0.0 1.0</axis>
+	</rot_0>
+	<anims>
+		<anim id="anim_wait">
+			<path>./data/gadjo_wait.dae</path>
+			<moving_speed>0.0</moving_speed>
+		</anim>
+		<anim id="anim_walk">
+			<path>./data/gadjo_walk.dae</path>
+			<moving_speed>0.06</moving_speed>
+		</anim>
+	</anims>
+</anim_cfg>

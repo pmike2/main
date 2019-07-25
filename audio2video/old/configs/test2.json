@@ -1,0 +1,73 @@
+{
+    "a2v": {
+        "at_load": [
+            {
+                "mtl": "../modeles/cylinder.mtl",
+                "obj": "../modeles/cylinder.obj",
+                "type": "OBJ"
+            },
+            {
+                "mtl": "../modeles/cylinder.mtl",
+                "obj": "../modeles/cylinder.obj",
+                "type": "OBJ"
+            },
+            {
+                "spotlight": false,
+                "type": "LIGHT"
+            },
+            {
+                "transformations": [
+                    {
+                        "type": "rotation",
+                        "x": 90.0,
+                        "y": 20.0,
+                        "z": 0.0
+                    },
+                    {
+                        "type": "translation",
+                        "x": 2.0,
+                        "y": 0.0,
+                        "z": -2.0
+                    }
+                ],
+                "type": "VMAT"
+            }
+        ],
+        "channel_1": {
+            "cc": [
+                {
+                    "action": {
+                        "add_offset": 0.3,
+                        "mult_offset": 0.5,
+                        "target": "alpha"
+                    },
+                    "idx": 0,
+                    "type": "OBJ"
+                },
+                {
+                    "action": {
+                        "idx": 0,
+                        "target": "diffuse"
+                    },
+                    "idx": 1,
+                    "type": "OBJ"
+                },
+                {
+                    "action": {
+                        "idx": 0,
+                        "target": "color"
+                    },
+                    "idx": 0,
+                    "type": "LIGHT"
+                },
+                {
+                    "action": {
+                        "target": "alpha"
+                    },
+                    "idx": 0,
+                    "type": "VMAT"
+                }
+            ]
+        }
+    }
+}

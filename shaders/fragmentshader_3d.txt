@@ -1,0 +1,98 @@
+#version 410 core
+
+
+struct light_struct {
+	vec3 light_color;
+	vec3 light_position;
+	vec3 spot_cone_direction;
+	float strength;
+	float constant_attenuation;
+	float linear_attenuation;
+	float quadratic_attenuation;
+	float spot_cos_cutoff;
+	float spot_exponent;
+	bool is_active;
+	bool is_spotlight;
+};
+
+const int n_lights= 8; // doit etre egal a N_MAX_LIGHTS de constantes.h !!!
+
+uniform lights_uni {
+	light_struct lights[n_lights];
+};
+
+uniform vec3 ambient_color;
+uniform float shininess;
+uniform vec3 eye_direction;
+uniform float alpha;
+
+
+flat in vec4 vertex_position;
+smooth in vec4 vertex_color;
+flat in vec3 vertex_normal;
+
+
+out vec4 frag_color;
+
+
+void main(void)
+{
+	vec3 scattered_light= ambient_color;
+	vec3 reflected_light= vec3(0., 0., 0.);
+	
+	float light_distance= 0.0;
+	float attenuation= 0.0;
+	float diffuse= 0.0;
+	float specular= 0.0;
+	float spot_cos= 0.0;
+	
+	light_struct l;
+	
+	for (int i=0; i<n_lights; i++) {
+		if (i==0) { l= lights[0]; }
+		if (i==1) { l= lights[1]; }
+		if (i==2) { l= lights[2]; }
+		if (i==3) { l= lights[3]; }
+		if (i==4) { l= lights[4]; }
+		if (i==5) { l= lights[5]; }
+		if (i==6) { l= lights[6]; }
+		if (i==7) { l= lights[7]; }
+
+		if (!l.is_active)
+			continue;
+		
+		vec3 light_direction= l.light_position- vec3(vertex_position);
+		light_distance= length(light_direction);
+		light_direction= light_direction/ light_distance;
+		attenuation= 1./ (l.constant_attenuation+ l.linear_attenuation* light_distance+ l.quadratic_attenuation* light_distance* light_distance);
+		if (l.is_spotlight) {
+			spot_cos= dot(light_direction, -l.spot_cone_direction);
+			if (spot_cos< l.spot_cos_cutoff) {
+				attenuation= 0.;
+			}
+			else {
+				attenuation*= pow(spot_cos, l.spot_exponent);
+			}
+		}
+		vec3 half_vector= normalize(light_direction+ eye_direction);
+		diffuse= max(0., dot(vertex_normal, light_direction));
+		specular= max(0., dot(vertex_normal, half_vector));
+		if (diffuse== 0.)
+			specular= 0.;
+		else
+			specular= pow(specular, shininess)* l.strength;
+		scattered_light+= l.light_color* diffuse* attenuation;
+		reflected_light+= l.light_color* specular* attenuation;
+	}
+	
+	vec3 rgb= min(vec3(1.), vertex_color.rgb* scattered_light+ reflected_light);
+	
+	frag_color= vec4(rgb, alpha);
+	
+	//frag_color= vec4(1.0, 1.0, 0.0, 1.0);
+	//frag_color= vec4(reflected_light, 1.0);
+	//frag_color= vec4(vertex_color.rgb* scattered_light, 1.0);
+	//frag_color= vec4(vertex_color.rgb* diffuse/ (lights[0].constant_attenuation+ lights[0].linear_attenuation* light_distance+ lights[0].quadratic_attenuation* light_distance* light_distance), 1.0);
+	//frag_color= vec4(vertex_color.rgb, 1.0);
+	
+}

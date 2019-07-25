@@ -1,0 +1,40 @@
+{"a2v" :
+	
+	{
+	"at_load" : [
+		{"type" : "OBJ", "obj" : "../modeles/cylinder.obj", "mtl" : "../modeles/cylinder.mtl"},
+		{"type" : "OBJ", "obj" : "../modeles/cylinder.obj", "mtl" : "../modeles/cylinder.mtl"},
+		{"type" : "LIGHT", "spotlight" : false},
+		{"type" : "VMAT", "transformations" : [
+			{"type" : "rotation",    "x" : 90.0, "y" : 20.0, "z" : 0.0},
+			{"type" : "translation", "x" : 2.0 , "y" : 0.0 , "z" : -2.0}
+			]
+		}
+	],
+	"channel_1" :
+		{"cc" : [
+			{
+				"type" : "OBJ",
+				"idx" : 0,
+				"action" : {"target" : "alpha", "mult_offset" : 0.5, "add_offset" : 0.3}
+			},
+			{
+				"type" : "OBJ",
+				"idx" : 1,
+				"action" : {"target" : "diffuse", "idx" : 0}
+			},
+			{
+				"type" : "LIGHT",
+				"idx" : 0,
+				"action" : {"target" : "color", "idx" : 0}
+			},
+			{
+				"type" : "VMAT",
+				"idx" : 0,
+				"action" : {"target" : "alpha"}
+			}
+			]
+		}
+	}
+}
+
