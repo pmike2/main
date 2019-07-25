@@ -1,0 +1,21 @@
+// cf https://rogerdudler.github.io/git-guide/
+// -----------------------------------------------------------
+
+// create new repository
+git init
+
+// ou alternativement recuperer un repository existant
+git clone https://github.com/pmike2/main.git
+
+// connexion a un serveur
+git remote add origin https://github.com/pmike2/main.git
+
+// ajout de fichiers
+git add ./libs
+git commit -m "1er commit global"
+
+// push vers serveur
+git push -u origin master
+
+// infos de l'état courant
+git status
