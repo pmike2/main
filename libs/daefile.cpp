@@ -1174,6 +1174,11 @@ AnimatedInstance::AnimatedInstance(AnimatedModel * model, const glm::vec3 & scal
 
 	_pos_rot= new InstancePosRot(glm::vec3(0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f), _model->_mesh->_aabb);
 	set_pos_rot_scale(glm::vec3(0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), scale);
+
+	// init des matrices et tout le tintouin
+	for (unsigned int idx_anim=0; idx_anim<_model->_animations.size(); ++idx_anim) {
+		_animations[idx_anim]->anim(0);
+	}
 }
 
 
@@ -1200,7 +1205,6 @@ void AnimatedInstance::draw() {
 	if (_draw_skeleton) {
 		_skeleton->draw();
 	}
-	
 }
 
 

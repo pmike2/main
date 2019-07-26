@@ -223,7 +223,7 @@ const std::vector<SIRandomConfig> SI_RANDOM_CONFIG_2 {
 const std::vector<AIRandomConfig> AI_RANDOM_CONFIG_1 {
 	{"./data/hero.xml", 1, 1.0f, 1.0f, 1.0f, 1.0f, true, 0.0f, 0.0f},
 	{"./data/gadjo.xml", 1000, 0.8f, 1.2f, 0.8f, 1.2f, false, 0.0f, (float)(M_PI)* 2.0f},
-	{"./data/gadjo.xml", 1, 50.0f, 50.0f, 50.0f, 50.0f, true, 0.0f, (float)(M_PI)* 2.0f}
+	{"./data/gadjo.xml", 10, 50.0f, 50.0f, 50.0f, 50.0f, true, 0.0f, (float)(M_PI)* 2.0f}
 };
 
 const std::vector<AIRandomConfig> AI_RANDOM_CONFIG_2 {

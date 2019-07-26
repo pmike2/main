@@ -11,7 +11,7 @@ git clone https://github.com/pmike2/main.git
 git remote add origin https://github.com/pmike2/main.git
 
 // ajout de fichiers
-git add ./libs
+git add .
 git commit -m "1er commit global"
 
 // push vers serveur

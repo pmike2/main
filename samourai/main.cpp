@@ -234,10 +234,10 @@ void init() {
 	check_gl_error();
 	
 	// --------------------------------------------------------------------------
-	//world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, & WORLD_RAND_CONFIG_1, "");
+	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, & WORLD_RAND_CONFIG_1, "");
 	//world->write("./data/world1");
 
-	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, NULL, "./data/world1");
+	//world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, NULL, "./data/world1");
 
 	// --------------------------------------------------------------------------
 	lights_ubo= new LightsUBO(prog_3d_terrain); // heu ca va marcher ca ???
