@@ -18,13 +18,6 @@ const unsigned int DELTA_ANIM= 1;
 const int SCREEN_WIDTH= 1024;
 const int SCREEN_HEIGHT= 1024;
 
-// params terrain aléatoire	
-const float ALTI_OFFSET= 20.0f;
-const unsigned int NLEVELS= 20;
-const unsigned int GRADIENT_BASE_SIZE= 6;
-const float MAX_FACTOR= 60.0f;
-const float REDISTRIBUTION_POWER= 1.5f;
-
 // visu des forces -----------------------------------------------------------------------
 // nombre max de forces à dessiner
 const int NMAX_FORCE_DRAW= 128;

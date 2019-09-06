@@ -409,6 +409,11 @@ void StaticInstance::set_pos_rot_scale(const glm::vec3 & position, const glm::qu
 }
 
 
+void StaticInstance::set_pos_rot_scale(const glm::mat4 & mat) {
+	_pos_rot->set_pos_rot_scale(mat);
+}
+
+
 void StaticInstance::set_precision(unsigned int precision) {
 	if (precision< _model->_n_precisions) {
 		_precision= precision;

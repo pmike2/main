@@ -19,7 +19,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "constantes.h"
-#include "gl_error.h"
+#include "gl_utils.h"
 #include "utile.h"
 #include "repere.h"
 #include "springs.h"
@@ -33,6 +33,9 @@ using namespace std;
 
 SDL_Window* window= NULL;
 SDL_GLContext mainContext;
+InputState * input_state;
+
+bool done= false;
 
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
@@ -43,41 +46,19 @@ GLuint g_vao;
 float eye_direction[3];
 GLuint eye_direction_loc, world2clip_loc;
 
-Repere * repere;
-SpringSystemGL * ssgl;
-SpringSystemGenetic * ssg;
-unsigned int is_debug= 0;
-bool is_paused= false;
-
 ViewSystem * view_system;
-
-/*
-
-
-TODO
-refaire ce code avec view_system !!!
-
-*/
+SpringSystemGL * ssgl;
+unsigned int is_debug= 0;
 
 
 
 // --------------------------------------------
 void mouse_motion(int x, int y, int xrel, int yrel) {
-	// si mouvement souris ET click gauche
-	if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK) {
-		view_system->move_target(-(float)(xrel)* 0.1f, (float)(yrel)* 0.1f);
-		view_system->recompute_world2camera();
-	}
-	// si mouvement souris ET click milieu
-	else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MMASK) {
-		view_system->move_dist(-(float)(yrel)* 1.0f);
-		view_system->recompute_world2camera();
-	}
-	// si mouvement souris ET click droit
-	else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_RMASK) {
-		view_system->move_alpha((float)(yrel)* 0.01f);
-		view_system->move_theta(-(float)(xrel)* 0.01f);
-		view_system->recompute_world2camera();
+	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
+	
+	if (view_system->mouse_motion(input_state)) {
+		return;
 	}
 }
 
@@ -92,16 +73,29 @@ void mouse_button_down(unsigned int x, unsigned int y) {
 }
 
 
-void init() {
-	GLuint vertex_shader_draw, fragment_shader_draw, vertex_shader_repere, fragment_shader_repere;
+void key_down(SDL_Keycode key) {
+	input_state->key_down(key);
 
+	if (key== SDLK_ESCAPE) {
+		done= true;
+	}
+	if (view_system->key_down(input_state, key)) {
+		return;
+	}
+	if (ssgl->key_down(input_state, key)) {
+		return;
+	}
+}
+
+
+void init() {
 	srand(time(NULL));
 
 	SDL_Init(SDL_INIT_EVERYTHING);
-	IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
+	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
@@ -126,71 +120,47 @@ void init() {
 
 	SDL_GL_SwapWindow(window);
 
-	memset(camera2clip, 0, sizeof(float) * 16);
-	glm::mat4 glm_frustum= glm::frustum(-1.0f, 1.0f, -1.0f, 1.0f, FRUSTUM_NEAR, FRUSTUM_FAR);
-	memcpy(camera2clip, glm::value_ptr(glm_frustum), sizeof(float) * 16);
-	//glm::mat4 glm_ortho= glm::ortho(-5.0f, 5.0f, -5.0f, 5.0f, FRUSTUM_NEAR, FRUSTUM_FAR);
-	//memcpy(camera2clip, glm::value_ptr(glm_ortho), sizeof(float) * 16);
-
-	eye_direction[0]= 0.0f;
-	eye_direction[1]= 0.0f;
-	eye_direction[2]= 1.0f;
-
-	mouse_angle_x= 0.0f;
-	mouse_angle_y= 0.0f;
-	zoom= -5.0f;
 
 	// --------------------------------------------------------------------------
 	/* VAO = vertex array object : tableau d'objets, chaque appel à un objet rappelle un contexte de dessin
-	 incluant tous les attribute array setup (glVertexAttribArray), buffer objects used for attribute arrays
-	 et GL_ELEMENT_ARRAY_BUFFER eventuellement
-	 */
-
-	 // ESSAYER DE LE COMMENTER !
+	incluant tous les attribute array setup (glVertexAttribArray), buffer objects used for attribute arrays
+	et GL_ELEMENT_ARRAY_BUFFER eventuellement
+	ici je n'en utilise qu'un pour tout le prog ; à terme peut-être faire plusieurs VAOs
+	*/
+	
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	// --------------------------------------------------------------------------
-	vertex_shader_draw= load_shader(GL_VERTEX_SHADER, "vertexshader_draw.txt");
-	fragment_shader_draw= load_shader(GL_FRAGMENT_SHADER, "fragmentshader_draw.txt");
-	prog_draw= glCreateProgram();
-	glAttachShader(prog_draw, vertex_shader_draw);
-	glAttachShader(prog_draw, fragment_shader_draw);
-	glBindAttribLocation(prog_draw, 0, "position_in"); // a faire avant link !
-	glBindAttribLocation(prog_draw, 1, "color_in");
-	glLinkProgram(prog_draw);
-	check_gl_program(prog_draw);
+	prog_draw  = create_prog("../shaders/vertexshader_repere.txt" , "../shaders/fragmentshader_basic.txt");
+	prog_repere= create_prog("../shaders/vertexshader_repere.txt", "../shaders/fragmentshader_basic.txt");
 
-	world2clip_loc= glGetUniformLocation(prog_draw, "world2clip_matrix");
-	eye_direction_loc= glGetUniformLocation(prog_draw, "eye_direction");
+	float eye_direction[]= {0.0f, 0.0f, 1.0f};
+	GLuint progs_eye[]= {prog_draw};
+	for (unsigned int i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
+		GLint eye_direction_loc= glGetUniformLocation(progs_eye[i], "eye_direction");
+		glUseProgram(progs_eye[i]);
+		glUniform3fv(eye_direction_loc, 1, eye_direction);
+		glUseProgram(0);
+	}
 
-	glUseProgram(prog_draw);
-	glUniform3fv(eye_direction_loc, 1, eye_direction);
-	glUseProgram(0);
+	// verif que les shaders ont bien été compilés - linkés
+	check_gl_error();
 
 	// --------------------------------------------------------------------------
-	vertex_shader_repere= load_shader(GL_VERTEX_SHADER, "vertexshader_repere.txt");
-	fragment_shader_repere= load_shader(GL_FRAGMENT_SHADER, "fragmentshader_repere.txt");
-	prog_repere= glCreateProgram();
-	glAttachShader(prog_repere, vertex_shader_repere);
-	glAttachShader(prog_repere, fragment_shader_repere);
-	glBindAttribLocation(prog_repere, 0, "position_in");
-	glBindAttribLocation(prog_repere, 1, "color_in");
-	glLinkProgram(prog_repere);
-	check_gl_program(prog_repere);
+	view_system= new ViewSystem(prog_repere, SCREEN_WIDTH, SCREEN_HEIGHT);
+	view_system->_repere->_is_ground= false;
+	view_system->_repere->_is_repere= false;
+	view_system->_repere->_is_box= false;
+	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 10.0f);
 
 	// --------------------------------------------------------------------------
-	recompute_world2camera();
-
-	check_gl_error(); // verif que init() s'est bien passé
-
+	input_state= new InputState();
+	
 	// --------------------------------------------------------------------------
-	repere= new Repere(prog_repere);
-
 	ssgl= new SpringSystemGL(prog_draw);
 	ssgl->_ss= new CubeSystem();
 	//ssgl->_ss->rand_disposition(N_CUBES);
-	ssgl->_ss->load("/Volumes/Cezanne/Cezanne/perso_dev/ovh/www/codes/springs/best.txt");
+	ssgl->_ss->load("./best.txt");
 }
 
 
@@ -198,18 +168,23 @@ void draw() {
 	compt_fps++;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	
+	view_system->draw();
 
-	repere->draw(world2clip);
-	ssgl->draw(world2clip);
+	ssgl->draw(view_system->_world2clip);
 
 	SDL_GL_SwapWindow(window);
 }
 
 
 void anim() {
+	if (ssgl->_is_paused) {
+		return;
+	}
 	tikanim2= SDL_GetTicks();
-	if (tikanim2- tikanim1 > DELTA_ANIM)
-	{
+	if (tikanim2- tikanim1 > DELTA_ANIM) {
 		tikanim1= SDL_GetTicks();
 		ssgl->anim();
 	}
@@ -230,20 +205,16 @@ void compute_fps() {
 }
 
 
-void idle()
-{
-	if (!is_paused)
-		anim();
+void idle() {
+	anim();
 	draw();
 	compute_fps();
 }
 
 
 
-void main_loop()
-{
+void main_loop() {
 	SDL_Event event;
-	int done= 0;
 
 	while (!done) {
 		while (SDL_PollEvent(&event)) {
@@ -262,37 +233,7 @@ void main_loop()
 					break;
 
 				case SDL_KEYDOWN:
-					switch (event.key.keysym.sym) {
-						case SDLK_ESCAPE: // esc : sortie programme
-							done= 1;
-							break;
-						case SDLK_SPACE: // tests
-							ssgl->_ss->rand_disposition(N_CUBES);
-							break;
-						case SDLK_a:
-							ssgl->_is_draw_accel_speed= !ssgl->_is_draw_accel_speed;
-							break;
-						case SDLK_f:
-							ssgl->_is_draw_forces= !ssgl->_is_draw_forces;
-							break;
-						case SDLK_g:
-							repere->_is_ground= !repere->_is_ground;
-							break;
-						case SDLK_p:
-							is_paused= !is_paused;
-							break;
-						case SDLK_r:
-							repere->_is_repere= !repere->_is_repere;
-							break;
-						case SDLK_s:
-							ssgl->_is_draw_springs= !ssgl->_is_draw_springs;
-							break;
-						case SDLK_z:
-							ssgl->_ss->rand_contracts();
-							break;
-						default:
-							break;
-					}
+					key_down(event.key.keysym.sym);
 					break;
 
 				case SDL_QUIT:
@@ -309,6 +250,10 @@ void main_loop()
 
 
 void clean() {
+	delete view_system;
+	delete ssgl;
+	delete input_state;
+
 	SDL_GL_DeleteContext(mainContext);
 	SDL_DestroyWindow(window);
 	IMG_Quit();
@@ -324,21 +269,22 @@ void test1() {
 
 
 void test2() {
-	ssg= new SpringSystemGenetic();
+	SpringSystemGenetic * ssg= new SpringSystemGenetic();
 	for (unsigned int i=0; i<N_GENERATIONS; i++) {
 		cout << i << endl;
 		ssg->next_gen();
 	}
-	ssg->save_best("/Volumes/Cezanne/Cezanne/perso_dev/ovh/www/codes/springs/best.txt");
-
+	ssg->save_best("./best.txt");
+	delete ssg;
 }
 
 
 void test3() {
-	CubeSystem* cs= new CubeSystem();
+	CubeSystem * cs= new CubeSystem();
 	cs->rand_disposition(N_CUBES);
 	cs->rand_contracts();
-	cs->save("/Volumes/Cezanne/Cezanne/perso_dev/ovh/www/codes/springs/best.txt");
+	cs->save("./best.txt");
+	delete cs;
 }
 
 

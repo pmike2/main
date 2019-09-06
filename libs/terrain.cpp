@@ -605,7 +605,6 @@ void Terrain::set_draw_mesh(bool b) {
 }
 
 
-
 void Terrain::save(string ch_tif) {
 	TIFF * alti_tif= TIFFOpen(ch_tif.c_str(), "w");
 	TIFFSetField(alti_tif, TIFFTAG_IMAGEWIDTH, _config->_width_n+ 1);

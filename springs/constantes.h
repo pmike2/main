@@ -9,8 +9,6 @@
 const int SCREEN_WIDTH= 800;
 const int SCREEN_HEIGHT= 700;
 
-const char * const CH_LOG= "sdl.log";
-
 const unsigned int DELTA_ANIM= 1;
 
 const unsigned int MAX_VERTICES= 500;

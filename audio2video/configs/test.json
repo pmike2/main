@@ -1,0 +1,1122 @@
+{
+    "connexions": [
+        {
+            "height": 6,
+            "true_indices": [
+                [
+                    0,
+                    4
+                ],
+                [
+                    1,
+                    2
+                ],
+                [
+                    2,
+                    2
+                ],
+                [
+                    3,
+                    2
+                ],
+                [
+                    6,
+                    2
+                ],
+                [
+                    8,
+                    4
+                ]
+            ],
+            "width": 9
+        },
+        {
+            "height": 6,
+            "true_indices": [
+                [
+                    1,
+                    4
+                ],
+                [
+                    2,
+                    2
+                ],
+                [
+                    2,
+                    4
+                ],
+                [
+                    2,
+                    5
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    4,
+                    4
+                ],
+                [
+                    5,
+                    1
+                ],
+                [
+                    7,
+                    1
+                ],
+                [
+                    7,
+                    3
+                ],
+                [
+                    8,
+                    4
+                ]
+            ],
+            "width": 9
+        },
+        {
+            "height": 6,
+            "true_indices": [
+                [
+                    0,
+                    2
+                ],
+                [
+                    0,
+                    4
+                ],
+                [
+                    3,
+                    0
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    4,
+                    1
+                ],
+                [
+                    5,
+                    5
+                ],
+                [
+                    6,
+                    2
+                ],
+                [
+                    8,
+                    5
+                ]
+            ],
+            "width": 9
+        },
+        {
+            "height": 6,
+            "true_indices": [
+                [
+                    0,
+                    2
+                ],
+                [
+                    0,
+                    5
+                ],
+                [
+                    1,
+                    3
+                ],
+                [
+                    5,
+                    3
+                ],
+                [
+                    6,
+                    2
+                ],
+                [
+                    7,
+                    3
+                ]
+            ],
+            "width": 9
+        },
+        {
+            "height": 6,
+            "true_indices": [
+                [
+                    0,
+                    0
+                ],
+                [
+                    1,
+                    3
+                ],
+                [
+                    2,
+                    0
+                ],
+                [
+                    3,
+                    3
+                ],
+                [
+                    5,
+                    5
+                ],
+                [
+                    6,
+                    2
+                ],
+                [
+                    6,
+                    3
+                ],
+                [
+                    7,
+                    5
+                ],
+                [
+                    8,
+                    1
+                ],
+                [
+                    8,
+                    3
+                ],
+                [
+                    8,
+                    5
+                ]
+            ],
+            "width": 9
+        },
+        {
+            "height": 6,
+            "true_indices": [
+                [
+                    1,
+                    1
+                ],
+                [
+                    1,
+                    2
+                ],
+                [
+                    3,
+                    0
+                ],
+                [
+                    5,
+                    0
+                ],
+                [
+                    5,
+                    2
+                ],
+                [
+                    6,
+                    0
+                ],
+                [
+                    7,
+                    2
+                ],
+                [
+                    8,
+                    3
+                ]
+            ],
+            "width": 9
+        }
+    ],
+    "model_objs": [
+        {
+            "cfg": "../data/tree.xml",
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "scale_z": 1.0
+        },
+        {
+            "cfg": "../data/rocks.xml",
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "scale_z": 1.0
+        },
+        {
+            "cfg": "../data/tree2.xml",
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "scale_z": 1.0
+        },
+        {
+            "cfg": "../data/tree3.xml",
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "scale_z": 1.0
+        },
+        {
+            "cfg": "../data/tree2.xml",
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "scale_z": 1.0
+        },
+        {
+            "cfg": "../data/tree2.xml",
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "scale_z": 1.0
+        },
+        {
+            "cfg": "../data/tree_dead.xml",
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "scale_z": 1.0
+        },
+        {
+            "cfg": "../data/tree.xml",
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "scale_z": 1.0
+        },
+        {
+            "cfg": "../data/tree_dead.xml",
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "scale_z": 1.0
+        }
+    ],
+    "morphing_objs": [
+        {
+            "alpha": {
+                "attack": 0.013849999755621,
+                "attack_power": 1.30384993553162,
+                "release": 1.95500004291534,
+                "release_power": 0.52114999294281,
+                "rest_value": 0.947350025177002,
+                "stimulated_value": 1.07735002040863
+            },
+            "ambient_x": {
+                "attack": 0.0942100062966347,
+                "attack_power": 1.47605001926422,
+                "release": 0.834999978542328,
+                "release_power": 1.76300001144409,
+                "rest_value": 0.643800020217896,
+                "stimulated_value": 0.93120002746582
+            },
+            "ambient_y": {
+                "attack": 0.063850000500679,
+                "attack_power": 1.53139996528625,
+                "release": 0.496800005435944,
+                "release_power": 1.33325004577637,
+                "rest_value": 0.0614000000059605,
+                "stimulated_value": 0.473399996757507
+            },
+            "ambient_z": {
+                "attack": 0.0403300002217293,
+                "attack_power": 1.1117000579834,
+                "release": 1.16620004177094,
+                "release_power": 1.29034996032715,
+                "rest_value": 0.987399995326996,
+                "stimulated_value": 1.48549997806549
+            },
+            "rot1_x": {
+                "attack": 0.0124000003561378,
+                "attack_power": 0.995599985122681,
+                "release": 0.865599989891052,
+                "release_power": 1.50380003452301,
+                "rest_value": 1.0983008146286,
+                "stimulated_value": 1.17256808280945
+            },
+            "rot1_y": {
+                "attack": 0.0711899995803833,
+                "attack_power": 0.598699986934662,
+                "release": 0.678799986839294,
+                "release_power": 1.1472499370575,
+                "rest_value": 3.25154852867126,
+                "stimulated_value": 3.04520869255066
+            },
+            "rot1_z": {
+                "attack": 0.0132300006225705,
+                "attack_power": 0.957800030708313,
+                "release": 0.207800000905991,
+                "release_power": 1.69774997234344,
+                "rest_value": 6.2593092918396,
+                "stimulated_value": 6.24064826965332
+            },
+            "rot2_x": {
+                "attack": 0.00499999988824129,
+                "attack_power": 0.592549979686737,
+                "release": 1.59519994258881,
+                "release_power": 0.5935999751091,
+                "rest_value": 4.87198209762573,
+                "stimulated_value": 5.06833171844482
+            },
+            "rot2_y": {
+                "attack": 0.0579700022935867,
+                "attack_power": 1.43315005302429,
+                "release": 0.77020001411438,
+                "release_power": 0.70235002040863,
+                "rest_value": 2.22990250587463,
+                "stimulated_value": 2.32452726364136
+            },
+            "rot2_z": {
+                "attack": 0.0880900025367737,
+                "attack_power": 0.930500030517578,
+                "release": 0.954800009727478,
+                "release_power": 1.32859992980957,
+                "rest_value": 0.277088463306427,
+                "stimulated_value": 0.065030962228775
+            },
+            "scale_x": {
+                "attack": 0.0168699994683266,
+                "attack_power": 0.735499978065491,
+                "release": 1.73599994182587,
+                "release_power": 1.91569995880127,
+                "rest_value": 1.61675000190735,
+                "stimulated_value": 1.68847000598907
+            },
+            "scale_y": {
+                "attack": 0.099250003695488,
+                "attack_power": 1.41439998149872,
+                "release": 1.08539998531342,
+                "release_power": 1.8779000043869,
+                "rest_value": 1.90550005435944,
+                "stimulated_value": 1.9206600189209
+            },
+            "scale_z": {
+                "attack": 0.0966499969363213,
+                "attack_power": 1.88135004043579,
+                "release": 0.80019998550415,
+                "release_power": 0.560000002384186,
+                "rest_value": 0.715250015258789,
+                "stimulated_value": 0.753329992294312
+            },
+            "shininess": {
+                "attack": 0.0851400047540665,
+                "attack_power": 1.12849998474121,
+                "release": 1.31780004501343,
+                "release_power": 1.39144992828369,
+                "rest_value": 0.722699999809265,
+                "stimulated_value": 1.11590003967285
+            },
+            "translate_x": {
+                "attack": 0.0260300021618605,
+                "attack_power": 0.822800040245056,
+                "release": 0.128800004720688,
+                "release_power": 1.52419996261597,
+                "rest_value": 1.5789999961853,
+                "stimulated_value": 1.49233996868134
+            },
+            "translate_y": {
+                "attack": 0.0223300009965897,
+                "attack_power": 1.103600025177,
+                "release": 0.446000009775162,
+                "release_power": 0.507350027561188,
+                "rest_value": 1.36399984359741,
+                "stimulated_value": 1.28107988834381
+            },
+            "translate_z": {
+                "attack": 0.00848000030964613,
+                "attack_power": 0.707000017166138,
+                "release": 0.535000026226044,
+                "release_power": 1.72580003738403,
+                "rest_value": -2.87100005149841,
+                "stimulated_value": -2.83666014671326
+            }
+        },
+        {
+            "alpha": {
+                "attack": 0.0399600006639957,
+                "attack_power": 0.608449995517731,
+                "release": 0.66839998960495,
+                "release_power": 1.07419991493225,
+                "rest_value": 0.878589987754822,
+                "stimulated_value": 0.639189958572388
+            },
+            "ambient_x": {
+                "attack": 0.0623900033533573,
+                "attack_power": 1.58284997940063,
+                "release": 1.06640005111694,
+                "release_power": 1.16464996337891,
+                "rest_value": 0.470099985599518,
+                "stimulated_value": 0.643700003623962
+            },
+            "ambient_y": {
+                "attack": 0.00371000031009316,
+                "attack_power": 0.500899970531464,
+                "release": 1.0654000043869,
+                "release_power": 0.747500002384186,
+                "rest_value": 0.989099979400635,
+                "stimulated_value": 1.0349999666214
+            },
+            "ambient_z": {
+                "attack": 0.0967399999499321,
+                "attack_power": 1.34809994697571,
+                "release": 0.25780001282692,
+                "release_power": 1.21399998664856,
+                "rest_value": 0.531300008296967,
+                "stimulated_value": 0.233700007200241
+            },
+            "rot1_x": {
+                "attack": 0.0862400010228157,
+                "attack_power": 1.26709997653961,
+                "release": 1.78419995307922,
+                "release_power": 1.77470004558563,
+                "rest_value": 0.424115031957626,
+                "stimulated_value": 0.333134531974792
+            },
+            "rot1_y": {
+                "attack": 0.0141000002622604,
+                "attack_power": 1.98979997634888,
+                "release": 1.10479998588562,
+                "release_power": 1.83560001850128,
+                "rest_value": 0.402752190828323,
+                "stimulated_value": 0.343313246965408
+            },
+            "rot1_z": {
+                "attack": 0.024720000103116,
+                "attack_power": 0.748250007629395,
+                "release": 0.973200023174286,
+                "release_power": 1.41619992256165,
+                "rest_value": 4.91910600662231,
+                "stimulated_value": 5.14083957672119
+            },
+            "rot2_x": {
+                "attack": 0.0895400047302246,
+                "attack_power": 1.03834998607635,
+                "release": 0.0777999982237816,
+                "release_power": 1.33910000324249,
+                "rest_value": 5.76670789718628,
+                "stimulated_value": 5.8604531288147
+            },
+            "rot2_y": {
+                "attack": 0.0237199999392033,
+                "attack_power": 0.635150015354156,
+                "release": 0.921999990940094,
+                "release_power": 1.44709992408752,
+                "rest_value": 1.15736281871796,
+                "stimulated_value": 1.26882648468018
+            },
+            "rot2_z": {
+                "attack": 0.0309700015932322,
+                "attack_power": 1.24790000915527,
+                "release": 0.961399972438812,
+                "release_power": 1.52435004711151,
+                "rest_value": 5.45883178710938,
+                "stimulated_value": 5.66686820983887
+            },
+            "scale_x": {
+                "attack": 0.0472499988973141,
+                "attack_power": 0.538100004196167,
+                "release": 0.221399992704391,
+                "release_power": 1.63730001449585,
+                "rest_value": 2.54649996757507,
+                "stimulated_value": 2.35645985603333
+            },
+            "scale_y": {
+                "attack": 0.0851500034332275,
+                "attack_power": 0.633350014686584,
+                "release": 0.648800015449524,
+                "release_power": 1.16180002689362,
+                "rest_value": 2.97324991226196,
+                "stimulated_value": 2.95532989501953
+            },
+            "scale_z": {
+                "attack": 0.0359099991619587,
+                "attack_power": 1.54700005054474,
+                "release": 0.432399988174438,
+                "release_power": 0.965299963951111,
+                "rest_value": 2.86999988555908,
+                "stimulated_value": 2.81723976135254
+            },
+            "shininess": {
+                "attack": 0.0494200028479099,
+                "attack_power": 1.5349999666214,
+                "release": 1.31379997730255,
+                "release_power": 1.73345005512238,
+                "rest_value": 0.269400000572205,
+                "stimulated_value": 0.318199992179871
+            },
+            "translate_x": {
+                "attack": 0.0685300007462502,
+                "attack_power": 1.21324992179871,
+                "release": 1.50539994239807,
+                "release_power": 1.4256500005722,
+                "rest_value": 0.923999786376953,
+                "stimulated_value": 0.931759774684906
+            },
+            "translate_y": {
+                "attack": 0.0114799998700619,
+                "attack_power": 1.48790001869202,
+                "release": 1.39919996261597,
+                "release_power": 0.816949963569641,
+                "rest_value": 0.89300012588501,
+                "stimulated_value": 0.887200117111206
+            },
+            "translate_z": {
+                "attack": 0.0487200021743774,
+                "attack_power": 1.12430000305176,
+                "release": 1.11020004749298,
+                "release_power": 1.46315002441406,
+                "rest_value": -1.23200011253357,
+                "stimulated_value": -1.31100010871887
+            }
+        },
+        {
+            "alpha": {
+                "attack": 0.0666299983859062,
+                "attack_power": 1.83665001392365,
+                "release": 0.968200027942657,
+                "release_power": 1.00594997406006,
+                "rest_value": 0.83449000120163,
+                "stimulated_value": 0.94419002532959
+            },
+            "ambient_x": {
+                "attack": 0.0518799982964993,
+                "attack_power": 0.973100006580353,
+                "release": 1.13240003585815,
+                "release_power": 1.26380002498627,
+                "rest_value": 0.189600005745888,
+                "stimulated_value": 0.589200019836426
+            },
+            "ambient_y": {
+                "attack": 0.0715100020170212,
+                "attack_power": 1.02079999446869,
+                "release": 1.55820000171661,
+                "release_power": 1.22344994544983,
+                "rest_value": 0.613600015640259,
+                "stimulated_value": 0.861100018024445
+            },
+            "ambient_z": {
+                "attack": 0.085379995405674,
+                "attack_power": 1.14995002746582,
+                "release": 1.89880001544952,
+                "release_power": 0.891350030899048,
+                "rest_value": 0.286300003528595,
+                "stimulated_value": 0.23309999704361
+            },
+            "rot1_x": {
+                "attack": 0.011680000461638,
+                "attack_power": 0.579349994659424,
+                "release": 0.601000010967255,
+                "release_power": 0.64190000295639,
+                "rest_value": 0.889070689678192,
+                "stimulated_value": 0.94806981086731
+            },
+            "rot1_y": {
+                "attack": 0.0879600048065186,
+                "attack_power": 1.15264999866486,
+                "release": 0.112199999392033,
+                "release_power": 1.2216500043869,
+                "rest_value": 2.47683167457581,
+                "stimulated_value": 2.19647598266602
+            },
+            "rot1_z": {
+                "attack": 0.0325600020587444,
+                "attack_power": 0.927350044250488,
+                "release": 1.49820005893707,
+                "release_power": 1.85794997215271,
+                "rest_value": 4.80475187301636,
+                "stimulated_value": 4.55838823318481
+            },
+            "rot2_x": {
+                "attack": 0.0947799980640411,
+                "attack_power": 1.32560002803802,
+                "release": 1.39059996604919,
+                "release_power": 1.93280005455017,
+                "rest_value": 6.07583999633789,
+                "stimulated_value": 6.12843036651611
+            },
+            "rot2_y": {
+                "attack": 0.0616800002753735,
+                "attack_power": 0.8505499958992,
+                "release": 1.43760001659393,
+                "release_power": 1.92739999294281,
+                "rest_value": 2.05837154388428,
+                "stimulated_value": 1.96487772464752
+            },
+            "rot2_z": {
+                "attack": 0.0130100008100271,
+                "attack_power": 1.80184996128082,
+                "release": 0.179800003767014,
+                "release_power": 1.02740001678467,
+                "rest_value": 5.35515880584717,
+                "stimulated_value": 5.35553598403931
+            },
+            "scale_x": {
+                "attack": 0.0608299970626831,
+                "attack_power": 1.91614997386932,
+                "release": 1.24140000343323,
+                "release_power": 1.40059995651245,
+                "rest_value": 2.25850009918213,
+                "stimulated_value": 2.43542003631592
+            },
+            "scale_y": {
+                "attack": 0.0995699986815453,
+                "attack_power": 1.00789999961853,
+                "release": 1.52579998970032,
+                "release_power": 1.88119995594025,
+                "rest_value": 1.713250041008,
+                "stimulated_value": 1.7701700925827
+            },
+            "scale_z": {
+                "attack": 0.0837299972772598,
+                "attack_power": 1.1397500038147,
+                "release": 1.44700002670288,
+                "release_power": 1.74995005130768,
+                "rest_value": 1.1782500743866,
+                "stimulated_value": 1.10297012329102
+            },
+            "shininess": {
+                "attack": 0.066260002553463,
+                "attack_power": 0.551750004291534,
+                "release": 0.399199992418289,
+                "release_power": 1.57745003700256,
+                "rest_value": 0.744799971580505,
+                "stimulated_value": 0.63019996881485
+            },
+            "translate_x": {
+                "attack": 0.0355600006878376,
+                "attack_power": 1.86035001277924,
+                "release": 0.730599999427795,
+                "release_power": 1.10540008544922,
+                "rest_value": -2.61899995803833,
+                "stimulated_value": -2.63967990875244
+            },
+            "translate_y": {
+                "attack": 0.0558700002729893,
+                "attack_power": 1.9190000295639,
+                "release": 0.760399997234344,
+                "release_power": 1.15460002422333,
+                "rest_value": 4.85799980163574,
+                "stimulated_value": 4.81941986083984
+            },
+            "translate_z": {
+                "attack": 0.0553700029850006,
+                "attack_power": 0.970849990844727,
+                "release": 0.876999974250793,
+                "release_power": 1.26515007019043,
+                "rest_value": 1.30299997329712,
+                "stimulated_value": 1.34581995010376
+            }
+        },
+        {
+            "alpha": {
+                "attack": 0.0379999987781048,
+                "attack_power": 1.93040001392365,
+                "release": 1.14139997959137,
+                "release_power": 1.09774994850159,
+                "rest_value": 0.318250000476837,
+                "stimulated_value": -0.0219500064849854
+            },
+            "ambient_x": {
+                "attack": 0.0530500002205372,
+                "attack_power": 0.54229998588562,
+                "release": 1.6224000453949,
+                "release_power": 1.48025000095367,
+                "rest_value": 0.748600006103516,
+                "stimulated_value": 0.282100021839142
+            },
+            "ambient_y": {
+                "attack": 0.066550001502037,
+                "attack_power": 0.585649967193604,
+                "release": 1.7661999464035,
+                "release_power": 0.831650018692017,
+                "rest_value": 0.517799973487854,
+                "stimulated_value": 0.383399963378906
+            },
+            "ambient_z": {
+                "attack": 0.0435400009155273,
+                "attack_power": 0.856549978256226,
+                "release": 0.0357999987900257,
+                "release_power": 0.722000002861023,
+                "rest_value": 0.474000006914139,
+                "stimulated_value": 0.134400010108948
+            },
+            "rot1_x": {
+                "attack": 0.00995999947190285,
+                "attack_power": 1.68350005149841,
+                "release": 1.59839999675751,
+                "release_power": 1.6574000120163,
+                "rest_value": 5.99855709075928,
+                "stimulated_value": 6.17524003982544
+            },
+            "rot1_y": {
+                "attack": 0.00724999979138374,
+                "attack_power": 1.89409995079041,
+                "release": 1.3503999710083,
+                "release_power": 0.846050024032593,
+                "rest_value": 1.54000878334045,
+                "stimulated_value": 1.73365652561188
+            },
+            "rot1_z": {
+                "attack": 0.0164199993014336,
+                "attack_power": 0.849650025367737,
+                "release": 0.174600005149841,
+                "release_power": 1.34960007667542,
+                "rest_value": 5.93195533752441,
+                "stimulated_value": 6.17643404006958
+            },
+            "rot2_x": {
+                "attack": 0.0509399995207787,
+                "attack_power": 1.63205003738403,
+                "release": 1.62800002098083,
+                "release_power": 0.622250020503998,
+                "rest_value": 1.85479629039764,
+                "stimulated_value": 1.54786264896393
+            },
+            "rot2_y": {
+                "attack": 0.0873600021004677,
+                "attack_power": 0.779150009155273,
+                "release": 0.0243999995291233,
+                "release_power": 1.5929000377655,
+                "rest_value": 4.19528293609619,
+                "stimulated_value": 4.35311651229858
+            },
+            "rot2_z": {
+                "attack": 0.0239599999040365,
+                "attack_power": 1.94945001602173,
+                "release": 1.08959996700287,
+                "release_power": 1.65094995498657,
+                "rest_value": 2.70868134498596,
+                "stimulated_value": 2.45264148712158
+            },
+            "scale_x": {
+                "attack": 0.0544100031256676,
+                "attack_power": 1.55134999752045,
+                "release": 0.647199988365173,
+                "release_power": 1.86530005931854,
+                "rest_value": 0.883749961853027,
+                "stimulated_value": 0.992749929428101
+            },
+            "scale_y": {
+                "attack": 0.0405500009655952,
+                "attack_power": 1.18774998188019,
+                "release": 0.55239999294281,
+                "release_power": 1.98454999923706,
+                "rest_value": 1.52900004386902,
+                "stimulated_value": 1.5563600063324
+            },
+            "scale_z": {
+                "attack": 0.0842000022530556,
+                "attack_power": 0.672800004482269,
+                "release": 0.635999977588654,
+                "release_power": 0.569750010967255,
+                "rest_value": 2.17175006866455,
+                "stimulated_value": 2.08955001831055
+            },
+            "shininess": {
+                "attack": 0.049040000885725,
+                "attack_power": 0.593299984931946,
+                "release": 0.377999991178513,
+                "release_power": 0.576650023460388,
+                "rest_value": 0.188500002026558,
+                "stimulated_value": 0.359600007534027
+            },
+            "translate_x": {
+                "attack": 0.0317200012505054,
+                "attack_power": 1.88314998149872,
+                "release": 1.96979999542236,
+                "release_power": 1.91254997253418,
+                "rest_value": -4.81699991226196,
+                "stimulated_value": -4.73479986190796
+            },
+            "translate_y": {
+                "attack": 0.0707900002598763,
+                "attack_power": 0.853700041770935,
+                "release": 1.27260005474091,
+                "release_power": 0.516049981117249,
+                "rest_value": 1.8600001335144,
+                "stimulated_value": 1.92354011535645
+            },
+            "translate_z": {
+                "attack": 0.0450699999928474,
+                "attack_power": 1.79750001430511,
+                "release": 0.0434000007808208,
+                "release_power": 0.51230001449585,
+                "rest_value": 2.8600001335144,
+                "stimulated_value": 2.78232002258301
+            }
+        },
+        {
+            "alpha": {
+                "attack": 0.0701799988746643,
+                "attack_power": 1.06505000591278,
+                "release": 0.216800004243851,
+                "release_power": 1.99685001373291,
+                "rest_value": 0.526239991188049,
+                "stimulated_value": 0.814040005207062
+            },
+            "ambient_x": {
+                "attack": 0.0195800010114908,
+                "attack_power": 1.49975001811981,
+                "release": 1.39719998836517,
+                "release_power": 0.787699997425079,
+                "rest_value": 0.76639997959137,
+                "stimulated_value": 0.625199973583221
+            },
+            "ambient_y": {
+                "attack": 0.034620001912117,
+                "attack_power": 1.30624997615814,
+                "release": 1.94620001316071,
+                "release_power": 1.2216500043869,
+                "rest_value": 0.890100002288818,
+                "stimulated_value": 1.31710004806519
+            },
+            "ambient_z": {
+                "attack": 0.00063999998383224,
+                "attack_power": 1.46359992027283,
+                "release": 0.241400003433228,
+                "release_power": 0.655250012874603,
+                "rest_value": 0.534600019454956,
+                "stimulated_value": 0.980100035667419
+            },
+            "rot1_x": {
+                "attack": 0.0837799981236458,
+                "attack_power": 0.522350013256073,
+                "release": 1.79499995708466,
+                "release_power": 0.674000024795532,
+                "rest_value": 5.20247793197632,
+                "stimulated_value": 5.02874803543091
+            },
+            "rot1_y": {
+                "attack": 0.00867000035941601,
+                "attack_power": 1.87100005149841,
+                "release": 0.12720000743866,
+                "release_power": 0.945950031280518,
+                "rest_value": 2.57987594604492,
+                "stimulated_value": 2.87160420417786
+            },
+            "rot1_z": {
+                "attack": 0.0716800019145012,
+                "attack_power": 0.774199962615967,
+                "release": 0.421999990940094,
+                "release_power": 1.67495000362396,
+                "rest_value": 2.33106160163879,
+                "stimulated_value": 2.64503240585327
+            },
+            "rot2_x": {
+                "attack": 0.0505200028419495,
+                "attack_power": 0.727699995040894,
+                "release": 1.79980003833771,
+                "release_power": 0.596300005912781,
+                "rest_value": 1.94464588165283,
+                "stimulated_value": 1.77430868148804
+            },
+            "rot2_y": {
+                "attack": 0.028439998626709,
+                "attack_power": 1.49870002269745,
+                "release": 0.29679998755455,
+                "release_power": 1.9190000295639,
+                "rest_value": 3.89054846763611,
+                "stimulated_value": 4.11008310317993
+            },
+            "rot2_z": {
+                "attack": 0.0370999984443188,
+                "attack_power": 0.907999992370605,
+                "release": 1.3128000497818,
+                "release_power": 0.713599979877472,
+                "rest_value": 2.68354845046997,
+                "stimulated_value": 2.74418115615845
+            },
+            "scale_x": {
+                "attack": 0.0710999965667725,
+                "attack_power": 0.645650029182434,
+                "release": 0.709200024604797,
+                "release_power": 1.88374996185303,
+                "rest_value": 1.66299998760223,
+                "stimulated_value": 1.51543998718262
+            },
+            "scale_y": {
+                "attack": 0.0117600001394749,
+                "attack_power": 1.63129997253418,
+                "release": 0.542400002479553,
+                "release_power": 1.47335004806519,
+                "rest_value": 2.99600005149841,
+                "stimulated_value": 3.12608003616333
+            },
+            "scale_z": {
+                "attack": 0.091839998960495,
+                "attack_power": 0.719300031661987,
+                "release": 1.73539996147156,
+                "release_power": 1.07719993591309,
+                "rest_value": 2.38800001144409,
+                "stimulated_value": 2.50636005401611
+            },
+            "shininess": {
+                "attack": 0.0286500006914139,
+                "attack_power": 0.656300008296967,
+                "release": 0.218999996781349,
+                "release_power": 0.848600029945374,
+                "rest_value": 0.760399997234344,
+                "stimulated_value": 0.306600004434586
+            },
+            "translate_x": {
+                "attack": 0.0300500001758337,
+                "attack_power": 0.606800019741058,
+                "release": 0.812799990177155,
+                "release_power": 1.53785002231598,
+                "rest_value": -0.913000106811523,
+                "stimulated_value": -0.93396008014679
+            },
+            "translate_y": {
+                "attack": 0.0809400007128716,
+                "attack_power": 1.92139995098114,
+                "release": 1.38580000400543,
+                "release_power": 1.28165006637573,
+                "rest_value": -3.88100004196167,
+                "stimulated_value": -3.92382001876831
+            },
+            "translate_z": {
+                "attack": 0.0241199992597103,
+                "attack_power": 1.03880000114441,
+                "release": 1.49940001964569,
+                "release_power": 1.79495000839233,
+                "rest_value": 4.70499992370605,
+                "stimulated_value": 4.76902008056641
+            }
+        },
+        {
+            "alpha": {
+                "attack": 0.084929995238781,
+                "attack_power": 1.00234997272491,
+                "release": 0.0784000009298325,
+                "release_power": 0.671000003814697,
+                "rest_value": 0.360369980335236,
+                "stimulated_value": -0.0293300151824951
+            },
+            "ambient_x": {
+                "attack": 0.0485999993979931,
+                "attack_power": 1.86814999580383,
+                "release": 0.796999990940094,
+                "release_power": 1.55420005321503,
+                "rest_value": 0.781000018119812,
+                "stimulated_value": 0.370400011539459
+            },
+            "ambient_y": {
+                "attack": 0.0714199990034103,
+                "attack_power": 1.13584995269775,
+                "release": 0.259200006723404,
+                "release_power": 1.92770004272461,
+                "rest_value": 0.28600001335144,
+                "stimulated_value": 0.540100038051605
+            },
+            "ambient_z": {
+                "attack": 0.0991000011563301,
+                "attack_power": 0.531499981880188,
+                "release": 1.44739997386932,
+                "release_power": 1.88495004177094,
+                "rest_value": 0.182600006461143,
+                "stimulated_value": 0.52920001745224
+            },
+            "rot1_x": {
+                "attack": 0.0793000012636185,
+                "attack_power": 1.00129997730255,
+                "release": 0.682600021362305,
+                "release_power": 1.56079995632172,
+                "rest_value": 2.5145308971405,
+                "stimulated_value": 2.62410974502563
+            },
+            "rot1_y": {
+                "attack": 0.0389800034463406,
+                "attack_power": 0.891499996185303,
+                "release": 0.300000011920929,
+                "release_power": 0.636350035667419,
+                "rest_value": 4.08972549438477,
+                "stimulated_value": 3.9880006313324
+            },
+            "rot1_z": {
+                "attack": 0.0634199976921082,
+                "attack_power": 1.34809994697571,
+                "release": 0.263200014829636,
+                "release_power": 0.761150002479553,
+                "rest_value": 2.75015020370483,
+                "stimulated_value": 2.46369981765747
+            },
+            "rot2_x": {
+                "attack": 0.0851900056004524,
+                "attack_power": 1.34345006942749,
+                "release": 0.485599994659424,
+                "release_power": 1.97329998016357,
+                "rest_value": 1.36470794677734,
+                "stimulated_value": 1.12236547470093
+            },
+            "rot2_y": {
+                "attack": 0.032650001347065,
+                "attack_power": 0.623449981212616,
+                "release": 0.0967999994754791,
+                "release_power": 1.25119996070862,
+                "rest_value": 2.96754837036133,
+                "stimulated_value": 2.69994759559631
+            },
+            "rot2_z": {
+                "attack": 0.00665999995544553,
+                "attack_power": 1.95500004291534,
+                "release": 0.80620002746582,
+                "release_power": 0.646849989891052,
+                "rest_value": 5.91561937332153,
+                "stimulated_value": 5.90531492233276
+            },
+            "scale_x": {
+                "attack": 0.0047800000756979,
+                "attack_power": 1.41499996185303,
+                "release": 0.401199996471405,
+                "release_power": 1.22359991073608,
+                "rest_value": 2.93149995803833,
+                "stimulated_value": 3.09889984130859
+            },
+            "scale_y": {
+                "attack": 0.0213500000536442,
+                "attack_power": 0.687049984931946,
+                "release": 0.404599994421005,
+                "release_power": 0.835700035095215,
+                "rest_value": 2.58899998664856,
+                "stimulated_value": 2.73183989524841
+            },
+            "scale_z": {
+                "attack": 0.0355900004506111,
+                "attack_power": 1.73074996471405,
+                "release": 0.410800009965897,
+                "release_power": 0.788900017738342,
+                "rest_value": 1.25650000572205,
+                "stimulated_value": 1.08438003063202
+            },
+            "shininess": {
+                "attack": 0.0485699996352196,
+                "attack_power": 0.984799981117249,
+                "release": 1.94840002059937,
+                "release_power": 1.66820001602173,
+                "rest_value": 0.934599995613098,
+                "stimulated_value": 1.14989995956421
+            },
+            "translate_x": {
+                "attack": 0.0206900015473366,
+                "attack_power": 1.66384994983673,
+                "release": 1.19539999961853,
+                "release_power": 1.2870500087738,
+                "rest_value": -3.39800000190735,
+                "stimulated_value": -3.35502004623413
+            },
+            "translate_y": {
+                "attack": 0.00786000024527311,
+                "attack_power": 0.664250016212463,
+                "release": 0.678399980068207,
+                "release_power": 1.33039999008179,
+                "rest_value": 3.49699974060059,
+                "stimulated_value": 3.54025983810425
+            },
+            "translate_z": {
+                "attack": 0.00203999993391335,
+                "attack_power": 0.966349959373474,
+                "release": 0.209199994802475,
+                "release_power": 1.62709999084473,
+                "rest_value": -1.1029999256134,
+                "stimulated_value": -1.02179992198944
+            }
+        }
+    ]
+}

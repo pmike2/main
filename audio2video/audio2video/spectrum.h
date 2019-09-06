@@ -33,9 +33,9 @@
 #include "utile.h"
 #include "constantes.h"
 #include "thread.h"
-#include "light.h"
 #include "repere.h"
 #include "objfile.h"
+#include "input_state.h"
 
 
 // renvoie la taille d'un bloc regroupant des fréquences parmi SAMPLES_PER_BUFFER
@@ -95,13 +95,13 @@ public:
 	Audio();
 	~Audio();
 	void push_event(double t); // callback écrit dans _audio_event_queue
-	void update_current_sample(double t, AudioMode audio_mode); // main lit dans _audio_event_queue et écrit dans _signatures_event_queue
+	void update_current_sample(double t); // main lit dans _audio_event_queue et écrit dans _signatures_event_queue
 	void record2file(std::string record_path);
 	void loadfromfile(std::string load_path);
 	void compute_spectrum(long sample);
 	void set_n_signatures(unsigned int n_signatures); // suppression et recréation des _signatures
 	void reinit_signatures(); // passage à false des _signatures.active
-	int get_idx_signature(unsigned int idx_record, AudioMode audio_mode); // renvoie l'indice de la signature la plus proche
+	int get_idx_signature(unsigned int idx_record); // renvoie l'indice de la signature la plus proche
 	void sort_signatures(); // tri des signatures
 	float event_length(long idx_sample); // renvoie la taille en secondes d'un événement triggé (release)
 	void set_block_idx_signature(unsigned int idx_record, int idx_signature); // écrit l'idx signature d'un block
@@ -123,6 +123,7 @@ public:
 	std::vector<SpectrumSignature *> _signatures; // signatures
 	SafeQueue<AudioEvent> _signatures_event_queue; // update_current_sample y écrit et visu_art.anim() y lit
 	PaTime _last_trig_time; // sert à voir si on peut redéclencher un son
+	AudioMode _mode;
 };
 
 
@@ -135,6 +136,10 @@ public:
 	~VisuWave();
 	void draw();
 	void update_data();
+	bool mouse_motion(InputState * input_state);
+	bool mouse_button_down(InputState * input_state);
+	bool mouse_button_up(InputState * input_state);
+	bool key_down(InputState * input_state, SDL_Keycode key);
 
 
 	GLuint _prog_draw;
@@ -147,6 +152,8 @@ public:
 	Audio * _audio;
 	long _sample_center;
 	long _sample_width;
+
+	bool _mouse_down;
 };
 
 
@@ -157,7 +164,7 @@ public:
 	GLSpectrum(GLuint prog_draw_3d, Audio * audio);
 	~GLSpectrum();
 	void draw();
-	void anim(float * world2camera, float * camera2clip);
+	void anim(glm::mat4 world2camera, glm::mat4 camera2clip);
 	void update_data();
 
 
@@ -171,12 +178,11 @@ public:
 	unsigned int * _faces;
 	GLuint _buffers[2];
 	
-	float _model2camera[16];
-	float _model2clip[16];
-	float _normal[9];
-	
-	float _model2world[16];
-	float _ambient[3];
+	glm::mat4 _model2camera;
+	glm::mat4 _model2clip;
+	glm::mat4 _model2world;
+	glm::mat3 _normal;
+	glm::vec3 _ambient;
 	float _shininess;
 	float _alpha;
 
@@ -198,12 +204,16 @@ public:
 	~VisuSpectrum();
 	void draw();
 	void anim();
+	bool mouse_motion(InputState * input_state);
+	bool mouse_button_down(InputState * input_state);
+	bool mouse_button_up(InputState * input_state);
+	bool key_down(InputState * input_state, SDL_Keycode key);
 
 
 	GLSpectrum * _gl_spectrum;
-	std::vector<Light> _lights;
-	LightsUBO * _lights_ubo;
 	ViewSystem * _view_system;
+	Audio * _audio;
+	bool _mouse_down;
 };
 
 
@@ -215,6 +225,10 @@ public:
 	~VisuSimu();
 	void draw();
 	void update_data();
+	bool mouse_motion(InputState * input_state);
+	bool mouse_button_down(InputState * input_state);
+	bool mouse_button_up(InputState * input_state);
+	bool key_down(InputState * input_state, SDL_Keycode key);
 
 
 	GLuint _prog_draw;
@@ -223,8 +237,8 @@ public:
 	unsigned int _n_blocks;
 	float * _data;
 	float _camera2clip[16];
-
 	Audio * _audio;
+	bool _mouse_down;
 };
 
 
@@ -318,19 +332,24 @@ public:
 	nlohmann::json get_json();
 	void save(std::string ch_json);
 	void print();
+	bool mouse_motion(InputState * input_state);
+	bool mouse_button_down(InputState * input_state);
+	bool mouse_button_up(InputState * input_state);
+	bool key_down(InputState * input_state, SDL_Keycode key);
 
 
-	std::vector<ModelObj *> _model_objs;
+	std::vector<StaticModel *> _static_models;
+	std::vector<StaticInstance *> _static_instances;
 	std::vector<MorphingObj *> _morphing_objs;
 	std::vector<Connexion *> _connexions;
-	std::vector<Light> _lights;
-	LightsUBO * _lights_ubo;
 	Repere * _repere;
 	ViewSystem * _view_system;
 	GLuint _prog_draw_3d;
 	GLuint _prog_repere;
 	Audio * _audio;
 	int _last_idx_signature; // pour debug affichage de la dernière signature utilisée dans main.draw()
+	bool _mouse_down;
+	bool _fullscreen;
 };
 
 #endif

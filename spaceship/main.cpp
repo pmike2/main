@@ -63,9 +63,12 @@ GLuint g_vao;
 float eye_direction[3];
 GLint eye_direction_loc, fog_start_loc, fog_end_loc, fog_color_loc;
 
+Font * arial_font;
+Font * silom_font;
+
 ViewSystem * view_system;;
 Ship * ship;
-RandTerrain * level;
+World * world;
 SkyBox * skybox;
 vector<Light> lights;
 LightsUBO * lights_ubo;
@@ -81,72 +84,64 @@ vector<string> firstnames;
 
 
 // ---------------------------------------------------------------------------------------
-// vue embarquée
-void recompute_world2camera_embarked() {
-	
-	glm::mat4 glm_world2camera;
-	
-	// cf https://stackoverflow.com/questions/21866866/glmtranslate-with-local-space
-	glm::mat4 rotation= glm::mat4(ship->_follow_camera._rotation_matrix);
-	glm::mat4 translation= glm::translate(glm::mat4(1.0f), ship->_follow_camera._position);
-	
-	glm_world2camera= glm::inverse(glm::lookAt(
-		glm::vec3(0.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 1.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 1.0f)
-	));
-	glm_world2camera= rotation* glm_world2camera;
-	glm_world2camera= translation* glm_world2camera;
-	glm_world2camera= glm::inverse(glm_world2camera);
-
-	memcpy(view_system->_world2camera, glm::value_ptr(glm_world2camera), sizeof(float)* 16);
-	
-	glm::mat4 glm_camera2clip= glm::make_mat4(view_system->_camera2clip);
-	glm::mat4 glm_world2clip = glm_camera2clip* glm_world2camera;
-	memcpy(view_system->_world2clip, glm::value_ptr(glm_world2clip), sizeof(float)* 16);
-}
-
-
 void mouse_motion(int x, int y, int xrel, int yrel) {
-	if (is_visu_global) {
+	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
+
+	if (view_system->mouse_motion(input_state)) {
+		//return;
+	}
+
+ 	if (world->mouse_motion(input_state)) {
 		return;
 	}
-	// si mouvement souris ET click gauche
-	if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK) {
-		view_system->move_target(-(float)(xrel)* 0.1f, (float)(yrel)* 0.1f);
-		view_system->recompute_world2camera();
+}
+
+
+void mouse_button_up(int x, int y, unsigned short button) {
+	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
+
+}
+
+
+void mouse_button_down(int x, int y, unsigned short button) {
+	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
+
+}
+
+
+void key_down(SDL_Keycode key) {
+	input_state->key_down(key);
+
+	if (key== SDLK_ESCAPE) {
+		done= true;
 	}
-	// si mouvement souris ET click milieu
-	else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MMASK) {
-		view_system->move_dist(-(float)(yrel)* 1.0f);
-		view_system->recompute_world2camera();
+
+	if (view_system->key_down(input_state, key)) {
+		return;
 	}
-	// si mouvement souris ET click droit
-	else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_RMASK) {
-		view_system->move_alpha((float)(yrel)* 0.01f);
-		view_system->move_theta(-(float)(xrel)* 0.01f);
-		view_system->recompute_world2camera();
+
+ 	if (world->key_down(input_state, key)) {
+		return;
 	}
 }
 
 
-void mouse_button_up(unsigned int x, unsigned int y) {
-}
+void key_up(SDL_Keycode key) {
+	input_state->key_up(key);
 
-
-void mouse_button_down(unsigned int x, unsigned int y) {
+	if (view_system->key_up(input_state, key)) {
+		return;
+	}
+ 	if (world->key_up(input_state, key)) {
+		return;
+	}
 }
 
 
 void init() {
-	GLuint vertex_shader_draw, fragment_shader_draw, vertex_shader_repere, fragment_shader_repere;
-	GLuint vertex_shader_skybox, fragment_shader_skybox, vertex_shader_draw_instanced, fragment_shader_draw_instanced;
-	GLuint vertex_shader_basic, fragment_shader_basic, vertex_shader_map, fragment_shader_map;
-	GLuint vertex_shader_font, fragment_shader_font;
-	
-	Font* arial_font;
-	Font* silom_font;
-
 	srand(time(NULL));
 	
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -188,132 +183,42 @@ void init() {
 	SDL_GL_SwapWindow(window);
 	
 	// --------------------------------------------------------------------------
-	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-	
-	eye_direction[0]= 0.0f;
-	eye_direction[1]= 0.0f;
-	eye_direction[2]= 1.0f;
-
-	mouse_angle_x= -45.0f;
-	mouse_angle_y= -45.0f;
-	zoom= -100.0f;
-
-	is_paused= false;
-	is_visu_global= false;
-	
 	// --------------------------------------------------------------------------
 	/* VAO = vertex array object : tableau d'objets, chaque appel à un objet rappelle un contexte de dessin
-	 incluant tous les attribute array setup (glVertexAttribArray), buffer objects used for attribute arrays
-	 et GL_ELEMENT_ARRAY_BUFFER eventuellement
-	 
-	 ici je n'en utilise qu'un pour tout le prog ; à terme peut-être faire plusieurs VAOs
-	 */
+	incluant tous les attribute array setup (glVertexAttribArray), buffer objects used for attribute arrays
+	et GL_ELEMENT_ARRAY_BUFFER eventuellement
+	ici je n'en utilise qu'un pour tout le prog ; à terme peut-être faire plusieurs VAOs
+	*/
 	
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	// --------------------------------------------------------------------------
-	vertex_shader_draw_instanced= load_shader(GL_VERTEX_SHADER, "shaders/vertexshader_draw_instanced.txt");
-	fragment_shader_draw_instanced= load_shader(GL_FRAGMENT_SHADER, "shaders/fragmentshader_draw_instanced.txt");
-	prog_draw_instanced= glCreateProgram();
-	glAttachShader(prog_draw_instanced, vertex_shader_draw_instanced);
-	glAttachShader(prog_draw_instanced, fragment_shader_draw_instanced);
-	glBindAttribLocation(prog_draw_instanced, 0, "position_in"); // a faire avant link !
-	glBindAttribLocation(prog_draw_instanced, 1, "color_in");
-	glBindAttribLocation(prog_draw_instanced, 2, "normal_in");
-	glBindAttribLocation(prog_draw_instanced, 3, "instanced_matrix"); // prend 4 emplacements : de 3 à 7
-	glLinkProgram(prog_draw_instanced);
-	check_gl_program(prog_draw_instanced);
+	prog_draw_instanced= create_prog("../shaders/vertexshader_3d_color_instanced.txt", "../shaders/fragmentshader_3d_color_fog.txt");
+	prog_draw          = create_prog("../shaders/vertexshader_3d_basic.txt"          , "../shaders/fragmentshader_3d_color_fog.txt");
+	prog_repere        = create_prog("../shaders/vertexshader_repere.txt"            , "../shaders/fragmentshader_basic.txt");
+	prog_basic         = create_prog("../shaders/vertexshader_basic.txt"             , "../shaders/fragmentshader_basic.txt");
+	prog_map           = create_prog("../shaders/vertexshader_2d.txt"                , "../shaders/fragmentshader_basic.txt");
+	prog_skybox        = create_prog("../shaders/vertexshader_skybox.txt"            , "../shaders/fragmentshader_skybox.txt");
+	prog_font          = create_prog("../shaders/vertexshader_font.txt"              , "../shaders/fragmentshader_font.txt");
 
-	eye_direction_loc= glGetUniformLocation(prog_draw_instanced, "eye_direction");
-	fog_start_loc= glGetUniformLocation(prog_draw_instanced, "fog_start");
-	fog_end_loc= glGetUniformLocation(prog_draw_instanced, "fog_end");
-	
-	glUseProgram(prog_draw_instanced);
-	glUniform3fv(eye_direction_loc, 1, eye_direction);
-	glUniform1f(fog_start_loc, FOG_START);
-	glUniform1f(fog_end_loc, FOG_END);
-	glUniform3fv(fog_color_loc, 1, FOG_COLOR);
-	glUseProgram(0);
-	
-	// --------------------------------------------------------------------------
-	vertex_shader_draw= load_shader(GL_VERTEX_SHADER, "shaders/vertexshader_draw.txt");
-	fragment_shader_draw= load_shader(GL_FRAGMENT_SHADER, "shaders/fragmentshader_draw.txt");
-	prog_draw= glCreateProgram();
-	glAttachShader(prog_draw, vertex_shader_draw);
-	glAttachShader(prog_draw, fragment_shader_draw);
-	glBindAttribLocation(prog_draw, 0, "position_in"); // a faire avant link !
-	glBindAttribLocation(prog_draw, 1, "color_in");
-	glBindAttribLocation(prog_draw, 2, "normal_in");
-	glLinkProgram(prog_draw);
-	check_gl_program(prog_draw);
+	float eye_direction[]= {0.0f, 0.0f, 1.0f};
+	GLuint progs_eye[]= {prog_draw_instanced, prog_draw};
+	for (unsigned int i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
+		GLint eye_direction_loc= glGetUniformLocation(progs_eye[i], "eye_direction");
+		GLint fog_start_loc= glGetUniformLocation(progs_eye[i], "fog_start");
+		GLint fog_end_loc= glGetUniformLocation(progs_eye[i], "fog_end");
+		GLint fog_color_loc= glGetUniformLocation(progs_eye[i], "fog_color");
+		
+		glUseProgram(progs_eye[i]);
+		glUniform3fv(eye_direction_loc, 1, eye_direction);
+		glUniform1f(fog_start_loc, FOG_START);
+		glUniform1f(fog_end_loc, FOG_END);
+		glUniform3fv(fog_color_loc, 1, FOG_COLOR);
+		glUseProgram(0);
+	}
 
-	eye_direction_loc= glGetUniformLocation(prog_draw, "eye_direction");
-	fog_start_loc= glGetUniformLocation(prog_draw, "fog_start");
-	fog_end_loc= glGetUniformLocation(prog_draw, "fog_end");
-	
-	glUseProgram(prog_draw);
-	glUniform3fv(eye_direction_loc, 1, eye_direction);
-	glUniform1f(fog_start_loc, FOG_START);
-	glUniform1f(fog_end_loc, FOG_END);
-	glUniform3fv(fog_color_loc, 1, FOG_COLOR);
-	glUseProgram(0);
-	
-	// --------------------------------------------------------------------------
-	vertex_shader_repere= load_shader(GL_VERTEX_SHADER, "shaders/vertexshader_repere.txt");
-	fragment_shader_repere= load_shader(GL_FRAGMENT_SHADER, "shaders/fragmentshader_repere.txt");
-	prog_repere= glCreateProgram();
-	glAttachShader(prog_repere, vertex_shader_repere);
-	glAttachShader(prog_repere, fragment_shader_repere);
-	glBindAttribLocation(prog_repere, 0, "position_in");
-	glBindAttribLocation(prog_repere, 1, "color_in");
-	glLinkProgram(prog_repere);
-	check_gl_program(prog_repere);
-	
-	// --------------------------------------------------------------------------
-	vertex_shader_basic= load_shader(GL_VERTEX_SHADER, "shaders/vertexshader_basic.txt");
-	fragment_shader_basic= load_shader(GL_FRAGMENT_SHADER, "shaders/fragmentshader_basic.txt");
-	prog_basic= glCreateProgram();
-	glAttachShader(prog_basic, vertex_shader_basic);
-	glAttachShader(prog_basic, fragment_shader_basic);
-	glBindAttribLocation(prog_basic, 0, "position_in");
-	glBindAttribLocation(prog_basic, 1, "color_in");
-	glLinkProgram(prog_basic);
-	check_gl_program(prog_basic);
-	
-	// --------------------------------------------------------------------------
-	vertex_shader_map= load_shader(GL_VERTEX_SHADER, "shaders/vertexshader_map.txt");
-	fragment_shader_map= load_shader(GL_FRAGMENT_SHADER, "shaders/fragmentshader_map.txt");
-	prog_map= glCreateProgram();
-	glAttachShader(prog_map, vertex_shader_map);
-	glAttachShader(prog_map, fragment_shader_map);
-	glBindAttribLocation(prog_map, 0, "position_in");
-	glBindAttribLocation(prog_map, 1, "color_in");
-	glLinkProgram(prog_map);
-	check_gl_program(prog_map);
-	
-	// --------------------------------------------------------------------------
-	vertex_shader_skybox= load_shader(GL_VERTEX_SHADER, "shaders/vertexshader_skybox.txt");
-	fragment_shader_skybox= load_shader(GL_FRAGMENT_SHADER, "shaders/fragmentshader_skybox.txt");
-	prog_skybox= glCreateProgram();
-	glAttachShader(prog_skybox, vertex_shader_skybox);
-	glAttachShader(prog_skybox, fragment_shader_skybox);
-	glBindAttribLocation(prog_skybox, 0, "position_in");
-	glLinkProgram(prog_skybox);
-	check_gl_program(prog_skybox);
-	
-	// --------------------------------------------------------------------------
-	vertex_shader_font= load_shader(GL_VERTEX_SHADER, "shaders/vertexshader_font.txt");
-	fragment_shader_font= load_shader(GL_FRAGMENT_SHADER, "shaders/fragmentshader_font.txt");
-	prog_font= glCreateProgram();
-	glAttachShader(prog_font, vertex_shader_font);
-	glAttachShader(prog_font, fragment_shader_font);
-	glBindAttribLocation(prog_font, 0, "vertex");
-	glLinkProgram(prog_font);
-	check_gl_program(prog_font);
-
-	// --------------------------------------------------------------------------
-	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
+	// verif que les shaders ont bien été compilés - linkés
+	check_gl_error();
 	
 	// --------------------------------------------------------------------------
 	arial_font= new Font(prog_font, "fonts/Arial.ttf", 48, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -323,8 +228,7 @@ void init() {
 	view_system->_repere->_is_repere= false;
 	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_box= false;
-	view_system->_dist= 100.0f;
-	view_system->_alpha= M_PI* 0.2;
+	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), M_PI* 0.2, 0.0f, 100.0f);
 	
 	ship= new Ship("YOU", prog_draw, prog_basic, "modeles/plane2.obj", "modeles/plane2.mtl", false, SHIP_SIZE_FACTOR, HEROS_COLOR);
 	ship->_rigid_body._position.z= 400.0f;
@@ -354,8 +258,7 @@ void init() {
 		all_ships.push_back(enemy->_ship);
 	}
 	
-	level= new RandTerrain(prog_draw);
-	level->gen_altis(ALTI_OFFSET, NLEVELS, GRADIENT_BASE_SIZE, MAX_FACTOR, REDISTRIBUTION_POWER);
+	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, & WORLD_RAND_CONFIG_1, "");
 	skybox= new SkyBox(prog_skybox);
 	
 	for (unsigned int i=0; i<NCLOUDS; ++i)
@@ -398,6 +301,9 @@ void init() {
 	for (unsigned int i=0; i<lights.size(); i++)
 		lights[i].anim(view_system->_world2camera);
 	lights_ubo->update(lights);
+
+	is_paused= false;
+	is_visu_global= false;
 }
 
 
@@ -652,6 +558,9 @@ void clean() {
 		delete it_exp;
 	delete level_map;
 	delete ranking;
+
+	delete arial_font;
+	delete silom_font;
 	
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);

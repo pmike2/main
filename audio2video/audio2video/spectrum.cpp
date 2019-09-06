@@ -79,7 +79,8 @@ float SpectrumSignature::mass_center() {
 // ------------------------------------------------------------------------------------------------------------------------
 Audio::Audio() :
 	_current_sample(0), _current_sample_callback(0), _n_samples(N_SAMPLES_RECORD), _left_selection(0), _right_selection(N_SAMPLES_RECORD),
-	_n_blocks_fft(N_BLOCKS_FFT), _n_blocks_record(N_SAMPLES_RECORD/ SAMPLES_PER_BUFFER), _playback_amplitude(INIT_PLAYBACK_AMPLITUDE), _last_trig_time(0)
+	_n_blocks_fft(N_BLOCKS_FFT), _n_blocks_record(N_SAMPLES_RECORD/ SAMPLES_PER_BUFFER), _playback_amplitude(INIT_PLAYBACK_AMPLITUDE), _last_trig_time(0),
+	_mode(AUDIO_RECORD)
 {
 	_amplitudes= new float[_n_samples* 2]; // stereo
 	for (unsigned int i=0; i<_n_samples* 2; ++i)
@@ -113,7 +114,7 @@ void Audio::push_event(double t) {
 }
 
 
-void Audio::update_current_sample(double t, AudioMode audio_mode) {
+void Audio::update_current_sample(double t) {
 	AudioEvent audio_event;
 	_last_sample= _current_sample;
 	// on met à jour _current_sample avec celui le + proche du présent
@@ -133,7 +134,7 @@ void Audio::update_current_sample(double t, AudioMode audio_mode) {
 				if ((_blocks[idx_time* _n_blocks_fft+ idx_freq]->_is_triggered) && (t- _last_trig_time> TRIG_MIN_DIST)) {
 					_last_trig_time= t;
 					// calcul signature et stockage pour réutilisation dans event_length()
-					audio_event._idx_signature= get_idx_signature(idx_time, audio_mode);
+					audio_event._idx_signature= get_idx_signature(idx_time);
 					set_block_idx_signature(idx_time, audio_event._idx_signature);
 
 					//cout << idx_time << ":" << idx_signature << endl;
@@ -293,10 +294,10 @@ void Audio::reinit_signatures() {
 }
 
 
-int Audio::get_idx_signature(unsigned int idx_record, AudioMode audio_mode) {
+int Audio::get_idx_signature(unsigned int idx_record) {
 	unsigned int n_blocks_record_signature= 0;
 	// en mode record on ne connait pas le futur...
-	if (audio_mode== AUDIO_RECORD) {
+	if (_mode== AUDIO_RECORD) {
 		n_blocks_record_signature= 1;
 	}
 	else {
@@ -453,7 +454,7 @@ VisuWave::VisuWave() {
 
 
 VisuWave::VisuWave(GLuint prog_draw_2d, Audio * audio) :
-	 _prog_draw(prog_draw_2d), _sample_center(0), _sample_width(WAVE_SAMPLE_WIDTH_INIT), _n_vertices(WAVE_N_VERTICES), _audio(audio)
+	 _prog_draw(prog_draw_2d), _sample_center(0), _sample_width(WAVE_SAMPLE_WIDTH_INIT), _n_vertices(WAVE_N_VERTICES), _audio(audio), _mouse_down(false)
 {
 	_data= new float[5* _n_vertices* 2]; // stereo
 
@@ -538,19 +539,101 @@ void VisuWave::update_data() {
 }
 
 
+bool VisuWave::mouse_motion(InputState * input_state) {
+	if (_mouse_down) {
+		if (input_state->_left_mouse) {
+			float xx= 2.0f* (float(input_state->_x- WAVE_WIN_X)/ float(WAVE_WIN_WIDTH))- 1.0f;
+			_audio->_right_selection= _sample_center+ (long)(xx* (float)(_sample_width));
+			if (_audio->_right_selection< _audio->_left_selection) {
+				_audio->_right_selection= _audio->_left_selection;
+			}
+			if (_audio->_right_selection> _audio->_n_samples)
+				_audio->_right_selection= _audio->_n_samples;
+			update_data();
+			return true;
+		}
+		else if (input_state->_middle_mouse) {
+			
+		}
+		else if (input_state->_right_mouse) {
+			_sample_width+= (long)((float)(input_state->_yrel)* 600.0f);
+			if (_sample_width< WAVE_SAMPLE_WIDTH_MIN)
+				_sample_width= WAVE_SAMPLE_WIDTH_MIN;
+			if (_sample_width> WAVE_SAMPLE_WIDTH_MAX)
+				_sample_width= WAVE_SAMPLE_WIDTH_MAX;
+
+			_sample_center-= (long)((float)(input_state->_xrel)* (float)(_sample_width)* 0.005f);
+			update_data();
+			return true;
+		}
+	}
+	return false;
+}
+
+
+bool VisuWave::mouse_button_down(InputState * input_state) {
+	if ((input_state->_x>= WAVE_WIN_X) && (input_state->_x< WAVE_WIN_X+ WAVE_WIN_WIDTH) &&
+		(input_state->_y>= MAIN_WIN_HEIGHT- WAVE_WIN_Y- WAVE_WIN_HEIGHT) && (input_state->_y< MAIN_WIN_HEIGHT- WAVE_WIN_Y)) {
+		_mouse_down= true;
+		if (input_state->_left_mouse) {
+			float xx= 2.0f* (float(input_state->_x- WAVE_WIN_X)/ float(WAVE_WIN_WIDTH))- 1.0f;
+			_audio->_left_selection= _sample_center+ (long)(xx* (float)(_sample_width));
+			if (_audio->_left_selection< 0)
+				_audio->_left_selection= 0;
+			if (_audio->_left_selection> _audio->_n_samples)
+				_audio->_left_selection= _audio->_n_samples;
+			_audio->_right_selection= _audio->_left_selection;
+			update_data();
+		}
+		return true;
+	}
+	return false;
+}
+
+
+bool VisuWave::mouse_button_up(InputState * input_state) {
+	if (_audio->_left_selection== _audio->_right_selection) {
+		_audio->_left_selection= 0;
+		_audio->_right_selection= _audio->_n_samples;
+		update_data();
+	}
+	_mouse_down= false;
+	return true;
+}
+
+
+bool VisuWave::key_down(InputState * input_state, SDL_Keycode key) {
+	if (key== SDLK_LEFT) {
+		if (_audio->_mode== AUDIO_STOP) {
+			if (_audio->_current_sample- SAMPLES_PER_BUFFER>= 0) {
+				//audio->_current_sample-= SAMPLES_PER_BUFFER; // fait dans VisuArt
+				update_data();
+			}
+		}
+		return true;
+	}
+	else if (key== SDLK_RIGHT) {
+		if (_audio->_mode== AUDIO_STOP) {
+			if (_audio->_current_sample+ SAMPLES_PER_BUFFER< _audio->_n_samples) {
+				//_audio->_current_sample+= SAMPLES_PER_BUFFER; // fait dans VisuArt
+				update_data();
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
+
 // ------------------------------------------------------------------------------------------------------------------------
 GLSpectrum::GLSpectrum() {
 
 }
 
 
-GLSpectrum::GLSpectrum(GLuint prog_draw_3d, Audio * audio) : _prog_draw(prog_draw_3d), _alpha(1.0f), _shininess(SPECTRUM_SHININESS), _audio(audio) {
-	_ambient[0]= SPECTRUM_AMBIENT_COLOR[0]; _ambient[1]= SPECTRUM_AMBIENT_COLOR[1]; _ambient[2]= SPECTRUM_AMBIENT_COLOR[2];
-	
-	glm::mat4 glm_identity(1.0f);
-	memcpy(_model2world , glm::value_ptr(glm_identity), sizeof(float)* 16);
-	memcpy(_model2camera, glm::value_ptr(glm_identity), sizeof(float)* 16);
-	memcpy(_model2clip  , glm::value_ptr(glm_identity), sizeof(float)* 16);
+GLSpectrum::GLSpectrum(GLuint prog_draw_3d, Audio * audio) :
+	_prog_draw(prog_draw_3d), _alpha(1.0f), _shininess(SPECTRUM_SHININESS), _audio(audio), _ambient(SPECTRUM_AMBIENT_COLOR),
+	_model2world(glm::mat4(1.0f)), _model2camera(glm::mat4(1.0f)), _model2clip(glm::mat4(1.0f)) {
 
 	_width_step= SPECTRUM_WIDTH_STEP_INIT;
 	_height_step= SPECTRUM_HEIGHT_STEP_INIT;
@@ -605,10 +688,10 @@ void GLSpectrum::draw() {
 	// On précise le tableau d'indices de triangle à utiliser
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _buffers[1]);
 	
-	glUniformMatrix4fv(_model2clip_loc  , 1, GL_FALSE, _model2clip);
-	glUniformMatrix4fv(_model2camera_loc, 1, GL_FALSE, _model2camera);
-	glUniformMatrix3fv(_normal_mat_loc  , 1, GL_FALSE, _normal);
-	glUniform3fv(_ambient_color_loc, 1, _ambient);
+	glUniformMatrix4fv(_model2clip_loc  , 1, GL_FALSE, glm::value_ptr(_model2clip));
+	glUniformMatrix4fv(_model2camera_loc, 1, GL_FALSE, glm::value_ptr(_model2camera));
+	glUniformMatrix3fv(_normal_mat_loc  , 1, GL_FALSE, glm::value_ptr(_normal));
+	glUniform3fv(_ambient_color_loc, 1, glm::value_ptr(_ambient));
 	glUniform1f(_shininess_loc, _shininess);
 	glUniform1f(_alpha_loc, _alpha);
 
@@ -637,20 +720,13 @@ void GLSpectrum::draw() {
 }
 
 
-void GLSpectrum::anim(float * world2camera, float * camera2clip) {
-	glm::mat4 glm_model2world= glm::make_mat4(_model2world);
-	glm::mat4 glm_world2camera= glm::make_mat4(world2camera);
-	glm::mat4 glm_camera2clip= glm::make_mat4(camera2clip);
-	glm::mat4 glm_model2camera= glm_world2camera* glm_model2world;
-	glm::mat4 glm_model2clip= glm_camera2clip* glm_model2camera;
+void GLSpectrum::anim(glm::mat4 world2camera, glm::mat4 camera2clip) {
+	_model2camera= world2camera* _model2world;
+	_model2clip= camera2clip* _model2camera;
 	// theoriquement il faudrait prendre la transposee de l'inverse mais si model2camera est 
 	// une matrice orthogonale, TRANS(INV(M)) == M, ce qui est le cas lorsqu'elle ne comprend que 
 	// des translations et rotations
-	glm::mat3 glm_normal= glm::mat3(glm_model2camera);
-	
-	memcpy(_model2clip, glm::value_ptr(glm_model2clip), sizeof(float)* 16);
-	memcpy(_model2camera, glm::value_ptr(glm_model2camera), sizeof(float)* 16);
-	memcpy(_normal, glm::value_ptr(glm_normal), sizeof(float)* 9);
+	_normal= glm::mat3(_model2camera);
 }
 
 
@@ -659,7 +735,8 @@ void GLSpectrum::update_data() {
 		for (unsigned int idx_fft=0; idx_fft<_audio->_n_blocks_fft- 1; ++idx_fft) {
 			
 			float xmin= -_width * 0.5f+ (float)(idx_fft)* _width_step;
-			float ymin= -_audio->_current_sample* _height_step/ SAMPLES_PER_BUFFER+ (float)(idx_record)* _height_step;
+			//float ymin= -_audio->_current_sample* _height_step/ SAMPLES_PER_BUFFER+ (float)(idx_record)* _height_step;
+			float ymin= (float)(idx_record)* _height_step;
 			float xmax= xmin+ _width_step;
 			float ymax= ymin+ _height_step;
 			float z0= _audio->_blocks[(idx_fft+ 0)+ _audio->_n_blocks_fft* (idx_record+ 0)]->_instant_energy* SPECTRUM_Z_FACTOR;
@@ -778,52 +855,95 @@ VisuSpectrum::VisuSpectrum() {
 }
 
 
-VisuSpectrum::VisuSpectrum(GLuint prog_draw_3d, GLuint prog_repere, Audio * audio) {
+VisuSpectrum::VisuSpectrum(GLuint prog_draw_3d, GLuint prog_repere, Audio * audio) : _mouse_down(false), _audio(audio) {
 	_gl_spectrum= new GLSpectrum(prog_draw_3d, audio);
 
-	_lights_ubo= new LightsUBO(0);
-	_lights_ubo->set_prog(prog_draw_3d);
-	_lights_ubo->init();
-	
-	// lumière fixe
-	float position_world[]= {0.0f, 0.0f, 500.0f, 1.0f};
-	float spot_cone_direction_world[]= {0.0f, 0.0f, -1.0f};
-	Light light(LIGHT_PARAMS_1, prog_repere, position_world, spot_cone_direction_world);
-	_lights.push_back(light);
-	
-	_lights_ubo->update(_lights);
-
-	_view_system= new ViewSystem(prog_repere);
+	_view_system= new ViewSystem(prog_repere, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	_view_system->_repere->_is_repere= false;
 	_view_system->_repere->_is_ground= false;
 	_view_system->_repere->_is_box= false;
-	_view_system->_dist= 500.0f;
-	_view_system->_alpha= M_PI* 0.2f;
-	_view_system->recompute_world2camera();
+	_view_system->move_rho(500.0f);
 }
 
 
 VisuSpectrum::~VisuSpectrum() {
 	delete _gl_spectrum;
-	_lights_ubo->release();
-	delete _lights_ubo;
 	delete _view_system;
 }
 
 
 void VisuSpectrum::draw() {
 	_gl_spectrum->draw();
-	/*for (unsigned int i=0; i<_lights.size(); i++)
-		_lights[i]._light_draw.draw(_view_system->_world2clip);*/
 	_view_system->draw();
 }
 
 
 void VisuSpectrum::anim() {
 	_gl_spectrum->anim(_view_system->_world2camera, _view_system->_camera2clip);
-	for (unsigned int i=0; i<_lights.size(); i++)
-		_lights[i].anim(_view_system->_world2camera);
-	_lights_ubo->update(_lights);
+}
+
+
+bool VisuSpectrum::mouse_motion(InputState * input_state) {
+	if (_mouse_down) {
+		if (input_state->_left_mouse) {
+			_view_system->move_target(glm::vec3((float)(input_state->_xrel)* 1.0f, (float)(input_state->_yrel)* 1.0f, 0.0f));
+			return true;
+		}
+		else if (input_state->_middle_mouse) {
+			_view_system->move_rho(-(float)(input_state->_yrel)* 1.0f);
+			return true;
+		}
+		else if (input_state->_right_mouse) {
+			_gl_spectrum->_height_step+= (float)(input_state->_xrel)* 0.01f;
+			if (_gl_spectrum->_height_step< SPECTRUM_HEIGHT_STEP_MIN)
+				_gl_spectrum->_height_step= SPECTRUM_HEIGHT_STEP_MIN;
+			if (_gl_spectrum->_height_step> SPECTRUM_HEIGHT_STEP_MAX)
+				_gl_spectrum->_height_step= SPECTRUM_HEIGHT_STEP_MAX;
+
+			_gl_spectrum->update_data();
+			return true;
+		}
+	}
+	return false;
+}
+
+
+bool VisuSpectrum::mouse_button_down(InputState * input_state) {
+	if ((input_state->_x>= SPECTRUM_WIN_X) && (input_state->_x< SPECTRUM_WIN_X+ SPECTRUM_WIN_WIDTH) &&
+		(input_state->_y> MAIN_WIN_HEIGHT- SPECTRUM_WIN_Y- SPECTRUM_WIN_HEIGHT) && (input_state->_y< MAIN_WIN_HEIGHT- SPECTRUM_WIN_Y)) {
+		_mouse_down= true;
+		return true;
+	}
+	return false;
+}
+
+
+bool VisuSpectrum::mouse_button_up(InputState * input_state) {
+	_mouse_down= false;
+	return true;
+}
+
+
+bool VisuSpectrum::key_down(InputState * input_state, SDL_Keycode key) {
+	if (key== SDLK_LEFT) {
+		if (_audio->_mode== AUDIO_STOP) {
+			if (_audio->_current_sample- SAMPLES_PER_BUFFER>= 0) {
+				//audio->_current_sample-= SAMPLES_PER_BUFFER; // fait dans VisuArt
+				_gl_spectrum->update_data();
+			}
+		}
+		return true;
+	}
+	else if (key== SDLK_RIGHT) {
+		if (_audio->_mode== AUDIO_STOP) {
+			if (_audio->_current_sample+ SAMPLES_PER_BUFFER< _audio->_n_samples) {
+				//_audio->_current_sample+= SAMPLES_PER_BUFFER; // fait dans VisuArt
+				_gl_spectrum->update_data();
+			}
+		}
+		return true;
+	}
+	return false;
 }
 
 
@@ -948,6 +1068,44 @@ void VisuSimu::update_data() {
 	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
 	glBufferData(GL_ARRAY_BUFFER, 30* _audio->_n_blocks_fft* sizeof(float), _data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+bool VisuSimu::mouse_motion(InputState * input_state) {
+	return false;
+}
+
+
+bool VisuSimu::mouse_button_down(InputState * input_state) {
+	return false;
+}
+
+
+bool VisuSimu::mouse_button_up(InputState * input_state) {
+	return false;
+}
+
+
+bool VisuSimu::key_down(InputState * input_state, SDL_Keycode key) {
+	if (key== SDLK_LEFT) {
+		if (_audio->_mode== AUDIO_STOP) {
+			if (_audio->_current_sample- SAMPLES_PER_BUFFER>= 0) {
+				//audio->_current_sample-= SAMPLES_PER_BUFFER; // fait dans VisuArt
+				update_data();
+			}
+		}
+		return true;
+	}
+	else if (key== SDLK_RIGHT) {
+		if (_audio->_mode== AUDIO_STOP) {
+			if (_audio->_current_sample+ SAMPLES_PER_BUFFER< _audio->_n_samples) {
+				//_audio->_current_sample+= SAMPLES_PER_BUFFER; // fait dans VisuArt
+				update_data();
+			}
+		}
+		return true;
+	}
+	return false;
 }
 
 
@@ -1184,7 +1342,7 @@ void MorphingObj::compute_mat() {
 	// les matrices de transfo sont de la forme : rotation2 x translate x rotation1 x scale
 	_mat= 
 		glm::rotate(_envelopes["rot2_x"]->get_value(), glm::vec3(1.0f, 0.0f, 0.0f))* glm::rotate(_envelopes["rot2_y"]->get_value(), glm::vec3(0.0f, 1.0f, 0.0f))* glm::rotate(_envelopes["rot2_z"]->get_value(), glm::vec3(0.0f, 0.0f, 1.0f))* 
-		glm::translate(glm::mat4(1.0), glm::vec3(_envelopes["translate_x"]->get_value(), _envelopes["translate_y"]->get_value(), _envelopes["translate_z"]->get_value()))*
+		glm::translate(glm::mat4(1.0f), glm::vec3(_envelopes["translate_x"]->get_value(), _envelopes["translate_y"]->get_value(), _envelopes["translate_z"]->get_value()))*
 		glm::rotate(_envelopes["rot1_x"]->get_value(), glm::vec3(1.0f, 0.0f, 0.0f))* glm::rotate(_envelopes["rot1_y"]->get_value(), glm::vec3(0.0f, 1.0f, 0.0f))* glm::rotate(_envelopes["rot1_z"]->get_value(), glm::vec3(0.0f, 0.0f, 1.0f))* 
 		glm::scale(glm::vec3(_envelopes["scale_x"]->get_value(), _envelopes["scale_y"]->get_value(), _envelopes["scale_z"]->get_value()));
 
@@ -1366,41 +1524,29 @@ VisuArt::VisuArt() {
 
 
 VisuArt::VisuArt(GLuint prog_draw_3d, GLuint prog_repere, Audio * audio) :
-	_prog_draw_3d(prog_draw_3d), _prog_repere(prog_repere), _audio(audio), _last_idx_signature(-1) {
+	_prog_draw_3d(prog_draw_3d), _prog_repere(prog_repere), _audio(audio), _last_idx_signature(-1), _mouse_down(false), _fullscreen(false) {
 	
-	// TODO : argument passé à LightsUBO ne résout pas le problème de lumière partagée entre VisuSpectrum et VisuArt
-	_lights_ubo= new LightsUBO(1);
-	_lights_ubo->set_prog(prog_draw_3d);
-	_lights_ubo->init();
-	
-	// lumière fixe
-	float position_world[]= {0.0f, 0.0f, 5000.0f, 1.0f};
-	float spot_cone_direction_world[]= {0.0f, 0.0f, -1.0f};
-	Light light(LIGHT_PARAMS_1, prog_repere, position_world, spot_cone_direction_world);
-	_lights.push_back(light);
-
-	_lights_ubo->update(_lights);
-
-	_view_system= new ViewSystem(prog_repere);
-	_view_system->_repere->_is_repere= false;
+	_view_system= new ViewSystem(prog_repere, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	_view_system->_repere->_is_repere= true;
 	_view_system->_repere->_is_ground= false;
-	_view_system->_repere->_is_box= false;
-	_view_system->_dist= 30.0f;
-	_view_system->_alpha= 0.0f;
-	_view_system->recompute_world2camera();
+	_view_system->_repere->_is_box= true;
+	_view_system->move_rho(30.0f);
+
+	vector<string> ch_models= list_files("../data/", "xml");
+	for (auto & ch_model : ch_models) {
+		_static_models.push_back(new StaticModel("../data/"+ ch_model, _prog_draw_3d));
+	}
 }
 
 
 VisuArt::~VisuArt() {
-	_lights_ubo->release();
-	delete _lights_ubo;
 	delete _view_system;
 	reinit();
 }
 
 
 void VisuArt::reinit() {
-	for (auto it_obj : _model_objs) {
+	for (auto it_obj : _static_instances) {
 		delete it_obj;
 	}
 	for (auto it_morph : _morphing_objs) {
@@ -1409,7 +1555,7 @@ void VisuArt::reinit() {
 	for (auto it_connexion : _connexions) {
 		delete it_connexion;
 	}
-	_model_objs.clear();
+	_static_instances.clear();
 	_morphing_objs.clear();
 	_connexions.clear();
 
@@ -1418,12 +1564,8 @@ void VisuArt::reinit() {
 
 
 void VisuArt::draw() {
-	for (auto it_obj : _model_objs) {
+	for (auto it_obj : _static_instances) {
 		it_obj->draw();
-	}
-	
-	for (auto &it_light : _lights) {
-		it_light._light_draw.draw(_view_system->_world2clip);
 	}
 	
 	_view_system->draw();
@@ -1448,7 +1590,7 @@ void VisuArt::anim(PaTime current_time, AudioMode audio_mode) {
 		}
 		
 		for (unsigned int idx_morph=0; idx_morph<_morphing_objs.size(); ++idx_morph) {
-			for (unsigned int idx_obj=0; idx_obj<_model_objs.size(); ++idx_obj) {
+			for (unsigned int idx_obj=0; idx_obj<_static_instances.size(); ++idx_obj) {
 				if (_connexions[audio_event._idx_signature]->get(idx_obj, idx_morph)) {
 					// si morph est connecté à au moins 1 obj pour cette signature, on set le release et on trig
 					if (audio_mode== AUDIO_PLAYBACK) {
@@ -1469,8 +1611,8 @@ void VisuArt::anim(PaTime current_time, AudioMode audio_mode) {
 		it_morph->anim(current_time);
 	}
 
-	// pour chaque model_obj , on cumule l'effet de tous les morphs de toutes les connexions
-	for (unsigned int idx_obj=0; idx_obj<_model_objs.size(); ++idx_obj) {
+	// pour chaque _static_instance , on cumule l'effet de tous les morphs de toutes les connexions
+	for (unsigned int idx_obj=0; idx_obj<_static_instances.size(); ++idx_obj) {
 		unsigned int n_morph= 0;
 
 		MorphingObj * m= new MorphingObj();
@@ -1495,28 +1637,24 @@ void VisuArt::anim(PaTime current_time, AudioMode audio_mode) {
 				}
 			}
 		}
-
-		float obj2camera[16];
+		
 		m->compute_mat();
-		memcpy(obj2camera, glm::value_ptr(glm::make_mat4(_view_system->_world2camera)* m->_mat), sizeof(float)* 16);
-		_model_objs[idx_obj]->anim(obj2camera, _view_system->_camera2clip);
+		//cout << "--------\n";
+		//cout << glm::to_string(m->_mat) << endl;
+		_static_instances[idx_obj]->set_pos_rot_scale(m->_mat);
+		_static_instances[idx_obj]->anim(_view_system);
 
 		// pour ces attributs on prend la moyenne
 		if (n_morph> 0) {
-			_model_objs[idx_obj]->_alpha= m->_envelopes["alpha"]->_rest_value/ n_morph;
-			_model_objs[idx_obj]->_shininess= m->_envelopes["shininess"]->_rest_value/ n_morph;
-			_model_objs[idx_obj]->_ambient[0]= m->_envelopes["ambient_x"]->_rest_value/ n_morph;
-			_model_objs[idx_obj]->_ambient[1]= m->_envelopes["ambient_y"]->_rest_value/ n_morph;
-			_model_objs[idx_obj]->_ambient[2]= m->_envelopes["ambient_z"]->_rest_value/ n_morph;
+			/*_static_instances[idx_obj]->_alpha= m->_envelopes["alpha"]->_rest_value/ n_morph;
+			_static_instances[idx_obj]->_shininess= m->_envelopes["shininess"]->_rest_value/ n_morph;
+			_static_instances[idx_obj]->_ambient[0]= m->_envelopes["ambient_x"]->_rest_value/ n_morph;
+			_static_instances[idx_obj]->_ambient[1]= m->_envelopes["ambient_y"]->_rest_value/ n_morph;
+			_static_instances[idx_obj]->_ambient[2]= m->_envelopes["ambient_z"]->_rest_value/ n_morph;*/
 		}
 
 		delete m;
 	}
-
-	for (auto &it_light : _lights) {
-		it_light.anim(_view_system->_world2camera);
-	}
-	_lights_ubo->update(_lights);
 }
 
 
@@ -1525,17 +1663,10 @@ void VisuArt::randomize() {
 
 	unsigned int n_objs= rand_int(MINMAX_N_OBJS._min, MINMAX_N_OBJS._max);
 	for (unsigned int i=0; i<n_objs; ++i) {
-		ModelObj * model_obj= new ModelObj(_prog_draw_3d, _prog_repere);
-		
-		vector<string> vec_objs= list_files("../modeles", "obj");
-		unsigned int idx_obj= rand_int(0, vec_objs.size()- 1);
-		string ch_obj= "../modeles/"+ vec_objs[idx_obj];
-		vector<string> vec_mtls= list_files("../modeles", "mtl");
-		unsigned int idx_mtl= rand_int(0, vec_mtls.size()- 1);
-		string ch_mtl= "../modeles/"+ vec_mtls[idx_mtl];
-
-		model_obj->load(ch_obj, ch_mtl, 1.0f);
-		_model_objs.push_back(model_obj);
+		unsigned int idx_model= rand_int(0, _static_models.size()- 1);
+		StaticInstance * model_obj= new StaticInstance(_static_models[idx_model], glm::vec3(1.0f));
+		model_obj->_pos_rot->_active= true;
+		_static_instances.push_back(model_obj);
 	}
 
 	unsigned int n_morphs= rand_int(MINMAX_N_MORPHS._min, MINMAX_N_MORPHS._max);
@@ -1547,7 +1678,7 @@ void VisuArt::randomize() {
 
 	unsigned int n_conns= rand_int(MINMAX_N_CONNS._min, MINMAX_N_CONNS._max);
 	for (unsigned int i=0; i<n_conns; ++i) {
-		Connexion * connexion= new Connexion(_model_objs.size(), _morphing_objs.size());
+		Connexion * connexion= new Connexion(_static_instances.size(), _morphing_objs.size());
 		connexion->randomize(CONN_CHANCE);
 		_connexions.push_back(connexion);
 	}
@@ -1571,13 +1702,22 @@ void VisuArt::load(string ch_json) {
 
 		if (key== "model_objs") {
 			for (json::iterator it2= value.begin(); it2!= value.end(); ++it2) {
-				string ch_obj= (*it2)["obj"];
-				string ch_mtl= (*it2)["mtl"];
-				float size_factor= (*it2)["size_factor"];
-				// TODO : prog_bbox ?
-				ModelObj * model_obj= new ModelObj(_prog_draw_3d, _prog_repere);
-				model_obj->load(ch_obj, ch_mtl, size_factor);
-				_model_objs.push_back(model_obj);
+				string ch_cfg= (*it2)["cfg"];
+				StaticModel * model_ok= NULL;
+				for (auto model : _static_models) {
+					if (model->_ch_config_file== ch_cfg) {
+						model_ok= model;
+						break;
+					}
+				}
+				if (!model_ok) {
+					cout << "Modele " << ch_cfg << " non trouvé" << endl;
+					continue;
+				}
+				glm::vec3 scale= glm::vec3((*it2)["scale_x"], (*it2)["scale_y"], (*it2)["scale_z"]);
+				StaticInstance * model_obj= new StaticInstance(model_ok, scale);
+				model_obj->_pos_rot->_active= true;
+				_static_instances.push_back(model_obj);
 			}
 		}
 		else if (key== "morphing_objs") {
@@ -1627,11 +1767,12 @@ json VisuArt::get_json() {
 	json js;
 
 	auto model_objs= json::array();
-	for (auto it_obj : _model_objs) {
+	for (auto it_obj : _static_instances) {
 		json js2;
-		js2["obj"]= it_obj->_ch_obj;
-		js2["mtl"]= it_obj->_ch_mat;
-		js2["size_factor"]= it_obj->_size_factor;
+		js2["cfg"]= it_obj->_model->_ch_config_file;
+		js2["scale_x"]= it_obj->_pos_rot->_scale.x;
+		js2["scale_y"]= it_obj->_pos_rot->_scale.y;
+		js2["scale_z"]= it_obj->_pos_rot->_scale.z;
 		model_objs.push_back(js2);
 	}
 	js["model_objs"]= model_objs;
@@ -1662,5 +1803,128 @@ void VisuArt::save(string ch_json) {
 
 void VisuArt::print() {
 	cout << get_json().dump(4) << endl;
-	cout << _model_objs.size() << ";" << _morphing_objs.size() << ";" << _connexions.size() << endl;
+	cout << _static_instances.size() << ";" << _morphing_objs.size() << ";" << _connexions.size() << endl;
 }
+
+
+bool VisuArt::mouse_motion(InputState * input_state) {
+	if (_mouse_down) {
+		if (input_state->_left_mouse) {
+			_view_system->move_target(glm::vec3((float)(input_state->_xrel)* 0.5f, (float)(input_state->_yrel)* 0.5f, 0.0f));
+			return true;
+		}
+		else if (input_state->_middle_mouse) {
+			_view_system->move_rho(-(float)(input_state->_yrel)* 1.0f);
+			return true;
+		}
+		else if (input_state->_right_mouse) {
+			_view_system->move_phi(-(float)(input_state->_xrel)* 0.01f);
+			_view_system->move_theta(-(float)(input_state->_yrel)* 0.01f);
+			return true;
+		}
+	}
+	return false;
+}
+
+
+bool VisuArt::mouse_button_down(InputState * input_state) {
+	if ((input_state->_x>= ART_WIN_X) && (input_state->_x< ART_WIN_X+ ART_WIN_WIDTH) && 
+		(input_state->_y> MAIN_WIN_HEIGHT- ART_WIN_Y- ART_WIN_HEIGHT) && (input_state->_y< MAIN_WIN_HEIGHT- ART_WIN_Y)) {
+		_mouse_down= true;
+		return true;
+	}
+	return false;
+}
+
+
+bool VisuArt::mouse_button_up(InputState * input_state) {
+	_mouse_down= false;
+	return true;
+}
+
+
+bool VisuArt::key_down(InputState * input_state, SDL_Keycode key) {
+	if (key== SDLK_c) {
+		randomize();
+		return true;
+	}
+	else if (key== SDLK_d) {
+		print();
+		return true;
+	}
+	else if (key== SDLK_g) {
+		load("../configs/visu_simple_1.json");
+		return true;
+	}
+	else if (key== SDLK_h) {
+		save("../configs/visu_test.json");
+		return true;
+	}
+	else if (key== SDLK_f) {
+		_fullscreen= !_fullscreen;
+		return true;
+	}
+	else if (key== SDLK_SPACE) {
+		if ((_audio->_mode== AUDIO_PLAYBACK) || (_audio->_mode== AUDIO_RECORD)) {
+			_audio->_mode= AUDIO_STOP;
+		}
+		else if (_audio->_mode== AUDIO_STOP) {
+			_audio->_mode= AUDIO_PLAYBACK;
+		}
+		return true;
+	}
+	else if (key== SDLK_a) {
+		if (_audio->_mode== AUDIO_RECORD) {
+			_audio->_mode= AUDIO_PLAYBACK;
+		}
+		else if (_audio->_mode== AUDIO_PLAYBACK) {
+			_audio->_mode= AUDIO_RECORD;
+		}
+		return true;
+	}
+	else if (key== SDLK_i) {
+		_audio->reinit_signatures();
+		return true;
+	}
+	else if (key== SDLK_l) {
+		_audio->_mode= AUDIO_PLAYBACK;
+		_audio->loadfromfile("../data/record.wav");
+		return true;
+	}
+	else if (key== SDLK_r) {
+		_audio->record2file("../data/record.wav");
+		return true;
+	}
+	else if (key== SDLK_LEFT) {
+		if (_audio->_mode== AUDIO_STOP) {
+			if (_audio->_current_sample- SAMPLES_PER_BUFFER>= 0) {
+				_audio->_current_sample-= SAMPLES_PER_BUFFER;
+			}
+		}
+		return true;
+	}
+	else if (key== SDLK_RIGHT) {
+		if (_audio->_mode== AUDIO_STOP) {
+			if (_audio->_current_sample+ SAMPLES_PER_BUFFER< _audio->_n_samples) {
+				_audio->_current_sample+= SAMPLES_PER_BUFFER;
+			}
+		}
+		return true;
+	}
+	else if (key== SDLK_UP) {
+		_audio->_playback_amplitude+= 0.05f;
+		if (_audio->_playback_amplitude> 1.0f) {
+			_audio->_playback_amplitude= 1.0f;
+		}
+		return true;
+	}
+	else if (key== SDLK_DOWN) {
+		_audio->_playback_amplitude-= 0.05f;
+		if (_audio->_playback_amplitude< 0.0f) {
+			_audio->_playback_amplitude= 0.0f;
+		}
+		return true;
+	}
+	return false;
+}
+

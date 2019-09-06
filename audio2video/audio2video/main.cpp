@@ -49,13 +49,14 @@ pour tester :
 
 #include <fftw3.h>
 
-#include "gl_error.h"
+#include "gl_utils.h"
 #include "utile.h"
 #include "font.h"
 #include "pa_utils.h"
-
 #include "constantes.h"
 #include "spectrum.h"
+#include "input_state.h"
+#include "light.h"
 
 
 using namespace std;
@@ -65,28 +66,24 @@ using namespace std;
 // ---------------------------------------------------------------------------------------
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
+InputState * input_state;
 
 int done= 0;
-MouseDownState mouse_down_state= MOUSE_DOWN_NULL;
-bool fullscreen= false;
 
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_3d, prog_2d, prog_repere, prog_font;
+GLuint prog_3d, prog_3d_obj, prog_2d, prog_repere, prog_font;
 GLuint g_vao;
-
-float eye_direction[3];
-GLint eye_direction_loc;
 
 Font * arial_font;
 
 int idx_device_input= -1;
 int idx_device_output= -1;
-AudioMode audio_mode= AUDIO_RECORD;
 PaStream * stream;
 PaError err;
 
+LightsUBO * lights_ubo;
 Audio * audio;
 VisuWave * visu_wave;
 VisuSpectrum * visu_spectrum;
@@ -113,11 +110,11 @@ int pa_callback(const void * input, void * output, unsigned long sample_count, c
 		out[2* i+ 1]= 0.0f;
 	}
 
-	if (audio_mode== AUDIO_STOP) {
+	if (data->_mode== AUDIO_STOP) {
 
 	}
 
-	else if (audio_mode== AUDIO_PLAYBACK) {
+	else if (data->_mode== AUDIO_PLAYBACK) {
 		// pousse dans une queue l'info que _current_sample_callback sera joué à time_info->outputBufferDacTime
 		data->push_event(time_info->outputBufferDacTime);
 
@@ -134,7 +131,7 @@ int pa_callback(const void * input, void * output, unsigned long sample_count, c
 		}
 	}
 
-	else if (audio_mode== AUDIO_RECORD) {
+	else if (data->_mode== AUDIO_RECORD) {
 		// la je ne sais pas trop lequel utiliser ; inputBufferAdcTime est dans le passé, currentTime le présent
 		data->push_event(time_info->inputBufferAdcTime);
 		//data->push_event(time_info->currentTime);
@@ -166,249 +163,104 @@ int pa_callback(const void * input, void * output, unsigned long sample_count, c
 
 // ---------------------------------------------------------------------------------------
 void mouse_motion(int x, int y, int xrel, int yrel) {
-	// click fenetre spectrum
-	if (mouse_down_state== MOUSE_DOWN_SPECTRUM) {
-		// si mouvement souris ET click gauche
-		if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK) {
-			visu_spectrum->_view_system->move_target(-(float)(xrel)* 0.1f, (float)(yrel)* 0.1f);
-			visu_spectrum->_view_system->recompute_world2camera();
-		}
-		// si mouvement souris ET click milieu
-		else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MMASK) {
-			visu_spectrum->_view_system->move_dist(-(float)(yrel)* 1.0f);
-			visu_spectrum->_view_system->recompute_world2camera();
-		}
-		// si mouvement souris ET click droit
-		else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_RMASK) {
-			visu_spectrum->_gl_spectrum->_height_step+= (float)(xrel)* 0.01f;
-			if (visu_spectrum->_gl_spectrum->_height_step< SPECTRUM_HEIGHT_STEP_MIN)
-				visu_spectrum->_gl_spectrum->_height_step= SPECTRUM_HEIGHT_STEP_MIN;
-			if (visu_spectrum->_gl_spectrum->_height_step> SPECTRUM_HEIGHT_STEP_MAX)
-				visu_spectrum->_gl_spectrum->_height_step= SPECTRUM_HEIGHT_STEP_MAX;
+	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-			visu_spectrum->_gl_spectrum->update_data();
-			visu_spectrum->_view_system->recompute_world2camera();
-		}
+ 	if (visu_spectrum->mouse_motion(input_state)) {
+		return;
 	}
-
-	// click fenetre art
-	else if (mouse_down_state== MOUSE_DOWN_ART) {
-		// si mouvement souris ET click gauche
-		if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK) {
-			visu_art->_view_system->move_target(-(float)(xrel)* 0.1f, (float)(yrel)* 0.1f);
-			visu_art->_view_system->recompute_world2camera();
-		}
-		// si mouvement souris ET click milieu
-		else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MMASK) {
-			visu_art->_view_system->move_dist(-(float)(yrel)* 1.0f);
-			visu_art->_view_system->recompute_world2camera();
-		}
-		// si mouvement souris ET click droit
-		else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_RMASK) {
-			visu_art->_view_system->move_alpha((float)(yrel)* 0.01f);
-			visu_art->_view_system->move_theta(-(float)(xrel)* 0.01f);
-			visu_art->_view_system->recompute_world2camera();
-		}
 	
+ 	if (visu_art->mouse_motion(input_state)) {
+		return;
+	}
+	
+ 	if (visu_wave->mouse_motion(input_state)) {
+		return;
 	}
 
-	// click fenetre wave
-	else if (mouse_down_state== MOUSE_DOWN_WAVE) {
-		// si mouvement souris ET click droit
-		if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_RMASK) {
-			visu_wave->_sample_width+= (long)((float)(yrel)* 600.0f);
-			if (visu_wave->_sample_width< WAVE_SAMPLE_WIDTH_MIN)
-				visu_wave->_sample_width= WAVE_SAMPLE_WIDTH_MIN;
-			if (visu_wave->_sample_width> WAVE_SAMPLE_WIDTH_MAX)
-				visu_wave->_sample_width= WAVE_SAMPLE_WIDTH_MAX;
-
-			visu_wave->_sample_center-= (long)((float)(xrel)* (float)(visu_wave->_sample_width)* 0.005f);
-			visu_wave->update_data();
-		}
-		// si mouvement souris ET click milieu
-		else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_MMASK) {
-
-		}
-		// si mouvement souris ET click gauche
-		else if (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON_LMASK) {
-			float xx= 2.0f* (float(x- WAVE_WIN_X)/ float(WAVE_WIN_WIDTH))- 1.0f;
-			audio->_right_selection= visu_wave->_sample_center+ (long)(xx* (float)(visu_wave->_sample_width));
-			if (audio->_right_selection< audio->_left_selection) {
-				audio->_right_selection= audio->_left_selection;
-			}
-			if (audio->_right_selection> audio->_n_samples)
-				audio->_right_selection= audio->_n_samples;
-			visu_wave->update_data();
-		}
-
+ 	if (visu_simu->mouse_motion(input_state)) {
+		return;
 	}
 }
 
 
 void mouse_button_up(unsigned int x, unsigned int y) {
-	if (mouse_down_state== MOUSE_DOWN_WAVE) {
-		if (audio->_left_selection== audio->_right_selection) {
-			audio->_left_selection= 0;
-			audio->_right_selection= audio->_n_samples;
-			visu_wave->update_data();
-		}
+	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
+
+ 	if (visu_spectrum->mouse_button_up(input_state)) {
+		//return;
 	}
-	mouse_down_state= MOUSE_DOWN_NULL;
+	
+ 	if (visu_art->mouse_button_up(input_state)) {
+		//return;
+	}
+	
+ 	if (visu_wave->mouse_button_up(input_state)) {
+		//return;
+	}
+
+ 	if (visu_simu->mouse_button_up(input_state)) {
+		//return;
+	}
 }
 
 
 void mouse_button_down(unsigned int x, unsigned int y, unsigned short button) {
-	if (fullscreen) {
-		mouse_down_state= MOUSE_DOWN_ART;
+	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
+
+ 	if (visu_spectrum->mouse_button_down(input_state)) {
+		return;
 	}
-	else {
-		if ((x>= SPECTRUM_WIN_X) && (x< SPECTRUM_WIN_X+ SPECTRUM_WIN_WIDTH) && (y> MAIN_WIN_HEIGHT- SPECTRUM_WIN_Y- SPECTRUM_WIN_HEIGHT) && (y< MAIN_WIN_HEIGHT- SPECTRUM_WIN_Y)) {
-			mouse_down_state= MOUSE_DOWN_SPECTRUM;
-		}
-		else if ((x>= ART_WIN_X) && (x< ART_WIN_X+ ART_WIN_WIDTH) && (y> MAIN_WIN_HEIGHT- ART_WIN_Y- ART_WIN_HEIGHT) && (y< MAIN_WIN_HEIGHT- ART_WIN_Y)) {
-			mouse_down_state= MOUSE_DOWN_ART;
-		}
-		else if ((x>= WAVE_WIN_X) && (x< WAVE_WIN_X+ WAVE_WIN_WIDTH) && (y>= MAIN_WIN_HEIGHT- WAVE_WIN_Y- WAVE_WIN_HEIGHT) && (y< MAIN_WIN_HEIGHT- WAVE_WIN_Y)) {
-			mouse_down_state= MOUSE_DOWN_WAVE;
-			if (button== SDL_BUTTON_LEFT) {
-				float xx= 2.0f* (float(x- WAVE_WIN_X)/ float(WAVE_WIN_WIDTH))- 1.0f;
-				audio->_left_selection= visu_wave->_sample_center+ (long)(xx* (float)(visu_wave->_sample_width));
-				if (audio->_left_selection< 0)
-					audio->_left_selection= 0;
-				if (audio->_left_selection> audio->_n_samples)
-					audio->_left_selection= audio->_n_samples;
-				audio->_right_selection= audio->_left_selection;
-				visu_wave->update_data();
-			}
-		}
+	
+ 	if (visu_art->mouse_button_down(input_state)) {
+		return;
+	}
+	
+ 	if (visu_wave->mouse_button_down(input_state)) {
+		return;
+	}
+
+ 	if (visu_simu->mouse_button_down(input_state)) {
+		return;
 	}
 }
 
 
 void key_down(SDL_Keycode key) {
-	switch (key) {
-		// esc : sortie programme
-		case SDLK_ESCAPE:
-			done= 1;
-			break;
-		
-		// play
-		case SDLK_SPACE:
-			if ((audio_mode== AUDIO_PLAYBACK) || (audio_mode== AUDIO_RECORD))
-				audio_mode= AUDIO_STOP;
-			else if (audio_mode== AUDIO_STOP)
-				audio_mode= AUDIO_PLAYBACK;
-			break;
-		
-		// choix mode
-		case SDLK_a:
-			if (audio_mode== AUDIO_RECORD) {
-				audio_mode= AUDIO_PLAYBACK;
-			}
-			else if (audio_mode== AUDIO_PLAYBACK) {
-				audio_mode= AUDIO_RECORD;
-			}
-			break;
-		
-		// affichage repère
-		case SDLK_b:
-			visu_art->_repere->_is_repere= !visu_art->_repere->_is_repere;
-			visu_art->_repere->_is_ground= !visu_art->_repere->_is_ground;
-			visu_art->_repere->_is_box= !visu_art->_repere->_is_box;
-			break;
+	input_state->key_down(key);
 
-		// random
-		case SDLK_c:
-			visu_art->randomize();
-			break;
+	if (key== SDLK_ESCAPE) {
+		done= true;
+	}
 
-		// debug
-		case SDLK_d:
-			visu_art->print();
-			break;
-		
-		// passage plein ecran
-		case SDLK_f:
-			fullscreen= !fullscreen;
-			break;
-
-		case SDLK_g:
-			visu_art->load("../configs/visu_simple_1.json");
-			break;
-		
-		case SDLK_h:
-			visu_art->save("../configs/visu_test.json");
-			break;
-		
-		// reinit signatures
-		case SDLK_i:
-			audio->reinit_signatures();
-			break;
-		
-		case SDLK_l:
-			audio_mode= AUDIO_PLAYBACK;
-			audio->loadfromfile("../data/record.wav");
-			break;
-		
-		case SDLK_r:
-			audio->record2file("../data/record.wav");
-			break;
-		
-		// déplacement dans onde
-		case SDLK_LEFT:
-			if (audio_mode== AUDIO_STOP) {
-				if (audio->_current_sample- SAMPLES_PER_BUFFER>= 0) {
-					audio->_current_sample-= SAMPLES_PER_BUFFER;
-					visu_wave->update_data();
-					visu_spectrum->_gl_spectrum->update_data();
-					visu_simu->update_data();
-				}
-			}
-			break;
-		
-		case SDLK_RIGHT:
-			if (audio_mode== AUDIO_STOP) {
-				if (audio->_current_sample+ SAMPLES_PER_BUFFER< audio->_n_samples) {
-					audio->_current_sample+= SAMPLES_PER_BUFFER;
-					visu_wave->update_data();
-					visu_spectrum->_gl_spectrum->update_data();
-					visu_simu->update_data();
-				}
-			}
-			break;
-		
-		// volume playback
-		case SDLK_UP:
-			audio->_playback_amplitude+= 0.05f;
-			if (audio->_playback_amplitude> 1.0f)
-				audio->_playback_amplitude= 1.0f;
-			break;
-		
-		case SDLK_DOWN:
-			audio->_playback_amplitude-= 0.05f;
-			if (audio->_playback_amplitude< 0.0f)
-				audio->_playback_amplitude= 0.0f;
-			break;
-
-		default:
-			break;
+ 	if (visu_spectrum->key_down(input_state, key)) {
+		//return;
+	}
+	
+ 	if (visu_art->key_down(input_state, key)) {
+		//return;
+	}
+	
+ 	if (visu_wave->key_down(input_state, key)) {
+		//return;
+	}
+	
+ 	if (visu_simu->key_down(input_state, key)) {
+		//return;
 	}
 }
 
 
 void key_up(SDL_Keycode key) {
-	switch (key) {
-		default:
-			break;
-	}
+	input_state->key_up(key);
+
 }
 
 
 // ---------------------------------------------------------------------------------------
 void init() {
-	GLuint vertex_shader_3d, vertex_shader_2d, vertex_shader_repere, vertex_shader_font;
-	GLuint fragment_shader_3d, fragment_shader_2d, fragment_shader_repere, fragment_shader_font;
-	
 	srand(time(NULL));
 	
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -453,82 +305,49 @@ void init() {
 	SDL_GL_SwapWindow(window);
 	
 	// --------------------------------------------------------------------------
-	eye_direction[0]= 0.0f;
-	eye_direction[1]= -1.0f; // normalement 0.0 je crois mais ça fait plus joli comme ça...
-	eye_direction[2]= 1.0f;
-
-	// --------------------------------------------------------------------------
 	/* VAO = vertex array object : tableau d'objets, chaque appel à un objet rappelle un contexte de dessin
-	 incluant tous les attribute array setup (glVertexAttribArray), buffer objects used for attribute arrays
-	 et GL_ELEMENT_ARRAY_BUFFER eventuellement
-	 
-	 ici je n'en utilise qu'un pour tout le prog ; à terme peut-être faire plusieurs VAOs
-	 */
+	incluant tous les attribute array setup (glVertexAttribArray), buffer objects used for attribute arrays
+	et GL_ELEMENT_ARRAY_BUFFER eventuellement
+	ici je n'en utilise qu'un pour tout le prog ; à terme peut-être faire plusieurs VAOs
+	*/
 	
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	// --------------------------------------------------------------------------
-	vertex_shader_3d= load_shader(GL_VERTEX_SHADER, "shaders/vertexshader_3d.txt");
-	fragment_shader_3d= load_shader(GL_FRAGMENT_SHADER, "shaders/fragmentshader_3d.txt");
-	prog_3d= glCreateProgram();
-	glAttachShader(prog_3d, vertex_shader_3d);
-	glAttachShader(prog_3d, fragment_shader_3d);
-	glBindAttribLocation(prog_3d, 0, "position_in"); // a faire avant link !
-	glBindAttribLocation(prog_3d, 1, "color_in");
-	glBindAttribLocation(prog_3d, 2, "normal_in");
-	glLinkProgram(prog_3d);
-	check_gl_program(prog_3d);
+	prog_3d    = create_prog("../../shaders/vertexshader_3d_basic.txt", "../../shaders/fragmentshader_3d.txt");
+	prog_3d_obj= create_prog("../../shaders/vertexshader_3d_obj.txt"  , "../../shaders/fragmentshader_3d_obj.txt");
+	prog_2d    = create_prog("../../shaders/vertexshader_2d.txt"      , "../../shaders/fragmentshader_basic.txt");
+	prog_repere= create_prog("../../shaders/vertexshader_repere.txt"  , "../../shaders/fragmentshader_basic.txt");
+	prog_font  = create_prog("../../shaders/vertexshader_font.txt"    , "../../shaders/fragmentshader_font.txt");
 
-	eye_direction_loc= glGetUniformLocation(prog_3d, "eye_direction");
-	glUseProgram(prog_3d);
-	glUniform3fv(eye_direction_loc, 1, eye_direction);
-	glUseProgram(0);
-	
-	// --------------------------------------------------------------------------
-	vertex_shader_2d= load_shader(GL_VERTEX_SHADER, "shaders/vertexshader_2d.txt");
-	fragment_shader_2d= load_shader(GL_FRAGMENT_SHADER, "shaders/fragmentshader_2d.txt");
-	prog_2d= glCreateProgram();
-	glAttachShader(prog_2d, vertex_shader_2d);
-	glAttachShader(prog_2d, fragment_shader_2d);
-	glBindAttribLocation(prog_2d, 0, "position_in");
-	glBindAttribLocation(prog_2d, 1, "color_in");
-	glLinkProgram(prog_2d);
-	check_gl_program(prog_2d);
-
-	// --------------------------------------------------------------------------
-	vertex_shader_repere= load_shader(GL_VERTEX_SHADER, "shaders/vertexshader_repere.txt");
-	fragment_shader_repere= load_shader(GL_FRAGMENT_SHADER, "shaders/fragmentshader_repere.txt");
-	prog_repere= glCreateProgram();
-	glAttachShader(prog_repere, vertex_shader_repere);
-	glAttachShader(prog_repere, fragment_shader_repere);
-	glBindAttribLocation(prog_repere, 0, "position_in");
-	glBindAttribLocation(prog_repere, 1, "color_in");
-	glLinkProgram(prog_repere);
-	check_gl_program(prog_repere);
-	
-	// --------------------------------------------------------------------------
-	vertex_shader_font= load_shader(GL_VERTEX_SHADER, "shaders/vertexshader_font.txt");
-	fragment_shader_font= load_shader(GL_FRAGMENT_SHADER, "shaders/fragmentshader_font.txt");
-	prog_font= glCreateProgram();
-	glAttachShader(prog_font, vertex_shader_font);
-	glAttachShader(prog_font, fragment_shader_font);
-	glBindAttribLocation(prog_font, 0, "vertex");
-	glLinkProgram(prog_font);
-	check_gl_program(prog_font);
+	float eye_direction[]= {0.0f, 0.0f, 1.0f};
+	GLuint progs_eye[]= {prog_3d, prog_3d_obj};
+	for (unsigned int i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
+		GLint eye_direction_loc= glGetUniformLocation(progs_eye[i], "eye_direction");
+		glUseProgram(progs_eye[i]);
+		glUniform3fv(eye_direction_loc, 1, eye_direction);
+		glUseProgram(0);
+	}
 
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
 	
 	// --------------------------------------------------------------------------
+	lights_ubo= new LightsUBO(prog_3d); // heu ca va marcher ca ???
+	lights_ubo->add_light(LIGHT_PARAMS_1, prog_repere, glm::vec3(0.0f, 0.0f, 5000.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+
 	arial_font= new Font(prog_font, "fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	audio= new Audio();
 	visu_wave= new VisuWave(prog_2d, audio);
 	visu_spectrum= new VisuSpectrum(prog_3d, prog_repere, audio);
 	visu_simu= new VisuSimu(prog_2d, audio);
-	visu_art= new VisuArt(prog_3d, prog_repere, audio);
+	visu_art= new VisuArt(prog_3d_obj, prog_repere, audio);
 
 	visu_art->load("../configs/visu_simple_1.json");
 	//visu_art->randomize();
+	//visu_art->save("../configs/test.json");
+
+	// ------------------------------------------------------------------------
+	input_state= new InputState();
 
 	// ------------------------------------------------------------------------
 	err= Pa_Initialize();
@@ -557,7 +376,7 @@ void init() {
 	outputParameters.hostApiSpecificStreamInfo= NULL;
 	
 	err= Pa_OpenStream(&stream, &inputParameters, &outputParameters, (double)(SAMPLE_RATE), (unsigned long)(SAMPLES_PER_BUFFER), paNoFlag, pa_callback, audio);
-	//err= Pa_OpenDefaultStream(&stream, 2, 2, paFloat32, (double)(SAMPLE_RATE), (unsigned long)(SAMPLES_PER_BUFFER), pa_callback, audio);
+	err= Pa_OpenDefaultStream(&stream, 2, 2, paFloat32, (double)(SAMPLE_RATE), (unsigned long)(SAMPLES_PER_BUFFER), pa_callback, audio);
 	
 	if (err!= paNoError) {
 		printf("ERROR: Pa_OpenStream returned 0x%x\n", err);
@@ -597,13 +416,13 @@ void show_infos() {
 	arial_font->draw(font_str.str(), 10.0f, float(MAIN_WIN_HEIGHT)- 30.0f, font_scale, font_color);
 
 	font_str.str("");
-	if (audio_mode== AUDIO_STOP) {
+	if (audio->_mode== AUDIO_STOP) {
 		font_str << "STOP";
 	}
-	else if (audio_mode== AUDIO_PLAYBACK) {
+	else if (audio->_mode== AUDIO_PLAYBACK) {
 		font_str << "PLAYBACK";
 	}
-	else if (audio_mode== AUDIO_RECORD) {
+	else if (audio->_mode== AUDIO_RECORD) {
 		font_str << "RECORD";
 	}
 	arial_font->draw(font_str.str(), 10.0f, float(MAIN_WIN_HEIGHT)- 45.0f, font_scale, font_color);
@@ -625,10 +444,11 @@ void show_infos() {
 void draw() {
 	compt_fps++;
 	
-	if (fullscreen) {
+	if (visu_art->_fullscreen) {
 		glClearColor(ART_BCK[0], ART_BCK[1], ART_BCK[2], ART_BCK[3]);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+		lights_ubo->draw(visu_art->_view_system->_world2clip);
 		visu_art->draw();
 	}
 	else {
@@ -647,8 +467,8 @@ void draw() {
 		visu_simu->draw();
 
 		subwindow(ART_BCK, ART_WIN_X, ART_WIN_Y, ART_WIN_WIDTH, ART_WIN_HEIGHT);
+		lights_ubo->draw(visu_art->_view_system->_world2clip);
 		visu_art->draw();
-
 	}
 
 	SDL_GL_SwapWindow(window);
@@ -661,15 +481,17 @@ void anim() {
 		return;
 
 	tikanim1= SDL_GetTicks();
+
+	lights_ubo->anim(visu_art->_view_system->_world2camera);
 	
 	// mise a jour de l'audio courant en lisant dans la queue écrite par le callback
 	PaTime current_time= Pa_GetStreamTime(stream);
-	audio->update_current_sample(current_time, audio_mode);
+	audio->update_current_sample(current_time);
 	
-	visu_art->anim(current_time, audio_mode);
+	visu_art->anim(current_time, audio->_mode);
 	visu_spectrum->anim();
 
-	if ((audio_mode== AUDIO_PLAYBACK) || (audio_mode== AUDIO_RECORD)) {
+	if ((audio->_mode== AUDIO_PLAYBACK) || (audio->_mode== AUDIO_RECORD)) {
 		visu_wave->update_data();
 		visu_spectrum->_gl_spectrum->update_data();
 		visu_simu->update_data();
@@ -702,7 +524,7 @@ void main_loop() {
 	SDL_Event event;
 	
 	while (!done) {
-		while (SDL_PollEvent(&event)) {
+		while (SDL_PollEvent(& event)) {
 			switch (event.type) {
 				case SDL_MOUSEMOTION:
 					mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
@@ -751,6 +573,8 @@ void clean() {
 	delete visu_spectrum;
 	delete visu_simu;
 	delete visu_art;
+	delete lights_ubo;
+	delete input_state;
 
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);

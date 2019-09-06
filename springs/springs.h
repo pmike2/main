@@ -22,6 +22,7 @@
 
 #include "constantes.h"
 #include "utile.h"
+#include "input_state.h"
 
 
 
@@ -31,6 +32,7 @@ public:
 	Force();
 	Force(glm::vec3 vec, std::string type);
 	void print();
+
 
 	glm::vec3 _vec;
 	std::string _type;
@@ -43,6 +45,7 @@ public:
 	Vertex();
 	Vertex(glm::vec3 p, float mass, float air_resist);
 	void reinit();
+
 
 	glm::vec3 _p;
 	glm::vec3 _p_init;
@@ -61,6 +64,7 @@ public:
 	Spring(unsigned int idx1, unsigned int idx2, float stiffness, float damping, float relaxed_size);
 	Spring(unsigned int idx1, unsigned int idx2, float stiffness, float damping, float relaxed_size, float contract_amount, float contract_begin, float contract_end);
 	void rand_contract();
+
 
 	unsigned int _idx1;
 	unsigned int _idx2;
@@ -96,6 +100,7 @@ public:
 	virtual void init_vertices_springs();
 	virtual void rand_disposition(unsigned int n_cubes);
 
+
 	std::vector<Vertex> _vertices;
 	std::vector<Spring> _springs;
 	unsigned int _tik_init;
@@ -107,6 +112,7 @@ public:
 	CubeSystem();
 	void init_vertices_springs();
 	void rand_disposition(unsigned int n_cubes);
+
 
 	std::vector< std::vector<int> > _cubes_idx;
 	float _mass;
@@ -123,6 +129,7 @@ public:
 	void next_gen();
 	void save_best(std::string ch);
 
+
 	std::vector<SpringSystem*> _sss;
 };
 
@@ -131,12 +138,13 @@ class SpringSystemGL {
 public:
 	SpringSystemGL();
 	SpringSystemGL(GLuint prog_draw);
-	void draw(float * world2clip);
-	void draw_debug(float * world2clip);
+	void draw(glm::mat4 world2clip);
 	void anim();
 	void update_data();
 	void update_data_forces();
 	void update_data_accel_speed();
+	bool key_down(InputState * input_state, SDL_Keycode key);
+
 
 	SpringSystem* _ss;
 	GLuint _prog_draw;
@@ -146,6 +154,7 @@ public:
 	float _data_accel_speed[MAX_DATA_ACCEL_SPEED];
 	GLint _world2clip_loc, _position_loc, _diffuse_color_loc;
 	bool _is_draw_springs, _is_draw_forces, _is_draw_accel_speed;
+	bool _is_paused;
 };
 
 

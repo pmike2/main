@@ -20,6 +20,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
 #include <glm/gtx/norm.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 
 // boite englobante dont les axes sont alignes avec le repere (axis aligned bouding box)
@@ -61,6 +63,7 @@ public:
 	InstancePosRot(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale, AABB * aabb);
 	~InstancePosRot();
 	void set_pos_rot_scale(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale);
+	void set_pos_rot_scale(const glm::mat4 & mat);
 	void update_dist2(glm::vec3 view_eye);
 
 

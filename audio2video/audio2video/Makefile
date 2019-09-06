@@ -8,17 +8,17 @@ LDFLAGS=-L$(external)/lib -lSDL2 -lSDL2_image -framework OpenGL -framework CoreF
 
 all: main
 
-main: main.o gl_error.o repere.o utile.o light.o font.o spectrum.o pa_utils.o objfile.o bbox.o
-	g++ -o main main.o gl_error.o repere.o utile.o light.o font.o spectrum.o pa_utils.o objfile.o bbox.o $(LDFLAGS)
+main: main.o gl_utils.o repere.o utile.o light.o font.o spectrum.o pa_utils.o objfile.o bbox.o input_state.o
+	g++ -o main main.o gl_utils.o repere.o utile.o light.o font.o spectrum.o pa_utils.o objfile.o bbox.o input_state.o $(LDFLAGS)
 
-main.o: main.cpp $(internal)/gl_error.h $(internal)/repere.h $(internal)/utile.h constantes.h $(internal)/light.h $(internal)/font.h spectrum.h $(internal)/pa_utils.h $(internal)/thread.h $(internal)/objfile.h
-	g++ -c main.cpp $(internal)/gl_error.cpp $(internal)/repere.cpp $(internal)/utile.cpp $(internal)/light.cpp $(internal)/font.cpp spectrum.cpp $(internal)/pa_utils.cpp  $(internal)/objfile.cpp $(CXXFLAGS)
+main.o: main.cpp $(internal)/gl_utils.h $(internal)/repere.h $(internal)/utile.h constantes.h $(internal)/light.h $(internal)/font.h spectrum.h $(internal)/pa_utils.h $(internal)/thread.h $(internal)/objfile.h
+	g++ -c main.cpp $(internal)/gl_utils.cpp $(internal)/repere.cpp $(internal)/utile.cpp $(internal)/light.cpp $(internal)/font.cpp spectrum.cpp $(internal)/pa_utils.cpp  $(internal)/objfile.cpp $(CXXFLAGS)
 
-gl_error.o: $(internal)/gl_error.cpp $(internal)/gl_error.h $(internal)/utile.h
-	g++ -c $(internal)/gl_error.cpp $(internal)/utile.cpp $(CXXFLAGS)
+gl_utils.o: $(internal)/gl_utils.cpp $(internal)/gl_utils.h $(internal)/utile.h
+	g++ -c $(internal)/gl_utils.cpp $(internal)/utile.cpp $(CXXFLAGS)
 
-repere.o: $(internal)/repere.cpp $(internal)/repere.h
-	g++ -c $(internal)/repere.cpp $(CXXFLAGS)
+repere.o: $(internal)/repere.cpp $(internal)/repere.h $(internal)/input_state.h $(internal)/bbox.h
+	g++ -c $(internal)/repere.cpp $(internal)/input_state.cpp $(internal)/bbox.cpp $(CXXFLAGS)
 
 light.o: $(internal)/light.cpp $(internal)/utile.h
 	g++ -c $(internal)/light.cpp $(internal)/utile.cpp $(CXXFLAGS)
@@ -40,6 +40,9 @@ objfile.o: $(internal)/objfile.cpp $(internal)/objfile.h $(internal)/bbox.h
 
 bbox.o: $(internal)/bbox.cpp $(internal)/bbox.h
 	g++ -c $(internal)/bbox.cpp $(CXXFLAGS)
+
+input_state.o: $(internal)/input_state.cpp $(internal)/input_state.h
+	g++ -c $(internal)/input_state.cpp $(CXXFLAGS)
 
 clean:
 	rm -rf *.o

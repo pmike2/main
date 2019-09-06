@@ -667,7 +667,7 @@ SpringSystemGL::SpringSystemGL() {
 
 
 SpringSystemGL::SpringSystemGL(GLuint prog_draw) :
-	_is_draw_springs(true), _is_draw_forces(false), _is_draw_accel_speed(false), _prog_draw(prog_draw) {
+	_is_draw_springs(true), _is_draw_forces(false), _is_draw_accel_speed(false), _prog_draw(prog_draw), _is_paused(false) {
 	unsigned int i;
 
 	for (i=0; i<MAX_DATA; i++)
@@ -700,9 +700,9 @@ SpringSystemGL::SpringSystemGL(GLuint prog_draw) :
 }
 
 
-void SpringSystemGL::draw(float * world2clip) {
+void SpringSystemGL::draw(glm::mat4 world2clip) {
 	glUseProgram(_prog_draw);
-	glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, world2clip);
+	glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
 	glEnableVertexAttribArray(_position_loc);
 	glEnableVertexAttribArray(_diffuse_color_loc);
 
@@ -843,4 +843,34 @@ void SpringSystemGL::update_data_accel_speed() {
 	glBindBuffer(GL_ARRAY_BUFFER, _buffer_accel_speed);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(_data_accel_speed), _data_accel_speed, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+bool SpringSystemGL::key_down(InputState * input_state, SDL_Keycode key) {
+	if (key== SDLK_SPACE) {
+		_ss->rand_disposition(N_CUBES);
+		return true;
+	}
+	else if (key== SDLK_a) {
+		_is_draw_accel_speed= !_is_draw_accel_speed;
+		return true;
+	}
+	else if (key== SDLK_f) {
+		_is_draw_forces= !_is_draw_forces;
+		return true;
+	}
+	else if (key== SDLK_p) {
+		_is_paused= !_is_paused;
+		return true;
+	}
+	else if (key== SDLK_s) {
+		_is_draw_springs= !_is_draw_springs;
+		return true;
+	}
+	else if (key== SDLK_z) {
+		_ss->rand_contracts();
+		return true;
+	}
+
+	return false;
 }

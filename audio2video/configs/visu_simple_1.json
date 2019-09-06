@@ -1,44 +1,19 @@
 {
     "connexions": [
         {
-			"width" : 3,
-			"height" : 3,
+			"width" : 1,
+			"height" : 1,
 			"true_indices" : [
 				[0, 0]
-			]
-		},
-		
-        {
-			"width" : 3,
-			"height" : 3,
-			"true_indices" : [
-				[1, 1]
-			]
-		},
-
-        {
-			"width" : 3,
-			"height" : 3,
-			"true_indices" : [
-				[2, 2]
 			]
 		}
 	],
     "model_objs": [
         {
-            "mtl": "../modeles/cube.mtl",
-            "obj": "../modeles/cube.obj",
-            "size_factor": 1.0
-        },
-        {
-            "mtl": "../modeles/sphere.mtl",
-            "obj": "../modeles/sphere.obj",
-            "size_factor": 1.0
-        },
-        {
-            "mtl": "../modeles/cylinder.mtl",
-            "obj": "../modeles/cylinder.obj",
-            "size_factor": 1.0
+            "cfg": "../data/tree.xml",
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "scale_z": 1.0
         }
     ],
     "morphing_objs": [
@@ -51,27 +26,6 @@
 				"attack_power" : 1.0,
 				"release_power" : 1.0
 			}
-		},
-		{
-			"translate_y" : {
-				"attack" : 0.0,
-				"release" : 1.0,
-				"rest_value" : 10.0,
-				"stimulated_value" : 20.0,
-				"attack_power" : 1.0,
-				"release_power" : 1.0
-			}
-		},
-		{
-			"translate_z" : {
-				"attack" : 0.0,
-				"release" : 1.0,
-				"rest_value" : 10.0,
-				"stimulated_value" : 20.0,
-				"attack_power" : 1.0,
-				"release_power" : 1.0
-			}
 		}
-		
     ]
 }
