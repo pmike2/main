@@ -9,7 +9,7 @@ AppliedForce::AppliedForce() {
 }
 
 
-AppliedForce::AppliedForce(glm::vec3 f, glm::vec3 pt, std::string name) : _f(f), _pt(pt), _name(name), _is_active(false) {
+AppliedForce::AppliedForce(const glm::vec3 & f, const glm::vec3 & pt, std::string name) : _f(f), _pt(pt), _name(name), _is_active(false) {
 
 }
 
@@ -43,7 +43,7 @@ void ForcesDraw::draw() {
 	glEnableVertexAttribArray(_position_loc);
 	glEnableVertexAttribArray(_diffuse_color_loc);
 
-	glUniformMatrix4fv(_model2clip_loc, 1, GL_FALSE, _model2clip);
+	glUniformMatrix4fv(_model2clip_loc, 1, GL_FALSE, glm::value_ptr(_model2clip));
 	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
 	glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 	
@@ -57,13 +57,8 @@ void ForcesDraw::draw() {
 }
 
 
-void ForcesDraw::anim(float * world2camera, float * camera2clip) {
-	glm::mat4 glm_model2world = glm::make_mat4(_model2world);
-	glm::mat4 glm_world2camera= glm::make_mat4(world2camera);
-	glm::mat4 glm_camera2clip = glm::make_mat4(camera2clip);
-	glm::mat4 glm_model2clip  = glm_camera2clip* glm_world2camera* glm_model2world;
-	
-	memcpy(_model2clip, glm::value_ptr(glm_model2clip), sizeof(float) * 16);
+void ForcesDraw::anim(const glm::mat4 & world2camera, const glm::mat4 & camera2clip) {
+	_model2clip= camera2clip* world2camera* _model2world;
 }
 
 
@@ -397,7 +392,7 @@ void RigidBody::anim(vector<AppliedForce> & applied_forces) {
 
 
 // ---------------------------------------------------------------------------------------
-bool out_of_bound(glm::vec3 position) {
+bool out_of_bound(const glm::vec3 & position) {
 	if (
 		(position.x< -WORLD_SIZE) || (position.x> WORLD_SIZE) ||
 		(position.y< -WORLD_SIZE) || (position.y> WORLD_SIZE) ||
@@ -417,11 +412,8 @@ FollowCamera::FollowCamera() {
 
 FollowCamera::FollowCamera(GLuint prog_draw_basic) :
 	_prog_draw(prog_draw_basic), _position(glm::vec3(0.0f, -FOLLOW_CAMERA_DISTANCE, 0.0f)),
-	_rotation_matrix(glm::mat3(1.0f)), _quaternion(glm::quat(1.0f, 0.0f, 0.0f, 0.0f))
+	_rotation_matrix(glm::mat3(1.0f)), _quaternion(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)), _model2world(glm::mat4(1.0f)), _model2clip(glm::mat4(1.0f))
 {
-	glm::mat4 glm_identity(1.0f);
-	memcpy(_model2world, glm::value_ptr(glm_identity), sizeof(float) * 16);
-	memcpy(_model2clip , glm::value_ptr(glm_identity), sizeof(float) * 16);
 	
 	// repere simple RGB
 	float data[]= {
@@ -453,7 +445,7 @@ void FollowCamera::draw() {
 	glEnableVertexAttribArray(_position_loc);
 	glEnableVertexAttribArray(_diffuse_color_loc);
 
-	glUniformMatrix4fv(_model2clip_loc, 1, GL_FALSE, _model2clip);
+	glUniformMatrix4fv(_model2clip_loc, 1, GL_FALSE, glm::value_ptr(_model2clip));
 	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
 	glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 	
@@ -467,7 +459,7 @@ void FollowCamera::draw() {
 }
 
 
-void FollowCamera::anim(float * world2camera, float * camera2clip, RigidBody & rigid_body) {
+void FollowCamera::anim(const glm::mat4 & world2camera, const glm::mat4 & camera2clip, RigidBody & rigid_body) {
 	// la camera converge vers la position idéale (derrière le ship à distance FOLLOW_CAMERA_DISTANCE), avec l'orientation du ship
 	
 	glm::vec3 target(0.0f, -FOLLOW_CAMERA_DISTANCE, 0.0f);
@@ -482,13 +474,8 @@ void FollowCamera::anim(float * world2camera, float * camera2clip, RigidBody & r
 	
 	glm::mat4 rotation= glm::mat4(_rotation_matrix);
 	glm::mat4 translation= glm::translate(glm::mat4(1.0f), _position);
-	glm::mat4 glm_model2world= translation* rotation;
-	memcpy(_model2world, glm::value_ptr(glm_model2world), sizeof(float) * 16);
-	
-	glm::mat4 glm_world2camera= glm::make_mat4(world2camera);
-	glm::mat4 glm_camera2clip = glm::make_mat4(camera2clip);
-	glm::mat4 glm_model2clip  = glm_camera2clip* glm_world2camera* glm_model2world;
-	memcpy(_model2clip, glm::value_ptr(glm_model2clip), sizeof(float) * 16);
+	_model2world= translation* rotation;
+	_model2clip= camera2clip* world2camera* _model2world;
 }
 
 
@@ -498,7 +485,7 @@ Bullet::Bullet() {
 }
 
 
-Bullet::Bullet(GLuint prog_draw, GLuint prog_draw_basic, std::string model_path, std::string material_path, glm::vec3 position, glm::mat3 rotation_matrix, float size_factor, glm::vec3 color) :
+Bullet::Bullet(GLuint prog_draw, GLuint prog_draw_basic, std::string model_path, std::string material_path, const glm::vec3 & position, const glm::mat3 & rotation_matrix, float size_factor, const glm::vec3 & color) :
 	_position(position), _rotation_matrix(rotation_matrix), _is_active(false)
 {
 	_model= ModelObj(prog_draw, prog_draw_basic);
@@ -707,7 +694,7 @@ void Explosion::reinit() {
 
 
 // ---------------------------------------------------------------------------------------
-void new_explosion(std::vector<Explosion*> &explosions, glm::vec3 position, glm::vec3 color) {
+void new_explosion(std::vector<Explosion *> & explosions, const glm::vec3 & position, const glm::vec3 & color) {
 	for (auto it_explosion : explosions) {
 		if (!it_explosion->_is_active) {
 			it_explosion->_is_active= true;
@@ -729,7 +716,7 @@ Ship::Ship() {
 }
 
 
-Ship::Ship(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, string model_path, string material_path, bool is_paves, float size_factor, glm::vec3 color) :
+Ship::Ship(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, string model_path, string material_path, bool is_paves, float size_factor, const glm::vec3 & color) :
 	_id(id), _is_shooting(false), _tik_shooting_1(0), _tik_shooting_2(0), _color(color)
 {
 	_model= ModelObj(prog_draw_3d, prog_draw_basic);

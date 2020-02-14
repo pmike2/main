@@ -31,14 +31,14 @@ Jeu d'avion 3D
 #include FT_FREETYPE_H
 
 #include "constantes.h"
-#include "gl_error.h"
+#include "gl_utils.h"
 #include "utile.h"
 #include "repere.h"
 #include "ship.h"
 #include "light.h"
 #include "level.h"
-#include "rand_terrain.h"
 #include "font.h"
+#include "world.h"
 
 
 using namespace std;
@@ -193,24 +193,37 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_draw_instanced= create_prog("../shaders/vertexshader_3d_color_instanced.txt", "../shaders/fragmentshader_3d_color_fog.txt");
-	prog_draw          = create_prog("../shaders/vertexshader_3d_basic.txt"          , "../shaders/fragmentshader_3d_color_fog.txt");
+	prog_3d_color_instanced= create_prog("../shaders/vertexshader_3d_color_instanced.txt", "../shaders/fragmentshader_3d_color_fog.txt");
+	prog_3d_mat_instanced= create_prog("../shaders/vertexshader_3d_mat_instanced.txt", "../shaders/fragmentshader_3d_mat.txt");
+	prog_fog          = create_prog("../shaders/vertexshader_3d_basic.txt"          , "../shaders/fragmentshader_3d_color_fog.txt");
 	prog_repere        = create_prog("../shaders/vertexshader_repere.txt"            , "../shaders/fragmentshader_basic.txt");
 	prog_basic         = create_prog("../shaders/vertexshader_basic.txt"             , "../shaders/fragmentshader_basic.txt");
 	prog_map           = create_prog("../shaders/vertexshader_2d.txt"                , "../shaders/fragmentshader_basic.txt");
 	prog_skybox        = create_prog("../shaders/vertexshader_skybox.txt"            , "../shaders/fragmentshader_skybox.txt");
 	prog_font          = create_prog("../shaders/vertexshader_font.txt"              , "../shaders/fragmentshader_font.txt");
+	prog_basic           = create_prog("../shaders/vertexshader_basic.txt"       , "../shaders/fragmentshader_basic.txt");
+	prog_3d_anim         = create_prog("../shaders/vertexshader_3d_anim.txt"     , "../shaders/fragmentshader_3d_color.txt");
+	prog_3d_terrain      = create_prog("../shaders/vertexshader_3d_terrain.txt"  , "../shaders/fragmentshader_3d_color.txt");
+	prog_3d_mat          = create_prog("../shaders/vertexshader_3d_mat.txt"      , "../shaders/fragmentshader_3d_mat.txt");
+	prog_bbox            = create_prog("../shaders/vertexshader_bbox.txt"        , "../shaders/fragmentshader_basic.txt");
 
 	float eye_direction[]= {0.0f, 0.0f, 1.0f};
-	GLuint progs_eye[]= {prog_draw_instanced, prog_draw};
+	GLuint progs_eye[]= {prog_3d_color_instanced, prog_3d_mat_instanced, prog_fog, prog_3d_animprog_3d_terrain, prog_3d_mat};
 	for (unsigned int i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
 		GLint eye_direction_loc= glGetUniformLocation(progs_eye[i], "eye_direction");
-		GLint fog_start_loc= glGetUniformLocation(progs_eye[i], "fog_start");
-		GLint fog_end_loc= glGetUniformLocation(progs_eye[i], "fog_end");
-		GLint fog_color_loc= glGetUniformLocation(progs_eye[i], "fog_color");
 		
 		glUseProgram(progs_eye[i]);
 		glUniform3fv(eye_direction_loc, 1, eye_direction);
+		glUseProgram(0);
+	}
+
+	GLuint progs_fog[]= {prog_fog, prog_3d_color_instanced};
+	for (unsigned int i=0; i<sizeof(progs_fog)/ sizeof(progs_fog[0]); ++i) {
+		GLint fog_start_loc= glGetUniformLocation(progs_fog[i], "fog_start");
+		GLint fog_end_loc= glGetUniformLocation(progs_fog[i], "fog_end");
+		GLint fog_color_loc= glGetUniformLocation(progs_fog[i], "fog_color");
+		
+		glUseProgram(progs_eye[i]);
 		glUniform1f(fog_start_loc, FOG_START);
 		glUniform1f(fog_end_loc, FOG_END);
 		glUniform3fv(fog_color_loc, 1, FOG_COLOR);
@@ -230,7 +243,7 @@ void init() {
 	view_system->_repere->_is_box= false;
 	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), M_PI* 0.2, 0.0f, 100.0f);
 	
-	ship= new Ship("YOU", prog_draw, prog_basic, "modeles/plane2.obj", "modeles/plane2.mtl", false, SHIP_SIZE_FACTOR, HEROS_COLOR);
+	ship= new Ship("YOU", prog_fog, prog_basic, "modeles/plane2.obj", "modeles/plane2.mtl", false, SHIP_SIZE_FACTOR, HEROS_COLOR);
 	ship->_rigid_body._position.z= 400.0f;
 	all_ships.push_back(ship);
 	
@@ -258,35 +271,22 @@ void init() {
 		all_ships.push_back(enemy->_ship);
 	}
 	
-	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, & WORLD_RAND_CONFIG_1, "");
+	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_mat, prog_3d_mat_instanced, prog_basic, prog_bbox, & WORLD_RAND_CONFIG_1, "");
 	skybox= new SkyBox(prog_skybox);
 	
 	for (unsigned int i=0; i<NCLOUDS; ++i)
-		clouds.push_back(new Cloud(prog_draw, prog_basic, "modeles/cloud.obj", "modeles/cloud.mtl", glm::vec3(rand_float(-REPERE_BOX, REPERE_BOX), rand_float(-REPERE_BOX, REPERE_BOX), rand_float(CLOUD_MIN_ALTI, CLOUD_MAX_ALTI)), glm::mat3(1.0f), rand_float(CLOUD_MIN_SIZE, CLOUD_MAX_SIZE), rand_float(CLOUD_MIN_SPEED, CLOUD_MAX_SPEED)));
+		clouds.push_back(new Cloud(prog_mat, prog_basic, "modeles/cloud.obj", "modeles/cloud.mtl", glm::vec3(rand_float(-REPERE_BOX, REPERE_BOX), rand_float(-REPERE_BOX, REPERE_BOX), rand_float(CLOUD_MIN_ALTI, CLOUD_MAX_ALTI)), glm::mat3(1.0f), rand_float(CLOUD_MIN_SIZE, CLOUD_MAX_SIZE), rand_float(CLOUD_MIN_SPEED, CLOUD_MAX_SPEED)));
 	
-	lights_ubo= new LightsUBO(0);
-	lights_ubo->set_prog(prog_draw);
-	lights_ubo->init();
-	
-	// lumière fixe
-	float position_world[]= {0.0f, 0.0f, 5000.0f, 1.0f};
-	float spot_cone_direction_world[]= {0.0f, 0.0f, -1.0f};
-	Light light(LIGHT_PARAMS_1, prog_repere, position_world, spot_cone_direction_world);
-	lights.push_back(light);
-	
+	lights_ubo= new LightsUBO(prog_3d_terrain); // heu ca va marcher ca ???
+	lights_ubo->add_light(LIGHT_PARAMS_1, prog_repere, glm::vec3(world->get_center().x, world->get_center().y, 5000.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 	// celle-ci suit le joueur
-	float position_world2[]= {0.0f, 0.0f, 0.0f, 1.0f};
-	float spot_cone_direction_world2[]= {0.0f, 0.0f, -1.0f};
-	Light light2(LIGHT_PARAMS_2, prog_repere, position_world2, spot_cone_direction_world2);
-	lights.push_back(light2);
-
-	lights_ubo->update(lights);
+	lights_ubo->add_light(LIGHT_PARAMS_2, prog_repere, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 	
 	for (unsigned int i=0; i<N_MAX_LITTLE_EXPLOSIONS; ++i) {
-		little_explosions.push_back(new Explosion(prog_draw_instanced, prog_basic, "modeles/explosion.obj", "modeles/explosion.mtl", glm::vec3(0.0f), LITTLE_EXPLOSION_PARAMS));
+		little_explosions.push_back(new Explosion(prog_3d_color_instanced, prog_basic, "modeles/explosion.obj", "modeles/explosion.mtl", glm::vec3(0.0f), LITTLE_EXPLOSION_PARAMS));
 	}
 	for (unsigned int i=0; i<N_MAX_BIG_EXPLOSIONS; ++i) {
-		big_explosions.push_back(new Explosion(prog_draw_instanced, prog_basic, "modeles/explosion.obj", "modeles/explosion.mtl", glm::vec3(0.0f), BIG_EXPLOSION_PARAMS));
+		big_explosions.push_back(new Explosion(prog_3d_color_instanced, prog_basic, "modeles/explosion.obj", "modeles/explosion.mtl", glm::vec3(0.0f), BIG_EXPLOSION_PARAMS));
 	}
 	
 	level_map= new LevelMap(prog_map, all_ships.size());

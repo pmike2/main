@@ -1,6 +1,6 @@
 
-CXXFLAGS=-std=c++11 -I/usr/local/include
-LDFLAGS=-L/usr/local/lib -lportaudio -lsndfile -lboost_filesystem -lboost_system -lsfml-graphics -lsfml-window -lsfml-system
+CXXFLAGS=-std=c++11 -I/usr/local/include -I/usr/local/include/rtmidi
+LDFLAGS=-L/usr/local/lib -lportaudio -lsndfile -lboost_filesystem -lboost_system -lrtmidi
 
 BIN="main"
 

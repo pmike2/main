@@ -8,11 +8,11 @@ LDFLAGS=-L$(external)/lib -lSDL2 -lSDL2_image -framework OpenGL -framework CoreF
 
 all: main
 
-main: main.o gl_error.o repere.o utile.o objfile.o ship.o light.o level.o font.o bbox.o rand_terrain.o
-	g++ -o main main.o gl_error.o repere.o utile.o objfile.o ship.o light.o level.o font.o bbox.o rand_terrain.o $(LDFLAGS)
+main: main.o gl_utils.o repere.o utile.o objfile.o ship.o light.o level.o font.o bbox.o world.o terrain.o
+	g++ -o main main.o gl_utils.o repere.o utile.o objfile.o ship.o light.o level.o font.o bbox.o world.o terrain.o $(LDFLAGS)
 
-main.o: main.cpp $(internal)/gl_error.h $(internal)/repere.h $(internal)/utile.h constantes.h $(internal)/objfile.h ship.h $(internal)/light.h level.h $(internal)/font.h
-	g++ -c main.cpp $(internal)/gl_error.cpp $(internal)/repere.cpp $(internal)/utile.cpp $(internal)/objfile.cpp $(internal)/light.cpp level.cpp $(internal)/font.cpp $(CXXFLAGS)
+main.o: main.cpp $(internal)/gl_utils.h $(internal)/repere.h $(internal)/utile.h constantes.h $(internal)/objfile.h ship.h $(internal)/light.h level.h $(internal)/font.h
+	g++ -c main.cpp $(internal)/gl_utils.cpp $(internal)/repere.cpp $(internal)/utile.cpp $(internal)/objfile.cpp $(internal)/light.cpp level.cpp $(internal)/font.cpp $(CXXFLAGS)
 
 repere.o: $(internal)/repere.cpp $(internal)/repere.h $(internal)/input_state.h $(internal)/bbox.h
 	g++ -c $(internal)/repere.cpp $(internal)/input_state.cpp $(internal)/bbox.cpp $(CXXFLAGS)

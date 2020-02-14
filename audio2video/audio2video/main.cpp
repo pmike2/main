@@ -314,8 +314,8 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_3d    = create_prog("../../shaders/vertexshader_3d_basic.txt", "../../shaders/fragmentshader_3d.txt");
-	prog_3d_obj= create_prog("../../shaders/vertexshader_3d_obj.txt"  , "../../shaders/fragmentshader_3d_obj.txt");
+	prog_3d    = create_prog("../../shaders/vertexshader_3d_basic.txt", "../../shaders/fragmentshader_3d_color.txt");
+	prog_3d_obj= create_prog("../../shaders/vertexshader_3d_mat.txt"  , "../../shaders/fragmentshader_3d_mat.txt");
 	prog_2d    = create_prog("../../shaders/vertexshader_2d.txt"      , "../../shaders/fragmentshader_basic.txt");
 	prog_repere= create_prog("../../shaders/vertexshader_repere.txt"  , "../../shaders/fragmentshader_basic.txt");
 	prog_font  = create_prog("../../shaders/vertexshader_font.txt"    , "../../shaders/fragmentshader_font.txt");

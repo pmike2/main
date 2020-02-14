@@ -108,15 +108,17 @@ void SkyBox::anim(float * world2camera, float * camera2clip) {
 
 
 // ---------------------------------------------------------------------------------------
-Cloud::Cloud() {
+/*Cloud::Cloud() {
 
 }
 
 
 Cloud::Cloud(GLuint prog_draw, GLuint prog_draw_basic, std::string model_path, std::string material_path, glm::vec3 position, glm::mat3 rotation_matrix, float size_factor, float speed) :
-	_position(position), _rotation_matrix(rotation_matrix), _speed(speed)
-{
-	_model= ModelObj(prog_draw, prog_draw_basic);
+	_position(position), _rotation_matrix(rotation_matrix), _speed(speed) {
+	_static_models.push_back(new StaticModel("../data/"+ ch_model, _prog_draw_3d));
+	_model= new StaticInstance(_static_models[idx_model], glm::vec3(1.0f));
+	_model->_pos_rot->_active= true;
+
 	_model.load(model_path, material_path, size_factor);
 	_model._ambient[0]= CLOUD_COLOR[0];
 	_model._ambient[1]= CLOUD_COLOR[1];
@@ -152,7 +154,7 @@ void Cloud::anim(float * world2camera, float * camera2clip) {
 	
 	_model.anim(world2camera, camera2clip);
 }
-
+*/
 
 // ---------------------------------------------------------------------------------------
 LevelMap::LevelMap() {

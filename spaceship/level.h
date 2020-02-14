@@ -21,7 +21,7 @@
 #include "constantes.h"
 #include "objfile.h"
 #include "ship.h"
-#include "rand_terrain.h"
+#include "terrain.h"
 
 
 
@@ -47,7 +47,7 @@ public:
 
 
 // TODO : faire de l'instanced comme pour Explosion
-class Cloud {
+/*class Cloud {
 public:
 	Cloud();
 	Cloud(GLuint prog_draw, GLuint prog_draw_basic, std::string model_path, std::string material_path, glm::vec3 position, glm::mat3 rotation_matrix, float size_factor, float speed);
@@ -55,12 +55,12 @@ public:
 	void draw();
 	void anim(float * world2camera, float * camera2clip);
 	
-	ModelObj _model;
+	StaticInstance _model;
 	glm::vec3 _position; // position
 	glm::mat3 _rotation_matrix; // matrice de rotation
 	float _speed; // vitesse de déplacement du nuage
 };
-
+*/
 
 // cf https://stackoverflow.com/questions/396084/headers-including-each-other-in-c
 class Ship;

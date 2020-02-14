@@ -23,7 +23,6 @@
 #include "objfile.h"
 #include "constantes.h"
 #include "level.h"
-#include "rand_terrain.h"
 #include "font.h"
 
 
@@ -31,7 +30,7 @@
 class AppliedForce {
 public:
 	AppliedForce();
-	AppliedForce(glm::vec3 f, glm::vec3 pt, std::string name);
+	AppliedForce(const glm::vec3 & f, const glm::vec3 & pt, std::string name);
 	
 	glm::vec3 _f;
 	glm::vec3 _pt;
@@ -46,12 +45,12 @@ public:
 	ForcesDraw();
 	ForcesDraw(GLuint prog_draw_basic);
 	void draw();
-	void anim(float * world2camera, float * camera2clip);
+	void anim(const glm::mat4 & world2camera, const glm::mat4 & camera2clip);
 	void sync2appliedforces(std::vector<AppliedForce> & applied_forces);
 	
 	unsigned int _n_forces;
-	float _model2world[16];
-	float _model2clip[16];
+	glm::mat4 _model2world;
+	glm::mat4 _model2clip;
 	GLuint _buffer;
 	GLfloat _data[12* NMAX_FORCE_DRAW];
 	GLint _model2clip_loc, _position_loc, _diffuse_color_loc;
@@ -90,7 +89,7 @@ public:
 
 
 // un point est-il hors monde
-bool out_of_bound(glm::vec3 position);
+bool out_of_bound(const glm::vec3 & position);
 
 
 // camera de suivi du ship pour plus de dynamisme
@@ -99,10 +98,10 @@ public:
 	FollowCamera();
 	FollowCamera(GLuint prog_draw_basic);
 	void draw();
-	void anim(float * world2camera, float * camera2clip, RigidBody & rigid_body);
+	void anim(const glm::mat4 & world2camera, const glm::mat4 & camera2clip, RigidBody & rigid_body);
 	
-	float _model2world[16];
-	float _model2clip[16];
+	glm::mat4 _model2world;
+	glm::mat4 _model2clip;
 	
 	GLuint _buffer;
 	GLfloat _data[36];
@@ -119,10 +118,10 @@ public:
 class Bullet {
 public:
 	Bullet();
-	Bullet(GLuint prog_draw_3d, GLuint prog_draw_basic, std::string model_path, std::string material_path, glm::vec3 position, glm::mat3 rotation_matrix, float size_factor, glm::vec3 color);
+	Bullet(GLuint prog_draw_3d, GLuint prog_draw_basic, std::string model_path, std::string material_path, const glm::vec3 & position, const glm::mat3 & rotation_matrix, float size_factor, const glm::vec3 & color);
 	~Bullet();
 	void draw();
-	void anim(float * world2camera, float * camera2clip);
+	void anim(const glm::mat4 & world2camera, const glm::mat4 & camera2clip);
 	
 	bool _is_active;
 	ModelObj _model;
@@ -147,10 +146,10 @@ struct ExplosionTransfo {
 class Explosion {
 public:
 	Explosion();
-	Explosion(GLuint prog_draw_3d, GLuint prog_draw_basic, std::string model_path, std::string material_path, glm::vec3 position, const ExplosionParams &ep);
+	Explosion(GLuint prog_draw_3d, GLuint prog_draw_basic, std::string model_path, std::string material_path, const glm::vec3 & position, const ExplosionParams & ep);
 	void release();
 	void draw();
-	void anim(float * world2camera, float * camera2clip);
+	void anim(const glm::mat4 & world2camera, const glm::mat4 & camera2clip);
 	void reinit();
 	
 	ExplosionParams _ep;
@@ -184,7 +183,7 @@ public:
 
 
 // générer une explosion à un endroit et avec une couleur
-void new_explosion(std::vector<Explosion*> &explosions, glm::vec3 position, glm::vec3 color);
+void new_explosion(std::vector<Explosion*> & explosions, const glm::vec3 & position, const glm::vec3 & color);
 
 
 // cf https://stackoverflow.com/questions/396084/headers-including-each-other-in-c
@@ -196,15 +195,15 @@ class GlobalMsg;
 class Ship {
 public:
     Ship();
-    Ship(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, std::string model_path, std::string material_path, bool is_paves, float size_factor, glm::vec3 color);
+    Ship(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, std::string model_path, std::string material_path, bool is_paves, float size_factor, const glm::vec3 & color);
 	~Ship();
 	
 	void init_applied_forces();
 	void draw(bool force_draw, bool draw_follow_camera);
-	void anim(float * world2camera, float * camera2clip);
+	void anim(const glm::mat4 & world2camera, const glm::mat4 & camera2clip);
 	void update_keys_pressed();
 	void sync_keys2forces();
-	void collision(RandTerrain * level, std::vector<Ship*> &ships, std::vector<Explosion*> &little_explosions, std::vector<Explosion*> &big_explosions, Ranking* ranking, GlobalMsg* global_msg);
+	void collision(RandTerrain * level, std::vector<Ship *> & ships, std::vector<Explosion *> & little_explosions, std::vector<Explosion *> & big_explosions, Ranking * ranking, GlobalMsg * global_msg);
 	void reinit();
 	
 	std::string _id;
@@ -227,10 +226,10 @@ public:
 class IA {
 public:
 	IA();
-	IA(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, std::string model_path, std::string material_path, bool is_paves, float size_factor, glm::vec3 color);
+	IA(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, std::string model_path, std::string material_path, bool is_paves, float size_factor, const glm::vec3 & color);
 	~IA();
 	bool align2target();
-	void think(RandTerrain * level, std::vector<Ship*> &ships);
+	void think(RandTerrain * level, std::vector<Ship *> & ships);
 	
 	Ship* _ship;
 	glm::vec3 _target_direction;
@@ -251,7 +250,7 @@ struct ShipPoints {
 class Ranking {
 public:
 	Ranking();
-	Ranking(Font* font, std::vector<Ship*> &ships);
+	Ranking(Font * font, std::vector<Ship *> & ships);
 	void draw();
 	bool loose(std::string id);
 	bool win(std::string id);
@@ -259,7 +258,7 @@ public:
 	void print();
 	std::string id_first();
 	
-	Font* _font;
+	Font * _font;
 	std::vector<ShipPoints> _ship_points;
 };
 
@@ -267,12 +266,12 @@ public:
 class GlobalMsg {
 public:
 	GlobalMsg();
-	GlobalMsg(Font* font);
-	void new_msg(std::string msg, glm::vec3 color);
+	GlobalMsg(Font * font);
+	void new_msg(std::string msg, const glm::vec3 & color);
 	void draw();
 	void anim();
 
-	Font* _font;
+	Font * _font;
 	bool _is_active;
 	std::string _msg;
 	glm::vec3 _color;

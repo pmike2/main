@@ -296,7 +296,7 @@ StaticModel::StaticModel(string ch_config_file, GLuint prog_draw) :
 	_ch_config_file(ch_config_file), _prog_draw(prog_draw)
 {
 	_aabb= new AABB();
-	parse_static_config_file(ch_config_file, _vertex_buffers, _index_buffers, _n_faces, _n_precisions, _materials_array, _aabb);
+	parse_static_config_file(_ch_config_file, _vertex_buffers, _index_buffers, _n_faces, _n_precisions, _materials_array, _aabb);
 
 	glUseProgram(_prog_draw);
 
