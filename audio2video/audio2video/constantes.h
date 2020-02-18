@@ -145,9 +145,9 @@ struct RandomIntMinMax {
 
 // valeurs min-max des randoms ; en secondes pour attack, release ; release n'aura d'impact qu'en mode AUDIO_RECORD (static_release)
 const std::map<std::string, RandomFloatMinMax> MINMAXS_ENV {
-	{"scale_base", RandomFloatMinMax{0.5f, 3.0f}},        {"scale_diff", RandomFloatMinMax{-0.2f, 0.2f}}, 
-	{"translate_base", RandomFloatMinMax{-5.0f, 5.0f}},   {"translate_diff", RandomFloatMinMax{-0.1f, 0.1f}}, 
-	{"rotate_base", RandomFloatMinMax{0.0f, M_PI* 2.0f}}, {"rotate_diff", RandomFloatMinMax{-M_PI* 2.0f* 0.05f, M_PI* 2.0f* 0.05f}},
+	{"scale_base", RandomFloatMinMax{0.5f, 2.0f}},        {"scale_diff", RandomFloatMinMax{-0.5f, 0.5f}}, 
+	{"translate_base", RandomFloatMinMax{-50.0f, 50.0f}},   {"translate_diff", RandomFloatMinMax{-10.0f, 10.0f}}, 
+	{"rotate_base", RandomFloatMinMax{0.0f, M_PI* 2.0f}}, {"rotate_diff", RandomFloatMinMax{-M_PI* 2.0f* 0.02f, M_PI* 2.0f* 0.02f}},
 	{"alpha_base", RandomFloatMinMax{0.1f, 1.0f}},        {"alpha_diff", RandomFloatMinMax{-0.5f, 0.5f}},
 	{"shininess_base", RandomFloatMinMax{0.0f, 1.0f}},    {"shininess_diff", RandomFloatMinMax{-0.5f, 0.5f}},
 	{"ambient_base", RandomFloatMinMax{0.0f, 1.0f}},      {"ambient_diff", RandomFloatMinMax{-0.5f, 0.5f}},

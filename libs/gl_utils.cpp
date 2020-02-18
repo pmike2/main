@@ -245,3 +245,13 @@ GLuint create_prog(string vs_path, string fs_path) {
 	return prog;
 }
 
+
+// gestion multi-fenetre
+void set_subwindow(const float bkgnd_color[4], int x, int y, int w, int h) {
+	glClearColor(bkgnd_color[0], bkgnd_color[1], bkgnd_color[2], bkgnd_color[3]);
+	glEnable(GL_SCISSOR_TEST);
+	glScissor(x, y, w, h);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glDisable(GL_SCISSOR_TEST);
+	glViewport(x, y, w, h);
+}
