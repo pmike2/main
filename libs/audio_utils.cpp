@@ -3,13 +3,14 @@
 using namespace std;
 
 
-StereoSample::StereoSample() : _data(0), _n_samples(0) {
+StereoSample::StereoSample() : _data_left(0), _data_right(0), _n_samples(0) {
 
 }
 
 
 StereoSample::~StereoSample() {
-	delete[] _data;
+	delete[] _data_left;
+	delete[] _data_right;
 }
 
 
@@ -30,21 +31,26 @@ void StereoSample::load_from_file(std::string file_path) {
 	sf_read_float(sound_file, buff, info.channels* info.frames);
 	sf_close(sound_file);
 
-	if (_data!= 0) {
-		delete[] _data;
+	if (_data_left!= 0) {
+		delete[] _data_left;
+	}
+
+	if (_data_right!= 0) {
+		delete[] _data_right;
 	}
 
 	_n_samples= info.frames;
-	_data= new float[2* _n_samples];
+	_data_left= new float[_n_samples];
+	_data_right= new float[_n_samples];
 	
 	for (unsigned long i=0; i<info.frames; ++i) {
 		if (info.channels== 1) {
-			_data[2* i+ 0]= buff[i];
-			_data[2* i+ 1]= buff[i];
+			_data_left[i]= buff[i];
+			_data_right[i]= buff[i];
 		}
 		else {
-			_data[2* i+ 0]= buff[2* i+ 0];
-			_data[2* i+ 1]= buff[2* i+ 1];
+			_data_left[i]= buff[2* i+ 0];
+			_data_right[i]= buff[2* i+ 1];
 		}
 	}
 }
@@ -57,10 +63,12 @@ StereoSampleGL::StereoSampleGL() {
 
 
 StereoSampleGL::StereoSampleGL(GLuint prog_draw_2d, StereoSample * ss, unsigned int x, unsigned int y, unsigned int w, unsigned int h, unsigned int screen_w, unsigned int screen_h) :
-	 _prog_draw(prog_draw_2d), _first_sample(0.0f), _interval_sample(0.01f), _ss(ss), _mouse_down(false), _data(0)
+	 _prog_draw(prog_draw_2d), _first_sample(0.0f), _interval_sample(0.001f), _ss(ss), _mouse_down(false)
 {
-	glGenBuffers(1, &_buffer);
+	glGenBuffers(1, &_buffer_left);
+	glGenBuffers(1, &_buffer_right);
 	glGenBuffers(1, &_buffer_background);
+	glGenBuffers(1, &_buffer_lines);
 
 	glUseProgram(_prog_draw);
 	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
@@ -77,8 +85,9 @@ StereoSampleGL::StereoSampleGL(GLuint prog_draw_2d, StereoSample * ss, unsigned 
 	_y= (0.5f- (float)(y)/ (float)(screen_h))* GL_HEIGHT;
 	_w= ((float)(w)/ (float)(screen_w))* GL_WIDTH;
 	_h= ((float)(h)/ (float)(screen_h))* GL_HEIGHT;
-	cout << _x << " ; " << _y << " ; " << _w << " ; " << _h << "\n";
+	//cout << _x << " ; " << _y << " ; " << _w << " ; " << _h << "\n";
 
+	// background ----------------------------------------------
 	float data_background[6* 5];
 	data_background[5* 0]= _x;	    data_background[5* 0+ 1]= _y;
 	data_background[5* 1]= _x+ _w;	data_background[5* 1+ 1]= _y;
@@ -95,12 +104,27 @@ StereoSampleGL::StereoSampleGL(GLuint prog_draw_2d, StereoSample * ss, unsigned 
 	glBufferData(GL_ARRAY_BUFFER, 6* 5* sizeof(float), data_background, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+	// lines --------------------------------------------------
+	float data_lines[4* 5];
+	data_lines[5* 0]= _x; 	  data_lines[5* 0+ 1]= _y+ 0.75f* _h;
+	data_lines[5* 1]= _x+ _w; data_lines[5* 1+ 1]= _y+ 0.75f* _h;
+	data_lines[5* 2]= _x; 	  data_lines[5* 2+ 1]= _y+ 0.25f* _h;
+	data_lines[5* 3]= _x+ _w; data_lines[5* 3+ 1]= _y+ 0.25f* _h;
+	for (unsigned int i=0; i<4; ++i) {
+		data_lines[5* i+ 2]= 0.4; data_lines[5* i+ 3]= 0.2; data_lines[5* i+ 4]= 0.5;
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer_lines);
+	glBufferData(GL_ARRAY_BUFFER, 4* 5* sizeof(float), data_lines, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// -------------------------------------------------------
 	update_data();
 }
 
 
 StereoSampleGL::~StereoSampleGL() {
-	delete[] _data;
+
 }
 
 
@@ -108,7 +132,7 @@ void StereoSampleGL::draw() {
 	if (_ss->_n_samples== 0) {
 		return;
 	}
-
+	
 	// -----------------------------------------------------------------------------------
 	glUseProgram(_prog_draw);
 	glBindBuffer(GL_ARRAY_BUFFER, _buffer_background);
@@ -131,7 +155,49 @@ void StereoSampleGL::draw() {
 
 	// -----------------------------------------------------------------------------------
 	glUseProgram(_prog_draw);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer_lines);
+
+	glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, _camera2clip);
+	
+	glEnableVertexAttribArray(_position_loc);
+	glEnableVertexAttribArray(_diffuse_color_loc);
+
+	glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)0);
+	glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(2* sizeof(float)));
+
+	glDrawArrays(GL_LINES, 0, 4);
+
+	glDisableVertexAttribArray(_position_loc);
+	glDisableVertexAttribArray(_diffuse_color_loc);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+
+	// -----------------------------------------------------------------------------------
+	glUseProgram(_prog_draw);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer_left);
+
+	glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, _camera2clip);
+	
+	glEnableVertexAttribArray(_position_loc);
+	glEnableVertexAttribArray(_diffuse_color_loc);
+
+	glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)0);
+	glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(2* sizeof(float)));
+
+	// left puis right channel
+	glDrawArrays(GL_LINE_STRIP, 0, _n_samples);
+	glDrawArrays(GL_LINE_STRIP, _n_samples, _n_samples);
+
+	glDisableVertexAttribArray(_position_loc);
+	glDisableVertexAttribArray(_diffuse_color_loc);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+
+	// -----------------------------------------------------------------------------------
+	glUseProgram(_prog_draw);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer_right);
 
 	glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, _camera2clip);
 	
@@ -158,43 +224,62 @@ void StereoSampleGL::update_data() {
 		return;
 	}
 
-	if (_data!= 0) {
-		delete[] _data;
-	}
-
 	if (_first_sample< 0.0f) {
 		_first_sample= 0.0f;
 	}
 	
-	unsigned long first_idx= (long)(ceil(_first_sample));
-	unsigned long last_idx= (long)(round(_first_sample+ _w/ _interval_sample));
+	unsigned long first_idx= (unsigned long)(ceil(_first_sample));
+	unsigned long last_idx= (unsigned long)(round(_first_sample+ _w/ _interval_sample));
 
 	if (last_idx>= _ss->_n_samples) {
 		last_idx= _ss->_n_samples- 1;
 	}
 
 	_n_samples= last_idx- first_idx;
-	_data= new float[_n_samples* 2* 5]; // stereo
 
-	// stereo
-	for (unsigned long j=0; j<2; ++j)
-		for (unsigned long i=first_idx; i<last_idx; ++i) {
-			unsigned long idx_data= 5* (i+ j* _n_samples);
-			float x= _x+ _interval_sample* (float)(i);
-			float y= _y+ (-(float)(j)* 0.5f+ 0.25f)* _h;
-			// affichage max == * 0.25f, mais illisible, donc on met moins
-			y+= _ss->_data[2* i+ j]* _h* 0.15f;
-			
-			_data[idx_data+ 0]= x;
-			_data[idx_data+ 1]= y;
-			_data[idx_data+ 2]= 1.0f;
-			_data[idx_data+ 3]= 1.0f;
-			_data[idx_data+ 4]= 1.0f;
-		}
+	// left channel ------------------------------------------------
+	float * _data_left= new float[_n_samples* 5];
 
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
-	glBufferData(GL_ARRAY_BUFFER, _n_samples* 5* 2* sizeof(float), _data, GL_DYNAMIC_DRAW);
+	for (unsigned long i=first_idx; i<last_idx; ++i) {
+		float x= _x+ _interval_sample* (float)(i);
+		float y= _y+ 0.75f* _h;
+		y+= _ss->_data_left[i]* _h* 0.5f;
+		
+		_data_left[5* i+ 0]= x;
+		_data_left[5* i+ 1]= y;
+		_data_left[5* i+ 2]= 1.0f;
+		_data_left[5* i+ 3]= 1.0f;
+		_data_left[5* i+ 4]= 1.0f;
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer_left);
+	glBufferData(GL_ARRAY_BUFFER, _n_samples* 5* sizeof(float), _data_left, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// right channel ------------------------------------------------
+	float * _data_right= new float[_n_samples* 5];
+
+	for (unsigned long i=first_idx; i<last_idx; ++i) {
+		float x= _x+ _interval_sample* (float)(i);
+		float y= _y+ 0.25f* _h;
+		y+= _ss->_data_right[i]* _h* 0.5f;
+		
+		_data_right[5* i+ 0]= x;
+		_data_right[5* i+ 1]= y;
+		_data_right[5* i+ 2]= 1.0f;
+		_data_right[5* i+ 3]= 1.0f;
+		_data_right[5* i+ 4]= 1.0f;
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer_right);
+	glBufferData(GL_ARRAY_BUFFER, _n_samples* 5* sizeof(float), _data_right, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void StereoSampleGL::zoom_all() {
+	_interval_sample= _w/ (float)(_ss->_n_samples);
+	update_data();
 }
 
 

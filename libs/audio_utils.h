@@ -35,7 +35,8 @@ public:
 
 
 	unsigned long _n_samples;
-	float * _data;
+	float * _data_left;
+	float * _data_right;
 };
 
 
@@ -46,6 +47,7 @@ public:
 	~StereoSampleGL();
 	void draw();
 	void update_data();
+	void zoom_all();
 	bool mouse_motion(InputState * input_state);
 	bool mouse_button_down(InputState * input_state);
 	bool mouse_button_up(InputState * input_state);
@@ -54,8 +56,7 @@ public:
 
 	GLuint _prog_draw;
 	GLint _camera2clip_loc, _position_loc, _diffuse_color_loc;
-	GLuint _buffer, _buffer_background;
-	float * _data;
+	GLuint _buffer_left, _buffer_right, _buffer_background, _buffer_lines;
 	float _camera2clip[16];
 
 	StereoSample * _ss;
