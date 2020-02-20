@@ -26,6 +26,17 @@
 const float GL_WIDTH= 20.0f;
 const float GL_HEIGHT= 20.0f;
 
+const float WAVE_COLOR[]= {0.3f, 0.3f, 0.7f};
+const float BACKGROUND_COLOR[]= {0.8f, 0.8f, 0.8f};
+const float LINES_COLOR[]= {0.2f, 0.2f, 0.2f};
+
+const float ZOOM_FACTOR= 0.05f;
+const float MOVE_FACTOR= 0.3f;
+
+const float INIT_INTERVAL_SAMPLE= 0.001f;
+const float MIN_INTERVAL_SAMPLE= 0.00001f;
+const float MAX_INTERVAL_SAMPLE= 0.01f;
+
 
 class StereoSample {
 public:
@@ -35,7 +46,8 @@ public:
 
 
 	unsigned long _n_samples;
-	float * _data;
+	float * _data_left;
+	float * _data_right;
 };
 
 
@@ -46,6 +58,7 @@ public:
 	~StereoSampleGL();
 	void draw();
 	void update_data();
+	void zoom_all();
 	bool mouse_motion(InputState * input_state);
 	bool mouse_button_down(InputState * input_state);
 	bool mouse_button_up(InputState * input_state);
@@ -54,14 +67,14 @@ public:
 
 	GLuint _prog_draw;
 	GLint _camera2clip_loc, _position_loc, _diffuse_color_loc;
-	GLuint _buffer, _buffer_background;
-	float * _data;
+	GLuint _buffer_left, _buffer_right, _buffer_background, _buffer_lines;
 	float _camera2clip[16];
 
 	StereoSample * _ss;
 
 	float _x, _y, _w, _h;
-	float _first_sample, _interval_sample;
+	unsigned long _first_sample, _last_sample;
+	float _interval_sample;
 	unsigned long _n_samples;
 	bool _mouse_down;
 };

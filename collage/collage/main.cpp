@@ -129,6 +129,9 @@ void key_down(SDL_Keycode key) {
 		done= true;
 	}
 
+ 	if (ssgl->key_down(input_state, key)) {
+		//return;
+	}
 }
 
 
@@ -139,9 +142,10 @@ void key_up(SDL_Keycode key) {
 
 
 void drag_drop(string file_path) {
-	cout << file_path << "\n";
+	cout << "loading " << file_path << "\n";
 	ss->load_from_file(file_path);
-	ssgl->update_data();
+	ssgl->zoom_all();
+	//ssgl->update_data();
 }
 
 
@@ -171,21 +175,22 @@ void init() {
 	cout << x << endl;*/
 
 	SDL_GL_SetSwapInterval(1);
-	// meme couleur que le brouillard
+
 	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
-	glClearDepth(1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LESS);
+	//glClearDepth(1.0f);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
+	//glEnable(GL_DEPTH_TEST);
+	//glDepthMask(GL_TRUE);
+	//glDepthFunc(GL_LESS);
 	//glDepthFunc(GL_LEQUAL); // ne fonctionne pas je ne sais pas pourquoi; mais necessaire pour bumpmapping et autres
-	glDepthRange(0.0f, 1.0f);
+	//glDepthRange(0.0f, 1.0f);
 	
 	// frontfaces en counterclockwise
 	glFrontFace(GL_CCW);
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_CLAMP);
+	//glEnable(GL_DEPTH_CLAMP);
 	
 	// pour gérer l'alpha
 	glEnable(GL_BLEND);
@@ -212,8 +217,8 @@ void init() {
 	arial_font= new Font(prog_font, "../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	input_state= new InputState();
 	ss= new StereoSample();
-	ssgl= new StereoSampleGL(prog_2d, ss, 10, 200, 100, 100, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	drag_drop("/Volumes/Cezanne/Cezanne/perso_dev/dir_git/collage/data/record_afx.wav");
+	ssgl= new StereoSampleGL(prog_2d, ss, 10, 500, 1000, 300, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	drag_drop("../data/record_afx.wav");
 
 	// ------------------------------------------------------------------------
 	err= Pa_Initialize();
@@ -272,7 +277,8 @@ void draw() {
 	compt_fps++;
 	
 	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 
 	ssgl->draw();
@@ -389,7 +395,7 @@ taf
 	idx_device_output= 4;
 	
 home
-	idx_device_input= 0;
+	idx_device_input= 2;
 	idx_device_output= 1;
 */
 
