@@ -13,6 +13,10 @@ const int MAIN_WIN_WIDTH= 1280;
 const int MAIN_WIN_HEIGHT= 1024;
 const float MAIN_BCK[]= {0.7f, 0.7f, 0.7f, 1.0f};
 
+// dimensions OpenGL
+const float GL_WIDTH= 20.0f;
+const float GL_HEIGHT= 20.0f;
+
 // nombre de samples dans 1s d'audio
 const int SAMPLE_RATE_PLAYBACK= 44100;
 

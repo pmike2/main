@@ -3,6 +3,37 @@
 using namespace std;
 
 
+// -------------------------------------------------------------------------------------------
+ScreenGL::ScreenGL() {
+
+}
+
+
+ScreenGL::ScreenGL(unsigned int screen_width, unsigned int screen_height, float gl_width, float gl_height) : 
+	_screen_width(screen_width), _screen_height(screen_height), _gl_width(gl_width), _gl_height(gl_height)
+{
+
+}
+
+
+ScreenGL::~ScreenGL() {
+
+}
+
+
+void ScreenGL::screen2gl(unsigned int i, unsigned int j, float & x, float & y) {
+	x= ((float)(i)/ (float)(_screen_width)- 0.5f)* _gl_width;
+	y= (0.5f- (float)(j)/ (float)(_screen_height))* _gl_height;
+}
+
+
+void ScreenGL::gl2screen(float x, float y, unsigned int & i, unsigned int & j) {
+	i= (unsigned int)((float)(_screen_width)* (x/ _gl_width+ 0.5f));
+	j= (unsigned int)((float)(_screen_width)* (0.5f- y/ _gl_height));
+}
+
+
+// -------------------------------------------------------------------------------------------
 void _check_gl_error(const char * file, int line){
 	GLenum err(glGetError());
 

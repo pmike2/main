@@ -14,6 +14,20 @@
 #include "utile.h"
 
 
+class ScreenGL {
+public:
+	ScreenGL();
+	ScreenGL(unsigned int screen_width, unsigned int screen_height, float gl_width, float gl_height);
+	~ScreenGL();
+	void screen2gl(unsigned int i, unsigned int j, float & x, float & y);
+	void gl2screen(float x, float y, unsigned int & i, unsigned int & j);
+
+
+	unsigned int _screen_width, _screen_height;
+	float _gl_width, _gl_height;
+};
+
+
 void _check_gl_error(const char * file, int line);
  #define check_gl_error() _check_gl_error(__FILE__,__LINE__)
 void check_gl_program(GLuint prog);

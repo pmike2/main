@@ -13,7 +13,7 @@ int main(int argc, char *argv[]) {
     SDL_bool done;
     SDL_Window *window;
     SDL_Event event;                        // Declare event handle
-    //char* dropped_filedir;                  // Pointer for directory of dropped file
+    char* dropped_filedir;                  // Pointer for directory of dropped file
 
     SDL_Init(SDL_INIT_VIDEO);               // SDL2 initialization
 
@@ -45,17 +45,17 @@ int main(int argc, char *argv[]) {
                     break;
                 }
 
+				case SDL_MOUSEMOTION:
+					//cout << event.motion.x << endl;
+					break;
+
+				case SDL_MOUSEBUTTONUP:
+					cout << event.button.x << endl;
+					break;
+
                 case (SDL_DROPFILE): {      // In case if dropped file
-					cout << string(event.drop.file) << "\n";
-                    //dropped_filedir = event.drop.file;
-                    // Shows directory of dropped file
-                    /*SDL_ShowSimpleMessageBox(
-                        SDL_MESSAGEBOX_INFORMATION,
-                        "File dropped on window",
-                        dropped_filedir,
-                        window
-                    );*/
-                    //SDL_free(dropped_filedir);    // Free dropped_filedir memory
+					cout << event.motion.x << endl;
+                    cout << string(event.drop.file) << endl;
                     break;
                }
             }

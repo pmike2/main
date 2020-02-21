@@ -57,6 +57,7 @@ using namespace std;
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
 InputState * input_state;
+ScreenGL * screengl;
 
 int done= 0;
 
@@ -73,9 +74,7 @@ int idx_device_output= -1;
 PaStream * stream;
 PaError err;
 
-StereoSample * ss;
-StereoSampleGL * ssgl;
-
+AudioProjectGL * audio_project;
 
 // ---------------------------------------------------------------------------------------
 // callback PortAudio
@@ -105,6 +104,9 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
+ 	if (audio_project->mouse_motion(input_state)) {
+		return;
+	}
 }
 
 
@@ -112,6 +114,9 @@ void mouse_button_up(unsigned int x, unsigned int y) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
+ 	if (audio_project->mouse_button_up(input_state)) {
+		return;
+	}
 }
 
 
@@ -119,6 +124,10 @@ void mouse_button_down(unsigned int x, unsigned int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
+
+ 	if (audio_project->mouse_button_down(input_state)) {
+		return;
+	}
 }
 
 
@@ -129,7 +138,7 @@ void key_down(SDL_Keycode key) {
 		done= true;
 	}
 
- 	if (ssgl->key_down(input_state, key)) {
+ 	if (audio_project->key_down(input_state, key)) {
 		//return;
 	}
 }
@@ -142,10 +151,9 @@ void key_up(SDL_Keycode key) {
 
 
 void drag_drop(string file_path) {
-	cout << "loading " << file_path << "\n";
-	ss->load_from_file(file_path);
-	ssgl->zoom_all();
-	//ssgl->update_data();
+	if (audio_project->drag_drop(file_path)) {
+		return;
+	}
 }
 
 
@@ -208,7 +216,7 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_2d  = create_prog("../../shaders/vertexshader_2d.txt"  , "../../shaders/fragmentshader_basic.txt");
+	prog_2d  = create_prog("../../shaders/vertexshader_2d_alpha.txt"  , "../../shaders/fragmentshader_basic.txt");
 	prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
@@ -216,9 +224,11 @@ void init() {
 	// --------------------------------------------------------------------------
 	arial_font= new Font(prog_font, "../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	input_state= new InputState();
-	ss= new StereoSample();
-	ssgl= new StereoSampleGL(prog_2d, ss, 10, 500, 1000, 300, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+	audio_project= new AudioProjectGL(prog_2d, screengl);
 	drag_drop("../data/record_afx.wav");
+	drag_drop("../data/record_autechre.wav");
+	drag_drop("../data/record_beat_simple.wav");
 
 	// ------------------------------------------------------------------------
 	err= Pa_Initialize();
@@ -281,7 +291,7 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 
-	ssgl->draw();
+	audio_project->draw();
 
 	show_infos();
 
@@ -375,8 +385,7 @@ void clean() {
 
 	delete arial_font;
 	delete input_state;
-	delete ss;
-	delete ssgl;
+	delete audio_project;
 
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
