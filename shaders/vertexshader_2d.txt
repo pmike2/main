@@ -1,11 +1,10 @@
-#version 410 core
+#version 410
 
 
 uniform mat4 camera2clip_matrix;
 
-
-layout(location=0) in vec2 position_in;
-layout(location=1) in vec3 color_in;
+in vec2 position_in;
+in vec3 color_in;
 
 
 out vec4 vertex_color;
@@ -15,5 +14,5 @@ void main(void)
 {
 	vertex_color= vec4(color_in, 1.0);
 
-	gl_Position= camera2clip_matrix* vec4(position_in.xy, 0.0, 1.0);
+	gl_Position= camera2clip_matrix* vec4(position_in.rg, 0.0, 1.0);
 }
