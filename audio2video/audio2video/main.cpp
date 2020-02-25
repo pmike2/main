@@ -335,7 +335,7 @@ void init() {
 	lights_ubo= new LightsUBO(prog_3d); // heu ca va marcher ca ???
 	lights_ubo->add_light(LIGHT_PARAMS_1, prog_repere, glm::vec3(0.0f, 0.0f, 5000.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 
-	arial_font= new Font(prog_font, "../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	arial_font= new Font(prog_font, "../../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	audio= new Audio();
 	visu_wave= new VisuWave(prog_2d, audio);
 	visu_spectrum= new VisuSpectrum(prog_3d, prog_repere, audio);

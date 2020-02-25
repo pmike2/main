@@ -222,10 +222,10 @@ void init() {
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
 	
 	// --------------------------------------------------------------------------
-	arial_font= new Font(prog_font, "../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	arial_font= new Font(prog_font, "../../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	input_state= new InputState();
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-	audio_project= new AudioProjectGL(prog_2d, screengl);
+	audio_project= new AudioProjectGL(prog_2d, arial_font, screengl);
 	drag_drop("../data/record_afx.wav");
 	drag_drop("../data/record_autechre.wav");
 	drag_drop("../data/record_beat_simple.wav");

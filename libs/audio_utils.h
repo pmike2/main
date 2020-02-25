@@ -21,6 +21,7 @@
 
 #include "input_state.h"
 #include "gl_utils.h"
+#include "font.h"
 
 
 
@@ -36,6 +37,10 @@ const float INIT_INTERVAL_SAMPLE= 0.001f;
 const float MIN_INTERVAL_SAMPLE= 0.00001f;
 const float MAX_INTERVAL_SAMPLE= 0.01f;
 
+const unsigned int MAX_GL_N_SAMPLES= 16384;
+
+enum SAMPLE_SELECTION_MODE {NO_SELECTION, MOVING_FIRST, MOVING_LAST};
+
 
 // ------------------------------------------------------------------------------------
 class StereoSample {
@@ -45,6 +50,7 @@ public:
 	void load_from_file(std::string file_path);
 
 
+	std::string _file_path;
 	unsigned long _n_samples;
 	float * _data_left;
 	float * _data_right;
@@ -102,6 +108,8 @@ public:
 	bool mouse_button_down(InputState * input_state);
 	bool mouse_button_up(InputState * input_state);
 	bool key_down(InputState * input_state, SDL_Keycode key);
+	unsigned long gl2sampleidx(float x);
+	float sampleidx2gl(unsigned long idx);
 
 
 	GLuint _prog_draw;
@@ -118,14 +126,14 @@ public:
 	unsigned long _n_samples;
 	bool _mouse_down;
 	unsigned long _first_selection, _last_selection;
-	bool _is_selection;
+	SAMPLE_SELECTION_MODE _selection_mode;
 };
 
 
 class AudioProjectGL {
 public:
 	AudioProjectGL();
-	AudioProjectGL(GLuint prog_draw_2d, ScreenGL * screengl);
+	AudioProjectGL(GLuint prog_draw_2d, Font * arial_font, ScreenGL * screengl);
 	~AudioProjectGL();
 	void add_sample(std::string file_path);
 	void add_track();
@@ -140,6 +148,7 @@ public:
 	ScreenGL * _screengl;	
 	AudioProject * _audio_project;
 	std::vector<StereoSampleGL *> _samples;
+	Font * _arial_font;
 };
 
 

@@ -17,13 +17,13 @@
 class ScreenGL {
 public:
 	ScreenGL();
-	ScreenGL(unsigned int screen_width, unsigned int screen_height, float gl_width, float gl_height);
+	ScreenGL(int screen_width, int screen_height, float gl_width, float gl_height);
 	~ScreenGL();
-	void screen2gl(unsigned int i, unsigned int j, float & x, float & y);
-	void gl2screen(float x, float y, unsigned int & i, unsigned int & j);
+	void screen2gl(int i, int j, float & x, float & y);
+	void gl2screen(float x, float y, int & i, int & j);
 
 
-	unsigned int _screen_width, _screen_height;
+	int _screen_width, _screen_height;
 	float _gl_width, _gl_height;
 };
 

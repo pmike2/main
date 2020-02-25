@@ -29,8 +29,8 @@ pa_utils.o: $(internal)/pa_utils.cpp $(internal)/pa_utils.h
 input_state.o: $(internal)/input_state.cpp $(internal)/input_state.h
 	g++ -c $(internal)/input_state.cpp $(CXXFLAGS)
 
-audio_utils.o: $(internal)/audio_utils.cpp $(internal)/audio_utils.h $(internal)/input_state.h $(internal)/gl_utils.h
-	g++ -c $(internal)/audio_utils.cpp $(internal)/input_state.cpp $(internal)/gl_utils.cpp $(CXXFLAGS)
+audio_utils.o: $(internal)/audio_utils.cpp $(internal)/audio_utils.h $(internal)/input_state.h $(internal)/gl_utils.h $(internal)/font.h
+	g++ -c $(internal)/audio_utils.cpp $(internal)/input_state.cpp $(internal)/gl_utils.cpp $(internal)/font.cpp $(CXXFLAGS)
 
 clean:
 	rm -rf *.o

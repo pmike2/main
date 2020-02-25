@@ -3,7 +3,7 @@
 using namespace std;
 
 
-StereoSample::StereoSample() : _data_left(0), _data_right(0), _n_samples(0) {
+StereoSample::StereoSample() : _data_left(0), _data_right(0), _n_samples(0), _file_path("") {
 
 }
 
@@ -17,6 +17,7 @@ StereoSample::~StereoSample() {
 void StereoSample::load_from_file(string file_path) {
 	SF_INFO info;
 	SNDFILE * sound_file= sf_open(file_path.c_str(), SFM_READ, &info);
+	_file_path= file_path;
 	
 	if (!sound_file) {
 		cerr << "ERREUR sf_open : " << file_path << endl;
@@ -132,7 +133,7 @@ StereoSampleGL::StereoSampleGL() {
 
 StereoSampleGL::StereoSampleGL(GLuint prog_draw_2d, StereoSample * ss, ScreenGL * screengl, unsigned int x, unsigned int y, unsigned int w, unsigned int h) :
 	 _prog_draw(prog_draw_2d), _first_sample(0), _last_sample(0), _n_samples(0), _interval_sample(INIT_INTERVAL_SAMPLE), _ss(ss), _screengl(screengl), _mouse_down(false),
-	 _first_selection(0), _last_selection(0), _is_selection(false)
+	 _first_selection(0), _last_selection(0), _selection_mode(NO_SELECTION)
 {
 	glGenBuffers(1, &_buffer_left);
 	glGenBuffers(1, &_buffer_right);
@@ -173,7 +174,7 @@ StereoSampleGL::StereoSampleGL(GLuint prog_draw_2d, StereoSample * ss, ScreenGL 
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, _buffer_background);
-	glBufferData(GL_ARRAY_BUFFER, 6* 6* sizeof(float), data_background, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 6* 6* sizeof(float), data_background, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// lines --------------------------------------------------
@@ -190,7 +191,7 @@ StereoSampleGL::StereoSampleGL(GLuint prog_draw_2d, StereoSample * ss, ScreenGL 
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, _buffer_lines);
-	glBufferData(GL_ARRAY_BUFFER, 6* 6* sizeof(float), data_lines, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 6* 6* sizeof(float), data_lines, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// -------------------------------------------------------
@@ -289,7 +290,7 @@ void StereoSampleGL::draw() {
 	glUseProgram(0);
 
 	// selection -----------------------------------------------------------------------------------
-	if (_is_selection) {
+	if (_selection_mode!= NO_SELECTION) {
 		glUseProgram(_prog_draw);
 		glBindBuffer(GL_ARRAY_BUFFER, _buffer_selection);
 
@@ -317,9 +318,6 @@ void StereoSampleGL::update_data() {
 		return;
 	}
 	
-	if (_first_sample< 0) {
-		_first_sample= 0;
-	}
 	if (_first_sample>= _ss->_n_samples) {
 		_first_sample= _ss->_n_samples- 1;
 	}
@@ -330,22 +328,38 @@ void StereoSampleGL::update_data() {
 		_last_sample= _ss->_n_samples- 1;
 	}
 
-	_n_samples= _last_sample- _first_sample;
-
-	//cout << "_interval_sample=" << _interval_sample << " ; _first_sample=" << _first_sample << " ; _last_sample=" << _last_sample << " ; _n_samples=" << _n_samples << "\n";
-
-	if (_n_samples<= 0) {
+	if (_last_sample<= _first_sample) {
 		_n_samples= 0;
 		return;
 	}
 
-	// left channel ------------------------------------------------
-	float * _data_left= new float[_n_samples* 6];
+	_n_samples= _last_sample- _first_sample;
 
+	// _n_samples peut etre grand => rame à l'affichage si on ne le réduit pas
+	unsigned long n_samples_ini= _n_samples;
+	if (_n_samples> MAX_GL_N_SAMPLES) {
+		_n_samples= MAX_GL_N_SAMPLES;
+	}
+
+	//cout << "_interval_sample=" << _interval_sample << " ; _first_sample=" << _first_sample << " ; _last_sample=" << _last_sample << " ; _n_samples=" << _n_samples << "\n";
+
+
+	float * _data_left = new float[_n_samples* 6];
+	float * _data_right= new float[_n_samples* 6];
+	float x, y;
+
+	// left channel ------------------------------------------------
 	for (unsigned long i=0; i<_n_samples; ++i) {
-		float x= _x+ _interval_sample* (float)(i);
-		float y= _y+ 0.75f* _h;
-		y+= _ss->_data_left[_first_sample+ i]* _h* 0.25f;
+		if (n_samples_ini!= _n_samples) {
+			x= _x+ _interval_sample* (float)(i)* float(n_samples_ini- 1)/ (float)(_n_samples- 1);
+			y= _y+ 0.75f* _h;
+			y+= _ss->_data_left[_first_sample+ ((n_samples_ini- 1)* i)/ (_n_samples- 1)]* _h* 0.25f;
+		}
+		else {
+			x= _x+ _interval_sample* (float)(i);
+			y= _y+ 0.75f* _h;
+			y+= _ss->_data_left[_first_sample+ i]* _h* 0.25f;
+		}
 		
 		_data_left[6* i+ 0]= x;
 		_data_left[6* i+ 1]= y;
@@ -360,12 +374,17 @@ void StereoSampleGL::update_data() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// right channel ------------------------------------------------
-	float * _data_right= new float[_n_samples* 6];
-
 	for (unsigned long i=0; i<_n_samples; ++i) {
-		float x= _x+ _interval_sample* (float)(i);
-		float y= _y+ 0.25f* _h;
-		y+= _ss->_data_right[_first_sample+ i]* _h* 0.25f;
+		if (n_samples_ini!= _n_samples) {
+			x= _x+ _interval_sample* (float)(i)* float(n_samples_ini- 1)/ (float)(_n_samples- 1);
+			y= _y+ 0.25f* _h;
+			y+= _ss->_data_right[_first_sample+ ((n_samples_ini- 1)* i)/ (_n_samples- 1)]* _h* 0.25f;
+		}
+		else {
+			x= _x+ _interval_sample* (float)(i);
+			y= _y+ 0.25f* _h;
+			y+= _ss->_data_right[_first_sample+ i]* _h* 0.25f;
+		}
 		
 		_data_right[6* i+ 0]= x;
 		_data_right[6* i+ 1]= y;
@@ -382,14 +401,9 @@ void StereoSampleGL::update_data() {
 
 
 void StereoSampleGL::update_selection() {
-	//cout << "_is_selection=" << _is_selection << " ; _first_selection=" << _first_selection << " ; _last_selection=" << _last_selection << "\n";
+	//cout << _first_selection=" << _first_selection << " ; _last_selection=" << _last_selection << "\n";
 
-	if (!_is_selection) {
-		return;
-	}
-
-	if (_first_selection== _last_selection) {
-		_is_selection= false;
+	if (_selection_mode== NO_SELECTION) {
 		return;
 	}
 
@@ -465,13 +479,22 @@ void StereoSampleGL::zoom_all() {
 bool StereoSampleGL::mouse_motion(InputState * input_state) {
 	float x, y;
 	_screengl->screen2gl(input_state->_x, input_state->_y, x, y);
+	if ((x< _x) || (x>= _x+ _w) || (y< _y) || (y>= _y+ _h)) {
+		return false;
+	}
 
 	if (_mouse_down) {
 		if (input_state->_left_mouse) {
-			_last_selection= _first_sample+ (unsigned long)((x- _x)/ _interval_sample);
-			_is_selection= true;
-			update_selection();
-			return true;
+			if (_selection_mode== MOVING_FIRST) {
+				_first_selection= gl2sampleidx(x);
+				update_selection();
+				return true;
+			}
+			else if (_selection_mode== MOVING_LAST) {
+				_last_selection= gl2sampleidx(x);
+				update_selection();
+				return true;
+			}
 		}
 		else if (input_state->_middle_mouse) {
 			
@@ -486,28 +509,48 @@ bool StereoSampleGL::mouse_motion(InputState * input_state) {
 bool StereoSampleGL::mouse_button_down(InputState * input_state) {
 	float x, y;
 	_screengl->screen2gl(input_state->_x, input_state->_y, x, y);
-	//cout << x << " ; " << y << "\n";
+	//cout << _ss->_file_path << " ; " << x << " ; " << y << "\n";
+	if ((x< _x) || (x>= _x+ _w) || (y< _y) || (y>= _y+ _h)) {
+		return false;
+	}
 
 	if (_mouse_down) {
 		return false;
 	}
 
-	if ((x>=_x) && (x< _x+ _w) && (y>=_y) && (y< _y+ _h)) {
-		_mouse_down= true;
-		if (input_state->_left_mouse) {
-			_first_selection= _first_sample+ (unsigned long)((x- _x)/ _interval_sample);
-			_last_selection= _first_selection;
-			_is_selection= false;
-			//cout << _first_selection << "\n";
-			//update_selection();
+	unsigned int TRESH_CHANGE_SELECTION= 20;
+	int x_first, x_last, y_tmp;
+	_screengl->gl2screen(sampleidx2gl(_first_selection), 0.0f, x_first, y_tmp);
+	_screengl->gl2screen(sampleidx2gl(_last_selection), 0.0f, x_last, y_tmp);
+
+	_mouse_down= true;
+	if (input_state->_left_mouse) {
+
+		if ((_selection_mode!= NO_SELECTION) && (abs(input_state->_x- x_first)< TRESH_CHANGE_SELECTION)) {
+			_selection_mode= MOVING_FIRST;
 		}
-		return true;
+		else if ((_selection_mode!= NO_SELECTION) && (abs(input_state->_x- x_last)< TRESH_CHANGE_SELECTION)) {
+			_selection_mode= MOVING_LAST;
+		}
+		else {
+			_first_selection= gl2sampleidx(x);
+			_last_selection= _first_selection;
+			_selection_mode= MOVING_LAST;
+			update_selection();
+		}
 	}
-	return false;
+
+	return true;
 }
 
 
 bool StereoSampleGL::mouse_button_up(InputState * input_state) {
+	float x, y;
+	_screengl->screen2gl(input_state->_x, input_state->_y, x, y);
+	if ((x< _x) || (x>= _x+ _w) || (y< _y) || (y>= _y+ _h)) {
+		return false;
+	}
+
 	_mouse_down= false;
 	return true;
 }
@@ -578,13 +621,23 @@ bool StereoSampleGL::key_down(InputState * input_state, SDL_Keycode key) {
 }
 
 
+unsigned long StereoSampleGL::gl2sampleidx(float x) {
+	return _first_sample+ (unsigned long)((x- _x)/ _interval_sample);
+}
+
+
+float StereoSampleGL::sampleidx2gl(unsigned long idx) {
+	return _x+ (float)(idx- _first_sample)* _interval_sample;
+}
+
+
 // ----------------------------------------------------------------------------------------
 AudioProjectGL::AudioProjectGL() {
 
 }
 
 
-AudioProjectGL::AudioProjectGL(GLuint prog_draw_2d, ScreenGL * screengl) : _prog_draw(prog_draw_2d), _screengl(screengl) {
+AudioProjectGL::AudioProjectGL(GLuint prog_draw_2d, Font * arial_font, ScreenGL * screengl) : _prog_draw(prog_draw_2d), _arial_font(arial_font), _screengl(screengl) {
 	_audio_project= new AudioProject();
 }
 
@@ -614,6 +667,15 @@ void AudioProjectGL::draw() {
 	for (auto sample : _samples) {
 		sample->draw();
 	}
+
+	ostringstream font_str;
+	float font_scale= 0.6f;
+	glm::vec3 font_color= glm::vec3(1.0f, 1.0f, 0.0f);
+
+	font_str.str("");
+	font_str << "prout";
+	_arial_font->draw(font_str.str(), 10.0f, 15.0f, font_scale, font_color);
+
 }
 
 
