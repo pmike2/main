@@ -58,12 +58,35 @@ void StereoSample::load_from_file(string file_path) {
 
 
 // -------------------------------------------------------------------------------------------------------
+SamplesPool::SamplesPool() {
+
+}
+
+
+SamplesPool::~SamplesPool() {
+	for (auto ss : _samples) {
+		delete ss;
+	}
+	_samples.clear();
+}
+
+
+void SamplesPool::add_sample(string file_path) {
+	StereoSample * ss= new StereoSample();
+	ss->load_from_file(file_path);
+	_samples.push_back(ss);
+}
+
+
+// -------------------------------------------------------------------------------------------------------
 AudioMark::AudioMark() {
 
 }
 
 
-AudioMark::AudioMark(unsigned long track_sample, int idx_sample, unsigned long sample_sample) : _track_sample(track_sample), _idx_sample(idx_sample), _sample_sample(sample_sample) {
+AudioMark::AudioMark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample) :
+	_track_sample(track_sample), _idx_sample(idx_sample), _first_sample(first_sample), _last_sample(last_sample)
+{
 
 }
 
@@ -79,31 +102,85 @@ StereoTrack::StereoTrack() {
 }
 
 
+StereoTrack::StereoTrack(SamplesPool * sp) : _sp(sp), _n_samples(0), _data_left(0), _data_right(0) {
+	
+}
+
+
 StereoTrack::~StereoTrack() {
 	for (auto mark : _marks) {
 		delete mark;
 	}
 	_marks.clear();
+
+	delete[] _data_left;
+	delete[] _data_right;
 }
 
 
-void StereoTrack::add_mark(unsigned long track_sample, int idx_sample, unsigned long sample_sample) {
-	AudioMark * mark= new AudioMark(track_sample, idx_sample, sample_sample);
+void StereoTrack::add_mark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample) {
+	if (idx_sample>= _sp->_samples.size()) {
+		cout << "Erreur add_mark : idx_sample=" << idx_sample << ">=" << "_sp->_samples.size()=" << _sp->_samples.size() << endl;
+		return;
+	}
+	if (first_sample>= _sp->_samples[idx_sample]->_n_samples) {
+		cout << "Erreur add_mark : first_sample=" << first_sample << ">=" << "_sp->_samples[idx_sample]->_n_samples=" << _sp->_samples[idx_sample]->_n_samples << endl;
+		return;
+	}
+	if (last_sample>= _sp->_samples[idx_sample]->_n_samples) {
+		cout << "Erreur add_mark : last_sample=" << last_sample << ">=" << "_sp->_samples[idx_sample]->_n_samples=" << _sp->_samples[idx_sample]->_n_samples << endl;
+		return;
+	}
+
+	AudioMark * mark= new AudioMark(track_sample, idx_sample, first_sample, last_sample);
 	_marks.push_back(mark);
+	update_data();
+}
+
+
+void StereoTrack::update_data() {
+	if (_data_left!= 0) {
+		delete[] _data_left;
+	}
+	if (_data_right!= 0) {
+		delete[] _data_right;
+	}
+
+	if (_marks.empty()) {
+		return;
+	}
+
+	_n_samples= 0;
+	for (auto mark : _marks) {
+		unsigned long last_track_sample= mark->_track_sample+ mark->_last_sample+ 1- mark->_first_sample; // last inclus -> +1
+		if (last_track_sample> _n_samples) {
+			_n_samples= last_track_sample;
+		}
+	}
+
+	_data_left= new float[_n_samples](); // () -> init des valeurs à 0
+	_data_right= new float[_n_samples]();
+
+	cout << _n_samples << "\n";
+
+	for (auto mark : _marks) {
+		for (unsigned long i=0; i<=mark->_last_sample- mark->_first_sample; ++i) {
+			_data_left[ mark->_track_sample+ i]= _sp->_samples[mark->_idx_sample]->_data_left[ mark->_first_sample+ i];
+			_data_right[mark->_track_sample+ i]= _sp->_samples[mark->_idx_sample]->_data_right[mark->_first_sample+ i];
+		}
+	}
+	
 }
 
 
 // -------------------------------------------------------------------------------------------------------
 AudioProject::AudioProject() {
-
+	_sp= new SamplesPool();
 }
 
 
 AudioProject::~AudioProject() {
-	for (auto ss : _samples) {
-		delete ss;
-	}
-	_samples.clear();
+	delete _sp;
 
 	for (auto track : _tracks) {
 		delete track;
@@ -112,27 +189,25 @@ AudioProject::~AudioProject() {
 }
 
 
-void AudioProject::add_sample(string file_path) {
-	StereoSample * ss= new StereoSample();
-	ss->load_from_file(file_path);
-	_samples.push_back(ss);
-}
-
-
 void AudioProject::add_track() {
-	StereoTrack * track= new StereoTrack();
+	StereoTrack * track= new StereoTrack(_sp);
 	_tracks.push_back(track);
 }
 
 
+void AudioProject::add_sample(string file_path) {
+	_sp->add_sample(file_path);
+}
+
+
 // -------------------------------------------------------------------------------------------------------
-StereoSampleGL::StereoSampleGL() {
+TrackGL::TrackGL() {
 
 }
 
 
-StereoSampleGL::StereoSampleGL(GLuint prog_draw_2d, StereoSample * ss, ScreenGL * screengl, unsigned int x, unsigned int y, unsigned int w, unsigned int h) :
-	 _prog_draw(prog_draw_2d), _first_sample(0), _last_sample(0), _n_samples(0), _interval_sample(INIT_INTERVAL_SAMPLE), _ss(ss), _screengl(screengl), _mouse_down(false),
+TrackGL::TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, unsigned int x, unsigned int y, unsigned int w, unsigned int h) :
+	 _prog_draw(prog_draw_2d), _first_sample(0), _last_sample(0), _n_samples(0), _interval_sample(INIT_INTERVAL_SAMPLE), _st(st), _screengl(screengl), _mouse_down(false),
 	 _first_selection(0), _last_selection(0), _selection_mode(NO_SELECTION)
 {
 	glGenBuffers(1, &_buffer_left);
@@ -199,15 +274,12 @@ StereoSampleGL::StereoSampleGL(GLuint prog_draw_2d, StereoSample * ss, ScreenGL 
 }
 
 
-StereoSampleGL::~StereoSampleGL() {
+TrackGL::~TrackGL() {
 
 }
 
 
-void StereoSampleGL::draw() {
-	if (_ss->_n_samples== 0) {
-		return;
-	}
+void TrackGL::draw() {
 	
 	// background -----------------------------------------------------------------------------------
 	glUseProgram(_prog_draw);
@@ -248,6 +320,11 @@ void StereoSampleGL::draw() {
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
+
+	// ----------------------------------------------------------------------------------------------
+	if (_st->_n_samples== 0) {
+		return;
+	}
 
 	// buffer_left -----------------------------------------------------------------------------------
 	glUseProgram(_prog_draw);
@@ -313,19 +390,19 @@ void StereoSampleGL::draw() {
 }
 
 
-void StereoSampleGL::update_data() {
-	if (_ss->_n_samples== 0) {
+void TrackGL::update_data() {
+	if (_st->_n_samples== 0) {
 		return;
 	}
 	
-	if (_first_sample>= _ss->_n_samples) {
-		_first_sample= _ss->_n_samples- 1;
+	if (_first_sample>= _st->_n_samples) {
+		_first_sample= _st->_n_samples- 1;
 	}
 	
 	_last_sample= _first_sample+ (unsigned long)(round(_w/ _interval_sample));
 
-	if (_last_sample>= _ss->_n_samples) {
-		_last_sample= _ss->_n_samples- 1;
+	if (_last_sample>= _st->_n_samples) {
+		_last_sample= _st->_n_samples- 1;
 	}
 
 	if (_last_sample<= _first_sample) {
@@ -353,12 +430,12 @@ void StereoSampleGL::update_data() {
 		if (n_samples_ini!= _n_samples) {
 			x= _x+ _interval_sample* (float)(i)* float(n_samples_ini- 1)/ (float)(_n_samples- 1);
 			y= _y+ 0.75f* _h;
-			y+= _ss->_data_left[_first_sample+ ((n_samples_ini- 1)* i)/ (_n_samples- 1)]* _h* 0.25f;
+			y+= _st->_data_left[_first_sample+ ((n_samples_ini- 1)* i)/ (_n_samples- 1)]* _h* 0.25f;
 		}
 		else {
 			x= _x+ _interval_sample* (float)(i);
 			y= _y+ 0.75f* _h;
-			y+= _ss->_data_left[_first_sample+ i]* _h* 0.25f;
+			y+= _st->_data_left[_first_sample+ i]* _h* 0.25f;
 		}
 		
 		_data_left[6* i+ 0]= x;
@@ -378,12 +455,12 @@ void StereoSampleGL::update_data() {
 		if (n_samples_ini!= _n_samples) {
 			x= _x+ _interval_sample* (float)(i)* float(n_samples_ini- 1)/ (float)(_n_samples- 1);
 			y= _y+ 0.25f* _h;
-			y+= _ss->_data_right[_first_sample+ ((n_samples_ini- 1)* i)/ (_n_samples- 1)]* _h* 0.25f;
+			y+= _st->_data_right[_first_sample+ ((n_samples_ini- 1)* i)/ (_n_samples- 1)]* _h* 0.25f;
 		}
 		else {
 			x= _x+ _interval_sample* (float)(i);
 			y= _y+ 0.25f* _h;
-			y+= _ss->_data_right[_first_sample+ i]* _h* 0.25f;
+			y+= _st->_data_right[_first_sample+ i]* _h* 0.25f;
 		}
 		
 		_data_right[6* i+ 0]= x;
@@ -400,7 +477,7 @@ void StereoSampleGL::update_data() {
 }
 
 
-void StereoSampleGL::update_selection() {
+void TrackGL::update_selection() {
 	//cout << _first_selection=" << _first_selection << " ; _last_selection=" << _last_selection << "\n";
 
 	if (_selection_mode== NO_SELECTION) {
@@ -470,27 +547,29 @@ void StereoSampleGL::update_selection() {
 }
 
 
-void StereoSampleGL::zoom_all() {
-	_interval_sample= _w/ (float)(_ss->_n_samples);
+void TrackGL::zoom_all() {
+	_interval_sample= _w/ (float)(_st->_n_samples);
 	update_data();
 }
 
 
-bool StereoSampleGL::mouse_motion(InputState * input_state) {
-	float x, y;
-	_screengl->screen2gl(input_state->_x, input_state->_y, x, y);
-	if ((x< _x) || (x>= _x+ _w) || (y< _y) || (y>= _y+ _h)) {
+bool TrackGL::mouse_motion(InputState * input_state) {
+	if (!is_inbox(input_state->_x, input_state->_y)) {
 		return false;
 	}
 
 	if (_mouse_down) {
 		if (input_state->_left_mouse) {
 			if (_selection_mode== MOVING_FIRST) {
+				float x, y;
+				_screengl->screen2gl(input_state->_x, input_state->_y, x, y);
 				_first_selection= gl2sampleidx(x);
 				update_selection();
 				return true;
 			}
 			else if (_selection_mode== MOVING_LAST) {
+				float x, y;
+				_screengl->screen2gl(input_state->_x, input_state->_y, x, y);
 				_last_selection= gl2sampleidx(x);
 				update_selection();
 				return true;
@@ -506,11 +585,8 @@ bool StereoSampleGL::mouse_motion(InputState * input_state) {
 }
 
 
-bool StereoSampleGL::mouse_button_down(InputState * input_state) {
-	float x, y;
-	_screengl->screen2gl(input_state->_x, input_state->_y, x, y);
-	//cout << _ss->_file_path << " ; " << x << " ; " << y << "\n";
-	if ((x< _x) || (x>= _x+ _w) || (y< _y) || (y>= _y+ _h)) {
+bool TrackGL::mouse_button_down(InputState * input_state) {
+	if (!is_inbox(input_state->_x, input_state->_y)) {
 		return false;
 	}
 
@@ -520,8 +596,10 @@ bool StereoSampleGL::mouse_button_down(InputState * input_state) {
 
 	unsigned int TRESH_CHANGE_SELECTION= 20;
 	int x_first, x_last, y_tmp;
+	float x, y;
 	_screengl->gl2screen(sampleidx2gl(_first_selection), 0.0f, x_first, y_tmp);
 	_screengl->gl2screen(sampleidx2gl(_last_selection), 0.0f, x_last, y_tmp);
+	_screengl->screen2gl(input_state->_x, input_state->_y, x, y);
 
 	_mouse_down= true;
 	if (input_state->_left_mouse) {
@@ -544,19 +622,33 @@ bool StereoSampleGL::mouse_button_down(InputState * input_state) {
 }
 
 
-bool StereoSampleGL::mouse_button_up(InputState * input_state) {
-	float x, y;
-	_screengl->screen2gl(input_state->_x, input_state->_y, x, y);
-	if ((x< _x) || (x>= _x+ _w) || (y< _y) || (y>= _y+ _h)) {
+bool TrackGL::mouse_button_up(InputState * input_state) {
+	if (!is_inbox(input_state->_x, input_state->_y)) {
 		return false;
 	}
 
+	if (_first_selection> _last_selection) {
+		unsigned long selection_tmp= _first_selection;
+		_first_selection= _last_selection;
+		_last_selection= selection_tmp;
+	}
+
+	if (_first_selection< _last_selection) {
+		_selection_mode= SELECTION;
+	}
+	else {
+		_selection_mode= NO_SELECTION;
+	}
 	_mouse_down= false;
 	return true;
 }
 
 
-bool StereoSampleGL::key_down(InputState * input_state, SDL_Keycode key) {
+bool TrackGL::key_down(InputState * input_state, SDL_Keycode key) {
+	if (!is_inbox(input_state->_x, input_state->_y)) {
+		return false;
+	}
+
 	if (key== SDLK_UP) {
 		_interval_sample*= 1.0f+ ZOOM_FACTOR;
 		if (_interval_sample> MAX_INTERVAL_SAMPLE) {
@@ -567,8 +659,8 @@ bool StereoSampleGL::key_down(InputState * input_state, SDL_Keycode key) {
 				// on veut zoomer sur le centre de la fenetre, il faut donc modifier _first_sample
 				unsigned long offset= (unsigned long)(_w* 0.5f* ZOOM_FACTOR/ _interval_sample);
 				_first_sample+= offset;
-				if (_first_sample>= _ss->_n_samples) {
-					_first_sample= _ss->_n_samples- 1;
+				if (_first_sample>= _st->_n_samples) {
+					_first_sample= _st->_n_samples- 1;
 				}
 			}
 		}
@@ -609,8 +701,8 @@ bool StereoSampleGL::key_down(InputState * input_state, SDL_Keycode key) {
 	else if (key== SDLK_RIGHT) {
 		unsigned long step= (unsigned long)(MOVE_FACTOR/ _interval_sample);
 		_first_sample+= step;
-		if (_first_sample>= _ss->_n_samples) {
-			_first_sample= _ss->_n_samples- 1;
+		if (_first_sample>= _st->_n_samples) {
+			_first_sample= _st->_n_samples- 1;
 		}
 		update_data();
 		update_selection();
@@ -621,13 +713,29 @@ bool StereoSampleGL::key_down(InputState * input_state, SDL_Keycode key) {
 }
 
 
-unsigned long StereoSampleGL::gl2sampleidx(float x) {
+unsigned long TrackGL::gl2sampleidx(float x) {
 	return _first_sample+ (unsigned long)((x- _x)/ _interval_sample);
 }
 
 
-float StereoSampleGL::sampleidx2gl(unsigned long idx) {
+float TrackGL::sampleidx2gl(unsigned long idx) {
 	return _x+ (float)(idx- _first_sample)* _interval_sample;
+}
+
+
+bool TrackGL::is_inbox(int i, int j) {
+	float x, y;
+	_screengl->screen2gl(i, j, x, y);
+	if ((x< _x) || (x>= _x+ _w) || (y< _y) || (y>= _y+ _h)) {
+		return false;
+	}
+	return true;
+}
+
+
+void TrackGL::add_mark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample) {
+	_st->add_mark(track_sample, idx_sample, first_sample, last_sample);
+	update_data();
 }
 
 
@@ -637,35 +745,35 @@ AudioProjectGL::AudioProjectGL() {
 }
 
 
-AudioProjectGL::AudioProjectGL(GLuint prog_draw_2d, Font * arial_font, ScreenGL * screengl) : _prog_draw(prog_draw_2d), _arial_font(arial_font), _screengl(screengl) {
+AudioProjectGL::AudioProjectGL(GLuint prog_draw_2d, Font * arial_font, ScreenGL * screengl) : _prog_draw(prog_draw_2d), _arial_font(arial_font), _screengl(screengl), _copy_idx(-1) {
 	_audio_project= new AudioProject();
 }
 
 
 AudioProjectGL::~AudioProjectGL() {
-	for (auto sample : _samples) {
-		delete sample;
+	for (auto track : _tracks) {
+		delete track;
 	}
-	_samples.clear();
+	_tracks.clear();
 	delete _audio_project;
 }
 
 
 void AudioProjectGL::add_sample(string file_path) {
 	_audio_project->add_sample(file_path);
-	StereoSampleGL * ssgl= new StereoSampleGL(_prog_draw, _audio_project->_samples.back(), _screengl, 10, _audio_project->_samples.size()* 150, 1000, 100);
-	_samples.push_back(ssgl);
 }
 
 
 void AudioProjectGL::add_track() {
 	_audio_project->add_track();
+	TrackGL * track= new TrackGL(_prog_draw, _audio_project->_tracks.back(), _screengl, 10, _audio_project->_tracks.size()* 150, 1000, 100);
+	_tracks.push_back(track);
 }
 
 
 void AudioProjectGL::draw() {
-	for (auto sample : _samples) {
-		sample->draw();
+	for (auto track : _tracks) {
+		track->draw();
 	}
 
 	ostringstream font_str;
@@ -680,8 +788,8 @@ void AudioProjectGL::draw() {
 
 
 bool AudioProjectGL::mouse_motion(InputState * input_state) {
-	for (auto sample : _samples) {
-		if (sample->mouse_motion(input_state)) {
+	for (auto track : _tracks) {
+		if (track->mouse_motion(input_state)) {
 			return true;
 		}
 	}
@@ -690,8 +798,8 @@ bool AudioProjectGL::mouse_motion(InputState * input_state) {
 
 
 bool AudioProjectGL::mouse_button_down(InputState * input_state) {
-	for (auto sample : _samples) {
-		if (sample->mouse_button_down(input_state)) {
+	for (auto track : _tracks) {
+		if (track->mouse_button_down(input_state)) {
 			return true;
 		}
 	}
@@ -700,8 +808,8 @@ bool AudioProjectGL::mouse_button_down(InputState * input_state) {
 
 
 bool AudioProjectGL::mouse_button_up(InputState * input_state) {
-	for (auto sample : _samples) {
-		if (sample->mouse_button_up(input_state)) {
+	for (auto track : _tracks) {
+		if (track->mouse_button_up(input_state)) {
 			return true;
 		}
 	}
@@ -710,8 +818,28 @@ bool AudioProjectGL::mouse_button_up(InputState * input_state) {
 
 
 bool AudioProjectGL::key_down(InputState * input_state, SDL_Keycode key) {
-	for (auto sample : _samples) {
-		if (sample->key_down(input_state, key)) {
+	if (key== SDLK_c) {
+		for (unsigned int idx_track=0; idx_track<_tracks.size(); ++idx_track) {
+			if ((_tracks[idx_track]->is_inbox(input_state->_x, input_state->_y)) && (_tracks[idx_track]->_selection_mode== SELECTION)) {
+				_copy_idx= idx_track;
+				return true;
+			}
+		}
+	}
+	else if (key== SDLK_p) {
+		if (_copy_idx>= 0) {
+			for (unsigned int idx_track=0; idx_track<_tracks.size(); ++idx_track) {
+				if (_tracks[idx_track]->is_inbox(input_state->_x, input_state->_y)) {
+					cout << _tracks[idx_track]->_st->_n_samples << " ; " << _copy_idx << " ; " << _tracks[_copy_idx]->_first_selection << " ; " << _tracks[_copy_idx]->_last_selection << "\n";
+					_tracks[idx_track]->add_mark(_tracks[idx_track]->_st->_n_samples, _copy_idx, _tracks[_copy_idx]->_first_selection, _tracks[_copy_idx]->_last_selection);
+					return true;
+				}
+			}
+		}
+	}
+
+	for (auto track : _tracks) {
+		if (track->key_down(input_state, key)) {
 			//return true;
 		}
 	}
@@ -721,6 +849,8 @@ bool AudioProjectGL::key_down(InputState * input_state, SDL_Keycode key) {
 
 bool AudioProjectGL::drag_drop(string file_path) {
 	add_sample(file_path);
+	add_track();
+	_tracks.back()->add_mark(0, _audio_project->_sp->_samples.size()- 1, 0, _audio_project->_sp->_samples.back()->_n_samples- 1);
 
 	return true;
 }

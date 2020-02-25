@@ -39,7 +39,7 @@ const float MAX_INTERVAL_SAMPLE= 0.01f;
 
 const unsigned int MAX_GL_N_SAMPLES= 16384;
 
-enum SAMPLE_SELECTION_MODE {NO_SELECTION, MOVING_FIRST, MOVING_LAST};
+enum SAMPLE_SELECTION_MODE {NO_SELECTION, SELECTION, MOVING_FIRST, MOVING_LAST};
 
 
 // ------------------------------------------------------------------------------------
@@ -57,27 +57,45 @@ public:
 };
 
 
+class SamplesPool {
+public:
+	SamplesPool();
+	~SamplesPool();
+	void add_sample(std::string file_path);
+
+
+	std::vector<StereoSample *> _samples;
+};
+
+
 class AudioMark {
 public:
 	AudioMark();
-	AudioMark(unsigned long track_sample, int idx_sample, unsigned long sample_sample);
+	AudioMark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample);
 	~AudioMark();
 
 
 	unsigned long _track_sample;
-	int _idx_sample; // -1 == STOP
-	unsigned long _sample_sample;
+	unsigned int _idx_sample;
+	unsigned long _first_sample;
+	unsigned long _last_sample;
 };
 
 
 class StereoTrack {
 public:
 	StereoTrack();
+	StereoTrack(SamplesPool * sp);
 	~StereoTrack();
-	void add_mark(unsigned long track_sample, int idx_sample, unsigned long sample_sample);
+	void add_mark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample);
+	void update_data();
 
 
+	SamplesPool * _sp;
 	std::vector<AudioMark *> _marks;
+	unsigned long _n_samples;
+	float * _data_left;
+	float * _data_right;
 };
 
 
@@ -85,21 +103,21 @@ class AudioProject {
 public:
 	AudioProject();
 	~AudioProject();
-	void add_sample(std::string file_path);
 	void add_track();
+	void add_sample(std::string file_path);
 
 
-	std::vector<StereoSample *> _samples;
+	SamplesPool * _sp;
 	std::vector<StereoTrack *> _tracks;
 };
 
 
 // ------------------------------------------------------------------------------------
-class StereoSampleGL {
+class TrackGL {
 public:
-	StereoSampleGL();
-	StereoSampleGL(GLuint prog_draw_2d, StereoSample * ss, ScreenGL * screengl, unsigned int x, unsigned int y, unsigned int w, unsigned int h);
-	~StereoSampleGL();
+	TrackGL();
+	TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, unsigned int x, unsigned int y, unsigned int w, unsigned int h);
+	~TrackGL();
 	void draw();
 	void update_data();
 	void update_selection();
@@ -110,6 +128,8 @@ public:
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	unsigned long gl2sampleidx(float x);
 	float sampleidx2gl(unsigned long idx);
+	bool is_inbox(int i, int j);
+	void add_mark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample);
 
 
 	GLuint _prog_draw;
@@ -117,7 +137,7 @@ public:
 	GLuint _buffer_left, _buffer_right, _buffer_background, _buffer_lines, _buffer_selection;
 	float _camera2clip[16];
 
-	StereoSample * _ss;
+	StereoTrack * _st;
 	ScreenGL * _screengl;
 
 	float _x, _y, _w, _h;
@@ -135,8 +155,8 @@ public:
 	AudioProjectGL();
 	AudioProjectGL(GLuint prog_draw_2d, Font * arial_font, ScreenGL * screengl);
 	~AudioProjectGL();
-	void add_sample(std::string file_path);
 	void add_track();
+	void add_sample(std::string file_path);
 	void draw();
 	bool mouse_motion(InputState * input_state);
 	bool mouse_button_down(InputState * input_state);
@@ -147,8 +167,9 @@ public:
 	GLuint _prog_draw;
 	ScreenGL * _screengl;	
 	AudioProject * _audio_project;
-	std::vector<StereoSampleGL *> _samples;
+	std::vector<TrackGL *> _tracks;
 	Font * _arial_font;
+	int _copy_idx;
 };
 
 

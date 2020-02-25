@@ -228,7 +228,10 @@ void init() {
 	audio_project= new AudioProjectGL(prog_2d, arial_font, screengl);
 	drag_drop("../data/record_afx.wav");
 	drag_drop("../data/record_autechre.wav");
-	drag_drop("../data/record_beat_simple.wav");
+	//drag_drop("../data/record_beat_simple.wav");
+	audio_project->add_track();
+	audio_project->_tracks[2]->add_mark(0, 0, 100, 10000);
+	audio_project->_tracks[2]->add_mark(11000, 1, 100, 1000);
 
 	// ------------------------------------------------------------------------
 	err= Pa_Initialize();
