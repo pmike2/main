@@ -29,6 +29,7 @@ const float WAVE_COLOR[]= {0.3f, 0.3f, 0.7f, 0.7f};
 const float BACKGROUND_COLOR[]= {0.8f, 0.8f, 0.8f, 1.0f};
 const float LINES_COLOR[]= {0.2f, 0.2f, 0.2f, 1.0f};
 const float SELECTION_COLOR[]= {0.5f, 0.5f, 0.5f, 0.5f};
+const float MARK_COLOR[]= {0.5f, 0.7f, 0.7f, 0.5f};
 
 const float ZOOM_FACTOR= 0.05f;
 const float MOVE_FACTOR= 0.3f;
@@ -38,6 +39,8 @@ const float MIN_INTERVAL_SAMPLE= 0.00001f;
 const float MAX_INTERVAL_SAMPLE= 0.01f;
 
 const unsigned int MAX_GL_N_SAMPLES= 16384;
+
+const unsigned int N_BUFFERS= 6;
 
 enum SAMPLE_SELECTION_MODE {NO_SELECTION, SELECTION, MOVING_FIRST, MOVING_LAST};
 
@@ -119,8 +122,9 @@ public:
 	TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, unsigned int x, unsigned int y, unsigned int w, unsigned int h);
 	~TrackGL();
 	void draw();
-	void update_data();
+	void update_waveform();
 	void update_selection();
+	void update_marks();
 	void zoom_all();
 	bool mouse_motion(InputState * input_state);
 	bool mouse_button_down(InputState * input_state);
@@ -134,7 +138,7 @@ public:
 
 	GLuint _prog_draw;
 	GLint _camera2clip_loc, _position_loc, _diffuse_color_loc;
-	GLuint _buffer_left, _buffer_right, _buffer_background, _buffer_lines, _buffer_selection;
+	GLuint _buffers[N_BUFFERS];
 	float _camera2clip[16];
 
 	StereoTrack * _st;

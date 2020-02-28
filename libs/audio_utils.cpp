@@ -158,10 +158,8 @@ void StereoTrack::update_data() {
 		}
 	}
 
-	_data_left= new float[_n_samples](); // () -> init des valeurs à 0
+	_data_left = new float[_n_samples](); // () -> init des valeurs à 0
 	_data_right= new float[_n_samples]();
-
-	cout << _n_samples << "\n";
 
 	for (auto mark : _marks) {
 		for (unsigned long i=0; i<=mark->_last_sample- mark->_first_sample; ++i) {
@@ -169,7 +167,6 @@ void StereoTrack::update_data() {
 			_data_right[mark->_track_sample+ i]= _sp->_samples[mark->_idx_sample]->_data_right[mark->_first_sample+ i];
 		}
 	}
-	
 }
 
 
@@ -210,11 +207,7 @@ TrackGL::TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, uns
 	 _prog_draw(prog_draw_2d), _first_sample(0), _last_sample(0), _n_samples(0), _interval_sample(INIT_INTERVAL_SAMPLE), _st(st), _screengl(screengl), _mouse_down(false),
 	 _first_selection(0), _last_selection(0), _selection_mode(NO_SELECTION)
 {
-	glGenBuffers(1, &_buffer_left);
-	glGenBuffers(1, &_buffer_right);
-	glGenBuffers(1, &_buffer_background);
-	glGenBuffers(1, &_buffer_lines);
-	glGenBuffers(1, &_buffer_selection);
+	glGenBuffers(N_BUFFERS, _buffers);
 
 	glUseProgram(_prog_draw);
 	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
@@ -248,7 +241,7 @@ TrackGL::TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, uns
 		data_background[6* i+ 2]= BACKGROUND_COLOR[0]; data_background[6* i+ 3]= BACKGROUND_COLOR[1]; data_background[6* i+ 4]= BACKGROUND_COLOR[2]; data_background[6* i+ 5]= BACKGROUND_COLOR[3];
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_background);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
 	glBufferData(GL_ARRAY_BUFFER, 6* 6* sizeof(float), data_background, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -265,12 +258,12 @@ TrackGL::TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, uns
 		data_lines[6* i+ 2]= LINES_COLOR[0]; data_lines[6* i+ 3]= LINES_COLOR[1]; data_lines[6* i+ 4]= LINES_COLOR[2]; data_lines[6* i+ 5]= LINES_COLOR[3];
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_lines);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[1]);
 	glBufferData(GL_ARRAY_BUFFER, 6* 6* sizeof(float), data_lines, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// -------------------------------------------------------
-	update_data();
+	update_waveform();
 }
 
 
@@ -280,117 +273,76 @@ TrackGL::~TrackGL() {
 
 
 void TrackGL::draw() {
-	
-	// background -----------------------------------------------------------------------------------
 	glUseProgram(_prog_draw);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_background);
 
+	// background -----------------------------------------------------------------------------------
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
 	glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, _camera2clip);
-	
 	glEnableVertexAttribArray(_position_loc);
 	glEnableVertexAttribArray(_diffuse_color_loc);
-
 	glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
 	glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(2* sizeof(float)));
-
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
-	glDisableVertexAttribArray(_position_loc);
-	glDisableVertexAttribArray(_diffuse_color_loc);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
-
 	// lines -----------------------------------------------------------------------------------
-	glUseProgram(_prog_draw);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_lines);
-
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[1]);
 	glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, _camera2clip);
-	
 	glEnableVertexAttribArray(_position_loc);
 	glEnableVertexAttribArray(_diffuse_color_loc);
-
 	glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
 	glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(2* sizeof(float)));
-
 	glDrawArrays(GL_LINES, 0, 6);
 
-	glDisableVertexAttribArray(_position_loc);
-	glDisableVertexAttribArray(_diffuse_color_loc);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
-
 	// ----------------------------------------------------------------------------------------------
-	if (_st->_n_samples== 0) {
-		return;
-	}
-
-	// buffer_left -----------------------------------------------------------------------------------
-	glUseProgram(_prog_draw);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_left);
-
-	glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, _camera2clip);
-	
-	glEnableVertexAttribArray(_position_loc);
-	glEnableVertexAttribArray(_diffuse_color_loc);
-
-	glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-	glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(2* sizeof(float)));
-
-	glDrawArrays(GL_LINE_STRIP, 0, _n_samples);
-
-	glDisableVertexAttribArray(_position_loc);
-	glDisableVertexAttribArray(_diffuse_color_loc);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
-
-	// buffer_right -----------------------------------------------------------------------------------
-	glUseProgram(_prog_draw);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_right);
-
-	glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, _camera2clip);
-	
-	glEnableVertexAttribArray(_position_loc);
-	glEnableVertexAttribArray(_diffuse_color_loc);
-
-	glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-	glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(2* sizeof(float)));
-
-	glDrawArrays(GL_LINE_STRIP, 0, _n_samples);
-
-	glDisableVertexAttribArray(_position_loc);
-	glDisableVertexAttribArray(_diffuse_color_loc);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
-
-	// selection -----------------------------------------------------------------------------------
-	if (_selection_mode!= NO_SELECTION) {
-		glUseProgram(_prog_draw);
-		glBindBuffer(GL_ARRAY_BUFFER, _buffer_selection);
-
+	if (_st->_n_samples> 0) {
+		// buffer_left -----------------------------------------------------------------------------------
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
 		glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, _camera2clip);
-		
 		glEnableVertexAttribArray(_position_loc);
 		glEnableVertexAttribArray(_diffuse_color_loc);
-
 		glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
 		glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(2* sizeof(float)));
+		glDrawArrays(GL_LINE_STRIP, 0, _n_samples);
 
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		// buffer_right -----------------------------------------------------------------------------------
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[3]);
+		glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, _camera2clip);
+		glEnableVertexAttribArray(_position_loc);
+		glEnableVertexAttribArray(_diffuse_color_loc);
+		glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+		glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(2* sizeof(float)));
+		glDrawArrays(GL_LINE_STRIP, 0, _n_samples);
 
-		glDisableVertexAttribArray(_position_loc);
-		glDisableVertexAttribArray(_diffuse_color_loc);
+		// marks ---------------------------------------------------------------------------------------
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[4]);
+		glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, _camera2clip);
+		glEnableVertexAttribArray(_position_loc);
+		glEnableVertexAttribArray(_diffuse_color_loc);
+		glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+		glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(2* sizeof(float)));
+		glDrawArrays(GL_TRIANGLES, 0, _st->_marks.size()* 6);
 
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glUseProgram(0);
+		// selection -----------------------------------------------------------------------------------
+		if (_selection_mode!= NO_SELECTION) {
+			glBindBuffer(GL_ARRAY_BUFFER, _buffers[5]);
+			glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, _camera2clip);
+			glEnableVertexAttribArray(_position_loc);
+			glEnableVertexAttribArray(_diffuse_color_loc);
+			glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+			glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(2* sizeof(float)));
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+		}
 	}
+
+	glDisableVertexAttribArray(_position_loc);
+	glDisableVertexAttribArray(_diffuse_color_loc);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
 }
 
 
-void TrackGL::update_data() {
+void TrackGL::update_waveform() {
 	if (_st->_n_samples== 0) {
 		return;
 	}
@@ -446,7 +398,7 @@ void TrackGL::update_data() {
 		_data_left[6* i+ 5]= WAVE_COLOR[3];
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_left);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
 	glBufferData(GL_ARRAY_BUFFER, _n_samples* 6* sizeof(float), _data_left, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -471,7 +423,7 @@ void TrackGL::update_data() {
 		_data_right[6* i+ 5]= WAVE_COLOR[3];
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_right);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[3]);
 	glBufferData(GL_ARRAY_BUFFER, _n_samples* 6* sizeof(float), _data_right, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -494,7 +446,7 @@ void TrackGL::update_selection() {
 			x1= _x+ _w;
 		}
 		else {
-			x1= _x+ (float)(_first_selection- _first_sample)* _interval_sample;
+			x1= sampleidx2gl(_first_selection);
 		}
 
 		if (_last_selection< _first_sample) {
@@ -504,7 +456,7 @@ void TrackGL::update_selection() {
 			x2= _x+ _w;
 		}
 		else {
-			x2= _x+ (float)(_last_selection- _first_sample)* _interval_sample;
+			x2= sampleidx2gl(_last_selection);
 		}
 	}
 	else {
@@ -515,7 +467,7 @@ void TrackGL::update_selection() {
 			x2= _x+ _w;
 		}
 		else {
-			x2= _x+ (float)(_first_selection- _first_sample)* _interval_sample;
+			x2= sampleidx2gl(_first_selection);
 		}
 
 		if (_last_selection< _first_sample) {
@@ -525,7 +477,7 @@ void TrackGL::update_selection() {
 			x1= _x+ _w;
 		}
 		else {
-			x1= _x+ (float)(_last_selection- _first_sample)* _interval_sample;
+			x1= sampleidx2gl(_last_selection);
 		}
 	}
 
@@ -541,15 +493,38 @@ void TrackGL::update_selection() {
 		data_selection[6* i+ 2]= SELECTION_COLOR[0]; data_selection[6* i+ 3]= SELECTION_COLOR[1]; data_selection[6* i+ 4]= SELECTION_COLOR[2]; data_selection[6* i+ 5]= SELECTION_COLOR[3];
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_selection);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[5]);
 	glBufferData(GL_ARRAY_BUFFER, 6* 6* sizeof(float), data_selection, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void TrackGL::update_marks() {
+	float data_marks[_st->_marks.size()* 6* 6];
+	for (unsigned int i=0; i<_st->_marks.size(); ++i) {
+		float x1= sampleidx2gl(_st->_marks[i]->_track_sample);
+		float x2= sampleidx2gl(_st->_marks[i]->_track_sample+ _st->_marks[i]->_last_sample- _st->_marks[i]->_first_sample);
+		data_marks[i* 36+ 6* 0+ 0]= x1; data_marks[i* 36+ 6* 0+ 1]= _y;
+		data_marks[i* 36+ 6* 1+ 0]= x2; data_marks[i* 36+ 6* 1+ 1]= _y;
+		data_marks[i* 36+ 6* 2+ 0]= x2; data_marks[i* 36+ 6* 2+ 1]= _y+ _h;
+		data_marks[i* 36+ 6* 3+ 0]= x1; data_marks[i* 36+ 6* 3+ 1]= _y;
+		data_marks[i* 36+ 6* 4+ 0]= x2; data_marks[i* 36+ 6* 4+ 1]= _y+ _h;
+		data_marks[i* 36+ 6* 5+ 0]= x1; data_marks[i* 36+ 6* 5+ 1]= _y+ _h;
+
+		for (unsigned int j=0; j<6; ++j) {
+			data_marks[i* 36+ 6* j+ 2]= MARK_COLOR[0]; data_marks[i* 36+ 6* j+ 3]= MARK_COLOR[1]; data_marks[i* 36+ 6* j+ 4]= MARK_COLOR[2]; data_marks[i* 36+ 6* j+ 5]= MARK_COLOR[3];
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[4]);
+	glBufferData(GL_ARRAY_BUFFER, _st->_marks.size()* 6* 6* sizeof(float), data_marks, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
 void TrackGL::zoom_all() {
 	_interval_sample= _w/ (float)(_st->_n_samples);
-	update_data();
+	update_waveform();
 }
 
 
@@ -664,8 +639,9 @@ bool TrackGL::key_down(InputState * input_state, SDL_Keycode key) {
 				}
 			}
 		}
-		update_data();
+		update_waveform();
 		update_selection();
+		update_marks();
 		return true;
 	}
 	else if (key== SDLK_DOWN) {
@@ -682,8 +658,9 @@ bool TrackGL::key_down(InputState * input_state, SDL_Keycode key) {
 				_first_sample= 0;
 			}
 		}
-		update_data();
+		update_waveform();
 		update_selection();
+		update_marks();
 		return true;
 	}
 	else if (key== SDLK_LEFT) {
@@ -694,8 +671,9 @@ bool TrackGL::key_down(InputState * input_state, SDL_Keycode key) {
 		else {
 			_first_sample= 0;
 		}
-		update_data();
+		update_waveform();
 		update_selection();
+		update_marks();
 		return true;
 	}
 	else if (key== SDLK_RIGHT) {
@@ -704,8 +682,9 @@ bool TrackGL::key_down(InputState * input_state, SDL_Keycode key) {
 		if (_first_sample>= _st->_n_samples) {
 			_first_sample= _st->_n_samples- 1;
 		}
-		update_data();
+		update_waveform();
 		update_selection();
+		update_marks();
 		return true;
 	}
 	
@@ -735,7 +714,8 @@ bool TrackGL::is_inbox(int i, int j) {
 
 void TrackGL::add_mark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample) {
 	_st->add_mark(track_sample, idx_sample, first_sample, last_sample);
-	update_data();
+	update_waveform();
+	update_marks();
 }
 
 
@@ -830,7 +810,6 @@ bool AudioProjectGL::key_down(InputState * input_state, SDL_Keycode key) {
 		if (_copy_idx>= 0) {
 			for (unsigned int idx_track=0; idx_track<_tracks.size(); ++idx_track) {
 				if (_tracks[idx_track]->is_inbox(input_state->_x, input_state->_y)) {
-					cout << _tracks[idx_track]->_st->_n_samples << " ; " << _copy_idx << " ; " << _tracks[_copy_idx]->_first_selection << " ; " << _tracks[_copy_idx]->_last_selection << "\n";
 					_tracks[idx_track]->add_mark(_tracks[idx_track]->_st->_n_samples, _copy_idx, _tracks[_copy_idx]->_first_selection, _tracks[_copy_idx]->_last_selection);
 					return true;
 				}
