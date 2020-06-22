@@ -317,9 +317,6 @@ void StereoSampleGL::update_data() {
 		return;
 	}
 	
-	if (_first_sample< 0) {
-		_first_sample= 0;
-	}
 	if (_first_sample>= _ss->_n_samples) {
 		_first_sample= _ss->_n_samples- 1;
 	}

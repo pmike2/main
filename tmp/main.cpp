@@ -1,79 +1,80 @@
-/*
-
-*/
-
-
-#include "CoreFoundation/CoreFoundation.h"
 
 #include <cstdlib>
+#include <iostream>
+#include <fstream>
 #include <sstream>
+#include <istream>
 #include <cmath>
 #include <string>
 #include <vector>
-#include <fstream>
+
 
 #include <OpenGL/gl3.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
-#define GLM_FORCE_RADIANS
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
-#include "gl_utils.h"
-#include "utile.h"
-#include "font.h"
+
 #include "constantes.h"
+#include "repere.h"
+#include "utile.h"
+#include "gl_utils.h"
+#include "light.h"
+#include "gl_interface.h"
 #include "input_state.h"
-#include "physics_2d.h"
+
+#include "pfs.h"
 
 
 using namespace std;
 
 
-
-// ---------------------------------------------------------------------------------------
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
 InputState * input_state;
-ScreenGL * screengl;
 
-int done= 0;
+bool done= false;
+float bck_factor= 1.0f;
 
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_2d, prog_font;
+GLuint prog_3d_obj_instanced, prog_repere;
 GLuint g_vao;
 
-Font * arial_font;
+ViewSystem * view_system;
+LightsUBO * lights_ubo;
 
-Physics2D * physics_2d;
-DebugPhysics2D * debug_physics_2d;
+PFS * pfs;
 
 
-// ---------------------------------------------------------------------------------------
+
 void mouse_motion(int x, int y, int xrel, int yrel) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
+	if (view_system->mouse_motion(input_state)) {
+		//return;
+	}
 }
 
 
-void mouse_button_up(unsigned int x, unsigned int y) {
+void mouse_button_up(int x, int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
-
 }
 
 
-void mouse_button_down(unsigned int x, unsigned int y, unsigned short button) {
+void mouse_button_down(int x, int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
+	if (input_state->_keys[SDLK_LSHIFT]) {
+		//glm::vec2 click_world= view_system->click2world(x, y, 0.0f);
+	}
 }
 
 
@@ -83,17 +84,21 @@ void key_down(SDL_Keycode key) {
 	if (key== SDLK_ESCAPE) {
 		done= true;
 	}
-
+	if (view_system->key_down(input_state, key)) {
+		return;
+	}
 }
 
 
 void key_up(SDL_Keycode key) {
 	input_state->key_up(key);
 
+	if (view_system->key_up(input_state, key)) {
+		return;
+	}
 }
 
 
-// ---------------------------------------------------------------------------------------
 void init() {
 	srand(time(NULL));
 	
@@ -101,38 +106,36 @@ void init() {
 	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 	
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	
-	window= SDL_CreateWindow("sandbox", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	window= SDL_CreateWindow("tmp", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
 
-	//cout << "OpenGL version=" << glGetString(GL_VERSION) << endl;
+	cout << "OpenGL version=" << glGetString(GL_VERSION) << endl;
 
 	SDL_GL_SetSwapInterval(1);
-
 	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
-	//glClearDepth(1.0f);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClear(GL_COLOR_BUFFER_BIT);
-	//glEnable(GL_DEPTH_TEST);
-	//glDepthMask(GL_TRUE);
-	//glDepthFunc(GL_LESS);
+	glClearDepth(1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LESS);
 	//glDepthFunc(GL_LEQUAL); // ne fonctionne pas je ne sais pas pourquoi; mais necessaire pour bumpmapping et autres
-	//glDepthRange(0.0f, 1.0f);
+	glDepthRange(0.0f, 1.0f);
 	
 	// frontfaces en counterclockwise
 	glFrontFace(GL_CCW);
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
-	//glEnable(GL_DEPTH_CLAMP);
+	glEnable(GL_DEPTH_CLAMP);
 	
 	// pour gérer l'alpha
-	//glEnable(GL_BLEND);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	SDL_GL_SwapWindow(window);
 	
@@ -146,58 +149,50 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_2d  = create_prog("../shaders/vertexshader_2d_alpha.txt"  , "../shaders/fragmentshader_basic.txt");
-	prog_font= create_prog("../shaders/vertexshader_font.txt", "../shaders/fragmentshader_font.txt");
+	prog_repere          = create_prog("../shaders/vertexshader_repere.txt"      , "../shaders/fragmentshader_basic.txt");
+	prog_3d_obj_instanced= create_prog("../shaders/vertexshader_3d_mat_instanced.txt", "../shaders/fragmentshader_3d_mat.txt");
 
-	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
+	float eye_direction[]= {0.0f, 0.0f, 1.0f};
+	GLuint progs_eye[]= {prog_3d_obj_instanced};
+	for (unsigned int i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
+		GLint eye_direction_loc= glGetUniformLocation(progs_eye[i], "eye_direction");
+		glUseProgram(progs_eye[i]);
+		glUniform3fv(eye_direction_loc, 1, eye_direction);
+		glUseProgram(0);
+	}
+
+	// verif que les shaders ont bien été compilés - linkés
+	check_gl_error();
 	
 	// --------------------------------------------------------------------------
-	arial_font= new Font(prog_font, "../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	lights_ubo= new LightsUBO(prog_3d_obj_instanced); // heu ca va marcher ca ???
+	lights_ubo->add_light(LIGHT_PARAMS_1, prog_repere, glm::vec3(0.0f, 0.0f, 5000.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+	
+	// --------------------------------------------------------------------------
+	view_system= new ViewSystem(prog_repere, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	view_system->_repere->_is_ground= false;
+	view_system->_repere->_is_repere= false;
+	view_system->_repere->_is_box= false;
+	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 130.0f);
+
+	// --------------------------------------------------------------------------
 	input_state= new InputState();
-	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 
-	physics_2d= new Physics2D(1.0f/ 60.0f, 10);
-	debug_physics_2d= new DebugPhysics2D(physics_2d, prog_2d, screengl);
-
-	Polygon2D * poly= new Polygon2D();
-	poly->randomize(12);
-	physics_2d->add_body(poly, glm::vec2(0.0f, 0.0f), 0.0f);
-
-	Polygon2D * poly2= new Polygon2D();
-	float points[]= {-10.0f, 0.0f, 10.0f, 0.0f, 10.0f, 1.0f, -10.0f, 1.0f};
-	poly2->set_points(points, 4);
-	poly->update_attributes(0.0f);
-	physics_2d->add_body(poly2, glm::vec2(0.0f, -15.0f), 0.0f);
-}
-
-
-// ---------------------------------------------------------------------------------------
-// affichage strings opengl
-void show_infos() {
-	ostringstream font_str;
-	font_str.precision(1);
-	font_str << fixed;
-
-	float font_scale= 0.6f;
-	glm::vec3 font_color= glm::vec3(1.0f, 1.0f, 0.0f);
-
-	font_str.str("");
-	font_str << "hello";
-	arial_font->draw(font_str.str(), 10.0f, 15.0f, font_scale, font_color);
+	pfs= new PFS(20, 20, 20, prog_3d_obj_instanced);
 }
 
 
 void draw() {
 	compt_fps++;
-	
-	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClear(GL_COLOR_BUFFER_BIT);
+
+	glClearColor(MAIN_BCK[0]* bck_factor, MAIN_BCK[1]* bck_factor, MAIN_BCK[2]* bck_factor, MAIN_BCK[3]);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	
+	view_system->draw();
+	//lights_ubo->draw(view_system->_world2clip);
 
-	debug_physics_2d->draw();
-
-	show_infos();
+	pfs->draw();
 
 	SDL_GL_SwapWindow(window);
 }
@@ -205,13 +200,14 @@ void draw() {
 
 void anim() {
 	tikanim2= SDL_GetTicks();
-	if (tikanim2- tikanim1< DELTA_ANIM)
+	int tikanim_delta= tikanim2- tikanim1;
+	if (tikanim_delta< DELTA_ANIM)
 		return;
-
+	
 	tikanim1= SDL_GetTicks();
 
-	debug_physics_2d->update();
-
+	lights_ubo->anim(view_system->_world2camera);
+	pfs->anim(view_system);
 }
 
 
@@ -230,7 +226,6 @@ void compute_fps() {
 
 
 void idle() {
-	physics_2d->step();
 	anim();
 	draw();
 	compute_fps();
@@ -241,14 +236,14 @@ void main_loop() {
 	SDL_Event event;
 	
 	while (!done) {
-		while (SDL_PollEvent(& event)) {
+		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				case SDL_MOUSEMOTION:
 					mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
 					break;
 					
 				case SDL_MOUSEBUTTONUP:
-					mouse_button_up(event.button.x, event.button.y);
+					mouse_button_up(event.button.x, event.button.y, event.button.button);
 					break;
 					
 				case SDL_MOUSEBUTTONDOWN:
@@ -277,11 +272,10 @@ void main_loop() {
 
 
 void clean() {
-	delete debug_physics_2d;
-	delete physics_2d;
-
-	delete arial_font;
+	delete view_system;
 	delete input_state;
+	delete lights_ubo;
+	delete pfs;
 
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
@@ -289,15 +283,12 @@ void clean() {
 	SDL_Quit();
 }
 
+// ------------------------------------------------------------------------
+int main(int argc, char * argv[]) {
 
-
-// ---------------------------------------------------------------------------------------
-// ---------------------------------------------------------------------------------------
-int main(int argc, char *argv[]) {
 	init();
 	main_loop();
 	clean();
-	
+
 	return 0;
 }
-
