@@ -969,7 +969,6 @@ Physics2D::~Physics2D() {
         delete it_collision;
     }
     _collisions.clear();
-
     for (auto it_body : _bodies) {
         delete it_body;
     }

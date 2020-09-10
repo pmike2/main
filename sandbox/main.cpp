@@ -77,6 +77,13 @@ void mouse_button_up(unsigned int x, unsigned int y) {
 	physics_2d->new_external_force(user_force_begin, user_force_end);
 }
 
+// ---------------------------------------------------------------------------------------
+SDL_Window * window= NULL;
+SDL_GLContext main_context;
+InputState * input_state;
+ScreenGL * screengl;
+
+int done= 0;
 
 void mouse_button_down(unsigned int x, unsigned int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
