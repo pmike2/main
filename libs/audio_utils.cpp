@@ -347,8 +347,8 @@ void TrackGL::update_waveform() {
 		return;
 	}
 	
-	if (_first_sample>= _st->_n_samples) {
-		_first_sample= _st->_n_samples- 1;
+	if (_first_sample>= _ss->_n_samples) {
+		_first_sample= _ss->_n_samples- 1;
 	}
 	
 	_last_sample= _first_sample+ (unsigned long)(round(_w/ _interval_sample));

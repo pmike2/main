@@ -28,7 +28,7 @@
 #include "font.h"
 #include "constantes.h"
 #include "input_state.h"
-#include "physics_2d.h"
+#include "anim_2d.h"
 
 
 using namespace std;
@@ -43,20 +43,15 @@ ScreenGL * screengl;
 
 bool done;
 unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2, tikphysics1, tikphysics2;
-unsigned int accumulator;
+unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_2d, prog_font;
+GLuint prog_anim_2d, prog_font;
 GLuint g_vao;
 
 Font * arial_font;
 
-Physics2D * physics_2d;
-DebugPhysics2D * debug_physics_2d;
-
-glm::vec2 user_force_begin;
-glm::vec2 user_force_end;
-
+vector<Test *> tests;
+vector<Model *> models;
 
 // ---------------------------------------------------------------------------------------
 void mouse_motion(int x, int y, int xrel, int yrel) {
@@ -73,8 +68,6 @@ void mouse_button_up(unsigned int x, unsigned int y) {
 	float xf, yf;
 	screengl->screen2gl(input_state->_x, input_state->_y, xf, yf);
 	//cout << "up : " << xf << " ; " << yf << "\n";
-	user_force_end= glm::vec2(xf, yf);
-	physics_2d->new_external_force(user_force_begin, user_force_end);
 }
 
 
@@ -85,7 +78,6 @@ void mouse_button_down(unsigned int x, unsigned int y, unsigned short button) {
 	float xf, yf;
 	screengl->screen2gl(input_state->_x, input_state->_y, xf, yf);
 	//cout << "down : " << xf << " ; " << yf << "\n";
-	user_force_begin= glm::vec2(xf, yf);
 }
 
 
@@ -94,55 +86,6 @@ void key_down(SDL_Keycode key) {
 
 	if (key== SDLK_ESCAPE) {
 		done= true;
-	}
-	else if (key== SDLK_a) {
-		physics_2d->add_body(0, 2, glm::vec2(0.0f, 9.0f), 0.0f);
-		//physics_2d->add_body(0, 2, glm::vec2(0.0f, 9.0f), M_PI* 0.5f);
-	}
-	else if (key== SDLK_b) {
-		physics_2d->add_body(1, 2, glm::vec2(0.0f, 9.0f), 0.0f);
-	}
-	else if (key== SDLK_c) {
-		Polygon2D * poly= new Polygon2D();
-		poly->randomize(50, rand_float(0.1f, 2.5f));
-		//physics_2d->_polygons.erase(physics_2d->_polygons.begin()+ 1);
-		physics_2d->add_polygon(poly);
-		//physics_2d->add_body(1, rand_int(1, physics_2d->_materials.size()- 1), glm::vec2(0.0f, 8.0f), 0.0f);
-		for (int i=0; i<1; ++i) {
-			physics_2d->add_body(physics_2d->_polygons.size()- 1, 2, glm::vec2(rand_float(-6.0f, 6.0f), 8.0f), 0.0f);
-		}
-		physics_2d->_bodies[physics_2d->_bodies.size()- 1]->save("last.txt");
-	}
-	else if (key== SDLK_p) {
-		physics_2d->_paused= !physics_2d->_paused;
-	}
-	else  if (key== SDLK_d) {
-		for (auto it_body : physics_2d->_bodies) {
-			it_body->print();
-			cout << "---------\n";
-		}
-	}
-	else if (key== SDLK_r) {
-		for (int i=physics_2d->_bodies.size()- 1; i>=1; --i) {
-			physics_2d->_bodies.erase(physics_2d->_bodies.begin()+ i);
-		}
-	}
-	else if (key== SDLK_n) {
-		physics_2d->_paused= false;
-		physics_2d->step(true);
-		physics_2d->_paused= true;
-	}
-	else if (key== SDLK_v) {
-		debug_physics_2d->_visible_normal= !debug_physics_2d->_visible_normal;
-		debug_physics_2d->_visible_center= !debug_physics_2d->_visible_center;
-		debug_physics_2d->_visible_vel_force= !debug_physics_2d->_visible_vel_force;
-		debug_physics_2d->_visible_collision= !debug_physics_2d->_visible_collision;
-		debug_physics_2d->_visible_contact= !debug_physics_2d->_visible_contact;
-	}
-	else if (key== SDLK_e) {
-		float xf, yf;
-		screengl->screen2gl(input_state->_x, input_state->_y, xf, yf);
-		physics_2d->new_explosion(glm::vec2(xf, yf), 6.0f);
 	}
 }
 
@@ -155,41 +98,10 @@ void key_up(SDL_Keycode key) {
 
 // ---------------------------------------------------------------------------------------
 void init() {
-	/*glm::vec2 result;
-	glm::vec2 pt1_begin(0.0f, 0.0f);
-	glm::vec2 pt1_end(1.0f, 0.0f);
-	glm::vec2 pt2_begin(0.5f, -0.5f);
-	glm::vec2 pt2_end(0.5f, 0.5f);
-	bool x= segment_intersects_segment(pt1_begin, pt1_end, pt2_begin, pt2_end, &result);
-	cout << x << " ; " << glm::to_string(result) << "\n";*/
-
-	/*glm::vec2 result;
-	glm::vec2 pt_begin(0.0f, 0.0f);
-	glm::vec2 pt_end(1.0f, 0.0f);
-	Polygon2D * poly= new Polygon2D();
-	float pts[]= {0.2f, -0.2f, 0.7f, -0.2f, 0.5f, 0.5f};
-	poly->set_points(pts, 3);
-	bool x= segment_intersects_poly(pt_begin, pt_end, poly, &result);
-	cout << x << " ; " << glm::to_string(result) << "\n";*/
-
-	/*Polygon2D * poly= new Polygon2D();
-	float pts[]= {-1.0f, -1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f, 1.0f};
-	poly->set_points(pts, 4);
-	Material * material= new Material(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec2 position(0.0f, 0.0f);
-	float orientation= 0.0f;
-	RigidBody2D * body= new RigidBody2D(poly, material, position, orientation);
-	glm::vec2 pt(10.0f, 0.0f);
-	//bool x= is_pt_inside_body(pt, body);
-	glm::vec2 proj;
-	float x= distance_body_pt(body, pt, &proj);
-	cout << x << " ; " << glm::to_string(proj) << "\n";*/
-
-
 	srand(time(NULL));
 	
 	SDL_Init(SDL_INIT_EVERYTHING);
-	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
+	IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 	
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
@@ -225,7 +137,7 @@ void init() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
-	glPointSize(4.0f);
+	//glPointSize(4.0f);
 	
 	SDL_GL_SwapWindow(window);
 
@@ -239,7 +151,7 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_2d  = create_prog("../shaders/vertexshader_2d_alpha.txt"  , "../shaders/fragmentshader_basic.txt");
+	prog_anim_2d  = create_prog("../shaders/vertexshader_2d_anim.txt"  , "../shaders/fragmentshader_2d_anim.txt");
 	prog_font= create_prog("../shaders/vertexshader_font.txt", "../shaders/fragmentshader_font.txt");
 
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
@@ -252,63 +164,18 @@ void init() {
 	done= false;
 	tikfps1= SDL_GetTicks();
 	tikanim1= SDL_GetTicks();
-	tikphysics1= SDL_GetTicks();
 	val_fps= 0;
 	compt_fps= 0;
-	accumulator= 0;
 
-	physics_2d= new Physics2D(DT_PHYSICS);
-	debug_physics_2d= new DebugPhysics2D(physics_2d, prog_2d, screengl);
-
-	
-	Polygon2D * poly_poutre= new Polygon2D();
-	poly_poutre->set_rectangle(16.0f, 1.0f);
-	
-	Polygon2D * poly_bloc= new Polygon2D();
-	poly_bloc->set_rectangle(2.0f, 2.0f);
-	
-	physics_2d->add_polygon(poly_poutre);
-	physics_2d->add_polygon(poly_bloc);
-
-	physics_2d->add_body(0, 0, glm::vec2(0.0f, -9.0f), 0.0f);
-	//physics_2d->add_body(0, 0, glm::vec2(-8.0f, 0.0f), M_PI* 0.5f);
-	//physics_2d->add_body(0, 0, glm::vec2(8.0f, 0.0f), M_PI* 0.5f);
-
-	//physics_2d->add_body(0, 2, glm::vec2(0.0f, 9.0f), 0.0f);
-	//physics_2d->add_body(0, 2, glm::vec2(0.0f, 9.0f), M_PI* 0.5f);
-	
-
-	//physics_2d->_bodies[0]->save(physics_2d->_bodies[0], "test.txt");
-	//physics_2d->load_body("test.txt", 0);
-
-	/*
-	Polygon2D * poly= new Polygon2D();
-	float points2[]= {0.0f, 0.0f, 1.0f, 1.0f, -1.0f, 1.0f};
-	poly->set_points(points2, 3);
-	physics_2d->add_polygon(poly);
-	*/
-
-	/*Polygon2D * poly_ref= new Polygon2D();
-	float points[]= {-4.0f, -4.0f, 4.0f, -4.0f, 4.0f, 4.0f, -4.0f, 4.0f};
-	poly_ref->set_points(points, 4);
-	physics_2d->add_polygon(poly_ref);
-	physics_2d->add_body(0, 1, glm::vec2(-1.0f, 1.0f), -1.0f);
-	physics_2d->add_body(0, 1, glm::vec2(2.0f, -2.0f), 1.0f);
-
-	Polygon2D * poly_incid= new Polygon2D();
-	float points2[]= {-4.0f, 4.0f, 0.0f, -4.0f, 4.0f, 4.0f};
-	poly_incid->set_points(points2, 3);
-	physics_2d->add_polygon(poly_incid);
-	//physics_2d->add_body(1, 1, glm::vec2(0.0f, 6.0f), 0.0f);
-
-	physics_2d->_paused= true;*/
-
-	/*
-	physics_2d->load_body("body_a.txt", 2);
-	physics_2d->load_body("body_b.txt", 2);
-	physics_2d->_paused= true;
-	Collision2D * collision= new Collision2D(physics_2d->_bodies[0], physics_2d->_bodies[1], true);
-	*/
+	models.push_back(new Model("/Users/home/git_dir/main/anim_2d/modeles/modele_1"));
+	models.push_back(new Model("/Users/home/git_dir/main/anim_2d/modeles/modele_2"));
+	for (unsigned int i=0; i<20; ++i) {
+		Test * test= new Test(prog_anim_2d, screengl, models[i % 2]);
+		test->_position= glm::vec2(rand_float(-5.0f, 5.0f), rand_float(-5.0f, 5.0f));
+		test->set_size(rand_float(1.0f, 5.0f));
+		//test->set_size(3.0f);
+		tests.push_back(test);
+	}
 }
 
 
@@ -336,9 +203,11 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 
-	debug_physics_2d->draw();
-
 	show_infos();
+
+	for (auto test : tests) {
+		test->draw();
+	}
 
 	SDL_GL_SwapWindow(window);
 }
@@ -351,26 +220,28 @@ void anim() {
 
 	tikanim1= SDL_GetTicks();
 
-}
-
-
-void physics() {
-	// fixed time step cf https://gafferongames.com/post/fix_your_timestep/
-	tikphysics2= SDL_GetTicks();
-	unsigned int delta_tik= tikphysics2- tikphysics1;
-	// pour éviter spiral of death
-	if (delta_tik> 250) {
-		delta_tik= 250;
-		cout << "spiral_death\n";
+	for (auto test : tests) {
+		int x= rand_int(0, 1000);
+		if (x== 0) {
+			test->set_action("right_wait");
+		}
+		else if (x== 1) {
+			test->set_action("left_wait");
+		}
+		else if (x== 2) {
+			test->set_action("right_walk");
+		}
+		else if (x== 3) {
+			test->set_action("left_walk");
+		}
+		else if (x== 4) {
+			test->set_action("right_run");
+		}
+		else if (x== 5) {
+			test->set_action("left_run");
+		}
+		test->anim(tikanim1);
 	}
-	accumulator+= delta_tik;
-	tikphysics1= SDL_GetTicks();
-	while (accumulator> DT_PHYSICS_MS) {
-		physics_2d->step(true);
-		accumulator-= DT_PHYSICS_MS;
-	}
-	// on interpole le visuel pour adoucir l'anim
-	debug_physics_2d->update(float(accumulator)/ float(DT_PHYSICS_MS));
 }
 
 
@@ -389,7 +260,6 @@ void compute_fps() {
 
 
 void idle() {
-	physics();
 	anim();
 	draw();
 	compute_fps();
@@ -436,11 +306,17 @@ void main_loop() {
 
 
 void clean() {
-	delete debug_physics_2d;
-	delete physics_2d;
-
+	for (auto test : tests) {
+		delete test;
+	}
+	tests.clear();
+	for (auto model : models) {
+		delete model;
+	}
+	models.clear();
 	delete arial_font;
 	delete input_state;
+	delete screengl;
 
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);

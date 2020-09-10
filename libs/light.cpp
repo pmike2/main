@@ -77,7 +77,7 @@ void Light::anim(glm::mat4 & world2camera) {
 	if (!_is_active)
 		return;
 
-	_position_camera= world2camera* glm::vec4(_position_world, 1.0f);
+	_position_camera= glm::vec3(world2camera* glm::vec4(_position_world, 1.0f));
 
 	_spot_cone_direction_camera= glm::mat3(world2camera)* _spot_cone_direction_world;
 	_spot_cone_direction_camera= glm::normalize(_spot_cone_direction_camera);

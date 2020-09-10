@@ -557,6 +557,7 @@ void StaticGroup::anim(ViewSystem * view_system) {
 		// a quelle classe de precision va appartenir cet objet
 		// ATTENTION : _dist2 doit etre calculé dans le programme appelant cette classe ; cela n'est pas fait de facon systematique ici pour des raisons de performance
 		for (unsigned int i=0; i<_distances.size(); ++i) {
+			// cout << i << " ; " << _n_precisions- 1 << " ; " << pr->_dist2 << " ; " << _distances[i]* _distances[i] << endl;
 			if ((i== _n_precisions- 1) || (pr->_dist2< _distances[i]* _distances[i])) {
 				_mats[i][_mats_sizes[i]]= pr->_model2world;
 				_mats_sizes[i]++;

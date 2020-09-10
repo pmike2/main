@@ -45,6 +45,7 @@ bool done;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2, tikphysics1, tikphysics2;
 unsigned int accumulator;
+bool verbose;
 
 GLuint prog_2d, prog_font;
 GLuint g_vao;
@@ -112,6 +113,13 @@ void key_down(SDL_Keycode key) {
 			physics_2d->add_body(physics_2d->_polygons.size()- 1, 2, glm::vec2(rand_float(-6.0f, 6.0f), 8.0f), 0.0f);
 		}
 		physics_2d->_bodies[physics_2d->_bodies.size()- 1]->save("last.txt");
+	}
+	else if (key== SDLK_l) {
+		physics_2d->load_body("last.txt", 2);
+	}
+	else if (key== SDLK_w) {
+		physics_2d->_warm_starting_enabled= !physics_2d->_warm_starting_enabled;
+		cout << "warm start : " << physics_2d->_warm_starting_enabled << "\n";
 	}
 	else if (key== SDLK_p) {
 		physics_2d->_paused= !physics_2d->_paused;
@@ -366,7 +374,7 @@ void physics() {
 	accumulator+= delta_tik;
 	tikphysics1= SDL_GetTicks();
 	while (accumulator> DT_PHYSICS_MS) {
-		physics_2d->step(true);
+		physics_2d->step(verbose);
 		accumulator-= DT_PHYSICS_MS;
 	}
 	// on interpole le visuel pour adoucir l'anim
@@ -453,6 +461,12 @@ void clean() {
 // ---------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
+	if ((string(argv[1])== "t") || (string(argv[1])== "true")) {
+		verbose= true;
+	}
+	else {
+		verbose= false;
+	}
 	init();
 	main_loop();
 	clean();

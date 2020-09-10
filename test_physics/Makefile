@@ -1,7 +1,6 @@
-external=/Volumes/Cezanne/Cezanne/perso_dev/External_tools
-#external=/usr/local
+#external=/Volumes/Cezanne/Cezanne/perso_dev/External_tools
+external=/usr/local
 
-#internal=/Volumes/Cezanne/Cezanne/perso_dev/ovh/www/codes/libs
 internal=../libs
 
 CXXFLAGS=-std=c++11 -I$(external)/include -I/usr/local/include/freetype2 -I$(internal)

@@ -62,7 +62,7 @@ struct LightParams {
 };
 
 // _linear_attenuation et _quadratic_attenuation font rapidement tout devenir sombre !!!!
-const struct LightParams LIGHT_PARAMS_1= {false, 1.0f, 1.0f, 0.0f, 0.0f, 0.90f, 200.0f};
+const struct LightParams LIGHT_PARAMS_1= {false, 1.0f, 1.0f, 0.01f, 0.0f, 0.90f, 200.0f};
 const struct LightParams LIGHT_PARAMS_2= {true, 1.0f, 1.0f, 0.0f, 0.0f, 0.20f, 200.0f};
 
 const float LIGHT_DRAW_MULT_FACTOR= 100.0f;

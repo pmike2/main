@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<anims xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <anim>
+        <name>right_walk</name>
+        <n_ms>150</n_ms>
+        <move>0.05</move>
+    </anim>
+    <anim>
+        <name>left_walk</name>
+        <n_ms>150</n_ms>
+        <move>-0.05</move>
+    </anim>
+</anims>
