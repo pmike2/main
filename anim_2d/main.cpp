@@ -29,6 +29,7 @@
 #include "constantes.h"
 #include "input_state.h"
 #include "anim_2d.h"
+#include "bbox_2d.h"
 
 
 using namespace std;
@@ -45,13 +46,14 @@ bool done;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_anim_2d, prog_font;
+GLuint prog_anim_2d, prog_static_2d, prog_font;
 GLuint g_vao;
 
 Font * arial_font;
 
 vector<Test *> tests;
 vector<Model *> models;
+vector<StaticTexture *> static_textures;
 
 // ---------------------------------------------------------------------------------------
 void mouse_motion(int x, int y, int xrel, int yrel) {
@@ -110,28 +112,28 @@ void init() {
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	
-	window= SDL_CreateWindow("sandbox", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	window= SDL_CreateWindow("anim_2d", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
 
 	//cout << "OpenGL version=" << glGetString(GL_VERSION) << endl;
 
 	SDL_GL_SetSwapInterval(1);
 
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LEQUAL);
+	//glDepthRange(0.0f, 1.0f);
+	//glEnable(GL_DEPTH_CLAMP);
+
 	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
 	//glClearDepth(1.0f);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClear(GL_COLOR_BUFFER_BIT);
-	//glEnable(GL_DEPTH_TEST);
-	//glDepthMask(GL_TRUE);
-	//glDepthFunc(GL_LESS);
-	//glDepthFunc(GL_LEQUAL); // ne fonctionne pas je ne sais pas pourquoi; mais necessaire pour bumpmapping et autres
-	//glDepthRange(0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glClear(GL_COLOR_BUFFER_BIT);
 	
 	// frontfaces en counterclockwise
 	glFrontFace(GL_CCW);
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
-	//glEnable(GL_DEPTH_CLAMP);
 	
 	// pour gérer l'alpha
 	glEnable(GL_BLEND);
@@ -151,8 +153,9 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_anim_2d  = create_prog("../shaders/vertexshader_2d_anim.txt"  , "../shaders/fragmentshader_2d_anim.txt");
 	prog_font= create_prog("../shaders/vertexshader_font.txt", "../shaders/fragmentshader_font.txt");
+	prog_static_2d= create_prog("../shaders/vertexshader_2d_static.txt"  , "../shaders/fragmentshader_2d_static.txt");
+	prog_anim_2d  = create_prog("../shaders/vertexshader_2d_anim.txt"  , "../shaders/fragmentshader_2d_anim.txt");
 
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
 	
@@ -169,13 +172,57 @@ void init() {
 
 	models.push_back(new Model("/Users/home/git_dir/main/anim_2d/modeles/modele_1"));
 	models.push_back(new Model("/Users/home/git_dir/main/anim_2d/modeles/modele_2"));
-	for (unsigned int i=0; i<20; ++i) {
-		Test * test= new Test(prog_anim_2d, screengl, models[i % 2]);
-		test->_position= glm::vec2(rand_float(-5.0f, 5.0f), rand_float(-5.0f, 5.0f));
-		test->set_size(rand_float(1.0f, 5.0f));
-		//test->set_size(3.0f);
+	for (unsigned int i=0; i<10; ++i) {
+		Test * test= new Test(prog_anim_2d, screengl, models[i%2]);
+		test->_z= rand_float(0.0f, 0.9f);
+		//test->_z= (float)(i % 2)* 0.1f;
+		//test->_z= 2.0f;
+		test->_position= glm::vec2(rand_float(-5.0f, 5.0f), -7.0f);
+		//test->_position= glm::vec2((float)(i)* 0.7f, (float)(i)* 0.7f);
+		//test->set_size(rand_float(1.0f, 5.0f));
+		test->set_size(3.0f);
 		tests.push_back(test);
 	}
+
+	StaticTexture * static_texture= new StaticTexture(prog_static_2d, screengl, "/Users/home/git_dir/main/anim_2d/static_textures/brick.png");
+	static_texture->_z= 1.5f;
+	vector<AABB_2D *> blocs;
+	blocs.push_back(new AABB_2D(glm::vec2(-8.0f, -8.0f), glm::vec2(8.0f, -7.0f)));
+	blocs.push_back(new AABB_2D(glm::vec2(-8.0f, -8.0f), glm::vec2(-7.0f, 5.0f)));
+	blocs.push_back(new AABB_2D(glm::vec2(7.0f, -8.0f), glm::vec2(8.0f, 5.0f)));
+	static_texture->set_blocs(blocs);
+	static_textures.push_back(static_texture);
+
+	StaticTexture * static_texture_2= new StaticTexture(prog_static_2d, screengl, "/Users/home/git_dir/main/anim_2d/static_textures/grass.png");
+	static_texture_2->_z= 0.0f;
+	vector<AABB_2D *> blocs_2;
+	blocs_2.push_back(new AABB_2D(glm::vec2(-8.0f, -7.0f), glm::vec2(8.0f, -6.0f)));
+	static_texture_2->set_blocs(blocs_2);
+	static_textures.push_back(static_texture_2);
+
+	StaticTexture * static_texture_3= new StaticTexture(prog_static_2d, screengl, "/Users/home/git_dir/main/anim_2d/static_textures/tree.png");
+	static_texture_3->_z= -1.0f;
+	static_texture_3->_size= 8.0f;
+	vector<AABB_2D *> blocs_3;
+	blocs_3.push_back(new AABB_2D(glm::vec2(-4.0f, -7.0f), glm::vec2(4.0f, 1.0f)));
+	static_texture_3->set_blocs(blocs_3);
+	static_textures.push_back(static_texture_3);
+
+	StaticTexture * static_texture_4= new StaticTexture(prog_static_2d, screengl, "/Users/home/git_dir/main/anim_2d/static_textures/hill.png");
+	static_texture_4->_z= -2.0f;
+	static_texture_4->_size= 16.0f;
+	vector<AABB_2D *> blocs_4;
+	blocs_4.push_back(new AABB_2D(glm::vec2(-8.0f, -8.0f), glm::vec2(8.0f, 8.0f)));
+	static_texture_4->set_blocs(blocs_4);
+	static_textures.push_back(static_texture_4);
+
+	StaticTexture * static_texture_5= new StaticTexture(prog_static_2d, screengl, "/Users/home/git_dir/main/anim_2d/static_textures/sky.png");
+	static_texture_5->_z= -3.0f;
+	static_texture_5->_size= 16.0f;
+	vector<AABB_2D *> blocs_5;
+	blocs_5.push_back(new AABB_2D(glm::vec2(-8.0f, -8.0f), glm::vec2(8.0f, 8.0f)));
+	static_texture_5->set_blocs(blocs_5);
+	static_textures.push_back(static_texture_5);
 }
 
 
@@ -198,16 +245,21 @@ void show_infos() {
 void draw() {
 	compt_fps++;
 	
-	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClear(GL_COLOR_BUFFER_BIT);
+	//glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 
 	show_infos();
 
+	for (auto static_texture : static_textures) {
+		static_texture->draw();
+	}
+
 	for (auto test : tests) {
 		test->draw();
 	}
+
 
 	SDL_GL_SwapWindow(window);
 }
@@ -222,6 +274,7 @@ void anim() {
 
 	for (auto test : tests) {
 		int x= rand_int(0, 1000);
+		//int x= 0;
 		if (x== 0) {
 			test->set_action("right_wait");
 		}
@@ -240,6 +293,14 @@ void anim() {
 		else if (x== 5) {
 			test->set_action("left_run");
 		}
+
+		if (test->_position.x> test->_screengl->_gl_width* 0.5f- 5.0f) {
+        	test->set_action("left_walk");
+    	}
+		if (test->_position.x< -test->_screengl->_gl_width* 0.5f+ 3.0f) {
+			test->set_action("right_walk");
+		}
+
 		test->anim(tikanim1);
 	}
 }
@@ -314,6 +375,10 @@ void clean() {
 		delete model;
 	}
 	models.clear();
+	for (auto static_texture : static_textures) {
+		delete static_texture;
+	}
+	static_textures.clear();
 	delete arial_font;
 	delete input_state;
 	delete screengl;

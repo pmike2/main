@@ -125,9 +125,9 @@ Test::Test() {
 
 Test::Test(GLuint prog_draw, ScreenGL * screengl, Model * model) :
     _prog_draw(prog_draw), _screengl(screengl), _current_anim(0), _next_anim(1),
-    _interpol_anim(0.0f), _first_ms(0), _position(glm::vec2(0.0f, -4.0f)), _current_action_idx(0), _model(model)
+    _interpol_anim(0.0f), _first_ms(0), _position(glm::vec2(0.0f, -4.0f)), _current_action_idx(0), _model(model), _z(0.0f)
 {
-	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, -1.0f, 1.0f);
+	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
     update_model2world();
     set_size(1.0f);
 
@@ -138,6 +138,7 @@ Test::Test(GLuint prog_draw, ScreenGL * screengl, Model * model) :
     _current_layer_loc= glGetUniformLocation(_prog_draw, "current_layer");
     _next_layer_loc= glGetUniformLocation(_prog_draw, "next_layer");
     _interpol_layer_loc= glGetUniformLocation(_prog_draw, "interpol_layer");
+    _z_loc= glGetUniformLocation(_prog_draw, "z");
 	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
     _tex_coord_loc= glGetAttribLocation(_prog_draw, "tex_coord_in");
 	glUseProgram(0);
@@ -159,7 +160,6 @@ Test::Test(GLuint prog_draw, ScreenGL * screengl, Model * model) :
     glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 	glBufferData(GL_ARRAY_BUFFER, 24* sizeof(float), vertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 }
 
 
@@ -174,6 +174,7 @@ void Test::draw() {
     glUniform1i(_current_layer_loc, _model->_actions[_current_action_idx]._first_idx+ _current_anim);
     glUniform1i(_next_layer_loc, _model->_actions[_current_action_idx]._first_idx+ _next_anim);
     glUniform1f(_interpol_layer_loc, _interpol_anim);
+    glUniform1f(_z_loc, _z);
     glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, glm::value_ptr(_camera2clip));
     glUniformMatrix4fv(_model2world_loc, 1, GL_FALSE, glm::value_ptr(_model2world));
     
@@ -211,12 +212,6 @@ void Test::anim(unsigned int n_ms) {
     _interpol_anim= (float)(n_ms- _first_ms)/ (float)(_model->_actions[_current_action_idx]._n_ms);
 
     _position.x+= _model->_actions[_current_action_idx]._move;
-    if (_position.x> _screengl->_gl_width* 0.5f- 6.0f) {
-        set_action("left_walk");
-    }
-    if (_position.x< -_screengl->_gl_width* 0.5f) {
-        set_action("right_walk");
-    }
     
     update_model2world();
 }
@@ -243,7 +238,6 @@ void Test::set_action(string action_name) {
 
 
 void Test::update_model2world() {
-    //_model2world= glm::translate(glm::scale(glm::mat4(1.0f), glm::vec3(_size, _size, 1.0f)), glm::vec3(_position.x, _position.y, 0.0f));
     _model2world= glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(_position.x, _position.y, 0.0f)), glm::vec3(_size, _size, 1.0f));
 }
 
@@ -259,8 +253,44 @@ StaticTexture::StaticTexture() {
 }
 
 
-StaticTexture::StaticTexture(GLuint prog_draw, ScreenGL * screengl, string path) {
+StaticTexture::StaticTexture(GLuint prog_draw, ScreenGL * screengl, string path) : _prog_draw(prog_draw), _screengl(screengl), _alpha(1.0f), _n_blocs(0), _size(1.0f), _z(1.0f) {
+	glGenTextures(1, &_texture_id);
+	glBindTexture(GL_TEXTURE_2D, _texture_id);
+    
+    SDL_Surface * surface= IMG_Load(path.c_str());
+    if (!surface) {
+        cout << "IMG_Load error :" << IMG_GetError() << endl;
+        return;
+    }
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_BGRA, GL_UNSIGNED_BYTE, surface->pixels);
 
+    SDL_FreeSurface(surface);
+
+    glActiveTexture(GL_TEXTURE0);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S    , GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T    , GL_REPEAT);
+    glActiveTexture(0);
+    
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    _camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
+    _model2world= glm::mat4(1.0f);
+
+	glUseProgram(_prog_draw);
+	_camera2clip_loc= glGetUniformLocation(_prog_draw, "camera2clip_matrix");
+    _model2world_loc= glGetUniformLocation(_prog_draw, "model2world_matrix");
+    _tex_loc= glGetUniformLocation(_prog_draw, "tex");
+    _alpha_loc= glGetUniformLocation(_prog_draw, "alpha");
+    _z_loc= glGetUniformLocation(_prog_draw, "z");
+	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
+    _tex_coord_loc= glGetAttribLocation(_prog_draw, "tex_coord_in");
+	glUseProgram(0);
+
+    glGenBuffers(1, &_vbo);	
 }
 
 
@@ -268,4 +298,76 @@ StaticTexture::~StaticTexture() {
 
 }
 
+
+void StaticTexture::draw() {
+    glActiveTexture(GL_TEXTURE0);
+
+    glUseProgram(_prog_draw);
+   	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+    glBindTexture(GL_TEXTURE_2D, _texture_id);
+
+    glUniform1i(_tex_loc, 0); //Sampler refers to texture unit 0
+    glUniform1f(_alpha_loc, _alpha);
+    glUniform1f(_z_loc, _z);
+    glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, glm::value_ptr(_camera2clip));
+    glUniformMatrix4fv(_model2world_loc, 1, GL_FALSE, glm::value_ptr(_model2world));
+    
+    glEnableVertexAttribArray(_position_loc);
+    glEnableVertexAttribArray(_tex_coord_loc);
+
+    glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 4* sizeof(float), (void*)0);
+    glVertexAttribPointer(_tex_coord_loc, 2, GL_FLOAT, GL_FALSE, 4* sizeof(float), (void*)(2* sizeof(float)));
+
+    glDrawArrays(GL_TRIANGLES, 0, 6* _n_blocs);
+
+    glDisableVertexAttribArray(_position_loc);
+    glDisableVertexAttribArray(_tex_coord_loc);
+
+    glBindTexture(GL_TEXTURE, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+}
+
+
+void StaticTexture::set_blocs(vector<AABB_2D *> blocs) {
+    _n_blocs= blocs.size();
+    float vertices[24* _n_blocs];
+    for (unsigned int idx_bloc=0; idx_bloc<_n_blocs; ++idx_bloc) {
+        glm::vec2 tex_coord((blocs[idx_bloc]->_pt_max.x- blocs[idx_bloc]->_pt_min.x)/ _size, (blocs[idx_bloc]->_pt_max.y- blocs[idx_bloc]->_pt_min.y)/ _size);
+        //glm::vec2 tex_coord(2.0f, 2.0f);
+
+        vertices[24* idx_bloc+ 0]= blocs[idx_bloc]->_pt_min.x;
+        vertices[24* idx_bloc+ 1]= blocs[idx_bloc]->_pt_max.y;
+        vertices[24* idx_bloc+ 2]= 0.0f;
+        vertices[24* idx_bloc+ 3]= 0.0f;
+
+        vertices[24* idx_bloc+ 4]= blocs[idx_bloc]->_pt_min.x;
+        vertices[24* idx_bloc+ 5]= blocs[idx_bloc]->_pt_min.y;
+        vertices[24* idx_bloc+ 6]= 0.0f;
+        vertices[24* idx_bloc+ 7]= tex_coord.y;
+
+        vertices[24* idx_bloc+ 8]= blocs[idx_bloc]->_pt_max.x;
+        vertices[24* idx_bloc+ 9]= blocs[idx_bloc]->_pt_min.y;
+        vertices[24* idx_bloc+ 10]= tex_coord.x;
+        vertices[24* idx_bloc+ 11]= tex_coord.y;
+
+        vertices[24* idx_bloc+ 12]= blocs[idx_bloc]->_pt_min.x;
+        vertices[24* idx_bloc+ 13]= blocs[idx_bloc]->_pt_max.y;
+        vertices[24* idx_bloc+ 14]= 0.0f;
+        vertices[24* idx_bloc+ 15]= 0.0f;
+
+        vertices[24* idx_bloc+ 16]= blocs[idx_bloc]->_pt_max.x;
+        vertices[24* idx_bloc+ 17]= blocs[idx_bloc]->_pt_min.y;
+        vertices[24* idx_bloc+ 18]= tex_coord.x;
+        vertices[24* idx_bloc+ 19]= tex_coord.y;
+
+        vertices[24* idx_bloc+ 20]= blocs[idx_bloc]->_pt_max.x;
+        vertices[24* idx_bloc+ 21]= blocs[idx_bloc]->_pt_max.y;
+        vertices[24* idx_bloc+ 22]= tex_coord.x;
+        vertices[24* idx_bloc+ 23]= 0.0f;
+    };
+    glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+	glBufferData(GL_ARRAY_BUFFER, 24* _n_blocs* sizeof(float), vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
 

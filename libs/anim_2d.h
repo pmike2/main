@@ -29,6 +29,12 @@
 
 #include "utile.h"
 #include "gl_utils.h"
+#include "bbox_2d.h"
+
+
+// _z doit etre entre ces bornes
+const float Z_NEAR= -10.0f;
+const float Z_FAR= 10.0f;
 
 
 struct Action {
@@ -51,7 +57,7 @@ public:
     ~Model();
 
     
-    unsigned int _texture_id;
+    GLuint _texture_id;
     std::vector<Action> _actions;
 };
 
@@ -69,7 +75,7 @@ public:
 
     GLuint _vbo;
 	GLuint _prog_draw;
-	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _texture_array_loc, _current_layer_loc, _next_layer_loc, _interpol_layer_loc;
+	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _texture_array_loc, _current_layer_loc, _next_layer_loc, _interpol_layer_loc, _z_loc;
     glm::mat4 _camera2clip;
     glm::mat4 _model2world;
     ScreenGL * _screengl;
@@ -80,6 +86,7 @@ public:
     unsigned int _current_action_idx;
     Model * _model;
     float _size;
+    float _z;
 };
 
 
@@ -88,14 +95,21 @@ public:
     StaticTexture();
     StaticTexture(GLuint prog_draw, ScreenGL * screengl, std::string path);
     ~StaticTexture();
+    void draw();
+    void set_blocs(std::vector<AABB_2D *> blocs);
 
 
+    GLuint _texture_id;
     GLuint _vbo;
 	GLuint _prog_draw;
-	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _texture_loc;
+	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _tex_loc, _alpha_loc, _z_loc;
     glm::mat4 _camera2clip;
     glm::mat4 _model2world;
     ScreenGL * _screengl;
+    float _alpha;
+    unsigned int _n_blocs;
+    float _size;
+    float _z;
 };
 
 
