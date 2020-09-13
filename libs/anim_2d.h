@@ -35,6 +35,10 @@
 // _z doit etre entre ces bornes
 const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
+const unsigned int MODEL_SIZE= 512;
+
+
+enum obstacle_type {AIR, SOLIDE};
 
 
 struct Action {
@@ -59,13 +63,14 @@ public:
     
     GLuint _texture_id;
     std::vector<Action> _actions;
+    AABB_2D * _footprint;
 };
 
 
 class Test {
 public:
     Test();
-    Test(GLuint prog_draw, ScreenGL * screengl, Model * model);
+    Test(GLuint prog_draw, GLuint prog_draw_footprint, ScreenGL * screengl, Model * model);
     void draw();
     void anim(unsigned int n_ms);
     void set_action(std::string action_name);
@@ -73,9 +78,10 @@ public:
     void set_size(float size);
 
 
-    GLuint _vbo;
-	GLuint _prog_draw;
+    GLuint _vbo, _vbo_footprint;
+	GLuint _prog_draw, _prog_draw_footprint;
 	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _texture_array_loc, _current_layer_loc, _next_layer_loc, _interpol_layer_loc, _z_loc;
+    GLint _camera2clip_fp_loc, _model2world_fp_loc, _position_fp_loc, _color_fp_loc;
     glm::mat4 _camera2clip;
     glm::mat4 _model2world;
     ScreenGL * _screengl;
@@ -112,5 +118,23 @@ public:
     float _z;
 };
 
+
+class Level {
+public:
+    Level();
+    Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw_static, ScreenGL * screengl, unsigned int w, unsigned int h);
+    ~Level();
+    void randomize();
+    void draw();
+    void anim(unsigned int n_ms);
+
+
+    std::vector<Test *> _tests;
+    std::vector<Model *> _models;
+    std::vector<StaticTexture *> _static_textures;
+    std::vector<obstacle_type> _obstacles;
+    unsigned int _w;
+    unsigned int _h;
+};
 
 #endif

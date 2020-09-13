@@ -53,7 +53,8 @@ Model::Model(string path) {
 	doc.parse<0>(&xml_content[0]);
 	xml_node<> * root_node= doc.first_node();
 
-	for (xml_node<> * anim_node=root_node->first_node("anim"); anim_node; anim_node=anim_node->next_sibling()) {
+    xml_node<> * anims_node= root_node->first_node("anims");
+	for (xml_node<> * anim_node=anims_node->first_node("anim"); anim_node; anim_node=anim_node->next_sibling()) {
 		xml_node<> * name_node= anim_node->first_node("name");
 	    string name= name_node->value();
 		xml_node<> * n_ms_node= anim_node->first_node("n_ms");
@@ -75,10 +76,17 @@ Model::Model(string path) {
         _actions[idx_action_ok]._move= move;
     }
 
+    xml_node<> * footprint_node= root_node->first_node("footprint");
+    float xmin= stof(footprint_node->first_node("xmin")->value())/ (float)(MODEL_SIZE);
+    float ymin= stof(footprint_node->first_node("ymin")->value())/ (float)(MODEL_SIZE);
+    float xmax= stof(footprint_node->first_node("xmax")->value())/ (float)(MODEL_SIZE);
+    float ymax= stof(footprint_node->first_node("ymax")->value())/ (float)(MODEL_SIZE);
+    _footprint= new AABB_2D(glm::vec2(xmin, ymin), glm::vec2(xmax, ymax));
+
 	glGenTextures(1, &_texture_id);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
     
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 512, 512, compt, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, MODEL_SIZE, MODEL_SIZE, compt, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
     for (auto action : _actions) {
         //action.print();
@@ -91,12 +99,12 @@ Model::Model(string path) {
 
             // sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
             glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-                            0,                     //Mipmap number
-                            0, 0, action._first_idx+ i, //xoffset, yoffset, zoffset
-                            512, 512, 1,           //width, height, depth
-                            GL_BGRA,               //format
-                            GL_UNSIGNED_BYTE,      //type
-                            surface->pixels);      //pointer to data
+                            0,                          // mipmap number
+                            0, 0, action._first_idx+ i, // xoffset, yoffset, zoffset
+                            MODEL_SIZE, MODEL_SIZE, 1,  // width, height, depth
+                            GL_BGRA,                    // format
+                            GL_UNSIGNED_BYTE,           // type
+                            surface->pixels);           // pointer to data
 
             SDL_FreeSurface(surface);
         }
@@ -114,7 +122,7 @@ Model::Model(string path) {
 
 
 Model::~Model() {
-
+    delete _footprint;
 }
 
 
@@ -123,8 +131,8 @@ Test::Test() {
 }
 
 
-Test::Test(GLuint prog_draw, ScreenGL * screengl, Model * model) :
-    _prog_draw(prog_draw), _screengl(screengl), _current_anim(0), _next_anim(1),
+Test::Test(GLuint prog_draw, GLuint prog_draw_footprint, ScreenGL * screengl, Model * model) :
+    _prog_draw(prog_draw), _prog_draw_footprint(prog_draw_footprint), _screengl(screengl), _current_anim(0), _next_anim(1),
     _interpol_anim(0.0f), _first_ms(0), _position(glm::vec2(0.0f, -4.0f)), _current_action_idx(0), _model(model), _z(0.0f)
 {
 	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
@@ -160,6 +168,32 @@ Test::Test(GLuint prog_draw, ScreenGL * screengl, Model * model) :
     glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 	glBufferData(GL_ARRAY_BUFFER, 24* sizeof(float), vertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+    // footprint ------------------------------------------------
+	glUseProgram(_prog_draw_footprint);
+	_camera2clip_fp_loc= glGetUniformLocation(_prog_draw_footprint, "camera2clip_matrix");
+    _model2world_fp_loc= glGetUniformLocation(_prog_draw_footprint, "model2world_matrix");
+    _position_fp_loc= glGetAttribLocation(_prog_draw_footprint, "position_in");
+    _color_fp_loc= glGetAttribLocation(_prog_draw_footprint, "color_in");
+	glUseProgram(0);
+
+    glGenBuffers(1, &_vbo_footprint);
+
+    float xmin= _model->_footprint->_pt_min.x;
+    float ymin= _model->_footprint->_pt_min.y;
+    float xmax= _model->_footprint->_pt_max.x;
+    float ymax= _model->_footprint->_pt_max.y;
+    glm::vec3 color(1.0f, 0.f, 0.0f);
+    float vertices_fp[4* 5]= {
+        xmin, ymin, color.x, color.y, color.z,
+        xmax, ymin, color.x, color.y, color.z,
+        xmax, ymax, color.x, color.y, color.z,
+        xmin, ymax, color.x, color.y, color.z
+    };
+
+    glBindBuffer(GL_ARRAY_BUFFER, _vbo_footprint);
+	glBufferData(GL_ARRAY_BUFFER, 20* sizeof(float), vertices_fp, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
@@ -190,6 +224,27 @@ void Test::draw() {
     glDisableVertexAttribArray(_tex_coord_loc);
 
     glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glUseProgram(0);
+
+    // footprint ----------------------
+    glUseProgram(_prog_draw_footprint);
+   	glBindBuffer(GL_ARRAY_BUFFER, _vbo_footprint);
+
+    glUniformMatrix4fv(_camera2clip_fp_loc, 1, GL_FALSE, glm::value_ptr(_camera2clip));
+    glUniformMatrix4fv(_model2world_fp_loc, 1, GL_FALSE, glm::value_ptr(_model2world));
+    
+    glEnableVertexAttribArray(_position_fp_loc);
+    glEnableVertexAttribArray(_color_fp_loc);
+
+    glVertexAttribPointer(_position_fp_loc, 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)0);
+    glVertexAttribPointer(_color_fp_loc, 3, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(2* sizeof(float)));
+
+    glDrawArrays(GL_LINE_LOOP, 0, 4);
+
+    glDisableVertexAttribArray(_position_fp_loc);
+    glDisableVertexAttribArray(_color_fp_loc);
+
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glUseProgram(0);
 }
@@ -371,3 +426,145 @@ void StaticTexture::set_blocs(vector<AABB_2D *> blocs) {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
+
+Level::Level() {
+
+}
+
+
+Level::Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw_static, ScreenGL * screengl, unsigned int w, unsigned int h) :
+    _w(w) ,_h(h)
+{
+	_models.push_back(new Model("/Users/home/git_dir/main/anim_2d/modeles/modele_1"));
+	_models.push_back(new Model("/Users/home/git_dir/main/anim_2d/modeles/modele_2"));
+	
+    for (unsigned int i=0; i<10; ++i) {
+		Test * test= new Test(prog_draw_anim, prog_draw_footprint, screengl, _models[i%2]);
+		test->_z= rand_float(0.0f, 0.9f);
+		//test->_z= (float)(i % 2)* 0.1f;
+		//test->_z= 2.0f;
+		test->_position= glm::vec2(rand_float(-5.0f, 5.0f), -7.0f);
+		//test->_position= glm::vec2((float)(i)* 0.7f, (float)(i)* 0.7f);
+		//test->set_size(rand_float(1.0f, 5.0f));
+		test->set_size(3.0f);
+		_tests.push_back(test);
+	}
+
+	StaticTexture * static_texture= new StaticTexture(prog_draw_static, screengl, "/Users/home/git_dir/main/anim_2d/static_textures/brick.png");
+	static_texture->_z= 1.5f;
+	vector<AABB_2D *> blocs;
+	blocs.push_back(new AABB_2D(glm::vec2(-8.0f, -8.0f), glm::vec2(8.0f, -7.0f)));
+	blocs.push_back(new AABB_2D(glm::vec2(-8.0f, -8.0f), glm::vec2(-7.0f, 5.0f)));
+	blocs.push_back(new AABB_2D(glm::vec2(7.0f, -8.0f), glm::vec2(8.0f, 5.0f)));
+	static_texture->set_blocs(blocs);
+	_static_textures.push_back(static_texture);
+
+	StaticTexture * static_texture_2= new StaticTexture(prog_draw_static, screengl, "/Users/home/git_dir/main/anim_2d/static_textures/grass.png");
+	static_texture_2->_z= 1.1f;
+	vector<AABB_2D *> blocs_2;
+	blocs_2.push_back(new AABB_2D(glm::vec2(-8.0f, -7.0f), glm::vec2(8.0f, -6.0f)));
+	static_texture_2->set_blocs(blocs_2);
+	_static_textures.push_back(static_texture_2);
+
+	StaticTexture * static_texture_3= new StaticTexture(prog_draw_static, screengl, "/Users/home/git_dir/main/anim_2d/static_textures/tree.png");
+	static_texture_3->_z= -1.0f;
+	static_texture_3->_size= 8.0f;
+	vector<AABB_2D *> blocs_3;
+	blocs_3.push_back(new AABB_2D(glm::vec2(-4.0f, -7.0f), glm::vec2(4.0f, 1.0f)));
+	static_texture_3->set_blocs(blocs_3);
+	_static_textures.push_back(static_texture_3);
+
+	StaticTexture * static_texture_4= new StaticTexture(prog_draw_static, screengl, "/Users/home/git_dir/main/anim_2d/static_textures/hill.png");
+	static_texture_4->_z= -2.0f;
+	static_texture_4->_size= 16.0f;
+	vector<AABB_2D *> blocs_4;
+	blocs_4.push_back(new AABB_2D(glm::vec2(-8.0f, -8.0f), glm::vec2(8.0f, 8.0f)));
+	static_texture_4->set_blocs(blocs_4);
+	_static_textures.push_back(static_texture_4);
+
+	StaticTexture * static_texture_5= new StaticTexture(prog_draw_static, screengl, "/Users/home/git_dir/main/anim_2d/static_textures/sky.png");
+	static_texture_5->_z= -3.0f;
+	static_texture_5->_size= 16.0f;
+	vector<AABB_2D *> blocs_5;
+	blocs_5.push_back(new AABB_2D(glm::vec2(-8.0f, -8.0f), glm::vec2(8.0f, 8.0f)));
+	static_texture_5->set_blocs(blocs_5);
+	_static_textures.push_back(static_texture_5);
+
+    for (unsigned int i=0; i<_w* _h; ++i) {
+        _obstacles.push_back(AIR);
+    }
+}
+
+
+Level::~Level() {
+	for (auto test : _tests) {
+		delete test;
+	}
+	_tests.clear();
+	for (auto model : _models) {
+		delete model;
+	}
+	_models.clear();
+	for (auto static_texture : _static_textures) {
+		delete static_texture;
+	}
+	_static_textures.clear();
+}
+
+
+void Level::randomize() {
+    for (unsigned int i=0; i<_w* _h; ++i) {
+        if (rand_int(0, 1)) {
+            _obstacles[i]= AIR;
+        }
+        else {
+            _obstacles[i]= SOLIDE;
+        }
+    }
+}
+
+
+void Level::draw() {
+	for (auto static_texture : _static_textures) {
+		static_texture->draw();
+	}
+
+	for (auto test : _tests) {
+		test->draw();
+	}
+}
+
+
+void Level::anim(unsigned int n_ms) {
+	for (auto test : _tests) {
+		int x= rand_int(0, 1000);
+		//int x= 0;
+		if (x== 0) {
+			test->set_action("right_wait");
+		}
+		else if (x== 1) {
+			test->set_action("left_wait");
+		}
+		else if (x== 2) {
+			test->set_action("right_walk");
+		}
+		else if (x== 3) {
+			test->set_action("left_walk");
+		}
+		else if (x== 4) {
+			test->set_action("right_run");
+		}
+		else if (x== 5) {
+			test->set_action("left_run");
+		}
+
+		if (test->_position.x> test->_screengl->_gl_width* 0.5f- 5.0f) {
+        	test->set_action("left_walk");
+    	}
+		if (test->_position.x< -test->_screengl->_gl_width* 0.5f+ 3.0f) {
+			test->set_action("right_walk");
+		}
+
+		test->anim(n_ms);
+	}
+}
