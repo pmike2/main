@@ -19,3 +19,10 @@ git push -u origin master
 
 // infos de l'état courant
 git status
+
+// récupérer le distant
+git pull
+
+// reinit le local pour ignorer les modifs en local en pouvoir faire un git pull
+git reset --hard
+

@@ -67,10 +67,10 @@ public:
 };
 
 
-class Test {
+class AnimTexture {
 public:
-    Test();
-    Test(GLuint prog_draw, GLuint prog_draw_footprint, ScreenGL * screengl, Model * model);
+    AnimTexture();
+    AnimTexture(GLuint prog_draw, GLuint prog_draw_footprint, ScreenGL * screengl, Model * model);
     void draw();
     void anim(unsigned int n_ms);
     void set_action(std::string action_name);
@@ -81,7 +81,7 @@ public:
     GLuint _vbo, _vbo_footprint;
 	GLuint _prog_draw, _prog_draw_footprint;
 	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _texture_array_loc, _current_layer_loc, _next_layer_loc, _interpol_layer_loc, _z_loc;
-    GLint _camera2clip_fp_loc, _model2world_fp_loc, _position_fp_loc, _color_fp_loc;
+    GLint _camera2clip_fp_loc, _model2world_fp_loc, _position_fp_loc, _color_fp_loc, _z_fp_loc;
     glm::mat4 _camera2clip;
     glm::mat4 _model2world;
     ScreenGL * _screengl;
@@ -93,6 +93,9 @@ public:
     Model * _model;
     float _size;
     float _z;
+	bool _go_right, _go_left, _go_up, _go_down;
+	bool _falling;
+	unsigned int _n_ms_start_falling;
 };
 
 
@@ -127,14 +130,17 @@ public:
     void randomize();
     void draw();
     void anim(unsigned int n_ms);
+	void sync_obstacles_bricks();
+	void update_gos();
 
 
-    std::vector<Test *> _tests;
+    std::vector<AnimTexture *> _anim_textures;
     std::vector<Model *> _models;
     std::vector<StaticTexture *> _static_textures;
     std::vector<obstacle_type> _obstacles;
-    unsigned int _w;
-    unsigned int _h;
+    unsigned int _w, _h;
+	float _block_w, _block_h;
+	ScreenGL * _screengl;
 };
 
 #endif

@@ -162,7 +162,7 @@ void init() {
 	arial_font= new Font(prog_font, "../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	input_state= new InputState();
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-	level= new Level(prog_anim_2d, prog_anim_2d_footprint, prog_static_2d, screengl, 16, 16);
+	level= new Level(prog_anim_2d, prog_anim_2d_footprint, prog_static_2d, screengl, 32, 32);
 
 	done= false;
 	tikfps1= SDL_GetTicks();
