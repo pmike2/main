@@ -1,5 +1,5 @@
-external=/Volumes/Cezanne/Cezanne/perso_dev/External_tools
-#external=/usr/local
+#external=/Volumes/Cezanne/Cezanne/perso_dev/External_tools
+external=/usr/local
 
 internal=../libs
 
@@ -27,8 +27,8 @@ input_state.o: $(internal)/input_state.cpp $(internal)/input_state.h
 gl_utils.o: $(internal)/gl_utils.cpp $(internal)/gl_utils.h $(internal)/utile.h
 	g++ -c $(internal)/gl_utils.cpp $(internal)/utile.cpp $(CXXFLAGS) $(OPTIONFLAGS)
 
-anim_2d.o: $(internal)/anim_2d.cpp $(internal)/anim_2d.h $(internal)/utile.h $(internal)/gl_utils.h $(internal)/bbox_2d.h
-	g++ -c $(internal)/anim_2d.cpp $(internal)/utile.cpp $(internal)/gl_utils.cpp $(internal)/bbox_2d.cpp $(CXXFLAGS) $(OPTIONFLAGS)
+anim_2d.o: $(internal)/anim_2d.cpp $(internal)/anim_2d.h $(internal)/utile.h $(internal)/gl_utils.h $(internal)/bbox_2d.h $(internal)/input_state.h
+	g++ -c $(internal)/anim_2d.cpp $(internal)/utile.cpp $(internal)/gl_utils.cpp $(internal)/bbox_2d.cpp $(internal)/input_state.cpp $(CXXFLAGS) $(OPTIONFLAGS)
 
 bbox_2d.o: $(internal)/bbox_2d.cpp $(internal)/bbox_2d.h
 	g++ -c $(internal)/bbox_2d.cpp $(CXXFLAGS) $(OPTIONFLAGS)

@@ -19,14 +19,6 @@
 
 
 #include "constantes.h"
-#include "repere.h"
-#include "utile.h"
-#include "gl_utils.h"
-#include "light.h"
-#include "gl_interface.h"
-#include "input_state.h"
-
-#include "pfs.h"
 
 
 using namespace std;
@@ -34,7 +26,6 @@ using namespace std;
 
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
-InputState * input_state;
 
 bool done= false;
 float bck_factor= 1.0f;
@@ -42,60 +33,34 @@ float bck_factor= 1.0f;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_3d_obj_instanced, prog_repere;
-GLuint g_vao;
-
-ViewSystem * view_system;
-LightsUBO * lights_ubo;
-
-PFS * pfs;
 
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
-	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
-
-	if (view_system->mouse_motion(input_state)) {
-		//return;
-	}
 }
 
 
 void mouse_button_up(int x, int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
-	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 }
 
 
 void mouse_button_down(int x, int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
-	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
-
-	if (input_state->_keys[SDLK_LSHIFT]) {
-		//glm::vec2 click_world= view_system->click2world(x, y, 0.0f);
-	}
 }
 
 
 void key_down(SDL_Keycode key) {
-	input_state->key_down(key);
-
 	if (key== SDLK_ESCAPE) {
 		done= true;
 	}
-	if (view_system->key_down(input_state, key)) {
-		return;
-	}
+	cout << "down\n";
 }
 
 
 void key_up(SDL_Keycode key) {
-	input_state->key_up(key);
-
-	if (view_system->key_up(input_state, key)) {
-		return;
-	}
+	cout << "up\n";
 }
 
 
@@ -140,45 +105,6 @@ void init() {
 	SDL_GL_SwapWindow(window);
 	
 	// --------------------------------------------------------------------------
-	/* VAO = vertex array object : tableau d'objets, chaque appel à un objet rappelle un contexte de dessin
-	incluant tous les attribute array setup (glVertexAttribArray), buffer objects used for attribute arrays
-	et GL_ELEMENT_ARRAY_BUFFER eventuellement
-	ici je n'en utilise qu'un pour tout le prog ; à terme peut-être faire plusieurs VAOs
-	*/
-	
-	glGenVertexArrays(1, &g_vao);
-	glBindVertexArray(g_vao);
-
-	prog_repere          = create_prog("../shaders/vertexshader_repere.txt"      , "../shaders/fragmentshader_basic.txt");
-	prog_3d_obj_instanced= create_prog("../shaders/vertexshader_3d_mat_instanced.txt", "../shaders/fragmentshader_3d_mat.txt");
-
-	float eye_direction[]= {0.0f, 0.0f, 1.0f};
-	GLuint progs_eye[]= {prog_3d_obj_instanced};
-	for (unsigned int i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
-		GLint eye_direction_loc= glGetUniformLocation(progs_eye[i], "eye_direction");
-		glUseProgram(progs_eye[i]);
-		glUniform3fv(eye_direction_loc, 1, eye_direction);
-		glUseProgram(0);
-	}
-
-	// verif que les shaders ont bien été compilés - linkés
-	check_gl_error();
-	
-	// --------------------------------------------------------------------------
-	lights_ubo= new LightsUBO(prog_3d_obj_instanced); // heu ca va marcher ca ???
-	lights_ubo->add_light(LIGHT_PARAMS_1, prog_repere, glm::vec3(0.0f, 0.0f, 5000.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-	
-	// --------------------------------------------------------------------------
-	view_system= new ViewSystem(prog_repere, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	view_system->_repere->_is_ground= false;
-	view_system->_repere->_is_repere= false;
-	view_system->_repere->_is_box= false;
-	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 130.0f);
-
-	// --------------------------------------------------------------------------
-	input_state= new InputState();
-
-	pfs= new PFS(20, 20, 20, prog_3d_obj_instanced);
 }
 
 
@@ -189,10 +115,6 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	
-	view_system->draw();
-	//lights_ubo->draw(view_system->_world2clip);
-
-	pfs->draw();
 
 	SDL_GL_SwapWindow(window);
 }
@@ -205,9 +127,6 @@ void anim() {
 		return;
 	
 	tikanim1= SDL_GetTicks();
-
-	lights_ubo->anim(view_system->_world2camera);
-	pfs->anim(view_system);
 }
 
 
@@ -272,11 +191,6 @@ void main_loop() {
 
 
 void clean() {
-	delete view_system;
-	delete input_state;
-	delete lights_ubo;
-	delete pfs;
-
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
 	IMG_Quit();

@@ -87,6 +87,11 @@ void key_down(SDL_Keycode key) {
 	if (key== SDLK_ESCAPE) {
 		done= true;
 	}
+
+	if (level->key_down(input_state, key)) {
+		return;
+	}
+
 }
 
 
