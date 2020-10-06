@@ -775,7 +775,7 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
     Action current_action= _anim_textures[0]->get_current_action();
 	if ((key== SDLK_LEFT) && (!_left_pressed)) {
         _left_pressed= true;
-        if ((current_action._speed_type== "RIGHT") || (current_action._speed_type== "WAIT")) {
+        if ((current_action._move_type== RIGHT) || (current_action._speed_type== WAIT)) {
             _anim_textures[0]->set_action("left_walk");
         }
 		return true;
@@ -788,6 +788,7 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
         else if ((current_action.name== "right_walk") || (current_action.name== "right_wait")) {
             _anim_textures[0]->set_action("right_jump");
         }
+		return true;
     }
 
 	return false;
@@ -795,9 +796,13 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 
 
 bool Level::key_up(InputState * input_state, SDL_Keycode key) {
+	Action current_action= _anim_textures[0]->get_current_action();
     if (key== SDLK_LEFT) {
         _left_pressed= false;
-        _anim_textures[0]->set_action("left_wait");
+		if (current_action._move_type== LEFT) {
+        	_anim_textures[0]->set_action("left_wait");
+		}
+		return true;
     }
     else if (key== SDLK_UP) {
         _up_pressed= false;

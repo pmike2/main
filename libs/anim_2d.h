@@ -127,7 +127,7 @@ public:
 	bool _falling;
 	unsigned int _n_ms_start_falling;
     glm::vec2 _speed;
-
+	glm::vec2 _acceleration;
 };
 
 
