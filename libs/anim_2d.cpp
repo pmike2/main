@@ -129,15 +129,16 @@ void StaticTexture::set_blocs(vector<AABB_2D *> blocs) {
 }
 
 
-// Action, Model, AnimTexture ---------------------------------------------------------------------------
+// Action ---------------------------------------------------------------------------
 void Action::print() {
-    cout << "_name=" << _name << " ; _first_idx=" << _first_idx << " ; _n_idx=" << _n_idx << " ; _n_ms=" << _n_ms << " ; _speed_inc=" << glm::to_string(_speed_inc) << " ; _speed_max=" << glm::to_string(_speed_max) << "\n";
+    cout << "_name=" << _name << " ; _first_idx=" << _first_idx << " ; _n_idx=" << _n_idx << " ; _n_ms=" << _n_ms << " ; _speed_begin=" << glm::to_string(_speed_begin) << " ; _speed_end=" << glm::to_string(_speed_end) << "\n";
     for (auto png : _pngs) {
         cout << png << "\n";
     }
 }
 
 
+// Model ---------------------------------------------------------------------------
 Model::Model() {
 
 }
@@ -150,17 +151,17 @@ Model::Model(string path) {
     for (auto dir : l_dirs) {
         if (dir[0]!= '.') {
             //cout << dir << "\n";
-            Action action= {};
-            action._name= dir;
-            action._first_idx= compt;
-            action._n_idx= 0;
+            Action * action= new Action();
+            action->_name= dir;
+            action->_first_idx= compt;
+            action->_n_idx= 0;
             vector<string> l_files= list_files(root_pngs+ "/"+ dir);
             sort(l_files.begin(), l_files.end());
             for (auto f : l_files) {
                 if (f[0]!= '.') {
                     //cout << f << "\n";
-                    action._pngs.push_back(root_pngs+ "/"+ dir+ "/"+ f);
-                    action._n_idx++;
+                    action->_pngs.push_back(root_pngs+ "/"+ dir+ "/"+ f);
+                    action->_n_idx++;
                     compt++;
                 }
             }
@@ -187,14 +188,14 @@ Model::Model(string path) {
 	    unsigned int n_ms= stoi(n_ms_node->value());
         xml_node<> * speed_type_node= anim_node->first_node("speed_type");
         string speed_type= speed_type_node->value();
-		xml_node<> * speed_inc_node= anim_node->first_node("speed_inc");
-	    float speed_inc= stof(speed_inc_node->value());
-		xml_node<> * speed_max_node= anim_node->first_node("speed_max");
-	    float speed_max= stof(speed_max_node->value());
+		xml_node<> * speed_begin_node= anim_node->first_node("speed_begin");
+	    float speed_begin= stof(speed_begin_node->value());
+		xml_node<> * speed_end_node= anim_node->first_node("speed_end");
+	    float speed_end= stof(speed_end_node->value());
 
         int idx_action_ok= -1;
         for (int idx_action=0; idx_action<_actions.size(); ++idx_action) {
-            if (_actions[idx_action]._name== name) {
+            if (_actions[idx_action]->_name== name) {
                 idx_action_ok= idx_action;
                 break;
             }
@@ -203,18 +204,18 @@ Model::Model(string path) {
             cout << "action non trouvee\n";
             return;
         }
-        _actions[idx_action_ok]._n_ms= n_ms;
-        _actions[idx_action_ok]._speed_inc.x= 0.0f;
-        _actions[idx_action_ok]._speed_inc.y= 0.0f;
-        _actions[idx_action_ok]._speed_max.x= 0.0f;
-        _actions[idx_action_ok]._speed_max.y= 0.0f;
+        _actions[idx_action_ok]->_n_ms= n_ms;
+        _actions[idx_action_ok]->_speed_begin.x= 0.0f;
+        _actions[idx_action_ok]->_speed_begin.y= 0.0f;
+        _actions[idx_action_ok]->_speed_end.x= 0.0f;
+        _actions[idx_action_ok]->_speed_end.y= 0.0f;
         if (speed_type== "HORIZONTAL") {
-            _actions[idx_action_ok]._speed_inc.x= speed_inc;
-            _actions[idx_action_ok]._speed_max.x= speed_max;
+            _actions[idx_action_ok]->_speed_begin.x= speed_begin;
+            _actions[idx_action_ok]->_speed_end.x= speed_end;
         }
         else if (speed_type== "VERTICAL") {
-            _actions[idx_action_ok]._speed_inc.y= speed_inc;
-            _actions[idx_action_ok]._speed_max.y= speed_max;
+            _actions[idx_action_ok]->_speed_begin.y= speed_begin;
+            _actions[idx_action_ok]->_speed_end.y= speed_end;
         }
     }
 
@@ -232,8 +233,8 @@ Model::Model(string path) {
 
     for (auto action : _actions) {
         //action.print();
-        for (unsigned int i=0; i<action._n_idx; ++i) {
-            SDL_Surface * surface= IMG_Load(action._pngs[i].c_str());
+        for (unsigned int i=0; i<action->_n_idx; ++i) {
+            SDL_Surface * surface= IMG_Load(action->_pngs[i].c_str());
             if (!surface) {
                 cout << "IMG_Load error :" << IMG_GetError() << endl;
                 return;
@@ -242,7 +243,7 @@ Model::Model(string path) {
             // sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
             glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
                             0,                          // mipmap number
-                            0, 0, action._first_idx+ i, // xoffset, yoffset, zoffset
+                            0, 0, action->_first_idx+ i, // xoffset, yoffset, zoffset
                             MODEL_SIZE, MODEL_SIZE, 1,  // width, height, depth
                             GL_BGRA,                    // format
                             GL_UNSIGNED_BYTE,           // type
@@ -265,12 +266,16 @@ Model::Model(string path) {
 
 Model::~Model() {
     delete _footprint;
+	for (auto action : _actions) {
+		delete action;
+	}
+	_actions.clear();
 }
 
 
-Action Model::get_action(string name) {
+Action * Model::get_action(string name) {
     for (auto action : _actions) {
-        if (action._name== name) {
+        if (action->_name== name) {
             return action;
         }
     }
@@ -279,6 +284,7 @@ Action Model::get_action(string name) {
 }
 
 
+// AnimTexture ----------------------------------------------------------------------------------------------------
 AnimTexture::AnimTexture() {
 
 }
@@ -286,8 +292,8 @@ AnimTexture::AnimTexture() {
 
 AnimTexture::AnimTexture(GLuint prog_draw, GLuint prog_draw_footprint, ScreenGL * screengl, Model * model) :
     _prog_draw(prog_draw), _prog_draw_footprint(prog_draw_footprint), _screengl(screengl), _current_anim(0), _next_anim(1),
-    _interpol_anim(0.0f), _first_ms(0), _position(glm::vec2(0.0f, -4.0f)), _current_action_idx(0), _model(model), _z(0.0f),
-	_go_right(false), _go_left(false), _go_up(false), _go_down(false), _falling(false), _n_ms_start_falling(0), _speed(glm::vec2(0.0f))
+    _interpol_anim(0.0f), _first_ms(0), _current_action_idx(0), _model(model), _z(0.0f)
+	//_go_right(false), _go_left(false), _go_up(false), _go_down(false), _falling(false), _n_ms_start_falling(0), _speed(glm::vec2(0.0f))
 {
 	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
     update_model2world();
@@ -337,6 +343,14 @@ AnimTexture::AnimTexture(GLuint prog_draw, GLuint prog_draw_footprint, ScreenGL 
     glBindBuffer(GL_ARRAY_BUFFER, _vbo_footprint);
 	glBufferData(GL_ARRAY_BUFFER, 80* sizeof(float), NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glm::vec2 pos(0.0f, -4.0f);
+	_aabb= new AABB_2D(pos, pos+ _model->_footprint->_pt_max- _model->_footprint->_pt_min);
+}
+
+
+AnimTexture::~AnimTexture() {
+	delete _aabb;
 }
 
 
@@ -348,8 +362,8 @@ void AnimTexture::draw() {
     glBindTexture(GL_TEXTURE_2D_ARRAY, _model->_texture_id);
 
     glUniform1i(_texture_array_loc, 0); //Sampler refers to texture unit 0
-    glUniform1i(_current_layer_loc, _model->_actions[_current_action_idx]._first_idx+ _current_anim);
-    glUniform1i(_next_layer_loc, _model->_actions[_current_action_idx]._first_idx+ _next_anim);
+    glUniform1i(_current_layer_loc, _model->_actions[_current_action_idx]->_first_idx+ _current_anim);
+    glUniform1i(_next_layer_loc, _model->_actions[_current_action_idx]->_first_idx+ _next_anim);
     glUniform1f(_interpol_layer_loc, _interpol_anim);
     glUniform1f(_z_loc, _z);
     glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, glm::value_ptr(_camera2clip));
@@ -437,20 +451,20 @@ void AnimTexture::anim(unsigned int n_ms) {
 	glBufferSubData(GL_ARRAY_BUFFER, 0, 80* sizeof(float), vertices_fp);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);*/
 
-    if (n_ms- _first_ms>= _model->_actions[_current_action_idx]._n_ms) {
-        _first_ms+= _model->_actions[_current_action_idx]._n_ms;
+    if (n_ms- _first_ms>= _model->_actions[_current_action_idx]->_n_ms) {
+        _first_ms+= _model->_actions[_current_action_idx]->_n_ms;
 
         _current_anim++;
-        if (_current_anim>= _model->_actions[_current_action_idx]._n_idx) {
+        if (_current_anim>= _model->_actions[_current_action_idx]->_n_idx) {
             _current_anim= 0;
         }
         _next_anim= _current_anim+ 1;
-        if (_next_anim>= _model->_actions[_current_action_idx]._n_idx) {
+        if (_next_anim>= _model->_actions[_current_action_idx]->_n_idx) {
             _next_anim= 0;
         }
     }
 
-    _interpol_anim= (float)(n_ms- _first_ms)/ (float)(_model->_actions[_current_action_idx]._n_ms);
+    _interpol_anim= (float)(n_ms- _first_ms)/ (float)(_model->_actions[_current_action_idx]->_n_ms);
 
 }
 
@@ -458,7 +472,7 @@ void AnimTexture::anim(unsigned int n_ms) {
 void AnimTexture::set_action(string action_name) {
     int next_action_idx= -1;
     for (int idx_action=0; idx_action<_model->_actions.size(); ++idx_action) {
-        if (_model->_actions[idx_action]._name== action_name) {
+        if (_model->_actions[idx_action]->_name== action_name) {
             next_action_idx= idx_action;
             break;
         }
@@ -468,16 +482,16 @@ void AnimTexture::set_action(string action_name) {
         return;
     }
 
-    if ((_model->_actions[next_action_idx]._speed_type== RIGHT) || (_model->_actions[next_action_idx]._speed_type== LEFT)) {
+    /*if ((_model->_actions[next_action_idx]->_speed_type== RIGHT) || (_model->_actions[next_action_idx]->_speed_type== LEFT)) {
         _speed.x= _model->_actions[next_action_idx]._speed_begin;
     }
-    if ((_model->_actions[next_action_idx]._speed_type== UP) || (_model->_actions[next_action_idx]._speed_type== DOWN)) {
+    if ((_model->_actions[next_action_idx]->_speed_type== UP) || (_model->_actions[next_action_idx]->_speed_type== DOWN)) {
         _speed.y= _model->_actions[next_action_idx]._speed_begin;
     }
-    if (_model->_actions[next_action_idx]._speed_type== WAIT) {
+    if (_model->_actions[next_action_idx]->_speed_type== WAIT) {
         _speed.x= 0.0f;
         _speed.y= 0.0f;
-    }
+    }*/
 
     _current_action_idx= next_action_idx;
     _current_anim= 0;
@@ -486,13 +500,13 @@ void AnimTexture::set_action(string action_name) {
 }
 
 
-Action AnimTexture::get_current_action() {
+Action * AnimTexture::get_current_action() {
     return _model->_actions[_current_action_idx];
 }
 
 
 void AnimTexture::update_model2world() {
-    _model2world= glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(_position.x, _position.y, 0.0f)), glm::vec3(_size, _size, 1.0f));
+    _model2world= glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(_aabb->_pt_min.x, _aabb->_pt_min.y, 0.0f)), glm::vec3(_size, _size, 1.0f));
 }
 
 
@@ -522,8 +536,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw
 		anim_texture->_z= rand_float(0.0f, 0.9f);
 		//anim_texture->_z= (float)(i % 2)* 0.1f;
 		//anim_texture->_z= 2.0f;
-		//anim_texture->_position= glm::vec2(rand_float(-5.0f, 5.0f), -7.0f);
-		anim_texture->_position= glm::vec2(0.0f, 7.0f);
+		anim_texture->_aabb->_pt_min= glm::vec2(0.0f, 7.0f);
 		//anim_texture->set_size(rand_float(1.0f, 5.0f));
 		anim_texture->set_size(3.0f);
 		_anim_textures.push_back(anim_texture);
@@ -647,7 +660,7 @@ void Level::anim(unsigned int n_ms) {
 
 		anim_texture->anim(n_ms);
 
-        anim_texture->_speed+= anim_texture->_model->_actions[_current_action_idx]._acceleration;
+        /*anim_texture->_speed+= anim_texture->_model->_actions[_current_action_idx]._acceleration;
         if ((anim_texture->_model->_actions[_current_action_idx]._move_type==RIGHT && (anim_texture->_speed.x> anim_texture->_model->_actions[_current_action_idx]._speed_end.x)) {
             anim_texture->_speed.x= anim_texture->_model->_actions[_current_action_idx]._speed_end.x;
         }
@@ -672,9 +685,9 @@ void Level::anim(unsigned int n_ms) {
                 _falling= false;
                 _n_ms_start_falling= 0;
             }
-        }
+        }*/
         
-        update_model2world();
+        anim_texture->update_model2world();
 
 	}
 }
@@ -727,7 +740,7 @@ void Level::sync_obstacles_bricks() {
 }
 
 
-void Level::update_gos() {
+/*void Level::update_gos() {
 	for (auto anim_texture : _anim_textures) {
 		glm::vec2 pos= anim_texture->_position;
 		glm::vec2 offset_min= anim_texture->_model->_footprint->_pt_min* anim_texture->_size;
@@ -768,26 +781,26 @@ void Level::update_gos() {
 			}
 		}
 	}
-}
+}*/
 
 
 bool Level::key_down(InputState * input_state, SDL_Keycode key) {
-    Action current_action= _anim_textures[0]->get_current_action();
+    Action * current_action= _anim_textures[0]->get_current_action();
 	if ((key== SDLK_LEFT) && (!_left_pressed)) {
         _left_pressed= true;
-        if ((current_action._move_type== RIGHT) || (current_action._speed_type== WAIT)) {
+        /*if ((current_action._move_type== RIGHT) || (current_action._speed_type== WAIT)) {
             _anim_textures[0]->set_action("left_walk");
-        }
+        }*/
 		return true;
 	}
     else if ((key== SDLK_UP) && (!_up_pressed)) {
         _up_pressed= true;
-        if ((current_action.name== "left_walk") || (current_action.name== "left_wait")) {
+        /*if ((current_action.name== "left_walk") || (current_action.name== "left_wait")) {
             _anim_textures[0]->set_action("left_jump");
         }
         else if ((current_action.name== "right_walk") || (current_action.name== "right_wait")) {
             _anim_textures[0]->set_action("right_jump");
-        }
+        }*/
 		return true;
     }
 
@@ -796,12 +809,12 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 
 
 bool Level::key_up(InputState * input_state, SDL_Keycode key) {
-	Action current_action= _anim_textures[0]->get_current_action();
+	Action * current_action= _anim_textures[0]->get_current_action();
     if (key== SDLK_LEFT) {
         _left_pressed= false;
-		if (current_action._move_type== LEFT) {
+		/*if (current_action._move_type== LEFT) {
         	_anim_textures[0]->set_action("left_wait");
-		}
+		}*/
 		return true;
     }
     else if (key== SDLK_UP) {

@@ -87,11 +87,11 @@ public:
     Model();
     Model(std::string path);
     ~Model();
-    Action get_action(std::string name);
+    Action * get_action(std::string name);
 
     
     GLuint _texture_id;
-    std::vector<Action> _actions;
+    std::vector<Action *> _actions;
     AABB_2D * _footprint;
 };
 
@@ -100,10 +100,11 @@ class AnimTexture {
 public:
     AnimTexture();
     AnimTexture(GLuint prog_draw, GLuint prog_draw_footprint, ScreenGL * screengl, Model * model);
+	~AnimTexture();
     void draw();
     void anim(unsigned int n_ms);
     void set_action(std::string action_name);
-    Action get_current_action();
+    Action * get_current_action();
     void update_model2world();
     void set_size(float size);
 
@@ -118,16 +119,17 @@ public:
     unsigned int _current_anim, _next_anim;
     unsigned int _first_ms;
     float _interpol_anim;
-    glm::vec2 _position;
     unsigned int _current_action_idx;
     Model * _model;
     float _size;
     float _z;
-	bool _go_right, _go_left, _go_up, _go_down;
+	/*bool _go_right, _go_left, _go_up, _go_down;
 	bool _falling;
 	unsigned int _n_ms_start_falling;
+	glm::vec2 _position;
     glm::vec2 _speed;
-	glm::vec2 _acceleration;
+	glm::vec2 _acceleration;*/
+	AABB_2D * _aabb;
 };
 
 
