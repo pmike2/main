@@ -452,7 +452,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw
 	_static_textures.push_back(new StaticTexture(prog_draw_static, "./static_textures/hill.png", screengl));
 	_static_textures.push_back(new StaticTexture(prog_draw_static, "./static_textures/sky.png", screengl));
 
-	for (unsigned int col=0; col<_w; ++col) {
+	/*for (unsigned int col=0; col<_w; ++col) {
 		for (unsigned int row=0; row<_h; ++row) {
 			if (row== 8) {
 				glm::vec2 pt_min(-0.5f* _screengl->_gl_width+ (float)(col)* _block_w, -0.5f* _screengl->_gl_height+ (float)(row)* _block_h);
@@ -461,6 +461,13 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw
 				_static_characters.push_back(new StaticCharacter(_static_objs[_static_objs.size()- 1], _static_textures[0], 0.0f));
 			}
 		}
+	}*/
+
+	for (unsigned int i=0; i<10000; ++i) {
+		glm::vec2 pt_min(rand_float(-5.0f, 5.0f), rand_float(-5.0f, 5.0f));
+		glm::vec2 pt_max= pt_min+ glm::vec2(1.0f, 1.0f);
+		_static_objs.push_back(new StaticObj(pt_min, pt_max));
+		_static_characters.push_back(new StaticCharacter(_static_objs[_static_objs.size()- 1], _static_textures[0], 1.0f));
 	}
 
 	for (auto st : _static_textures) {
@@ -477,11 +484,12 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw
 	_anim_textures.push_back(new AnimTexture(prog_draw_anim, "./anim_textures/modele_1", screengl));
 	//_anim_textures.push_back(new AnimTexture(prog_draw_anim, "./anim_textures/modele_2", screengl));
 	
-	_anim_objs.push_back(new AnimObj(glm::vec2(2.0f, 2.0f), glm::vec2(5.0f, 5.0f)));
-	//_anim_objs.push_back(new AnimObj(glm::vec2(3.0f, 0.0f), glm::vec2(5.0f, 2.0f)));
-
-	_anim_characters.push_back(new AnimCharacter(_anim_objs[0], _anim_textures[0], 1.0f));
-	//_anim_characters.push_back(new AnimCharacter(_anim_objs[1], _anim_textures[0], 1.0f));
+	for (unsigned int i=0; i<10000; ++i) {
+		glm::vec2 pt_min(rand_float(-5.0f, 5.0f), rand_float(-5.0f, 5.0f));
+		glm::vec2 pt_max= pt_min+ glm::vec2(1.0f, 1.0f);
+		_anim_objs.push_back(new AnimObj(pt_min, pt_max));
+		_anim_characters.push_back(new AnimCharacter(_anim_objs[_anim_objs.size()- 1], _anim_textures[0], 1.0f));
+	}
 
 	for (auto at : _anim_textures) {
 		vector<AnimCharacter *> anim_chars;
@@ -541,6 +549,16 @@ void Level::anim(unsigned int n_ms) {
 	
 	for (auto anim_char : _anim_characters) {
 		anim_char->anim(n_ms);
+	}
+
+	for (auto at : _anim_textures) {
+		vector<AnimCharacter *> anim_chars;
+		for (auto ac : _anim_characters) {
+			if (ac->_anim_texture== at) {
+				anim_chars.push_back(ac);
+			}
+		}
+		at->update(anim_chars);
 	}
 }
 
