@@ -36,34 +36,14 @@
 // _z doit etre entre ces bornes
 const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
+
 const unsigned int MODEL_SIZE= 512;
 
+const unsigned int LEVEL_WIDTH= 16;
+const unsigned int LEVEL_HEIGHT= 16;
 
-enum obstacle_type {AIR, SOLIDE};
-enum move_type {LEFT, RIGHT, UP, DOWN, WAIT};
+const unsigned int N_MS_ANIM= 50;
 
-
-class StaticTexture {
-public:
-    StaticTexture();
-    StaticTexture(GLuint prog_draw, ScreenGL * screengl, std::string path);
-    ~StaticTexture();
-    void draw();
-    void set_blocs(std::vector<AABB_2D *> blocs);
-
-
-    GLuint _texture_id;
-    GLuint _vbo;
-	GLuint _prog_draw;
-	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _tex_loc, _alpha_loc, _z_loc;
-    glm::mat4 _camera2clip;
-    glm::mat4 _model2world;
-    ScreenGL * _screengl;
-    float _alpha;
-    unsigned int _n_blocs;
-    float _size;
-    float _z;
-};
 
 
 struct Action {
@@ -74,87 +54,132 @@ struct Action {
     std::vector<std::string> _pngs;
     unsigned int _first_idx;
     unsigned int _n_idx;
-    unsigned int _n_ms;
-    move_type _move_type;
-    glm::vec2 _speed_begin;
-    glm::vec2 _speed_end;
-    glm::vec2 _acceleration;
 };
 
 
-class Model {
+class StaticObj {
 public:
-    Model();
-    Model(std::string path);
-    ~Model();
-    Action * get_action(std::string name);
+	StaticObj();
+	StaticObj(glm::vec2 pt_min, glm::vec2 pt_max);
+	~StaticObj();
 
-    
-    GLuint _texture_id;
-    std::vector<Action *> _actions;
-    AABB_2D * _footprint;
+	
+	AABB_2D * _aabb;
 };
 
+
+class AnimObj {
+public:
+	AnimObj();
+	AnimObj(glm::vec2 pt_min, glm::vec2 pt_max);
+	~AnimObj();
+	void anim(unsigned int n_ms);
+
+
+	AABB_2D * _aabb;
+	glm::vec2 _velocity;
+};
+
+
+class StaticCharacter;
+
+class StaticTexture {
+public:
+    StaticTexture();
+    StaticTexture(GLuint prog_draw, std::string path, ScreenGL * screengl);
+    ~StaticTexture();
+    void draw();
+    void update(std::vector<StaticCharacter *> static_chars);
+
+
+    GLuint _texture_id;
+    GLuint _vbo;
+	GLuint _prog_draw;
+	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _tex_loc, _alpha_loc;
+    glm::mat4 _camera2clip;
+    glm::mat4 _model2world;
+    ScreenGL * _screengl;
+    float _alpha;
+    unsigned int _n_aabbs;
+};
+
+
+class StaticCharacter {
+public:
+	StaticCharacter();
+	StaticCharacter(StaticObj * static_obj, StaticTexture * static_texture, float z);
+	~StaticCharacter();
+
+
+	StaticObj * _static_obj;
+	StaticTexture * _static_texture;
+	float _z;
+};
+
+
+class AnimCharacter;
 
 class AnimTexture {
 public:
     AnimTexture();
-    AnimTexture(GLuint prog_draw, GLuint prog_draw_footprint, ScreenGL * screengl, Model * model);
+    AnimTexture(GLuint prog_draw, std::string path, ScreenGL * screengl);
 	~AnimTexture();
     void draw();
-    void anim(unsigned int n_ms);
-    void set_action(std::string action_name);
-    Action * get_current_action();
-    void update_model2world();
-    void set_size(float size);
+    void update(std::vector<AnimCharacter *> anim_chars);
 
 
-    GLuint _vbo, _vbo_footprint;
-	GLuint _prog_draw, _prog_draw_footprint;
+    GLuint _texture_id;
+    GLuint _vbo;
+	GLuint _prog_draw;
 	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _texture_array_loc, _current_layer_loc, _next_layer_loc, _interpol_layer_loc, _z_loc;
-    GLint _camera2clip_fp_loc, _model2world_fp_loc, _position_fp_loc, _color_fp_loc, _z_fp_loc;
     glm::mat4 _camera2clip;
     glm::mat4 _model2world;
     ScreenGL * _screengl;
-    unsigned int _current_anim, _next_anim;
-    unsigned int _first_ms;
-    float _interpol_anim;
-    unsigned int _current_action_idx;
-    Model * _model;
-    float _size;
+	unsigned int _n_aabbs;
+	std::vector<Action *> _actions;
+};
+
+
+class AnimCharacter {
+public:
+	AnimCharacter();
+	AnimCharacter(AnimObj * anim_obj, AnimTexture * anim_texture, float z);
+	~AnimCharacter();
+	void anim(unsigned int n_ms);
+	void set_action(std::string action_name);
+
+
+	AnimObj * _anim_obj;
+	AnimTexture * _anim_texture;
     float _z;
-	/*bool _go_right, _go_left, _go_up, _go_down;
-	bool _falling;
-	unsigned int _n_ms_start_falling;
-	glm::vec2 _position;
-    glm::vec2 _speed;
-	glm::vec2 _acceleration;*/
-	AABB_2D * _aabb;
+	unsigned int _current_anim;
+	unsigned int _first_ms;
+	Action * _current_action;
 };
 
 
 class Level {
 public:
     Level();
-    Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw_static, ScreenGL * screengl, unsigned int w, unsigned int h);
+    Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw_static, ScreenGL * screengl);
     ~Level();
-    void randomize();
     void draw();
     void anim(unsigned int n_ms);
-	void ia();
-	void sync_obstacles_bricks();
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
 
 
-    std::vector<AnimTexture *> _anim_textures;
-    std::vector<Model *> _models;
     std::vector<StaticTexture *> _static_textures;
-    std::vector<obstacle_type> _obstacles;
-    unsigned int _w, _h;
+    std::vector<AnimTexture *> _anim_textures;
+	std::vector<StaticObj *> _static_objs;
+	std::vector<AnimObj *> _anim_objs;
+	std::vector<StaticCharacter *> _static_characters;
+	std::vector<AnimCharacter *> _anim_characters;
+    
+	unsigned int _w, _h;
 	float _block_w, _block_h;
 	ScreenGL * _screengl;
-    bool _left_pressed, _right_pressed, _down_pressed, _up_pressed;
+	bool _left_pressed, _right_pressed, _down_pressed, _up_pressed;
 };
 
 #endif

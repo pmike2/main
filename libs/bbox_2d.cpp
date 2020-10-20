@@ -9,7 +9,7 @@ AABB_2D::AABB_2D() {
 }
 
 
-AABB_2D::AABB_2D(glm::vec2 pt_min, glm::vec2 pt_max) : _pt_min(pt_min), _pt_max(pt_max), _velocity(glm::vec2(0.0f)) {
+AABB_2D::AABB_2D(glm::vec2 pt_min, glm::vec2 pt_max) : _pt_min(pt_min), _pt_max(pt_max) {
     /*for (unsigned int i=0; i<4; ++i) {
 		_contacts[i]= nullptr;
 	}*/
@@ -91,7 +91,7 @@ bool ray_intersects_aabb(const glm::vec2 & ray_origin, const glm::vec2 & ray_dir
 	return true;
 }
 
-
+/*
 bool dynamic_aabb_intersects_aabb(const AABB_2D * dynamic_aabb, const AABB_2D * static_aabb, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time) {
 	if (glm::length2(dynamic_aabb->_velocity)< 1e-6f) {
 		return false;
@@ -107,6 +107,8 @@ bool dynamic_aabb_intersects_aabb(const AABB_2D * dynamic_aabb, const AABB_2D * 
 	
 	return false;
 }
+*/
+
 
 /*
 bool resolve_dynamic_aabb_intersects_aabb(AABB_2D * dynamic_aabb, const AABB_2D * static_aabb, const float time_step) {

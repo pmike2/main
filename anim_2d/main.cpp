@@ -35,7 +35,6 @@
 using namespace std;
 
 
-
 // ---------------------------------------------------------------------------------------
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
@@ -51,7 +50,8 @@ GLuint g_vao;
 
 Font * arial_font;
 
-//Level * level;
+Level * level;
+
 
 // ---------------------------------------------------------------------------------------
 void mouse_motion(int x, int y, int xrel, int yrel) {
@@ -65,9 +65,9 @@ void mouse_button_up(unsigned int x, unsigned int y) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	float xf, yf;
+	/*float xf, yf;
 	screengl->screen2gl(input_state->_x, input_state->_y, xf, yf);
-	//cout << "up : " << xf << " ; " << yf << "\n";
+	cout << "up : " << xf << " ; " << yf << "\n";*/
 }
 
 
@@ -75,9 +75,9 @@ void mouse_button_down(unsigned int x, unsigned int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	float xf, yf;
+	/*float xf, yf;
 	screengl->screen2gl(input_state->_x, input_state->_y, xf, yf);
-	//cout << "down : " << xf << " ; " << yf << "\n";
+	cout << "down : " << xf << " ; " << yf << "\n";*/
 }
 
 
@@ -89,9 +89,9 @@ void key_down(SDL_Keycode key) {
 		return;
 	}
 
-	/*if (level->key_down(input_state, key)) {
+	if (level->key_down(input_state, key)) {
 		return;
-	}*/
+	}
 
 }
 
@@ -99,6 +99,9 @@ void key_down(SDL_Keycode key) {
 void key_up(SDL_Keycode key) {
 	input_state->key_up(key);
 
+	if (level->key_up(input_state, key)) {
+		return;
+	}
 }
 
 
@@ -168,7 +171,7 @@ void init() {
 	arial_font= new Font(prog_font, "../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	input_state= new InputState();
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-	//level= new Level(prog_anim_2d, prog_anim_2d_footprint, prog_static_2d, screengl, 32, 32);
+	level= new Level(prog_anim_2d, prog_anim_2d_footprint, prog_static_2d, screengl);
 
 	done= false;
 	tikfps1= SDL_GetTicks();
@@ -176,8 +179,7 @@ void init() {
 	val_fps= 0;
 	compt_fps= 0;
 
-
-	AABB_2D * x= new AABB_2D(glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+	/*AABB_2D * x= new AABB_2D(glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
 	x->_velocity= glm::vec2(100.0f, 0.0f);
 	AABB_2D * y= new AABB_2D(glm::vec2(2.0f, 0.5f), glm::vec2(4.0f, 1.5f));
 	glm::vec2 pt(0.5f, -0.5f);
@@ -189,15 +191,15 @@ void init() {
 	float time_step= 0.1f;
 	float contact_time= 0.0f;
 	
-	//cout << point_in_aabb(pt, x) << "\n";
-	//cout << aabb_intersects_aabb(x, y) << "\n";
-	//cout << ray_intersects_aabb(ray_origin, ray_dir, x, contact_pt, contact_normal, t_hit_near) << "\n";
-	//cout << glm::to_string(contact_pt) <<  " ; " << glm::to_string(contact_normal) << " ; " << t_hit_near << "\n";
+	cout << point_in_aabb(pt, x) << "\n";
+	cout << aabb_intersects_aabb(x, y) << "\n";
+	cout << ray_intersects_aabb(ray_origin, ray_dir, x, contact_pt, contact_normal, t_hit_near) << "\n";
+	cout << glm::to_string(contact_pt) <<  " ; " << glm::to_string(contact_normal) << " ; " << t_hit_near << "\n";
 	cout << dynamic_aabb_intersects_aabb(x, y, time_step, contact_pt, contact_normal, contact_time) << "\n";
 	cout << glm::to_string(contact_pt) <<  " ; " << glm::to_string(contact_normal) << " ; " << contact_time << "\n";
 
 	delete x;
-	delete y;
+	delete y;*/
 }
 
 
@@ -227,7 +229,7 @@ void draw() {
 
 	show_infos();
 
-	//level->draw();
+	level->draw();
 
 	SDL_GL_SwapWindow(window);
 }
@@ -240,7 +242,7 @@ void anim() {
 
 	tikanim1= SDL_GetTicks();
 
-	//level->anim(tikanim1);
+	level->anim(tikanim1);
 }
 
 
@@ -305,7 +307,7 @@ void main_loop() {
 
 
 void clean() {
-	//delete level;
+	delete level;
 	delete arial_font;
 	delete input_state;
 	delete screengl;
