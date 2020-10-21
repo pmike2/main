@@ -21,13 +21,13 @@ https://github.com/OneLoneCoder/olcPixelGameEngine/blob/master/Videos/OneLoneCod
 
 class AABB_2D {
 public:
-    AABB_2D();
-    AABB_2D(glm::vec2 pt_min, glm::vec2 pt_max);
-    ~AABB_2D();
+	AABB_2D();
+	AABB_2D(glm::vec2 pt_min, glm::vec2 pt_max);
+	~AABB_2D();
 
 
-    glm::vec2 _pt_min;
-    glm::vec2 _pt_max;
+	glm::vec2 _pt_min;
+	glm::vec2 _pt_max;
 	//glm::vec2 _velocity;
 	//std::array<AABB_2D *, 4> _contacts;
 };

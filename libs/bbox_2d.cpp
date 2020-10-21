@@ -10,14 +10,14 @@ AABB_2D::AABB_2D() {
 
 
 AABB_2D::AABB_2D(glm::vec2 pt_min, glm::vec2 pt_max) : _pt_min(pt_min), _pt_max(pt_max) {
-    /*for (unsigned int i=0; i<4; ++i) {
+		/*for (unsigned int i=0; i<4; ++i) {
 		_contacts[i]= nullptr;
 	}*/
 }
 
 
 AABB_2D::~AABB_2D() {
-    
+		
 }
 
 

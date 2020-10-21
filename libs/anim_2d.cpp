@@ -5,10 +5,10 @@ using namespace rapidxml;
 
 // Action ---------------------------------------------------------------------------
 void Action::print() {
-    cout << "_name=" << _name << " ; _first_idx=" << _first_idx << " ; _n_idx=" << _n_idx << "\n";
-    for (auto png : _pngs) {
-        cout << png << "\n";
-    }
+	cout << "_name=" << _name << " ; _first_idx=" << _first_idx << " ; _n_idx=" << _n_idx << "\n";
+	for (auto png : _pngs) {
+		cout << png << "\n";
+	}
 }
 
 
@@ -44,9 +44,26 @@ AnimObj::~AnimObj() {
 }
 
 
-void AnimObj::anim(unsigned int n_ms) {
-	_aabb->_pt_min+= _velocity* (float)(n_ms)* 0.001f;
-	_aabb->_pt_max+= _velocity* (float)(n_ms)* 0.001f;
+void AnimObj::anim(float elapsed_time) {
+	_aabb->_pt_min+= _velocity* elapsed_time* 400.0f;
+	_aabb->_pt_max+= _velocity* elapsed_time* 400.0f;
+}
+
+
+bool anim_intersect_static(const AnimObj * anim_obj, const StaticObj * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time) {
+	if (glm::length2(anim_obj->_velocity)< 1e-6f) {
+		return false;
+	}
+
+	AABB_2D expanded;
+	expanded._pt_min= static_obj->_aabb->_pt_min- 0.5f* (anim_obj->_aabb->_pt_max- anim_obj->_aabb->_pt_min);
+	expanded._pt_max= static_obj->_aabb->_pt_max+ 0.5f* (anim_obj->_aabb->_pt_max- anim_obj->_aabb->_pt_min);
+
+	if (ray_intersects_aabb(0.5f* (anim_obj->_aabb->_pt_min+ anim_obj->_aabb->_pt_max), time_step* anim_obj->_velocity, &expanded, contact_pt, contact_normal, contact_time)) {
+		return ((contact_time> 0.0f) && (contact_time< 1.0f));
+	}
+	
+	return false;
 }
 
 
@@ -59,40 +76,40 @@ StaticTexture::StaticTexture() {
 StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl) : _prog_draw(prog_draw), _screengl(screengl), _alpha(1.0f), _n_aabbs(0) {
 	glGenTextures(1, &_texture_id);
 	glBindTexture(GL_TEXTURE_2D, _texture_id);
-    
-    SDL_Surface * surface= IMG_Load(path.c_str());
-    if (!surface) {
-        cout << "IMG_Load error :" << IMG_GetError() << endl;
-        return;
-    }
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_BGRA, GL_UNSIGNED_BYTE, surface->pixels);
+	
+	SDL_Surface * surface= IMG_Load(path.c_str());
+	if (!surface) {
+		cout << "IMG_Load error :" << IMG_GetError() << endl;
+		return;
+	}
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_BGRA, GL_UNSIGNED_BYTE, surface->pixels);
 
-    SDL_FreeSurface(surface);
+	SDL_FreeSurface(surface);
 
-    glActiveTexture(GL_TEXTURE0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S    , GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T    , GL_REPEAT);
-    glActiveTexture(0);
-    
-    glBindTexture(GL_TEXTURE_2D, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S    , GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T    , GL_REPEAT);
+	glActiveTexture(0);
+	
+	glBindTexture(GL_TEXTURE_2D, 0);
 
-    _camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
-    _model2world= glm::mat4(1.0f);
+	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
+	_model2world= glm::mat4(1.0f);
 
 	glUseProgram(_prog_draw);
 	_camera2clip_loc= glGetUniformLocation(_prog_draw, "camera2clip_matrix");
-    _model2world_loc= glGetUniformLocation(_prog_draw, "model2world_matrix");
-    _tex_loc= glGetUniformLocation(_prog_draw, "tex");
-    _alpha_loc= glGetUniformLocation(_prog_draw, "alpha");
+	_model2world_loc= glGetUniformLocation(_prog_draw, "model2world_matrix");
+	_tex_loc= glGetUniformLocation(_prog_draw, "tex");
+	_alpha_loc= glGetUniformLocation(_prog_draw, "alpha");
 	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
-    _tex_coord_loc= glGetAttribLocation(_prog_draw, "tex_coord_in");
+	_tex_coord_loc= glGetAttribLocation(_prog_draw, "tex_coord_in");
 	glUseProgram(0);
 
-    glGenBuffers(1, &_vbo);	
+	glGenBuffers(1, &_vbo);	
 }
 
 
@@ -106,78 +123,78 @@ void StaticTexture::draw() {
 		return;
 	}
 	
-    glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
 
-    glUseProgram(_prog_draw);
+	glUseProgram(_prog_draw);
    	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-    glBindTexture(GL_TEXTURE_2D, _texture_id);
+	glBindTexture(GL_TEXTURE_2D, _texture_id);
 
-    glUniform1i(_tex_loc, 0); //Sampler refers to texture unit 0
-    glUniform1f(_alpha_loc, _alpha);
-    glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, glm::value_ptr(_camera2clip));
-    glUniformMatrix4fv(_model2world_loc, 1, GL_FALSE, glm::value_ptr(_model2world));
-    
-    glEnableVertexAttribArray(_position_loc);
-    glEnableVertexAttribArray(_tex_coord_loc);
+	glUniform1i(_tex_loc, 0); //Sampler refers to texture unit 0
+	glUniform1f(_alpha_loc, _alpha);
+	glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(_model2world_loc, 1, GL_FALSE, glm::value_ptr(_model2world));
+	
+	glEnableVertexAttribArray(_position_loc);
+	glEnableVertexAttribArray(_tex_coord_loc);
 
-    glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)0);
-    glVertexAttribPointer(_tex_coord_loc, 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)0);
+	glVertexAttribPointer(_tex_coord_loc, 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(3* sizeof(float)));
 
-    glDrawArrays(GL_TRIANGLES, 0, 6* _n_aabbs);
+	glDrawArrays(GL_TRIANGLES, 0, 6* _n_aabbs);
 
-    glDisableVertexAttribArray(_position_loc);
-    glDisableVertexAttribArray(_tex_coord_loc);
+	glDisableVertexAttribArray(_position_loc);
+	glDisableVertexAttribArray(_tex_coord_loc);
 
-    glBindTexture(GL_TEXTURE, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glUseProgram(0);
+	glBindTexture(GL_TEXTURE, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
 }
 
 
 void StaticTexture::update(vector<StaticCharacter *> static_chars) {
-    _n_aabbs= static_chars.size();
-    float vertices[30* _n_aabbs];
-    for (unsigned int idx=0; idx<_n_aabbs; ++idx) {
-        //glm::vec2 tex_coord= static_chars[idx]->_static_obj->_aabb->_pt_max- static_chars[idx]->_static_obj->_aabb->_pt_min;
+	_n_aabbs= static_chars.size();
+	float vertices[30* _n_aabbs];
+	for (unsigned int idx=0; idx<_n_aabbs; ++idx) {
+		//glm::vec2 tex_coord= static_chars[idx]->_static_obj->_aabb->_pt_max- static_chars[idx]->_static_obj->_aabb->_pt_min;
 		glm::vec2 tex_coord(1.0f, 1.0f);
 
-        vertices[30* idx+ 0]= static_chars[idx]->_static_obj->_aabb->_pt_min.x;
-        vertices[30* idx+ 1]= static_chars[idx]->_static_obj->_aabb->_pt_max.y;
+		vertices[30* idx+ 0]= static_chars[idx]->_static_obj->_aabb->_pt_min.x;
+		vertices[30* idx+ 1]= static_chars[idx]->_static_obj->_aabb->_pt_max.y;
 		vertices[30* idx+ 2]= static_chars[idx]->_z;
-        vertices[30* idx+ 3]= 0.0f;
-        vertices[30* idx+ 4]= 0.0f;
+		vertices[30* idx+ 3]= 0.0f;
+		vertices[30* idx+ 4]= 0.0f;
 
-        vertices[30* idx+ 5]= static_chars[idx]->_static_obj->_aabb->_pt_min.x;
-        vertices[30* idx+ 6]= static_chars[idx]->_static_obj->_aabb->_pt_min.y;
+		vertices[30* idx+ 5]= static_chars[idx]->_static_obj->_aabb->_pt_min.x;
+		vertices[30* idx+ 6]= static_chars[idx]->_static_obj->_aabb->_pt_min.y;
 		vertices[30* idx+ 7]= static_chars[idx]->_z;
-        vertices[30* idx+ 8]= 0.0f;
-        vertices[30* idx+ 9]= tex_coord.y;
+		vertices[30* idx+ 8]= 0.0f;
+		vertices[30* idx+ 9]= tex_coord.y;
 
-        vertices[30* idx+ 10]= static_chars[idx]->_static_obj->_aabb->_pt_max.x;
-        vertices[30* idx+ 11]= static_chars[idx]->_static_obj->_aabb->_pt_min.y;
+		vertices[30* idx+ 10]= static_chars[idx]->_static_obj->_aabb->_pt_max.x;
+		vertices[30* idx+ 11]= static_chars[idx]->_static_obj->_aabb->_pt_min.y;
 		vertices[30* idx+ 12]= static_chars[idx]->_z;
-        vertices[30* idx+ 13]= tex_coord.x;
-        vertices[30* idx+ 14]= tex_coord.y;
+		vertices[30* idx+ 13]= tex_coord.x;
+		vertices[30* idx+ 14]= tex_coord.y;
 
-        vertices[30* idx+ 15]= static_chars[idx]->_static_obj->_aabb->_pt_min.x;
-        vertices[30* idx+ 16]= static_chars[idx]->_static_obj->_aabb->_pt_max.y;
+		vertices[30* idx+ 15]= static_chars[idx]->_static_obj->_aabb->_pt_min.x;
+		vertices[30* idx+ 16]= static_chars[idx]->_static_obj->_aabb->_pt_max.y;
 		vertices[30* idx+ 17]= static_chars[idx]->_z;
-        vertices[30* idx+ 18]= 0.0f;
-        vertices[30* idx+ 19]= 0.0f;
+		vertices[30* idx+ 18]= 0.0f;
+		vertices[30* idx+ 19]= 0.0f;
 
-        vertices[30* idx+ 20]= static_chars[idx]->_static_obj->_aabb->_pt_max.x;
-        vertices[30* idx+ 21]= static_chars[idx]->_static_obj->_aabb->_pt_min.y;
+		vertices[30* idx+ 20]= static_chars[idx]->_static_obj->_aabb->_pt_max.x;
+		vertices[30* idx+ 21]= static_chars[idx]->_static_obj->_aabb->_pt_min.y;
 		vertices[30* idx+ 22]= static_chars[idx]->_z;
-        vertices[30* idx+ 23]= tex_coord.x;
-        vertices[30* idx+ 24]= tex_coord.y;
+		vertices[30* idx+ 23]= tex_coord.x;
+		vertices[30* idx+ 24]= tex_coord.y;
 
-        vertices[30* idx+ 25]= static_chars[idx]->_static_obj->_aabb->_pt_max.x;
-        vertices[30* idx+ 26]= static_chars[idx]->_static_obj->_aabb->_pt_max.y;
+		vertices[30* idx+ 25]= static_chars[idx]->_static_obj->_aabb->_pt_max.x;
+		vertices[30* idx+ 26]= static_chars[idx]->_static_obj->_aabb->_pt_max.y;
 		vertices[30* idx+ 27]= static_chars[idx]->_z;
-        vertices[30* idx+ 28]= tex_coord.x;
-        vertices[30* idx+ 29]= 0.0f;
-    }
-    glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+		vertices[30* idx+ 28]= tex_coord.x;
+		vertices[30* idx+ 29]= 0.0f;
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 	glBufferData(GL_ARRAY_BUFFER, 30* _n_aabbs* sizeof(float), vertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -206,79 +223,79 @@ AnimTexture::AnimTexture() {
 
 
 AnimTexture::AnimTexture(GLuint prog_draw, std::string path, ScreenGL * screengl) : _prog_draw(prog_draw), _screengl(screengl), _n_aabbs(0) {
-    string root_pngs= path+ "/pngs";
-    vector<string> l_dirs= list_files(root_pngs);
-    unsigned int compt= 0;
-    for (auto dir : l_dirs) {
-        if (dir[0]!= '.') {
-            //cout << dir << "\n";
-            Action * action= new Action();
-            action->_name= dir;
-            action->_first_idx= compt;
-            action->_n_idx= 0;
-            vector<string> l_files= list_files(root_pngs+ "/"+ dir);
-            sort(l_files.begin(), l_files.end());
-            for (auto f : l_files) {
-                if (f[0]!= '.') {
-                    //cout << f << "\n";
-                    action->_pngs.push_back(root_pngs+ "/"+ dir+ "/"+ f);
-                    action->_n_idx++;
-                    compt++;
-                }
-            }
-            _actions.push_back(action);
-        }
-    }
+	string root_pngs= path+ "/pngs";
+	vector<string> l_dirs= list_files(root_pngs);
+	unsigned int compt= 0;
+	for (auto dir : l_dirs) {
+		if (dir[0]!= '.') {
+			//cout << dir << "\n";
+			Action * action= new Action();
+			action->_name= dir;
+			action->_first_idx= compt;
+			action->_n_idx= 0;
+			vector<string> l_files= list_files(root_pngs+ "/"+ dir);
+			sort(l_files.begin(), l_files.end());
+			for (auto f : l_files) {
+				if (f[0]!= '.') {
+					//cout << f << "\n";
+					action->_pngs.push_back(root_pngs+ "/"+ dir+ "/"+ f);
+					action->_n_idx++;
+					compt++;
+				}
+			}
+			_actions.push_back(action);
+		}
+	}
 
 	glGenTextures(1, &_texture_id);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
-    
-    glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, MODEL_SIZE, MODEL_SIZE, compt, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, MODEL_SIZE, MODEL_SIZE, compt, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-    for (auto action : _actions) {
-        //action.print();
-        for (unsigned int i=0; i<action->_n_idx; ++i) {
-            SDL_Surface * surface= IMG_Load(action->_pngs[i].c_str());
-            if (!surface) {
-                cout << "IMG_Load error :" << IMG_GetError() << endl;
-                return;
-            }
+	for (auto action : _actions) {
+		//action.print();
+		for (unsigned int i=0; i<action->_n_idx; ++i) {
+			SDL_Surface * surface= IMG_Load(action->_pngs[i].c_str());
+			if (!surface) {
+				cout << "IMG_Load error :" << IMG_GetError() << endl;
+				return;
+			}
 
-            // sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
-            glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-                            0,                          // mipmap number
-                            0, 0, action->_first_idx+ i, // xoffset, yoffset, zoffset
-                            MODEL_SIZE, MODEL_SIZE, 1,  // width, height, depth
-                            GL_BGRA,                    // format
-                            GL_UNSIGNED_BYTE,           // type
-                            surface->pixels);           // pointer to data
+			// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
+			glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+							0,                          // mipmap number
+							0, 0, action->_first_idx+ i, // xoffset, yoffset, zoffset
+							MODEL_SIZE, MODEL_SIZE, 1,  // width, height, depth
+							GL_BGRA,                    // format
+							GL_UNSIGNED_BYTE,           // type
+							surface->pixels);           // pointer to data
 
-            SDL_FreeSurface(surface);
-        }
-    }
+			SDL_FreeSurface(surface);
+		}
+	}
 
-    glActiveTexture(GL_TEXTURE0);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-    glActiveTexture(0);
-    
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glActiveTexture(GL_TEXTURE0);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+	glActiveTexture(0);
+	
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
 	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	_model2world= glm::mat4(1.0f);
 
 	glUseProgram(_prog_draw);
 	_camera2clip_loc= glGetUniformLocation(_prog_draw, "camera2clip_matrix");
-    _model2world_loc= glGetUniformLocation(_prog_draw, "model2world_matrix");
-    _texture_array_loc= glGetUniformLocation(_prog_draw, "texture_array");
+	_model2world_loc= glGetUniformLocation(_prog_draw, "model2world_matrix");
+	_texture_array_loc= glGetUniformLocation(_prog_draw, "texture_array");
 	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
-    _tex_coord_loc= glGetAttribLocation(_prog_draw, "tex_coord_in");
-    _current_layer_loc= glGetAttribLocation(_prog_draw, "current_layer_in");
+	_tex_coord_loc= glGetAttribLocation(_prog_draw, "tex_coord_in");
+	_current_layer_loc= glGetAttribLocation(_prog_draw, "current_layer_in");
 	glUseProgram(0);
 
-    glGenBuffers(1, &_vbo);
+	glGenBuffers(1, &_vbo);
 }
 
 
@@ -295,93 +312,93 @@ void AnimTexture::draw() {
 		return;
 	}
 
-    glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
 
-    glUseProgram(_prog_draw);
+	glUseProgram(_prog_draw);
    	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-    glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
 
-    glUniform1i(_texture_array_loc, 0); //Sampler refers to texture unit 0
-    glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, glm::value_ptr(_camera2clip));
-    glUniformMatrix4fv(_model2world_loc, 1, GL_FALSE, glm::value_ptr(_model2world));
-    
-    glEnableVertexAttribArray(_position_loc);
-    glEnableVertexAttribArray(_tex_coord_loc);
+	glUniform1i(_texture_array_loc, 0); //Sampler refers to texture unit 0
+	glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(_model2world_loc, 1, GL_FALSE, glm::value_ptr(_model2world));
+	
+	glEnableVertexAttribArray(_position_loc);
+	glEnableVertexAttribArray(_tex_coord_loc);
 	glEnableVertexAttribArray(_current_layer_loc);
 
-    glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-    glVertexAttribPointer(_tex_coord_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+	glVertexAttribPointer(_tex_coord_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 	glVertexAttribPointer(_current_layer_loc, 1, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(5* sizeof(float)));
 
-    glDrawArrays(GL_TRIANGLES, 0, 6* _n_aabbs);
+	glDrawArrays(GL_TRIANGLES, 0, 6* _n_aabbs);
 
-    glDisableVertexAttribArray(_position_loc);
-    glDisableVertexAttribArray(_tex_coord_loc);
+	glDisableVertexAttribArray(_position_loc);
+	glDisableVertexAttribArray(_tex_coord_loc);
 	glDisableVertexAttribArray(_current_layer_loc);
 
-    glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glUseProgram(0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
 }
 
 
 void AnimTexture::update(vector<AnimCharacter *> anim_chars) {
-    _n_aabbs= anim_chars.size();
-    float vertices[36* _n_aabbs];
-    for (unsigned int idx=0; idx<_n_aabbs; ++idx) {
-        //glm::vec2 tex_coord= anim_chars[idx]->_anim_obj->_aabb->_pt_max- anim_chars[idx]->_anim_obj->_aabb->_pt_min;
+	_n_aabbs= anim_chars.size();
+	float vertices[36* _n_aabbs];
+	for (unsigned int idx=0; idx<_n_aabbs; ++idx) {
+		//glm::vec2 tex_coord= anim_chars[idx]->_anim_obj->_aabb->_pt_max- anim_chars[idx]->_anim_obj->_aabb->_pt_min;
 		glm::vec2 tex_coord(1.0f, 1.0f);
 		float current_layer= (float)(anim_chars[idx]->_current_action->_first_idx+ anim_chars[idx]->_current_anim);
 
-        vertices[36* idx+ 0]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.x;
-        vertices[36* idx+ 1]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.y;
+		vertices[36* idx+ 0]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.x;
+		vertices[36* idx+ 1]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.y;
 		vertices[36* idx+ 2]= anim_chars[idx]->_z;
-        vertices[36* idx+ 3]= 0.0f;
-        vertices[36* idx+ 4]= 0.0f;
+		vertices[36* idx+ 3]= 0.0f;
+		vertices[36* idx+ 4]= 0.0f;
 		vertices[36* idx+ 5]= current_layer;
 
-        vertices[36* idx+ 6]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.x;
-        vertices[36* idx+ 7]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.y;
+		vertices[36* idx+ 6]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.x;
+		vertices[36* idx+ 7]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.y;
 		vertices[36* idx+ 8]= anim_chars[idx]->_z;
-        vertices[36* idx+ 9]= 0.0f;
-        vertices[36* idx+ 10]= tex_coord.y;
+		vertices[36* idx+ 9]= 0.0f;
+		vertices[36* idx+ 10]= tex_coord.y;
 		vertices[36* idx+ 11]= current_layer;
 
-        vertices[36* idx+ 12]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.x;
-        vertices[36* idx+ 13]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.y;
+		vertices[36* idx+ 12]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.x;
+		vertices[36* idx+ 13]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.y;
 		vertices[36* idx+ 14]= anim_chars[idx]->_z;
-        vertices[36* idx+ 15]= tex_coord.x;
-        vertices[36* idx+ 16]= tex_coord.y;
+		vertices[36* idx+ 15]= tex_coord.x;
+		vertices[36* idx+ 16]= tex_coord.y;
 		vertices[36* idx+ 17]= current_layer;
 
-        vertices[36* idx+ 18]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.x;
-        vertices[36* idx+ 19]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.y;
+		vertices[36* idx+ 18]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.x;
+		vertices[36* idx+ 19]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.y;
 		vertices[36* idx+ 20]= anim_chars[idx]->_z;
-        vertices[36* idx+ 21]= 0.0f;
-        vertices[36* idx+ 22]= 0.0f;
+		vertices[36* idx+ 21]= 0.0f;
+		vertices[36* idx+ 22]= 0.0f;
 		vertices[36* idx+ 23]= current_layer;
 
-        vertices[36* idx+ 24]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.x;
-        vertices[36* idx+ 25]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.y;
+		vertices[36* idx+ 24]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.x;
+		vertices[36* idx+ 25]= anim_chars[idx]->_anim_obj->_aabb->_pt_min.y;
 		vertices[36* idx+ 26]= anim_chars[idx]->_z;
-        vertices[36* idx+ 27]= tex_coord.x;
-        vertices[36* idx+ 28]= tex_coord.y;
+		vertices[36* idx+ 27]= tex_coord.x;
+		vertices[36* idx+ 28]= tex_coord.y;
 		vertices[36* idx+ 29]= current_layer;
 
-        vertices[36* idx+ 30]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.x;
-        vertices[36* idx+ 31]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.y;
+		vertices[36* idx+ 30]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.x;
+		vertices[36* idx+ 31]= anim_chars[idx]->_anim_obj->_aabb->_pt_max.y;
 		vertices[36* idx+ 32]= anim_chars[idx]->_z;
-        vertices[36* idx+ 33]= tex_coord.x;
-        vertices[36* idx+ 34]= 0.0f;
+		vertices[36* idx+ 33]= tex_coord.x;
+		vertices[36* idx+ 34]= 0.0f;
 		vertices[36* idx+ 35]= current_layer;
-    }
+	}
 	/*for (unsigned int i=0; i<36* _n_aabbs; ++i) {
 		if (i%6==0) {
 			cout << "\n";
 		}
 		cout << vertices[i] << " ; ";
 	}*/
-    glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 	glBufferData(GL_ARRAY_BUFFER, 36* _n_aabbs* sizeof(float), vertices, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -393,7 +410,7 @@ AnimCharacter::AnimCharacter() {
 }
 
 
-AnimCharacter::AnimCharacter(AnimObj * anim_obj, AnimTexture * anim_texture, float z) : _anim_obj(anim_obj), _anim_texture(anim_texture), _z(z), _current_anim(0), _first_ms(0) {
+AnimCharacter::AnimCharacter(AnimObj * anim_obj, AnimTexture * anim_texture, float z) : _anim_obj(anim_obj), _anim_texture(anim_texture), _z(z), _current_anim(0) {
 	_current_action= _anim_texture->_actions[0];
 }
 
@@ -403,33 +420,41 @@ AnimCharacter::~AnimCharacter() {
 }
 
 
-void AnimCharacter::anim(unsigned int n_ms) {
-    if (n_ms- _first_ms>= N_MS_ANIM) {
-        _first_ms+= N_MS_ANIM;
+void AnimCharacter::anim(float elapsed_time) {
+	if (elapsed_time>= ANIM_TIME) {
+		_current_anim++;
+		if (_current_anim>= _current_action->_n_idx) {
+			_current_anim= 0;
+		}
+	}
+}
 
-        _current_anim++;
-        if (_current_anim>= _current_action->_n_idx) {
-            _current_anim= 0;
-        }
-    }
+
+void AnimCharacter::set_action(unsigned int idx_action) {
+	if (idx_action>= _anim_texture->_actions.size()) {
+		cout << "set_action " << idx_action << " trop grand\n";
+		return;
+	}
+	_current_action= _anim_texture->_actions[idx_action];
+	_current_anim= 0;
 }
 
 
 void AnimCharacter::set_action(string action_name) {
-    bool found= false;
-    for (auto action : _anim_texture->_actions) {
-        if (action->_name== action_name) {
-            found= true;
+	bool found= false;
+	for (auto action : _anim_texture->_actions) {
+		if (action->_name== action_name) {
+			found= true;
 			_current_action= action;
-            break;
-        }
-    }
-    if (!found) {
-        cout << "action non trouvee : " << action_name << "\n";
-        return;
-    }
+			break;
+		}
+	}
+	if (!found) {
+		cout << "action non trouvee : " << action_name << "\n";
+		return;
+	}
 
-    _current_anim= 0;
+	_current_anim= 0;
 }
 
 
@@ -440,7 +465,7 @@ Level::Level() {
 
 
 Level::Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw_static, ScreenGL * screengl) :
-    _w(LEVEL_WIDTH) ,_h(LEVEL_HEIGHT), _screengl(screengl)
+	_w(LEVEL_WIDTH) ,_h(LEVEL_HEIGHT), _screengl(screengl)
 {
 	_block_w= _screengl->_gl_width/ (float)(_w);
 	_block_h= _screengl->_gl_height/ (float)(_h);
@@ -452,23 +477,23 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw
 	_static_textures.push_back(new StaticTexture(prog_draw_static, "./static_textures/hill.png", screengl));
 	_static_textures.push_back(new StaticTexture(prog_draw_static, "./static_textures/sky.png", screengl));
 
-	/*for (unsigned int col=0; col<_w; ++col) {
+	for (unsigned int col=0; col<_w; ++col) {
 		for (unsigned int row=0; row<_h; ++row) {
-			if (row== 8) {
+			if (row== 2) {
 				glm::vec2 pt_min(-0.5f* _screengl->_gl_width+ (float)(col)* _block_w, -0.5f* _screengl->_gl_height+ (float)(row)* _block_h);
 				glm::vec2 pt_max= pt_min+ glm::vec2(_block_w, _block_h);
 				_static_objs.push_back(new StaticObj(pt_min, pt_max));
 				_static_characters.push_back(new StaticCharacter(_static_objs[_static_objs.size()- 1], _static_textures[0], 0.0f));
 			}
 		}
-	}*/
+	}
 
-	for (unsigned int i=0; i<10000; ++i) {
+	/*for (unsigned int i=0; i<10000; ++i) {
 		glm::vec2 pt_min(rand_float(-5.0f, 5.0f), rand_float(-5.0f, 5.0f));
 		glm::vec2 pt_max= pt_min+ glm::vec2(1.0f, 1.0f);
 		_static_objs.push_back(new StaticObj(pt_min, pt_max));
-		_static_characters.push_back(new StaticCharacter(_static_objs[_static_objs.size()- 1], _static_textures[0], 1.0f));
-	}
+		_static_characters.push_back(new StaticCharacter(_static_objs[_static_objs.size()- 1], _static_textures[rand_int(0, 1)], 0.0f));
+	}*/
 
 	for (auto st : _static_textures) {
 		vector<StaticCharacter *> static_chars;
@@ -482,14 +507,17 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw
 
 	// anim -------------------
 	_anim_textures.push_back(new AnimTexture(prog_draw_anim, "./anim_textures/modele_1", screengl));
-	//_anim_textures.push_back(new AnimTexture(prog_draw_anim, "./anim_textures/modele_2", screengl));
+	_anim_textures.push_back(new AnimTexture(prog_draw_anim, "./anim_textures/modele_2", screengl));
 	
-	for (unsigned int i=0; i<10000; ++i) {
+	_anim_objs.push_back(new AnimObj(glm::vec2(0.0f, 0.0f), glm::vec2(2.0f, 2.0f)));
+	_anim_characters.push_back(new AnimCharacter(_anim_objs[0], _anim_textures[0], 1.0f));
+
+	/*for (unsigned int i=0; i<100; ++i) {
 		glm::vec2 pt_min(rand_float(-5.0f, 5.0f), rand_float(-5.0f, 5.0f));
 		glm::vec2 pt_max= pt_min+ glm::vec2(1.0f, 1.0f);
 		_anim_objs.push_back(new AnimObj(pt_min, pt_max));
-		_anim_characters.push_back(new AnimCharacter(_anim_objs[_anim_objs.size()- 1], _anim_textures[0], 1.0f));
-	}
+		_anim_characters.push_back(new AnimCharacter(_anim_objs[_anim_objs.size()- 1], _anim_textures[rand_int(0, 1)], 1.0f));
+	}*/
 
 	for (auto at : _anim_textures) {
 		vector<AnimCharacter *> anim_chars;
@@ -542,13 +570,50 @@ void Level::draw() {
 }
 
 
-void Level::anim(unsigned int n_ms) {
+void Level::anim(float elapsed_time) {
+	/*for (auto anim_char : _anim_characters) {
+		if (!rand_int(0, 100)) {
+			anim_char->set_action(rand_int(0, anim_char->_anim_texture->_actions.size()- 1));
+		}
+	}*/
+
+	float vel= 0.03f;
+
+	if (_left_pressed) {
+		_anim_objs[0]->_velocity.x= -vel;
+	}
+	else if (_right_pressed) {
+		_anim_objs[0]->_velocity.x= vel;
+	}
+	else {
+		_anim_objs[0]->_velocity.x= 0.0f;
+	}
+
+	if (_up_pressed) {
+		_anim_objs[0]->_velocity.y= vel;
+	}
+	else if (_down_pressed) {
+		_anim_objs[0]->_velocity.y= -vel;
+	}
+	else {
+		_anim_objs[0]->_velocity.y= 0.0f;
+	}
+
+	glm::vec2 contact_pt(0.0f);
+	glm::vec2 contact_normal(0.0f);
+	float contact_time= 0.0f;
+	for (auto static_obj : _static_objs) {
+		if (anim_intersect_static(_anim_objs[0], static_obj, elapsed_time, contact_pt, contact_normal, contact_time)) {
+			cout << "inter\n";
+		}
+	}
+
 	for (auto anim_obj : _anim_objs) {
-		anim_obj->anim(n_ms);
+		anim_obj->anim(elapsed_time);
 	}
 	
 	for (auto anim_char : _anim_characters) {
-		anim_char->anim(n_ms);
+		anim_char->anim(elapsed_time);
 	}
 
 	for (auto at : _anim_textures) {
@@ -565,25 +630,43 @@ void Level::anim(unsigned int n_ms) {
 
 bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 	if ((key== SDLK_LEFT) && (!_left_pressed)) {
-        _left_pressed= true;
+		_left_pressed= true;
 		return true;
 	}
-    else if ((key== SDLK_UP) && (!_up_pressed)) {
-        _up_pressed= true;
+	else if ((key== SDLK_RIGHT) && (!_right_pressed)) {
+		_right_pressed= true;
 		return true;
-    }
+	}
+	else if ((key== SDLK_UP) && (!_up_pressed)) {
+		_up_pressed= true;
+		return true;
+	}
+	else if ((key== SDLK_DOWN) && (!_down_pressed)) {
+		_down_pressed= true;
+		return true;
+	}
 
 	return false;
 }
 
 
 bool Level::key_up(InputState * input_state, SDL_Keycode key) {
-    if (key== SDLK_LEFT) {
-        _left_pressed= false;
+	if (key== SDLK_LEFT) {
+		_left_pressed= false;
 		return true;
-    }
-    else if (key== SDLK_UP) {
-        _up_pressed= false;
-    }
+	}
+	else if (key== SDLK_RIGHT) {
+		_right_pressed= false;
+		return true;
+	}
+	else if (key== SDLK_UP) {
+		_up_pressed= false;
+		return true;
+	}
+	else if (key== SDLK_DOWN) {
+		_down_pressed= false;
+		return true;
+	}
+
 	return false;
 }

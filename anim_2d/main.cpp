@@ -240,9 +240,9 @@ void anim() {
 	if (tikanim2- tikanim1< DELTA_ANIM)
 		return;
 
-	tikanim1= SDL_GetTicks();
+	level->anim(float(tikanim2- tikanim1)* 0.001f);
 
-	level->anim(tikanim1);
+	tikanim1= SDL_GetTicks();
 }
 
 
