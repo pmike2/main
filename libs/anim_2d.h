@@ -37,12 +37,12 @@
 const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
 
-const unsigned int MODEL_SIZE= 512;
+const unsigned int ANIM_MODEL_SIZE= 512;
 
 const unsigned int LEVEL_WIDTH= 16;
 const unsigned int LEVEL_HEIGHT= 16;
 
-const float ANIM_TIME= 0.02f;
+const float ANIM_TIME= 0.2f;
 
 
 
@@ -60,23 +60,29 @@ struct Action {
 class StaticObj {
 public:
 	StaticObj();
-	StaticObj(glm::vec2 pt_min, glm::vec2 pt_max);
+	StaticObj(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size);
 	~StaticObj();
+	void update_footprint_pos();
 
 	
 	AABB_2D * _aabb;
+	glm::vec2 _footprint_offset;
+	AABB_2D * _footprint;
 };
 
 
 class AnimObj {
 public:
 	AnimObj();
-	AnimObj(glm::vec2 pt_min, glm::vec2 pt_max);
+	AnimObj(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size);
 	~AnimObj();
 	void anim(float elapsed_time);
+	void update_footprint_pos();
 
 
 	AABB_2D * _aabb;
+	glm::vec2 _footprint_offset;
+	AABB_2D * _footprint;
 	glm::vec2 _velocity;
 };
 
@@ -104,6 +110,8 @@ public:
 	ScreenGL * _screengl;
 	float _alpha;
 	unsigned int _n_aabbs;
+	glm::vec2 _footprint_offset; // entre 0 et 1
+	glm::vec2 _footprint_size; // entre 0 et 1
 };
 
 
@@ -134,12 +142,14 @@ public:
 	GLuint _texture_id;
 	GLuint _vbo;
 	GLuint _prog_draw;
-	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _texture_array_loc, _current_layer_loc, _next_layer_loc, _interpol_layer_loc, _z_loc;
+	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _texture_array_loc, _current_layer_loc;
 	glm::mat4 _camera2clip;
 	glm::mat4 _model2world;
 	ScreenGL * _screengl;
 	unsigned int _n_aabbs;
 	std::vector<Action *> _actions;
+	glm::vec2 _footprint_offset; // entre 0 et 1
+	glm::vec2 _footprint_size; // entre 0 et 1
 };
 
 
@@ -157,7 +167,7 @@ public:
 	AnimTexture * _anim_texture;
 	float _z;
 	unsigned int _current_anim;
-	//unsigned int _first_ms;
+	float _accumulated_time;
 	Action * _current_action;
 };
 
@@ -165,7 +175,7 @@ public:
 class Level {
 public:
 	Level();
-	Level(GLuint prog_draw_anim, GLuint prog_draw_footprint, GLuint prog_draw_static, ScreenGL * screengl);
+	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, ScreenGL * screengl);
 	~Level();
 	void draw();
 	void anim(float elapsed_time);
@@ -185,5 +195,26 @@ public:
 	ScreenGL * _screengl;
 	bool _left_pressed, _right_pressed, _down_pressed, _up_pressed;
 };
+
+
+class LevelDebug {
+public:
+	LevelDebug();
+	LevelDebug(GLuint prog_draw_aabb, Level * level, ScreenGL * screengl);
+	~LevelDebug();
+	void draw();
+	void update();
+
+
+	GLuint _vbo;
+	GLuint _prog_draw;
+	GLint _camera2clip_loc, _model2world_loc, _position_loc, _color_loc, _z_loc;
+	glm::mat4 _camera2clip;
+	glm::mat4 _model2world;
+	ScreenGL * _screengl;
+	Level * _level;
+	unsigned int _n_aabbs;
+};
+
 
 #endif

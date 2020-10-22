@@ -45,12 +45,13 @@ bool done;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_anim_2d, prog_anim_2d_footprint, prog_static_2d, prog_font;
+GLuint prog_static_2d, prog_anim_2d, prog_aabb_2d, prog_font;
 GLuint g_vao;
 
 Font * arial_font;
 
 Level * level;
+LevelDebug * level_debug;
 
 
 // ---------------------------------------------------------------------------------------
@@ -160,10 +161,10 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_font= create_prog("../shaders/vertexshader_font.txt", "../shaders/fragmentshader_font.txt");
 	prog_static_2d= create_prog("../shaders/vertexshader_2d_static.txt"  , "../shaders/fragmentshader_2d_static.txt");
 	prog_anim_2d  = create_prog("../shaders/vertexshader_2d_anim.txt"  , "../shaders/fragmentshader_2d_anim.txt");
-	prog_anim_2d_footprint= create_prog("../shaders/vertexshader_2d_footprint.txt"  , "../shaders/fragmentshader_basic.txt");
+	prog_aabb_2d= create_prog("../shaders/vertexshader_2d_aabb.txt"  , "../shaders/fragmentshader_basic.txt");
+	prog_font= create_prog("../shaders/vertexshader_font.txt", "../shaders/fragmentshader_font.txt");
 
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
 	
@@ -171,7 +172,8 @@ void init() {
 	arial_font= new Font(prog_font, "../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	input_state= new InputState();
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-	level= new Level(prog_anim_2d, prog_anim_2d_footprint, prog_static_2d, screengl);
+	level= new Level(prog_anim_2d, prog_static_2d, prog_aabb_2d, screengl);
+	level_debug= new LevelDebug(prog_aabb_2d, level, screengl);
 
 	done= false;
 	tikfps1= SDL_GetTicks();
@@ -230,6 +232,7 @@ void draw() {
 	show_infos();
 
 	level->draw();
+	level_debug->draw();
 
 	SDL_GL_SwapWindow(window);
 }
@@ -241,6 +244,7 @@ void anim() {
 		return;
 
 	level->anim(float(tikanim2- tikanim1)* 0.001f);
+	level_debug->update();
 
 	tikanim1= SDL_GetTicks();
 }

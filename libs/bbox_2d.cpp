@@ -9,10 +9,7 @@ AABB_2D::AABB_2D() {
 }
 
 
-AABB_2D::AABB_2D(glm::vec2 pt_min, glm::vec2 pt_max) : _pt_min(pt_min), _pt_max(pt_max) {
-		/*for (unsigned int i=0; i<4; ++i) {
-		_contacts[i]= nullptr;
-	}*/
+AABB_2D::AABB_2D(glm::vec2 pos, glm::vec2 size) : _pos(pos), _size(size) {
 }
 
 
@@ -22,12 +19,12 @@ AABB_2D::~AABB_2D() {
 
 
 bool point_in_aabb(const glm::vec2 & pt, const AABB_2D * aabb) {
-	return ((pt.x> aabb->_pt_min.x) && (pt.x< aabb->_pt_max.x) && (pt.y> aabb->_pt_min.y) && (pt.y< aabb->_pt_max.y));
+	return ((pt.x> aabb->_pos.x) && (pt.x< aabb->_pos.x+ aabb->_size.x) && (pt.y> aabb->_pos.y) && (pt.y< aabb->_pos.y+ aabb->_size.y));
 }
 
 
 bool aabb_intersects_aabb(const AABB_2D * aabb_1, const AABB_2D * aabb_2) {
-	return ((aabb_1->_pt_min.x< aabb_2->_pt_max.x) && (aabb_1->_pt_max.x> aabb_2->_pt_min.x) && (aabb_1->_pt_min.y< aabb_2->_pt_max.y) && (aabb_1->_pt_max.y> aabb_2->_pt_min.y));
+	return ((aabb_1->_pos.x< aabb_2->_pos.x+ aabb_2->_size.x) && (aabb_1->_pos.x+ aabb_1->_size.x> aabb_2->_pos.x) && (aabb_1->_pos.y< aabb_2->_pos.y+ aabb_2->_size.y) && (aabb_1->_pos.y+ aabb_1->_size.y> aabb_2->_pos.y));
 }
 
 
@@ -44,8 +41,8 @@ bool ray_intersects_aabb(const glm::vec2 & ray_origin, const glm::vec2 & ray_dir
 
 	glm::vec2 ray_dir_inv= 1.0f/ ray_dir;
 
-	glm::vec2 k_near= (aabb->_pt_min- ray_origin)* ray_dir_inv;
-	glm::vec2 k_far = (aabb->_pt_max- ray_origin)* ray_dir_inv;
+	glm::vec2 k_near= (aabb->_pos- ray_origin)* ray_dir_inv;
+	glm::vec2 k_far = (aabb->_pos+ aabb->_size- ray_origin)* ray_dir_inv;
 
 	if (k_near.x> k_far.x) {
 		swap(k_near.x, k_far.x);
