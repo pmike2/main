@@ -39,9 +39,6 @@ const float Z_FAR= 10.0f;
 
 const unsigned int ANIM_MODEL_SIZE= 512;
 
-const unsigned int LEVEL_WIDTH= 16;
-const unsigned int LEVEL_HEIGHT= 16;
-
 const float ANIM_TIME= 0.2f;
 
 
@@ -63,6 +60,7 @@ public:
 	StaticObj(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size);
 	~StaticObj();
 	void update_footprint_pos();
+	void set_aabb_pos(glm::vec2 pos);
 
 	
 	AABB_2D * _aabb;
@@ -78,6 +76,7 @@ public:
 	~AnimObj();
 	void anim(float elapsed_time);
 	void update_footprint_pos();
+	void set_aabb_pos(glm::vec2 pos);
 
 
 	AABB_2D * _aabb;
@@ -88,6 +87,13 @@ public:
 
 
 bool anim_intersect_static(const AnimObj * anim_obj, const StaticObj * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time);
+
+
+struct Collision {
+	unsigned int _idx_static;
+	float _contact_time;
+	glm::vec2 _contact_normal;
+};
 
 
 class StaticCharacter;
@@ -175,7 +181,7 @@ public:
 class Level {
 public:
 	Level();
-	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, ScreenGL * screengl);
+	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, std::string path, ScreenGL * screengl);
 	~Level();
 	void draw();
 	void anim(float elapsed_time);
@@ -194,6 +200,7 @@ public:
 	float _block_w, _block_h;
 	ScreenGL * _screengl;
 	bool _left_pressed, _right_pressed, _down_pressed, _up_pressed;
+	bool _jump;
 };
 
 
@@ -204,6 +211,7 @@ public:
 	~LevelDebug();
 	void draw();
 	void update();
+	bool key_down(InputState * input_state, SDL_Keycode key);
 
 
 	GLuint _vbo;
@@ -214,6 +222,7 @@ public:
 	ScreenGL * _screengl;
 	Level * _level;
 	unsigned int _n_aabbs;
+	bool _draw_aabb, _draw_footprint;
 };
 
 

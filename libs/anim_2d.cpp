@@ -36,6 +36,12 @@ void StaticObj::update_footprint_pos() {
 }
 
 
+void StaticObj::set_aabb_pos(glm::vec2 pos) {
+	_aabb->_pos= pos;
+	update_footprint_pos();
+}
+
+
 // AnimObj --------------------------------------------------------------------------------------------
 AnimObj::AnimObj() {
 
@@ -66,9 +72,16 @@ void AnimObj::update_footprint_pos() {
 }
 
 
+void AnimObj::set_aabb_pos(glm::vec2 pos) {
+	_aabb->_pos= pos;
+	update_footprint_pos();
+}
+
+
 // -------------------------------------------------------------------------------------------
 bool anim_intersect_static(const AnimObj * anim_obj, const StaticObj * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time) {
-	if (glm::length2(anim_obj->_velocity)< 1e-6f) {
+	if (glm::length2(anim_obj->_velocity)< 1e-9f) {
+	//if (glm::length2(anim_obj->_velocity)== 0.0f) {
 		return false;
 	}
 
@@ -76,8 +89,11 @@ bool anim_intersect_static(const AnimObj * anim_obj, const StaticObj * static_ob
 	expanded._pos= static_obj->_footprint->_pos- 0.5f* anim_obj->_footprint->_size;
 	expanded._size= static_obj->_footprint->_size+ anim_obj->_footprint->_size;
 
-	if (ray_intersects_aabb(anim_obj->_footprint->_pos+ 0.5f* anim_obj->_footprint->_size, time_step* anim_obj->_velocity, &expanded, contact_pt, contact_normal, contact_time)) {
-		return ((contact_time> 0.0f) && (contact_time< 1.0f));
+	bool ray_inter= ray_intersects_aabb(anim_obj->_footprint->_pos+ 0.5f* anim_obj->_footprint->_size, time_step* anim_obj->_velocity, &expanded, contact_pt, contact_normal, contact_time);
+	//cout << "ray_inter=" << ray_inter << "\n";
+	if (ray_inter) {
+		// le = du >= est important
+		return ((contact_time>= 0.0f) && (contact_time< 1.0f));
 	}
 	
 	return false;
@@ -130,7 +146,7 @@ StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl)
 
 	// A FAIRE EVOLUER !
 	_footprint_offset= glm::vec2(0.2f, 0.2f);
-	_footprint_size= glm::vec2(0.5f, 0.5f);
+	_footprint_size= glm::vec2(0.6f, 0.6f);
 }
 
 
@@ -319,8 +335,8 @@ AnimTexture::AnimTexture(GLuint prog_draw, std::string path, ScreenGL * screengl
 	glGenBuffers(1, &_vbo);
 
 	// A FAIRE EVOLUER !
-	_footprint_offset= glm::vec2(0.2f, 0.2f);
-	_footprint_size= glm::vec2(0.5f, 0.5f);
+	_footprint_offset= glm::vec2(0.2f, 0.05f);
+	_footprint_size= glm::vec2(0.5f, 0.9f);
 }
 
 
@@ -486,22 +502,58 @@ Level::Level() {
 }
 
 
-Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, ScreenGL * screengl) :
-	_w(LEVEL_WIDTH) ,_h(LEVEL_HEIGHT), _screengl(screengl), _left_pressed(false), _right_pressed(false), _down_pressed(false), _up_pressed(false)
+Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, string path, ScreenGL * screengl) :
+	_screengl(screengl), _left_pressed(false), _right_pressed(false), _down_pressed(false), _up_pressed(false), _jump(false)
 {
+	ifstream xml_file(path);
+	stringstream buffer;
+	buffer << xml_file.rdbuf();
+	xml_file.close();
+	string xml_content(buffer.str());
+	xml_document<> doc;
+	doc.parse<0>(&xml_content[0]);
+	xml_node<> * root_node= doc.first_node();
+
+	xml_node<> * w_node= root_node->first_node("w");
+	_w= stoi(w_node->value());
+	xml_node<> * h_node= root_node->first_node("h");
+	_h= stoi(h_node->value());
+	xml_node<> * data_node= root_node->first_node("data");
+	string data= data_node->value();
+	trim(data);
+
+	stringstream ss(data);
+	string line;
+	bool is_solid[_w* _h];
+	unsigned int idx= 0;
+	while (getline(ss, line, '\n')) {
+		trim(line);
+		//cout << line << "\n";
+		for(char & c : line) {
+			if (c=='-') {
+				is_solid[idx++]= false;
+			}
+			else {
+				is_solid[idx++]= true;
+			}
+		}
+	}
+
 	_block_w= _screengl->_gl_width/ (float)(_w);
 	_block_h= _screengl->_gl_height/ (float)(_h);
 
 	// static -------------
-	_static_textures.push_back(new StaticTexture(prog_draw_static, "./static_textures/brick.png", screengl));
-	_static_textures.push_back(new StaticTexture(prog_draw_static, "./static_textures/grass.png", screengl));
-	_static_textures.push_back(new StaticTexture(prog_draw_static, "./static_textures/tree.png", screengl));
-	_static_textures.push_back(new StaticTexture(prog_draw_static, "./static_textures/hill.png", screengl));
-	_static_textures.push_back(new StaticTexture(prog_draw_static, "./static_textures/sky.png", screengl));
+	_static_textures.push_back(new StaticTexture(prog_draw_static, "./data/static_textures/brick.png", screengl));
+	_static_textures.push_back(new StaticTexture(prog_draw_static, "./data/static_textures/grass.png", screengl));
+	_static_textures.push_back(new StaticTexture(prog_draw_static, "./data/static_textures/tree.png", screengl));
+	_static_textures.push_back(new StaticTexture(prog_draw_static, "./data/static_textures/hill.png", screengl));
+	_static_textures.push_back(new StaticTexture(prog_draw_static, "./data/static_textures/sky.png", screengl));
 
 	for (unsigned int col=0; col<_w; ++col) {
 		for (unsigned int row=0; row<_h; ++row) {
-			if ((row== 4) && (((col> 4) && (col< 10)))) {
+			//if ( ((row== 4) && (((col> 2) && (col< 14)))) || ((row== 2) && (((col> 0) && (col< 18))))) {
+			//if ((row== 4) && (col== 8)) {
+			if (is_solid[col+ _w* (_h- row- 1)]) {
 				glm::vec2 pos(-0.5f* _screengl->_gl_width+ (float)(col)* _block_w, -0.5f* _screengl->_gl_height+ (float)(row)* _block_h);
 				glm::vec2 size= glm::vec2(_block_w, _block_h);
 				_static_objs.push_back(new StaticObj(pos, size, _static_textures[0]->_footprint_offset, _static_textures[0]->_footprint_size));
@@ -528,8 +580,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 	}
 
 	// anim -------------------
-	_anim_textures.push_back(new AnimTexture(prog_draw_anim, "./anim_textures/modele_1", screengl));
-	_anim_textures.push_back(new AnimTexture(prog_draw_anim, "./anim_textures/modele_2", screengl));
+	_anim_textures.push_back(new AnimTexture(prog_draw_anim, "./data/anim_textures/modele_1", screengl));
+	_anim_textures.push_back(new AnimTexture(prog_draw_anim, "./data/anim_textures/modele_2", screengl));
 	
 	_anim_objs.push_back(new AnimObj(glm::vec2(0.0f, 0.0f), glm::vec2(2.0f, 2.0f), _anim_textures[0]->_footprint_offset, _anim_textures[0]->_footprint_size));
 	_anim_characters.push_back(new AnimCharacter(_anim_objs[0], _anim_textures[0], 1.0f));
@@ -599,7 +651,7 @@ void Level::anim(float elapsed_time) {
 		}
 	}*/
 
-	float vel= 3.0f;
+	float vel= 6.0f;
 
 	if (_left_pressed) {
 		_anim_objs[0]->_velocity.x= -vel;
@@ -608,10 +660,11 @@ void Level::anim(float elapsed_time) {
 		_anim_objs[0]->_velocity.x= vel;
 	}
 	else {
-		_anim_objs[0]->_velocity.x= 0.0f;
+		//_anim_objs[0]->_velocity.x= 0.0f;
+		_anim_objs[0]->_velocity.x*= 0.9f;
 	}
 
-	if (_up_pressed) {
+	/*if (_up_pressed) {
 		_anim_objs[0]->_velocity.y= vel;
 	}
 	else if (_down_pressed) {
@@ -619,18 +672,56 @@ void Level::anim(float elapsed_time) {
 	}
 	else {
 		_anim_objs[0]->_velocity.y= 0.0f;
+	}*/
+
+	if (_jump) {
+		_jump= false;
+		_anim_objs[0]->_velocity.y+= 13.0f;
+	}
+
+	_anim_objs[0]->_velocity.y+= -0.5f;
+	if (_anim_objs[0]->_velocity.y< -10.0f) {
+		_anim_objs[0]->_velocity.y= -10.0f;
 	}
 
 	glm::vec2 contact_pt(0.0f);
 	glm::vec2 contact_normal(0.0f);
 	float contact_time= 0.0f;
+	vector<Collision> collisions;
 	for (unsigned int i=0; i<_static_objs.size(); ++i) {
-		if (anim_intersect_static(_anim_objs[0], _static_objs[i], elapsed_time, contact_pt, contact_normal, contact_time)) {
-			cout << "inter " << i << "\n";
-			cout << glm::to_string(_anim_objs[0]->_velocity) << "\n";
-			cout << glm::to_string((1.0f- contact_time)* glm::vec2(abs(_anim_objs[0]->_velocity.x)* contact_normal.x, abs(_anim_objs[0]->_velocity.y)* contact_normal.y)) << "\n";
+		bool inter= anim_intersect_static(_anim_objs[0], _static_objs[i], elapsed_time, contact_pt, contact_normal, contact_time);
+		//cout << "inter=" << inter << " ; contact_time=" << contact_time << "\n";
+		if (inter) {
+			//cout << "-------------------\n";
+			//cout << "inter=" << i << "\n";
+			//cout << "velocity avant=" << glm::to_string(_anim_objs[0]->_velocity) << "\n";
+			//cout << "correction=" << glm::to_string((1.0f- contact_time)* glm::vec2(abs(_anim_objs[0]->_velocity.x)* contact_normal.x, abs(_anim_objs[0]->_velocity.y)* contact_normal.y)) << "\n";
+			//_anim_objs[0]->_velocity+= (1.0f- contact_time)* glm::vec2(abs(_anim_objs[0]->_velocity.x)* contact_normal.x, abs(_anim_objs[0]->_velocity.y)* contact_normal.y);
+			//cout << "velocity apres=" << glm::to_string(_anim_objs[0]->_velocity) << "\n";
+			//cout << "-------------------\n";
+			
+			collisions.push_back({i, contact_time, contact_normal});
+			//collisions.push_back({i, contact_time});
+		}
+	}
+
+	/*cout << "--------------\n";
+	for (auto coll : collisions) {
+		cout << coll._contact_time << "\n";
+	}*/
+
+	sort(collisions.begin(), collisions.end(), [](const Collision & a, const Collision & b) {
+		return a._contact_time< b._contact_time- 0.001f;
+	});
+
+	for (auto coll : collisions) {
+		//_anim_objs[0]->_velocity+= (1.0f- coll._contact_time)* glm::vec2(abs(_anim_objs[0]->_velocity.x)* coll._contact_normal.x, abs(_anim_objs[0]->_velocity.y)* coll._contact_normal.y);
+		bool inter= anim_intersect_static(_anim_objs[0], _static_objs[coll._idx_static], elapsed_time, contact_pt, contact_normal, contact_time);
+		if (inter) {
+			cout << "contact_time=" << coll._contact_time << "\n";
+			cout << "velocity avant=" << glm::to_string(_anim_objs[0]->_velocity) << "\n";
 			_anim_objs[0]->_velocity+= (1.0f- contact_time)* glm::vec2(abs(_anim_objs[0]->_velocity.x)* contact_normal.x, abs(_anim_objs[0]->_velocity.y)* contact_normal.y);
-			cout << glm::to_string(_anim_objs[0]->_velocity) << "\n";
+			cout << "velocity apres=" << glm::to_string(_anim_objs[0]->_velocity) << "\n";
 		}
 	}
 
@@ -665,11 +756,17 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 	else if ((key== SDLK_UP) && (!_up_pressed)) {
 		_up_pressed= true;
+		_jump= true;
 		return true;
 	}
 	else if ((key== SDLK_DOWN) && (!_down_pressed)) {
 		_down_pressed= true;
 		return true;
+	}
+	else if (key== SDLK_SPACE) {
+		_anim_objs[0]->set_aabb_pos(glm::vec2(0.0f, 0.0f));
+		_anim_objs[0]->_velocity.x= 0.0f;
+		_anim_objs[0]->_velocity.y= 0.0f;
 	}
 
 	return false;
@@ -704,7 +801,9 @@ LevelDebug::LevelDebug() {
 }
 
 
-LevelDebug::LevelDebug(GLuint prog_draw_aabb, Level * level, ScreenGL * screengl) : _prog_draw(prog_draw_aabb), _level(level), _screengl(screengl), _n_aabbs(0) {
+LevelDebug::LevelDebug(GLuint prog_draw_aabb, Level * level, ScreenGL * screengl) :
+	_prog_draw(prog_draw_aabb), _level(level), _screengl(screengl), _n_aabbs(0), _draw_aabb(false), _draw_footprint(true)
+{
 	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	_model2world= glm::mat4(1.0f);
 
@@ -756,7 +855,7 @@ void LevelDebug::draw() {
 
 void LevelDebug::update() {
 	glm::vec3 static_aabb_color(1.0f, 0.0f, 0.0f);
-	glm::vec3 static_footprint_color(1.0f, 0.5f, 0.5f);
+	glm::vec3 static_footprint_color(0.5f, 0.2f, 0.2f);
 	glm::vec3 anim_aabb_color(0.0f, 1.0f, 0.0f);
 	glm::vec3 anim_footprint_color(0.5f, 1.0f, 0.5f);
 
@@ -765,121 +864,146 @@ void LevelDebug::update() {
 
 	_n_aabbs= (n_static+ n_anim)* 2;
 	float vertices[_n_aabbs* 40];
+	for (unsigned int i=0; i<_n_aabbs* 40; ++i) {
+		vertices[i]= 0.0f;
+	}
 
-	for (unsigned int idx=0; idx<n_static; ++idx) {
-		vertices[40* idx+ 0]= _level->_static_objs[idx]->_aabb->_pos.x;
-		vertices[40* idx+ 1]= _level->_static_objs[idx]->_aabb->_pos.y;
-		vertices[40* idx+ 5]= _level->_static_objs[idx]->_aabb->_pos.x+ _level->_static_objs[idx]->_aabb->_size.x;
-		vertices[40* idx+ 6]= _level->_static_objs[idx]->_aabb->_pos.y;
+	if (_draw_aabb) {
+		for (unsigned int idx=0; idx<n_static; ++idx) {
+			vertices[40* idx+ 0]= _level->_static_objs[idx]->_aabb->_pos.x;
+			vertices[40* idx+ 1]= _level->_static_objs[idx]->_aabb->_pos.y;
+			vertices[40* idx+ 5]= _level->_static_objs[idx]->_aabb->_pos.x+ _level->_static_objs[idx]->_aabb->_size.x;
+			vertices[40* idx+ 6]= _level->_static_objs[idx]->_aabb->_pos.y;
 
-		vertices[40* idx+ 10]= _level->_static_objs[idx]->_aabb->_pos.x+ _level->_static_objs[idx]->_aabb->_size.x;
-		vertices[40* idx+ 11]= _level->_static_objs[idx]->_aabb->_pos.y;
-		vertices[40* idx+ 15]= _level->_static_objs[idx]->_aabb->_pos.x+ _level->_static_objs[idx]->_aabb->_size.x;
-		vertices[40* idx+ 16]= _level->_static_objs[idx]->_aabb->_pos.y+ _level->_static_objs[idx]->_aabb->_size.y;
+			vertices[40* idx+ 10]= _level->_static_objs[idx]->_aabb->_pos.x+ _level->_static_objs[idx]->_aabb->_size.x;
+			vertices[40* idx+ 11]= _level->_static_objs[idx]->_aabb->_pos.y;
+			vertices[40* idx+ 15]= _level->_static_objs[idx]->_aabb->_pos.x+ _level->_static_objs[idx]->_aabb->_size.x;
+			vertices[40* idx+ 16]= _level->_static_objs[idx]->_aabb->_pos.y+ _level->_static_objs[idx]->_aabb->_size.y;
 
-		vertices[40* idx+ 20]= _level->_static_objs[idx]->_aabb->_pos.x+ _level->_static_objs[idx]->_aabb->_size.x;
-		vertices[40* idx+ 21]= _level->_static_objs[idx]->_aabb->_pos.y+ _level->_static_objs[idx]->_aabb->_size.y;
-		vertices[40* idx+ 25]= _level->_static_objs[idx]->_aabb->_pos.x;
-		vertices[40* idx+ 26]= _level->_static_objs[idx]->_aabb->_pos.y+ _level->_static_objs[idx]->_aabb->_size.y;
+			vertices[40* idx+ 20]= _level->_static_objs[idx]->_aabb->_pos.x+ _level->_static_objs[idx]->_aabb->_size.x;
+			vertices[40* idx+ 21]= _level->_static_objs[idx]->_aabb->_pos.y+ _level->_static_objs[idx]->_aabb->_size.y;
+			vertices[40* idx+ 25]= _level->_static_objs[idx]->_aabb->_pos.x;
+			vertices[40* idx+ 26]= _level->_static_objs[idx]->_aabb->_pos.y+ _level->_static_objs[idx]->_aabb->_size.y;
 
-		vertices[40* idx+ 30]= _level->_static_objs[idx]->_aabb->_pos.x;
-		vertices[40* idx+ 31]= _level->_static_objs[idx]->_aabb->_pos.y+ _level->_static_objs[idx]->_aabb->_size.y;
-		vertices[40* idx+ 35]= _level->_static_objs[idx]->_aabb->_pos.x;
-		vertices[40* idx+ 36]= _level->_static_objs[idx]->_aabb->_pos.y;
+			vertices[40* idx+ 30]= _level->_static_objs[idx]->_aabb->_pos.x;
+			vertices[40* idx+ 31]= _level->_static_objs[idx]->_aabb->_pos.y+ _level->_static_objs[idx]->_aabb->_size.y;
+			vertices[40* idx+ 35]= _level->_static_objs[idx]->_aabb->_pos.x;
+			vertices[40* idx+ 36]= _level->_static_objs[idx]->_aabb->_pos.y;
 
-		for (unsigned int i=0; i<8; ++i) {
-			vertices[40* idx+ 5* i+ 2]= static_aabb_color.x;
-			vertices[40* idx+ 5* i+ 3]= static_aabb_color.y;
-			vertices[40* idx+ 5* i+ 4]= static_aabb_color.z;
+			for (unsigned int i=0; i<8; ++i) {
+				vertices[40* idx+ 5* i+ 2]= static_aabb_color.x;
+				vertices[40* idx+ 5* i+ 3]= static_aabb_color.y;
+				vertices[40* idx+ 5* i+ 4]= static_aabb_color.z;
+			}
+		}
+	}
+	
+	if (_draw_footprint) {
+		for (unsigned int idx=0; idx<n_static; ++idx) {
+			vertices[n_static* 40+ 40* idx+ 0]= _level->_static_objs[idx]->_footprint->_pos.x;
+			vertices[n_static* 40+ 40* idx+ 1]= _level->_static_objs[idx]->_footprint->_pos.y;
+			vertices[n_static* 40+ 40* idx+ 5]= _level->_static_objs[idx]->_footprint->_pos.x+ _level->_static_objs[idx]->_footprint->_size.x;
+			vertices[n_static* 40+ 40* idx+ 6]= _level->_static_objs[idx]->_footprint->_pos.y;
+
+			vertices[n_static* 40+ 40* idx+ 10]= _level->_static_objs[idx]->_footprint->_pos.x+ _level->_static_objs[idx]->_footprint->_size.x;
+			vertices[n_static* 40+ 40* idx+ 11]= _level->_static_objs[idx]->_footprint->_pos.y;
+			vertices[n_static* 40+ 40* idx+ 15]= _level->_static_objs[idx]->_footprint->_pos.x+ _level->_static_objs[idx]->_footprint->_size.x;
+			vertices[n_static* 40+ 40* idx+ 16]= _level->_static_objs[idx]->_footprint->_pos.y+ _level->_static_objs[idx]->_footprint->_size.y;
+
+			vertices[n_static* 40+ 40* idx+ 20]= _level->_static_objs[idx]->_footprint->_pos.x+ _level->_static_objs[idx]->_footprint->_size.x;
+			vertices[n_static* 40+ 40* idx+ 21]= _level->_static_objs[idx]->_footprint->_pos.y+ _level->_static_objs[idx]->_footprint->_size.y;
+			vertices[n_static* 40+ 40* idx+ 25]= _level->_static_objs[idx]->_footprint->_pos.x;
+			vertices[n_static* 40+ 40* idx+ 26]= _level->_static_objs[idx]->_footprint->_pos.y+ _level->_static_objs[idx]->_footprint->_size.y;
+
+			vertices[n_static* 40+ 40* idx+ 30]= _level->_static_objs[idx]->_footprint->_pos.x;
+			vertices[n_static* 40+ 40* idx+ 31]= _level->_static_objs[idx]->_footprint->_pos.y+ _level->_static_objs[idx]->_footprint->_size.y;
+			vertices[n_static* 40+ 40* idx+ 35]= _level->_static_objs[idx]->_footprint->_pos.x;
+			vertices[n_static* 40+ 40* idx+ 36]= _level->_static_objs[idx]->_footprint->_pos.y;
+
+			for (unsigned int i=0; i<8; ++i) {
+				vertices[n_static* 40+ 40* idx+ 5* i+ 2]= static_footprint_color.x;
+				vertices[n_static* 40+ 40* idx+ 5* i+ 3]= static_footprint_color.y;
+				vertices[n_static* 40+ 40* idx+ 5* i+ 4]= static_footprint_color.z;
+			}
 		}
 	}
 
-	for (unsigned int idx=0; idx<n_static; ++idx) {
-		vertices[n_static* 40+ 40* idx+ 0]= _level->_static_objs[idx]->_footprint->_pos.x;
-		vertices[n_static* 40+ 40* idx+ 1]= _level->_static_objs[idx]->_footprint->_pos.y;
-		vertices[n_static* 40+ 40* idx+ 5]= _level->_static_objs[idx]->_footprint->_pos.x+ _level->_static_objs[idx]->_footprint->_size.x;
-		vertices[n_static* 40+ 40* idx+ 6]= _level->_static_objs[idx]->_footprint->_pos.y;
+	if (_draw_aabb) {
+		for (unsigned int idx=0; idx<n_anim; ++idx) {
+			vertices[n_static* 80+ 40* idx+ 0]= _level->_anim_objs[idx]->_aabb->_pos.x;
+			vertices[n_static* 80+ 40* idx+ 1]= _level->_anim_objs[idx]->_aabb->_pos.y;
+			vertices[n_static* 80+ 40* idx+ 5]= _level->_anim_objs[idx]->_aabb->_pos.x+ _level->_anim_objs[idx]->_aabb->_size.x;
+			vertices[n_static* 80+ 40* idx+ 6]= _level->_anim_objs[idx]->_aabb->_pos.y;
 
-		vertices[n_static* 40+ 40* idx+ 10]= _level->_static_objs[idx]->_footprint->_pos.x+ _level->_static_objs[idx]->_footprint->_size.x;
-		vertices[n_static* 40+ 40* idx+ 11]= _level->_static_objs[idx]->_footprint->_pos.y;
-		vertices[n_static* 40+ 40* idx+ 15]= _level->_static_objs[idx]->_footprint->_pos.x+ _level->_static_objs[idx]->_footprint->_size.x;
-		vertices[n_static* 40+ 40* idx+ 16]= _level->_static_objs[idx]->_footprint->_pos.y+ _level->_static_objs[idx]->_footprint->_size.y;
+			vertices[n_static* 80+ 40* idx+ 10]= _level->_anim_objs[idx]->_aabb->_pos.x+ _level->_anim_objs[idx]->_aabb->_size.x;
+			vertices[n_static* 80+ 40* idx+ 11]= _level->_anim_objs[idx]->_aabb->_pos.y;
+			vertices[n_static* 80+ 40* idx+ 15]= _level->_anim_objs[idx]->_aabb->_pos.x+ _level->_anim_objs[idx]->_aabb->_size.x;
+			vertices[n_static* 80+ 40* idx+ 16]= _level->_anim_objs[idx]->_aabb->_pos.y+ _level->_anim_objs[idx]->_aabb->_size.y;
 
-		vertices[n_static* 40+ 40* idx+ 20]= _level->_static_objs[idx]->_footprint->_pos.x+ _level->_static_objs[idx]->_footprint->_size.x;
-		vertices[n_static* 40+ 40* idx+ 21]= _level->_static_objs[idx]->_footprint->_pos.y+ _level->_static_objs[idx]->_footprint->_size.y;
-		vertices[n_static* 40+ 40* idx+ 25]= _level->_static_objs[idx]->_footprint->_pos.x;
-		vertices[n_static* 40+ 40* idx+ 26]= _level->_static_objs[idx]->_footprint->_pos.y+ _level->_static_objs[idx]->_footprint->_size.y;
+			vertices[n_static* 80+ 40* idx+ 20]= _level->_anim_objs[idx]->_aabb->_pos.x+ _level->_anim_objs[idx]->_aabb->_size.x;
+			vertices[n_static* 80+ 40* idx+ 21]= _level->_anim_objs[idx]->_aabb->_pos.y+ _level->_anim_objs[idx]->_aabb->_size.y;
+			vertices[n_static* 80+ 40* idx+ 25]= _level->_anim_objs[idx]->_aabb->_pos.x;
+			vertices[n_static* 80+ 40* idx+ 26]= _level->_anim_objs[idx]->_aabb->_pos.y+ _level->_anim_objs[idx]->_aabb->_size.y;
 
-		vertices[n_static* 40+ 40* idx+ 30]= _level->_static_objs[idx]->_footprint->_pos.x;
-		vertices[n_static* 40+ 40* idx+ 31]= _level->_static_objs[idx]->_footprint->_pos.y+ _level->_static_objs[idx]->_footprint->_size.y;
-		vertices[n_static* 40+ 40* idx+ 35]= _level->_static_objs[idx]->_footprint->_pos.x;
-		vertices[n_static* 40+ 40* idx+ 36]= _level->_static_objs[idx]->_footprint->_pos.y;
+			vertices[n_static* 80+ 40* idx+ 30]= _level->_anim_objs[idx]->_aabb->_pos.x;
+			vertices[n_static* 80+ 40* idx+ 31]= _level->_anim_objs[idx]->_aabb->_pos.y+ _level->_anim_objs[idx]->_aabb->_size.y;
+			vertices[n_static* 80+ 40* idx+ 35]= _level->_anim_objs[idx]->_aabb->_pos.x;
+			vertices[n_static* 80+ 40* idx+ 36]= _level->_anim_objs[idx]->_aabb->_pos.y;
 
-		for (unsigned int i=0; i<8; ++i) {
-			vertices[n_static* 40+ 40* idx+ 5* i+ 2]= static_footprint_color.x;
-			vertices[n_static* 40+ 40* idx+ 5* i+ 3]= static_footprint_color.y;
-			vertices[n_static* 40+ 40* idx+ 5* i+ 4]= static_footprint_color.z;
+			for (unsigned int i=0; i<8; ++i) {
+				vertices[n_static* 80+ 40* idx+ 5* i+ 2]= anim_aabb_color.x;
+				vertices[n_static* 80+ 40* idx+ 5* i+ 3]= anim_aabb_color.y;
+				vertices[n_static* 80+ 40* idx+ 5* i+ 4]= anim_aabb_color.z;
+			}
 		}
 	}
 
-	for (unsigned int idx=0; idx<n_anim; ++idx) {
-		vertices[n_static* 80+ 40* idx+ 0]= _level->_anim_objs[idx]->_aabb->_pos.x;
-		vertices[n_static* 80+ 40* idx+ 1]= _level->_anim_objs[idx]->_aabb->_pos.y;
-		vertices[n_static* 80+ 40* idx+ 5]= _level->_anim_objs[idx]->_aabb->_pos.x+ _level->_anim_objs[idx]->_aabb->_size.x;
-		vertices[n_static* 80+ 40* idx+ 6]= _level->_anim_objs[idx]->_aabb->_pos.y;
+	if (_draw_footprint) {
+		for (unsigned int idx=0; idx<n_anim; ++idx) {
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 0]= _level->_anim_objs[idx]->_footprint->_pos.x;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 1]= _level->_anim_objs[idx]->_footprint->_pos.y;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 5]= _level->_anim_objs[idx]->_footprint->_pos.x+ _level->_anim_objs[idx]->_footprint->_size.x;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 6]= _level->_anim_objs[idx]->_footprint->_pos.y;
 
-		vertices[n_static* 80+ 40* idx+ 10]= _level->_anim_objs[idx]->_aabb->_pos.x+ _level->_anim_objs[idx]->_aabb->_size.x;
-		vertices[n_static* 80+ 40* idx+ 11]= _level->_anim_objs[idx]->_aabb->_pos.y;
-		vertices[n_static* 80+ 40* idx+ 15]= _level->_anim_objs[idx]->_aabb->_pos.x+ _level->_anim_objs[idx]->_aabb->_size.x;
-		vertices[n_static* 80+ 40* idx+ 16]= _level->_anim_objs[idx]->_aabb->_pos.y+ _level->_anim_objs[idx]->_aabb->_size.y;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 10]= _level->_anim_objs[idx]->_footprint->_pos.x+ _level->_anim_objs[idx]->_footprint->_size.x;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 11]= _level->_anim_objs[idx]->_footprint->_pos.y;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 15]= _level->_anim_objs[idx]->_footprint->_pos.x+ _level->_anim_objs[idx]->_footprint->_size.x;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 16]= _level->_anim_objs[idx]->_footprint->_pos.y+ _level->_anim_objs[idx]->_footprint->_size.y;
 
-		vertices[n_static* 80+ 40* idx+ 20]= _level->_anim_objs[idx]->_aabb->_pos.x+ _level->_anim_objs[idx]->_aabb->_size.x;
-		vertices[n_static* 80+ 40* idx+ 21]= _level->_anim_objs[idx]->_aabb->_pos.y+ _level->_anim_objs[idx]->_aabb->_size.y;
-		vertices[n_static* 80+ 40* idx+ 25]= _level->_anim_objs[idx]->_aabb->_pos.x;
-		vertices[n_static* 80+ 40* idx+ 26]= _level->_anim_objs[idx]->_aabb->_pos.y+ _level->_anim_objs[idx]->_aabb->_size.y;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 20]= _level->_anim_objs[idx]->_footprint->_pos.x+ _level->_anim_objs[idx]->_footprint->_size.x;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 21]= _level->_anim_objs[idx]->_footprint->_pos.y+ _level->_anim_objs[idx]->_footprint->_size.y;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 25]= _level->_anim_objs[idx]->_footprint->_pos.x;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 26]= _level->_anim_objs[idx]->_footprint->_pos.y+ _level->_anim_objs[idx]->_footprint->_size.y;
 
-		vertices[n_static* 80+ 40* idx+ 30]= _level->_anim_objs[idx]->_aabb->_pos.x;
-		vertices[n_static* 80+ 40* idx+ 31]= _level->_anim_objs[idx]->_aabb->_pos.y+ _level->_anim_objs[idx]->_aabb->_size.y;
-		vertices[n_static* 80+ 40* idx+ 35]= _level->_anim_objs[idx]->_aabb->_pos.x;
-		vertices[n_static* 80+ 40* idx+ 36]= _level->_anim_objs[idx]->_aabb->_pos.y;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 30]= _level->_anim_objs[idx]->_footprint->_pos.x;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 31]= _level->_anim_objs[idx]->_footprint->_pos.y+ _level->_anim_objs[idx]->_footprint->_size.y;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 35]= _level->_anim_objs[idx]->_footprint->_pos.x;
+			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 36]= _level->_anim_objs[idx]->_footprint->_pos.y;
 
-		for (unsigned int i=0; i<8; ++i) {
-			vertices[n_static* 80+ 40* idx+ 5* i+ 2]= anim_aabb_color.x;
-			vertices[n_static* 80+ 40* idx+ 5* i+ 3]= anim_aabb_color.y;
-			vertices[n_static* 80+ 40* idx+ 5* i+ 4]= anim_aabb_color.z;
-		}
-	}
-
-	for (unsigned int idx=0; idx<n_anim; ++idx) {
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 0]= _level->_anim_objs[idx]->_footprint->_pos.x;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 1]= _level->_anim_objs[idx]->_footprint->_pos.y;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 5]= _level->_anim_objs[idx]->_footprint->_pos.x+ _level->_anim_objs[idx]->_footprint->_size.x;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 6]= _level->_anim_objs[idx]->_footprint->_pos.y;
-
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 10]= _level->_anim_objs[idx]->_footprint->_pos.x+ _level->_anim_objs[idx]->_footprint->_size.x;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 11]= _level->_anim_objs[idx]->_footprint->_pos.y;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 15]= _level->_anim_objs[idx]->_footprint->_pos.x+ _level->_anim_objs[idx]->_footprint->_size.x;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 16]= _level->_anim_objs[idx]->_footprint->_pos.y+ _level->_anim_objs[idx]->_footprint->_size.y;
-
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 20]= _level->_anim_objs[idx]->_footprint->_pos.x+ _level->_anim_objs[idx]->_footprint->_size.x;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 21]= _level->_anim_objs[idx]->_footprint->_pos.y+ _level->_anim_objs[idx]->_footprint->_size.y;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 25]= _level->_anim_objs[idx]->_footprint->_pos.x;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 26]= _level->_anim_objs[idx]->_footprint->_pos.y+ _level->_anim_objs[idx]->_footprint->_size.y;
-
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 30]= _level->_anim_objs[idx]->_footprint->_pos.x;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 31]= _level->_anim_objs[idx]->_footprint->_pos.y+ _level->_anim_objs[idx]->_footprint->_size.y;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 35]= _level->_anim_objs[idx]->_footprint->_pos.x;
-		vertices[n_static* 80+ n_anim* 40+ 40* idx+ 36]= _level->_anim_objs[idx]->_footprint->_pos.y;
-
-		for (unsigned int i=0; i<8; ++i) {
-			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 5* i+ 2]= anim_footprint_color.x;
-			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 5* i+ 3]= anim_footprint_color.y;
-			vertices[n_static* 80+ n_anim* 40+ 40* idx+ 5* i+ 4]= anim_footprint_color.z;
+			for (unsigned int i=0; i<8; ++i) {
+				vertices[n_static* 80+ n_anim* 40+ 40* idx+ 5* i+ 2]= anim_footprint_color.x;
+				vertices[n_static* 80+ n_anim* 40+ 40* idx+ 5* i+ 3]= anim_footprint_color.y;
+				vertices[n_static* 80+ n_anim* 40+ 40* idx+ 5* i+ 4]= anim_footprint_color.z;
+			}
 		}
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 	glBufferData(GL_ARRAY_BUFFER, 40* _n_aabbs* sizeof(float), vertices, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+bool LevelDebug::key_down(InputState * input_state, SDL_Keycode key) {
+	if (key== SDLK_a) {
+		_draw_aabb= !_draw_aabb;
+		return true;
+	}
+	else if (key== SDLK_f) {
+		_draw_footprint= !_draw_footprint;
+		return true;
+	}
+
+	return false;
 }
 

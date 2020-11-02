@@ -94,6 +94,9 @@ void key_down(SDL_Keycode key) {
 		return;
 	}
 
+	if (level_debug->key_down(input_state, key)) {
+		return;
+	}
 }
 
 
@@ -172,7 +175,7 @@ void init() {
 	arial_font= new Font(prog_font, "../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	input_state= new InputState();
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-	level= new Level(prog_anim_2d, prog_static_2d, prog_aabb_2d, screengl);
+	level= new Level(prog_anim_2d, prog_static_2d, prog_aabb_2d, "./data/levels/level_02.xml", screengl);
 	level_debug= new LevelDebug(prog_aabb_2d, level, screengl);
 
 	done= false;
@@ -240,9 +243,8 @@ void draw() {
 
 void anim() {
 	tikanim2= SDL_GetTicks();
-	if (tikanim2- tikanim1< DELTA_ANIM)
-		return;
-
+	/*if (tikanim2- tikanim1< DELTA_ANIM)
+		return;*/
 	level->anim(float(tikanim2- tikanim1)* 0.001f);
 	level_debug->update();
 
@@ -327,6 +329,32 @@ void clean() {
 // ---------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
+	/*glm::vec2 contact_pt(0.0f);
+	glm::vec2 contact_normal(0.0f);
+	float contact_time= 0.0f;
+	StaticObj * static_obj= new StaticObj(glm::vec2(0.0f, 0.0f), glm::vec2(2.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+	AnimObj * anim_obj    = new AnimObj(  glm::vec2(2.5f, 0.0f), glm::vec2(1.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+	anim_obj->_velocity= glm::vec2(-3.0f, 0.0f);
+	float elapsed_time= 0.015f;
+	for (unsigned int i=0; i<20; ++i) {
+		cout << "------------------------\n";
+		cout << "i=" << i << "\n";
+		cout << "pos=" << glm::to_string(anim_obj->_aabb->_pos) << "\n";
+		bool inter= anim_intersect_static(anim_obj, static_obj, elapsed_time, contact_pt, contact_normal, contact_time);
+		cout << "inter=" << inter << "\n";
+		cout << "contact_pt=" << glm::to_string(contact_pt) << "\n";
+		cout << "contact_normal=" << glm::to_string(contact_normal) << "\n";
+		cout << "contact_time=" << contact_time << "\n";
+
+		if (inter) {
+			anim_obj->_velocity+= (1.0f- contact_time)* glm::vec2(abs(anim_obj->_velocity.x)* contact_normal.x, abs(anim_obj->_velocity.y)* contact_normal.y);
+		}
+		cout << "velocity=" << glm::to_string(anim_obj->_velocity) << "\n";
+
+		anim_obj->anim(elapsed_time);
+	}	
+	return 0;*/
+
 	init();
 	main_loop();
 	clean();

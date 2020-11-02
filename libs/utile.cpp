@@ -200,3 +200,20 @@ vector<string> list_files(string ch_dir, string ext) {
 	
 	return res;
 }
+
+
+// trim from start (in place)
+void ltrim(string & s) {
+	s.erase(s.begin(), find_if(s.begin(), s.end(), not1(ptr_fun<int, int>(isspace))));
+}
+
+// trim from end (in place)
+void rtrim(string & s) {
+	s.erase(find_if(s.rbegin(), s.rend(), not1(ptr_fun<int, int>(isspace))).base(), s.end());
+}
+
+// trim from both ends (in place)
+void trim(string & s) {
+	ltrim(s);
+	rtrim(s);
+}

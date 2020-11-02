@@ -35,7 +35,9 @@ bool ray_intersects_aabb(const glm::vec2 & ray_origin, const glm::vec2 & ray_dir
 	contact_normal.y= 0.0f;
 	t_hit_near= 0.0f;
 
-	if (glm::length2(ray_dir)< 1e-6f) {
+	// choisir ici une valeur suffisamment petite, dans le code original il fait un std::isnan
+	if (glm::length2(ray_dir)< 1e-9f) {
+	//if (glm::length2(ray_dir)== 0.0f) {
 		return false;
 	}
 

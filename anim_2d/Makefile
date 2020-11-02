@@ -1,5 +1,5 @@
-external=/Volumes/Cezanne/Cezanne/perso_dev/External_tools
-#external=/usr/local
+#external=/Volumes/Cezanne/Cezanne/perso_dev/External_tools
+external=/usr/local
 
 internal=../libs
 
