@@ -1,4 +1,12 @@
+#include <iostream>
+#include <cstdlib>
+
+#include <SDL2/SDL_image.h>
+
+#include "utile.h"
+
 #include "gl_utils.h"
+
 
 using namespace std;
 

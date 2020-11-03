@@ -1,3 +1,4 @@
+#include <iostream>
 
 #include "input_state.h"
 

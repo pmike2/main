@@ -6,22 +6,20 @@
 #include "CoreFoundation/CoreFoundation.h"
 
 #include <cstdlib>
-#include <sstream>
 #include <cmath>
 #include <string>
 #include <vector>
-#include <fstream>
+#include <iostream>
+#include <sstream>
 
 #include <OpenGL/gl3.h>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #include "gl_utils.h"
 #include "utile.h"
@@ -164,18 +162,18 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_static_2d= create_prog("../shaders/vertexshader_2d_static.txt"  , "../shaders/fragmentshader_2d_static.txt");
-	prog_anim_2d  = create_prog("../shaders/vertexshader_2d_anim.txt"  , "../shaders/fragmentshader_2d_anim.txt");
-	prog_aabb_2d= create_prog("../shaders/vertexshader_2d_aabb.txt"  , "../shaders/fragmentshader_basic.txt");
-	prog_font= create_prog("../shaders/vertexshader_font.txt", "../shaders/fragmentshader_font.txt");
+	prog_static_2d= create_prog("../../shaders/vertexshader_2d_static.txt"  , "../../shaders/fragmentshader_2d_static.txt");
+	prog_anim_2d  = create_prog("../../shaders/vertexshader_2d_anim.txt"  , "../../shaders/fragmentshader_2d_anim.txt");
+	prog_aabb_2d= create_prog("../../shaders/vertexshader_2d_aabb.txt"  , "../../shaders/fragmentshader_basic.txt");
+	prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
 	
 	// --------------------------------------------------------------------------
-	arial_font= new Font(prog_font, "../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	arial_font= new Font(prog_font, "../../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	input_state= new InputState();
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-	level= new Level(prog_anim_2d, prog_static_2d, prog_aabb_2d, "./data/levels/level_02.xml", screengl);
+	level= new Level(prog_anim_2d, prog_static_2d, prog_aabb_2d, "../data", screengl);
 	level_debug= new LevelDebug(prog_aabb_2d, level, screengl);
 
 	done= false;

@@ -2,7 +2,6 @@
 #ifndef INPUT_STATE_H
 #define INPUT_STATE_H
 
-#include <iostream>
 #include <map>
 
 #include <SDL2/SDL_keycode.h>

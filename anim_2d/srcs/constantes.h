@@ -2,8 +2,6 @@
 #ifndef CONSTANTES_H
 #define CONSTANTES_H
 
-#include <string>
-
 
 // en ms; temps entre 2 anims
 //const unsigned int DELTA_ANIM= 1;

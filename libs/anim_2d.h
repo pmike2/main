@@ -2,32 +2,8 @@
 #define ANIM_2D_H
 
 #include <string>
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <algorithm>
 #include <vector>
-#include <map>
-#include <sstream>
-#include <iomanip>
-#include <dirent.h>
 
-#include <OpenGL/gl3.h>
-
-#define GLM_FORCE_RADIANS
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtx/norm.hpp>
-#include <glm/gtx/string_cast.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/transform.hpp>
-
-// cf bug : https://stackoverflow.com/questions/14113923/rapidxml-print-header-has-undefined-methods
-#include "rapidxml_ext.h"
-
-#include "utile.h"
 #include "gl_utils.h"
 #include "bbox_2d.h"
 #include "input_state.h"

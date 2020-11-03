@@ -1,5 +1,17 @@
+#include <cstdlib>
+#include <iostream>
+#include <sstream>
+#include <fstream>
+
+#include <dirent.h>
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+//#include "CoreFoundation/CoreFoundation.h"
 
 #include "utile.h"
+
 
 using namespace std;
 
@@ -110,7 +122,7 @@ void calculate_normal(float *coord1, float *coord2, float *coord3, float *norm) 
 
 
 void absolute_path(const char * rel_path, char * abs_path) {
-#ifdef __APPLE__
+/*#ifdef __APPLE__
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
 	CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
 	char path[PATH_MAX];
@@ -122,9 +134,9 @@ void absolute_path(const char * rel_path, char * abs_path) {
 	string s2(rel_path);
 	string concat= s1+ "/"+ s2;
 	strcpy(abs_path, concat.c_str());
-#else
+#else*/
 	strcpy(abs_path, rel_path);
-#endif
+//#endif
 }
 
 

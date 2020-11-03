@@ -2,24 +2,12 @@
 #ifndef UTILE_H
 #define UTILE_H
 
-#include "CoreFoundation/CoreFoundation.h"
 
 #include <string>
-#include <cstdlib>
-#include <iostream>
-#include <sstream>
-#include <fstream>
 #include <sys/time.h>
 #include <vector>
-#include <dirent.h>
-
-#include <OpenGL/gl3.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
-#include <SDL2/SDL_image.h>
 
 
 

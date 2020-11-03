@@ -1,7 +1,37 @@
+#include <iostream>
+#include <fstream>
+#include <cmath>
+#include <algorithm>
+#include <map>
+#include <sstream>
+#include <iomanip>
+#include <dirent.h>
+
+#include <OpenGL/gl3.h>
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+
+#define GLM_FORCE_RADIANS
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/constants.hpp>
+#include <glm/gtx/norm.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+
+// cf bug : https://stackoverflow.com/questions/14113923/rapidxml-print-header-has-undefined-methods
+#include "rapidxml_ext.h"
+
 #include "anim_2d.h"
+#include "utile.h"
+
 
 using namespace std;
 using namespace rapidxml;
+
 
 // Action ---------------------------------------------------------------------------
 void Action::print() {
@@ -505,7 +535,7 @@ Level::Level() {
 Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, string path, ScreenGL * screengl) :
 	_screengl(screengl), _left_pressed(false), _right_pressed(false), _down_pressed(false), _up_pressed(false), _jump(false)
 {
-	ifstream xml_file(path);
+	ifstream xml_file(path+ "/levels/level_02.xml");
 	stringstream buffer;
 	buffer << xml_file.rdbuf();
 	xml_file.close();
@@ -543,11 +573,11 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 	_block_h= _screengl->_gl_height/ (float)(_h);
 
 	// static -------------
-	_static_textures.push_back(new StaticTexture(prog_draw_static, "./data/static_textures/brick.png", screengl));
-	_static_textures.push_back(new StaticTexture(prog_draw_static, "./data/static_textures/grass.png", screengl));
-	_static_textures.push_back(new StaticTexture(prog_draw_static, "./data/static_textures/tree.png", screengl));
-	_static_textures.push_back(new StaticTexture(prog_draw_static, "./data/static_textures/hill.png", screengl));
-	_static_textures.push_back(new StaticTexture(prog_draw_static, "./data/static_textures/sky.png", screengl));
+	_static_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/brick.png", screengl));
+	_static_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/grass.png", screengl));
+	_static_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/tree.png", screengl));
+	_static_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/hill.png", screengl));
+	_static_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/sky.png", screengl));
 
 	for (unsigned int col=0; col<_w; ++col) {
 		for (unsigned int row=0; row<_h; ++row) {
@@ -562,7 +592,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		}
 	}
 
-	cout << setprecision(12) << _static_objs[0]->_footprint->_pos.y+ _static_objs[0]->_footprint->_size.y << "\n";
+	//cout << setprecision(12) << _static_objs[0]->_footprint->_pos.y+ _static_objs[0]->_footprint->_size.y << "\n";
 
 	/*for (unsigned int i=0; i<10000; ++i) {
 		glm::vec2 pt_min(rand_float(-5.0f, 5.0f), rand_float(-5.0f, 5.0f));
@@ -582,8 +612,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 	}
 
 	// anim -------------------
-	_anim_textures.push_back(new AnimTexture(prog_draw_anim, "./data/anim_textures/modele_1", screengl));
-	_anim_textures.push_back(new AnimTexture(prog_draw_anim, "./data/anim_textures/modele_2", screengl));
+	_anim_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_1", screengl));
+	_anim_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_2", screengl));
 	
 	_anim_objs.push_back(new AnimObj(glm::vec2(0.0f, 0.0f), glm::vec2(2.0f, 2.0f), _anim_textures[0]->_footprint_offset, _anim_textures[0]->_footprint_size));
 	_anim_characters.push_back(new AnimCharacter(_anim_objs[0], _anim_textures[0], 1.0f));
