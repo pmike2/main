@@ -562,6 +562,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		}
 	}
 
+	cout << setprecision(12) << _static_objs[0]->_footprint->_pos.y+ _static_objs[0]->_footprint->_size.y << "\n";
+
 	/*for (unsigned int i=0; i<10000; ++i) {
 		glm::vec2 pt_min(rand_float(-5.0f, 5.0f), rand_float(-5.0f, 5.0f));
 		glm::vec2 pt_max= pt_min+ glm::vec2(1.0f, 1.0f);
@@ -689,8 +691,13 @@ void Level::anim(float elapsed_time) {
 	float contact_time= 0.0f;
 	vector<Collision> collisions;
 	for (unsigned int i=0; i<_static_objs.size(); ++i) {
+		cout << "-------------------------\n";
 		bool inter= anim_intersect_static(_anim_objs[0], _static_objs[i], elapsed_time, contact_pt, contact_normal, contact_time);
-		//cout << "inter=" << inter << " ; contact_time=" << contact_time << "\n";
+		cout << setprecision(12);
+		cout << "elapsed_time=" << elapsed_time << "\n";
+		cout << "position= (" << _anim_objs[0]->_footprint->_pos.x << " ; " << _anim_objs[0]->_footprint->_pos.y << ")\n";
+		cout << "velocity= (" << _anim_objs[0]->_velocity.x << " ; " << _anim_objs[0]->_velocity.y << ") ; with_elapsed= (" << _anim_objs[0]->_velocity.x* elapsed_time << " ; " << _anim_objs[0]->_velocity.y* elapsed_time << ")\n";
+		cout << "inter=" << inter << " ; contact_time=" << contact_time << "\n";
 		if (inter) {
 			//cout << "-------------------\n";
 			//cout << "inter=" << i << "\n";
@@ -711,17 +718,20 @@ void Level::anim(float elapsed_time) {
 	}*/
 
 	sort(collisions.begin(), collisions.end(), [](const Collision & a, const Collision & b) {
-		return a._contact_time< b._contact_time- 0.001f;
+		return a._contact_time< b._contact_time;
 	});
 
 	for (auto coll : collisions) {
 		//_anim_objs[0]->_velocity+= (1.0f- coll._contact_time)* glm::vec2(abs(_anim_objs[0]->_velocity.x)* coll._contact_normal.x, abs(_anim_objs[0]->_velocity.y)* coll._contact_normal.y);
 		bool inter= anim_intersect_static(_anim_objs[0], _static_objs[coll._idx_static], elapsed_time, contact_pt, contact_normal, contact_time);
 		if (inter) {
-			cout << "contact_time=" << coll._contact_time << "\n";
-			cout << "velocity avant=" << glm::to_string(_anim_objs[0]->_velocity) << "\n";
-			_anim_objs[0]->_velocity+= (1.0f- contact_time)* glm::vec2(abs(_anim_objs[0]->_velocity.x)* contact_normal.x, abs(_anim_objs[0]->_velocity.y)* contact_normal.y);
-			cout << "velocity apres=" << glm::to_string(_anim_objs[0]->_velocity) << "\n";
+			//cout << "contact_time=" << coll._contact_time << "\n";
+			//cout << "velocity avant=" << glm::to_string(_anim_objs[0]->_velocity) << "\n";
+			glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(_anim_objs[0]->_velocity.x)* contact_normal.x, abs(_anim_objs[0]->_velocity.y)* contact_normal.y);
+			cout << "correction= (" << correction.x << " ; " << correction.y << ")\n";
+			_anim_objs[0]->_velocity+= correction;
+			//cout << "velocity apres=" << glm::to_string(_anim_objs[0]->_velocity) << "\n";
+			cout << "velocity corrigee= (" << _anim_objs[0]->_velocity.x << " ; " << _anim_objs[0]->_velocity.y << ") ; with_elapsed= (" << _anim_objs[0]->_velocity.x* elapsed_time << " ; " << _anim_objs[0]->_velocity.y* elapsed_time << ")\n";
 		}
 	}
 

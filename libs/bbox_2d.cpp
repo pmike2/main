@@ -36,15 +36,26 @@ bool ray_intersects_aabb(const glm::vec2 & ray_origin, const glm::vec2 & ray_dir
 	t_hit_near= 0.0f;
 
 	// choisir ici une valeur suffisamment petite, dans le code original il fait un std::isnan
-	if (glm::length2(ray_dir)< 1e-9f) {
-	//if (glm::length2(ray_dir)== 0.0f) {
+	//if (glm::length2(ray_dir)< 1e-9f) {
+	if ((ray_dir.x== 0.0f) && (ray_dir.y== 0.0f)) {
 		return false;
 	}
 
 	glm::vec2 ray_dir_inv= 1.0f/ ray_dir;
+	//glm::dvec2 ray_dir_inv= glm::dvec2(1.0/ (double)(ray_dir.x), 1.0/ (double)(ray_dir.y));
 
 	glm::vec2 k_near= (aabb->_pos- ray_origin)* ray_dir_inv;
 	glm::vec2 k_far = (aabb->_pos+ aabb->_size- ray_origin)* ray_dir_inv;
+
+	cout << "___\n";
+	cout << "ray_dir= (" << ray_dir.x << " ; " << ray_dir.y << ")\n";
+	cout << "ray_dir_inv= (" << ray_dir_inv.x << " ; " << ray_dir_inv.y << ")\n";
+	cout << "k_near= (" << k_near.x << " ; " << k_near.y << ")\n";
+	cout << "k_far= (" << k_far.x << " ; " << k_far.y << ")\n";
+	cout << "___\n";
+
+	//glm::dvec2 k_near= glm::dvec2((double)(aabb->_pos.x+ aabb->_size.x- ray_origin.x)* ray_dir_inv.x, (double)(aabb->_pos.y+ aabb->_size.y- ray_origin.y)* ray_dir_inv.y);
+	//glm::dvec2 k_far= glm::dvec2((double)(aabb->_pos.x+ aabb->_size.x- ray_origin.x)* ray_dir_inv.x, (double)(aabb->_pos.y+ aabb->_size.y- ray_origin.y)* ray_dir_inv.y);
 
 	if (k_near.x> k_far.x) {
 		swap(k_near.x, k_far.x);
@@ -57,8 +68,8 @@ bool ray_intersects_aabb(const glm::vec2 & ray_origin, const glm::vec2 & ray_dir
 		return false;
 	}
 
-	t_hit_near= max(k_near.x, k_near.y);
-	float t_hit_far= min(k_far.x, k_far.y);
+	t_hit_near= (float)(max(k_near.x, k_near.y));
+	float t_hit_far= (float)(min(k_far.x, k_far.y));
 
 	if (t_hit_far< 0.0f) {
 		return false;
