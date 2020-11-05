@@ -715,7 +715,7 @@ void Level::anim(float elapsed_time) {
 	if (_anim_objs[0]->_velocity.y< -10.0f) {
 		_anim_objs[0]->_velocity.y= -10.0f;
 	}
-
+	
 	glm::vec2 contact_pt(0.0f);
 	glm::vec2 contact_normal(0.0f);
 	float contact_time= 0.0f;
