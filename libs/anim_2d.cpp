@@ -759,7 +759,7 @@ void Level::anim(float elapsed_time) {
 
 	if (_jump) {
 		_jump= false;
-		_anim_objs[0]->_velocity.y+= 13.0f;
+		_anim_objs[0]->_velocity.y+= 18.0f;
 	}
 
 	_anim_objs[0]->_velocity.y+= -0.5f;
@@ -895,7 +895,8 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 
 	if ((key== SDLK_LEFT) && (!_left_pressed)) {
 		_left_pressed= true;
-		if ((current_action== "right_walk") || (current_action== "right_run") || (current_action== "right_wait")) {
+		_right_pressed= false;
+		if ((current_action== "right_walk") || (current_action== "right_run") || (current_type== "wait")) {
 			if (_lshift_pressed) {
 				_anim_characters[0]->set_action("left_run");
 			}
@@ -913,7 +914,8 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 	else if ((key== SDLK_RIGHT) && (!_right_pressed)) {
 		_right_pressed= true;
-		if ((current_action== "left_walk") || (current_action== "left_run") || (current_action== "left_wait")) {
+		_left_pressed= false;
+		if ((current_action== "left_walk") || (current_action== "left_run") || (current_type== "wait")) {
 			if (_lshift_pressed) {
 				_anim_characters[0]->set_action("right_run");
 			}
@@ -931,12 +933,14 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 	else if ((key== SDLK_UP) && (!_up_pressed)) {
 		_up_pressed= true;
-		_jump= true;
-		if (current_direction== "left") {
-			_anim_characters[0]->set_action("left_jump");
-		}
-		else {
-			_anim_characters[0]->set_action("right_jump");
+		if ((current_type!= "jump") && (current_type!= "fall")) {
+			_jump= true;
+			if (current_direction== "left") {
+				_anim_characters[0]->set_action("left_jump");
+			}
+			else {
+				_anim_characters[0]->set_action("right_jump");
+			}
 		}
 		return true;
 	}
