@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 
 #include <OpenGL/gl3.h>
@@ -217,8 +218,8 @@ void show_infos() {
 	glm::vec3 font_color= glm::vec3(1.0f, 1.0f, 0.0f);
 
 	font_str.str("");
-	font_str << "hello";
-	arial_font->draw(font_str.str(), 10.0f, 15.0f, font_scale, font_color);
+	font_str << level->_anim_characters[0]->current_action();
+	arial_font->draw(font_str.str(), 10.0f, 1000.0f, font_scale, font_color);
 }
 
 
@@ -323,6 +324,9 @@ void clean() {
 }
 
 
+void f(float &t) {
+	t= rand_float(0.0f, 1.0f);
+}
 
 // ---------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------
@@ -351,6 +355,30 @@ int main(int argc, char *argv[]) {
 
 		anim_obj->anim(elapsed_time);
 	}	
+	return 0;*/
+
+	/*
+	float y= -0.180000007153f;
+	glm::vec2 v(0.0f, y);
+	glm::vec2 w= 1.0f/ v;
+	float yy= 1.0f/ y;
+	cout << setprecision(12) << w.y << "\n";
+	cout << yy << "\n";
+	cout << yy- w.y << "\n";
+	cout << setprecision(12) << -0.180000010878f+ 0.180000007153f << "\n";
+	cout << setprecision(12) << 1.0f/ 0.180000010878f- 1.0f/ 0.180000007153f << "\n";
+	return 0;*/
+
+	/*vector<Collision> collisions;
+	glm::vec2 contact_normal(0.0f);
+	float contact_time= 0.0f;
+	for (unsigned int i=0; i<5; ++i) {
+		f(contact_time);
+		collisions.push_back({i, contact_time, contact_normal});
+	}
+	for (auto c : collisions) {
+		cout << c._idx_static << " ; " << c._contact_time << "\n";
+	}
 	return 0;*/
 
 	init();

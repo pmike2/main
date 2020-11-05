@@ -20,6 +20,8 @@ const float ANIM_TIME= 0.2f;
 
 
 struct Action {
+	std::string direction();
+	std::string type();
 	void print();
 
 
@@ -64,13 +66,13 @@ public:
 
 bool anim_intersect_static(const AnimObj * anim_obj, const StaticObj * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time);
 
-
+/*
 struct Collision {
 	unsigned int _idx_static;
 	float _contact_time;
 	glm::vec2 _contact_normal;
 };
-
+*/
 
 class StaticCharacter;
 
@@ -143,6 +145,9 @@ public:
 	void anim(float elapsed_time);
 	void set_action(unsigned int idx_action);
 	void set_action(std::string action_name);
+	std::string current_action();
+	std::string current_direction();
+	std::string current_type();
 
 
 	AnimObj * _anim_obj;
@@ -175,7 +180,7 @@ public:
 	unsigned int _w, _h;
 	float _block_w, _block_h;
 	ScreenGL * _screengl;
-	bool _left_pressed, _right_pressed, _down_pressed, _up_pressed;
+	bool _left_pressed, _right_pressed, _down_pressed, _up_pressed, _lshift_pressed;
 	bool _jump;
 };
 
