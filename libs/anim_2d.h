@@ -15,9 +15,6 @@ const float Z_FAR= 10.0f;
 
 const unsigned int ANIM_MODEL_SIZE= 512;
 
-const float ANIM_TIME= 0.13f;
-
-
 
 struct Action {
 	std::string direction();
@@ -29,6 +26,7 @@ struct Action {
 	std::vector<std::string> _pngs;
 	unsigned int _first_idx;
 	unsigned int _n_idx;
+	float _anim_time;
 	glm::vec2 _footprint_offset; // entre 0 et 1
 	glm::vec2 _footprint_size; // entre 0 et 1
 };
@@ -85,7 +83,7 @@ public:
 	StaticTexture(GLuint prog_draw, std::string path, ScreenGL * screengl);
 	~StaticTexture();
 	void draw();
-	void update(std::vector<StaticCharacter *> static_chars);
+	void update();
 
 
 	GLuint _texture_id;
@@ -99,6 +97,7 @@ public:
 	unsigned int _n_aabbs;
 	glm::vec2 _footprint_offset; // entre 0 et 1
 	glm::vec2 _footprint_size; // entre 0 et 1
+	std::vector<StaticCharacter *> _static_characters;
 };
 
 
@@ -123,7 +122,7 @@ public:
 	AnimTexture(GLuint prog_draw, std::string path, ScreenGL * screengl);
 	~AnimTexture();
 	void draw();
-	void update(std::vector<AnimCharacter *> anim_chars);
+	void update();
 
 
 	GLuint _texture_id;
@@ -135,6 +134,7 @@ public:
 	ScreenGL * _screengl;
 	unsigned int _n_aabbs;
 	std::vector<Action *> _actions;
+	std::vector<AnimCharacter *> _anim_characters;
 };
 
 
@@ -171,6 +171,8 @@ public:
 	Level();
 	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, std::string path, ScreenGL * screengl);
 	~Level();
+	void add_static_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z);
+	void add_anim_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z);
 	void draw();
 	void anim(float elapsed_time);
 	bool key_down(InputState * input_state, SDL_Keycode key);
