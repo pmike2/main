@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # -*- coding:utf-8 -*- 
 
+#
 # script GIMP, faire un lien symbolique de ce script dans le dossier /Users/home/Library/Application\ Support/GIMP/2.8/plug-ins
 # pour le faire apparaitre dans GIMP
+# on le déclenche depuis GIMP menu/Filtres/MesFiltres/Anim 2D
+#
 
 
 import os, sys, re
@@ -45,7 +48,7 @@ register(
     "Anim 2D",
     "",
     [
-        (PF_DIRNAME, "root_out", "root_out", '/Users/home/git_dir/main/anim_2d/modeles')
+        (PF_DIRNAME, "root_out", "root_out", '/Users/home/git_dir/main/anim_2d/data/anim_textures')
     ],
     [],
     anim_2d, menu="<Image>/Filters/MesFiltres")
