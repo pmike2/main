@@ -487,7 +487,8 @@ AnimCharacter::AnimCharacter() {
 
 
 AnimCharacter::AnimCharacter(AnimObj * anim_obj, AnimTexture * anim_texture, float z) : _anim_obj(anim_obj), _anim_texture(anim_texture), _z(z), _current_anim(0), _accumulated_time(0.0f) {
-	_current_action= _anim_texture->_actions[0];
+	//_current_action= _anim_texture->_actions[0];
+	set_action("left_wait");
 }
 
 
@@ -639,7 +640,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 
 	// anim -------------------
 	_anim_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_1", screengl));
-	_anim_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_2", screengl));
+	//_anim_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_2", screengl));
 	
 	_anim_objs.push_back(new AnimObj(glm::vec2(0.0f, 0.0f), glm::vec2(2.0f, 2.0f), _anim_textures[0]->_footprint_offset, _anim_textures[0]->_footprint_size));
 	_anim_characters.push_back(new AnimCharacter(_anim_objs[0], _anim_textures[0], 1.0f));
@@ -725,6 +726,9 @@ void Level::anim(float elapsed_time) {
 				_anim_objs[0]->_velocity.x= -vel_walk;
 			}
 		}
+		else {
+			_anim_objs[0]->_velocity.x*= 0.9f;
+		}
 	}
 	else if (_right_pressed) {
 		if (current_action== "right_run") {
@@ -741,9 +745,11 @@ void Level::anim(float elapsed_time) {
 				_anim_objs[0]->_velocity.x= vel_walk;
 			}
 		}
+		else {
+			_anim_objs[0]->_velocity.x*= 0.9f;
+		}
 	}
 	else {
-		//_anim_objs[0]->_velocity.x= 0.0f;
 		_anim_objs[0]->_velocity.x*= 0.9f;
 	}
 
@@ -899,9 +905,10 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 	string current_type= _anim_characters[0]->current_type();
 
 	if ((key== SDLK_LEFT) && (!_left_pressed)) {
+		//cout << "left_pressed\n";
 		_left_pressed= true;
 		_right_pressed= false;
-		if ((current_action== "right_walk") || (current_action== "right_run") || (current_type== "wait")) {
+		if ((current_action== "right_walk") || (current_action== "right_run") || (current_type== "wait") || (current_type== "crouch")) {
 			if (_lshift_pressed) {
 				_anim_characters[0]->set_action("left_run");
 			}
@@ -918,9 +925,10 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 		return true;
 	}
 	else if ((key== SDLK_RIGHT) && (!_right_pressed)) {
+		//cout << "right_pressed\n";
 		_right_pressed= true;
 		_left_pressed= false;
-		if ((current_action== "left_walk") || (current_action== "left_run") || (current_type== "wait")) {
+		if ((current_action== "left_walk") || (current_action== "left_run") || (current_type== "wait") || (current_type== "crouch")) {
 			if (_lshift_pressed) {
 				_anim_characters[0]->set_action("right_run");
 			}
@@ -937,6 +945,7 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 		return true;
 	}
 	else if ((key== SDLK_UP) && (!_up_pressed)) {
+		//cout << "up_pressed\n";
 		_up_pressed= true;
 		if ((current_type!= "jump") && (current_type!= "fall")) {
 			_jump= true;
@@ -950,10 +959,24 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 		return true;
 	}
 	else if ((key== SDLK_DOWN) && (!_down_pressed)) {
+		//cout << "down_pressed\n";
 		_down_pressed= true;
+		if ((current_action== "left_walk") || (current_action== "left_wait")) {
+			_anim_characters[0]->set_action("left_crouch");
+		}
+		else if ((current_action== "right_walk") || (current_action== "right_wait")) {
+			_anim_characters[0]->set_action("right_crouch");
+		}
+		else if (current_action== "left_run") {
+			_anim_characters[0]->set_action("left_roll");
+		}
+		else if (current_action== "right_run") {
+			_anim_characters[0]->set_action("right_roll");
+		}
 		return true;
 	}
 	else if ((key== SDLK_LSHIFT) && (!_lshift_pressed)) {
+		//cout << "shift_pressed\n";
 		_lshift_pressed= true;
 		if (current_action== "left_walk") {
 			_anim_characters[0]->set_action("left_run");
@@ -993,6 +1016,12 @@ bool Level::key_up(InputState * input_state, SDL_Keycode key) {
 	}
 	else if (key== SDLK_DOWN) {
 		_down_pressed= false;
+		if (current_direction== "left") {
+			_anim_characters[0]->set_action("left_wait");
+		}
+		else if (current_direction== "right") {
+			_anim_characters[0]->set_action("right_wait");
+		}
 		return true;
 	}
 	else if (key== SDLK_LSHIFT) {

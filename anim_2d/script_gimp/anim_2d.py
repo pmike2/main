@@ -5,6 +5,7 @@
 # script GIMP, faire un lien symbolique de ce script dans le dossier /Users/home/Library/Application\ Support/GIMP/2.8/plug-ins
 # pour le faire apparaitre dans GIMP
 # on le déclenche depuis GIMP menu/Filtres/MesFiltres/Anim 2D
+# ATTENTION ne pas sauvegarder le projet à l'issue du lancement de ce script car tous les calques auront subis un miroir
 #
 
 
