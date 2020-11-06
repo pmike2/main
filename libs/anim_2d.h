@@ -15,7 +15,7 @@ const float Z_FAR= 10.0f;
 
 const unsigned int ANIM_MODEL_SIZE= 512;
 
-const float ANIM_TIME= 0.2f;
+const float ANIM_TIME= 0.13f;
 
 
 
@@ -29,6 +29,8 @@ struct Action {
 	std::vector<std::string> _pngs;
 	unsigned int _first_idx;
 	unsigned int _n_idx;
+	glm::vec2 _footprint_offset; // entre 0 et 1
+	glm::vec2 _footprint_size; // entre 0 et 1
 };
 
 
@@ -55,6 +57,7 @@ public:
 	void anim(float elapsed_time);
 	void update_footprint_pos();
 	void set_aabb_pos(glm::vec2 pos);
+	void set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_size);
 
 
 	AABB_2D * _aabb;
@@ -132,8 +135,6 @@ public:
 	ScreenGL * _screengl;
 	unsigned int _n_aabbs;
 	std::vector<Action *> _actions;
-	glm::vec2 _footprint_offset; // entre 0 et 1
-	glm::vec2 _footprint_size; // entre 0 et 1
 };
 
 
@@ -143,6 +144,10 @@ public:
 	AnimCharacter(AnimObj * anim_obj, AnimTexture * anim_texture, float z);
 	~AnimCharacter();
 	void anim(float elapsed_time);
+	void update_velocity();
+	void update_action();
+	void key_down(SDL_Keycode key);
+	void key_up(SDL_Keycode key);
 	void set_action(unsigned int idx_action);
 	void set_action(std::string action_name);
 	std::string current_action();
@@ -156,6 +161,8 @@ public:
 	unsigned int _current_anim;
 	float _accumulated_time;
 	Action * _current_action;
+	bool _left_pressed, _right_pressed, _down_pressed, _up_pressed, _lshift_pressed;
+	bool _jump;
 };
 
 
@@ -180,8 +187,6 @@ public:
 	unsigned int _w, _h;
 	float _block_w, _block_h;
 	ScreenGL * _screengl;
-	bool _left_pressed, _right_pressed, _down_pressed, _up_pressed, _lshift_pressed;
-	bool _jump;
 };
 
 

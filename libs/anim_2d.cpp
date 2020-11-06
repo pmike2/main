@@ -90,8 +90,8 @@ AnimObj::AnimObj() {
 
 AnimObj::AnimObj(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size) : _velocity(glm::vec2(0.0f)) {
 	_aabb= new AABB_2D(pos, size);
-	_footprint= new AABB_2D(glm::vec2(0.0f), glm::vec2(size.x* footprint_size.x, size.y* footprint_size.y));
-	_footprint_offset= glm::vec2(size.x* footprint_offset.x, size.y* footprint_offset.y);
+	_footprint= new AABB_2D(glm::vec2(0.0f), glm::vec2(_aabb->_size.x* footprint_size.x, _aabb->_size.y* footprint_size.y));
+	_footprint_offset= glm::vec2(_aabb->_size.x* footprint_offset.x, _aabb->_size.y* footprint_offset.y);
 	update_footprint_pos();
 }
 
@@ -114,6 +114,13 @@ void AnimObj::update_footprint_pos() {
 
 void AnimObj::set_aabb_pos(glm::vec2 pos) {
 	_aabb->_pos= pos;
+	update_footprint_pos();
+}
+
+
+void AnimObj::set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_size) {
+	_footprint_offset= glm::vec2(_aabb->_size.x* footprint_offset.x, _aabb->_size.y* footprint_offset.y);
+	_footprint->_size= glm::vec2(_aabb->_size.x* footprint_size.x, _aabb->_size.y* footprint_size.y);
 	update_footprint_pos();
 }
 
@@ -299,7 +306,7 @@ AnimTexture::AnimTexture() {
 }
 
 
-AnimTexture::AnimTexture(GLuint prog_draw, std::string path, ScreenGL * screengl) : _prog_draw(prog_draw), _screengl(screengl), _n_aabbs(0) {
+AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl) : _prog_draw(prog_draw), _screengl(screengl), _n_aabbs(0) {
 	string root_pngs= path+ "/pngs";
 	vector<string> l_dirs= list_files(root_pngs);
 	unsigned int compt= 0;
@@ -310,6 +317,17 @@ AnimTexture::AnimTexture(GLuint prog_draw, std::string path, ScreenGL * screengl
 			action->_name= dir;
 			action->_first_idx= compt;
 			action->_n_idx= 0;
+
+			// FAIRE EVOLUER -> XML
+			if ((dir.find("crouch")!= string::npos) || (dir.find("roll")!= string::npos)) {
+				action->_footprint_offset= glm::vec2(0.25f, 0.05f);
+				action->_footprint_size= glm::vec2(0.5f, 0.5f);
+			}
+			else {
+				action->_footprint_offset= glm::vec2(0.25f, 0.05f);
+				action->_footprint_size= glm::vec2(0.5f, 0.9f);
+			}
+
 			vector<string> l_files= list_files(root_pngs+ "/"+ dir);
 			sort(l_files.begin(), l_files.end());
 			for (auto f : l_files) {
@@ -373,10 +391,6 @@ AnimTexture::AnimTexture(GLuint prog_draw, std::string path, ScreenGL * screengl
 	glUseProgram(0);
 
 	glGenBuffers(1, &_vbo);
-
-	// A FAIRE EVOLUER !
-	_footprint_offset= glm::vec2(0.2f, 0.05f);
-	_footprint_size= glm::vec2(0.5f, 0.9f);
 }
 
 
@@ -486,7 +500,10 @@ AnimCharacter::AnimCharacter() {
 }
 
 
-AnimCharacter::AnimCharacter(AnimObj * anim_obj, AnimTexture * anim_texture, float z) : _anim_obj(anim_obj), _anim_texture(anim_texture), _z(z), _current_anim(0), _accumulated_time(0.0f) {
+AnimCharacter::AnimCharacter(AnimObj * anim_obj, AnimTexture * anim_texture, float z) :
+	_anim_obj(anim_obj), _anim_texture(anim_texture), _z(z), _current_anim(0), _accumulated_time(0.0f),
+	_left_pressed(false), _right_pressed(false), _down_pressed(false), _up_pressed(false), _lshift_pressed(false), _jump(false)
+{
 	//_current_action= _anim_texture->_actions[0];
 	set_action("left_wait");
 }
@@ -509,6 +526,251 @@ void AnimCharacter::anim(float elapsed_time) {
 }
 
 
+void AnimCharacter::update_velocity() {
+	float vel_run= 9.0f;
+	float vel_walk= 5.0f;
+	float vel_roll= 9.0f;
+
+	if (_left_pressed) {
+		if (current_action()== "left_run") {
+			_anim_obj->_velocity.x= -vel_run;
+		}
+		else if (current_action()== "left_walk") {
+			_anim_obj->_velocity.x= -vel_walk;
+		}
+		else if ((current_action()== "left_jump") || (current_action()== "left_fall")) {
+			if (_lshift_pressed) {
+				_anim_obj->_velocity.x= -vel_run;
+			}
+			else {
+				_anim_obj->_velocity.x= -vel_walk;
+			}
+		}
+		else if (current_action()== "left_roll") {
+			_anim_obj->_velocity.x= -vel_roll;
+		}
+		else {
+			_anim_obj->_velocity.x*= 0.9f;
+		}
+	}
+	else if (_right_pressed) {
+		if (current_action()== "right_run") {
+			_anim_obj->_velocity.x= vel_run;
+		}
+		else if (current_action()== "right_walk") {
+			_anim_obj->_velocity.x= vel_walk;
+		}
+		else if ((current_action()== "right_jump") || (current_action()== "right_fall")) {
+			if (_lshift_pressed) {
+				_anim_obj->_velocity.x= vel_run;
+			}
+			else {
+				_anim_obj->_velocity.x= vel_walk;
+			}
+		}
+		else if (current_action()== "right_roll") {
+			_anim_obj->_velocity.x= vel_roll;
+		}
+		else {
+			_anim_obj->_velocity.x*= 0.9f;
+		}
+	}
+	else {
+		_anim_obj->_velocity.x*= 0.9f;
+	}
+
+	if (_jump) {
+		_jump= false;
+		if (_lshift_pressed) {
+			_anim_obj->_velocity.y+= 25.0f;
+		}
+		else {
+			_anim_obj->_velocity.y+= 20.0f;
+		}
+	}
+
+	_anim_obj->_velocity.y-= 1.0f;
+	if (_anim_obj->_velocity.y< -20.0f) {
+		_anim_obj->_velocity.y= -20.0f;
+	}
+}
+
+
+void AnimCharacter::update_action() {
+	if ((abs(_anim_obj->_velocity.x)< 0.1f) && (abs(_anim_obj->_velocity.y)< 0.1f)) {
+		if ((current_action()== "left_walk") || (current_action()== "left_run") || (current_action()== "left_fall")) {
+			set_action("left_wait");
+		}
+		else if ((current_action()== "right_walk") || (current_action()== "right_run") || (current_action()== "right_fall")) {
+			set_action("right_wait");
+		}
+	}
+	
+	if (_anim_obj->_velocity.y< 0.0f) {
+		if (current_action()== "left_jump") {
+			set_action("left_fall");
+		}
+		else if (current_action()== "right_jump") {
+			set_action("right_fall");
+		}
+	}
+	else if (abs(_anim_obj->_velocity.y)< 0.1f) {
+		if (current_action()== "left_fall") {
+			if (_lshift_pressed) {
+				set_action("left_run");
+			}
+			else {
+				set_action("left_walk");
+			}
+		}
+		else if (current_action()== "right_fall") {
+			if (_lshift_pressed) {
+				set_action("right_run");
+			}
+			else {
+				set_action("right_walk");
+			}
+		}
+	}
+}
+
+
+void AnimCharacter::key_down(SDL_Keycode key) {
+	if ((key== SDLK_LEFT) && (!_left_pressed)) {
+		//cout << "left_pressed\n";
+		_left_pressed= true;
+		_right_pressed= false;
+		if ((current_action()== "right_walk") || (current_action()== "right_run") || (current_type()== "wait") || (current_type()== "crouch")) {
+			if (_lshift_pressed) {
+				set_action("left_run");
+			}
+			else {
+				set_action("left_walk");
+			}
+		}
+		else if (current_action()== "right_jump") {
+			set_action("left_jump");
+		}
+		else if (current_action()== "right_fall") {
+			set_action("left_fall");
+		}
+	}
+	else if ((key== SDLK_RIGHT) && (!_right_pressed)) {
+		//cout << "right_pressed\n";
+		_right_pressed= true;
+		_left_pressed= false;
+		if ((current_action()== "left_walk") || (current_action()== "left_run") || (current_type()== "wait") || (current_type()== "crouch")) {
+			if (_lshift_pressed) {
+				set_action("right_run");
+			}
+			else {
+				set_action("right_walk");
+			}
+		}
+		else if (current_action()== "left_jump") {
+			set_action("right_jump");
+		}
+		else if (current_action()== "left_fall") {
+			set_action("right_fall");
+		}
+	}
+	else if ((key== SDLK_UP) && (!_up_pressed)) {
+		//cout << "up_pressed\n";
+		_up_pressed= true;
+		if ((current_type()!= "jump") && (current_type()!= "fall")) {
+			_jump= true;
+			if (current_direction()== "left") {
+				set_action("left_jump");
+			}
+			else {
+				set_action("right_jump");
+			}
+		}
+	}
+	else if ((key== SDLK_DOWN) && (!_down_pressed)) {
+		//cout << "down_pressed\n";
+		_down_pressed= true;
+		if ((current_action()== "left_walk") || (current_action()== "left_wait")) {
+			set_action("left_crouch");
+		}
+		else if ((current_action()== "right_walk") || (current_action()== "right_wait")) {
+			set_action("right_crouch");
+		}
+		else if (current_action()== "left_run") {
+			set_action("left_roll");
+		}
+		else if (current_action()== "right_run") {
+			set_action("right_roll");
+		}
+	}
+	// BUG cherry keyboard
+	//else if ((key== SDLK_LSHIFT) && (!_lshift_pressed)) {
+	else if ((key== SDLK_a) && (!_lshift_pressed)) {
+		//cout << "shift_pressed\n";
+		_lshift_pressed= true;
+		if (current_action()== "left_walk") {
+			set_action("left_run");
+		}
+		else if (current_action()== "right_walk") {
+			set_action("right_run");
+		}
+	}
+}
+
+
+void AnimCharacter::key_up(SDL_Keycode key) {
+	if (key== SDLK_LEFT) {
+		_left_pressed= false;
+	}
+	else if (key== SDLK_RIGHT) {
+		_right_pressed= false;
+	}
+	else if (key== SDLK_UP) {
+		_up_pressed= false;
+	}
+	else if (key== SDLK_DOWN) {
+		_down_pressed= false;
+		if (current_direction()== "left") {
+			if (_left_pressed) {
+				if (_lshift_pressed) {
+					set_action("left_run");
+				}
+				else {
+					set_action("left_walk");
+				}
+			}
+			else {
+				set_action("left_wait");
+			}
+		}
+		else if (current_direction()== "right") {
+			if (_right_pressed) {
+				if (_lshift_pressed) {
+					set_action("right_run");
+				}
+				else {
+					set_action("right_walk");
+				}
+			}
+			else {
+				set_action("right_wait");
+			}
+		}
+	}
+	// BUG cherry keyboard
+	//else if (key== SDLK_LSHIFT) {
+	else if (key== SDLK_a) {
+		_lshift_pressed= false;
+		if (current_action()== "left_run") {
+			set_action("left_walk");
+		}
+		else if (current_action()== "right_run") {
+			set_action("right_walk");
+		}
+	}
+}
+
+
 void AnimCharacter::set_action(unsigned int idx_action) {
 	if (idx_action>= _anim_texture->_actions.size()) {
 		cout << "set_action " << idx_action << " trop grand\n";
@@ -516,24 +778,24 @@ void AnimCharacter::set_action(unsigned int idx_action) {
 	}
 	_current_action= _anim_texture->_actions[idx_action];
 	_current_anim= 0;
+	_anim_obj->set_footprint(_current_action->_footprint_offset, _current_action->_footprint_size);
 }
 
 
 void AnimCharacter::set_action(string action_name) {
-	bool found= false;
-	for (auto action : _anim_texture->_actions) {
-		if (action->_name== action_name) {
-			found= true;
-			_current_action= action;
+	int idx_action_ok= -1;
+	for (int idx_action=0; idx_action<_anim_texture->_actions.size(); ++idx_action) {
+		if (_anim_texture->_actions[idx_action]->_name== action_name) {
+			idx_action_ok= idx_action;
 			break;
 		}
 	}
-	if (!found) {
+	if (idx_action_ok< 0) {
 		cout << "action non trouvee : " << action_name << "\n";
 		return;
 	}
 
-	_current_anim= 0;
+	set_action(idx_action_ok);
 }
 
 
@@ -559,8 +821,7 @@ Level::Level() {
 
 
 Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, string path, ScreenGL * screengl) :
-	_screengl(screengl), _left_pressed(false), _right_pressed(false), _down_pressed(false), _up_pressed(false), _lshift_pressed(false),
-	_jump(false)
+	_screengl(screengl)
 {
 	ifstream xml_file(path+ "/levels/level_01.xml");
 	stringstream buffer;
@@ -642,7 +903,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 	_anim_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_1", screengl));
 	//_anim_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_2", screengl));
 	
-	_anim_objs.push_back(new AnimObj(glm::vec2(0.0f, 0.0f), glm::vec2(2.0f, 2.0f), _anim_textures[0]->_footprint_offset, _anim_textures[0]->_footprint_size));
+	_anim_objs.push_back(new AnimObj(glm::vec2(0.0f, 0.0f), glm::vec2(2.0f, 2.0f), _anim_textures[0]->_actions[0]->_footprint_offset, _anim_textures[0]->_actions[0]->_footprint_size));
 	_anim_characters.push_back(new AnimCharacter(_anim_objs[0], _anim_textures[0], 1.0f));
 
 	/*for (unsigned int i=0; i<100; ++i) {
@@ -704,78 +965,8 @@ void Level::draw() {
 
 
 void Level::anim(float elapsed_time) {
-	string current_action= _anim_characters[0]->current_action();
-	string current_direction= _anim_characters[0]->current_direction();
-	string current_type= _anim_characters[0]->current_type();
-
-	float vel_run= 9.0f;
-	float vel_walk= 5.0f;
-
-	if (_left_pressed) {
-		if (current_action== "left_run") {
-			_anim_objs[0]->_velocity.x= -vel_run;
-		}
-		else if (current_action== "left_walk") {
-			_anim_objs[0]->_velocity.x= -vel_walk;
-		}
-		else if ((current_action== "left_jump") || (current_action== "left_fall")) {
-			if (_lshift_pressed) {
-				_anim_objs[0]->_velocity.x= -vel_run;
-			}
-			else {
-				_anim_objs[0]->_velocity.x= -vel_walk;
-			}
-		}
-		else {
-			_anim_objs[0]->_velocity.x*= 0.9f;
-		}
-	}
-	else if (_right_pressed) {
-		if (current_action== "right_run") {
-			_anim_objs[0]->_velocity.x= vel_run;
-		}
-		else if (current_action== "right_walk") {
-			_anim_objs[0]->_velocity.x= vel_walk;
-		}
-		else if ((current_action== "right_jump") || (current_action== "right_fall")) {
-			if (_lshift_pressed) {
-				_anim_objs[0]->_velocity.x= vel_run;
-			}
-			else {
-				_anim_objs[0]->_velocity.x= vel_walk;
-			}
-		}
-		else {
-			_anim_objs[0]->_velocity.x*= 0.9f;
-		}
-	}
-	else {
-		_anim_objs[0]->_velocity.x*= 0.9f;
-	}
-
-	/*if (_up_pressed) {
-		_anim_objs[0]->_velocity.y= vel;
-	}
-	else if (_down_pressed) {
-		_anim_objs[0]->_velocity.y= -vel;
-	}
-	else {
-		_anim_objs[0]->_velocity.y= 0.0f;
-	}*/
-
-	if (_jump) {
-		_jump= false;
-		if (_lshift_pressed) {
-			_anim_objs[0]->_velocity.y+= 25.0f;
-		}
-		else {
-			_anim_objs[0]->_velocity.y+= 20.0f;
-		}
-	}
-
-	_anim_objs[0]->_velocity.y-= 1.0f;
-	if (_anim_objs[0]->_velocity.y< -20.0f) {
-		_anim_objs[0]->_velocity.y= -20.0f;
+	for (auto anim_character : _anim_characters) {
+		anim_character->update_velocity();
 	}
 	
 	glm::vec2 contact_pt(0.0f);
@@ -840,150 +1031,34 @@ void Level::anim(float elapsed_time) {
 			//cout << "velocity corrigee= (" << _anim_objs[0]->_velocity.x << " ; " << _anim_objs[0]->_velocity.y << ") ; with_elapsed= (" << _anim_objs[0]->_velocity.x* elapsed_time << " ; " << _anim_objs[0]->_velocity.y* elapsed_time << ")\n";
 		}
 	}
-*/
-	
-	if ((abs(_anim_objs[0]->_velocity.x)< 0.1f) && (abs(_anim_objs[0]->_velocity.y)< 0.1f)) {
-		if ((current_action== "left_walk") || (current_action== "left_run") || (current_action== "left_fall")) {
-			_anim_characters[0]->set_action("left_wait");
-		}
-		else if ((current_action== "right_walk") || (current_action== "right_run") || (current_action== "right_fall")) {
-			_anim_characters[0]->set_action("right_wait");
-		}
-	}
-	
-	if (_anim_objs[0]->_velocity.y< 0.0f) {
-		if (current_action== "left_jump") {
-			_anim_characters[0]->set_action("left_fall");
-		}
-		else if (current_action== "right_jump") {
-			_anim_characters[0]->set_action("right_fall");
-		}
-	}
-
-	else if (abs(_anim_objs[0]->_velocity.y)< 0.1f) {
-		if (current_action== "left_fall") {
-			if (_lshift_pressed) {
-				_anim_characters[0]->set_action("left_run");
-			}
-			else {
-				_anim_characters[0]->set_action("left_walk");
-			}
-		}
-		else if (current_action== "right_fall") {
-			if (_lshift_pressed) {
-				_anim_characters[0]->set_action("right_run");
-			}
-			else {
-				_anim_characters[0]->set_action("right_walk");
-			}
-		}
+*/	
+	for (auto anim_character : _anim_characters) {
+		anim_character->update_action();
 	}
 
 	for (auto anim_obj : _anim_objs) {
 		anim_obj->anim(elapsed_time);
 	}
 	
-	for (auto anim_char : _anim_characters) {
-		anim_char->anim(elapsed_time);
+	for (auto anim_character : _anim_characters) {
+		anim_character->anim(elapsed_time);
 	}
 
 	for (auto at : _anim_textures) {
-		vector<AnimCharacter *> anim_chars;
+		vector<AnimCharacter *> anim_characters;
 		for (auto ac : _anim_characters) {
 			if (ac->_anim_texture== at) {
-				anim_chars.push_back(ac);
+				anim_characters.push_back(ac);
 			}
 		}
-		at->update(anim_chars);
+		at->update(anim_characters);
 	}
 }
 
 
 bool Level::key_down(InputState * input_state, SDL_Keycode key) {
-	string current_action= _anim_characters[0]->current_action();
-	string current_direction= _anim_characters[0]->current_direction();
-	string current_type= _anim_characters[0]->current_type();
-
-	if ((key== SDLK_LEFT) && (!_left_pressed)) {
-		//cout << "left_pressed\n";
-		_left_pressed= true;
-		_right_pressed= false;
-		if ((current_action== "right_walk") || (current_action== "right_run") || (current_type== "wait") || (current_type== "crouch")) {
-			if (_lshift_pressed) {
-				_anim_characters[0]->set_action("left_run");
-			}
-			else {
-				_anim_characters[0]->set_action("left_walk");
-			}
-		}
-		else if (current_action== "right_jump") {
-			_anim_characters[0]->set_action("left_jump");
-		}
-		else if (current_action== "right_fall") {
-			_anim_characters[0]->set_action("left_fall");
-		}
-		return true;
-	}
-	else if ((key== SDLK_RIGHT) && (!_right_pressed)) {
-		//cout << "right_pressed\n";
-		_right_pressed= true;
-		_left_pressed= false;
-		if ((current_action== "left_walk") || (current_action== "left_run") || (current_type== "wait") || (current_type== "crouch")) {
-			if (_lshift_pressed) {
-				_anim_characters[0]->set_action("right_run");
-			}
-			else {
-				_anim_characters[0]->set_action("right_walk");
-			}
-		}
-		else if (current_action== "left_jump") {
-			_anim_characters[0]->set_action("right_jump");
-		}
-		else if (current_action== "left_fall") {
-			_anim_characters[0]->set_action("right_fall");
-		}
-		return true;
-	}
-	else if ((key== SDLK_UP) && (!_up_pressed)) {
-		//cout << "up_pressed\n";
-		_up_pressed= true;
-		if ((current_type!= "jump") && (current_type!= "fall")) {
-			_jump= true;
-			if (current_direction== "left") {
-				_anim_characters[0]->set_action("left_jump");
-			}
-			else {
-				_anim_characters[0]->set_action("right_jump");
-			}
-		}
-		return true;
-	}
-	else if ((key== SDLK_DOWN) && (!_down_pressed)) {
-		//cout << "down_pressed\n";
-		_down_pressed= true;
-		if ((current_action== "left_walk") || (current_action== "left_wait")) {
-			_anim_characters[0]->set_action("left_crouch");
-		}
-		else if ((current_action== "right_walk") || (current_action== "right_wait")) {
-			_anim_characters[0]->set_action("right_crouch");
-		}
-		else if (current_action== "left_run") {
-			_anim_characters[0]->set_action("left_roll");
-		}
-		else if (current_action== "right_run") {
-			_anim_characters[0]->set_action("right_roll");
-		}
-		return true;
-	}
-	else if ((key== SDLK_LSHIFT) && (!_lshift_pressed)) {
-		//cout << "shift_pressed\n";
-		_lshift_pressed= true;
-		if (current_action== "left_walk") {
-			_anim_characters[0]->set_action("left_run");
-		}
-		else if (current_action== "right_walk") {
-			_anim_characters[0]->set_action("right_run");
-		}
+	if ((key== SDLK_DOWN) || (key== SDLK_UP) || (key== SDLK_LEFT) || (key== SDLK_RIGHT) || (key== SDLK_a)) {
+		_anim_characters[0]->key_down(key);
 		return true;
 	}
 	else if (key== SDLK_SPACE) {
@@ -998,40 +1073,8 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 
 
 bool Level::key_up(InputState * input_state, SDL_Keycode key) {
-	string current_action= _anim_characters[0]->current_action();
-	string current_direction= _anim_characters[0]->current_direction();
-	string current_type= _anim_characters[0]->current_type();
-
-	if (key== SDLK_LEFT) {
-		_left_pressed= false;
-		return true;
-	}
-	else if (key== SDLK_RIGHT) {
-		_right_pressed= false;
-		return true;
-	}
-	else if (key== SDLK_UP) {
-		_up_pressed= false;
-		return true;
-	}
-	else if (key== SDLK_DOWN) {
-		_down_pressed= false;
-		if (current_direction== "left") {
-			_anim_characters[0]->set_action("left_wait");
-		}
-		else if (current_direction== "right") {
-			_anim_characters[0]->set_action("right_wait");
-		}
-		return true;
-	}
-	else if (key== SDLK_LSHIFT) {
-		_lshift_pressed= false;
-		if (current_action== "left_run") {
-			_anim_characters[0]->set_action("left_walk");
-		}
-		else if (current_action== "right_run") {
-			_anim_characters[0]->set_action("right_walk");
-		}
+	if ((key== SDLK_DOWN) || (key== SDLK_UP) || (key== SDLK_LEFT) || (key== SDLK_RIGHT) || (key== SDLK_a)) {
+		_anim_characters[0]->key_down(key);
 		return true;
 	}
 
@@ -1239,7 +1282,7 @@ void LevelDebug::update() {
 
 
 bool LevelDebug::key_down(InputState * input_state, SDL_Keycode key) {
-	if (key== SDLK_a) {
+	if (key== SDLK_d) {
 		_draw_aabb= !_draw_aabb;
 		return true;
 	}
