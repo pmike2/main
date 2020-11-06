@@ -707,8 +707,8 @@ void Level::anim(float elapsed_time) {
 	string current_direction= _anim_characters[0]->current_direction();
 	string current_type= _anim_characters[0]->current_type();
 
-	float vel_run= 6.0f;
-	float vel_walk= 3.0f;
+	float vel_run= 9.0f;
+	float vel_walk= 5.0f;
 
 	if (_left_pressed) {
 		if (current_action== "left_run") {
@@ -759,12 +759,17 @@ void Level::anim(float elapsed_time) {
 
 	if (_jump) {
 		_jump= false;
-		_anim_objs[0]->_velocity.y+= 18.0f;
+		if (_lshift_pressed) {
+			_anim_objs[0]->_velocity.y+= 25.0f;
+		}
+		else {
+			_anim_objs[0]->_velocity.y+= 20.0f;
+		}
 	}
 
-	_anim_objs[0]->_velocity.y+= -0.5f;
-	if (_anim_objs[0]->_velocity.y< -10.0f) {
-		_anim_objs[0]->_velocity.y= -10.0f;
+	_anim_objs[0]->_velocity.y-= 1.0f;
+	if (_anim_objs[0]->_velocity.y< -20.0f) {
+		_anim_objs[0]->_velocity.y= -20.0f;
 	}
 	
 	glm::vec2 contact_pt(0.0f);
