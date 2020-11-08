@@ -217,8 +217,7 @@ void show_infos() {
 	float font_scale= 0.6f;
 	glm::vec3 font_color= glm::vec3(1.0f, 1.0f, 0.0f);
 
-	font_str.str("");
-	font_str << level->_anim_characters[0]->current_action();
+	font_str.str("hello");
 	arial_font->draw(font_str.str(), 10.0f, 1000.0f, font_scale, font_color);
 }
 

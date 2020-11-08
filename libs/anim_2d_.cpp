@@ -52,43 +52,16 @@ void Action::print() {
 }
 
 
-// StaticObj --------------------------------------------------------------------------------------------
-StaticObj::StaticObj() {
-
-}
-
-
-StaticObj::StaticObj(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size) {
-	_aabb= new AABB_2D(pos, size);
-	_footprint= new AABB_2D(glm::vec2(0.0f), glm::vec2(size.x* footprint_size.x, size.y* footprint_size.y));
-	_footprint_offset= glm::vec2(size.x* footprint_offset.x, size.y* footprint_offset.y);
-	update_footprint_pos();
-}
-
-
-StaticObj::~StaticObj() {
-	delete _aabb;
-}
-
-
-void StaticObj::update_footprint_pos() {
-	_footprint->_pos= _aabb->_pos+ _footprint_offset;
-}
-
-
-void StaticObj::set_aabb_pos(glm::vec2 pos) {
-	_aabb->_pos= pos;
-	update_footprint_pos();
-}
-
 
 // AnimObj --------------------------------------------------------------------------------------------
-AnimObj::AnimObj() {
+Object2D::Object2D() {
 
 }
 
 
-AnimObj::AnimObj(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size) : _velocity(glm::vec2(0.0f)) {
+Object2D::Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size, bool is_static, bool is_solid) :
+	_velocity(glm::vec2(0.0f)), _is_static(is_static), _is_solid(is_solid)
+{
 	_aabb= new AABB_2D(pos, size);
 	_footprint= new AABB_2D(glm::vec2(0.0f), glm::vec2(_aabb->_size.x* footprint_size.x, _aabb->_size.y* footprint_size.y));
 	_footprint_offset= glm::vec2(_aabb->_size.x* footprint_offset.x, _aabb->_size.y* footprint_offset.y);
@@ -96,29 +69,33 @@ AnimObj::AnimObj(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm:
 }
 
 
-AnimObj::~AnimObj() {
+Object2D::~Object2D() {
 	delete _aabb;
+	delete _footprint;
 }
 
 
-void AnimObj::anim(float elapsed_time) {
+void Object2D::anim(float elapsed_time) {
+	if (_is_static) {
+		return;
+	}
 	_aabb->_pos+= _velocity* elapsed_time;
 	update_footprint_pos();
 }
 
 
-void AnimObj::update_footprint_pos() {
+void Object2D::update_footprint_pos() {
 	_footprint->_pos= _aabb->_pos+ _footprint_offset;
 }
 
 
-void AnimObj::set_aabb_pos(glm::vec2 pos) {
+void Object2D::set_aabb_pos(glm::vec2 pos) {
 	_aabb->_pos= pos;
 	update_footprint_pos();
 }
 
 
-void AnimObj::set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_size) {
+void Object2D::set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_size) {
 	_footprint_offset= glm::vec2(_aabb->_size.x* footprint_offset.x, _aabb->_size.y* footprint_offset.y);
 	_footprint->_size= glm::vec2(_aabb->_size.x* footprint_size.x, _aabb->_size.y* footprint_size.y);
 	update_footprint_pos();
@@ -126,7 +103,11 @@ void AnimObj::set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_size
 
 
 // -------------------------------------------------------------------------------------------
-bool anim_intersect_static(const AnimObj * anim_obj, const StaticObj * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time) {
+bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time) {
+	if ((!anim_obj->_is_solid) || (!static_obj->_is_solid)) {
+		return false;
+	}
+
 	//if (glm::length2(anim_obj->_velocity)< 1e-9f) {
 	if ((anim_obj->_velocity.x== 0.0f) && (anim_obj->_velocity.y== 0.0f)) {
 		return false;
@@ -296,7 +277,7 @@ StaticCharacter::StaticCharacter() {
 }
 
 
-StaticCharacter::StaticCharacter(StaticObj * static_obj, StaticTexture * static_texture, float z) : _static_obj(static_obj), _static_texture(static_texture), _z(z) {
+StaticCharacter::StaticCharacter(Object2D * static_obj, StaticTexture * static_texture, float z) : _static_obj(static_obj), _static_texture(static_texture), _z(z) {
 
 }
 
@@ -514,7 +495,7 @@ AnimCharacter::AnimCharacter() {
 }
 
 
-AnimCharacter::AnimCharacter(AnimObj * anim_obj, AnimTexture * anim_texture, float z) :
+AnimCharacter::AnimCharacter(Object2D * anim_obj, AnimTexture * anim_texture, float z) :
 	_anim_obj(anim_obj), _anim_texture(anim_texture), _z(z), _current_anim(0), _accumulated_time(0.0f),
 	_left_pressed(false), _right_pressed(false), _down_pressed(false), _up_pressed(false), _lshift_pressed(false), _jump(false)
 {

@@ -16,9 +16,33 @@ const float Z_FAR= 10.0f;
 const unsigned int ANIM_MODEL_SIZE= 512;
 
 
-struct Action {
-	std::string direction();
-	std::string type();
+class Object2D {
+public:
+	Object2D();
+	Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size, bool is_static, bool is_solid);
+	~Object2D();
+	void anim(float elapsed_time);
+	void update_footprint_pos();
+	void set_aabb_pos(glm::vec2 pos);
+	void set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_size);
+
+
+	AABB_2D * _aabb;
+	glm::vec2 _footprint_offset;
+	AABB_2D * _footprint;
+	glm::vec2 _velocity;
+	bool _is_static;
+	bool _is_solid;
+};
+
+
+bool obj_intersect(const Object2D * anim_obj, const Object2D * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time);
+
+
+class Action {
+public:
+	Action();
+	~Action();
 	void print();
 
 
@@ -32,35 +56,13 @@ struct Action {
 };
 
 
-class Object2D {
-public:
-	Object2D();
-	Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size, bool is_static);
-	~Object2D();
-	void anim(float elapsed_time);
-	void update_footprint_pos();
-	void set_aabb_pos(glm::vec2 pos);
-	void set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_size);
-
-
-	AABB_2D * _aabb;
-	glm::vec2 _footprint_offset;
-	AABB_2D * _footprint;
-	glm::vec2 _velocity;
-	bool _is_static;
-};
-
-
-bool obj_intersect(const Object2D * anim_obj, const Object2D * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time);
-
-
 class Character2D;
 
 class Texture2D {
 public:
 	Texture2D();
 	Texture2D(GLuint prog_draw, ScreenGL * screengl);
-	~Texture2D();
+	virtual ~Texture2D();
 	virtual void draw() = 0;
 	virtual void update() = 0;
 
@@ -73,7 +75,9 @@ public:
 	ScreenGL * _screengl;
 	unsigned int _n_aabbs;
 	std::vector<Character2D *> _characters;
-}
+	std::vector<Action *> _actions;
+};
+
 
 class StaticTexture : public Texture2D {
 public:
@@ -86,12 +90,10 @@ public:
 
 	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _tex_loc, _alpha_loc;
 	float _alpha;
-	glm::vec2 _footprint_offset; // entre 0 et 1
-	glm::vec2 _footprint_size; // entre 0 et 1
-	bool _is_solid;
 };
 
 
+//class AnimatedCharacter2D;
 class AnimTexture : public Texture2D {
 public:
 	AnimTexture();
@@ -102,7 +104,6 @@ public:
 
 
 	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _texture_array_loc, _current_layer_loc;
-	std::vector<Action *> _actions;
 };
 
 
@@ -110,26 +111,46 @@ class Character2D {
 public:
 	Character2D();
 	Character2D(Object2D * obj, Texture2D * texture, float z);
-	~Character2D();
-	void anim(float elapsed_time);
-	void update_velocity();
-	void update_action();
-	void key_down(SDL_Keycode key);
-	void key_up(SDL_Keycode key);
-	void ia();
-	void set_action(unsigned int idx_action);
-	void set_action(std::string action_name);
-	std::string current_action();
-	std::string current_direction();
-	std::string current_type();
+	virtual ~Character2D();
 
 
 	Object2D * _obj;
 	Texture2D * _texture;
 	float _z;
+};
+
+
+class AnimatedCharacter2D : public Character2D {
+public:
+	AnimatedCharacter2D();
+	AnimatedCharacter2D(Object2D * obj, Texture2D * texture, float z);
+	~AnimatedCharacter2D();
+	void anim(float elapsed_time);
+	void set_action(unsigned int idx_action);
+	void set_action(std::string action_name);
+	std::string current_action();
+
+
+	Action * _current_action;
 	unsigned int _current_anim;
 	float _accumulated_time;
-	Action * _current_action;
+};
+
+
+class Person2D : public AnimatedCharacter2D {
+public:
+	Person2D();
+	Person2D(Object2D * obj, Texture2D * texture, float z);
+	~Person2D();
+	void update_velocity();
+	void update_action();
+	void key_down(SDL_Keycode key);
+	void key_up(SDL_Keycode key);
+	void ia();
+	std::string current_direction();
+	std::string current_type();
+
+
 	bool _left_pressed, _right_pressed, _down_pressed, _up_pressed, _lshift_pressed;
 	bool _jump;
 };
@@ -140,16 +161,15 @@ public:
 	Level();
 	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, std::string path, ScreenGL * screengl);
 	~Level();
-	void add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, bool is_static);
-	void delete_character(unsigned int idx_static_character);
+	void add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, bool is_static, bool is_solid, std::string character_type);
+	void delete_character(unsigned int idx_character);
 	void draw();
 	void anim(float elapsed_time);
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
 
 
-	std::vector<StaticTexture *> _static_textures;
-	std::vector<AnimTexture *> _anim_textures;
+	std::vector<Texture2D *> _textures;
 	std::vector<Character2D *> _characters;
 	
 	unsigned int _w, _h;

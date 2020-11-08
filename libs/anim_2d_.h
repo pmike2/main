@@ -16,22 +16,7 @@ const float Z_FAR= 10.0f;
 const unsigned int ANIM_MODEL_SIZE= 512;
 
 
-struct Action {
-	std::string direction();
-	std::string type();
-	void print();
-
-
-	std::string _name;
-	std::vector<std::string> _pngs;
-	unsigned int _first_idx;
-	unsigned int _n_idx;
-	float _anim_time;
-	glm::vec2 _footprint_offset; // entre 0 et 1
-	glm::vec2 _footprint_size; // entre 0 et 1
-};
-
-
+/*
 class StaticObj {
 public:
 	StaticObj();
@@ -66,6 +51,29 @@ public:
 
 
 bool anim_intersect_static(const AnimObj * anim_obj, const StaticObj * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time);
+*/
+
+class Object2D {
+public:
+	Object2D();
+	Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size, bool is_static, bool is_solid);
+	~Object2D();
+	void anim(float elapsed_time);
+	void update_footprint_pos();
+	void set_aabb_pos(glm::vec2 pos);
+	void set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_size);
+
+
+	AABB_2D * _aabb;
+	glm::vec2 _footprint_offset;
+	AABB_2D * _footprint;
+	glm::vec2 _velocity;
+	bool _is_static;
+	bool _is_solid;
+};
+
+
+bool obj_intersect(const Object2D * anim_obj, const Object2D * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time);
 
 
 class StaticCharacter;
@@ -95,16 +103,19 @@ public:
 };
 
 
-class StaticCharacter {
-public:
-	StaticCharacter();
-	StaticCharacter(StaticObj * static_obj, StaticTexture * static_texture, float z);
-	~StaticCharacter();
+struct Action {
+	std::string direction();
+	std::string type();
+	void print();
 
 
-	StaticObj * _static_obj;
-	StaticTexture * _static_texture;
-	float _z;
+	std::string _name;
+	std::vector<std::string> _pngs;
+	unsigned int _first_idx;
+	unsigned int _n_idx;
+	float _anim_time;
+	glm::vec2 _footprint_offset; // entre 0 et 1
+	glm::vec2 _footprint_size; // entre 0 et 1
 };
 
 
@@ -135,7 +146,7 @@ public:
 class AnimCharacter {
 public:
 	AnimCharacter();
-	AnimCharacter(AnimObj * anim_obj, AnimTexture * anim_texture, float z);
+	AnimCharacter(Object2D * anim_obj, AnimTexture * anim_texture, float z);
 	~AnimCharacter();
 	void anim(float elapsed_time);
 	void update_velocity();
@@ -150,7 +161,7 @@ public:
 	std::string current_type();
 
 
-	AnimObj * _anim_obj;
+	Object2D * _anim_obj;
 	AnimTexture * _anim_texture;
 	float _z;
 	unsigned int _current_anim;
@@ -158,6 +169,14 @@ public:
 	Action * _current_action;
 	bool _left_pressed, _right_pressed, _down_pressed, _up_pressed, _lshift_pressed;
 	bool _jump;
+};
+
+
+class PersonCharacter {
+public:
+	PersonCharacter();
+	PersonCharacter(Object2D * anim_obj, AnimTexture * anim_texture, float z);
+	~PersonCharacter();
 };
 
 
