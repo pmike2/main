@@ -13,45 +13,85 @@ import os, sys, re
 
 from gimpfu import *
 
+# pour faire un print ouvrir la console d'erreurs et faire :
+#gimp.pdb.gimp_message('This is displayed as a message')
 
+default_dir= os.path.join(os.path.dirname(os.path.realpath(__file__)), "../data/anim_textures")
+
+
+# ---------------------------------------------------------------------------------------------------------
 def anim_2d(root_out):
-    # pour faire un print ouvrir la console d'erreurs et faire :
-    #gimp.pdb.gimp_message('This is displayed as a message')
-    
-    savefn= gimp.pdb['file-png-save-defaults']
+	
+	savefn= gimp.pdb['file-png-save-defaults']
 
-    img= gimp.image_list()[0]
+	img= gimp.image_list()[0]
 
-    for group in img.layers:
-        for lay in group.layers:
-            out_name= os.path.join(root_out, "right_"+ group.name, "right_"+ lay.name + ".png")
-            if not os.path.isdir(os.path.dirname(out_name)):
-                os.system("mkdir -p %s" % os.path.dirname(out_name))
-            savefn(img, lay, out_name, out_name)
+	for group in img.layers:
+		for lay in group.layers:
+			out_name= os.path.join(root_out, group.name, lay.name + ".png")
+			if not os.path.isdir(os.path.dirname(out_name)):
+				os.system("mkdir -p %s" % os.path.dirname(out_name))
+			savefn(img, lay, out_name, out_name)
 
-    pdb.gimp_image_flip(img, ORIENTATION_HORIZONTAL)
 
-    for group in img.layers:
-        for lay in group.layers:
-            out_name= os.path.join(root_out, "left_"+ group.name, "left_"+ lay.name + ".png")
-            if not os.path.isdir(os.path.dirname(out_name)):
-                os.system("mkdir -p %s" % os.path.dirname(out_name))
-            savefn(img, lay, out_name, out_name)
+def anim_2d_symmetry(root_out):
+	
+	savefn= gimp.pdb['file-png-save-defaults']
+
+	img= gimp.image_list()[0]
+
+	for group in img.layers:
+		for lay in group.layers:
+			out_name= os.path.join(root_out, "right_"+ group.name, "right_"+ lay.name + ".png")
+			if not os.path.isdir(os.path.dirname(out_name)):
+				os.system("mkdir -p %s" % os.path.dirname(out_name))
+			savefn(img, lay, out_name, out_name)
+
+	pdb.gimp_image_flip(img, ORIENTATION_HORIZONTAL)
+
+	for group in img.layers:
+		for lay in group.layers:
+			out_name= os.path.join(root_out, "left_"+ group.name, "left_"+ lay.name + ".png")
+			if not os.path.isdir(os.path.dirname(out_name)):
+				os.system("mkdir -p %s" % os.path.dirname(out_name))
+			savefn(img, lay, out_name, out_name)
+
+# ---------------------------------------------------------------------------------------------------------
+register(
+	"python_fu_anim_2d", # name
+	"Anim 2D", # blurb
+	"save pour anim 2D", # help
+	"PMB", # author
+	"PMB", # copyright
+	"2020", # date
+	"Anim 2D", # menupath
+	"", # imagetypes
+	[ 
+		(PF_DIRNAME, "root_out", "root_out", default_dir)
+	], # params
+	[], # results
+	anim_2d, # function
+	menu="<Image>/Filters/MesFiltres"
+)
 
 
 register(
-    "python_fu_anim_2d",
-    "Anim 2D",
-    "save + mirror pour anim 2D",
-    "PMB",
-    "PMB",
-    "2020",
-    "Anim 2D",
-    "",
-    [
-        (PF_DIRNAME, "root_out", "root_out", '/Users/home/git_dir/main/anim_2d/data/anim_textures')
-    ],
-    [],
-    anim_2d, menu="<Image>/Filters/MesFiltres")
+	"python_fu_anim_2d_symmetry", # name
+	"Anim 2D Symmetry", # blurb
+	"save + mirror pour anim 2D", # help
+	"PMB", # author
+	"PMB", # copyright
+	"2020", # date
+	"Anim 2D Symmetry", # menupath
+	"", # imagetypes
+	[ 
+		(PF_DIRNAME, "root_out", "root_out", default_dir)
+	], # params
+	[], # results
+	anim_2d_symmetry, # function
+	menu="<Image>/Filters/MesFiltres"
+)
 
+
+# ---------------------------------------------------------------------------------------------------------
 main()

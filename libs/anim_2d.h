@@ -19,9 +19,10 @@ const unsigned int ANIM_MODEL_SIZE= 512;
 class Object2D {
 public:
 	Object2D();
-	Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size, bool is_static, bool is_solid);
+	Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size, bool is_static, bool is_solid, bool is_falling);
 	~Object2D();
-	void anim(float elapsed_time);
+	void update_pos(float elapsed_time);
+	void update_velocity();
 	void update_footprint_pos();
 	void set_aabb_pos(glm::vec2 pos);
 	void set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_size);
@@ -33,6 +34,7 @@ public:
 	glm::vec2 _velocity;
 	bool _is_static;
 	bool _is_solid;
+	bool _is_falling;
 };
 
 
@@ -161,7 +163,7 @@ public:
 	Level();
 	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, std::string path, ScreenGL * screengl);
 	~Level();
-	void add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, bool is_static, bool is_solid, std::string character_type);
+	void add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, bool is_static, bool is_solid, bool is_falling, std::string character_type);
 	void delete_character(unsigned int idx_character);
 	void draw();
 	void anim(float elapsed_time);
@@ -175,6 +177,7 @@ public:
 	unsigned int _w, _h;
 	float _block_w, _block_h;
 	ScreenGL * _screengl;
+	Person2D * _hero;
 };
 
 
