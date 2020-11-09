@@ -16,6 +16,18 @@ const float Z_FAR= 10.0f;
 const unsigned int ANIM_MODEL_SIZE= 512;
 
 
+class CheckPoint {
+public:
+	CheckPoint();
+	CheckPoint(glm::vec2 pos, float velocity);
+	~CheckPoint();
+
+
+	glm::vec2 _pos;
+	float _velocity;
+};
+
+
 class Object2D {
 public:
 	Object2D();
@@ -26,6 +38,7 @@ public:
 	void update_footprint_pos();
 	void set_aabb_pos(glm::vec2 pos);
 	void set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_size);
+	void add_checkpoint(glm::vec2 pos, float velocity);
 
 
 	AABB_2D * _aabb;
@@ -35,6 +48,8 @@ public:
 	bool _is_static;
 	bool _is_solid;
 	bool _is_falling;
+	std::vector<CheckPoint *> _checkpoints;
+	unsigned int _idx_checkpoint;
 };
 
 
@@ -163,7 +178,7 @@ public:
 	Level();
 	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, std::string path, ScreenGL * screengl);
 	~Level();
-	void add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, bool is_static, bool is_solid, bool is_falling, std::string character_type);
+	void add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, bool is_static, bool is_solid, bool is_falling, std::string character_type, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
 	void delete_character(unsigned int idx_character);
 	void draw();
 	void anim(float elapsed_time);

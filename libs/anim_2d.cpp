@@ -33,6 +33,22 @@ using namespace std;
 using namespace rapidxml;
 
 
+// CheckPoint ------------------------------------------------------------------------------------------
+CheckPoint::CheckPoint() {
+
+}
+
+
+CheckPoint::CheckPoint(glm::vec2 pos, float velocity) : _pos(pos), _velocity(velocity) {
+
+}
+
+
+CheckPoint::~CheckPoint() {
+
+}
+
+
 // Object2D --------------------------------------------------------------------------------------------
 Object2D::Object2D() {
 
@@ -40,7 +56,7 @@ Object2D::Object2D() {
 
 
 Object2D::Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size, bool is_static, bool is_solid, bool is_falling) :
-	_velocity(glm::vec2(0.0f)), _is_static(is_static), _is_solid(is_solid), _is_falling(is_falling)
+	_velocity(glm::vec2(0.0f)), _is_static(is_static), _is_solid(is_solid), _is_falling(is_falling), _idx_checkpoint(0)
 {
 	_aabb= new AABB_2D(pos, size);
 	_footprint= new AABB_2D(glm::vec2(0.0f), glm::vec2(_aabb->_size.x* footprint_size.x, _aabb->_size.y* footprint_size.y));
@@ -52,6 +68,10 @@ Object2D::Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, gl
 Object2D::~Object2D() {
 	delete _aabb;
 	delete _footprint;
+	for (auto checkpoint : _checkpoints) {
+		delete checkpoint;
+	}
+	_checkpoints.clear();
 }
 
 
@@ -59,6 +79,14 @@ void Object2D::update_pos(float elapsed_time) {
 	if (!_is_static) {
 		_aabb->_pos+= _velocity* elapsed_time;
 		update_footprint_pos();
+		if (_checkpoints.size()) {
+			if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)< 0.1f) {
+				_idx_checkpoint++;
+				if (_idx_checkpoint>= _checkpoints.size()) {
+					_idx_checkpoint= 0;
+				}
+			}
+		}
 	}
 }
 
@@ -68,6 +96,12 @@ void Object2D::update_velocity() {
 		_velocity.y-= 1.0f;
 		if (_velocity.y< -20.0f) {
 			_velocity.y= -20.0f;
+		}
+	}
+	if (_checkpoints.size()) {
+		if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)> 0.1f) {
+			glm::vec2 direction= _checkpoints[_idx_checkpoint]->_pos- _aabb->_pos;
+			_velocity= glm::normalize(direction)* _checkpoints[_idx_checkpoint]->_velocity;
 		}
 	}
 }
@@ -88,6 +122,11 @@ void Object2D::set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_siz
 	_footprint_offset= glm::vec2(_aabb->_size.x* footprint_offset.x, _aabb->_size.y* footprint_offset.y);
 	_footprint->_size= glm::vec2(_aabb->_size.x* footprint_size.x, _aabb->_size.y* footprint_size.y);
 	update_footprint_pos();
+}
+
+
+void Object2D::add_checkpoint(glm::vec2 pos, float velocity) {
+	_checkpoints.push_back(new CheckPoint(pos, velocity));
 }
 
 
@@ -940,7 +979,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 	}
 
 	add_character(7, glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 2.0f, true, false, true, "AnimatedCharacter2D");
-	add_character(0, glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 3.0f, false, true, false, "Character2D");
+	add_character(0, glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 3.0f, false, true, false, "Character2D", {{glm::vec2(0.0f, -2.0f), 4.0f}, {glm::vec2(4.0f, -2.0f), 2.0f}});
 }
 
 
@@ -957,8 +996,11 @@ Level::~Level() {
 }
 
 
-void Level::add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, bool is_static, bool is_solid, bool is_falling, string character_type) {
+void Level::add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, bool is_static, bool is_solid, bool is_falling, string character_type, vector<CheckPoint> checkpoints) {
 	Object2D * obj= new Object2D(pos, size, _textures[idx_texture]->_actions[0]->_footprint_offset, _textures[idx_texture]->_actions[0]->_footprint_size, is_static, is_solid, is_falling);
+	for (auto checkpoint : checkpoints) {
+		obj->add_checkpoint(checkpoint._pos, checkpoint._velocity);
+	}
 	Character2D * character;
 	if (character_type== "Character2D") {
 		character= new Character2D(obj, _textures[idx_texture], z);
