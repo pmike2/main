@@ -15,6 +15,7 @@ class AABB_2D {
 public:
 	AABB_2D();
 	AABB_2D(glm::vec2 pos, glm::vec2 size);
+	AABB_2D(const AABB_2D & aabb);
 	~AABB_2D();
 
 

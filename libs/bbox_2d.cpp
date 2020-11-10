@@ -17,6 +17,13 @@ AABB_2D::AABB_2D() {
 
 
 AABB_2D::AABB_2D(glm::vec2 pos, glm::vec2 size) : _pos(pos), _size(size) {
+
+}
+
+
+AABB_2D::AABB_2D(const AABB_2D & aabb) {
+	_pos= glm::vec2(aabb._pos);
+	_size= glm::vec2(aabb._size);
 }
 
 
