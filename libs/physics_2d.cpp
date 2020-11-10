@@ -1,4 +1,19 @@
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <cmath>
+#include <algorithm>
+#include <cfloat> // FLT_MAX
+
+#include <glm/gtc/constants.hpp>
+#include <glm/gtx/norm.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "physics_2d.h"
+#include "utile.h"
+
 
 using namespace std;
 

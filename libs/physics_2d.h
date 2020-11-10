@@ -2,23 +2,14 @@
 #define PHYSICS_2D_H
 
 #include <string>
-#include <iostream>
-#include <fstream>
-#include <cmath>
-#include <algorithm>
 #include <vector>
 #include <map>
-#include <cfloat> // FLT_MAX
 
 #include <OpenGL/gl3.h>
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtx/norm.hpp>
-#include <glm/gtx/string_cast.hpp>
 
-#include "utile.h"
 #include "gl_utils.h"
 
 /*

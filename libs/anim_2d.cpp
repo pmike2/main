@@ -55,13 +55,20 @@ Object2D::Object2D() {
 }
 
 
-Object2D::Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size, bool is_static, bool is_solid, bool is_falling) :
-	_velocity(glm::vec2(0.0f)), _is_static(is_static), _is_solid(is_solid), _is_falling(is_falling), _idx_checkpoint(0)
+Object2D::Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size, ObjectSolidity solidity, ObjectPhysics physics, vector<CheckPoint> checkpoints) :
+	_velocity(glm::vec2(0.0f)), _solidity(solidity), _physics(physics), _idx_checkpoint(0)
 {
 	_aabb= new AABB_2D(pos, size);
 	_footprint= new AABB_2D(glm::vec2(0.0f), glm::vec2(_aabb->_size.x* footprint_size.x, _aabb->_size.y* footprint_size.y));
 	_footprint_offset= glm::vec2(_aabb->_size.x* footprint_offset.x, _aabb->_size.y* footprint_offset.y);
 	update_footprint_pos();
+
+	for (auto checkpoint : checkpoints) {
+		_checkpoints.push_back(new CheckPoint(checkpoint._pos, checkpoint._velocity));
+	}
+	if ( ((_physics== CHECKPOINT) && (!_checkpoints.size())) || ((_physics!= CHECKPOINT) && (_checkpoints.size())) ) {
+		cout << "erreur object checkpoint\n";
+	}
 }
 
 
@@ -76,15 +83,15 @@ Object2D::~Object2D() {
 
 
 void Object2D::update_pos(float elapsed_time) {
-	if (!_is_static) {
+	if (_physics!= STATIC) {
 		_aabb->_pos+= _velocity* elapsed_time;
 		update_footprint_pos();
-		if (_checkpoints.size()) {
-			if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)< 0.1f) {
-				_idx_checkpoint++;
-				if (_idx_checkpoint>= _checkpoints.size()) {
-					_idx_checkpoint= 0;
-				}
+	}
+	if (_physics== CHECKPOINT) {
+		if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)< 0.1f) {
+			_idx_checkpoint++;
+			if (_idx_checkpoint>= _checkpoints.size()) {
+				_idx_checkpoint= 0;
 			}
 		}
 	}
@@ -92,13 +99,13 @@ void Object2D::update_pos(float elapsed_time) {
 
 
 void Object2D::update_velocity() {
-	if (_is_falling) {
+	if (_physics== FALLING) {
 		_velocity.y-= 1.0f;
 		if (_velocity.y< -20.0f) {
 			_velocity.y= -20.0f;
 		}
 	}
-	if (_checkpoints.size()) {
+	else if (_physics== CHECKPOINT) {
 		if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)> 0.1f) {
 			glm::vec2 direction= _checkpoints[_idx_checkpoint]->_pos- _aabb->_pos;
 			_velocity= glm::normalize(direction)* _checkpoints[_idx_checkpoint]->_velocity;
@@ -122,11 +129,6 @@ void Object2D::set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_siz
 	_footprint_offset= glm::vec2(_aabb->_size.x* footprint_offset.x, _aabb->_size.y* footprint_offset.y);
 	_footprint->_size= glm::vec2(_aabb->_size.x* footprint_size.x, _aabb->_size.y* footprint_size.y);
 	update_footprint_pos();
-}
-
-
-void Object2D::add_checkpoint(glm::vec2 pos, float velocity) {
-	_checkpoints.push_back(new CheckPoint(pos, velocity));
 }
 
 
@@ -954,32 +956,32 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 	_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_2", screengl));
 	_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/flower", screengl));
 
-	add_character(2, glm::vec2(-5.0f, -5.0f), glm::vec2(5.0f, 5.0f), 0.3f, true, false, true, "Character2D");
-	add_character(3, glm::vec2(-0.5f* _screengl->_gl_width, -0.5f* _screengl->_gl_height), glm::vec2(_screengl->_gl_width, _screengl->_gl_height), 0.2f, true, false, true, "Character2D");
-	add_character(4, glm::vec2(-0.5f* _screengl->_gl_width, -0.5f* _screengl->_gl_height), glm::vec2(_screengl->_gl_width, _screengl->_gl_height), 0.1f, true, false, true, "Character2D");
+	add_character(2, glm::vec2(-5.0f, -5.0f), glm::vec2(5.0f, 5.0f), 0.3f, UNSOLID, STATIC, "Character2D");
+	add_character(3, glm::vec2(-0.5f* _screengl->_gl_width, -0.5f* _screengl->_gl_height), glm::vec2(_screengl->_gl_width, _screengl->_gl_height), 0.2f, UNSOLID, STATIC, "Character2D");
+	add_character(4, glm::vec2(-0.5f* _screengl->_gl_width, -0.5f* _screengl->_gl_height), glm::vec2(_screengl->_gl_width, _screengl->_gl_height), 0.1f, UNSOLID, STATIC, "Character2D");
 
 	for (unsigned int col=0; col<_w; ++col) {
 		for (unsigned int row=0; row<_h; ++row) {
 			glm::vec2 pos(-0.5f* _screengl->_gl_width+ (float)(col)* _block_w, -0.5f* _screengl->_gl_height+ (float)(row)* _block_h);
 			glm::vec2 size= glm::vec2(_block_w, _block_h);
 			if (level_data[col+ _w* (_h- row- 1)]== '*') {
-				add_character(0, pos, size, 1.0f, true, true, true, "Character2D");
+				add_character(0, pos, size, 1.0f, SOLID_FIXED, STATIC, "Character2D");
 				if ((row!= _h- 1) && (level_data[col+ _w* (_h- row- 2)]!= '*')) {
-					add_character(1, pos+ glm::vec2(0.0f, size.y), size, 1.5f, true, false, true, "Character2D");
+					add_character(1, pos+ glm::vec2(0.0f, size.y), size, 1.5f, UNSOLID, STATIC, "Character2D");
 				}
 			}
 			else if (level_data[col+ _w* (_h- row- 1)]== 'x') {
-				add_character(5, pos, size* 2.0f, 0.5f, false, false, true, "Person2D");
+				add_character(5, pos, size* 2.0f, 0.5f, SOLID_MOVABLE, FALLING, "Person2D");
 			}
 			else if (level_data[col+ _w* (_h- row- 1)]== '+') {
-				add_character(5, pos, size* 2.0f, 0.5f, false, false, true, "Person2D");
+				add_character(5, pos, size* 2.0f, 0.5f, SOLID_MOVABLE, FALLING, "Person2D");
 				_hero= dynamic_cast<Person2D *>(_characters[_characters.size()- 1]);
 			}
 		}
 	}
 
-	add_character(7, glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 2.0f, true, false, true, "AnimatedCharacter2D");
-	add_character(0, glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 3.0f, false, true, false, "Character2D", {{glm::vec2(0.0f, -2.0f), 4.0f}, {glm::vec2(4.0f, -2.0f), 2.0f}});
+	add_character(7, glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 2.0f, UNSOLID, STATIC, "AnimatedCharacter2D");
+	add_character(0, glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 3.0f, SOLID_FIXED, CHECKPOINT, "Character2D", {{glm::vec2(0.0f, -2.0f), 4.0f}, {glm::vec2(4.0f, -2.0f), 2.0f}});
 }
 
 
@@ -996,11 +998,8 @@ Level::~Level() {
 }
 
 
-void Level::add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, bool is_static, bool is_solid, bool is_falling, string character_type, vector<CheckPoint> checkpoints) {
-	Object2D * obj= new Object2D(pos, size, _textures[idx_texture]->_actions[0]->_footprint_offset, _textures[idx_texture]->_actions[0]->_footprint_size, is_static, is_solid, is_falling);
-	for (auto checkpoint : checkpoints) {
-		obj->add_checkpoint(checkpoint._pos, checkpoint._velocity);
-	}
+void Level::add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, ObjectSolidity solidity, ObjectPhysics physics, string character_type, vector<CheckPoint> checkpoints) {
+	Object2D * obj= new Object2D(pos, size, _textures[idx_texture]->_actions[0]->_footprint_offset, _textures[idx_texture]->_actions[0]->_footprint_size, solidity, physics, checkpoints);
 	Character2D * character;
 	if (character_type== "Character2D") {
 		character= new Character2D(obj, _textures[idx_texture], z);
@@ -1042,6 +1041,13 @@ void Level::anim(float elapsed_time) {
 		obj->update_velocity();
 	}
 
+	/*for (auto character : _characters) {
+		Object2D * obj= character->_obj;
+		if (obj->_physics== CHECKPOINT) {
+			obj->update_pos(elapsed_time);
+		}
+	}*/
+
 	for (auto character : _characters) {
 		Person2D * person= dynamic_cast<Person2D *>(character);
 		if (person) {
@@ -1055,9 +1061,12 @@ void Level::anim(float elapsed_time) {
 	for (unsigned int idx1=0; idx1<_characters.size(); ++idx1) {
 		Character2D * character1= _characters[idx1];
 		Object2D * obj1= character1->_obj;
-		if (obj1->_is_static) {
+		//if ((obj1->_physics== STATIC) || (obj1->_solidity== SOLID_FIXED)) {
+		//if ((obj1->_physics!= FALLING) || (obj1->_solidity== SOLID_FIXED)) {
+		if (obj1->_physics== STATIC) {
 			continue;
 		}
+		
 		//vector<unsigned int> delete_statics;
 		for (unsigned int idx2=0; idx2<_characters.size(); ++idx2) {
 			if (idx2== idx1) {
@@ -1067,16 +1076,29 @@ void Level::anim(float elapsed_time) {
 			Character2D * character2= _characters[idx2];
 			Object2D * obj2= character2->_obj;
 
-			if (!obj2->_is_solid) {
+			if (obj2->_solidity== UNSOLID) {
 				continue;
 			}
 
 			if (anim_intersect_static(obj1, obj2, elapsed_time, contact_pt, contact_normal, contact_time)) {
 				glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
-				obj1->_velocity+= correction* 1.1f;
+				if (obj1->_solidity== SOLID_MOVABLE) {
+					obj1->_velocity+= correction* 1.1f;
+				}
+				else if (obj2->_solidity== SOLID_MOVABLE) {
+					obj2->_velocity-= correction* 1.1f;
+				}
 
 				/*if (contact_normal.y< 0.0f) {
 					delete_statics.push_back(idx_static);
+				}*/
+				/*Person2D * person1= dynamic_cast<Person2D *>(character1);
+				if (person1== _hero) {
+					cout << "1\n";
+				}*/
+				/*Person2D * person2= dynamic_cast<Person2D *>(character2);
+				if (person2== _hero) {
+					cout << "2\n";
 				}*/
 			}
 		}
@@ -1084,8 +1106,14 @@ void Level::anim(float elapsed_time) {
 		for (auto idx_delete : delete_statics) {
 			delete_static_character(idx_delete);
 		}*/
+		//obj1->update_pos(elapsed_time);
 	}
 
+	for (auto character : _characters) {
+		Object2D * obj= character->_obj;
+		obj->update_pos(elapsed_time);
+	}
+	
 	for (auto character : _characters) {
 		Person2D * person= dynamic_cast<Person2D *>(character);
 		if (person) {
@@ -1094,9 +1122,6 @@ void Level::anim(float elapsed_time) {
 	}
 
 	for (auto character : _characters) {
-		Object2D * obj= character->_obj;
-		obj->update_pos(elapsed_time);
-
 		AnimatedCharacter2D * anim_character= dynamic_cast<AnimatedCharacter2D *>(character);
 		if (anim_character) {
 			anim_character->anim(elapsed_time);

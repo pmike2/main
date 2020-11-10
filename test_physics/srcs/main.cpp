@@ -5,12 +5,9 @@
 
 #include "CoreFoundation/CoreFoundation.h"
 
-#include <cstdlib>
+#include <iostream>
 #include <sstream>
-#include <cmath>
 #include <string>
-#include <vector>
-#include <fstream>
 
 #include <OpenGL/gl3.h>
 #include <SDL2/SDL.h>
@@ -19,9 +16,6 @@
 #define GLM_FORCE_RADIANS
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 #include "gl_utils.h"
 #include "utile.h"
@@ -247,13 +241,13 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_2d  = create_prog("../shaders/vertexshader_2d_alpha.txt"  , "../shaders/fragmentshader_basic.txt");
-	prog_font= create_prog("../shaders/vertexshader_font.txt", "../shaders/fragmentshader_font.txt");
+	prog_2d  = create_prog("../../shaders/vertexshader_2d_alpha.txt"  , "../../shaders/fragmentshader_basic.txt");
+	prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
 	
 	// --------------------------------------------------------------------------
-	arial_font= new Font(prog_font, "../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	arial_font= new Font(prog_font, "../../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	input_state= new InputState();
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 
@@ -461,12 +455,13 @@ void clean() {
 // ---------------------------------------------------------------------------------------
 // ---------------------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
-	if ((string(argv[1])== "t") || (string(argv[1])== "true")) {
+	/*if ((string(argv[1])== "t") || (string(argv[1])== "true")) {
 		verbose= true;
 	}
 	else {
 		verbose= false;
-	}
+	}*/
+	verbose= false;
 	init();
 	main_loop();
 	clean();
