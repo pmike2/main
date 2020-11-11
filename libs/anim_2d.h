@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#include <glm/glm.hpp>
+
 #include "gl_utils.h"
 #include "bbox_2d.h"
 #include "input_state.h"
@@ -15,8 +17,10 @@ const float Z_FAR= 10.0f;
 
 const unsigned int ANIM_MODEL_SIZE= 512;
 
+const glm::vec2 MOVE_VIEWPOINT(5.0f, 5.0f);
 
-enum ObjectPhysics {STATIC_SOLID, STATIC_UNSOLID, FALLING, CHECKPOINT_SOLID, CHECKPOINT_UNSOLID};
+
+enum ObjectPhysics {STATIC_DESTRUCTIBLE, STATIC_INDESTRUCTIBLE, STATIC_UNSOLID, FALLING, CHECKPOINT_SOLID, CHECKPOINT_UNSOLID};
 
 
 class CheckPoint {
@@ -51,6 +55,9 @@ public:
 	ObjectPhysics _physics;
 	std::vector<CheckPoint *> _checkpoints;
 	unsigned int _idx_checkpoint;
+	std::vector<Object2D *> _bottom;
+	std::vector<Object2D *> _top;
+	Object2D * _referential;
 };
 
 
@@ -79,10 +86,11 @@ class Character2D;
 class Texture2D {
 public:
 	Texture2D();
-	Texture2D(GLuint prog_draw, ScreenGL * screengl);
+	Texture2D(GLuint prog_draw, std::string path, ScreenGL * screengl);
 	virtual ~Texture2D();
 	virtual void draw() = 0;
 	virtual void update() = 0;
+	void set_model2world(glm::mat4 model2world);
 
 
 	GLuint _texture_id;
@@ -94,6 +102,7 @@ public:
 	unsigned int _n_aabbs;
 	std::vector<Character2D *> _characters;
 	std::vector<Action *> _actions;
+	std::string _name;
 };
 
 
@@ -179,8 +188,10 @@ public:
 	Level();
 	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, std::string path, ScreenGL * screengl);
 	~Level();
-	void add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, ObjectPhysics physics, std::string character_type, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
+	Texture2D * get_texture(std::string texture_name);
+	void add_character(std::string texture_name, glm::vec2 pos, glm::vec2 size, float z, ObjectPhysics physics, std::string character_type, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
 	void delete_character(unsigned int idx_character);
+	void update_model2worlds();
 	void draw();
 	void anim(float elapsed_time);
 	bool key_down(InputState * input_state, SDL_Keycode key);
@@ -194,6 +205,7 @@ public:
 	float _block_w, _block_h;
 	ScreenGL * _screengl;
 	Person2D * _hero;
+	glm::vec2 _viewpoint;
 };
 
 

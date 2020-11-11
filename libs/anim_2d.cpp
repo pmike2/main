@@ -56,7 +56,7 @@ Object2D::Object2D() {
 
 
 Object2D::Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size, ObjectPhysics physics, vector<CheckPoint> checkpoints) :
-	_velocity(glm::vec2(0.0f)), _physics(physics), _idx_checkpoint(0)
+	_velocity(glm::vec2(0.0f)), _physics(physics), _idx_checkpoint(0), _referential(nullptr)
 {
 	_aabb= new AABB_2D(pos, size);
 	_footprint= new AABB_2D(glm::vec2(0.0f), glm::vec2(_aabb->_size.x* footprint_size.x, _aabb->_size.y* footprint_size.y));
@@ -96,7 +96,7 @@ Object2D::~Object2D() {
 
 
 void Object2D::update_pos(float elapsed_time) {
-	if ((_physics!= STATIC_SOLID) && (_physics!= STATIC_UNSOLID)) {
+	if ((_physics!= STATIC_DESTRUCTIBLE) && (_physics!= STATIC_INDESTRUCTIBLE) && (_physics!= STATIC_UNSOLID)) {
 		_aabb->_pos+= _velocity* elapsed_time;
 		update_footprint_pos();
 	}
@@ -156,7 +156,7 @@ bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_ob
 	expanded._pos= static_obj->_footprint->_pos- 0.5f* anim_obj->_footprint->_size;
 	expanded._size= static_obj->_footprint->_size+ anim_obj->_footprint->_size;
 
-	if (ray_intersects_aabb(anim_obj->_footprint->_pos+ 0.5f* anim_obj->_footprint->_size, time_step* anim_obj->_velocity, &expanded, contact_pt, contact_normal, contact_time)) {
+	if (ray_intersects_aabb(anim_obj->_footprint->center(), time_step* anim_obj->_velocity, &expanded, contact_pt, contact_normal, contact_time)) {
 		// le = du >= est important
 		return ((contact_time>= 0.0f) && (contact_time< 1.0f));
 		//return ((contact_time> -1e-3f) && (contact_time< 1.0f));
@@ -192,8 +192,9 @@ Texture2D::Texture2D() {
 }
 
 
-Texture2D::Texture2D(GLuint prog_draw, ScreenGL * screengl) : _prog_draw(prog_draw), _screengl(screengl), _n_aabbs(0) {
-
+Texture2D::Texture2D(GLuint prog_draw, string path, ScreenGL * screengl) : _prog_draw(prog_draw), _screengl(screengl), _n_aabbs(0) {
+	string with_ext= path.substr(path.find_last_of("/")+ 1);
+	_name= with_ext.substr(0, with_ext.find("."));
 }
 
 
@@ -205,13 +206,18 @@ Texture2D::~Texture2D() {
 }
 
 
+void Texture2D::set_model2world(glm::mat4 model2world) {
+	_model2world= model2world;
+}
+
+
 // StaticTexture ----------------------------------------------------------------------------------------------------
 StaticTexture::StaticTexture() : Texture2D() {
 
 }
 
 
-StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl) : Texture2D(prog_draw, screengl), _alpha(1.0f) {
+StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl) : Texture2D(prog_draw, path, screengl), _alpha(1.0f) {
 	glGenTextures(1, &_texture_id);
 	glBindTexture(GL_TEXTURE_2D, _texture_id);
 	
@@ -254,7 +260,7 @@ StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl)
 	action->_footprint_offset= glm::vec2(0.0f, 0.0f);
 	action->_footprint_size= glm::vec2(1.0f, 1.0f);
 	_actions.push_back(action);
-	
+
 	/*if (path.find("brick")!= string::npos) {
 		_is_solid= true;
 	}
@@ -356,7 +362,7 @@ AnimTexture::AnimTexture() : Texture2D() {
 }
 
 
-AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl) : Texture2D(prog_draw, screengl) {
+AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl) : Texture2D(prog_draw, path, screengl) {
 	string root_pngs= path+ "/pngs";
 	vector<string> l_dirs= list_files(root_pngs);
 	unsigned int compt= 0;
@@ -658,50 +664,50 @@ void Person2D::update_velocity() {
 
 	if (_left_pressed) {
 		if (current_action()== "left_run") {
-			_obj->_velocity.x= -vel_run;
+			_obj->_velocity.x+= -vel_run;
 		}
 		else if (current_action()== "left_walk") {
-			_obj->_velocity.x= -vel_walk;
+			_obj->_velocity.x+= -vel_walk;
 		}
 		else if ((current_action()== "left_jump") || (current_action()== "left_fall")) {
 			if (_lshift_pressed) {
-				_obj->_velocity.x= -vel_run;
+				_obj->_velocity.x+= -vel_run;
 			}
 			else {
-				_obj->_velocity.x= -vel_walk;
+				_obj->_velocity.x+= -vel_walk;
 			}
 		}
 		else if (current_action()== "left_roll") {
-			_obj->_velocity.x= -vel_roll;
+			_obj->_velocity.x+= -vel_roll;
 		}
 		else {
-			_obj->_velocity.x*= 0.9f;
+			//_obj->_velocity.x*= 0.9f;
 		}
 	}
 	else if (_right_pressed) {
 		if (current_action()== "right_run") {
-			_obj->_velocity.x= vel_run;
+			_obj->_velocity.x+= vel_run;
 		}
 		else if (current_action()== "right_walk") {
-			_obj->_velocity.x= vel_walk;
+			_obj->_velocity.x+= vel_walk;
 		}
 		else if ((current_action()== "right_jump") || (current_action()== "right_fall")) {
 			if (_lshift_pressed) {
-				_obj->_velocity.x= vel_run;
+				_obj->_velocity.x+= vel_run;
 			}
 			else {
-				_obj->_velocity.x= vel_walk;
+				_obj->_velocity.x+= vel_walk;
 			}
 		}
 		else if (current_action()== "right_roll") {
-			_obj->_velocity.x= vel_roll;
+			_obj->_velocity.x+= vel_roll;
 		}
 		else {
-			_obj->_velocity.x*= 0.9f;
+			//_obj->_velocity.x*= 0.9f;
 		}
 	}
 	else {
-		_obj->_velocity.x*= 0.9f;
+		//_obj->_velocity.x*= 0.9f;
 	}
 
 	if (_jump) {
@@ -717,7 +723,15 @@ void Person2D::update_velocity() {
 
 
 void Person2D::update_action() {
-	if ((abs(_obj->_velocity.x)< 0.1f) && (abs(_obj->_velocity.y)< 0.1f)) {
+	glm::vec2 v(0.0f);
+	if (_obj->_referential!= nullptr) {
+		v= _obj->_velocity- _obj->_referential->_velocity;
+	}
+	else {
+		v= _obj->_velocity;
+	}
+
+	if ((abs(v.x)< 0.1f) && (abs(v.y)< 0.1f)) {
 		if ((current_action()== "left_walk") || (current_action()== "left_run") || (current_action()== "left_fall")) {
 			set_action("left_wait");
 		}
@@ -726,7 +740,7 @@ void Person2D::update_action() {
 		}
 	}
 	
-	if (_obj->_velocity.y< 0.0f) {
+	if (v.y< 0.0f) {
 		if (current_action()== "left_jump") {
 			set_action("left_fall");
 		}
@@ -734,7 +748,7 @@ void Person2D::update_action() {
 			set_action("right_fall");
 		}
 	}
-	else if (abs(_obj->_velocity.y)< 0.1f) {
+	else if (abs(v.y)< 0.1f) {
 		if (current_action()== "left_fall") {
 			if (_lshift_pressed) {
 				set_action("left_run");
@@ -926,7 +940,7 @@ Level::Level() {
 
 
 Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, string path, ScreenGL * screengl) :
-	_screengl(screengl)
+	_screengl(screengl), _viewpoint(glm::vec2(0.0f))
 {
 	ifstream xml_file(path+ "/levels/level_01.xml");
 	stringstream buffer;
@@ -941,6 +955,10 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 	_w= stoi(w_node->value());
 	xml_node<> * h_node= root_node->first_node("h");
 	_h= stoi(h_node->value());
+	xml_node<> * block_w_node= root_node->first_node("block_w");
+	_block_w= stof(block_w_node->value());
+	xml_node<> * block_h_node= root_node->first_node("block_h");
+	_block_h= stof(block_h_node->value());
 	xml_node<> * data_node= root_node->first_node("data");
 	string data= data_node->value();
 	trim(data);
@@ -956,45 +974,47 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		}
 	}
 
-	_block_w= _screengl->_gl_width/ (float)(_w);
-	_block_h= _screengl->_gl_height/ (float)(_h);
+	/*_block_w= _screengl->_gl_width/ (float)(_w);
+	_block_h= _screengl->_gl_height/ (float)(_h);*/
 
 	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/brick.png", screengl));
 	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/grass.png", screengl));
 	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/tree.png", screengl));
 	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/hill.png", screengl));
 	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/sky.png", screengl));
+	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/cloud.png", screengl));
 
 	_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_1", screengl));
 	_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_2", screengl));
 	_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/flower", screengl));
 
-	add_character(2, glm::vec2(-5.0f, -5.0f), glm::vec2(5.0f, 5.0f), 0.3f, STATIC_UNSOLID, "Character2D");
-	add_character(3, glm::vec2(-0.5f* _screengl->_gl_width, -0.5f* _screengl->_gl_height), glm::vec2(_screengl->_gl_width, _screengl->_gl_height), 0.2f, STATIC_UNSOLID, "Character2D");
-	add_character(4, glm::vec2(-0.5f* _screengl->_gl_width, -0.5f* _screengl->_gl_height), glm::vec2(_screengl->_gl_width, _screengl->_gl_height), 0.1f, STATIC_UNSOLID, "Character2D");
+	add_character("tree", glm::vec2(-5.0f, -5.0f), glm::vec2(5.0f, 5.0f), 0.3f, STATIC_UNSOLID, "Character2D");
+	add_character("hill", glm::vec2(-0.5f* _screengl->_gl_width, -0.5f* _screengl->_gl_height), glm::vec2(_screengl->_gl_width, _screengl->_gl_height), 0.2f, STATIC_UNSOLID, "Character2D");
+	add_character("sky", glm::vec2(-0.5f* _screengl->_gl_width, -0.5f* _screengl->_gl_height), glm::vec2(_screengl->_gl_width, _screengl->_gl_height), 0.1f, STATIC_UNSOLID, "Character2D");
 
 	for (unsigned int col=0; col<_w; ++col) {
 		for (unsigned int row=0; row<_h; ++row) {
 			glm::vec2 pos(-0.5f* _screengl->_gl_width+ (float)(col)* _block_w, -0.5f* _screengl->_gl_height+ (float)(row)* _block_h);
 			glm::vec2 size= glm::vec2(_block_w, _block_h);
 			if (level_data[col+ _w* (_h- row- 1)]== '*') {
-				add_character(0, pos, size, 1.0f, STATIC_SOLID, "Character2D");
+				add_character("brick", pos, size, 1.0f, STATIC_DESTRUCTIBLE, "Character2D");
 				if ((row!= _h- 1) && (level_data[col+ _w* (_h- row- 2)]!= '*')) {
-					add_character(1, pos+ glm::vec2(0.0f, size.y), size, 1.5f, STATIC_UNSOLID, "Character2D");
+					add_character("grass", pos+ glm::vec2(0.0f, size.y), size, 1.5f, STATIC_UNSOLID, "Character2D");
 				}
 			}
 			else if (level_data[col+ _w* (_h- row- 1)]== 'x') {
-				add_character(5, pos, size* 2.0f, 0.5f, FALLING, "Person2D");
+				add_character("modele_1", pos, size* 2.0f, 0.5f, FALLING, "Person2D");
 			}
 			else if (level_data[col+ _w* (_h- row- 1)]== '+') {
-				add_character(5, pos, size* 2.0f, 0.5f, FALLING, "Person2D");
+				add_character("modele_1", pos, size* 2.0f, 0.5f, FALLING, "Person2D");
 				_hero= dynamic_cast<Person2D *>(_characters[_characters.size()- 1]);
 			}
 		}
 	}
 
-	add_character(7, glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 2.0f, STATIC_UNSOLID, "AnimatedCharacter2D");
-	add_character(0, glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 3.0f, CHECKPOINT_SOLID, "Character2D", {{glm::vec2(0.0f, -2.0f), 4.0f}, {glm::vec2(4.0f, -2.0f), 2.0f}});
+	add_character("flower", glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 2.0f, STATIC_UNSOLID, "AnimatedCharacter2D");
+	add_character("brick", glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 1.0f), 3.0f, CHECKPOINT_SOLID, "Character2D", {{glm::vec2(-2.0f, -3.0f), 2.0f}, {glm::vec2(-2.0f, 3.0f), 2.0f}});
+	add_character("cloud", glm::vec2(-4.0f, 5.0f), glm::vec2(5.0f, 5.0f), 1.4f, CHECKPOINT_UNSOLID, "Character2D", {{glm::vec2(-4.0f, 5.0f), 2.0f}, {glm::vec2(4.0f, 5.0f), 2.0f}});
 }
 
 
@@ -1011,21 +1031,33 @@ Level::~Level() {
 }
 
 
-void Level::add_character(unsigned int idx_texture, glm::vec2 pos, glm::vec2 size, float z, ObjectPhysics physics, string character_type, vector<CheckPoint> checkpoints) {
-	Object2D * obj= new Object2D(pos, size, _textures[idx_texture]->_actions[0]->_footprint_offset, _textures[idx_texture]->_actions[0]->_footprint_size, physics, checkpoints);
+Texture2D * Level::get_texture(string texture_name) {
+	for (auto texture : _textures) {
+		if (texture->_name== texture_name) {
+			return texture;
+		}
+	}
+	cout << "texture non trouvee\n";
+	return nullptr;
+}
+
+
+void Level::add_character(string texture_name, glm::vec2 pos, glm::vec2 size, float z, ObjectPhysics physics, string character_type, vector<CheckPoint> checkpoints) {
+	Texture2D * texture= get_texture(texture_name);
+	Object2D * obj= new Object2D(pos, size, texture->_actions[0]->_footprint_offset, texture->_actions[0]->_footprint_size, physics, checkpoints);
 	Character2D * character;
 	if (character_type== "Character2D") {
-		character= new Character2D(obj, _textures[idx_texture], z);
+		character= new Character2D(obj, texture, z);
 	}
 	else if (character_type== "AnimatedCharacter2D") {
-		character= new AnimatedCharacter2D(obj, _textures[idx_texture], z);
+		character= new AnimatedCharacter2D(obj, texture, z);
 	}
 	else if (character_type== "Person2D") {
-		character= new Person2D(obj, _textures[idx_texture], z);
+		character= new Person2D(obj, texture, z);
 	}
 	_characters.push_back(character);
-	_textures[idx_texture]->_characters.push_back(character);
-	_textures[idx_texture]->update();
+	texture->_characters.push_back(character);
+	texture->update();
 }
 
 
@@ -1034,6 +1066,14 @@ void Level::delete_character(unsigned int idx_character) {
 	texture->_characters.erase(remove(texture->_characters.begin(), texture->_characters.end(), _characters[idx_character]), texture->_characters.end());
 	delete _characters[idx_character];
 	_characters.erase(_characters.begin()+ idx_character);
+}
+
+
+void Level::update_model2worlds() {
+	for (auto texture: _textures) {
+		// pourquoi des - ici ?
+		texture->set_model2world(glm::translate(glm::mat4(1.0f), glm::vec3(-_viewpoint.x, -_viewpoint.y, 0.0f)));
+	}
 }
 
 
@@ -1051,15 +1091,19 @@ void Level::anim(float elapsed_time) {
 
 	for (auto character : _characters) {
 		Object2D * obj= character->_obj;
-		obj->update_velocity();
+		if (obj->_physics!= FALLING) {
+			continue;
+		}
+		obj->_velocity.x= 0.0f;
+		if (obj->_referential!= nullptr) {
+			obj->_velocity.x= obj->_referential->_velocity.x;
+		}
 	}
 
-	/*for (auto character : _characters) {
+	for (auto character : _characters) {
 		Object2D * obj= character->_obj;
-		if (obj->_physics== CHECKPOINT) {
-			obj->update_pos(elapsed_time);
-		}
-	}*/
+		obj->update_velocity();
+	}
 
 	for (auto character : _characters) {
 		Person2D * person= dynamic_cast<Person2D *>(character);
@@ -1071,45 +1115,75 @@ void Level::anim(float elapsed_time) {
 		}
 	}
 
-	for (unsigned int idx1=0; idx1<_characters.size(); ++idx1) {
-		Character2D * character1= _characters[idx1];
+	/*for (auto character : _characters) {
+		Object2D * obj= character->_obj;
+		Person2D * person= dynamic_cast<Person2D *>(character);
+		if (person== _hero) {
+			//cout << glm::to_string(obj->_velocity) << "\n";
+			if (obj->_referential!= nullptr) {
+				cout << glm::to_string(obj->_velocity) << " ; " << glm::to_string(obj->_referential->_velocity) << "\n";
+				cout << glm::to_string(obj->_velocity- obj->_referential->_velocity) << "\n";
+				cout << person->_left_pressed << " ; " << person->_right_pressed << "\n";
+			}
+		}
+	}*/
+
+	for (auto character : _characters) {
+		Object2D * obj= character->_obj;
+		if (obj->_physics!= FALLING) {
+			continue;
+		}
+		
+		obj->_bottom.clear();
+		obj->_top.clear();
+		obj->_referential= nullptr;
+	}
+
+	for (auto character1 : _characters) {
 		Object2D * obj1= character1->_obj;
 		if (obj1->_physics!= FALLING) {
 			continue;
 		}
-		
-		for (unsigned int idx2=0; idx2<_characters.size(); ++idx2) {
-			if (idx2== idx1) {
+
+		for (auto character2 : _characters) {
+			if (character2== character1) {
 				continue;
 			}
 
-			Character2D * character2= _characters[idx2];
 			Object2D * obj2= character2->_obj;
 
-			if ((obj2->_physics!= STATIC_SOLID) && (obj2->_physics!= CHECKPOINT_SOLID)) {
+			if ((obj2->_physics!= STATIC_DESTRUCTIBLE) && (obj2->_physics!= STATIC_INDESTRUCTIBLE) && (obj2->_physics!= CHECKPOINT_SOLID)) {
 				continue;
 			}
 
 			if (anim_intersect_static(obj1, obj2, elapsed_time, contact_pt, contact_normal, contact_time)) {
 				glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
 				obj1->_velocity+= correction* 1.1f;
+
+				if (contact_normal.y> 0.0f) {
+					obj1->_bottom.push_back(obj2);
+					if (obj2->_physics== CHECKPOINT_SOLID) {
+						obj1->_referential= obj2;
+					}
+				}
+				else if (contact_normal.y< 0.0f) {
+					obj1->_top.push_back(obj2);
+				}
 			}
 		}
 	}
 
-	for (unsigned int idx1=0; idx1<_characters.size(); ++idx1) {
-		Character2D * character1= _characters[idx1];
+	for (auto character1 : _characters) {
 		Object2D * obj1= character1->_obj;
 		if (obj1->_physics!= CHECKPOINT_SOLID) {
 			continue;
 		}
 		
-		for (unsigned int idx2=0; idx2<_characters.size(); ++idx2) {
-			if (idx2== idx1) {
+		for (auto character2 : _characters) {
+			if (character2== character1) {
 				continue;
 			}
 
-			Character2D * character2= _characters[idx2];
 			Object2D * obj2= character2->_obj;
 
 			if (obj2->_physics!= FALLING) {
@@ -1121,9 +1195,23 @@ void Level::anim(float elapsed_time) {
 			if (anim_intersect_static(obj1, obj_tmp, elapsed_time, contact_pt, contact_normal, contact_time)) {
 				glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
 				obj2->_velocity-= correction* 1.1f;
+
+				if (contact_normal.y< 0.0f) {
+					obj2->_bottom.push_back(obj1);
+					if (obj1->_physics== CHECKPOINT_SOLID) {
+						obj2->_referential= obj1;
+					}
+				}
+				else if (contact_normal.y> 0.0f) {
+					obj2->_top.push_back(obj1);
+				}
 			}
 			delete obj_tmp;
 		}
+	}
+
+	for (auto character : _characters) {
+		x
 	}
 
 	for (auto character : _characters) {
@@ -1131,36 +1219,15 @@ void Level::anim(float elapsed_time) {
 		obj->update_pos(elapsed_time);
 	}
 	
-	/*for (unsigned int idx1=0; idx1<_characters.size(); ++idx1) {
-		Character2D * character1= _characters[idx1];
-		Object2D * obj1= character1->_obj;
-		if (obj1->_physics!= CHECKPOINT_SOLID) {
-			continue;
-		}
-		
-		for (unsigned int idx2=0; idx2<_characters.size(); ++idx2) {
-			if (idx2== idx1) {
-				continue;
-			}
-
-			Character2D * character2= _characters[idx2];
-			Object2D * obj2= character2->_obj;
-
-			if (obj2->_physics!= FALLING) {
-				continue;
-			}
-
-			if (anim_intersect_static(obj1, obj2, elapsed_time, contact_pt, contact_normal, contact_time)) {
-				glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
-				obj2->_velocity-= correction* 1.1f;
-			}
-		}
-	}
-
 	for (auto character : _characters) {
 		Object2D * obj= character->_obj;
-		obj->update_pos(elapsed_time);
-	}*/
+		if (obj->_physics!= FALLING) {
+			continue;
+		}
+		if ((obj->_bottom.size()) && (obj->_top.size())) {
+			cout << "death\n";
+		}
+	}
 
 	for (auto character : _characters) {
 		Person2D * person= dynamic_cast<Person2D *>(character);
@@ -1179,6 +1246,23 @@ void Level::anim(float elapsed_time) {
 	for (auto texture : _textures) {
 		texture->update();
 	}
+
+	glm::vec2 hero= _hero->_obj->_aabb->center();
+	//_viewpoint= hero;
+	if (hero.x< _viewpoint.x- MOVE_VIEWPOINT.x) {
+		_viewpoint.x= hero.x+ MOVE_VIEWPOINT.x;
+	}
+	else if (hero.x> _viewpoint.x+ MOVE_VIEWPOINT.x) {
+		_viewpoint.x= hero.x- MOVE_VIEWPOINT.x;
+	}
+	if (hero.y< _viewpoint.y- MOVE_VIEWPOINT.y) {
+		_viewpoint.y= hero.y+ MOVE_VIEWPOINT.y;
+	}
+	else if (hero.y> _viewpoint.y+ MOVE_VIEWPOINT.y) {
+		_viewpoint.y= hero.y- MOVE_VIEWPOINT.y;
+	}
+
+	update_model2worlds();
 }
 
 

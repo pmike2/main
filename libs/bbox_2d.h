@@ -17,6 +17,7 @@ public:
 	AABB_2D(glm::vec2 pos, glm::vec2 size);
 	AABB_2D(const AABB_2D & aabb);
 	~AABB_2D();
+	glm::vec2 center();
 
 
 	glm::vec2 _pos;
