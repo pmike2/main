@@ -17,6 +17,9 @@ git commit -m "1er commit global"
 // push vers serveur
 git push -u origin master
 
+// tout d'un coup
+git add . && git commit -m "commit" && git push -u origin master
+
 // infos de l'état courant
 git status
 

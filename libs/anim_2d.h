@@ -190,7 +190,7 @@ public:
 	~Level();
 	Texture2D * get_texture(std::string texture_name);
 	void add_character(std::string texture_name, glm::vec2 pos, glm::vec2 size, float z, ObjectPhysics physics, std::string character_type, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
-	void delete_character(unsigned int idx_character);
+	void delete_character(Character2D * character);
 	void update_model2worlds();
 	void draw();
 	void anim(float elapsed_time);

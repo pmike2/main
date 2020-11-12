@@ -1061,11 +1061,11 @@ void Level::add_character(string texture_name, glm::vec2 pos, glm::vec2 size, fl
 }
 
 
-void Level::delete_character(unsigned int idx_character) {
-	Texture2D * texture= _characters[idx_character]->_texture;
-	texture->_characters.erase(remove(texture->_characters.begin(), texture->_characters.end(), _characters[idx_character]), texture->_characters.end());
-	delete _characters[idx_character];
-	_characters.erase(_characters.begin()+ idx_character);
+void Level::delete_character(Character2D * character) {
+	Texture2D * texture= character->_texture;
+	texture->_characters.erase(remove(texture->_characters.begin(), texture->_characters.end(), character), texture->_characters.end());
+	delete character;
+	_characters.erase(remove(_characters.begin(), _characters.end(), character), _characters.end());
 }
 
 
@@ -1210,8 +1210,22 @@ void Level::anim(float elapsed_time) {
 		}
 	}
 
+	vector<Object2D *> objects2delete;
 	for (auto character : _characters) {
-		x
+		Object2D * obj= character->_obj;
+		for (auto object_top : obj->_top) {
+			if ((object_top->_physics== STATIC_DESTRUCTIBLE) && (find(objects2delete.begin(), objects2delete.end(), object_top)== objects2delete.end())) {
+				objects2delete.push_back(object_top);
+			}
+		}
+	}
+	for (auto obj : objects2delete) {
+		for (auto character : _characters) {
+			if (character->_obj== obj) {
+				delete_character(character);
+				break;
+			}
+		}
 	}
 
 	for (auto character : _characters) {
