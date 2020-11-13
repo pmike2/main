@@ -380,6 +380,9 @@ int main(int argc, char *argv[]) {
 	}
 	return 0;*/
 
+	Level * level__= new Level(0, 0, 0, "../data/levels/level_01.svg", NULL);
+	return 0;
+
 	init();
 	main_loop();
 	clean();

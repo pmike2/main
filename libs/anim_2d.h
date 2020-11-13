@@ -120,7 +120,6 @@ public:
 };
 
 
-//class AnimatedCharacter2D;
 class AnimTexture : public Texture2D {
 public:
 	AnimTexture();
