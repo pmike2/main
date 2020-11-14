@@ -182,6 +182,38 @@ public:
 };
 
 
+struct SVG_Image {
+	AABB _aabb;
+	std::string _href;
+	float _z;
+};
+
+struct SVG_Rect {
+	AABB _aabb;
+	SVG_Image * _image_model;
+};
+
+struct SVG_Path {
+	std::vector<glm::vec2> _pts;
+	std::vector<float> _speeds;
+	SVG_Image * _image;
+};
+
+class SVGParser {
+public:
+	SVGParser();
+	SVGParser(std::string svg_path);
+	~SVGParser();
+
+
+	glm::vec2 _pt_hg;
+	glm::vec2 _pt_bd;
+	std::vector<SVG_Image *> _images;
+	std::vector<SVG_Path *> _paths;
+	std::vector<SVG_Rect *> _rects;
+};
+
+
 class Level {
 public:
 	Level();

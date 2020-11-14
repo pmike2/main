@@ -926,6 +926,72 @@ string Person2D::current_type() {
 }
 
 
+// SVGParser ----------------------------------------------------------------
+SVGParser::SVGParser() {
+
+}
+
+
+SVGParser::SVGParser(string svg_path) {
+	ifstream xml_file(svg_path);
+	stringstream buffer;
+	buffer << xml_file.rdbuf();
+	xml_file.close();
+	string xml_content(buffer.str());
+	xml_document<> doc;
+	doc.parse<0>(&xml_content[0]);
+	xml_node<> * root_node= doc.first_node();
+	
+	string view_box= root_node->first_attribute("viewBox")->value();
+
+
+	for (xml_node<> * g_node=root_node->first_node("g"); g_node; g_node=g_node->next_sibling()) {
+		string layer_label= g_node->first_attribute("inkscape:label")->value();
+		//cout << layer_label << "\n";
+		for (xml_node<> * image_node=g_node->first_node("image"); image_node; image_node=image_node->next_sibling()) {
+			if (string(image_node->name())!= "image") {
+				continue;
+			}
+			string href= image_node->first_attribute("xlink:href")->value();
+			float width= stof(image_node->first_attribute("width")->value());
+			float height= stof(image_node->first_attribute("height")->value());
+			float x= stof(image_node->first_attribute("x")->value());
+			float y= stof(image_node->first_attribute("y")->value());
+		}
+
+		for (xml_node<> * rect_node=g_node->first_node("rect"); rect_node; rect_node=rect_node->next_sibling()) {
+			if (string(rect_node->name())!= "rect") {
+				continue;
+			}
+			string id= rect_node->first_attribute("id")->value();
+			float width= stof(rect_node->first_attribute("width")->value());
+			float height= stof(rect_node->first_attribute("height")->value());
+			float x= stof(rect_node->first_attribute("x")->value());
+			float y= stof(rect_node->first_attribute("y")->value());
+		}
+
+		for (xml_node<> * text_node=g_node->first_node("text"); text_node; text_node=text_node->next_sibling()) {
+			if (string(text_node->name())!= "text") {
+				continue;
+			}
+			string id= text_node->first_attribute("id")->value();
+			for (xml_node<> * tspan_node=text_node->first_node("text"); tspan_node; tspan_node=tspan_node->next_sibling()) {
+				if (string(tspan_node->name())!= "tspan") {
+					continue;
+				}
+				string s= tspan_node->value();
+			}
+		}
+	}
+
+}
+
+
+SVGParser::~SVGParser() {
+
+}
+
+
 // Level -------------------------------------------------------------------------------------------------
 Level::Level() {
 
@@ -1008,54 +1074,11 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 	add_character("cloud", glm::vec2(-4.0f, 5.0f), glm::vec2(5.0f, 5.0f), 1.4f, CHECKPOINT_UNSOLID, "Character2D", {{glm::vec2(-4.0f, 5.0f), 2.0f}, {glm::vec2(4.0f, 5.0f), 2.0f}});
 	add_character("platform", glm::vec2(-2.0f, -3.0f), glm::vec2(2.0f, 2.0f), 2.0f, STATIC_UNSOLID, "Character2D");*/
 
-	ifstream xml_file(path);
-	stringstream buffer;
-	buffer << xml_file.rdbuf();
-	xml_file.close();
-	string xml_content(buffer.str());
-	xml_document<> doc;
-	doc.parse<0>(&xml_content[0]);
-	xml_node<> * root_node= doc.first_node();
-	cout << "ok\n";
+	SVGParser * svg_parser= new SVGParser(path);
 
-	for (xml_node<> * g_node=root_node->first_node("g"); g_node; g_node=g_node->next_sibling()) {
-		string layer_label= g_node->first_attribute("inkscape:label")->value();
-		//cout << layer_label << "\n";
-		for (xml_node<> * image_node=g_node->first_node("image"); image_node; image_node=image_node->next_sibling()) {
-			if (string(image_node->name())!= "image") {
-				continue;
-			}
-			string href= image_node->first_attribute("xlink:href")->value();
-			float width= stof(image_node->first_attribute("width")->value());
-			float height= stof(image_node->first_attribute("height")->value());
-			float x= stof(image_node->first_attribute("x")->value());
-			float y= stof(image_node->first_attribute("y")->value());
-		}
+	
 
-		for (xml_node<> * rect_node=g_node->first_node("rect"); rect_node; rect_node=rect_node->next_sibling()) {
-			if (string(rect_node->name())!= "rect") {
-				continue;
-			}
-			string id= rect_node->first_attribute("id")->value();
-			float width= stof(rect_node->first_attribute("width")->value());
-			float height= stof(rect_node->first_attribute("height")->value());
-			float x= stof(rect_node->first_attribute("x")->value());
-			float y= stof(rect_node->first_attribute("y")->value());
-		}
-
-		for (xml_node<> * text_node=g_node->first_node("text"); text_node; text_node=text_node->next_sibling()) {
-			if (string(text_node->name())!= "text") {
-				continue;
-			}
-			string id= text_node->first_attribute("id")->value();
-			for (xml_node<> * tspan_node=text_node->first_node("text"); tspan_node; tspan_node=tspan_node->next_sibling()) {
-				if (string(tspan_node->name())!= "tspan") {
-					continue;
-				}
-				string s= tspan_node->value();
-			}
-		}
-	}
+	delete svg_parser;
 }
 
 
