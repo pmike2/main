@@ -28,15 +28,15 @@
      inkscape:cx="269.85394"
      inkscape:cy="508.00003"
      inkscape:document-units="mm"
-     inkscape:current-layer="layer4"
+     inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
      showgrid="true"
      showguides="true"
      inkscape:snap-to-guides="false"
      inkscape:window-width="1434"
      inkscape:window-height="1042"
-     inkscape:window-x="80"
-     inkscape:window-y="23"
+     inkscape:window-x="62"
+     inkscape:window-y="24"
      inkscape:window-maximized="0"
      inkscape:showpageshadow="false"
      borderlayer="true"
@@ -434,8 +434,8 @@
        height="15.875"
        width="15.875" />
     <image
-       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/modele_1/pngs/left_wait/left_wait_00.png"
-       xlink:href="../anim_textures/modele_1/pngs/left_wait/left_wait_00.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
+       xlink:href="../anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
        y="231.5105"
        x="2.9104204"
        id="hero"
@@ -444,21 +444,11 @@
        height="17.197918"
        width="17.197918" />
     <image
-       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/modele_1/pngs/left_wait/left_wait_00.png"
-       xlink:href="../anim_textures/modele_1/pngs/left_wait/left_wait_00.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
+       xlink:href="../anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
        y="109.80208"
        x="71.702087"
        id="image1051"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="17.197918"
-       width="17.197918" />
-    <image
-       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/modele_1/pngs/left_wait/left_wait_00.png"
-       xlink:href="../anim_textures/modele_1/pngs/left_wait/left_wait_00.png"
-       y="109.80208"
-       x="103.45207"
-       id="image1053"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
        height="17.197918"
@@ -472,6 +462,7 @@
     <image
        sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
        xlink:href="../static_textures/brick.png"
+       physics="STATIC_DESTRUCTIBLE"
        width="11.90625"
        height="11.90624"
        preserveAspectRatio="none"
@@ -482,6 +473,7 @@
     <image
        sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/grass.png"
        xlink:href="../static_textures/grass.png"
+       physics="STATIC_UNSOLID"
        y="248.70834"
        x="-59.531246"
        id="image46"
@@ -492,6 +484,7 @@
     <image
        sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/platform.png"
        xlink:href="../static_textures/platform.png"
+       physics="CHECKPOINT_SOLID"
        y="221.00882"
        x="-75.324516"
        id="image128"
@@ -509,6 +502,7 @@
     <image
        sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/flower/pngs/moving/moving_00.png"
        xlink:href="../anim_textures/flower/pngs/moving/moving_00.png"
+       physics="STATIC_UNSOLID"
        y="68.791664"
        x="-79.375"
        id="image1005"
@@ -517,8 +511,9 @@
        height="15.875"
        width="15.875" />
     <image
-       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/modele_1/pngs/left_crouch/left_crouch_00.png"
-       xlink:href="../anim_textures/modele_1/pngs/left_crouch/left_crouch_00.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_crouch/left_crouch_00.png"
+       xlink:href="../anim_textures/persons/modele_1/pngs/left_crouch/left_crouch_00.png"
+       anim_time="0.13"
        y="41.010418"
        x="-54.239582"
        id="image1025"
@@ -527,8 +522,14 @@
        height="17.197916"
        width="17.197916" />
     <image
-       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/modele_1/pngs/left_wait/left_wait_00.png"
-       xlink:href="../anim_textures/modele_1/pngs/left_wait/left_wait_00.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
+       xlink:href="../anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
+       velocity_jump_walk="20.0"
+       velocity_jump_run="25.0"
+       velocity_roll="9.0"
+       velocity_run="9.0"
+       velocity_walk="5.0"
+       anim_time="0.08"
        y="19.84375"
        x="-54.239582"
        id="image1039"
@@ -553,6 +554,7 @@
     <image
        sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/tree.png"
        xlink:href="../static_textures/tree.png"
+       physics="STATIC_UNSOLID"
        y="89.958336"
        x="-90.035622"
        id="image82"
@@ -563,6 +565,7 @@
     <image
        sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/cloud.png"
        xlink:href="../static_textures/cloud.png"
+       physics="CHECKPOINT_UNSOLID"
        y="170.31972"
        x="-62.000668"
        id="image64"

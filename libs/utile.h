@@ -45,5 +45,6 @@ std::vector<std::string> list_files(std::string ch_dir, std::string ext="");
 void ltrim(std::string & s);
 void rtrim(std::string & s);
 void trim(std::string & s);
+std::string basename(std::string s);
 
 #endif

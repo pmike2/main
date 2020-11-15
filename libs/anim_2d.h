@@ -14,8 +14,8 @@
 // _z doit etre entre ces bornes
 const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
-
 const unsigned int ANIM_MODEL_SIZE= 512;
+const float UPDATE_ACTION_TRESH= 0.1f;
 
 const glm::vec2 MOVE_VIEWPOINT(5.0f, 5.0f);
 
@@ -45,7 +45,7 @@ public:
 	void update_velocity();
 	void update_footprint_pos();
 	void set_aabb_pos(glm::vec2 pos);
-	void set_footprint(glm::vec2 footprint_offset, glm::vec2 footprint_size);
+	void set_footprint(AABB_2D * footprint);
 
 
 	AABB_2D * _aabb;
@@ -76,8 +76,7 @@ public:
 	unsigned int _first_idx;
 	unsigned int _n_idx;
 	float _anim_time;
-	glm::vec2 _footprint_offset; // entre 0 et 1
-	glm::vec2 _footprint_size; // entre 0 et 1
+	AABB_2D * _footprint; // pos et size entre 0 et 1
 };
 
 
@@ -109,7 +108,7 @@ public:
 class StaticTexture : public Texture2D {
 public:
 	StaticTexture();
-	StaticTexture(GLuint prog_draw, std::string path, ScreenGL * screengl);
+	StaticTexture(GLuint prog_draw, std::string path, ScreenGL * screengl, AABB_2D * footprint = nullptr);
 	~StaticTexture();
 	void draw();
 	void update();
@@ -166,7 +165,7 @@ public:
 class Person2D : public AnimatedCharacter2D {
 public:
 	Person2D();
-	Person2D(Object2D * obj, Texture2D * texture, float z);
+	Person2D(Object2D * obj, Texture2D * texture, float z, std::map<std::string, float> velocities);
 	~Person2D();
 	void update_velocity();
 	void update_action();
@@ -179,25 +178,9 @@ public:
 
 	bool _left_pressed, _right_pressed, _down_pressed, _up_pressed, _lshift_pressed;
 	bool _jump;
+	std::map<std::string, float> _velocities;
 };
 
-
-struct SVG_Image {
-	AABB _aabb;
-	std::string _href;
-	float _z;
-};
-
-struct SVG_Rect {
-	AABB _aabb;
-	SVG_Image * _image_model;
-};
-
-struct SVG_Path {
-	std::vector<glm::vec2> _pts;
-	std::vector<float> _speeds;
-	SVG_Image * _image;
-};
 
 class SVGParser {
 public:
@@ -206,11 +189,9 @@ public:
 	~SVGParser();
 
 
-	glm::vec2 _pt_hg;
-	glm::vec2 _pt_bd;
-	std::vector<SVG_Image *> _images;
-	std::vector<SVG_Path *> _paths;
-	std::vector<SVG_Rect *> _rects;
+	std::string _viewbox;
+	std::vector<std::map<std::string, std::string> > _models;
+	std::vector<std::map<std::string, std::string> > _objs;
 };
 
 
@@ -220,7 +201,7 @@ public:
 	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, std::string path, ScreenGL * screengl);
 	~Level();
 	Texture2D * get_texture(std::string texture_name);
-	void add_character(std::string texture_name, glm::vec2 pos, glm::vec2 size, float z, ObjectPhysics physics, std::string character_type, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
+	void add_character(std::string texture_name, glm::vec2 pos, glm::vec2 size, float z, ObjectPhysics physics, std::string character_type, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>(), std::map<std::string, float> velocities= std::map<std::string, float>());
 	void delete_character(Character2D * character);
 	void update_model2worlds();
 	void draw();

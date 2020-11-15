@@ -229,3 +229,8 @@ void trim(string & s) {
 	ltrim(s);
 	rtrim(s);
 }
+
+string basename(string s) {
+	string with_ext= s.substr(s.find_last_of("/")+ 1);
+	return with_ext.substr(0, with_ext.find("."));
+}

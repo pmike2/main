@@ -11,7 +11,7 @@
 using namespace std;
 
 
-AABB_2D::AABB_2D() {
+AABB_2D::AABB_2D() : _pos(glm::vec2(0.0f)), _size(glm::vec2(0.0f)) {
 
 }
 
@@ -28,7 +28,7 @@ AABB_2D::AABB_2D(const AABB_2D & aabb) {
 
 
 AABB_2D::~AABB_2D() {
-		
+
 }
 
 
