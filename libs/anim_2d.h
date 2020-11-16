@@ -23,6 +23,9 @@ const glm::vec2 MOVE_VIEWPOINT(5.0f, 5.0f);
 enum ObjectPhysics {STATIC_DESTRUCTIBLE, STATIC_INDESTRUCTIBLE, STATIC_UNSOLID, FALLING, CHECKPOINT_SOLID, CHECKPOINT_UNSOLID};
 
 
+ObjectPhysics str2physics(std::string s);
+
+
 class CheckPoint {
 public:
 	CheckPoint();
@@ -38,7 +41,7 @@ public:
 class Object2D {
 public:
 	Object2D();
-	Object2D(glm::vec2 pos, glm::vec2 size, glm::vec2 footprint_offset, glm::vec2 footprint_size, ObjectPhysics physics, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
+	Object2D(glm::vec2 pos, glm::vec2 size, AABB_2D * footprint, ObjectPhysics physics, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
 	Object2D(const Object2D & obj);
 	~Object2D();
 	void update_pos(float elapsed_time);
@@ -85,11 +88,12 @@ class Character2D;
 class Texture2D {
 public:
 	Texture2D();
-	Texture2D(GLuint prog_draw, std::string path, ScreenGL * screengl);
+	Texture2D(GLuint prog_draw, std::string path, ScreenGL * screengl, ObjectPhysics physics);
 	virtual ~Texture2D();
 	virtual void draw() = 0;
 	virtual void update() = 0;
 	void set_model2world(glm::mat4 model2world);
+	Action * get_action(std::string action_name);
 
 
 	GLuint _texture_id;
@@ -102,13 +106,14 @@ public:
 	std::vector<Character2D *> _characters;
 	std::vector<Action *> _actions;
 	std::string _name;
+	ObjectPhysics _physics;
 };
 
 
 class StaticTexture : public Texture2D {
 public:
 	StaticTexture();
-	StaticTexture(GLuint prog_draw, std::string path, ScreenGL * screengl, AABB_2D * footprint = nullptr);
+	StaticTexture(GLuint prog_draw, std::string path, ScreenGL * screengl, ObjectPhysics physics);
 	~StaticTexture();
 	void draw();
 	void update();
@@ -122,13 +127,14 @@ public:
 class AnimTexture : public Texture2D {
 public:
 	AnimTexture();
-	AnimTexture(GLuint prog_draw, std::string path, ScreenGL * screengl);
+	AnimTexture(GLuint prog_draw, std::string path, ScreenGL * screengl, ObjectPhysics physics);
 	~AnimTexture();
 	void draw();
 	void update();
 
 
 	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _texture_array_loc, _current_layer_loc;
+	std::map<std::string, float> _velocities;
 };
 
 
@@ -165,7 +171,7 @@ public:
 class Person2D : public AnimatedCharacter2D {
 public:
 	Person2D();
-	Person2D(Object2D * obj, Texture2D * texture, float z, std::map<std::string, float> velocities);
+	Person2D(Object2D * obj, Texture2D * texture, float z);
 	~Person2D();
 	void update_velocity();
 	void update_action();
@@ -178,7 +184,6 @@ public:
 
 	bool _left_pressed, _right_pressed, _down_pressed, _up_pressed, _lshift_pressed;
 	bool _jump;
-	std::map<std::string, float> _velocities;
 };
 
 
@@ -201,7 +206,7 @@ public:
 	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, std::string path, ScreenGL * screengl);
 	~Level();
 	Texture2D * get_texture(std::string texture_name);
-	void add_character(std::string texture_name, glm::vec2 pos, glm::vec2 size, float z, ObjectPhysics physics, std::string character_type, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>(), std::map<std::string, float> velocities= std::map<std::string, float>());
+	void add_character(std::string texture_name, glm::vec2 pos, glm::vec2 size, float z, ObjectPhysics physics, std::string character_type, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
 	void delete_character(Character2D * character);
 	void update_model2worlds();
 	void draw();
