@@ -215,7 +215,9 @@ Texture2D::Texture2D() {
 }
 
 
-Texture2D::Texture2D(GLuint prog_draw, string path, ScreenGL * screengl, ObjectPhysics physics) : _prog_draw(prog_draw), _screengl(screengl), _n_aabbs(0), _physics(physics) {
+Texture2D::Texture2D(GLuint prog_draw, string path, ScreenGL * screengl, ObjectPhysics physics, CharacterType character_type) :
+	_prog_draw(prog_draw), _screengl(screengl), _n_aabbs(0), _physics(physics), _character_type(character_type), _texture_id(0)
+{
 	_name= basename(path);
 }
 
@@ -250,7 +252,7 @@ StaticTexture::StaticTexture() : Texture2D() {
 }
 
 
-StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl, ObjectPhysics physics) : Texture2D(prog_draw, path, screengl, physics), _alpha(1.0f) {
+StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl, ObjectPhysics physics, CharacterType character_type) : Texture2D(prog_draw, path, screengl, physics, character_type), _alpha(1.0f) {
 	glGenTextures(1, &_texture_id);
 	glBindTexture(GL_TEXTURE_2D, _texture_id);
 	
@@ -386,7 +388,7 @@ AnimTexture::AnimTexture() : Texture2D() {
 }
 
 
-AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl, ObjectPhysics physics) : Texture2D(prog_draw, path, screengl, physics) {
+AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl, ObjectPhysics physics, CharacterType character_type) : Texture2D(prog_draw, path, screengl, physics, character_type) {
 	string root_pngs= path+ "/pngs";
 	vector<string> l_dirs= list_files(root_pngs);
 	unsigned int compt= 0;
@@ -979,7 +981,7 @@ SVGParser::SVGParser(string svg_path) {
 	xml_node<> * root_node= doc.first_node();
 	
 	_viewbox= root_node->first_attribute("viewBox")->value();
-	vector<string> tags= {"x", "y", "width", "height", "xlink:href", "id", "anim_time", "velocity_walk", "velocity_run", "velocity_roll", "velocity_jump_walk", "velocity_jump_run", "d", "velocity"};
+	vector<string> tags= {"x", "y", "width", "height", "xlink:href", "id", "physics", "anim_time", "velocity_walk", "velocity_run", "velocity_roll", "velocity_jump_walk", "velocity_jump_run", "d", "velocity"};
 	
 	for (xml_node<> * g_node=root_node->first_node("g"); g_node; g_node=g_node->next_sibling()) {
 		string layer_label= g_node->first_attribute("inkscape:label")->value();
@@ -1003,8 +1005,7 @@ SVGParser::SVGParser(string svg_path) {
 				_models.push_back(obj);
 			}
 			else {
-				unsigned int label_idx= stoi(layer_label.substr(layer_label.find("layer"+ 1)));
-				obj["z"]= (float)(label_idx)* 0.1f;
+				obj["z"]= g_node->first_attribute("z")->value();
 				_objs.push_back(obj);
 			}
 		}
@@ -1108,16 +1109,25 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		if (!model.count("physics")) {
 			continue;
 		}
+		//cout << model["xlink:href"] << "\n";
 		ObjectPhysics physics= str2physics(model["physics"]);
 		if (model["xlink:href"].find("static_textures")!= string::npos) {
-			if (get_texture(basename(model["xlink:href"]))== nullptr) {
-				_textures.push_back(new StaticTexture(prog_draw_static, model["xlink:href"], screengl, physics));
+			string static_path= model["xlink:href"];
+			static_path.replace(0, 2, "../data");
+			CharacterType character_type= CHARACTER_2D;
+			if (get_texture(basename(static_path), false)== nullptr) {
+				_textures.push_back(new StaticTexture(prog_draw_static, static_path, screengl, physics, character_type));
 			}
 		}
 		else if (model["xlink:href"].find("anim_textures")!= string::npos) {
 			string anim_path= model["xlink:href"].substr(0, model["xlink:href"].find("/pngs"));
-			if (get_texture(basename(anim_path))== nullptr) {
-				_textures.push_back(new AnimTexture(prog_draw_anim, anim_path, screengl, physics));
+			anim_path.replace(0, 2, "../data");
+			CharacterType character_type= ANIM_CHARACTER_2D;
+			if (model["xlink:href"].find("persons")!= string::npos) {
+				character_type= PERSON_2D;
+			}
+			if (get_texture(basename(anim_path), false)== nullptr) {
+				_textures.push_back(new AnimTexture(prog_draw_anim, anim_path, screengl, physics, character_type));
 			}
 		}
 	}
@@ -1174,8 +1184,9 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			}
 			anim_name= model["xlink:href"].substr(0, model["xlink:href"].find("/pngs"));
 			anim_name= anim_name.substr(anim_name.find_last_of("/")+ 1);
-			action_name= model["xlink:href"].substr(model["xlink:href"].find("pngs/")+ 1);
-			action_name= anim_name.substr(0, anim_name.find("/"));
+			action_name= model["xlink:href"].substr(model["xlink:href"].find("pngs/")+ 5);
+			action_name= action_name.substr(0, action_name.find("/"));
+			//cout << anim_name << " ; " << action_name << "\n";
 			if (anim_name== anim_texture->_name) {
 				pos= glm::vec2(stof(model["x"]), stof(model["y"]));
 				size= glm::vec2(stof(model["width"]), stof(model["height"]));
@@ -1207,12 +1218,50 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		}
 	}
 
-	for (auto model : svg_parser->_objs) {
-		if (model["type"]!= "image") {
+	for (auto obj : svg_parser->_objs) {
+		if (obj["type"]!= "image") {
 			continue;
 		}
-		if (model["xlink:href"].find("static_textures")!= string::npos) {
-			add_character(basename(model["xlink:href"]), glm::vec2(stof(model["x"]), stof(model["y"])), glm::vec2(stof(model["width"]), stof(model["height"])), model["z"], STATIC_UNSOLID, "Character2D");
+		AABB_2D * aabb= new AABB_2D(glm::vec2(stof(obj["x"]), stof(obj["y"])), glm::vec2(stof(obj["width"]), stof(obj["height"])));
+
+		vector<CheckPoint> checkpoints;
+		for (auto path : svg_parser->_objs) {
+			if (obj["type"]!= "path") {
+				continue;
+			}
+			
+			float velocity= stof(path["velocity"]);
+
+			istringstream iss(path["d"]);
+			string token;
+			string instruction= "";
+			while (getline(iss, token, ' ')) {
+				if (token== "M") {
+					instruction= "M";
+				}
+				else if (token== "H") {
+					instruction= "H";
+				}
+				else {
+					if (instruction== "M") {
+						float x= stof(token.substr(0, token.find(",")));
+						float y= stof(token.substr(token.find(",")+ 1));
+						if (!point_in_aabb(glm::vec2(x, y), aabb)) {
+							break;
+						}
+						checkpoints.push_back({glm::vec2(x, y), velocity});
+					}
+					else if (instruction== "H") {
+						float x= stof(token);
+						float y= checkpoints[checkpoints.size()- 1]._pos.y;
+						checkpoints.push_back({glm::vec2(x, y), velocity});
+					}
+				}
+			}
+		}
+		if (obj["xlink:href"].find("static_textures")!= string::npos) {
+			add_character(basename(obj["xlink:href"]), aabb, stof(obj["z"]), checkpoints);
+			delete aabb;
 		}
 	}
 
@@ -1233,28 +1282,30 @@ Level::~Level() {
 }
 
 
-Texture2D * Level::get_texture(string texture_name) {
+Texture2D * Level::get_texture(string texture_name, bool verbose) {
 	for (auto texture : _textures) {
 		if (texture->_name== texture_name) {
 			return texture;
 		}
 	}
-	cout << "texture non trouvee\n";
+	if (verbose) {
+		cout << "texture non trouvee : " << texture_name << "\n";
+	}
 	return nullptr;
 }
 
 
-void Level::add_character(string texture_name, glm::vec2 pos, glm::vec2 size, float z, ObjectPhysics physics, string character_type, vector<CheckPoint> checkpoints) {
+void Level::add_character(string texture_name, AABB_2D * aabb, float z, vector<CheckPoint> checkpoints) {
 	Texture2D * texture= get_texture(texture_name);
-	Object2D * obj= new Object2D(pos, size, texture->_actions[0]->_footprint, physics, checkpoints);
+	Object2D * obj= new Object2D(aabb->_pos, aabb->_size, texture->_actions[0]->_footprint, texture->_physics, checkpoints);
 	Character2D * character;
-	if (character_type== "Character2D") {
+	if (texture->_character_type== CHARACTER_2D) {
 		character= new Character2D(obj, texture, z);
 	}
-	else if (character_type== "AnimatedCharacter2D") {
+	else if (texture->_character_type== ANIM_CHARACTER_2D) {
 		character= new AnimatedCharacter2D(obj, texture, z);
 	}
-	else if (character_type== "Person2D") {
+	else if (texture->_character_type== PERSON_2D) {
 		character= new Person2D(obj, texture, z);
 	}
 	_characters.push_back(character);

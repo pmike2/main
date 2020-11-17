@@ -21,6 +21,7 @@ const glm::vec2 MOVE_VIEWPOINT(5.0f, 5.0f);
 
 
 enum ObjectPhysics {STATIC_DESTRUCTIBLE, STATIC_INDESTRUCTIBLE, STATIC_UNSOLID, FALLING, CHECKPOINT_SOLID, CHECKPOINT_UNSOLID};
+enum CharacterType {CHARACTER_2D, ANIM_CHARACTER_2D, PERSON_2D};
 
 
 ObjectPhysics str2physics(std::string s);
@@ -88,7 +89,7 @@ class Character2D;
 class Texture2D {
 public:
 	Texture2D();
-	Texture2D(GLuint prog_draw, std::string path, ScreenGL * screengl, ObjectPhysics physics);
+	Texture2D(GLuint prog_draw, std::string path, ScreenGL * screengl, ObjectPhysics physics, CharacterType character_type);
 	virtual ~Texture2D();
 	virtual void draw() = 0;
 	virtual void update() = 0;
@@ -107,13 +108,14 @@ public:
 	std::vector<Action *> _actions;
 	std::string _name;
 	ObjectPhysics _physics;
+	CharacterType _character_type;
 };
 
 
 class StaticTexture : public Texture2D {
 public:
 	StaticTexture();
-	StaticTexture(GLuint prog_draw, std::string path, ScreenGL * screengl, ObjectPhysics physics);
+	StaticTexture(GLuint prog_draw, std::string path, ScreenGL * screengl, ObjectPhysics physics, CharacterType character_type);
 	~StaticTexture();
 	void draw();
 	void update();
@@ -127,7 +129,7 @@ public:
 class AnimTexture : public Texture2D {
 public:
 	AnimTexture();
-	AnimTexture(GLuint prog_draw, std::string path, ScreenGL * screengl, ObjectPhysics physics);
+	AnimTexture(GLuint prog_draw, std::string path, ScreenGL * screengl, ObjectPhysics physics, CharacterType character_type);
 	~AnimTexture();
 	void draw();
 	void update();
@@ -205,8 +207,8 @@ public:
 	Level();
 	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, std::string path, ScreenGL * screengl);
 	~Level();
-	Texture2D * get_texture(std::string texture_name);
-	void add_character(std::string texture_name, glm::vec2 pos, glm::vec2 size, float z, ObjectPhysics physics, std::string character_type, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
+	Texture2D * get_texture(std::string texture_name, bool verbose = true);
+	void add_character(std::string texture_name, AABB_2D * aabb, float z, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
 	void delete_character(Character2D * character);
 	void update_model2worlds();
 	void draw();

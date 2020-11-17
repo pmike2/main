@@ -174,7 +174,7 @@ void init() {
 	arial_font= new Font(prog_font, "../../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	input_state= new InputState();
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-	level= new Level(prog_anim_2d, prog_static_2d, prog_aabb_2d, "../data", screengl);
+	level= new Level(prog_anim_2d, prog_static_2d, prog_aabb_2d, "../data/levels/level_01.svg", screengl);
 	level_debug= new LevelDebug(prog_aabb_2d, level, screengl);
 
 	done= false;
@@ -380,8 +380,13 @@ int main(int argc, char *argv[]) {
 	}
 	return 0;*/
 
-	Level * level__= new Level(0, 0, 0, "../data/levels/level_01.svg", NULL);
-	return 0;
+	/*string s="M 31.75,223.57291 H 64.822916";
+				istringstream iss(s);
+			string token;
+			while (getline(iss, token, ' ')) {
+				cout << token << "\n";
+			}*/
+	//return 0;
 
 	init();
 	main_loop();
