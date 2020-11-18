@@ -1018,6 +1018,11 @@ SVGParser::~SVGParser() {
 }
 
 
+string SVGParser::static_href2name(string href) {
+	return basename(href);
+}
+
+
 // Level -------------------------------------------------------------------------------------------------
 Level::Level() {
 
@@ -1109,7 +1114,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		if (!model.count("physics")) {
 			continue;
 		}
-		//cout << model["xlink:href"] << "\n";
+		//cout << "model[xlink:href]= " << model["xlink:href"] << "\n";
 		ObjectPhysics physics= str2physics(model["physics"]);
 		if (model["xlink:href"].find("static_textures")!= string::npos) {
 			string static_path= model["xlink:href"];
@@ -1123,6 +1128,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		else if (model["xlink:href"].find("anim_textures")!= string::npos) {
 			string anim_path= model["xlink:href"].substr(0, model["xlink:href"].find("/pngs"));
 			anim_path.replace(0, 2, "../data");
+			//cout << "anim_path = " << anim_path << "\n";
 			CharacterType character_type= ANIM_CHARACTER_2D;
 			if (model["xlink:href"].find("persons")!= string::npos) {
 				character_type= PERSON_2D;
@@ -1257,7 +1263,6 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 							if (!point_in_aabb(glm::vec2(x, y), aabb)) {
 								break;
 							}
-								cout << "ok\n";
 							checkpoints.push_back({glm::vec2(x, y), velocity});
 						}
 						else if (instruction== "H") {

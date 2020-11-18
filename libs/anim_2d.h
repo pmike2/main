@@ -25,6 +25,7 @@ enum CharacterType {CHARACTER_2D, ANIM_CHARACTER_2D, PERSON_2D};
 
 
 ObjectPhysics str2physics(std::string s);
+;
 
 
 class CheckPoint {
@@ -194,6 +195,7 @@ public:
 	SVGParser();
 	SVGParser(std::string svg_path);
 	~SVGParser();
+	std::string static_href2name(std::string s);
 
 
 	std::string _viewbox;
