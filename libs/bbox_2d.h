@@ -8,6 +8,8 @@ https://github.com/OneLoneCoder/olcPixelGameEngine/blob/master/Videos/OneLoneCod
 
 */
 
+#include <iostream>
+
 #include <glm/glm.hpp>
 
 
@@ -18,6 +20,7 @@ public:
 	AABB_2D(const AABB_2D & aabb);
 	~AABB_2D();
 	glm::vec2 center();
+	friend std::ostream & operator << (std::ostream & os, const AABB_2D & aabb);
 
 
 	glm::vec2 _pos;

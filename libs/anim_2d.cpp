@@ -90,7 +90,7 @@ Object2D::Object2D(glm::vec2 pos, glm::vec2 size, AABB_2D * footprint, ObjectPhy
 		_checkpoints.push_back(new CheckPoint(checkpoint._pos, checkpoint._velocity));
 	}
 	if ( (((_physics== CHECKPOINT_SOLID) || (_physics== CHECKPOINT_UNSOLID)) && (!_checkpoints.size())) || ((_physics!= CHECKPOINT_SOLID) && (_physics!= CHECKPOINT_UNSOLID) && (_checkpoints.size())) ) {
-		cout << "erreur object checkpoint\n";
+		cout << "erreur object checkpoint : _physics=" << _physics << " ; _checkpoints.size()=" << _checkpoints.size() << "\n";
 	}
 }
 
@@ -991,7 +991,7 @@ SVGParser::SVGParser(string svg_path) {
 				continue;
 			}*/
 
-			std::map<std::string, std::string> obj;
+			map<string, string> obj;
 			obj["type"]= string(obj_node->name());
 			for (xml_attribute<> * attr=obj_node->first_attribute(); attr; attr=attr->next_attribute()) {
 				for (auto tag : tags) {
@@ -1116,6 +1116,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			static_path.replace(0, 2, "../data");
 			CharacterType character_type= CHARACTER_2D;
 			if (get_texture(basename(static_path), false)== nullptr) {
+				cout << "add static texture " << static_path << "\n";
 				_textures.push_back(new StaticTexture(prog_draw_static, static_path, screengl, physics, character_type));
 			}
 		}
@@ -1127,6 +1128,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 				character_type= PERSON_2D;
 			}
 			if (get_texture(basename(anim_path), false)== nullptr) {
+				cout << "add anim texture " << anim_path << "\n";
 				_textures.push_back(new AnimTexture(prog_draw_anim, anim_path, screengl, physics, character_type));
 			}
 		}
@@ -1225,41 +1227,51 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		AABB_2D * aabb= new AABB_2D(glm::vec2(stof(obj["x"]), stof(obj["y"])), glm::vec2(stof(obj["width"]), stof(obj["height"])));
 
 		vector<CheckPoint> checkpoints;
-		for (auto path : svg_parser->_objs) {
-			if (obj["type"]!= "path") {
-				continue;
-			}
-			
-			float velocity= stof(path["velocity"]);
+		ObjectPhysics physics= get_texture(basename(obj["xlink:href"]))->_physics;
+		if ((physics== CHECKPOINT_SOLID) || (physics== CHECKPOINT_UNSOLID)) {
+			for (auto path : svg_parser->_objs) {
+				if (path["type"]!= "path") {
+					continue;
+				}
+				
+				float velocity= stof(path["velocity"]);
 
-			istringstream iss(path["d"]);
-			string token;
-			string instruction= "";
-			while (getline(iss, token, ' ')) {
-				if (token== "M") {
-					instruction= "M";
-				}
-				else if (token== "H") {
-					instruction= "H";
-				}
-				else {
-					if (instruction== "M") {
-						float x= stof(token.substr(0, token.find(",")));
-						float y= stof(token.substr(token.find(",")+ 1));
-						if (!point_in_aabb(glm::vec2(x, y), aabb)) {
-							break;
-						}
-						checkpoints.push_back({glm::vec2(x, y), velocity});
+				istringstream iss(path["d"]);
+				string token;
+				string instruction= "";
+				while (getline(iss, token, ' ')) {
+					if (token== "M") {
+						instruction= "M";
 					}
-					else if (instruction== "H") {
-						float x= stof(token);
-						float y= checkpoints[checkpoints.size()- 1]._pos.y;
-						checkpoints.push_back({glm::vec2(x, y), velocity});
+					else if (token== "H") {
+						instruction= "H";
+					}
+					else {
+						if (instruction== "M") {
+							float x= stof(token.substr(0, token.find(",")));
+							float y= stof(token.substr(token.find(",")+ 1));
+							
+							/*if (basename(obj["xlink:href"])== "cloud") {
+								cout << x << " ; " << y << " ; " << *aabb << "\n";
+							}*/
+							if (!point_in_aabb(glm::vec2(x, y), aabb)) {
+								break;
+							}
+								cout << "ok\n";
+							checkpoints.push_back({glm::vec2(x, y), velocity});
+						}
+						else if (instruction== "H") {
+							float x= stof(token);
+							float y= checkpoints[checkpoints.size()- 1]._pos.y;
+							checkpoints.push_back({glm::vec2(x, y), velocity});
+						}
 					}
 				}
 			}
 		}
+
 		if (obj["xlink:href"].find("static_textures")!= string::npos) {
+			cout << "add_character " << basename(obj["xlink:href"]) << "\n";
 			add_character(basename(obj["xlink:href"]), aabb, stof(obj["z"]), checkpoints);
 			delete aabb;
 		}

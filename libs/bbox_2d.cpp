@@ -37,6 +37,12 @@ glm::vec2 AABB_2D::center() {
 }
 
 
+ostream & operator << (ostream & os, const AABB_2D & aabb) {
+	os << "pos=" << glm::to_string(aabb._pos) << " ; size=" << glm::to_string(aabb._size);
+	return os;
+}
+
+
 bool point_in_aabb(const glm::vec2 & pt, const AABB_2D * aabb) {
 	return ((pt.x> aabb->_pos.x) && (pt.x< aabb->_pos.x+ aabb->_size.x) && (pt.y> aabb->_pos.y) && (pt.y< aabb->_pos.y+ aabb->_size.y));
 }

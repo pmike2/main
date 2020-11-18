@@ -25,17 +25,17 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.693038"
-     inkscape:cx="298.99792"
-     inkscape:cy="695.50822"
+     inkscape:cx="183.56413"
+     inkscape:cy="699.1701"
      inkscape:document-units="mm"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="layer4"
      inkscape:document-rotation="0"
      showgrid="true"
      showguides="true"
      inkscape:snap-to-guides="false"
      inkscape:window-width="1434"
      inkscape:window-height="1005"
-     inkscape:window-x="62"
+     inkscape:window-x="77"
      inkscape:window-y="23"
      inkscape:window-maximized="0"
      inkscape:showpageshadow="false"
@@ -54,7 +54,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -63,35 +63,36 @@
      id="layer3"
      inkscape:label="Calque 3"
      style="display:inline"
-     sodipodi:insensitive="true"
-     z="0.0">
+     z="0.0"
+     sodipodi:insensitive="true">
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/sky.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/sky.png"
        xlink:href="../static_textures/sky.png"
-       width="270.93332"
-       height="270.93332"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image114"
+       y="-32.808319"
        x="-38.099987"
-       y="-32.808319" />
+       id="image114"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="270.93332"
+       width="270.93332" />
   </g>
   <g
      inkscape:groupmode="layer"
      id="layer2"
      inkscape:label="Calque 2"
-     sodipodi:insensitive="true"
-     z="0.1">
+     z="0.1"
+     style="display:inline"
+     sodipodi:insensitive="true">
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/hill.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/hill.png"
        xlink:href="../static_textures/hill.png"
-       width="270.93332"
-       height="270.93332"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image99"
+       y="30.691681"
        x="-38.099987"
-       y="30.691681" />
+       id="image99"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="270.93332"
+       width="270.93332" />
   </g>
   <g
      inkscape:label="Calque 1"
@@ -99,285 +100,285 @@
      id="layer1"
      z="0.2">
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
        xlink:href="../static_textures/brick.png"
-       y="256.64584"
-       x="6.6145835"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
        id="image2138"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
+       x="6.6145835"
+       y="256.64584" />
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
        xlink:href="../static_textures/brick.png"
-       y="256.64584"
-       x="18.520834"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
        id="image20"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="256.64584"
-       x="30.427084"
-       id="image22"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="256.64584"
-       x="42.333332"
-       id="image24"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="244.73959"
-       x="42.333332"
-       id="image26"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="244.73959"
-       x="54.239586"
-       id="image28"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="244.73958"
-       x="66.145836"
-       id="image30"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="232.83333"
-       x="66.145836"
-       id="image32"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="232.83333"
-       x="78.052078"
-       id="image34"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/grass.png"
-       xlink:href="../static_textures/grass.png"
-       width="11.906243"
-       height="11.906243"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image50"
-       x="6.6145902"
-       y="244.73958" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/grass.png"
-       xlink:href="../static_textures/grass.png"
-       width="11.906243"
-       height="11.906243"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image52"
        x="18.520834"
+       y="256.64584" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image22"
+       x="30.427084"
+       y="256.64584" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image24"
+       x="42.333332"
+       y="256.64584" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image26"
+       x="42.333332"
        y="244.73959" />
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/cloud.png"
-       xlink:href="../static_textures/cloud.png"
-       width="56.709"
-       height="56.709"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
-       id="image68"
+       id="image28"
+       x="54.239586"
+       y="244.73959" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image30"
+       x="66.145836"
+       y="244.73958" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image32"
+       x="66.145836"
+       y="232.83333" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image34"
+       x="78.052078"
+       y="232.83333" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/grass.png"
+       xlink:href="../static_textures/grass.png"
+       y="244.73958"
+       x="6.6145902"
+       id="image50"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="11.906243"
+       width="11.906243" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/grass.png"
+       xlink:href="../static_textures/grass.png"
+       y="244.73959"
+       x="18.520834"
+       id="image52"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="11.906243"
+       width="11.906243" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/cloud.png"
+       xlink:href="../static_textures/cloud.png"
+       y="74.083336"
        x="12.082667"
-       y="74.083336" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/cloud.png"
-       xlink:href="../static_textures/cloud.png"
-       width="56.709"
+       id="image68"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
        height="56.709"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
+       width="56.709" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/cloud.png"
+       xlink:href="../static_textures/cloud.png"
+       y="43.832668"
+       x="89.958336"
        id="image70"
-       x="89.958336"
-       y="43.832668" />
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="56.709"
+       width="56.709" />
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/tree.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/tree.png"
        xlink:href="../static_textures/tree.png"
-       width="79.452286"
-       height="79.452286"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image86"
+       y="157.16252"
        x="42.333332"
-       y="157.16252" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/platform.png"
-       xlink:href="../static_textures/platform.png"
-       width="32.991184"
-       height="32.991184"
-       preserveAspectRatio="none"
+       id="image86"
        style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="79.452286"
+       width="79.452286" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/platform.png"
+       xlink:href="../static_textures/platform.png"
+       y="205.1338"
+       x="14.633819"
        id="image132"
-       x="14.633819"
-       y="205.1338" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/platform.png"
-       xlink:href="../static_textures/platform.png"
-       width="32.991184"
-       height="32.991184"
-       preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
-       id="image134"
+       preserveAspectRatio="none"
+       height="32.991184"
+       width="32.991184" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/platform.png"
+       xlink:href="../static_textures/platform.png"
+       y="183.96712"
        x="56.967155"
-       y="183.96712" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/platform.png"
-       xlink:href="../static_textures/platform.png"
-       width="32.991184"
+       id="image134"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
        height="32.991184"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image136"
+       width="32.991184" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/platform.png"
+       xlink:href="../static_textures/platform.png"
+       y="162.80043"
        x="14.633819"
-       y="162.80043" />
+       id="image136"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="32.991184"
+       width="32.991184" />
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
        xlink:href="../static_textures/brick.png"
-       y="148.16667"
-       x="56.885418"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
        id="image138"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="148.16667"
-       x="68.791664"
-       id="image140"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="148.16667"
-       x="79.375"
-       id="image142"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="148.16667"
-       x="89.958336"
-       id="image144"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="137.58333"
-       x="100.54166"
-       id="image146"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="137.58333"
-       x="112.44791"
-       id="image148"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="137.58333"
-       x="123.03124"
-       id="image150"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="137.58333"
-       x="133.61458"
-       id="image152"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="125.67709"
-       x="130.96875"
-       id="image154"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="113.50629"
-       x="130.96875"
-       id="image156"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
-       width="11.90625" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
-       xlink:href="../static_textures/brick.png"
-       y="135.99585"
        x="56.885418"
-       id="image158"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
+       y="148.16667" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
        height="11.90624"
-       width="11.90625" />
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image140"
+       x="68.791664"
+       y="148.16667" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image142"
+       x="79.375"
+       y="148.16667" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image144"
+       x="89.958336"
+       y="148.16667" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image146"
+       x="100.54166"
+       y="137.58333" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image148"
+       x="112.44791"
+       y="137.58333" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image150"
+       x="123.03124"
+       y="137.58333" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image152"
+       x="133.61458"
+       y="137.58333" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image154"
+       x="130.96875"
+       y="125.67709" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image156"
+       x="130.96875"
+       y="113.50629" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
+       xlink:href="../static_textures/brick.png"
+       width="11.90625"
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image158"
+       x="56.885418"
+       y="135.99585" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
        d="M 30.427083,182.5625 H 79.374999"
@@ -404,55 +405,55 @@
        id="path993"
        velocity="0.01" />
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/anim_textures/flower/pngs/moving/moving_00.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/flower/pngs/moving/moving_00.png"
        xlink:href="../anim_textures/flower/pngs/moving/moving_00.png"
-       width="15.875"
-       height="15.875"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image1009"
+       y="132.29164"
        x="69.173447"
-       y="132.29164" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/anim_textures/flower/pngs/moving/moving_00.png"
-       xlink:href="../anim_textures/flower/pngs/moving/moving_00.png"
-       width="15.875"
-       height="15.875"
-       preserveAspectRatio="none"
+       id="image1009"
        style="image-rendering:optimizeSpeed"
-       id="image1011"
+       preserveAspectRatio="none"
+       height="15.875"
+       width="15.875" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/flower/pngs/moving/moving_00.png"
+       xlink:href="../anim_textures/flower/pngs/moving/moving_00.png"
+       y="132.29164"
        x="76.581764"
-       y="132.29164" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/anim_textures/flower/pngs/moving/moving_00.png"
-       xlink:href="../anim_textures/flower/pngs/moving/moving_00.png"
-       width="15.875"
+       id="image1011"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
        height="15.875"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image1013"
+       width="15.875" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/flower/pngs/moving/moving_00.png"
+       xlink:href="../anim_textures/flower/pngs/moving/moving_00.png"
+       y="132.29164"
        x="84.519264"
-       y="132.29164" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
-       xlink:href="../anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
-       width="17.197918"
-       height="17.197918"
-       preserveAspectRatio="none"
+       id="image1013"
        style="image-rendering:optimizeSpeed"
-       id="hero"
+       preserveAspectRatio="none"
+       height="15.875"
+       width="15.875" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
+       xlink:href="../anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
+       y="231.5105"
        x="2.9104204"
-       y="231.5105" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
-       xlink:href="../anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
-       width="17.197918"
-       height="17.197918"
-       preserveAspectRatio="none"
+       id="hero"
        style="image-rendering:optimizeSpeed"
-       id="image1051"
+       preserveAspectRatio="none"
+       height="17.197918"
+       width="17.197918" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
+       xlink:href="../anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
+       y="109.80208"
        x="71.702087"
-       y="109.80208" />
+       id="image1051"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="17.197918"
+       width="17.197918" />
   </g>
   <g
      inkscape:groupmode="layer"
@@ -460,83 +461,84 @@
      inkscape:label="Models"
      style="display:inline">
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/brick.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/brick.png"
        xlink:href="../static_textures/brick.png"
-       y="268.28751"
-       x="-61.647926"
-       id="image18"
-       style="image-rendering:optimizeSpeed"
-       preserveAspectRatio="none"
-       height="11.90624"
+       physics="STATIC_DESTRUCTIBLE"
        width="11.90625"
-       physics="STATIC_DESTRUCTIBLE" />
+       height="11.90624"
+       preserveAspectRatio="none"
+       style="image-rendering:optimizeSpeed"
+       id="image18"
+       x="-61.647926"
+       y="268.28751" />
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/grass.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/grass.png"
        xlink:href="../static_textures/grass.png"
-       width="11.906243"
-       height="11.906243"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image46"
-       x="-59.531246"
+       physics="STATIC_UNSOLID"
        y="248.70834"
-       physics="STATIC_UNSOLID" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/platform.png"
-       xlink:href="../static_textures/platform.png"
-       width="32.991184"
-       height="32.991184"
-       preserveAspectRatio="none"
+       x="-59.531246"
+       id="image46"
        style="image-rendering:optimizeSpeed"
-       id="image128"
-       x="-75.324516"
+       preserveAspectRatio="none"
+       height="11.906243"
+       width="11.906243" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/platform.png"
+       xlink:href="../static_textures/platform.png"
+       physics="CHECKPOINT_SOLID"
        y="221.00882"
-       physics="CHECKPOINT_SOLID" />
+       x="-75.324516"
+       id="image128"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="32.991184"
+       width="32.991184" />
     <rect
        style="fill:none;stroke:#000000;stroke-width:0.264583"
        id="footprint_platform"
        width="30.427082"
        height="3.96875"
        x="-74.083336"
-       y="238.125" />
+       y="238.125"
+       physics="CHECKPOINT_SOLID" />
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/anim_textures/flower/pngs/moving/moving_00.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/flower/pngs/moving/moving_00.png"
        xlink:href="../anim_textures/flower/pngs/moving/moving_00.png"
-       width="15.875"
-       height="15.875"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image1005"
-       x="-79.375"
+       physics="STATIC_UNSOLID"
        y="68.791664"
-       physics="STATIC_UNSOLID" />
+       x="-79.375"
+       id="image1005"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="15.875"
+       width="15.875" />
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_crouch/left_crouch_00.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_crouch/left_crouch_00.png"
        xlink:href="../anim_textures/persons/modele_1/pngs/left_crouch/left_crouch_00.png"
-       width="17.197916"
-       height="17.197916"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image1025"
-       x="-54.239582"
+       anim_time="0.13"
        y="41.010418"
-       anim_time="0.13" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
-       xlink:href="../anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
-       width="17.197918"
-       height="17.197918"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image1039"
        x="-54.239582"
-       y="19.84375"
-       anim_time="0.08"
-       velocity_walk="5.0"
-       velocity_run="9.0"
-       velocity_roll="9.0"
+       id="image1025"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="17.197916"
+       width="17.197916" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
+       xlink:href="../anim_textures/persons/modele_1/pngs/left_wait/left_wait_00.png"
+       velocity_jump_walk="20.0"
        velocity_jump_run="25.0"
-       velocity_jump_walk="20.0" />
+       velocity_roll="9.0"
+       velocity_run="9.0"
+       velocity_walk="5.0"
+       anim_time="0.08"
+       y="19.84375"
+       x="-54.239582"
+       id="image1039"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="17.197918"
+       width="17.197918" />
     <rect
        style="fill:none;stroke:#000000;stroke-width:0.264583"
        id="footprint_modele_1_default"
@@ -552,26 +554,48 @@
        x="-49.20821"
        y="48.330917" />
     <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/tree.png"
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/tree.png"
        xlink:href="../static_textures/tree.png"
-       width="79.452286"
-       height="79.452286"
-       preserveAspectRatio="none"
-       style="image-rendering:optimizeSpeed"
-       id="image82"
-       x="-90.035622"
+       physics="STATIC_UNSOLID"
        y="89.958336"
-       physics="STATIC_UNSOLID" />
-    <image
-       sodipodi:absref="/Volumes/malenge/dir_git/main/anim_2d/data/static_textures/cloud.png"
-       xlink:href="../static_textures/cloud.png"
-       width="56.709"
-       height="56.709"
-       preserveAspectRatio="none"
+       x="-90.035622"
+       id="image82"
        style="image-rendering:optimizeSpeed"
-       id="image64"
-       x="-62.000668"
+       preserveAspectRatio="none"
+       height="79.452286"
+       width="79.452286" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/cloud.png"
+       xlink:href="../static_textures/cloud.png"
+       physics="CHECKPOINT_UNSOLID"
        y="170.31972"
-       physics="CHECKPOINT_UNSOLID" />
+       x="-62.000668"
+       id="image64"
+       style="image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="56.709"
+       width="56.709" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/hill.png"
+       xlink:href="../static_textures/hill.png"
+       physics="STATIC_UNSOLID"
+       y="300.66815"
+       x="-91.016647"
+       id="image149"
+       style="display:inline;image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="32.706844"
+       width="30.797977" />
+    <image
+       sodipodi:absref="/Users/home/git_dir/main/anim_2d/data/static_textures/sky.png"
+       xlink:href="../static_textures/sky.png"
+       physics="STATIC_UNSOLID"
+       y="278.57593"
+       x="-93.133324"
+       id="image153"
+       style="display:inline;image-rendering:optimizeSpeed"
+       preserveAspectRatio="none"
+       height="19.344782"
+       width="24.689606" />
   </g>
 </svg>
