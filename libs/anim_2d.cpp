@@ -986,7 +986,7 @@ SVGParser::SVGParser() {
 }
 
 
-SVGParser::SVGParser(string svg_path) {
+SVGParser::SVGParser(string svg_path, ScreenGL * screengl) : _screengl(screengl) {
 	ifstream xml_file(svg_path);
 	stringstream buffer;
 	buffer << xml_file.rdbuf();
@@ -996,7 +996,6 @@ SVGParser::SVGParser(string svg_path) {
 	doc.parse<0>(&xml_content[0]);
 	xml_node<> * root_node= doc.first_node();
 	
-	_viewbox= root_node->first_attribute("viewBox")->value();
 	vector<string> tags= {"x", "y", "width", "height", "xlink:href", "image_name", "action_name", "physics", "anim_time", "velocity_walk", "velocity_run", "velocity_roll", "velocity_jump_walk", "velocity_jump_run", "d", "velocity", "hero"};
 	
 	for (xml_node<> * g_node=root_node->first_node("g"); g_node; g_node=g_node->next_sibling()) {
@@ -1045,6 +1044,9 @@ SVGParser::SVGParser(string svg_path) {
 			if (layer_label== "Models") {
 				_models.push_back(obj);
 			}
+			else if (layer_label== "View") {
+				_view= new AABB_2D(glm::vec2(stof(obj["x"]), stof(obj["y"])), glm::vec2(stof(obj["width"]), stof(obj["height"])));
+			}
 			else {
 				obj["z"]= g_node->first_attribute("z")->value();
 				_objs.push_back(obj);
@@ -1055,12 +1057,21 @@ SVGParser::SVGParser(string svg_path) {
 
 
 SVGParser::~SVGParser() {
-
+	delete _view;
 }
 
 
-string SVGParser::static_href2name(string href) {
-	return basename(href);
+glm::vec2 SVGParser::svg2screen_pos(glm::vec2 v) {
+	float x= (v.x- (_view->_pos.x+ _view->_size.x* 0.5f))* _screengl->_gl_width / _view->_size.x;
+	float y= ((_view->_pos.y+ _view->_size.y* 0.5f)- v.y)* _screengl->_gl_height/ _view->_size.y;
+	return glm::vec2(x, y);
+}
+
+
+glm::vec2 SVGParser::svg2screen_size(glm::vec2 v) {
+	float w= v.x* _screengl->_gl_width / _view->_size.x;
+	float h= v.y* _screengl->_gl_height/ _view->_size.y;
+	return glm::vec2(w, h);
 }
 
 
@@ -1146,7 +1157,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 	add_character("cloud", glm::vec2(-4.0f, 5.0f), glm::vec2(5.0f, 5.0f), 1.4f, CHECKPOINT_UNSOLID, "Character2D", {{glm::vec2(-4.0f, 5.0f), 2.0f}, {glm::vec2(4.0f, 5.0f), 2.0f}});
 	add_character("platform", glm::vec2(-2.0f, -3.0f), glm::vec2(2.0f, 2.0f), 2.0f, STATIC_UNSOLID, "Character2D");*/
 
-	SVGParser * svg_parser= new SVGParser(path);
+	SVGParser * svg_parser= new SVGParser(path, _screengl);
 
 	// créer textures ---------------------------------------------------
 	for (auto model : svg_parser->_models) {
@@ -1190,8 +1201,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 				continue;
 			}
 			
-			pos= glm::vec2(stof(model["x"]), stof(model["y"]));
-			size= glm::vec2(stof(model["width"]), stof(model["height"]));
+			pos= svg_parser->svg2screen_pos(glm::vec2(stof(model["x"]), stof(model["y"])));
+			size= svg_parser->svg2screen_size(glm::vec2(stof(model["width"]), stof(model["height"])));
 			for (auto rect : svg_parser->_models) {
 				if (rect["type"]!= "rect") {
 					continue;
@@ -1199,8 +1210,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 				if (rect["image_name"]!= static_texture->_name) {
 					continue;
 				}
-				footprint_pos= glm::vec2(stof(rect["x"]), stof(rect["y"]));
-				footprint_size= glm::vec2(stof(rect["width"]), stof(rect["height"]));
+				footprint_pos= svg_parser->svg2screen_pos(glm::vec2(stof(rect["x"]), stof(rect["y"])));
+				footprint_size= svg_parser->svg2screen_size(glm::vec2(stof(rect["width"]), stof(rect["height"])));
 				static_texture->_actions[0]->_footprint->_pos= footprint_pos- pos;
 				static_texture->_actions[0]->_footprint->_size= footprint_size/ size;
 				break;
@@ -1236,8 +1247,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			}
 			
 			for (auto action : anim_texture->_actions) {
-				glm::vec2 pos= glm::vec2(stof(model["x"]), stof(model["y"]));
-				glm::vec2 size= glm::vec2(stof(model["width"]), stof(model["height"]));
+				glm::vec2 pos= svg_parser->svg2screen_pos(glm::vec2(stof(model["x"]), stof(model["y"])));
+				glm::vec2 size= svg_parser->svg2screen_size(glm::vec2(stof(model["width"]), stof(model["height"])));
 				if (model.count("anim_time")) {
 					action->_anim_time= stof(model["anim_time"]);
 				}
@@ -1249,8 +1260,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 					if (rect["image_name"]!= anim_texture->_name) {
 						continue;
 					}
-					glm::vec2 footprint_pos= glm::vec2(stof(rect["x"]), stof(rect["y"]));
-					glm::vec2 footprint_size= glm::vec2(stof(rect["width"]), stof(rect["height"]));
+					glm::vec2 footprint_pos= svg_parser->svg2screen_pos(glm::vec2(stof(rect["x"]), stof(rect["y"])));
+					glm::vec2 footprint_size= svg_parser->svg2screen_size(glm::vec2(stof(rect["width"]), stof(rect["height"])));
 					action->_footprint->_pos= footprint_pos- pos;
 					action->_footprint->_size= footprint_size/ size;
 					break;
@@ -1270,8 +1281,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			}
 			Action * action= anim_texture->get_action(model["action_name"]);
 
-			glm::vec2 pos= glm::vec2(stof(model["x"]), stof(model["y"]));
-			glm::vec2 size= glm::vec2(stof(model["width"]), stof(model["height"]));
+			glm::vec2 pos= svg_parser->svg2screen_pos(glm::vec2(stof(model["x"]), stof(model["y"])));
+			glm::vec2 size= svg_parser->svg2screen_size(glm::vec2(stof(model["width"]), stof(model["height"])));
 			if (model.count("anim_time")) {
 				action->_anim_time= stof(model["anim_time"]);
 			}
@@ -1286,8 +1297,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 				if (rect["action_name"]!= action->_name) {
 					continue;
 				}
-				glm::vec2 footprint_pos= glm::vec2(stof(rect["x"]), stof(rect["y"]));
-				glm::vec2 footprint_size= glm::vec2(stof(rect["width"]), stof(rect["height"]));
+				glm::vec2 footprint_pos= svg_parser->svg2screen_pos(glm::vec2(stof(rect["x"]), stof(rect["y"])));
+				glm::vec2 footprint_size= svg_parser->svg2screen_size(glm::vec2(stof(rect["width"]), stof(rect["height"])));
 				action->_footprint->_pos= footprint_pos- pos;
 				action->_footprint->_size= footprint_size/ size;
 				break;
@@ -1300,7 +1311,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		if (obj["type"]!= "image") {
 			continue;
 		}
-		AABB_2D * aabb= new AABB_2D(glm::vec2(stof(obj["x"]), stof(obj["y"])), glm::vec2(stof(obj["width"]), stof(obj["height"])));
+		AABB_2D * aabb= new AABB_2D(svg_parser->svg2screen_pos(glm::vec2(stof(obj["x"]), stof(obj["y"]))), svg_parser->svg2screen_size(glm::vec2(stof(obj["width"]), stof(obj["height"]))));
 
 		vector<CheckPoint> checkpoints;
 		ObjectPhysics physics= get_texture(obj["image_name"])->_physics;
@@ -1326,15 +1337,17 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 						if (instruction== "M") {
 							float x= stof(token.substr(0, token.find(",")));
 							float y= stof(token.substr(token.find(",")+ 1));
-							if (!point_in_aabb(glm::vec2(x, y), aabb)) {
+							glm::vec2 pt= svg_parser->svg2screen_pos(glm::vec2(x, y));
+							if (!point_in_aabb(pt, aabb)) {
 								break;
 							}
-							checkpoints.push_back({glm::vec2(x, y), velocity});
+							checkpoints.push_back({pt, velocity});
 						}
 						else if (instruction== "H") {
 							float x= stof(token);
 							float y= checkpoints[checkpoints.size()- 1]._pos.y;
-							checkpoints.push_back({glm::vec2(x, y), velocity});
+							glm::vec2 pt= svg_parser->svg2screen_pos(glm::vec2(x, y));
+							checkpoints.push_back({pt, velocity});
 						}
 					}
 				}

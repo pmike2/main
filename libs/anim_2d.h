@@ -193,12 +193,14 @@ public:
 class SVGParser {
 public:
 	SVGParser();
-	SVGParser(std::string svg_path);
+	SVGParser(std::string svg_path, ScreenGL * screengl);
 	~SVGParser();
-	std::string static_href2name(std::string s);
+	glm::vec2 svg2screen_pos(glm::vec2 v);
+	glm::vec2 svg2screen_size(glm::vec2 v);
 
 
-	std::string _viewbox;
+	ScreenGL * _screengl;
+	AABB_2D * _view;
 	std::vector<std::map<std::string, std::string> > _models;
 	std::vector<std::map<std::string, std::string> > _objs;
 };
