@@ -25,7 +25,7 @@ enum CharacterType {CHARACTER_2D, ANIM_CHARACTER_2D, PERSON_2D};
 
 
 ObjectPhysics str2physics(std::string s);
-;
+CharacterType str2character_type(std::string s);
 
 
 class CheckPoint {
