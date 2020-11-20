@@ -195,8 +195,7 @@ public:
 	SVGParser();
 	SVGParser(std::string svg_path, ScreenGL * screengl);
 	~SVGParser();
-	glm::vec2 svg2screen_pos(glm::vec2 v);
-	glm::vec2 svg2screen_size(glm::vec2 v);
+	AABB_2D svg2screen(AABB_2D aabb);
 
 
 	ScreenGL * _screengl;
