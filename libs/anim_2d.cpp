@@ -996,7 +996,8 @@ SVGParser::SVGParser(string svg_path, ScreenGL * screengl) : _screengl(screengl)
 	doc.parse<0>(&xml_content[0]);
 	xml_node<> * root_node= doc.first_node();
 	
-	vector<string> tags= {"x", "y", "width", "height", "xlink:href", "image_name", "action_name", "physics", "anim_time", "velocity_walk", "velocity_run", "velocity_roll", "velocity_jump_walk", "velocity_jump_run", "d", "velocity", "hero"};
+	// id pour debug
+	vector<string> tags= {"id", "x", "y", "width", "height", "xlink:href", "image_name", "action_name", "physics", "anim_time", "velocity_walk", "velocity_run", "velocity_roll", "velocity_jump_walk", "velocity_jump_run", "d", "velocity", "hero"};
 	
 	for (xml_node<> * g_node=root_node->first_node("g"); g_node; g_node=g_node->next_sibling()) {
 		string layer_label= g_node->first_attribute("inkscape:label")->value();
@@ -1311,7 +1312,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		if (obj["type"]!= "image") {
 			continue;
 		}
-		AABB_2D * aabb= new AABB_2D(svg_parser->svg2screen_pos(glm::vec2(stof(obj["x"]), stof(obj["y"]))), svg_parser->svg2screen_size(glm::vec2(stof(obj["width"]), stof(obj["height"]))));
+		AABB_2D * aabb= new AABB_2D(glm::vec2(stof(obj["x"]), stof(obj["y"])), glm::vec2(stof(obj["width"]), stof(obj["height"])));
 
 		vector<CheckPoint> checkpoints;
 		ObjectPhysics physics= get_texture(obj["image_name"])->_physics;
@@ -1320,7 +1321,6 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 				if (path["type"]!= "path") {
 					continue;
 				}
-				
 				float velocity= stof(path["velocity"]);
 
 				istringstream iss(path["d"]);
@@ -1337,7 +1337,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 						if (instruction== "M") {
 							float x= stof(token.substr(0, token.find(",")));
 							float y= stof(token.substr(token.find(",")+ 1));
-							glm::vec2 pt= svg_parser->svg2screen_pos(glm::vec2(x, y));
+							glm::vec2 pt= glm::vec2(x, y);
 							if (!point_in_aabb(pt, aabb)) {
 								break;
 							}
@@ -1346,7 +1346,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 						else if (instruction== "H") {
 							float x= stof(token);
 							float y= checkpoints[checkpoints.size()- 1]._pos.y;
-							glm::vec2 pt= svg_parser->svg2screen_pos(glm::vec2(x, y));
+							glm::vec2 pt= glm::vec2(x, y);
 							checkpoints.push_back({pt, velocity});
 						}
 					}
@@ -1354,7 +1354,12 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			}
 		}
 
-		cout << "add character " << obj["image_name"] << "\n";
+		cout << "add character " << obj["image_name"] << " ; " << obj["id"] << "\n";
+		for (unsigned int i=0; i<checkpoints.size(); ++i) {
+			checkpoints[i]._pos= svg_parser->svg2screen_pos(checkpoints[i]._pos);
+		}
+		aabb->_pos= svg_parser->svg2screen_pos(aabb->_pos);
+		aabb->_size= svg_parser->svg2screen_size(aabb->_size);
 		add_character(obj["image_name"], aabb, stof(obj["z"]), checkpoints);
 
 		if (obj.count("hero")) {
@@ -1363,6 +1368,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 
 		delete aabb;
 	}
+
+	_viewpoint= svg_parser->svg2screen_pos(svg_parser->_view->_pos+ svg_parser->_view->_size* 0.5f);
 
 	delete svg_parser;
 
@@ -1617,7 +1624,7 @@ void Level::anim(float elapsed_time) {
 
 	glm::vec2 hero= _hero->_obj->_aabb->center();
 	//_viewpoint= hero;
-	if (hero.x< _viewpoint.x- MOVE_VIEWPOINT.x) {
+	/*if (hero.x< _viewpoint.x- MOVE_VIEWPOINT.x) {
 		_viewpoint.x= hero.x+ MOVE_VIEWPOINT.x;
 	}
 	else if (hero.x> _viewpoint.x+ MOVE_VIEWPOINT.x) {
@@ -1628,7 +1635,7 @@ void Level::anim(float elapsed_time) {
 	}
 	else if (hero.y> _viewpoint.y+ MOVE_VIEWPOINT.y) {
 		_viewpoint.y= hero.y- MOVE_VIEWPOINT.y;
-	}
+	}*/
 
 	update_model2worlds();
 }
