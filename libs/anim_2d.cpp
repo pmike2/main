@@ -94,10 +94,10 @@ Object2D::Object2D() {
 }
 
 
-Object2D::Object2D(glm::vec2 pos, glm::vec2 size, AABB_2D * footprint, ObjectPhysics physics, vector<CheckPoint> checkpoints) :
+Object2D::Object2D(AABB_2D * aabb, AABB_2D * footprint, ObjectPhysics physics, vector<CheckPoint> checkpoints) :
 	_velocity(glm::vec2(0.0f)), _physics(physics), _idx_checkpoint(0), _referential(nullptr)
 {
-	_aabb= new AABB_2D(pos, size);
+	_aabb= new AABB_2D(*aabb);
 	_footprint= new AABB_2D(glm::vec2(0.0f), glm::vec2(_aabb->_size.x* footprint->_size.x, _aabb->_size.y* footprint->_size.y));
 	_footprint_offset= glm::vec2(_aabb->_size.x* footprint->_pos.x, _aabb->_size.y* footprint->_pos.y);
 	update_footprint_pos();
@@ -184,6 +184,14 @@ void Object2D::set_footprint(AABB_2D * footprint) {
 }
 
 
+ostream & operator << (ostream & os, const Object2D & obj) {
+	os << "aabb : " << *obj._aabb << "\n";
+	os << "footprint : " << *obj._footprint << "\n";
+	os << "velocity : " << glm::to_string(obj._velocity) << "\n";
+	return os;
+}
+
+
 // -------------------------------------------------------------------------------------------
 bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time) {
 	//if (glm::length2(anim_obj->_velocity)< 1e-9f) {
@@ -208,7 +216,7 @@ bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_ob
 
 // Action ---------------------------------------------------------------------------
 Action::Action() : _name(""), _first_idx(0), _n_idx(0), _anim_time(0.0f) {
-	_footprint= new AABB_2D();
+	_footprint= new AABB_2D(glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
 }
 
 
@@ -217,11 +225,12 @@ Action::~Action() {
 }
 
 
-void Action::print() {
-	cout << "_name=" << _name << " ; _first_idx=" << _first_idx << " ; _n_idx=" << _n_idx << "\n";
-	for (auto png : _pngs) {
-		cout << png << "\n";
+ostream & operator << (ostream & os, const Action & action) {
+	os << "_name=" << action._name << " ; _first_idx=" << action._first_idx << " ; _n_idx=" << action._n_idx << "\n";
+	for (auto png : action._pngs) {
+		os << png << "\n";
 	}
+	return os;
 }
 
 
@@ -454,7 +463,7 @@ AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl, Obj
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, ANIM_MODEL_SIZE, ANIM_MODEL_SIZE, compt, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	for (auto action : _actions) {
-		//action.print();
+		//cout << action << "\n";
 		for (unsigned int i=0; i<action->_n_idx; ++i) {
 			SDL_Surface * surface= IMG_Load(action->_pngs[i].c_str());
 			if (!surface) {
@@ -1192,7 +1201,6 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			if (model["image_name"]!= static_texture->_name) {
 				continue;
 			}
-			
 			AABB_2D aabb_svg(glm::vec2(stof(model["x"]), stof(model["y"])), glm::vec2(stof(model["width"]), stof(model["height"])));
 			AABB_2D aabb_gl= svg_parser->svg2screen(aabb_svg);
 			for (auto rect : svg_parser->_models) {
@@ -1204,7 +1212,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 				}
 				AABB_2D footprint_svg(glm::vec2(stof(rect["x"]), stof(rect["y"])), glm::vec2(stof(rect["width"]), stof(rect["height"])));
 				AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
-				static_texture->_actions[0]->_footprint->_pos= footprint_gl._pos- aabb_gl._pos;
+				static_texture->_actions[0]->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
 				static_texture->_actions[0]->_footprint->_size= footprint_gl._size/ aabb_gl._size;
 				break;
 			}
@@ -1234,7 +1242,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			vector<string> velocity_tags= {"velocity_walk", "velocity_run", "velocity_roll", "velocity_jump_walk", "velocity_jump_run"};
 			for (auto tag : velocity_tags) {
 				if (model.count(tag)) {
-					dynamic_cast<AnimTexture *>(anim_texture)->_velocities[tag]= stof(model[tag]);
+					dynamic_cast<AnimTexture *>(anim_texture)->_velocities[tag.substr(tag.find("_")+ 1)]= stof(model[tag]);
 				}
 			}
 			
@@ -1255,7 +1263,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 					}
 					AABB_2D footprint_svg(glm::vec2(stof(rect["x"]), stof(rect["y"])), glm::vec2(stof(rect["width"]), stof(rect["height"])));
 					AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
-					action->_footprint->_pos= footprint_gl._pos- aabb_gl._pos;
+					action->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
 					action->_footprint->_size= footprint_gl._size/ aabb_gl._size;
 					break;
 				}
@@ -1293,13 +1301,21 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 				}
 				AABB_2D footprint_svg(glm::vec2(stof(rect["x"]), stof(rect["y"])), glm::vec2(stof(rect["width"]), stof(rect["height"])));
 				AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
-				action->_footprint->_pos= footprint_gl._pos- aabb_gl._pos;
+				action->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
 				action->_footprint->_size= footprint_gl._size/ aabb_gl._size;
 				break;
 			}
 		}
 	}
 
+for (auto anim_texture : _textures) {
+		if (!dynamic_cast<AnimTexture *>(anim_texture)) {
+			continue;
+		}
+	for (auto x : dynamic_cast<AnimTexture *>(anim_texture)->_velocities) {
+		cout << x.first << " ; " << x.second << "\n";
+	}
+}
 	// checkpoints et ajout character -----------------------------------------------------
 	for (auto obj : svg_parser->_objs) {
 		if (obj["type"]!= "image") {
@@ -1348,12 +1364,19 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			}
 		}
 
-		cout << "add character " << obj["image_name"] << " ; " << obj["id"] << "\n";
-		for (unsigned int i=0; i<checkpoints.size(); ++i) {
-			// aabb reduite a un pt -> size == 0
-			AABB_2D pt_gl= svg_parser->svg2screen(AABB_2D(checkpoints[i]._pos, glm::vec2(0.0f)));
-			checkpoints[i]._pos= pt_gl._pos;
+		if (checkpoints.size()) {
+			for (unsigned int i=0; i<checkpoints.size(); ++i) {
+				// aabb reduite a un pt -> size == 0
+				AABB_2D pt_gl= svg_parser->svg2screen(AABB_2D(checkpoints[i]._pos, glm::vec2(0.0f)));
+				checkpoints[i]._pos= pt_gl._pos;
+			}
+			glm::vec2 v= aabb_gl._pos- checkpoints[0]._pos;
+			for (unsigned int i=0; i<checkpoints.size(); ++i) {
+				checkpoints[i]._pos+= v;
+			}
 		}
+
+		cout << "add character " << obj["image_name"] << " ; " << obj["id"] << "\n";
 		add_character(obj["image_name"], &aabb_gl, stof(obj["z"]), checkpoints);
 
 		if (obj.count("hero")) {
@@ -1397,7 +1420,7 @@ Texture2D * Level::get_texture(string texture_name, bool verbose) {
 
 void Level::add_character(string texture_name, AABB_2D * aabb, float z, vector<CheckPoint> checkpoints) {
 	Texture2D * texture= get_texture(texture_name);
-	Object2D * obj= new Object2D(aabb->_pos, aabb->_size, texture->_actions[0]->_footprint, texture->_physics, checkpoints);
+	Object2D * obj= new Object2D(aabb, texture->_actions[0]->_footprint, texture->_physics, checkpoints);
 	Character2D * character;
 	if (texture->_character_type== CHARACTER_2D) {
 		character= new Character2D(obj, texture, z);
@@ -1467,6 +1490,7 @@ void Level::anim(float elapsed_time) {
 			person->update_velocity();
 		}
 	}
+	//cout << *_hero->_obj << "\n";
 
 	/*for (auto character : _characters) {
 		Object2D * obj= character->_obj;
@@ -1616,7 +1640,7 @@ void Level::anim(float elapsed_time) {
 
 	glm::vec2 hero= _hero->_obj->_aabb->center();
 	//_viewpoint= hero;
-	/*if (hero.x< _viewpoint.x- MOVE_VIEWPOINT.x) {
+	if (hero.x< _viewpoint.x- MOVE_VIEWPOINT.x) {
 		_viewpoint.x= hero.x+ MOVE_VIEWPOINT.x;
 	}
 	else if (hero.x> _viewpoint.x+ MOVE_VIEWPOINT.x) {
@@ -1627,7 +1651,7 @@ void Level::anim(float elapsed_time) {
 	}
 	else if (hero.y> _viewpoint.y+ MOVE_VIEWPOINT.y) {
 		_viewpoint.y= hero.y- MOVE_VIEWPOINT.y;
-	}*/
+	}
 
 	update_model2worlds();
 }
@@ -1660,7 +1684,7 @@ LevelDebug::LevelDebug() {
 
 
 LevelDebug::LevelDebug(GLuint prog_draw_aabb, Level * level, ScreenGL * screengl) :
-	_prog_draw(prog_draw_aabb), _level(level), _screengl(screengl), _n_aabbs(0), _draw_aabb(false), _draw_footprint(false)
+	_prog_draw(prog_draw_aabb), _level(level), _screengl(screengl), _n_aabbs(0), _draw_aabb(true), _draw_footprint(true)
 {
 	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	_model2world= glm::mat4(1.0f);
@@ -1786,6 +1810,9 @@ void LevelDebug::update() {
 	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 	glBufferData(GL_ARRAY_BUFFER, 40* _n_aabbs* sizeof(float), vertices, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// suivre le mouvement de caméra
+	_model2world= glm::translate(glm::mat4(1.0f), glm::vec3(-_level->_viewpoint.x, -_level->_viewpoint.y, 0.0f));
 }
 
 

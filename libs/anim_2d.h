@@ -43,7 +43,7 @@ public:
 class Object2D {
 public:
 	Object2D();
-	Object2D(glm::vec2 pos, glm::vec2 size, AABB_2D * footprint, ObjectPhysics physics, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
+	Object2D(AABB_2D * aabb, AABB_2D * footprint, ObjectPhysics physics, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
 	Object2D(const Object2D & obj);
 	~Object2D();
 	void update_pos(float elapsed_time);
@@ -51,6 +51,7 @@ public:
 	void update_footprint_pos();
 	void set_aabb_pos(glm::vec2 pos);
 	void set_footprint(AABB_2D * footprint);
+	friend std::ostream & operator << (std::ostream & os, const Object2D & obj);
 
 
 	AABB_2D * _aabb;
@@ -73,7 +74,7 @@ class Action {
 public:
 	Action();
 	~Action();
-	void print();
+	friend std::ostream & operator << (std::ostream & os, const Action & action);
 
 
 	std::string _name;
