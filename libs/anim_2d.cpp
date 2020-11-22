@@ -52,6 +52,9 @@ ObjectPhysics str2physics(string s) {
 	else if (s== "CHECKPOINT_UNSOLID") {
 		return CHECKPOINT_UNSOLID;
 	}
+	else if (s== "CHECKPOINT_SOLID_TOP") {
+		return CHECKPOINT_SOLID_TOP;
+	}
 	cout << "physics non trouve\n";
 	return STATIC_DESTRUCTIBLE;
 }
@@ -105,7 +108,7 @@ Object2D::Object2D(AABB_2D * aabb, AABB_2D * footprint, ObjectPhysics physics, v
 	for (auto checkpoint : checkpoints) {
 		_checkpoints.push_back(new CheckPoint(checkpoint._pos, checkpoint._velocity));
 	}
-	if ( (((_physics== CHECKPOINT_SOLID) || (_physics== CHECKPOINT_UNSOLID)) && (!_checkpoints.size())) || ((_physics!= CHECKPOINT_SOLID) && (_physics!= CHECKPOINT_UNSOLID) && (_checkpoints.size())) ) {
+	if ( (((_physics== CHECKPOINT_SOLID) || (_physics== CHECKPOINT_UNSOLID) || (_physics== CHECKPOINT_SOLID_TOP)) && (!_checkpoints.size())) || ((_physics!= CHECKPOINT_SOLID) && (_physics!= CHECKPOINT_UNSOLID) && (_physics!= CHECKPOINT_SOLID_TOP) && (_checkpoints.size())) ) {
 		cout << "erreur object checkpoint : _physics=" << _physics << " ; _checkpoints.size()=" << _checkpoints.size() << "\n";
 	}
 }
@@ -139,7 +142,7 @@ void Object2D::update_pos(float elapsed_time) {
 		_aabb->_pos+= _velocity* elapsed_time;
 		update_footprint_pos();
 	}
-	if ((_physics== CHECKPOINT_SOLID) || (_physics== CHECKPOINT_UNSOLID)) {
+	if ((_physics== CHECKPOINT_SOLID) || (_physics== CHECKPOINT_UNSOLID) || (_physics== CHECKPOINT_SOLID_TOP)) {
 		if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)< 0.1f) {
 			_idx_checkpoint++;
 			if (_idx_checkpoint>= _checkpoints.size()) {
@@ -157,7 +160,7 @@ void Object2D::update_velocity() {
 			_velocity.y= -20.0f;
 		}
 	}
-	else if ((_physics== CHECKPOINT_SOLID) || (_physics== CHECKPOINT_UNSOLID)) {
+	else if ((_physics== CHECKPOINT_SOLID) || (_physics== CHECKPOINT_UNSOLID) || (_physics== CHECKPOINT_SOLID_TOP)) {
 		if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)> 0.1f) {
 			glm::vec2 direction= _checkpoints[_idx_checkpoint]->_pos- _aabb->_pos;
 			_velocity= glm::normalize(direction)* _checkpoints[_idx_checkpoint]->_velocity;
@@ -708,13 +711,6 @@ Person2D::~Person2D() {
 }
 
 
-/*
-	float vel_run= 9.0f;
-	float vel_walk= 5.0f;
-	float vel_roll= 9.0f;
-	float vel_jump_run= 25.0f;
-	float vel_jump_wait= 20.0f;
-*/
 void Person2D::update_velocity() {
 	AnimTexture * anim_texture= dynamic_cast<AnimTexture *>(_texture);
 
@@ -1089,82 +1085,9 @@ Level::Level() {
 Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, string path, ScreenGL * screengl) :
 	_screengl(screengl), _viewpoint(glm::vec2(0.0f))
 {
-	/*ifstream xml_file(path+ "/levels/level_01.xml");
-	stringstream buffer;
-	buffer << xml_file.rdbuf();
-	xml_file.close();
-	string xml_content(buffer.str());
-	xml_document<> doc;
-	doc.parse<0>(&xml_content[0]);
-	xml_node<> * root_node= doc.first_node();
-
-	xml_node<> * w_node= root_node->first_node("w");
-	_w= stoi(w_node->value());
-	xml_node<> * h_node= root_node->first_node("h");
-	_h= stoi(h_node->value());
-	xml_node<> * block_w_node= root_node->first_node("block_w");
-	_block_w= stof(block_w_node->value());
-	xml_node<> * block_h_node= root_node->first_node("block_h");
-	_block_h= stof(block_h_node->value());
-	xml_node<> * data_node= root_node->first_node("data");
-	string data= data_node->value();
-	trim(data);
-
-	stringstream ss(data);
-	string line;
-	char level_data[_w* _h];
-	unsigned int idx= 0;
-	while (getline(ss, line, '\n')) {
-		trim(line);
-		for(char & c : line) {
-			level_data[idx++]= c;
-		}
-	}
-
-	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/brick.png", screengl));
-	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/grass.png", screengl));
-	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/tree.png", screengl));
-	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/hill.png", screengl));
-	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/sky.png", screengl));
-	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/cloud.png", screengl));
-	_textures.push_back(new StaticTexture(prog_draw_static, path+ "/static_textures/platform.png", screengl));
-
-	_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_1", screengl));
-	_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/modele_2", screengl));
-	_textures.push_back(new AnimTexture(prog_draw_anim, path+ "/anim_textures/flower", screengl));
-
-	add_character("tree", glm::vec2(-5.0f, -5.0f), glm::vec2(5.0f, 5.0f), 0.3f, STATIC_UNSOLID, "Character2D");
-	add_character("hill", glm::vec2(-0.5f* _screengl->_gl_width, -0.5f* _screengl->_gl_height), glm::vec2(_screengl->_gl_width, _screengl->_gl_height), 0.2f, STATIC_UNSOLID, "Character2D");
-	add_character("sky", glm::vec2(-0.5f* _screengl->_gl_width, -0.5f* _screengl->_gl_height), glm::vec2(_screengl->_gl_width, _screengl->_gl_height), 0.1f, STATIC_UNSOLID, "Character2D");
-
-	for (unsigned int col=0; col<_w; ++col) {
-		for (unsigned int row=0; row<_h; ++row) {
-			glm::vec2 pos(-0.5f* _screengl->_gl_width+ (float)(col)* _block_w, -0.5f* _screengl->_gl_height+ (float)(row)* _block_h);
-			glm::vec2 size= glm::vec2(_block_w, _block_h);
-			if (level_data[col+ _w* (_h- row- 1)]== '*') {
-				add_character("brick", pos, size, 1.0f, STATIC_DESTRUCTIBLE, "Character2D");
-				if ((row!= _h- 1) && (level_data[col+ _w* (_h- row- 2)]!= '*')) {
-					add_character("grass", pos+ glm::vec2(0.0f, size.y), size, 1.5f, STATIC_UNSOLID, "Character2D");
-				}
-			}
-			else if (level_data[col+ _w* (_h- row- 1)]== 'x') {
-				add_character("modele_1", pos, size* 2.0f, 0.5f, FALLING, "Person2D");
-			}
-			else if (level_data[col+ _w* (_h- row- 1)]== '+') {
-				add_character("modele_1", pos, size* 2.0f, 0.5f, FALLING, "Person2D");
-				_hero= dynamic_cast<Person2D *>(_characters[_characters.size()- 1]);
-			}
-		}
-	}
-
-	add_character("flower", glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 4.0f), 2.0f, STATIC_UNSOLID, "AnimatedCharacter2D");
-	add_character("brick", glm::vec2(0.0f, 0.0f), glm::vec2(4.0f, 1.0f), 3.0f, CHECKPOINT_SOLID, "Character2D", {{glm::vec2(-2.0f, -3.0f), 2.0f}, {glm::vec2(-2.0f, 3.0f), 2.0f}});
-	add_character("cloud", glm::vec2(-4.0f, 5.0f), glm::vec2(5.0f, 5.0f), 1.4f, CHECKPOINT_UNSOLID, "Character2D", {{glm::vec2(-4.0f, 5.0f), 2.0f}, {glm::vec2(4.0f, 5.0f), 2.0f}});
-	add_character("platform", glm::vec2(-2.0f, -3.0f), glm::vec2(2.0f, 2.0f), 2.0f, STATIC_UNSOLID, "Character2D");*/
-
 	SVGParser * svg_parser= new SVGParser(path, _screengl);
 
-	// créer textures ---------------------------------------------------
+	// creation textures ---------------------------------------------------
 	for (auto model : svg_parser->_models) {
 		if (model["type"]!= "image") {
 			continue;
@@ -1172,7 +1095,6 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		if (!model.count("physics")) {
 			continue;
 		}
-		//cout << "model[xlink:href]= " << model["xlink:href"] << "\n";
 		ObjectPhysics physics= str2physics(model["physics"]);
 		CharacterType character_type= str2character_type(model["character_type"]);
 		if ((model["image_type"]== "static") && (get_texture(model["image_name"], false)== nullptr)) {
@@ -1308,14 +1230,6 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		}
 	}
 
-for (auto anim_texture : _textures) {
-		if (!dynamic_cast<AnimTexture *>(anim_texture)) {
-			continue;
-		}
-	for (auto x : dynamic_cast<AnimTexture *>(anim_texture)->_velocities) {
-		cout << x.first << " ; " << x.second << "\n";
-	}
-}
 	// checkpoints et ajout character -----------------------------------------------------
 	for (auto obj : svg_parser->_objs) {
 		if (obj["type"]!= "image") {
@@ -1326,7 +1240,7 @@ for (auto anim_texture : _textures) {
 
 		vector<CheckPoint> checkpoints;
 		ObjectPhysics physics= get_texture(obj["image_name"])->_physics;
-		if ((physics== CHECKPOINT_SOLID) || (physics== CHECKPOINT_UNSOLID)) {
+		if ((physics== CHECKPOINT_SOLID) || (physics== CHECKPOINT_UNSOLID) || (physics== CHECKPOINT_SOLID_TOP)) {
 			for (auto path : svg_parser->_objs) {
 				if (path["type"]!= "path") {
 					continue;
@@ -1383,8 +1297,6 @@ for (auto anim_texture : _textures) {
 			_hero= dynamic_cast<Person2D *>(_characters[_characters.size()- 1]);
 		}
 	}
-
-	//_viewpoint= svg_parser->svg2screen_pos(svg_parser->_view->_pos+ svg_parser->_view->_size* 0.5f);
 
 	delete svg_parser;
 
@@ -1490,7 +1402,6 @@ void Level::anim(float elapsed_time) {
 			person->update_velocity();
 		}
 	}
-	//cout << *_hero->_obj << "\n";
 
 	/*for (auto character : _characters) {
 		Object2D * obj= character->_obj;
@@ -1529,17 +1440,19 @@ void Level::anim(float elapsed_time) {
 
 			Object2D * obj2= character2->_obj;
 
-			if ((obj2->_physics!= STATIC_DESTRUCTIBLE) && (obj2->_physics!= STATIC_INDESTRUCTIBLE) && (obj2->_physics!= CHECKPOINT_SOLID)) {
+			if ((obj2->_physics!= STATIC_DESTRUCTIBLE) && (obj2->_physics!= STATIC_INDESTRUCTIBLE) && (obj2->_physics!= CHECKPOINT_SOLID) && (obj2->_physics!= CHECKPOINT_SOLID_TOP)) {
 				continue;
 			}
 
 			if (anim_intersect_static(obj1, obj2, elapsed_time, contact_pt, contact_normal, contact_time)) {
-				glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
-				obj1->_velocity+= correction* 1.1f;
+				if ((obj2->_physics!= CHECKPOINT_SOLID_TOP) || (contact_normal.y> 0.0f)) {
+					glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
+					obj1->_velocity+= correction* 1.1f;
+				}
 
 				if (contact_normal.y> 0.0f) {
 					obj1->_bottom.push_back(obj2);
-					if (obj2->_physics== CHECKPOINT_SOLID) {
+					if ((obj2->_physics== CHECKPOINT_SOLID) || (obj2->_physics== CHECKPOINT_SOLID_TOP)) {
 						obj1->_referential= obj2;
 					}
 				}
@@ -1552,7 +1465,7 @@ void Level::anim(float elapsed_time) {
 
 	for (auto character1 : _characters) {
 		Object2D * obj1= character1->_obj;
-		if (obj1->_physics!= CHECKPOINT_SOLID) {
+		if ((obj1->_physics!= CHECKPOINT_SOLID) || (obj1->_physics!= CHECKPOINT_SOLID_TOP)) {
 			continue;
 		}
 		
@@ -1570,14 +1483,14 @@ void Level::anim(float elapsed_time) {
 			Object2D * obj_tmp= new Object2D(*obj2);
 			obj_tmp->update_pos(elapsed_time);
 			if (anim_intersect_static(obj1, obj_tmp, elapsed_time, contact_pt, contact_normal, contact_time)) {
-				glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
-				obj2->_velocity-= correction* 1.1f;
+				if ((obj1->_physics!= CHECKPOINT_SOLID_TOP) || (contact_normal.y> 0.0f)) {
+					glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
+					obj2->_velocity-= correction* 1.1f;
+				}
 
 				if (contact_normal.y< 0.0f) {
 					obj2->_bottom.push_back(obj1);
-					if (obj1->_physics== CHECKPOINT_SOLID) {
-						obj2->_referential= obj1;
-					}
+					obj2->_referential= obj1;
 				}
 				else if (contact_normal.y> 0.0f) {
 					obj2->_top.push_back(obj1);
@@ -1684,7 +1597,7 @@ LevelDebug::LevelDebug() {
 
 
 LevelDebug::LevelDebug(GLuint prog_draw_aabb, Level * level, ScreenGL * screengl) :
-	_prog_draw(prog_draw_aabb), _level(level), _screengl(screengl), _n_aabbs(0), _draw_aabb(true), _draw_footprint(true)
+	_prog_draw(prog_draw_aabb), _level(level), _screengl(screengl), _n_aabbs(0), _draw_aabb(false), _draw_footprint(false)
 {
 	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	_model2world= glm::mat4(1.0f);
