@@ -143,7 +143,7 @@ void Object2D::update_pos(float elapsed_time) {
 		update_footprint_pos();
 	}
 	if ((_physics== CHECKPOINT_SOLID) || (_physics== CHECKPOINT_UNSOLID) || (_physics== CHECKPOINT_SOLID_TOP)) {
-		if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)< 0.1f) {
+		if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)< CHECKPOINT_TRESH) {
 			_idx_checkpoint++;
 			if (_idx_checkpoint>= _checkpoints.size()) {
 				_idx_checkpoint= 0;
@@ -155,13 +155,13 @@ void Object2D::update_pos(float elapsed_time) {
 
 void Object2D::update_velocity() {
 	if (_physics== FALLING) {
-		_velocity.y-= 1.0f;
-		if (_velocity.y< -20.0f) {
-			_velocity.y= -20.0f;
+		_velocity.y-= GRAVITY_INC;
+		if (_velocity.y< -1.0f* GRAVITY_MAX) {
+			_velocity.y= -1.0f* GRAVITY_MAX;
 		}
 	}
 	else if ((_physics== CHECKPOINT_SOLID) || (_physics== CHECKPOINT_UNSOLID) || (_physics== CHECKPOINT_SOLID_TOP)) {
-		if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)> 0.1f) {
+		if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)> CHECKPOINT_TRESH) {
 			glm::vec2 direction= _checkpoints[_idx_checkpoint]->_pos- _aabb->_pos;
 			_velocity= glm::normalize(direction)* _checkpoints[_idx_checkpoint]->_velocity;
 		}
@@ -196,6 +196,7 @@ ostream & operator << (ostream & os, const Object2D & obj) {
 
 
 // -------------------------------------------------------------------------------------------
+// voir refs dans bbox_2d.h pour algo
 bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time) {
 	//if (glm::length2(anim_obj->_velocity)< 1e-9f) {
 	if ((anim_obj->_velocity.x== 0.0f) && (anim_obj->_velocity.y== 0.0f)) {
@@ -209,8 +210,6 @@ bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_ob
 	if (ray_intersects_aabb(anim_obj->_footprint->center(), time_step* anim_obj->_velocity, &expanded, contact_pt, contact_normal, contact_time)) {
 		// le = du >= est important
 		return ((contact_time>= 0.0f) && (contact_time< 1.0f));
-		//return ((contact_time> -1e-3f) && (contact_time< 1.0f));
-		//return ( ((contact_normal.y== 1.0f) && (contact_time> -1e-3f) && (contact_time< 1.0f)) || ((contact_time>= 0.0f) && (contact_time< 1.0f)) );
 	}
 	
 	return false;
@@ -219,6 +218,7 @@ bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_ob
 
 // Action ---------------------------------------------------------------------------
 Action::Action() : _name(""), _first_idx(0), _n_idx(0), _anim_time(0.0f) {
+	// par défaut footprint prend toute l'emprise
 	_footprint= new AABB_2D(glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
 }
 
@@ -280,7 +280,9 @@ StaticTexture::StaticTexture() : Texture2D() {
 }
 
 
-StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl, ObjectPhysics physics, CharacterType character_type) : Texture2D(prog_draw, path, screengl, physics, character_type), _alpha(1.0f) {
+StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl, ObjectPhysics physics, CharacterType character_type) :
+	Texture2D(prog_draw, path, screengl, physics, character_type), _alpha(1.0f) 
+{
 	glGenTextures(1, &_texture_id);
 	glBindTexture(GL_TEXTURE_2D, _texture_id);
 	
@@ -289,6 +291,7 @@ StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl,
 		cout << "IMG_Load error :" << IMG_GetError() << endl;
 		return;
 	}
+	// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_BGRA, GL_UNSIGNED_BYTE, surface->pixels);
 
 	SDL_FreeSurface(surface);
@@ -296,10 +299,10 @@ StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl,
 	glActiveTexture(GL_TEXTURE0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S    , GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T    , GL_REPEAT);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glActiveTexture(0);
 	
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -318,6 +321,7 @@ StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl,
 
 	glGenBuffers(1, &_vbo);
 
+	// 1 seule action pour StaticTexture
 	Action * action= new Action();
 	action->_name= "static_action";
 	_actions.push_back(action);
@@ -366,8 +370,6 @@ void StaticTexture::update() {
 	_n_aabbs= _characters.size();
 	float vertices[30* _n_aabbs];
 	for (unsigned int idx=0; idx<_n_aabbs; ++idx) {
-		glm::vec2 tex_coord(1.0f, 1.0f);
-
 		vertices[30* idx+ 0]= _characters[idx]->_obj->_aabb->_pos.x;
 		vertices[30* idx+ 1]= _characters[idx]->_obj->_aabb->_pos.y+ _characters[idx]->_obj->_aabb->_size.y;
 		vertices[30* idx+ 2]= _characters[idx]->_z;
@@ -378,13 +380,13 @@ void StaticTexture::update() {
 		vertices[30* idx+ 6]= _characters[idx]->_obj->_aabb->_pos.y;
 		vertices[30* idx+ 7]= _characters[idx]->_z;
 		vertices[30* idx+ 8]= 0.0f;
-		vertices[30* idx+ 9]= tex_coord.y;
+		vertices[30* idx+ 9]= 1.0f;
 
 		vertices[30* idx+ 10]= _characters[idx]->_obj->_aabb->_pos.x+ _characters[idx]->_obj->_aabb->_size.x;
 		vertices[30* idx+ 11]= _characters[idx]->_obj->_aabb->_pos.y;
 		vertices[30* idx+ 12]= _characters[idx]->_z;
-		vertices[30* idx+ 13]= tex_coord.x;
-		vertices[30* idx+ 14]= tex_coord.y;
+		vertices[30* idx+ 13]= 1.0f;
+		vertices[30* idx+ 14]= 1.0f;
 
 		vertices[30* idx+ 15]= _characters[idx]->_obj->_aabb->_pos.x;
 		vertices[30* idx+ 16]= _characters[idx]->_obj->_aabb->_pos.y+ _characters[idx]->_obj->_aabb->_size.y;
@@ -395,13 +397,13 @@ void StaticTexture::update() {
 		vertices[30* idx+ 20]= _characters[idx]->_obj->_aabb->_pos.x+ _characters[idx]->_obj->_aabb->_size.x;
 		vertices[30* idx+ 21]= _characters[idx]->_obj->_aabb->_pos.y;
 		vertices[30* idx+ 22]= _characters[idx]->_z;
-		vertices[30* idx+ 23]= tex_coord.x;
-		vertices[30* idx+ 24]= tex_coord.y;
+		vertices[30* idx+ 23]= 1.0f;
+		vertices[30* idx+ 24]= 1.0f;
 
 		vertices[30* idx+ 25]= _characters[idx]->_obj->_aabb->_pos.x+ _characters[idx]->_obj->_aabb->_size.x;
 		vertices[30* idx+ 26]= _characters[idx]->_obj->_aabb->_pos.y+ _characters[idx]->_obj->_aabb->_size.y;
 		vertices[30* idx+ 27]= _characters[idx]->_z;
-		vertices[30* idx+ 28]= tex_coord.x;
+		vertices[30* idx+ 28]= 1.0f;
 		vertices[30* idx+ 29]= 0.0f;
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
@@ -416,41 +418,22 @@ AnimTexture::AnimTexture() : Texture2D() {
 }
 
 
-AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl, ObjectPhysics physics, CharacterType character_type) : Texture2D(prog_draw, path, screengl, physics, character_type) {
+AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl, ObjectPhysics physics, CharacterType character_type) :
+	Texture2D(prog_draw, path, screengl, physics, character_type) 
+{
 	string root_pngs= path+ "/pngs";
 	vector<string> l_dirs= list_files(root_pngs);
-	unsigned int compt= 0;
+	unsigned int compt= 0; // compteur courant permettant l'init de _first_idx
 	for (auto dir : l_dirs) {
 		if (dir[0]!= '.') {
-			//cout << dir << "\n";
 			Action * action= new Action();
 			action->_name= dir;
 			action->_first_idx= compt;
-			//action->_n_idx= 0;
-
-			// FAIRE EVOLUER -> XML
-			/*if (dir.find("roll")!= string::npos) {
-				action->_anim_time= 0.08f;
-			}
-			else {
-				action->_anim_time= 0.13f;
-			}*/
-
-			// FAIRE EVOLUER -> XML
-			/*if ((dir.find("crouch")!= string::npos) || (dir.find("roll")!= string::npos)) {
-				action->_footprint_offset= glm::vec2(0.3f, 0.05f);
-				action->_footprint_size= glm::vec2(0.4f, 0.5f);
-			}
-			else {
-				action->_footprint_offset= glm::vec2(0.3f, 0.05f);
-				action->_footprint_size= glm::vec2(0.4f, 0.9f);
-			}*/
 
 			vector<string> l_files= list_files(root_pngs+ "/"+ dir);
 			sort(l_files.begin(), l_files.end());
 			for (auto f : l_files) {
 				if (f[0]!= '.') {
-					//cout << f << "\n";
 					action->_pngs.push_back(root_pngs+ "/"+ dir+ "/"+ f);
 					action->_n_idx++;
 					compt++;
@@ -460,13 +443,18 @@ AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl, Obj
 		}
 	}
 
+	// utilisation de GL_TEXTURE_2D_ARRAY : on stocke dans un tableau de textures toutes les images de toutes les actions
 	glGenTextures(1, &_texture_id);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
 	
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, ANIM_MODEL_SIZE, ANIM_MODEL_SIZE, compt, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	// on utilise la 1ere image de la 1ere action pour déterminer la taille de toutes les images
+	SDL_Surface * surface_0= IMG_Load(_actions[0]->_pngs[0].c_str());
+	glm::ivec2 model_size(surface_0->w, surface_0->h);
+	SDL_FreeSurface(surface_0);
+
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, model_size.x, model_size.y, compt, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	for (auto action : _actions) {
-		//cout << action << "\n";
 		for (unsigned int i=0; i<action->_n_idx; ++i) {
 			SDL_Surface * surface= IMG_Load(action->_pngs[i].c_str());
 			if (!surface) {
@@ -476,12 +464,12 @@ AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl, Obj
 
 			// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
 			glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-							0,                          // mipmap number
-							0, 0, action->_first_idx+ i, // xoffset, yoffset, zoffset
-							ANIM_MODEL_SIZE, ANIM_MODEL_SIZE, 1,  // width, height, depth
-							GL_BGRA,                    // format
-							GL_UNSIGNED_BYTE,           // type
-							surface->pixels);           // pointer to data
+							0,                             // mipmap number
+							0, 0, action->_first_idx+ i,   // xoffset, yoffset, zoffset
+							model_size.x, model_size.y, 1, // width, height, depth
+							GL_BGRA,                       // format
+							GL_UNSIGNED_BYTE,              // type
+							surface->pixels);              // pointer to data
 
 			SDL_FreeSurface(surface);
 		}
@@ -556,8 +544,9 @@ void AnimTexture::update() {
 	_n_aabbs= _characters.size();
 	float vertices[36* _n_aabbs];
 	for (unsigned int idx=0; idx<_n_aabbs; ++idx) {
-		glm::vec2 tex_coord(1.0f, 1.0f);
+		// cast en AnimatedCharacter2D *
 		AnimatedCharacter2D * anim_character= dynamic_cast<AnimatedCharacter2D *>(_characters[idx]);
+		// on ajoute l'indice de la 1ere image liée à l'action courante + indice de l'anim courante au sein de cette action
 		float current_layer= (float)(anim_character->_current_action->_first_idx+ anim_character->_current_anim);
 
 		vertices[36* idx+ 0]= anim_character->_obj->_aabb->_pos.x;
@@ -571,14 +560,14 @@ void AnimTexture::update() {
 		vertices[36* idx+ 7]= anim_character->_obj->_aabb->_pos.y;
 		vertices[36* idx+ 8]= anim_character->_z;
 		vertices[36* idx+ 9]= 0.0f;
-		vertices[36* idx+ 10]= tex_coord.y;
+		vertices[36* idx+ 10]= 1.0f;
 		vertices[36* idx+ 11]= current_layer;
 
 		vertices[36* idx+ 12]= anim_character->_obj->_aabb->_pos.x+ anim_character->_obj->_aabb->_size.x;
 		vertices[36* idx+ 13]= anim_character->_obj->_aabb->_pos.y;
 		vertices[36* idx+ 14]= anim_character->_z;
-		vertices[36* idx+ 15]= tex_coord.x;
-		vertices[36* idx+ 16]= tex_coord.y;
+		vertices[36* idx+ 15]= 1.0f;
+		vertices[36* idx+ 16]= 1.0f;
 		vertices[36* idx+ 17]= current_layer;
 
 		vertices[36* idx+ 18]= anim_character->_obj->_aabb->_pos.x;
@@ -591,14 +580,14 @@ void AnimTexture::update() {
 		vertices[36* idx+ 24]= anim_character->_obj->_aabb->_pos.x+ anim_character->_obj->_aabb->_size.x;
 		vertices[36* idx+ 25]= anim_character->_obj->_aabb->_pos.y;
 		vertices[36* idx+ 26]= anim_character->_z;
-		vertices[36* idx+ 27]= tex_coord.x;
-		vertices[36* idx+ 28]= tex_coord.y;
+		vertices[36* idx+ 27]= 1.0f;
+		vertices[36* idx+ 28]= 1.0f;
 		vertices[36* idx+ 29]= current_layer;
 
 		vertices[36* idx+ 30]= anim_character->_obj->_aabb->_pos.x+ anim_character->_obj->_aabb->_size.x;
 		vertices[36* idx+ 31]= anim_character->_obj->_aabb->_pos.y+ anim_character->_obj->_aabb->_size.y;
 		vertices[36* idx+ 32]= anim_character->_z;
-		vertices[36* idx+ 33]= tex_coord.x;
+		vertices[36* idx+ 33]= 1.0f;
 		vertices[36* idx+ 34]= 0.0f;
 		vertices[36* idx+ 35]= current_layer;
 	}
@@ -636,8 +625,7 @@ AnimatedCharacter2D::AnimatedCharacter2D() : Character2D() {
 AnimatedCharacter2D::AnimatedCharacter2D(Object2D * obj, Texture2D * texture, float z) :
 	Character2D(obj, texture, z), _current_anim(0), _accumulated_time(0.0f)
 {
-	AnimTexture * anim_texture= dynamic_cast<AnimTexture *>(_texture);
-	_current_action= anim_texture->_actions[0];
+	_current_action= _texture->_actions[0];
 }
 
 
@@ -659,22 +647,21 @@ void AnimatedCharacter2D::anim(float elapsed_time) {
 
 
 void AnimatedCharacter2D::set_action(unsigned int idx_action) {
-	AnimTexture * anim_texture= dynamic_cast<AnimTexture *>(_texture);
-	if (idx_action>= anim_texture->_actions.size()) {
+	if (idx_action>= _texture->_actions.size()) {
 		cout << "set_action " << idx_action << " trop grand\n";
 		return;
 	}
-	_current_action= anim_texture->_actions[idx_action];
+	_current_action= _texture->_actions[idx_action];
 	_current_anim= 0;
+	// l'objet recupere le footprint de l'action
 	_obj->set_footprint(_current_action->_footprint);
 }
 
 
 void AnimatedCharacter2D::set_action(string action_name) {
 	int idx_action_ok= -1;
-	AnimTexture * anim_texture= dynamic_cast<AnimTexture *>(_texture);
-	for (int idx_action=0; idx_action<anim_texture->_actions.size(); ++idx_action) {
-		if (anim_texture->_actions[idx_action]->_name== action_name) {
+	for (int idx_action=0; idx_action<_texture->_actions.size(); ++idx_action) {
+		if (_texture->_actions[idx_action]->_name== action_name) {
 			idx_action_ok= idx_action;
 			break;
 		}
@@ -700,7 +687,8 @@ Person2D::Person2D() : AnimatedCharacter2D() {
 
 
 Person2D::Person2D(Object2D * obj, Texture2D * texture, float z) : 
-	AnimatedCharacter2D(obj, texture, z), _left_pressed(false), _right_pressed(false), _down_pressed(false), _up_pressed(false), _lshift_pressed(false), _jump(false)
+	AnimatedCharacter2D(obj, texture, z), _left_pressed(false), _right_pressed(false), _down_pressed(false), _up_pressed(false),
+	_lshift_pressed(false), _jump(false)
 {
 	set_action("left_wait");
 }
@@ -1047,13 +1035,16 @@ SVGParser::SVGParser(string svg_path, ScreenGL * screengl) : _screengl(screengl)
 				}
 			}
 
+			// dans le calque Models on met des images qui ne feront pas parties du level, mais servent à initialiser les textures
 			if (layer_label== "Models") {
 				_models.push_back(obj);
 			}
+			// calque View contient un rectangle d'init du pt de vue au chargement du level
 			else if (layer_label== "View") {
 				_view= new AABB_2D(glm::vec2(stof(obj["x"]), stof(obj["y"])), glm::vec2(stof(obj["width"]), stof(obj["height"])));
 			}
 			else {
+				// tous les objs d'un meme calque ont le meme z
 				obj["z"]= g_node->first_attribute("z")->value();
 				_objs.push_back(obj);
 			}
@@ -1067,6 +1058,7 @@ SVGParser::~SVGParser() {
 }
 
 
+// SVG : origine = pt haut gauche ; y positif pointe vers le bas
 AABB_2D SVGParser::svg2screen(AABB_2D aabb) {
 	float x= (aabb._pos.x- (_view->_pos.x+ _view->_size.x* 0.5f))* _screengl->_gl_width / _view->_size.x;
 	float y= ((_view->_pos.y+ _view->_size.y* 0.5f)- aabb._pos.y)* _screengl->_gl_height/ _view->_size.y;
@@ -1082,12 +1074,7 @@ Level::Level() {
 }
 
 
-Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, string path, ScreenGL * screengl) :
-	_screengl(screengl), _viewpoint(glm::vec2(0.0f))
-{
-	SVGParser * svg_parser= new SVGParser(path, _screengl);
-
-	// creation textures ---------------------------------------------------
+void Level::gen_textures(GLuint prog_draw_anim, GLuint prog_draw_static, ScreenGL * screengl, SVGParser * svg_parser, bool verbose) {
 	for (auto model : svg_parser->_models) {
 		if (model["type"]!= "image") {
 			continue;
@@ -1098,16 +1085,22 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		ObjectPhysics physics= str2physics(model["physics"]);
 		CharacterType character_type= str2character_type(model["character_type"]);
 		if ((model["image_type"]== "static") && (get_texture(model["image_name"], false)== nullptr)) {
-			cout << "add static texture " << model["image_name"] << "\n";
 			_textures.push_back(new StaticTexture(prog_draw_static, model["image_path"], screengl, physics, character_type));
+			if (verbose) {
+				cout << "add static texture " << model["image_name"] << "\n";
+			}
 		}
 		else if ((model["image_type"]== "anim") && (get_texture(model["image_name"], false)== nullptr)) {
-			cout << "add anim texture " << model["image_name"] << "\n";
 			_textures.push_back(new AnimTexture(prog_draw_anim, model["image_path"], screengl, physics, character_type));
+			if (verbose) {
+				cout << "add anim texture " << model["image_name"] << "\n";
+			}
 		}
 	}
+}
 
-	// static footprint --------------------------------------------------
+
+void Level::update_static_textures(SVGParser * svg_parser) {
 	for (auto static_texture : _textures) {
 		if (!dynamic_cast<StaticTexture *>(static_texture)) {
 			continue;
@@ -1123,8 +1116,11 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			if (model["image_name"]!= static_texture->_name) {
 				continue;
 			}
+			
 			AABB_2D aabb_svg(glm::vec2(stof(model["x"]), stof(model["y"])), glm::vec2(stof(model["width"]), stof(model["height"])));
 			AABB_2D aabb_gl= svg_parser->svg2screen(aabb_svg);
+
+			// si un rect correspond au model on modifie le footprint de l'unique action de la texture statique
 			for (auto rect : svg_parser->_models) {
 				if (rect["type"]!= "rect") {
 					continue;
@@ -1132,8 +1128,10 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 				if (rect["image_name"]!= static_texture->_name) {
 					continue;
 				}
+				
 				AABB_2D footprint_svg(glm::vec2(stof(rect["x"]), stof(rect["y"])), glm::vec2(stof(rect["width"]), stof(rect["height"])));
 				AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
+				// Action._footprint entre 0 et 1 pour pos et size
 				static_texture->_actions[0]->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
 				static_texture->_actions[0]->_footprint->_size= footprint_gl._size/ aabb_gl._size;
 				break;
@@ -1141,13 +1139,17 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			break;
 		}
 	}
+}
 
-	// anim footprint + anim_time + velocities ----------------------------------------
+
+void Level::update_anim_textures(SVGParser * svg_parser) {
 	for (auto anim_texture : _textures) {
 		if (!dynamic_cast<AnimTexture *>(anim_texture)) {
 			continue;
 		}
 
+		// 1ere étape : on init toutes les actions avec la version du modele qui a physics en paramètre
+		// et avec pour footprint l'emprise du rect dont action_name == default
 		for (auto model : svg_parser->_models) {
 			if (model["type"]!= "image") {
 				continue;
@@ -1161,6 +1163,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			if (model["image_name"]!= anim_texture->_name) {
 				continue;
 			}
+
+			// récup d'éventuelles vitesses
 			vector<string> velocity_tags= {"velocity_walk", "velocity_run", "velocity_roll", "velocity_jump_walk", "velocity_jump_run"};
 			for (auto tag : velocity_tags) {
 				if (model.count(tag)) {
@@ -1172,6 +1176,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			AABB_2D aabb_gl= svg_parser->svg2screen(aabb_svg);
 
 			for (auto action : anim_texture->_actions) {
+				// récup éventuelle d'un temps d'anim
 				if (model.count("anim_time")) {
 					action->_anim_time= stof(model["anim_time"]);
 				}
@@ -1183,15 +1188,23 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 					if (rect["image_name"]!= anim_texture->_name) {
 						continue;
 					}
+					if (rect["action_name"]!= "default") {
+						continue;
+					}
+					
+					// footprint du rect action_name == default
 					AABB_2D footprint_svg(glm::vec2(stof(rect["x"]), stof(rect["y"])), glm::vec2(stof(rect["width"]), stof(rect["height"])));
 					AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
 					action->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
 					action->_footprint->_size= footprint_gl._size/ aabb_gl._size;
+					// faut-il forcer cela ?
+					//action->_footprint->_pos.y= 0.0;
 					break;
 				}
 			}
 		}
 
+		// 2e étape : spécifications potentielles des params ou footprint d'autres versions du modele
 		for (auto model : svg_parser->_models) {
 			if (model["type"]!= "image") {
 				continue;
@@ -1202,6 +1215,8 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			if (model["image_name"]!= anim_texture->_name) {
 				continue;
 			}
+			
+			// action spécifique
 			Action * action= anim_texture->get_action(model["action_name"]);
 
 			AABB_2D aabb_svg(glm::vec2(stof(model["x"]), stof(model["y"])), glm::vec2(stof(model["width"]), stof(model["height"])));
@@ -1218,19 +1233,25 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 				if (rect["image_name"]!= anim_texture->_name) {
 					continue;
 				}
+				// rect lié à l'action considérée
 				if (rect["action_name"]!= action->_name) {
 					continue;
 				}
+				
 				AABB_2D footprint_svg(glm::vec2(stof(rect["x"]), stof(rect["y"])), glm::vec2(stof(rect["width"]), stof(rect["height"])));
 				AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
 				action->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
 				action->_footprint->_size= footprint_gl._size/ aabb_gl._size;
+				// faut-il forcer cela ?
+				//action->_footprint->_pos.y= 0.0;
 				break;
 			}
 		}
 	}
+}
 
-	// checkpoints et ajout character -----------------------------------------------------
+
+void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 	for (auto obj : svg_parser->_objs) {
 		if (obj["type"]!= "image") {
 			continue;
@@ -1250,11 +1271,13 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 				istringstream iss(path["d"]);
 				string token;
 				string instruction= "";
+				// dans les preferences de inkscape aller à Entrée/Sortie / Sortie SVG / Format de la chaine du chemin
+				// et mettre Absolu
 				while (getline(iss, token, ' ')) {
-					if (token== "M") {
+					if (token== "M") { // M = move en absolu
 						instruction= "M";
 					}
-					else if (token== "H") {
+					else if (token== "H") { // H = deplacement horizontal en absolu
 						instruction= "H";
 					}
 					else {
@@ -1262,6 +1285,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 							float x= stof(token.substr(0, token.find(",")));
 							float y= stof(token.substr(token.find(",")+ 1));
 							glm::vec2 pt= glm::vec2(x, y);
+							// on cherche le path dont le 1er point est contenu dans l'emprise de l'objet
 							if (!point_in_aabb(pt, &aabb_svg)) {
 								break;
 							}
@@ -1279,6 +1303,7 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 		}
 
 		if (checkpoints.size()) {
+			// conversion dans l'espace GL
 			for (unsigned int i=0; i<checkpoints.size(); ++i) {
 				// aabb reduite a un pt -> size == 0
 				AABB_2D pt_gl= svg_parser->svg2screen(AABB_2D(checkpoints[i]._pos, glm::vec2(0.0f)));
@@ -1290,17 +1315,35 @@ Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aa
 			}
 		}
 
-		cout << "add character " << obj["image_name"] << " ; " << obj["id"] << "\n";
-		add_character(obj["image_name"], &aabb_gl, stof(obj["z"]), checkpoints);
+		// on ne fait de texture->update() a chaque fois, mais une fois que tout est chargé
+		add_character(obj["image_name"], &aabb_gl, stof(obj["z"]), checkpoints, false);
+		if (verbose) {
+			cout << "add character " << obj["image_name"] << " ; " << obj["id"] << "\n";
+		}
 
+		// si le tag hero est présent (quelque soit sa valeur)
 		if (obj.count("hero")) {
 			_hero= dynamic_cast<Person2D *>(_characters[_characters.size()- 1]);
 		}
 	}
+}
 
+
+Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, string path, ScreenGL * screengl, bool verbose) :
+	_screengl(screengl), _viewpoint(glm::vec2(0.0f))
+{
+	SVGParser * svg_parser= new SVGParser(path, _screengl);
+	gen_textures(prog_draw_anim, prog_draw_static, screengl, svg_parser, verbose);
+	update_static_textures(svg_parser);
+	update_anim_textures(svg_parser);
+	add_characters(svg_parser, verbose);
 	delete svg_parser;
 
-	cout << "fin chargement level\n";
+	update_textures();
+
+	if (verbose) {
+		cout << "fin chargement level\n";
+	}
 }
 
 
@@ -1330,7 +1373,7 @@ Texture2D * Level::get_texture(string texture_name, bool verbose) {
 }
 
 
-void Level::add_character(string texture_name, AABB_2D * aabb, float z, vector<CheckPoint> checkpoints) {
+void Level::add_character(string texture_name, AABB_2D * aabb, float z, vector<CheckPoint> checkpoints, bool update_texture) {
 	Texture2D * texture= get_texture(texture_name);
 	Object2D * obj= new Object2D(aabb, texture->_actions[0]->_footprint, texture->_physics, checkpoints);
 	Character2D * character;
@@ -1345,38 +1388,24 @@ void Level::add_character(string texture_name, AABB_2D * aabb, float z, vector<C
 	}
 	_characters.push_back(character);
 	texture->_characters.push_back(character);
-	texture->update();
+
+	if (update_texture) {
+		texture->update();
+	}
 }
 
 
 void Level::delete_character(Character2D * character) {
 	Texture2D * texture= character->_texture;
+	// https://en.wikipedia.org/wiki/Erase-remove_idiom
 	texture->_characters.erase(remove(texture->_characters.begin(), texture->_characters.end(), character), texture->_characters.end());
 	delete character;
 	_characters.erase(remove(_characters.begin(), _characters.end(), character), _characters.end());
 }
 
 
-void Level::update_model2worlds() {
-	for (auto texture: _textures) {
-		// pourquoi des - ici ?
-		texture->set_model2world(glm::translate(glm::mat4(1.0f), glm::vec3(-_viewpoint.x, -_viewpoint.y, 0.0f)));
-	}
-}
-
-
-void Level::draw() {
-	for (auto texture : _textures) {
-		texture->draw();
-	}
-}
-
-
-void Level::anim(float elapsed_time) {
-	glm::vec2 contact_pt(0.0f);
-	glm::vec2 contact_normal(0.0f);
-	float contact_time= 0.0f;
-
+void Level::update_velocities() {
+	// si referential, vx = ref.vx
 	for (auto character : _characters) {
 		Object2D * obj= character->_obj;
 		if (obj->_physics!= FALLING) {
@@ -1388,11 +1417,13 @@ void Level::anim(float elapsed_time) {
 		}
 	}
 
+	// gravité + checkpoints
 	for (auto character : _characters) {
 		Object2D * obj= character->_obj;
 		obj->update_velocity();
 	}
 
+	// init velocity en fonction de l'action courante
 	for (auto character : _characters) {
 		Person2D * person= dynamic_cast<Person2D *>(character);
 		if (person) {
@@ -1402,19 +1433,13 @@ void Level::anim(float elapsed_time) {
 			person->update_velocity();
 		}
 	}
+}
 
-	/*for (auto character : _characters) {
-		Object2D * obj= character->_obj;
-		Person2D * person= dynamic_cast<Person2D *>(character);
-		if (person== _hero) {
-			//cout << glm::to_string(obj->_velocity) << "\n";
-			if (obj->_referential!= nullptr) {
-				cout << glm::to_string(obj->_velocity) << " ; " << glm::to_string(obj->_referential->_velocity) << "\n";
-				cout << glm::to_string(obj->_velocity- obj->_referential->_velocity) << "\n";
-				cout << person->_left_pressed << " ; " << person->_right_pressed << "\n";
-			}
-		}
-	}*/
+
+void Level::intersections(float elapsed_time) {
+	glm::vec2 contact_pt(0.0f);
+	glm::vec2 contact_normal(0.0f);
+	float contact_time= 0.0f;
 
 	for (auto character : _characters) {
 		Object2D * obj= character->_obj;
@@ -1427,6 +1452,8 @@ void Level::anim(float elapsed_time) {
 		obj->_referential= nullptr;
 	}
 
+	// pour chaque objet FALLING (perso par ex), si intersecte la prochaine fois un objet solide, correction
+	// + renseignement _bottom, _top, _referential
 	for (auto character1 : _characters) {
 		Object2D * obj1= character1->_obj;
 		if (obj1->_physics!= FALLING) {
@@ -1445,14 +1472,18 @@ void Level::anim(float elapsed_time) {
 			}
 
 			if (anim_intersect_static(obj1, obj2, elapsed_time, contact_pt, contact_normal, contact_time)) {
+				// les CHECKPOINT_SOLID_TOP ne font du contact que lorsqu'on les approche par dessus
 				if ((obj2->_physics!= CHECKPOINT_SOLID_TOP) || (contact_normal.y> 0.0f)) {
+					// cf refs dans bbox_2d.h
 					glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
-					obj1->_velocity+= correction* 1.1f;
+					// malheureusement ca ne marche pas nickel, il faut * par 1.xxx a cause de l'approx float, et encore ca foire parfois. Que faire ?
+					obj1->_velocity+= correction* CORRECT_FACTOR;
 				}
 
 				if (contact_normal.y> 0.0f) {
 					obj1->_bottom.push_back(obj2);
 					if ((obj2->_physics== CHECKPOINT_SOLID) || (obj2->_physics== CHECKPOINT_SOLID_TOP)) {
+						// on est sur une plateforme
 						obj1->_referential= obj2;
 					}
 				}
@@ -1463,6 +1494,8 @@ void Level::anim(float elapsed_time) {
 		}
 	}
 
+	// pour chaque objet CHECKPOINT_SOLID, si intersecte un FALLING, on corrige la vélocité du FALLING
+	// ex d'une plateforme qui rentre dans un perso
 	for (auto character1 : _characters) {
 		Object2D * obj1= character1->_obj;
 		if ((obj1->_physics!= CHECKPOINT_SOLID) || (obj1->_physics!= CHECKPOINT_SOLID_TOP)) {
@@ -1480,15 +1513,17 @@ void Level::anim(float elapsed_time) {
 				continue;
 			}
 
+			// on considère le FALLING après update position
 			Object2D * obj_tmp= new Object2D(*obj2);
 			obj_tmp->update_pos(elapsed_time);
 			if (anim_intersect_static(obj1, obj_tmp, elapsed_time, contact_pt, contact_normal, contact_time)) {
 				if ((obj1->_physics!= CHECKPOINT_SOLID_TOP) || (contact_normal.y> 0.0f)) {
 					glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
-					obj2->_velocity-= correction* 1.1f;
+					obj2->_velocity-= correction* CORRECT_FACTOR;
 				}
 
 				if (contact_normal.y< 0.0f) {
+					// obj2 sur platform obj1
 					obj2->_bottom.push_back(obj1);
 					obj2->_referential= obj1;
 				}
@@ -1499,8 +1534,13 @@ void Level::anim(float elapsed_time) {
 			delete obj_tmp;
 		}
 	}
+}
 
+
+void Level::deletes() {
+	// suppression des characters destructibles touchés par en dessous
 	vector<Object2D *> objects2delete;
+	
 	for (auto character : _characters) {
 		Object2D * obj= character->_obj;
 		for (auto object_top : obj->_top) {
@@ -1509,6 +1549,7 @@ void Level::anim(float elapsed_time) {
 			}
 		}
 	}
+	
 	for (auto obj : objects2delete) {
 		for (auto character : _characters) {
 			if (character->_obj== obj) {
@@ -1518,11 +1559,7 @@ void Level::anim(float elapsed_time) {
 		}
 	}
 
-	for (auto character : _characters) {
-		Object2D * obj= character->_obj;
-		obj->update_pos(elapsed_time);
-	}
-
+	// si coincé entre 2 objets, mort
 	for (auto character : _characters) {
 		Object2D * obj= character->_obj;
 		if (obj->_physics!= FALLING) {
@@ -1532,25 +1569,49 @@ void Level::anim(float elapsed_time) {
 			cout << "death\n";
 		}
 	}
+}
 
+
+void Level::update_positions(float elapsed_time) {
+	// pos = pos + k * velocity
+	for (auto character : _characters) {
+		Object2D * obj= character->_obj;
+		obj->update_pos(elapsed_time);
+	}
+}
+
+
+void Level::update_actions() {
+	// passage d'une action à une autre en fonction de la vitesse
 	for (auto character : _characters) {
 		Person2D * person= dynamic_cast<Person2D *>(character);
 		if (person) {
 			person->update_action();
 		}
 	}
+}
 
+
+void Level::anim_characters(float elapsed_time) {
+	// animation chars animables
 	for (auto character : _characters) {
 		AnimatedCharacter2D * anim_character= dynamic_cast<AnimatedCharacter2D *>(character);
 		if (anim_character) {
 			anim_character->anim(elapsed_time);
 		}
 	}
+}
 
+
+void Level::update_textures() {
 	for (auto texture : _textures) {
 		texture->update();
 	}
+}
 
+
+void Level::follow_hero() {
+	// la caméra suit le héros
 	glm::vec2 hero= _hero->_obj->_aabb->center();
 	//_viewpoint= hero;
 	if (hero.x< _viewpoint.x- MOVE_VIEWPOINT.x) {
@@ -1566,7 +1627,28 @@ void Level::anim(float elapsed_time) {
 		_viewpoint.y= hero.y- MOVE_VIEWPOINT.y;
 	}
 
-	update_model2worlds();
+	for (auto texture: _textures) {
+		texture->set_model2world(glm::translate(glm::mat4(1.0f), glm::vec3(-_viewpoint.x, -_viewpoint.y, 0.0f)));
+	}
+}
+
+
+void Level::anim(float elapsed_time) {
+	update_velocities();
+	intersections(elapsed_time);
+	deletes();
+	update_positions(elapsed_time);
+	update_actions();
+	anim_characters(elapsed_time);
+	update_textures();
+	follow_hero();
+}
+
+
+void Level::draw() {
+	for (auto texture : _textures) {
+		texture->draw();
+	}
 }
 
 
