@@ -29,3 +29,7 @@ git pull
 // reinit le local pour ignorer les modifs en local en pouvoir faire un git pull
 git reset --hard
 
+
+
+UPDATE : PM Token
+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
