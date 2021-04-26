@@ -1657,6 +1657,10 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 		_hero->key_down(key);
 		return true;
 	}
+	else if (key== SDLK_SPACE) {
+		cout << _hero->current_action() << "\n" << *(_hero->_obj) << "\n";
+		return true;
+	}
 
 	return false;
 }
