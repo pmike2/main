@@ -220,31 +220,58 @@ struct Level {
 
 
 	Level() {
-		_grid= new Grid(10, 8);
-		for (unsigned int i=0; i<4; ++i) {
+
+	}
+
+
+	Level(unsigned int width, unsigned int height) {
+		_grid= new Grid(width, height);
+		for (unsigned int i=0; i<20; ++i) {
 			Polygon2D * poly= new Polygon2D();
 			float x= rand_float(-5.0f, 5.0f);
 			float y= rand_float(-5.0f, 5.0f);
-			cout << x << " ; " << y << "\n";
 			poly->randomize(10, 1.0f, glm::vec2(x, y));
 			_polygons.push_back(poly);
 		}
 
+		vector<unsigned int> vertices_to_erase;
 		_grid->_it_v= _grid->_vertices.begin();
 		while (_grid->_it_v!= _grid->_vertices.end()) {
-			bool erased= false;
 			for (auto poly : _polygons) {
 				if (is_pt_inside_poly(_grid->_it_v->second._pos, poly)) {
-					_grid->remove_vertex(_grid->_it_v->first);
-					erased= true;
-					cout << "erased\n";
+					vertices_to_erase.push_back(_grid->_it_v->first);
 					break;
 				}
 			}
-			if (!erased) {
-				_grid->_it_v++;
-			}
+			_grid->_it_v++;
 		}
+		for (auto it_erase : vertices_to_erase) {
+			_grid->remove_vertex(it_erase);
+		}
+
+		vector<pair<unsigned int, unsigned int> > edges_to_erase;
+		_grid->_it_v= _grid->_vertices.begin();
+		while (_grid->_it_v!= _grid->_vertices.end()) {
+			_grid->_it_e= _grid->_it_v->second._edges.begin();
+			while (_grid->_it_e!= _grid->_it_v->second._edges.end()) {
+				glm::vec2 pt_begin= _grid->_it_v->second._pos;
+				glm::vec2 pt_end= _grid->_vertices[_grid->_it_e->first]._pos;
+				glm::vec2 * result= new glm::vec2(0.0f);
+				for (auto poly : _polygons) {
+					if (segment_intersects_poly(pt_begin, pt_end, poly, result)) {
+						edges_to_erase.push_back(make_pair(_grid->_it_v->first, _grid->_it_e->first));
+						break;
+					}
+				}
+				delete result;
+				_grid->_it_e++;
+			}
+			_grid->_it_v++;
+		}
+		for (auto it_erase : edges_to_erase) {
+			_grid->remove_edge(it_erase.first, it_erase.second);
+		}
+
 	}
 
 
@@ -339,7 +366,7 @@ void draw_svg(Level * l, vector<unsigned int> path) {
 			float y1= g->_vertices[path[i]]._pos.y;
 			float x2= g->_vertices[path[i+ 1]]._pos.x;
 			float y2= g->_vertices[path[i+ 1]]._pos.y;
-			f << "<line x1=\"" << x1 << "\" y1=\"" << y1 << "\" x2=\"" << x2 << "\" y2=\"" << y2 << "\" stroke=\"red\" stroke-width=\"0.02\" />\n";
+			f << "<line x1=\"" << x1 << "\" y1=\"" << y1 << "\" x2=\"" << x2 << "\" y2=\"" << y2 << "\" stroke=\"red\" stroke-width=\"0.04\" />\n";
 		}
 	}
 
@@ -434,8 +461,10 @@ void test5() {
 
 
 void test6() {
-	Level * l= new Level();
-	vector<unsigned int> path= search(l->_grid, 0, 30);
+	unsigned int width= 50;
+	unsigned int height= 40;
+	Level * l= new Level(width, height);
+	vector<unsigned int> path= search(l->_grid, 0, width* height- 1);
 	draw_svg(l, path);
 	delete l;
 }

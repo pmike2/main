@@ -1,6 +1,8 @@
 #include <iostream>
+#include <cfloat> // FLT_MAX
 
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/norm.hpp>
 
 #include "geom_2d.h"
 #include "utile.h"
@@ -39,6 +41,53 @@ bool is_pt_inside_poly(glm::vec2 pt, Polygon2D * poly) {
         }
     }
     return true;
+}
+
+
+// cf https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
+bool segment_intersects_segment(glm::vec2 pt1_begin, glm::vec2 pt1_end, glm::vec2 pt2_begin, glm::vec2 pt2_end, glm::vec2 * result) {
+    glm::vec2 dir1= pt1_end- pt1_begin;
+    glm::vec2 dir2= pt2_end- pt2_begin;
+    
+    // parallèles
+    float a= cross2d(dir1, dir2);
+    if (abs(a)< EPSILON) {
+        return false;
+    }
+    float t1= cross2d(pt2_begin- pt1_begin, dir2)/ a;
+    if ((t1< 0.0f) || (t1> 1.0f)) {
+        return false;
+    }
+    float t2= cross2d(pt2_begin- pt1_begin, dir1)/ a;
+    if ((t2< 0.0f) || (t2> 1.0f)) {
+        return false;
+    }
+    result->x= pt1_begin.x+ t1* dir1.x;
+    result->y= pt1_begin.y+ t1* dir1.y;
+    return true;
+}
+
+
+// si existe intersection la + proche du pt de départ du segment avec le poly
+bool segment_intersects_poly(glm::vec2 pt_begin, glm::vec2 pt_end, Polygon2D * poly, glm::vec2 * result) {
+    float min_dist= FLT_MAX;
+    bool is_inter= false;
+    glm::vec2 inter(0.0f);
+    for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+        glm::vec2 pt1= poly->_pts[i];
+        glm::vec2 pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
+        
+        if (segment_intersects_segment(pt1, pt2, pt_begin, pt_end, &inter)) {
+            float dist2= glm::distance2(pt_begin, inter);
+            if (dist2< min_dist) {
+                is_inter= true;
+                min_dist= dist2;
+                result->x= inter.x;
+                result->y= inter.y;
+            }
+        }
+    }
+    return is_inter;
 }
 
 
