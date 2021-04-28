@@ -29,6 +29,7 @@ struct Edge {
 struct Vertex {
 	float _weight;
 	glm::vec2 _pos;
+	bool _visited;
 	unordered_map<unsigned int, Edge> _edges;
 };
 
@@ -55,6 +56,7 @@ struct Graph {
 			v._weight= weight;
 			v._pos.x= x;
 			v._pos.y= y;
+			v._visited= false;
 			_vertices[i]= v;
 		}
 	}
@@ -115,7 +117,16 @@ struct Graph {
 
 
 	float cost(unsigned int i, unsigned int j) {
-		return _vertices[i]._edges[j]._weight;
+		//return _vertices[i]._edges[j]._weight;
+		// theta * empeche d'utiliser edge._weight car i et j ne sont pas forcement voisins
+		//return glm::distance(_vertices[i]._pos, _vertices[j]._pos)+ _vertices[j]._weight;
+		return _vertices[j]._weight;
+	}
+
+
+	float heuristic(unsigned int i, unsigned int j) {
+		//return abs(_vertices[i]._pos.x- _vertices[j]._pos.x)+ abs(_vertices[i]._pos.y- _vertices[j]._pos.y);
+		return glm::distance(_vertices[i]._pos, _vertices[j]._pos);
 	}
 
 
@@ -181,9 +192,14 @@ struct Grid : public Graph {
 		for (unsigned int i=0; i<_width; ++i) {
 			for (unsigned int j=0; j<_height; ++j) {
 				unsigned int id= i+ _width* j;
+				//float weight= rand_float(1.0f, 10.0f);
+				float weight= 1.0f;
+				if (rand_bool()) {
+					weight= 10.0f;
+				}
 				float x= -5.0f+ ((float)(i)/ (float)(_width))* 10.0f;
 				float y= -5.0f+ ((float)(j)/ (float)(_height))* 10.0f;
-				add_vertex(id, 0.0f, x, y);
+				add_vertex(id, weight, x, y);
 			}
 		}
 		
@@ -192,16 +208,16 @@ struct Grid : public Graph {
 			unsigned int i= _it_v->first% _width;
 			unsigned int j= _it_v->first/ _width;
 			if (i> 0) {
-				add_edge(_it_v->first, _it_v->first- 1, 0.0f, true);
+				add_edge(_it_v->first, _it_v->first- 1, 1.0f, false);
 			}
 			if (i< _width- 1) {
-				add_edge(_it_v->first, _it_v->first+ 1, 0.0f, true);
+				add_edge(_it_v->first, _it_v->first+ 1, 1.0f, false);
 			}
 			if (j> 0) {
-				add_edge(_it_v->first, _it_v->first- _width, 0.0f, true);
+				add_edge(_it_v->first, _it_v->first- _width, 1.0f, false);
 			}
 			if (j< _height- 1) {
-				add_edge(_it_v->first, _it_v->first+ _width, 0.0f, true);
+				add_edge(_it_v->first, _it_v->first+ _width, 1.0f, false);
 			}
 			_it_v++;
 		}
@@ -210,6 +226,12 @@ struct Grid : public Graph {
 
 	~Grid() {
 
+	}
+
+
+	friend ostream & operator << (ostream & os, Grid & g) {
+		os << static_cast<Graph &>(g);
+		return os;
 	}
 };
 
@@ -226,19 +248,31 @@ struct Level {
 
 	Level(unsigned int width, unsigned int height) {
 		_grid= new Grid(width, height);
-		for (unsigned int i=0; i<20; ++i) {
+		
+		/*
+		for (unsigned int i=0; i<10; ++i) {
 			Polygon2D * poly= new Polygon2D();
 			float x= rand_float(-5.0f, 5.0f);
 			float y= rand_float(-5.0f, 5.0f);
 			poly->randomize(10, 1.0f, glm::vec2(x, y));
 			_polygons.push_back(poly);
 		}
+		*/
+
+		/*
+		Polygon2D * poly= new Polygon2D();
+		unsigned int n_pts= 3;
+		float pts[]= {-4.0f, -4.0f, -2.0f, -4.0f, -3.0f, 7.0f};
+		poly->set_points(pts, n_pts);
+		_polygons.push_back(poly);
+		*/
 
 		vector<unsigned int> vertices_to_erase;
 		_grid->_it_v= _grid->_vertices.begin();
 		while (_grid->_it_v!= _grid->_vertices.end()) {
 			for (auto poly : _polygons) {
-				if (is_pt_inside_poly(_grid->_it_v->second._pos, poly)) {
+				//if (is_pt_inside_poly(_grid->_it_v->second._pos, poly)) {
+				if (distance_poly_pt(poly, _grid->_it_v->second._pos, NULL)< 0.1f) {
 					vertices_to_erase.push_back(_grid->_it_v->first);
 					break;
 				}
@@ -256,14 +290,12 @@ struct Level {
 			while (_grid->_it_e!= _grid->_it_v->second._edges.end()) {
 				glm::vec2 pt_begin= _grid->_it_v->second._pos;
 				glm::vec2 pt_end= _grid->_vertices[_grid->_it_e->first]._pos;
-				glm::vec2 * result= new glm::vec2(0.0f);
 				for (auto poly : _polygons) {
-					if (segment_intersects_poly(pt_begin, pt_end, poly, result)) {
+					if (segment_intersects_poly(pt_begin, pt_end, poly, NULL)) {
 						edges_to_erase.push_back(make_pair(_grid->_it_v->first, _grid->_it_e->first));
 						break;
 					}
 				}
-				delete result;
 				_grid->_it_e++;
 			}
 			_grid->_it_v++;
@@ -278,6 +310,19 @@ struct Level {
 	~Level() {
 		delete _grid;
 	}
+
+
+	bool line_of_sight(unsigned int i, unsigned int j) {
+		glm::vec2 pt_begin= _grid->_vertices[i]._pos;
+		glm::vec2 pt_end= _grid->_vertices[j]._pos;
+		for (auto poly : _polygons) {
+			//if (segment_intersects_poly(pt_begin, pt_end, poly, NULL)) {
+			if (distance_poly_segment(poly, pt_begin, pt_end, NULL)< 0.1f) {
+				return false;
+			}
+		}
+		return true;
+	}
 };
 
 
@@ -287,10 +332,12 @@ bool frontier_cmp(pair<unsigned int, float> x, pair<unsigned int, float> y) {
 }
 
 
-vector<unsigned int> search(Graph * g, unsigned int start, unsigned int goal) {
+vector<unsigned int> search(Level * l, unsigned int start, unsigned int goal) {
 	priority_queue< pair<unsigned int, float>, vector<pair<unsigned int, float> >, decltype(&frontier_cmp) > frontier(frontier_cmp);
 	unordered_map<unsigned int, unsigned int> came_from;
 	unordered_map<unsigned int, float> cost_so_far;
+
+	Graph * g= l->_grid;
 
 	frontier.emplace(start, 0.0f);
 	came_from[start]= start;
@@ -299,6 +346,7 @@ vector<unsigned int> search(Graph * g, unsigned int start, unsigned int goal) {
 	while (!frontier.empty()) {
 		unsigned int current= frontier.top().first;
 		frontier.pop();
+		g->_vertices[current]._visited= true;
 
 		if (current== goal) {
 			break;
@@ -306,11 +354,18 @@ vector<unsigned int> search(Graph * g, unsigned int start, unsigned int goal) {
 
 		vector<unsigned int> nexts= g->neighbors(current);
 		for (auto next : nexts) {
-			float new_cost= cost_so_far[current]+ g->cost(current, next);
+			unsigned int theta= current;
+			if (l->line_of_sight(came_from[current], next)) {
+				//theta= came_from[current];
+			}
+			float new_cost= cost_so_far[theta]+ g->cost(theta, next);
 			if ((!cost_so_far.count(next)) || (new_cost< cost_so_far[next])) {
 				cost_so_far[next]= new_cost;
-				came_from[next]= current;
-				frontier.emplace(next, new_cost);
+				came_from[next]= theta;
+				float priority= new_cost; // dijkstra
+				//float priority= g->heuristic(next, goal); // greedy best first search
+				//float priority= new_cost+ g->heuristic(next, goal); // A *
+				frontier.emplace(next, priority);
 			}
 		}
 	}
@@ -342,11 +397,34 @@ void draw_svg(Level * l, vector<unsigned int> path) {
 
 	Grid * g= l->_grid;
 
+	if (path.size()) {
+		for (unsigned int i=0; i<path.size()- 1; ++i) {
+			float x1= g->_vertices[path[i]]._pos.x;
+			float y1= g->_vertices[path[i]]._pos.y;
+			float x2= g->_vertices[path[i+ 1]]._pos.x;
+			float y2= g->_vertices[path[i+ 1]]._pos.y;
+			f << "<line x1=\"" << x1 << "\" y1=\"" << y1 << "\" x2=\"" << x2 << "\" y2=\"" << y2 << "\" stroke=\"red\" stroke-width=\"0.06\" />\n";
+		}
+	}
+
+	for (auto poly : l->_polygons) {
+		f << "<polygon points=\"";
+		for (auto pt : poly->_pts) {
+			f << pt.x << "," << pt.y << " ";
+		}
+		f << "\" fill=\"none\" stroke=\"purple\" stroke-width=\"0.02\" />\n";
+	}
+
 	g->_it_v= g->_vertices.begin();
 	while (g->_it_v!= g->_vertices.end()) {
 		float x1= g->_it_v->second._pos.x;
 		float y1= g->_it_v->second._pos.y;
-		f << "<circle cx=\"" << x1 << "\" cy=\"" << y1 << "\" r=\"0.02\" fill=\"black\" />\n";
+		string color= "black";
+		if (g->_it_v->second._visited) {
+			color= "cyan";
+		}
+		float radius= 0.01* g->_it_v->second._weight;
+		f << "<circle cx=\"" << x1 << "\" cy=\"" << y1 << "\" r=\"" << radius << "\" fill=\"" << color << "\" />\n";
 		//f << "<text x=\"" << x1+ 0.15f << "\" y=\"" << y1- 0.15f << "\" fill=\"black\" font-size=\"0.2px\">" << to_string(g->_it_v->first) << "</text>\n";
 
 		g->_it_e= g->_it_v->second._edges.begin();
@@ -360,24 +438,6 @@ void draw_svg(Level * l, vector<unsigned int> path) {
 		g->_it_v++;
 	}
 	
-	if (path.size()) {
-		for (unsigned int i=0; i<path.size()- 1; ++i) {
-			float x1= g->_vertices[path[i]]._pos.x;
-			float y1= g->_vertices[path[i]]._pos.y;
-			float x2= g->_vertices[path[i+ 1]]._pos.x;
-			float y2= g->_vertices[path[i+ 1]]._pos.y;
-			f << "<line x1=\"" << x1 << "\" y1=\"" << y1 << "\" x2=\"" << x2 << "\" y2=\"" << y2 << "\" stroke=\"red\" stroke-width=\"0.04\" />\n";
-		}
-	}
-
-	for (auto poly : l->_polygons) {
-		f << "<polygon points=\"";
-		for (auto pt : poly->_pts) {
-			f << pt.x << "," << pt.y << " ";
-		}
-		f << "\" fill=\"none\" stroke=\"purple\" stroke-width=\"0.05\" />\n";
-	}
-
 	f << "</svg>\n</body>\n</html>\n";
 	f.close();
 }
@@ -434,11 +494,11 @@ void test3() {
 	g->add_edge(1, 3, 1.0f);
 	g->add_edge(2, 3, 1.0f);
 	
-	vector<unsigned int> path= search(g, 0, 3);
+	/*vector<unsigned int> path= search(g, 0, 3);
 	for (auto it : path) {
 		cout << it << " ; ";
 	}
-	cout << "\n";
+	cout << "\n";*/
 	//draw_svg(g, path);
 }
 
@@ -446,7 +506,7 @@ void test3() {
 void test4() {
 	Graph * g= new Graph();
 	g->rand_1();
-	vector<unsigned int> path= search(g, 0, 1);
+	//vector<unsigned int> path= search(g, 0, 1);
 	//draw_svg(g, path);
 	delete g;
 }
@@ -454,7 +514,7 @@ void test4() {
 
 void test5() {
 	Grid * g= new Grid(30, 40);
-	vector<unsigned int> path= search(g, 0, 1000);
+	//vector<unsigned int> path= search(g, 0, 1000);
 	//draw_svg(g, path);
 	delete g;
 }
@@ -462,10 +522,14 @@ void test5() {
 
 void test6() {
 	unsigned int width= 50;
-	unsigned int height= 40;
+	unsigned int height= 50;
 	Level * l= new Level(width, height);
-	vector<unsigned int> path= search(l->_grid, 0, width* height- 1);
+	//cout << *l->_grid << "\n";
+	cout << "searching\n";
+	vector<unsigned int> path= search(l, 0, 1021);
+	cout << "drawing\n";
 	draw_svg(l, path);
+	//cout << *l->_grid << "\n";
 	delete l;
 }
 

@@ -22,6 +22,9 @@ bool is_left(glm::vec2 pt_ref, glm::vec2 dir_ref, glm::vec2 pt_test);
 bool is_pt_inside_poly(glm::vec2 pt, Polygon2D * poly);
 bool segment_intersects_segment(glm::vec2 pt1_begin, glm::vec2 pt1_end, glm::vec2 pt2_begin, glm::vec2 pt2_end, glm::vec2 * result);
 bool segment_intersects_poly(glm::vec2 pt_begin, glm::vec2 pt_end, Polygon2D * poly, glm::vec2 * result);
+bool distance_segment_pt(glm::vec2 seg1, glm::vec2 seg2, glm::vec2 pt, float * dist, glm::vec2 * proj);
+float distance_poly_pt(Polygon2D * poly, glm::vec2 pt, glm::vec2 * proj);
+float distance_poly_segment(Polygon2D * poly, glm::vec2 seg1, glm::vec2 seg2, glm::vec2 * proj);
 void convex_hull_2d(std::vector<glm::vec2> & pts);
 
 

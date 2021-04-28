@@ -82,12 +82,122 @@ bool segment_intersects_poly(glm::vec2 pt_begin, glm::vec2 pt_end, Polygon2D * p
             if (dist2< min_dist) {
                 is_inter= true;
                 min_dist= dist2;
-                result->x= inter.x;
-                result->y= inter.y;
+                if (result!= NULL) {
+                    result->x= inter.x;
+                    result->y= inter.y;
+                }
             }
         }
     }
     return is_inter;
+}
+
+
+// d(pt, [seg1, seg2])
+bool distance_segment_pt(glm::vec2 seg1, glm::vec2 seg2, glm::vec2 pt, float * dist, glm::vec2 * proj) {
+    float seg_norm2= glm::distance2(seg1, seg2);
+    bool proj_in_segment= true;
+    
+    if (seg_norm2< EPSILON) {
+        return glm::distance(seg1, pt);
+    }
+    
+    float t= glm::dot(pt- seg1, seg2- seg1)/ seg_norm2;
+    if ((t< 0.0f) || (t> 1.0f)) {
+        t= max(0.0f, min(1.0f, t));
+        proj_in_segment= false;
+    }
+    
+    proj->x= seg1.x+ t* (seg2.x- seg1.x);
+    proj->y= seg1.y+ t* (seg2.y- seg1.y);
+    *dist= glm::distance(pt, *proj);
+    return proj_in_segment;
+}
+
+
+float distance_poly_pt(Polygon2D * poly, glm::vec2 pt, glm::vec2 * proj) {
+    float dist_min= FLT_MAX;
+    float dist;
+    glm::vec2 proj2;
+
+    if (is_pt_inside_poly(pt, poly)) {
+        if (proj!= NULL) {
+            proj->x= pt.x;
+            proj->y= pt.y;
+        }
+        return 0.0f;
+    }
+
+    for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+        glm::vec2 pt1= poly->_pts[i];
+        glm::vec2 pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
+
+        bool x= distance_segment_pt(pt1, pt2, pt, &dist, &proj2);
+        if (dist< dist_min) {
+            dist_min= dist;
+            if (proj!= NULL) {
+                proj->x= proj2.x;
+                proj->y= proj2.y;
+            }
+        }
+    }
+    return dist_min;
+}
+
+
+float distance_poly_segment(Polygon2D * poly, glm::vec2 seg1, glm::vec2 seg2, glm::vec2 * proj) {
+    float dist_min= FLT_MAX;
+    float dist;
+    glm::vec2 proj2;
+
+    if (is_pt_inside_poly(seg1, poly)) {
+        // proj ?
+        return 0.0f;
+    }
+
+    if (segment_intersects_poly(seg1, seg2, poly, &proj2)) {
+        if (proj!= NULL) {
+            proj->x= proj2.x;
+            proj->y= proj2.y;
+        }
+        return 0.0f;
+    }
+
+    for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+        glm::vec2 pt1= poly->_pts[i];
+        glm::vec2 pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
+
+        bool x1= distance_segment_pt(pt1, pt2, seg1, &dist, &proj2);
+        if (dist< dist_min) {
+            dist_min= dist;
+            if (proj!= NULL) {
+                proj->x= proj2.x;
+                proj->y= proj2.y;
+            }
+        }
+
+        bool x2= distance_segment_pt(pt1, pt2, seg2, &dist, &proj2);
+        if (dist< dist_min) {
+            dist_min= dist;
+            if (proj!= NULL) {
+                proj->x= proj2.x;
+                proj->y= proj2.y;
+            }
+        }
+    }
+
+    for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+        bool x1= distance_segment_pt(seg1, seg2, poly->_pts[i], &dist, &proj2);
+        if (dist< dist_min) {
+            dist_min= dist;
+            if (proj!= NULL) {
+                proj->x= proj2.x;
+                proj->y= proj2.y;
+            }
+        }
+    }
+
+    return dist_min;
 }
 
 
