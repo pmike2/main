@@ -194,9 +194,9 @@ struct Grid : public Graph {
 				unsigned int id= i+ _width* j;
 				//float weight= rand_float(1.0f, 10.0f);
 				float weight= 1.0f;
-				if (rand_bool()) {
+				/*if (rand_bool()) {
 					weight= 10.0f;
-				}
+				}*/
 				float x= -5.0f+ ((float)(i)/ (float)(_width))* 10.0f;
 				float y= -5.0f+ ((float)(j)/ (float)(_height))* 10.0f;
 				add_vertex(id, weight, x, y);
@@ -219,6 +219,21 @@ struct Grid : public Graph {
 			if (j< _height- 1) {
 				add_edge(_it_v->first, _it_v->first+ _width, 1.0f, false);
 			}
+
+			// 8 connexity
+			if ((i> 0) && (j> 0)) {
+				add_edge(_it_v->first, _it_v->first- 1- _width, 1.0f, false);
+			}
+			if ((i< _width- 1) && (j> 0)) {
+				add_edge(_it_v->first, _it_v->first+ 1- _width, 1.0f, false);
+			}
+			if ((i> 0) && (j< _height- 1)) {
+				add_edge(_it_v->first, _it_v->first- 1+ _width, 1.0f, false);
+			}
+			if ((i< _width- 1) && (j< _height- 1)) {
+				add_edge(_it_v->first, _it_v->first+ 1+ _width, 1.0f, false);
+			}
+
 			_it_v++;
 		}
 	}
@@ -249,7 +264,7 @@ struct Level {
 	Level(unsigned int width, unsigned int height) {
 		_grid= new Grid(width, height);
 		
-		/*
+		
 		for (unsigned int i=0; i<10; ++i) {
 			Polygon2D * poly= new Polygon2D();
 			float x= rand_float(-5.0f, 5.0f);
@@ -257,7 +272,7 @@ struct Level {
 			poly->randomize(10, 1.0f, glm::vec2(x, y));
 			_polygons.push_back(poly);
 		}
-		*/
+		
 
 		/*
 		Polygon2D * poly= new Polygon2D();
@@ -355,16 +370,16 @@ vector<unsigned int> search(Level * l, unsigned int start, unsigned int goal) {
 		vector<unsigned int> nexts= g->neighbors(current);
 		for (auto next : nexts) {
 			unsigned int theta= current;
-			if (l->line_of_sight(came_from[current], next)) {
-				//theta= came_from[current];
-			}
+			/*if (l->line_of_sight(came_from[current], next)) {
+				theta= came_from[current];
+			}*/
 			float new_cost= cost_so_far[theta]+ g->cost(theta, next);
 			if ((!cost_so_far.count(next)) || (new_cost< cost_so_far[next])) {
 				cost_so_far[next]= new_cost;
 				came_from[next]= theta;
-				float priority= new_cost; // dijkstra
+				//float priority= new_cost; // dijkstra
 				//float priority= g->heuristic(next, goal); // greedy best first search
-				//float priority= new_cost+ g->heuristic(next, goal); // A *
+				float priority= new_cost+ g->heuristic(next, goal); // A *
 				frontier.emplace(next, priority);
 			}
 		}
@@ -523,13 +538,16 @@ void test5() {
 void test6() {
 	unsigned int width= 50;
 	unsigned int height= 50;
+	unsigned int start= rand_int(0, width* height- 1);
+	unsigned int goal= rand_int(0, width* height- 1);
+	
+	cout << "init\n";
 	Level * l= new Level(width, height);
 	//cout << *l->_grid << "\n";
 	cout << "searching\n";
-	vector<unsigned int> path= search(l, 0, 1021);
+	vector<unsigned int> path= search(l, start, goal);
 	cout << "drawing\n";
 	draw_svg(l, path);
-	//cout << *l->_grid << "\n";
 	delete l;
 }
 
