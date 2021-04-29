@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/Volumes/malenge/dir_git/main/libs/light.cpp" "/Volumes/malenge/dir_git/main/samourai/build/CMakeFiles/lib_light.dir/Volumes/malenge/dir_git/main/libs/light.cpp.o"
+  "/Users/home/git_dir/main/libs/light.cpp" "/Users/home/git_dir/main/samourai/build/CMakeFiles/lib_light.dir/Users/home/git_dir/main/libs/light.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "AppleClang")
 

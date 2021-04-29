@@ -257,7 +257,7 @@ void QuadTree::set_z_max(float * altis, unsigned int width_n, unsigned int heigh
 			}
 
 			// on calcule pour chaque objet associé a la feuille son z + son rayon
-			QuadNode * node= find_node(_depth, glm::vec3((xmin+ xmax)* 0.5f, (ymin+ ymax)* 0.5f, 0.0f));
+			QuadNode * node= find_node(_depth, glm::vec2((xmin+ xmax)* 0.5f, (ymin+ ymax)* 0.5f));
 			for (auto pr : node->_pos_rots) {
 				if (pr->_position.z+ pr->_bbox->_radius* 2.0f> alti_max) {
 					alti_max= pr->_position.z+ pr->_bbox->_radius* 2.0f;
