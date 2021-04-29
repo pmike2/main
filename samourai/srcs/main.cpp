@@ -212,14 +212,14 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_basic           = create_prog("../shaders/vertexshader_basic.txt"       , "../shaders/fragmentshader_basic.txt");
-	prog_ihm             = create_prog("../shaders/vertexshader_ihm.txt"         , "../shaders/fragmentshader_basic.txt");
-	prog_repere          = create_prog("../shaders/vertexshader_repere.txt"      , "../shaders/fragmentshader_basic.txt");
-	prog_3d_anim         = create_prog("../shaders/vertexshader_3d_anim.txt"     , "../shaders/fragmentshader_3d.txt");
-	prog_3d_terrain      = create_prog("../shaders/vertexshader_3d_terrain.txt"  , "../shaders/fragmentshader_3d.txt");
-	prog_3d_obj          = create_prog("../shaders/vertexshader_3d_obj.txt"      , "../shaders/fragmentshader_3d_obj.txt");
-	prog_3d_obj_instanced= create_prog("../shaders/vertexshader_3d_instanced.txt", "../shaders/fragmentshader_3d_obj.txt");
-	prog_bbox            = create_prog("../shaders/vertexshader_bbox.txt"        , "../shaders/fragmentshader_basic.txt");
+	prog_basic           = create_prog("../../shaders/vertexshader_basic.txt"       , "../../shaders/fragmentshader_basic.txt");
+	prog_ihm             = create_prog("../../shaders/vertexshader_ihm.txt"         , "../../shaders/fragmentshader_basic.txt");
+	prog_repere          = create_prog("../../shaders/vertexshader_repere.txt"      , "../../shaders/fragmentshader_basic.txt");
+	prog_3d_anim         = create_prog("../../shaders/vertexshader_3d_anim.txt"     , "../../shaders/fragmentshader_3d_color.txt");
+	prog_3d_terrain      = create_prog("../../shaders/vertexshader_3d_terrain.txt"  , "../../shaders/fragmentshader_3d_color.txt");
+	prog_3d_obj          = create_prog("../../shaders/vertexshader_3d_basic.txt"      , "../../shaders/fragmentshader_3d_color.txt");
+	prog_3d_obj_instanced= create_prog("../../shaders/vertexshader_3d_color_instanced.txt", "../../shaders/fragmentshader_3d_color.txt");
+	prog_bbox            = create_prog("../../shaders/vertexshader_bbox.txt"        , "../../shaders/fragmentshader_basic.txt");
 
 	float eye_direction[]= {0.0f, 0.0f, 1.0f};
 	GLuint progs_eye[]= {prog_3d_anim, prog_3d_terrain, prog_3d_obj};
@@ -237,7 +237,8 @@ void init() {
 	//world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, & WORLD_RAND_CONFIG_1, "");
 	//world->write("./data/world1");
 
-	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, NULL, "./data/world1");
+	
+	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, NULL, "../data/world2");
 
 	// --------------------------------------------------------------------------
 	lights_ubo= new LightsUBO(prog_3d_terrain); // heu ca va marcher ca ???

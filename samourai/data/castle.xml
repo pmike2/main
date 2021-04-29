@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <static_cfg xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<objs>
-		<obj precision="0">./data/castle.obj</obj>
-		<obj precision="1">./data/castle.obj</obj>
+		<obj precision="0">../data/castle.obj</obj>
+		<obj precision="1">../data/castle.obj</obj>
 	</objs>
-	<mat>./data/castle.mtl</mat>
+	<mat>../data/castle.mtl</mat>
 </static_cfg>

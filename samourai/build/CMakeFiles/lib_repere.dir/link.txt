@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc liblib_repere.a  CMakeFiles/lib_repere.dir/Volumes/malenge/dir_git/main/libs/repere.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib liblib_repere.a

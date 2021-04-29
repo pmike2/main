@@ -6,11 +6,11 @@
 	</rot_0>
 	<anims>
 		<anim id="anim_wait">
-			<path>./data/gadjo_wait.dae</path>
+			<path>../data/gadjo_wait.dae</path>
 			<moving_speed>0.0</moving_speed>
 		</anim>
 		<anim id="anim_walk">
-			<path>./data/gadjo_walk.dae</path>
+			<path>../data/gadjo_walk.dae</path>
 			<moving_speed>0.06</moving_speed>
 		</anim>
 	</anims>

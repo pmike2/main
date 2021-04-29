@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <static_cfg xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<objs>
-		<obj precision="0">./data/tree3.obj</obj>
+		<obj precision="0">../data/tree3.obj</obj>
 	</objs>
-	<mat>./data/tree3.mtl</mat>
+	<mat>../data/tree3.mtl</mat>
 </static_cfg>
