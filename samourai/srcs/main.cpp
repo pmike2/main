@@ -238,11 +238,12 @@ void init() {
 	//world->write("./data/world1");
 
 	
-	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, NULL, "../data/world2");
+	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, NULL, "../data/world3");
 
 	// --------------------------------------------------------------------------
 	lights_ubo= new LightsUBO(prog_3d_terrain); // heu ca va marcher ca ???
-	lights_ubo->add_light(LIGHT_PARAMS_1, prog_repere, glm::vec3(world->get_center().x, world->get_center().y, 5000.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+	lights_ubo->add_light(LIGHT_PARAMS_1, prog_repere, glm::vec3(world->get_center().x, world->get_center().y, 500.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+	//lights_ubo->print();
 
 	// --------------------------------------------------------------------------
 	view_system= new ViewSystem(prog_repere, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);

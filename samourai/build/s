@@ -1,0 +1,132 @@
+
+
+#######################################################################################
+#*************************************************************************************#
+#*************************************************************************************#
+#********    *****    *******      ******       *******    *********         *********#
+#*********    ***    ********      ******         *****    *******           *********#
+#**********    *    **********    *******    *     ****    ******     ****************#
+#***********       ***********    *******    **     ***    ******    *****************#
+#***********       ***********    *******    ***     **    ******    ****    *********#
+#**********    *    **********    *******    ****     *    ******     ****   *********#
+#*********    ***    ********      ******    *****         ******            *********#
+#********    *****    *******      ******    ******        ********        * *********#
+#*************************************************************************************#
+#*************************************************************************************#
+#*************************************************************************************#
+#######################################################################################
+#*************************************************************************************#
+#                                                                                      
+#               VERSION du           14 janvier 2021                             
+#                   RUN du VENDREDI 30     AVRIL 2021 a 13:19:57                             
+#                                                                    
+#======================================================================================#
+#                                                                            
+#---------------------------------------------------------------------------------------
+#           Rappel du parametrage
+#---------------------------------------------------------------------------------------
+#@#     /Volumes/malenge/xingng \
+#@#        -tf \
+#@#        -i /Volumes/malenge/dir_git/main/samourai/data/world3/altis.tif \
+#@#        -o /Volumes/malenge/dir_git/main/samourai/data/world3/altis_f.tif \
+#@#        -n:s#
+#---------------------------------------------------------------------------------------
+#           Environnement
+#---------------------------------------------------------------------------------------
+#     CSinG_PARAMETRES=
+#        MessageLogiciel                  = XinG - 14 janvier 2021
+#        CODE_EPSG_DEFAUT                 = 4326
+#        GT_MODEL_DEFAUT                  = 2
+#        TAILLE_MEMOIRE_MAXIMUM           = 1000000000
+#        TOLERANCE_COORDONNEES_IMAGE      = 0.001000
+#        MARGE_RECOUVREMENT               = 0.020000
+#        NOMBRE_MAX_ITERATIONS            = 15
+#        FicProj                          = 
+#        NTF2RGF93                        = 
+#        LONGUEUR_BARRE                   = 75
+#        REMPLISSAGE                      = 0.000000e+00
+#        PAS_GRILLE_DEFAUT                = 32.000000 x 32.000000
+#        Z_Reference                      = 0.000000
+#        TOLERANCE_H_MNT                  = 0.100000
+#        TYPE_PREDICTEUR_GV               = 2
+#        DEGRE_PREDICTEUR_GV              = 1 1 1 1
+#        PRECISION_CORRELATION            = 0.100000
+#        CONTRAINTES                      = 1000.000000
+#        DimGrille                        = 20 20 20
+#        PHASAGE                          = 0
+#        DirTmp                           = .
+#        CHIFFRES SIGNIFICATIFS           = 13
+#        Format_doubles                   = 20.12le
+#        IsHDR                            = 0
+#        def_min_max                      = 0
+#        v_min                            = 0.000000
+#        v_max                            = 0.000000
+#        IsPlugin                         = 2
+#        nombre_threads                   = 4
+#        ModeInterpolation                = 1
+#        CorrectionParcoursLumiere        = 0
+#        IsOffset                         = 0
+#
+#        INHIBITION DES ECT DANS UN MODELE EUCLIDE =  NON
+#======================================================================================#
+#
+
+#==========================================================================================
+#                     CARACTERISTIQUES DE l'IMAGE /Volumes/malenge/dir_git/main/samourai/data/world3/altis.tif
+#==========================================================================================
+#&       nombre de lignes             =    513
+#&       nombre de colonnes           =    513
+#&       nombre de canaux             =      1
+#&       type                         = char non signe [0:255]
+#&       photommetrie                 = 0 a NOIR
+#&       compression                  = SANS COMPRESSION
+#&       configuration planaire       = CANAUX ENTRELACES
+#&       bits par canal               =      8
+#      ----------------------------------------------------------------------------------
+#                             Calage de l'image
+#      ----------------------------------------------------------------------------------
+#&       position de la premiere ligne dans la sortie        =       0
+#&       position de la premiere colonne dans la sortie      =       0
+#&       position du premier canal (cas d'un merge de canaux)=       0
+#      ----------------------------------------------------------------------------------
+#                             Decoupage de l'image
+#      ----------------------------------------------------------------------------------
+#&       premiere ligne               =      0
+#&       premiere colonne             =      0
+#&       derniere ligne               =    512
+#&       derniere colonne             =    512
+#      ----------------------------------------------------------------------------------
+#                Parametrage de l'adaptation de dynamique (canal 1)
+#      ----------------------------------------------------------------------------------
+#&       pourcentage de pixels satures (seuil bas)      =   0.000000000000e+00%%
+#&       pourcentage de pixels satures (seuil haut)     =   0.000000000000e+00%%
+#&       valeur saturee (seuil bas)                     =   0.000000000000e+00
+#&       valeur saturee (seuil haut)                    =   0.000000000000e+00
+#&       pente de l'adaptation                          =   1.000000000000e+00
+#&       nouvelle valeur de la mediane                  =   0.000000000000e+00
+#&       valeur de saturation (valeur basse) v_min_out  =  -1.000000000000e+99
+#&       valeur de saturation (valeur haute) v_max_out  =   1.000000000000e+99
+#&       valeur d'offset ajoutee                        =   0.000000000000e+00
+#&       type (interne)  = 0
+
+#==========================================================================================
+#                     CARACTERISTIQUES DE l'IMAGE /Volumes/malenge/dir_git/main/samourai/data/world3/altis_f.tif
+#==========================================================================================
+#&       nombre de lignes             =    513
+#&       nombre de colonnes           =    513
+#&       nombre de canaux             =      1
+#&       type                         = flottant [-1e99:1e99]
+#&       photommetrie                 = 0 a NOIR
+#&       compression                  = SANS COMPRESSION
+#&       configuration planaire       = CANAUX ENTRELACES
+#&       bits par canal               =     32
+#      ----------------------------------------------------------------------------------
+#                             Calage de l'image
+#      ----------------------------------------------------------------------------------
+#&       position de la premiere ligne dans la sortie        =       0
+#&       position de la premiere colonne dans la sortie      =       0
+#&       position du premier canal (cas d'un merge de canaux)=       0
+
+#========================================================================================
+#              DUREE DU TRAITEMENT :     0.027687
+#========================================================================================

@@ -36,8 +36,8 @@ const float FRUSTUM_HALFSIZE= 5.0f;
 const float CONTAINS_POINT_TOLERANCE= 20.0f;
 
 // sensibilité souris
-const float LEFT_MOUSE_SENSIVITY= 1.0f;
-const float MIDDLE_MOUSE_SENSIVITY= 2.0f;
+const float LEFT_MOUSE_SENSIVITY= 5.0f;
+const float MIDDLE_MOUSE_SENSIVITY= 5.0f;
 const float RIGHT_MOUSE_SENSIVITY= 0.01f;
 
 // modes de vision : vue libre , 3e personne libre, 3e personne fixe

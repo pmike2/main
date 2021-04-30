@@ -50,13 +50,13 @@ void main(void)
 	
 	for (int i=0; i<n_lights; i++) {
 		if (i==0) { l= lights[0]; }
-		if (i==1) { l= lights[1]; continue;}
-		if (i==2) { l= lights[2]; continue;}
-		if (i==3) { l= lights[3]; continue;}
-		if (i==4) { l= lights[4]; continue;}
-		if (i==5) { l= lights[5]; continue;}
-		if (i==6) { l= lights[6]; continue;}
-		if (i==7) { l= lights[7]; continue;}
+		if (i==1) { l= lights[1]; }
+		if (i==2) { l= lights[2]; }
+		if (i==3) { l= lights[3]; }
+		if (i==4) { l= lights[4]; }
+		if (i==5) { l= lights[5]; }
+		if (i==6) { l= lights[6]; }
+		if (i==7) { l= lights[7]; }
 
 		if (!l.is_active)
 			continue;
@@ -64,7 +64,10 @@ void main(void)
 		vec3 light_direction= l.light_position- vec3(vertex_position);
 		light_distance= length(light_direction);
 		light_direction= light_direction/ light_distance;
-		attenuation= 1./ (l.constant_attenuation+ l.linear_attenuation* light_distance+ l.quadratic_attenuation* light_distance* light_distance);
+
+		// _linear_attenuation et _quadratic_attenuation font rapidement tout devenir sombre
+		//attenuation= 1./ (l.constant_attenuation+ l.linear_attenuation* light_distance+ l.quadratic_attenuation* light_distance* light_distance);
+		attenuation= 1.;
 		if (l.is_spotlight) {
 			spot_cos= dot(light_direction, -l.spot_cone_direction);
 			if (spot_cos< l.spot_cos_cutoff) {
@@ -86,6 +89,7 @@ void main(void)
 	}
 	
 	vec3 rgb= min(vec3(1.), max(vec3(0.), vertex_color.rgb* scattered_light+ reflected_light));
+	//vec3 rgb= vertex_color.rgb* scattered_light+ reflected_light;
 	
 	frag_color= vec4(rgb, alpha);
 	
