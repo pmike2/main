@@ -249,7 +249,7 @@ void init() {
 	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_repere= false;
 	view_system->_repere->_is_box= false;
-	view_system->set(glm::vec3(world->get_center().x, world->get_center().y, 0.0f), (float)(M_PI)* 1.5f, (float)(M_PI)* 0.25f, 1000.0f);
+	view_system->set(glm::vec3(world->get_center().x, world->get_center().y, 0.0f), (float)(M_PI)* 1.5f, (float)(M_PI)* 0.35f, 1000.0f);
 	//view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 1000.0f);
 
 	// temporaire
