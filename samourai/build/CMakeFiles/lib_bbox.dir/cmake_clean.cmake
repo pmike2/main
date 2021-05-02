@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/lib_bbox.dir/Volumes/malenge/dir_git/main/libs/bbox.cpp.o"
-  "liblib_bbox.pdb"
+  "CMakeFiles/lib_bbox.dir/Users/home/git_dir/main/libs/bbox.cpp.o"
   "liblib_bbox.a"
+  "liblib_bbox.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

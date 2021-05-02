@@ -35,6 +35,7 @@ https://www.khronos.org/collada/wiki/Skinning
 #include "world.h"
 #include "gl_interface.h"
 #include "input_state.h"
+#include "shapefile.h"
 
 
 using namespace std;
@@ -412,9 +413,14 @@ void clean() {
 // ------------------------------------------------------------------------
 int main(int argc, char * argv[]) {
 
-	init();
+	/*init();
 	main_loop();
-	clean();
+	clean();*/
+	vector<Polygon2D *> polygons;
+	read_shp("/Users/home/git_dir/main/samourai/data/world3/obstacle.shp", polygons);
+	for (auto poly : polygons) {
+		poly->print();
+	}
 
 	return 0;
 }

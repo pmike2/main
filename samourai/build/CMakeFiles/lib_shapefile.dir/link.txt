@@ -1,0 +1,2 @@
+/Library/Developer/CommandLineTools/usr/bin/ar qc liblib_shapefile.a CMakeFiles/lib_shapefile.dir/Users/home/git_dir/main/libs/shapefile.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ranlib liblib_shapefile.a

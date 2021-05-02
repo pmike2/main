@@ -29,6 +29,7 @@ find_package(SDL2_image REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(TIFF REQUIRED)
+find_package(GDAL REQUIRED)
 
 include_directories(/usr/local/include)
 include_directories(/usr/local/include/freetype2)
@@ -37,6 +38,7 @@ include_directories(../libs)
 # si les installs des libs externes sont faites dans des emplacements différents de /usr/local, on peut faire ca
 # pour chaque lib, cf https://cmake.org/cmake/help/latest/manual/cmake-modules.7.html
 # include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS})
+include_directories(${GDAL_INCLUDE_DIRS})
 
 add_library(lib_daefile STATIC ../libs/daefile.cpp ../libs/daefile.h)
 add_library(lib_repere STATIC ../libs/repere.cpp ../libs/repere.h)
@@ -50,6 +52,8 @@ add_library(lib_terrain STATIC ../libs/terrain.cpp ../libs/terrain.h)
 add_library(lib_world STATIC ../libs/world.cpp ../libs/world.h)
 add_library(lib_gl_interface STATIC ../libs/gl_interface.cpp ../libs/gl_interface.h)
 add_library(lib_objfile STATIC ../libs/objfile.cpp ../libs/objfile.h)
+add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
+add_library(lib_shapefile STATIC ../libs/shapefile.cpp ../libs/shapefile.h)
 
 add_executable(main ./srcs/main.cpp ./srcs/constantes.h)
 
@@ -65,6 +69,8 @@ target_link_libraries(main PUBLIC lib_terrain)
 target_link_libraries(main PUBLIC lib_world)
 target_link_libraries(main PUBLIC lib_gl_interface)
 target_link_libraries(main PUBLIC lib_objfile)
+target_link_libraries(main PUBLIC lib_geom_2d)
+target_link_libraries(main PUBLIC lib_shapefile)
 
 # bug debile cf https://stackoverflow.com/questions/45730098/cmake-leading-or-trailing-whitespace-policy-cmp0004
 string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
@@ -73,4 +79,4 @@ target_link_libraries(main PUBLIC ${SDL2_IMAGE_LIBRARIES})
 target_link_libraries(main PUBLIC ${FREETYPE_LIBRARIES})
 target_link_libraries(main PUBLIC ${OPENGL_LIBRARIES})
 target_link_libraries(main PUBLIC ${TIFF_LIBRARIES})
-
+target_link_libraries(main PUBLIC ${GDAL_LIBRARIES})
