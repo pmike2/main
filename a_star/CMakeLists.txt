@@ -15,17 +15,22 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(a_star)
 
+find_package(GDAL REQUIRED)
 
 include_directories(/usr/local/include)
 include_directories(../libs)
+include_directories(${GDAL_INCLUDE_DIRS})
 
 add_library(lib_path_find STATIC ../libs/path_find.cpp ../libs/path_find.h)
 add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
 add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
+add_library(lib_shapefile STATIC ../libs/shapefile.cpp ../libs/shapefile.h)
 
 add_executable(main ./srcs/main.cpp)
 
 target_link_libraries(main PUBLIC lib_path_find)
 target_link_libraries(main PUBLIC lib_utile)
 target_link_libraries(main PUBLIC lib_geom_2d)
+target_link_libraries(main PUBLIC lib_shapefile)
 
+target_link_libraries(main PUBLIC ${GDAL_LIBRARIES})

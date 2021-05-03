@@ -3,6 +3,8 @@
 #include <vector>
 #include <chrono>
 
+#include <glm/glm.hpp>
+
 #include "utile.h"
 #include "path_find.h"
 
@@ -11,19 +13,21 @@ using namespace std::chrono;
 
 
 void test() {
-	unsigned int width= 50;
-	unsigned int height= 50;
-	unsigned int start= rand_int(0, width* height- 1);
-	unsigned int goal= rand_int(0, width* height- 1);
+	unsigned int n_ligs= 50;
+	unsigned int n_cols= 50;
+	glm::vec2 origin(0.0f, 0.0f);
+	glm::vec2 size(10.0f, 10.0f);
+	unsigned int start= rand_int(0, 1000);
+	unsigned int goal= rand_int(0, 1000);
 	
 	cout << "init\n";
-	Level * l= new Level(width, height);
-	//cout << *l->_grid << "\n";
+	PathFinder * pf= new PathFinder(n_ligs, n_cols, origin, size);
+	pf->rand(8, 20, 1.0f);
 	cout << "searching\n";
-	vector<unsigned int> path= l->path_find(start, goal);
+	vector<unsigned int> path= pf->path_find(start, goal);
 	cout << "drawing\n";
-	l->draw_svg(path, "../data/graph.html");
-	delete l;
+	pf->draw_svg(path, "../data/graph.html");
+	delete pf;
 }
 
 

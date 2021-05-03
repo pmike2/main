@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/lib_utile.dir/Users/home/git_dir/main/libs/utile.cpp.o"
-  "liblib_utile.a"
+  "CMakeFiles/lib_utile.dir/Volumes/malenge/dir_git/main/libs/utile.cpp.o"
   "liblib_utile.pdb"
+  "liblib_utile.a"
 )
 
 # Per-language clean rules from dependency scanning.

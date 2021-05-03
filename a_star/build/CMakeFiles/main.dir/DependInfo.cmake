@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/Users/home/git_dir/main/a_star/srcs/main.cpp" "/Users/home/git_dir/main/a_star/build/CMakeFiles/main.dir/srcs/main.cpp.o"
+  "/Volumes/malenge/dir_git/main/a_star/srcs/main.cpp" "/Volumes/malenge/dir_git/main/a_star/build/CMakeFiles/main.dir/srcs/main.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "AppleClang")
 
@@ -12,13 +12,15 @@ set(CMAKE_CXX_COMPILER_ID "AppleClang")
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "/usr/local/include"
   "../../libs"
+  "/Library/Frameworks/GDAL.framework/Headers"
   )
 
 # Targets to which this target links.
 set(CMAKE_TARGET_LINKED_INFO_FILES
-  "/Users/home/git_dir/main/a_star/build/CMakeFiles/lib_path_find.dir/DependInfo.cmake"
-  "/Users/home/git_dir/main/a_star/build/CMakeFiles/lib_utile.dir/DependInfo.cmake"
-  "/Users/home/git_dir/main/a_star/build/CMakeFiles/lib_geom_2d.dir/DependInfo.cmake"
+  "/Volumes/malenge/dir_git/main/a_star/build/CMakeFiles/lib_path_find.dir/DependInfo.cmake"
+  "/Volumes/malenge/dir_git/main/a_star/build/CMakeFiles/lib_utile.dir/DependInfo.cmake"
+  "/Volumes/malenge/dir_git/main/a_star/build/CMakeFiles/lib_geom_2d.dir/DependInfo.cmake"
+  "/Volumes/malenge/dir_git/main/a_star/build/CMakeFiles/lib_shapefile.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

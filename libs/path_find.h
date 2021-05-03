@@ -12,64 +12,70 @@
 #include "geom_2d.h"
 
 
-struct Edge {
+struct GraphEdge {
 	//unsigned int _start_node;
 	//unsigned int _end_node;
 	float _weight;
 };
 
 
-struct Vertex {
+struct GraphVertex {
 	float _weight;
-	glm::vec2 _pos;
+	glm::vec3 _pos;
 	bool _visited;
-	std::unordered_map<unsigned int, Edge> _edges;
+	std::unordered_map<unsigned int, GraphEdge> _edges;
 };
 
 
 struct Graph {
-	std::unordered_map<unsigned int, Vertex> _vertices;
-	std::unordered_map<unsigned int, Vertex>::iterator _it_v;
-	std::unordered_map<unsigned int, Edge>::iterator _it_e;
+	std::unordered_map<unsigned int, GraphVertex> _vertices;
+	std::unordered_map<unsigned int, GraphVertex>::iterator _it_v;
+	std::unordered_map<unsigned int, GraphEdge>::iterator _it_e;
 
 
 	Graph();
 	~Graph();
-	void add_vertex(unsigned int i, float weight=0.0f, float x=0.0f, float y=0.0f);
+	void add_vertex(unsigned int i, float weight=0.0f, float x=0.0f, float y=0.0f, float z=0.0f);
 	void add_edge(unsigned int i, unsigned int j, float weight=0.0f, bool weight_is_dist=false);
 	void remove_vertex(unsigned int i);
 	void remove_edge(unsigned int i, unsigned int j);
 	std::vector<unsigned int> neighbors(unsigned int i);
-	float cost(unsigned int i, unsigned int j);
-	float heuristic(unsigned int i, unsigned int j);
 	void clear();
 	void rand();
 	friend std::ostream & operator << (std::ostream & os, Graph & g);
 };
 
 
-struct Grid : public Graph {
-	unsigned int _width;
-	unsigned int _height;
+struct GraphGrid : public Graph {
+	unsigned int _n_ligs;
+	unsigned int _n_cols;
+	glm::vec2 _origin;
+	glm::vec2 _size;
 
 
-	Grid();
-	Grid(unsigned int width, unsigned int height);
-	~Grid();
-	friend std::ostream & operator << (std::ostream & os, Grid & g);
+	GraphGrid();
+	GraphGrid(unsigned int n_ligs, unsigned int n_cols, glm::vec2 & origin, glm::vec2 & size, bool is8connex=true);
+	~GraphGrid();
+	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
 };
 
 
 bool frontier_cmp(std::pair<unsigned int, float> x, std::pair<unsigned int, float> y);
 
-struct Level {
-	Grid * _grid;
+
+struct PathFinder {
+	GraphGrid * _grid;
 	std::vector<Polygon2D *> _polygons;
 
 
-	Level();
-	Level(unsigned int width, unsigned int height);
-	~Level();
+	PathFinder();
+	PathFinder(unsigned int n_ligs, unsigned int n_cols, glm::vec2 & origin, glm::vec2 & size, bool is8connex=true);
+	~PathFinder();
+	void update_grid();
+	void read_shapefile(std::string shp_path);
+	void rand(unsigned int n_polys, unsigned int n_pts_per_poly, float poly_radius);
+	float cost(unsigned int i, unsigned int j);
+	float heuristic(unsigned int i, unsigned int j);
 	bool line_of_sight(unsigned int i, unsigned int j);
 	std::vector<unsigned int> path_find(unsigned int start, unsigned int goal);
 	void draw_svg(std::vector<unsigned int> path, std::string result);
