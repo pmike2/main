@@ -251,7 +251,7 @@ void Polygon2D::set_points(float * points, unsigned int n_points) {
     for (unsigned int i=0; i<n_points; ++i) {
         _pts.push_back(glm::vec2(points[2* i], points[2* i+ 1]));
     }
-    convex_hull_2d(_pts);
+    //convex_hull_2d(_pts); // a mettre en option ?
     update_attributes();
 }
 
@@ -263,7 +263,7 @@ void Polygon2D::randomize(unsigned int n_points, float radius, glm::vec2 center)
         float y= center.y+ rand_float(-radius, radius);
         _pts.push_back(glm::vec2(x, y));
     }
-    convex_hull_2d(_pts);
+    //convex_hull_2d(_pts); // a mettre en option ?
     update_attributes();
 }
 

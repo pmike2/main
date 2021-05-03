@@ -21,7 +21,7 @@ struct GraphEdge {
 
 struct GraphVertex {
 	float _weight;
-	glm::vec3 _pos;
+	glm::vec2 _pos;
 	bool _visited;
 	std::unordered_map<unsigned int, GraphEdge> _edges;
 };
@@ -35,7 +35,7 @@ struct Graph {
 
 	Graph();
 	~Graph();
-	void add_vertex(unsigned int i, float weight=0.0f, float x=0.0f, float y=0.0f, float z=0.0f);
+	void add_vertex(unsigned int i, float weight=0.0f, float x=0.0f, float y=0.0f);
 	void add_edge(unsigned int i, unsigned int j, float weight=0.0f, bool weight_is_dist=false);
 	void remove_vertex(unsigned int i);
 	void remove_edge(unsigned int i, unsigned int j);
@@ -72,7 +72,7 @@ struct PathFinder {
 	PathFinder(unsigned int n_ligs, unsigned int n_cols, glm::vec2 & origin, glm::vec2 & size, bool is8connex=true);
 	~PathFinder();
 	void update_grid();
-	void read_shapefile(std::string shp_path);
+	void read_shapefile(std::string shp_path, glm::vec2 origin, glm::vec2 size, bool reverse_y=false);
 	void rand(unsigned int n_polys, unsigned int n_pts_per_poly, float poly_radius);
 	float cost(unsigned int i, unsigned int j);
 	float heuristic(unsigned int i, unsigned int j);

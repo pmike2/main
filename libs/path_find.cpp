@@ -19,13 +19,12 @@ Graph::~Graph() {
 	
 }
 
-void Graph::add_vertex(unsigned int i, float weight, float x, float y, float z) {
+void Graph::add_vertex(unsigned int i, float weight, float x, float y) {
 	if (!_vertices.count(i)) {
 		GraphVertex v= {};
 		v._weight= weight;
 		v._pos.x= x;
 		v._pos.y= y;
-		v._pos.z= z;
 		v._visited= false;
 		_vertices[i]= v;
 	}
@@ -150,8 +149,7 @@ GraphGrid::GraphGrid(unsigned int n_ligs, unsigned int n_cols, glm::vec2 & origi
 			}*/
 			float x= _origin.x+ ((float)(col)/ (float)(_n_cols))* _size.x;
 			float y= _origin.y+ ((float)(lig)/ (float)(_n_ligs))* _size.y;
-			float z= 0.0f; // a changer ?
-			add_vertex(id, weight, x, y, z);
+			add_vertex(id, weight, x, y);
 		}
 	}
 	
@@ -264,8 +262,26 @@ void PathFinder::update_grid() {
 }
 
 
-void PathFinder::read_shapefile(string shp_path) {
-	read_shp(shp_path, _polygons);
+void PathFinder::read_shapefile(string shp_path, glm::vec2 origin, glm::vec2 size, bool reverse_y) {
+	vector<Polygon2D *> polygons;
+	read_shp(shp_path, polygons);
+	for (auto poly : polygons) {
+		Polygon2D * poly_reproj= new Polygon2D();
+		float pts[poly->_pts.size()* 2];
+		for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+			pts[2* i   ]= ((poly->_pts[i].x- origin.x)/ size.x)* _grid->_size.x+ _grid->_origin.x;
+			if (reverse_y) {
+				pts[2* i+ 1]= ((origin.y- poly->_pts[i].y)/ size.y)* _grid->_size.y+ _grid->_origin.y;
+			}
+			else {
+				pts[2* i+ 1]= ((poly->_pts[i].y- origin.y)/ size.y)* _grid->_size.y+ _grid->_origin.y;
+			}
+		}
+		poly_reproj->set_points(pts, poly->_pts.size());
+		poly_reproj->print();
+		_polygons.push_back(poly_reproj);
+		delete poly;
+	}
 	update_grid();
 }
 
