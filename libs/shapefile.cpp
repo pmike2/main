@@ -11,7 +11,7 @@ void read_shp(string shp_path, vector<Polygon2D *> & polygons) {
 	GDALAllRegister();
 	GDALDataset * poDS= (GDALDataset *) GDALOpenEx(shp_path.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
 	if (poDS== NULL) {
-		cout << "Open failed.\n";
+		cout << "Shapefile " << shp_path << " : open failed.\n";
 		return;
 	}
 	OGRLayer * poLayer= poDS->GetLayer(0);

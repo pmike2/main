@@ -3,12 +3,6 @@
 
 #include <string>
 #include <vector>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <math.h>
-#include <algorithm>
-#include <map>
 #include <thread>
 
 #include <OpenGL/gl3.h>
@@ -16,17 +10,13 @@
 #define GLM_FORCE_RADIANS
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/string_cast.hpp>
-#include <glm/gtx/normal.hpp>
 
-#include <tiffio.h>
 
 #include "utile.h"
 #include "bbox.h"
+#include "bbox_2d.h"
 #include "repere.h"
+
 
 
 // brillance du level
@@ -95,6 +85,7 @@ struct TerrainConfig {
 	unsigned int _n_subs_x, _n_subs_y; // nombre de subterrains en x, y
 	unsigned int _n_subs; // nombre de subterrains
 	unsigned int * _idxs[N_DEGRADATIONS]; // indices des sommets en fonction de la degradation
+	AABB_2D * _aabb;
 };
 
 
@@ -187,7 +178,10 @@ public:
 	~Terrain();
 	void draw();
 	void anim(ViewSystem * view_system);
-	float get_alti(const glm::vec2 & pos, bool cout_err=true);
+	float get_alti(const glm::vec2 & pos, bool * alti_ok=NULL);
+	//void get_altis_segment(glm::vec2 & pt_begin, glm::vec2 & pt_end, float step, std::vector<float> & altis);
+	bool get_intersecting_point_OLD(glm::vec3 & pt_begin, glm::vec3 & pt_end, float step, glm::vec3 & result);
+	bool get_intersecting_point(glm::vec3 & origin, glm::vec3 & direction, float step, glm::vec3 & result);
 	void sync_mesh();
 	void set_draw_mesh(bool b);
 	void save(std::string ch_tif);

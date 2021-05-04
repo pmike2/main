@@ -1,5 +1,19 @@
+#include <fstream>
+#include <iostream>
+#include <sstream>
+#include <math.h>
+#include <algorithm>
+
+#include <glm/gtc/constants.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/normal.hpp>
+
+#include <tiffio.h>
 
 #include "terrain.h"
+#include "geom_2d.h"
 
 using namespace std;
 
@@ -55,6 +69,8 @@ TerrainConfig::TerrainConfig(const glm::vec2 & origin, float width_sub, float he
 
 		_idxs[k]= idx;
 	}
+
+	_aabb= new AABB_2D(_origin, glm::vec2(_width, _height));
 }
 
 
@@ -62,6 +78,7 @@ TerrainConfig::~TerrainConfig() {
 	for (unsigned int k=0; k<N_DEGRADATIONS; ++k) {
 		delete _idxs[k];
 	}
+	delete _aabb;
 }
 
 
@@ -560,13 +577,16 @@ void Terrain::anim(ViewSystem * view_system) {
 
 
 // renvoie l'alti interpolée
-float Terrain::get_alti(const glm::vec2 & pos, bool cout_err) {
+float Terrain::get_alti(const glm::vec2 & pos, bool * alti_ok) {
 	int i, j;
 	float xx, yy;
 
+	if (alti_ok) {
+		*alti_ok= true;
+	}
 	if ((pos.x< _config->_origin.x) || (pos.x- _config->_origin.x> _config->_width) || (pos.y< _config->_origin.y) || (pos.y- _config->_origin.y> _config->_height)) {
-		if (cout_err) {
-			cout << "Terrain::get_alti ERREUR : pos=" << glm::to_string(pos) << " width=" << _config->_width << " height=" << _config->_height << " origin=" << glm::to_string(_config->_origin) << endl;
+		if (alti_ok) {
+			*alti_ok= false;
 		}
 		return 0.0f;
 	}
@@ -595,6 +615,105 @@ float Terrain::get_alti(const glm::vec2 & pos, bool cout_err) {
 	//if ((alti> 10000.0f) || (alti< -1000.0f)) cout << "get : " << glm::to_string(pos) << " ; " << i << " ; " << j << " ; " << xx << " ; " << yy << " ; " << alti << endl;
 	
 	return alti;
+}
+
+/*
+void Terrain::get_altis_segment(glm::vec2 & pt_begin, glm::vec2 & pt_end, float step, vector<float> & altis) {
+	float dist= glm::distance(pt_begin, pt_end);
+	unsigned int n_pts= dist/ step;
+	for (unsigned int i=0; i<n_pts; ++i) {
+		glm::vec2 pt= pt_begin+ ((float)(i)/ (float)(n_pts))* (pt_end- pt_begin);
+		bool alti_ok;
+		float alti= get_alti(pt, &alti_ok);
+		if (alti_ok) {
+			altis.push_back(alti);
+		}
+	}
+}
+*/
+
+bool Terrain::get_intersecting_point_OLD(glm::vec3 & pt_begin, glm::vec3 & pt_end, float step, glm::vec3 & result) {
+	glm::vec2 pt_begin_2d= glm::vec2(pt_begin);
+	glm::vec2 pt_end_2d= glm::vec2(pt_end);
+	float dist= glm::distance(pt_begin_2d, pt_end_2d);
+	unsigned int n_pts= dist/ step;
+	for (unsigned int i=0; i<n_pts; ++i) {
+		glm::vec2 pt= pt_begin_2d+ ((float)(i)/ (float)(n_pts))* (pt_end_2d- pt_begin_2d);
+		bool alti_ok;
+		float alti= get_alti(pt, &alti_ok);
+		if (alti_ok) {
+			float alti_seg= pt_begin.z+ ((float)(i)/ (float)(n_pts))* (pt_end.z- pt_begin.z);
+			if (alti_seg< alti) {
+				//result= glm::vec3(pt, alti_seg);
+				result= glm::vec3(pt, alti);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+
+bool Terrain::get_intersecting_point(glm::vec3 & origin, glm::vec3 & direction, float step, glm::vec3 & result) {
+	glm::vec2 origin_2d= glm::vec2(origin);
+	glm::vec2 direction_2d= glm::normalize(glm::vec2(direction));
+
+	glm::vec2 pt_begin_2d;
+	glm::vec2 pt_end_2d;
+	vector<glm::vec2> inters;
+	bool is_intersect;
+	vector<pair<glm::vec2, glm::vec2> > aabb_segments;
+	aabb_segments.push_back(make_pair(_config->_origin, _config->_origin+ glm::vec2(_config->_width, 0.0f)));
+	aabb_segments.push_back(make_pair(_config->_origin, _config->_origin+ glm::vec2(0.0f, _config->_height)));
+	aabb_segments.push_back(make_pair(_config->_origin+ glm::vec2(0.0f, _config->_height), _config->_origin+ glm::vec2(_config->_width, _config->_height)));
+	aabb_segments.push_back(make_pair(_config->_origin+ glm::vec2(_config->_width, 0.0f), _config->_origin+ glm::vec2(_config->_width, _config->_height)));
+	for (auto aabb_segment : aabb_segments) {
+		glm::vec2 inter;
+		is_intersect= ray_intersects_segment(origin_2d, direction_2d, aabb_segment.first, aabb_segment.second, &inter);
+		if (is_intersect) {
+			inters.push_back(inter);
+		}
+	}
+	if (inters.size()== 0) {
+		return false;
+	}
+	else if (inters.size()== 1) {
+		pt_begin_2d= origin_2d;
+		pt_end_2d= inters[0];
+	}
+	else if (inters.size()> 1) {
+		if (glm::distance2(origin_2d, inters[0])< glm::distance2(origin_2d, inters[1])) {
+			pt_begin_2d= inters[0];
+			pt_end_2d= inters[1];
+		}
+		else {
+			pt_begin_2d= inters[1];
+			pt_end_2d= inters[0];
+		}
+	}
+
+	float lambda= glm::distance(pt_begin_2d, origin_2d)/ glm::length(direction);
+	float pt_begin_alti= origin.z+ direction.z* lambda;
+	lambda= glm::distance(pt_end_2d, origin_2d)/ glm::length(direction);
+	float pt_end_alti= origin.z+ direction.z* lambda;
+	
+	float dist= glm::distance(pt_begin_2d, pt_end_2d);
+	unsigned int n_pts= dist/ step;
+	for (unsigned int i=0; i<n_pts; ++i) {
+		glm::vec2 pt= pt_begin_2d+ ((float)(i)/ (float)(n_pts))* (pt_end_2d- pt_begin_2d);
+		bool alti_ok;
+		float alti= get_alti(pt, &alti_ok);
+		if (alti_ok) {
+			float alti_seg= pt_begin_alti+ ((float)(i)/ (float)(n_pts))* (pt_end_alti- pt_begin_alti);
+			if (alti_seg< alti) {
+				//result= glm::vec3(pt, alti_seg);
+				result= glm::vec3(pt, alti);
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 

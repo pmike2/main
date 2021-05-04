@@ -18,7 +18,7 @@ float cross2d(glm::vec2 v1, glm::vec2 v2) {
 
 
 // tri de points selon x ; utile au calcul de convex hull
-bool cmp_points(glm::vec2 pt1, glm::vec2 pt2) {
+bool cmp_points(glm::vec2 & pt1, glm::vec2 & pt2) {
     return pt1.x< pt2.x;
 }
 
@@ -29,23 +29,40 @@ bool is_left(glm::vec2 pt_ref, glm::vec2 dir_ref, glm::vec2 pt_test) {
 }
 
 
-bool is_pt_inside_poly(glm::vec2 pt, Polygon2D * poly) {
-    if (glm::distance(pt, poly->_centroid)> poly->_radius) {
+bool is_pt_inside_poly(glm::vec2 & pt, Polygon2D * poly) {
+	// ne fonctionne que pour les polygones convexes
+    /*if (glm::distance(pt, poly->_centroid)> poly->_radius) {
         return false;
-    }
-    for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+    }*/
+    /*for (unsigned int i=0; i<poly->_pts.size(); ++i) {
         glm::vec2 pt1= poly->_pts[i];
         glm::vec2 pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
         if (!is_left(pt1, pt2- pt1, pt)) {
             return false;
         }
     }
-    return true;
+    return true;*/
+
+	if (!point_in_aabb(pt, poly->_aabb)) {
+		return false;
+	}
+
+	// raycast ; cf https://stackoverflow.com/questions/217578/how-can-i-determine-whether-a-2d-point-is-within-a-polygon
+	int i, j, c= 0;
+	for (i=0, j=poly->_pts.size()- 1; i<poly->_pts.size(); j=i++) {
+		if ( 
+			((poly->_pts[i].y> pt.y)!= (poly->_pts[j].y> pt.y)) &&
+			(pt.x< (poly->_pts[j].x- poly->_pts[i].x)* (pt.y- poly->_pts[i].y)/ (poly->_pts[j].y- poly->_pts[i].y)+ poly->_pts[i].x) 
+		) {
+			c= !c;
+		}
+  	}
+  	return c;
 }
 
 
 // cf https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-bool segment_intersects_segment(glm::vec2 pt1_begin, glm::vec2 pt1_end, glm::vec2 pt2_begin, glm::vec2 pt2_end, glm::vec2 * result) {
+bool segment_intersects_segment(glm::vec2 & pt1_begin, glm::vec2 & pt1_end, glm::vec2 & pt2_begin, glm::vec2 & pt2_end, glm::vec2 * result) {
     glm::vec2 dir1= pt1_end- pt1_begin;
     glm::vec2 dir2= pt2_end- pt2_begin;
     
@@ -68,8 +85,42 @@ bool segment_intersects_segment(glm::vec2 pt1_begin, glm::vec2 pt1_end, glm::vec
 }
 
 
+bool ray_intersects_segment(glm::vec2 & origin, glm::vec2 & direction, glm::vec2 & pt_begin, glm::vec2 & pt_end, glm::vec2 * result) {
+	glm::vec2 dir_segment= pt_end- pt_begin;
+    // parallèles
+    float a= cross2d(direction, dir_segment);
+    if (abs(a)< EPSILON) {
+        return false;
+    }
+    float t1= cross2d(pt_begin- origin, dir_segment)/ a;
+    if (t1< 0.0f) {
+        return false;
+    }
+    float t2= cross2d(pt_begin- origin, direction)/ a;
+    if ((t2< 0.0f) || (t2> 1.0f)) {
+        return false;
+    }
+    result->x= origin.x+ t1* direction.x;
+    result->y= origin.y+ t1* direction.y;
+    return true;
+}
+
+
 // si existe intersection la + proche du pt de départ du segment avec le poly
-bool segment_intersects_poly(glm::vec2 pt_begin, glm::vec2 pt_end, Polygon2D * poly, glm::vec2 * result) {
+bool segment_intersects_poly(glm::vec2 & pt_begin, glm::vec2 & pt_end, Polygon2D * poly, glm::vec2 * result) {
+	if ((pt_begin.x< poly->_aabb->_pos.x) && (pt_end.x< poly->_aabb->_pos.x)) {
+		return false;
+	}
+	if ((pt_begin.x> poly->_aabb->_pos.x+ poly->_aabb->_size.x) && (pt_end.x> poly->_aabb->_pos.x+ poly->_aabb->_size.x)) {
+		return false;
+	}
+	if ((pt_begin.y< poly->_aabb->_pos.y) && (pt_end.y< poly->_aabb->_pos.y)) {
+		return false;
+	}
+	if ((pt_begin.y> poly->_aabb->_pos.y+ poly->_aabb->_size.y) && (pt_end.y> poly->_aabb->_pos.y+ poly->_aabb->_size.y)) {
+		return false;
+	}
+
     float min_dist= FLT_MAX;
     bool is_inter= false;
     glm::vec2 inter(0.0f);
@@ -94,7 +145,7 @@ bool segment_intersects_poly(glm::vec2 pt_begin, glm::vec2 pt_end, Polygon2D * p
 
 
 // d(pt, [seg1, seg2])
-bool distance_segment_pt(glm::vec2 seg1, glm::vec2 seg2, glm::vec2 pt, float * dist, glm::vec2 * proj) {
+bool distance_segment_pt(glm::vec2 & seg1, glm::vec2 & seg2, glm::vec2 & pt, float * dist, glm::vec2 * proj) {
     float seg_norm2= glm::distance2(seg1, seg2);
     bool proj_in_segment= true;
     
@@ -115,7 +166,7 @@ bool distance_segment_pt(glm::vec2 seg1, glm::vec2 seg2, glm::vec2 pt, float * d
 }
 
 
-float distance_poly_pt(Polygon2D * poly, glm::vec2 pt, glm::vec2 * proj) {
+float distance_poly_pt(Polygon2D * poly, glm::vec2 & pt, glm::vec2 * proj) {
     float dist_min= FLT_MAX;
     float dist;
     glm::vec2 proj2;
@@ -145,7 +196,7 @@ float distance_poly_pt(Polygon2D * poly, glm::vec2 pt, glm::vec2 * proj) {
 }
 
 
-float distance_poly_segment(Polygon2D * poly, glm::vec2 seg1, glm::vec2 seg2, glm::vec2 * proj) {
+float distance_poly_segment(Polygon2D * poly, glm::vec2 & seg1, glm::vec2 & seg2, glm::vec2 * proj) {
     float dist_min= FLT_MAX;
     float dist;
     glm::vec2 proj2;
@@ -236,13 +287,14 @@ void convex_hull_2d(std::vector<glm::vec2> & pts) {
 
 // ---------------------------------------------------------------------------------------------------
 Polygon2D::Polygon2D() : _area(0.0f), _centroid(glm::vec2(0.0f)), _radius(0.0f) {
-
+	_aabb= new AABB_2D();
 }
 
 
 Polygon2D::~Polygon2D() {
     _pts.clear();
     _normals.clear();
+	delete _aabb;
 }
 
 
@@ -295,6 +347,7 @@ void Polygon2D::update_attributes() {
         _centroid+= (0.5f* THIRD/ _area)* (pt1.x* pt2.y- pt1.y* pt2.x)* (pt1+ pt2);
     }
 
+	// a mettre en option ?
     // on met le centre du polygon sur le centre de gravité
     /*for (unsigned int i=0; i<_pts.size(); ++i) {
         _pts[i]-= _centroid;
@@ -317,15 +370,31 @@ void Polygon2D::update_attributes() {
         _normals.push_back(glm::normalize(glm::vec2(pt2.y- pt1.y, pt1.x- pt2.x)));
     }
 
-    // calcul rayon cercle englobant
+    // calcul rayon cercle englobant ; n'est pertinent que si le poly est convexe...
     _radius= 0.0f;
     for (auto it_pt : _pts) {
-        float dist2= it_pt.x* it_pt.x+ it_pt.y* it_pt.y;
+        float dist2= glm::distance2(it_pt, _centroid);
         if (dist2> _radius) {
             _radius= dist2;
         }
     }
     _radius= sqrt(_radius);
+
+	// calcul AABB
+	float xmin= 1e8;
+	float ymin= 1e8;
+	float xmax= -1e8;
+	float ymax= -1e8;
+	for (auto it_pt : _pts) {
+		if (it_pt.x< xmin) xmin= it_pt.x;
+		if (it_pt.y< ymin) ymin= it_pt.y;
+		if (it_pt.x> xmax) xmax= it_pt.x;
+		if (it_pt.y> ymax) ymax= it_pt.y;
+	}
+	_aabb->_pos.x= xmin;
+	_aabb->_pos.y= ymin;
+	_aabb->_size.x= xmax- xmin;
+	_aabb->_size.y= ymax- ymin;
 }
 
 
@@ -346,5 +415,7 @@ glm::vec2 Polygon2D::farthest_pt_along_dir(glm::vec2 direction) {
 
 
 void Polygon2D::print() {
-	cout << "area= " << _area << " ; centroid= " << glm::to_string(_centroid) << "\n";
+	cout << "area= " << _area << " ; centroid= " << glm::to_string(_centroid);
+	cout << " ; aabb_pos=" << glm::to_string(_aabb->_pos) << " ; aabb_size=" << glm::to_string(_aabb->_size);
+	cout << "\n";
 }

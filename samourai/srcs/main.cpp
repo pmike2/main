@@ -71,6 +71,18 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 	}
 	
 	if (view_system->mouse_motion(input_state)) {
+		/*float alti= world->_terrain->get_alti(glm::vec2(view_system->_target));
+		cout << glm::to_string(glm::vec2(view_system->_target)) << " ; " << alti << "\n";
+		view_system->_target.z= alti;
+		view_system->update();*/
+
+		glm::vec3 result(0.0f);
+		//bool b= world->_terrain->get_intersecting_point(view_system->_eye, view_system->_target, 1.0f, result);
+		/*bool b= world->_terrain->get_intersecting_point(view_system->_eye, view_system->_dir, 1.0f, result);
+		if (b) {
+			cout << "ok\n";
+			view_system->_target= result;
+		}*/
 		//return;
 	}
 
@@ -100,6 +112,17 @@ void mouse_button_down(int x, int y, unsigned short button) {
 
 	if (input_state->_keys[SDLK_LSHIFT]) {
 		glm::vec2 click_world= view_system->click2world(x, y, 0.0f);
+		//cout << glm::to_string(click_world) << "\n";
+
+		//glm::vec3 pt_begin= view_system->_eye;
+		//glm::vec3 pt_end= glm::vec3(click_world, 0.0f);
+		glm::vec3 result(0.0f);
+		//bool b= world->_terrain->get_intersecting_point(pt_begin, pt_end, step, result);
+		bool b= world->_terrain->get_intersecting_point(view_system->_eye, view_system->_dir, 1.0f, result);
+		cout << b << " ; " << glm::to_string(result) << "\n";
+		if (b) {
+			world->get_hero()->set_pos_rot_scale(result, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+		}
 	}
 }
 
@@ -413,14 +436,17 @@ void clean() {
 // ------------------------------------------------------------------------
 int main(int argc, char * argv[]) {
 
-	/*init();
+	init();
 	main_loop();
-	clean();*/
-	vector<Polygon2D *> polygons;
-	read_shp("/Users/home/git_dir/main/samourai/data/world3/obstacle.shp", polygons);
-	for (auto poly : polygons) {
-		poly->print();
-	}
+	clean();
+	
+	/*glm::vec2 origin(2.0f, 3.0f);
+	glm::vec2 direction(0.0f, 1.0f);
+	glm::vec2 pt_begin(0.0f, 0.0f);
+	glm::vec2 pt_end(10.0f, 0.0f);
+	glm::vec2 result(0.0f);
+	bool b= ray_intersects_segment(origin, direction, pt_begin, pt_end, &result);
+	cout << b << " ; " << glm::to_string(result) << "\n";*/
 
 	return 0;
 }
