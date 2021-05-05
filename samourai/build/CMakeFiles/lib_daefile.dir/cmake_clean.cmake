@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/lib_daefile.dir/Volumes/malenge/dir_git/main/libs/daefile.cpp.o"
-  "liblib_daefile.pdb"
+  "CMakeFiles/lib_daefile.dir/Users/home/git_dir/main/libs/daefile.cpp.o"
   "liblib_daefile.a"
+  "liblib_daefile.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

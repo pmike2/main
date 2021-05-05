@@ -450,6 +450,7 @@ World::~World() {
 	clear();
 	delete _quad_tree;
 	_models_pool->clear();
+	delete _path_finder;
 }
 
 
@@ -485,7 +486,7 @@ bool World::key_up(InputState * input_state, SDL_Keycode key) {
 
 bool World::mouse_motion(InputState * input_state) {
 	// A REVOIR ; un peu sale car interfère avec view_system ; permet de faire une rotation de la vue mais pour l'instant quelle que soit le mode de view_system !
-	get_hero()->set_pos_rot_scale(get_hero()->_pos_rot->_position, glm::rotate(get_hero()->_pos_rot->_rotation, (float)(-input_state->_xrel)* 0.01f, glm::vec3(0.0f, 0.0f, 1.0f)), glm::vec3(1.0f));
+	//get_hero()->set_pos_rot_scale(get_hero()->_pos_rot->_position, glm::rotate(get_hero()->_pos_rot->_rotation, (float)(-input_state->_xrel)* 0.01f, glm::vec3(0.0f, 0.0f, 1.0f)), glm::vec3(1.0f));
 	return true;
 }
 
@@ -873,6 +874,17 @@ void World::read(std::string ch_directory) {
 		ai->set_pos_rot_scale(position, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), scale);
 		_animated_instances.push_back(ai);
 	}
+
+	// -----------------------------------------------------------------
+	xml_node<> * path_finder_node= root_node->first_node("path_finder");
+	xml_node<> * n_ligs_node= path_finder_node->first_node("n_ligs");
+	unsigned int n_ligs= stoi(n_ligs_node->value());
+	xml_node<> * n_cols_node= path_finder_node->first_node("n_cols");
+	unsigned int n_cols= stoi(n_cols_node->value());
+	xml_node<> * obstacles_node= path_finder_node->first_node("obstacles");
+	string shp_path= obstacles_node->value();
+	_path_finder= new PathFinder(n_ligs, n_cols, _terrain->_config->_origin, glm::vec2(_terrain->_config->_width, _terrain->_config->_height), true);
+	_path_finder->read_shapefile(shp_path, glm::vec2(0.0f ,0.0f), glm::vec2(_terrain->_config->_width+ 1.0f, _terrain->_config->_height+ 1.0f), true);
 }
 
 

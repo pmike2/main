@@ -32,6 +32,7 @@
 #include "daefile.h"
 #include "objfile.h"
 #include "repere.h"
+#include "path_find.h"
 
 
 // TODO
@@ -198,6 +199,7 @@ public:
 	std::vector<BBoxDraw *> _static_bbox_draws;
 	std::vector<BBoxDraw *> _animated_bbox_draws;
 	bool _is_bbox_draw;
+	PathFinder * _path_finder;
 };
 
 

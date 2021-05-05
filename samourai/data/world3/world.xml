@@ -15,6 +15,11 @@
 			<n_subs_y>1</n_subs_y>
 		</config>
 	</terrain>
+	<path_finder>
+		<n_ligs>100</n_ligs>
+		<n_cols>100</n_cols>
+		<obstacles>../data/world3/obstacle.shp</obstacles>
+	</path_finder>
 	<static_models>
 		<static_model>
 			<ch_config>../data/tree.xml</ch_config>

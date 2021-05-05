@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/lib_geom_2d.dir/Volumes/malenge/dir_git/main/libs/geom_2d.cpp.o"
-  "liblib_geom_2d.pdb"
+  "CMakeFiles/lib_geom_2d.dir/Users/home/git_dir/main/libs/geom_2d.cpp.o"
   "liblib_geom_2d.a"
+  "liblib_geom_2d.pdb"
 )
 
 # Per-language clean rules from dependency scanning.

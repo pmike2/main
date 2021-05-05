@@ -61,6 +61,9 @@ IHM * ihm;
 
 //float depth_data[MAIN_WIN_WIDTH* MAIN_WIN_HEIGHT];
 
+glm::vec3 path_find_start;
+glm::vec3 path_find_goal;
+
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
@@ -76,15 +79,28 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 		view_system->_target.z= alti;
 		view_system->update();*/
 
-		glm::vec3 result(0.0f);
+		//glm::vec3 result(0.0f);
 		//bool b= world->_terrain->get_intersecting_point(view_system->_eye, view_system->_target, 1.0f, result);
-		/*bool b= world->_terrain->get_intersecting_point(view_system->_eye, view_system->_dir, 1.0f, result);
-		if (b) {
-			cout << "ok\n";
-			view_system->_target= result;
-		}*/
+		//bool b= world->_terrain->get_intersecting_point(view_system->_eye, view_system->_dir, 1.0f, result);
+		//cout << b << " ; " << glm::to_string(result) << " ; " << glm::to_string(view_system->_target) << "\n";
+		//if (b) {
+			//view_system->_target= result;
+			//view_system->update();
+		//}
 		//return;
 	}
+
+	/*
+	glm::vec2 click_world= view_system->click2world(x, y, 0.0f);
+	glm::vec3 pt_begin= view_system->_eye;
+	glm::vec3 pt_end= glm::vec3(click_world, 0.0f);
+	//glm::vec3 direction= glm::vec3(click_world, 0.0f)- pt_begin;
+	glm::vec3 result(0.0f);
+	bool b= world->_terrain->get_intersecting_point(pt_begin, pt_end, 1.0f, result);
+	if (b) {
+		world->get_hero()->set_pos_rot_scale(result, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+	}
+	*/
 
  	if (world->mouse_motion(input_state)) {
 		return;
@@ -110,18 +126,31 @@ void mouse_button_down(int x, int y, unsigned short button) {
 		return;
 	}
 
-	if (input_state->_keys[SDLK_LSHIFT]) {
+	if (input_state->_keys[SDLK_a]) {
 		glm::vec2 click_world= view_system->click2world(x, y, 0.0f);
-		//cout << glm::to_string(click_world) << "\n";
-
-		//glm::vec3 pt_begin= view_system->_eye;
-		//glm::vec3 pt_end= glm::vec3(click_world, 0.0f);
+		glm::vec3 pt_begin= view_system->_eye;
+		glm::vec3 pt_end= glm::vec3(click_world, 0.0f);
+		//glm::vec3 direction= glm::vec3(click_world, 0.0f)- pt_begin;
 		glm::vec3 result(0.0f);
-		//bool b= world->_terrain->get_intersecting_point(pt_begin, pt_end, step, result);
-		bool b= world->_terrain->get_intersecting_point(view_system->_eye, view_system->_dir, 1.0f, result);
-		cout << b << " ; " << glm::to_string(result) << "\n";
+		bool b= world->_terrain->get_intersecting_point(pt_begin, pt_end, 1.0f, result);
 		if (b) {
-			world->get_hero()->set_pos_rot_scale(result, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+			path_find_start= result;
+		}
+	}
+	else if (input_state->_keys[SDLK_z]) {
+		glm::vec2 click_world= view_system->click2world(x, y, 0.0f);
+		glm::vec3 pt_begin= view_system->_eye;
+		glm::vec3 pt_end= glm::vec3(click_world, 0.0f);
+		//glm::vec3 direction= glm::vec3(click_world, 0.0f)- pt_begin;
+		glm::vec3 result(0.0f);
+		bool b= world->_terrain->get_intersecting_point(pt_begin, pt_end, 1.0f, result);
+		if (b) {
+			path_find_goal= result;
+			std::vector<glm::vec2> v= world->_path_finder->path_find(glm::vec2(path_find_start), glm::vec2(path_find_goal));
+			for (auto x : v) {
+				cout << glm::to_string(x) << " ; ";
+			}
+			cout << "\n";
 		}
 	}
 }
@@ -274,7 +303,7 @@ void init() {
 	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_repere= false;
 	view_system->_repere->_is_box= false;
-	view_system->set(glm::vec3(world->get_center().x, world->get_center().y, 0.0f), (float)(M_PI)* 1.5f, (float)(M_PI)* 0.35f, 1000.0f);
+	view_system->set(glm::vec3(world->get_center().x, world->get_center().y, 0.0f), (float)(M_PI)* 1.5f, (float)(M_PI)* 0.35f, 300.0f);
 	//view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 1000.0f);
 
 	// temporaire

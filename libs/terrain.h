@@ -180,8 +180,8 @@ public:
 	void anim(ViewSystem * view_system);
 	float get_alti(const glm::vec2 & pos, bool * alti_ok=NULL);
 	//void get_altis_segment(glm::vec2 & pt_begin, glm::vec2 & pt_end, float step, std::vector<float> & altis);
-	bool get_intersecting_point_OLD(glm::vec3 & pt_begin, glm::vec3 & pt_end, float step, glm::vec3 & result);
-	bool get_intersecting_point(glm::vec3 & origin, glm::vec3 & direction, float step, glm::vec3 & result);
+	bool get_intersecting_point(glm::vec3 & pt_begin, glm::vec3 & pt_end, float step, glm::vec3 & result);
+	bool get_intersecting_point_BUG(glm::vec3 & origin, glm::vec3 & direction, float step, glm::vec3 & result);
 	void sync_mesh();
 	void set_draw_mesh(bool b);
 	void save(std::string ch_tif);

@@ -55,6 +55,7 @@ add_library(lib_objfile STATIC ../libs/objfile.cpp ../libs/objfile.h)
 add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
 add_library(lib_shapefile STATIC ../libs/shapefile.cpp ../libs/shapefile.h)
 add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
+add_library(lib_path_find STATIC ../libs/path_find.cpp ../libs/path_find.h)
 
 add_executable(main ./srcs/main.cpp ./srcs/constantes.h)
 
@@ -73,6 +74,7 @@ target_link_libraries(main PUBLIC lib_objfile)
 target_link_libraries(main PUBLIC lib_geom_2d)
 target_link_libraries(main PUBLIC lib_shapefile)
 target_link_libraries(main PUBLIC lib_bbox_2d)
+target_link_libraries(main PUBLIC lib_path_find)
 
 # bug debile cf https://stackoverflow.com/questions/45730098/cmake-leading-or-trailing-whitespace-policy-cmp0004
 string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)

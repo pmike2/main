@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 
 #include "geom_2d.h"
+#include "bbox_2d.h"
 
 
 struct GraphEdge {
@@ -51,11 +52,14 @@ struct GraphGrid : public Graph {
 	unsigned int _n_cols;
 	glm::vec2 _origin;
 	glm::vec2 _size;
+	AABB_2D * _aabb;
 
 
 	GraphGrid();
-	GraphGrid(unsigned int n_ligs, unsigned int n_cols, glm::vec2 & origin, glm::vec2 & size, bool is8connex=true);
+	GraphGrid(unsigned int n_ligs, unsigned int n_cols, const glm::vec2 & origin, const glm::vec2 & size, bool is8connex=true);
 	~GraphGrid();
+	std::pair<unsigned int, unsigned int> id2col_lig(unsigned int id);
+	unsigned int col_lig2id(unsigned int col, unsigned int lig);
 	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
 };
 
@@ -69,7 +73,7 @@ struct PathFinder {
 
 
 	PathFinder();
-	PathFinder(unsigned int n_ligs, unsigned int n_cols, glm::vec2 & origin, glm::vec2 & size, bool is8connex=true);
+	PathFinder(unsigned int n_ligs, unsigned int n_cols, const glm::vec2 & origin, const glm::vec2 & size, bool is8connex=true);
 	~PathFinder();
 	void update_grid();
 	void read_shapefile(std::string shp_path, glm::vec2 origin, glm::vec2 size, bool reverse_y=false);
@@ -77,7 +81,8 @@ struct PathFinder {
 	float cost(unsigned int i, unsigned int j);
 	float heuristic(unsigned int i, unsigned int j);
 	bool line_of_sight(unsigned int i, unsigned int j);
-	std::vector<unsigned int> path_find(unsigned int start, unsigned int goal);
+	std::vector<unsigned int> path_find_nodes(unsigned int start, unsigned int goal);
+	std::vector<glm::vec2> path_find(glm::vec2 start, glm::vec2 goal);
 	void draw_svg(std::vector<unsigned int> path, std::string result);
 };
 

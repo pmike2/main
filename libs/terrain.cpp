@@ -632,7 +632,7 @@ void Terrain::get_altis_segment(glm::vec2 & pt_begin, glm::vec2 & pt_end, float 
 }
 */
 
-bool Terrain::get_intersecting_point_OLD(glm::vec3 & pt_begin, glm::vec3 & pt_end, float step, glm::vec3 & result) {
+bool Terrain::get_intersecting_point(glm::vec3 & pt_begin, glm::vec3 & pt_end, float step, glm::vec3 & result) {
 	glm::vec2 pt_begin_2d= glm::vec2(pt_begin);
 	glm::vec2 pt_end_2d= glm::vec2(pt_end);
 	float dist= glm::distance(pt_begin_2d, pt_end_2d);
@@ -654,7 +654,7 @@ bool Terrain::get_intersecting_point_OLD(glm::vec3 & pt_begin, glm::vec3 & pt_en
 }
 
 
-bool Terrain::get_intersecting_point(glm::vec3 & origin, glm::vec3 & direction, float step, glm::vec3 & result) {
+bool Terrain::get_intersecting_point_BUG(glm::vec3 & origin, glm::vec3 & direction, float step, glm::vec3 & result) {
 	glm::vec2 origin_2d= glm::vec2(origin);
 	glm::vec2 direction_2d= glm::normalize(glm::vec2(direction));
 
@@ -696,6 +696,7 @@ bool Terrain::get_intersecting_point(glm::vec3 & origin, glm::vec3 & direction, 
 	float pt_begin_alti= origin.z+ direction.z* lambda;
 	lambda= glm::distance(pt_end_2d, origin_2d)/ glm::length(direction);
 	float pt_end_alti= origin.z+ direction.z* lambda;
+	//cout << lambda << " ; " << pt_begin_alti << " ; " << pt_end_alti << "\n";
 	
 	float dist= glm::distance(pt_begin_2d, pt_end_2d);
 	unsigned int n_pts= dist/ step;

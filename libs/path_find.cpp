@@ -138,10 +138,10 @@ GraphGrid::GraphGrid() {
 }
 
 
-GraphGrid::GraphGrid(unsigned int n_ligs, unsigned int n_cols, glm::vec2 & origin, glm::vec2 & size, bool is8connex) : _n_ligs(n_ligs), _n_cols(n_cols), _origin(origin), _size(size) {
+GraphGrid::GraphGrid(unsigned int n_ligs, unsigned int n_cols, const glm::vec2 & origin, const glm::vec2 & size, bool is8connex) : _n_ligs(n_ligs), _n_cols(n_cols), _origin(origin), _size(size) {
 	for (unsigned int lig=0; lig<_n_ligs; ++lig) {
 		for (unsigned int col=0; col<_n_cols; ++col) {
-			unsigned int id= col+ _n_cols* lig;
+			unsigned int id= col_lig2id(col, lig);
 			//float weight= rand_float(1.0f, 10.0f);
 			float weight= 1.0f;
 			/*if (rand_bool()) {
@@ -155,8 +155,8 @@ GraphGrid::GraphGrid(unsigned int n_ligs, unsigned int n_cols, glm::vec2 & origi
 	
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
-		unsigned int col= _it_v->first% _n_cols;
-		unsigned int lig= _it_v->first/ _n_cols;
+		unsigned int col= id2col_lig(_it_v->first).first;
+		unsigned int lig= id2col_lig(_it_v->first).second;
 		if (col> 0) {
 			add_edge(_it_v->first, _it_v->first- 1);
 		}
@@ -187,11 +187,23 @@ GraphGrid::GraphGrid(unsigned int n_ligs, unsigned int n_cols, glm::vec2 & origi
 
 		_it_v++;
 	}
+
+	_aabb= new AABB_2D(_origin, _size);
 }
 
 
 GraphGrid::~GraphGrid() {
+	delete _aabb;
+}
 
+
+pair<unsigned int, unsigned int> GraphGrid::id2col_lig(unsigned int id) {
+	return make_pair(id % _n_cols, id/ _n_cols);
+}
+
+
+unsigned int GraphGrid::col_lig2id(unsigned int col, unsigned int lig) {
+	return col+ _n_cols* lig;
 }
 
 
@@ -212,7 +224,7 @@ PathFinder::PathFinder() {
 }
 
 
-PathFinder::PathFinder(unsigned int n_ligs, unsigned int n_cols, glm::vec2 & origin, glm::vec2 & size, bool is8connex) {
+PathFinder::PathFinder(unsigned int n_ligs, unsigned int n_cols, const glm::vec2 & origin, const glm::vec2 & size, bool is8connex) {
 	_grid= new GraphGrid(n_ligs, n_cols, origin, size, is8connex);
 }
 
@@ -326,7 +338,7 @@ bool PathFinder::line_of_sight(unsigned int i, unsigned int j) {
 }
 
 
-vector<unsigned int> PathFinder::path_find(unsigned int start, unsigned int goal) {
+vector<unsigned int> PathFinder::path_find_nodes(unsigned int start, unsigned int goal) {
 	priority_queue< pair<unsigned int, float>, vector<pair<unsigned int, float> >, decltype(&frontier_cmp) > frontier(frontier_cmp);
 	unordered_map<unsigned int, unsigned int> came_from;
 	unordered_map<unsigned int, float> cost_so_far;
@@ -378,6 +390,37 @@ vector<unsigned int> PathFinder::path_find(unsigned int start, unsigned int goal
 	reverse(path.begin(), path.end());
 	
 	return path;
+}
+
+
+vector<glm::vec2> PathFinder::path_find(glm::vec2 start, glm::vec2 goal) {
+	vector<glm::vec2> result;
+	
+	if ((!point_in_aabb(start, _grid->_aabb)) || (!point_in_aabb(goal, _grid->_aabb))) {
+		return result;
+	}
+
+	unsigned int start_col_min= (unsigned int)(((start.x- _grid->_origin.x)/ _grid->_size.x)* (float)(_grid->_n_cols- 1));
+	//unsigned int start_col_max= col_min+ 1;
+	unsigned int start_lig_min= (unsigned int)(((start.y- _grid->_origin.y)/ _grid->_size.y)* (float)(_grid->_n_ligs- 1));
+	//unsigned int start_lig_max= lig_min+ 1;
+	unsigned int start_id= _grid->col_lig2id(start_col_min, start_lig_min);
+
+	unsigned int goal_col_min= (unsigned int)(((goal.x- _grid->_origin.x)/ _grid->_size.x)* (float)(_grid->_n_cols- 1));
+	//unsigned int goal_col_max= col_min+ 1;
+	unsigned int goal_lig_min= (unsigned int)(((goal.y- _grid->_origin.y)/ _grid->_size.y)* (float)(_grid->_n_ligs- 1));
+	//unsigned int goal_lig_max= lig_min+ 1;
+	unsigned int goal_id= _grid->col_lig2id(goal_col_min, goal_lig_min);
+
+	std::vector<unsigned int> nodes= path_find_nodes(start_id, goal_id);
+
+	result.push_back(start);
+	for (auto node : nodes) {
+		result.push_back(_grid->_vertices[node]._pos);
+	}
+	result.push_back(goal);
+
+	return result;
 }
 
 
