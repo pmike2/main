@@ -4,3 +4,4 @@ main
 *.o
 *.tif
 build
+build/

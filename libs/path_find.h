@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include <OpenGL/gl3.h>
+
 #include <glm/glm.hpp>
 
 #include "geom_2d.h"
@@ -23,7 +25,6 @@ struct GraphEdge {
 struct GraphVertex {
 	float _weight;
 	glm::vec2 _pos;
-	bool _visited;
 	std::unordered_map<unsigned int, GraphEdge> _edges;
 };
 
@@ -81,10 +82,28 @@ struct PathFinder {
 	float cost(unsigned int i, unsigned int j);
 	float heuristic(unsigned int i, unsigned int j);
 	bool line_of_sight(unsigned int i, unsigned int j);
-	std::vector<unsigned int> path_find_nodes(unsigned int start, unsigned int goal);
-	std::vector<glm::vec2> path_find(glm::vec2 start, glm::vec2 goal);
-	void draw_svg(std::vector<unsigned int> path, std::string result);
+	bool path_find_nodes(unsigned int start, unsigned int goal, std::vector<unsigned int> & path, std::vector<unsigned int> & visited);
+	bool path_find(glm::vec2 start, glm::vec2 goal, std::vector<glm::vec2> & path, std::vector<unsigned int> & visited);
+	void draw_svg(const std::vector<unsigned int> & path, const std::vector<unsigned int> & visited, std::string svg_path);
 };
+
+
+struct PathFinderDebug {
+	PathFinderDebug();
+	PathFinderDebug(GLuint prog_draw);
+	~PathFinderDebug();
+	void draw();
+	void anim(const glm::mat4 & world2clip);
+	void update(const PathFinder & path_finder, const std::vector<glm::vec2> & path, const std::vector<unsigned int> & visited);
+
+
+	GLuint _prog_draw;
+	GLint _world2clip_loc, _position_loc, _color_loc;
+	GLuint _buffers[1];
+	glm::mat4 _world2clip;
+	unsigned int _n_pts;
+};
+
 
 
 #endif

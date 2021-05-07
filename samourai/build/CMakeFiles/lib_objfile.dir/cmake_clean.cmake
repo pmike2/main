@@ -1,7 +1,7 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/lib_objfile.dir/Users/home/git_dir/main/libs/objfile.cpp.o"
-  "liblib_objfile.a"
+  "CMakeFiles/lib_objfile.dir/Volumes/malenge/dir_git/main/libs/objfile.cpp.o"
   "liblib_objfile.pdb"
+  "liblib_objfile.a"
 )
 
 # Per-language clean rules from dependency scanning.

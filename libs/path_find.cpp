@@ -1,6 +1,8 @@
 #include <queue>
 #include <fstream>
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include "path_find.h"
 #include "utile.h"
 #include "shapefile.h"
@@ -25,7 +27,6 @@ void Graph::add_vertex(unsigned int i, float weight, float x, float y) {
 		v._weight= weight;
 		v._pos.x= x;
 		v._pos.y= y;
-		v._visited= false;
 		_vertices[i]= v;
 	}
 }
@@ -290,7 +291,7 @@ void PathFinder::read_shapefile(string shp_path, glm::vec2 origin, glm::vec2 siz
 			}
 		}
 		poly_reproj->set_points(pts, poly->_pts.size());
-		poly_reproj->print();
+		//poly_reproj->print();
 		_polygons.push_back(poly_reproj);
 		delete poly;
 	}
@@ -338,7 +339,7 @@ bool PathFinder::line_of_sight(unsigned int i, unsigned int j) {
 }
 
 
-vector<unsigned int> PathFinder::path_find_nodes(unsigned int start, unsigned int goal) {
+bool PathFinder::path_find_nodes(unsigned int start, unsigned int goal, std::vector<unsigned int> & path, std::vector<unsigned int> & visited) {
 	priority_queue< pair<unsigned int, float>, vector<pair<unsigned int, float> >, decltype(&frontier_cmp) > frontier(frontier_cmp);
 	unordered_map<unsigned int, unsigned int> came_from;
 	unordered_map<unsigned int, float> cost_so_far;
@@ -350,7 +351,8 @@ vector<unsigned int> PathFinder::path_find_nodes(unsigned int start, unsigned in
 	while (!frontier.empty()) {
 		unsigned int current= frontier.top().first;
 		frontier.pop();
-		_grid->_vertices[current]._visited= true;
+		
+		visited.push_back(current);
 
 		if (current== goal) {
 			break;
@@ -374,11 +376,9 @@ vector<unsigned int> PathFinder::path_find_nodes(unsigned int start, unsigned in
 		}
 	}
 
-	vector<unsigned int> path;
-
 	if (!came_from.count(goal)) {
-		cout << "disconnected\n";
-		return path;
+		//cout << "disconnected\n";
+		return false;
 	}
 
 	unsigned int current= goal;
@@ -388,16 +388,14 @@ vector<unsigned int> PathFinder::path_find_nodes(unsigned int start, unsigned in
 	}
 	path.push_back(start);
 	reverse(path.begin(), path.end());
-	
-	return path;
+
+	return true;
 }
 
 
-vector<glm::vec2> PathFinder::path_find(glm::vec2 start, glm::vec2 goal) {
-	vector<glm::vec2> result;
-	
+bool PathFinder::path_find(glm::vec2 start, glm::vec2 goal, vector<glm::vec2> & path, vector<unsigned int> & visited) {
 	if ((!point_in_aabb(start, _grid->_aabb)) || (!point_in_aabb(goal, _grid->_aabb))) {
-		return result;
+		return false;
 	}
 
 	unsigned int start_col_min= (unsigned int)(((start.x- _grid->_origin.x)/ _grid->_size.x)* (float)(_grid->_n_cols- 1));
@@ -412,21 +410,25 @@ vector<glm::vec2> PathFinder::path_find(glm::vec2 start, glm::vec2 goal) {
 	//unsigned int goal_lig_max= lig_min+ 1;
 	unsigned int goal_id= _grid->col_lig2id(goal_col_min, goal_lig_min);
 
-	std::vector<unsigned int> nodes= path_find_nodes(start_id, goal_id);
-
-	result.push_back(start);
-	for (auto node : nodes) {
-		result.push_back(_grid->_vertices[node]._pos);
+	std::vector<unsigned int> nodes;
+	bool is_path_ok= path_find_nodes(start_id, goal_id, nodes, visited);
+	if (!is_path_ok) {
+		return false;
 	}
-	result.push_back(goal);
 
-	return result;
+	path.push_back(start);
+	for (auto node : nodes) {
+		path.push_back(_grid->_vertices[node]._pos);
+	}
+	path.push_back(goal);
+
+	return true;
 }
 
 
-void PathFinder::draw_svg(vector<unsigned int> path, string result) {
+void PathFinder::draw_svg(const vector<unsigned int> & path, const vector<unsigned int> & visited, string svg_path) {
 	ofstream f;
-	f.open(result);
+	f.open(svg_path);
 	f << "<!DOCTYPE html>\n<html>\n<body>\n";
 	f << "<svg width=\"1000\" height=\"1000\" viewbox=\"" << _grid->_origin.x << " " << _grid->_origin.y << " " << _grid->_size.x << " " << _grid->_size.y << "\">\n";
 
@@ -453,7 +455,7 @@ void PathFinder::draw_svg(vector<unsigned int> path, string result) {
 		float x1= _grid->_it_v->second._pos.x;
 		float y1= _grid->_it_v->second._pos.y;
 		string color= "black";
-		if (_grid->_it_v->second._visited) {
+		if (find(visited.begin(), visited.end(), _grid->_it_v->first)!= visited.end()) {
 			color= "cyan";
 		}
 		float radius= 0.01* _grid->_it_v->second._weight;
@@ -473,4 +475,77 @@ void PathFinder::draw_svg(vector<unsigned int> path, string result) {
 	
 	f << "</svg>\n</body>\n</html>\n";
 	f.close();
+}
+
+
+// -------------------------------------------------------------------------------------------------------------
+PathFinderDebug::PathFinderDebug() {
+
+}
+
+
+PathFinderDebug::PathFinderDebug(GLuint prog_draw) : _prog_draw(prog_draw), _world2clip(glm::mat4(1.0f)), _n_pts(0) {
+	glGenBuffers(1, _buffers);
+
+	glUseProgram(_prog_draw);
+	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
+	_color_loc= glGetAttribLocation(_prog_draw, "color_in");
+	_world2clip_loc= glGetUniformLocation(_prog_draw, "world2clip_matrix");
+	glUseProgram(0);
+}
+
+
+PathFinderDebug::~PathFinderDebug() {
+	
+}
+
+
+void PathFinderDebug::draw() {
+	if (_n_pts> 0) {
+		glUseProgram(_prog_draw);
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
+
+		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(_world2clip));
+		
+		glEnableVertexAttribArray(_position_loc);
+		glEnableVertexAttribArray(_color_loc);
+
+		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+		glVertexAttribPointer(_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
+
+		glDrawArrays(GL_POINTS, 0, _n_pts);
+
+		glDisableVertexAttribArray(_position_loc);
+		glDisableVertexAttribArray(_color_loc);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glUseProgram(0);
+	}
+}
+
+
+void PathFinderDebug::anim(const glm::mat4 & world2clip) {
+	_world2clip= world2clip;
+}
+
+
+void PathFinderDebug::update(const PathFinder & path_finder, const vector<glm::vec2> & path, const vector<unsigned int> & visited) {
+	_n_pts= path_finder._grid->_vertices.size();
+	float data_pts[_n_pts* 6];
+	unsigned int idx= 0;
+	path_finder._grid->_it_v= path_finder._grid->_vertices.begin();
+	while (path_finder._grid->_it_v!= path_finder._grid->_vertices.end()) {
+		data_pts[6* idx+ 0]= path_finder._grid->_it_v->second._pos.x;
+		data_pts[6* idx+ 1]= path_finder._grid->_it_v->second._pos.y;
+		data_pts[6* idx+ 2]= 300.0f;
+		data_pts[6* idx+ 3]= 0.9f;
+		data_pts[6* idx+ 4]= 0.2f;
+		data_pts[6* idx+ 5]= 0.2f;
+		path_finder._grid->_it_v++;
+		idx++;
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
+	glBufferData(GL_ARRAY_BUFFER, _n_pts* 6* sizeof(float), data_pts, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

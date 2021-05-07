@@ -16,6 +16,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(a_star)
 
 find_package(GDAL REQUIRED)
+find_package(OpenGL REQUIRED)
 
 include_directories(/usr/local/include)
 include_directories(../libs)
@@ -36,3 +37,4 @@ target_link_libraries(main PUBLIC lib_shapefile)
 target_link_libraries(main PUBLIC lib_bbox_2d)
 
 target_link_libraries(main PUBLIC ${GDAL_LIBRARIES})
+target_link_libraries(main PUBLIC ${OPENGL_LIBRARIES})

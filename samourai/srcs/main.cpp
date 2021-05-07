@@ -63,6 +63,7 @@ IHM * ihm;
 
 glm::vec3 path_find_start;
 glm::vec3 path_find_goal;
+PathFinderDebug * pfd;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
@@ -146,11 +147,18 @@ void mouse_button_down(int x, int y, unsigned short button) {
 		bool b= world->_terrain->get_intersecting_point(pt_begin, pt_end, 1.0f, result);
 		if (b) {
 			path_find_goal= result;
-			std::vector<glm::vec2> v= world->_path_finder->path_find(glm::vec2(path_find_start), glm::vec2(path_find_goal));
-			for (auto x : v) {
-				cout << glm::to_string(x) << " ; ";
+			vector<glm::vec2> path;
+			vector<unsigned int> visited;
+			if (world->_path_finder->path_find(glm::vec2(path_find_start), glm::vec2(path_find_goal), path, visited)) {
+				for (auto x : path) {
+					cout << glm::to_string(x) << " ; ";
+				}
+				cout << "\n";
 			}
-			cout << "\n";
+			else {
+				cout << "disconnected\n";
+			}
+			pfd->update(*world->_path_finder, path, visited);
 		}
 	}
 }
@@ -252,6 +260,8 @@ void init() {
 	// pour gérer l'alpha
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glPointSize(5.0f);
 	
 	SDL_GL_SwapWindow(window);
 	
@@ -352,6 +362,8 @@ void init() {
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
+
+	pfd= new PathFinderDebug(prog_repere);
 }
 
 
@@ -366,6 +378,7 @@ void draw() {
 	lights_ubo->draw(view_system->_world2clip);
 	world->draw();
 	ihm->draw();
+	pfd->draw();
 
 	SDL_GL_SwapWindow(window);
 }
@@ -384,6 +397,7 @@ void anim() {
 	//bck_factor= 0.5f* ((lights_ubo->_lights[0]->_position_world[2]/ 5000.0f)+ 1.0f);
 	lights_ubo->anim(view_system->_world2camera);
 	world->anim(view_system, tikanim_delta);
+	pfd->anim(view_system->_world2clip);
 
 	//glReadPixels(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT, depth_data);
 }
