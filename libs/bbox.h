@@ -52,6 +52,7 @@ public:
 	float _radius;
 	glm::mat4 _model2world;
 	glm::vec3 _pts[8]; // sommets du parallelepipede droit
+	AABB * _aabb;
 };
 
 
@@ -82,7 +83,7 @@ bool aabb_intersects_aabb(AABB * aabb_1, AABB * aabb_2);
 bool aabb_intersects_bbox(AABB * aabb, BBox * bbox);
 float aabb_distance_pt_2(AABB * aabb, const glm::vec3 & pt);
 float aabb_distance_pt(AABB * aabb, const glm::vec3 & pt);
-//bool bbox_intersects(BBox * bbox1, const glm::mat3 & rotation1, const glm::vec3 & translation1, BBox * bbox2, const glm::mat3 & rotation2, const glm::vec3 & translation2);
+bool ray_intersects_aabb(glm::vec3 origin, glm::vec3 direction, AABB * aabb, float & t_hit);
 
 
 // dessin de BBox ; a utiliser avec parcimonie ; lent si trop d'objets

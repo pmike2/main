@@ -850,8 +850,8 @@ void World::read(std::string ch_directory) {
 	for (xml_node<> * static_instance_node=static_instances_node->first_node("static_instance"); static_instance_node; static_instance_node=static_instance_node->next_sibling()) {
 		string ch_config_file= static_instance_node->first_node("ch_config")->value();
 		glm::vec3 position;
-		
 		sscanf(static_instance_node->first_node("position")->value(), "vec3(%f, %f, %f)", &position.x, &position.y, &position.z);
+		position.z= _terrain->get_alti(glm::vec2(position.x, position.y));
 		glm::quat rotation;
 		sscanf(static_instance_node->first_node("rotation")->value(), "quat(%f, {%f, %f, %f})", &rotation.w, &rotation.x, &rotation.y, &rotation.z);
 		glm::vec3 scale;
@@ -883,8 +883,28 @@ void World::read(std::string ch_directory) {
 	unsigned int n_cols= stoi(n_cols_node->value());
 	xml_node<> * obstacles_node= path_finder_node->first_node("obstacles");
 	string shp_path= obstacles_node->value();
+	
 	_path_finder= new PathFinder(n_ligs, n_cols, _terrain->_config->_origin, glm::vec2(_terrain->_config->_width, _terrain->_config->_height), true);
 	_path_finder->read_shapefile(shp_path, glm::vec2(0.0f ,0.0f), glm::vec2(_terrain->_config->_width+ 1.0f, _terrain->_config->_height+ 1.0f), true);
+	statics2obstacles();
+	_path_finder->update_grid();
+}
+
+
+void World::statics2obstacles() {
+	for (auto si : _static_instances) {
+		Polygon2D * poly= new Polygon2D();
+		/*glm::vec2 origin= glm::vec2(si->_pos_rot->_bbox->_vmin.x, si->_pos_rot->_bbox->_vmin.y);
+		glm::vec2 size= glm::vec2(si->_pos_rot->_bbox->_vmax.x, si->_pos_rot->_bbox->_vmax.y)- origin;
+		poly->set_rectangle(origin, size);*/
+		float pts[16];
+		for (unsigned int i=0; i<8; ++i) {
+			pts[2* i+ 0]= si->_pos_rot->_bbox->_pts[i].x;
+			pts[2* i+ 1]= si->_pos_rot->_bbox->_pts[i].y;
+		}
+		poly->set_points(pts, 8, true);
+		_path_finder->_polygons.push_back(poly);
+	}
 }
 
 

@@ -5,7 +5,7 @@ cd $1
 
 TMP="tmp"
 XING="xingng"
-TRESH="20"
+TRESH="60"
 SIMPLIFY="3.0"
 
 rm -r $TMP 2> /dev/null

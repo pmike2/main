@@ -282,7 +282,7 @@ void PathFinder::read_shapefile(string shp_path, glm::vec2 origin, glm::vec2 siz
 		Polygon2D * poly_reproj= new Polygon2D();
 		float pts[poly->_pts.size()* 2];
 		for (unsigned int i=0; i<poly->_pts.size(); ++i) {
-			pts[2* i   ]= ((poly->_pts[i].x- origin.x)/ size.x)* _grid->_size.x+ _grid->_origin.x;
+			pts[2* i]= ((poly->_pts[i].x- origin.x)/ size.x)* _grid->_size.x+ _grid->_origin.x;
 			if (reverse_y) {
 				pts[2* i+ 1]= ((origin.y- poly->_pts[i].y)/ size.y)* _grid->_size.y+ _grid->_origin.y;
 			}
@@ -295,7 +295,6 @@ void PathFinder::read_shapefile(string shp_path, glm::vec2 origin, glm::vec2 siz
 		_polygons.push_back(poly_reproj);
 		delete poly;
 	}
-	update_grid();
 }
 
 
@@ -484,8 +483,10 @@ PathFinderDebug::PathFinderDebug() {
 }
 
 
-PathFinderDebug::PathFinderDebug(GLuint prog_draw) : _prog_draw(prog_draw), _world2clip(glm::mat4(1.0f)), _n_pts(0) {
-	glGenBuffers(1, _buffers);
+PathFinderDebug::PathFinderDebug(GLuint prog_draw) :
+	_prog_draw(prog_draw), _world2clip(glm::mat4(1.0f)), _n_pts_grid(0), _n_pts_obstacle(0), _n_pts_path(0)
+{
+	glGenBuffers(3, _buffers);
 
 	glUseProgram(_prog_draw);
 	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
@@ -501,7 +502,7 @@ PathFinderDebug::~PathFinderDebug() {
 
 
 void PathFinderDebug::draw() {
-	if (_n_pts> 0) {
+	if (_n_pts_grid> 0) {
 		glUseProgram(_prog_draw);
 		glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
 
@@ -513,7 +514,49 @@ void PathFinderDebug::draw() {
 		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
 		glVertexAttribPointer(_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 
-		glDrawArrays(GL_POINTS, 0, _n_pts);
+		glDrawArrays(GL_POINTS, 0, _n_pts_grid);
+
+		glDisableVertexAttribArray(_position_loc);
+		glDisableVertexAttribArray(_color_loc);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glUseProgram(0);
+	}
+
+	if (_n_pts_obstacle> 0) {
+		glUseProgram(_prog_draw);
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[1]);
+
+		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(_world2clip));
+		
+		glEnableVertexAttribArray(_position_loc);
+		glEnableVertexAttribArray(_color_loc);
+
+		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+		glVertexAttribPointer(_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
+
+		glDrawArrays(GL_LINES, 0, _n_pts_obstacle* 2);
+
+		glDisableVertexAttribArray(_position_loc);
+		glDisableVertexAttribArray(_color_loc);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glUseProgram(0);
+	}
+
+	if (_n_pts_path> 0) {
+		glUseProgram(_prog_draw);
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
+
+		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(_world2clip));
+		
+		glEnableVertexAttribArray(_position_loc);
+		glEnableVertexAttribArray(_color_loc);
+
+		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+		glVertexAttribPointer(_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
+
+		glDrawArrays(GL_LINES, 0, (_n_pts_path- 1)* 2);
 
 		glDisableVertexAttribArray(_position_loc);
 		glDisableVertexAttribArray(_color_loc);
@@ -530,22 +573,85 @@ void PathFinderDebug::anim(const glm::mat4 & world2clip) {
 
 
 void PathFinderDebug::update(const PathFinder & path_finder, const vector<glm::vec2> & path, const vector<unsigned int> & visited) {
-	_n_pts= path_finder._grid->_vertices.size();
-	float data_pts[_n_pts* 6];
+	float alti= 300.0f;
+
+	_n_pts_grid= path_finder._grid->_vertices.size();
+	float data_pts[_n_pts_grid* 6];
 	unsigned int idx= 0;
 	path_finder._grid->_it_v= path_finder._grid->_vertices.begin();
 	while (path_finder._grid->_it_v!= path_finder._grid->_vertices.end()) {
 		data_pts[6* idx+ 0]= path_finder._grid->_it_v->second._pos.x;
 		data_pts[6* idx+ 1]= path_finder._grid->_it_v->second._pos.y;
-		data_pts[6* idx+ 2]= 300.0f;
-		data_pts[6* idx+ 3]= 0.9f;
-		data_pts[6* idx+ 4]= 0.2f;
-		data_pts[6* idx+ 5]= 0.2f;
+		data_pts[6* idx+ 2]= alti;
+		if (find(visited.begin(), visited.end(), path_finder._grid->_it_v->first)!= visited.end()) {
+			data_pts[6* idx+ 3]= 0.9f;
+			data_pts[6* idx+ 4]= 0.2f;
+			data_pts[6* idx+ 5]= 0.2f;
+		}
+		else {
+			data_pts[6* idx+ 3]= 0.2f;
+			data_pts[6* idx+ 4]= 0.9f;
+			data_pts[6* idx+ 5]= 0.9f;
+		}
 		path_finder._grid->_it_v++;
 		idx++;
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, _n_pts* 6* sizeof(float), data_pts, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, _n_pts_grid* 6* sizeof(float), data_pts, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// -------------------------------------------------
+	_n_pts_obstacle= 0;
+	for (auto polygon : path_finder._polygons) {
+		_n_pts_obstacle+= polygon->_pts.size();
+	}
+	float data_obstacle[_n_pts_obstacle* 12];
+	idx= 0;
+	for (auto polygon : path_finder._polygons) {
+		for (unsigned int i=0; i<polygon->_pts.size(); ++i) {
+			data_obstacle[12* idx+ 0]= polygon->_pts[i].x;
+			data_obstacle[12* idx+ 1]= polygon->_pts[i].y;
+			data_obstacle[12* idx+ 2]= alti;
+			data_obstacle[12* idx+ 3]= 0.2f;
+			data_obstacle[12* idx+ 4]= 0.2f;
+			data_obstacle[12* idx+ 5]= 0.9f;
+
+			data_obstacle[12* idx+ 6]= polygon->_pts[(i+ 1)% polygon->_pts.size()].x;
+			data_obstacle[12* idx+ 7]= polygon->_pts[(i+ 1)% polygon->_pts.size()].y;
+			data_obstacle[12* idx+ 8]= alti;
+			data_obstacle[12* idx+ 9]= 0.2f;
+			data_obstacle[12* idx+ 10]= 0.2f;
+			data_obstacle[12* idx+ 11]= 0.9f;
+
+			idx++;
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[1]);
+	glBufferData(GL_ARRAY_BUFFER, _n_pts_obstacle* 12* sizeof(float), data_obstacle, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// -------------------------------------------------
+	_n_pts_path= path.size();
+	float data_path[(_n_pts_path- 1)* 12];
+	for (unsigned int i=0; i<_n_pts_path- 1; ++i) {
+		data_path[12* i+ 0]= path[i].x;
+		data_path[12* i+ 1]= path[i].y;
+		data_path[12* i+ 2]= alti;
+		data_path[12* i+ 3]= 0.2;
+		data_path[12* i+ 4]= 0.5;
+		data_path[12* i+ 5]= 0.2;
+
+		data_path[12* i+ 6]= path[i+ 1].x;
+		data_path[12* i+ 7]= path[i+ 1].y;
+		data_path[12* i+ 8]= alti;
+		data_path[12* i+ 9]= 0.2;
+		data_path[12* i+ 10]= 0.5;
+		data_path[12* i+ 11]= 0.2;
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
+	glBufferData(GL_ARRAY_BUFFER, (_n_pts_path- 1)* 12* sizeof(float), data_path, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }

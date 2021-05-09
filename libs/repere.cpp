@@ -57,18 +57,17 @@ Repere::Repere(GLuint prog_draw) : _prog_draw(prog_draw), _is_repere(true), _is_
 	for (i=0; i<144; i++)
 		_data_box[i]= data_box[i];
 
-	glGenBuffers(1, &_buffer_repere);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_repere);
+	glGenBuffers(3, _buffers);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(_data_repere), _data_repere, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glGenBuffers(1, &_buffer_ground);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_ground);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[1]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(_data_ground), _data_ground, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
-	glGenBuffers(1, &_buffer_box);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer_box);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(_data_box), _data_box, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
@@ -86,7 +85,7 @@ Repere::~Repere() {
 void Repere::draw(const glm::mat4 & world2clip) {
 	if (_is_repere) {
 		glUseProgram(_prog_draw);
-		glBindBuffer(GL_ARRAY_BUFFER, _buffer_repere);
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
 		
 		glEnableVertexAttribArray(_position_loc);
 		glEnableVertexAttribArray(_diffuse_color_loc);
@@ -106,7 +105,7 @@ void Repere::draw(const glm::mat4 & world2clip) {
 	
 	if (_is_ground) {
 		glUseProgram(_prog_draw);
-		glBindBuffer(GL_ARRAY_BUFFER, _buffer_ground);
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[1]);
 
 		glEnableVertexAttribArray(_position_loc);
 		glEnableVertexAttribArray(_diffuse_color_loc);
@@ -126,7 +125,7 @@ void Repere::draw(const glm::mat4 & world2clip) {
 
 	if (_is_box) {
 		glUseProgram(_prog_draw);
-		glBindBuffer(GL_ARRAY_BUFFER, _buffer_box);
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
 
 		glEnableVertexAttribArray(_position_loc);
 		glEnableVertexAttribArray(_diffuse_color_loc);
@@ -147,12 +146,92 @@ void Repere::draw(const glm::mat4 & world2clip) {
 
 
 // ------------------------------------------------------------------------------------------------------------------------
+RectSelect::RectSelect() {
+
+}
+
+
+RectSelect::RectSelect(GLuint prog_draw) : 
+	_prog_draw(prog_draw), _is_active(false), _vmin(glm::vec(0.0f)), _vmax(glm::vec(0.0f)), _color(glm::vec3(0.0f, 1.0f, 1.0f))
+{
+	glGenBuffers(1, &_buffer);
+	
+	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
+	_color_loc= glGetAttribLocation(_prog_draw, "color_in");
+
+	update();
+}
+
+
+RectSelect::~RectSelect() {
+
+}
+
+
+void RectSelect::draw() {
+	if (_is_active) {
+		glUseProgram(_prog_draw);
+		glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+
+		glEnableVertexAttribArray(_position_loc);
+		glEnableVertexAttribArray(_color_loc);
+		
+		glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)0);
+		glVertexAttribPointer(_color_loc, 3, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(2* sizeof(float)));
+
+		glDrawArrays(GL_LINES, 0, 8);
+
+		glDisableVertexAttribArray(_position_loc);
+		glDisableVertexAttribArray(_color_loc);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);		
+		glUseProgram(0);
+	}
+}
+
+
+void RectSelect::anim(glm::vec3 vmin, glm::vec3 vmax) {
+	if (_is_active) {
+		_vmin= vmin;
+		_vmax= vmax;
+		update();
+	}
+}
+
+
+void RectSelect::set_active(bool is_active) {
+	_is_active= is_active;
+}
+
+
+void RectSelect::update() {
+	float data_selection[]= {
+		_vmin.x, _vmin.y, _color.x, _color.y, _color.z,
+		_vmax.x, _vmin.y, _color.x, _color.y, _color.z,
+		
+		_vmax.x, _vmin.y, _color.x, _color.y, _color.z,
+		_vmax.x, _vmax.y, _color.x, _color.y, _color.z,
+		
+		_vmax.x, _vmax.y, _color.x, _color.y, _color.z,
+		_vmin.x, _vmax.y, _color.x, _color.y, _color.z,
+
+		_vmin.x, _vmax.y, _color.x, _color.y, _color.z,
+		_vmin.x, _vmin.y, _color.x, _color.y, _color.z,
+	};
+
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(data_selection), data_selection, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+// ------------------------------------------------------------------------------------------------------------------------
 ViewSystem::ViewSystem() {
 
 }
 
 
-ViewSystem::ViewSystem(GLuint prog_repere, unsigned int screen_width, unsigned int screen_height) :
+ViewSystem::ViewSystem(GLuint prog_repere, GLuint prog_select, unsigned int screen_width, unsigned int screen_height) :
 	_target(glm::vec3(0.0f, 0.0f, 0.0f)), _eye(glm::vec3(0.0f, 0.0f, 0.0f)), _up(glm::vec3(0.0f, 0.0f, 0.0f)), 
 	_phi(0.0f), _theta(0.0f), _rho(1.0f), _screen_width(screen_width), _screen_height(screen_height),
 	_type(FREE_VIEW), _frustum_halfsize(FRUSTUM_HALFSIZE), _frustum_near(FRUSTUM_NEAR), _frustum_far(FRUSTUM_FAR)
@@ -162,11 +241,29 @@ ViewSystem::ViewSystem(GLuint prog_repere, unsigned int screen_width, unsigned i
 	update();
 
 	_repere= new Repere(prog_repere);
+	_rect_select= new RectSelect(prog_select);
 }
 
 
 ViewSystem::~ViewSystem() {
 	delete _repere;
+	delete _rect_select;
+}
+
+
+bool ViewSystem::mouse_button_down(InputState * input_state) {
+	if (input_state->_left_mouse) {
+		_rect_select->set_active(true);
+		cout << input_state->_x << " ; " << input_state->_y << "\n";
+		glm::vec2 v(input_state->_x, );
+		_rect_select->anim(v, v);
+	}
+	return false;
+}
+
+
+bool ViewSystem::mouse_button_up(InputState * input_state) {
+	return false;
 }
 
 

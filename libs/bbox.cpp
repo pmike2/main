@@ -53,13 +53,14 @@ BBox::BBox(const glm::vec3 & vmin, const glm::vec3 & vmax, const glm::mat4 & mod
 	if (abs(_vmax.y)> _radius) _radius= abs(_vmax.y);
 	if (abs(_vmin.z)> _radius) _radius= abs(_vmin.z);
 	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);
+	_aabb= new AABB();
 
 	set_model2world(model2world);
 }
 
 
 BBox::~BBox() {
-	
+	delete _aabb;
 }
 
 
@@ -74,6 +75,30 @@ void BBox::set_model2world(const glm::mat4 & model2world) {
 	_pts[5]= glm::vec3(_model2world* glm::vec4(_vmax.x, _vmin.y, _vmax.z, 1.0f));
 	_pts[6]= glm::vec3(_model2world* glm::vec4(_vmin.x, _vmax.y, _vmax.z, 1.0f));
 	_pts[7]= glm::vec3(_model2world* glm::vec4(_vmax.x, _vmax.y, _vmax.z, 1.0f));
+
+	glm::vec3 vmin(_pts[0]);
+	glm::vec3 vmax(_pts[0]);
+	for (unsigned int i=1; i<8; ++i) {
+		if (_pts[i].x< vmin.x) {
+			vmin.x= _pts[i].x;
+		}
+		if (_pts[i].y< vmin.y) {
+			vmin.y= _pts[i].y;
+		}
+		if (_pts[i].z< vmin.z) {
+			vmin.z= _pts[i].z;
+		}
+		if (_pts[i].x> vmax.x) {
+			vmax.x= _pts[i].x;
+		}
+		if (_pts[i].y> vmax.y) {
+			vmax.y= _pts[i].y;
+		}
+		if (_pts[i].z> vmax.z) {
+			vmax.z= _pts[i].z;
+		}
+	}
+	_aabb->set_vmin_vmax(vmin, vmax);
 }
 
 
@@ -192,6 +217,37 @@ float aabb_distance_pt_2(AABB * aabb, const glm::vec3 & pt) {
 
 float aabb_distance_pt(AABB * aabb, const glm::vec3 & pt) {
 	return sqrt(aabb_distance_pt_2(aabb, pt));
+}
+
+
+// cf https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+bool ray_intersects_aabb(glm::vec3 origin, glm::vec3 direction, AABB * aabb, float & t_hit) {
+	direction= glm::normalize(direction);
+	glm::vec3 dirfrac(1.0f/ direction.x, 1.0f/ direction.y, 1.0f/ direction.z);
+	float t1= (aabb->_vmin.x- origin.x)* dirfrac.x;
+	float t2= (aabb->_vmax.x- origin.x)* dirfrac.x;
+	float t3= (aabb->_vmin.y- origin.y)* dirfrac.y;
+	float t4= (aabb->_vmax.y- origin.y)* dirfrac.y;
+	float t5= (aabb->_vmin.z- origin.z)* dirfrac.z;
+	float t6= (aabb->_vmax.z- origin.z)* dirfrac.z;
+
+	float tmin= max(max(min(t1, t2), min(t3, t4)), min(t5, t6));
+	float tmax= min(min(max(t1, t2), max(t3, t4)), max(t5, t6));
+
+	// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+	if (tmax < 0) {
+		t_hit= tmax;
+		return false;
+	}
+
+	// if tmin > tmax, ray doesn't intersect AABB
+	if (tmin > tmax) {
+		t_hit= tmax;
+		return false;
+	}
+
+	t_hit= tmin;
+	return true;
 }
 
 

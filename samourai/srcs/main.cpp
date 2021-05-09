@@ -51,7 +51,7 @@ float bck_factor= 1.0f;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_basic, prog_ihm, prog_repere, prog_3d_obj_instanced, prog_bbox;
+GLuint prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_basic, prog_ihm, prog_repere, prog_3d_obj_instanced, prog_bbox, prog_select;
 GLuint g_vao;
 
 ViewSystem * view_system;
@@ -116,6 +116,10 @@ void mouse_button_up(int x, int y, unsigned short button) {
 	if (ihm->mouse_button_up(input_state)) {
 		return;
 	}
+
+	if (view_system->mouse_button_up(input_state)) {
+		return;
+	}
 }
 
 
@@ -124,6 +128,10 @@ void mouse_button_down(int x, int y, unsigned short button) {
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (ihm->mouse_button_down(input_state)) {
+		return;
+	}
+
+	if (view_system->mouse_button_down(input_state)) {
 		return;
 	}
 
@@ -150,15 +158,34 @@ void mouse_button_down(int x, int y, unsigned short button) {
 			vector<glm::vec2> path;
 			vector<unsigned int> visited;
 			if (world->_path_finder->path_find(glm::vec2(path_find_start), glm::vec2(path_find_goal), path, visited)) {
-				for (auto x : path) {
+				/*for (auto x : path) {
 					cout << glm::to_string(x) << " ; ";
-				}
-				cout << "\n";
+				}*/
+				cout << "connected\n";
 			}
 			else {
 				cout << "disconnected\n";
 			}
 			pfd->update(*world->_path_finder, path, visited);
+		}
+	}
+	else if (input_state->_keys[SDLK_s]) {
+		float buffer_depth;
+		// attention au height- y
+		glReadPixels(x, MAIN_WIN_HEIGHT- y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
+		float near= view_system->_frustum_near;
+		float far= view_system->_frustum_far;
+		float world_depth= near* far* 2.0f/ ((2.0f* buffer_depth- 1.0f)* (far- near) - (far+ near));
+
+		glm::vec2 click_world= view_system->click2world(x, y, 0.0f);
+		float t_hit;
+		bool intersect= ray_intersects_aabb(view_system->_eye, glm::vec3(click_world, 0.0f)- view_system->_eye, world->get_hero()->_pos_rot->_bbox->_aabb, t_hit);
+		cout << world_depth << " ; " << t_hit << "\n";
+		if ((intersect) && (abs(abs(world_depth)- t_hit)< 40.0f)) {
+			cout << "intersect\n";
+		}
+		else {
+			cout << "no intersect\n";
 		}
 	}
 }
@@ -261,7 +288,7 @@ void init() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glPointSize(5.0f);
+	glPointSize(3.0f);
 	
 	SDL_GL_SwapWindow(window);
 	
@@ -280,9 +307,10 @@ void init() {
 	prog_repere          = create_prog("../../shaders/vertexshader_repere.txt"      , "../../shaders/fragmentshader_basic.txt");
 	prog_3d_anim         = create_prog("../../shaders/vertexshader_3d_anim.txt"     , "../../shaders/fragmentshader_3d_color.txt");
 	prog_3d_terrain      = create_prog("../../shaders/vertexshader_3d_terrain.txt"  , "../../shaders/fragmentshader_3d_color.txt");
-	prog_3d_obj          = create_prog("../../shaders/vertexshader_3d_basic.txt"      , "../../shaders/fragmentshader_3d_color.txt");
+	prog_3d_obj          = create_prog("../../shaders/vertexshader_3d_basic.txt"    , "../../shaders/fragmentshader_3d_color.txt");
 	prog_3d_obj_instanced= create_prog("../../shaders/vertexshader_3d_color_instanced.txt", "../../shaders/fragmentshader_3d_color.txt");
 	prog_bbox            = create_prog("../../shaders/vertexshader_bbox.txt"        , "../../shaders/fragmentshader_basic.txt");
+	prog_select          = create_prog("../../shaders/vertexshader_select.txt"      , "../../shaders/fragmentshader_basic.txt");
 
 	float eye_direction[]= {0.0f, 0.0f, 1.0f};
 	GLuint progs_eye[]= {prog_3d_anim, prog_3d_terrain, prog_3d_obj};
@@ -309,7 +337,7 @@ void init() {
 	//lights_ubo->print();
 
 	// --------------------------------------------------------------------------
-	view_system= new ViewSystem(prog_repere, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	view_system= new ViewSystem(prog_repere, prog_select, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_repere= false;
 	view_system->_repere->_is_box= false;
@@ -317,7 +345,7 @@ void init() {
 	//view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 1000.0f);
 
 	// temporaire
-	world->get_hero()->set_pos_rot_scale(glm::vec3(glm::vec2(view_system->_target), 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
+	//world->get_hero()->set_pos_rot_scale(glm::vec3(glm::vec2(view_system->_target), 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
 	//world->get_hero()->set_pos_rot_scale(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
 
 	// --------------------------------------------------------------------------
@@ -490,6 +518,13 @@ int main(int argc, char * argv[]) {
 	glm::vec2 result(0.0f);
 	bool b= ray_intersects_segment(origin, direction, pt_begin, pt_end, &result);
 	cout << b << " ; " << glm::to_string(result) << "\n";*/
+
+	/*glm::vec3 origin(0.0f, 0.0f, 0.0f);
+	glm::vec3 direction(-1.0f, 0.0f, 0.0f);
+	AABB * aabb= new AABB(glm::vec3(10.0f, -1.0f, -1.0f), glm::vec3(20.0f, 1.0f, 1.0f));
+	float t_hit= 0.0f;
+	bool b= ray_intersects_aabb(origin, direction, aabb, t_hit);
+	cout << b << " ; " << t_hit << "\n";*/
 
 	return 0;
 }

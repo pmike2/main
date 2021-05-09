@@ -24,6 +24,7 @@ void test() {
 	PathFinder * pf= new PathFinder(n_ligs, n_cols, origin, size);
 	//pf->rand(8, 20, 1.0f);
 	pf->read_shapefile("../data/obstacle.shp", glm::vec2(0.0f, 0.0f), glm::vec2(513.0f, 513.0f), true);
+	pf->update_grid();
 	cout << "searching\n";
 	vector<unsigned int> path;
 	vector<unsigned int> visited;

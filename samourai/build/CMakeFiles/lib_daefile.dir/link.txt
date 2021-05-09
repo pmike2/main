@@ -1,2 +1,2 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc liblib_daefile.a  CMakeFiles/lib_daefile.dir/Volumes/malenge/dir_git/main/libs/daefile.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ar qc liblib_daefile.a CMakeFiles/lib_daefile.dir/Users/home/git_dir/main/libs/daefile.cpp.o
 /Library/Developer/CommandLineTools/usr/bin/ranlib liblib_daefile.a

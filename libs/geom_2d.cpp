@@ -298,34 +298,38 @@ Polygon2D::~Polygon2D() {
 }
 
 
-void Polygon2D::set_points(float * points, unsigned int n_points) {
+void Polygon2D::set_points(float * points, unsigned int n_points, bool convexhull) {
     _pts.clear();
     for (unsigned int i=0; i<n_points; ++i) {
         _pts.push_back(glm::vec2(points[2* i], points[2* i+ 1]));
     }
-    //convex_hull_2d(_pts); // a mettre en option ?
+    if (convexhull) {
+        convex_hull_2d(_pts);
+    }
     update_attributes();
 }
 
 
-void Polygon2D::randomize(unsigned int n_points, float radius, glm::vec2 center) {
+void Polygon2D::randomize(unsigned int n_points, float radius, glm::vec2 center, bool convexhull) {
     _pts.clear();
     for (unsigned int i=0; i<n_points; ++i) {
         float x= center.x+ rand_float(-radius, radius);
         float y= center.y+ rand_float(-radius, radius);
         _pts.push_back(glm::vec2(x, y));
     }
-    //convex_hull_2d(_pts); // a mettre en option ?
+    if (convexhull) {
+        convex_hull_2d(_pts);
+    }
     update_attributes();
 }
 
 
-void Polygon2D::set_rectangle(float width, float height) {
+void Polygon2D::set_rectangle(glm::vec2 origin, glm::vec2 size) {
     _pts.clear();
-    _pts.push_back(glm::vec2(0.0f, 0.0f));
-    _pts.push_back(glm::vec2(width, 0.0f));
-    _pts.push_back(glm::vec2(width, height));
-    _pts.push_back(glm::vec2(0.0f, height));
+    _pts.push_back(origin);
+    _pts.push_back(origin+ glm::vec2(size.x, 0.0f));
+    _pts.push_back(origin+ size);
+    _pts.push_back(origin+ glm::vec2(0.0f, size.y));
     update_attributes();
 }
 

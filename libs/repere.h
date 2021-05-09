@@ -55,18 +55,33 @@ public:
 	
 	GLuint _prog_draw;
 	GLint _world2clip_loc, _position_loc, _diffuse_color_loc;
-
-	GLuint _buffer_repere;
+	GLuint _buffers[3];
 	float _data_repere[36];
 	bool _is_repere;
-	
-	GLuint _buffer_ground;
 	float _data_ground[36];
 	bool _is_ground;
-
-	GLuint _buffer_box;
 	float _data_box[144];
 	bool _is_box;
+};
+
+
+class RectSelect {
+public:
+	RectSelect();
+	RectSelect(GLuint prog_draw);
+	~RectSelect();
+	void draw();
+	void anim(glm::vec2 vmin, glm::vec2 vmax);
+	void set_active(bool is_active);
+	void update();
+
+	GLuint _prog_draw;
+	GLint _position_loc, _color_loc;
+	GLuint _buffer;
+	bool _is_active;
+	glm::vec2 _vmin;
+	glm::vec2 _vmax;
+	glm::vec3 _color;
 };
 
 
@@ -74,8 +89,10 @@ public:
 class ViewSystem {
 public:
 	ViewSystem();
-	ViewSystem(GLuint prog_repere, unsigned int screen_width, unsigned int screen_height);
+	ViewSystem(GLuint prog_repere, GLuint prog_select, unsigned int screen_width, unsigned int screen_height);
 	~ViewSystem();
+	bool mouse_button_down(InputState * input_state);
+	bool mouse_button_up(InputState * input_state);
 	bool mouse_motion(InputState * input_state);
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
@@ -113,6 +130,7 @@ public:
 	ViewSystemType _type;
 	
 	Repere * _repere;
+	RectSelect * _rect_select;
 };
 
 

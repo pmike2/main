@@ -178,6 +178,7 @@ public:
 	void randomize(const WorldRandomConfig * world_random_config);
 	void write(std::string ch_directory);
 	void read(std::string ch_directory);
+	void statics2obstacles();
 	void clear(bool clear_instances=true, bool clear_terrain=true);
 	glm::vec2 get_center();
 	void print();

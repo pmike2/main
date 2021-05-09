@@ -99,9 +99,9 @@ struct PathFinderDebug {
 
 	GLuint _prog_draw;
 	GLint _world2clip_loc, _position_loc, _color_loc;
-	GLuint _buffers[1];
+	GLuint _buffers[3];
 	glm::mat4 _world2clip;
-	unsigned int _n_pts;
+	unsigned int _n_pts_grid, _n_pts_obstacle, _n_pts_path;
 };
 
 
