@@ -33,7 +33,7 @@ const float FRUSTUM_FAR= 5000.0f;
 const float FRUSTUM_HALFSIZE= 5.0f;
 
 // ajoute une marge a l'ensemble des points contenus dans le champ de vision
-const float CONTAINS_POINT_TOLERANCE= 20.0f;
+//const float CONTAINS_POINT_TOLERANCE= 20.0f;
 
 // sensibilité souris
 const float LEFT_MOUSE_SENSIVITY= 5.0f;
@@ -71,17 +71,20 @@ public:
 	RectSelect(GLuint prog_draw);
 	~RectSelect();
 	void draw();
-	void anim(glm::vec2 vmin, glm::vec2 vmax);
+	void set_origin(glm::vec2 gl_v);
+	void set_moving(glm::vec2 gl_v);
 	void set_active(bool is_active);
-	void update();
+	void update_draw();
+
 
 	GLuint _prog_draw;
 	GLint _position_loc, _color_loc;
 	GLuint _buffer;
 	bool _is_active;
-	glm::vec2 _vmin;
-	glm::vec2 _vmax;
+	glm::vec2 _gl_origin;
+	glm::vec2 _gl_moving;
 	glm::vec3 _color;
+	glm::vec3 _norms[4];
 };
 
 
@@ -104,17 +107,25 @@ public:
 	void move_phi(float x);
 	void move_theta(float x);
 	void move_rho(float x);
-	glm::vec2 click2world(unsigned int x, unsigned int y, float z);
-	bool contains_point(const glm::vec3 & pos);
-	bool intersects_bbox(BBox * bbox);
-	bool intersects_aabb(AABB * aabb);
-	bool intersects_aabb(AABB * aabb, const glm::mat4 & model2world_matrix);
-	bool intersects_pts(glm::vec3 * pts);
+	glm::vec2 screen2world(unsigned int x, unsigned int y, float z);
+	glm::vec2 screen2world(glm::vec2 gl_coords, float z);
+	glm::vec2 screen2gl(unsigned int x, unsigned int y);
+	glm::uvec2 gl2screen(glm::vec2 gl_coords);
+	float depthbuffer2world(float depth);
+	//bool contains_point(const glm::vec3 & pos);
+	bool intersects_bbox(BBox * bbox, bool selection=false);
+	bool intersects_aabb(AABB * aabb, bool selection=false);
+	bool intersects_aabb(AABB * aabb, const glm::mat4 & model2world_matrix, bool selection=false);
+	bool intersects_pts(glm::vec3 * pts, unsigned int n_pts, bool selection=false);
+	//bool selection_contains_point(const glm::vec3 & pt);
+	void update_selection_norms();
+	bool single_selection_intersects_aabb(AABB * aabb);
+	bool rect_selection_intersects_bbox(BBox * bbox);
 
 	
 	// paramètres en entrée
 	float _frustum_near, _frustum_far, _frustum_halfsize;
-	float _screen_width, _screen_height;
+	unsigned int _screen_width, _screen_height;
 	glm::vec3 _target;
 	float _phi, _theta, _rho;
 	
@@ -131,6 +142,8 @@ public:
 	
 	Repere * _repere;
 	RectSelect * _rect_select;
+	bool _new_single_selection;
+	bool _new_rect_selection;
 };
 
 

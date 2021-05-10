@@ -514,6 +514,25 @@ void World::draw() {
 
 
 void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
+	if (view_system->_new_single_selection) {
+		cout << "new_single_selection\n";
+		view_system->_new_single_selection= false;
+		for (auto ai : _animated_instances) {
+			if (view_system->single_selection_intersects_aabb(ai->_pos_rot->_bbox->_aabb)) {
+				cout << "single_selection success\n";
+			}
+		}
+	}
+	if (view_system->_new_rect_selection) {
+		cout << "new_rect_selection\n";
+		view_system->_new_rect_selection= false;
+		for (auto ai : _animated_instances) {
+			if (view_system->rect_selection_intersects_bbox(ai->_pos_rot->_bbox)) {
+				cout << "rect_selection success\n";
+			}
+		}
+	}
+
 	_terrain->anim(view_system);
 
 	// determination des objets statiques a dessiner

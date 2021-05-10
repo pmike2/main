@@ -92,7 +92,7 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 	}
 
 	/*
-	glm::vec2 click_world= view_system->click2world(x, y, 0.0f);
+	glm::vec2 click_world= view_system->screen2world(x, y, 0.0f);
 	glm::vec3 pt_begin= view_system->_eye;
 	glm::vec3 pt_end= glm::vec3(click_world, 0.0f);
 	//glm::vec3 direction= glm::vec3(click_world, 0.0f)- pt_begin;
@@ -136,7 +136,7 @@ void mouse_button_down(int x, int y, unsigned short button) {
 	}
 
 	if (input_state->_keys[SDLK_a]) {
-		glm::vec2 click_world= view_system->click2world(x, y, 0.0f);
+		glm::vec2 click_world= view_system->screen2world(x, y, 0.0f);
 		glm::vec3 pt_begin= view_system->_eye;
 		glm::vec3 pt_end= glm::vec3(click_world, 0.0f);
 		//glm::vec3 direction= glm::vec3(click_world, 0.0f)- pt_begin;
@@ -147,7 +147,7 @@ void mouse_button_down(int x, int y, unsigned short button) {
 		}
 	}
 	else if (input_state->_keys[SDLK_z]) {
-		glm::vec2 click_world= view_system->click2world(x, y, 0.0f);
+		glm::vec2 click_world= view_system->screen2world(x, y, 0.0f);
 		glm::vec3 pt_begin= view_system->_eye;
 		glm::vec3 pt_end= glm::vec3(click_world, 0.0f);
 		//glm::vec3 direction= glm::vec3(click_world, 0.0f)- pt_begin;
@@ -169,15 +169,14 @@ void mouse_button_down(int x, int y, unsigned short button) {
 			pfd->update(*world->_path_finder, path, visited);
 		}
 	}
-	else if (input_state->_keys[SDLK_s]) {
+	/*else if (input_state->_keys[SDLK_s]) {
 		float buffer_depth;
-		// attention au height- y
 		glReadPixels(x, MAIN_WIN_HEIGHT- y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
 		float near= view_system->_frustum_near;
 		float far= view_system->_frustum_far;
 		float world_depth= near* far* 2.0f/ ((2.0f* buffer_depth- 1.0f)* (far- near) - (far+ near));
 
-		glm::vec2 click_world= view_system->click2world(x, y, 0.0f);
+		glm::vec2 click_world= view_system->screen2world(x, y, 0.0f);
 		float t_hit;
 		bool intersect= ray_intersects_aabb(view_system->_eye, glm::vec3(click_world, 0.0f)- view_system->_eye, world->get_hero()->_pos_rot->_bbox->_aabb, t_hit);
 		cout << world_depth << " ; " << t_hit << "\n";
@@ -187,7 +186,7 @@ void mouse_button_down(int x, int y, unsigned short button) {
 		else {
 			cout << "no intersect\n";
 		}
-	}
+	}*/
 }
 
 
