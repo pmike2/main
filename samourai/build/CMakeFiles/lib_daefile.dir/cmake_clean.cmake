@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/lib_daefile.dir/Users/home/git_dir/main/libs/daefile.cpp.o"
+  "CMakeFiles/lib_daefile.dir/Volumes/malenge/dir_git/main/libs/daefile.cpp.o"
+  "CMakeFiles/lib_daefile.dir/Volumes/malenge/dir_git/main/libs/daefile.cpp.o.d"
   "liblib_daefile.a"
   "liblib_daefile.pdb"
 )

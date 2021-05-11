@@ -369,6 +369,124 @@ void QuadTree::recursive_print(QuadNode * node) {
 
 
 // ------------------------------------------------------------------------------------------
+SelectionDraw::SelectionDraw() {
+
+}
+
+
+SelectionDraw::SelectionDraw(GLuint prog_draw) : _prog_draw(prog_draw), _world2clip(glm::mat4(1.0f)) {
+	glGenBuffers(1, &_buffer);
+	
+	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
+	_color_loc= glGetAttribLocation(_prog_draw, "color_in");
+	_world2clip_loc= glGetUniformLocation(_prog_draw, "world2clip_matrix");
+}
+
+
+SelectionDraw::~SelectionDraw() {
+
+}
+
+
+void SelectionDraw::draw() {
+	glUseProgram(_prog_draw);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+	
+	glEnableVertexAttribArray(_position_loc);
+	glEnableVertexAttribArray(_color_loc);
+
+	glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(_world2clip));
+	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+	glVertexAttribPointer(_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
+
+	glDrawArrays(GL_LINES, 0, _n_instances* 24);
+
+	glDisableVertexAttribArray(_position_loc);
+	glDisableVertexAttribArray(_color_loc);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
+void SelectionDraw::anim(ViewSystem * view_system) {
+	_world2clip= view_system->_world2clip;
+}
+
+
+void SelectionDraw::update(vector<AnimatedInstance *> animated_instances) {
+	_n_instances= 0;
+	for (auto ai : animated_instances) {
+		if (ai->_pos_rot->_selected) {
+			_n_instances++;
+		}
+	}
+	float data[_n_instances* 144];
+	glm::vec3 color(1.0f, 1.0f, 0.0f);
+	
+	unsigned int i=0;
+	for (auto ai : animated_instances) {
+		if (!ai->_pos_rot->_selected) {
+			continue;
+		}
+
+		glm::vec3 vmin= ai->_pos_rot->_bbox->_aabb->_vmin;
+		glm::vec3 vmax= ai->_pos_rot->_bbox->_aabb->_vmax;
+
+		data[144* i+ 0]= vmax.x; data[144* i+ 1]= vmin.y; data[144* i+ 2]= vmin.z;
+		data[144* i+ 6]= vmax.x; data[144* i+ 7]= vmax.y; data[144* i+ 8]= vmin.z;
+		
+		data[144* i+ 12]= vmax.x; data[144* i+ 13]= vmax.y; data[144* i+ 14]= vmin.z;
+		data[144* i+ 18]= vmax.x; data[144* i+ 19]= vmax.y; data[144* i+ 20]= vmax.z;
+		
+		data[144* i+ 24]= vmax.x; data[144* i+ 25]= vmax.y; data[144* i+ 26]= vmax.z;
+		data[144* i+ 30]= vmax.x; data[144* i+ 31]= vmin.y; data[144* i+ 32]= vmax.z;
+		
+		data[144* i+ 36]= vmax.x; data[144* i+ 37]= vmin.y; data[144* i+ 38]= vmax.z;
+		data[144* i+ 42]= vmax.x; data[144* i+ 43]= vmin.y; data[144* i+ 44]= vmin.z;
+		
+		// ---
+		data[144* i+ 48]= vmin.x; data[144* i+ 49]= vmin.y; data[144* i+ 50]= vmin.z;
+		data[144* i+ 54]= vmin.x; data[144* i+ 55]= vmax.y; data[144* i+ 56]= vmin.z;
+		
+		data[144* i+ 60]= vmin.x; data[144* i+ 61]= vmax.y; data[144* i+ 62]= vmin.z;
+		data[144* i+ 66]= vmin.x; data[144* i+ 67]= vmax.y; data[144* i+ 68]= vmax.z;
+		
+		data[144* i+ 72]= vmin.x; data[144* i+ 73]= vmax.y; data[144* i+ 74]= vmax.z;
+		data[144* i+ 78]= vmin.x; data[144* i+ 79]= vmin.y; data[144* i+ 80]= vmax.z;
+		
+		data[144* i+ 84]= vmin.x; data[144* i+ 85]= vmin.y; data[144* i+ 86]= vmax.z;
+		data[144* i+ 90]= vmin.x; data[144* i+ 91]= vmin.y; data[144* i+ 92]= vmin.z;
+		
+		// ---
+		data[144* i+ 96]= vmax.x; data[144* i+ 97]= vmin.y; data[144* i+ 98]= vmin.z;
+		data[144* i+ 102]= vmin.x; data[144* i+ 103]= vmin.y; data[144* i+ 104]= vmin.z;
+		
+		data[144* i+ 108]= vmax.x; data[144* i+ 109]= vmax.y; data[144* i+ 110]= vmin.z;
+		data[144* i+ 114]= vmin.x; data[144* i+ 115]= vmax.y; data[144* i+ 116]= vmin.z;
+		
+		data[144* i+ 120]= vmax.x; data[144* i+ 121]= vmax.y; data[144* i+ 122]= vmax.z;
+		data[144* i+ 126]= vmin.x; data[144* i+ 127]= vmax.y; data[144* i+ 128]= vmax.z;
+		
+		data[144* i+ 132]= vmax.x; data[144* i+ 133]= vmin.y; data[144* i+ 134]= vmax.z;
+		data[144* i+ 138]= vmin.x; data[144* i+ 139]= vmin.y; data[144* i+ 140]= vmax.z;
+
+		for (unsigned int j=0; j<24; j++) {
+			data[144* i+ 6* j+ 3]= color.x;
+			data[144* i+ 6* j+ 4]= color.y;
+			data[144* i+ 6* j+ 5]= color.z;
+		}
+
+		i++;
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+// ------------------------------------------------------------------------------------------
 World::World() {
 
 }
@@ -442,6 +560,8 @@ World::World(GLuint prog_3d_anim, GLuint prog_3d_terrain, GLuint prog_3d_obj, GL
 	}*/
 
 	//sync_bbox_draws();
+	_selection_draw= new SelectionDraw(_prog_bbox);
+
 	//cout << "end init\n";
 }
 
@@ -451,6 +571,7 @@ World::~World() {
 	delete _quad_tree;
 	_models_pool->clear();
 	delete _path_finder;
+	delete _selection_draw;
 }
 
 
@@ -496,6 +617,8 @@ void World::draw() {
 	for (auto ai : _animated_instances) {
 		ai->draw();
 	}
+
+	_selection_draw->draw();
 }
 
 
@@ -523,7 +646,33 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 		}
 	}
 
+	if (view_system->_new_destination) {
+		view_system->_new_destination= false;
+		glm::vec3 path_find_goal(0.0f);
+		if (_terrain->get_intersecting_point(view_system->_eye, view_system->_destination, 1.0f, path_find_goal)) {
+			for (auto ai : _animated_instances) {
+				if (!ai->_pos_rot->_selected) {
+					continue;
+				}
+
+				vector<glm::vec2> path;
+				vector<unsigned int> visited;
+				if (_path_finder->path_find(glm::vec2(ai->_pos_rot->_position), glm::vec2(path_find_goal), path, visited)) {
+					vector<glm::vec3> path_3d;
+					for (auto pt : path) {
+						path_3d.push_back(glm::vec3(pt, _terrain->get_alti(pt)));
+					}
+					ai->set_path(path_3d);
+					ai->_current_idx_anim= 1;
+				}
+			}
+		}
+	}
+
 	_terrain->anim(view_system);
+
+	_selection_draw->update(_animated_instances);
+	_selection_draw->anim(view_system);
 
 	// determination des objets statiques a dessiner
 	for (auto sg : _static_groups) {
@@ -562,11 +711,11 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 			ai->set_animated(true);
 		}
 
-		if (ai!= get_hero()) {
+		/*if (ai!= get_hero()) {
 			if (rand_int(0, 100)== 0) {
 				ai->randomize();
 			}
-		}
+		}*/
 
 		ai->anim(view_system, tikanim_delta);
 

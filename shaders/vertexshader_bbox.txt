@@ -1,12 +1,11 @@
 #version 410 core
 
 
-uniform mat4 model2world_matrix;
 uniform mat4 world2clip_matrix;
-uniform vec4 color;
 
 
 layout(location=0) in vec4 position_in;
+layout(location=1) in vec4 color_in;
 
 
 out vec4 vertex_color;
@@ -14,7 +13,7 @@ out vec4 vertex_color;
 
 void main(void)
 {
-	vertex_color= color;
+	vertex_color= color_in;
 
-	gl_Position= world2clip_matrix* model2world_matrix* position_in;
+	gl_Position= world2clip_matrix* position_in;
 }

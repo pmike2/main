@@ -324,10 +324,6 @@ void init() {
 	check_gl_error();
 	
 	// --------------------------------------------------------------------------
-	//world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, & WORLD_RAND_CONFIG_1, "");
-	//world->write("./data/world1");
-
-	
 	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, NULL, "../data/world3");
 
 	// --------------------------------------------------------------------------
@@ -342,10 +338,6 @@ void init() {
 	view_system->_repere->_is_box= false;
 	view_system->set(glm::vec3(world->get_center().x, world->get_center().y, 0.0f), (float)(M_PI)* 1.5f, (float)(M_PI)* 0.35f, 300.0f);
 	//view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 1000.0f);
-
-	// temporaire
-	//world->get_hero()->set_pos_rot_scale(glm::vec3(glm::vec2(view_system->_target), 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
-	//world->get_hero()->set_pos_rot_scale(glm::vec3(0.0f, 0.0f, 0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
 
 	// --------------------------------------------------------------------------
 	ihm= new IHM(prog_ihm, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);

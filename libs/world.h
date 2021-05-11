@@ -163,6 +163,24 @@ public:
 };
 
 
+class SelectionDraw {
+public:
+	SelectionDraw();
+	SelectionDraw(GLuint prog_draw);
+	~SelectionDraw();
+	void draw();
+	void anim(ViewSystem * view_system);
+	void update(std::vector<AnimatedInstance *> animated_instances);
+
+
+	GLuint _prog_draw;
+	GLint _world2clip_loc, _position_loc, _color_loc;
+	GLuint _buffer;
+	unsigned int _n_instances;
+	glm::mat4 _world2clip;
+};
+
+
 // classe monde ; regroupe terrain, objets statiques, animés
 class World {
 public:
@@ -201,6 +219,7 @@ public:
 	std::vector<BBoxDraw *> _animated_bbox_draws;
 	bool _is_bbox_draw;*/
 	PathFinder * _path_finder;
+	SelectionDraw * _selection_draw;
 };
 
 

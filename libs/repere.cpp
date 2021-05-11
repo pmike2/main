@@ -23,8 +23,6 @@ Repere::Repere(GLuint prog_draw) : _prog_draw(prog_draw), _is_repere(true), _is_
 		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, REPERE_AXIS, 0.0f, 0.0f, 1.0f
 	};
-	for (i=0; i<36; i++)
-		_data_repere[i]= data_repere[i];
 	
 	float EPS= 0.01f;
 	float data_ground[]= {
@@ -35,8 +33,6 @@ Repere::Repere(GLuint prog_draw) : _prog_draw(prog_draw), _is_repere(true), _is_
 		 REPERE_GROUND,  REPERE_GROUND, -EPS, 0.0f, 0.0f, 0.0f,
 		-REPERE_GROUND,  REPERE_GROUND, -EPS, 0.0f, 0.0f, 0.0f
 	};
-	for (i=0; i<36; i++)
-		_data_ground[i]= data_ground[i];
 
 	float data_box[]= {
 		-REPERE_BOX, -REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  REPERE_BOX, -REPERE_BOX, -REPERE_BOX , 0.0f, 0.0f, 0.0f,
@@ -54,21 +50,19 @@ Repere::Repere(GLuint prog_draw) : _prog_draw(prog_draw), _is_repere(true), _is_
 		-REPERE_BOX, REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  -REPERE_BOX, REPERE_BOX, REPERE_BOX , 0.0f, 0.0f, 0.0f,
 		REPERE_BOX, REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  REPERE_BOX, REPERE_BOX, REPERE_BOX , 0.0f, 0.0f, 0.0f
 	};
-	for (i=0; i<144; i++)
-		_data_box[i]= data_box[i];
 
 	glGenBuffers(3, _buffers);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(_data_repere), _data_repere, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(data_repere), data_repere, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, _buffers[1]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(_data_ground), _data_ground, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(data_ground), data_ground, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(_data_box), _data_box, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(data_box), data_box, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
 	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
@@ -243,7 +237,7 @@ ViewSystem::ViewSystem(GLuint prog_repere, GLuint prog_select, unsigned int scre
 	_target(glm::vec3(0.0f, 0.0f, 0.0f)), _eye(glm::vec3(0.0f, 0.0f, 0.0f)), _up(glm::vec3(0.0f, 0.0f, 0.0f)), 
 	_phi(0.0f), _theta(0.0f), _rho(1.0f), _screen_width(screen_width), _screen_height(screen_height),
 	_type(FREE_VIEW), _frustum_halfsize(FRUSTUM_HALFSIZE), _frustum_near(FRUSTUM_NEAR), _frustum_far(FRUSTUM_FAR),
-	_new_single_selection(false), _new_rect_selection(false)
+	_new_single_selection(false), _new_rect_selection(false), _new_destination(false)
 {
 	_camera2clip= glm::frustum(-_frustum_halfsize* (float)(_screen_width)/ (float)(_screen_height), _frustum_halfsize* (float)(_screen_width)/ (float)(_screen_height), -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
 
@@ -262,9 +256,16 @@ ViewSystem::~ViewSystem() {
 
 bool ViewSystem::mouse_button_down(InputState * input_state) {
 	if (input_state->_left_mouse) {
-		_rect_select->set_active(true);
-		_rect_select->set_origin(screen2gl(input_state->_x, input_state->_y));
-		return true;
+		if (input_state->_keys[SDLK_m]) {
+			_new_destination= true;
+			_destination= glm::vec3(screen2world(input_state->_x, input_state->_y, 0.0f), 0.0f);
+			return true;
+		}
+		else {
+			_rect_select->set_active(true);
+			_rect_select->set_origin(screen2gl(input_state->_x, input_state->_y));
+			return true;
+		}
 	}
 	return false;
 }

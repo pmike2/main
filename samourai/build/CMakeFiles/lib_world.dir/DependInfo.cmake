@@ -1,19 +1,14 @@
+
+# Consider dependencies only in project.
+set(CMAKE_DEPENDS_IN_PROJECT_ONLY OFF)
+
 # The set of languages for which implicit dependencies are needed:
 set(CMAKE_DEPENDS_LANGUAGES
-  "CXX"
   )
-# The set of files for implicit dependencies of each language:
-set(CMAKE_DEPENDS_CHECK_CXX
-  "/Users/home/git_dir/main/libs/world.cpp" "/Users/home/git_dir/main/samourai/build/CMakeFiles/lib_world.dir/Users/home/git_dir/main/libs/world.cpp.o"
-  )
-set(CMAKE_CXX_COMPILER_ID "AppleClang")
 
-# The include file search paths:
-set(CMAKE_CXX_TARGET_INCLUDE_PATH
-  "/usr/local/include"
-  "/usr/local/include/freetype2"
-  "../../libs"
-  "/Library/Frameworks/GDAL.framework/Headers"
+# The set of dependency files which are needed:
+set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/Volumes/malenge/dir_git/main/libs/world.cpp" "CMakeFiles/lib_world.dir/Volumes/malenge/dir_git/main/libs/world.cpp.o" "gcc" "CMakeFiles/lib_world.dir/Volumes/malenge/dir_git/main/libs/world.cpp.o.d"
   )
 
 # Targets to which this target links.

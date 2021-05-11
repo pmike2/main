@@ -56,11 +56,8 @@ public:
 	GLuint _prog_draw;
 	GLint _world2clip_loc, _position_loc, _diffuse_color_loc;
 	GLuint _buffers[3];
-	float _data_repere[36];
 	bool _is_repere;
-	float _data_ground[36];
 	bool _is_ground;
-	float _data_box[144];
 	bool _is_box;
 };
 
@@ -141,9 +138,13 @@ public:
 	ViewSystemType _type;
 	
 	Repere * _repere;
+	
 	RectSelect * _rect_select;
 	bool _new_single_selection;
 	bool _new_rect_selection;
+
+	bool _new_destination;
+	glm::vec3 _destination;
 };
 
 

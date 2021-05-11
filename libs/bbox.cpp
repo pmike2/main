@@ -117,7 +117,7 @@ InstancePosRot::InstancePosRot(const glm::vec3 & position, const glm::quat & rot
 
 
 InstancePosRot::InstancePosRot(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale, AABB * aabb) : 
-	_position(position), _rotation(rotation), _scale(scale), _active(false), _dist2(0.0f) 
+	_position(position), _rotation(rotation), _scale(scale), _active(false), _dist2(0.0f), _selected(false)
 {
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox= new BBox(aabb->_vmin, aabb->_vmax, _model2world);

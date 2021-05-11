@@ -229,6 +229,7 @@ public:
 	void set_animated(bool b);
 	void randomize();
 	void print();
+	void set_path(const std::vector<glm::vec3> & path);
 
 
 	AnimatedModel * _model;
@@ -238,6 +239,9 @@ public:
 	bool _draw_mesh, _draw_skeleton, _animated;
 	unsigned int _current_idx_anim;
 	InstancePosRot * _pos_rot;
+	
+	std::vector<glm::vec3> _path;
+	unsigned int _next_path_idx;
 };
 
 #endif

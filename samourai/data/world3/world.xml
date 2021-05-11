@@ -4,13 +4,13 @@
 		<altis>../data/world3/altis_f.tif</altis>
 		<config>
 			<origin>
-				<x>0.000000</x>
-				<y>0.000000</y>
+				<x>0.0</x>
+				<y>0.0</y>
 			</origin>
-			<width_sub>512.000000</width_sub>
-			<height_sub>512.000000</height_sub>
-			<width_step>1.000000</width_step>
-			<height_step>1.000000</height_step>
+			<width_sub>512.0</width_sub>
+			<height_sub>512.0</height_sub>
+			<width_step>1.0</width_step>
+			<height_step>1.0</height_step>
 			<n_subs_x>1</n_subs_x>
 			<n_subs_y>1</n_subs_y>
 		</config>
@@ -57,16 +57,31 @@
 	<static_instances>
 		<static_instance>
 			<ch_config>../data/tree.xml</ch_config>
-			<position>vec3(200.000000, 200.000000, 0.0)</position>
-			<rotation>quat(1.000000, {0.000000, 0.000000, 0.000000})</rotation>
-			<scale>vec3(1.000000, 1.000000, 1.000000)</scale>
+			<position>vec3(200.0, 200.0, 0.0)</position>
+			<rotation>quat(1.0, {0.0, 0.0, 0.0})</rotation>
+			<scale>vec3(1.0, 1.0, 1.0)</scale>
 		</static_instance>
 	</static_instances>
 	<animated_instances>
 		<animated_instance>
 			<ch_config>../data/hero.xml</ch_config>
 			<position>vec3(300.0, 300.0, 0.0)</position>
-			<scale>vec3(10.000000, 10.000000, 10.000000)</scale>
+			<scale>vec3(4.0, 4.0, 4.0)</scale>
+		</animated_instance>
+		<animated_instance>
+			<ch_config>../data/gadjo.xml</ch_config>
+			<position>vec3(200.0, 200.0, 0.0)</position>
+			<scale>vec3(4.0, 4.0, 4.0)</scale>
+		</animated_instance>
+		<animated_instance>
+			<ch_config>../data/gadjo.xml</ch_config>
+			<position>vec3(100.0, 200.0, 0.0)</position>
+			<scale>vec3(4.0, 4.0, 4.0)</scale>
+		</animated_instance>
+		<animated_instance>
+			<ch_config>../data/gadjo.xml</ch_config>
+			<position>vec3(200.0, 100.0, 0.0)</position>
+			<scale>vec3(4.0, 4.0, 4.0)</scale>
 		</animated_instance>
 	</animated_instances>
 </world>
