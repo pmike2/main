@@ -73,7 +73,7 @@ void ModelsPool::clear() {
 
 
 // ------------------------------------------------------------------------------------------
-Square::Square() {
+/*Square::Square() {
 
 }
 
@@ -86,7 +86,7 @@ Square::Square(const glm::vec2 & vmin, const glm::vec2 & vmax) : _vmin(vmin), _v
 Square::~Square() {
 
 }
-
+*/
 
 // ---------------------------------------------------------------------------------------------------------------------
 QuadNode::QuadNode() {
@@ -377,7 +377,7 @@ World::World() {
 World::World(GLuint prog_3d_anim, GLuint prog_3d_terrain, GLuint prog_3d_obj, GLuint prog_3d_obj_instanced, GLuint prog_basic, GLuint prog_bbox,
 	const WorldRandomConfig * world_random_config, string ch_directory) :
 	_prog_3d_anim(prog_3d_anim), _prog_3d_terrain(prog_3d_terrain), _prog_3d_obj(prog_3d_obj), _prog_3d_obj_instanced(prog_3d_obj_instanced),
-	_prog_basic(prog_basic), _prog_bbox(prog_bbox), _is_bbox_draw(false)
+	_prog_basic(prog_basic), _prog_bbox(prog_bbox)
 {
 	_models_pool= new ModelsPool(_prog_3d_anim, _prog_3d_obj, _prog_basic);
 
@@ -441,7 +441,7 @@ World::World(GLuint prog_3d_anim, GLuint prog_3d_terrain, GLuint prog_3d_obj, GL
 		}
 	}*/
 
-	sync_bbox_draws();
+	//sync_bbox_draws();
 	//cout << "end init\n";
 }
 
@@ -463,11 +463,6 @@ bool World::key_down(InputState * input_state, SDL_Keycode key) {
 	// debug
 	else if (key== SDLK_SPACE) {
 		print();
-		return true;
-	}
-	// affichage bboxs
-	else if (key== SDLK_b) {
-		_is_bbox_draw= !_is_bbox_draw;
 		return true;
 	}
 	return false;
@@ -501,34 +496,29 @@ void World::draw() {
 	for (auto ai : _animated_instances) {
 		ai->draw();
 	}
-
-	if (_is_bbox_draw) {
-		for (auto bbd : _static_bbox_draws) {
-			bbd->draw();
-		}
-		for (auto bbd : _animated_bbox_draws) {
-			bbd->draw();
-		}
-	}
 }
 
 
 void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 	if (view_system->_new_single_selection) {
-		cout << "new_single_selection\n";
+		//cout << "new_single_selection\n";
 		view_system->_new_single_selection= false;
 		for (auto ai : _animated_instances) {
+			ai->_pos_rot->_selected= false;
 			if (view_system->single_selection_intersects_aabb(ai->_pos_rot->_bbox->_aabb)) {
-				cout << "single_selection success\n";
+				//cout << "single_selection success\n";
+				ai->_pos_rot->_selected= true;
 			}
 		}
 	}
-	if (view_system->_new_rect_selection) {
-		cout << "new_rect_selection\n";
+	else if (view_system->_new_rect_selection) {
+		//cout << "new_rect_selection\n";
 		view_system->_new_rect_selection= false;
 		for (auto ai : _animated_instances) {
+			ai->_pos_rot->_selected= false;
 			if (view_system->rect_selection_intersects_bbox(ai->_pos_rot->_bbox)) {
-				cout << "rect_selection success\n";
+				//cout << "rect_selection success\n";
+				ai->_pos_rot->_selected= true;
 			}
 		}
 	}
@@ -591,19 +581,6 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 		ai->set_pos_rot_scale(glm::vec3(x, y, z), ai->_pos_rot->_rotation, ai->_pos_rot->_scale);
 	}
 
-	if (_is_bbox_draw) {
-		for (auto bbd : _static_bbox_draws) {
-			bbd->anim(view_system->_world2clip);
-		}
-
-		// pas top ... a revoir
-		for (unsigned int i=0; i<_animated_instances.size(); ++i) {
-			_animated_bbox_draws[i]->set_model2world(_animated_instances[i]->_pos_rot->_model2world);
-		}
-		for (auto bbd : _animated_bbox_draws) {
-			bbd->anim(view_system->_world2clip);
-		}
-	}
 }
 
 
@@ -1006,7 +983,7 @@ AnimatedInstance * World::get_hero() {
 
 
 // synchro des bboxs ; Tout ce truc est très lent ; a revoir
-void World::sync_bbox_draws() {
+/*void World::sync_bbox_draws() {
 	for (auto bbd : _static_bbox_draws) {
 		delete bbd;
 	}
@@ -1034,5 +1011,4 @@ void World::sync_bbox_draws() {
 		_animated_bbox_draws.push_back(bbd);
 	}
 }
-
-
+*/

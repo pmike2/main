@@ -74,6 +74,7 @@ public:
 	glm::mat4 _model2world;
 	BBox * _bbox;
 	bool _active;
+	bool _selected;
 	float _dist2;
 };
 
@@ -87,7 +88,7 @@ bool ray_intersects_aabb(glm::vec3 origin, glm::vec3 direction, AABB * aabb, flo
 
 
 // dessin de BBox ; a utiliser avec parcimonie ; lent si trop d'objets
-class BBoxDraw {
+/*class BBoxDraw {
 public:
 	BBoxDraw();
 	BBoxDraw(GLuint prog_draw, const glm::vec3 & vmin, const glm::vec3 & vmax, const glm::vec3 & color);
@@ -108,7 +109,7 @@ public:
 	GLint _model2world_loc, _world2clip_loc, _position_loc, _color_loc;
 	GLuint _buffer;
 	float _data[72];
-};
+};*/
 
 
 #endif

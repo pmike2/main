@@ -36,7 +36,7 @@
 
 
 // TODO
-enum SquareState {WALKABLE, OBSTACLE, WATER};
+//enum SquareState {WALKABLE, OBSTACLE, WATER};
 
 // distances seuils pour choix precision des objets statiques ; au dela de la derniere distance on desactive l'objet
 const std::vector<float> STATIC_GROUP_DISTANCES {1000.0f, 5000.0f};
@@ -50,9 +50,9 @@ const float ANIMATED_DIST_VISIBLE= 2000.0f;
 const unsigned int QUAD_TREE_DEPTH= 5;
 
 // pour dessins bboxs
-const glm::vec3 STATIC_BBOX_COLOR= glm::vec3(0.4f, 0.8f, 0.5f);
-const glm::vec3 ANIMATED_BBOX_COLOR= glm::vec3(0.8f, 0.1f, 0.7f);
-const glm::vec3 TERRAIN_BBOX_COLOR= glm::vec3(0.2f, 0.7f, 0.8f);
+//const glm::vec3 STATIC_BBOX_COLOR= glm::vec3(0.4f, 0.8f, 0.5f);
+//const glm::vec3 ANIMATED_BBOX_COLOR= glm::vec3(0.8f, 0.1f, 0.7f);
+//const glm::vec3 TERRAIN_BBOX_COLOR= glm::vec3(0.2f, 0.7f, 0.8f);
 
 
 // ensemble de modeles statiques et animés
@@ -75,7 +75,7 @@ public:
 
 
 // TODO
-class Square {
+/*class Square {
 public:
 	Square();
 	Square(const glm::vec2 & vmin, const glm::vec2 & vmax);
@@ -85,7 +85,7 @@ public:
 	SquareState _state;
 	glm::vec2 _vmin, _vmax;
 };
-
+*/
 
 // random d'un ensemble d'objets statiques
 struct SIRandomConfig {
@@ -184,7 +184,7 @@ public:
 	void print();
 	//void update_squares();
 	AnimatedInstance * get_hero();
-	void sync_bbox_draws();
+	//void sync_bbox_draws();
 
 
 	GLuint _prog_3d_anim, _prog_3d_terrain, _prog_3d_obj, _prog_3d_obj_instanced, _prog_basic, _prog_bbox;
@@ -193,13 +193,13 @@ public:
 	std::vector<StaticInstance *> _static_instances;
 	std::vector<StaticGroup *> _static_groups;
 	Terrain * _terrain;
-	std::vector<Square *> _squares;
-	float _square_size_x, _square_size_y;
-	unsigned int _n_squares_x, _n_squares_y;
+	//std::vector<Square *> _squares;
+	//float _square_size_x, _square_size_y;
+	//unsigned int _n_squares_x, _n_squares_y;
 	QuadTree * _quad_tree;
-	std::vector<BBoxDraw *> _static_bbox_draws;
+	/*std::vector<BBoxDraw *> _static_bbox_draws;
 	std::vector<BBoxDraw *> _animated_bbox_draws;
-	bool _is_bbox_draw;
+	bool _is_bbox_draw;*/
 	PathFinder * _path_finder;
 };
 

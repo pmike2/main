@@ -109,7 +109,7 @@ InstancePosRot::InstancePosRot() {
 
 
 InstancePosRot::InstancePosRot(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale) :
-	_position(position), _rotation(rotation), _scale(scale), _active(false), _dist2(0.0f) 
+	_position(position), _rotation(rotation), _scale(scale), _active(false), _dist2(0.0f), _selected(false)
 {
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox= new BBox();
@@ -252,7 +252,7 @@ bool ray_intersects_aabb(glm::vec3 origin, glm::vec3 direction, AABB * aabb, flo
 
 
 // ------------------------------------------------------------------------------------------------------
-BBoxDraw::BBoxDraw() {
+/*BBoxDraw::BBoxDraw() {
 
 }
 
@@ -364,7 +364,7 @@ void BBoxDraw::anim(const glm::mat4 & world2clip) {
 
 void BBoxDraw::set_model2world(const glm::mat4 & model2world) {
 	_model2world= model2world;
-}
+}*/
 
 // ---------------------------------------------------------------------------------------
 
