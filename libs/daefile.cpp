@@ -1236,7 +1236,7 @@ void AnimatedInstance::anim(ViewSystem * view_system, unsigned int delta_time_ms
 		//cout << glm::to_string(_pos_rot->_rotation) << "\n";
 		//cout << glm::to_string(direction) << "\n";
 
-		_pos_rot->_rotation= glm::angleAxis(direction.x, glm::vec3(0.0f, 0.0f, 1.0f));
+		_pos_rot->_rotation= glm::angleAxis(acos(direction.x), glm::vec3(0.0f, 0.0f, 1.0f));
 	}
 
 	if (_animations[_current_idx_anim]->_model_animation->_moving_speed> 0.0f) {
