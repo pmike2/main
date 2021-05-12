@@ -1,4 +1,4 @@
-# Install script for directory: /Volumes/malenge/dir_git/main/samourai
+# Install script for directory: /Users/home/git_dir/main/samourai
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/Volumes/malenge/dir_git/main/samourai/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/Users/home/git_dir/main/samourai/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/lib_utile.dir/Volumes/malenge/dir_git/main/libs/utile.cpp.o"
-  "CMakeFiles/lib_utile.dir/Volumes/malenge/dir_git/main/libs/utile.cpp.o.d"
+  "CMakeFiles/lib_utile.dir/Users/home/git_dir/main/libs/utile.cpp.o"
   "liblib_utile.a"
   "liblib_utile.pdb"
 )

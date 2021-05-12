@@ -1163,7 +1163,7 @@ AnimatedInstance::AnimatedInstance() {
 
 
 AnimatedInstance::AnimatedInstance(AnimatedModel * model, const glm::vec3 & scale, GLuint prog_3d, GLuint prog_basic) :
-	_model(model), _draw_mesh(true), _draw_skeleton(false), _animated(true), _current_idx_anim(0)
+	_model(model), _draw_mesh(true), _draw_skeleton(false), _animated(true), _current_idx_anim(0), _status(STATIC)
 {
 	for (auto it_anim : _model->_animations) {
 		InstanceAnimation * ia= new InstanceAnimation(it_anim);
@@ -1179,6 +1179,8 @@ AnimatedInstance::AnimatedInstance(AnimatedModel * model, const glm::vec3 & scal
 	for (unsigned int idx_anim=0; idx_anim<_model->_animations.size(); ++idx_anim) {
 		_animations[idx_anim]->anim(0);
 	}
+
+	set_status(STATIC);
 }
 
 
@@ -1217,34 +1219,6 @@ void AnimatedInstance::anim(ViewSystem * view_system, unsigned int delta_time_ms
 		_animations[_current_idx_anim]->anim(delta_time_ms);
 	}
 
-	if (_path.size()> 0) {
-		while (glm::distance2(_path[_next_path_idx], _pos_rot->_position)< 0.1f) {
-			_next_path_idx++;
-			if (_next_path_idx>= _path.size()) {
-				_path.clear();
-				_next_path_idx= 0;
-				_current_idx_anim= 0;
-				break;
-			}
-		}
-	}
-	if (_path.size()> 0) {
-		//glm::vec3 direction= glm::normalize(_path[_next_path_idx]- _pos_rot->_position);
-		glm::vec3 direction= glm::vec3(glm::normalize(glm::vec2(_path[_next_path_idx])- glm::vec2(_pos_rot->_position)), 0.0f);
-		//glm::vec3 up(0.0f, 0.0f, 1.0f);
-		//_pos_rot->_rotation= glm::quatLookAt(direction, up);
-		//cout << glm::to_string(_pos_rot->_rotation) << "\n";
-		//cout << glm::to_string(direction) << "\n";
-
-		_pos_rot->_rotation= glm::angleAxis(acos(direction.x), glm::vec3(0.0f, 0.0f, 1.0f));
-	}
-
-	if (_animations[_current_idx_anim]->_model_animation->_moving_speed> 0.0f) {
-		glm::vec3 forward_dir= _pos_rot->_rotation* _model->_rotation_0* glm::vec3(1.0f, 0.0f, 0.0f);
-		//cout << glm::to_string(forward_dir) << "\n";
-		set_pos_rot_scale(_pos_rot->_position+ forward_dir* _animations[_current_idx_anim]->_model_animation->_moving_speed, _pos_rot->_rotation, _pos_rot->_scale);
-	}
-
 	if (_draw_mesh) {
 		_mesh->anim(view_system, _animations[_current_idx_anim]->_joints);
 	}
@@ -1257,7 +1231,6 @@ void AnimatedInstance::anim(ViewSystem * view_system, unsigned int delta_time_ms
 
 void AnimatedInstance::set_pos_rot_scale(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale) {
 	_pos_rot->set_pos_rot_scale(position, rotation, scale);
-
 	_mesh->_model2world= _pos_rot->_model2world;
 	_skeleton->_model2world= _pos_rot->_model2world;
 }
@@ -1293,4 +1266,60 @@ void AnimatedInstance::set_path(const vector<glm::vec3> & path) {
 		_path.push_back(pt);
 	}
 	_next_path_idx= 0;
+	if (_path.size()> 0) {
+		set_status(WAITING);
+	}
+	else {
+		set_status(STATIC);
+	}
 }
+
+
+void AnimatedInstance::compute_next_pos_rot() {
+	if (_path.size()> 0) {
+		while ((glm::distance2(glm::vec2(_path[_next_path_idx]), glm::vec2(_pos_rot->_position))< 0.1f) && (_next_path_idx< _path.size())) {
+			_next_path_idx++;
+		}
+		if (_next_path_idx>= _path.size()) {
+			_path.clear();
+			_next_path_idx= 0;
+			set_status(STATIC);
+		}
+	}
+
+	if ((_status!= STATIC) && (_path.size()> 0)) {
+		glm::vec3 direction= glm::vec3(glm::normalize(glm::vec2(_path[_next_path_idx])- glm::vec2(_pos_rot->_position)), 0.0f);
+		float angle= acosf(direction.x);
+		if (direction.y< 0.0f) {
+			angle= 2.0f* (float)(M_PI)- angle;
+		}
+		glm::quat rotation= glm::angleAxis(angle, glm::vec3(0.0f, 0.0f, 1.0f));
+		glm::vec3 forward_dir= rotation* glm::vec3(1.0f, 0.0f, 0.0f);
+
+		set_status(MOVING);
+		// TODO : stocker glm::inverse(_model->_rotation_0) au lieu de _model->_rotation_0 ?
+		_next_position= _pos_rot->_position+ forward_dir* _animations[_current_idx_anim]->_model_animation->_moving_speed;
+		set_status(WAITING);
+		_next_rotation= rotation* glm::inverse(_model->_rotation_0);
+	}
+}
+
+
+void AnimatedInstance::move2next_pos_rot() {
+	set_pos_rot_scale(_next_position, _next_rotation, _pos_rot->_scale);
+}
+
+
+void AnimatedInstance::set_status(AnimatedInstanceStatus status) {
+	_status= status;
+	if (_status== STATIC) {
+		_current_idx_anim= 0;
+	}
+	else if (_status== WAITING) {
+		_current_idx_anim= 0;
+	}
+	else if (_status== MOVING) {
+		_current_idx_anim= 1;
+	}
+}
+

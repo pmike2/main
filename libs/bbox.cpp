@@ -113,6 +113,7 @@ InstancePosRot::InstancePosRot(const glm::vec3 & position, const glm::quat & rot
 {
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox= new BBox();
+	_emprise= new AABB_2D();
 }
 
 
@@ -121,11 +122,13 @@ InstancePosRot::InstancePosRot(const glm::vec3 & position, const glm::quat & rot
 {
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox= new BBox(aabb->_vmin, aabb->_vmax, _model2world);
+	_emprise= new AABB_2D(glm::vec2(_position+ _bbox->_vmin), glm::vec2(_bbox->_vmax- _bbox->_vmin));
 }
 
 
 InstancePosRot::~InstancePosRot() {
 	delete _bbox;
+	delete _emprise;
 }
 
 
@@ -135,17 +138,19 @@ void InstancePosRot::set_pos_rot_scale(const glm::vec3 & position, const glm::qu
 	_scale= scale;
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox->set_model2world(_model2world);
+	_emprise->_pos= glm::vec2(_position+ _bbox->_vmin);
+	//cout << glm::to_string(_position) << " ; " << *_emprise << glm::to_string(_bbox->_vmin) << "\n";
 }
 
 
 // lent, mieux vaut utiliser l'autre
-void InstancePosRot::set_pos_rot_scale(const glm::mat4 & mat) {
+/*void InstancePosRot::set_pos_rot_scale(const glm::mat4 & mat) {
 	glm::vec3 skew;
 	glm::vec4 perspective;
 	glm::decompose(mat, _scale, _rotation, _position, skew, perspective);
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox->set_model2world(_model2world);
-}
+}*/
 
 
 void InstancePosRot::update_dist2(glm::vec3 view_eye) {

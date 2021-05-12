@@ -219,6 +219,7 @@ public:
 	std::vector<BBoxDraw *> _animated_bbox_draws;
 	bool _is_bbox_draw;*/
 	PathFinder * _path_finder;
+	PathFinderDebug * _path_finder_debug;
 	SelectionDraw * _selection_draw;
 };
 

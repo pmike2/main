@@ -1,6 +1,5 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/lib_gl_interface.dir/Volumes/malenge/dir_git/main/libs/gl_interface.cpp.o"
-  "CMakeFiles/lib_gl_interface.dir/Volumes/malenge/dir_git/main/libs/gl_interface.cpp.o.d"
+  "CMakeFiles/lib_gl_interface.dir/Users/home/git_dir/main/libs/gl_interface.cpp.o"
   "liblib_gl_interface.a"
   "liblib_gl_interface.pdb"
 )

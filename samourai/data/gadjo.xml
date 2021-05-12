@@ -11,7 +11,7 @@
 		</anim>
 		<anim id="anim_walk">
 			<path>../data/gadjo_walk.dae</path>
-			<moving_speed>0.06</moving_speed>
+			<moving_speed>0.4</moving_speed>
 		</anim>
 	</anims>
 </anim_cfg>

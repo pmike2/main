@@ -44,6 +44,7 @@ struct Graph {
 	std::vector<unsigned int> neighbors(unsigned int i);
 	void clear();
 	void rand();
+	void reinit_weights();
 	friend std::ostream & operator << (std::ostream & os, Graph & g);
 };
 
@@ -61,6 +62,7 @@ struct GraphGrid : public Graph {
 	~GraphGrid();
 	std::pair<unsigned int, unsigned int> id2col_lig(unsigned int id);
 	unsigned int col_lig2id(unsigned int col, unsigned int lig);
+	void set_heavy_weight(AABB_2D * aabb);
 	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
 };
 

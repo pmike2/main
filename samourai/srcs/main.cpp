@@ -59,11 +59,6 @@ LightsUBO * lights_ubo;
 World * world;
 IHM * ihm;
 
-//float depth_data[MAIN_WIN_WIDTH* MAIN_WIN_HEIGHT];
-
-glm::vec3 path_find_start;
-glm::vec3 path_find_goal;
-PathFinderDebug * pfd;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
@@ -75,33 +70,8 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 	}
 	
 	if (view_system->mouse_motion(input_state)) {
-		/*float alti= world->_terrain->get_alti(glm::vec2(view_system->_target));
-		cout << glm::to_string(glm::vec2(view_system->_target)) << " ; " << alti << "\n";
-		view_system->_target.z= alti;
-		view_system->update();*/
-
-		//glm::vec3 result(0.0f);
-		//bool b= world->_terrain->get_intersecting_point(view_system->_eye, view_system->_target, 1.0f, result);
-		//bool b= world->_terrain->get_intersecting_point(view_system->_eye, view_system->_dir, 1.0f, result);
-		//cout << b << " ; " << glm::to_string(result) << " ; " << glm::to_string(view_system->_target) << "\n";
-		//if (b) {
-			//view_system->_target= result;
-			//view_system->update();
-		//}
 		//return;
 	}
-
-	/*
-	glm::vec2 click_world= view_system->screen2world(x, y, 0.0f);
-	glm::vec3 pt_begin= view_system->_eye;
-	glm::vec3 pt_end= glm::vec3(click_world, 0.0f);
-	//glm::vec3 direction= glm::vec3(click_world, 0.0f)- pt_begin;
-	glm::vec3 result(0.0f);
-	bool b= world->_terrain->get_intersecting_point(pt_begin, pt_end, 1.0f, result);
-	if (b) {
-		world->get_hero()->set_pos_rot_scale(result, glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(1.0f));
-	}
-	*/
 
  	if (world->mouse_motion(input_state)) {
 		return;
@@ -135,11 +105,10 @@ void mouse_button_down(int x, int y, unsigned short button) {
 		return;
 	}
 
-	if (input_state->_keys[SDLK_a]) {
+	/*if (input_state->_keys[SDLK_a]) {
 		glm::vec2 click_world= view_system->screen2world(x, y, 0.0f);
 		glm::vec3 pt_begin= view_system->_eye;
 		glm::vec3 pt_end= glm::vec3(click_world, 0.0f);
-		//glm::vec3 direction= glm::vec3(click_world, 0.0f)- pt_begin;
 		glm::vec3 result(0.0f);
 		bool b= world->_terrain->get_intersecting_point(pt_begin, pt_end, 1.0f, result);
 		if (b) {
@@ -150,7 +119,6 @@ void mouse_button_down(int x, int y, unsigned short button) {
 		glm::vec2 click_world= view_system->screen2world(x, y, 0.0f);
 		glm::vec3 pt_begin= view_system->_eye;
 		glm::vec3 pt_end= glm::vec3(click_world, 0.0f);
-		//glm::vec3 direction= glm::vec3(click_world, 0.0f)- pt_begin;
 		glm::vec3 result(0.0f);
 		bool b= world->_terrain->get_intersecting_point(pt_begin, pt_end, 1.0f, result);
 		if (b) {
@@ -158,9 +126,6 @@ void mouse_button_down(int x, int y, unsigned short button) {
 			vector<glm::vec2> path;
 			vector<unsigned int> visited;
 			if (world->_path_finder->path_find(glm::vec2(path_find_start), glm::vec2(path_find_goal), path, visited)) {
-				/*for (auto x : path) {
-					cout << glm::to_string(x) << " ; ";
-				}*/
 				cout << "connected\n";
 			}
 			else {
@@ -168,7 +133,7 @@ void mouse_button_down(int x, int y, unsigned short button) {
 			}
 			pfd->update(*world->_path_finder, path, visited);
 		}
-	}
+	}*/
 	/*else if (input_state->_keys[SDLK_s]) {
 		float buffer_depth;
 		glReadPixels(x, MAIN_WIN_HEIGHT- y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
@@ -207,26 +172,6 @@ void key_down(SDL_Keycode key) {
 		return;
 	}
 
-/*
-	string ch_tif= "test.tif";
-	TIFF * file_tif= TIFFOpen(ch_tif.c_str(), "w");
-	TIFFSetField(file_tif, TIFFTAG_IMAGEWIDTH, MAIN_WIN_WIDTH);
-	TIFFSetField(file_tif, TIFFTAG_IMAGELENGTH, MAIN_WIN_HEIGHT);
-	TIFFSetField(file_tif, TIFFTAG_SAMPLESPERPIXEL, 1);
-	TIFFSetField(file_tif, TIFFTAG_BITSPERSAMPLE, 32);
-	TIFFSetField(file_tif, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
-	TIFFSetField(file_tif, TIFFTAG_COMPRESSION, COMPRESSION_NONE);
-	TIFFSetField(file_tif, TIFFTAG_SAMPLEFORMAT, SAMPLEFORMAT_IEEEFP);
-	TIFFSetField(file_tif, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-	//TIFFSetField(file_tif, TIFFTAG_ROWSPERSTRIP, 1);
-	TIFFSetField(file_tif, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(file_tif, MAIN_WIN_WIDTH));
-
-	for (unsigned int row=0; row<MAIN_WIN_HEIGHT; ++row) {
-		TIFFWriteScanline(file_tif, (unsigned char *)(depth_data+ MAIN_WIN_WIDTH* row), row, 0);
-	}
-
-	TIFFClose(file_tif);
-*/
 }
 
 
@@ -287,7 +232,7 @@ void init() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glPointSize(3.0f);
+	glPointSize(4.0f);
 	
 	SDL_GL_SwapWindow(window);
 	
@@ -325,6 +270,9 @@ void init() {
 	
 	// --------------------------------------------------------------------------
 	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_obj, prog_3d_obj_instanced, prog_basic, prog_bbox, NULL, "../data/world3");
+	/*vector<glm::vec3> path;
+	path.push_back(world->_animated_instances[0]->_pos_rot->_position+ glm::vec3(0.0f, -100.0f, 0.0f));
+	world->_animated_instances[0]->set_path(path);*/
 
 	// --------------------------------------------------------------------------
 	lights_ubo= new LightsUBO(prog_3d_terrain); // heu ca va marcher ca ???
@@ -382,7 +330,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
 
-	pfd= new PathFinderDebug(prog_repere);
+	//SDL_RaiseWindow(window);
 }
 
 
@@ -397,7 +345,6 @@ void draw() {
 	lights_ubo->draw(view_system->_world2clip);
 	world->draw();
 	ihm->draw();
-	pfd->draw();
 
 	SDL_GL_SwapWindow(window);
 }
@@ -416,9 +363,6 @@ void anim() {
 	//bck_factor= 0.5f* ((lights_ubo->_lights[0]->_position_world[2]/ 5000.0f)+ 1.0f);
 	lights_ubo->anim(view_system->_world2camera);
 	world->anim(view_system, tikanim_delta);
-	pfd->anim(view_system->_world2clip);
-
-	//glReadPixels(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_DEPTH_COMPONENT, GL_FLOAT, depth_data);
 }
 
 
@@ -516,6 +460,11 @@ int main(int argc, char * argv[]) {
 	float t_hit= 0.0f;
 	bool b= ray_intersects_aabb(origin, direction, aabb, t_hit);
 	cout << b << " ; " << t_hit << "\n";*/
+
+	/*glm::vec2 direction(0.0f, 1.0f);
+	glm::quat q= glm::angleAxis(acos(direction.x), glm::vec3(0.0f, 0.0f, 1.0f));
+	glm::mat4 m= glm::toMat4(q);
+	cout << glm::to_string(m) << "\n";*/
 
 	return 0;
 }

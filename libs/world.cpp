@@ -562,6 +562,8 @@ World::World(GLuint prog_3d_anim, GLuint prog_3d_terrain, GLuint prog_3d_obj, GL
 	//sync_bbox_draws();
 	_selection_draw= new SelectionDraw(_prog_bbox);
 
+	_path_finder_debug= new PathFinderDebug(_prog_bbox);
+
 	//cout << "end init\n";
 }
 
@@ -619,6 +621,8 @@ void World::draw() {
 	}
 
 	_selection_draw->draw();
+
+	_path_finder_debug->draw();
 }
 
 
@@ -658,12 +662,13 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 				vector<glm::vec2> path;
 				vector<unsigned int> visited;
 				if (_path_finder->path_find(glm::vec2(ai->_pos_rot->_position), glm::vec2(path_find_goal), path, visited)) {
+					_path_finder_debug->update(*_path_finder, path, visited);
+
 					vector<glm::vec3> path_3d;
 					for (auto pt : path) {
 						path_3d.push_back(glm::vec3(pt, _terrain->get_alti(pt)));
 					}
 					ai->set_path(path_3d);
-					ai->_current_idx_anim= 1;
 				}
 			}
 		}
@@ -673,6 +678,8 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 
 	_selection_draw->update(_animated_instances);
 	_selection_draw->anim(view_system);
+
+	_path_finder_debug->anim(view_system->_world2clip);
 
 	// determination des objets statiques a dessiner
 	for (auto sg : _static_groups) {
@@ -688,7 +695,37 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 		sg->anim(view_system);
 	}
 
-	// objets animés
+	_path_finder->_grid->reinit_weights();
+	for (auto ai : _animated_instances) {
+		_path_finder->_grid->set_heavy_weight(ai->_pos_rot->_emprise);
+	}
+
+	for (auto ai : _animated_instances) {
+		if (ai->_status== STATIC) {
+			continue;
+		}
+		ai->compute_next_pos_rot();
+		if (ai->_status== STATIC) {
+			continue;
+		}
+		ai->set_status(MOVING);
+		for (auto ai_other : _animated_instances) {
+			if (ai_other== ai) {
+				continue;
+			}
+			if (glm::distance(ai->_next_position, ai_other->_pos_rot->_position)< ai->_pos_rot->_bbox->_radius+ ai_other->_pos_rot->_bbox->_radius) {
+				ai->set_status(WAITING);
+				break;
+			}
+		}
+	}
+
+	for (auto ai : _animated_instances) {
+		if (ai->_status== MOVING) {
+			ai->move2next_pos_rot();
+		}
+	}
+
 	for (auto ai : _animated_instances) {
 		ai->_pos_rot->_active= true;
 

@@ -22,6 +22,7 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/matrix_interpolation.hpp>
 #include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/transform.hpp>
 
 #include "rapidxml.hpp"
@@ -218,6 +219,8 @@ public:
 };
 
 
+enum AnimatedInstanceStatus {STATIC, MOVING, WAITING};
+
 class AnimatedInstance {
 public:
 	AnimatedInstance();
@@ -230,6 +233,9 @@ public:
 	void randomize();
 	void print();
 	void set_path(const std::vector<glm::vec3> & path);
+	void compute_next_pos_rot();
+	void move2next_pos_rot();
+	void set_status(AnimatedInstanceStatus status);
 
 
 	AnimatedModel * _model;
@@ -242,6 +248,9 @@ public:
 	
 	std::vector<glm::vec3> _path;
 	unsigned int _next_path_idx;
+	glm::vec3 _next_position;
+	glm::quat _next_rotation;
+	AnimatedInstanceStatus _status;
 };
 
 #endif

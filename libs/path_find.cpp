@@ -116,6 +116,15 @@ void Graph::rand() {
 }
 
 
+void Graph::reinit_weights() {
+	_it_v= _vertices.begin();
+	while (_it_v!= _vertices.end()) {
+		_it_v->second._weight= 1.0f;
+		_it_v++;
+	}
+}
+
+
 ostream & operator << (ostream & os, Graph & g) {
 	os << "graph -----" << "\n";
 	os << "n_vertices = " << g._vertices.size() << "\n";
@@ -205,6 +214,23 @@ pair<unsigned int, unsigned int> GraphGrid::id2col_lig(unsigned int id) {
 
 unsigned int GraphGrid::col_lig2id(unsigned int col, unsigned int lig) {
 	return col+ _n_cols* lig;
+}
+
+
+void GraphGrid::set_heavy_weight(AABB_2D * aabb) {
+	int col_min= (int)((aabb->_pos.x- _origin.x)* (float)(_n_cols)/ _size.x);
+	int col_max= (int)((aabb->_pos.x+ aabb->_size.x- _origin.x)* (float)(_n_cols)/ _size.x);
+	int lig_min= (int)((aabb->_pos.y- _origin.y)* (float)(_n_ligs)/ _size.y);
+	int lig_max= (int)((aabb->_pos.y+ aabb->_size.y- _origin.y)* (float)(_n_ligs)/ _size.y);
+
+	for (int col=col_min; col<=col_max; ++col) {
+		for (int lig=lig_min; lig<=lig_max; ++lig) {
+			if ((col< 0) || (col>= _n_cols) || (lig< 0) || (lig>= _n_ligs)) {
+				continue;
+			}
+			_vertices[col_lig2id(col, lig)]._weight= 1000.0f;
+		}
+	}
 }
 
 
@@ -398,26 +424,49 @@ bool PathFinder::path_find(glm::vec2 start, glm::vec2 goal, vector<glm::vec2> & 
 	}
 
 	unsigned int start_col_min= (unsigned int)(((start.x- _grid->_origin.x)/ _grid->_size.x)* (float)(_grid->_n_cols- 1));
-	//unsigned int start_col_max= col_min+ 1;
+	unsigned int start_col_max= start_col_min+ 1;
 	unsigned int start_lig_min= (unsigned int)(((start.y- _grid->_origin.y)/ _grid->_size.y)* (float)(_grid->_n_ligs- 1));
-	//unsigned int start_lig_max= lig_min+ 1;
-	unsigned int start_id= _grid->col_lig2id(start_col_min, start_lig_min);
+	unsigned int start_lig_max= start_lig_min+ 1;
+	vector<unsigned int> start_ids;
+	start_ids.push_back(_grid->col_lig2id(start_col_min, start_lig_min));
+	start_ids.push_back(_grid->col_lig2id(start_col_max, start_lig_min));
+	start_ids.push_back(_grid->col_lig2id(start_col_max, start_lig_max));
+	start_ids.push_back(_grid->col_lig2id(start_col_min, start_lig_max));
 
 	unsigned int goal_col_min= (unsigned int)(((goal.x- _grid->_origin.x)/ _grid->_size.x)* (float)(_grid->_n_cols- 1));
-	//unsigned int goal_col_max= col_min+ 1;
+	unsigned int goal_col_max= goal_col_min+ 1;
 	unsigned int goal_lig_min= (unsigned int)(((goal.y- _grid->_origin.y)/ _grid->_size.y)* (float)(_grid->_n_ligs- 1));
-	//unsigned int goal_lig_max= lig_min+ 1;
-	unsigned int goal_id= _grid->col_lig2id(goal_col_min, goal_lig_min);
+	unsigned int goal_lig_max= goal_lig_min+ 1;
+	vector<unsigned int> goal_ids;
+	goal_ids.push_back(_grid->col_lig2id(goal_col_min, goal_lig_min));
+	goal_ids.push_back(_grid->col_lig2id(goal_col_max, goal_lig_min));
+	goal_ids.push_back(_grid->col_lig2id(goal_col_max, goal_lig_max));
+	goal_ids.push_back(_grid->col_lig2id(goal_col_min, goal_lig_max));
 
 	std::vector<unsigned int> nodes;
-	bool is_path_ok= path_find_nodes(start_id, goal_id, nodes, visited);
+	bool is_path_ok= path_find_nodes(start_ids[0], goal_ids[0], nodes, visited);
 	if (!is_path_ok) {
 		return false;
 	}
+	
+	unsigned int start_idx= 0;
+	for (unsigned int i=1; i<nodes.size(); ++i) {
+		if (find(start_ids.begin(), start_ids.end(), nodes[i])== start_ids.end()) {
+			start_idx= i- 1;
+			break;
+		}
+	}
+	unsigned int goal_idx= nodes.size()- 1;
+	for (unsigned int i=nodes.size()-2; i>=0; --i) {
+		if (find(goal_ids.begin(), goal_ids.end(), nodes[i])== goal_ids.end()) {
+			goal_idx= i+ 1;
+			break;
+		}
+	}
 
 	path.push_back(start);
-	for (auto node : nodes) {
-		path.push_back(_grid->_vertices[node]._pos);
+	for (unsigned int i=start_idx; i<=goal_idx; ++i) {
+		path.push_back(_grid->_vertices[nodes[i]]._pos);
 	}
 	path.push_back(goal);
 
@@ -589,9 +638,16 @@ void PathFinderDebug::update(const PathFinder & path_finder, const vector<glm::v
 			data_pts[6* idx+ 5]= 0.2f;
 		}
 		else {
-			data_pts[6* idx+ 3]= 0.2f;
-			data_pts[6* idx+ 4]= 0.9f;
-			data_pts[6* idx+ 5]= 0.9f;
+			if (path_finder._grid->_it_v->second._weight< 10.0f) {
+				data_pts[6* idx+ 3]= 0.2f;
+				data_pts[6* idx+ 4]= 0.9f;
+				data_pts[6* idx+ 5]= 0.9f;
+			}
+			else {
+				data_pts[6* idx+ 3]= 0.2f;
+				data_pts[6* idx+ 4]= 0.5f;
+				data_pts[6* idx+ 5]= 0.5f;
+			}
 		}
 		path_finder._grid->_it_v++;
 		idx++;

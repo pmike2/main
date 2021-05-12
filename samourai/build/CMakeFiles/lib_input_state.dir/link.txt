@@ -1,2 +1,2 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc liblib_input_state.a CMakeFiles/lib_input_state.dir/Volumes/malenge/dir_git/main/libs/input_state.cpp.o
+/Library/Developer/CommandLineTools/usr/bin/ar qc liblib_input_state.a CMakeFiles/lib_input_state.dir/Users/home/git_dir/main/libs/input_state.cpp.o
 /Library/Developer/CommandLineTools/usr/bin/ranlib liblib_input_state.a

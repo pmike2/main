@@ -23,6 +23,8 @@
 #include <glm/gtx/matrix_decompose.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+#include "bbox_2d.h"
+
 
 // boite englobante dont les axes sont alignes avec le repere (axis aligned bouding box)
 class AABB {
@@ -64,7 +66,7 @@ public:
 	InstancePosRot(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale, AABB * aabb);
 	~InstancePosRot();
 	void set_pos_rot_scale(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale);
-	void set_pos_rot_scale(const glm::mat4 & mat);
+	//void set_pos_rot_scale(const glm::mat4 & mat);
 	void update_dist2(glm::vec3 view_eye);
 
 
@@ -73,6 +75,7 @@ public:
 	glm::vec3 _scale;
 	glm::mat4 _model2world;
 	BBox * _bbox;
+	AABB_2D * _emprise;
 	bool _active;
 	bool _selected;
 	float _dist2;
