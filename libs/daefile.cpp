@@ -1163,7 +1163,7 @@ AnimatedInstance::AnimatedInstance() {
 
 
 AnimatedInstance::AnimatedInstance(AnimatedModel * model, const glm::vec3 & scale, GLuint prog_3d, GLuint prog_basic) :
-	_model(model), _draw_mesh(true), _draw_skeleton(false), _animated(true), _current_idx_anim(0), _status(STATIC)
+	_model(model), _draw_mesh(true), _draw_skeleton(false), _animated(true), _current_idx_anim(0), _status(STATIC), _waiting_n_ms(0)
 {
 	for (auto it_anim : _model->_animations) {
 		InstanceAnimation * ia= new InstanceAnimation(it_anim);
@@ -1268,6 +1268,7 @@ void AnimatedInstance::set_path(const vector<glm::vec3> & path) {
 	_next_path_idx= 0;
 	if (_path.size()> 0) {
 		set_status(WAITING);
+		_waiting_n_ms= 0;
 	}
 	else {
 		set_status(STATIC);
@@ -1314,6 +1315,7 @@ void AnimatedInstance::set_status(AnimatedInstanceStatus status) {
 	_status= status;
 	if (_status== STATIC) {
 		_current_idx_anim= 0;
+		_waiting_n_ms= 0;
 	}
 	else if (_status== WAITING) {
 		_current_idx_anim= 0;

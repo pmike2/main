@@ -251,6 +251,7 @@ public:
 	glm::vec3 _next_position;
 	glm::quat _next_rotation;
 	AnimatedInstanceStatus _status;
+	unsigned int _waiting_n_ms;
 };
 
 #endif

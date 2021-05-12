@@ -26,6 +26,7 @@ struct GraphVertex {
 	float _weight;
 	glm::vec2 _pos;
 	std::unordered_map<unsigned int, GraphEdge> _edges;
+	bool _active;
 };
 
 

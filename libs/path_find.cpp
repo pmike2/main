@@ -27,6 +27,7 @@ void Graph::add_vertex(unsigned int i, float weight, float x, float y) {
 		v._weight= weight;
 		v._pos.x= x;
 		v._pos.y= y;
+		v._active= true;
 		_vertices[i]= v;
 	}
 }
@@ -76,10 +77,12 @@ void Graph::remove_edge(unsigned int i, unsigned int j) {
 
 vector<unsigned int> Graph::neighbors(unsigned int i) {
 	vector<unsigned int> result;
-	result.reserve(_vertices[i]._edges.size());
+	//result.reserve(_vertices[i]._edges.size());
 	_it_e= _vertices[i]._edges.begin();
 	while (_it_e!= _vertices[i]._edges.end()) {
-		result.push_back(_it_e->first);
+		if (_vertices[_it_e->first]._active) {
+			result.push_back(_it_e->first);
+		}
 		_it_e++;
 	}
 	return result;
@@ -119,7 +122,8 @@ void Graph::rand() {
 void Graph::reinit_weights() {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
-		_it_v->second._weight= 1.0f;
+		//_it_v->second._weight= 1.0f;
+		_it_v->second._active= true;
 		_it_v++;
 	}
 }
@@ -228,7 +232,8 @@ void GraphGrid::set_heavy_weight(AABB_2D * aabb) {
 			if ((col< 0) || (col>= _n_cols) || (lig< 0) || (lig>= _n_ligs)) {
 				continue;
 			}
-			_vertices[col_lig2id(col, lig)]._weight= 1000.0f;
+			//_vertices[col_lig2id(col, lig)]._weight= 10.0f;
+			_vertices[col_lig2id(col, lig)]._active= false;
 		}
 	}
 }
@@ -638,7 +643,8 @@ void PathFinderDebug::update(const PathFinder & path_finder, const vector<glm::v
 			data_pts[6* idx+ 5]= 0.2f;
 		}
 		else {
-			if (path_finder._grid->_it_v->second._weight< 10.0f) {
+			//if (path_finder._grid->_it_v->second._weight< 10.0f) {
+			if (path_finder._grid->_it_v->second._active) {
 				data_pts[6* idx+ 3]= 0.2f;
 				data_pts[6* idx+ 4]= 0.9f;
 				data_pts[6* idx+ 5]= 0.9f;

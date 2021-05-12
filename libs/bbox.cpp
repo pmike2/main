@@ -122,7 +122,7 @@ InstancePosRot::InstancePosRot(const glm::vec3 & position, const glm::quat & rot
 {
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox= new BBox(aabb->_vmin, aabb->_vmax, _model2world);
-	_emprise= new AABB_2D(glm::vec2(_position+ _bbox->_vmin), glm::vec2(_bbox->_vmax- _bbox->_vmin));
+	_emprise= new AABB_2D(glm::vec2(_bbox->_aabb->_vmin), glm::vec2(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin));
 }
 
 
@@ -138,10 +138,8 @@ void InstancePosRot::set_pos_rot_scale(const glm::vec3 & position, const glm::qu
 	_scale= scale;
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox->set_model2world(_model2world);
-	//_emprise->_pos= glm::vec2(_position+ _bbox->_vmin);
 	_emprise->_pos= glm::vec2(_bbox->_aabb->_vmin);
-	_emprise->_size= glm::vec2(_bbox->_aabb->_vmax)- glm::vec2(_bbox->_aabb->_vmin);
-	//cout << glm::to_string(_position) << " ; " << *_emprise << glm::to_string(_bbox->_vmin) << "\n";
+	_emprise->_size= glm::vec2(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin);
 }
 
 

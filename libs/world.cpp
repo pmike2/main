@@ -564,6 +564,14 @@ World::World(GLuint prog_3d_anim, GLuint prog_3d_terrain, GLuint prog_3d_obj, GL
 
 	_path_finder_debug= new PathFinderDebug(_prog_bbox);
 
+
+	for (unsigned int i=0; i<100; ++i) {
+		AnimatedInstance * ai= new AnimatedInstance(_models_pool->get_animated_model("../data/gadjo.xml"), glm::vec3(1.0f, 1.0f, 1.0f), _prog_3d_anim, _prog_basic);
+		glm::quat q;
+		ai->set_pos_rot_scale(glm::vec3(rand_float(-200.0f, 200.0f), rand_float(-200.0f, 200.0f), 0.0f), q, glm::vec3(1.0f));
+		_animated_instances.push_back(ai);
+	}
+
 	//cout << "end init\n";
 }
 
@@ -659,6 +667,16 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 					continue;
 				}
 
+				_path_finder->_grid->reinit_weights();
+				for (auto ai_other : _animated_instances) {
+					if (ai_other== ai) {
+						continue;
+					}
+					AABB_2D * emprise_buff= ai_other->_pos_rot->_emprise->buffered(10.0f);
+					_path_finder->_grid->set_heavy_weight(emprise_buff);
+					delete emprise_buff;
+				}
+
 				vector<glm::vec2> path;
 				vector<unsigned int> visited;
 				if (_path_finder->path_find(glm::vec2(ai->_pos_rot->_position), glm::vec2(path_find_goal), path, visited)) {
@@ -718,6 +736,10 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 			// a remplacer par emprise ?
 			if (glm::distance(ai->_next_position, ai_other->_pos_rot->_position)< ai->_pos_rot->_bbox->_radius+ ai_other->_pos_rot->_bbox->_radius) {
 				ai->set_status(WAITING);
+				ai->_waiting_n_ms+= tikanim_delta;
+				if (ai->_waiting_n_ms> 5000) {
+					ai->set_status(STATIC);
+				}
 				break;
 			}
 		}
