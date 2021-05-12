@@ -20,6 +20,7 @@ public:
 	AABB_2D(const AABB_2D & aabb);
 	~AABB_2D();
 	glm::vec2 center();
+	AABB_2D * buffered(float size);
 	friend std::ostream & operator << (std::ostream & os, const AABB_2D & aabb);
 
 

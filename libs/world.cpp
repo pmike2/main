@@ -697,7 +697,9 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 
 	_path_finder->_grid->reinit_weights();
 	for (auto ai : _animated_instances) {
-		_path_finder->_grid->set_heavy_weight(ai->_pos_rot->_emprise);
+		AABB_2D * emprise_buff= ai->_pos_rot->_emprise->buffered(30.0f);
+		_path_finder->_grid->set_heavy_weight(emprise_buff);
+		delete emprise_buff;
 	}
 
 	for (auto ai : _animated_instances) {
@@ -713,6 +715,7 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 			if (ai_other== ai) {
 				continue;
 			}
+			// a remplacer par emprise ?
 			if (glm::distance(ai->_next_position, ai_other->_pos_rot->_position)< ai->_pos_rot->_bbox->_radius+ ai_other->_pos_rot->_bbox->_radius) {
 				ai->set_status(WAITING);
 				break;
@@ -1076,9 +1079,8 @@ void World::read(std::string ch_directory) {
 void World::statics2obstacles() {
 	for (auto si : _static_instances) {
 		Polygon2D * poly= new Polygon2D();
-		/*glm::vec2 origin= glm::vec2(si->_pos_rot->_bbox->_vmin.x, si->_pos_rot->_bbox->_vmin.y);
-		glm::vec2 size= glm::vec2(si->_pos_rot->_bbox->_vmax.x, si->_pos_rot->_bbox->_vmax.y)- origin;
-		poly->set_rectangle(origin, size);*/
+
+		// a remplacer par emprise ?
 		float pts[16];
 		for (unsigned int i=0; i<8; ++i) {
 			pts[2* i+ 0]= si->_pos_rot->_bbox->_pts[i].x;
