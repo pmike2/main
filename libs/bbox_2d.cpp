@@ -38,7 +38,7 @@ glm::vec2 AABB_2D::center() {
 
 
 AABB_2D * AABB_2D::buffered(float size) {
-	return new AABB_2D(_pos- glm::vec2(size, size), _size+ glm::vec2(size, size));
+	return new AABB_2D(_pos- glm::vec2(size, size), _size+ 2.0f* glm::vec2(size, size));
 }
 
 

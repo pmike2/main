@@ -697,7 +697,7 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 
 	_path_finder->_grid->reinit_weights();
 	for (auto ai : _animated_instances) {
-		AABB_2D * emprise_buff= ai->_pos_rot->_emprise->buffered(30.0f);
+		AABB_2D * emprise_buff= ai->_pos_rot->_emprise->buffered(10.0f);
 		_path_finder->_grid->set_heavy_weight(emprise_buff);
 		delete emprise_buff;
 	}
