@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/lib_bbox.dir/Users/home/git_dir/main/libs/bbox.cpp.o"
+  "CMakeFiles/lib_bbox.dir/Volumes/malenge/dir_git/main/libs/bbox.cpp.o"
+  "CMakeFiles/lib_bbox.dir/Volumes/malenge/dir_git/main/libs/bbox.cpp.o.d"
   "liblib_bbox.a"
   "liblib_bbox.pdb"
 )

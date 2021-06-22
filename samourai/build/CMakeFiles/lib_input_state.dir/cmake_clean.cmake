@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/lib_input_state.dir/Users/home/git_dir/main/libs/input_state.cpp.o"
+  "CMakeFiles/lib_input_state.dir/Volumes/malenge/dir_git/main/libs/input_state.cpp.o"
+  "CMakeFiles/lib_input_state.dir/Volumes/malenge/dir_git/main/libs/input_state.cpp.o.d"
   "liblib_input_state.a"
   "liblib_input_state.pdb"
 )

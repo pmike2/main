@@ -13,41 +13,8 @@
 
 #include "geom_2d.h"
 #include "bbox_2d.h"
+#include "graph.h"
 
-
-struct GraphEdge {
-	//unsigned int _start_node;
-	//unsigned int _end_node;
-	float _weight;
-};
-
-
-struct GraphVertex {
-	float _weight;
-	glm::vec2 _pos;
-	std::unordered_map<unsigned int, GraphEdge> _edges;
-	bool _active;
-};
-
-
-struct Graph {
-	std::unordered_map<unsigned int, GraphVertex> _vertices;
-	std::unordered_map<unsigned int, GraphVertex>::iterator _it_v;
-	std::unordered_map<unsigned int, GraphEdge>::iterator _it_e;
-
-
-	Graph();
-	~Graph();
-	void add_vertex(unsigned int i, float weight=0.0f, float x=0.0f, float y=0.0f);
-	void add_edge(unsigned int i, unsigned int j, float weight=0.0f, bool weight_is_dist=false);
-	void remove_vertex(unsigned int i);
-	void remove_edge(unsigned int i, unsigned int j);
-	std::vector<unsigned int> neighbors(unsigned int i);
-	void clear();
-	void rand();
-	void reinit_weights();
-	friend std::ostream & operator << (std::ostream & os, Graph & g);
-};
 
 
 struct GraphGrid : public Graph {

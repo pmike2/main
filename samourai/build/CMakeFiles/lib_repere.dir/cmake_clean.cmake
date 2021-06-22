@@ -1,5 +1,6 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/lib_repere.dir/Users/home/git_dir/main/libs/repere.cpp.o"
+  "CMakeFiles/lib_repere.dir/Volumes/malenge/dir_git/main/libs/repere.cpp.o"
+  "CMakeFiles/lib_repere.dir/Volumes/malenge/dir_git/main/libs/repere.cpp.o.d"
   "liblib_repere.a"
   "liblib_repere.pdb"
 )
