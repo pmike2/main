@@ -178,12 +178,14 @@ void init() {
 	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_repere= true;
 	view_system->_repere->_is_box= true;
-	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 1000.0f);
+	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 1.0f, 200.0f);
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
 
-	dungeon= new Dungeon(glm::vec3(-10.0f, -10.0f, -10.0f), glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+	float x= 50.0f;
+	dungeon= new Dungeon(glm::vec3(-x, -x, -x), glm::vec3(x, x, x), glm::vec3(1.0f, 1.0f, 1.0f), prog_repere);
+	dungeon->randomize();
 }
 
 
@@ -195,6 +197,7 @@ void draw() {
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	
 	view_system->draw();
+	dungeon->draw(view_system->_world2clip);
 
 	SDL_GL_SwapWindow(window);
 }

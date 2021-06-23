@@ -161,7 +161,7 @@ void InstancePosRot::update_dist2(glm::vec3 view_eye) {
 
 
 // -----------------------------------------------------------------------------------------------------
-bool aabb_intersects(AABB * aabb_1, AABB * aabb_2) {
+bool aabb_intersects_aabb(AABB * aabb_1, AABB * aabb_2) {
 	if ((aabb_1->_vmin.x> aabb_2->_vmax.x) || (aabb_1->_vmax.x< aabb_2->_vmin.x) ||
 		(aabb_1->_vmin.y> aabb_2->_vmax.y) || (aabb_1->_vmax.y< aabb_2->_vmin.y) ||
 		(aabb_1->_vmin.z> aabb_2->_vmax.z) || (aabb_1->_vmax.z< aabb_2->_vmin.z)) {
