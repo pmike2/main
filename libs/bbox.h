@@ -88,6 +88,7 @@ bool aabb_intersects_bbox(AABB * aabb, BBox * bbox);
 float aabb_distance_pt_2(AABB * aabb, const glm::vec3 & pt);
 float aabb_distance_pt(AABB * aabb, const glm::vec3 & pt);
 bool ray_intersects_aabb(glm::vec3 origin, glm::vec3 direction, AABB * aabb, float & t_hit);
+bool segment_intersects_aabb(const glm::vec3 & pt1, const glm::vec3 & pt2, AABB * aabb);
 
 
 // dessin de BBox ; a utiliser avec parcimonie ; lent si trop d'objets

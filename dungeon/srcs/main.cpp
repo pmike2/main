@@ -290,6 +290,19 @@ int main(int argc, char * argv[]) {
 	init();
 	main_loop();
 	clean();
+
 	
+	/*glm::vec3 pt1(6.0f, 0.5f, 0.5f);
+	glm::vec3 pt2(0.5f, 0.5f, 0.5f);
+	AABB * aabb= new AABB(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
+
+	bool x= segment_intersects_aabb(pt1, pt2, aabb);
+	cout << x << "\n";
+	cout << "-----------\n";
+	
+	float t_hit;
+	bool y= ray_intersects_aabb(pt1, pt2- pt1, aabb, t_hit);
+	cout << y << " ; " << t_hit << "\n";*/
+
 	return 0;
 }

@@ -256,6 +256,17 @@ bool ray_intersects_aabb(glm::vec3 origin, glm::vec3 direction, AABB * aabb, flo
 }
 
 
+bool segment_intersects_aabb(const glm::vec3 & pt1, const glm::vec3 & pt2, AABB * aabb) {
+	float t_hit;
+	bool ray_inter= ray_intersects_aabb(pt1, pt2- pt1, aabb, t_hit);
+	//cout << ray_inter << " ; " << t_hit << " ; " << glm::length(pt2- pt1) << "\n";
+	if ((!ray_inter) || (t_hit> glm::length(pt2- pt1))) {
+		return false;
+	}
+	return true;
+}
+
+
 // ------------------------------------------------------------------------------------------------------
 /*BBoxDraw::BBoxDraw() {
 

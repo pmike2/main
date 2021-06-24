@@ -13,29 +13,33 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # pour ne pas avoir les warnings de opengl deprecated
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 
 # cmake peut faire par défaut des find_package sur des libs classiques
 # mais par il ne connait pas SDL2_image, j'ai récupéré un .cmake que j'ai mis dans le dossier cmake
 # il faut faire la ligne ci-dessous pour lui dire d'aller chercher dans le dossier cmake
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/")
 
 
 project(anim_2d)
 
+set(ENV{SDLDIR} /Volumes/Cezanne/Cezanne/perso_dev/External_tools)
 
-find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
+find_package(SDL2 REQUIRED PATHS /Volumes/Cezanne/Cezanne/perso_dev/External_tools)
+find_package(SDL2_image)
 find_package(Freetype REQUIRED)
 find_package(OpenGL REQUIRED)
 
+
+include_directories(/Volumes/Cezanne/Cezanne/perso_dev/External_tools/include)
 include_directories(/usr/local/include)
 include_directories(/usr/local/include/freetype2)
 include_directories(../libs)
 
 # si les installs des libs externes sont faites dans des emplacements différents de /usr/local, on peut faire ca
 # pour chaque lib, cf https://cmake.org/cmake/help/latest/manual/cmake-modules.7.html
-# include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS})
+include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS})
+
 
 add_library(lib_anim_2d STATIC ../libs/anim_2d.cpp ../libs/anim_2d.h)
 add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)

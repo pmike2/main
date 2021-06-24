@@ -105,11 +105,23 @@ void Dungeon::randomize() {
 	}
 	aabbs.clear();
 
-	/*for (auto mesh : _meshes) {
-		for (auto edge : mesh->_edges) {
-			cout << edge.first << " ; " << edge.second << "\n";
+	for (unsigned int i=0; i<100; ++i) {
+		unsigned int idx_mesh= rand_int(0, _meshes.size()- 1);
+		unsigned int j= rand_int(0, 3);
+
+		// a droite
+		if (j== 0) {
+			AABB * aabb= new AABB(glm::vec3(aabbs[idx_mesh]->_vmin.x, aabbs[idx_mesh]->_vmax.y, _aabb->_vmin.z), glm::vec3(aabbs[idx_mesh]->_vmax.x, _aabb->_vmax.y, _aabb->_vmax.z));
+			for (unsigned idx_mesh_2=0; idx_mesh_2<_meshes.size(); ++idx_mesh_2) {
+				if (idx_mesh_2== idx_mesh) {
+					continue;
+				}
+				if (segment_intersects_aabb(glm::vec3(aabbs[idx_mesh_2]->_vmin.x, aabbs[idx_mesh_2]->_vmin.y, aabbs[idx_mesh_2]->_vmin.z), glm::vec3(aabbs[idx_mesh_2]->_vmax.x, aabbs[idx_mesh_2]->_vmin.y, aabbs[idx_mesh_2]->_vmin.z), aabb)) {
+
+				}
+			}
 		}
-	}*/
+	}
 
 	update();
 }
