@@ -1,6 +1,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <istream>
@@ -23,6 +24,7 @@
 #include "gl_utils.h"
 #include "input_state.h"
 #include "dungeon.h"
+#include "geom.h"
 
 
 using namespace std;
@@ -184,7 +186,7 @@ void init() {
 	input_state= new InputState();
 
 	float x= 50.0f;
-	dungeon= new Dungeon(glm::vec3(-x, -x, -x), glm::vec3(x, x, x), glm::vec3(1.0f, 1.0f, 1.0f), prog_repere);
+	dungeon= new Dungeon(glm::vec3(-x, -x, -x), glm::vec3(x, x, x), glm::vec3(1.0f, 1.0f, 1.0f), prog_repere, prog_repere);
 	dungeon->randomize();
 }
 
@@ -286,23 +288,50 @@ void clean() {
 
 // ------------------------------------------------------------------------
 int main(int argc, char * argv[]) {
-
+/*
 	init();
 	main_loop();
 	clean();
-
+*/
 	
-	/*glm::vec3 pt1(6.0f, 0.5f, 0.5f);
-	glm::vec3 pt2(0.5f, 0.5f, 0.5f);
-	AABB * aabb= new AABB(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f));
-
-	bool x= segment_intersects_aabb(pt1, pt2, aabb);
+	/*
+	glm::vec3 v0= glm::vec3(416, 899, 865); glm::vec3 v1= glm::vec3(412, 791, 403); glm::vec3 v2= glm::vec3(486, 414, 943);
+	glm::vec3 w0= glm::vec3(665, 244, 757); glm::vec3 w1= glm::vec3(345, 6, 942); glm::vec3 w2= glm::vec3(48, 951, 379);
+	glm::vec3 v[]= {v0, v1, v2};
+	glm::vec3 w[]= {w0, w1, w2};
+	bool x= triangle_intersects_triangle(v, w);
 	cout << x << "\n";
-	cout << "-----------\n";
-	
-	float t_hit;
-	bool y= ray_intersects_aabb(pt1, pt2- pt1, aabb, t_hit);
-	cout << y << " ; " << t_hit << "\n";*/
+*/
+
+
+	ifstream infile("/Volumes/Vol-Users/Users/pmbeau2/Desktop/tmp/tmp.txt");
+	float x1, y1, z1, x2, y2, z2, x3, y3, z3;
+	float x4, y4, z4, x5, y5, z5, x6, y6, z6;
+	bool b;
+	unsigned int compt= 0;
+	while (infile >> x1 >> y1 >> z1 >> x2 >> y2 >> z2 >> x3 >> y3 >> z3 >> x4 >> y4 >> z4 >> x5 >> y5 >> z5 >> x6 >> y6 >> z6 >> b) {
+		//if (compt!= 5) {compt++;continue;}
+		glm::vec3 v0(x1, y1, z1);
+		glm::vec3 v1(x2, y2, z2);
+		glm::vec3 v2(x3, y3, z3);
+		glm::vec3 w0(x4, y4, z4);
+		glm::vec3 w1(x5, y5, z5);
+		glm::vec3 w2(x6, y6, z6);
+		glm::vec3 v[]= {v0, v1, v2};
+		glm::vec3 w[]= {w0, w1, w2};
+		cout.precision(2);
+		cout << "----------\n";
+		cout << "debut " << compt << "\n";
+		cout << fixed << "glm::vec3 v0= glm::" << glm::to_string(v0) << "; glm::vec3 v1= glm::" << glm::to_string(v1) << "; glm::vec3 v2= glm::" << glm::to_string(v2) << ";\n";
+		cout << "glm::vec3 w0= glm::" << glm::to_string(w0) << "; glm::vec3 w1= glm::" << glm::to_string(w1) << "; glm::vec3 w2= glm::" << glm::to_string(w2) << ";\n";
+		bool x= triangle_intersects_triangle(v, w);
+		cout << "fin " << compt << "\n";
+		if (x!= b) {
+			cout << "aie\n";
+		}
+		compt++;
+	}
+
 
 	return 0;
 }

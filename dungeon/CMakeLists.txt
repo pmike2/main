@@ -43,6 +43,7 @@ add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h
 add_library(lib_bbox STATIC ../libs/bbox.cpp ../libs/bbox.h)
 add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
 add_library(lib_graph STATIC ../libs/graph.cpp ../libs/graph.h)
+add_library(lib_geom STATIC ../libs/geom.cpp ../libs/geom.h)
 add_library(lib_dungeon STATIC ./srcs/dungeon.cpp ./srcs/dungeon.h)
 
 add_executable(main ./srcs/main.cpp ./srcs/constantes.h)
@@ -54,6 +55,7 @@ target_link_libraries(main PUBLIC lib_input_state)
 target_link_libraries(main PUBLIC lib_bbox)
 target_link_libraries(main PUBLIC lib_bbox_2d)
 target_link_libraries(main PUBLIC lib_graph)
+target_link_libraries(main PUBLIC lib_geom)
 target_link_libraries(main PUBLIC lib_dungeon)
 
 # bug debile cf https://stackoverflow.com/questions/45730098/cmake-leading-or-trailing-whitespace-policy-cmp0004

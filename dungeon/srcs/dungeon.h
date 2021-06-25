@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 
+#include <OpenGL/gl3.h>
+
 #include <glm/glm.hpp>
 
 #include "bbox.h"
@@ -13,7 +15,7 @@
 
 struct Dungeon {
 	Dungeon();
-	Dungeon(glm::vec3 vmin, glm::vec3 vmax, glm::vec3 step, GLuint prog_draw);
+	Dungeon(glm::vec3 vmin, glm::vec3 vmax, glm::vec3 step, GLuint prog_draw_border, GLuint prog_draw_fill);
 	~Dungeon();
 	unsigned int pos2idx(glm::uvec3 pos);
 	glm::uvec3 idx2pos(unsigned int idx);
@@ -30,9 +32,9 @@ struct Dungeon {
 	Graph * _graph;
 	std::vector<Mesh *> _meshes;
 	
-	GLuint _prog_draw;
+	GLuint _prog_draw_border, _prog_draw_fill;
 	GLint _world2clip_loc, _position_loc, _diffuse_color_loc;
-	GLuint _buffer;
+	GLuint _buffers[2];
 	unsigned int _n_pts;
 };
 

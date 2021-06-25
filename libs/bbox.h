@@ -1,27 +1,9 @@
 #ifndef BBOX_H
 #define BBOX_H
 
-#include <string>
-#include <cmath>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <cstdlib>
-#include <vector>
-#include <sys/time.h>
-
-#include <OpenGL/gl3.h>
-
 #define GLM_FORCE_RADIANS
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
-#include <glm/gtc/constants.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/transform.hpp>
-#include <glm/gtx/norm.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
-#include <glm/gtx/string_cast.hpp>
 
 #include "bbox_2d.h"
 
