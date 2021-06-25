@@ -126,8 +126,12 @@ void Dungeon::randomize() {
 					}
 				}
 			}
-			float xmin= max(aabbs[idx_mesh]->_vmin.x, aabbs[idx_mesh_min]->_vmin.x);
-			float xmax= min(aabbs[idx_mesh]->_vmax.x, aabbs[idx_mesh_min]->_vmax.x);
+			float xfmin= max(aabbs[idx_mesh]->_vmin.x, aabbs[idx_mesh_min]->_vmin.x);
+			float xfmax= min(aabbs[idx_mesh]->_vmax.x, aabbs[idx_mesh_min]->_vmax.x);
+			glm::uvec3 vmin= posf2pos(xfmin, 0.0f, 0.0f);
+			glm::uvec3 vmax= posf2pos(xfmax, 0.0f, 0.0f);
+			unsigned int xmin= vmin.x;
+			unsigned int xmax= vmax.x;
 			
 		}
 	}
