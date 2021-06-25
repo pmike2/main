@@ -112,14 +112,23 @@ void Dungeon::randomize() {
 		// a droite
 		if (j== 0) {
 			AABB * aabb= new AABB(glm::vec3(aabbs[idx_mesh]->_vmin.x, aabbs[idx_mesh]->_vmax.y, _aabb->_vmin.z), glm::vec3(aabbs[idx_mesh]->_vmax.x, _aabb->_vmax.y, _aabb->_vmax.z));
+			float dist_min= 1e7;
+			unsigned int idx_mesh_min= 0;
 			for (unsigned idx_mesh_2=0; idx_mesh_2<_meshes.size(); ++idx_mesh_2) {
 				if (idx_mesh_2== idx_mesh) {
 					continue;
 				}
 				if (segment_intersects_aabb(glm::vec3(aabbs[idx_mesh_2]->_vmin.x, aabbs[idx_mesh_2]->_vmin.y, aabbs[idx_mesh_2]->_vmin.z), glm::vec3(aabbs[idx_mesh_2]->_vmax.x, aabbs[idx_mesh_2]->_vmin.y, aabbs[idx_mesh_2]->_vmin.z), aabb)) {
-
+					float dist= aabbs[idx_mesh_2]->_vmin.y- aabbs[idx_mesh]->_vmax.y;
+					if (dist< dist_min) {
+						dist_min= dist;
+						idx_mesh_min= idx_mesh_2;
+					}
 				}
 			}
+			float xmin= max(aabbs[idx_mesh]->_vmin.x, aabbs[idx_mesh_min]->_vmin.x);
+			float xmax= min(aabbs[idx_mesh]->_vmax.x, aabbs[idx_mesh_min]->_vmax.x);
+			
 		}
 	}
 
