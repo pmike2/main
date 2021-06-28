@@ -276,6 +276,15 @@ float aabb_distance_pt(AABB * aabb, const glm::vec3 & pt) {
 // cf https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
 bool ray_intersects_aabb(glm::vec3 origin, glm::vec3 direction, AABB * aabb, float & t_hit) {
 	direction= glm::normalize(direction);
+	if (direction.x== 0.0f) {
+		direction.x= 1e-7;
+	}
+	if (direction.y== 0.0f) {
+		direction.y= 1e-7;
+	}
+	if (direction.z== 0.0f) {
+		direction.z= 1e-7;
+	}
 	glm::vec3 dirfrac(1.0f/ direction.x, 1.0f/ direction.y, 1.0f/ direction.z);
 	float t1= (aabb->_vmin.x- origin.x)* dirfrac.x;
 	float t2= (aabb->_vmax.x- origin.x)* dirfrac.x;

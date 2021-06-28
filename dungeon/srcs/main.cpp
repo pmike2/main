@@ -293,7 +293,12 @@ int main(int argc, char * argv[]) {
 	main_loop();
 	clean();
 
-	
+	/*glm::vec3 pt1(16, 44, 0);
+	glm::vec3 pt2(16, 49, 0);
+	AABB * aabb= new AABB(glm::vec3(16, -3, -20), glm::vec3(50, 3, 20));
+	bool b= segment_intersects_aabb(pt1, pt2, aabb);
+	cout << b << "\n";
+	*/
 	/*
 	glm::vec3 v0= glm::vec3(416, 899, 865); glm::vec3 v1= glm::vec3(412, 791, 403); glm::vec3 v2= glm::vec3(486, 414, 943);
 	glm::vec3 w0= glm::vec3(665, 244, 757); glm::vec3 w1= glm::vec3(345, 6, 942); glm::vec3 w2= glm::vec3(48, 951, 379);
