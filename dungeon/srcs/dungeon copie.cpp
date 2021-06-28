@@ -73,19 +73,14 @@ void Dungeon::randomize() {
 	float EPS= 0.01f;
 	float z= 10.0f;
 	float hallway_depth= 2.0f;
-	float MIN_DIST= 10.0f;
-	unsigned int MIN_SIZE= 5;
-	
 	std::vector<Mesh *> rooms;
 	std::vector<Mesh *> hallways;
 	vector<AABB *> aabbs_rooms;
 	vector<BBox *> bboxs_hallways;
-	vector<bool> connected;
-
 	for (unsigned int i=0; i<500; ++i) {
-		glm::uvec3 pos0= glm::uvec3(rand_int(0, _n.x- 1- MIN_SIZE), rand_int(0, _n.y- 1- MIN_SIZE), rand_int(0, _n.z- 1));
-		unsigned int size_x= rand_int(MIN_SIZE, _n.x- 1- pos0.x);
-		unsigned int size_y= rand_int(MIN_SIZE, _n.y- 1- pos0.y);
+		glm::uvec3 pos0= glm::uvec3(rand_int(0, _n.x- 2), rand_int(0, _n.y- 2), rand_int(0, _n.z- 2));
+		unsigned int size_x= rand_int(1, _n.x- 1- pos0.x);
+		unsigned int size_y= rand_int(1, _n.y- 1- pos0.y);
 		glm::uvec3 pos1= pos0+ glm::uvec3(size_x, 0, 0);
 		glm::uvec3 pos2= pos0+ glm::uvec3(size_x, size_y, 0);
 		glm::uvec3 pos3= pos0+ glm::uvec3(0, size_y, 0);
@@ -101,9 +96,7 @@ void Dungeon::randomize() {
 		if (is_inter) {
 			continue;
 		}
-		
 		aabbs_rooms.push_back(new_aabb);
-		connected.push_back(false);
 		
 		Mesh * mesh= new Mesh();
 		mesh->_edges.push_back(make_pair(pos2idx(pos0), pos2idx(pos1)));
@@ -115,25 +108,34 @@ void Dungeon::randomize() {
 
 	for (unsigned int i=0; i<300; ++i) {
 		unsigned int idx_mesh= rand_int(0, aabbs_rooms.size()- 1);
-		unsigned int idx_mesh_min= 0;
-		//unsigned int j= rand_int(0, 1);
-		unsigned int j= 1;
-		BBox * bbox;
-		glm::uvec3 pos0, pos1, pos2, pos3;
+		//unsigned int j= rand_int(0, 3);
+		unsigned int j= 0;
 
 		// y+
 		if (j== 0) {
 			AABB * aabb= new AABB(
-				glm::vec3(aabbs_rooms[idx_mesh]->_vmin.x+ EPS, aabbs_rooms[idx_mesh]->_vmax.y+ MIN_DIST, _aabb->_vmin.z),
+				glm::vec3(aabbs_rooms[idx_mesh]->_vmin.x+ EPS, aabbs_rooms[idx_mesh]->_vmax.y, _aabb->_vmin.z),
+				glm::vec3(aabbs_rooms[idx_mesh]->_vmax.x- EPS, _aabb->_vmax.y, _aabb->_vmax.z));
+		}
+		// x+
+		else if (j== 1) {
+			AABB * aabb= new AABB(
+				glm::vec3(aabbs_rooms[idx_mesh]->_vmax.x, aabbs_rooms[idx_mesh]->_vmin.y+ EPS, _aabb->_vmin.z),
+				glm::vec3(_aabb->_vmax.x, aabbs_rooms[idx_mesh]->_vmax.y- EPS, _aabb->_vmax.z));
+		}
+
+		// a droite
+		if (j== 0) {
+			AABB * aabb= new AABB(
+				glm::vec3(aabbs_rooms[idx_mesh]->_vmin.x+ EPS, aabbs_rooms[idx_mesh]->_vmax.y, _aabb->_vmin.z),
 				glm::vec3(aabbs_rooms[idx_mesh]->_vmax.x- EPS, _aabb->_vmax.y, _aabb->_vmax.z));
 			float dist_min= 1e7;
-			idx_mesh_min= 0;
+			unsigned int idx_mesh_min= 0;
 			for (unsigned idx_mesh_2=0; idx_mesh_2<aabbs_rooms.size(); ++idx_mesh_2) {
 				if (idx_mesh_2== idx_mesh) {
 					continue;
 				}
-				if (segment_intersects_aabb(
-					glm::vec3(aabbs_rooms[idx_mesh_2]->_vmin.x, aabbs_rooms[idx_mesh_2]->_vmin.y, aabbs_rooms[idx_mesh_2]->_vmin.z),
+				if (segment_intersects_aabb(glm::vec3(aabbs_rooms[idx_mesh_2]->_vmin.x, aabbs_rooms[idx_mesh_2]->_vmin.y, aabbs_rooms[idx_mesh_2]->_vmin.z),
 					glm::vec3(aabbs_rooms[idx_mesh_2]->_vmax.x, aabbs_rooms[idx_mesh_2]->_vmin.y, aabbs_rooms[idx_mesh_2]->_vmin.z), aabb)) {
 					float dist= aabbs_rooms[idx_mesh_2]->_vmin.y- aabbs_rooms[idx_mesh]->_vmax.y;
 					if (dist< dist_min) {
@@ -145,11 +147,10 @@ void Dungeon::randomize() {
 			if (dist_min> 1e5) {
 				continue;
 			}
-
-			pos0= idx2pos(rooms[idx_mesh]->_edges[2].second);
-			pos1= idx2pos(rooms[idx_mesh]->_edges[2].first);
-			pos2= idx2pos(rooms[idx_mesh_min]->_edges[0].second);
-			pos3= idx2pos(rooms[idx_mesh_min]->_edges[0].first);
+			glm::uvec3 pos0= idx2pos(rooms[idx_mesh]->_edges[2].second);
+			glm::uvec3 pos1= idx2pos(rooms[idx_mesh]->_edges[2].first);
+			glm::uvec3 pos2= idx2pos(rooms[idx_mesh_min]->_edges[0].second);
+			glm::uvec3 pos3= idx2pos(rooms[idx_mesh_min]->_edges[0].first);
 			unsigned int xmin= max(pos0.x, pos3.x);
 			unsigned int xmax= min(pos1.x, pos2.x);
 			unsigned int xmin_rand= rand_int(xmin, xmax- 1);
@@ -179,111 +180,31 @@ void Dungeon::randomize() {
 			}
 
 			bool is_inter_hallway= false;
-			bbox= new BBox(
+			BBox * bbox= new BBox(
 				glm::vec3(0.0f, 0.0f, 0.0f),
 				glm::vec3(posf1.x- posf0.x, glm::length(glm::vec3(0.0f, posf3.y- posf0.y, posf3.z- posf0.z)), hallway_depth),
 				glm::rotate(glm::translate(glm::mat4(1.0f), posf0), atan((posf3.z- posf0.z)/ (posf3.y- posf0.y)), glm::vec3(1.0f, 0.0f, 0.0f))
 			);
-		}
-
-		// x+
-		else if (j== 1) {
-			AABB * aabb= new AABB(
-				glm::vec3(aabbs_rooms[idx_mesh]->_vmax.x+ MIN_DIST, aabbs_rooms[idx_mesh]->_vmin.y+ EPS, _aabb->_vmin.z),
-				glm::vec3(_aabb->_vmax.x, aabbs_rooms[idx_mesh]->_vmax.y- EPS, _aabb->_vmax.z));
-			float dist_min= 1e7;
-			idx_mesh_min= 0;
-			for (unsigned idx_mesh_2=0; idx_mesh_2<aabbs_rooms.size(); ++idx_mesh_2) {
-				if (idx_mesh_2== idx_mesh) {
-					continue;
-				}
-				if (segment_intersects_aabb(
-					glm::vec3(aabbs_rooms[idx_mesh_2]->_vmin.x, aabbs_rooms[idx_mesh_2]->_vmin.y, aabbs_rooms[idx_mesh_2]->_vmin.z),
-					glm::vec3(aabbs_rooms[idx_mesh_2]->_vmin.x, aabbs_rooms[idx_mesh_2]->_vmax.y, aabbs_rooms[idx_mesh_2]->_vmin.z), aabb)) {
-					float dist= aabbs_rooms[idx_mesh_2]->_vmin.x- aabbs_rooms[idx_mesh]->_vmax.x;
-					if (dist< dist_min) {
-						dist_min= dist;
-						idx_mesh_min= idx_mesh_2;
-					}
-				}
-			}
-			if (dist_min> 1e5) {
-				continue;
-			}
-
-			pos0= idx2pos(rooms[idx_mesh]->_edges[1].first);
-			pos1= idx2pos(rooms[idx_mesh_min]->_edges[3].second);
-			pos2= idx2pos(rooms[idx_mesh_min]->_edges[3].first);
-			pos3= idx2pos(rooms[idx_mesh]->_edges[1].second);
-			unsigned int ymin= max(pos0.y, pos1.y);
-			unsigned int ymax= min(pos2.y, pos3.y);
-			unsigned int ymin_rand= rand_int(ymin, ymax- 1);
-			unsigned int ymax_rand= rand_int(ymin_rand+ 1, ymax);
-			pos0.y= ymin_rand;
-			pos1.y= ymin_rand;
-			pos2.y= ymax_rand;
-			pos3.y= ymax_rand;
-			glm::vec3 posf0= pos2posf(pos0);
-			glm::vec3 posf1= pos2posf(pos1);
-			glm::vec3 posf2= pos2posf(pos2);
-			glm::vec3 posf3= pos2posf(pos3);
-
-			bool is_inter_room= false;
-			for (unsigned idx_mesh_2=0; idx_mesh_2<aabbs_rooms.size(); ++idx_mesh_2) {
-				if ((idx_mesh_2== idx_mesh) || (idx_mesh_2== idx_mesh_min)) {
-					continue;
-				}
-				if ((segment_intersects_aabb(posf0, posf1, aabbs_rooms[idx_mesh_2])) ||
-					(segment_intersects_aabb(posf2, posf3, aabbs_rooms[idx_mesh_2]))) {
-					is_inter_room= true;
+			for (unsigned int idx_hallway=0; idx_hallway<hallways.size(); ++idx_hallway) {
+				if (bbox_intersects_bbox(bboxs_hallways[idx_hallway], bbox)) {
+					is_inter_hallway= true;
 					break;
 				}
 			}
-			if (is_inter_room) {
+			if (is_inter_hallway) {
 				continue;
 			}
+			bboxs_hallways.push_back(bbox);
 
-			bbox= new BBox(
-				glm::vec3(0.0f, 0.0f, 0.0f),
-				glm::vec3(glm::length(glm::vec3(0.0f, posf1.x- posf0.x, posf1.z- posf0.z)), posf3.y- posf0.y, hallway_depth),
-				glm::rotate(glm::translate(glm::mat4(1.0f), posf0), atan((posf1.z- posf0.z)/ (posf1.x- posf0.x)), glm::vec3(0.0f, 1.0f, 0.0f))
-			);
+			Mesh * mesh= new Mesh();
+			mesh->_edges.push_back(make_pair(pos2idx(pos0), pos2idx(pos1)));
+			mesh->_edges.push_back(make_pair(pos2idx(pos1), pos2idx(pos2)));
+			mesh->_edges.push_back(make_pair(pos2idx(pos2), pos2idx(pos3)));
+			mesh->_edges.push_back(make_pair(pos2idx(pos3), pos2idx(pos0)));
+			hallways.push_back(mesh);
 		}
-
-		// ===================================================
-		bool is_inter_hallway= false;
-		for (unsigned int idx_hallway=0; idx_hallway<hallways.size(); ++idx_hallway) {
-			if (bbox_intersects_bbox(bboxs_hallways[idx_hallway], bbox)) {
-				is_inter_hallway= true;
-				break;
-			}
-		}
-		if (is_inter_hallway) {
-			continue;
-		}
-		
-		bboxs_hallways.push_back(bbox);
-		
-		connected[idx_mesh]= true;
-		connected[idx_mesh_min]= true;
-		//rooms[idx_mesh]->_debug= true;
-		//rooms[idx_mesh_min]->_debug= true;
-
-		Mesh * mesh= new Mesh();
-		mesh->_edges.push_back(make_pair(pos2idx(pos0), pos2idx(pos1)));
-		mesh->_edges.push_back(make_pair(pos2idx(pos1), pos2idx(pos2)));
-		mesh->_edges.push_back(make_pair(pos2idx(pos2), pos2idx(pos3)));
-		mesh->_edges.push_back(make_pair(pos2idx(pos3), pos2idx(pos0)));
-		mesh->_debug= false;
-		hallways.push_back(mesh);
 	}
-	
 	_meshes.insert(_meshes.end(), rooms.begin(), rooms.end());
-	/*for (unsigned int i=0; i<rooms.size(); ++i) {
-		if (connected[i]) {
-			_meshes.push_back(rooms[i]);
-		}
-	}*/
 	_meshes.insert(_meshes.end(), hallways.begin(), hallways.end());
 
 	for (auto aabb : aabbs_rooms) {
@@ -377,6 +298,9 @@ void Dungeon::update() {
 	float data_fill[_meshes.size()* 42];
 	compt= 0;
 	for (auto mesh : _meshes) {
+		if (_graph->_vertices[mesh->_edges[0].first]._pos.y> _graph->_vertices[mesh->_edges[3].first]._pos.y) {
+			cout << "aaa\n";
+		}
 		
 		data_fill[42* compt+ 0]= _graph->_vertices[mesh->_edges[0].first]._pos.x;
 		data_fill[42* compt+ 1]= _graph->_vertices[mesh->_edges[0].first]._pos.y;
@@ -404,16 +328,9 @@ void Dungeon::update() {
 		data_fill[42* compt+ 37]= _graph->_vertices[mesh->_edges[3].first]._pos.z;
 
 		for (unsigned int i=0; i<6; ++i) {
-			if (mesh->_debug) {
-				data_fill[42* compt+ i* 7+ 3]= 0.5;
-				data_fill[42* compt+ i* 7+ 4]= 0.2;
-				data_fill[42* compt+ i* 7+ 5]= 0.7;
-			}
-			else {
-				data_fill[42* compt+ i* 7+ 3]= 0.0;
-				data_fill[42* compt+ i* 7+ 4]= 0.9;
-				data_fill[42* compt+ i* 7+ 5]= 0.9;
-			}
+			data_fill[42* compt+ i* 7+ 3]= 0.5;
+			data_fill[42* compt+ i* 7+ 4]= 0.2;
+			data_fill[42* compt+ i* 7+ 5]= 0.7;
 			data_fill[42* compt+ i* 7+ 6]= 0.5;
 		}
 

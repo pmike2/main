@@ -46,6 +46,7 @@ struct Graph {
 
 struct Mesh {
 	std::vector<std::pair<unsigned int, unsigned int> > _edges;
+	bool _debug = true;
 };
 
 

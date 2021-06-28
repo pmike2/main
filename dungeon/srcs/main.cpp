@@ -186,7 +186,7 @@ void init() {
 	input_state= new InputState();
 
 	float x= 50.0f;
-	dungeon= new Dungeon(glm::vec3(-x, -x, -x), glm::vec3(x, x, x), glm::vec3(1.0f, 1.0f, 1.0f), prog_repere, prog_repere);
+	dungeon= new Dungeon(glm::vec3(-x, -x, -x* 0.5f), glm::vec3(x, x, x* 0.5f), glm::vec3(1.0f, 1.0f, 1.0f), prog_repere, prog_repere);
 	dungeon->randomize();
 }
 
@@ -288,11 +288,11 @@ void clean() {
 
 // ------------------------------------------------------------------------
 int main(int argc, char * argv[]) {
-/*
+
 	init();
 	main_loop();
 	clean();
-*/
+
 	
 	/*
 	glm::vec3 v0= glm::vec3(416, 899, 865); glm::vec3 v1= glm::vec3(412, 791, 403); glm::vec3 v2= glm::vec3(486, 414, 943);
@@ -303,7 +303,7 @@ int main(int argc, char * argv[]) {
 	cout << x << "\n";
 */
 
-
+/*
 	ifstream infile("/Volumes/Vol-Users/Users/pmbeau2/Desktop/tmp/tmp.txt");
 	float x1, y1, z1, x2, y2, z2, x3, y3, z3;
 	float x4, y4, z4, x5, y5, z5, x6, y6, z6;
@@ -319,19 +319,50 @@ int main(int argc, char * argv[]) {
 		glm::vec3 w2(x6, y6, z6);
 		glm::vec3 v[]= {v0, v1, v2};
 		glm::vec3 w[]= {w0, w1, w2};
-		cout.precision(2);
 		cout << "----------\n";
 		cout << "debut " << compt << "\n";
-		cout << fixed << "glm::vec3 v0= glm::" << glm::to_string(v0) << "; glm::vec3 v1= glm::" << glm::to_string(v1) << "; glm::vec3 v2= glm::" << glm::to_string(v2) << ";\n";
+		cout << "glm::vec3 v0= glm::" << glm::to_string(v0) << "; glm::vec3 v1= glm::" << glm::to_string(v1) << "; glm::vec3 v2= glm::" << glm::to_string(v2) << ";\n";
 		cout << "glm::vec3 w0= glm::" << glm::to_string(w0) << "; glm::vec3 w1= glm::" << glm::to_string(w1) << "; glm::vec3 w2= glm::" << glm::to_string(w2) << ";\n";
+		cout << "lx1= [" << v0.x << ", " << v1.x << ", " << v2.x << ", " << v0.x << "]\n";
+		cout << "ly1= [" << v0.y << ", " << v1.y << ", " << v2.y << ", " << v0.y << "]\n";
+		cout << "lz1= [" << v0.z << ", " << v1.z << ", " << v2.z << ", " << v0.z << "]\n";
+		cout << "lx2= [" << w0.x << ", " << w1.x << ", " << w2.x << ", " << w0.x << "]\n";
+		cout << "ly2= [" << w0.y << ", " << w1.y << ", " << w2.y << ", " << w0.y << "]\n";
+		cout << "lz2= [" << w0.z << ", " << w1.z << ", " << w2.z << ", " << w0.z << "]\n";
 		bool x= triangle_intersects_triangle(v, w);
+		cout << "pg_inter=" << b << " ; my_inter=" << x << "\n";
 		cout << "fin " << compt << "\n";
 		if (x!= b) {
 			cout << "aie\n";
+			break;
 		}
 		compt++;
 	}
+*/
+/*
+	BBox * bbox_1= new BBox(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::mat4(1.0f));
+	BBox * bbox_2= new BBox(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f), glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.5f, 0.0f)));
+	bool x= bbox_intersects_bbox(bbox_1, bbox_2);
+	cout << x << "\n";
+*/
 
-
+/*
+	float hallway_depth= 2.0f;
+	glm::vec3 posf0(10.0f, 10.0f, 30.0f);
+	glm::vec3 posf1(20.0f, 10.0f, 30.0f);
+	glm::vec3 posf2(20.0f, 50.0f, 20.0f);
+	glm::vec3 posf3(10.0f, 50.0f, 20.0f);
+	BBox * bbox= new BBox(
+		glm::vec3(0.0f, 0.0f, 0.0f),
+		glm::vec3(posf1.x- posf0.x, glm::length(glm::vec3(0.0f, posf3.y- posf0.y, posf3.z- posf0.z)), hallway_depth),
+		//glm::translate(glm::rotate(glm::mat4(1.0f), atan((posf3.z- posf0.z)/ (posf3.y- posf0.y)), glm::vec3(1.0f, 0.0f, 0.0f)), posf0)
+		glm::rotate(glm::translate(glm::mat4(1.0f), posf0), atan((posf3.z- posf0.z)/ (posf3.y- posf0.y)), glm::vec3(1.0f, 0.0f, 0.0f))
+	);
+	cout << glm::to_string(glm::vec3(posf1.x- posf0.x, glm::length(glm::vec3(0.0f, posf3.y- posf0.y, posf3.z- posf0.z)), hallway_depth)) << "\n";
+	cout << atan((posf3.z- posf0.z)/ (posf3.y- posf0.y)) << "\n";
+	for (unsigned int i=0; i<8; ++i) {
+		cout << glm::to_string(bbox->_pts[i]) << "\n";
+	}
+*/
 	return 0;
 }

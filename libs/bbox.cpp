@@ -194,6 +194,43 @@ bool aabb_intersects_bbox(AABB * aabb, BBox * bbox) {
 }
 
 
+// https://www.jkh.me/files/tutorials/Separating%20Axis%20Theorem%20for%20Oriented%20Bounding%20Boxes.pdf
+bool bbox_intersects_bbox(BBox * bbox_1, BBox * bbox_2) {
+	glm::vec3 center_1= 0.5f* (bbox_1->_pts[7]+ bbox_1->_pts[0]);
+	glm::vec3 x_1= glm::normalize(bbox_1->_pts[1]- bbox_1->_pts[0]);
+	glm::vec3 y_1= glm::normalize(bbox_1->_pts[2]- bbox_1->_pts[0]);
+	glm::vec3 z_1= glm::normalize(bbox_1->_pts[4]- bbox_1->_pts[0]);
+	float half_width_1= 0.5f* (bbox_1->_vmax[0]- bbox_1->_vmin[0]);
+	float half_height_1= 0.5f* (bbox_1->_vmax[1]- bbox_1->_vmin[1]);
+	float half_depth_1= 0.5f* (bbox_1->_vmax[2]- bbox_1->_vmin[2]);
+
+	glm::vec3 center_2= 0.5f* (bbox_2->_pts[7]+ bbox_2->_pts[0]);
+	glm::vec3 x_2= glm::normalize(bbox_2->_pts[1]- bbox_2->_pts[0]);
+	glm::vec3 y_2= glm::normalize(bbox_2->_pts[2]- bbox_2->_pts[0]);
+	glm::vec3 z_2= glm::normalize(bbox_2->_pts[4]- bbox_2->_pts[0]);
+	float half_width_2= 0.5f* (bbox_2->_vmax[0]- bbox_2->_vmin[0]);
+	float half_height_2= 0.5f* (bbox_2->_vmax[1]- bbox_2->_vmin[1]);
+	float half_depth_2= 0.5f* (bbox_2->_vmax[2]- bbox_2->_vmin[2]);
+
+	glm::vec3 axes[15]= {
+		x_1, y_1, z_1, x_2, y_2, z_2, 
+		glm::cross(x_1, x_2), glm::cross(x_1, y_2), glm::cross(x_1, z_2), 
+		glm::cross(y_1, x_2), glm::cross(y_1, y_2), glm::cross(y_1, z_2), 
+		glm::cross(z_1, x_2), glm::cross(z_1, y_2), glm::cross(z_1, z_2)
+	};
+
+	for (unsigned i=0; i<15; ++i) {
+		float a= abs(glm::dot(axes[i], center_2- center_1));
+		float b= abs(half_width_1* glm::dot(axes[i], x_1))+ abs(half_height_1* glm::dot(axes[i], y_1))+ abs(half_depth_1* glm::dot(axes[i], z_1))+
+				 abs(half_width_2* glm::dot(axes[i], x_2))+ abs(half_height_2* glm::dot(axes[i], y_2))+ abs(half_depth_2* glm::dot(axes[i], z_2));
+		if (a> b) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
 float aabb_distance_pt_2(AABB * aabb, const glm::vec3 & pt) {
 	float dx, dy, dz;
 	
@@ -395,122 +432,3 @@ void BBoxDraw::set_model2world(const glm::mat4 & model2world) {
 
 // ---------------------------------------------------------------------------------------
 
-// a revoir
-
-// cf https://www.geometrictools.com/Documentation/DynamicCollisionDetection.pdf
-/*bool bbox_intersects(BBox * bbox1, glm::mat3 rotation1, glm::vec3 translation1, BBox * bbox2, glm::mat3 rotation2, glm::vec3 translation2) {
-	bool verbose= false;
-
-	glm::vec3 A0= rotation1* glm::vec3(1.0f, 0.0f, 0.0f);
-	glm::vec3 A1= rotation1* glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 A2= rotation1* glm::vec3(0.0f, 0.0f, 1.0f);
-	glm::mat3 A= rotation1;
-	
-	// on recentre la bbox si xmin != -xmax, etc
-	float a0= (bbox1->_vmax.x- bbox1->_vmin.x)* 0.5f;
-	float a1= (bbox1->_vmax.y- bbox1->_vmin.y)* 0.5f;
-	float a2= (bbox1->_vmax.z- bbox1->_vmin.z)* 0.5f;
-	
-	glm::vec3 B0= rotation2* glm::vec3(1.0f, 0.0f, 0.0f);
-	glm::vec3 B1= rotation2* glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 B2= rotation2* glm::vec3(0.0f, 0.0f, 1.0f);
-	glm::mat3 B= rotation2;
-	
-	float b0= (bbox2->_vmax.x- bbox2->_vmin.x)* 0.5f;
-	float b1= (bbox2->_vmax.y- bbox2->_vmin.y)* 0.5f;
-	float b2= (bbox2->_vmax.z- bbox2->_vmin.z)* 0.5f;
-	
-	glm::vec3 D= 
-		(translation2+ glm::vec3((bbox2->_vmax.x+ bbox2->_vmin.x)* 0.5f, (bbox2->_vmax.y+ bbox2->_vmin.y)* 0.5f, (bbox2->_vmax.z+ bbox2->_vmin.z)* 0.5f))-
-		(translation1+ glm::vec3((bbox1->_vmax.x+ bbox1->_vmin.x)* 0.5f, (bbox1->_vmax.y+ bbox1->_vmin.y)* 0.5f, (bbox1->_vmax.z+ bbox1->_vmin.z)* 0.5f));
-	
-	glm::mat3 C= glm::transpose(A)* B;
-	
-	if (verbose) {
-		cout << "A0=(" << A0[0] << ";" << A0[1] << ";" << A0[2] << ")" << endl;
-		cout << "A1=(" << A1[0] << ";" << A1[1] << ";" << A1[2] << ")" << endl;
-		cout << "A2=(" << A2[0] << ";" << A2[1] << ";" << A2[2] << ")" << endl;
-		cout << "a0=" << a0 << "; a1=" << a1 << "; a2=" << a2 << endl;
-
-		cout << "B0=(" << B0[0] << ";" << B0[1] << ";" << B0[2] << ")" << endl;
-		cout << "B1=(" << B1[0] << ";" << B1[1] << ";" << B1[2] << ")" << endl;
-		cout << "B2=(" << B2[0] << ";" << B2[1] << ";" << B2[2] << ")" << endl;
-		cout << "b0=" << b0 << "; b1=" << b1 << "; b2=" << b2 << endl;
-	
-		cout << "D=(" << D[0] << ";" << D[1] << ";" << D[2] << ")" << endl;
-	
-		cout << "C=(" << endl;
-		cout << C[0][0] << ";" << C[0][1] << ";" << C[0][2] << endl;
-		cout << C[1][0] << ";" << C[1][1] << ";" << C[1][2] << endl;
-		cout << C[2][0] << ";" << C[2][1] << ";" << C[2][2] << endl;
-		cout << ")" << endl;
-	}
-	
-	if (a0+ b0* abs(C[0][0])+ b1* abs(C[0][1])+ b2* abs(C[0][2])< glm::dot(A0, D)) {
-		if (verbose) cout << "A0" << endl;
-		return false;
-	}
-	if (a1+ b0* abs(C[1][0])+ b1* abs(C[1][1])+ b2* abs(C[1][2])< glm::dot(A1, D)) {
-		if (verbose) cout << "A1" << endl;
-		return false;
-	}
-	if (a2+ b0* abs(C[2][0])+ b1* abs(C[2][1])+ b2* abs(C[2][2])< glm::dot(A2, D)) {
-		if (verbose) cout << "A2" << endl;
-		return false;
-	}
-
-	if (b0+ a0* abs(C[0][0])+ a1* abs(C[1][0])+ a2* abs(C[2][0])< glm::dot(B0, D)) {
-		if (verbose) cout << "B0" << endl;
-		return false;
-	}
-	if (b1+ a0* abs(C[0][1])+ a1* abs(C[1][1])+ a2* abs(C[2][1])< glm::dot(B1, D)) {
-		if (verbose) cout << "B1" << endl;
-		return false;
-	}
-	if (b2+ a0* abs(C[0][2])+ a1* abs(C[1][2])+ a2* abs(C[2][2])< glm::dot(B2, D)) {
-		if (verbose) cout << "B2" << endl;
-		return false;
-	}
-
-	if (a1* abs(C[2][0])+ a2* abs(C[1][0])+ b1* abs(C[0][2])+ b2* abs(C[0][1])< abs(C[1][0]* glm::dot(A2, D)- C[2][0]* glm::dot(A1, D))) {
-		if (verbose) cout << "A0 x B0" << endl;
-		return false;
-	}
-	if (a1* abs(C[2][1])+ a2* abs(C[1][1])+ b0* abs(C[0][2])+ b2* abs(C[0][0])< abs(C[1][1]* glm::dot(A2, D)- C[2][1]* glm::dot(A1, D))) {
-		if (verbose) cout << "A0 x B1" << endl;
-		return false;
-	}
-	if (a1* abs(C[2][2])+ a2* abs(C[1][2])+ b0* abs(C[0][1])+ b1* abs(C[0][0])< abs(C[1][2]* glm::dot(A2, D)- C[2][2]* glm::dot(A1, D))) {
-		if (verbose) cout << "A0 x B2" << endl;
-		return false;
-	}
-	
-	if (a0* abs(C[2][0])+ a2* abs(C[0][0])+ b1* abs(C[1][2])+ b2* abs(C[1][1])< abs(C[2][0]* glm::dot(A0, D)- C[0][0]* glm::dot(A2, D))) {
-		if (verbose) cout << "A1 x B0" << endl;
-		return false;
-	}
-	if (a0* abs(C[2][1])+ a2* abs(C[0][1])+ b0* abs(C[1][2])+ b2* abs(C[1][0])< abs(C[2][1]* glm::dot(A0, D)- C[0][1]* glm::dot(A2, D))) {
-		if (verbose) cout << "A1 x B1" << endl;
-		return false;
-	}
-	if (a0* abs(C[2][2])+ a2* abs(C[0][2])+ b0* abs(C[1][1])+ b1* abs(C[1][0])< abs(C[2][2]* glm::dot(A0, D)- C[0][2]* glm::dot(A2, D))) {
-		if (verbose) cout << "A1 x B2" << endl;
-		return false;
-	}
-	
-	if (a0* abs(C[1][0])+ a1* abs(C[0][0])+ b1* abs(C[2][2])+ b2* abs(C[2][1])< abs(C[0][0]* glm::dot(A1, D)- C[1][0]* glm::dot(A0, D))) {
-		if (verbose) cout << "A2 x B0" << endl;
-		return false;
-	}
-	if (a0* abs(C[1][1])+ a1* abs(C[0][1])+ b0* abs(C[2][2])+ b2* abs(C[2][0])< abs(C[0][1]* glm::dot(A1, D)- C[1][1]* glm::dot(A0, D))) {
-		if (verbose) cout << "A2 x B1" << endl;
-		return false;
-	}
-	if (a0* abs(C[1][2])+ a1* abs(C[0][2])+ b0* abs(C[2][1])+ b1* abs(C[2][0])< abs(C[0][2]* glm::dot(A1, D)- C[1][2]* glm::dot(A0, D))) {
-		if (verbose) cout << "A2 x B2" << endl;
-		return false;
-	}
-
-	return true;
-}
-*/

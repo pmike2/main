@@ -8,7 +8,9 @@
 using namespace std;
 
 
+// Intersection de 2 triangles en 3D
 // http://web.stanford.edu/class/cs277/resources/papers/Moller1997b.pdf
+// ATTENTION : reste à gérer le cas ou les triangles sont coplanaires !
 bool triangle_intersects_triangle(glm::vec3 v[3], glm::vec3 w[3]) {
 	// -------
 	glm::vec3 nv= glm::cross(v[1]- v[0], v[2]- v[0]);
@@ -33,12 +35,13 @@ bool triangle_intersects_triangle(glm::vec3 v[3], glm::vec3 w[3]) {
 	}
 
 	// -------
-	glm::vec3 d= glm::normalize(glm::cross(nv, nw));
+	//glm::vec3 d= glm::normalize(glm::cross(nv, nw));
+	glm::vec3 d= glm::cross(nv, nw);
 
 	// -------
 	unsigned int v_idx_alone, v_idx_couple_1, v_idx_couple_2;
-	if (dvw[0]* dvw[1]< 0.0f) {
-		if (dvw[0]* dvw[2]< 0.0f) {
+	if (dwv[0]* dwv[1]< 0.0f) {
+		if (dwv[0]* dwv[2]< 0.0f) {
 			v_idx_alone= 0;
 			v_idx_couple_1= 1;
 			v_idx_couple_2= 2;
@@ -60,13 +63,13 @@ bool triangle_intersects_triangle(glm::vec3 v[3], glm::vec3 w[3]) {
 	v_dot_d[1]= glm::dot(d, v[1]);
 	v_dot_d[2]= glm::dot(d, v[2]);
 
-	float tv1= v_dot_d[v_idx_couple_1]+ (v_dot_d[v_idx_alone]- v_dot_d[v_idx_couple_1])* dvw[v_idx_couple_1]/ (dvw[v_idx_couple_1]- dvw[v_idx_alone]);
-	float tv2= v_dot_d[v_idx_couple_2]+ (v_dot_d[v_idx_alone]- v_dot_d[v_idx_couple_2])* dvw[v_idx_couple_2]/ (dvw[v_idx_couple_2]- dvw[v_idx_alone]);
+	float tv1= v_dot_d[v_idx_couple_1]+ (v_dot_d[v_idx_alone]- v_dot_d[v_idx_couple_1])* dwv[v_idx_couple_1]/ (dwv[v_idx_couple_1]- dwv[v_idx_alone]);
+	float tv2= v_dot_d[v_idx_couple_2]+ (v_dot_d[v_idx_alone]- v_dot_d[v_idx_couple_2])* dwv[v_idx_couple_2]/ (dwv[v_idx_couple_2]- dwv[v_idx_alone]);
 
 	// -------
 	unsigned int w_idx_alone, w_idx_couple_1, w_idx_couple_2;
-	if (dwv[0]* dwv[1]< 0.0f) {
-		if (dwv[0]* dwv[2]< 0.0f) {
+	if (dvw[0]* dvw[1]< 0.0f) {
+		if (dvw[0]* dvw[2]< 0.0f) {
 			w_idx_alone= 0;
 			w_idx_couple_1= 1;
 			w_idx_couple_2= 2;
@@ -88,11 +91,11 @@ bool triangle_intersects_triangle(glm::vec3 v[3], glm::vec3 w[3]) {
 	w_dot_d[1]= glm::dot(d, w[1]);
 	w_dot_d[2]= glm::dot(d, w[2]);
 
-	float tw1= w_dot_d[w_idx_couple_1]+ (w_dot_d[w_idx_alone]- w_dot_d[w_idx_couple_1])* dwv[w_idx_couple_1]/ (dwv[w_idx_couple_1]- dwv[w_idx_alone]);
-	float tw2= w_dot_d[w_idx_couple_2]+ (w_dot_d[w_idx_alone]- w_dot_d[w_idx_couple_2])* dwv[w_idx_couple_2]/ (dwv[w_idx_couple_2]- dwv[w_idx_alone]);
+	float tw1= w_dot_d[w_idx_couple_1]+ (w_dot_d[w_idx_alone]- w_dot_d[w_idx_couple_1])* dvw[w_idx_couple_1]/ (dvw[w_idx_couple_1]- dvw[w_idx_alone]);
+	float tw2= w_dot_d[w_idx_couple_2]+ (w_dot_d[w_idx_alone]- w_dot_d[w_idx_couple_2])* dvw[w_idx_couple_2]/ (dvw[w_idx_couple_2]- dvw[w_idx_alone]);
 
 	// -------
-	cout << "v0=" << glm::to_string(v[0]) << " ; v1=" << glm::to_string(v[1]) << "v2=" << glm::to_string(v[2]) << "\n";
+	/*cout << "v0=" << glm::to_string(v[0]) << " ; v1=" << glm::to_string(v[1]) << "v2=" << glm::to_string(v[2]) << "\n";
 	cout << "w0=" << glm::to_string(w[0]) << " ; w1=" << glm::to_string(w[1]) << "w2=" << glm::to_string(w[2]) << "\n";
 	cout << "nv=" << glm::to_string(nv) << "\n";
 	cout << "nw=" << glm::to_string(nw) << "\n";
@@ -101,7 +104,7 @@ bool triangle_intersects_triangle(glm::vec3 v[3], glm::vec3 w[3]) {
 	cout << "w_idx_alone=" << w_idx_alone << " ; w_idx_couple_1=" << w_idx_couple_1 << " ; w_idx_couple_2=" << w_idx_couple_2 << "\n";
 	cout << "v_dot_d[v_idx_alone]=" << v_dot_d[v_idx_alone] << " ; v_dot_d[v_idx_couple_1]=" << v_dot_d[v_idx_couple_1] << " ; v_dot_d[v_idx_couple_2]=" << v_dot_d[v_idx_couple_2] << "\n";
 	cout << "w_dot_d[w_idx_alone]=" << w_dot_d[w_idx_alone] << " ; w_dot_d[w_idx_couple_1]=" << w_dot_d[w_idx_couple_1] << " ; w_dot_d[w_idx_couple_2]=" << w_dot_d[w_idx_couple_2] << "\n";
-	cout << "tv1=" << tv1 << " ; tv2=" << tv2 << " ; tw1=" << tw1 << " ; tw2=" << tw2 << "\n";
+	cout << "tv1=" << tv1 << " ; tv2=" << tv2 << " ; tw1=" << tw1 << " ; tw2=" << tw2 << "\n";*/
 
 	if ((max(tv1, tv2)< min(tw1, tw2)) || (min(tv1, tv2)> max(tw1, tw2))) {
 		return false;

@@ -67,6 +67,7 @@ public:
 // fonctions utilitaires
 bool aabb_intersects_aabb(AABB * aabb_1, AABB * aabb_2);
 bool aabb_intersects_bbox(AABB * aabb, BBox * bbox);
+bool bbox_intersects_bbox(BBox * bbox_1, BBox * bbox_2);
 float aabb_distance_pt_2(AABB * aabb, const glm::vec3 & pt);
 float aabb_distance_pt(AABB * aabb, const glm::vec3 & pt);
 bool ray_intersects_aabb(glm::vec3 origin, glm::vec3 direction, AABB * aabb, float & t_hit);
