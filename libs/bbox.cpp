@@ -51,6 +51,19 @@ void AABB::set_vmin_vmax(const glm::vec3 & vmin, const glm::vec3 & vmax) {
 }
 
 
+vector<vector<unsigned int> > AABB::triangles_idxs() {
+	vector<vector<unsigned int> > idx= {
+		{0, 4, 2}, {2, 4, 6}, // x-
+		{1, 3, 7}, {1, 7, 5}, // x+
+		{0, 1, 5}, {0, 5, 4}, // y-
+		{3, 2, 6}, {3, 6, 7}, // y+
+		{0, 2, 3}, {0, 3, 1}, // z-
+		{5, 7, 6}, {5, 6, 4} // z+
+	};
+	return idx;
+}
+
+
 // ------------------------------------------------------------------------------------------------------
 BBox::BBox() : _vmin(glm::vec3(0.0f)), _vmax(glm::vec3(0.0f)), _radius(0.0f) {
 	
@@ -110,6 +123,19 @@ void BBox::set_model2world(const glm::mat4 & model2world) {
 		}
 	}
 	_aabb->set_vmin_vmax(vmin, vmax);
+}
+
+
+vector<vector<unsigned int> > BBox::triangles_idxs() {
+	vector<vector<unsigned int> > idx= {
+		{0, 4, 2}, {2, 4, 6}, // x-
+		{1, 3, 7}, {1, 7, 5}, // x+
+		{0, 1, 5}, {0, 5, 4}, // y-
+		{3, 2, 6}, {3, 6, 7}, // y+
+		{0, 2, 3}, {0, 3, 1}, // z-
+		{5, 7, 6}, {5, 6, 4} // z+
+	};
+	return idx;
 }
 
 

@@ -31,10 +31,12 @@ struct Dungeon {
 	glm::uvec3 _n;
 	Graph * _graph;
 	std::vector<Mesh *> _meshes;
+	std::vector<AABB *> _aabbs_rooms;
+	std::vector<BBox *> _bboxs_hallways;
 	
 	GLuint _prog_draw_border, _prog_draw_fill;
 	GLint _world2clip_loc, _position_loc, _diffuse_color_loc;
-	GLuint _buffers[2];
+	GLuint _buffers[4];
 	unsigned int _n_pts;
 };
 

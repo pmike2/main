@@ -1,6 +1,8 @@
 #ifndef BBOX_H
 #define BBOX_H
 
+#include <vector>
+
 #define GLM_FORCE_RADIANS
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
@@ -15,6 +17,7 @@ public:
 	AABB(const glm::vec3 & vmin, const glm::vec3 & vmax);
 	~AABB();
 	void set_vmin_vmax(const glm::vec3 & vmin, const glm::vec3 & vmax);
+	static std::vector<std::vector<unsigned int> > triangles_idxs();
 
 
 	glm::vec3 _vmin, _vmax;
@@ -30,6 +33,7 @@ public:
 	BBox(const glm::vec3 & vmin, const glm::vec3 & vmax, const glm::mat4 & model2world);
 	~BBox();
 	void set_model2world(const glm::mat4 & model2world);
+	static std::vector<std::vector<unsigned int> > triangles_idxs();
 
 
 	glm::vec3 _vmin, _vmax;
