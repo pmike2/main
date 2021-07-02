@@ -91,6 +91,9 @@ void key_down(SDL_Keycode key) {
 		return;
 	}
 
+	if (dungeon->key_down(input_state, key)) {
+		return;
+	}
 }
 
 

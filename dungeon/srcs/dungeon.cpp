@@ -31,6 +31,11 @@ Dungeon::Dungeon(glm::vec3 vmin, glm::vec3 vmax, glm::vec3 step, GLuint prog_dra
 	_position_loc= glGetAttribLocation(_prog_draw_border, "position_in");
 	_diffuse_color_loc= glGetAttribLocation(_prog_draw_border, "color_in");
 	_world2clip_loc= glGetUniformLocation(_prog_draw_border, "world2clip_matrix");
+
+	_draw[0]= true;
+	_draw[1]= true;
+	_draw[2]= false;
+	_draw[3]= false;
 }
 
 
@@ -89,7 +94,7 @@ void Dungeon::randomize() {
 	
 	std::vector<Mesh *> rooms;
 	std::vector<Mesh *> hallways;
-	vector<bool> connected;
+	//vector<bool> connected;
 
 	for (unsigned int i=0; i<N_ROOMS; ++i) {
 		glm::uvec3 pos0= glm::uvec3(rand_int(0, _n.x- 1- MIN_ROOM_SIZE), rand_int(0, _n.y- 1- MIN_ROOM_SIZE), rand_int(0, _n.z- 1));
@@ -112,7 +117,7 @@ void Dungeon::randomize() {
 		}
 		
 		_aabbs_rooms.push_back(new_aabb);
-		connected.push_back(false);
+		//connected.push_back(false);
 		
 		Mesh * mesh= new Mesh();
 		mesh->_edges.push_back(make_pair(pos2idx(pos0), pos2idx(pos1)));
@@ -257,8 +262,6 @@ void Dungeon::randomize() {
 				glm::rotate(glm::translate(glm::mat4(1.0f), posf0), atan((posf1.z- posf0.z)/ (posf1.x- posf0.x)), glm::vec3(0.0f, -1.0f, 0.0f)) // pas compris pquoi mais il faut -1 ici
 			);
 		}		
-			
-
 
 		// ===================================================
 		bool is_inter_hallway= false;
@@ -274,8 +277,8 @@ void Dungeon::randomize() {
 		
 		_bboxs_hallways.push_back(bbox);
 		
-		connected[idx_mesh]= true;
-		connected[idx_mesh_min]= true;
+		//connected[idx_mesh]= true;
+		//connected[idx_mesh_min]= true;
 		//rooms[idx_mesh]->_debug= true;
 		//rooms[idx_mesh_min]->_debug= true;
 
@@ -301,80 +304,88 @@ void Dungeon::randomize() {
 
 
 void Dungeon::draw(const glm::mat4 & world2clip) {
-	glUseProgram(_prog_draw_border);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
-	
-	glEnableVertexAttribArray(_position_loc);
-	glEnableVertexAttribArray(_diffuse_color_loc);
+	if (_draw[0]) {
+		glUseProgram(_prog_draw_border);
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
+		
+		glEnableVertexAttribArray(_position_loc);
+		glEnableVertexAttribArray(_diffuse_color_loc);
 
-	glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
-	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-	glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
+		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
+		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+		glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 
-	glDrawArrays(GL_LINES, 0, _n_pts);
+		glDrawArrays(GL_LINES, 0, _n_pts);
 
-	glDisableVertexAttribArray(_position_loc);
-	glDisableVertexAttribArray(_diffuse_color_loc);
+		glDisableVertexAttribArray(_position_loc);
+		glDisableVertexAttribArray(_diffuse_color_loc);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
-
-	// -------------
-	glUseProgram(_prog_draw_fill);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffers[1]);
-	
-	glEnableVertexAttribArray(_position_loc);
-	glEnableVertexAttribArray(_diffuse_color_loc);
-
-	glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
-	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)0);
-	glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)(3* sizeof(float)));
-
-	glDrawArrays(GL_TRIANGLES, 0, _meshes.size()* 6);
-
-	glDisableVertexAttribArray(_position_loc);
-	glDisableVertexAttribArray(_diffuse_color_loc);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glUseProgram(0);
+	}
 
 	// -------------
-	glUseProgram(_prog_draw_fill);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffers[3]);
-	
-	glEnableVertexAttribArray(_position_loc);
-	glEnableVertexAttribArray(_diffuse_color_loc);
+	if (_draw[1]) {
+		glUseProgram(_prog_draw_fill);
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[1]);
+		
+		glEnableVertexAttribArray(_position_loc);
+		glEnableVertexAttribArray(_diffuse_color_loc);
 
-	glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
-	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)0);
-	glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)(3* sizeof(float)));
+		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
+		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)0);
+		glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)(3* sizeof(float)));
 
-	glDrawArrays(GL_TRIANGLES, 0, _bboxs_hallways.size()* 36);
+		glDrawArrays(GL_TRIANGLES, 0, _meshes.size()* 6);
 
-	glDisableVertexAttribArray(_position_loc);
-	glDisableVertexAttribArray(_diffuse_color_loc);
+		glDisableVertexAttribArray(_position_loc);
+		glDisableVertexAttribArray(_diffuse_color_loc);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glUseProgram(0);
+	}
+
 	// -------------
-	glUseProgram(_prog_draw_fill);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
-	
-	glEnableVertexAttribArray(_position_loc);
-	glEnableVertexAttribArray(_diffuse_color_loc);
+	if (_draw[2]) {
+		glUseProgram(_prog_draw_fill);
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[3]);
+		
+		glEnableVertexAttribArray(_position_loc);
+		glEnableVertexAttribArray(_diffuse_color_loc);
 
-	glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
-	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)0);
-	glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)(3* sizeof(float)));
+		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
+		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)0);
+		glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)(3* sizeof(float)));
 
-	glDrawArrays(GL_TRIANGLES, 0, _aabbs_rooms.size()* 36);
+		glDrawArrays(GL_TRIANGLES, 0, _bboxs_hallways.size()* 36);
 
-	glDisableVertexAttribArray(_position_loc);
-	glDisableVertexAttribArray(_diffuse_color_loc);
+		glDisableVertexAttribArray(_position_loc);
+		glDisableVertexAttribArray(_diffuse_color_loc);
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glUseProgram(0);
+	}
 
+	// -------------
+	if (_draw[3]) {
+		glUseProgram(_prog_draw_fill);
+		glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
+		
+		glEnableVertexAttribArray(_position_loc);
+		glEnableVertexAttribArray(_diffuse_color_loc);
+
+		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
+		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)0);
+		glVertexAttribPointer(_diffuse_color_loc, 4, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)(3* sizeof(float)));
+
+		glDrawArrays(GL_TRIANGLES, 0, _aabbs_rooms.size()* 36);
+
+		glDisableVertexAttribArray(_position_loc);
+		glDisableVertexAttribArray(_diffuse_color_loc);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glUseProgram(0);
+	}
 }
 
 
@@ -505,3 +516,26 @@ void Dungeon::update() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(data_bbox_hallway), data_bbox_hallway, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
+
+
+bool Dungeon::key_down(InputState * input_state, SDL_Keycode key) {
+	if (key== SDLK_KP_0) {
+		_draw[0]= !_draw[0];
+		return true;
+	}
+	else if (key== SDLK_KP_1) {
+		_draw[1]= !_draw[1];
+		return true;
+	}
+	else if (key== SDLK_KP_2) {
+		_draw[2]= !_draw[2];
+		return true;
+	}
+	else if (key== SDLK_KP_3) {
+		_draw[3]= !_draw[3];
+		return true;
+	}
+
+	return false;
+}
+

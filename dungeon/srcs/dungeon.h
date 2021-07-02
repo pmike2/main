@@ -8,9 +8,12 @@
 
 #include <glm/glm.hpp>
 
+#include <SDL2/SDL_keycode.h>
+
 #include "bbox.h"
 #include "graph.h"
 #include "utile.h"
+#include "input_state.h"
 
 
 struct Dungeon {
@@ -24,6 +27,7 @@ struct Dungeon {
 	void randomize();
 	void draw(const glm::mat4 & world2clip);
 	void update();
+	bool key_down(InputState * input_state, SDL_Keycode key);
 
 
 	AABB * _aabb;
@@ -38,6 +42,7 @@ struct Dungeon {
 	GLint _world2clip_loc, _position_loc, _diffuse_color_loc;
 	GLuint _buffers[4];
 	unsigned int _n_pts;
+	bool _draw[4];
 };
 
 #endif
