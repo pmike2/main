@@ -3,6 +3,7 @@
 
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/norm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "geom_2d.h"
 #include "utile.h"
@@ -282,6 +283,37 @@ void convex_hull_2d(std::vector<glm::vec2> & pts) {
     pts.clear();
     pts.insert(pts.begin(), pts_upper.begin(), pts_upper.end());
     pts.insert(pts.end()  , pts_lower.begin(), pts_lower.end());
+}
+
+
+bool is_ccw(glm::vec2 & pt1, glm::vec2 & pt2, glm::vec2 & pt3) {
+	return (pt2.x- pt1.x)* (pt3.y- pt1.y)- (pt3.x- pt1.x)* (pt2.y- pt1.y)> 0.0f;
+}
+
+
+// https://stackoverflow.com/questions/39984709/how-can-i-check-wether-a-point-is-inside-the-circumcircle-of-3-points
+bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & pt) {
+	glm::vec2 pt1, pt2, pt3;
+	if (is_ccw(pt1, pt2, pt3)) {
+		pt1= circle_pt1;
+		pt2= circle_pt2;
+		pt3= circle_pt3;
+	}
+	else {
+		pt1= circle_pt1;
+		pt2= circle_pt3;
+		pt3= circle_pt2;
+	}
+
+	float m[9] = {
+		pt1.x- pt.x, pt2.x- pt.x, pt3.x- pt.x,
+		pt1.y- pt.y, pt2.y- pt.y, pt3.y- pt.y,
+		(pt1.x- pt.x)* (pt1.x- pt.x)+ (pt1.y- pt.y)* (pt1.y- pt.y), (pt2.x- pt.x)* (pt2.x- pt.x)+ (pt2.y- pt.y)* (pt2.y- pt.y), (pt3.x- pt.x)* (pt3.x- pt.x)+ (pt3.y- pt.y)* (pt3.y- pt.y)
+	};
+	glm::mat3 glm_m= glm::make_mat3(m);
+	float det= glm::determinant(glm_m);
+	cout << det << "\n";
+	return (det> 0.0f);
 }
 
 

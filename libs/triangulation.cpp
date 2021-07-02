@@ -7,6 +7,8 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/norm.hpp>
 
+#include "geom_2d.h"
+
 
 using namespace std;
 
@@ -108,7 +110,7 @@ void BTree::recursive_merge(BTreeNode * node) {
 		recursive_merge(node->_left);
 		recursive_merge(node->_right);
 
-		
+
 	}
 }
 

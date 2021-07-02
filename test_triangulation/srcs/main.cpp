@@ -24,6 +24,7 @@
 #include "gl_utils.h"
 #include "input_state.h"
 #include "triangulation.h"
+#include "geom_2d.h"
 
 
 using namespace std;
@@ -285,6 +286,7 @@ int main(int argc, char * argv[]) {
 	clean();
 */
 
+/*
 	BTree * btree= new BTree();
 	btree->_pts.push_back(glm::vec2(0.0f, 0.0f));
 	btree->_pts.push_back(glm::vec2(1.0f, 0.0f));
@@ -293,6 +295,16 @@ int main(int argc, char * argv[]) {
 	btree->_pts.push_back(glm::vec2(1.0f, 1.0f));
 	btree->triangulate();
 	btree->print();
+*/
+
+	glm::vec2 pt1(0.0f, 0.0f);
+	glm::vec2 pt2(1.0f, 0.0f);
+	glm::vec2 pt3(0.0f, 1.0f);
+	glm::vec2 pt(0.5f, 0.5f);
+	//bool x= is_ccw(pt1, pt2, pt3);
+	//cout << x << "\n";
+	bool x= point_in_circumcircle(pt1, pt2, pt3, pt);
+	cout << x << "\n";
 
 	return 0;
 }

@@ -29,6 +29,8 @@ bool distance_segment_pt(glm::vec2 & seg1, glm::vec2 & seg2, glm::vec2 & pt, flo
 float distance_poly_pt(Polygon2D * poly, glm::vec2 & pt, glm::vec2 * proj);
 float distance_poly_segment(Polygon2D * poly, glm::vec2 & seg1, glm::vec2 & seg2, glm::vec2 * proj);
 void convex_hull_2d(std::vector<glm::vec2> & pts);
+bool is_ccw(glm::vec2 & pt1, glm::vec2 & pt2, glm::vec2 & pt3);
+bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & pt);
 
 
 class Polygon2D {
