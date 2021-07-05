@@ -291,10 +291,9 @@ bool is_ccw(glm::vec2 & pt1, glm::vec2 & pt2, glm::vec2 & pt3) {
 }
 
 
-// https://stackoverflow.com/questions/39984709/how-can-i-check-wether-a-point-is-inside-the-circumcircle-of-3-points
 bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & pt) {
 	glm::vec2 pt1, pt2, pt3;
-	if (is_ccw(pt1, pt2, pt3)) {
+	if (is_ccw(circle_pt1, circle_pt2, circle_pt3)) {
 		pt1= circle_pt1;
 		pt2= circle_pt2;
 		pt3= circle_pt3;
@@ -305,15 +304,13 @@ bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::
 		pt3= circle_pt2;
 	}
 
-	float m[9] = {
-		pt1.x- pt.x, pt2.x- pt.x, pt3.x- pt.x,
-		pt1.y- pt.y, pt2.y- pt.y, pt3.y- pt.y,
-		(pt1.x- pt.x)* (pt1.x- pt.x)+ (pt1.y- pt.y)* (pt1.y- pt.y), (pt2.x- pt.x)* (pt2.x- pt.x)+ (pt2.y- pt.y)* (pt2.y- pt.y), (pt3.x- pt.x)* (pt3.x- pt.x)+ (pt3.y- pt.y)* (pt3.y- pt.y)
-	};
-	glm::mat3 glm_m= glm::make_mat3(m);
-	float det= glm::determinant(glm_m);
-	cout << det << "\n";
-	return (det> 0.0f);
+	glm::vec2 d21= pt2- pt1;
+	glm::vec2 d31= pt3- pt1;
+	glm::vec2 d32= pt3- pt2;
+
+	float lambda= 0.5f* (d31.x* d32.x+ d32.y* d31.y)/ (d32.y* d21.x- d21.y* d32.x);
+	glm::vec2 center= glm::vec2(0.5f* (pt1.x+ pt2.x)- lambda* d21.y, 0.5f* (pt1.y+ pt2.y)+ lambda* d21.x);
+	return (center.x- pt.x)* (center.x- pt.x)+ (center.y- pt.y)* (center.y- pt.y)< (center.x- pt1.x)* (center.x- pt1.x)+ (center.y- pt1.y)* (center.y- pt1.y);
 }
 
 

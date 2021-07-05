@@ -297,14 +297,14 @@ int main(int argc, char * argv[]) {
 	btree->print();
 */
 
+/*
 	glm::vec2 pt1(0.0f, 0.0f);
-	glm::vec2 pt2(1.0f, 0.0f);
-	glm::vec2 pt3(0.0f, 1.0f);
-	glm::vec2 pt(0.5f, 0.5f);
-	//bool x= is_ccw(pt1, pt2, pt3);
-	//cout << x << "\n";
+	glm::vec2 pt2(0.0f, 1.0f);
+	glm::vec2 pt3(1.0f, 0.0f);
+	glm::vec2 pt(-0.99f, 0.99f);
 	bool x= point_in_circumcircle(pt1, pt2, pt3, pt);
 	cout << x << "\n";
+*/
 
 	return 0;
 }
