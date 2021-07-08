@@ -6,59 +6,49 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 
+#include "bbox_2d.h"
 
-// http://www.geom.uiuc.edu/~samuelp/del_project.html
 
+bool sort_pts(PointBin & pt1, PointBin & pt2);
 
-/*
-struct TriangulationPolygon {
-	std::vector<glm::vec2> _pts;
-	std::vector<TriangulationPolygon *> _adjacents_polys;
-};
-*/
 
 struct Triangle {
 	Triangle();
+	Triangle(int v0, int v1, int v2, int a0, int a1, int a2);
 	~Triangle();
 
-	int _idx[3];
+
+	int _vertices[3];
+	int _adjacents[3];
 };
 
 
-/*struct Triangulation {
-	std::vector<Triangle> _triangles;
-};*/
+struct PointBin {
+	PointBin();
+	PointBin(glm::vec2 pt, int idx_bin);
+	~PointBin();
 
 
-struct BTreeNode {
-	BTreeNode();
-	~BTreeNode();
-
-
-	//Triangulation _triangulation;
-	std::vector<Triangle *> _triangles;
-	unsigned int _idx_min;
-	unsigned int _idx_max;
-	BTreeNode * _left;
-	BTreeNode * _right;
+	glm::vec2 _pt;
+	int _idx_bin;
 };
 
 
-struct BTree {
-	BTree();
-	~BTree();
-	void recursive_init(BTreeNode * node);
-	void recursive_delete(BTreeNode * node);
-	void recursive_leaf_triangulate(BTreeNode * node);
-	void recursive_merge(BTreeNode * node);
-	void recursive_print(BTreeNode * node);
+struct Triangulation {
+	Triangulation();
+	Triangulation(std::vector<glm::vec2> & pts);
+	~Triangulation();
 	void triangulate();
-	void print();
 
 
-	BTreeNode * _root;
-	std::vector<glm::vec2> _pts;
+	std::vector<glm::vec2> _pts_init;
+	std::vector<PointBin *> _pts;
+	std::vector<Triangle *> _triangles;
+	AABB_2D * _aabb;
+	std::vector<AABB_2D *> _bins;
 };
+
+
 
 
 #endif
