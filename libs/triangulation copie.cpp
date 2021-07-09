@@ -5,7 +5,6 @@
 #include <iostream>
 #include <algorithm>
 #include <deque>
-#include <fstream>
 
 #include <glm/gtx/string_cast.hpp>
 
@@ -134,7 +133,7 @@ Triangulation::Triangulation(vector<glm::vec2> & pts) {
 	_triangles.push_back(t);
 
 	Triangle * last_triangle= NULL;
-	for (unsigned int idx_pt=0; idx_pt<_pts.size()- 3; ++idx_pt) {
+	for (unsigned int idx_pt=0; idx_pt<_pts.size(); ++idx_pt) {
 		cout << "-------------------------\n";
 		cout << "pt=" << glm::to_string(_pts[idx_pt]->_pt) << "\n";
 
@@ -187,6 +186,12 @@ Triangulation::Triangulation(vector<glm::vec2> & pts) {
 			}
 		}
 
+		/*for (unsigned int i=0; i<3; ++i) {
+			if (last_triangle->_adjacents[i]) {
+				tris_deque.push_back(last_triangle->_adjacents[i]);
+			}
+		}*/
+
 		cout << "erase\n";
 		print_triangle(last_triangle, true);
 
@@ -202,29 +207,41 @@ Triangulation::Triangulation(vector<glm::vec2> & pts) {
 			Opposition * opposition= opposition_deque.back();
 			opposition_deque.pop_back();
 			cout << "deque\n";
-			print_triangle(opposition->_new_triangle);
-			print_triangle(opposition->_opposite_triangle);
+			print_triangle(opposition_deque->_new_triangle);
+			print_triangle(opposition_deque->_opposite_triangle);
 
-			if (point_in_circumcircle(_pts[opposition->_opposite_triangle->_vertices[0]]->_pt, _pts[opposition->_opposite_triangle->_vertices[1]]->_pt, _pts[opposition->_opposite_triangle->_vertices[2]]->_pt, _pts[idx_pt]->_pt)) {
-				Triangle * t4_adjs[2]= {
-					opposition->_opposite_triangle->_adjacents[(opposition->_opposite_edge_idx+ 2)% 3],
-					opposition->_new_triangle->_adjacents[(opposition->_new_edge_idx+ 1) % 3]
-				};
-				Triangle * t4= new Triangle(
-					opposition->_new_triangle->_vertices[opposition->_new_edge_idx],
-					opposition->_opposite_triangle->_vertices[(opposition->_opposite_edge_idx+ 2)% 3],
-					opposition->_opposite_triangle->_vertices[opposition->_opposite_edge_idx],
-					NULL, t4_adjs[0], t4_adjs[1]);
+			Triangle * triangle_1= NULL;
+			int edge_1_idx= -1;
+			int edge_2_idx= -1;
+			for (unsigned int i=0; i<3; ++i) {
+				for (unsigned int j=0; j<3; ++j) {
+					if (opposite_triangle->_adjacents[i]== new_tris[j]) {
+						triangle_1= new_tris[j];
+						edge_2_idx= i;
+						break;
+					}
+				}
+				if (triangle_1) {
+					break;
+				}
+			}
 
-				Triangle * t5_adjs[2]= {
-					opposition->_new_triangle->_adjacents[(opposition->_new_edge_idx+ 1) % 3],
-					opposition->_opposite_triangle->_adjacents[(opposition->_opposite_edge_idx+ 1) % 3]
-				};
-				Triangle * t5= new Triangle(
-					opposition->_opposite_triangle->_vertices[(opposition->_opposite_edge_idx+ 2)% 3],
-					opposition->_new_triangle->_vertices[(opposition->_new_edge_idx+ 2) % 3],
-					opposition->_new_triangle->_vertices[opposition->_new_edge_idx],
-					NULL, t5_adjs[0], t5_adjs[1]);
+			for (unsigned int i=0; i<3; ++i) {
+				if (triangle_1->_adjacents[i]== opposite_triangle) {
+					edge_1_idx= i;
+					break;
+				}
+			}
+
+			unsigned int vertex_opposite_1= (edge_1_idx+ 2) % 3;
+			unsigned int vertex_opposite_2= (edge_2_idx+ 2) % 3;
+
+			if (point_in_circumcircle(_pts[opposite_triangle->_vertices[0]]->_pt, _pts[opposite_triangle->_vertices[1]]->_pt, _pts[opposite_triangle->_vertices[2]]->_pt, _pts[idx_pt]->_pt)) {
+				Triangle * t4_adjs[2]= {opposite_triangle->_adjacents[vertex_opposite_2], triangle_1->_adjacents[(edge_1_idx+ 1) % 3]};
+				Triangle * t4= new Triangle(triangle_1->_vertices[vertex_opposite_1], opposite_triangle->_vertices[vertex_opposite_2], opposite_triangle->_vertices[edge_2_idx], NULL, t4_adjs[0], t4_adjs[1]);
+
+				Triangle * t5_adjs[2]= {triangle_1->_adjacents[vertex_opposite_1], opposite_triangle->_adjacents[(edge_2_idx+ 1) % 3]};
+				Triangle * t5= new Triangle(opposite_triangle->_vertices[vertex_opposite_2], triangle_1->_vertices[vertex_opposite_1], triangle_1->_vertices[edge_1_idx], NULL, t5_adjs[0], t5_adjs[1]);
 				
 				t4->_adjacents[0]= t5;
 				t5->_adjacents[0]= t4;
@@ -234,7 +251,7 @@ Triangulation::Triangulation(vector<glm::vec2> & pts) {
 				for (unsigned int i=0; i<2; ++i) {
 					if (t4_adjs[i]) {
 						for (unsigned int j=0; j<3; ++j) {
-							if ((t4_adjs[i]->_adjacents[j]== opposition->_new_triangle) || (t4_adjs[i]->_adjacents[j]== opposition->_opposite_triangle)) {
+							if ((t4_adjs[i]->_adjacents[j]== triangle_1) || (t4_adjs[i]->_adjacents[j]== opposite_triangle)) {
 								t4_adjs[i]->_adjacents[j]= t4;
 								break;
 							}
@@ -245,7 +262,7 @@ Triangulation::Triangulation(vector<glm::vec2> & pts) {
 				for (unsigned int i=0; i<2; ++i) {
 					if (t5_adjs[i]) {
 						for (unsigned int j=0; j<3; ++j) {
-							if ((t5_adjs[i]->_adjacents[j]== opposition->_new_triangle) || (t5_adjs[i]->_adjacents[j]== opposition->_opposite_triangle)) {
+							if ((t5_adjs[i]->_adjacents[j]== triangle_1) || (t5_adjs[i]->_adjacents[j]== opposite_triangle)) {
 								t5_adjs[i]->_adjacents[j]= t5;
 								break;
 							}
@@ -253,19 +270,19 @@ Triangulation::Triangulation(vector<glm::vec2> & pts) {
 					}
 				}
 
-				if (opposition->_opposite_triangle->_adjacents[(opposition->_opposite_edge_idx+ 1)% 3]) {
-					opposition_deque.push_back(new Opposition(t5, opposition->_opposite_triangle->_adjacents[(opposition->_opposite_edge_idx+ 1)% 3]));
+				if (opposite_triangle->_adjacents[vertex_opposite_2]) {
+					tris_deque.push_back(opposite_triangle->_adjacents[vertex_opposite_2]);
 				}
-				if (opposition->_opposite_triangle->_adjacents[(opposition->_opposite_edge_idx+ 2)% 3]) {
-					opposition_deque.push_back(new Opposition(t4, opposition->_opposite_triangle->_adjacents[(opposition->_opposite_edge_idx+ 2)% 3]));
+				if (opposite_triangle->_adjacents[(edge_2_idx+ 1) % 3]) {
+					tris_deque.push_back(opposite_triangle->_adjacents[(edge_2_idx+ 1) % 3]);
 				}
 
 				cout << "erase2\n";
-				print_triangle(opposition->_new_triangle);
-				print_triangle(opposition->_opposite_triangle);
+				print_triangle(triangle_1);
+				print_triangle(opposite_triangle);
 
-				_triangles.erase(remove(_triangles.begin(), _triangles.end(), opposition->_new_triangle), _triangles.end());
-				_triangles.erase(remove(_triangles.begin(), _triangles.end(), opposition->_opposite_triangle), _triangles.end());
+				_triangles.erase(remove(_triangles.begin(), _triangles.end(), triangle_1), _triangles.end());
+				_triangles.erase(remove(_triangles.begin(), _triangles.end(), opposite_triangle), _triangles.end());
 				_triangles.insert(_triangles.end(), new_tris_2, new_tris_2+ 2);
 
 				cout << "insert2\n";
@@ -274,15 +291,6 @@ Triangulation::Triangulation(vector<glm::vec2> & pts) {
 			}
 		}
 	}
-
-	_triangles.erase(remove_if(_triangles.begin(), _triangles.end(), [this](Triangle * t) { 
-		for (unsigned int i=0; i<3; ++i) {
-			if (t->_vertices[i]>= _pts.size()- 3) {
-				return true;
-			}
-		}
-		return false;
-	}), _triangles.end());
 }
 
 
@@ -304,62 +312,3 @@ void Triangulation::print_triangle(Triangle * triangle, bool verbose) {
 	}
 }
 
-
-void Triangulation::draw(std::string svg_path) {
-	ofstream f;
-	f.open(svg_path);
-	f << "<!DOCTYPE html>\n<html>\n<body>\n";
-	f << "<svg width=\"1000\" height=\"1000\" viewbox=\"" << 0 << " " << 0 << " " << 1+ 2* _svg_margin << " " << 1+ 2* _svg_margin << "\">\n";
-
-	for (auto pt : _pts_init) {
-		string color= "black";
-		float radius= 0.01f;
-		glm::vec2 pt_svg= svg_coords(pt);
-		f << "<circle cx=\"" << pt_svg.x << "\" cy=\"" << pt_svg.y << "\" r=\"" << radius << "\" fill=\"" << color << "\" />\n";
-	}
-	for (auto t : _triangles) {
-		for (unsigned int i=0; i<3; ++i) {
-			glm::vec2 pt_svg_1= svg_coords(_pts_init[t->_vertices[i]]);
-			glm::vec2 pt_svg_2= svg_coords(_pts_init[t->_vertices[(i+ 1)% 3]]);
-			f << "<line x1=\"" << pt_svg_1.x << "\" y1=\"" << pt_svg_1.y << "\" x2=\"" << pt_svg_2.x << "\" y2=\"" << pt_svg_2.y << "\" stroke=\"red\" stroke-width=\"0.001\" />\n";
-		}
-	}
-
-	f << "</svg>\n</body>\n</html>\n";
-	f.close();
-
-}
-
-
-glm::vec2 Triangulation::svg_coords(glm::vec2 & v) {
-	return glm::vec2(_svg_margin+ (v.x- _aabb->_pos.x)/ _aabb->_size.x, _svg_margin+ (_aabb->_pos.y+ _aabb->_size.y- v.y)/ _aabb->_size.y);
-}
-
-
-// ----------------------------------------------------
-Opposition::Opposition() {
-
-}
-
-
-Opposition::Opposition(Triangle * new_triangle, Triangle * opposite_triangle) : _new_triangle(new_triangle), _opposite_triangle(opposite_triangle) {
-	_new_edge_idx= -1;
-	_opposite_edge_idx= -1;
-	for (unsigned int i=0; i<3; ++i) {
-		if (_new_triangle->_adjacents[i]== _opposite_triangle) {
-			_new_edge_idx= i;
-			break;
-		}
-	}
-	for (unsigned int i=0; i<3; ++i) {
-		if (_opposite_triangle->_adjacents[i]== _new_triangle) {
-			_opposite_edge_idx= i;
-			break;
-		}
-	}
-}
-
-
-Opposition::~Opposition() {
-
-}
