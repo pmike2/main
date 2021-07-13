@@ -288,13 +288,16 @@ int main(int argc, char * argv[]) {
 
 	vector<glm::vec2> pts;
 
-	
+
 	pts.push_back(glm::vec2(0.0f, 0.0f));
 	pts.push_back(glm::vec2(1.0f, 0.0f));
 	pts.push_back(glm::vec2(0.1f, 1.0f));
-	pts.push_back(glm::vec2(-0.2f, 0.2f));
+	pts.push_back(glm::vec2(0.2f, 0.2f));
+	pts.push_back(glm::vec2(0.5f, 0.2f));
 
+	
 	/*
+	srand(time(NULL));
 	for (unsigned int i=0; i<100; ++i) {
 		pts.push_back(glm::vec2(rand_float(0.0f, 10.0f), rand_float(0.0f, 10.0f)));
 	}

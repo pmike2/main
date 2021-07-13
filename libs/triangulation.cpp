@@ -211,13 +211,13 @@ Triangulation::Triangulation(vector<glm::vec2> & pts) {
 					opposition->_new_triangle->_adjacents[(opposition->_new_edge_idx+ 1) % 3]
 				};
 				Triangle * t4= new Triangle(
-					opposition->_new_triangle->_vertices[opposition->_new_edge_idx],
+					opposition->_new_triangle->_vertices[(opposition->_new_edge_idx+ 2)% 3],
 					opposition->_opposite_triangle->_vertices[(opposition->_opposite_edge_idx+ 2)% 3],
 					opposition->_opposite_triangle->_vertices[opposition->_opposite_edge_idx],
 					NULL, t4_adjs[0], t4_adjs[1]);
 
 				Triangle * t5_adjs[2]= {
-					opposition->_new_triangle->_adjacents[(opposition->_new_edge_idx+ 1) % 3],
+					opposition->_new_triangle->_adjacents[(opposition->_new_edge_idx+ 2) % 3],
 					opposition->_opposite_triangle->_adjacents[(opposition->_opposite_edge_idx+ 1) % 3]
 				};
 				Triangle * t5= new Triangle(
@@ -283,6 +283,7 @@ Triangulation::Triangulation(vector<glm::vec2> & pts) {
 		}
 		return false;
 	}), _triangles.end());
+
 }
 
 
