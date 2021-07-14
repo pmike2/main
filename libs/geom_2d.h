@@ -13,7 +13,7 @@
 // 1.0 / 3.0
 const float THIRD= 1.0f/ 3.0f;
 // utilisé pour comparaison float à 0.0f
-const float EPSILON= 1e-5f;
+const float EPSILON= 1e-10f;
 
 
 class Polygon2D;
@@ -31,6 +31,7 @@ float distance_poly_segment(Polygon2D * poly, glm::vec2 & seg1, glm::vec2 & seg2
 void convex_hull_2d(std::vector<glm::vec2> & pts);
 bool is_ccw(glm::vec2 & pt1, glm::vec2 & pt2, glm::vec2 & pt3);
 bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & pt);
+void get_circle_center(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & center, float * radius);
 
 
 class Polygon2D {

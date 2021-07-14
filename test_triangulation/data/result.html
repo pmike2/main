@@ -1,27 +1,90 @@
 <!DOCTYPE html>
 <html>
+<head>
+<style>
+.triangle_class {fill: transparent; stroke: black; stroke-width: 0.001; stroke-opacity: 0.3;}
+.circle_class {fill: none; stroke: black; stroke-width: 0.001; stroke-opacity: 0.1;}
+.triangle_hover_class {fill: red; opacity: 0.2; stroke-opacity: 0.8;}
+.circle_hover_class {stroke-opacity: 1.0;}
+.circle_text_class {fill: gray; font-size: 0.04px; opacity: 0.4;}
+.point_class {fill: black;}
+.point_text_class {fill: red; font-size: 0.03px;}
+</style>
+</head>
 <body>
-<svg width="1000" height="1000" viewbox="0 0 1.2 1.2">
-<circle cx="0.1" cy="1.1" r="0.01" fill="black" />
-<circle cx="1.1" cy="1.1" r="0.01" fill="black" />
-<circle cx="0.2" cy="0.1" r="0.01" fill="black" />
-<circle cx="0.3" cy="0.9" r="0.01" fill="black" />
-<circle cx="0.6" cy="0.9" r="0.01" fill="black" />
-<line x1="0.2" y1="0.1" x2="0.1" y2="1.1" stroke="red" stroke-width="0.001" />
-<line x1="0.1" y1="1.1" x2="0.3" y2="0.9" stroke="red" stroke-width="0.001" />
-<line x1="0.3" y1="0.9" x2="0.2" y2="0.1" stroke="red" stroke-width="0.001" />
-<line x1="1.1" y1="1.1" x2="0.2" y2="0.1" stroke="red" stroke-width="0.001" />
-<line x1="0.2" y1="0.1" x2="0.6" y2="0.9" stroke="red" stroke-width="0.001" />
-<line x1="0.6" y1="0.9" x2="1.1" y2="1.1" stroke="red" stroke-width="0.001" />
-<line x1="0.6" y1="0.9" x2="0.2" y2="0.1" stroke="red" stroke-width="0.001" />
-<line x1="0.2" y1="0.1" x2="0.3" y2="0.9" stroke="red" stroke-width="0.001" />
-<line x1="0.3" y1="0.9" x2="0.6" y2="0.9" stroke="red" stroke-width="0.001" />
-<line x1="0.6" y1="0.9" x2="0.1" y2="1.1" stroke="red" stroke-width="0.001" />
-<line x1="0.1" y1="1.1" x2="1.1" y2="1.1" stroke="red" stroke-width="0.001" />
-<line x1="1.1" y1="1.1" x2="0.6" y2="0.9" stroke="red" stroke-width="0.001" />
-<line x1="0.1" y1="1.1" x2="0.6" y2="0.9" stroke="red" stroke-width="0.001" />
-<line x1="0.6" y1="0.9" x2="0.3" y2="0.9" stroke="red" stroke-width="0.001" />
-<line x1="0.3" y1="0.9" x2="0.1" y2="1.1" stroke="red" stroke-width="0.001" />
+<svg width="700" height="700" viewbox="0 0 1.2 1.2">
+<text class="point_text_class" x="0.12" y="0.671447" >0</text>
+<circle class="point_class" cx="0.1" cy="0.671447" r="0.003" />
+<text class="point_text_class" x="0.580314" y="0.1" >1</text>
+<circle class="point_class" cx="0.560314" cy="0.1" r="0.003" />
+<text class="point_text_class" x="0.585795" y="0.74955" >2</text>
+<circle class="point_class" cx="0.565795" cy="0.74955" r="0.003" />
+<text class="point_text_class" x="0.357588" y="0.916026" >3</text>
+<circle class="point_class" cx="0.337588" cy="0.916026" r="0.003" />
+<text class="point_text_class" x="0.565873" y="0.733447" >4</text>
+<circle class="point_class" cx="0.545873" cy="0.733447" r="0.003" />
+<text class="point_text_class" x="0.438963" y="1.1" >5</text>
+<circle class="point_class" cx="0.418963" cy="1.1" r="0.003" />
+<text class="point_text_class" x="-99.88" y="101.1" >6</text>
+<circle class="point_class" cx="-99.9" cy="101.1" r="0.003" />
+<text class="point_text_class" x="100.12" y="101.1" >7</text>
+<circle class="point_class" cx="100.1" cy="101.1" r="0.003" />
+<text class="point_text_class" x="0.12" y="-98.9" >8</text>
+<circle class="point_class" cx="0.1" cy="-98.9" r="0.003" />
+<g>
+<text class="circle_text_class" x="0.332634" y="0.562491">0</text>
+<polygon class="triangle_class" id="poly_0" data="vertices=3 ; 1 ; 0 ; adjacents=(1 ; 3 ; 4 ; )(8 ; 0 ; 1 ; )(0 ; 5 ; 3 ; )" points="0.337588,0.916026 0.560314,0.1 0.1,0.671447 " />
+<circle class="circle_class" cx="0.498893" cy="0.521644" r="0.426094" />
+</g>
+<g>
+<text class="circle_text_class" x="0.481258" y="0.583158">1</text>
+<polygon class="triangle_class" id="poly_1" data="vertices=1 ; 3 ; 4 ; adjacents=(3 ; 1 ; 0 ; )(5 ; 4 ; 3 ; )(2 ; 1 ; 4 ; )" points="0.560314,0.1 0.337588,0.916026 0.545873,0.733447 " />
+<circle class="circle_class" cx="0.0745094" cy="0.405813" r="0.574045" />
+</g>
+<g>
+<text class="circle_text_class" x="0.557327" y="0.527666">2</text>
+<polygon class="triangle_class" id="poly_2" data="vertices=2 ; 1 ; 4 ; adjacents=(0 ; -1342177280 ; -277413847 ; )(1 ; 3 ; 4 ; )(4 ; 5 ; 2 ; )" points="0.565795,0.74955 0.560314,0.1 0.545873,0.733447 " />
+<circle class="circle_class" cx="0.813551" cy="0.422661" r="0.41017" />
+</g>
+<g>
+<text class="circle_text_class" x="0.285517" y="0.895824">3</text>
+<polygon class="triangle_class" id="poly_3" data="vertices=0 ; 5 ; 3 ; adjacents=(5 ; 0 ; 6 ; )(5 ; 4 ; 3 ; )(3 ; 1 ; 0 ; )" points="0.1,0.671447 0.418963,1.1 0.337588,0.916026 " />
+<circle class="circle_class" cx="-0.319514" cy="1.31666" r="0.769603" />
+</g>
+<g>
+<text class="circle_text_class" x="0.434141" y="0.916491">4</text>
+<polygon class="triangle_class" id="poly_4" data="vertices=5 ; 4 ; 3 ; adjacents=(4 ; 5 ; 2 ; )(1 ; 3 ; 4 ; )(0 ; 5 ; 3 ; )" points="0.418963,1.1 0.545873,0.733447 0.337588,0.916026 " />
+<circle class="circle_class" cx="0.539771" cy="0.936581" r="0.203225" />
+</g>
+<g>
+<text class="circle_text_class" x="0.51021" y="0.860999">5</text>
+<polygon class="triangle_class" id="poly_5" data="vertices=4 ; 5 ; 2 ; adjacents=(5 ; 4 ; 3 ; )(2 ; 5 ; 7 ; )(2 ; 1 ; 4 ; )" points="0.545873,0.733447 0.418963,1.1 0.565795,0.74955 " />
+<circle class="circle_class" cx="0.429116" cy="0.898269" r="0.201986" />
+</g>
 </svg>
+<div id="coords"></div>
+<div id="info"></div>
+<script>
+var tris = document.getElementsByClassName('triangle_class');
+for (var i = 0; i < tris.length; i++) {
+tris[i].addEventListener('mouseover', mouseOverEffect);
+tris[i].addEventListener('mouseout', mouseOutEffect);}
+function mouseOverEffect() {
+this.classList.add("triangle_hover_class"); this.parentNode.getElementsByTagName("circle")[0].classList.add("circle_hover_class");
+document.getElementById("info").innerHTML='id='+ this.id+ ' '+ this.getAttribute("data");
+}
+function mouseOutEffect() {
+this.classList.remove("triangle_hover_class"); this.parentNode.getElementsByTagName("circle")[0].classList.remove("circle_hover_class");
+document.getElementById("info").innerHTML="_"
+}
+document.addEventListener('mousemove', (e)=> {document.getElementById("coords").innerHTML=svg_inv_coords(e.clientX, e.clientY); })
+function svg_inv_coords(x_html, y_html) {
+var m= 1;
+var x= x_html*0.00171429;
+var y= y_html*0.00171429;
+var xx= (x- 0.1)* m+ 0;
+var yy= -(y- 0.1)* m+ 1;
+return xx+ ' '+ yy;}
+</script>
 </body>
 </html>

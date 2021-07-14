@@ -314,6 +314,30 @@ bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::
 }
 
 
+void get_circle_center(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & center, float * radius) {
+	glm::vec2 pt1, pt2, pt3;
+	if (is_ccw(circle_pt1, circle_pt2, circle_pt3)) {
+		pt1= circle_pt1;
+		pt2= circle_pt2;
+		pt3= circle_pt3;
+	}
+	else {
+		pt1= circle_pt1;
+		pt2= circle_pt3;
+		pt3= circle_pt2;
+	}
+
+	glm::vec2 d21= pt2- pt1;
+	glm::vec2 d31= pt3- pt1;
+	glm::vec2 d32= pt3- pt2;
+
+	float lambda= 0.5f* (d31.x* d32.x+ d32.y* d31.y)/ (d32.y* d21.x- d21.y* d32.x);
+	center= glm::vec2(0.5f* (pt1.x+ pt2.x)- lambda* d21.y, 0.5f* (pt1.y+ pt2.y)+ lambda* d21.x);
+
+	*radius= sqrt((center.x- pt1.x)* (center.x- pt1.x)+ (center.y- pt1.y)* (center.y- pt1.y));
+}
+
+
 // ---------------------------------------------------------------------------------------------------
 Polygon2D::Polygon2D() : _area(0.0f), _centroid(glm::vec2(0.0f)), _radius(0.0f) {
 	_aabb= new AABB_2D();

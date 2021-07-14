@@ -288,22 +288,38 @@ int main(int argc, char * argv[]) {
 
 	vector<glm::vec2> pts;
 
-
+/*
 	pts.push_back(glm::vec2(0.0f, 0.0f));
 	pts.push_back(glm::vec2(1.0f, 0.0f));
 	pts.push_back(glm::vec2(0.1f, 1.0f));
 	pts.push_back(glm::vec2(0.2f, 0.2f));
-	pts.push_back(glm::vec2(0.5f, 0.2f));
+	pts.push_back(glm::vec2(0.7f, 0.7f));
+*/
 
+pts.push_back(glm::vec2(0.000000, 0.428553));
+pts.push_back(glm::vec2(0.460314, 1.000000));
+pts.push_back(glm::vec2(0.465795, 0.350450));
+pts.push_back(glm::vec2(0.237588, 0.183974));
+pts.push_back(glm::vec2(0.445873, 0.366553));
+pts.push_back(glm::vec2(0.318963, 0.000000));/*
+pts.push_back(glm::vec2(0.183725, 0.641182));
+pts.push_back(glm::vec2(0.933593, 0.126030));
+pts.push_back(glm::vec2(0.787499, 0.076075));
+pts.push_back(glm::vec2(0.834194, 0.282110));
+pts.push_back(glm::vec2(0.924107, 0.295930));
+pts.push_back(glm::vec2(1.000000, 0.083048));
+pts.push_back(glm::vec2(0.709813, 0.630278));
+pts.push_back(glm::vec2(0.827448, 0.942183));
+pts.push_back(glm::vec2(0.804891, 0.872195));
+pts.push_back(glm::vec2(0.951196, 0.957018));
+*/	
+	//srand(time(NULL));
+	/*for (unsigned int i=0; i<16; ++i) {
+		pts.push_back(glm::vec2(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
+	}*/
 	
-	/*
-	srand(time(NULL));
-	for (unsigned int i=0; i<100; ++i) {
-		pts.push_back(glm::vec2(rand_float(0.0f, 10.0f), rand_float(0.0f, 10.0f)));
-	}
-	*/
 
-	Triangulation * tgl= new Triangulation(pts);
+	Triangulation * tgl= new Triangulation(pts, true);
 	tgl->draw("../data/result.html");
 	delete tgl;
 

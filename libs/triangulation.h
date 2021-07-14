@@ -37,9 +37,10 @@ bool sort_pts(PointBin * pt1, PointBin * pt2);
 
 struct Triangulation {
 	Triangulation();
-	Triangulation(std::vector<glm::vec2> & pts);
+	Triangulation(std::vector<glm::vec2> & pts, bool verbose=false);
 	~Triangulation();
-	void print_triangle(Triangle * triangle, bool verbose=false);
+	int idx_triangle(Triangle * triangle);
+	void print_triangle(Triangle * triangle, bool verbose=false, bool is_pt_init=true);
 	void draw(std::string svg_path);
 	glm::vec2 svg_coords(glm::vec2 & v);
 
