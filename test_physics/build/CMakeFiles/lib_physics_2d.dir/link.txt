@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc liblib_physics_2d.a  CMakeFiles/lib_physics_2d.dir/Volumes/malenge/dir_git/main/libs/physics_2d.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib liblib_physics_2d.a
