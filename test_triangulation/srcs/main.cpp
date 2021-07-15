@@ -8,6 +8,7 @@
 #include <cmath>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include <OpenGL/gl3.h>
 
@@ -28,6 +29,7 @@
 
 
 using namespace std;
+using namespace std::chrono;
 
 
 SDL_Window * window= NULL;
@@ -296,52 +298,47 @@ int main(int argc, char * argv[]) {
 	pts.push_back(glm::vec2(0.7f, 0.7f));
 */
 
-pts.push_back(glm::vec2(0.000000, 0.428553));
-pts.push_back(glm::vec2(0.460314, 1.000000));
-pts.push_back(glm::vec2(0.465795, 0.350450));
-pts.push_back(glm::vec2(0.237588, 0.183974));
-pts.push_back(glm::vec2(0.445873, 0.366553));
-pts.push_back(glm::vec2(0.318963, 0.000000));/*
-pts.push_back(glm::vec2(0.183725, 0.641182));
-pts.push_back(glm::vec2(0.933593, 0.126030));
-pts.push_back(glm::vec2(0.787499, 0.076075));
-pts.push_back(glm::vec2(0.834194, 0.282110));
-pts.push_back(glm::vec2(0.924107, 0.295930));
-pts.push_back(glm::vec2(1.000000, 0.083048));
-pts.push_back(glm::vec2(0.709813, 0.630278));
-pts.push_back(glm::vec2(0.827448, 0.942183));
-pts.push_back(glm::vec2(0.804891, 0.872195));
-pts.push_back(glm::vec2(0.951196, 0.957018));
-*/	
-	//srand(time(NULL));
-	/*for (unsigned int i=0; i<16; ++i) {
-		pts.push_back(glm::vec2(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
-	}*/
+/*
+	pts.push_back(glm::vec2(0.000000, 0.428553));
+	pts.push_back(glm::vec2(0.460314, 1.000000));
+	pts.push_back(glm::vec2(0.465795, 0.350450));
+	pts.push_back(glm::vec2(0.237588, 0.183974));
+	pts.push_back(glm::vec2(0.445873, 0.366553));
+	pts.push_back(glm::vec2(0.318963, 0.000000));
+	pts.push_back(glm::vec2(0.183725, 0.641182));
+	pts.push_back(glm::vec2(0.933593, 0.126030));
+	pts.push_back(glm::vec2(0.787499, 0.076075));
+	pts.push_back(glm::vec2(0.834194, 0.282110));
+	pts.push_back(glm::vec2(0.924107, 0.295930));
+	pts.push_back(glm::vec2(1.000000, 0.083048));
+	pts.push_back(glm::vec2(0.709813, 0.630278));
+	pts.push_back(glm::vec2(0.827448, 0.942183));
+	pts.push_back(glm::vec2(0.804891, 0.872195));
+	pts.push_back(glm::vec2(0.951196, 0.957018));
+*/
+	srand(time(NULL));
+	for (unsigned int i=0; i<10000; ++i) {
+		pts.push_back(glm::vec2(rand_float(0.0f, 10.0f), rand_float(0.0f, 10.0f)));
+	}
 	
+	auto t1= high_resolution_clock::now();
 
 	Triangulation * tgl= new Triangulation(pts, true);
-	tgl->draw("../data/result.html");
+
+	auto t2= high_resolution_clock::now();
+	auto ms= duration_cast<milliseconds>(t2- t1);
+	cout << ms.count() << " ms\n";
+
+	//tgl->draw("../data/result.html");
 	delete tgl;
 
-/*
-	BTree * btree= new BTree();
-	btree->_pts.push_back(glm::vec2(0.0f, 0.0f));
-	btree->_pts.push_back(glm::vec2(1.0f, 0.0f));
-	btree->_pts.push_back(glm::vec2(2.0f, 0.0f));
-	btree->_pts.push_back(glm::vec2(0.0f, 1.0f));
-	btree->_pts.push_back(glm::vec2(1.0f, 1.0f));
-	btree->triangulate();
-	btree->print();
-*/
 
-/*
-	glm::vec2 pt1(0.0f, 0.0f);
-	glm::vec2 pt2(0.0f, 1.0f);
-	glm::vec2 pt3(1.0f, 0.0f);
-	glm::vec2 pt(-0.99f, 0.99f);
+/*	glm::vec2 pt1(0.460314f, 1.000000f);
+	glm::vec2 pt2(0.000000f, 0.428553f);
+	glm::vec2 pt3(0.465795f, 0.350450f);
+	glm::vec2 pt(0.237588f, 0.183974f);
 	bool x= point_in_circumcircle(pt1, pt2, pt3, pt);
 	cout << x << "\n";
 */
-
 	return 0;
 }

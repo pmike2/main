@@ -41,7 +41,7 @@ struct Triangulation {
 	~Triangulation();
 	int idx_triangle(Triangle * triangle);
 	void print_triangle(Triangle * triangle, bool verbose=false, bool is_pt_init=true);
-	void draw(std::string svg_path);
+	void draw(std::string svg_path, bool verbose=false);
 	glm::vec2 svg_coords(glm::vec2 & v);
 
 
