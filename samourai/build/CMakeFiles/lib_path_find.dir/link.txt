@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc liblib_path_find.a CMakeFiles/lib_path_find.dir/Volumes/malenge/dir_git/main/libs/path_find.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib liblib_path_find.a

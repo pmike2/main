@@ -1,8 +1,0 @@
-/Volumes/malenge/dir_git/main/test_physics/build/CMakeFiles/rebuild_cache.dir
-/Volumes/malenge/dir_git/main/test_physics/build/CMakeFiles/edit_cache.dir
-/Volumes/malenge/dir_git/main/test_physics/build/CMakeFiles/lib_font.dir
-/Volumes/malenge/dir_git/main/test_physics/build/CMakeFiles/lib_input_state.dir
-/Volumes/malenge/dir_git/main/test_physics/build/CMakeFiles/main.dir
-/Volumes/malenge/dir_git/main/test_physics/build/CMakeFiles/lib_physics_2d.dir
-/Volumes/malenge/dir_git/main/test_physics/build/CMakeFiles/lib_gl_utils.dir
-/Volumes/malenge/dir_git/main/test_physics/build/CMakeFiles/lib_utile.dir

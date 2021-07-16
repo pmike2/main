@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc liblib_shapefile.a CMakeFiles/lib_shapefile.dir/Volumes/malenge/dir_git/main/libs/shapefile.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib liblib_shapefile.a

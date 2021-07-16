@@ -3,6 +3,7 @@
 
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/norm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "geom_2d.h"
 #include "utile.h"
@@ -62,24 +63,42 @@ bool is_pt_inside_poly(glm::vec2 & pt, Polygon2D * poly) {
 
 
 // cf https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-bool segment_intersects_segment(glm::vec2 & pt1_begin, glm::vec2 & pt1_end, glm::vec2 & pt2_begin, glm::vec2 & pt2_end, glm::vec2 * result) {
+bool segment_intersects_segment(glm::vec2 & pt1_begin, glm::vec2 & pt1_end, glm::vec2 & pt2_begin, glm::vec2 & pt2_end, glm::vec2 * result, bool exclude_extremities) {
     glm::vec2 dir1= pt1_end- pt1_begin;
     glm::vec2 dir2= pt2_end- pt2_begin;
     
     // parallèles
     float a= cross2d(dir1, dir2);
-    if (abs(a)< EPSILON) {
+    //if (abs(a)< EPSILON) {
+	if (a== 0.0f) {
         return false;
     }
-    float t1= cross2d(pt2_begin- pt1_begin, dir2)/ a;
-    if ((t1< 0.0f) || (t1> 1.0f)) {
-        return false;
-    }
-    float t2= cross2d(pt2_begin- pt1_begin, dir1)/ a;
-    if ((t2< 0.0f) || (t2> 1.0f)) {
-        return false;
-    }
-    result->x= pt1_begin.x+ t1* dir1.x;
+    
+	float t1= cross2d(pt2_begin- pt1_begin, dir2)/ a;
+	if (exclude_extremities) {
+		if ((t1<= 0.0f) || (t1>= 1.0f)) {
+			return false;
+		}
+	}
+	else {
+		if ((t1< 0.0f) || (t1> 1.0f)) {
+        	return false;
+    	}
+	}
+    
+	float t2= cross2d(pt2_begin- pt1_begin, dir1)/ a;
+	if (exclude_extremities) {
+		if ((t2<= 0.0f) || (t2>= 1.0f)) {
+			return false;
+		}
+	}
+	else {
+		if ((t2< 0.0f) || (t2> 1.0f)) {
+			return false;
+		}
+	}
+
+	result->x= pt1_begin.x+ t1* dir1.x;
     result->y= pt1_begin.y+ t1* dir1.y;
     return true;
 }
@@ -282,6 +301,63 @@ void convex_hull_2d(std::vector<glm::vec2> & pts) {
     pts.clear();
     pts.insert(pts.begin(), pts_upper.begin(), pts_upper.end());
     pts.insert(pts.end()  , pts_lower.begin(), pts_lower.end());
+}
+
+
+bool is_ccw(glm::vec2 & pt1, glm::vec2 & pt2, glm::vec2 & pt3) {
+	return (pt2.x- pt1.x)* (pt3.y- pt1.y)- (pt3.x- pt1.x)* (pt2.y- pt1.y)> 0.0f;
+}
+
+
+bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & pt) {
+	glm::vec2 pt1, pt2, pt3;
+	if (is_ccw(circle_pt1, circle_pt2, circle_pt3)) {
+		pt1= circle_pt1;
+		pt2= circle_pt2;
+		pt3= circle_pt3;
+	}
+	else {
+		pt1= circle_pt1;
+		pt2= circle_pt3;
+		pt3= circle_pt2;
+	}
+
+	glm::vec2 d21= pt2- pt1;
+	glm::vec2 d31= pt3- pt1;
+	glm::vec2 d32= pt3- pt2;
+
+	// points alignés
+	if (d32.y* d21.x- d21.y* d32.x== 0.0f) {
+		return false; // true ?
+	}
+	float lambda= 0.5f* (d31.x* d32.x+ d32.y* d31.y)/ (d32.y* d21.x- d21.y* d32.x);
+	glm::vec2 center= glm::vec2(0.5f* (pt1.x+ pt2.x)- lambda* d21.y, 0.5f* (pt1.y+ pt2.y)+ lambda* d21.x);
+	return (center.x- pt.x)* (center.x- pt.x)+ (center.y- pt.y)* (center.y- pt.y)< (center.x- pt1.x)* (center.x- pt1.x)+ (center.y- pt1.y)* (center.y- pt1.y);
+}
+
+
+// utilisé pour debug test_triangulation
+void get_circle_center(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & center, float * radius) {
+	glm::vec2 pt1, pt2, pt3;
+	if (is_ccw(circle_pt1, circle_pt2, circle_pt3)) {
+		pt1= circle_pt1;
+		pt2= circle_pt2;
+		pt3= circle_pt3;
+	}
+	else {
+		pt1= circle_pt1;
+		pt2= circle_pt3;
+		pt3= circle_pt2;
+	}
+
+	glm::vec2 d21= pt2- pt1;
+	glm::vec2 d31= pt3- pt1;
+	glm::vec2 d32= pt3- pt2;
+
+	float lambda= 0.5f* (d31.x* d32.x+ d32.y* d31.y)/ (d32.y* d21.x- d21.y* d32.x);
+	center= glm::vec2(0.5f* (pt1.x+ pt2.x)- lambda* d21.y, 0.5f* (pt1.y+ pt2.y)+ lambda* d21.x);
+
+	*radius= sqrt((center.x- pt1.x)* (center.x- pt1.x)+ (center.y- pt1.y)* (center.y- pt1.y));
 }
 
 

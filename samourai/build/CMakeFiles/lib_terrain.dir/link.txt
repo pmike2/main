@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc liblib_terrain.a CMakeFiles/lib_terrain.dir/Volumes/malenge/dir_git/main/libs/terrain.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib liblib_terrain.a

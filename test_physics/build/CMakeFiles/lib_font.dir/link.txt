@@ -1,2 +1,0 @@
-/Library/Developer/CommandLineTools/usr/bin/ar qc liblib_font.a  CMakeFiles/lib_font.dir/Volumes/malenge/dir_git/main/libs/font.cpp.o
-/Library/Developer/CommandLineTools/usr/bin/ranlib liblib_font.a
