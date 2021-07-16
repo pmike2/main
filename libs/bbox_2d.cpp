@@ -49,12 +49,12 @@ ostream & operator << (ostream & os, const AABB_2D & aabb) {
 
 
 bool point_in_aabb(const glm::vec2 & pt, const AABB_2D * aabb) {
-	return ((pt.x> aabb->_pos.x) && (pt.x< aabb->_pos.x+ aabb->_size.x) && (pt.y> aabb->_pos.y) && (pt.y< aabb->_pos.y+ aabb->_size.y));
+	return ((pt.x>= aabb->_pos.x) && (pt.x<= aabb->_pos.x+ aabb->_size.x) && (pt.y>= aabb->_pos.y) && (pt.y<= aabb->_pos.y+ aabb->_size.y));
 }
 
 
 bool aabb_intersects_aabb(const AABB_2D * aabb_1, const AABB_2D * aabb_2) {
-	return ((aabb_1->_pos.x< aabb_2->_pos.x+ aabb_2->_size.x) && (aabb_1->_pos.x+ aabb_1->_size.x> aabb_2->_pos.x) && (aabb_1->_pos.y< aabb_2->_pos.y+ aabb_2->_size.y) && (aabb_1->_pos.y+ aabb_1->_size.y> aabb_2->_pos.y));
+	return ((aabb_1->_pos.x<= aabb_2->_pos.x+ aabb_2->_size.x) && (aabb_1->_pos.x+ aabb_1->_size.x>= aabb_2->_pos.x) && (aabb_1->_pos.y<= aabb_2->_pos.y+ aabb_2->_size.y) && (aabb_1->_pos.y+ aabb_1->_size.y>= aabb_2->_pos.y));
 }
 
 

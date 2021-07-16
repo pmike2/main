@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <cfloat> // FLT_MAX
 
 #include <glm/gtx/string_cast.hpp>
@@ -69,13 +70,14 @@ bool segment_intersects_segment(glm::vec2 & pt1_begin, glm::vec2 & pt1_end, glm:
     
     // parallèles
     float a= cross2d(dir1, dir2);
-    //if (abs(a)< EPSILON) {
+    //if (abs(a)<= EPSILON) {
 	if (a== 0.0f) {
         return false;
     }
     
 	float t1= cross2d(pt2_begin- pt1_begin, dir2)/ a;
 	if (exclude_extremities) {
+		//if ((t1<= EPSILON) || (t1>= 1.0f- EPSILON)) {
 		if ((t1<= 0.0f) || (t1>= 1.0f)) {
 			return false;
 		}
@@ -88,6 +90,7 @@ bool segment_intersects_segment(glm::vec2 & pt1_begin, glm::vec2 & pt1_end, glm:
     
 	float t2= cross2d(pt2_begin- pt1_begin, dir1)/ a;
 	if (exclude_extremities) {
+		//if ((t2<= EPSILON) || (t2>= 1.0f- EPSILON)) {
 		if ((t2<= 0.0f) || (t2>= 1.0f)) {
 			return false;
 		}

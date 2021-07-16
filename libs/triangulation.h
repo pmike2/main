@@ -17,27 +17,31 @@ struct Triangle {
 
 
 	int _vertices[3];
+	int _vertices_init[3];
 	Triangle * _adjacents[3];
 };
 
 
 struct PointBin {
 	PointBin();
-	PointBin(glm::vec2 pt, int idx_bin);
+	PointBin(glm::vec2 pt_init, glm::vec2 pt, int idx_init, int idx_bin);
 	~PointBin();
 
 
+	glm::vec2 _pt_init;
 	glm::vec2 _pt;
+	int _idx_init;
 	int _idx_bin;
 };
 
 
-bool sort_pts(PointBin * pt1, PointBin * pt2);
+bool sort_pts_by_idx_bin(PointBin * pt1, PointBin * pt2);
+bool sort_pts_by_idx_init(PointBin * pt1, PointBin * pt2);
 
 
 struct Triangulation {
 	Triangulation();
-	Triangulation(std::vector<glm::vec2> & pts, bool verbose=false);
+	Triangulation(std::vector<glm::vec2> & pts, bool sort_by_bin=true, bool verbose=false);
 	~Triangulation();
 	int idx_triangle(Triangle * triangle);
 	void print_triangle(Triangle * triangle, bool verbose=false, bool is_pt_init=true);
@@ -45,7 +49,6 @@ struct Triangulation {
 	glm::vec2 svg_coords(glm::vec2 & v);
 
 
-	std::vector<glm::vec2> _pts_init;
 	std::vector<PointBin *> _pts;
 	std::vector<Triangle *> _triangles;
 	AABB_2D * _aabb;

@@ -13,7 +13,7 @@
 // 1.0 / 3.0
 const float THIRD= 1.0f/ 3.0f;
 // utilisé pour comparaison float à 0.0f
-const float EPSILON= 1e-10f;
+const float EPSILON= 1e-8f;
 
 
 class Polygon2D;
