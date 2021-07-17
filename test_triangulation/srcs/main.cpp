@@ -29,11 +29,16 @@ int main(int argc, char * argv[]) {
 /*
 	pts.push_back(glm::vec2(0.0f, 0.0f));
 	pts.push_back(glm::vec2(1.0f, 0.0f));
-	pts.push_back(glm::vec2(0.1f, 1.0f));
-	pts.push_back(glm::vec2(0.2f, 0.2f));
-	pts.push_back(glm::vec2(0.7f, 0.7f));
-*/
+	pts.push_back(glm::vec2(0.0f, 1.0f));
+	pts.push_back(glm::vec2(0.0f, -1.0f));
+	pts.push_back(glm::vec2(0.5f, 0.0f));
 
+	pts.push_back(glm::vec2(0.0f, 0.0f));
+	pts.push_back(glm::vec2(1.0f, 0.0f));
+	pts.push_back(glm::vec2(0.0f, 1.0f));
+	pts.push_back(glm::vec2(0.0f, -1.0f));
+	pts.push_back(glm::vec2(0.5f, 0.0f));
+*/
 /*
 	pts.push_back(glm::vec2(0.000000, 0.428553));
 	pts.push_back(glm::vec2(0.460314, 1.000000));
@@ -58,7 +63,7 @@ int main(int argc, char * argv[]) {
 	for (unsigned int i=0; i<10000; ++i) {
 		pts.push_back(glm::vec2(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
 	}
-	
+
 	auto t1= high_resolution_clock::now();
 
 	Triangulation * tgl= new Triangulation(pts, false, false);
