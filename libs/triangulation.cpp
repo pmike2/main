@@ -50,6 +50,14 @@ Triangle::~Triangle() {
 }
 
 
+bool Triangle::is_valid() {
+	if ((_vertices[0]< 0) || (_vertices[1]< 0) || (_vertices[2]< 0)) {
+		return false;
+	}
+	return true;
+}
+
+
 // --------------------------------------------------
 PointBin::PointBin() {
 
@@ -183,6 +191,18 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 		//int compt= 0;
 		cout << "chekpoint3\n" << flush;
 		while (search_triangle) {
+			if (!last_triangle) {
+				search_valid= false;
+				cerr << "ERREUR last_triangle NULL\n" << flush;
+				break;
+			}
+
+			if (!last_triangle->is_valid()) {
+				search_valid= false;
+				cerr << "ERREUR last_triangle non valide\n" << flush;
+				break;
+			}
+
 			//compt++;
 			search_triangle= false;
 			glm::vec2 bary= (_pts[last_triangle->_vertices[0]]->_pt+ _pts[last_triangle->_vertices[1]]->_pt+ _pts[last_triangle->_vertices[2]]->_pt)/ 3.0f;
@@ -208,15 +228,31 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 					}*/
 						if (before_last_triangle== last_triangle->_adjacents[i]) {
 							search_valid= false;
-							cerr << "ERREUR point sur arete\n";
+							search_triangle= false;
+							cerr << "ERREUR point sur arete\n" << flush;
 							break;
 						}
 						before_last_triangle= last_triangle;
 						last_triangle= last_triangle->_adjacents[i];
+
+						if (!last_triangle) {
+							search_valid= false;
+							search_triangle= false;
+							cerr << "ERREUR last_triangle NULL\n" << flush;
+							break;
+						}
+						if (!last_triangle->is_valid()) {
+							search_valid= false;
+							search_triangle= false;
+							cerr << "ERREUR last_triangle non valide\n" << flush;
+							break;
+						}
+
 						if (verbose) {
-							cout << "bary intersects\n";
+							cout << "bary intersects\n" << flush;
 							print_triangle(last_triangle);
 						}
+						
 						search_triangle= true;
 						break;
 					//}
@@ -229,11 +265,6 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 			continue;
 		}
 
-		if (!last_triangle) {
-			cerr << "ERREUR last_triangle NULL\n";
-			continue;
-		}
-		
 		//cout << compt << "\n";
 		if (verbose) {
 			cout << "last_triangle\n";
@@ -243,6 +274,11 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 		Triangle * t1= new Triangle(last_triangle->_vertices[0], last_triangle->_vertices[1], idx_pt, last_triangle->_adjacents[0], NULL, NULL);
 		Triangle * t2= new Triangle(idx_pt, last_triangle->_vertices[1], last_triangle->_vertices[2], NULL, last_triangle->_adjacents[1], NULL);
 		Triangle * t3= new Triangle(last_triangle->_vertices[2], last_triangle->_vertices[0], idx_pt, last_triangle->_adjacents[2], NULL, NULL);
+
+		if ((!t1->is_valid()) || (!t2->is_valid()) || (!t3->is_valid())) {
+			cerr << "ERREUR new_tris non valides\n" << flush;
+			continue;
+		}
 		
 		t1->_adjacents[1]= t2;
 		t1->_adjacents[2]= t3;
@@ -272,7 +308,14 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 			print_triangle(last_triangle, true);
 		}
 
-		_triangles.erase(remove(_triangles.begin(), _triangles.end(), last_triangle), _triangles.end());
+		if (last_triangle) {
+			_triangles.erase(remove(_triangles.begin(), _triangles.end(), last_triangle), _triangles.end());
+			delete last_triangle;
+			last_triangle= NULL;
+		}
+		else {
+			cerr << "ERREUR last_triangle NULL\n";
+		}		
 		_triangles.insert(_triangles.end(), new_tris, new_tris+ 3);
 
 		if (verbose) {
@@ -287,9 +330,19 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 			Opposition * opposition= opposition_deque.back();
 			opposition_deque.pop_back();
 			cout << "opposition1\n" << flush;
+			
+			if (!opposition->_is_valid) {
+				cerr << "ERREUR opposition non valide\n";
+				continue;
+			}
 
-			if ((opposition->_new_triangle==NULL) || (opposition->_opposite_triangle==NULL)) {
+			if ((!opposition->_new_triangle) || (!opposition->_opposite_triangle)) {
 				cerr << "ERREUR opposition triangle NULL\n";
+				continue;
+			}
+
+			if ((!opposition->_opposite_triangle->is_valid()) || (!opposition->_new_triangle->is_valid())) {
+				cerr << "ERREUR opposition triangle non valide\n";
 				continue;
 			}
 
@@ -304,17 +357,20 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 				print_triangle(opposition->_opposite_triangle);
 			}
 			
+			cout << "opposition2\n" << flush;
 			if (point_in_circumcircle(_pts[opposition->_opposite_triangle->_vertices[0]]->_pt, _pts[opposition->_opposite_triangle->_vertices[1]]->_pt, _pts[opposition->_opposite_triangle->_vertices[2]]->_pt, _pts[idx_pt]->_pt)) {
+				cout << "opposition2 BIS3\n" << flush;
 				Triangle * t4_adjs[2]= {
 					opposition->_opposite_triangle->_adjacents[(opposition->_opposite_edge_idx+ 2)% 3],
 					opposition->_new_triangle->_adjacents[(opposition->_new_edge_idx+ 1) % 3]
 				};
+				cout << "opposition2 BIS2\n" << flush;
 				Triangle * t4= new Triangle(
 					opposition->_new_triangle->_vertices[(opposition->_new_edge_idx+ 2)% 3],
 					opposition->_opposite_triangle->_vertices[(opposition->_opposite_edge_idx+ 2)% 3],
 					opposition->_opposite_triangle->_vertices[opposition->_opposite_edge_idx],
 					NULL, t4_adjs[0], t4_adjs[1]);
-
+cout << "opposition2 BIS\n" << flush;
 				Triangle * t5_adjs[2]= {
 					opposition->_new_triangle->_adjacents[(opposition->_new_edge_idx+ 2) % 3],
 					opposition->_opposite_triangle->_adjacents[(opposition->_opposite_edge_idx+ 1) % 3]
@@ -328,7 +384,14 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 				t4->_adjacents[0]= t5;
 				t5->_adjacents[0]= t4;
 
+				if ((!t4->is_valid()) || (!t5->is_valid())) {
+					cerr << "ERREUR new_tris_2 non valides\n" << flush;
+					continue;
+				}
+
+
 				Triangle * new_tris_2[2]= {t4, t5};
+				cout << "opposition3\n" << flush;
 
 				for (unsigned int i=0; i<2; ++i) {
 					if (t4_adjs[i]) {
@@ -365,25 +428,24 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 					print_triangle(opposition->_opposite_triangle);
 				}
 
-				if ((opposition->_new_triangle==NULL) || (opposition->_opposite_triangle==NULL)) {
-					cerr << "ERREUR opposition triangle NULL\n";
-					continue;
-				}
-
-				if (opposition->_new_triangle== opposition->_opposite_triangle) {
-					cerr << "ERREUR opposition triangles égaux\n";
-					continue;
-				}
-
 				cout << "ok_delete1\n" << flush;
-				delete opposition->_new_triangle;
-				//cout << "ok_delete1 1\n" << flush;
-				delete opposition->_opposite_triangle;
-				//cout << "ok_delete1 2\n" << flush;
-				_triangles.erase(remove(_triangles.begin(), _triangles.end(), opposition->_new_triangle), _triangles.end());
-				//cout << "ok_delete1 3\n" << flush;
-				_triangles.erase(remove(_triangles.begin(), _triangles.end(), opposition->_opposite_triangle), _triangles.end());
-				//cout << "ok_delete1 4\n" << flush;
+				if (opposition->_new_triangle) {
+					_triangles.erase(remove(_triangles.begin(), _triangles.end(), opposition->_new_triangle), _triangles.end());
+					delete opposition->_new_triangle;
+					opposition->_new_triangle= NULL;
+				}
+				else {
+					cerr << "ERREUR opposition triangle NULL\n";
+				}
+				if (opposition->_opposite_triangle) {
+					_triangles.erase(remove(_triangles.begin(), _triangles.end(), opposition->_opposite_triangle), _triangles.end());
+					delete opposition->_opposite_triangle;
+					opposition->_opposite_triangle= NULL;
+				}
+				else {
+					cerr << "ERREUR opposition triangle NULL\n";
+				}
+
 				_triangles.insert(_triangles.end(), new_tris_2, new_tris_2+ 2);
 				cout << "ok_delete2\n" << flush;
 
@@ -397,6 +459,7 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 					cout << flush;
 				}
 			}
+			cout << "opposition2_END\n" << flush;
 		}
 
 		//draw("test"+ to_string(idx_pt)+ ".html");
@@ -614,20 +677,32 @@ Opposition::Opposition() {
 }
 
 
-Opposition::Opposition(Triangle * new_triangle, Triangle * opposite_triangle) : _new_triangle(new_triangle), _opposite_triangle(opposite_triangle) {
+Opposition::Opposition(Triangle * new_triangle, Triangle * opposite_triangle) : _new_triangle(new_triangle), _opposite_triangle(opposite_triangle), _is_valid(true) {
 	_new_edge_idx= -1;
 	_opposite_edge_idx= -1;
+	if ((!_new_triangle) || (!_opposite_triangle)) {
+		_is_valid= false;
+		return;
+	}
 	for (unsigned int i=0; i<3; ++i) {
 		if (_new_triangle->_adjacents[i]== _opposite_triangle) {
 			_new_edge_idx= i;
 			break;
 		}
 	}
+	if (_new_edge_idx== -1) {
+		_is_valid= false;
+		return;
+	}
 	for (unsigned int i=0; i<3; ++i) {
 		if (_opposite_triangle->_adjacents[i]== _new_triangle) {
 			_opposite_edge_idx= i;
 			break;
 		}
+	}
+	if (_opposite_edge_idx== -1) {
+		_is_valid= false;
+		return;
 	}
 }
 

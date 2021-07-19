@@ -14,6 +14,7 @@ struct Triangle {
 	Triangle();
 	Triangle(int v0, int v1, int v2, Triangle * a0, Triangle * a1, Triangle * a2);
 	~Triangle();
+	bool is_valid();
 
 
 	int _vertices[3];
@@ -67,6 +68,7 @@ struct Opposition {
 	Triangle * _opposite_triangle;
 	int _new_edge_idx;
 	int _opposite_edge_idx;
+	bool _is_valid;
 };
 
 
