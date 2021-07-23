@@ -26,9 +26,9 @@ Triangle::Triangle() {
 	_vertices_init[0]= -1;
 	_vertices_init[1]= -1;
 	_vertices_init[2]= -1;
-	_adjacents[0]= NULL;
-	_adjacents[1]= NULL;
-	_adjacents[2]= NULL;
+	_adjacents[0]= 0;
+	_adjacents[1]= 0;
+	_adjacents[2]= 0;
 }
 
 
@@ -92,7 +92,7 @@ Triangulation::Triangulation() {
 }
 
 
-Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool verbose) {
+Triangulation::Triangulation(vector<glm::vec2> & pts, vector<pair<unsigned int, unsigned int> > & constrained_edges, bool sort_by_bin, bool verbose) {
 	streambuf * coutbuf;
 	ofstream out_stream("../data/out.txt");
 	if (verbose) {
@@ -150,7 +150,8 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 			}
 		}
 		if (idx_bin_ok== -1) {
-			cout << "ERREUR 1\n";
+			cerr << "ERREUR recherche bin\n";
+			continue;
 		}
 		_pts.push_back(new PointBin(pts[i], normalized_pt, i, idx_bin_ok));
 	}
@@ -187,11 +188,12 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 		bool search_triangle= true;
 		unsigned int compt= 0;
 		bool search_triangle_ok= true;
+
 		while (search_triangle) {
 			compt++;
 			if (compt> _triangles.size()) {
 				search_triangle_ok= false;
-				cerr << "Erreur search_triangle\n" << flush;
+				cerr << "Erreur search_triangle\n";
 				break;
 			}
 			search_triangle= false;
@@ -203,9 +205,14 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 				glm::vec2 result;
 				if (segment_intersects_segment(bary, _pts[idx_pt]->_pt, _pts[last_triangle->_vertices[i]]->_pt, _pts[last_triangle->_vertices[(i+ 1)% 3]]->_pt, &result, true)) {
 					last_triangle= last_triangle->_adjacents[i];
+					if (!last_triangle) {
+						search_triangle_ok= false;
+						cerr << "ERREUR last_triangle NULL\n";
+						break;
+					}
 
 					if (verbose) {
-						cout << "bary intersects\n" << flush;
+						cout << "bary intersects\n";
 						print_triangle(last_triangle);
 					}
 					
@@ -214,11 +221,10 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 				}
 			}
 		}
-
 		if (!search_triangle_ok) {
 			continue;
 		}
-		
+
 		Triangle * t1= new Triangle(last_triangle->_vertices[0], last_triangle->_vertices[1], idx_pt, last_triangle->_adjacents[0], NULL, NULL);
 		Triangle * t2= new Triangle(idx_pt, last_triangle->_vertices[1], last_triangle->_vertices[2], NULL, last_triangle->_adjacents[1], NULL);
 		Triangle * t3= new Triangle(last_triangle->_vertices[2], last_triangle->_vertices[0], idx_pt, last_triangle->_adjacents[2], NULL, NULL);
@@ -233,7 +239,6 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 		Triangle * new_tris[3]= {t1, t2, t3};
 
 		deque<Opposition *> opposition_deque;
-
 		for (unsigned int i=0; i<3; ++i) {
 			if (last_triangle->_adjacents[i]) {
 				for (unsigned int j=0; j<3; ++j) {
@@ -251,12 +256,14 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 			print_triangle(last_triangle, true);
 		}
 
-		_triangles.erase(find(_triangles.begin(), _triangles.end(), last_triangle));
+		vector<Triangle *>::iterator it= find(_triangles.begin(), _triangles.end(), last_triangle);
+		if (it!= _triangles.end()) {
+			_triangles.erase(it);
+		}
 		//delete last_triangle;
 		last_triangle= 0;
-
 		_triangles.insert(_triangles.end(), new_tris, new_tris+ 3);
-
+		
 		if (verbose) {
 			cout << "insert\n";
 			print_triangle(t1, true);
@@ -267,7 +274,10 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 		while (!opposition_deque.empty()) {
 			Opposition * opposition= opposition_deque.back();
 			opposition_deque.pop_back();
-			
+			if (!opposition->_is_valid) {
+				cerr << "ERREUR opposition non valide\n";
+				continue;
+			}
 			if (verbose) {
 				cout << "deque\n";
 				print_triangle(opposition->_new_triangle);
@@ -294,7 +304,7 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 					opposition->_new_triangle->_vertices[(opposition->_new_edge_idx+ 2) % 3],
 					opposition->_new_triangle->_vertices[opposition->_new_edge_idx],
 					NULL, t5_adjs[0], t5_adjs[1]);
-				
+
 				t4->_adjacents[0]= t5;
 				t5->_adjacents[0]= t4;
 
@@ -335,11 +345,17 @@ Triangulation::Triangulation(vector<glm::vec2> & pts, bool sort_by_bin, bool ver
 					print_triangle(opposition->_opposite_triangle);
 				}
 
-				_triangles.erase(find(_triangles.begin(), _triangles.end(), opposition->_new_triangle));
+				vector<Triangle *>::iterator it= find(_triangles.begin(), _triangles.end(), opposition->_new_triangle);
+				if (it!= _triangles.end()) {
+					_triangles.erase(it);
+				}
 				//delete opposition->_new_triangle;
 				opposition->_new_triangle= 0;
 
-				_triangles.erase(find(_triangles.begin(), _triangles.end(), opposition->_opposite_triangle));
+				it= find(_triangles.begin(), _triangles.end(), opposition->_opposite_triangle);
+				if (it!= _triangles.end()) {
+					_triangles.erase(it);
+				}
 				//delete opposition->_opposite_triangle;
 				opposition->_opposite_triangle= 0;
 

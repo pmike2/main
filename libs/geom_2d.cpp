@@ -324,7 +324,6 @@ bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::
 		pt2= circle_pt3;
 		pt3= circle_pt2;
 	}
-
 	glm::vec2 d21= pt2- pt1;
 	glm::vec2 d31= pt3- pt1;
 	glm::vec2 d32= pt3- pt2;

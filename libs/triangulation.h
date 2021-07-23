@@ -33,6 +33,7 @@ struct PointBin {
 	glm::vec2 _pt;
 	int _idx_init;
 	int _idx_bin;
+	std::vector<unsigned int> _idx_triangles;
 };
 
 
@@ -42,7 +43,7 @@ bool sort_pts_by_idx_init(PointBin * pt1, PointBin * pt2);
 
 struct Triangulation {
 	Triangulation();
-	Triangulation(std::vector<glm::vec2> & pts, bool sort_by_bin=true, bool verbose=false);
+	Triangulation(std::vector<glm::vec2> & pts, std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges, bool sort_by_bin=true, bool verbose=false);
 	~Triangulation();
 	int idx_triangle(Triangle * triangle);
 	void print_triangle(Triangle * triangle, bool verbose=false, bool is_pt_init=true);
