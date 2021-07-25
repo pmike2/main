@@ -22,6 +22,7 @@ using namespace std;
 using namespace std::chrono;
 
 vector<glm::vec2> pts;
+vector<pair<unsigned int, unsigned int> > constrained_edges;
 
 
 void test1() {
@@ -92,9 +93,10 @@ void test4() {
 int main(int argc, char * argv[]) {
 	auto t1= high_resolution_clock::now();
 
+	test2();
 	//test3();
-	test4();
-	Triangulation * tgl= new Triangulation(pts, false, false);
+	//test4();
+	Triangulation * tgl= new Triangulation(pts, constrained_edges, true, true);
 
 	auto t2= high_resolution_clock::now();
 	auto ms= duration_cast<milliseconds>(t2- t1);

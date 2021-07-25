@@ -41,10 +41,34 @@ bool sort_pts_by_idx_bin(PointBin * pt1, PointBin * pt2);
 bool sort_pts_by_idx_init(PointBin * pt1, PointBin * pt2);
 
 
+struct Opposition {
+	Opposition();
+	Opposition(Triangle * triangle_1, Triangle * triangle_2);
+	~Opposition();
+
+
+	Triangle * _triangle_1;
+	Triangle * _triangle_2;
+	int _edge_idx_1;
+	int _edge_idx_2;
+	bool _is_valid;
+};
+
+
 struct Triangulation {
 	Triangulation();
-	Triangulation(std::vector<glm::vec2> & pts, std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges, bool sort_by_bin=true, bool verbose=false);
+	Triangulation(const std::vector<glm::vec2> & pts, const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges=std::vector<std::pair<unsigned int, unsigned int> >(), bool sort_by_bin=true, bool verbose=false);
 	~Triangulation();
+	// méthodes utiles
+	void init_pts(const std::vector<glm::vec2> & pts);
+	void add_large_triangle();
+	Triangle * get_containing_triangle(unsigned int idx_pt);
+	void delete_triangle(Triangle * triangle);
+	void swap_triangle(Opposition * opposition, Triangle * new_triangle_1, Triangle * new_triangle_2);
+	void add_pt(unsigned int idx_pt);
+	void remove_large_triangle();
+	void finish_pts();
+	// méthodes de debug
 	int idx_triangle(Triangle * triangle);
 	void print_triangle(Triangle * triangle, bool verbose=false, bool is_pt_init=true);
 	void draw(std::string svg_path, bool verbose=false);
@@ -56,20 +80,7 @@ struct Triangulation {
 	AABB_2D * _aabb;
 	std::vector<AABB_2D *> _bins;
 	float _svg_margin= 0.1f;
-};
-
-
-struct Opposition {
-	Opposition();
-	Opposition(Triangle * new_triangle, Triangle * opposite_triangle);
-	~Opposition();
-
-
-	Triangle * _new_triangle;
-	Triangle * _opposite_triangle;
-	int _new_edge_idx;
-	int _opposite_edge_idx;
-	bool _is_valid;
+	bool _sort_by_bin, _verbose;
 };
 
 
