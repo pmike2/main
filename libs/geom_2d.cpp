@@ -363,6 +363,29 @@ void get_circle_center(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2
 }
 
 
+bool is_quad_convex(glm::vec2 * pts) {
+	bool is_positive= false;
+	for (unsigned int i=0; i<4; ++i) {
+		float dx1= pts[i+ 1].x- pts[i].x;
+		float dy1= pts[i+ 1].y- pts[i].y;
+		float dx2= pts[i+ 2].x- pts[i+ 1].x;
+		float dy2= pts[i+ 2].y- pts[i+ 1].y;
+		float crossprod= dx1* dy2- dy1* dx2;
+		if (i== 0) {
+			if (crossprod> 0.0f) {
+				is_positive= true;
+			}
+		}
+		else {
+			if (((is_positive) && (crossprod< 0.0f)) || ((!is_positive) && (crossprod> 0.0f))) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+
 // ---------------------------------------------------------------------------------------------------
 Polygon2D::Polygon2D() : _area(0.0f), _centroid(glm::vec2(0.0f)), _radius(0.0f) {
 	_aabb= new AABB_2D();

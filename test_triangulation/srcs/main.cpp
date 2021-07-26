@@ -57,6 +57,9 @@ void test2() {
 	pts.push_back(glm::vec2(0.827448, 0.942183));
 	pts.push_back(glm::vec2(0.804891, 0.872195));
 	pts.push_back(glm::vec2(0.951196, 0.957018));
+
+	constrained_edges.push_back(make_pair(0, 8));
+	//constrained_edges.push_back(make_pair(8, 1));
 }
 
 
@@ -94,17 +97,21 @@ int main(int argc, char * argv[]) {
 	auto t1= high_resolution_clock::now();
 
 	test2();
-	//test3();
-	//test4();
-	Triangulation * tgl= new Triangulation(pts, constrained_edges, true, true);
+	Triangulation * tgl= new Triangulation(pts, constrained_edges, false, false);
 
 	auto t2= high_resolution_clock::now();
 	auto ms= duration_cast<milliseconds>(t2- t1);
 	cout << ms.count() << " ms\n";
 
-	//tgl->draw("../data/result.html", true);
+	tgl->draw("../data/result.html", true);
 	delete tgl;
 
+
+/*
+	glm::vec2 pts[4]= {glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.0f), glm::vec2(0.1f, 0.1f), glm::vec2(0.0f, 1.0f)};
+	bool x= is_quad_convex(pts);
+	cout << x << "\n";
+*/
 
 /*
 	glm::vec2 bary(0.246591, 0.163983);

@@ -140,7 +140,7 @@ Triangulation::Triangulation(const vector<glm::vec2> & pts, const vector<pair<un
 	ofstream out_stream("../data/out.txt");
 	if (_verbose) {
 		coutbuf= cout.rdbuf();
-		//cout.rdbuf(out_stream.rdbuf());
+		cout.rdbuf(out_stream.rdbuf());
 	}
 
 	init_pts(pts);
@@ -148,6 +148,12 @@ Triangulation::Triangulation(const vector<glm::vec2> & pts, const vector<pair<un
 
 	for (unsigned int idx_pt=0; idx_pt<_pts.size()- 3; ++idx_pt) {
 		add_pt(idx_pt);
+	}
+
+	set_idx_triangles();
+
+	for (auto edge : constrained_edges) {
+		add_constrained_edge(edge);
 	}
 
 	remove_large_triangle();
@@ -471,6 +477,125 @@ void Triangulation::add_pt(unsigned int idx_pt) {
 }
 
 
+void Triangulation::set_idx_triangles() {
+	for (auto triangle : _triangles) {
+		for (unsigned int i=0; i<3; ++i) {
+			_pts[triangle->_vertices[i]]->_triangles.push_back(triangle);
+		}
+	}
+	/*for (unsigned int i=0; i<_pts.size(); ++i) {
+		cout << i << " : ";
+		for (auto t : _pts[i]->_triangles) {
+			cout << "(";
+		 	cout << t->_vertices[0] << " ; " << t->_vertices[1] << " ; " << t->_vertices[2];
+			cout << ")";
+		}
+		cout << "\n";
+	}*/
+}
+
+
+Opposition * opposition_from_edge(std::pair<unsigned int, unsigned int> edge) {
+	unsigned int compt= 0;
+	for (auto triangle : _pts[edge.first]->_triangles) {
+		for (unsigned int i=0; i<3; ++i) {
+			if (triangle->_vertices[i]== edge.second) {
+				if (compt== 0) {
+					compt++;
+					
+				}
+				
+				break;
+			}
+		}
+	}
+}
+
+
+void Triangulation::add_constrained_edge(pair<unsigned int, unsigned int> edge) {
+	for (auto t0 : _pts[edge.first]->_triangles) {
+		for (auto t1 : _pts[edge.second]->_triangles) {
+			if (t0== t1) {
+				return;
+			}
+		}
+	}
+
+	deque<pair<unsigned int, unsigned int> > intersecting_edges;
+	Triangle * intersecting_triangle;
+	unsigned int intersecting_edge= 0;
+	glm::vec2 pt1_begin= _pts[edge.first]->_pt;
+	glm::vec2 pt1_end  = _pts[edge.second]->_pt;
+
+	for (auto triangle : _pts[edge.first]->_triangles) {
+		unsigned int idx_pt= 0;
+		for (unsigned int i=0; i<3; ++i) {
+			if (triangle->_vertices[i]== edge.first) {
+				idx_pt= i;
+				break;
+			}
+		}
+		glm::vec2 pt2_begin= _pts[triangle->_vertices[(idx_pt+ 1)% 3]]->_pt;
+		glm::vec2 pt2_end  = _pts[triangle->_vertices[(idx_pt+ 2)% 3]]->_pt;
+		glm::vec2 result;
+
+		if (segment_intersects_segment(pt1_begin, pt1_end, pt2_begin, pt2_end, &result)) {
+			intersecting_triangle= triangle;
+			intersecting_edge= (idx_pt+ 1)% 3;
+			intersecting_edges.push_back(make_pair(triangle->_vertices[intersecting_edge], triangle->_vertices[(intersecting_edge+ 1)% 3]));
+			break;
+		}
+	}
+
+	while (true) {
+		intersecting_triangle= intersecting_triangle->_adjacents[intersecting_edge];
+		unsigned int idx_pt= 0;
+		for (unsigned int i=0; i<3; ++i) {
+			if (intersecting_triangle->_vertices[i]== intersecting_edges.back().first) {
+				idx_pt= i;
+				break;
+			}
+		}
+		//print_triangle(intersecting_triangle, false, false);
+		//cout << "idx_pt=" << idx_pt << "\n";
+		if (intersecting_triangle->_vertices[(idx_pt+ 1)% 3]== edge.second) {
+			break;
+		}
+		
+		glm::vec2 pt2_begin= _pts[intersecting_triangle->_vertices[idx_pt]]->_pt;
+		glm::vec2 pt2_end  = _pts[intersecting_triangle->_vertices[(idx_pt+ 1)% 3]]->_pt;
+		glm::vec2 result;
+
+		if (segment_intersects_segment(pt1_begin, pt1_end, pt2_begin, pt2_end, &result)) {
+			intersecting_edge= idx_pt;
+		}
+		else {
+			intersecting_edge= (idx_pt+ 1)% 3;
+		}
+		
+		intersecting_edges.push_back(make_pair(intersecting_triangle->_vertices[intersecting_edge], intersecting_triangle->_vertices[(intersecting_edge+ 1)% 3]));
+	}
+
+	/*for (auto edge : intersecting_edges) {
+		cout << edge.first << " ; " << edge.second << "\n";
+	}*/
+
+	deque<pair<unsigned int, unsigned int> > new_edges;
+	while (!intersecting_edges.empty()) {
+		pair<unsigned int, unsigned int> edge= intersecting_edges.front();
+		intersecting_edges.pop_front();
+
+		glm::vec2 quad[4]= {pt1_begin, pt1_end, _pts[edge.first]->_pt, _pts[edge.second]->_pt};
+		if (!is_quad_convex(quad)) {
+			intersecting_edges.push_back(edge);
+			continue;
+		}
+
+
+	}
+}
+
+
 void Triangulation::remove_large_triangle() {
 	for (auto & t : _triangles) {
 		for (unsigned int i=0; i<3; ++i) {
@@ -561,8 +686,8 @@ void Triangulation::draw(std::string svg_path, bool verbose) {
 	for (unsigned int i=0; i<_pts.size(); ++i) {
 		glm::vec2 pt_svg= svg_coords(_pts[i]->_pt_init);
 		if (verbose) {
-			//f << "<text class=\"point_text_class\" x=\"" << pt_svg.x+ 0.02f << "\" y=\"" << pt_svg.y << "\" >" << _pts[i]->_idx_init << "</text>\n";
-			f << "<text class=\"point_text_class\" x=\"" << pt_svg.x+ 0.02f << "\" y=\"" << pt_svg.y << "\" >" << _pts[i]->_idx_bin << "</text>\n";
+			f << "<text class=\"point_text_class\" x=\"" << pt_svg.x+ 0.02f << "\" y=\"" << pt_svg.y << "\" >" << _pts[i]->_idx_init << "</text>\n";
+			//f << "<text class=\"point_text_class\" x=\"" << pt_svg.x+ 0.02f << "\" y=\"" << pt_svg.y << "\" >" << _pts[i]->_idx_bin << "</text>\n";
 		}
 		f << "<circle class=\"point_class\" cx=\"" << pt_svg.x << "\" cy=\"" << pt_svg.y << "\" r=\"" << 0.003f << "\" />\n";
 	}

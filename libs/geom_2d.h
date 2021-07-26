@@ -32,7 +32,7 @@ void convex_hull_2d(std::vector<glm::vec2> & pts);
 bool is_ccw(glm::vec2 & pt1, glm::vec2 & pt2, glm::vec2 & pt3);
 bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & pt);
 void get_circle_center(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & center, float * radius);
-
+bool is_quad_convex(glm::vec2 * pts);
 
 class Polygon2D {
 public:

@@ -33,7 +33,7 @@ struct PointBin {
 	glm::vec2 _pt;
 	int _idx_init;
 	int _idx_bin;
-	std::vector<unsigned int> _idx_triangles;
+	std::vector<Triangle *> _triangles;
 };
 
 
@@ -66,6 +66,9 @@ struct Triangulation {
 	void delete_triangle(Triangle * triangle);
 	void swap_triangle(Opposition * opposition, Triangle * new_triangle_1, Triangle * new_triangle_2);
 	void add_pt(unsigned int idx_pt);
+	void set_idx_triangles();
+	Opposition * opposition_from_edge(std::pair<unsigned int, unsigned int> edge);
+	void add_constrained_edge(std::pair<unsigned int, unsigned int> edge);
 	void remove_large_triangle();
 	void finish_pts();
 	// méthodes de debug
