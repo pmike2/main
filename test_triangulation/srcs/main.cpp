@@ -28,15 +28,18 @@ vector<pair<unsigned int, unsigned int> > constrained_edges;
 void test1() {
 	pts.push_back(glm::vec2(0.0f, 0.0f));
 	pts.push_back(glm::vec2(1.0f, 0.0f));
+	pts.push_back(glm::vec2(1.0f, 1.0f));
 	pts.push_back(glm::vec2(0.0f, 1.0f));
-	pts.push_back(glm::vec2(0.0f, -1.0f));
-	pts.push_back(glm::vec2(0.5f, 0.0f));
 
-	pts.push_back(glm::vec2(0.0f, 0.0f));
-	pts.push_back(glm::vec2(1.0f, 0.0f));
-	pts.push_back(glm::vec2(0.0f, 1.0f));
-	pts.push_back(glm::vec2(0.0f, -1.0f));
-	pts.push_back(glm::vec2(0.5f, 0.0f));
+	pts.push_back(glm::vec2(0.3f, 0.3f));
+	pts.push_back(glm::vec2(0.6f, 0.3f));
+	pts.push_back(glm::vec2(0.6f, 0.6f));
+	pts.push_back(glm::vec2(0.3f, 0.6f));
+
+	constrained_edges.push_back(make_pair(4, 5));
+	constrained_edges.push_back(make_pair(5, 6));
+	constrained_edges.push_back(make_pair(6, 7));
+	constrained_edges.push_back(make_pair(7, 4));
 }
 
 
@@ -58,15 +61,17 @@ void test2() {
 	pts.push_back(glm::vec2(0.804891, 0.872195));
 	pts.push_back(glm::vec2(0.951196, 0.957018));
 
-	constrained_edges.push_back(make_pair(0, 8));
-	//constrained_edges.push_back(make_pair(8, 1));
+	constrained_edges.push_back(make_pair(1, 8));
 }
 
 
 void test3() {
 	srand(time(NULL));
-	for (unsigned int i=0; i<10000; ++i) {
+	for (unsigned int i=0; i<100; ++i) {
 		pts.push_back(glm::vec2(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
+	}
+	for (unsigned int i=0; i<10; ++i) {
+		constrained_edges.push_back(make_pair(rand_int(0, pts.size()- 1), rand_int(0, pts.size()- 1)));
 	}
 
 	ofstream f;
@@ -96,8 +101,8 @@ void test4() {
 int main(int argc, char * argv[]) {
 	auto t1= high_resolution_clock::now();
 
-	test2();
-	Triangulation * tgl= new Triangulation(pts, constrained_edges, false, false);
+	test1();
+	Triangulation * tgl= new Triangulation(pts, constrained_edges, true, true, true);
 
 	auto t2= high_resolution_clock::now();
 	auto ms= duration_cast<milliseconds>(t2- t1);

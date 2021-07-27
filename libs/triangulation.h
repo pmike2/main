@@ -55,20 +55,39 @@ struct Opposition {
 };
 
 
+struct ConstrainedEdge {
+	ConstrainedEdge();
+	ConstrainedEdge(std::pair<unsigned int, unsigned int> idx_init, std::pair<unsigned int, unsigned int> idx);
+	~ConstrainedEdge();
+
+
+	std::pair<unsigned int, unsigned int> _idx_init;
+	std::pair<unsigned int, unsigned int> _idx;
+};
+
+
 struct Triangulation {
 	Triangulation();
-	Triangulation(const std::vector<glm::vec2> & pts, const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges=std::vector<std::pair<unsigned int, unsigned int> >(), bool sort_by_bin=true, bool verbose=false);
+	Triangulation(
+		const std::vector<glm::vec2> & pts,
+		const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges=std::vector<std::pair<unsigned int, unsigned int> >(),
+		bool clean_in_constrained_polygon=false,
+		bool sort_by_bin=true,
+		bool verbose=false
+	);
 	~Triangulation();
 	// méthodes utiles
-	void init_pts(const std::vector<glm::vec2> & pts);
+	void init(const std::vector<glm::vec2> & pts, const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges);
 	void add_large_triangle();
 	Triangle * get_containing_triangle(unsigned int idx_pt);
-	void delete_triangle(Triangle * triangle);
+	void delete_triangle(Triangle * triangle, bool update_point_bin=false);
+	void insert_triangle(Triangle * triangle, bool update_point_bin=false);
 	void swap_triangle(Opposition * opposition, Triangle * new_triangle_1, Triangle * new_triangle_2);
 	void add_pt(unsigned int idx_pt);
 	void set_idx_triangles();
 	Opposition * opposition_from_edge(std::pair<unsigned int, unsigned int> edge);
-	void add_constrained_edge(std::pair<unsigned int, unsigned int> edge);
+	void add_constrained_edge(unsigned int idx_edge);
+	void clean_in_constrained_poly();
 	void remove_large_triangle();
 	void finish_pts();
 	// méthodes de debug
@@ -80,6 +99,7 @@ struct Triangulation {
 
 	std::vector<PointBin *> _pts;
 	std::vector<Triangle *> _triangles;
+	std::vector<ConstrainedEdge *> _constrained_edges;
 	AABB_2D * _aabb;
 	std::vector<AABB_2D *> _bins;
 	float _svg_margin= 0.1f;

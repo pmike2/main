@@ -128,12 +128,31 @@ Opposition::~Opposition() {
 
 
 // --------------------------------------------------
+ConstrainedEdge::ConstrainedEdge() {
+
+}
+
+
+ConstrainedEdge::ConstrainedEdge(std::pair<unsigned int, unsigned int> idx_init, std::pair<unsigned int, unsigned int> idx) :
+	_idx_init(idx_init), _idx(idx) 
+{
+
+}
+
+
+ConstrainedEdge::~ConstrainedEdge() {
+
+}
+
+
+// --------------------------------------------------
 Triangulation::Triangulation() {
 
 }
 
 
-Triangulation::Triangulation(const vector<glm::vec2> & pts, const vector<pair<unsigned int, unsigned int> > & constrained_edges, bool sort_by_bin, bool verbose) :
+Triangulation::Triangulation(const vector<glm::vec2> & pts, const vector<pair<unsigned int, unsigned int> > & constrained_edges, 
+	bool clean_in_constrained_polygon, bool sort_by_bin, bool verbose) :
 	_sort_by_bin(sort_by_bin), _verbose(verbose)
 {
 	streambuf * coutbuf;
@@ -143,7 +162,7 @@ Triangulation::Triangulation(const vector<glm::vec2> & pts, const vector<pair<un
 		cout.rdbuf(out_stream.rdbuf());
 	}
 
-	init_pts(pts);
+	init(pts, constrained_edges);
 	add_large_triangle();
 
 	for (unsigned int idx_pt=0; idx_pt<_pts.size()- 3; ++idx_pt) {
@@ -152,8 +171,12 @@ Triangulation::Triangulation(const vector<glm::vec2> & pts, const vector<pair<un
 
 	set_idx_triangles();
 
-	for (auto edge : constrained_edges) {
-		add_constrained_edge(edge);
+	for (unsigned int idx_edge=0; idx_edge<_constrained_edges.size(); ++idx_edge) {
+		add_constrained_edge(idx_edge);
+	}
+
+	if (clean_in_constrained_polygon) {
+		clean_in_constrained_poly();
 	}
 
 	remove_large_triangle();
@@ -176,6 +199,11 @@ Triangulation::~Triangulation() {
 	}
 	_triangles.clear();
 
+	for (auto & constrained_edge : _constrained_edges) {
+		delete constrained_edge;
+	}
+	_constrained_edges.clear();
+
 	for (auto & bin : _bins) {
 		delete bin;
 	}
@@ -185,7 +213,7 @@ Triangulation::~Triangulation() {
 }
 
 
-void Triangulation::init_pts(const vector<glm::vec2> & pts) {
+void Triangulation::init(const vector<glm::vec2> & pts, const vector<pair<unsigned int, unsigned int> > & constrained_edges) {
 	float xmin= 1e8f;
 	float ymin= 1e8f;
 	float xmax= -1e8f;
@@ -245,13 +273,40 @@ void Triangulation::init_pts(const vector<glm::vec2> & pts) {
 	if (_sort_by_bin) {
 		sort(_pts.begin(), _pts.end(), sort_pts_by_idx_bin);
 	}
+
+	for (auto constrained_edge : constrained_edges) {
+		pair<unsigned int, unsigned int> sort_constrained_edge;
+		
+		if (_sort_by_bin) {
+			bool is_first_found= false;
+			bool is_second_found= false;
+			for (unsigned int idx_pt=0; idx_pt<_pts.size(); ++idx_pt) {
+				if (_pts[idx_pt]->_idx_init== constrained_edge.first) {
+					sort_constrained_edge.first= idx_pt;
+					is_first_found= true;
+				}
+				if (_pts[idx_pt]->_idx_init== constrained_edge.second) {
+					sort_constrained_edge.second= idx_pt;
+					is_second_found= true;
+				}
+				if ((is_first_found) && (is_second_found)) {
+					break;
+				}
+			}
+		}
+		else {
+			sort_constrained_edge.first= constrained_edge.first;
+			sort_constrained_edge.second= constrained_edge.second;
+		}
+		_constrained_edges.push_back(new ConstrainedEdge(constrained_edge, sort_constrained_edge));
+	}
 }
 
 
 void Triangulation::add_large_triangle() {
-	_pts.push_back(new PointBin(glm::vec2(0.0f), glm::vec2(-100.0f, -100.0f), -1, -1));
-	_pts.push_back(new PointBin(glm::vec2(0.0f), glm::vec2(100.0f, -100.0f), -1, -1));
-	_pts.push_back(new PointBin(glm::vec2(0.0f), glm::vec2(0.0f, 100.0f), -1, -1));
+	_pts.push_back(new PointBin(glm::vec2(-100.0f, -100.0f), glm::vec2(-100.0f, -100.0f), -1, -1));
+	_pts.push_back(new PointBin(glm::vec2(100.0f, -100.0f), glm::vec2(100.0f, -100.0f), -1, -1));
+	_pts.push_back(new PointBin(glm::vec2(0.0f, 100.0f), glm::vec2(0.0f, 100.0f), -1, -1));
 
 	Triangle * t= new Triangle();
 	t->_vertices[0]= _pts.size()- 3;
@@ -262,6 +317,10 @@ void Triangulation::add_large_triangle() {
 
 
 Triangle * Triangulation::get_containing_triangle(unsigned int idx_pt) {
+	if (_verbose) {
+		cout << "get_containing_triangle\n";
+	}
+
 	Triangle * last_triangle= _triangles[_triangles.size()- 1];
 	bool search_triangle= true;
 	unsigned int compt= 0;
@@ -281,7 +340,7 @@ Triangle * Triangulation::get_containing_triangle(unsigned int idx_pt) {
 		}
 		for (unsigned int i=0; i<3; ++i) {
 			glm::vec2 result;
-			if (segment_intersects_segment(bary, _pts[idx_pt]->_pt, _pts[last_triangle->_vertices[i]]->_pt, _pts[last_triangle->_vertices[(i+ 1)% 3]]->_pt, &result, true)) {
+			if (segment_intersects_segment(bary, _pts[idx_pt]->_pt, _pts[last_triangle->_vertices[i]]->_pt, _pts[last_triangle->_vertices[(i+ 1)% 3]]->_pt, &result, true, false)) {
 				last_triangle= last_triangle->_adjacents[i];
 				if (!last_triangle) {
 					search_triangle_ok= false;
@@ -309,13 +368,32 @@ Triangle * Triangulation::get_containing_triangle(unsigned int idx_pt) {
 }
 
 
-void Triangulation::delete_triangle(Triangle * triangle) {
+void Triangulation::delete_triangle(Triangle * triangle, bool update_point_bin) {
+	if (update_point_bin) {
+		for (unsigned int i=0; i<3; ++i) {
+			vector<Triangle *>::iterator it= find(_pts[triangle->_vertices[i]]->_triangles.begin(), _pts[triangle->_vertices[i]]->_triangles.end(), triangle);
+			if (it!= _pts[triangle->_vertices[i]]->_triangles.end()) {
+				_pts[triangle->_vertices[i]]->_triangles.erase(it);
+			}
+		}
+	}
+
 	vector<Triangle *>::iterator it= find(_triangles.begin(), _triangles.end(), triangle);
 	if (it!= _triangles.end()) {
 		_triangles.erase(it);
 	}
 	delete triangle;
 	triangle= 0;
+}
+
+
+void Triangulation::insert_triangle(Triangle * triangle, bool update_point_bin) {
+	if (update_point_bin) {
+		for (unsigned int i=0; i<3; ++i) {
+			_pts[triangle->_vertices[i]]->_triangles.push_back(triangle);
+		}
+	}
+	_triangles.insert(_triangles.end(), triangle);
 }
 
 
@@ -373,7 +451,7 @@ void Triangulation::swap_triangle(Opposition * opposition, Triangle * new_triang
 
 void Triangulation::add_pt(unsigned int idx_pt) {
 	if (_verbose) {
-		cout << "--------------------------------------------------\n";
+		cout << "\nadd_pt\n";
 		cout << "pt=" << glm::to_string(_pts[idx_pt]->_pt) << "\n";
 		cout << "pt_init=" << glm::to_string(_pts[idx_pt]->_pt_init) << "\n";
 	}
@@ -416,7 +494,10 @@ void Triangulation::add_pt(unsigned int idx_pt) {
 	
 	delete_triangle(containing_triangle);
 
-	_triangles.insert(_triangles.end(), new_tris, new_tris+ 3);
+	//_triangles.insert(_triangles.end(), new_tris, new_tris+ 3);
+	insert_triangle(t1);
+	insert_triangle(t2);
+	insert_triangle(t3);
 	
 	if (_verbose) {
 		cout << "insert\n";
@@ -460,8 +541,10 @@ void Triangulation::add_pt(unsigned int idx_pt) {
 			delete_triangle(opposition->_triangle_1);
 			delete_triangle(opposition->_triangle_2);
 
-			Triangle * new_tris_2[2]= {new_triangle_1, new_triangle_2};
-			_triangles.insert(_triangles.end(), new_tris_2, new_tris_2+ 2);
+			//Triangle * new_tris_2[2]= {new_triangle_1, new_triangle_2};
+			//_triangles.insert(_triangles.end(), new_tris_2, new_tris_2+ 2);
+			insert_triangle(new_triangle_1);
+			insert_triangle(new_triangle_2);
 
 			if (_verbose) {
 				cout << "insert2\n";
@@ -495,42 +578,63 @@ void Triangulation::set_idx_triangles() {
 }
 
 
-Opposition * opposition_from_edge(std::pair<unsigned int, unsigned int> edge) {
+Opposition * Triangulation::opposition_from_edge(std::pair<unsigned int, unsigned int> edge) {
 	unsigned int compt= 0;
+	Triangle * triangle_1= 0;
+	Triangle * triangle_2= 0;
 	for (auto triangle : _pts[edge.first]->_triangles) {
 		for (unsigned int i=0; i<3; ++i) {
 			if (triangle->_vertices[i]== edge.second) {
 				if (compt== 0) {
-					compt++;
-					
+					triangle_1= triangle;
 				}
-				
+				else {
+					triangle_2= triangle;
+				}
+				compt++;
 				break;
 			}
 		}
+		if (compt> 1) {
+			break;
+		}
 	}
+	return new Opposition(triangle_1, triangle_2);
 }
 
 
-void Triangulation::add_constrained_edge(pair<unsigned int, unsigned int> edge) {
-	for (auto t0 : _pts[edge.first]->_triangles) {
-		for (auto t1 : _pts[edge.second]->_triangles) {
+void Triangulation::add_constrained_edge(unsigned int idx_edge) {
+	if (_verbose) {
+		cout << "\nadd_constrained_edge\n";
+		cout << _constrained_edges[idx_edge]->_idx_init.first << " ; " << _constrained_edges[idx_edge]->_idx_init.second << "\n";
+	}
+	std::pair<unsigned int, unsigned int> constrained_edge= _constrained_edges[idx_edge]->_idx;
+
+	if (constrained_edge.first== constrained_edge.second) {
+		return;
+	}
+
+	for (auto t0 : _pts[constrained_edge.first]->_triangles) {
+		for (auto t1 : _pts[constrained_edge.second]->_triangles) {
 			if (t0== t1) {
 				return;
 			}
 		}
 	}
 
+	if (_verbose) {
+		cout << "get intersecting triangles\n";
+	}
 	deque<pair<unsigned int, unsigned int> > intersecting_edges;
 	Triangle * intersecting_triangle;
 	unsigned int intersecting_edge= 0;
-	glm::vec2 pt1_begin= _pts[edge.first]->_pt;
-	glm::vec2 pt1_end  = _pts[edge.second]->_pt;
+	glm::vec2 pt1_begin= _pts[constrained_edge.first]->_pt;
+	glm::vec2 pt1_end  = _pts[constrained_edge.second]->_pt;
 
-	for (auto triangle : _pts[edge.first]->_triangles) {
+	for (auto triangle : _pts[constrained_edge.first]->_triangles) {
 		unsigned int idx_pt= 0;
 		for (unsigned int i=0; i<3; ++i) {
-			if (triangle->_vertices[i]== edge.first) {
+			if (triangle->_vertices[i]== constrained_edge.first) {
 				idx_pt= i;
 				break;
 			}
@@ -556,9 +660,7 @@ void Triangulation::add_constrained_edge(pair<unsigned int, unsigned int> edge) 
 				break;
 			}
 		}
-		//print_triangle(intersecting_triangle, false, false);
-		//cout << "idx_pt=" << idx_pt << "\n";
-		if (intersecting_triangle->_vertices[(idx_pt+ 1)% 3]== edge.second) {
+		if (intersecting_triangle->_vertices[(idx_pt+ 1)% 3]== constrained_edge.second) {
 			break;
 		}
 		
@@ -576,36 +678,161 @@ void Triangulation::add_constrained_edge(pair<unsigned int, unsigned int> edge) 
 		intersecting_edges.push_back(make_pair(intersecting_triangle->_vertices[intersecting_edge], intersecting_triangle->_vertices[(intersecting_edge+ 1)% 3]));
 	}
 
-	/*for (auto edge : intersecting_edges) {
-		cout << edge.first << " ; " << edge.second << "\n";
-	}*/
-
+	if (_verbose) {
+		cout << "get new edges\n";
+	}
 	deque<pair<unsigned int, unsigned int> > new_edges;
 	while (!intersecting_edges.empty()) {
-		pair<unsigned int, unsigned int> edge= intersecting_edges.front();
+		pair<unsigned int, unsigned int> intersecting_edge= intersecting_edges.front();
 		intersecting_edges.pop_front();
+		if (_verbose) {
+			cout << "intersecting edge= " << intersecting_edge.first << " ; " << intersecting_edge.second << "\n";
+		}
 
-		glm::vec2 quad[4]= {pt1_begin, pt1_end, _pts[edge.first]->_pt, _pts[edge.second]->_pt};
+		Opposition * opposition= opposition_from_edge(intersecting_edge);
+
+		glm::vec2 quad[4]= {
+			_pts[opposition->_triangle_1->_vertices[(opposition->_edge_idx_1+ 2)% 3]]->_pt,
+			_pts[opposition->_triangle_1->_vertices[opposition->_edge_idx_1]]->_pt,
+			_pts[opposition->_triangle_2->_vertices[(opposition->_edge_idx_2+ 2)% 3]]->_pt,
+			_pts[opposition->_triangle_2->_vertices[opposition->_edge_idx_2]]->_pt
+		};
 		if (!is_quad_convex(quad)) {
-			intersecting_edges.push_back(edge);
+			if (_verbose) {
+				cout << "non convex\n";
+			}
+			intersecting_edges.push_back(intersecting_edge);
 			continue;
 		}
 
+		Triangle * new_triangle_1= new Triangle();
+		Triangle * new_triangle_2= new Triangle();
+		swap_triangle(opposition, new_triangle_1, new_triangle_2);
+		unsigned int idx_pt_1= opposition->_triangle_1->_vertices[(opposition->_edge_idx_1+ 2) % 3];
+		unsigned int idx_pt_2= opposition->_triangle_2->_vertices[(opposition->_edge_idx_2+ 2) % 3];
+		delete_triangle(opposition->_triangle_1, true);
+		delete_triangle(opposition->_triangle_2, true);
+		insert_triangle(new_triangle_1, true);
+		insert_triangle(new_triangle_2, true);
 
+		glm::vec2 pt2_begin= _pts[idx_pt_1]->_pt;
+		glm::vec2 pt2_end  = _pts[idx_pt_2]->_pt;
+		glm::vec2 result;
+
+		if (segment_intersects_segment(pt1_begin, pt1_end, pt2_begin, pt2_end, &result, true)) {
+			intersecting_edges.push_back(make_pair(idx_pt_1, idx_pt_2));
+			if (_verbose) {
+				cout << "still intersects\n";
+			}
+		}
+		else {
+			new_edges.push_back(make_pair(idx_pt_1, idx_pt_2));
+			if (_verbose) {
+				cout << "add to new edges\n";
+			}
+		}
+	}
+
+	if (_verbose) {
+		cout << "delaunay\n";
+	}
+	while (!new_edges.empty()) {
+		pair<unsigned int, unsigned int> new_edge= new_edges.front();
+		new_edges.pop_front();
+		if (_verbose) {
+			cout << "new_edge= " << new_edge.first << " ; " << new_edge.second << "\n";
+		}
+
+		if (((new_edge.first== constrained_edge.first) && (new_edge.second== constrained_edge.second)) || ((new_edge.first== constrained_edge.second) && (new_edge.second== constrained_edge.first))) {
+			continue;
+		}
+
+		Opposition * opposition= opposition_from_edge(new_edge);
+		if (   (point_in_circumcircle(_pts[opposition->_triangle_1->_vertices[0]]->_pt, _pts[opposition->_triangle_1->_vertices[1]]->_pt, _pts[opposition->_triangle_1->_vertices[2]]->_pt, _pts[opposition->_triangle_2->_vertices[(opposition->_edge_idx_2+ 2)% 3]]->_pt))
+			|| (point_in_circumcircle(_pts[opposition->_triangle_2->_vertices[0]]->_pt, _pts[opposition->_triangle_2->_vertices[1]]->_pt, _pts[opposition->_triangle_2->_vertices[2]]->_pt, _pts[opposition->_triangle_1->_vertices[(opposition->_edge_idx_1+ 2)% 3]]->_pt))) {
+			if (_verbose) {
+				cout << "swapping\n";
+			}
+			Triangle * new_triangle_1= new Triangle();
+			Triangle * new_triangle_2= new Triangle();
+			swap_triangle(opposition, new_triangle_1, new_triangle_2);
+			unsigned int idx_pt_1= opposition->_triangle_1->_vertices[(opposition->_edge_idx_1+ 2) % 3];
+			unsigned int idx_pt_2= opposition->_triangle_2->_vertices[(opposition->_edge_idx_2+ 2) % 3];
+			delete_triangle(opposition->_triangle_1, true);
+			delete_triangle(opposition->_triangle_2, true);
+			insert_triangle(new_triangle_1, true);
+			insert_triangle(new_triangle_2, true);
+			new_edges.push_back(make_pair(idx_pt_1, idx_pt_2));
+		}
 	}
 }
 
 
-void Triangulation::remove_large_triangle() {
+void Triangulation::clean_in_constrained_poly() {
+	// ici on suppose que les _constrained_edges definissent un polygone ; rajouter un test ?
+	Polygon2D * constrained_poly= new Polygon2D();
+	float pts[_constrained_edges.size()* 2];
+	for (unsigned int i=0; i<_constrained_edges.size(); ++i) {
+		pts[2* i+ 0]= _pts[_constrained_edges[i]->_idx.first]->_pt.x;
+		pts[2* i+ 1]= _pts[_constrained_edges[i]->_idx.first]->_pt.y;
+	}
+	constrained_poly->set_points(pts, _constrained_edges.size());
+
 	for (auto & t : _triangles) {
 		for (unsigned int i=0; i<3; ++i) {
-			if (t->_vertices[i]>= _pts.size()- 3) {
-				//delete t;
+			bool point_in_constrained_edge= false;
+			for (auto constrained_edge : _constrained_edges) {
+				if ((constrained_edge->_idx.first== t->_vertices[i]) || (constrained_edge->_idx.second== t->_vertices[i])) {
+					point_in_constrained_edge= true;
+					break;
+				}
+			}
+			if (point_in_constrained_edge) {
+				continue;
+			}
+
+			if (is_pt_inside_poly(_pts[t->_vertices[i]]->_pt, constrained_poly)) {
+				if (_verbose) {
+					cout << "remove :";
+					print_triangle(t);
+				}
+				delete t;
 				t= 0;
 				break;
 			}
 		}
 	}
+
+	_triangles.erase(remove_if(_triangles.begin(), _triangles.end(), [this](Triangle * t) { 
+		if (!t) {
+			return true;
+		}
+		return false;
+	}), _triangles.end());
+
+	delete constrained_poly;
+}
+
+
+void Triangulation::remove_large_triangle() {
+	if (_verbose) {
+		cout << "\nremove_large_triangle\n";
+	}
+
+	for (auto & t : _triangles) {
+		for (unsigned int i=0; i<3; ++i) {
+			if (t->_vertices[i]>= _pts.size()- 3) {
+				if (_verbose) {
+					cout << "remove :";
+					print_triangle(t);
+				}
+				delete t;
+				t= 0;
+				break;
+			}
+		}
+	}
+
 	_triangles.erase(remove_if(_triangles.begin(), _triangles.end(), [this](Triangle * t) { 
 		if (!t) {
 			return true;
