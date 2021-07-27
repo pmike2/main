@@ -384,6 +384,8 @@ void Triangulation::delete_triangle(Triangle * triangle, bool update_point_bin) 
 	}
 	delete triangle;
 	triangle= 0;
+
+	// TODO : rajouter un test sur tous les adjacents ?
 }
 
 
@@ -566,15 +568,6 @@ void Triangulation::set_idx_triangles() {
 			_pts[triangle->_vertices[i]]->_triangles.push_back(triangle);
 		}
 	}
-	/*for (unsigned int i=0; i<_pts.size(); ++i) {
-		cout << i << " : ";
-		for (auto t : _pts[i]->_triangles) {
-			cout << "(";
-		 	cout << t->_vertices[0] << " ; " << t->_vertices[1] << " ; " << t->_vertices[2];
-			cout << ")";
-		}
-		cout << "\n";
-	}*/
 }
 
 
@@ -779,7 +772,7 @@ void Triangulation::clean_in_constrained_poly() {
 	constrained_poly->set_points(pts, _constrained_edges.size());
 
 	for (auto & t : _triangles) {
-		for (unsigned int i=0; i<3; ++i) {
+		/*for (unsigned int i=0; i<3; ++i) {
 			bool point_in_constrained_edge= false;
 			for (auto constrained_edge : _constrained_edges) {
 				if ((constrained_edge->_idx.first== t->_vertices[i]) || (constrained_edge->_idx.second== t->_vertices[i])) {
@@ -800,6 +793,16 @@ void Triangulation::clean_in_constrained_poly() {
 				t= 0;
 				break;
 			}
+		}*/
+
+		glm::vec2 bary= (_pts[t->_vertices[0]]->_pt+ _pts[t->_vertices[1]]->_pt+ _pts[t->_vertices[2]]->_pt)/ 3.0f;
+		if (is_pt_inside_poly(bary, constrained_poly)) {
+			if (_verbose) {
+				cout << "remove :";
+				print_triangle(t);
+			}
+			delete t;
+			t= 0;
 		}
 	}
 
