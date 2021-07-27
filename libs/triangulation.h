@@ -14,7 +14,7 @@ struct Triangle {
 	Triangle();
 	Triangle(int v0, int v1, int v2, Triangle * a0, Triangle * a1, Triangle * a2);
 	~Triangle();
-	bool is_valid();
+	//bool is_valid();
 
 
 	int _vertices[3];
@@ -89,7 +89,7 @@ struct Triangulation {
 	void add_constrained_edge(unsigned int idx_edge);
 	void clean_in_constrained_poly();
 	void remove_large_triangle();
-	void finish_pts();
+	void finish();
 	// méthodes de debug
 	int idx_triangle(Triangle * triangle);
 	void print_triangle(Triangle * triangle, bool verbose=false, bool is_pt_init=true);
