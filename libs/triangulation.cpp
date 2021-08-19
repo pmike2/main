@@ -19,6 +19,8 @@ using namespace std;
 
 
 // --------------------------------------------------
+// un triangle stocke les indices des sommets et des pointeurs vers les triangles adjacents
+// _vertices_init est utile pour retrouver les indices initiaux après tri par bin
 Triangle::Triangle() {
 	_vertices[0]= -1;
 	_vertices[1]= -1;
@@ -59,6 +61,8 @@ bool Triangle::is_valid() {
 */
 
 // --------------------------------------------------
+// PointBin représente un sommet du graphe ; pt_init est le point donné en argument, pt est normalisé, idx_init est l'indice dans la liste initiale et idx_bin l'indice du bin
+// contenant le point ; _triangles est la liste des triangles qui ont ce point pour sommet
 PointBin::PointBin() {
 
 }
@@ -76,6 +80,7 @@ PointBin::~PointBin() {
 
 
 // --------------------------------------------------
+// fonctions de tri par bin et par classement initial
 bool sort_pts_by_idx_bin(PointBin * pt1, PointBin * pt2) {
 	return pt1->_idx_bin< pt2->_idx_bin;
 }
@@ -87,6 +92,7 @@ bool sort_pts_by_idx_init(PointBin * pt1, PointBin * pt2) {
 
 
 // ----------------------------------------------------
+// une Opposition représente 2 triangles adjacents et les indices de l'edge commun pour ces 2 triangles
 Opposition::Opposition() {
 
 }
@@ -130,6 +136,7 @@ Opposition::~Opposition() {
 
 
 // --------------------------------------------------
+// un ConstrainedEdge est un edge qui doit être présent dans la triangulation finale
 ConstrainedEdge::ConstrainedEdge() {
 
 }
@@ -157,6 +164,7 @@ Triangulation::Triangulation(const vector<glm::vec2> & pts, const vector<pair<un
 	bool clean_in_constrained_polygon, bool sort_by_bin, bool verbose) :
 	_sort_by_bin(sort_by_bin), _verbose(verbose)
 {
+	// on redirige cout vers un fichier qui est affiché dans le log du html
 	streambuf * coutbuf;
 	ofstream out_stream("../data/out.txt");
 	if (_verbose) {
@@ -164,26 +172,37 @@ Triangulation::Triangulation(const vector<glm::vec2> & pts, const vector<pair<un
 		cout.rdbuf(out_stream.rdbuf());
 	}
 
+	// init de _pts et _constrained_edges
 	init(pts, constrained_edges);
+
+	// ajout d'un triangle englobant
 	add_large_triangle();
 
+	// ajout un par un des points
 	for (unsigned int idx_pt=0; idx_pt<_pts.size()- 3; ++idx_pt) {
 		add_pt(idx_pt);
 	}
 
+	// remplissage de l'attribut PointBin._triangles
 	set_idx_triangles();
 
+	// ajout un par un des edges de contrainte
 	for (unsigned int idx_edge=0; idx_edge<_constrained_edges.size(); ++idx_edge) {
 		add_constrained_edge(idx_edge);
 	}
 
+	// suppression triangle englobant
+	remove_large_triangle();
+
+	// suppression des triangles contenus dans les polygones définis par les edges de contrainte
 	if (clean_in_constrained_polygon) {
 		clean_in_constrained_poly();
 	}
 
-	remove_large_triangle();
+	// tri dans l'ordre initial
 	finish();
 
+	// cout redevient cout
 	if (_verbose) {
 		cout.rdbuf(coutbuf);
 	}
@@ -239,6 +258,8 @@ void Triangulation::init(const vector<glm::vec2> & pts, const vector<pair<unsign
 		}
 	}
 
+	// découpage en bins (paquets) de la liste de points
+	// censé accélerer le traitement car en insérant le point suivant on n'est pas loin du point précédent
 	unsigned int subdiv= (unsigned int)(pow(pts.size(), 0.25f));
 	float step= 1.0f/ subdiv;
 	for (unsigned int idx_bin=0; idx_bin< subdiv* subdiv; ++idx_bin) {
@@ -326,11 +347,13 @@ void Triangulation::add_large_triangle() {
 }
 
 
+// renvoie le triangle contenant un point
 Triangle * Triangulation::get_containing_triangle(unsigned int idx_pt) {
 	if (_verbose) {
 		cout << "get_containing_triangle\n";
 	}
 
+	// on part du dernier triangle ajouté car le tri par bin implique que le point courant ne doit pas être loin du point précédent
 	Triangle * last_triangle= _triangles[_triangles.size()- 1];
 	bool search_triangle= true;
 	unsigned int compt= 0;
@@ -763,38 +786,39 @@ void Triangulation::clean_in_constrained_poly() {
 		cout << "\nclean_in_constrained_poly\n";
 	}
 
-	Polygon2D * constrained_poly= new Polygon2D();
-	float pts[_constrained_edges.size()* 2];
-	for (unsigned int i=0; i<_constrained_edges.size(); ++i) {
-		if (_constrained_edges[i]->_idx.second!= _constrained_edges[(i+ 1) % _constrained_edges.size()]->_idx.first) {
-			cerr << "ERREUR : clean_in_constrained_poly ne peut être utilisé que si les _constrained_edges définissent un polygone\n";
-			return;
-		}
-		pts[2* i+ 0]= _pts[_constrained_edges[i]->_idx.first]->_pt.x;
-		pts[2* i+ 1]= _pts[_constrained_edges[i]->_idx.first]->_pt.y;
-	}
-	constrained_poly->set_points(pts, _constrained_edges.size());
-
-	for (auto & t : _triangles) {
-		glm::vec2 bary= (_pts[t->_vertices[0]]->_pt+ _pts[t->_vertices[1]]->_pt+ _pts[t->_vertices[2]]->_pt)/ 3.0f;
-		if (is_pt_inside_poly(bary, constrained_poly)) {
-			if (_verbose) {
-				cout << "remove :";
-				print_triangle(t);
+	vector<float> pts;
+	for (unsigned int idx_edge=0; idx_edge<_constrained_edges.size(); ++idx_edge) {
+		pts.push_back(_pts[_constrained_edges[idx_edge]->_idx.first]->_pt.x);
+		pts.push_back(_pts[_constrained_edges[idx_edge]->_idx.first]->_pt.y);
+		
+		// fin polygone courant
+		if ((idx_edge== _constrained_edges.size()- 1) || (_constrained_edges[idx_edge]->_idx.second!= _constrained_edges[idx_edge+ 1]->_idx.first)) {
+			Polygon2D * constrained_poly= new Polygon2D();
+			constrained_poly->set_points(pts.data(), pts.size()/ 2);
+			constrained_poly->print();
+			pts.clear();
+			for (auto & t : _triangles) {
+				glm::vec2 bary= (_pts[t->_vertices[0]]->_pt+ _pts[t->_vertices[1]]->_pt+ _pts[t->_vertices[2]]->_pt)/ 3.0f;
+				if (is_pt_inside_poly(bary, constrained_poly)) {
+					if (_verbose) {
+						cout << "remove :";
+						print_triangle(t);
+					}
+					delete t;
+					t= 0;
+				}
 			}
-			delete t;
-			t= 0;
+
+			delete constrained_poly;
+
+			_triangles.erase(remove_if(_triangles.begin(), _triangles.end(), [this](Triangle * t) { 
+				if (!t) {
+					return true;
+				}
+				return false;
+			}), _triangles.end());
 		}
 	}
-
-	_triangles.erase(remove_if(_triangles.begin(), _triangles.end(), [this](Triangle * t) { 
-		if (!t) {
-			return true;
-		}
-		return false;
-	}), _triangles.end());
-
-	delete constrained_poly;
 }
 
 

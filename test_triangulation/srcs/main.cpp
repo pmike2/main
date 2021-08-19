@@ -44,29 +44,30 @@ void test1() {
 
 
 void test2() {
-	pts.push_back(glm::vec2(0.000000, 0.428553));
-	pts.push_back(glm::vec2(0.460314, 1.000000));
-	pts.push_back(glm::vec2(0.465795, 0.350450));
-	pts.push_back(glm::vec2(0.237588, 0.183974));
-	pts.push_back(glm::vec2(0.445873, 0.366553));
-	pts.push_back(glm::vec2(0.318963, 0.000000));
-	pts.push_back(glm::vec2(0.183725, 0.641182));
-	pts.push_back(glm::vec2(0.933593, 0.126030));
-	pts.push_back(glm::vec2(0.787499, 0.076075));
-	pts.push_back(glm::vec2(0.834194, 0.282110));
-	pts.push_back(glm::vec2(0.924107, 0.295930));
-	pts.push_back(glm::vec2(1.000000, 0.083048));
-	pts.push_back(glm::vec2(0.709813, 0.630278));
-	pts.push_back(glm::vec2(0.827448, 0.942183));
-	pts.push_back(glm::vec2(0.804891, 0.872195));
-	pts.push_back(glm::vec2(0.951196, 0.957018));
+	pts.push_back(glm::vec2(0.0f, 0.0f));
+	pts.push_back(glm::vec2(1.0f, 0.0f));
+	pts.push_back(glm::vec2(1.0f, 1.0f));
+	pts.push_back(glm::vec2(0.0f, 1.0f));
 
-	constrained_edges.push_back(make_pair(1, 8));
+	unsigned int n_obstacles= 8;
+	for (unsigned int i=0; i<n_obstacles; ++i) {
+		glm::vec2 vmin= glm::vec2(rand_float(0.1f, 0.8f), rand_float(0.1f, 0.8f));
+		glm::vec2 vmax= vmin+ glm::vec2(rand_float(0.05f, 0.1f), rand_float(0.05f, 0.1f));
+		
+		pts.push_back(glm::vec2(vmin.x, vmin.y));
+		pts.push_back(glm::vec2(vmax.x, vmin.y));
+		pts.push_back(glm::vec2(vmax.x, vmax.y));
+		pts.push_back(glm::vec2(vmin.x, vmax.y));
+		
+		constrained_edges.push_back(make_pair(4+ i* 4+ 0, 4+ i* 4+ 1));
+		constrained_edges.push_back(make_pair(4+ i* 4+ 1, 4+ i* 4+ 2));
+		constrained_edges.push_back(make_pair(4+ i* 4+ 2, 4+ i* 4+ 3));
+		constrained_edges.push_back(make_pair(4+ i* 4+ 3, 4+ i* 4+ 0));
+	}
 }
 
 
 void test3() {
-	srand(time(NULL));
 	for (unsigned int i=0; i<100; ++i) {
 		pts.push_back(glm::vec2(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
 	}
@@ -99,9 +100,10 @@ void test4() {
 
 // ------------------------------------------------------------------------
 int main(int argc, char * argv[]) {
+	srand(time(NULL));
 	auto t1= high_resolution_clock::now();
 
-	test1();
+	test2();
 	Triangulation * tgl= new Triangulation(pts, constrained_edges, true, true, true);
 
 	auto t2= high_resolution_clock::now();
