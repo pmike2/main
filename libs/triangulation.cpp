@@ -234,6 +234,7 @@ Triangulation::~Triangulation() {
 }
 
 
+// initialisation de la liste des points et des constrained edges
 void Triangulation::init(const vector<glm::vec2> & pts, const vector<pair<unsigned int, unsigned int> > & constrained_edges) {
 	if (_verbose) {
 		cout << "\ninit\n";
@@ -330,6 +331,7 @@ void Triangulation::init(const vector<glm::vec2> & pts, const vector<pair<unsign
 }
 
 
+// ajout d'un triangle englobant
 void Triangulation::add_large_triangle() {
 	if (_verbose) {
 		cout << "\nadd_large_triangle\n";
@@ -361,16 +363,21 @@ Triangle * Triangulation::get_containing_triangle(unsigned int idx_pt) {
 
 	while (search_triangle) {
 		compt++;
+		// le code n'est pas robuste à ce niveau, il arrive que l'on ne trouve pas le triangle ; cf segment_intersects_segment
 		if (compt> _triangles.size()) {
 			search_triangle_ok= false;
 			cerr << "Erreur search_triangle\n";
 			break;
 		}
+		
 		search_triangle= false;
 		glm::vec2 bary= (_pts[last_triangle->_vertices[0]]->_pt+ _pts[last_triangle->_vertices[1]]->_pt+ _pts[last_triangle->_vertices[2]]->_pt)/ 3.0f;
+		
 		if (_verbose) {
 			cout << "bary=" << glm::to_string(bary) << "\n";
 		}
+		
+		// pour chaque arête du triangle courant, si le segment [barycentre, point_a _inserer] intersecte l'arête on passe au triangle adjacent
 		for (unsigned int i=0; i<3; ++i) {
 			glm::vec2 result;
 			if (segment_intersects_segment(bary, _pts[idx_pt]->_pt, _pts[last_triangle->_vertices[i]]->_pt, _pts[last_triangle->_vertices[(i+ 1)% 3]]->_pt, &result, true, false)) {
@@ -401,12 +408,14 @@ Triangle * Triangulation::get_containing_triangle(unsigned int idx_pt) {
 }
 
 
+// suppression d'un triangle
 void Triangulation::delete_triangle(Triangle * triangle, bool update_point_bin) {
 	if (_verbose) {
 		cout << "delete_triangle\n";
 		print_triangle(triangle);
 	}
 
+	// pour chaque sommet du triangle on supprime la référence au triangle
 	if (update_point_bin) {
 		for (unsigned int i=0; i<3; ++i) {
 			vector<Triangle *>::iterator it= find(_pts[triangle->_vertices[i]]->_triangles.begin(), _pts[triangle->_vertices[i]]->_triangles.end(), triangle);
@@ -422,17 +431,17 @@ void Triangulation::delete_triangle(Triangle * triangle, bool update_point_bin) 
 	}
 	delete triangle;
 	triangle= 0;
-
-	// TODO : rajouter un test sur tous les adjacents ?
 }
 
 
+// insertion d'un triangle
 void Triangulation::insert_triangle(Triangle * triangle, bool update_point_bin) {
 	if (_verbose) {
 		cout << "insert_triangle\n";
 		print_triangle(triangle);
 	}
 
+	// maj des listes de triangles passant par les sommets du triangle a insérer
 	if (update_point_bin) {
 		for (unsigned int i=0; i<3; ++i) {
 			_pts[triangle->_vertices[i]]->_triangles.push_back(triangle);
@@ -442,6 +451,7 @@ void Triangulation::insert_triangle(Triangle * triangle, bool update_point_bin) 
 }
 
 
+// met à jour les attributs de new_triangle_1 et new_triangle_2 pour qu'ils correspondent à opposition mais avec l'autre diagonale
 void Triangulation::swap_triangle(Opposition * opposition, Triangle * new_triangle_1, Triangle * new_triangle_2) {
 	if (_verbose) {
 		cout << "swap_triangle\n";
@@ -500,6 +510,7 @@ void Triangulation::swap_triangle(Opposition * opposition, Triangle * new_triang
 }
 
 
+// ajout d'un point
 void Triangulation::add_pt(unsigned int idx_pt) {
 	if (_verbose) {
 		cout << "\nadd_pt\n";
@@ -507,11 +518,13 @@ void Triangulation::add_pt(unsigned int idx_pt) {
 		cout << "pt_init=" << glm::to_string(_pts[idx_pt]->_pt_init) << "\n";
 	}
 
+	// récup du triangle contenant le point
 	Triangle * containing_triangle= get_containing_triangle(idx_pt);
 	if (!containing_triangle) {
 		return;
 	}
 
+	// création des 3 triangles subdivisant le triangle initial
 	Triangle * t1= new Triangle(containing_triangle->_vertices[0], containing_triangle->_vertices[1], idx_pt, containing_triangle->_adjacents[0], NULL, NULL);
 	Triangle * t2= new Triangle(idx_pt, containing_triangle->_vertices[1], containing_triangle->_vertices[2], NULL, containing_triangle->_adjacents[1], NULL);
 	Triangle * t3= new Triangle(containing_triangle->_vertices[2], containing_triangle->_vertices[0], idx_pt, containing_triangle->_adjacents[2], NULL, NULL);
@@ -523,8 +536,8 @@ void Triangulation::add_pt(unsigned int idx_pt) {
 	t3->_adjacents[1]= t1;
 	t3->_adjacents[2]= t2;
 
+	// Pour chaque nouveau triangle, si il existe un triangle adjacent, on met à jour l'adjacent de l'adjacent et on ajoute une Opposition
 	Triangle * new_tris[3]= {t1, t2, t3};
-
 	deque<Opposition *> opposition_deque;
 	for (unsigned int i=0; i<3; ++i) {
 		if (containing_triangle->_adjacents[i]) {
@@ -538,12 +551,15 @@ void Triangulation::add_pt(unsigned int idx_pt) {
 		}
 	}
 	
+	// suppression du triangle initial
 	delete_triangle(containing_triangle);
 
+	// insertion des nouveaux triangles
 	insert_triangle(t1);
 	insert_triangle(t2);
 	insert_triangle(t3);
 	
+	// traitement de la queue d'Oppositions
 	while (!opposition_deque.empty()) {
 		Opposition * opposition= opposition_deque.back();
 		opposition_deque.pop_back();
@@ -552,6 +568,8 @@ void Triangulation::add_pt(unsigned int idx_pt) {
 			continue;
 		}
 		
+		// si le nouveau point est contenu dans le cercle circonscrit au triangle de Opposition (triangle_2 qui est celui n'ayant pas le point pour sommet)
+		// on change de diagonale et on ajoute à la queue les éventuelles nouvelles oppositions
 		if (point_in_circumcircle(_pts[opposition->_triangle_2->_vertices[0]]->_pt, _pts[opposition->_triangle_2->_vertices[1]]->_pt, _pts[opposition->_triangle_2->_vertices[2]]->_pt, _pts[idx_pt]->_pt)) {
 			Triangle * new_triangle_1= new Triangle();
 			Triangle * new_triangle_2= new Triangle();
@@ -575,6 +593,7 @@ void Triangulation::add_pt(unsigned int idx_pt) {
 }
 
 
+// maj de la liste des triangles passant par chaque sommet
 void Triangulation::set_idx_triangles() {
 	if (_verbose) {
 		cout << "\nset_idx_triangles\n";
@@ -588,6 +607,7 @@ void Triangulation::set_idx_triangles() {
 }
 
 
+// renvoie l'opposition des 2 triangles définis par un edge commun
 Opposition * Triangulation::opposition_from_edge(std::pair<unsigned int, unsigned int> edge) {
 	unsigned int compt= 0;
 	Triangle * triangle_1= 0;
@@ -613,6 +633,7 @@ Opposition * Triangulation::opposition_from_edge(std::pair<unsigned int, unsigne
 }
 
 
+// ajout d'un edge de contraintes, ie on veut qu'il soit présent dans la triangulation finale
 void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 	if (_verbose) {
 		cout << "\nadd_constrained_edge\n";
@@ -625,6 +646,7 @@ void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 		return;
 	}
 
+	// si on trouve un triangle qui passe par les 2 points du edge c'est qu'il est déjà présent dans la triangluation
 	for (auto t0 : _pts[constrained_edge.first]->_triangles) {
 		for (auto t1 : _pts[constrained_edge.second]->_triangles) {
 			if (t0== t1) {
@@ -637,6 +659,8 @@ void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 		cout << "get intersecting triangles\n";
 	}
 
+	// liste des edges intersectant le constrained_edge
+	// on commence par chercher le triangle passant par le 1er point de constrained_edge qui a un edge intersectant
 	deque<pair<unsigned int, unsigned int> > intersecting_edges;
 	Triangle * intersecting_triangle;
 	unsigned int intersecting_edge= 0;
@@ -663,6 +687,7 @@ void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 		}
 	}
 
+	// puis on va de triangle adjacent en triangle adjacent jusqu'a tomber sur constrained_edge.second
 	while (true) {
 		intersecting_triangle= intersecting_triangle->_adjacents[intersecting_edge];
 		unsigned int idx_pt= 0;
@@ -694,6 +719,8 @@ void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 		cout << "get new edges\n";
 	}
 
+	// pour chaque edge intersectant si les 2 triangles ayant cet edge en commun forment un quadrilatère convexe
+	// on swape la diagonale ; si cette nouvelle diagonale intersecte tjrs le constrained_edge on la remet dans la liste
 	deque<pair<unsigned int, unsigned int> > new_edges;
 	while (!intersecting_edges.empty()) {
 		pair<unsigned int, unsigned int> intersecting_edge= intersecting_edges.front();
@@ -751,6 +778,7 @@ void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 		cout << "delaunay\n";
 	}
 
+	// pour chaque new_edge on cherche à rétablir l'aspect Delaunay, sauf s'il s'agit du constrained_edge
 	while (!new_edges.empty()) {
 		pair<unsigned int, unsigned int> new_edge= new_edges.front();
 		new_edges.pop_front();
@@ -781,6 +809,8 @@ void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 }
 
 
+// suppression des triangles inclus dans les polygones définis par les constrained_edge
+// on détecte un changement de polygone lorsque le 1er sommet du edge suivant ne correspond pas au 2 sommet du edge courant
 void Triangulation::clean_in_constrained_poly() {
 	if (_verbose) {
 		cout << "\nclean_in_constrained_poly\n";
@@ -822,6 +852,7 @@ void Triangulation::clean_in_constrained_poly() {
 }
 
 
+// suppression du triangle englobant et de ses sommets
 void Triangulation::remove_large_triangle() {
 	if (_verbose) {
 		cout << "\nremove_large_triangle\n";
@@ -852,6 +883,7 @@ void Triangulation::remove_large_triangle() {
 }
 
 
+// on renseigne _vertices_init qui ne sert que pour debug ; et on rétablit l'ordre initial des points
 void Triangulation::finish() {
 	if (_verbose) {
 		cout << "\nfinish\n";
@@ -869,7 +901,9 @@ void Triangulation::finish() {
 }
 
 
-// fonctions de debug
+// fonctions de debug ------------------------------------------------------------------------------------------------------------------------------
+
+// renvoie l'indice d'un triangle
 int Triangulation::idx_triangle(Triangle * triangle) {
 	for (unsigned int i=0; i<_triangles.size(); ++i) {
 		if (_triangles[i]== triangle) {
@@ -880,6 +914,7 @@ int Triangulation::idx_triangle(Triangle * triangle) {
 }
 
 
+// print
 void Triangulation::print_triangle(Triangle * triangle, bool verbose, bool is_pt_init) {
 	if (is_pt_init) {
 		cout << idx_triangle(triangle) << " ; " << triangle->_vertices[0] << " ; " << glm::to_string(_pts[triangle->_vertices[0]]->_pt_init) << " ; " << triangle->_vertices[1] << " ; " << glm::to_string(_pts[triangle->_vertices[1]]->_pt_init) << " ; " << triangle->_vertices[2] << " ; " << glm::to_string(_pts[triangle->_vertices[2]]->_pt_init) << "\n";
@@ -904,6 +939,7 @@ void Triangulation::print_triangle(Triangle * triangle, bool verbose, bool is_pt
 }
 
 
+// dessin d'un SVG pour debug
 void Triangulation::draw(std::string svg_path, bool verbose) {
 	unsigned int svg_width= 700;
 	unsigned int svg_height= 700;

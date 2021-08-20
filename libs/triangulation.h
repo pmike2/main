@@ -8,6 +8,12 @@
 
 #include "bbox_2d.h"
 
+/*
+
+Triangulation de Delaunay avec contraintes
+https://www.newcastle.edu.au/__data/assets/pdf_file/0019/22519/23_A-fast-algortithm-for-generating-constrained-Delaunay-triangulations.pdf
+
+*/
 
 
 struct Triangle {
@@ -76,6 +82,7 @@ struct Triangulation {
 		bool verbose=false
 	);
 	~Triangulation();
+	
 	// méthodes utiles
 	void init(const std::vector<glm::vec2> & pts, const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges);
 	void add_large_triangle();
@@ -90,6 +97,7 @@ struct Triangulation {
 	void clean_in_constrained_poly();
 	void remove_large_triangle();
 	void finish();
+	
 	// méthodes de debug
 	int idx_triangle(Triangle * triangle);
 	void print_triangle(Triangle * triangle, bool verbose=false, bool is_pt_init=true);
