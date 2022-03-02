@@ -22,12 +22,12 @@ int main() {
 	// map file descriptor into memory
 	// PROT_READ | PROT_WRITE : lecture & écriture
 	// MAP_SHARED : d'autres processeurs auront accès à ce mapping
-	struct Test * data= (struct Test *)mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	int * data= (int *)mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
 	// écriture des valeurs
-	data[0]._i= 0; data[0]._f= 0.0;
-	data[1]._i= 1; data[1]._f= 0.1;
-	data[2]._i= 2; data[2]._f= 0.2;
+	data[0]= 0;
+	data[1]= 1;
+	data[2]= 2;
 
 	// suppression du mapping
 	munmap(data, SIZE);

@@ -13,27 +13,25 @@ https://linuxhint.com/posix-shared-memory-c-programming/
 
 int main() {
 	// create shared memory object; renvoie un file descriptor
-	// O_CREAT : crée si n'existe pas ; O_EXCL : si existe déjà, erreur ; O_RDWR : read & write
-	int fd= shm_open(NAME, O_CREAT | O_EXCL | O_RDWR, 0600);
-
-	// set size
-	ftruncate(fd, SIZE);
+	// O_RDONLY : lecture
+	int fd= shm_open(NAME, O_RDONLY, 0666);
 
 	// map file descriptor into memory
-	// PROT_READ | PROT_WRITE : lecture & écriture
+	// PROT_READ : lecture
 	// MAP_SHARED : d'autres processeurs auront accès à ce mapping
-	struct Test * data= (struct Test *)mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	int * data= (int *)mmap(0, SIZE, PROT_READ, MAP_SHARED, fd, 0);
 
-	// écriture des valeurs
-	data[0]._i= 0; data[0]._f= 0.0;
-	data[1]._i= 1; data[1]._f= 0.1;
-	data[2]._i= 2; data[2]._f= 0.2;
+	// lecture des valeurs
+	printf("%d %d %d\n", data[0], data[1], data[2]);
 
 	// suppression du mapping
 	munmap(data, SIZE);
 
 	// fermeture file
 	close(fd);
+	
+	// suppression shared memory object
+	shm_unlink(NAME);
 	
 	return 0;
 }
