@@ -3,7 +3,7 @@ external=/usr/local
 
 internal=../../libs
 
-CXXFLAGS=-std=c++11 -I$(external)/include -I$(internal) -I/usr/local/include/freetype2
+CXXFLAGS=-std=c++11 -I$(external)/include -I$(internal) -I/usr/local/include/freetype2 -Wno-deprecated-declarations
 LDFLAGS=-L$(external)/lib -lSDL2 -lSDL2_image -framework OpenGL -framework CoreFoundation -lfreetype -lsndfile -lportaudio -lfftw3 -lm
 
 all: main
