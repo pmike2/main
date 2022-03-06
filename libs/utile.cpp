@@ -214,8 +214,10 @@ vector<string> list_files(string ch_dir, string ext) {
 }
 
 
+// A RECODER, ptr_fun is deprecated
+
 // trim from start (in place)
-void ltrim(string & s) {
+/*void ltrim(string & s) {
 	s.erase(s.begin(), find_if(s.begin(), s.end(), not1(ptr_fun<int, int>(isspace))));
 }
 
@@ -228,7 +230,7 @@ void rtrim(string & s) {
 void trim(string & s) {
 	ltrim(s);
 	rtrim(s);
-}
+}*/
 
 string basename(string s) {
 	string with_ext= s.substr(s.find_last_of("/")+ 1);
