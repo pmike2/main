@@ -1,7 +1,7 @@
 #ifndef RECEIVER_TEST_H
 #define RECEIVER_TEST_H
 
-#include "keyseq.h"
+#include "looper.h"
 
 
 class ReceiverTest: public Receiver {

@@ -7,12 +7,17 @@
 #include <termios.h>
 #include <sys/ioctl.h>
 
-#include "keyseq.h"
+#include "looper.h"
 
 using namespace std;
 
 
+string time_print(time_type t) {
+	return to_string(chrono::duration_cast<chrono::milliseconds>(t).count())+ "ms";
+}
 
+
+// ------------------------------------------------------------------------
 Event::Event() {
 	set_null();
 }
@@ -38,6 +43,17 @@ void Event::set_null() {
 	_previous= 0;
 	_next= 0;
 	_key= NULL_KEY;
+}
+
+
+ostream & operator << (ostream & os, const Event & e) {
+	os << "addr= " << &e << " ; ";
+	os << "key= " << e._key << " ; ";
+	os << "t_start= " << time_print(e._t_start) << " ; ";
+	os << "t_end= " << time_print(e._t_end) << " ; ";
+	os << "previous= " << e._previous << " ; ";
+	os << "next= " << e._next;
+	return os;
 }
 
 
@@ -97,11 +113,11 @@ Event * Track::get_last_event_before(time_type t) {
 	if (res== 0) {
 		return 0;
 	}
-	while ((res->_next) && (res->_next->_t_start<= t)) {
-		res= res->_next;
-	}
 	if (res->_t_start> t) {
 		return 0;
+	}
+	while ((res->_next) && (res->_next->_t_start<= t)) {
+		res= res->_next;
 	}
 
 	return res;
@@ -109,9 +125,15 @@ Event * Track::get_last_event_before(time_type t) {
 
 
 Event * Track::get_first_event_after(time_type t) {
-	Event * res= get_last_event_before(t);
-	if ((res== 0) || (res->_next== 0)) {
+	Event * res= get_last_event();
+	if (res== 0) {
 		return 0;
+	}
+	if (res->_t_start< t) {
+		return 0;
+	}
+	while ((res->_previous) && (res->_previous->_t_start>= t)) {
+		res= res->_previous;
 	}
 
 	return res;
@@ -132,7 +154,25 @@ Event * Track::get_first_event() {
 }
 
 
-void Track::insert_event(key_type key, time_type t, bool hold=false) {
+Event * Track::get_last_event() {
+	Event * res= get_first_not_null_event();
+	if (res== 0) {
+		return 0;
+	}
+
+	while (res->_next) {
+		res= res->_next;
+	}
+
+	return res;
+}
+
+
+void Track::insert_event(key_type key, time_type t, bool hold) {
+	//cout << "insert_event " << key << "\n";
+
+	t= get_relative_t(t);
+
 	Event * event2insert= get_first_null_event();
 	if (event2insert== 0) {
 		cout << "TRACK FULL !\n";
@@ -141,11 +181,13 @@ void Track::insert_event(key_type key, time_type t, bool hold=false) {
 
 	Event * event_before_t= get_last_event_before(t);
 	Event * event_after_t= get_first_event_after(t);
-	event2insert->set(get_relative_t(t), event_before_t, event_after_t, key);
+	event2insert->set(t, event_before_t, event_after_t, key);
 	if (event_before_t!= 0) {
+		//cout << "before : " << *event_before_t << "\n";
 		event_before_t->_next= event2insert;
 	}
 	if (event_after_t!= 0) {
+		//cout << "after : " << *event_after_t << "\n";
 		event_after_t->_previous= event2insert;
 	}
 
@@ -156,7 +198,9 @@ void Track::insert_event(key_type key, time_type t, bool hold=false) {
 
 
 void Track::set_event_end(Event * event, time_type t) {
-	event->_t_end= get_relative_t(t);
+	t= get_relative_t(t);
+	
+	event->_t_end= t;
 }
 
 
@@ -204,14 +248,14 @@ void Track::update(time_type t) {
 		}
 		if ((_last_event->_next) && (t>= _last_event->_next->_t_start)) {
 			_last_event= _last_event->_next;
-			//cout << "Event " << _last_event->_key << "\n";
+			//cout << "Event(1) " << _last_event->_key << "\n";
 		}
 	}
 	else {
 		Event * first_event= get_first_event();
 		if ((first_event) && (t>= first_event->_t_start)) {
 			_last_event= first_event;
-			//cout << "Event " << _last_event->_key << "\n";
+			//cout << "Event(2) " << _last_event->_key << "\n";
 		}
 	}
 }
@@ -266,6 +310,8 @@ void Sequence::set_track(Track * track) {
 
 
 void Sequence::init_data2send() {
+	//https://linuxhint.com/posix-shared-memory-c-programming/
+
 	// create shared memory object; renvoie un file descriptor
 	// O_CREAT : crée si n'existe pas ; O_RDWR : read & write
 	// O_EXCL permet de générer une erreur si l'objet existe déjà mais c'est pénible d'avoir à supprimer l'objet à la main
@@ -301,6 +347,18 @@ void Sequence::close_data2send() {
 
 	// suppression shared memory object
 	shm_unlink(SHARED_MEM_OBJ_NAME.c_str());
+}
+
+
+void Sequence::debug() {
+	for (unsigned i=0; i<N_MAX_TRACKS; ++i) {
+		for (unsigned j=0; j<N_MAX_EVENTS; ++j) {
+			if (_tracks[i]->_events[j]->_key!= NULL_KEY) {
+				cout << *_tracks[i]->_events[j] << "\n";
+			}
+		}
+		break;
+	}
 }
 
 

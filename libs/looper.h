@@ -1,5 +1,5 @@
-#ifndef KEYSEQ_H
-#define KEYSEQ_H
+#ifndef LOOPER_H
+#define LOOPER_H
 
 #include <chrono>
 #include <string>
@@ -19,8 +19,10 @@ const key_type NULL_KEY= 0;
 const std::chrono::duration<int,std::milli> DEFAULT_TRACK_DURATION= std::chrono::milliseconds(1000);
 const std::chrono::duration<int,std::milli> MIN_EVENT_DURATION= std::chrono::milliseconds(50);
 const unsigned int DATA_SIZE= sizeof(sharedata_type)* N_MAX_TRACKS;
-const std::string SHARED_MEM_OBJ_NAME= "/shmem-seq";
+const std::string SHARED_MEM_OBJ_NAME= "/shmem-looper";
 
+
+std::string time_print(time_type t);
 
 class Event {
 public:
@@ -28,6 +30,7 @@ public:
 	~Event();
 	void set(time_type t, Event * previous, Event * next, key_type key);
 	void set_null();
+	friend std::ostream & operator << (std::ostream & os, const Event & e);
 
 	time_type _t_start;
 	time_type _t_end;
@@ -49,7 +52,8 @@ public:
 	Event * get_last_event_before(time_type t);
 	Event * get_first_event_after(time_type t);
 	Event * get_first_event();
-	void insert_event(key_type key, time_type t, bool hold);
+	Event * get_last_event();
+	void insert_event(key_type key, time_type t, bool hold=false);
 	void set_event_end(Event * event, time_type t);
 	void delete_event(Event * event);
 	void update(time_type t);
@@ -71,6 +75,7 @@ public:
 	void set_track(Track * track);
 	void init_data2send();
 	void close_data2send();
+	void debug();
 
 	Track * _tracks[N_MAX_TRACKS];
 	Track * _current_track;
