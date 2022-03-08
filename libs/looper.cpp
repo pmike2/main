@@ -12,8 +12,45 @@
 using namespace std;
 
 
+
+bool operator== (const sharedata_type& x, const sharedata_type& y) {
+	return ((x._key== y._key) && (x._duration== y._duration) && (x._volume== y._volume));
+}
+
+
+bool operator!= (const sharedata_type& x, const sharedata_type& y) {
+	return ((x._key!= y._key) || (x._duration!= y._duration) || (x._volume!= y._volume));
+}
+
+
+sharedata_type& sharedata_type::operator=(const sharedata_type& other) {
+	_key= other._key;
+	_duration= other._duration;
+	_volume= other._volume;
+	return *this;
+}
+
+
+void sharedata_type::set_null() {
+	_key= NULL_KEY;
+	_duration= time_type::zero();
+	_volume= 0;
+}
+
+
+bool sharedata_type::is_null() {
+	return _key== NULL_KEY;
+}
+
+
+// ------------------------------------------------------------------------
+unsigned int time_ms(time_type t) {
+	return chrono::duration_cast<chrono::milliseconds>(t).count();
+}
+
+
 string time_print(time_type t) {
-	return to_string(chrono::duration_cast<chrono::milliseconds>(t).count())+ "ms";
+	return to_string(time_ms(t))+ "ms";
 }
 
 
@@ -28,12 +65,23 @@ Event::~Event() {
 }
 
 
-void Event::set(time_type t, Event * previous, Event * next, key_type key) {
+void Event::set(time_type t, Event * previous, Event * next, key_type key, bool hold) {
 	_t_start= t;
-	_t_end= time_type::zero();
+	_t_end= t;
 	_previous= previous;
 	_next= next;
 	_key= key;
+	_hold= hold;
+
+	if (!hold) {
+		_t_end= _t_start+ MIN_EVENT_DURATION;
+	}
+}
+
+
+void Event::set_end(time_type t) {
+	_t_end= t;
+	_hold= false;
 }
 
 
@@ -43,6 +91,12 @@ void Event::set_null() {
 	_previous= 0;
 	_next= 0;
 	_key= NULL_KEY;
+	_hold= false;
+}
+
+
+bool Event::is_null() {
+	return _key== NULL_KEY;
 }
 
 
@@ -58,7 +112,9 @@ ostream & operator << (ostream & os, const Event & e) {
 
 
 // ----------------------------------------------------------------
-Track::Track() : /*_duration(time_type::zero()),*/ _duration(DEFAULT_TRACK_DURATION), _last_event(0), _current_cycle(0) {
+Track::Track() : 
+	/*_duration(time_type::zero()),*/ _duration(DEFAULT_TRACK_DURATION), _last_event(0), _current_cycle(0), _next(0), _previous(0)
+{
 	for (unsigned int i=0; i<N_MAX_EVENTS; ++i) {
 		_events[i]= new Event();
 	}
@@ -90,7 +146,7 @@ void Track::set_duration(time_type duration) {
 
 Event * Track::get_first_null_event() {
 	for (unsigned int i=0; i<N_MAX_EVENTS; ++i) {
-		if (_events[i]->_key== NULL_KEY) {
+		if (_events[i]->is_null()) {
 			return _events[i];
 		}
 	}
@@ -100,7 +156,7 @@ Event * Track::get_first_null_event() {
 
 Event * Track::get_first_not_null_event() {
 	for (unsigned int i=0; i<N_MAX_EVENTS; ++i) {
-		if (_events[i]->_key!= NULL_KEY) {
+		if (!_events[i]->is_null()) {
 			return _events[i];
 		}
 	}
@@ -168,7 +224,7 @@ Event * Track::get_last_event() {
 }
 
 
-void Track::insert_event(key_type key, time_type t, bool hold) {
+Event * Track::insert_event(key_type key, time_type t, bool hold) {
 	//cout << "insert_event " << key << "\n";
 
 	t= get_relative_t(t);
@@ -176,31 +232,33 @@ void Track::insert_event(key_type key, time_type t, bool hold) {
 	Event * event2insert= get_first_null_event();
 	if (event2insert== 0) {
 		cout << "TRACK FULL !\n";
-		return;
+		return 0;
 	}
 
 	Event * event_before_t= get_last_event_before(t);
 	Event * event_after_t= get_first_event_after(t);
-	event2insert->set(t, event_before_t, event_after_t, key);
-	if (event_before_t!= 0) {
+	// cas où Event existe déjà avec _t_start == t
+	if ((event_before_t) && (event_before_t== event_after_t)) {
+		delete_event(event_before_t);
+		event_before_t= get_last_event_before(t);
+		event_after_t= get_first_event_after(t);
+	}
+
+	event2insert->set(t, event_before_t, event_after_t, key, hold);
+	if (event_before_t) {
 		//cout << "before : " << *event_before_t << "\n";
 		event_before_t->_next= event2insert;
+
+		if (event_before_t->_t_end>= t) {
+			event_before_t->_t_end= t- chrono::milliseconds(1);
+		}
 	}
-	if (event_after_t!= 0) {
+	if (event_after_t) {
 		//cout << "after : " << *event_after_t << "\n";
 		event_after_t->_previous= event2insert;
 	}
 
-	if (!hold) {
-		event2insert->_t_end= event2insert->_t_start+ MIN_EVENT_DURATION;
-	}
-}
-
-
-void Track::set_event_end(Event * event, time_type t) {
-	t= get_relative_t(t);
-	
-	event->_t_end= t;
+	return event2insert;
 }
 
 
@@ -232,31 +290,44 @@ void Track::update(time_type t) {
 	unsigned int cycle= get_cycle(t);
 	if (cycle!= _current_cycle) {
 		_current_cycle= cycle;
+
+		if ((_last_event) && (_last_event->_hold)) {
+			_last_event->set_end(_duration);
+		}
+
 		_last_event= 0;
 	}
 
 	t= get_relative_t(t);
 
-	if (_last_event) {
-		if (t> _last_event->_t_end) {
-			//_last_event= 0;
-		}
-		else {
-			while ((_last_event->_next) && (_last_event->_next->_t_start< t)) {
-				delete_event(_last_event->_next);
-			}
-		}
-		if ((_last_event->_next) && (t>= _last_event->_next->_t_start)) {
-			_last_event= _last_event->_next;
-			//cout << "Event(1) " << _last_event->_key << "\n";
-		}
-	}
-	else {
+	if (!_last_event) {
 		Event * first_event= get_first_event();
 		if ((first_event) && (t>= first_event->_t_start)) {
 			_last_event= first_event;
 			//cout << "Event(2) " << _last_event->_key << "\n";
 		}
+	}
+	
+	if (!_last_event) {
+		return;
+	}
+
+	if (_last_event->_hold) {
+		_last_event->_t_end= t;
+	}
+
+	if (t> _last_event->_t_end) {
+		//_last_event= 0;
+	}
+	else {
+		while ((_last_event->_next) && (_last_event->_next->_t_start<= t)) {
+			delete_event(_last_event->_next);
+		}
+	}
+	
+	if ((_last_event->_next) && (t>= _last_event->_next->_t_start)) {
+		_last_event= _last_event->_next;
+		//cout << "Event(1) " << _last_event->_key << "\n";
 	}
 }
 
@@ -266,6 +337,16 @@ Sequence::Sequence() : _start_point(chrono::system_clock::now()) {
 	for (unsigned int i=0; i<N_MAX_TRACKS; ++i) {
 		_tracks[i]= new Track();
 	}
+
+	for (unsigned int i=0; i<N_MAX_TRACKS; ++i) {
+		if (i> 0) {
+			_tracks[i]->_previous= _tracks[i- 1];
+		}
+		if (i< N_MAX_TRACKS- 1) {
+			_tracks[i]->_next= _tracks[i+ 1];
+		}
+	}
+
 	_current_track= _tracks[0];
 
 	init_data2send();
@@ -286,8 +367,13 @@ time_type Sequence::now() {
 }
 
 
-void Sequence::insert_event(key_type key) {
-	_current_track->insert_event(key, now());
+Event * Sequence::insert_event(key_type key, bool hold) {
+	return _current_track->insert_event(key, now(), hold);
+}
+
+
+void Sequence::set_event_end(Event * event) {
+	event->set_end(_current_track->get_relative_t(now()));
 }
 
 
@@ -304,8 +390,17 @@ void Sequence::update() {
 }
 
 
-void Sequence::set_track(Track * track) {
-	_current_track= track;
+void Sequence::set_next_track() {
+	if (_current_track->_next) {
+		_current_track= _current_track->_next;
+	}
+}
+
+
+void Sequence::set_previous_track() {
+	if (_current_track->_previous) {
+		_current_track= _current_track->_previous;
+	}
 }
 
 
@@ -331,9 +426,7 @@ void Sequence::init_data2send() {
 	//cout << _data2send << "\n";
 
 	for (unsigned i=0; i<N_MAX_TRACKS; ++i) {
-		_data2send[i]._key= NULL_KEY;
-		_data2send[i]._duration= time_type::zero();
-		_data2send[i]._volume= 0;
+		_data2send[i].set_null();
 	}
 }
 
@@ -353,7 +446,7 @@ void Sequence::close_data2send() {
 void Sequence::debug() {
 	for (unsigned i=0; i<N_MAX_TRACKS; ++i) {
 		for (unsigned j=0; j<N_MAX_EVENTS; ++j) {
-			if (_tracks[i]->_events[j]->_key!= NULL_KEY) {
+			if (!_tracks[i]->_events[j]->is_null()) {
 				cout << *_tracks[i]->_events[j] << "\n";
 			}
 		}
@@ -368,9 +461,7 @@ Receiver::Receiver() {
 
 	_data2receive_current= new sharedata_type[N_MAX_TRACKS];
 	for (unsigned i=0; i<N_MAX_TRACKS; ++i) {
-		_data2receive_current[i]._key= NULL_KEY;
-		_data2receive_current[i]._duration= time_type::zero();
-		_data2receive_current[i]._volume= 0;
+		_data2receive_current[i].set_null();
 	}
 
 }
@@ -404,10 +495,12 @@ void Receiver::close_data2receive() {
 
 void Receiver::update() {
 	for (unsigned i=0; i<N_MAX_TRACKS; ++i) {
-		if ((_data2receive[i]._key!= NULL_KEY) && (_data2receive[i]._key!= _data2receive_current[i]._key)) {
-			_data2receive_current[i]._key= _data2receive[i]._key;
-			_data2receive_current[i]._duration= _data2receive[i]._duration;
-			_data2receive_current[i]._volume= _data2receive[i]._volume;
+		if (_data2receive[i].is_null()) {
+			continue;
+		} 
+		
+		if (_data2receive_current[i]!= _data2receive[i]) {
+			_data2receive_current[i]= _data2receive[i];
 			on_new_data(_data2receive_current[i]);
 		}
 	}

@@ -8,6 +8,12 @@ typedef std::chrono::system_clock::duration time_type;
 typedef unsigned int key_type;
 
 struct sharedata_type {
+	friend bool operator== (const sharedata_type& x, const sharedata_type& y);
+	friend bool operator!= (const sharedata_type& x, const sharedata_type& y);
+	sharedata_type& operator=(const sharedata_type& other);
+	void set_null();
+	bool is_null();
+
 	key_type _key;
 	time_type _duration;
 	unsigned int _volume;
@@ -22,14 +28,17 @@ const unsigned int DATA_SIZE= sizeof(sharedata_type)* N_MAX_TRACKS;
 const std::string SHARED_MEM_OBJ_NAME= "/shmem-looper";
 
 
+unsigned int time_ms(time_type t);
 std::string time_print(time_type t);
 
 class Event {
 public:
 	Event();
 	~Event();
-	void set(time_type t, Event * previous, Event * next, key_type key);
+	void set(time_type t, Event * previous, Event * next, key_type key, bool hold=false);
+	void set_end(time_type t);
 	void set_null();
+	bool is_null();
 	friend std::ostream & operator << (std::ostream & os, const Event & e);
 
 	time_type _t_start;
@@ -37,6 +46,7 @@ public:
 	Event * _previous;
 	Event * _next;
 	key_type _key;
+	bool _hold;
 };
 
 
@@ -53,8 +63,7 @@ public:
 	Event * get_first_event_after(time_type t);
 	Event * get_first_event();
 	Event * get_last_event();
-	void insert_event(key_type key, time_type t, bool hold=false);
-	void set_event_end(Event * event, time_type t);
+	Event * insert_event(key_type key, time_type t, bool hold=false);
 	void delete_event(Event * event);
 	void update(time_type t);
 
@@ -62,6 +71,8 @@ public:
 	Event * _events[N_MAX_EVENTS];
 	Event * _last_event;
 	unsigned int _current_cycle;
+	Track * _previous;
+	Track * _next;
 };
 
 
@@ -70,9 +81,11 @@ public:
 	Sequence();
 	~Sequence();
 	time_type now();
-	void insert_event(key_type key);
+	Event * insert_event(key_type key, bool hold=false);
+	void set_event_end(Event * event);
 	void update();
-	void set_track(Track * track);
+	void set_next_track();
+	void set_previous_track();
 	void init_data2send();
 	void close_data2send();
 	void debug();

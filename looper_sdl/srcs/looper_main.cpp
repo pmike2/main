@@ -9,10 +9,12 @@
 using namespace std;
 
 
-SDL_Window * window= NULL;
-SDL_GLContext main_context;
-bool done;
-LooperSDL * looper;
+SDL_Window * window= 0;
+SDL_Renderer* renderer= 0;
+bool done= false;
+LooperSDL * looper= 0;
+int SCREEN_WIDTH= 500;
+int SCREEN_HEIGHT= 500;
 
 
 void key_down(SDL_Keycode key) {
@@ -36,19 +38,24 @@ void init() {
 	//SDL_Init(SDL_INIT_EVENTS);
 	SDL_Init(SDL_INIT_EVERYTHING);
 
-	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 500, 500, SDL_WINDOW_SHOWN);
-	main_context= SDL_GL_CreateContext(window);
+	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
-	done= false;
-	looper= new LooperSDL();
-	/*looper->_tracks[0]->insert_event(1, std::chrono::milliseconds(100));
-	looper->_tracks[0]->insert_event(2, std::chrono::milliseconds(80));
-	looper->debug();*/
+	looper= new LooperSDL(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+	/*Event * e1= looper->_tracks[0]->insert_event(1, chrono::milliseconds(500), false);
+	e1->set_end(chrono::milliseconds(900));
+	Event * e2= looper->_tracks[0]->insert_event(2, chrono::milliseconds(500), false);
+	e2->set_end(chrono::milliseconds(900));
+	looper->_tracks[0]->update(chrono::milliseconds(600));
+	looper->debug();
+	done= true;*/
 }
 
 
 void idle() {
 	looper->update();
+	looper->draw();
 }
 
 
@@ -82,8 +89,8 @@ void main_loop() {
 void clean() {
 	delete looper;
 
-	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
+	SDL_Quit();
 }
 
 
