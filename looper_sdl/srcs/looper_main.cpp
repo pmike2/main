@@ -13,8 +13,8 @@ SDL_Window * window= 0;
 SDL_Renderer* renderer= 0;
 bool done= false;
 LooperSDL * looper= 0;
-int SCREEN_WIDTH= 500;
-int SCREEN_HEIGHT= 500;
+int SCREEN_WIDTH= 1024;
+int SCREEN_HEIGHT= 512;
 
 
 void key_down(SDL_Keycode key) {

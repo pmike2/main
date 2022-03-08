@@ -139,8 +139,14 @@ unsigned int Track::get_cycle(time_type t) {
 }
 
 
-void Track::set_duration(time_type duration) {
-	_duration= duration;
+void Track::set_duration(time_type t) {
+	Event * e= get_first_event_after(t);
+	while (e) {
+		Event * e_next= e->_next;
+		delete_event(e);
+		e= e_next;
+	}
+	_duration= t;
 }
 
 
@@ -332,6 +338,13 @@ void Track::update(time_type t) {
 }
 
 
+void Track::clear() {
+	for (unsigned int i=0; i<N_MAX_EVENTS; ++i) {
+		_events[i]->set_null();
+	}
+}
+
+
 // ----------------------------------------------------------------
 Sequence::Sequence() : _start_point(chrono::system_clock::now()) {
 	for (unsigned int i=0; i<N_MAX_TRACKS; ++i) {
@@ -390,6 +403,13 @@ void Sequence::update() {
 }
 
 
+void Sequence::clear() {
+	for (unsigned int i=0; i<N_MAX_TRACKS; ++i) {
+		_tracks[i]->clear();
+	}
+}
+
+
 void Sequence::set_next_track() {
 	if (_current_track->_next) {
 		_current_track= _current_track->_next;
@@ -401,6 +421,21 @@ void Sequence::set_previous_track() {
 	if (_current_track->_previous) {
 		_current_track= _current_track->_previous;
 	}
+}
+
+
+void Sequence::set_current_track_duration(time_type t) {
+	_current_track->set_duration(t);
+}
+
+
+void Sequence::set_current_track_duration_ratio(float ratio) {
+	if (_current_track== _tracks[0]) {
+		return;
+	}
+	float t_f= (float)(time_ms(_tracks[0]->_duration))* ratio;
+	time_type t= std::chrono::milliseconds((unsigned int)(t_f));
+	set_current_track_duration(t);
 }
 
 

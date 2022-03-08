@@ -56,7 +56,7 @@ public:
 	~Track();
 	time_type get_relative_t(time_type t);
 	unsigned int get_cycle(time_type t);
-	void set_duration(time_type duration);
+	void set_duration(time_type t);
 	Event * get_first_null_event();
 	Event * get_first_not_null_event();
 	Event * get_last_event_before(time_type t);
@@ -66,6 +66,7 @@ public:
 	Event * insert_event(key_type key, time_type t, bool hold=false);
 	void delete_event(Event * event);
 	void update(time_type t);
+	void clear();
 
 	time_type _duration;
 	Event * _events[N_MAX_EVENTS];
@@ -84,8 +85,11 @@ public:
 	Event * insert_event(key_type key, bool hold=false);
 	void set_event_end(Event * event);
 	void update();
+	void clear();
 	void set_next_track();
 	void set_previous_track();
+	void set_current_track_duration(time_type t);
+	void set_current_track_duration_ratio(float ratio);
 	void init_data2send();
 	void close_data2send();
 	void debug();
