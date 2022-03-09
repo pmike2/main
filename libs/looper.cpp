@@ -14,19 +14,19 @@ using namespace std;
 
 
 bool operator== (const sharedata_type& x, const sharedata_type& y) {
-	return ((x._key== y._key) && (x._duration== y._duration) && (x._volume== y._volume));
+	return ((x._key== y._key) && (x._duration== y._duration) && (x._amplitude== y._amplitude));
 }
 
 
 bool operator!= (const sharedata_type& x, const sharedata_type& y) {
-	return ((x._key!= y._key) || (x._duration!= y._duration) || (x._volume!= y._volume));
+	return ((x._key!= y._key) || (x._duration!= y._duration) || (x._amplitude!= y._amplitude));
 }
 
 
 sharedata_type& sharedata_type::operator=(const sharedata_type& other) {
 	_key= other._key;
 	_duration= other._duration;
-	_volume= other._volume;
+	_amplitude= other._amplitude;
 	return *this;
 }
 
@@ -34,7 +34,7 @@ sharedata_type& sharedata_type::operator=(const sharedata_type& other) {
 void sharedata_type::set_null() {
 	_key= NULL_KEY;
 	_duration= time_type::zero();
-	_volume= 0;
+	_amplitude= 0;
 }
 
 
@@ -397,7 +397,7 @@ void Sequence::update() {
 		if (_tracks[i]->_last_event!= 0) {
 			_data2send[i]._key= _tracks[i]->_last_event->_key;
 			_data2send[i]._duration= _tracks[i]->_last_event->_t_end- _tracks[i]->_last_event->_t_start;
-			_data2send[i]._volume= 0; // TODO
+			_data2send[i]._amplitude= 0; // TODO
 		}
 	}
 }

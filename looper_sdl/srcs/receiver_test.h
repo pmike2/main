@@ -4,12 +4,11 @@
 #include "looper.h"
 
 
-class ReceiverTest: public Receiver {
+class ReceiverTest : public Receiver {
 public:
 	ReceiverTest();
 	~ReceiverTest();
 	void on_new_data(sharedata_type data);
-
 };
 
 #endif

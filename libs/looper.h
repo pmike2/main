@@ -16,7 +16,7 @@ struct sharedata_type {
 
 	key_type _key;
 	time_type _duration;
-	unsigned int _volume;
+	unsigned int _amplitude;
 };
 
 const unsigned int N_MAX_EVENTS= 1024;
