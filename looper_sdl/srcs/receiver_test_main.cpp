@@ -1,7 +1,3 @@
-/*
-https://linuxhint.com/posix-shared-memory-c-programming/
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>

@@ -1,0 +1,97 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+
+#include "portaudio.h"
+#ifdef WIN32
+#include <windows.h>
+#if PA_USE_ASIO
+#include "pa_asio.h"
+#endif
+#endif
+
+#include "sampler.h"
+#include "pa_utils.h"
+
+using namespace std;
+
+
+// nombre de samples dans 1s d'audio
+const unsigned int SAMPLE_RATE= 44100;
+
+// nombre de samples a traiter a chaque appel du callback portaudio
+const unsigned int FRAMES_PER_BUFFER= 1024;
+
+
+PaStream * stream;
+Sampler * sampler;
+
+
+// callback PortAudio
+int pa_callback(const void * input, void * output, unsigned long frame_count, const PaStreamCallbackTimeInfo * time_info, PaStreamCallbackFlags status_flags, void * user_data) {
+	Sampler * s= (Sampler *)user_data;
+	//float * in= (float *)input;
+	float * out= (float *)output;
+
+	for (unsigned int i=0; i<frame_count; ++i) {
+		out[2* i+ 0]= 0.0f;
+		out[2* i+ 1]= 0.0f;
+
+		for (unsigned int idx_sample=0; idx_sample<N_MAX_SAMPLE_PLAYING; ++idx_sample) {
+			if (s->_playing[idx_sample]->_playing) {
+				key_type key= s->_playing[idx_sample]->_info._key;
+				SubSample * sub_sample= s->_map[key];
+				//float amplitude= (float)(s->_playing[idx_sample]->_info._amplitude)/ 128.0f;
+				float amplitude= 1.0f;
+
+				if (sub_sample->_sample->_n_channels== 1) {
+					out[2* i+ 0]+= sub_sample->_sample->_data[s->_playing[idx_sample]->_frame_idx]* amplitude;
+					out[2* i+ 1]+= sub_sample->_sample->_data[s->_playing[idx_sample]->_frame_idx]* amplitude;
+				}
+				else {
+					out[2* i+ 0]+= sub_sample->_sample->_data[2* s->_playing[idx_sample]->_frame_idx+ 0]* amplitude;
+					out[2* i+ 1]+= sub_sample->_sample->_data[2* s->_playing[idx_sample]->_frame_idx+ 1]* amplitude;
+				}
+				
+				s->_playing[idx_sample]->_frame_idx++;
+				if (s->_playing[idx_sample]->_frame_idx>= sub_sample->_sample->_n_frames) {
+					s->_playing[idx_sample]->_playing= false;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
+
+void init() {
+	sampler= new Sampler("../data/sampler_01.json");
+
+	int idx_device_input= -1;
+	int idx_device_output= 1;
+	stream= pa_init(idx_device_input, idx_device_output, SAMPLE_RATE, FRAMES_PER_BUFFER, pa_callback, sampler);
+}
+
+
+void main_loop() {
+	while (true) {
+		sampler->update();
+	}
+}
+
+
+void clean() {
+	pa_close(stream);
+	delete sampler;
+}
+
+
+int main() {
+	//list_devices(); return 0;
+	init();
+	main_loop();
+	clean();
+
+	return 0;
+}

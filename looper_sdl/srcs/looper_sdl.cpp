@@ -25,8 +25,16 @@ LooperSDL::~LooperSDL() {
 void LooperSDL::key_down(SDL_Keycode key) {
 	//cout << "key down : " << key << "\n";
 	
-	if (key== SDLK_SPACE) {
+	if (key== SDLK_d) {
 		debug();
+		return;
+	}
+	else if (key== SDLK_SPACE) {
+		toggle_start();
+		return;
+	}
+	else if (key== SDLK_r) {
+		toggle_record();
 		return;
 	}
 	else if (key== SDLK_DOWN) {
@@ -37,7 +45,7 @@ void LooperSDL::key_down(SDL_Keycode key) {
 		set_previous_track();
 		return;
 	}
-	else if (key== SDLK_a) {
+	else if (key== SDLK_z) {
 		clear();
 		return;
 	}
@@ -56,7 +64,8 @@ void LooperSDL::key_down(SDL_Keycode key) {
 	}
 
 	if (!_input_state->get_key(key)) {
-		_current_event= insert_event(key, true);
+		unsigned int amplitude= 0; // TODO
+		_current_event= insert_event(key, amplitude, true);
 		_current_event_key= key;
 	}
 	_input_state->key_down(key);
@@ -92,9 +101,20 @@ void LooperSDL::draw() {
 	time_type now_time= now();
 	unsigned int track_height= _screen_height/ N_MAX_TRACKS;
 
-	for (unsigned int i=0; i<N_MAX_TRACKS; ++i) {
+	for (unsigned int i=1; i<N_MAX_TRACKS; ++i) {
 		float y= (float)(i)/ (float)(N_MAX_TRACKS);
-		float t_track= (float)(time_ms(_tracks[i]->get_relative_t(now_time)))/ (float)(time_ms(_tracks[i]->_duration));
+
+		if ((_mode== RUNNING) || (_mode== RECORDING)) {
+			float t_track= (float)(time_ms(_tracks[i]->get_relative_t(now_time)))/ (float)(time_ms(_tracks[i]->_duration));
+			Color c;
+			if (_mode== RUNNING) {
+				c._r= 250; c._g= 250; c._b= 200;
+			}
+			else if (_mode== RECORDING) {
+				c._r= 250; c._g= 50; c._b= 50;
+			}
+			draw_rect((int)((float)(_screen_width)* t_track), (int)((float)(_screen_height)* y), 2, track_height, c);
+		}
 
 		if (_tracks[i]== _current_track) {
 			Color c;
@@ -102,16 +122,12 @@ void LooperSDL::draw() {
 			draw_rect(0, (int)((float)(_screen_height)* y), _screen_width, track_height, c);
 		}
 
-		Color c;
-		c._r= 250; c._g= 250; c._b= 200;
-		draw_rect((int)((float)(_screen_width)* t_track), (int)((float)(_screen_height)* y), 2, track_height, c);
-
 		for (unsigned int j=0; j<N_MAX_EVENTS; ++j) {
 			if (!_tracks[i]->_events[j]->is_null()) {
-				float start= (float)(time_ms(_tracks[i]->_events[j]->_t_start))/ (float)(time_ms(_tracks[i]->_duration));
-				float end= (float)(time_ms(_tracks[i]->_events[j]->_t_end))/ (float)(time_ms(_tracks[i]->_duration));
+				float start= (float)(time_ms(_tracks[i]->_events[j]->_data._t_start))/ (float)(time_ms(_tracks[i]->_duration));
+				float end= (float)(time_ms(_tracks[i]->_events[j]->_data._t_end))/ (float)(time_ms(_tracks[i]->_duration));
 				
-				Color c= get_color(_tracks[i]->_events[j]->_key);
+				Color c= get_color(_tracks[i]->_events[j]->_data._key);
 				draw_rect((int)((float)(_screen_width)* start), (int)((float)(_screen_height)* y), (int)((float)(_screen_width)* (end- start)), track_height, c);
 			}
 		}

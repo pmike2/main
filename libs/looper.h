@@ -4,18 +4,22 @@
 #include <chrono>
 #include <string>
 
+enum SEQ_MODE {STOPPED, RUNNING, RECORDING};
+
 typedef std::chrono::system_clock::duration time_type;
 typedef unsigned int key_type;
 
 struct sharedata_type {
-	friend bool operator== (const sharedata_type& x, const sharedata_type& y);
-	friend bool operator!= (const sharedata_type& x, const sharedata_type& y);
-	sharedata_type& operator=(const sharedata_type& other);
+	friend bool operator== (const sharedata_type & x, const sharedata_type & y);
+	friend bool operator!= (const sharedata_type & x, const sharedata_type & y);
+	friend std::ostream & operator << (std::ostream & os, const sharedata_type & e);
+	sharedata_type & operator=(const sharedata_type & other);
 	void set_null();
 	bool is_null();
 
 	key_type _key;
-	time_type _duration;
+	time_type _t_start;
+	time_type _t_end;
 	unsigned int _amplitude;
 };
 
@@ -23,7 +27,7 @@ const unsigned int N_MAX_EVENTS= 1024;
 const unsigned int N_MAX_TRACKS= 16;
 const key_type NULL_KEY= 0; 
 const std::chrono::duration<int,std::milli> DEFAULT_TRACK_DURATION= std::chrono::milliseconds(1000);
-const std::chrono::duration<int,std::milli> MIN_EVENT_DURATION= std::chrono::milliseconds(50);
+const std::chrono::duration<int,std::milli> DEFAULT_EVENT_DURATION= std::chrono::milliseconds(50);
 const unsigned int DATA_SIZE= sizeof(sharedata_type)* N_MAX_TRACKS;
 const std::string SHARED_MEM_OBJ_NAME= "/shmem-looper";
 
@@ -31,21 +35,20 @@ const std::string SHARED_MEM_OBJ_NAME= "/shmem-looper";
 unsigned int time_ms(time_type t);
 std::string time_print(time_type t);
 
+
 class Event {
 public:
 	Event();
 	~Event();
-	void set(time_type t, Event * previous, Event * next, key_type key, bool hold=false);
+	void set(key_type key, time_type t, unsigned int amplitude, Event * previous, Event * next, bool hold);
 	void set_end(time_type t);
 	void set_null();
 	bool is_null();
 	friend std::ostream & operator << (std::ostream & os, const Event & e);
 
-	time_type _t_start;
-	time_type _t_end;
+	sharedata_type _data;
 	Event * _previous;
 	Event * _next;
-	key_type _key;
 	bool _hold;
 };
 
@@ -63,7 +66,7 @@ public:
 	Event * get_first_event_after(time_type t);
 	Event * get_first_event();
 	Event * get_last_event();
-	Event * insert_event(key_type key, time_type t, bool hold=false);
+	Event * insert_event(key_type key, time_type t, unsigned int amplitude, bool hold);
 	void delete_event(Event * event);
 	void update(time_type t);
 	void clear();
@@ -82,10 +85,13 @@ public:
 	Sequence();
 	~Sequence();
 	time_type now();
-	Event * insert_event(key_type key, bool hold=false);
+	Event * insert_event(key_type key, unsigned int amplitude, bool hold);
 	void set_event_end(Event * event);
+	void emit_track(unsigned int idx_track);
 	void update();
 	void clear();
+	void toggle_start();
+	void toggle_record();
 	void set_next_track();
 	void set_previous_track();
 	void set_current_track_duration(time_type t);
@@ -99,6 +105,7 @@ public:
 	std::chrono::system_clock::time_point _start_point;
 	sharedata_type * _data2send;
 	int _fd;
+	SEQ_MODE _mode;
 };
 
 

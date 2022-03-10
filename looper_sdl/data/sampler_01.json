@@ -1,0 +1,14 @@
+{
+	"a" : {
+		"wav" : "../data/samples/kick.wav",
+		"mode" : "ALL"
+	},
+	"b" : {
+		"wav" : "../data/samples/snare.wav",
+		"mode" : "ALL"
+	},
+	"c" : {
+		"wav" : "../data/samples/hihat.wav",
+		"mode" : "ALL"
+	}
+}

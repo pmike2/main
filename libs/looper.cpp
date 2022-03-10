@@ -14,18 +14,28 @@ using namespace std;
 
 
 bool operator== (const sharedata_type& x, const sharedata_type& y) {
-	return ((x._key== y._key) && (x._duration== y._duration) && (x._amplitude== y._amplitude));
+	return ((x._key== y._key) && (x._t_start== y._t_start) && (x._t_end== y._t_end) && (x._amplitude== y._amplitude));
 }
 
 
 bool operator!= (const sharedata_type& x, const sharedata_type& y) {
-	return ((x._key!= y._key) || (x._duration!= y._duration) || (x._amplitude!= y._amplitude));
+	return ((x._key!= y._key) || (x._t_start!= y._t_start) || (x._t_end!= y._t_end) || (x._amplitude!= y._amplitude));
+}
+
+
+ostream & operator << (ostream & os, const sharedata_type & e) {
+	os << "key= " << e._key << " ; ";
+	os << "t_start= " << time_print(e._t_start) << " ; ";
+	os << "t_end= " << time_print(e._t_end) << " ; ";
+	os << "amplitude= " << e._amplitude << " ; ";
+	return os;
 }
 
 
 sharedata_type& sharedata_type::operator=(const sharedata_type& other) {
 	_key= other._key;
-	_duration= other._duration;
+	_t_start= other._t_start;
+	_t_end= other._t_end;
 	_amplitude= other._amplitude;
 	return *this;
 }
@@ -33,7 +43,8 @@ sharedata_type& sharedata_type::operator=(const sharedata_type& other) {
 
 void sharedata_type::set_null() {
 	_key= NULL_KEY;
-	_duration= time_type::zero();
+	_t_start= time_type::zero();
+	_t_end= time_type::zero();
 	_amplitude= 0;
 }
 
@@ -65,48 +76,49 @@ Event::~Event() {
 }
 
 
-void Event::set(time_type t, Event * previous, Event * next, key_type key, bool hold) {
-	_t_start= t;
-	_t_end= t;
+void Event::set(key_type key, time_type t, unsigned int amplitude, Event * previous, Event * next, bool hold=false) {
+	_data._key= key;
+	_data._t_start= t;
+	_data._t_end= t;
+	_data._amplitude= amplitude;
 	_previous= previous;
 	_next= next;
-	_key= key;
 	_hold= hold;
 
 	if (!hold) {
-		_t_end= _t_start+ MIN_EVENT_DURATION;
+		_data._t_end= _data._t_start+ DEFAULT_EVENT_DURATION;
 	}
 }
 
 
 void Event::set_end(time_type t) {
-	_t_end= t;
+	_data._t_end= t;
 	_hold= false;
 }
 
 
 void Event::set_null() {
-	_t_start= time_type::zero();
-	_t_end= time_type::zero();
+	_data._key= NULL_KEY;
+	_data._t_start= time_type::zero();
+	_data._t_end= time_type::zero();
+	_data._amplitude= 0;
 	_previous= 0;
 	_next= 0;
-	_key= NULL_KEY;
 	_hold= false;
 }
 
 
 bool Event::is_null() {
-	return _key== NULL_KEY;
+	return _data._key== NULL_KEY;
 }
 
 
 ostream & operator << (ostream & os, const Event & e) {
 	os << "addr= " << &e << " ; ";
-	os << "key= " << e._key << " ; ";
-	os << "t_start= " << time_print(e._t_start) << " ; ";
-	os << "t_end= " << time_print(e._t_end) << " ; ";
+	os << "data= " << e._data << " ; ";
 	os << "previous= " << e._previous << " ; ";
 	os << "next= " << e._next;
+	os << "hold= " << e._hold;
 	return os;
 }
 
@@ -115,15 +127,15 @@ ostream & operator << (ostream & os, const Event & e) {
 Track::Track() : 
 	/*_duration(time_type::zero()),*/ _duration(DEFAULT_TRACK_DURATION), _last_event(0), _current_cycle(0), _next(0), _previous(0)
 {
-	for (unsigned int i=0; i<N_MAX_EVENTS; ++i) {
-		_events[i]= new Event();
+	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+		_events[idx_event]= new Event();
 	}
 }
 
 
 Track::~Track() {
-	for (unsigned int i=0; i<N_MAX_EVENTS; ++i) {
-		delete _events[i];
+	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+		delete _events[idx_event];
 	}
 }
 
@@ -151,9 +163,9 @@ void Track::set_duration(time_type t) {
 
 
 Event * Track::get_first_null_event() {
-	for (unsigned int i=0; i<N_MAX_EVENTS; ++i) {
-		if (_events[i]->is_null()) {
-			return _events[i];
+	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+		if (_events[idx_event]->is_null()) {
+			return _events[idx_event];
 		}
 	}
 	return 0;
@@ -161,9 +173,9 @@ Event * Track::get_first_null_event() {
 
 
 Event * Track::get_first_not_null_event() {
-	for (unsigned int i=0; i<N_MAX_EVENTS; ++i) {
-		if (!_events[i]->is_null()) {
-			return _events[i];
+	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+		if (!_events[idx_event]->is_null()) {
+			return _events[idx_event];
 		}
 	}
 	return 0;
@@ -175,10 +187,10 @@ Event * Track::get_last_event_before(time_type t) {
 	if (res== 0) {
 		return 0;
 	}
-	if (res->_t_start> t) {
+	if (res->_data._t_start> t) {
 		return 0;
 	}
-	while ((res->_next) && (res->_next->_t_start<= t)) {
+	while ((res->_next) && (res->_next->_data._t_start<= t)) {
 		res= res->_next;
 	}
 
@@ -191,10 +203,10 @@ Event * Track::get_first_event_after(time_type t) {
 	if (res== 0) {
 		return 0;
 	}
-	if (res->_t_start< t) {
+	if (res->_data._t_start< t) {
 		return 0;
 	}
-	while ((res->_previous) && (res->_previous->_t_start>= t)) {
+	while ((res->_previous) && (res->_previous->_data._t_start>= t)) {
 		res= res->_previous;
 	}
 
@@ -230,7 +242,7 @@ Event * Track::get_last_event() {
 }
 
 
-Event * Track::insert_event(key_type key, time_type t, bool hold) {
+Event * Track::insert_event(key_type key, time_type t, unsigned int amplitude, bool hold) {
 	//cout << "insert_event " << key << "\n";
 
 	t= get_relative_t(t);
@@ -250,13 +262,13 @@ Event * Track::insert_event(key_type key, time_type t, bool hold) {
 		event_after_t= get_first_event_after(t);
 	}
 
-	event2insert->set(t, event_before_t, event_after_t, key, hold);
+	event2insert->set(key, t, amplitude, event_before_t, event_after_t, hold);
 	if (event_before_t) {
 		//cout << "before : " << *event_before_t << "\n";
 		event_before_t->_next= event2insert;
 
-		if (event_before_t->_t_end>= t) {
-			event_before_t->_t_end= t- chrono::milliseconds(1);
+		if (event_before_t->_data._t_end>= t) {
+			event_before_t->_data._t_end= t- chrono::milliseconds(1);
 		}
 	}
 	if (event_after_t) {
@@ -308,7 +320,7 @@ void Track::update(time_type t) {
 
 	if (!_last_event) {
 		Event * first_event= get_first_event();
-		if ((first_event) && (t>= first_event->_t_start)) {
+		if ((first_event) && (t>= first_event->_data._t_start)) {
 			_last_event= first_event;
 			//cout << "Event(2) " << _last_event->_key << "\n";
 		}
@@ -319,19 +331,19 @@ void Track::update(time_type t) {
 	}
 
 	if (_last_event->_hold) {
-		_last_event->_t_end= t;
+		_last_event->_data._t_end= t;
 	}
 
-	if (t> _last_event->_t_end) {
+	if (t> _last_event->_data._t_end) {
 		//_last_event= 0;
 	}
 	else {
-		while ((_last_event->_next) && (_last_event->_next->_t_start<= t)) {
+		while ((_last_event->_next) && (_last_event->_next->_data._t_start<= t)) {
 			delete_event(_last_event->_next);
 		}
 	}
 	
-	if ((_last_event->_next) && (t>= _last_event->_next->_t_start)) {
+	if ((_last_event->_next) && (t>= _last_event->_next->_data._t_start)) {
 		_last_event= _last_event->_next;
 		//cout << "Event(1) " << _last_event->_key << "\n";
 	}
@@ -339,28 +351,28 @@ void Track::update(time_type t) {
 
 
 void Track::clear() {
-	for (unsigned int i=0; i<N_MAX_EVENTS; ++i) {
-		_events[i]->set_null();
+	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+		_events[idx_event]->set_null();
 	}
 }
 
 
 // ----------------------------------------------------------------
-Sequence::Sequence() : _start_point(chrono::system_clock::now()) {
-	for (unsigned int i=0; i<N_MAX_TRACKS; ++i) {
-		_tracks[i]= new Track();
+Sequence::Sequence() : _start_point(chrono::system_clock::now()), _mode(STOPPED) {
+	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		_tracks[idx_track]= new Track();
 	}
 
-	for (unsigned int i=0; i<N_MAX_TRACKS; ++i) {
-		if (i> 0) {
-			_tracks[i]->_previous= _tracks[i- 1];
+	for (unsigned int idx_track=1; idx_track<N_MAX_TRACKS; ++idx_track) {
+		if (idx_track> 1) {
+			_tracks[idx_track]->_previous= _tracks[idx_track- 1];
 		}
-		if (i< N_MAX_TRACKS- 1) {
-			_tracks[i]->_next= _tracks[i+ 1];
+		if (idx_track< N_MAX_TRACKS- 1) {
+			_tracks[idx_track]->_next= _tracks[idx_track+ 1];
 		}
 	}
 
-	_current_track= _tracks[0];
+	_current_track= _tracks[1];
 
 	init_data2send();
 }
@@ -368,8 +380,8 @@ Sequence::Sequence() : _start_point(chrono::system_clock::now()) {
 
 Sequence::~Sequence() {
 	close_data2send();
-	for (unsigned int i=0; i<N_MAX_TRACKS; ++i) {
-		delete _tracks[i];
+	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		delete _tracks[idx_track];
 	}
 }
 
@@ -380,32 +392,83 @@ time_type Sequence::now() {
 }
 
 
-Event * Sequence::insert_event(key_type key, bool hold) {
-	return _current_track->insert_event(key, now(), hold);
+Event * Sequence::insert_event(key_type key, unsigned int amplitude, bool hold) {
+	if (_mode== RECORDING) {
+		return _current_track->insert_event(key, now(), amplitude, hold);
+	}
+	else {
+		_tracks[0]->clear();
+		_tracks[0]->_last_event= _tracks[0]->insert_event(key, time_type::zero(), amplitude, hold);
+		return _tracks[0]->_last_event;
+	}
 }
 
 
 void Sequence::set_event_end(Event * event) {
-	event->set_end(_current_track->get_relative_t(now()));
+	if (_mode== RECORDING) {
+		event->set_end(_current_track->get_relative_t(now()));
+	}
+	else {
+		event->set_end(now());
+	}
+}
+
+
+void Sequence::emit_track(unsigned int idx_track) {
+	_data2send[idx_track]._key      = _tracks[idx_track]->_last_event->_data._key;
+	_data2send[idx_track]._t_start  = _tracks[idx_track]->_last_event->_data._t_start;
+	_data2send[idx_track]._t_end    = _tracks[idx_track]->_last_event->_data._t_end;
+	_data2send[idx_track]._amplitude= _tracks[idx_track]->_last_event->_data._amplitude;
 }
 
 
 void Sequence::update() {
 	time_type now_time= now();
-	for (unsigned int i=0; i<N_MAX_TRACKS; ++i) {
-		_tracks[i]->update(now_time);
-		if (_tracks[i]->_last_event!= 0) {
-			_data2send[i]._key= _tracks[i]->_last_event->_key;
-			_data2send[i]._duration= _tracks[i]->_last_event->_t_end- _tracks[i]->_last_event->_t_start;
-			_data2send[i]._amplitude= 0; // TODO
+
+	if ((_mode== RUNNING) || (_mode== RECORDING)) {
+		for (unsigned int idx_track=1; idx_track<N_MAX_TRACKS; ++idx_track) {
+			_tracks[idx_track]->update(now_time);
+			if (_tracks[idx_track]->_last_event!= 0) {
+				emit_track(idx_track);
+			}
+		}
+	}
+	else {
+		if (_tracks[0]->_last_event!= 0) {
+			if (_tracks[0]->_last_event->_hold) {
+				_tracks[0]->_last_event->_data._t_end= now_time;
+			}
+
+			emit_track(0);
 		}
 	}
 }
 
 
 void Sequence::clear() {
-	for (unsigned int i=0; i<N_MAX_TRACKS; ++i) {
-		_tracks[i]->clear();
+	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		_tracks[idx_track]->clear();
+	}
+}
+
+
+void Sequence::toggle_start() {
+	if ((_mode== RUNNING) || (_mode== RECORDING)) {
+		_mode= STOPPED;
+	}
+	else if (_mode== STOPPED) {
+		_mode= RUNNING;
+		_start_point= chrono::system_clock::now();
+	}
+}
+
+
+void Sequence::toggle_record() {
+	if (_mode== RECORDING) {
+		_mode= RUNNING;
+	}
+	else if (_mode== RUNNING) {
+		_mode= RECORDING;
 	}
 }
 
@@ -430,10 +493,10 @@ void Sequence::set_current_track_duration(time_type t) {
 
 
 void Sequence::set_current_track_duration_ratio(float ratio) {
-	if (_current_track== _tracks[0]) {
+	if (_current_track== _tracks[1]) {
 		return;
 	}
-	float t_f= (float)(time_ms(_tracks[0]->_duration))* ratio;
+	float t_f= (float)(time_ms(_tracks[1]->_duration))* ratio;
 	time_type t= std::chrono::milliseconds((unsigned int)(t_f));
 	set_current_track_duration(t);
 }
@@ -447,7 +510,7 @@ void Sequence::init_data2send() {
 	// O_EXCL permet de générer une erreur si l'objet existe déjà mais c'est pénible d'avoir à supprimer l'objet à la main
 	_fd= shm_open(SHARED_MEM_OBJ_NAME.c_str(), O_CREAT | O_RDWR, 0600);
 	if (_fd< 0) {
-		perror("ERROR shm_open");
+		perror("Sequence : ERROR shm_open");
 		return;
 	}
 
@@ -460,8 +523,8 @@ void Sequence::init_data2send() {
 	_data2send= (sharedata_type *)mmap(0, DATA_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, _fd, 0);
 	//cout << _data2send << "\n";
 
-	for (unsigned i=0; i<N_MAX_TRACKS; ++i) {
-		_data2send[i].set_null();
+	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		_data2send[idx_track].set_null();
 	}
 }
 
@@ -479,10 +542,10 @@ void Sequence::close_data2send() {
 
 
 void Sequence::debug() {
-	for (unsigned i=0; i<N_MAX_TRACKS; ++i) {
-		for (unsigned j=0; j<N_MAX_EVENTS; ++j) {
-			if (!_tracks[i]->_events[j]->is_null()) {
-				cout << *_tracks[i]->_events[j] << "\n";
+	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		for (unsigned idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+			if (!_tracks[idx_track]->_events[idx_event]->is_null()) {
+				cout << "track " << idx_track << " : " << *_tracks[idx_track]->_events[idx_event] << "\n";
 			}
 		}
 		break;
@@ -495,8 +558,8 @@ Receiver::Receiver() {
 	init_data2receive();
 
 	_data2receive_current= new sharedata_type[N_MAX_TRACKS];
-	for (unsigned i=0; i<N_MAX_TRACKS; ++i) {
-		_data2receive_current[i].set_null();
+	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		_data2receive_current[idx_track].set_null();
 	}
 
 }
@@ -511,6 +574,10 @@ void Receiver::init_data2receive() {
 	// create shared memory object; renvoie un file descriptor
 	// O_RDONLY : lecture
 	_fd= shm_open(SHARED_MEM_OBJ_NAME.c_str(), O_RDONLY, 0666);
+	if (_fd< 0) {
+		perror("Receiver : ERROR shm_open");
+		return;
+	}
 
 	// map file descriptor into memory
 	// PROT_READ : lecture
@@ -529,15 +596,14 @@ void Receiver::close_data2receive() {
 
 
 void Receiver::update() {
-	for (unsigned i=0; i<N_MAX_TRACKS; ++i) {
-		if (_data2receive[i].is_null()) {
+	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		if (_data2receive[idx_track].is_null()) {
 			continue;
 		} 
-		
-		if (_data2receive_current[i]!= _data2receive[i]) {
-			_data2receive_current[i]= _data2receive[i];
-			on_new_data(_data2receive_current[i]);
+
+		if (_data2receive_current[idx_track]!= _data2receive[idx_track]) {
+			_data2receive_current[idx_track]= _data2receive[idx_track];
+			on_new_data(_data2receive_current[idx_track]);
 		}
 	}
 }
-

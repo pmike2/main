@@ -17,8 +17,10 @@
 
 void print_supported_standard_sample_rates(const PaStreamParameters *inputParameters, const PaStreamParameters *outputParameters);
 int list_devices();
-
-
+PaStream * pa_init(int idx_device_input, int idx_device_output, const unsigned int sample_rate, const unsigned int frames_per_buffer,
+	int (* callback)(const void * input, void * output, unsigned long sample_count, const PaStreamCallbackTimeInfo * time_info, PaStreamCallbackFlags status_flags, void * user_data),
+	void * user_data);
+void pa_close(PaStream * stream);
 
 #endif
 
