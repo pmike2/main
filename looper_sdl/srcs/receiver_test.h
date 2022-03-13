@@ -8,7 +8,8 @@ class ReceiverTest : public Receiver {
 public:
 	ReceiverTest();
 	~ReceiverTest();
-	void on_new_data(sharedata_type data);
+	void note_on(unsigned int idx_track);
+	void note_off(unsigned int idx_track);
 };
 
 #endif

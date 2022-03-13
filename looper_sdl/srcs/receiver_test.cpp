@@ -17,6 +17,12 @@ ReceiverTest::~ReceiverTest() {
 }
 
 
-void ReceiverTest::on_new_data(sharedata_type data) {
-	cout << "key=" << data._key << " ; t_start=" << time_print(data._t_start) << " ; t_end=" << time_print(data._t_end) << " ; amplitude=" << data._amplitude << "\n";
+void ReceiverTest::note_on(unsigned int idx_track) {
+	cout << "NOTE_ON : idx_track=" << idx_track << " ; key=" << _data[idx_track]._key << " ; t_start=" << time_print(_data[idx_track]._t_start) << " ; t_end=" << time_print(_data[idx_track]._t_end) << " ; amplitude=" << _data[idx_track]._amplitude << "\n";
+}
+
+
+void ReceiverTest::note_off(unsigned int idx_track) {
+	//cout << "NOTE_OFF : idx_track=" << idx_track << " ; key=" << _data[idx_track]._key << " ; t_start=" << time_print(_data[idx_track]._t_start) << " ; t_end=" << time_print(_data[idx_track]._t_end) << " ; amplitude=" << _data[idx_track]._amplitude << "\n";
+	cout << "NOTE_OFF : idx_track=" << idx_track << "\n";
 }

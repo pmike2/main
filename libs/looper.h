@@ -5,6 +5,7 @@
 #include <string>
 
 enum SEQ_MODE {STOPPED, RUNNING, RECORDING};
+//enum EVENT_TYPE {NOTE_ON, NOTE_OFF};
 
 typedef std::chrono::system_clock::duration time_type;
 typedef unsigned int key_type;
@@ -18,9 +19,9 @@ struct sharedata_type {
 	bool is_null();
 
 	key_type _key;
+	unsigned int _amplitude;
 	time_type _t_start;
 	time_type _t_end;
-	unsigned int _amplitude;
 };
 
 const unsigned int N_MAX_EVENTS= 1024;
@@ -56,6 +57,7 @@ public:
 class Track {
 public:
 	Track();
+	Track(sharedata_type * track_data, bool infinite=false);
 	~Track();
 	time_type get_relative_t(time_type t);
 	unsigned int get_cycle(time_type t);
@@ -66,17 +68,21 @@ public:
 	Event * get_first_event_after(time_type t);
 	Event * get_first_event();
 	Event * get_last_event();
-	Event * insert_event(key_type key, time_type t, unsigned int amplitude, bool hold);
+	void insert_event(key_type key, time_type t, unsigned int amplitude, bool hold);
 	void delete_event(Event * event);
 	void update(time_type t);
+	void emit_current();
+	void emit_null();
 	void clear();
 
 	time_type _duration;
 	Event * _events[N_MAX_EVENTS];
-	Event * _last_event;
+	Event * _current_event;
 	unsigned int _current_cycle;
 	Track * _previous;
 	Track * _next;
+	sharedata_type * _data;
+	bool _infinite;
 };
 
 
@@ -85,9 +91,8 @@ public:
 	Sequence();
 	~Sequence();
 	time_type now();
-	Event * insert_event(key_type key, unsigned int amplitude, bool hold);
-	void set_event_end(Event * event);
-	void emit_track(unsigned int idx_track);
+	void note_on(key_type key, unsigned int amplitude, bool hold);
+	void note_off();
 	void update();
 	void clear();
 	void toggle_start();
@@ -96,14 +101,14 @@ public:
 	void set_previous_track();
 	void set_current_track_duration(time_type t);
 	void set_current_track_duration_ratio(float ratio);
-	void init_data2send();
-	void close_data2send();
+	void init_data();
+	void close_data();
 	void debug();
 
 	Track * _tracks[N_MAX_TRACKS];
 	Track * _current_track;
 	std::chrono::system_clock::time_point _start_point;
-	sharedata_type * _data2send;
+	sharedata_type * _data;
 	int _fd;
 	SEQ_MODE _mode;
 };
@@ -113,13 +118,14 @@ class Receiver {
 public:
 	Receiver();
 	~Receiver();
-	void init_data2receive();
-	void close_data2receive();
+	void init_data();
+	void close_data();
 	void update();
-	virtual void on_new_data(sharedata_type data) = 0;
+	virtual void note_on(unsigned int idx_track) = 0;
+	virtual void note_off(unsigned int idx_track) = 0;
 
-	sharedata_type * _data2receive;
-	sharedata_type * _data2receive_current;
+	sharedata_type * _data;
+	sharedata_type * _data_current;
 	int _fd;
 };
 

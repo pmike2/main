@@ -14,12 +14,14 @@ using namespace std;
 
 
 bool operator== (const sharedata_type& x, const sharedata_type& y) {
-	return ((x._key== y._key) && (x._t_start== y._t_start) && (x._t_end== y._t_end) && (x._amplitude== y._amplitude));
+	//return ((x._key== y._key) && (x._t_start== y._t_start) && (x._t_end== y._t_end) && (x._amplitude== y._amplitude));
+	return ((x._key== y._key) && (x._t_start== y._t_start) && (x._amplitude== y._amplitude));
 }
 
 
 bool operator!= (const sharedata_type& x, const sharedata_type& y) {
-	return ((x._key!= y._key) || (x._t_start!= y._t_start) || (x._t_end!= y._t_end) || (x._amplitude!= y._amplitude));
+	//return ((x._key!= y._key) || (x._t_start!= y._t_start) || (x._t_end!= y._t_end) || (x._amplitude!= y._amplitude));
+	return ((x._key!= y._key) || (x._t_start!= y._t_start) || (x._amplitude!= y._amplitude));
 }
 
 
@@ -27,7 +29,7 @@ ostream & operator << (ostream & os, const sharedata_type & e) {
 	os << "key= " << e._key << " ; ";
 	os << "t_start= " << time_print(e._t_start) << " ; ";
 	os << "t_end= " << time_print(e._t_end) << " ; ";
-	os << "amplitude= " << e._amplitude << " ; ";
+	os << "amplitude= " << e._amplitude;
 	return os;
 }
 
@@ -117,16 +119,28 @@ ostream & operator << (ostream & os, const Event & e) {
 	os << "addr= " << &e << " ; ";
 	os << "data= " << e._data << " ; ";
 	os << "previous= " << e._previous << " ; ";
-	os << "next= " << e._next;
+	os << "next= " << e._next << " ; ";
 	os << "hold= " << e._hold;
 	return os;
 }
 
 
 // ----------------------------------------------------------------
-Track::Track() : 
-	/*_duration(time_type::zero()),*/ _duration(DEFAULT_TRACK_DURATION), _last_event(0), _current_cycle(0), _next(0), _previous(0)
+Track::Track() {
+
+}
+
+
+Track::Track(sharedata_type * track_data, bool infinite) :
+	_current_event(0), _current_cycle(0), _next(0), _previous(0), _data(track_data), _infinite(infinite)
 {
+	if (_infinite) {
+		_duration= time_type::zero();
+	}
+	else {
+		_duration= DEFAULT_TRACK_DURATION;
+	}
+
 	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		_events[idx_event]= new Event();
 	}
@@ -141,11 +155,19 @@ Track::~Track() {
 
 
 time_type Track::get_relative_t(time_type t) {
+	if (_infinite) {
+		return t;
+	}
+
 	return t % _duration;
 }
 
 
 unsigned int Track::get_cycle(time_type t) {
+	if (_infinite) {
+		return 0;
+	}
+
 	unsigned int cycle= t / _duration;
 	return cycle;
 }
@@ -242,7 +264,7 @@ Event * Track::get_last_event() {
 }
 
 
-Event * Track::insert_event(key_type key, time_type t, unsigned int amplitude, bool hold) {
+void Track::insert_event(key_type key, time_type t, unsigned int amplitude, bool hold) {
 	//cout << "insert_event " << key << "\n";
 
 	t= get_relative_t(t);
@@ -250,7 +272,7 @@ Event * Track::insert_event(key_type key, time_type t, unsigned int amplitude, b
 	Event * event2insert= get_first_null_event();
 	if (event2insert== 0) {
 		cout << "TRACK FULL !\n";
-		return 0;
+		//return 0;
 	}
 
 	Event * event_before_t= get_last_event_before(t);
@@ -276,7 +298,7 @@ Event * Track::insert_event(key_type key, time_type t, unsigned int amplitude, b
 		event_after_t->_previous= event2insert;
 	}
 
-	return event2insert;
+	//return event2insert;
 }
 
 
@@ -309,44 +331,65 @@ void Track::update(time_type t) {
 	if (cycle!= _current_cycle) {
 		_current_cycle= cycle;
 
-		if ((_last_event) && (_last_event->_hold)) {
-			_last_event->set_end(_duration);
+		if ((_current_event) && (_current_event->_hold)) {
+			_current_event->set_end(_duration);
 		}
 
-		_last_event= 0;
+		_current_event= 0;
 	}
 
 	t= get_relative_t(t);
 
-	if (!_last_event) {
+	if (!_current_event) {
 		Event * first_event= get_first_event();
 		if ((first_event) && (t>= first_event->_data._t_start)) {
-			_last_event= first_event;
-			//cout << "Event(2) " << _last_event->_key << "\n";
+			_current_event= first_event;
 		}
 	}
-	
-	if (!_last_event) {
+
+	if (!_current_event) {
+		emit_null();
 		return;
 	}
 
-	if (_last_event->_hold) {
-		_last_event->_data._t_end= t;
-	}
+	if (_current_event->_hold) {
+		_current_event->_data._t_end= t;
 
-	if (t> _last_event->_data._t_end) {
-		//_last_event= 0;
+		while ((_current_event->_next) && (_current_event->_next->_data._t_start<= t)) {
+			delete_event(_current_event->_next);
+		}
+		emit_current();
 	}
 	else {
-		while ((_last_event->_next) && (_last_event->_next->_data._t_start<= t)) {
-			delete_event(_last_event->_next);
+		while ((_current_event->_next) && (t>= _current_event->_next->_data._t_start)) {
+			_current_event= _current_event->_next;
+		}
+
+		if (t> _current_event->_data._t_end) {
+			emit_null();
+		}
+		else {
+			emit_current();
 		}
 	}
-	
-	if ((_last_event->_next) && (t>= _last_event->_next->_data._t_start)) {
-		_last_event= _last_event->_next;
-		//cout << "Event(1) " << _last_event->_key << "\n";
-	}
+}
+
+
+void Track::emit_current() {
+	//cout << "emit_current : " << _current_event->_data << "\n";
+	_data->_key      = _current_event->_data._key;
+	_data->_t_start  = _current_event->_data._t_start;
+	_data->_t_end    = _current_event->_data._t_end;
+	_data->_amplitude= _current_event->_data._amplitude;
+}
+
+
+void Track::emit_null() {
+	//cout << "emit_null\n";
+	_data->_key      = NULL_KEY;
+	_data->_t_start  = time_type::zero();
+	_data->_t_end    = time_type::zero();
+	_data->_amplitude= 0;
 }
 
 
@@ -359,8 +402,14 @@ void Track::clear() {
 
 // ----------------------------------------------------------------
 Sequence::Sequence() : _start_point(chrono::system_clock::now()), _mode(STOPPED) {
+	init_data();
+
 	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
-		_tracks[idx_track]= new Track();
+		bool infinite= false;
+		if (idx_track== 0) {
+			infinite= true;
+		}
+		_tracks[idx_track]= new Track(&_data[idx_track], infinite);
 	}
 
 	for (unsigned int idx_track=1; idx_track<N_MAX_TRACKS; ++idx_track) {
@@ -373,13 +422,11 @@ Sequence::Sequence() : _start_point(chrono::system_clock::now()), _mode(STOPPED)
 	}
 
 	_current_track= _tracks[1];
-
-	init_data2send();
 }
 
 
 Sequence::~Sequence() {
-	close_data2send();
+	close_data();
 	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
 		delete _tracks[idx_track];
 	}
@@ -392,55 +439,52 @@ time_type Sequence::now() {
 }
 
 
-Event * Sequence::insert_event(key_type key, unsigned int amplitude, bool hold) {
+void Sequence::note_on(key_type key, unsigned int amplitude, bool hold) {
+	//note_off();
+
 	if (_mode== RECORDING) {
-		return _current_track->insert_event(key, now(), amplitude, hold);
+		_current_track->insert_event(key, now(), amplitude, hold);
 	}
 	else {
 		_tracks[0]->clear();
-		_tracks[0]->_last_event= _tracks[0]->insert_event(key, time_type::zero(), amplitude, hold);
-		return _tracks[0]->_last_event;
+		_tracks[0]->insert_event(key, now(), amplitude, hold);
 	}
+
+	update();
 }
 
 
-void Sequence::set_event_end(Event * event) {
+void Sequence::note_off() {
 	if (_mode== RECORDING) {
-		event->set_end(_current_track->get_relative_t(now()));
+		if (_current_track->_current_event) {
+			_current_track->_current_event->set_end(_current_track->get_relative_t(now()));
+		}
 	}
 	else {
-		event->set_end(now());
+		if (_tracks[0]->_current_event) {
+			_tracks[0]->_current_event->set_end(now());
+		}
 	}
-}
 
-
-void Sequence::emit_track(unsigned int idx_track) {
-	_data2send[idx_track]._key      = _tracks[idx_track]->_last_event->_data._key;
-	_data2send[idx_track]._t_start  = _tracks[idx_track]->_last_event->_data._t_start;
-	_data2send[idx_track]._t_end    = _tracks[idx_track]->_last_event->_data._t_end;
-	_data2send[idx_track]._amplitude= _tracks[idx_track]->_last_event->_data._amplitude;
+	update();
 }
 
 
 void Sequence::update() {
 	time_type now_time= now();
 
-	if ((_mode== RUNNING) || (_mode== RECORDING)) {
-		for (unsigned int idx_track=1; idx_track<N_MAX_TRACKS; ++idx_track) {
+	if (_mode== RUNNING) {
+		for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
 			_tracks[idx_track]->update(now_time);
-			if (_tracks[idx_track]->_last_event!= 0) {
-				emit_track(idx_track);
-			}
 		}
 	}
-	else {
-		if (_tracks[0]->_last_event!= 0) {
-			if (_tracks[0]->_last_event->_hold) {
-				_tracks[0]->_last_event->_data._t_end= now_time;
-			}
-
-			emit_track(0);
+	else if (_mode== RECORDING) {
+		for (unsigned int idx_track=1; idx_track<N_MAX_TRACKS; ++idx_track) {
+			_tracks[idx_track]->update(now_time);
 		}
+	}
+	else if (_mode== STOPPED) {
+		_tracks[0]->update(now_time);
 	}
 }
 
@@ -460,6 +504,8 @@ void Sequence::toggle_start() {
 		_mode= RUNNING;
 		_start_point= chrono::system_clock::now();
 	}
+
+	_tracks[0]->clear();
 }
 
 
@@ -502,7 +548,7 @@ void Sequence::set_current_track_duration_ratio(float ratio) {
 }
 
 
-void Sequence::init_data2send() {
+void Sequence::init_data() {
 	//https://linuxhint.com/posix-shared-memory-c-programming/
 
 	// create shared memory object; renvoie un file descriptor
@@ -520,18 +566,18 @@ void Sequence::init_data2send() {
 	// map file descriptor into memory
 	// PROT_READ | PROT_WRITE : lecture & écriture
 	// MAP_SHARED : d'autres processeurs auront accès à ce mapping
-	_data2send= (sharedata_type *)mmap(0, DATA_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, _fd, 0);
-	//cout << _data2send << "\n";
+	_data= (sharedata_type *)mmap(0, DATA_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, _fd, 0);
+	//cout << _data << "\n";
 
 	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
-		_data2send[idx_track].set_null();
+		_data[idx_track].set_null();
 	}
 }
 
 
-void Sequence::close_data2send() {
+void Sequence::close_data() {
 	// suppression du mapping
-	munmap(_data2send, DATA_SIZE);
+	munmap(_data, DATA_SIZE);
 
 	// fermeture file
 	close(_fd);
@@ -555,25 +601,26 @@ void Sequence::debug() {
 
 // ------------------------------------------------------------------
 Receiver::Receiver() {
-	init_data2receive();
+	init_data();
 
-	_data2receive_current= new sharedata_type[N_MAX_TRACKS];
+	_data_current= new sharedata_type[N_MAX_TRACKS];
 	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
-		_data2receive_current[idx_track].set_null();
+		_data_current[idx_track].set_null();
 	}
 
 }
 
 Receiver::~Receiver() {
-	close_data2receive();
-	delete[] _data2receive_current;
+	close_data();
+	delete[] _data_current;
 }
 
 
-void Receiver::init_data2receive() {
+void Receiver::init_data() {
 	// create shared memory object; renvoie un file descriptor
 	// O_RDONLY : lecture
 	_fd= shm_open(SHARED_MEM_OBJ_NAME.c_str(), O_RDONLY, 0666);
+	//_fd= shm_open(SHARED_MEM_OBJ_NAME.c_str(), O_CREAT | O_RDWR, 0600);
 	if (_fd< 0) {
 		perror("Receiver : ERROR shm_open");
 		return;
@@ -582,13 +629,14 @@ void Receiver::init_data2receive() {
 	// map file descriptor into memory
 	// PROT_READ : lecture
 	// MAP_SHARED : d'autres processeurs auront accès à ce mapping
-	_data2receive= (sharedata_type *)mmap(0, DATA_SIZE, PROT_READ, MAP_SHARED, _fd, 0);
+	_data= (sharedata_type *)mmap(0, DATA_SIZE, PROT_READ, MAP_SHARED, _fd, 0);
+	//_data= (sharedata_type *)mmap(0, DATA_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, _fd, 0);
 }
 
 
-void Receiver::close_data2receive() {
+void Receiver::close_data() {
 	// suppression du mapping
-	munmap(_data2receive, DATA_SIZE);
+	munmap(_data, DATA_SIZE);
 
 	// fermeture file
 	close(_fd);
@@ -596,14 +644,22 @@ void Receiver::close_data2receive() {
 
 
 void Receiver::update() {
-	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
-		if (_data2receive[idx_track].is_null()) {
-			continue;
-		} 
+	//cout << _data_current[0] << " | " << _data[0] << "\n";
 
-		if (_data2receive_current[idx_track]!= _data2receive[idx_track]) {
-			_data2receive_current[idx_track]= _data2receive[idx_track];
-			on_new_data(_data2receive_current[idx_track]);
+	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		/*if (_data[idx_track].is_null()) {
+			continue;
+		} */
+
+		if (_data_current[idx_track]!= _data[idx_track]) {
+			if (!_data_current[idx_track].is_null()) {
+				note_off(idx_track);
+			}
+
+			if (!_data[idx_track].is_null()) {
+				note_on(idx_track);
+			}
+			_data_current[idx_track]= _data[idx_track];
 		}
 	}
 }

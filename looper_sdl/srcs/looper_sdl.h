@@ -16,29 +16,21 @@ struct Color {
 	int _b;
 };
 
-/*
-class EventSDL : public Event {
-public:
-	EventSDL();
-	~EventSDL();
-
-	Color _color;
-};
-*/
 
 class LooperSDL : public Sequence {
 public:
 	LooperSDL();
 	LooperSDL(SDL_Renderer * renderer, int screen_width, int screen_height);
 	~LooperSDL();
+	bool event_key(SDL_Keycode key);
 	void key_down(SDL_Keycode key);
 	void key_up(SDL_Keycode key);
 	void draw();
 	Color get_color(SDL_Keycode key);
 	void draw_rect(int x, int y, int w, int h, Color c);
 
-	Event * _current_event;
-	SDL_Keycode _current_event_key;
+	//Event * _current_event;
+	//SDL_Keycode _current_event_key;
 	InputState * _input_state;
 	SDL_Renderer * _renderer;
 	int _screen_width;

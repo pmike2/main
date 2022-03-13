@@ -20,7 +20,7 @@ using namespace std;
 const unsigned int SAMPLE_RATE= 44100;
 
 // nombre de samples a traiter a chaque appel du callback portaudio
-const unsigned int FRAMES_PER_BUFFER= 1024;
+const unsigned int FRAMES_PER_BUFFER= 128;
 
 
 PaStream * stream;
@@ -37,25 +37,25 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 		out[2* i+ 0]= 0.0f;
 		out[2* i+ 1]= 0.0f;
 
-		for (unsigned int idx_sample=0; idx_sample<N_MAX_SAMPLE_PLAYING; ++idx_sample) {
-			if (s->_playing[idx_sample]->_playing) {
-				key_type key= s->_playing[idx_sample]->_info._key;
+		for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+			if (s->_track_samples[idx_track]->_playing) {
+				key_type key= s->_track_samples[idx_track]->_info._key;
 				SubSample * sub_sample= s->_map[key];
-				//float amplitude= (float)(s->_playing[idx_sample]->_info._amplitude)/ 128.0f;
+				//float amplitude= (float)(s->_track_samples[idx_track]->_info._amplitude)/ 128.0f;
 				float amplitude= 1.0f;
 
 				if (sub_sample->_sample->_n_channels== 1) {
-					out[2* i+ 0]+= sub_sample->_sample->_data[s->_playing[idx_sample]->_frame_idx]* amplitude;
-					out[2* i+ 1]+= sub_sample->_sample->_data[s->_playing[idx_sample]->_frame_idx]* amplitude;
+					out[2* i+ 0]+= sub_sample->_sample->_data[s->_track_samples[idx_track]->_frame_idx]* amplitude;
+					out[2* i+ 1]+= sub_sample->_sample->_data[s->_track_samples[idx_track]->_frame_idx]* amplitude;
 				}
 				else {
-					out[2* i+ 0]+= sub_sample->_sample->_data[2* s->_playing[idx_sample]->_frame_idx+ 0]* amplitude;
-					out[2* i+ 1]+= sub_sample->_sample->_data[2* s->_playing[idx_sample]->_frame_idx+ 1]* amplitude;
+					out[2* i+ 0]+= sub_sample->_sample->_data[2* s->_track_samples[idx_track]->_frame_idx+ 0]* amplitude;
+					out[2* i+ 1]+= sub_sample->_sample->_data[2* s->_track_samples[idx_track]->_frame_idx+ 1]* amplitude;
 				}
 				
-				s->_playing[idx_sample]->_frame_idx++;
-				if (s->_playing[idx_sample]->_frame_idx>= sub_sample->_sample->_n_frames) {
-					s->_playing[idx_sample]->_playing= false;
+				s->_track_samples[idx_track]->_frame_idx++;
+				if (s->_track_samples[idx_track]->_frame_idx>= sub_sample->_sample->_n_frames) {
+					s->note_off(idx_track);
 				}
 			}
 		}

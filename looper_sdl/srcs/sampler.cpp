@@ -97,13 +97,13 @@ SubSample::~SubSample() {
 
 
 // ----------------------------------------------------------------------
-SamplePlaying::SamplePlaying() : _frame_idx(0), _playing(false) {
+TrackSample::TrackSample() : _frame_idx(0), _playing(false) {
 	_info.set_null();
 
 }
 
 
-SamplePlaying::~SamplePlaying() {
+TrackSample::~TrackSample() {
 
 }
 
@@ -116,8 +116,8 @@ Sampler::Sampler() {
 
 Sampler::Sampler(string json_path) {
 	_sample_pool= new SamplePool();
-	for (unsigned int idx_sample=0; idx_sample<N_MAX_SAMPLE_PLAYING; ++idx_sample) {
-		_playing[idx_sample]= new SamplePlaying();
+	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		_track_samples[idx_track]= new TrackSample();
 	}
 
 	ifstream istr(json_path);
@@ -157,8 +157,8 @@ Sampler::Sampler(string json_path) {
 
 
 Sampler::~Sampler() {
-	for (unsigned int idx_sample=0; idx_sample<N_MAX_SAMPLE_PLAYING; ++idx_sample) {
-		delete _playing[idx_sample];
+	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		delete _track_samples[idx_track];
 	}
 	for (const auto &x : _map) {
 		delete x.second;
@@ -168,21 +168,21 @@ Sampler::~Sampler() {
 }
 
 
-void Sampler::on_new_data(sharedata_type data) {
-	SamplePlaying * sample_playing= get_first_not_playing();
-	if (!sample_playing) {
-		return;
-	}
-
-	cout << data << "\n";
-	
-	sample_playing->_info= data;
-	sample_playing->_frame_idx= 0;
-	sample_playing->_playing= true;
+void Sampler::note_on(unsigned int idx_track) {
+	_track_samples[idx_track]->_info= _data[idx_track];
+	_track_samples[idx_track]->_frame_idx= 0;
+	_track_samples[idx_track]->_playing= true;
 }
 
 
-SamplePlaying * Sampler::get_first_not_playing() {
+void Sampler::note_off(unsigned int idx_track) {
+	_track_samples[idx_track]->_info.set_null();
+	_track_samples[idx_track]->_frame_idx= 0;
+	_track_samples[idx_track]->_playing= false;
+}
+
+
+/*SamplePlaying * Sampler::get_first_not_playing() {
 	for (unsigned int idx_sample=0; idx_sample<N_MAX_SAMPLE_PLAYING; ++idx_sample) {
 		if (!_playing[idx_sample]->_playing) {
 			return _playing[idx_sample];
@@ -191,4 +191,4 @@ SamplePlaying * Sampler::get_first_not_playing() {
 	cout << "All samples playing !\n";
 	return 0;
 }
-
+*/

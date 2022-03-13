@@ -15,7 +15,7 @@ enum SUB_SAMPLE_MODE {HOLD, FROM_START, TO_END, ALL};
 SUB_SAMPLE_MODE get_sample_mode(std::string str_mode);
 
 
-const unsigned int N_MAX_SAMPLE_PLAYING= 128;
+//const unsigned int N_MAX_SAMPLE_PLAYING= 128;
 
 
 class Sample {
@@ -53,10 +53,10 @@ public:
 };
 
 
-class SamplePlaying {
+class TrackSample {
 public:
-	SamplePlaying();
-	~SamplePlaying();
+	TrackSample();
+	~TrackSample();
 
 	sharedata_type _info;
 	unsigned int _frame_idx;
@@ -69,12 +69,13 @@ public:
 	Sampler();
 	Sampler(std::string json_path);
 	~Sampler();
-	void on_new_data(sharedata_type data);
-	SamplePlaying * get_first_not_playing();
+	void note_on(unsigned int idx_track);
+	void note_off(unsigned int idx_track);
+	//SamplePlaying * get_first_not_playing();
 
 	SamplePool * _sample_pool;
 	std::map<key_type,SubSample *> _map;
-	SamplePlaying * _playing[N_MAX_SAMPLE_PLAYING];
+	TrackSample * _track_samples[N_MAX_TRACKS];
 };
 
 

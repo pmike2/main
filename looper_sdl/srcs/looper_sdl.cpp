@@ -11,7 +11,7 @@ LooperSDL::LooperSDL() {
 
 
 LooperSDL::LooperSDL(SDL_Renderer * renderer, int screen_width, int screen_height) : 
-	_current_event(0), _current_event_key(0), _renderer(renderer), _screen_width(screen_width), _screen_height(screen_height)
+	/*_current_event(0), _current_event_key(0),*/ _renderer(renderer), _screen_width(screen_width), _screen_height(screen_height)
 {
 	_input_state= new InputState();
 }
@@ -22,74 +22,94 @@ LooperSDL::~LooperSDL() {
 }
 
 
+bool LooperSDL::event_key(SDL_Keycode key) {
+	if ((key>= 97) && (key<=122)) {
+		return true;
+	}
+	return false;
+}
+
+
 void LooperSDL::key_down(SDL_Keycode key) {
-	//cout << "key down : " << key << "\n";
+	/*cout << "key down : " << key << "\n";
+	cout << event_key(key) << "\n";
+	return;*/
+
+	SDL_Keymod key_mod= SDL_GetModState();
+	if (KMOD_CTRL && key_mod) {
+		if (key== SDLK_d) {
+			debug();
+		}
+		else if (key== SDLK_SPACE) {
+			toggle_start();
+		}
+		else if (key== SDLK_r) {
+			toggle_record();
+		}
+		else if (key== SDLK_DOWN) {
+			set_next_track();
+		}
+		else if (key== SDLK_UP) {
+			set_previous_track();
+		}
+		else if (key== SDLK_c) {
+			clear();
+		}
+		else if (key== SDLK_KP_1) {
+			set_current_track_duration_ratio(1.0);
+		}
+		else if (key== SDLK_KP_2) {
+			set_current_track_duration_ratio(0.5);
+		}
+		return;
+	}
+
+	if (event_key(key)) {
+		if (!_input_state->get_key(key)) {
+			unsigned int amplitude= 0; // TODO
+			//_current_event= insert_event(key, amplitude, true);
+			note_on(key, amplitude, true);
+			//_current_event_key= key;
+		}
+		_input_state->key_down(key);
+		return;
+	}
 	
-	if (key== SDLK_d) {
-		debug();
-		return;
-	}
-	else if (key== SDLK_SPACE) {
-		toggle_start();
-		return;
-	}
-	else if (key== SDLK_r) {
-		toggle_record();
-		return;
-	}
-	else if (key== SDLK_DOWN) {
-		set_next_track();
-		return;
-	}
-	else if (key== SDLK_UP) {
-		set_previous_track();
-		return;
-	}
-	else if (key== SDLK_z) {
-		clear();
-		return;
-	}
-	else if (key== SDLK_KP_1) {
-		set_current_track_duration_ratio(1.0);
-		return;
-	}
-	else if (key== SDLK_KP_2) {
-		set_current_track_duration_ratio(0.5);
-		return;
-	}
 
-	if ((_current_event_key!= key) && (_current_event) && (_current_event->_hold)) {
+	/*if ((_current_event_key!= key) && (_current_event) && (_current_event->_hold)) {
 		set_event_end(_current_event);
-		_current_event= 0;
-	}
+		//_current_event= 0;
+	}*/
 
-	if (!_input_state->get_key(key)) {
-		unsigned int amplitude= 0; // TODO
-		_current_event= insert_event(key, amplitude, true);
-		_current_event_key= key;
-	}
-	_input_state->key_down(key);
 }
 
 
 void LooperSDL::key_up(SDL_Keycode key) {
 	//cout << "key up : " << key << "\n";
+	SDL_Keymod key_mod= SDL_GetModState();
+	if (KMOD_CTRL && key_mod) {
+		return;
+	}
 
-	_input_state->key_up(key);
+	if (event_key(key)) {
+		note_off();
+		_input_state->key_up(key);
+		return;
+	}
 
-	if (_current_event== 0) {
+	/*if (_current_event== 0) {
 		return;
 	}
 
 	if (key!= _current_event_key) {
 		return;
-	}
+	}*/
 
-	if (_current_event->_hold) {
-		set_event_end(_current_event);
-	}
-	_current_event= 0;
-	_current_event_key= 0;
+	//if (_current_event->_hold) {
+		//note_off();
+	//}
+	//_current_event= 0;
+	//_current_event_key= 0;
 }
 
 
