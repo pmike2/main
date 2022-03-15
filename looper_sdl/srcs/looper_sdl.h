@@ -29,8 +29,6 @@ public:
 	Color get_color(SDL_Keycode key);
 	void draw_rect(int x, int y, int w, int h, Color c);
 
-	//Event * _current_event;
-	//SDL_Keycode _current_event_key;
 	InputState * _input_state;
 	SDL_Renderer * _renderer;
 	int _screen_width;

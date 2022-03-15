@@ -181,14 +181,3 @@ void Sampler::note_off(unsigned int idx_track) {
 	_track_samples[idx_track]->_playing= false;
 }
 
-
-/*SamplePlaying * Sampler::get_first_not_playing() {
-	for (unsigned int idx_sample=0; idx_sample<N_MAX_SAMPLE_PLAYING; ++idx_sample) {
-		if (!_playing[idx_sample]->_playing) {
-			return _playing[idx_sample];
-		}
-	}
-	cout << "All samples playing !\n";
-	return 0;
-}
-*/

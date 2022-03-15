@@ -5,7 +5,6 @@
 #include <string>
 
 enum SEQ_MODE {STOPPED, RUNNING, RECORDING};
-//enum EVENT_TYPE {NOTE_ON, NOTE_OFF};
 
 typedef std::chrono::system_clock::duration time_type;
 typedef unsigned int key_type;

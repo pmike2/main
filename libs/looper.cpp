@@ -265,7 +265,6 @@ Event * Track::get_last_event() {
 
 
 void Track::insert_event(key_type key, time_type t, unsigned int amplitude, bool hold) {
-	//cout << "insert_event " << key << "\n";
 
 	t= get_relative_t(t);
 
@@ -286,7 +285,6 @@ void Track::insert_event(key_type key, time_type t, unsigned int amplitude, bool
 
 	event2insert->set(key, t, amplitude, event_before_t, event_after_t, hold);
 	if (event_before_t) {
-		//cout << "before : " << *event_before_t << "\n";
 		event_before_t->_next= event2insert;
 
 		if (event_before_t->_data._t_end>= t) {
@@ -294,16 +292,12 @@ void Track::insert_event(key_type key, time_type t, unsigned int amplitude, bool
 		}
 	}
 	if (event_after_t) {
-		//cout << "after : " << *event_after_t << "\n";
 		event_after_t->_previous= event2insert;
 	}
-
-	//return event2insert;
 }
 
 
 void Track::delete_event(Event * event) {
-	//cout << "delete event\n";
 	if (event->_previous) {
 		if (event->_next) {
 			event->_previous->_next= event->_next;
@@ -567,7 +561,6 @@ void Sequence::init_data() {
 	// PROT_READ | PROT_WRITE : lecture & écriture
 	// MAP_SHARED : d'autres processeurs auront accès à ce mapping
 	_data= (sharedata_type *)mmap(0, DATA_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, _fd, 0);
-	//cout << _data << "\n";
 
 	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
 		_data[idx_track].set_null();
@@ -620,7 +613,6 @@ void Receiver::init_data() {
 	// create shared memory object; renvoie un file descriptor
 	// O_RDONLY : lecture
 	_fd= shm_open(SHARED_MEM_OBJ_NAME.c_str(), O_RDONLY, 0666);
-	//_fd= shm_open(SHARED_MEM_OBJ_NAME.c_str(), O_CREAT | O_RDWR, 0600);
 	if (_fd< 0) {
 		perror("Receiver : ERROR shm_open");
 		return;
@@ -630,7 +622,6 @@ void Receiver::init_data() {
 	// PROT_READ : lecture
 	// MAP_SHARED : d'autres processeurs auront accès à ce mapping
 	_data= (sharedata_type *)mmap(0, DATA_SIZE, PROT_READ, MAP_SHARED, _fd, 0);
-	//_data= (sharedata_type *)mmap(0, DATA_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, _fd, 0);
 }
 
 
@@ -644,12 +635,7 @@ void Receiver::close_data() {
 
 
 void Receiver::update() {
-	//cout << _data_current[0] << " | " << _data[0] << "\n";
-
 	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
-		/*if (_data[idx_track].is_null()) {
-			continue;
-		} */
 
 		if (_data_current[idx_track]!= _data[idx_track]) {
 			if (!_data_current[idx_track].is_null()) {

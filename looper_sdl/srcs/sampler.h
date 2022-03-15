@@ -15,8 +15,6 @@ enum SUB_SAMPLE_MODE {HOLD, FROM_START, TO_END, ALL};
 SUB_SAMPLE_MODE get_sample_mode(std::string str_mode);
 
 
-//const unsigned int N_MAX_SAMPLE_PLAYING= 128;
-
 
 class Sample {
 public:
