@@ -5,3 +5,4 @@ main
 *.tif
 build
 build/
+*.pgm

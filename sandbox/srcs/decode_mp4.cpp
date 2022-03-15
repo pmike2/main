@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
 				std::cout << "frame: " << ctx_codec->frame_number << std::endl;
 
                 char buf[1024];
-                snprintf(buf, sizeof(buf), "%s-%d", out, ctx_codec->frame_number);
+                snprintf(buf, sizeof(buf), "%s-%d.pgm", out, ctx_codec->frame_number);
             	pgm_save(frame->data[0], frame->linesize[0], frame->width, frame->height, buf);
 
 			}
