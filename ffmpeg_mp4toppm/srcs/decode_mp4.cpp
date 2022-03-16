@@ -2,6 +2,9 @@
 
 http://dranger.com/ffmpeg/tutorial01.html
 
+Utilisation :
+./decode_mp4 ../data/test.mp4 ../data/result
+
 */
 
 #define __STDC_CONSTANT_MACROS
@@ -76,12 +79,24 @@ int main(int argc, char **argv) {
 	*/
 	AVPacket * pkt = av_packet_alloc();
 
-	int stream_idx;
+	// buffer qui servira a stocker les données de frame_rgb après conversion du frame
+	uint8_t * buffer_rgb= 0;
+	int buffer_rgb_size= 0;
+	
+	// servira a faire la conversion de format de couleur entre frame et frame_rgb
+	struct SwsContext * sws_ctx= 0;
+
+	// indice du stream video du fichier en entrée
+	int stream_idx= 0;
+	
+	// valeurs de retour des fonctions
+	int ret= 0;
+
+	// fichier mp4 en entrée
 	const char * file_in= argv[1];
+
+	// dossier en sortie
 	const char * dir_out= argv[2];
-	int ret;
-	uint8_t * buffer = 0;
-	int buffer_size;
 
 	/*
 	Allocate memory for AVFormatContext.
@@ -153,7 +168,7 @@ int main(int argc, char **argv) {
 	av_image_fill_arrays(frame_rgb->data, frame_rgb->linesize, buffer_rgb, AV_PIX_FMT_RGB24, ctx_codec->width, ctx_codec->height, 1);
 
 	// servira a faire la conversion de format de couleur
-	struct SwsContext * sws_ctx= sws_getContext(ctx_codec->width, ctx_codec->height, ctx_codec->pix_fmt, ctx_codec->width, ctx_codec->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, 0, 0, 0);
+	sws_ctx= sws_getContext(ctx_codec->width, ctx_codec->height, ctx_codec->pix_fmt, ctx_codec->width, ctx_codec->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, 0, 0, 0);
 
 	// Return the next frame of a stream
 	while (av_read_frame(ctx_format, pkt)>= 0){

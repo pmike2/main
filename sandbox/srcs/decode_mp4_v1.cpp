@@ -1,9 +1,3 @@
-/*
-
-http://dranger.com/ffmpeg/tutorial01.html
-
-*/
-
 #define __STDC_CONSTANT_MACROS
 extern "C" {
 #include<libavutil/avutil.h>
@@ -18,31 +12,14 @@ extern "C" {
 using namespace std;
 
 
-/*
-PGM  = fichier en niveaux de gris
-PPM = couleur
-*/
-
-/*
-static void pgm_save(unsigned char * buf, int wrap, int xsize, int ysize, char * filename) {
+static void pgm_save(unsigned char *buf, int wrap, int xsize, int ysize, char *filename) {
 	FILE *f;
+	int i;
 
 	f = fopen(filename, "wb");
 	fprintf(f, "P5\n%d %d\n%d\n", xsize, ysize, 255);
-	for (int i= 0; i< ysize; i++) {
+	for (i = 0; i < ysize; i++) {
 		fwrite(buf + i * wrap, 1, xsize, f);
-	}
-	fclose(f);
-}
-*/
-
-void ppm_save(AVFrame * frame_rgb, int width, int height, char * filename) {
-	FILE *f;
-
-	f = fopen(filename, "wb");
-	fprintf(f, "P6\n%d %d\n255\n", width, height);
-	for (int y=0; y<height; y++) {
-		fwrite(frame_rgb->data[0]+ y* frame_rgb->linesize[0], 1, width* 3, f);
 	}
 	fclose(f);
 }
@@ -59,8 +36,7 @@ int main(int argc, char **argv) {
 	const AVCodec * codec = 0;
 	
 	// This structure describes decoded (raw) audio or video data
-	AVFrame * frame= av_frame_alloc();
-	AVFrame * frame_rgb= av_frame_alloc();
+	AVFrame * frame = av_frame_alloc();
 
 	// Structure permettant de manipuler la data
 	SwsContext * ctx_sws = 0;
@@ -77,11 +53,9 @@ int main(int argc, char **argv) {
 	AVPacket * pkt = av_packet_alloc();
 
 	int stream_idx;
-	const char * file_in= argv[1];
-	const char * dir_out= argv[2];
+	const char * fin = argv[1];
+	const char * out = argv[2];
 	int ret;
-	uint8_t * buffer = 0;
-	int buffer_size;
 
 	/*
 	Allocate memory for AVFormatContext.
@@ -89,7 +63,7 @@ int main(int argc, char **argv) {
 	Tries to guess the input file format, codec parameter for the input file. This is done by calling read_probe function pointer for each of the demuxer.
 	Allocate the codec context, demuxed context, I/O context.
 	*/
-	ret = avformat_open_input(&ctx_format, file_in, 0, 0);
+	ret = avformat_open_input(&ctx_format, fin, 0, 0);
 	if (ret!= 0) {
 		cout << "ERREUR avformat_open_input\n";
 		return ret;
@@ -107,7 +81,7 @@ int main(int argc, char **argv) {
 	}
 
 	// Print detailed information about the input or output format, such as duration, bitrate, streams, container, programs, metadata, side data, codec and time base.
-	av_dump_format(ctx_format, 0, file_in, false);
+	av_dump_format(ctx_format, 0, fin, false);
 
 	// pour chaque stream, si c'est un stream video on l'assigne à vid_stream
 	for (int i = 0; i < ctx_format->nb_streams; i++)
@@ -145,16 +119,6 @@ int main(int argc, char **argv) {
 		return ret;
 	}
 
-	// Determine required buffer size and allocate buffer
-	buffer_rgb_size= av_image_get_buffer_size(AV_PIX_FMT_RGB24, ctx_codec->width, ctx_codec->height, 32);
-	buffer_rgb= (uint8_t *)av_malloc(buffer_rgb_size* sizeof(uint8_t));
-
-	// Assign appropriate parts of buffer to image planes in frame_rgb
-	av_image_fill_arrays(frame_rgb->data, frame_rgb->linesize, buffer_rgb, AV_PIX_FMT_RGB24, ctx_codec->width, ctx_codec->height, 1);
-
-	// servira a faire la conversion de format de couleur
-	struct SwsContext * sws_ctx= sws_getContext(ctx_codec->width, ctx_codec->height, ctx_codec->pix_fmt, ctx_codec->width, ctx_codec->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, 0, 0, 0);
-
 	// Return the next frame of a stream
 	while (av_read_frame(ctx_format, pkt)>= 0){
 		// s'il s'agit du bon stream
@@ -169,23 +133,22 @@ int main(int argc, char **argv) {
 			while (ret>= 0) {
 				// Return decoded output data from a decoder
 				// AVERROR_EOF: the decoder has been fully flushed, and there will be no more output frames
-				// AVERROR(EAGAIN): output is not available in this state
+				// en pratique j'au l'impression que AVERROR_EOF arrive après le 1er tour de while
 				ret= avcodec_receive_frame(ctx_codec, frame);
-				if ((ret== AVERROR_EOF) || (ret== AVERROR(EAGAIN))) {
-					//cout << "avcodec_receive_frame: " << ret << "\n";
+				if (ret== AVERROR_EOF) {
+					break;
+				}
+				else if (ret== AVERROR(EAGAIN)) {
+					cout << "avcodec_receive_frame: " << ret << "\n";
 					break;
 				}
 
 				cout << "frame: " << ctx_codec->frame_number << "\n";
 
-				// conversion de frame vers frame_rgb
-				sws_scale(sws_ctx, (uint8_t const * const *)frame->data, frame->linesize, 0, ctx_codec->height, frame_rgb->data, frame_rgb->linesize);
-	
-				// sauvegarde du frame dans un fichier PPM
-				char file_out[1024];
-				snprintf(file_out, sizeof(file_out), "%s/frame-%d.pgm", dir_out, ctx_codec->frame_number);
-				//pgm_save(frame->data[0], frame->linesize[0], frame->width, frame->height, file_out);
-				ppm_save(frame_rgb, ctx_codec->width, ctx_codec->height, file_out);
+				char buf[1024];
+				snprintf(buf, sizeof(buf), "%s-%d.pgm", out, ctx_codec->frame_number);
+				pgm_save(frame->data[0], frame->linesize[0], frame->width, frame->height, buf);
+
 			}
 		}
 
