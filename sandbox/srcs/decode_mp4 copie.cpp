@@ -16,70 +16,30 @@ extern "C" {
 #include <libswscale/swscale.h>
 }
 
-#include <SDL2/SDL.h>
-
 #include <iostream>
 
 using namespace std;
 
 
-int SCREEN_WIDTH= 512;
-int SCREEN_HEIGHT= 512;
-
-
-SDL_Window * window= 0;
-SDL_Renderer * renderer= 0;
-SDL_Surface * surf;
-SDL_Texture * tex;
-Uint32 rmask, gmask, bmask, amask;
-bool done= false;
-
-// Format I/O context
-AVFormatContext * ctx_format = 0;
-
-// main external API structure
-AVCodecContext * ctx_codec = 0;
-
-// Codec
-const AVCodec * codec = 0;
-
-// This structure describes decoded (raw) audio or video data
-AVFrame * frame= av_frame_alloc();
-AVFrame * frame_rgb= av_frame_alloc();
-
-// Structure permettant de manipuler la data
-SwsContext * ctx_sws = 0;
-
-// Stream
-AVStream * vid_stream = 0;
+/*
+PGM  = fichier en niveaux de gris
+PPM = couleur
+*/
 
 /*
-This structure stores compressed data.
-It is typically exported by demuxers and then passed as input to decoders, or received as output from encoders and then passed to muxers.
-For video, it should typically contain one compressed frame. For audio it may contain several compressed frames.
-Encoders are allowed to output empty packets, with no compressed data, containing only side data (e.g. to update some stream parameters at the end of encoding).
+static void pgm_save(unsigned char * buf, int wrap, int xsize, int ysize, char * filename) {
+	FILE *f;
+
+	f = fopen(filename, "wb");
+	fprintf(f, "P5\n%d %d\n%d\n", xsize, ysize, 255);
+	for (int i= 0; i< ysize; i++) {
+		fwrite(buf + i * wrap, 1, xsize, f);
+	}
+	fclose(f);
+}
 */
-AVPacket * pkt = av_packet_alloc();
 
-// buffer qui servira a stocker les données de frame_rgb après conversion du frame
-unsigned char * buffer_rgb= 0;
-int buffer_rgb_size= 0;
-unsigned char * buffer_all= 0;
-
-// servira a faire la conversion de format de couleur entre frame et frame_rgb
-struct SwsContext * sws_ctx= 0;
-
-// indice du stream video du fichier en entrée
-int stream_idx= 0;
-
-// valeurs de retour des fonctions
-int ret= 0;
-
-int n_frames= 0;
-int current_idx= 0;
-
-
-/*void ppm_save(AVFrame * frame_rgb, int width, int height, char * filename) {
+void ppm_save(AVFrame * frame_rgb, int width, int height, char * filename) {
 	FILE *f;
 
 	f = fopen(filename, "wb");
@@ -88,29 +48,55 @@ int current_idx= 0;
 		fwrite(frame_rgb->data[0]+ y* frame_rgb->linesize[0], 1, width* 3, f);
 	}
 	fclose(f);
-}*/
+}
 
 
-int init(const char * file_in) {
-	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
-		cout << "SDL_Init failed: " << SDL_GetError() << "\n";
-		return 1;
-	}
+int main(int argc, char **argv) {
+	// Format I/O context
+	AVFormatContext * ctx_format = 0;
+	
+	// main external API structure
+	AVCodecContext * ctx_codec = 0;
+	
+	// Codec
+	const AVCodec * codec = 0;
+	
+	// This structure describes decoded (raw) audio or video data
+	AVFrame * frame= av_frame_alloc();
+	AVFrame * frame_rgb= av_frame_alloc();
 
-	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	// Structure permettant de manipuler la data
+	SwsContext * ctx_sws = 0;
 
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		rmask = 0xff000000;
-		gmask = 0x00ff0000;
-		bmask = 0x0000ff00;
-		amask = 0x000000ff;
-	#else
-		rmask = 0x000000ff;
-		gmask = 0x0000ff00;
-		bmask = 0x00ff0000;
-		amask = 0xff000000;
-	#endif
+	// Stream
+	AVStream * vid_stream = 0;
+
+	/*
+	This structure stores compressed data.
+	It is typically exported by demuxers and then passed as input to decoders, or received as output from encoders and then passed to muxers.
+	For video, it should typically contain one compressed frame. For audio it may contain several compressed frames.
+	Encoders are allowed to output empty packets, with no compressed data, containing only side data (e.g. to update some stream parameters at the end of encoding).
+	*/
+	AVPacket * pkt = av_packet_alloc();
+
+	// buffer qui servira a stocker les données de frame_rgb après conversion du frame
+	uint8_t * buffer_rgb= 0;
+	int buffer_rgb_size= 0;
+	
+	// servira a faire la conversion de format de couleur entre frame et frame_rgb
+	struct SwsContext * sws_ctx= 0;
+
+	// indice du stream video du fichier en entrée
+	int stream_idx= 0;
+	
+	// valeurs de retour des fonctions
+	int ret= 0;
+
+	// fichier mp4 en entrée
+	const char * file_in= argv[1];
+
+	// dossier en sortie
+	const char * dir_out= argv[2];
 
 	/*
 	Allocate memory for AVFormatContext.
@@ -136,7 +122,7 @@ int init(const char * file_in) {
 	}
 
 	// Print detailed information about the input or output format, such as duration, bitrate, streams, container, programs, metadata, side data, codec and time base.
-	//av_dump_format(ctx_format, 0, file_in, false);
+	av_dump_format(ctx_format, 0, file_in, false);
 
 	// pour chaque stream, si c'est un stream video on l'assigne à vid_stream
 	for (int i = 0; i < ctx_format->nb_streams; i++)
@@ -176,19 +162,13 @@ int init(const char * file_in) {
 
 	// Determine required buffer size and allocate buffer
 	buffer_rgb_size= av_image_get_buffer_size(AV_PIX_FMT_RGB24, ctx_codec->width, ctx_codec->height, 32);
-	buffer_rgb= (unsigned char *)av_malloc(buffer_rgb_size* sizeof(unsigned char));
+	buffer_rgb= (uint8_t *)av_malloc(buffer_rgb_size* sizeof(uint8_t));
 
 	// Assign appropriate parts of buffer to image planes in frame_rgb
 	av_image_fill_arrays(frame_rgb->data, frame_rgb->linesize, buffer_rgb, AV_PIX_FMT_RGB24, ctx_codec->width, ctx_codec->height, 1);
 
 	// servira a faire la conversion de format de couleur
 	sws_ctx= sws_getContext(ctx_codec->width, ctx_codec->height, ctx_codec->pix_fmt, ctx_codec->width, ctx_codec->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, 0, 0, 0);
-
-
-	n_frames= ctx_format->streams[stream_idx]->nb_frames;
-	cout << "NB Frames estimated = " << n_frames << "\n";
-	buffer_all= (unsigned char *)av_malloc(buffer_rgb_size* sizeof(unsigned char)* n_frames);
-
 
 	// Return the next frame of a stream
 	while (av_read_frame(ctx_format, pkt)>= 0){
@@ -211,94 +191,23 @@ int init(const char * file_in) {
 					break;
 				}
 
-				//cout << "frame: " << ctx_codec->frame_number << "\n";
-				n_frames= ctx_codec->frame_number;
+				cout << "frame: " << ctx_codec->frame_number << "\n";
 
 				// conversion de frame vers frame_rgb
-				sws_scale(sws_ctx, (unsigned char const * const *)frame->data, frame->linesize, 0, ctx_codec->height, frame_rgb->data, frame_rgb->linesize);
+				sws_scale(sws_ctx, (uint8_t const * const *)frame->data, frame->linesize, 0, ctx_codec->height, frame_rgb->data, frame_rgb->linesize);
 	
 				// sauvegarde du frame dans un fichier PPM
-				/*char file_out[1024];
-				snprintf(file_out, sizeof(file_out), "%s/frame-%d.ppm", dir_out, ctx_codec->frame_number);
+				char file_out[1024];
+				snprintf(file_out, sizeof(file_out), "%s/frame-%d.pgm", dir_out, ctx_codec->frame_number);
 				//pgm_save(frame->data[0], frame->linesize[0], frame->width, frame->height, file_out);
-				ppm_save(frame_rgb, ctx_codec->width, ctx_codec->height, file_out);*/
-
-				memcpy(buffer_all+ (ctx_codec->frame_number- 1)* buffer_rgb_size* sizeof(unsigned char), buffer_rgb, buffer_rgb_size* sizeof(unsigned char));
+				ppm_save(frame_rgb, ctx_codec->width, ctx_codec->height, file_out);
 			}
-
 		}
 
 		// Wipe the packet. Unreference the buffer referenced by the packet and reset the remaining packet fields to their default values.
 		av_packet_unref(pkt);
 	}
 
-	cout << "NB Frames exact = " << n_frames << "\n";
-
-	surf= SDL_CreateRGBSurface(0, ctx_codec->width, ctx_codec->height, 32, 0, 0, 0, 0);
-
-	return 0;
-}
-
-
-void idle() {
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderClear(renderer);
-
-	current_idx++;
-	if (current_idx>= n_frames) {
-		current_idx= 0;
-	}
-
-	int depth = 24;
-	int pitch = 3* ctx_codec->width;
-	surf= SDL_CreateRGBSurfaceFrom((void*)(buffer_all+ current_idx* buffer_rgb_size* sizeof(unsigned char)), ctx_codec->width, ctx_codec->height, depth, pitch, rmask, gmask, bmask, amask);
-	tex= SDL_CreateTextureFromSurface(renderer, surf);
-	SDL_FreeSurface(surf);
-
-	SDL_Rect texture_rect;
-	texture_rect.x = 0;
-	texture_rect.y = 0;
-	texture_rect.w = SCREEN_WIDTH;
-	texture_rect.h = SCREEN_HEIGHT;
-
-	SDL_RenderCopy(renderer, tex, NULL, &texture_rect);
-	SDL_DestroyTexture(tex);
-	
-	SDL_RenderPresent(renderer);
-	//SDL_Delay(100);
-}
-
-
-void main_loop() {
-	SDL_Event event;
-	
-	while (!done) {
-		while (SDL_PollEvent(& event)) {
-			switch (event.type) {
-				case SDL_KEYDOWN:
-					if (event.key.keysym.sym== SDLK_ESCAPE) {
-						done= true;
-						return;
-					}
-					break;
-					
-				case SDL_KEYUP:
-					break;
-					
-				case SDL_QUIT:
-					done= true;
-					break;
-					
-				default:
-					break;
-			}
-		}
-		idle();
-	}
-}
-
-
-void clean() {
 	// close format context
 	avformat_close_input(&ctx_format);
 	av_packet_unref(pkt);
@@ -306,23 +215,6 @@ void clean() {
 	avcodec_free_context(&ctx_codec);
 	// Free an AVFormatContext and all its streams.
 	avformat_free_context(ctx_format);
-
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
-}
-
-
-int main(int argc, char **argv) {
-	// fichier mp4 en entrée
-	const char * file_in= argv[1];
-	
-	ret= init(file_in);
-	main_loop();
-	clean();
 	
 	return 0;
 }
-
-
-
