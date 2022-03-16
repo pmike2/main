@@ -1,8 +1,6 @@
 #include <iostream>
 #include <fstream>
 
-#include "json.hpp"
-
 #include "sampler.h"
 
 using namespace std;
@@ -28,17 +26,31 @@ SUB_SAMPLE_MODE get_sample_mode(string str_mode) {
 
 
 // ----------------------------------------------------------------------
-Sample::Sample() : _n_frames(0), _fps(0) {
+Sample::Sample() : _data(0), _n_frames(0), _n_channels(0) {
 
 }
 
 
-Sample::Sample(string sample_path) : _n_frames(0), _fps(0) {
+Sample::Sample(string wav) {
+	SF_INFO info;
+	SNDFILE * sound_file= sf_open(wav.c_str(), SFM_READ, &info);
+	
+	if (!sound_file) {
+		cerr << "ERREUR sf_open : " << wav << "\n";
+		return;
+	}
 
+	_n_frames= info.frames;
+	_n_channels= info.channels;
+	_data= new float[_n_frames* _n_channels];
+
+	sf_read_float(sound_file, _data, _n_frames* _n_channels);
+	sf_close(sound_file);
 }
+
 
 Sample::~Sample() {
-
+	delete[] _data;
 }
 
 
@@ -55,12 +67,12 @@ SamplePool::~SamplePool() {
 }
 
 
-Sample * SamplePool::get_sample(string sample_path) {
-	if (!_samples.count(sample_path)) {
-		Sample * sample= new Sample(sample_path);
-		_samples[sample_path]= sample;
+Sample * SamplePool::get_sample(string wav) {
+	if (!_samples.count(wav)) {
+		Sample * sample= new Sample(wav);
+		_samples[wav]= sample;
 	}
-	return _samples[sample_path];
+	return _samples[wav];
 }
 
 
@@ -116,16 +128,16 @@ Sampler::Sampler(string json_path) {
 		key_type key= (key_type)(mapping.key().c_str()[0]);
 		json val= mapping.value();
 
-		string sample_path= "";
+		string wav= "";
 		SUB_SAMPLE_MODE mode= ALL;
 		time_type t_start= time_type::zero();
 		time_type t_end= time_type::zero();
 		
-		if (val.contains("sample_path")) {
-			sample_path= val["sample_path"];
+		if (val.contains("wav")) {
+			wav= val["wav"];
 		}
 		else {
-			cout << "Attribut sample_path manquant !\n";
+			cout << "Attribut wav manquant !\n";
 			continue;
 		}
 		if (val.contains("mode")) {
@@ -138,7 +150,7 @@ Sampler::Sampler(string json_path) {
 			t_end= chrono::milliseconds(val["t_end"]);
 		}
 
-		Sample * sample= _sample_pool->get_sample(sample_path);
+		Sample * sample= _sample_pool->get_sample(wav);
 		_map[key]= new SubSample(sample, t_start, t_end, mode);
 	}
 }

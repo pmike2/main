@@ -76,6 +76,8 @@ int stream_idx= 0;
 int ret= 0;
 
 int n_frames= 0;
+int width= 0;
+int height= 0;
 int current_idx= 0;
 
 
@@ -150,6 +152,9 @@ int init(const char * file_in) {
 		return 1;
 	}
 
+	//float frame_rate= av_q2d(ctx_format->streams[stream_idx]->r_frame_rate);
+	//cout << "frame rate= " << frame_rate << "\n";
+
 	// 	Find a registered decoder with a matching codec ID
 	codec= avcodec_find_decoder(vid_stream->codecpar->codec_id);
 	if (!codec) {
@@ -174,15 +179,18 @@ int init(const char * file_in) {
 		return ret;
 	}
 
+	width= ctx_codec->width;
+	height= ctx_codec->height;
+
 	// Determine required buffer size and allocate buffer
-	buffer_rgb_size= av_image_get_buffer_size(AV_PIX_FMT_RGB24, ctx_codec->width, ctx_codec->height, 32);
+	buffer_rgb_size= av_image_get_buffer_size(AV_PIX_FMT_RGB24, width, height, 32);
 	buffer_rgb= (unsigned char *)av_malloc(buffer_rgb_size* sizeof(unsigned char));
 
 	// Assign appropriate parts of buffer to image planes in frame_rgb
-	av_image_fill_arrays(frame_rgb->data, frame_rgb->linesize, buffer_rgb, AV_PIX_FMT_RGB24, ctx_codec->width, ctx_codec->height, 1);
+	av_image_fill_arrays(frame_rgb->data, frame_rgb->linesize, buffer_rgb, AV_PIX_FMT_RGB24, width, height, 1);
 
 	// servira a faire la conversion de format de couleur
-	sws_ctx= sws_getContext(ctx_codec->width, ctx_codec->height, ctx_codec->pix_fmt, ctx_codec->width, ctx_codec->height, AV_PIX_FMT_RGB24, SWS_BILINEAR, 0, 0, 0);
+	sws_ctx= sws_getContext(width, height, ctx_codec->pix_fmt, width, height, AV_PIX_FMT_RGB24, SWS_BILINEAR, 0, 0, 0);
 
 
 	n_frames= ctx_format->streams[stream_idx]->nb_frames;
@@ -215,13 +223,13 @@ int init(const char * file_in) {
 				n_frames= ctx_codec->frame_number;
 
 				// conversion de frame vers frame_rgb
-				sws_scale(sws_ctx, (unsigned char const * const *)frame->data, frame->linesize, 0, ctx_codec->height, frame_rgb->data, frame_rgb->linesize);
+				sws_scale(sws_ctx, (unsigned char const * const *)frame->data, frame->linesize, 0, height, frame_rgb->data, frame_rgb->linesize);
 	
 				// sauvegarde du frame dans un fichier PPM
 				/*char file_out[1024];
 				snprintf(file_out, sizeof(file_out), "%s/frame-%d.ppm", dir_out, ctx_codec->frame_number);
 				//pgm_save(frame->data[0], frame->linesize[0], frame->width, frame->height, file_out);
-				ppm_save(frame_rgb, ctx_codec->width, ctx_codec->height, file_out);*/
+				ppm_save(frame_rgb, width, height, file_out);*/
 
 				memcpy(buffer_all+ (ctx_codec->frame_number- 1)* buffer_rgb_size* sizeof(unsigned char), buffer_rgb, buffer_rgb_size* sizeof(unsigned char));
 			}
@@ -234,7 +242,13 @@ int init(const char * file_in) {
 
 	cout << "NB Frames exact = " << n_frames << "\n";
 
-	surf= SDL_CreateRGBSurface(0, ctx_codec->width, ctx_codec->height, 32, 0, 0, 0, 0);
+	// close format context
+	avformat_close_input(&ctx_format);
+	av_packet_unref(pkt);
+	// Free the codec context and everything associated with it and write NULL to the provided pointer
+	avcodec_free_context(&ctx_codec);
+	// Free an AVFormatContext and all its streams.
+	avformat_free_context(ctx_format);
 
 	return 0;
 }
@@ -250,8 +264,8 @@ void idle() {
 	}
 
 	int depth = 24;
-	int pitch = 3* ctx_codec->width;
-	surf= SDL_CreateRGBSurfaceFrom((void*)(buffer_all+ current_idx* buffer_rgb_size* sizeof(unsigned char)), ctx_codec->width, ctx_codec->height, depth, pitch, rmask, gmask, bmask, amask);
+	int pitch = 3* width;
+	surf= SDL_CreateRGBSurfaceFrom((void*)(buffer_all+ current_idx* buffer_rgb_size* sizeof(unsigned char)), width, height, depth, pitch, rmask, gmask, bmask, amask);
 	tex= SDL_CreateTextureFromSurface(renderer, surf);
 	SDL_FreeSurface(surf);
 
@@ -299,14 +313,6 @@ void main_loop() {
 
 
 void clean() {
-	// close format context
-	avformat_close_input(&ctx_format);
-	av_packet_unref(pkt);
-	// Free the codec context and everything associated with it and write NULL to the provided pointer
-	avcodec_free_context(&ctx_codec);
-	// Free an AVFormatContext and all its streams.
-	avformat_free_context(ctx_format);
-
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();

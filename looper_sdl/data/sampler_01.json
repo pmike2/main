@@ -1,14 +1,14 @@
 {
 	"a" : {
-		"wav" : "../data/samples/kick.wav",
+		"sample_path" : "../data/samples/kick.wav",
 		"mode" : "ALL"
 	},
 	"b" : {
-		"wav" : "../data/samples/snare.wav",
+		"sample_path" : "../data/samples/snare.wav",
 		"mode" : "ALL"
 	},
 	"c" : {
-		"wav" : "../data/samples/hihat.wav",
+		"sample_path" : "../data/samples/hihat.wav",
 		"mode" : "ALL"
 	}
 }

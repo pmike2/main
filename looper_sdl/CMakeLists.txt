@@ -30,7 +30,8 @@ add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
 
 add_executable(looper_main ./srcs/looper_main.cpp ./srcs/looper_sdl.cpp ./srcs/looper_sdl.h)
 add_executable(receiver_test_main ./srcs/receiver_test_main.cpp ./srcs/receiver_test.cpp ./srcs/receiver_test.h)
-add_executable(sampler_main ./srcs/sampler_main.cpp ./srcs/sampler.cpp ./srcs/sampler.h)
+add_executable(audio_sampler_main ./srcs/audio_sampler_main.cpp ./srcs/sampler.cpp ./srcs/sampler.h ./srcs/audio_sampler.cpp ./srcs/audio_sampler.h)
+add_executable(video_sampler_main ./srcs/video_sampler_main.cpp ./srcs/sampler.cpp ./srcs/sampler.h ./srcs/video_sampler.cpp ./srcs/video_sampler.h)
 
 target_link_libraries(looper_main PUBLIC lib_looper)
 target_link_libraries(looper_main PUBLIC lib_input_state)
@@ -38,11 +39,16 @@ target_link_libraries(looper_main PUBLIC lib_utile)
 
 target_link_libraries(receiver_test_main PUBLIC lib_looper)
 
-target_link_libraries(sampler_main PUBLIC lib_looper)
-target_link_libraries(sampler_main PUBLIC lib_pa_utils)
+target_link_libraries(audio_sampler_main PUBLIC lib_looper)
+target_link_libraries(audio_sampler_main PUBLIC lib_pa_utils)
+
+target_link_libraries(video_sampler_main PUBLIC lib_looper)
 
 string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
 target_link_libraries(looper_main PUBLIC ${SDL2_LIBRARIES})
 
-target_link_libraries(sampler_main PUBLIC ${LIBSNDFILE_LIBRARIES})
-target_link_libraries(sampler_main PUBLIC ${PORTAUDIO_LIBRARIES})
+target_link_libraries(audio_sampler_main PUBLIC ${LIBSNDFILE_LIBRARIES})
+target_link_libraries(audio_sampler_main PUBLIC ${PORTAUDIO_LIBRARIES})
+
+target_link_libraries(video_sampler_main "-L/usr/local/lib" "-L/usr/lib" "-lbz2" "-liconv" "-lz" "-lavutil" "-lavcodec" "-lavdevice" "-lavformat" "-lavfilter" "-lswresample" "-lswscale" "-pthread" "-lm" "-framework AudioUnit" "-framework AudioToolbox" "-framework CoreAudio" "-framework VideoToolbox" "-framework CoreFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework CoreServices" "-framework Security")
+target_link_libraries(looper_main PUBLIC ${SDL2_LIBRARIES})

@@ -10,7 +10,7 @@
 #endif
 #endif
 
-#include "sampler.h"
+#include "audio_sampler.h"
 #include "pa_utils.h"
 
 using namespace std;
@@ -24,7 +24,7 @@ const unsigned int FRAMES_PER_BUFFER= 128;
 
 
 PaStream * stream;
-Sampler * sampler;
+Sampler * audio_sampler;
 
 
 // callback PortAudio
@@ -44,17 +44,19 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 				//float amplitude= (float)(s->_track_samples[idx_track]->_info._amplitude)/ 128.0f;
 				float amplitude= 1.0f;
 
-				if (sub_sample->_sample->_n_channels== 1) {
-					out[2* i+ 0]+= sub_sample->_sample->_data[s->_track_samples[idx_track]->_frame_idx]* amplitude;
-					out[2* i+ 1]+= sub_sample->_sample->_data[s->_track_samples[idx_track]->_frame_idx]* amplitude;
+				AudioSample * audio_sample= (AudioSample *)(sub_sample->_sample);
+
+				if (audio_sample->_n_channels== 1) {
+					out[2* i+ 0]+= audio_sample->_data[s->_track_samples[idx_track]->_frame_idx]* amplitude;
+					out[2* i+ 1]+= audio_sample->_data[s->_track_samples[idx_track]->_frame_idx]* amplitude;
 				}
 				else {
-					out[2* i+ 0]+= sub_sample->_sample->_data[2* s->_track_samples[idx_track]->_frame_idx+ 0]* amplitude;
-					out[2* i+ 1]+= sub_sample->_sample->_data[2* s->_track_samples[idx_track]->_frame_idx+ 1]* amplitude;
+					out[2* i+ 0]+= audio_sample->_data[2* s->_track_samples[idx_track]->_frame_idx+ 0]* amplitude;
+					out[2* i+ 1]+= audio_sample->_data[2* s->_track_samples[idx_track]->_frame_idx+ 1]* amplitude;
 				}
 				
 				s->_track_samples[idx_track]->_frame_idx++;
-				if (s->_track_samples[idx_track]->_frame_idx>= sub_sample->_sample->_n_frames) {
+				if (s->_track_samples[idx_track]->_frame_idx>= audio_sample->_n_frames) {
 					s->note_off(idx_track);
 				}
 			}
@@ -66,24 +68,24 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 
 
 void init() {
-	sampler= new Sampler("../data/sampler_01.json");
+	audio_sampler= new Sampler("../data/audio_sampler_01.json");
 
 	int idx_device_input= -1;
 	int idx_device_output= 1;
-	stream= pa_init(idx_device_input, idx_device_output, SAMPLE_RATE, FRAMES_PER_BUFFER, pa_callback, sampler);
+	stream= pa_init(idx_device_input, idx_device_output, SAMPLE_RATE, FRAMES_PER_BUFFER, pa_callback, audio_sampler);
 }
 
 
 void main_loop() {
 	while (true) {
-		sampler->update();
+		audio_sampler->update();
 	}
 }
 
 
 void clean() {
 	pa_close(stream);
-	delete sampler;
+	delete audio_sampler;
 }
 
 
