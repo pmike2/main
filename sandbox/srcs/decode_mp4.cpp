@@ -102,6 +102,7 @@ int init(const char * file_in) {
 	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
+	// RGBA
 	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
 		rmask = 0xff000000;
 		gmask = 0x00ff0000;
@@ -182,15 +183,19 @@ int init(const char * file_in) {
 	width= ctx_codec->width;
 	height= ctx_codec->height;
 
+	// AV_PIX_FMT_RGBA permet de rajouter un canal alpha
+	//AVPixelFormat pixel_format= AV_PIX_FMT_RGB24;
+	AVPixelFormat pixel_format= AV_PIX_FMT_RGBA;
+
 	// Determine required buffer size and allocate buffer
-	buffer_rgb_size= av_image_get_buffer_size(AV_PIX_FMT_RGB24, width, height, 32);
+	buffer_rgb_size= av_image_get_buffer_size(pixel_format, width, height, 32);
 	buffer_rgb= (unsigned char *)av_malloc(buffer_rgb_size* sizeof(unsigned char));
 
 	// Assign appropriate parts of buffer to image planes in frame_rgb
-	av_image_fill_arrays(frame_rgb->data, frame_rgb->linesize, buffer_rgb, AV_PIX_FMT_RGB24, width, height, 1);
+	av_image_fill_arrays(frame_rgb->data, frame_rgb->linesize, buffer_rgb, pixel_format, width, height, 1);
 
 	// servira a faire la conversion de format de couleur
-	sws_ctx= sws_getContext(width, height, ctx_codec->pix_fmt, width, height, AV_PIX_FMT_RGB24, SWS_BILINEAR, 0, 0, 0);
+	sws_ctx= sws_getContext(width, height, ctx_codec->pix_fmt, width, height, pixel_format, SWS_BILINEAR, 0, 0, 0);
 
 
 	n_frames= ctx_format->streams[stream_idx]->nb_frames;
@@ -231,6 +236,19 @@ int init(const char * file_in) {
 				//pgm_save(frame->data[0], frame->linesize[0], frame->width, frame->height, file_out);
 				ppm_save(frame_rgb, width, height, file_out);*/
 
+				// gestion canal alpha
+				for (int i= 0; i< width* height; i++) {
+					int num= i* sizeof(uint8_t)* 4;
+					div_t div_result= div(num, width* sizeof(uint8_t)* 4);
+					int offset= frame_rgb->linesize[0]* div_result.quot+ div_result.rem;
+					if (i%7==1) {
+						buffer_rgb[offset+ 3]= 255;
+					}
+					else {
+						buffer_rgb[offset+ 3]= 0;
+					}
+				}
+
 				memcpy(buffer_all+ (ctx_codec->frame_number- 1)* buffer_rgb_size* sizeof(unsigned char), buffer_rgb, buffer_rgb_size* sizeof(unsigned char));
 			}
 
@@ -263,8 +281,14 @@ void idle() {
 		current_idx= 0;
 	}
 
-	int depth = 24;
-	int pitch = 3* width;
+	// si canal alpha 32, sinon 24
+	//int depth = 24;
+	int depth = 32;
+
+	// si canal alpha 4, sinon 3
+	//int pitch = 3* width;
+	int pitch = 4* width;
+
 	surf= SDL_CreateRGBSurfaceFrom((void*)(buffer_all+ current_idx* buffer_rgb_size* sizeof(unsigned char)), width, height, depth, pitch, rmask, gmask, bmask, amask);
 	tex= SDL_CreateTextureFromSurface(renderer, surf);
 	SDL_FreeSurface(surf);
