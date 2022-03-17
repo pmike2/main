@@ -1,0 +1,14 @@
+{
+	"a" : {
+		"sample_path" : "../data/audio_samples/kick.wav",
+		"mode" : "ALL"
+	},
+	"b" : {
+		"sample_path" : "../data/audio_samples/snare.wav",
+		"mode" : "ALL"
+	},
+	"c" : {
+		"sample_path" : "../data/audio_samples/hihat.wav",
+		"mode" : "ALL"
+	}
+}

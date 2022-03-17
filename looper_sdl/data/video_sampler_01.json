@@ -1,0 +1,18 @@
+{
+	"a" : {
+		"sample_path" : "../data/video_samples/test.mp4",
+		"mode" : "ALL",
+		"x" : 0,
+		"y" : 0,
+		"w" : 100,
+		"h" : 100
+	},
+	"b" : {
+		"sample_path" : "../data/video_samples/test.mp4",
+		"mode" : "ALL"
+	},
+	"c" : {
+		"sample_path" : "../data/video_samples/test.mp4",
+		"mode" : "ALL"
+	}
+}

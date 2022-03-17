@@ -24,12 +24,12 @@ const unsigned int FRAMES_PER_BUFFER= 128;
 
 
 PaStream * stream;
-Sampler * audio_sampler;
+AudioSampler * audio_sampler;
 
 
 // callback PortAudio
 int pa_callback(const void * input, void * output, unsigned long frame_count, const PaStreamCallbackTimeInfo * time_info, PaStreamCallbackFlags status_flags, void * user_data) {
-	Sampler * s= (Sampler *)user_data;
+	AudioSampler * s= (AudioSampler *)user_data;
 	//float * in= (float *)input;
 	float * out= (float *)output;
 
@@ -40,11 +40,11 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 		for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
 			if (s->_track_samples[idx_track]->_playing) {
 				key_type key= s->_track_samples[idx_track]->_info._key;
-				SubSample * sub_sample= s->_map[key];
+				AudioSubSample * sub_sample= s->_map[key];
 				//float amplitude= (float)(s->_track_samples[idx_track]->_info._amplitude)/ 128.0f;
 				float amplitude= 1.0f;
 
-				AudioSample * audio_sample= (AudioSample *)(sub_sample->_sample);
+				AudioSample * audio_sample= sub_sample->_sample;
 
 				if (audio_sample->_n_channels== 1) {
 					out[2* i+ 0]+= audio_sample->_data[s->_track_samples[idx_track]->_frame_idx]* amplitude;
@@ -68,7 +68,7 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 
 
 void init() {
-	audio_sampler= new Sampler("../data/audio_sampler_01.json");
+	audio_sampler= new AudioSampler("../data/audio_sampler_01.json");
 
 	int idx_device_input= -1;
 	int idx_device_output= 1;
