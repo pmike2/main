@@ -1,6 +1,7 @@
 
 #include <stdlib.h>
 #include <iostream>
+#include <thread>
 
 #include <SDL2/SDL.h>
 
@@ -15,6 +16,8 @@ bool done= false;
 LooperSDL * looper= 0;
 int SCREEN_WIDTH= 1024;
 int SCREEN_HEIGHT= 512;
+thread thr;
+atomic_bool stop_thr= ATOMIC_VAR_INIT(false);
 
 
 void key_down(SDL_Keycode key) {
@@ -32,6 +35,16 @@ void key_up(SDL_Keycode key) {
 }
 
 
+void update_thread() {
+	while (true) {
+		if (stop_thr) {
+			break;
+		}
+		looper->update();
+	}
+}
+
+
 void init() {
 	srand(time(NULL));
 
@@ -40,21 +53,31 @@ void init() {
 
 	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	// activation alpha blending
+	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
 	looper= new LooperSDL(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-	/*Event * e1= looper->_tracks[0]->insert_event(1, chrono::milliseconds(500), false);
-	e1->set_end(chrono::milliseconds(900));
-	Event * e2= looper->_tracks[0]->insert_event(2, chrono::milliseconds(500), false);
-	e2->set_end(chrono::milliseconds(900));
-	looper->_tracks[0]->update(chrono::milliseconds(600));
-	looper->debug();
-	done= true;*/
+	unsigned int n= 16;
+	for (unsigned int i=0; i<n; ++i) {
+		// 97 = 'a'
+		looper->_tracks[1]->insert_event(97, (DEFAULT_TRACK_DURATION* i)/ n, 0);
+	}
+	//Event * e1= looper->_tracks[1]->get_event_at(chrono::milliseconds(250));
+	//e1->set_end(chrono::milliseconds(400));
+	//looper->_tracks[1]->update(chrono::milliseconds(310));
+	//looper->debug();
+	//looper->_tracks[1]->insert_event(1, chrono::milliseconds(300), 0, false, 4);
+	//looper->_tracks[1]->update(chrono::milliseconds(310));
+	//looper->debug();
+	//done= true;
+
+	thr= thread(update_thread);
 }
 
 
 void idle() {
-	looper->update();
+	//looper->update();
 	looper->draw();
 }
 
@@ -87,6 +110,9 @@ void main_loop() {
 
 
 void clean() {
+	stop_thr= true;
+	thr.join();
+	
 	delete looper;
 
 	SDL_DestroyWindow(window);

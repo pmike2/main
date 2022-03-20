@@ -10,13 +10,6 @@
 #include "input_state.h"
 
 
-struct Color {
-	int _r;
-	int _g;
-	int _b;
-};
-
-
 class LooperSDL : public Sequence {
 public:
 	LooperSDL();
@@ -26,14 +19,16 @@ public:
 	void key_down(SDL_Keycode key);
 	void key_up(SDL_Keycode key);
 	void draw();
-	Color get_color(SDL_Keycode key);
-	void draw_rect(int x, int y, int w, int h, Color c);
+	SDL_Color get_color(SDL_Keycode key);
+	void draw_rect(int x, int y, int w, int h, SDL_Color c);
+	void tap_tempo();
 
 	InputState * _input_state;
 	SDL_Renderer * _renderer;
 	int _screen_width;
 	int _screen_height;
-	std::map<key_type, Color> _colors;
+	std::map<key_type, SDL_Color> _colors;
+	std::chrono::system_clock::time_point _tap;
 };
 
 

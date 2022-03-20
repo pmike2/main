@@ -20,7 +20,7 @@ using namespace std;
 const unsigned int SAMPLE_RATE= 44100;
 
 // nombre de samples a traiter a chaque appel du callback portaudio
-const unsigned int FRAMES_PER_BUFFER= 128;
+const unsigned int FRAMES_PER_BUFFER= 64;
 
 
 PaStream * stream;
@@ -71,7 +71,7 @@ void init() {
 	audio_sampler= new AudioSampler("../data/audio_sampler_01.json");
 
 	int idx_device_input= -1;
-	int idx_device_output= 1;
+	int idx_device_output= 2;
 	stream= pa_init(idx_device_input, idx_device_output, SAMPLE_RATE, FRAMES_PER_BUFFER, pa_callback, audio_sampler);
 }
 

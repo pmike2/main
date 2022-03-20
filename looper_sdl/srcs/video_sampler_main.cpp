@@ -2,6 +2,7 @@
 #include <SDL2/SDL.h>
 
 #include <iostream>
+#include <thread>
 
 #include "video_sampler.h"
 
@@ -19,8 +20,19 @@ SDL_Texture * tex;
 Uint32 rmask, gmask, bmask, amask;
 bool done= false;
 
-
 VideoSampler * video_sampler;
+thread thr;
+atomic_bool stop_thr= ATOMIC_VAR_INIT(false);
+
+
+void update_thread() {
+	while (true) {
+		if (stop_thr) {
+			break;
+		}
+		video_sampler->update();
+	}
+}
 
 
 void init() {
@@ -45,6 +57,8 @@ void init() {
 		bmask = 0x00ff0000;
 		amask = 0xff000000;
 	#endif
+
+	thr= thread(update_thread);
 }
 
 
@@ -54,12 +68,24 @@ void draw() {
 
 	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
 		if (video_sampler->_track_samples[idx_track]->_playing) {
+	
+			if (video_sampler->_track_samples[idx_track]->_frame_idx== 0) {
+				time_type t= chrono::system_clock::now()- video_sampler->_debug_start_point;
+				video_sampler->_debug[video_sampler->_compt_debug++]= t;
+				if (video_sampler->_compt_debug>= N_DEBUG) {
+					video_sampler->_compt_debug= 0;
+				}
+			}
+
 			key_type key= video_sampler->_track_samples[idx_track]->_info._key;
-			VideoSubSample * sub_sample= video_sampler->_map[key];
+			VideoSubSample * sub_sample= video_sampler->get_subsample(key);
+			if (!sub_sample) {
+				continue;
+			}
 			//float amplitude= 1.0f;
 
 			VideoSample * video_sample= sub_sample->_sample;
-			
+			/*
 			surf= SDL_CreateRGBSurfaceFrom(video_sample->get_frame(video_sampler->_track_samples[idx_track]->_frame_idx),
 				video_sample->_width, video_sample->_height, 24, video_sample->_width* 3, rmask, gmask, bmask, amask);
 			tex= SDL_CreateTextureFromSurface(renderer, surf);
@@ -70,10 +96,6 @@ void draw() {
 			SDL_SetTextureAlphaMod(tex, alpha);
 
 			SDL_Rect texture_rect;
-			/*texture_rect.x = 0;
-			texture_rect.y = 0;
-			texture_rect.w = SCREEN_WIDTH;
-			texture_rect.h = SCREEN_HEIGHT;*/
 			texture_rect.x = sub_sample->_x;
 			texture_rect.y = sub_sample->_y;
 			texture_rect.w = sub_sample->_w;
@@ -82,7 +104,7 @@ void draw() {
 			SDL_RenderCopy(renderer, tex, NULL, &texture_rect);
 			SDL_DestroyTexture(tex);
 
-			//cout << video_sampler->_track_samples[idx_track]->_frame_idx << "\n";
+			//cout << video_sampler->_track_samples[idx_track]->_frame_idx << "\n";*/
 
 			video_sampler->_track_samples[idx_track]->_frame_idx++;
 			if (video_sampler->_track_samples[idx_track]->_frame_idx>= video_sample->_n_frames) {
@@ -96,7 +118,6 @@ void draw() {
 
 
 void idle() {
-	video_sampler->update();
 	draw();
 }
 
@@ -131,6 +152,10 @@ void main_loop() {
 
 
 void clean() {
+	stop_thr= true;
+	thr.join();
+
+	delete video_sampler;
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();

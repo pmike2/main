@@ -337,6 +337,11 @@ VideoSampler::VideoSampler(string json_path) {
 		VideoSample * sample= _sample_pool->get_sample(sample_path);
 		_map[key]= new VideoSubSample(sample, t_start, t_end, mode, x, y, w, h);
 	}
+
+	for (unsigned int i=0; i<N_DEBUG; ++i) {
+		_debug[i]= time_type::zero();
+	}
+	_debug_start_point= chrono::system_clock::now();
 }
 
 
@@ -349,18 +354,37 @@ VideoSampler::~VideoSampler() {
 	}
 
 	delete _sample_pool;
+
+	ofstream myfile;
+	myfile.open("../data/video_sampler.txt");
+	for (unsigned int i=0; i<N_DEBUG; ++i) {
+		if (_debug[i]!= time_type::zero()) {
+			myfile << time_ms(_debug[i]) << "\n";
+		}
+	}
+	myfile.close();
 }
 
 
 void VideoSampler::note_on(unsigned int idx_track) {
-	_track_samples[idx_track]->_info= _data[idx_track];
+	//cout << "note_on\n";
+	_track_samples[idx_track]->_info= _data_current[idx_track];
 	_track_samples[idx_track]->_frame_idx= 0;
 	_track_samples[idx_track]->_playing= true;
 }
 
 
 void VideoSampler::note_off(unsigned int idx_track) {
+	//cout << "note_off\n";
 	_track_samples[idx_track]->_info.set_null();
 	_track_samples[idx_track]->_frame_idx= 0;
 	_track_samples[idx_track]->_playing= false;
+}
+
+
+VideoSubSample * VideoSampler::get_subsample(key_type key) {
+	if (!_map.count(key)) {
+		return 0;
+	}
+	return _map[key];
 }

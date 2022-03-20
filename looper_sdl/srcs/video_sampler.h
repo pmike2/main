@@ -7,10 +7,12 @@
 #include "looper.h"
 
 
+const unsigned int N_DEBUG= 1000;
 
 enum SUB_SAMPLE_MODE {HOLD, FROM_START, TO_END, ALL};
 
 SUB_SAMPLE_MODE get_sample_mode(std::string str_mode);
+
 
 
 class VideoSample {
@@ -71,10 +73,15 @@ public:
 	~VideoSampler();
 	void note_on(unsigned int idx_track);
 	void note_off(unsigned int idx_track);
+	VideoSubSample * get_subsample(key_type key);
 
 	VideoSamplePool * _sample_pool;
 	std::map<key_type, VideoSubSample *> _map;
 	VideoTrackSample * _track_samples[N_MAX_TRACKS];
+
+	time_type _debug[N_DEBUG];
+	unsigned int _compt_debug;
+	std::chrono::system_clock::time_point _debug_start_point;
 };
 
 #endif
