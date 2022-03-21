@@ -10,7 +10,6 @@ cmake_minimum_required(VERSION 3.13)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/")
 
 project(looper_sdl)
@@ -49,5 +48,5 @@ target_link_libraries(audio_sampler_main PUBLIC ${LIBSNDFILE_LIBRARIES})
 target_link_libraries(audio_sampler_main PUBLIC ${PORTAUDIO_LIBRARIES})
 
 target_link_libraries(video_sampler_main PUBLIC lib_looper)
-target_link_libraries(video_sampler_main PUBLIC "-L/usr/local/lib" "-L/usr/lib" "-lbz2" "-liconv" "-lz" "-lavutil" "-lavcodec" "-lavdevice" "-lavformat" "-lavfilter" "-lswresample" "-lswscale" "-pthread" "-lm" "-framework AudioUnit" "-framework AudioToolbox" "-framework CoreAudio" "-framework VideoToolbox" "-framework CoreFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework CoreServices" "-framework Security")
+target_link_libraries(video_sampler_main PUBLIC "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lbz2" "-liconv" "-lz" "-lavutil" "-lavcodec" "-lavdevice" "-lavformat" "-lavfilter" "-lswresample" "-lswscale" "-pthread" "-lm" "-framework AudioUnit" "-framework AudioToolbox" "-framework CoreAudio" "-framework VideoToolbox" "-framework CoreFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework CoreServices" "-framework Security")
 target_link_libraries(video_sampler_main PUBLIC ${SDL2_LIBRARIES})

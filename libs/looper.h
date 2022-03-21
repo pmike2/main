@@ -9,6 +9,7 @@ enum SEQ_MODE {STOPPED, RUNNING, RECORDING};
 
 typedef std::chrono::system_clock::duration time_type;
 typedef unsigned int key_type;
+typedef float amplitude_type;
 
 struct sharedata_type {
 	friend bool operator== (const sharedata_type & x, const sharedata_type & y);
@@ -19,16 +20,21 @@ struct sharedata_type {
 	bool is_null();
 
 	key_type _key;
-	unsigned int _amplitude;
+	amplitude_type _amplitude;
 	time_type _t_start;
 	time_type _t_end;
 };
 
-const bool VERBOSE= 1;
+
+const bool VERBOSE= false;
+const bool DEBUG= false;
+const unsigned int N_DEBUG= 1000;
+
 
 const unsigned int N_MAX_EVENTS= 1024;
-const unsigned int N_MAX_TRACKS= 2;
+const unsigned int N_MAX_TRACKS= 8;
 const key_type NULL_KEY= 0; 
+const amplitude_type NULL_AMPLITUDE= 0.0f;
 const std::chrono::duration<int,std::milli> DEFAULT_TRACK_DURATION= std::chrono::milliseconds(1024);
 const std::chrono::duration<int,std::milli> DEFAULT_EVENT_DURATION= std::chrono::milliseconds(50);
 const std::chrono::duration<int,std::milli> DEFAULT_EVENT_MARGIN= std::chrono::milliseconds(5);
@@ -44,7 +50,7 @@ class Event {
 public:
 	Event();
 	~Event();
-	void set(key_type key, time_type t, unsigned int amplitude, Event * previous, Event * next);
+	void set(key_type key, time_type t, amplitude_type amplitude, Event * previous, Event * next);
 	void set_end(time_type t);
 	void set_null();
 	bool is_null();
@@ -71,7 +77,7 @@ public:
 	Event * get_event_at(time_type t);
 	Event * get_first_event();
 	Event * get_last_event();
-	void insert_event(key_type key, time_type t, unsigned int amplitude);
+	void insert_event(key_type key, time_type t, amplitude_type amplitude);
 	void set_inserted_event_end(time_type t);
 	void delete_event(Event * event);
 	void update(time_type t);
@@ -103,7 +109,7 @@ public:
 	Sequence();
 	~Sequence();
 	time_type now();
-	void note_on(key_type key, unsigned int amplitude);
+	void note_on(key_type key, amplitude_type amplitude);
 	void note_off();
 	void update();
 	void clear();
@@ -140,6 +146,11 @@ public:
 	sharedata_type * _data;
 	sharedata_type * _data_current;
 	int _fd;
+
+	time_type _debug[N_DEBUG];
+	unsigned int _compt_debug;
+	std::chrono::system_clock::time_point _debug_start_point;
+	std::string _debug_path;
 };
 
 

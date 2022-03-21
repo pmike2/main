@@ -265,9 +265,8 @@ VideoSubSample::~VideoSubSample() {
 
 
 // ----------------------------------------------------------------------
-VideoTrackSample::VideoTrackSample() : _frame_idx(0), _playing(false) {
+VideoTrackSample::VideoTrackSample() : _frame_idx(0), _playing(false), _frame_idx_inc(0.0) {
 	_info.set_null();
-
 }
 
 
@@ -338,10 +337,7 @@ VideoSampler::VideoSampler(string json_path) {
 		_map[key]= new VideoSubSample(sample, t_start, t_end, mode, x, y, w, h);
 	}
 
-	for (unsigned int i=0; i<N_DEBUG; ++i) {
-		_debug[i]= time_type::zero();
-	}
-	_debug_start_point= chrono::system_clock::now();
+	_debug_path= "../data/debug/video_sampler.txt";
 }
 
 
@@ -354,15 +350,6 @@ VideoSampler::~VideoSampler() {
 	}
 
 	delete _sample_pool;
-
-	ofstream myfile;
-	myfile.open("../data/video_sampler.txt");
-	for (unsigned int i=0; i<N_DEBUG; ++i) {
-		if (_debug[i]!= time_type::zero()) {
-			myfile << time_ms(_debug[i]) << "\n";
-		}
-	}
-	myfile.close();
 }
 
 
@@ -370,6 +357,7 @@ void VideoSampler::note_on(unsigned int idx_track) {
 	//cout << "note_on\n";
 	_track_samples[idx_track]->_info= _data_current[idx_track];
 	_track_samples[idx_track]->_frame_idx= 0;
+	_track_samples[idx_track]->_frame_idx_inc= 0.0;
 	_track_samples[idx_track]->_playing= true;
 }
 
@@ -378,6 +366,7 @@ void VideoSampler::note_off(unsigned int idx_track) {
 	//cout << "note_off\n";
 	_track_samples[idx_track]->_info.set_null();
 	_track_samples[idx_track]->_frame_idx= 0;
+	_track_samples[idx_track]->_frame_idx_inc= 0.0;
 	_track_samples[idx_track]->_playing= false;
 }
 

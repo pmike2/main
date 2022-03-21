@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <sys/mman.h>
 #include <fcntl.h>
@@ -47,7 +48,7 @@ void sharedata_type::set_null() {
 	_key= NULL_KEY;
 	_t_start= time_type::zero();
 	_t_end= time_type::zero();
-	_amplitude= 0;
+	_amplitude= NULL_AMPLITUDE;
 }
 
 
@@ -78,7 +79,7 @@ Event::~Event() {
 }
 
 
-void Event::set(key_type key, time_type t, unsigned int amplitude, Event * previous, Event * next) {
+void Event::set(key_type key, time_type t, amplitude_type amplitude, Event * previous, Event * next) {
 	if (VERBOSE) {
 		cout << "Event::set\n";
 	}
@@ -93,7 +94,7 @@ void Event::set(key_type key, time_type t, unsigned int amplitude, Event * previ
 
 void Event::set_end(time_type t) {
 	if (VERBOSE) {
-		cout << "Event::set_end\n";
+		cout << "Event::set_end : " << *this << "\n";
 	}
 	_data._t_end= t;
 }
@@ -190,9 +191,9 @@ void Track::set_duration(time_type t) {
 
 
 Event * Track::get_first_null_event() {
-	if (VERBOSE) {
+	/*if (VERBOSE) {
 		cout << "Track::get_first_null_event\n";
-	}
+	}*/
 	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		if (_events[idx_event]->is_null()) {
 			return _events[idx_event];
@@ -300,12 +301,16 @@ Event * Track::get_last_event() {
 }
 
 
-void Track::insert_event(key_type key, time_type t, unsigned int amplitude) {
+void Track::insert_event(key_type key, time_type t, amplitude_type amplitude) {
 	if (VERBOSE) {
 		cout << "Track::insert_event\n";
 	}
 
 	t= get_relative_t(t);
+
+	if (_inserted_event) {
+		set_inserted_event_end(t);
+	}
 
 	// calage au pas de quantisation précédent
 	if ((!_infinite) && (_quantize> 0)) {
@@ -327,6 +332,7 @@ void Track::insert_event(key_type key, time_type t, unsigned int amplitude) {
 	Event * event_after_t= get_first_event_after(t);
 
 	_inserted_event->set(key, t, amplitude, event_before_t, event_after_t);
+	
 	if (event_before_t) {
 		event_before_t->_next= _inserted_event;
 
@@ -345,6 +351,13 @@ void Track::insert_event(key_type key, time_type t, unsigned int amplitude) {
 
 
 void Track::set_inserted_event_end(time_type t) {
+	if (VERBOSE) {
+		cout << "Track::set_inserted_event_end\n";
+	}
+	if (!_inserted_event) {
+		cout << "Track::set_inserted_event_end ERROR _inserted_event = 0\n";
+		return;
+	}
 	_inserted_event->set_end(t);
 	_inserted_event= 0;
 }
@@ -400,7 +413,7 @@ void Track::update(time_type t) {
 
 		if ((update_current_quantize(t)) && (_repeat)) {
 			key_type key= _inserted_event->_data._key;
-			unsigned int amplitude= _inserted_event->_data._amplitude;
+			amplitude_type amplitude= _inserted_event->_data._amplitude;
 			set_inserted_event_end(_current_quantize* _quantize_step- DEFAULT_EVENT_MARGIN);
 			insert_event(key, _current_quantize* _quantize_step, amplitude);
 		}
@@ -488,7 +501,7 @@ void Track::emit_null() {
 	_data->_key      = NULL_KEY;
 	_data->_t_start  = time_type::zero();
 	_data->_t_end    = time_type::zero();
-	_data->_amplitude= 0;
+	_data->_amplitude= NULL_AMPLITUDE;
 }
 
 
@@ -545,14 +558,14 @@ time_type Sequence::now() {
 }
 
 
-void Sequence::note_on(key_type key, unsigned int amplitude) {
+void Sequence::note_on(key_type key, amplitude_type amplitude) {
 	if (VERBOSE) {
 		cout << "Sequence::note_on\n";
 	}
 
-	if (_current_track->_inserted_event) {
+	/*if (_current_track->_inserted_event) {
 		note_off();
-	}
+	}*/
 
 	if (_mode== RECORDING) {
 		_current_track->insert_event(key, now(), amplitude);
@@ -764,11 +777,28 @@ Receiver::Receiver() {
 		_data_current[idx_track].set_null();
 	}
 
+	if (DEBUG) {
+		for (unsigned int i=0; i<N_DEBUG; ++i) {
+			_debug[i]= time_type::zero();
+		}
+		_debug_start_point= chrono::system_clock::now();
+	}
 }
 
 Receiver::~Receiver() {
 	close_data();
 	delete[] _data_current;
+
+	if (DEBUG) {
+		ofstream myfile;
+		myfile.open(_debug_path);
+		for (unsigned int i=0; i<N_DEBUG; ++i) {
+			if (_debug[i]!= time_type::zero()) {
+				myfile << time_ms(_debug[i]) << "\n";
+			}
+		}
+		myfile.close();
+	}
 }
 
 

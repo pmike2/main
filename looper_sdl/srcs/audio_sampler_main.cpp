@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <signal.h>
 
 #include "portaudio.h"
 #ifdef WIN32
@@ -16,15 +17,21 @@
 using namespace std;
 
 
-// nombre de samples dans 1s d'audio
+// nombre de frames dans 1s d'audio
 const unsigned int SAMPLE_RATE= 44100;
 
-// nombre de samples a traiter a chaque appel du callback portaudio
+// nombre de frames a traiter a chaque appel du callback
 const unsigned int FRAMES_PER_BUFFER= 64;
 
 
 PaStream * stream;
 AudioSampler * audio_sampler;
+
+
+void interruption_handler(sig_atomic_t s) {
+	delete audio_sampler;
+	exit(1); 
+}
 
 
 // callback PortAudio
@@ -39,10 +46,23 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 
 		for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
 			if (s->_track_samples[idx_track]->_playing) {
+				
+				if (DEBUG) {
+					if (s->_track_samples[idx_track]->_frame_idx== 0) {
+						time_type t= chrono::system_clock::now()- s->_debug_start_point;
+						s->_debug[s->_compt_debug++]= t;
+						if (s->_compt_debug>= N_DEBUG) {
+							s->_compt_debug= 0;
+						}
+					}
+				}
+
 				key_type key= s->_track_samples[idx_track]->_info._key;
-				AudioSubSample * sub_sample= s->_map[key];
-				//float amplitude= (float)(s->_track_samples[idx_track]->_info._amplitude)/ 128.0f;
-				float amplitude= 1.0f;
+				amplitude_type amplitude= s->_track_samples[idx_track]->_info._amplitude;
+				AudioSubSample * sub_sample= audio_sampler->get_subsample(key);
+				if (!sub_sample) {
+					continue;
+				}
 
 				AudioSample * audio_sample= sub_sample->_sample;
 
@@ -67,8 +87,10 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 }
 
 
-void init() {
-	audio_sampler= new AudioSampler("../data/audio_sampler_01.json");
+void init(string json_path) {
+	signal(SIGINT, interruption_handler);
+
+	audio_sampler= new AudioSampler(json_path);
 
 	int idx_device_input= -1;
 	int idx_device_output= 2;
@@ -89,9 +111,14 @@ void clean() {
 }
 
 
-int main() {
+int main(int argc, char **argv) {
 	//list_devices(); return 0;
-	init();
+
+	if (argc!= 2) {
+		cout << "donner le chemin d'un json en entrée\n";
+		return 1;
+	}
+	init(string(argv[1]));
 	main_loop();
 	clean();
 

@@ -157,6 +157,8 @@ AudioSampler::AudioSampler(string json_path) {
 		AudioSample * sample= _sample_pool->get_sample(sample_path);
 		_map[key]= new AudioSubSample(sample, t_start, t_end, mode);
 	}
+
+	_debug_path= "../data/debug/audio_sampler.txt";
 }
 
 
@@ -185,3 +187,10 @@ void AudioSampler::note_off(unsigned int idx_track) {
 	_track_samples[idx_track]->_playing= false;
 }
 
+
+AudioSubSample * AudioSampler::get_subsample(key_type key) {
+	if (!_map.count(key)) {
+		return 0;
+	}
+	return _map[key];
+}

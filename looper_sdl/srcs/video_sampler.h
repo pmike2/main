@@ -7,12 +7,9 @@
 #include "looper.h"
 
 
-const unsigned int N_DEBUG= 1000;
-
 enum SUB_SAMPLE_MODE {HOLD, FROM_START, TO_END, ALL};
 
 SUB_SAMPLE_MODE get_sample_mode(std::string str_mode);
-
 
 
 class VideoSample {
@@ -63,6 +60,7 @@ public:
 	sharedata_type _info;
 	unsigned int _frame_idx;
 	bool _playing;
+	double _frame_idx_inc;
 };
 
 
@@ -78,10 +76,6 @@ public:
 	VideoSamplePool * _sample_pool;
 	std::map<key_type, VideoSubSample *> _map;
 	VideoTrackSample * _track_samples[N_MAX_TRACKS];
-
-	time_type _debug[N_DEBUG];
-	unsigned int _compt_debug;
-	std::chrono::system_clock::time_point _debug_start_point;
 };
 
 #endif

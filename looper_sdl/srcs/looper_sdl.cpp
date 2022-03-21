@@ -70,7 +70,7 @@ void LooperSDL::key_down(SDL_Keycode key) {
 		}
 		else if (key== SDLK_q) {
 			if (_current_track->_quantize== 0) {
-				_current_track->_quantize++;
+				_current_track->_quantize= 1;
 			}
 			else {
 				_current_track->set_quantize(_current_track->_quantize* 2);
@@ -89,7 +89,13 @@ void LooperSDL::key_down(SDL_Keycode key) {
 	}
 
 	if (event_key(key)) {
-		unsigned int amplitude= 0; // TODO
+		amplitude_type amplitude= 1.0f;
+		for (unsigned int i=SDLK_KP_1; i<SDLK_KP_9; ++i) {
+			if (_input_state->get_key(i)) {
+				amplitude= (amplitude_type)(i- SDLK_KP_1+ 1)/ 9.0f;
+				break;
+			}
+		}
 		note_on(key, amplitude);
 		return;
 	}
@@ -139,7 +145,7 @@ void LooperSDL::draw() {
 				int w= (int)((float)(_screen_width* (time_ms(_tracks[i]->_events[j]->_data._t_end)- time_ms(_tracks[i]->_events[j]->_data._t_start)))/ (float)(time_ms(_tracks[i]->_duration)));
 				
 				SDL_Color c= get_color(_tracks[i]->_events[j]->_data._key);
-				c.a= 200;
+				c.a= int(_tracks[i]->_events[j]->_data._amplitude* 255.0f);
 				draw_rect(x, y, w, track_height, c);
 			}
 		}

@@ -66,6 +66,7 @@ public:
 	~AudioSampler();
 	void note_on(unsigned int idx_track);
 	void note_off(unsigned int idx_track);
+	AudioSubSample * get_subsample(key_type key);
 
 	AudioSamplePool * _sample_pool;
 	std::map<key_type, AudioSubSample *> _map;

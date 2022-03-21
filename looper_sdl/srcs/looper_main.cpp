@@ -18,6 +18,7 @@ int SCREEN_WIDTH= 1024;
 int SCREEN_HEIGHT= 512;
 thread thr;
 atomic_bool stop_thr= ATOMIC_VAR_INIT(false);
+mutex mtx;
 
 
 void key_down(SDL_Keycode key) {
@@ -26,12 +27,16 @@ void key_down(SDL_Keycode key) {
 		return;
 	}
 
+	mtx.lock();
 	looper->key_down(key);
+	mtx.unlock();
 }
 
 
 void key_up(SDL_Keycode key) {
+	mtx.lock();
 	looper->key_up(key);
+	mtx.unlock();
 }
 
 
@@ -40,7 +45,9 @@ void update_thread() {
 		if (stop_thr) {
 			break;
 		}
+		mtx.lock();
 		looper->update();
+		mtx.unlock();
 	}
 }
 
@@ -48,7 +55,6 @@ void update_thread() {
 void init() {
 	srand(time(NULL));
 
-	//SDL_Init(SDL_INIT_EVENTS);
 	SDL_Init(SDL_INIT_EVERYTHING);
 
 	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
@@ -58,17 +64,17 @@ void init() {
 
 	looper= new LooperSDL(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-	unsigned int n= 16;
+	/*unsigned int n= 16;
 	for (unsigned int i=0; i<n; ++i) {
 		// 97 = 'a'
 		looper->_tracks[1]->insert_event(97, (DEFAULT_TRACK_DURATION* i)/ n, 0);
-	}
-	//Event * e1= looper->_tracks[1]->get_event_at(chrono::milliseconds(250));
-	//e1->set_end(chrono::milliseconds(400));
-	//looper->_tracks[1]->update(chrono::milliseconds(310));
-	//looper->debug();
-	//looper->_tracks[1]->insert_event(1, chrono::milliseconds(300), 0, false, 4);
-	//looper->_tracks[1]->update(chrono::milliseconds(310));
+	}*/
+
+	/*looper->_tracks[1]->_hold= true;
+	looper->_tracks[1]->insert_event(97, time_type::zero(), 1.0f);
+	looper->_tracks[1]->set_inserted_event_end(looper->_tracks[1]->_duration- std::chrono::milliseconds(100));
+	*/
+
 	//looper->debug();
 	//done= true;
 
@@ -77,7 +83,6 @@ void init() {
 
 
 void idle() {
-	//looper->update();
 	looper->draw();
 }
 
