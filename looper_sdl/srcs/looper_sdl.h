@@ -29,6 +29,7 @@ public:
 	int _screen_height;
 	std::map<key_type, SDL_Color> _colors;
 	std::chrono::system_clock::time_point _tap;
+	unsigned int _ratio_numerator;
 };
 
 

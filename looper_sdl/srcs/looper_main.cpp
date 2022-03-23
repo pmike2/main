@@ -58,7 +58,7 @@ void init() {
 	SDL_Init(SDL_INIT_EVERYTHING);
 
 	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	// activation alpha blending
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 
@@ -83,7 +83,9 @@ void init() {
 
 
 void idle() {
+	//mtx.lock();
 	looper->draw();
+	//mtx.unlock();
 }
 
 

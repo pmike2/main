@@ -135,7 +135,7 @@ Track::Track() {
 
 Track::Track(sharedata_type * track_data, bool infinite) :
 	_current_event(0), _inserted_event(0), _current_cycle(0), _next(0), _previous(0), _data(track_data), _infinite(infinite),
-	_quantize(0), _quantize_step(time_type::zero()), _current_quantize(0), _repeat(false), _hold(false)
+	_quantize(0), _quantize_step(time_type::zero()), _current_quantize(0), _repeat(false), _hold(false), _ratio_to_master_track(1, 1)
 {
 	if (_infinite) {
 		_duration= time_type::zero();
@@ -187,6 +187,26 @@ void Track::set_duration(time_type t) {
 		e= e_next;
 	}
 	_duration= t;
+}
+
+
+void Track::set_ratio_to_master_track(Track * master_track, ratio_type ratio) {
+	if (VERBOSE) {
+		cout << "Track::set_ratio_to_master_track\n";
+	}
+	if (master_track== this) {
+		cout << "set_ratio_to_master_track sur master track impossible\n";
+		return;
+	}
+	_ratio_to_master_track= ratio;
+	update_duration_from_ratio_to_master_track(master_track);
+}
+
+
+void Track::update_duration_from_ratio_to_master_track(Track * master_track) {
+	float t_f= (float)(time_ms(master_track->_duration)* _ratio_to_master_track.first)/ (float)(_ratio_to_master_track.second);
+	time_type t= std::chrono::milliseconds((unsigned int)(t_f));
+	set_duration(t);
 }
 
 
@@ -536,10 +556,6 @@ Sequence::Sequence() : _start_point(chrono::system_clock::now()), _mode(RECORDIN
 		}
 	}
 
-	for (unsigned int idx_track=1; idx_track<N_MAX_TRACKS; ++idx_track) {
-		_ratios[idx_track]= 1.0f;
-	}
-
 	_current_track= _tracks[1];
 }
 
@@ -686,27 +702,6 @@ void Sequence::set_previous_track() {
 }
 
 
-void Sequence::set_track_duration_ratio(Track * track, float ratio) {
-	if (VERBOSE) {
-		cout << "Sequence::set_track_duration_ratio\n";
-	}
-
-	if (track== _tracks[1]) {
-		return;
-	}
-
-	for (unsigned int idx_track=2; idx_track<N_MAX_TRACKS; ++idx_track) {
-		if (track== _tracks[idx_track]) {
-			_ratios[idx_track]= ratio;
-			break;
-		}
-	}
-	float t_f= (float)(time_ms(_tracks[1]->_duration))* ratio;
-	time_type t= std::chrono::milliseconds((unsigned int)(t_f));
-	track->set_duration(t);
-}
-
-
 void Sequence::set_master_track_duration(time_type t) {
 	if (VERBOSE) {
 		cout << "Sequence::set_master_track_duration\n";
@@ -714,7 +709,7 @@ void Sequence::set_master_track_duration(time_type t) {
 
 	_tracks[1]->set_duration(t);
 	for (unsigned int idx_track=2; idx_track<N_MAX_TRACKS; ++idx_track) {
-		set_track_duration_ratio(_tracks[idx_track], _ratios[idx_track]);
+		_tracks[idx_track]->update_duration_from_ratio_to_master_track(_tracks[1]);
 	}
 }
 
@@ -782,6 +777,8 @@ Receiver::Receiver() {
 			_debug[i]= time_type::zero();
 		}
 		_debug_start_point= chrono::system_clock::now();
+		// _debug_path doit être spécifié dans les classes filles 
+		_debug_path= "";
 	}
 }
 
@@ -790,6 +787,10 @@ Receiver::~Receiver() {
 	delete[] _data_current;
 
 	if (DEBUG) {
+		if (_debug_path.empty()) {
+			cout << "_debug_path n'est pas précisé\n";
+			return;
+		}
 		ofstream myfile;
 		myfile.open(_debug_path);
 		for (unsigned int i=0; i<N_DEBUG; ++i) {

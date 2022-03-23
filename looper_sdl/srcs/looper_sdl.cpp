@@ -1,3 +1,5 @@
+#include <utility>
+
 #include "looper_sdl.h"
 #include "utile.h"
 
@@ -11,7 +13,7 @@ LooperSDL::LooperSDL() {
 
 
 LooperSDL::LooperSDL(SDL_Renderer * renderer, int screen_width, int screen_height) : 
-	_renderer(renderer), _screen_width(screen_width), _screen_height(screen_height), _tap()
+	_renderer(renderer), _screen_width(screen_width), _screen_height(screen_height), _tap(), _ratio_numerator(0)
 {
 	_input_state= new InputState();
 }
@@ -41,6 +43,22 @@ void LooperSDL::key_down(SDL_Keycode key) {
 
 	SDL_Keymod key_mod= SDL_GetModState();
 	if (KMOD_LSHIFT & key_mod) {
+		for (unsigned int i=SDLK_KP_1; i<=SDLK_KP_9; ++i) {
+			if (_input_state->get_key(i)) {
+				if (_ratio_numerator> 0) {
+					unsigned int ratio_denominator= i- SDLK_KP_1+ 1;
+					if (_current_track!= _tracks[1]) {
+						_current_track->set_ratio_to_master_track(_tracks[1], ratio_type(_ratio_numerator, ratio_denominator));
+					}
+					_ratio_numerator= 0;
+				}
+				else {
+					_ratio_numerator= i- SDLK_KP_1+ 1;
+				}
+				break;
+			}
+		}
+
 		if (key== SDLK_d) {
 			debug();
 		}
@@ -79,18 +97,12 @@ void LooperSDL::key_down(SDL_Keycode key) {
 				}
 			}
 		}
-		else if (key== SDLK_KP_1) {
-			set_track_duration_ratio(_current_track, 1.0);
-		}
-		else if (key== SDLK_KP_2) {
-			set_track_duration_ratio(_current_track, 0.5);
-		}
 		return;
 	}
 
 	if (event_key(key)) {
 		amplitude_type amplitude= 1.0f;
-		for (unsigned int i=SDLK_KP_1; i<SDLK_KP_9; ++i) {
+		for (unsigned int i=SDLK_KP_1; i<=SDLK_KP_9; ++i) {
 			if (_input_state->get_key(i)) {
 				amplitude= (amplitude_type)(i- SDLK_KP_1+ 1)/ 9.0f;
 				break;
@@ -128,11 +140,11 @@ void LooperSDL::draw() {
 	time_type now_time= now();
 	unsigned int track_height= _screen_height/ N_MAX_TRACKS;
 
-	for (unsigned int i=1; i<N_MAX_TRACKS; ++i) {
-		int y= (int)((float)(_screen_height* i)/ (float)(N_MAX_TRACKS));
+	for (unsigned int idx_track=1; idx_track<N_MAX_TRACKS; ++idx_track) {
+		int y= (int)((float)(_screen_height* idx_track)/ (float)(N_MAX_TRACKS));
 
 		// rect track
-		if (_tracks[i]== _current_track) {
+		if (_tracks[idx_track]== _current_track) {
 			SDL_Color c;
 			c.r= 40; c.g= 40; c.b= 40; c.a= 100;
 			draw_rect(0, y, _screen_width, track_height, c);
@@ -140,19 +152,19 @@ void LooperSDL::draw() {
 
 		// events
 		for (unsigned int j=0; j<N_MAX_EVENTS; ++j) {
-			if (!_tracks[i]->_events[j]->is_null()) {
-				int x= (int)((float)(_screen_width* time_ms(_tracks[i]->_events[j]->_data._t_start))/ (float)(time_ms(_tracks[i]->_duration)));
-				int w= (int)((float)(_screen_width* (time_ms(_tracks[i]->_events[j]->_data._t_end)- time_ms(_tracks[i]->_events[j]->_data._t_start)))/ (float)(time_ms(_tracks[i]->_duration)));
+			if (!_tracks[idx_track]->_events[j]->is_null()) {
+				int x= (int)((float)(_screen_width* time_ms(_tracks[idx_track]->_events[j]->_data._t_start))/ (float)(time_ms(_tracks[idx_track]->_duration)));
+				int w= (int)((float)(_screen_width* (time_ms(_tracks[idx_track]->_events[j]->_data._t_end)- time_ms(_tracks[idx_track]->_events[j]->_data._t_start)))/ (float)(time_ms(_tracks[idx_track]->_duration)));
 				
-				SDL_Color c= get_color(_tracks[i]->_events[j]->_data._key);
-				c.a= int(_tracks[i]->_events[j]->_data._amplitude* 255.0f);
+				SDL_Color c= get_color(_tracks[idx_track]->_events[j]->_data._key);
+				c.a= int(_tracks[idx_track]->_events[j]->_data._amplitude* 255.0f);
 				draw_rect(x, y, w, track_height, c);
 			}
 		}
 
 		// time cursor
 		if ((_mode== RUNNING) || (_mode== RECORDING)) {
-			int x= (int)((float)(_screen_width* time_ms(_tracks[i]->get_relative_t(now_time)))/ (float)(time_ms(_tracks[i]->_duration)));
+			int x= (int)((float)(_screen_width* time_ms(_tracks[idx_track]->get_relative_t(now_time)))/ (float)(time_ms(_tracks[idx_track]->_duration)));
 			SDL_Color c;
 			if (_mode== RUNNING) {
 				c.r= 250; c.g= 250; c.b= 200;
@@ -165,9 +177,9 @@ void LooperSDL::draw() {
 		}
 
 		// repères quantize
-		if (_current_track->_quantize) {
-			for (unsigned int i=0; i<_current_track->_quantize; ++i) {
-				int x= (int)((float)(i* _screen_width)/ (float)(_current_track->_quantize));
+		if (_tracks[idx_track]->_quantize) {
+			for (unsigned int i=0; i<_tracks[idx_track]->_quantize; ++i) {
+				int x= (int)((float)(i* _screen_width)/ (float)(_tracks[idx_track]->_quantize));
 				SDL_Color c;
 				c.r= 80; c.g= 80; c.b= 80; c.a= 200;
 				draw_rect(x, y, 1, track_height, c);
@@ -207,8 +219,8 @@ void LooperSDL::draw_rect(int x, int y, int w, int h, SDL_Color c) {
 
 void LooperSDL::tap_tempo() {
 	chrono::system_clock::time_point t_now= chrono::system_clock::now();
-	if (_tap.time_since_epoch().count()!= 0) {
-		time_type tap_diff= t_now- _tap;
+	time_type tap_diff= t_now- _tap;
+	if (tap_diff< chrono::milliseconds(5000)) {
 		set_master_track_duration(tap_diff);
 	}
 	_tap= t_now;

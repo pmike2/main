@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <string>
+#include <utility>
 
 
 enum SEQ_MODE {STOPPED, RUNNING, RECORDING};
@@ -10,6 +11,7 @@ enum SEQ_MODE {STOPPED, RUNNING, RECORDING};
 typedef std::chrono::system_clock::duration time_type;
 typedef unsigned int key_type;
 typedef float amplitude_type;
+typedef std::pair<unsigned int, unsigned int> ratio_type;
 
 struct sharedata_type {
 	friend bool operator== (const sharedata_type & x, const sharedata_type & y);
@@ -70,6 +72,8 @@ public:
 	time_type get_relative_t(time_type t);
 	unsigned int get_cycle(time_type t);
 	void set_duration(time_type t);
+	void set_ratio_to_master_track(Track * master_track, ratio_type ratio);
+	void update_duration_from_ratio_to_master_track(Track * master_track);
 	Event * get_first_null_event();
 	Event * get_first_not_null_event();
 	Event * get_last_event_before(time_type t);
@@ -88,6 +92,7 @@ public:
 	void clear();
 
 	time_type _duration;
+	ratio_type _ratio_to_master_track;
 	Event * _events[N_MAX_EVENTS];
 	Event * _current_event;
 	Event * _inserted_event;
@@ -117,7 +122,6 @@ public:
 	void toggle_record();
 	void set_next_track();
 	void set_previous_track();
-	void set_track_duration_ratio(Track * track, float ratio);
 	void set_master_track_duration(time_type t);
 	void init_data();
 	void close_data();
@@ -129,7 +133,6 @@ public:
 	sharedata_type * _data;
 	int _fd;
 	SEQ_MODE _mode;
-	float _ratios[N_MAX_TRACKS];
 };
 
 

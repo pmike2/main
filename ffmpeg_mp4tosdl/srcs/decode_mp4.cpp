@@ -23,8 +23,8 @@ extern "C" {
 using namespace std;
 
 
-int SCREEN_WIDTH= 512;
-int SCREEN_HEIGHT= 512;
+int SCREEN_WIDTH= 1000;
+int SCREEN_HEIGHT= 1000;
 
 
 SDL_Window * window= 0;
@@ -63,7 +63,8 @@ AVPacket * pkt = av_packet_alloc();
 
 // buffer qui servira a stocker les données de frame_rgb après conversion du frame
 unsigned char * buffer_rgb= 0;
-int buffer_rgb_size= 0;
+// ici long pas int !
+unsigned long buffer_rgb_size= 0;
 unsigned char * buffer_all= 0;
 
 // servira a faire la conversion de format de couleur entre frame et frame_rgb
@@ -99,8 +100,11 @@ int init(const char * file_in) {
 		return 1;
 	}
 
+
 	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	//tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+	tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	// RGBA
 	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -187,22 +191,31 @@ int init(const char * file_in) {
 	//AVPixelFormat pixel_format= AV_PIX_FMT_RGB24;
 	AVPixelFormat pixel_format= AV_PIX_FMT_RGBA;
 
+	unsigned int width_rgb= SCREEN_WIDTH;
+	unsigned int height_rgb= SCREEN_HEIGHT;
+
 	// Determine required buffer size and allocate buffer
-	buffer_rgb_size= av_image_get_buffer_size(pixel_format, width, height, 32);
-	buffer_rgb= (unsigned char *)av_malloc(buffer_rgb_size* sizeof(unsigned char));
+	buffer_rgb_size= av_image_get_buffer_size(pixel_format, width_rgb, height_rgb, 32);
+	buffer_rgb= (unsigned char *)av_malloc(buffer_rgb_size);
 
 	// Assign appropriate parts of buffer to image planes in frame_rgb
-	av_image_fill_arrays(frame_rgb->data, frame_rgb->linesize, buffer_rgb, pixel_format, width, height, 1);
+	av_image_fill_arrays(frame_rgb->data, frame_rgb->linesize, buffer_rgb, pixel_format, width_rgb, height_rgb, 1);
 
 	// servira a faire la conversion de format de couleur
-	sws_ctx= sws_getContext(width, height, ctx_codec->pix_fmt, width, height, pixel_format, SWS_BILINEAR, 0, 0, 0);
-
+	//sws_ctx= sws_getContext(width, height, ctx_codec->pix_fmt, width, height, pixel_format, SWS_BILINEAR, 0, 0, 0);
+	sws_ctx= sws_getContext(width, height, ctx_codec->pix_fmt, width_rgb, height_rgb, pixel_format, SWS_BILINEAR, 0, 0, 0);
 
 	n_frames= ctx_format->streams[stream_idx]->nb_frames;
 	cout << "NB Frames estimated = " << n_frames << "\n";
-	buffer_all= (unsigned char *)av_malloc(buffer_rgb_size* sizeof(unsigned char)* n_frames);
 
-
+	// av_malloc échoue si la taille est trop grosse
+	//buffer_all= (unsigned char *)av_malloc((unsigned long long)(buffer_rgb_size* n_frames));
+	buffer_all= (unsigned char *)malloc(buffer_rgb_size* n_frames);
+	if (buffer_all== 0) {
+		cout << "error malloc : " << buffer_rgb_size* n_frames << " bytes\n";
+		exit(1);
+	}
+	
 	// Return the next frame of a stream
 	while (av_read_frame(ctx_format, pkt)>= 0){
 		// s'il s'agit du bon stream
@@ -230,18 +243,11 @@ int init(const char * file_in) {
 				// conversion de frame vers frame_rgb
 				sws_scale(sws_ctx, (unsigned char const * const *)frame->data, frame->linesize, 0, height, frame_rgb->data, frame_rgb->linesize);
 	
-				// sauvegarde du frame dans un fichier PPM
-				/*char file_out[1024];
-				snprintf(file_out, sizeof(file_out), "%s/frame-%d.ppm", dir_out, ctx_codec->frame_number);
-				//pgm_save(frame->data[0], frame->linesize[0], frame->width, frame->height, file_out);
-				ppm_save(frame_rgb, width, height, file_out);*/
-
 				// gestion canal alpha
-				for (int i= 0; i< width* height; i++) {
-					unsigned int alpha= (255* (i% width))/ width;
+				for (int i= 0; i< width_rgb* height_rgb; i++) {
+					unsigned int alpha= (255* (i% width_rgb))/ width_rgb;
 					buffer_rgb[4* i+ 3]= alpha;
 				}
-
 				memcpy(buffer_all+ (ctx_codec->frame_number- 1)* buffer_rgb_size* sizeof(unsigned char), buffer_rgb, buffer_rgb_size* sizeof(unsigned char));
 			}
 
@@ -280,20 +286,34 @@ void idle() {
 
 	// si canal alpha 4, sinon 3
 	//int pitch = 3* width;
-	int pitch = 4* width;
+	//int pitch = 4* width;
 
-	surf= SDL_CreateRGBSurfaceFrom((void*)(buffer_all+ current_idx* buffer_rgb_size* sizeof(unsigned char)), width, height, depth, pitch, rmask, gmask, bmask, amask);
-	tex= SDL_CreateTextureFromSurface(renderer, surf);
-	SDL_FreeSurface(surf);
+	//surf= SDL_CreateRGBSurfaceFrom((void*)(buffer_all+ current_idx* buffer_rgb_size* sizeof(unsigned char)), width, height, depth, pitch, rmask, gmask, bmask, amask);
+	//tex= SDL_CreateTextureFromSurface(renderer, surf);
+	//SDL_FreeSurface(surf);
 
-	SDL_Rect texture_rect;
+	/*SDL_Rect texture_rect;
 	texture_rect.x = 0;
 	texture_rect.y = 0;
 	texture_rect.w = SCREEN_WIDTH;
-	texture_rect.h = SCREEN_HEIGHT;
+	texture_rect.h = SCREEN_HEIGHT;*/
 
-	SDL_RenderCopy(renderer, tex, NULL, &texture_rect);
-	SDL_DestroyTexture(tex);
+	/*int pitch = SCREEN_WIDTH* 4;
+	unsigned char *pixels= 0;
+	SDL_LockTexture(tex, NULL, (void **) &pixels, &pitch);
+	//pixels= buffer_all+ current_idx* buffer_rgb_size* sizeof(unsigned char);
+	for (unsigned int i=0; i<SCREEN_WIDTH; ++i) {
+		for (unsigned int j=0; j<SCREEN_HEIGHT; ++j) {
+			pixels[i+ SCREEN_WIDTH* j]= 100;
+		}
+	}
+	SDL_UnlockTexture(tex);*/
+
+	SDL_UpdateTexture(tex, NULL, buffer_all+ current_idx* buffer_rgb_size* sizeof(unsigned char), SCREEN_WIDTH* 4);
+
+	//SDL_RenderCopy(renderer, tex, NULL, &texture_rect);
+	SDL_RenderCopy(renderer, tex, NULL, NULL);
+	//SDL_DestroyTexture(tex);
 	
 	SDL_RenderPresent(renderer);
 	//SDL_Delay(100);
@@ -333,13 +353,14 @@ void clean() {
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
+	av_free(buffer_rgb);
+	av_free(buffer_all);
 }
 
 
 int main(int argc, char **argv) {
 	// fichier mp4 en entrée
 	const char * file_in= argv[1];
-	
 	ret= init(file_in);
 	main_loop();
 	clean();

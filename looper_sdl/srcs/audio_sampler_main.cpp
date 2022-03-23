@@ -28,12 +28,6 @@ PaStream * stream;
 AudioSampler * audio_sampler;
 
 
-void interruption_handler(sig_atomic_t s) {
-	delete audio_sampler;
-	exit(1); 
-}
-
-
 // callback PortAudio
 int pa_callback(const void * input, void * output, unsigned long frame_count, const PaStreamCallbackTimeInfo * time_info, PaStreamCallbackFlags status_flags, void * user_data) {
 	AudioSampler * s= (AudioSampler *)user_data;
@@ -87,6 +81,18 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 }
 
 
+void clean() {
+	pa_close(stream);
+	delete audio_sampler;
+}
+
+
+void interruption_handler(sig_atomic_t s) {
+	clean();
+	exit(1); 
+}
+
+
 void init(string json_path) {
 	signal(SIGINT, interruption_handler);
 
@@ -102,12 +108,6 @@ void main_loop() {
 	while (true) {
 		audio_sampler->update();
 	}
-}
-
-
-void clean() {
-	pa_close(stream);
-	delete audio_sampler;
 }
 
 

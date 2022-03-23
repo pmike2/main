@@ -101,6 +101,7 @@ int init(const char * file_in) {
 
 	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+	//tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	// RGBA
 	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
