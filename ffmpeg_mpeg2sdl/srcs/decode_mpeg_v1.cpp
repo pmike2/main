@@ -52,6 +52,16 @@ void ppm_save(AVFrame * frame_rgb, int width, int height, char * filename) {
 
 
 int main(int argc, char **argv) {
+	if (argc!= 3) {
+		cerr << "Donner en argument le fichier mpeg en entrée et le dossier en sortie\n";
+		return 1;
+	}
+	// fichier mp4 en entrée
+	const char * file_in= argv[1];
+
+	// dossier en sortie
+	const char * dir_out= argv[2];
+
 	// Format I/O context
 	AVFormatContext * ctx_format = 0;
 	
@@ -91,12 +101,6 @@ int main(int argc, char **argv) {
 	
 	// valeurs de retour des fonctions
 	int ret= 0;
-
-	// fichier mp4 en entrée
-	const char * file_in= argv[1];
-
-	// dossier en sortie
-	const char * dir_out= argv[2];
 
 	/*
 	Allocate memory for AVFormatContext.
@@ -195,10 +199,10 @@ int main(int argc, char **argv) {
 
 				// conversion de frame vers frame_rgb
 				sws_scale(sws_ctx, (uint8_t const * const *)frame->data, frame->linesize, 0, ctx_codec->height, frame_rgb->data, frame_rgb->linesize);
-	
+
 				// sauvegarde du frame dans un fichier PPM
 				char file_out[1024];
-				snprintf(file_out, sizeof(file_out), "%s/frame-%d.pgm", dir_out, ctx_codec->frame_number);
+				snprintf(file_out, sizeof(file_out), "%s/frame-%d.ppm", dir_out, ctx_codec->frame_number);
 				//pgm_save(frame->data[0], frame->linesize[0], frame->width, frame->height, file_out);
 				ppm_save(frame_rgb, ctx_codec->width, ctx_codec->height, file_out);
 			}

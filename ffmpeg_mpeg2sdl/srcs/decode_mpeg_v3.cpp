@@ -82,18 +82,6 @@ int height= 0;
 int current_idx= 0;
 
 
-/*void ppm_save(AVFrame * frame_rgb, int width, int height, char * filename) {
-	FILE *f;
-
-	f = fopen(filename, "wb");
-	fprintf(f, "P6\n%d %d\n255\n", width, height);
-	for (int y=0; y<height; y++) {
-		fwrite(frame_rgb->data[0]+ y* frame_rgb->linesize[0], 1, width* 3, f);
-	}
-	fclose(f);
-}*/
-
-
 int init(const char * file_in) {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
 		cout << "SDL_Init failed: " << SDL_GetError() << "\n";
@@ -102,8 +90,7 @@ int init(const char * file_in) {
 
 
 	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-	//tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	// RGBA
@@ -191,6 +178,7 @@ int init(const char * file_in) {
 	//AVPixelFormat pixel_format= AV_PIX_FMT_RGB24;
 	AVPixelFormat pixel_format= AV_PIX_FMT_RGBA;
 
+	// dans cette version on va transformer chaque frame dans la taille écran
 	unsigned int width_rgb= SCREEN_WIDTH;
 	unsigned int height_rgb= SCREEN_HEIGHT;
 
@@ -208,8 +196,7 @@ int init(const char * file_in) {
 	n_frames= ctx_format->streams[stream_idx]->nb_frames;
 	cout << "NB Frames estimated = " << n_frames << "\n";
 
-	// av_malloc échoue si la taille est trop grosse
-	//buffer_all= (unsigned char *)av_malloc((unsigned long long)(buffer_rgb_size* n_frames));
+	// av_malloc échoue si la taille est trop grosse !
 	buffer_all= (unsigned char *)malloc(buffer_rgb_size* n_frames);
 	if (buffer_all== 0) {
 		cout << "error malloc : " << buffer_rgb_size* n_frames << " bytes\n";
@@ -280,43 +267,13 @@ void idle() {
 		current_idx= 0;
 	}
 
-	// si canal alpha 32, sinon 24
-	//int depth = 24;
 	int depth = 32;
-
-	// si canal alpha 4, sinon 3
-	//int pitch = 3* width;
-	//int pitch = 4* width;
-
-	//surf= SDL_CreateRGBSurfaceFrom((void*)(buffer_all+ current_idx* buffer_rgb_size* sizeof(unsigned char)), width, height, depth, pitch, rmask, gmask, bmask, amask);
-	//tex= SDL_CreateTextureFromSurface(renderer, surf);
-	//SDL_FreeSurface(surf);
-
-	/*SDL_Rect texture_rect;
-	texture_rect.x = 0;
-	texture_rect.y = 0;
-	texture_rect.w = SCREEN_WIDTH;
-	texture_rect.h = SCREEN_HEIGHT;*/
-
-	/*int pitch = SCREEN_WIDTH* 4;
-	unsigned char *pixels= 0;
-	SDL_LockTexture(tex, NULL, (void **) &pixels, &pitch);
-	//pixels= buffer_all+ current_idx* buffer_rgb_size* sizeof(unsigned char);
-	for (unsigned int i=0; i<SCREEN_WIDTH; ++i) {
-		for (unsigned int j=0; j<SCREEN_HEIGHT; ++j) {
-			pixels[i+ SCREEN_WIDTH* j]= 100;
-		}
-	}
-	SDL_UnlockTexture(tex);*/
 
 	SDL_UpdateTexture(tex, NULL, buffer_all+ current_idx* buffer_rgb_size* sizeof(unsigned char), SCREEN_WIDTH* 4);
 
-	//SDL_RenderCopy(renderer, tex, NULL, &texture_rect);
 	SDL_RenderCopy(renderer, tex, NULL, NULL);
-	//SDL_DestroyTexture(tex);
 	
 	SDL_RenderPresent(renderer);
-	//SDL_Delay(100);
 }
 
 
@@ -359,8 +316,13 @@ void clean() {
 
 
 int main(int argc, char **argv) {
+	if (argc!= 2) {
+		cerr << "Donner en argument le fichier mpeg en entrée\n";
+		return 1;
+	}
 	// fichier mp4 en entrée
 	const char * file_in= argv[1];
+
 	ret= init(file_in);
 	main_loop();
 	clean();

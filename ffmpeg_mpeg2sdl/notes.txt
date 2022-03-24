@@ -1,0 +1,16 @@
+Utilisation :
+
+./decode_mpeg_v1 ../data/test.mp4 ../data/ppms
+-> génère des PPMs de chaque frame du mpeg en entrée
+
+./decode_mpeg_v2 ../data/test.mp4
+-> affichage SDL des frames avec canal alpha ajouté
+utilisation de SDL_CreateRGBSurfaceFrom et SDL_CreateTextureFromSurface
+
+./decode_mpeg_v3 ../data/test.mp4
+idem v2 mais chaque frame est converti en dimensions écran au chargement (+ long du coup)
+et utilisation SDL_UpdateTexture
+
+Voir si V3 vaut le coup en terme de perfo
+
+TODO : textures OPENGL

@@ -23,8 +23,8 @@ extern "C" {
 using namespace std;
 
 
-int SCREEN_WIDTH= 512;
-int SCREEN_HEIGHT= 512;
+int SCREEN_WIDTH= 1024;
+int SCREEN_HEIGHT= 1024;
 
 
 SDL_Window * window= 0;
@@ -81,17 +81,6 @@ int height= 0;
 int current_idx= 0;
 
 
-/*void ppm_save(AVFrame * frame_rgb, int width, int height, char * filename) {
-	FILE *f;
-
-	f = fopen(filename, "wb");
-	fprintf(f, "P6\n%d %d\n255\n", width, height);
-	for (int y=0; y<height; y++) {
-		fwrite(frame_rgb->data[0]+ y* frame_rgb->linesize[0], 1, width* 3, f);
-	}
-	fclose(f);
-}*/
-
 
 int init(const char * file_in) {
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
@@ -100,8 +89,7 @@ int init(const char * file_in) {
 	}
 
 	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-	//tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
+	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
 	// RGBA
 	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -231,12 +219,6 @@ int init(const char * file_in) {
 				// conversion de frame vers frame_rgb
 				sws_scale(sws_ctx, (unsigned char const * const *)frame->data, frame->linesize, 0, height, frame_rgb->data, frame_rgb->linesize);
 	
-				// sauvegarde du frame dans un fichier PPM
-				/*char file_out[1024];
-				snprintf(file_out, sizeof(file_out), "%s/frame-%d.ppm", dir_out, ctx_codec->frame_number);
-				//pgm_save(frame->data[0], frame->linesize[0], frame->width, frame->height, file_out);
-				ppm_save(frame_rgb, width, height, file_out);*/
-
 				// gestion canal alpha
 				for (int i= 0; i< width* height; i++) {
 					unsigned int alpha= (255* (i% width))/ width;
@@ -297,7 +279,6 @@ void idle() {
 	SDL_DestroyTexture(tex);
 	
 	SDL_RenderPresent(renderer);
-	//SDL_Delay(100);
 }
 
 
@@ -338,6 +319,10 @@ void clean() {
 
 
 int main(int argc, char **argv) {
+	if (argc!= 2) {
+		cerr << "Donner en argument le fichier mpeg en entrée\n";
+		return 1;
+	}
 	// fichier mp4 en entrée
 	const char * file_in= argv[1];
 	
