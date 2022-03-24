@@ -23,15 +23,13 @@ extern "C" {
 using namespace std;
 
 
-int SCREEN_WIDTH= 1000;
-int SCREEN_HEIGHT= 1000;
+int SCREEN_WIDTH= 1024;
+int SCREEN_HEIGHT= 1024;
 
 
 SDL_Window * window= 0;
 SDL_Renderer * renderer= 0;
-SDL_Surface * surf;
 SDL_Texture * tex;
-Uint32 rmask, gmask, bmask, amask;
 bool done= false;
 
 // Format I/O context
@@ -63,7 +61,7 @@ AVPacket * pkt = av_packet_alloc();
 
 // buffer qui servira a stocker les données de frame_rgb après conversion du frame
 unsigned char * buffer_rgb= 0;
-// ici long pas int !
+// ici long pas int ! sinon bug lors du malloc
 unsigned long buffer_rgb_size= 0;
 unsigned char * buffer_all= 0;
 
@@ -88,23 +86,9 @@ int init(const char * file_in) {
 		return 1;
 	}
 
-
 	window= SDL_CreateWindow("looper", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 	tex = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-	// RGBA
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		rmask = 0xff000000;
-		gmask = 0x00ff0000;
-		bmask = 0x0000ff00;
-		amask = 0x000000ff;
-	#else
-		rmask = 0x000000ff;
-		gmask = 0x0000ff00;
-		bmask = 0x00ff0000;
-		amask = 0xff000000;
-	#endif
 
 	/*
 	Allocate memory for AVFormatContext.

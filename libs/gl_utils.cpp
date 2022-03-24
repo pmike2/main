@@ -245,7 +245,7 @@ GLuint load_shader(GLenum type, const char * filename) {
 	return shader;
 }
 
-
+/*
 unsigned int load_cube_map(vector<string> faces) {
 	unsigned int texture_id;
 	glGenTextures(1, &texture_id);
@@ -270,7 +270,7 @@ unsigned int load_cube_map(vector<string> faces) {
 	
 	return texture_id;
 }
-
+*/
 
 GLuint create_prog(string vs_path, string fs_path) {
 	GLuint vs= load_shader(GL_VERTEX_SHADER  , vs_path.c_str());

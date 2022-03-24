@@ -363,6 +363,8 @@ void StaticTexture::draw() {
 	glBindTexture(GL_TEXTURE, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
+
+	glActiveTexture(0);
 }
 
 
@@ -513,7 +515,7 @@ void AnimTexture::draw() {
 	glActiveTexture(GL_TEXTURE0);
 
 	glUseProgram(_prog_draw);
-   	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
 
 	glUniform1i(_texture_array_loc, 0); //Sampler refers to texture unit 0
@@ -537,6 +539,8 @@ void AnimTexture::draw() {
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
+
+	glActiveTexture(0);
 }
 
 
