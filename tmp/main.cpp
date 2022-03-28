@@ -1,208 +1,157 @@
-
-#include <cstdlib>
+#include <string>
+#include <utility>
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <istream>
-#include <cmath>
-#include <string>
-#include <vector>
 
 
-#include <OpenGL/gl3.h>
-
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
+typedef unsigned char uc;
+typedef std::pair<uc, uc> coords;
 
 
-#include "constantes.h"
+const uc SIZE= 9;
+const uc SUBSIZE= 3;
+const uc NONE= 0;
 
 
-using namespace std;
+uc coords2index(coords c) {
+	return (c.first- 1)+ (c.second- 1)* SIZE;
+}
 
-
-SDL_Window * window= NULL;
-SDL_GLContext main_context;
-
-bool done= false;
-float bck_factor= 1.0f;
-
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
-
-
-
-
-void mouse_motion(int x, int y, int xrel, int yrel) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+coords index2coords(uc index) {
+	return std::make_pair(index % SIZE+ 1, index/ SIZE+ 1);
 }
 
 
-void mouse_button_up(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+struct Grid {
+	uc _data[SIZE* SIZE];
+	coords _c;
+	uc _val;
+
+	//Grid & operator= (const Grid & g);
+	Grid(const Grid & g);
+	Grid(std::string file_path);
+	void set_cell(coords c, uc val);
+	uc get_cell(uc x, uc y);
+	bool is_valid();
+	bool is_full();
+	coords first_empty_cell();
+};
+
+//std::ostream & operator << (std::ostream & stream, const Grid & g);
+
+/*
+Grid & Grid::operator = (const Grid & g ) {
+
+	return *this;
 }
+*/
 
-
-void mouse_button_down(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
-}
-
-
-void key_down(SDL_Keycode key) {
-	if (key== SDLK_ESCAPE) {
-		done= true;
-	}
-	cout << "down\n";
-}
-
-
-void key_up(SDL_Keycode key) {
-	cout << "up\n";
-}
-
-
-void init() {
-	srand(time(NULL));
-	
-	SDL_Init(SDL_INIT_EVERYTHING);
-	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
-	
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	
-	window= SDL_CreateWindow("tmp", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
-	main_context= SDL_GL_CreateContext(window);
-
-	cout << "OpenGL version=" << glGetString(GL_VERSION) << endl;
-
-	SDL_GL_SetSwapInterval(1);
-	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
-	glClearDepth(1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LESS);
-	//glDepthFunc(GL_LEQUAL); // ne fonctionne pas je ne sais pas pourquoi; mais necessaire pour bumpmapping et autres
-	glDepthRange(0.0f, 1.0f);
-	
-	// frontfaces en counterclockwise
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_CLAMP);
-	
-	// pour gérer l'alpha
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
-	SDL_GL_SwapWindow(window);
-	
-	// --------------------------------------------------------------------------
-}
-
-
-void draw() {
-	compt_fps++;
-
-	glClearColor(MAIN_BCK[0]* bck_factor, MAIN_BCK[1]* bck_factor, MAIN_BCK[2]* bck_factor, MAIN_BCK[3]);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	
-
-	SDL_GL_SwapWindow(window);
-}
-
-
-void anim() {
-	tikanim2= SDL_GetTicks();
-	int tikanim_delta= tikanim2- tikanim1;
-	if (tikanim_delta< DELTA_ANIM)
-		return;
-	
-	tikanim1= SDL_GetTicks();
-}
-
-
-void compute_fps() {
-	tikfps2= SDL_GetTicks();
-	if (tikfps2- tikfps1> 1000) {
-		char s_fps[256];
-
-		tikfps1= SDL_GetTicks();
-		val_fps= compt_fps;
-		compt_fps= 0;
-		sprintf(s_fps, "%d", val_fps);
-		SDL_SetWindowTitle(window, s_fps);
+Grid::Grid(const Grid & g) : _c(std::make_pair(NONE, NONE)), _val(NONE) {
+	for (uc i=0; i<SIZE* SIZE; ++i) {
+		_data[i]= g._data[i];
 	}
 }
 
 
-void idle() {
-	anim();
-	draw();
-	compute_fps();
-}
-
-
-void main_loop() {
-	SDL_Event event;
-	
-	while (!done) {
-		while (SDL_PollEvent(&event)) {
-			switch (event.type) {
-				case SDL_MOUSEMOTION:
-					mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
-					break;
-					
-				case SDL_MOUSEBUTTONUP:
-					mouse_button_up(event.button.x, event.button.y, event.button.button);
-					break;
-					
-				case SDL_MOUSEBUTTONDOWN:
-					mouse_button_down(event.button.x, event.button.y, event.button.button);
-					break;
-
-				case SDL_KEYDOWN:
-					key_down(event.key.keysym.sym);
-					break;
-					
-				case SDL_KEYUP:
-					key_up(event.key.keysym.sym);
-					break;
-					
-				case SDL_QUIT:
-					done= 1;
-					break;
-					
-				default:
-					break;
-			}
+Grid::Grid(std::string file_path) : _c(std::make_pair(NONE, NONE)), _val(NONE) {
+	std::string line;
+	std::ifstream rfile;
+	rfile.open(file_path);
+	uc compt= 0;
+	while (std::getline(rfile, line)) {
+		std::stringstream sstr(line);
+		std::string str_cell;
+		while (sstr >>  str_cell) {
+			_data[compt++]= str_cell.c_str()[0];
 		}
-		idle();
 	}
 }
 
 
-void clean() {
-	SDL_GL_DeleteContext(main_context);
-	SDL_DestroyWindow(window);
-	IMG_Quit();
-	SDL_Quit();
+void Grid::set_cell(coords c, uc val) {
+	_c= c;
+	_val= val;
+	_data[coords2index(_c)]= _val;
 }
 
-// ------------------------------------------------------------------------
-int main(int argc, char * argv[]) {
 
-	init();
-	main_loop();
-	clean();
+uc Grid::get_cell(uc x, uc y) {
+	return _data[coords2index(std::make_pair(x, y))];
+}
 
+
+bool Grid::is_valid() {
+	uc index= coords2index(_c);
+	for (uc i=0; i<SIZE; ++i) {
+		if ((i!= _c.second) && (_data[index]== get_cell(_c.first, i))) {
+			return false;
+		}
+		if ((i!= _c.first) && (_data[index]== get_cell(i, _c.second))) {
+			return false;
+		}
+		uc x= SUBSIZE* (_c.first/ SUBSIZE)+ i % SUBSIZE;
+		uc y= SUBSIZE* (_c.second/ SUBSIZE)+ i / SUBSIZE;
+		if ((x!= _c.first) && (y!= _c.second) && (_data[index]== get_cell(x, y))) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+bool Grid::is_full() {
+	coords c= first_empty_cell();
+	if (c.first== NONE) {
+		return true;
+	}
+	return false;
+}
+
+
+coords Grid::first_empty_cell() {
+	for (uc cell=0; cell<SIZE* SIZE; ++cell) {
+		if (_data[cell]== NONE) {
+			return index2coords(cell);
+		}
+	}
+	return std::make_pair(NONE, NONE);
+}
+
+
+std::ostream & operator << (std::ostream & stream, Grid & g) {
+	for (uc i=0; i<SIZE; ++i) {
+		for (uc j=0; j<SIZE; ++j) {
+			stream << g.get_cell(i, j) << " ";
+		}
+		stream << "\n";
+	}
+	
+	return stream;
+}
+
+
+void f(Grid * g) {
+	if (g->is_full()) {
+		std::cout << *g;
+	}
+	else if (g->is_valid()) {
+		for (uc val=1; val<=SIZE; ++val) {
+			Grid * child= new Grid(*g);
+			coords c= g->first_empty_cell();
+			child->set_cell(c, val);
+			f(child);
+		}
+	}
+	else {
+	}
+}
+
+
+int main() {
+	Grid * start_grid= new Grid("sudoku_grid.txt");
+	f(start_grid);
+	
 	return 0;
 }
+

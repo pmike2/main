@@ -13,4 +13,5 @@ et utilisation SDL_UpdateTexture
 
 Voir si V3 vaut le coup en terme de perfo
 
-TODO : textures OPENGL
+./decode_mpeg_v4 ../data/test.mp4
+OPENGL Texture 3D

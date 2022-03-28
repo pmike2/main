@@ -17,6 +17,7 @@ extern "C" {
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "gl_utils.h"
 
@@ -38,7 +39,7 @@ GLuint prog_texture_3d;
 GLuint vao;
 GLuint vbo;
 GLuint texture_id;
-GLint camera2clip_loc, model2world_loc, position_loc, tex_coord_loc, texture_array_loc;
+GLint camera2clip_loc, model2world_loc, position_loc, tex_coord_loc, texture_3d_loc;
 glm::mat4 camera2clip;
 glm::mat4 model2world;
 
@@ -48,9 +49,9 @@ bool done= false;
 
 unsigned char * buffer_all= 0;
 int n_frames= 0;
-int current_idx= 0;
 unsigned int width= 0;
 unsigned int height= 0;
+unsigned int compt= 0;
 
 
 
@@ -95,9 +96,6 @@ int init_ffmpeg(const char * file_in) {
 
 	// indice du stream video du fichier en entrée
 	int stream_idx= 0;
-
-	width= 0;
-	height= 0;
 
 	/*
 	Allocate memory for AVFormatContext.
@@ -224,7 +222,8 @@ int init_ffmpeg(const char * file_in) {
 	
 				// gestion canal alpha
 				for (int i= 0; i< width_rgb* height_rgb; i++) {
-					unsigned int alpha= (255* (i% width_rgb))/ width_rgb;
+					//unsigned int alpha= (255* (i% width_rgb))/ width_rgb;
+					unsigned int alpha= 255;
 					buffer_rgb[4* i+ 3]= alpha;
 				}
 				memcpy(buffer_all+ (ctx_codec->frame_number- 1)* buffer_rgb_size* sizeof(unsigned char), buffer_rgb, buffer_rgb_size* sizeof(unsigned char));
@@ -261,7 +260,7 @@ void init_sdl() {
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	
-	window= SDL_CreateWindow("anim_2d", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	window= SDL_CreateWindow("decode_mpeg", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
 
 	//cout << "OpenGL version=" << glGetString(GL_VERSION) << endl;
@@ -323,6 +322,7 @@ void init_texture() {
 	glActiveTexture(GL_TEXTURE0);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
 	glActiveTexture(0);
@@ -335,7 +335,7 @@ void init_texture() {
 	glUseProgram(prog_texture_3d);
 	camera2clip_loc= glGetUniformLocation(prog_texture_3d, "camera2clip_matrix");
 	model2world_loc= glGetUniformLocation(prog_texture_3d, "model2world_matrix");
-	texture_array_loc= glGetUniformLocation(prog_texture_3d, "texture_array");
+	texture_3d_loc= glGetUniformLocation(prog_texture_3d, "texture_3d");
 	position_loc= glGetAttribLocation(prog_texture_3d, "position_in");
 	tex_coord_loc= glGetAttribLocation(prog_texture_3d, "tex_coord_in");
 	glUseProgram(0);
@@ -354,16 +354,72 @@ void init(const char * file_in) {
 	init_sdl();
 	screengl= new ScreenGL(SCREEN_WIDTH, SCREEN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	init_texture();
-
 }
 
 
-void idle() {
-	current_idx++;
-	if (current_idx>= n_frames) {
-		current_idx= 0;
-	}
+void update() {
+	float vertices[36];
+	float x= -0.5f* screengl->_gl_width;
+	float y= -0.5f* screengl->_gl_height;
+	float z= 0.0f;
+	float w= screengl->_gl_width;
+	float h= screengl->_gl_height;
 
+	compt++;
+	if (compt>= n_frames) {
+		compt= 0;
+	}
+	float t= (float)(compt)/ (float)(n_frames);
+
+	vertices[0]= x;
+	vertices[1]= y+ h;
+	vertices[2]= z;
+	vertices[3]= 0.0f;
+	vertices[4]= 0.0f;
+	vertices[5]= t* 0.1f;
+
+	vertices[6]= x;
+	vertices[7]= y;
+	vertices[8]= z;
+	vertices[9]= 0.0f;
+	vertices[10]= 1.0f;
+	vertices[11]= t* 0.2f;
+
+	vertices[12]= x+ w;
+	vertices[13]= y;
+	vertices[14]= z;
+	vertices[15]= 1.0f;
+	vertices[16]= 1.0f;
+	vertices[17]= t* 0.3f;
+
+	vertices[18]= x;
+	vertices[19]= y+ h;
+	vertices[20]= z;
+	vertices[21]= 0.0f;
+	vertices[22]= 0.0f;
+	vertices[23]= t* 0.4f;
+
+	vertices[24]= x+ w;
+	vertices[25]= y;
+	vertices[26]= z;
+	vertices[27]= 1.0f;
+	vertices[28]= 1.0f;
+	vertices[29]= t* 0.5f;
+
+	vertices[30]= x+ w;
+	vertices[31]= y+ h;
+	vertices[32]= z;
+	vertices[33]= 1.0f;
+	vertices[34]= 0.0f;
+	vertices[35]= t* 0.6f;
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, 36* sizeof(float), vertices, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	
@@ -373,7 +429,7 @@ void idle() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBindTexture(GL_TEXTURE_3D, texture_id);
 
-	glUniform1i(texture_array_loc, 0); //Sampler refers to texture unit 0
+	glUniform1i(texture_3d_loc, 0); //Sampler refers to texture unit 0
 	glUniformMatrix4fv(camera2clip_loc, 1, GL_FALSE, glm::value_ptr(camera2clip));
 	glUniformMatrix4fv(model2world_loc, 1, GL_FALSE, glm::value_ptr(model2world));
 	
@@ -381,9 +437,9 @@ void idle() {
 	glEnableVertexAttribArray(tex_coord_loc);
 
 	glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-	glVertexAttribPointer(tex_coord_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(tex_coord_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 
-	glDrawArrays(GL_TRIANGLES, 0, );
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 
 	glDisableVertexAttribArray(position_loc);
 	glDisableVertexAttribArray(tex_coord_loc);
@@ -395,6 +451,12 @@ void idle() {
 	glActiveTexture(0);
 	
 	SDL_GL_SwapWindow(window);
+}
+
+
+void idle() {
+	update();
+	draw();
 }
 
 

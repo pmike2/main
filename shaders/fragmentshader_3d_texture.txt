@@ -1,0 +1,12 @@
+#version 410 core
+
+uniform sampler3D texture_3d;
+
+in vec3 tex_coord;
+out vec4 color;
+
+void main() {
+	vec4 current_color= texture(texture_3d, tex_coord);
+	//color= current_color;
+	color= vec4(vec3(current_color), 1.0);
+}
