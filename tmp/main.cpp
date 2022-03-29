@@ -1,78 +1,87 @@
+#include <cstdint>
 #include <string>
 #include <utility>
 #include <iostream>
 #include <fstream>
-#include <sstream>
+#include <vector>
+#include <regex>
 
 
-typedef unsigned char uc;
+// types ------------------------------------
+typedef unsigned int uc;
 typedef std::pair<uc, uc> coords;
 
 
+// constantes ------------------------------
 const uc SIZE= 9;
 const uc SUBSIZE= 3;
-const uc NONE= 0;
+const uc NONE= 255;
 
 
+// fonctions -------------------------------
 uc coords2index(coords c) {
-	return (c.first- 1)+ (c.second- 1)* SIZE;
+	return c.first+ c.second* SIZE;
 }
 
 coords index2coords(uc index) {
-	return std::make_pair(index % SIZE+ 1, index/ SIZE+ 1);
+	return std::make_pair(index % SIZE, index/ SIZE);
 }
 
 
+// définitions struct ---------------------
 struct Grid {
 	uc _data[SIZE* SIZE];
-	coords _c;
-	uc _val;
 
-	//Grid & operator= (const Grid & g);
 	Grid(const Grid & g);
 	Grid(std::string file_path);
 	void set_cell(coords c, uc val);
 	uc get_cell(uc x, uc y);
+	bool is_valid(coords c, uc val);
 	bool is_valid();
 	bool is_full();
 	coords first_empty_cell();
+	uc count_none();
 };
 
-//std::ostream & operator << (std::ostream & stream, const Grid & g);
 
-/*
-Grid & Grid::operator = (const Grid & g ) {
+struct Solver {
+	uc _n_grids;
+	std::vector<Grid *> _solutions;
 
-	return *this;
-}
-*/
+	Solver(std::string file_path);
+	~Solver();
+	void handle_grid(Grid * g);
+};
 
-Grid::Grid(const Grid & g) : _c(std::make_pair(NONE, NONE)), _val(NONE) {
+
+// implémentation Grid --------------------
+Grid::Grid(const Grid & g) {
 	for (uc i=0; i<SIZE* SIZE; ++i) {
 		_data[i]= g._data[i];
 	}
 }
 
 
-Grid::Grid(std::string file_path) : _c(std::make_pair(NONE, NONE)), _val(NONE) {
+Grid::Grid(std::string file_path) {
 	std::string line;
 	std::ifstream rfile;
 	rfile.open(file_path);
 	uc compt= 0;
 	while (std::getline(rfile, line)) {
-		std::stringstream sstr(line);
-		std::string str_cell;
-		while (sstr >>  str_cell) {
-			_data[compt++]= str_cell.c_str()[0];
+		for (uc i=0; i<SIZE; ++i) {
+			if (line[i]== 'x') {
+				_data[compt++]= NONE;
+			}
+			else {
+				_data[compt++]= (uc)(line[i])- '0';
+			}
 		}
 	}
 }
 
 
 void Grid::set_cell(coords c, uc val) {
-	_c= c;
-	_val= val;
-	_data[coords2index(_c)]= _val;
+	_data[coords2index(c)]= val;
 }
 
 
@@ -81,18 +90,27 @@ uc Grid::get_cell(uc x, uc y) {
 }
 
 
-bool Grid::is_valid() {
-	uc index= coords2index(_c);
+bool Grid::is_valid(coords c, uc val) {
 	for (uc i=0; i<SIZE; ++i) {
-		if ((i!= _c.second) && (_data[index]== get_cell(_c.first, i))) {
+		if ((i!= c.second) && (val== get_cell(c.first, i))) {
 			return false;
 		}
-		if ((i!= _c.first) && (_data[index]== get_cell(i, _c.second))) {
+		if ((i!= c.first) && (val== get_cell(i, c.second))) {
 			return false;
 		}
-		uc x= SUBSIZE* (_c.first/ SUBSIZE)+ i % SUBSIZE;
-		uc y= SUBSIZE* (_c.second/ SUBSIZE)+ i / SUBSIZE;
-		if ((x!= _c.first) && (y!= _c.second) && (_data[index]== get_cell(x, y))) {
+		uc x= SUBSIZE* (c.first/ SUBSIZE)+ i % SUBSIZE;
+		uc y= SUBSIZE* (c.second/ SUBSIZE)+ i / SUBSIZE;
+		if ((x!= c.first) && (y!= c.second) && (val== get_cell(x, y))) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+bool Grid::is_valid() {
+	for (uc i=0; i<SIZE* SIZE; ++i) {
+		if ((_data[i]!= NONE) && (!is_valid(index2coords(i), _data[i]))) {
 			return false;
 		}
 	}
@@ -119,10 +137,26 @@ coords Grid::first_empty_cell() {
 }
 
 
+uc Grid::count_none() {
+	uc compt= 0;
+	for (uc cell=0; cell<SIZE* SIZE; ++cell) {
+		if (_data[cell]== NONE) {
+			compt++;
+		}
+	}
+	return compt;
+}
+
+
 std::ostream & operator << (std::ostream & stream, Grid & g) {
-	for (uc i=0; i<SIZE; ++i) {
-		for (uc j=0; j<SIZE; ++j) {
-			stream << g.get_cell(i, j) << " ";
+	for (uc j=0; j<SIZE; ++j) {
+		for (uc i=0; i<SIZE; ++i) {
+			if (g.get_cell(i, j)== NONE) {
+				stream << "x ";
+			}
+			else {
+				stream << g.get_cell(i, j) << " ";
+			}
 		}
 		stream << "\n";
 	}
@@ -131,27 +165,82 @@ std::ostream & operator << (std::ostream & stream, Grid & g) {
 }
 
 
-void f(Grid * g) {
-	if (g->is_full()) {
+// implémentation Solver --------------------
+Solver::Solver(std::string file_path) : _n_grids(0) {
+	Grid * g= new Grid(file_path);
+	
+	if (!g->is_valid()) {
+		std::cout << "Grille initiale invalide\n";
+		return;
+	}
+
+	handle_grid(g);
+
+	std::cout << "n_grids=" << _n_grids << " ; n_solutions=" << _solutions.size() << "\n";
+
+	for (auto g : _solutions) {
+		std::cout << "Solution :\n";
 		std::cout << *g;
 	}
-	else if (g->is_valid()) {
-		for (uc val=1; val<=SIZE; ++val) {
-			Grid * child= new Grid(*g);
-			coords c= g->first_empty_cell();
-			child->set_cell(c, val);
-			f(child);
-		}
+
+}
+
+
+Solver::~Solver() {
+	for (auto g : _solutions) {
+		delete g;
+	}
+}
+
+
+void Solver::handle_grid(Grid * g) {
+	//std::cout << *g << "\n";
+
+	_n_grids++;
+
+	if (g->is_full()) {
+		_solutions.push_back(g);
 	}
 	else {
+		coords c= g->first_empty_cell();
+		for (uc val=1; val<=SIZE; ++val) {
+			if (g->is_valid(c, val)) {
+				Grid * child= new Grid(*g);
+				child->set_cell(c, val);
+				handle_grid(child);
+			}
+		}
+		delete g;
+	}
+}
+
+
+// tests -----------------------------
+void test1() {
+	Solver * solver= new Solver("sudoku_grid.txt");
+}
+
+
+void test2() {
+	std::string line;
+	std::ifstream rfile;
+	rfile.open("sudoku_grids.txt");
+	while (std::getline(rfile, line)) {
+		std::smatch sm;
+		regex_match(line, sm, std::regex("Grid ([0-9]{2})"));
+		if (sm.size()> 0) {
+			std::cout << "Grille " << sm[1] << "\n";
+		}
+		else {
+			
+		}
 	}
 }
 
 
 int main() {
-	Grid * start_grid= new Grid("sudoku_grid.txt");
-	f(start_grid);
+	//test1();
+	test2();
 	
 	return 0;
 }
-

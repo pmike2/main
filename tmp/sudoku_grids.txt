@@ -1,0 +1,500 @@
+Grid 01
+xx3x2x6xx
+9xx3x5xx1
+xx18x64xx
+xx81x29xx
+7xxxxxxx8
+xx67x82xx
+xx26x95xx
+8xx2x3xx9
+xx5x1x3xx
+Grid 02
+2xxx8x3xx
+x6xx7xx84
+x3x5xx2x9
+xxx1x54x8
+xxxxxxxxx
+4x27x6xxx
+3x1xx7x4x
+72xx4xx6x
+xx4x1xxx3
+Grid 03
+xxxxxx9x7
+xxx42x18x
+xxx7x5x26
+1xx9x4xxx
+x5xxxxx4x
+xxx5x7xx9
+92x1x8xxx
+x34x59xxx
+5x7xxxxxx
+Grid 04
+x3xx5xx4x
+xx8x1x5xx
+46xxxxx12
+x7x5x2x8x
+xxx6x3xxx
+x4x1x9x3x
+25xxxxx98
+xx1x2x6xx
+x8xx6xx2x
+Grid 05
+x2x81x74x
+7xxxx31xx
+x9xxx28x5
+xx9x4xx87
+4xx2x8xx3
+16xx3x2xx
+3x27xxx6x
+xx56xxxx8
+x76x51x9x
+Grid 06
+1xx92xxxx
+524x1xxxx
+xxxxxxx7x
+x5xxx81x2
+xxxxxxxxx
+4x27xxx9x
+x6xxxxxxx
+xxxx3x945
+xxxx71xx6
+Grid 07
+x43x8x25x
+6xxxxxxxx
+xxxxx1x94
+9xxxx4x7x
+xxx6x8xxx
+x1x2xxxx3
+82x5xxxxx
+xxxxxxxx5
+x34x9x71x
+Grid 08
+48xxx69x2
+xx2xx8xx1
+9xx37xx6x
+84xx1x2xx
+xx37x41xx
+xx1x6xx49
+x2xx85xx7
+7xx9xx6xx
+6x92xxx18
+Grid 09
+xxx9xxxx2
+x5x1234xx
+x3xxxx16x
+9x8xxxxxx
+x7xxxxx9x
+xxxxxx2x5
+x91xxxx5x
+xx7439x2x
+4xxxx7xxx
+Grid 10
+xx19xxxx3
+9xx7xx16x
+x3xxx5xx7
+x5xxxxxx9
+xx43x26xx
+2xxxxxx7x
+6xx1xxx3x
+x42xx7xx6
+5xxxx68xx
+Grid 11
+xxx1254xx
+xx84xxxxx
+42x8xxxxx
+x3xxxxx95
+x6x9x2x1x
+51xxxxx6x
+xxxxx3x49
+xxxxx72xx
+xx1298xxx
+Grid 12
+x6234x75x
+1xxxx56xx
+57xxxxx4x
+xxxx948xx
+4xxxxxxx6
+xx583xxxx
+x3xxxxx91
+xx64xxxx7
+x59x8326x
+Grid 13
+3xxxxxxxx
+xx5xx9xxx
+2xx5x4xxx
+x2xxxx7xx
+16xxxxx58
+7x431x6xx
+xxx89x1xx
+xxxx67x8x
+xxxxx5437
+Grid 14
+63xxxxxxx
+xxx5xxxx8
+xx5674xxx
+xxxx2xxxx
+xx34x1x2x
+xxxxxx345
+xxxxx7xx4
+x8x3xx9x2
+9471xxx8x
+Grid 15
+xxxx2xx4x
+xx8x35xxx
+xxxx7x6x2
+x31x4697x
+2xxxxxxxx
+xxx5x12x3
+x49xxx73x
+xxxxxxx1x
+8xxxx4xxx
+Grid 16
+361x259xx
+x8x96xx1x
+4xxxxxx57
+xx8xxx471
+xxx6x3xxx
+259xxx8xx
+74xxxxxx5
+x2xx18x6x
+xx547x329
+Grid 17
+x5x8x7x2x
+6xxx1xx9x
+7x254xxx6
+x7xx2x3x1
+5x4xxx9x8
+1x3x8xx7x
+9xxx762x5
+x6xx9xxx3
+x8x1x3x4x
+Grid 18
+x8xxx5xxx
+xxxxx3457
+xxxx7x8x9
+x6x4xx9x3
+xx7x1x5xx
+4x8xx7x2x
+9x1x2xxxx
+8423xxxxx
+xxx1xxx8x
+Grid 19
+xx35x29xx
+xxxx4xxxx
+1x6xxx3x5
+9xx251xx8
+x7x4x8x3x
+8xx763xx1
+3x8xxx1x4
+xxxx2xxxx
+xx51x48xx
+Grid 20
+xxxxxxxxx
+xx98x51xx
+x519x742x
+29x4x1x65
+xxxxxxxxx
+14x5x8x93
+x267x958x
+xx51x36xx
+xxxxxxxxx
+Grid 21
+x2xx3xx9x
+xxx9x7xxx
+9xx2x8xx5
+xx48x65xx
+6x7xxx2x8
+xx31x29xx
+8xx6x5xx7
+xxx3x9xxx
+x3xx2xx5x
+Grid 22
+xx5xxxxx6
+x7xxx9x2x
+xxx5xx1x7
+8x415xxxx
+xxx8x3xxx
+xxxx928x5
+9x7xx6xxx
+x3x4xxx1x
+2xxxxx6xx
+Grid 23
+x4xxxxx5x
+xx19436xx
+xx9xxx3xx
+6xxx5xxx2
+1x3xxx5x6
+8xxx2xxx7
+xx5xxx2xx
+xx24367xx
+x3xxxxx4x
+Grid 24
+xx4xxxxxx
+xxxx3xxx2
+39x7xxx8x
+4xxxx9xx1
+2x98x13x7
+6xx2xxxx8
+x1xxx8x53
+9xxx4xxxx
+xxxxxx8xx
+Grid 25
+36xx2xx89
+xxx361xxx
+xxxxxxxxx
+8x3xxx6x2
+4xx6x3xx7
+6x7xxx1x8
+xxxxxxxxx
+xxx418xxx
+97xx3xx14
+Grid 26
+5xx4xxx6x
+xx9xxx8xx
+64xx2xxxx
+xxxxx1xx8
+2x8xxx5x1
+7xx5xxxxx
+xxxx9xx84
+xx3xxx6xx
+x6xxx3xx2
+Grid 27
+xx72564xx
+4xxxxxxx5
+x1xx3xx6x
+xxx5x8xxx
+xx8x6x2xx
+xxx1x7xxx
+x3xx7xx9x
+2xxxxxxx4
+xx63127xx
+Grid 28
+xxxxxxxxx
+x79x5x18x
+8xxxxxxx7
+xx73x68xx
+45x7x8x96
+xx35x27xx
+7xxxxxxx5
+x16x3x42x
+xxxxxxxxx
+Grid 29
+x3xxxxx8x
+xx9xxx5xx
+xx75x92xx
+7xx1x5xx8
+x2xx9xx3x
+9xx4x2xx1
+xx42x71xx
+xx2xxx8xx
+x7xxxxx9x
+Grid 30
+2xx17x6x3
+x5xxxx1xx
+xxxxx6x79
+xxxx4x7xx
+xxx8x1xxx
+xx9x5xxxx
+31x4xxxxx
+xx5xxxx6x
+9x6x37xx2
+Grid 31
+xxxxxxx8x
+8xx7x1x4x
+x4xx2xx3x
+374xxx9xx
+xxxx3xxxx
+xx5xxx321
+x1xx6xx5x
+x5x8x2xx6
+x8xxxxxxx
+Grid 32
+xxxxxxx85
+xxx21xxx9
+96xx8x1xx
+5xx8xxx16
+xxxxxxxxx
+89xxx6xx7
+xx9x7xx52
+3xxx54xxx
+48xxxxxxx
+Grid 33
+6x8x7x5x2
+x5x6x8x7x
+xx2xxx3xx
+5xxx9xxx6
+x4x3x2x5x
+8xxx5xxx3
+xx5xxx2xx
+x1x7x4x9x
+4x9x6x7x1
+Grid 34
+x5xx1xx4x
+1x7xxx6x2
+xxx9x5xxx
+2x8x3x5x1
+x4xx7xx2x
+9x1x8x4x6
+xxx4x1xxx
+3x4xxx7x9
+x2xx6xx1x
+Grid 35
+x53xxx79x
+xx97534xx
+1xxxxxxx2
+x9xx8xx1x
+xxx9x7xxx
+x8xx3xx7x
+5xxxxxxx3
+xx76412xx
+x61xxx94x
+Grid 36
+xx6x8x3xx
+x49x7x25x
+xxx4x5xxx
+6xx317xx4
+xx7xxx8xx
+1xx826xx9
+xxx7x2xxx
+x75x4x19x
+xx3x9x6xx
+Grid 37
+xx5x8x7xx
+7xx2x4xx5
+32xxxxx84
+x6x1x5x4x
+xx8xxx5xx
+x7x8x3x1x
+45xxxxx91
+6xx5x8xx7
+xx3x1x6xx
+Grid 38
+xxx9xx8xx
+128xx64xx
+x7x8xxx6x
+8xx43xxx7
+5xxxxxxx9
+6xxx79xx8
+x9xxx4x1x
+xx36xx284
+xx1xx7xxx
+Grid 39
+xxxx8xxxx
+27xxxxx54
+x95xxx81x
+xx98x64xx
+x2x4x3x6x
+xx69x51xx
+x17xxx62x
+46xxxxx38
+xxxx9xxxx
+Grid 40
+xxx6x2xxx
+4xxx5xxx1
+x85x1x62x
+x382x671x
+xxxxxxxxx
+x194x735x
+x26x4x53x
+9xxx2xxx7
+xxx8x9xxx
+Grid 41
+xxx9xxxx2
+x5x1234xx
+x3xxxx16x
+9x8xxxxxx
+x7xxxxx9x
+xxxxxx2x5
+x91xxxx5x
+xx7439x2x
+4xxxx7xxx
+Grid 42
+38xxxxxxx
+xxx4xx785
+xx9x2x3xx
+x6xx9xxxx
+8xx3x2xx9
+xxxx4xx7x
+xx1x7x5xx
+495xx6xxx
+xxxxxxx92
+Grid 43
+xxx158xxx
+xx2x6x8xx
+x3xxxxx4x
+x27x3x51x
+xxxxxxxxx
+x46x8x79x
+x5xxxxx8x
+xx4x7x1xx
+xxx325xxx
+Grid 44
+x1x5xx2xx
+9xxxx1xxx
+xx2xx8x3x
+5xxx3xxx7
+xx8xxx5xx
+6xxx8xxx4
+x4x1xx7xx
+xxx7xxxx6
+xx3xx4x5x
+Grid 45
+x8xxxxx4x
+xxx469xxx
+4xxxxxxx7
+xx59x46xx
+x7x6x8x3x
+xx85x21xx
+9xxxxxxx5
+xxx781xxx
+x6xxxxx1x
+Grid 46
+9x42xxxx7
+x1xxxxxxx
+xxx7x65xx
+xxx8xxx9x
+x2x9x4x6x
+x4xxx2xxx
+xx16x7xxx
+xxxxxxx3x
+3xxxx57x2
+Grid 47
+xxx7xx8xx
+xx6xxxx31
+x4xxx2xxx
+x24x7xxxx
+x1xx3xx8x
+xxxx6x29x
+xxx8xxx7x
+86xxxx5xx
+xx2xx6xxx
+Grid 48
+xx1xx7x9x
+59xx8xxx1
+x3xxxxx8x
+xxxxx58xx
+x5xx6xx2x
+xx41xxxxx
+x8xxxxx3x
+1xxx2xx79
+x2x7xx4xx
+Grid 49
+xxxxx3x17
+x15xx9xx8
+x6xxxxxxx
+1xxxx7xxx
+xx9xxx2xx
+xxx5xxxx4
+xxxxxxx2x
+5xx6xx34x
+34x2xxxxx
+Grid 50
+3xx2xxxxx
+xxx1x7xxx
+7x6x3x5xx
+x7xxx9x8x
+9xxx2xxx4
+x1x8xxx5x
+xx9x4x3x1
+xxx7x2xxx
+xxxxx8xx6
