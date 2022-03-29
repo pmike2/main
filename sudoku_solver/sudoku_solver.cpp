@@ -262,6 +262,9 @@ void Solver::handle_grid(Grid * g) {
 		_solutions.push_back(g);
 	}
 	else {
+		// on récupère la 1ère cellule vide
+		// pour chaque valeur, qui mise dans cette cellule laisse la grille valide, 
+		// on relance cette fonction avec en argument la nouvelle grille modifiée
 		coords c= g->first_empty_cell();
 		for (number val=1; val<=SIZE; ++val) {
 			if (g->is_valid(c, val)) {
@@ -343,6 +346,7 @@ int main(int argc, char **argv) {
 	}
 	std::string file_path= std::string(argv[1]);
 	
+	// si le chemin du fichier contient 'grids' on suppose qu'il y en a plusieurs
 	if (file_path.find("grids")!= std::string::npos) {
 		MetaSolver * meta_solver= new MetaSolver(file_path);
 		delete meta_solver;
