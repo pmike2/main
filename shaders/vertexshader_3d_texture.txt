@@ -10,8 +10,7 @@ in vec3 tex_coord_in;
 out vec3 tex_coord;
 
 
-void main(void)
-{
+void main(void) {
 	gl_Position= camera2clip_matrix* model2world_matrix* vec4(position_in, 1.0);
 	tex_coord= tex_coord_in;
 }

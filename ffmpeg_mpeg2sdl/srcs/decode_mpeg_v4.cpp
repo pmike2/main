@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 
 #define __STDC_CONSTANT_MACROS
 extern "C" {
@@ -44,8 +45,8 @@ glm::mat4 camera2clip;
 glm::mat4 model2world;
 
 ScreenGL * screengl;
-
 bool done= false;
+chrono::system_clock::time_point t1, t2;
 
 unsigned char * buffer_all= 0;
 int n_frames= 0;
@@ -376,42 +377,42 @@ void update() {
 	vertices[2]= z;
 	vertices[3]= 0.0f;
 	vertices[4]= 0.0f;
-	vertices[5]= t* 0.1f;
+	vertices[5]= t;
 
 	vertices[6]= x;
 	vertices[7]= y;
 	vertices[8]= z;
 	vertices[9]= 0.0f;
 	vertices[10]= 1.0f;
-	vertices[11]= t* 0.2f;
+	vertices[11]= t;
 
 	vertices[12]= x+ w;
 	vertices[13]= y;
 	vertices[14]= z;
 	vertices[15]= 1.0f;
 	vertices[16]= 1.0f;
-	vertices[17]= t* 0.3f;
+	vertices[17]= t;
 
 	vertices[18]= x;
 	vertices[19]= y+ h;
 	vertices[20]= z;
 	vertices[21]= 0.0f;
 	vertices[22]= 0.0f;
-	vertices[23]= t* 0.4f;
+	vertices[23]= t;
 
 	vertices[24]= x+ w;
 	vertices[25]= y;
 	vertices[26]= z;
 	vertices[27]= 1.0f;
 	vertices[28]= 1.0f;
-	vertices[29]= t* 0.5f;
+	vertices[29]= t;
 
 	vertices[30]= x+ w;
 	vertices[31]= y+ h;
 	vertices[32]= z;
 	vertices[33]= 1.0f;
 	vertices[34]= 0.0f;
-	vertices[35]= t* 0.6f;
+	vertices[35]= t;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, 36* sizeof(float), vertices, GL_DYNAMIC_DRAW);
@@ -454,9 +455,21 @@ void draw() {
 }
 
 
+void compute_fps() {
+	t2= chrono::system_clock::now();
+	auto d= chrono::duration_cast<chrono::milliseconds>(t2- t1).count();
+	t1= t2;
+
+	char s_fps[256];
+	sprintf(s_fps, "%lld", d);
+	SDL_SetWindowTitle(window, s_fps);
+}
+
+
 void idle() {
 	update();
 	draw();
+	compute_fps();
 }
 
 
