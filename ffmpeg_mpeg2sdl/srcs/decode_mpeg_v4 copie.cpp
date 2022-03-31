@@ -21,7 +21,6 @@ extern "C" {
 #include <glm/gtc/type_ptr.hpp>
 
 #include "gl_utils.h"
-#include "utile.h"
 
 
 using namespace std;
@@ -40,8 +39,8 @@ SDL_GLContext main_context;
 GLuint prog_texture_3d;
 GLuint vao;
 GLuint vbo;
-GLuint texture_3d_id, texture_index_2d_id;
-GLint camera2clip_loc, model2world_loc, position_loc, texture_3d_loc, texture_index_2d_loc, screen_width_loc, screen_height_loc;
+GLuint texture_id;
+GLint camera2clip_loc, model2world_loc, position_loc, texture_3d_loc;
 glm::mat4 camera2clip;
 glm::mat4 model2world;
 
@@ -303,11 +302,23 @@ void init_sdl() {
 
 
 void init_texture() {
-	// ----------------------------------------
-	glGenTextures(1, &texture_3d_id);
+	glGenTextures(1, &texture_id);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, texture_3d_id);
+	glBindTexture(GL_TEXTURE_3D, texture_id);
+	
+	/*glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, width, height, n_frames, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+	for (unsigned int i=0; i<n_frames; ++i) {
+		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
+		glTexSubImage3D(GL_TEXTURE_3D,
+						0,                             // mipmap number
+						0, 0, i,   // xoffset, yoffset, zoffset
+						width, height, 1, // width, height, depth
+						GL_BGRA,                       // format
+						GL_UNSIGNED_BYTE,              // type
+						surface->pixels);              // pointer to data
+	}*/
 
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, width, height, n_frames, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_all);
 
@@ -320,27 +331,6 @@ void init_texture() {
 	glBindTexture(GL_TEXTURE_3D, 0);
 	glActiveTexture(0);
 
-	// ----------------------------------------
-	glGenTextures(1, &texture_index_2d_id);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture_index_2d_id);
-
-	float data_index[SCREEN_WIDTH* SCREEN_HEIGHT];
-	for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
-		data_index[i]= 0.0f;
-	}
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RED, GL_FLOAT, data_index);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(0);
-
-	// ----------------------------------------
 	camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	model2world= glm::mat4(1.0f);
 
@@ -348,10 +338,8 @@ void init_texture() {
 	camera2clip_loc= glGetUniformLocation(prog_texture_3d, "camera2clip_matrix");
 	model2world_loc= glGetUniformLocation(prog_texture_3d, "model2world_matrix");
 	texture_3d_loc= glGetUniformLocation(prog_texture_3d, "texture_3d");
-	texture_index_2d_loc= glGetUniformLocation(prog_texture_3d, "texture_index_2d");
-	screen_width_loc= glGetUniformLocation(prog_texture_3d, "screen_width");
-	screen_height_loc= glGetUniformLocation(prog_texture_3d, "screen_height");
 	position_loc= glGetAttribLocation(prog_texture_3d, "position_in");
+	tex_coord_loc= glGetAttribLocation(prog_texture_3d, "tex_coord_in");
 	glUseProgram(0);
 
 	glGenBuffers(1, &vbo);
@@ -372,58 +360,64 @@ void init(const char * file_in) {
 
 
 void update() {
-	float vertices[18];
+	float vertices[36];
 	float x= -0.5f* screengl->_gl_width;
 	float y= -0.5f* screengl->_gl_height;
 	float z= 0.0f;
 	float w= screengl->_gl_width;
 	float h= screengl->_gl_height;
 
-	/*compt++;
+	compt++;
 	if (compt>= n_frames) {
 		compt= 0;
 	}
-	float t= (float)(compt)/ (float)(n_frames);*/
+	float t= (float)(compt)/ (float)(n_frames);
 
 	vertices[0]= x;
 	vertices[1]= y+ h;
 	vertices[2]= z;
+	vertices[3]= 0.0f;
+	vertices[4]= 0.0f;
+	vertices[5]= t;
 
-	vertices[3]= x;
-	vertices[4]= y;
-	vertices[5]= z;
-
-	vertices[6]= x+ w;
+	vertices[6]= x;
 	vertices[7]= y;
 	vertices[8]= z;
-
-	vertices[9]= x;
-	vertices[10]= y+ h;
-	vertices[11]= z;
+	vertices[9]= 0.0f;
+	vertices[10]= 1.0f;
+	vertices[11]= t;
 
 	vertices[12]= x+ w;
 	vertices[13]= y;
 	vertices[14]= z;
+	vertices[15]= 1.0f;
+	vertices[16]= 1.0f;
+	vertices[17]= t;
 
-	vertices[15]= x+ w;
-	vertices[16]= y+ h;
-	vertices[17]= z;
+	vertices[18]= x;
+	vertices[19]= y+ h;
+	vertices[20]= z;
+	vertices[21]= 0.0f;
+	vertices[22]= 0.0f;
+	vertices[23]= t;
+
+	vertices[24]= x+ w;
+	vertices[25]= y;
+	vertices[26]= z;
+	vertices[27]= 1.0f;
+	vertices[28]= 1.0f;
+	vertices[29]= t;
+
+	vertices[30]= x+ w;
+	vertices[31]= y+ h;
+	vertices[32]= z;
+	vertices[33]= 1.0f;
+	vertices[34]= 0.0f;
+	vertices[35]= t;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, 18* sizeof(float), vertices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 36* sizeof(float), vertices, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture_index_2d_id);
-	float data_index[SCREEN_WIDTH* SCREEN_HEIGHT];
-	for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
-		//data_index[i]= rand_float(0.0f, 1.0f);
-
-		float x= (float)(i % SCREEN_WIDTH)/ (float)(SCREEN_WIDTH);
-		float y= (float)(i / SCREEN_WIDTH)/ (float)(SCREEN_HEIGHT);
-		data_index[i]= sqrt(x*x+ y*y)/ sqrt(2.0f);
-	}
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RED, GL_FLOAT, data_index);
 }
 
 
@@ -431,34 +425,31 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	
+	glActiveTexture(GL_TEXTURE0);
+
 	glUseProgram(prog_texture_3d);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, texture_3d_id);
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture_index_2d_id);
+	glBindTexture(GL_TEXTURE_3D, texture_id);
 
 	glUniform1i(texture_3d_loc, 0); //Sampler refers to texture unit 0
-	glUniform1i(texture_index_2d_loc, 1);
-	glUniform1i(screen_width_loc, SCREEN_WIDTH);
-	glUniform1i(screen_height_loc, SCREEN_HEIGHT);
 	glUniformMatrix4fv(camera2clip_loc, 1, GL_FALSE, glm::value_ptr(camera2clip));
 	glUniformMatrix4fv(model2world_loc, 1, GL_FALSE, glm::value_ptr(model2world));
 	
 	glEnableVertexAttribArray(position_loc);
+	glEnableVertexAttribArray(tex_coord_loc);
 
-	glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 3* sizeof(float), (void*)0);
+	glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+	glVertexAttribPointer(tex_coord_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
 	glDisableVertexAttribArray(position_loc);
+	glDisableVertexAttribArray(tex_coord_loc);
 
+	glBindTexture(GL_TEXTURE_3D, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
 
-	glBindTexture(GL_TEXTURE_3D, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(0);
 	
 	SDL_GL_SwapWindow(window);
