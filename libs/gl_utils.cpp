@@ -272,14 +272,16 @@ unsigned int load_cube_map(vector<string> faces) {
 }
 */
 
-GLuint create_prog(string vs_path, string fs_path) {
+GLuint create_prog(string vs_path, string fs_path, bool check) {
 	GLuint vs= load_shader(GL_VERTEX_SHADER  , vs_path.c_str());
 	GLuint fs= load_shader(GL_FRAGMENT_SHADER, fs_path.c_str());
 	GLuint prog= glCreateProgram();
 	glAttachShader(prog, fs);
 	glAttachShader(prog, vs);
 	glLinkProgram(prog);
-	check_gl_program(prog);
+	if (check) {
+		check_gl_program(prog);
+	}
 
 	return prog;
 }

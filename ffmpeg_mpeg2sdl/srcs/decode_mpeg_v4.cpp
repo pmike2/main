@@ -40,8 +40,8 @@ SDL_GLContext main_context;
 GLuint prog_texture_3d;
 GLuint vao;
 GLuint vbo;
-GLuint texture_3d_id, texture_index_2d_id;
-GLint camera2clip_loc, model2world_loc, position_loc, texture_3d_loc, texture_index_2d_loc, screen_width_loc, screen_height_loc;
+GLuint texture_3d_id, texture_index_3d_id;
+GLint camera2clip_loc, model2world_loc, position_loc, texture_3d_loc, texture_index_3d_loc, screen_width_loc, screen_height_loc, index_index_loc;
 glm::mat4 camera2clip;
 glm::mat4 model2world;
 
@@ -54,7 +54,8 @@ int n_frames= 0;
 unsigned int width= 0;
 unsigned int height= 0;
 unsigned int compt= 0;
-
+unsigned int n_index_index= 512;
+float index_index= 0.0f;
 
 
 int init_ffmpeg(const char * file_in) {
@@ -293,97 +294,21 @@ void init_sdl() {
 	
 	SDL_GL_SwapWindow(window);
 
+	screengl= new ScreenGL(SCREEN_WIDTH, SCREEN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+}
+
+
+void init_vao_vbo() {
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
-
-	prog_texture_3d= create_prog("../../shaders/vertexshader_3d_texture.txt"  , "../../shaders/fragmentshader_3d_texture.txt");
-
-	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
-}
-
-
-void init_texture() {
-	// ----------------------------------------
-	glGenTextures(1, &texture_3d_id);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, texture_3d_id);
-
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, width, height, n_frames, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_all);
-
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-	
-	glBindTexture(GL_TEXTURE_3D, 0);
-	glActiveTexture(0);
-
-	// ----------------------------------------
-	glGenTextures(1, &texture_index_2d_id);
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture_index_2d_id);
-
-	float data_index[SCREEN_WIDTH* SCREEN_HEIGHT];
-	for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
-		data_index[i]= 0.0f;
-	}
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RED, GL_FLOAT, data_index);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	
-	glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(0);
-
-	// ----------------------------------------
-	camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
-	model2world= glm::mat4(1.0f);
-
-	glUseProgram(prog_texture_3d);
-	camera2clip_loc= glGetUniformLocation(prog_texture_3d, "camera2clip_matrix");
-	model2world_loc= glGetUniformLocation(prog_texture_3d, "model2world_matrix");
-	texture_3d_loc= glGetUniformLocation(prog_texture_3d, "texture_3d");
-	texture_index_2d_loc= glGetUniformLocation(prog_texture_3d, "texture_index_2d");
-	screen_width_loc= glGetUniformLocation(prog_texture_3d, "screen_width");
-	screen_height_loc= glGetUniformLocation(prog_texture_3d, "screen_height");
-	position_loc= glGetAttribLocation(prog_texture_3d, "position_in");
-	glUseProgram(0);
-
 	glGenBuffers(1, &vbo);
-}
 
-
-void init(const char * file_in) {
-	int ret= init_ffmpeg(file_in);
-	if (ret!= 0) {
-		cerr << "ffmpeg error " << ret << "\n";
-		exit(1);
-	}
-
-	init_sdl();
-	screengl= new ScreenGL(SCREEN_WIDTH, SCREEN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-	init_texture();
-}
-
-
-void update() {
 	float vertices[18];
 	float x= -0.5f* screengl->_gl_width;
 	float y= -0.5f* screengl->_gl_height;
 	float z= 0.0f;
 	float w= screengl->_gl_width;
 	float h= screengl->_gl_height;
-
-	/*compt++;
-	if (compt>= n_frames) {
-		compt= 0;
-	}
-	float t= (float)(compt)/ (float)(n_frames);*/
 
 	vertices[0]= x;
 	vertices[1]= y+ h;
@@ -410,20 +335,125 @@ void update() {
 	vertices[17]= z;
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, 18* sizeof(float), vertices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 18* sizeof(float), vertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void init_program() {
+	// cf https://community.khronos.org/t/2-samplers-fs-fails-different-sampler-types-for-same-sample-texture-unit-in-fragment/72598
+	// il faut faire les glUniform1i avant check_gl_program, d'où l'option check de create_prog à false, et check_gl_program + tard
+	prog_texture_3d= create_prog("../../shaders/vertexshader_3d_texture.txt"  , "../../shaders/fragmentshader_3d_texture.txt", false);
+	camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
+	model2world= glm::mat4(1.0f);
+
+	glUseProgram(prog_texture_3d);
+	camera2clip_loc= glGetUniformLocation(prog_texture_3d, "camera2clip_matrix");
+	model2world_loc= glGetUniformLocation(prog_texture_3d, "model2world_matrix");
+	texture_3d_loc= glGetUniformLocation(prog_texture_3d, "texture_3d");
+	texture_index_3d_loc= glGetUniformLocation(prog_texture_3d, "texture_index_3d");
+	screen_width_loc= glGetUniformLocation(prog_texture_3d, "screen_width");
+	screen_height_loc= glGetUniformLocation(prog_texture_3d, "screen_height");
+	index_index_loc= glGetUniformLocation(prog_texture_3d, "index_index");
+	position_loc= glGetAttribLocation(prog_texture_3d, "position_in");
+
+	glUniform1i(texture_3d_loc, 0); //Sampler refers to texture unit 0
+	glUniform1i(texture_index_3d_loc, 1);
+
+	glUseProgram(0);
+
+	check_gl_program(prog_texture_3d);
+
+	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
+}
+
+
+void init_texture() {
+	// ----------------------------------------
+	glGenTextures(1, &texture_3d_id);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, texture_3d_id);
+
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, width, height, n_frames, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_all);
+	av_free(buffer_all);
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+	
+	glBindTexture(GL_TEXTURE_3D, 0);
+	glActiveTexture(0);
+
+	// ----------------------------------------
+	glGenTextures(1, &texture_index_3d_id);
 
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture_index_2d_id);
+	glBindTexture(GL_TEXTURE_3D, texture_index_3d_id);
+
+	float * data_index= new float[SCREEN_WIDTH* SCREEN_HEIGHT* n_index_index];
+	for (unsigned int j=0; j<n_index_index; ++j) {
+		//float r= rand_float(0.0f, 1.0f);
+		float index_f= (float)(j)/ (float)(n_index_index);
+		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
+			float x= (float)(i % SCREEN_WIDTH)/ (float)(SCREEN_WIDTH);
+			float y= (float)(i / SCREEN_WIDTH)/ (float)(SCREEN_HEIGHT);
+			//data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= 0.0f;
+			//data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= r;
+			//data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= index_f;
+			/*if ((x>0.1f) && (x<0.4f) && (y>0.1f) && (y<0.3f)) {
+				data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= index_f* 0.5f;
+			}
+			else {
+				data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= index_f;
+			}*/
+			data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= index_f* x* y;
+		}
+	}
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, SCREEN_WIDTH, SCREEN_HEIGHT, n_index_index, 0, GL_RED, GL_FLOAT, data_index);
+	delete[] data_index;
+
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	
+	glBindTexture(GL_TEXTURE_3D, 0);
+	glActiveTexture(0);
+}
+
+
+void init(const char * file_in) {
+	int ret= init_ffmpeg(file_in);
+	if (ret!= 0) {
+		cerr << "ffmpeg error " << ret << "\n";
+		exit(1);
+	}
+
+	init_sdl();
+	init_vao_vbo();
+	init_program();
+	init_texture();
+}
+
+
+void update() {
+	compt++;
+	if (compt>= n_index_index) {
+		compt= 0;
+	}
+	index_index= (float)(compt)/ (float)(n_index_index);
+
+	/*glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, texture_index_3d_id);
 	float data_index[SCREEN_WIDTH* SCREEN_HEIGHT];
 	for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
-		//data_index[i]= rand_float(0.0f, 1.0f);
-
-		float x= (float)(i % SCREEN_WIDTH)/ (float)(SCREEN_WIDTH);
-		float y= (float)(i / SCREEN_WIDTH)/ (float)(SCREEN_HEIGHT);
-		data_index[i]= sqrt(x*x+ y*y)/ sqrt(2.0f);
+		data_index[i]= rand_float(0.0f, 1.0f);
+		//data_index[i]= t;
 	}
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RED, GL_FLOAT, data_index);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RED, GL_FLOAT, data_index);*/
 }
 
 
@@ -437,12 +467,13 @@ void draw() {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, texture_3d_id);
 	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture_index_2d_id);
+	glBindTexture(GL_TEXTURE_3D, texture_index_3d_id);
 
 	glUniform1i(texture_3d_loc, 0); //Sampler refers to texture unit 0
-	glUniform1i(texture_index_2d_loc, 1);
+	glUniform1i(texture_index_3d_loc, 1);
 	glUniform1i(screen_width_loc, SCREEN_WIDTH);
 	glUniform1i(screen_height_loc, SCREEN_HEIGHT);
+	glUniform1f(index_index_loc, index_index);
 	glUniformMatrix4fv(camera2clip_loc, 1, GL_FALSE, glm::value_ptr(camera2clip));
 	glUniformMatrix4fv(model2world_loc, 1, GL_FALSE, glm::value_ptr(model2world));
 	
@@ -458,7 +489,7 @@ void draw() {
 	glUseProgram(0);
 
 	glBindTexture(GL_TEXTURE_3D, 0);
-	glBindTexture(GL_TEXTURE_2D, 0);
+	//glBindTexture(GL_TEXTURE_2D, 0);
 	glActiveTexture(0);
 	
 	SDL_GL_SwapWindow(window);
@@ -516,7 +547,6 @@ void clean() {
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
-	av_free(buffer_all);
 }
 
 

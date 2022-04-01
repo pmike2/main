@@ -33,7 +33,7 @@ char * load_source(const char * filename);
 GLuint load_shader(GLenum type, const char * filename);
 // sert à la skybox
 //unsigned int load_cube_map(std::vector<std::string> faces);
-GLuint create_prog(std::string vs_path, std::string fs_path);
+GLuint create_prog(std::string vs_path, std::string fs_path, bool check=true);
 void set_subwindow(const float bkgnd_color[4], int x, int y, int w, int h);
 
 #endif

@@ -1,14 +1,15 @@
 #version 410 core
 
 uniform sampler3D texture_3d;
-uniform sampler2D texture_index_2d;
+uniform sampler3D texture_index_3d;
 uniform int screen_width;
 uniform int screen_height;
+uniform float index_index;
 
 out vec4 color;
 
 void main() {
 	vec2 uv = vec2(gl_FragCoord.x/ screen_width, gl_FragCoord.y/ screen_height);
-	vec4 frame = texture(texture_index_2d, uv);
+	vec4 frame = texture(texture_index_3d, vec3(uv, index_index));
 	color= texture(texture_3d, vec3(uv, frame.x));
 }
