@@ -54,7 +54,7 @@ int n_frames= 0;
 unsigned int width= 0;
 unsigned int height= 0;
 unsigned int compt= 0;
-unsigned int n_index_index= 512;
+unsigned int n_index_index= 256;
 float index_index= 0.0f;
 
 
@@ -368,6 +368,26 @@ void init_program() {
 }
 
 
+float index_function(float x, float y, float t) {
+	//return 0.0f;
+	//return t;
+	/*if ((x>0.1f) && (x<0.4f) && (y>0.1f) && (y<0.3f)) {
+		return t* 0.5f;
+	}
+	else {
+		return t;
+	}*/
+	//return t* sqrt(2.0f)* sqrt(0.5f- (x- 0.5)* (x- 0.5)- (y- 0.5)* (y- 0.5));
+	return t* rand_float(0.0f, 1.0f);
+	/*if (rand_int(0, 1)) {
+		return t;
+	}
+	else {
+		return 1.0f- t;
+	}*/
+}
+
+
 void init_texture() {
 	// ----------------------------------------
 	glGenTextures(1, &texture_3d_id);
@@ -395,23 +415,32 @@ void init_texture() {
 
 	float * data_index= new float[SCREEN_WIDTH* SCREEN_HEIGHT* n_index_index];
 	for (unsigned int j=0; j<n_index_index; ++j) {
-		//float r= rand_float(0.0f, 1.0f);
-		float index_f= (float)(j)/ (float)(n_index_index);
+		float r= rand_float(0.0f, 1.0f);
+		//float index_f= (float)(j)/ (float)(n_index_index);
+		int m= 10;
+		int k= rand_int(-m, m);
 		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
 			float x= (float)(i % SCREEN_WIDTH)/ (float)(SCREEN_WIDTH);
 			float y= (float)(i / SCREEN_WIDTH)/ (float)(SCREEN_HEIGHT);
-			//data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= 0.0f;
 			//data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= r;
-			//data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= index_f;
-			/*if ((x>0.1f) && (x<0.4f) && (y>0.1f) && (y<0.3f)) {
-				data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= index_f* 0.5f;
+			//data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= index_function(x, y, index_f);
+			if (j== 0) {
+				data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= r;
 			}
 			else {
-				data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= index_f;
-			}*/
-			data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= index_f* x* y;
+				data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* (j- 1)]+ k/ (float)(n_index_index);
+			}
 		}
 	}
+	for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT* n_index_index; ++i) {
+		if (data_index[i]< 0.0f) {
+			data_index[i]= 0.0f;
+		}
+		if (data_index[i]> 1.0f) {
+			data_index[i]= 1.0f;
+		}
+	}
+
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, SCREEN_WIDTH, SCREEN_HEIGHT, n_index_index, 0, GL_RED, GL_FLOAT, data_index);
 	delete[] data_index;
 
@@ -426,6 +455,8 @@ void init_texture() {
 
 
 void init(const char * file_in) {
+	srand(time(NULL));
+
 	int ret= init_ffmpeg(file_in);
 	if (ret!= 0) {
 		cerr << "ffmpeg error " << ret << "\n";
