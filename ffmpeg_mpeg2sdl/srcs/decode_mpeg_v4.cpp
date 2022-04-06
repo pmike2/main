@@ -54,7 +54,7 @@ int n_frames= 0;
 unsigned int width= 0;
 unsigned int height= 0;
 unsigned int compt= 0;
-unsigned int n_index_index= 256;
+unsigned int n_index_index= 128;
 float index_index= 0.0f;
 
 
@@ -355,6 +355,7 @@ void init_program() {
 	screen_width_loc= glGetUniformLocation(prog_texture_3d, "screen_width");
 	screen_height_loc= glGetUniformLocation(prog_texture_3d, "screen_height");
 	index_index_loc= glGetUniformLocation(prog_texture_3d, "index_index");
+	//n_frames_loc= glGetUniformLocation(prog_texture_3d, "n_frames");
 	position_loc= glGetAttribLocation(prog_texture_3d, "position_in");
 
 	glUniform1i(texture_3d_loc, 0); //Sampler refers to texture unit 0
@@ -368,26 +369,110 @@ void init_program() {
 }
 
 
-float index_function(float x, float y, float t) {
-	//return 0.0f;
-	//return t;
-	/*if ((x>0.1f) && (x<0.4f) && (y>0.1f) && (y<0.3f)) {
-		return t* 0.5f;
+// fonctions test -----------------------------------------
+void linear_index(float * data) {
+	for (unsigned int j=0; j<n_index_index; ++j) {
+		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
+			float x= (float)(i % SCREEN_WIDTH)/ (float)(SCREEN_WIDTH);
+			float y= (float)(i / SCREEN_WIDTH)/ (float)(SCREEN_HEIGHT);
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 0]= x;
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 1]= y;
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= (float)(j)/ (float)(n_frames);
+		}
 	}
-	else {
-		return t;
-	}*/
-	//return t* sqrt(2.0f)* sqrt(0.5f- (x- 0.5)* (x- 0.5)- (y- 0.5)* (y- 0.5));
-	return t* rand_float(0.0f, 1.0f);
-	/*if (rand_int(0, 1)) {
-		return t;
-	}
-	else {
-		return 1.0f- t;
-	}*/
 }
 
 
+void total_rand_index(float * data) {
+	for (unsigned int j=0; j<n_index_index; ++j) {
+		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 0]= rand_float(0.0f, 1.0f);
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 1]= rand_float(0.0f, 1.0f);
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= rand_float(0.0f, 1.0f);
+		}
+	}
+}
+
+
+void time_rand_index(float * data) {
+	for (unsigned int j=0; j<n_index_index; ++j) {
+		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
+			float x= (float)(i % SCREEN_WIDTH)/ (float)(SCREEN_WIDTH);
+			float y= (float)(i / SCREEN_WIDTH)/ (float)(SCREEN_HEIGHT);
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 0]= x;
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 1]= y;
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= rand_float(0.0f, 1.0f);
+		}
+	}
+}
+
+
+void position_rand_index(float * data) {
+	for (unsigned int j=0; j<n_index_index; ++j) {
+		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 0]= rand_float(0.0f, 1.0f);
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 1]= rand_float(0.0f, 1.0f);
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= (float)(j)/ (float)(n_frames);
+		}
+	}
+}
+
+
+void smooth_rand_time_index(float * data, int m) {
+	for (unsigned int j=0; j<n_index_index; ++j) {
+		float r= rand_float(0.0f, 1.0f);
+		int k= rand_int(-m, m);
+		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
+			float x= (float)(i % SCREEN_WIDTH)/ (float)(SCREEN_WIDTH);
+			float y= (float)(i / SCREEN_WIDTH)/ (float)(SCREEN_HEIGHT);
+			
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 0]= x;
+			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 1]= y;
+			
+			if (j== 0) {
+				data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= r;
+			}
+			else {
+				data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= data[(SCREEN_WIDTH* SCREEN_HEIGHT* (j- 1)+ i)* 3+ 2]+ (float)(k)/ (float)(n_index_index);
+			}
+		}
+	}
+	for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT* n_index_index* 3; ++i) {
+		if (data[i]< 0.0f) {
+			data[i]= 0.0f;
+		}
+		if (data[i]> 1.0f) {
+			data[i]= 1.0f;
+		}
+	}
+}
+
+
+void mosaic_index(float * data, int size) {
+	unsigned int * t= new unsigned int[size* size];
+	for (unsigned int i=0; i<size; ++i) {
+		for (unsigned int j=0; j<size; ++j) {
+			t[i+ j* size]= rand_int(0, n_frames- 1);
+		}
+	}
+	for (unsigned int k=0; k<n_index_index; ++k) {
+		for (unsigned int i=0; i<SCREEN_WIDTH; ++i) {
+			for (unsigned int j=0; j<SCREEN_HEIGHT; ++j) {
+				float x= (float)(i % size)/ (float)(size);
+				float y= (float)(j % size)/ (float)(size);
+				float z= (float)((t[(i % size)+ (j % size)* size]+ k) % n_frames)/ (float)(n_frames);
+				
+				data[(SCREEN_WIDTH* SCREEN_HEIGHT* k+ SCREEN_WIDTH* j+ i)* 3+ 0]= x;
+				data[(SCREEN_WIDTH* SCREEN_HEIGHT* k+ SCREEN_WIDTH* j+ i)* 3+ 1]= y;
+				data[(SCREEN_WIDTH* SCREEN_HEIGHT* k+ SCREEN_WIDTH* j+ i)* 3+ 2]= z;
+			}
+		}
+	}
+	delete[] t;
+}
+
+
+// ----------------------------------------------------------------------
 void init_texture() {
 	// ----------------------------------------
 	glGenTextures(1, &texture_3d_id);
@@ -398,8 +483,8 @@ void init_texture() {
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, width, height, n_frames, 0, GL_RGBA, GL_UNSIGNED_BYTE, buffer_all);
 	av_free(buffer_all);
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
@@ -413,39 +498,21 @@ void init_texture() {
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D, texture_index_3d_id);
 
-	float * data_index= new float[SCREEN_WIDTH* SCREEN_HEIGHT* n_index_index];
-	for (unsigned int j=0; j<n_index_index; ++j) {
-		float r= rand_float(0.0f, 1.0f);
-		//float index_f= (float)(j)/ (float)(n_index_index);
-		int m= 10;
-		int k= rand_int(-m, m);
-		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
-			float x= (float)(i % SCREEN_WIDTH)/ (float)(SCREEN_WIDTH);
-			float y= (float)(i / SCREEN_WIDTH)/ (float)(SCREEN_HEIGHT);
-			//data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= r;
-			//data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= index_function(x, y, index_f);
-			if (j== 0) {
-				data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= r;
-			}
-			else {
-				data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* j]= data_index[i+ SCREEN_WIDTH* SCREEN_HEIGHT* (j- 1)]+ k/ (float)(n_index_index);
-			}
-		}
-	}
-	for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT* n_index_index; ++i) {
-		if (data_index[i]< 0.0f) {
-			data_index[i]= 0.0f;
-		}
-		if (data_index[i]> 1.0f) {
-			data_index[i]= 1.0f;
-		}
-	}
+	float * data_index= new float[SCREEN_WIDTH* SCREEN_HEIGHT* n_index_index* 3];
+	//linear_index(data_index);
+	//total_rand_index(data_index);
+	//time_rand_index(data_index);
+	//position_rand_index(data_index);
+	//smooth_rand_time_index(data_index, 2);
+	mosaic_index(data_index, 100);
 
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, SCREEN_WIDTH, SCREEN_HEIGHT, n_index_index, 0, GL_RED, GL_FLOAT, data_index);
+	//glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, SCREEN_WIDTH, SCREEN_HEIGHT, n_index_index, 0, GL_RED, GL_FLOAT, data_index);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F, SCREEN_WIDTH, SCREEN_HEIGHT, n_index_index, 0, GL_RGB, GL_FLOAT, data_index);
+	//glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16UI, SCREEN_WIDTH, SCREEN_HEIGHT, n_index_index, 0, GL_RGB, GL_UNSIGNED_SHORT, data_index);
 	delete[] data_index;
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
 	
@@ -505,6 +572,7 @@ void draw() {
 	glUniform1i(screen_width_loc, SCREEN_WIDTH);
 	glUniform1i(screen_height_loc, SCREEN_HEIGHT);
 	glUniform1f(index_index_loc, index_index);
+	//glUniform1i(n_frames_loc, n_frames);
 	glUniformMatrix4fv(camera2clip_loc, 1, GL_FALSE, glm::value_ptr(camera2clip));
 	glUniformMatrix4fv(model2world_loc, 1, GL_FALSE, glm::value_ptr(model2world));
 	
