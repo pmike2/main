@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 
+const unsigned int N_MAX_TEXTURES= 8;
 
 class MPEG {
 public:
@@ -28,9 +29,10 @@ public:
 	~MPEGTextures();
 	void prepare2draw();
 
-	unsigned int * _ids;
+	unsigned int _ids[N_MAX_TEXTURES];
 	int _loc;
 	int _base_index;
+	GLint _indices[N_MAX_TEXTURES];
 	unsigned int _n;
 };
 

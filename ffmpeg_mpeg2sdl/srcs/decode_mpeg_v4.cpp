@@ -155,16 +155,13 @@ void init_program() {
 	screen_width_loc= glGetUniformLocation(prog_texture_3d, "screen_width");
 	screen_height_loc= glGetUniformLocation(prog_texture_3d, "screen_height");
 	index_index_loc= glGetUniformLocation(prog_texture_3d, "index_index");
-	//n_frames_loc= glGetUniformLocation(prog_texture_3d, "n_frames");
 	position_loc= glGetAttribLocation(prog_texture_3d, "position_in");
 
-	glUniform1i(texture_index_3d_loc, 0);
+	//glUniform1i(texture_index_3d_loc, 0);
 
 	int base_index= 1;
 	vector<string> mpeg_paths{"../data/flower_04.mov", "../data/flower_06.mov"};
-	//vector<string> mpeg_paths{"../data/flower_04.mov"};
 	mpeg_textures= new MPEGTextures(mpeg_paths, texture_3d_loc, base_index);
-	//glUniform1i(texture_3d_loc, base_index);
 
 	glUseProgram(0);
 
@@ -284,7 +281,7 @@ void init_texture() {
 	// ----------------------------------------
 	glGenTextures(1, &texture_index_3d_id);
 
-	glActiveTexture(GL_TEXTURE1);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, texture_index_3d_id);
 
 	float * data_index= new float[SCREEN_WIDTH* SCREEN_HEIGHT* n_index_index* 3];

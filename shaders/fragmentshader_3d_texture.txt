@@ -13,6 +13,6 @@ void main() {
 	vec2 uv = vec2(gl_FragCoord.x/ screen_width, gl_FragCoord.y/ screen_height);
 	vec4 frame = texture(texture_index_3d, vec3(uv, index_index));
 	//color= texture(texture_3d, vec3(uv, frame.x));
-	color= texture(texture_3d[1], frame.xyz);
+	color= mix(texture(texture_3d[0], frame.xyz), texture(texture_3d[1], frame.xyz), 0.5);
 	//color= texture(texture_3d, vec3(frame.x/ screen_width, frame.y/ screen_height, frame.z/ n_frames));
 }

@@ -208,9 +208,10 @@ MPEGTextures::MPEGTextures() {
 
 
 MPEGTextures::MPEGTextures(vector<string> mpeg_paths, int loc, int base_index) : _base_index(base_index), _loc(loc), _n(mpeg_paths.size()) {
-	_ids= (unsigned int *)malloc(sizeof(unsigned int)* _n);
-	glGenTextures(_n, _ids);
-	glUniform1i(_loc, _base_index);
+	glGenTextures(N_MAX_TEXTURES, _ids);
+	for (unsigned int i=0; i<N_MAX_TEXTURES; ++i) {
+		_indices[i]= _base_index+ i;
+	}
 
 	for (unsigned int i=0; i<_n; ++i) {
 		MPEG * mpeg= new MPEG(mpeg_paths[i]);
@@ -239,7 +240,7 @@ MPEGTextures::~MPEGTextures() {
 
 
 void MPEGTextures::prepare2draw() {
-	glUniform1i(_loc, _base_index);
+	glUniform1iv(_loc, N_MAX_TEXTURES, &_indices[0]);
 	for (unsigned int i=0; i<_n; ++i) {
 		glActiveTexture(GL_TEXTURE0+ _base_index+ i);
 		glBindTexture(GL_TEXTURE_3D, _ids[i]);
