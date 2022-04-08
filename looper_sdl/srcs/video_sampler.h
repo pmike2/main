@@ -12,21 +12,6 @@ enum SUB_SAMPLE_MODE {HOLD, FROM_START, TO_END, ALL};
 SUB_SAMPLE_MODE get_sample_mode(std::string str_mode);
 
 
-class VideoSample {
-public:
-	VideoSample();
-	VideoSample(std::string sample_path);
-	~VideoSample();
-	void * get_frame(unsigned int frame_idx);
-
-	unsigned int _n_frames;
-	unsigned int _fps;
-	unsigned char * _data;
-	unsigned int _width;
-	unsigned int _height;
-	unsigned int _frame_size;
-};
-
 
 class VideoSamplePool {
 public:

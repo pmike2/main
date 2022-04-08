@@ -16,6 +16,7 @@ include_directories(../libs)
 
 add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
 add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)
+add_library(lib_mpeg STATIC ../libs/mpeg.cpp ../libs/mpeg.h)
 
 add_executable(decode_mpeg_v1 ./srcs/decode_mpeg_v1.cpp)
 add_executable(decode_mpeg_v2 ./srcs/decode_mpeg_v2.cpp)
@@ -28,4 +29,4 @@ set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lbz2
 target_link_libraries(decode_mpeg_v1 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS})
 target_link_libraries(decode_mpeg_v2 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS})
 target_link_libraries(decode_mpeg_v3 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS})
-target_link_libraries(decode_mpeg_v4 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS} ${OPENGL_LIBRARIES} lib_utile lib_gl_utils)
+target_link_libraries(decode_mpeg_v4 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS} ${OPENGL_LIBRARIES} lib_utile lib_gl_utils lib_mpeg)
