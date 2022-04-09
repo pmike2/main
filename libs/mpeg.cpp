@@ -12,6 +12,8 @@ extern "C" {
 #include <OpenGL/gl3.h>
 
 #include "mpeg.h"
+#include "utile.h"
+
 
 using namespace std;
 
@@ -207,7 +209,9 @@ MPEGTextures::MPEGTextures() {
 }
 
 
-MPEGTextures::MPEGTextures(vector<string> mpeg_paths, int loc, int base_index) : _base_index(base_index), _loc(loc), _n(mpeg_paths.size()) {
+MPEGTextures::MPEGTextures(vector<string> mpeg_paths, int loc, int base_index) :
+	_base_index(base_index), _loc(loc), _n(mpeg_paths.size()) 
+{
 	glGenTextures(N_MAX_TEXTURES, _ids);
 	for (unsigned int i=0; i<N_MAX_TEXTURES; ++i) {
 		_indices[i]= _base_index+ i;
@@ -229,7 +233,6 @@ MPEGTextures::MPEGTextures(vector<string> mpeg_paths, int loc, int base_index) :
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
 		
 		glBindTexture(GL_TEXTURE_3D, 0);
-		//glActiveTexture(0);
 	}
 }
 
@@ -247,3 +250,165 @@ void MPEGTextures::prepare2draw() {
 	}
 }
 
+
+// -----------------------------------------------------------------------------------
+MPEGReaders::MPEGReaders() {
+
+}
+
+
+MPEGReaders::MPEGReaders(int width, int height, int depth, int loc, int index_loc, int base_index) :
+	_width(width), _height(height), _depth(depth), _idx(0), _base_index(base_index), _loc(loc), _index_loc(index_loc)
+{
+	glGenTextures(N_MAX_READERS, _ids);
+	for (unsigned int i=0; i<N_MAX_READERS; ++i) {
+		_indices[i]= _base_index+ i;
+		_index_indices[i]= -1.0f;
+	}
+
+	for (unsigned int i=0; i<N_MAX_READERS; ++i) {
+		glActiveTexture(GL_TEXTURE0+ _base_index+ i);
+		glBindTexture(GL_TEXTURE_3D, _ids[i]);
+
+		float * data= new float[_width* _height* _depth* 3];
+		linear_index(data);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F, _width, _height, _depth, 0, GL_RGB, GL_FLOAT, data);
+		delete[] data;
+
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+		
+		glBindTexture(GL_TEXTURE_3D, 0);
+	}
+}
+
+
+MPEGReaders::~MPEGReaders() {
+
+}
+
+
+void MPEGReaders::linear_index(float * data) {
+	for (unsigned int j=0; j<_depth; ++j) {
+		for (unsigned int i=0; i<_width* _height; ++i) {
+			float x= (float)(i % _width)/ (float)(_width);
+			float y= (float)(i / _width)/ (float)(_height);
+			data[(_width* _height* j+ i)* 3+ 0]= x;
+			data[(_width* _height* j+ i)* 3+ 1]= y;
+			data[(_width* _height* j+ i)* 3+ 2]= (float)(j)/ (float)(_depth);
+		}
+	}
+}
+
+
+void MPEGReaders::total_rand_index(float * data) {
+	for (unsigned int j=0; j<_depth; ++j) {
+		for (unsigned int i=0; i<_width* _height; ++i) {
+			data[(_width* _height* j+ i)* 3+ 0]= rand_float(0.0f, 1.0f);
+			data[(_width* _height* j+ i)* 3+ 1]= rand_float(0.0f, 1.0f);
+			data[(_width* _height* j+ i)* 3+ 2]= rand_float(0.0f, 1.0f);
+		}
+	}
+}
+
+
+void MPEGReaders::time_rand_index(float * data) {
+	for (unsigned int j=0; j<_depth; ++j) {
+		for (unsigned int i=0; i<_width* _height; ++i) {
+			float x= (float)(i % _width)/ (float)(_width);
+			float y= (float)(i / _width)/ (float)(_height);
+			data[(_width* _height* j+ i)* 3+ 0]= x;
+			data[(_width* _height* j+ i)* 3+ 1]= y;
+			data[(_width* _height* j+ i)* 3+ 2]= rand_float(0.0f, 1.0f);
+		}
+	}
+}
+
+
+void MPEGReaders::position_rand_index(float * data) {
+	for (unsigned int j=0; j<_depth; ++j) {
+		for (unsigned int i=0; i<_width* _height; ++i) {
+			data[(_width* _height* j+ i)* 3+ 0]= rand_float(0.0f, 1.0f);
+			data[(_width* _height* j+ i)* 3+ 1]= rand_float(0.0f, 1.0f);
+			data[(_width* _height* j+ i)* 3+ 2]= (float)(j)/ (float)(_depth);
+		}
+	}
+}
+
+
+void MPEGReaders::smooth_rand_time_index(float * data, int m) {
+	for (unsigned int j=0; j<_depth; ++j) {
+		float r= rand_float(0.0f, 1.0f);
+		int k= rand_int(-m, m);
+		for (unsigned int i=0; i<_width* _height; ++i) {
+			float x= (float)(i % _width)/ (float)(_width);
+			float y= (float)(i / _width)/ (float)(_height);
+			
+			data[(_width* _height* j+ i)* 3+ 0]= x;
+			data[(_width* _height* j+ i)* 3+ 1]= y;
+			
+			if (j== 0) {
+				data[(_width* _height* j+ i)* 3+ 2]= r;
+			}
+			else {
+				data[(_width* _height* j+ i)* 3+ 2]= data[(_width* _height* (j- 1)+ i)* 3+ 2]+ (float)(k)/ (float)(_depth);
+			}
+		}
+	}
+	for (unsigned int i=0; i<_width* _height* _depth* 3; ++i) {
+		if (data[i]< 0.0f) {
+			data[i]= 0.0f;
+		}
+		if (data[i]> 1.0f) {
+			data[i]= 1.0f;
+		}
+	}
+}
+
+
+void MPEGReaders::mosaic_index(float * data, int size) {
+	unsigned int * t= new unsigned int[size* size];
+	for (unsigned int i=0; i<size; ++i) {
+		for (unsigned int j=0; j<size; ++j) {
+			t[i+ j* size]= rand_int(0, _depth- 1);
+		}
+	}
+	for (unsigned int k=0; k<_depth; ++k) {
+		for (unsigned int i=0; i<_width; ++i) {
+			for (unsigned int j=0; j<_height; ++j) {
+				float x= (float)(i % size)/ (float)(size);
+				float y= (float)(j % size)/ (float)(size);
+				float z= (float)((t[(i / size)+ (j / size)* size]+ k) % _depth)/ (float)(_depth);
+				
+				data[(_width* _height* k+ _width* j+ i)* 3+ 0]= x;
+				data[(_width* _height* k+ _width* j+ i)* 3+ 1]= y;
+				data[(_width* _height* k+ _width* j+ i)* 3+ 2]= z;
+			}
+		}
+	}
+	delete[] t;
+}
+
+
+void MPEGReaders::prepare2draw() {
+	glUniform1iv(_loc, N_MAX_READERS, &_indices[0]);
+	glUniform1fv(_index_loc, N_MAX_READERS, &_index_indices[0]);
+	for (unsigned int i=0; i<N_MAX_READERS; ++i) {
+		glActiveTexture(GL_TEXTURE0+ _base_index+ i);
+		glBindTexture(GL_TEXTURE_3D, _ids[i]);
+	}
+}
+
+
+void MPEGReaders::next() {
+	_idx+= 1;
+	if (_idx>= _depth) {
+		_idx= 0;
+	}
+	for (unsigned int i=0; i<N_MAX_READERS; ++i) {
+		_index_indices[i]= (float)(_idx)/ (float)(_depth);
+	}
+}

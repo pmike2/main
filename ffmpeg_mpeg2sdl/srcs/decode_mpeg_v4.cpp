@@ -33,8 +33,8 @@ SDL_GLContext main_context;
 GLuint prog_texture_3d;
 GLuint vao;
 GLuint vbo;
-GLuint texture_index_3d_id;
-GLint camera2clip_loc, model2world_loc, position_loc, texture_3d_loc, texture_index_3d_loc, screen_width_loc, screen_height_loc, index_index_loc;
+//GLuint texture_index_3d_id;
+GLint camera2clip_loc, model2world_loc, position_loc, screen_width_loc, screen_height_loc, texture_3d_loc, reader_3d_loc, reader_index_loc;
 glm::mat4 camera2clip;
 glm::mat4 model2world;
 
@@ -42,11 +42,8 @@ ScreenGL * screengl;
 bool done= false;
 chrono::system_clock::time_point t1, t2;
 
-unsigned int compt= 0;
-unsigned int n_index_index= 128;
-float index_index= 0.0f;
-
 MPEGTextures * mpeg_textures;
+MPEGReaders * mpeg_readers;
 
 
 void init_sdl() {
@@ -151,159 +148,26 @@ void init_program() {
 	camera2clip_loc= glGetUniformLocation(prog_texture_3d, "camera2clip_matrix");
 	model2world_loc= glGetUniformLocation(prog_texture_3d, "model2world_matrix");
 	texture_3d_loc= glGetUniformLocation(prog_texture_3d, "texture_3d");
-	texture_index_3d_loc= glGetUniformLocation(prog_texture_3d, "texture_index_3d");
+	reader_3d_loc= glGetUniformLocation(prog_texture_3d, "reader_3d");
+	reader_index_loc= glGetUniformLocation(prog_texture_3d, "reader_index");
 	screen_width_loc= glGetUniformLocation(prog_texture_3d, "screen_width");
 	screen_height_loc= glGetUniformLocation(prog_texture_3d, "screen_height");
-	index_index_loc= glGetUniformLocation(prog_texture_3d, "index_index");
 	position_loc= glGetAttribLocation(prog_texture_3d, "position_in");
 
-	//glUniform1i(texture_index_3d_loc, 0);
-
-	int base_index= 1;
+	cout << "loading textures\n";
+	int texture_3d_base_index= 0;
 	vector<string> mpeg_paths{"../data/flower_04.mov", "../data/flower_06.mov"};
-	mpeg_textures= new MPEGTextures(mpeg_paths, texture_3d_loc, base_index);
+	mpeg_textures= new MPEGTextures(mpeg_paths, texture_3d_loc, texture_3d_base_index);
+
+	cout << "loading readers\n";
+	int reader_3d_base_index= 4;
+	mpeg_readers= new MPEGReaders(256, 256, 256, reader_3d_loc, reader_index_loc, reader_3d_base_index);
+
+	cout << "loading end\n";
 
 	glUseProgram(0);
-
 	check_gl_program(prog_texture_3d);
-
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
-}
-
-
-// fonctions test -----------------------------------------
-void linear_index(float * data) {
-	for (unsigned int j=0; j<n_index_index; ++j) {
-		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
-			float x= (float)(i % SCREEN_WIDTH)/ (float)(SCREEN_WIDTH);
-			float y= (float)(i / SCREEN_WIDTH)/ (float)(SCREEN_HEIGHT);
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 0]= x;
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 1]= y;
-			//data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= (float)(j)/ (float)(n_frames);
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= (float)(j)/ (float)(100);
-		}
-	}
-}
-
-
-void total_rand_index(float * data) {
-	for (unsigned int j=0; j<n_index_index; ++j) {
-		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 0]= rand_float(0.0f, 1.0f);
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 1]= rand_float(0.0f, 1.0f);
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= rand_float(0.0f, 1.0f);
-		}
-	}
-}
-
-/*
-void time_rand_index(float * data) {
-	for (unsigned int j=0; j<n_index_index; ++j) {
-		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
-			float x= (float)(i % SCREEN_WIDTH)/ (float)(SCREEN_WIDTH);
-			float y= (float)(i / SCREEN_WIDTH)/ (float)(SCREEN_HEIGHT);
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 0]= x;
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 1]= y;
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= rand_float(0.0f, 1.0f);
-		}
-	}
-}
-
-
-void position_rand_index(float * data) {
-	for (unsigned int j=0; j<n_index_index; ++j) {
-		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 0]= rand_float(0.0f, 1.0f);
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 1]= rand_float(0.0f, 1.0f);
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= (float)(j)/ (float)(n_frames);
-		}
-	}
-}
-
-
-void smooth_rand_time_index(float * data, int m) {
-	for (unsigned int j=0; j<n_index_index; ++j) {
-		float r= rand_float(0.0f, 1.0f);
-		int k= rand_int(-m, m);
-		for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
-			float x= (float)(i % SCREEN_WIDTH)/ (float)(SCREEN_WIDTH);
-			float y= (float)(i / SCREEN_WIDTH)/ (float)(SCREEN_HEIGHT);
-			
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 0]= x;
-			data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 1]= y;
-			
-			if (j== 0) {
-				data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= r;
-			}
-			else {
-				data[(SCREEN_WIDTH* SCREEN_HEIGHT* j+ i)* 3+ 2]= data[(SCREEN_WIDTH* SCREEN_HEIGHT* (j- 1)+ i)* 3+ 2]+ (float)(k)/ (float)(n_index_index);
-			}
-		}
-	}
-	for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT* n_index_index* 3; ++i) {
-		if (data[i]< 0.0f) {
-			data[i]= 0.0f;
-		}
-		if (data[i]> 1.0f) {
-			data[i]= 1.0f;
-		}
-	}
-}
-
-
-void mosaic_index(float * data, int size) {
-	unsigned int * t= new unsigned int[size* size];
-	for (unsigned int i=0; i<size; ++i) {
-		for (unsigned int j=0; j<size; ++j) {
-			t[i+ j* size]= rand_int(0, n_frames- 1);
-		}
-	}
-	for (unsigned int k=0; k<n_index_index; ++k) {
-		for (unsigned int i=0; i<SCREEN_WIDTH; ++i) {
-			for (unsigned int j=0; j<SCREEN_HEIGHT; ++j) {
-				float x= (float)(i % size)/ (float)(size);
-				float y= (float)(j % size)/ (float)(size);
-				float z= (float)((t[(i / size)+ (j / size)* size]+ k) % n_frames)/ (float)(n_frames);
-				
-				data[(SCREEN_WIDTH* SCREEN_HEIGHT* k+ SCREEN_WIDTH* j+ i)* 3+ 0]= x;
-				data[(SCREEN_WIDTH* SCREEN_HEIGHT* k+ SCREEN_WIDTH* j+ i)* 3+ 1]= y;
-				data[(SCREEN_WIDTH* SCREEN_HEIGHT* k+ SCREEN_WIDTH* j+ i)* 3+ 2]= z;
-			}
-		}
-	}
-	delete[] t;
-}
-*/
-
-// ----------------------------------------------------------------------
-void init_texture() {
-
-	// ----------------------------------------
-	glGenTextures(1, &texture_index_3d_id);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, texture_index_3d_id);
-
-	float * data_index= new float[SCREEN_WIDTH* SCREEN_HEIGHT* n_index_index* 3];
-	linear_index(data_index);
-	//total_rand_index(data_index);
-	//time_rand_index(data_index);
-	//position_rand_index(data_index);
-	//smooth_rand_time_index(data_index, 2);
-	//mosaic_index(data_index, 100);
-
-	//glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, SCREEN_WIDTH, SCREEN_HEIGHT, n_index_index, 0, GL_RED, GL_FLOAT, data_index);
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB32F, SCREEN_WIDTH, SCREEN_HEIGHT, n_index_index, 0, GL_RGB, GL_FLOAT, data_index);
-	//glTexImage3D(GL_TEXTURE_3D, 0, GL_RGB16UI, SCREEN_WIDTH, SCREEN_HEIGHT, n_index_index, 0, GL_RGB, GL_UNSIGNED_SHORT, data_index);
-	delete[] data_index;
-
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	
-	glBindTexture(GL_TEXTURE_3D, 0);
-	glActiveTexture(0);
 }
 
 
@@ -313,16 +177,12 @@ void init() {
 	init_sdl();
 	init_vao_vbo();
 	init_program();
-	init_texture();
+	//init_texture();
 }
 
 
 void update() {
-	compt++;
-	if (compt>= n_index_index) {
-		compt= 0;
-	}
-	index_index= (float)(compt)/ (float)(n_index_index);
+	mpeg_readers->next();
 
 	/*glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, texture_index_3d_id);
@@ -342,16 +202,11 @@ void draw() {
 	glUseProgram(prog_texture_3d);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, texture_index_3d_id);
-
 	mpeg_textures->prepare2draw();
+	mpeg_readers->prepare2draw();
 
-	glUniform1i(texture_index_3d_loc, 0);
 	glUniform1i(screen_width_loc, SCREEN_WIDTH);
 	glUniform1i(screen_height_loc, SCREEN_HEIGHT);
-	glUniform1f(index_index_loc, index_index);
-	//glUniform1i(n_frames_loc, n_frames);
 	glUniformMatrix4fv(camera2clip_loc, 1, GL_FALSE, glm::value_ptr(camera2clip));
 	glUniformMatrix4fv(model2world_loc, 1, GL_FALSE, glm::value_ptr(model2world));
 	
@@ -367,8 +222,6 @@ void draw() {
 	glUseProgram(0);
 
 	glBindTexture(GL_TEXTURE_3D, 0);
-	//glBindTexture(GL_TEXTURE_2D, 0);
-	glActiveTexture(0);
 	
 	SDL_GL_SwapWindow(window);
 }
