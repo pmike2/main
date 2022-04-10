@@ -5,7 +5,7 @@
 #include <string>
 
 const unsigned int N_MAX_TEXTURES= 4;
-//const unsigned int N_MAX_READERS= 4;
+const unsigned int N_MAX_READERS= 4;
 
 class MPEG {
 public:
@@ -40,23 +40,24 @@ public:
 class MPEGReaders {
 public:
 	MPEGReaders();
-	MPEGReaders(int width, int height, int depth, int loc, int base_index);
+	MPEGReaders(int width, int height, int depth, int loc, int index_loc, int base_index);
 	~MPEGReaders();
-	void hidden(float * data);
-	void linear(float * data, float z);
-	void total_rand(float * data);
-	void time_rand(float * data);
-	void position_rand(float * data);
-	void smooth_rand_time(float * data, int m);
-	void mosaic(float * data, int size);
+	void linear_index(float * data);
+	void total_rand_index(float * data);
+	void time_rand_index(float * data);
+	void position_rand_index(float * data);
+	void smooth_rand_time_index(float * data, int m);
+	void mosaic_index(float * data, int size);
 	void prepare2draw();
 	void next();
 
-	unsigned int _id;
-	int _loc;
+	unsigned int _ids[N_MAX_READERS];
+	int _loc, _index_loc;
 	int _base_index;
+	int _indices[N_MAX_READERS];
+	float _index_indices[N_MAX_READERS];
 	int _width, _height, _depth;
-	float _idx;
+	unsigned int _idx;
 };
 
 

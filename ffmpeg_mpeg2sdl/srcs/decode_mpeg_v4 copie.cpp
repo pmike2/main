@@ -34,7 +34,7 @@ GLuint prog_texture_3d;
 GLuint vao;
 GLuint vbo;
 //GLuint texture_index_3d_id;
-GLint camera2clip_loc, model2world_loc, position_loc, screen_width_loc, screen_height_loc, texture_3d_loc, reader_loc, reader_index_loc, texture_index_loc;
+GLint camera2clip_loc, model2world_loc, position_loc, screen_width_loc, screen_height_loc, texture_3d_loc, reader_3d_loc, reader_index_loc, texture_index_loc;
 glm::mat4 camera2clip;
 glm::mat4 model2world;
 
@@ -147,8 +147,8 @@ void init_program() {
 	camera2clip_loc= glGetUniformLocation(prog_texture_3d, "camera2clip_matrix");
 	model2world_loc= glGetUniformLocation(prog_texture_3d, "model2world_matrix");
 	texture_3d_loc= glGetUniformLocation(prog_texture_3d, "texture_3d");
-	reader_loc= glGetUniformLocation(prog_texture_3d, "reader");
-	//reader_index_loc= glGetUniformLocation(prog_texture_3d, "reader_index");
+	reader_3d_loc= glGetUniformLocation(prog_texture_3d, "reader_3d");
+	reader_index_loc= glGetUniformLocation(prog_texture_3d, "reader_index");
 	//texture_index_loc= glGetUniformLocation(prog_texture_3d, "texture_index");
 	screen_width_loc= glGetUniformLocation(prog_texture_3d, "screen_width");
 	screen_height_loc= glGetUniformLocation(prog_texture_3d, "screen_height");
@@ -160,8 +160,8 @@ void init_program() {
 	mpeg_textures= new MPEGTextures(mpeg_paths, texture_3d_loc, texture_3d_base_index);
 
 	cout << "loading readers\n";
-	int reader_base_index= N_MAX_TEXTURES;
-	mpeg_readers= new MPEGReaders(512, 512, 8, reader_loc, reader_base_index);
+	int reader_3d_base_index= N_MAX_TEXTURES;
+	mpeg_readers= new MPEGReaders(64, 64, 64, reader_3d_loc, reader_index_loc, reader_3d_base_index);
 
 	cout << "loading end\n";
 
