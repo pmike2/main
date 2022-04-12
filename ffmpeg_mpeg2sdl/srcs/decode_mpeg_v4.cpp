@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <vector>
+//#include <thread>
 
 #include <OpenGL/gl3.h>
 
@@ -30,11 +31,11 @@ const float Z_FAR= 10.0f;
 
 SDL_Window * window= 0;
 SDL_GLContext main_context;
-GLuint prog_texture_3d;
+GLuint prog_movie;
 GLuint vao;
 GLuint vbo;
-//GLuint texture_index_3d_id;
-GLint camera2clip_loc, model2world_loc, position_loc, screen_width_loc, screen_height_loc, texture_3d_loc, reader_loc, reader_index_loc, texture_index_loc;
+GLint camera2clip_loc, model2world_loc, position_loc, screen_width_loc, screen_height_loc,
+	movie_loc, alpha_loc, movie_time_loc, index_time_loc;
 glm::mat4 camera2clip;
 glm::mat4 model2world;
 
@@ -44,6 +45,13 @@ chrono::system_clock::time_point t1, t2;
 
 MPEGTextures * mpeg_textures;
 MPEGReaders * mpeg_readers;
+
+/*
+vector<thread> thrs;
+atomic_bool stop_thr= ATOMIC_VAR_INIT(false);
+mutex mtx;
+const int N_THREADS= 8;
+*/
 
 
 void init_sdl() {
@@ -139,35 +147,57 @@ void init_vao_vbo() {
 void init_program() {
 	// cf https://community.khronos.org/t/2-samplers-fs-fails-different-sampler-types-for-same-sample-texture-unit-in-fragment/72598
 	// il faut faire les glUniform1i avant check_gl_program, d'où l'option check de create_prog à false, et check_gl_program + tard
-	prog_texture_3d= create_prog("../../shaders/vertexshader_3d_texture.txt"  , "../../shaders/fragmentshader_3d_texture.txt", false);
+	prog_movie= create_prog("../../shaders/vertexshader_movie.txt"  , "../../shaders/fragmentshader_movie.txt", false);
 	camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	model2world= glm::mat4(1.0f);
 
-	glUseProgram(prog_texture_3d);
-	camera2clip_loc= glGetUniformLocation(prog_texture_3d, "camera2clip_matrix");
-	model2world_loc= glGetUniformLocation(prog_texture_3d, "model2world_matrix");
-	texture_3d_loc= glGetUniformLocation(prog_texture_3d, "texture_3d");
-	reader_loc= glGetUniformLocation(prog_texture_3d, "reader");
-	//reader_index_loc= glGetUniformLocation(prog_texture_3d, "reader_index");
-	//texture_index_loc= glGetUniformLocation(prog_texture_3d, "texture_index");
-	screen_width_loc= glGetUniformLocation(prog_texture_3d, "screen_width");
-	screen_height_loc= glGetUniformLocation(prog_texture_3d, "screen_height");
-	position_loc= glGetAttribLocation(prog_texture_3d, "position_in");
+	glUseProgram(prog_movie);
+	camera2clip_loc= glGetUniformLocation(prog_movie, "camera2clip_matrix");
+	model2world_loc= glGetUniformLocation(prog_movie, "model2world_matrix");
+	movie_loc= glGetUniformLocation(prog_movie, "movie");
+	alpha_loc= glGetUniformLocation(prog_movie, "alpha");
+	movie_time_loc= glGetUniformLocation(prog_movie, "movie_time");
+	index_time_loc= glGetUniformLocation(prog_movie, "index_time");
+	screen_width_loc= glGetUniformLocation(prog_movie, "screen_width");
+	screen_height_loc= glGetUniformLocation(prog_movie, "screen_height");
+	position_loc= glGetAttribLocation(prog_movie, "position_in");
 
 	cout << "loading textures\n";
-	int texture_3d_base_index= 0;
+	int movies_texture_index= 0;
 	vector<string> mpeg_paths{"../data/flower_04.mov", "../data/flower_06.mov"};
-	mpeg_textures= new MPEGTextures(mpeg_paths, texture_3d_loc, texture_3d_base_index);
+	mpeg_textures= new MPEGTextures(mpeg_paths, movie_loc, movies_texture_index);
 
 	cout << "loading readers\n";
-	int reader_base_index= N_MAX_TEXTURES;
-	mpeg_readers= new MPEGReaders(512, 512, 8, reader_loc, reader_base_index);
-
+	unsigned int reader_texture_index= movies_texture_index+ N_MAX_TEXTURES;
+	mpeg_readers= new MPEGReaders(8, 512, 512, reader_texture_index, alpha_loc, 256, reader_texture_index+ 1, movie_time_loc, reader_texture_index+ 2, index_time_loc);
 	cout << "loading end\n";
 
 	glUseProgram(0);
-	check_gl_program(prog_texture_3d);
+	check_gl_program(prog_movie);
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
+}
+
+/*
+void update_thread(int i) {
+	while (true) {
+		if (stop_thr) {
+			break;
+		}
+		//mtx.lock();
+		int n= mpeg_readers->_depth/ N_THREADS;
+		for (int j=i* n; j<(i+ 1)* n; ++j) {
+			mpeg_readers->next(j);
+		}
+		//mtx.unlock();
+	}
+}
+*/
+
+void update() {
+	for (int i=0; i<mpeg_readers->_alpha_depth; ++i) {
+		mpeg_readers->update_alpha(i);
+		mpeg_readers->next_index_time(i);
+	}
 }
 
 
@@ -177,21 +207,6 @@ void init() {
 	init_sdl();
 	init_vao_vbo();
 	init_program();
-	//init_texture();
-}
-
-
-void update() {
-	mpeg_readers->next();
-
-	/*glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D, texture_index_3d_id);
-	float data_index[SCREEN_WIDTH* SCREEN_HEIGHT];
-	for (unsigned int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT; ++i) {
-		data_index[i]= rand_float(0.0f, 1.0f);
-		//data_index[i]= t;
-	}
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, SCREEN_WIDTH, SCREEN_HEIGHT, 0, GL_RED, GL_FLOAT, data_index);*/
 }
 
 
@@ -200,7 +215,7 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	
-	glUseProgram(prog_texture_3d);
+	glUseProgram(prog_movie);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
 	mpeg_textures->prepare2draw();
@@ -276,6 +291,13 @@ void main_loop() {
 
 
 void clean() {
+	/*stop_thr= true;
+	for (thread & thr : thrs) {
+		if (thr.joinable()) {
+			thr.join();
+		}
+	}*/
+
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
 	SDL_Quit();

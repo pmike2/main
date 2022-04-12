@@ -5,7 +5,6 @@
 #include <string>
 
 const unsigned int N_MAX_TEXTURES= 4;
-//const unsigned int N_MAX_READERS= 4;
 
 class MPEG {
 public:
@@ -40,23 +39,41 @@ public:
 class MPEGReaders {
 public:
 	MPEGReaders();
-	MPEGReaders(int width, int height, int depth, int loc, int base_index);
+	MPEGReaders(unsigned int n_readers,
+		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_texture_index, unsigned int alpha_loc,
+		unsigned int time_height, unsigned int time_texture_index, unsigned int time_loc,
+		unsigned int index_time_texture_index, unsigned int index_time_loc
+	);
 	~MPEGReaders();
-	void hidden(float * data);
-	void linear(float * data, float z);
+	/*void hidden(float * data);
+	void linear(float ** data, int depth, float z);
 	void total_rand(float * data);
 	void time_rand(float * data);
 	void position_rand(float * data);
 	void smooth_rand_time(float * data, int m);
-	void mosaic(float * data, int size);
+	void mosaic(float * data, int size);*/
 	void prepare2draw();
-	void next();
+	void update_alpha(unsigned int depth);
+	void next_index_time(unsigned int depth);
 
-	unsigned int _id;
-	int _loc;
-	int _base_index;
-	int _width, _height, _depth;
-	float _idx;
+
+	unsigned int _alpha_width, _alpha_height, _alpha_depth;
+	float * _alpha_data;
+	unsigned int _alpha_id;
+	int _alpha_loc;
+	unsigned int _alpha_texture_index;
+
+	unsigned int _time_width, _time_height;
+	float * _time_data;
+	unsigned int _time_id;
+	int _time_loc;
+	unsigned int _time_texture_index;
+
+	unsigned int _index_time_width;
+	unsigned int * _index_time_data;
+	unsigned int _index_time_id;
+	int _index_time_loc;
+	unsigned int _index_time_texture_index;
 };
 
 

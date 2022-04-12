@@ -263,75 +263,103 @@ MPEGReaders::MPEGReaders() {
 }
 
 
-MPEGReaders::MPEGReaders(int width, int height, int depth, int loc, int base_index) :
-	_width(width), _height(height), _depth(depth), _base_index(base_index), _loc(loc), _idx(0.0f)
+MPEGReaders::MPEGReaders(unsigned int n_readers,
+		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_texture_index, unsigned int alpha_loc,
+		unsigned int time_height, unsigned int time_texture_index, unsigned int time_loc,
+		unsigned int index_time_texture_index, unsigned int index_time_loc) :
+	_alpha_width(alpha_width), _alpha_height(alpha_height), _alpha_depth(n_readers), _alpha_texture_index(alpha_texture_index), _alpha_loc(alpha_loc),
+	_time_width(n_readers), _time_height(time_height), _time_texture_index(time_texture_index), _time_loc(time_loc),
+	_index_time_width(n_readers), _index_time_texture_index(index_time_texture_index), _index_time_loc(index_time_loc)
 {
-	glGenTextures(1, &_id);
-	/*for (unsigned int i=0; i<N_MAX_READERS; ++i) {
-		_indices[i]= _base_index+ i;
-		_index_indices[i]= -1.0f;
-	}*/
-	glActiveTexture(GL_TEXTURE0+ _base_index);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _id);
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA32F, _width, _height, _depth, 0, GL_RGBA, GL_FLOAT, 0);
+	// -------------------
+	glGenTextures(1, &_alpha_id);
+
+	_alpha_data= new float[_alpha_width* _alpha_height* _alpha_depth];
+	for (unsigned int i=0; i<_alpha_width* _alpha_height* _alpha_depth; ++i) {
+		_alpha_data[i]= 0.0f;
+	}
+
+	glActiveTexture(GL_TEXTURE0+ _alpha_texture_index);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _alpha_id);
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, _alpha_width, _alpha_height, _alpha_depth, 0, GL_RED, GL_FLOAT, _alpha_data);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
 
-	for (unsigned int i=0; i<_depth; ++i) {
-		//glActiveTexture(GL_TEXTURE0+ _base_index+ i);
-		//glBindTexture(GL_TEXTURE_3D, _ids[i]);
+	/*for (unsigned int i=0; i<_alpha_depth; ++i) {
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, _width, _height, 1, GL_RGBA, GL_FLOAT, _data0[i]);
+	}*/
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
-		float * data= new float[_width* _height* 4];
-		linear(data, 0.0f);
+	glUniform1i(_alpha_loc, _alpha_texture_index);
 
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-				0,                             // mipmap number
-				0, 0, i,   // xoffset, yoffset, zoffset
-				_width, _height, 1, // width, height, depth
-				GL_RGBA,                       // format
-				GL_FLOAT,              // type
-				data);              // pointer to data
-		
-		delete[] data;
+	// -------------------
+	glGenTextures(1, &_time_id);
 
-		/*glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA32F, _width, _height, _depth, 0, GL_RGBA, GL_FLOAT, data);
-		delete[] data;
-
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-		
-		glBindTexture(GL_TEXTURE_3D, 0);*/
+	_time_data= new float[_time_width* _time_height];
+	for (unsigned int i=0; i<_time_width* _time_height; ++i) {
+		//_time_data[i]= 0.0f;
+		_time_data[i]= rand_float(0.0f, 1.0f);
 	}
 
-	glUniform1i(_loc, _base_index);
+	glActiveTexture(GL_TEXTURE0+ _time_texture_index);
+	glBindTexture(GL_TEXTURE_1D_ARRAY, _time_id);
+	glTexImage2D(GL_TEXTURE_1D_ARRAY, 0, GL_R32F, _time_width, _time_height, 0, GL_RED, GL_FLOAT, _time_data);
+	glTexParameteri(GL_TEXTURE_1D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D_ARRAY, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_1D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_1D_ARRAY, 0);
+
+	glUniform1i(_time_loc, _time_texture_index);
+
+	// -------------------
+	glGenTextures(1, &_index_time_id);
+
+	_index_time_data= new unsigned int[_index_time_width];
+	for (unsigned int i=0; i<_index_time_width; ++i) {
+		_index_time_data[i]= 0;
+	}
+
+	glActiveTexture(GL_TEXTURE0+ _index_time_texture_index);
+	glBindTexture(GL_TEXTURE_1D, _index_time_id);
+	glTexImage1D(GL_TEXTURE_1D, 0, GL_R32UI, _index_time_width, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, _index_time_data);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_1D, 0);
+
+	glUniform1i(_index_time_loc, _index_time_texture_index);
 }
 
 
 MPEGReaders::~MPEGReaders() {
-
+	delete[] _alpha_data;
+	delete[] _time_data;
+	delete[] _index_time_data;
 }
 
-void MPEGReaders::hidden(float * data) {
+/*void MPEGReaders::hidden(float * data) {
 	for (unsigned int i=0; i<_width* _height* _depth* 4; ++i) {
 		data[i]= 0.0f;
 	}
 }
 
 
-void MPEGReaders::linear(float * data, float z) {
-	for (unsigned int i=0; i<_width* _height; ++i) {
-		float x= (float)(i % _width)/ (float)(_width);
-		float y= (float)(i / _width)/ (float)(_height);
-		data[i* 4+ 0]= x;
-		data[i* 4+ 1]= y;
-		data[i* 4+ 2]= z;
-		data[i* 4+ 3]= 0.5f;
+void MPEGReaders::linear(float ** data, int depth, float z) {
+	float f_width= (float)(_width);
+	float f_height= (float)(_height);
+	for (unsigned int j=0; j<_height; ++j) {
+		for (unsigned int i=0; i<_width; ++i) {
+			data[depth][(j* _width+ i)* 4+ 0]= (float)(i)/ f_width;
+			data[depth][(j* _width+ i)* 4+ 1]= (float)(j)/ f_height;
+			data[depth][(j* _width+ i)* 4+ 2]= z;
+			data[depth][(j* _width+ i)* 4+ 3]= 0.5f;
+		}
 	}
 }
 
@@ -422,24 +450,26 @@ void MPEGReaders::mosaic(float * data, int size) {
 		}
 	}
 	delete[] t;
-}
+}*/
 
 
 void MPEGReaders::prepare2draw() {
-	glUniform1i(_loc, _base_index);
-	//glUniform1fv(_index_loc, N_MAX_READERS, &_index_indices[0]);
-	//glUniform1iv(_texture_index_loc, N_MAX_READERS, &_texture_indices[0]);
-	/*for (unsigned int i=0; i<N_MAX_READERS; ++i) {
-		glActiveTexture(GL_TEXTURE0+ _base_index+ i);
-		glBindTexture(GL_TEXTURE_3D, _ids[i]);
-	}*/
-	glActiveTexture(GL_TEXTURE0+ _base_index);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _id);
+	glUniform1i(_alpha_loc, _alpha_texture_index);
+	glActiveTexture(GL_TEXTURE0+ _alpha_texture_index);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _alpha_id);
+
+	glUniform1i(_time_loc, _time_texture_index);
+	glActiveTexture(GL_TEXTURE0+ _time_texture_index);
+	glBindTexture(GL_TEXTURE_1D_ARRAY, _time_id);
+
+	glUniform1i(_index_time_loc, _index_time_texture_index);
+	glActiveTexture(GL_TEXTURE0+ _index_time_texture_index);
+	glBindTexture(GL_TEXTURE_1D, _index_time_id);
 }
 
 
-void MPEGReaders::next() {
-	/*_idx+= 1;
+/*void MPEGReaders::next(unsigned int reader_idx) {
+	_idx+= 1;
 	if (_idx>= _depth) {
 		_idx= 0;
 	}
@@ -447,22 +477,31 @@ void MPEGReaders::next() {
 		_index_indices[i]= (float)(_idx)/ (float)(_depth);
 	}*/
 
-	for (unsigned int i=0; i<_depth; ++i) {
-		float * data= new float[_width* _height* 4];
-		_idx+= 0.01f;
-		if (_idx> 1.0f) {
-			_idx= 0.0f;
-		}
-		linear(data, _idx);
-
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-				0,                             // mipmap number
-				0, 0, i,   // xoffset, yoffset, zoffset
-				_width, _height, 1, // width, height, depth
-				GL_RGBA,                       // format
-				GL_FLOAT,              // type
-				data);              // pointer to data
-		
-		delete[] data;
+	/*_idx[reader_idx]+= 0.01f;
+	if (_idx[reader_idx]> 1.0f) {
+		_idx[reader_idx]= 0.0f;
 	}
+	
+	linear(reader_idx, _idx[reader_idx]);
+}*/
+
+
+void MPEGReaders::update_alpha(unsigned int depth) {
+	for (unsigned int i=0; i<_alpha_width* _alpha_height; ++i) {
+		_alpha_data[_alpha_width* _alpha_height* depth+ i]= rand_float(0.0f, 1.0f);
+	}
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _alpha_id);
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, _alpha_width, _alpha_height, 1, GL_RED, GL_FLOAT, _alpha_data+ _alpha_width* _alpha_height* depth);
 }
+
+
+void MPEGReaders::next_index_time(unsigned int depth) {
+	_index_time_data[depth]++;
+	if (_index_time_data[depth]>= _time_height) {
+		_index_time_data[depth]= 0;
+	}
+	glBindTexture(GL_TEXTURE_1D, _index_time_id);
+	glTexSubImage1D(GL_TEXTURE_1D, 0, depth, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, &_index_time_data[depth]);
+}
+
