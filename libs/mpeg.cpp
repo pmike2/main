@@ -257,6 +257,29 @@ void MPEGTextures::prepare2draw() {
 }
 
 
+
+// -----------------------------------------------------------------------------------
+TimeConfig::TimeConfig() {
+
+}
+
+
+TimeConfig::TimeConfig(std::vector<std::pair<float, float> > time_checkpoints) : _time_checkpoints(time_checkpoints) {
+
+}
+
+
+TimeConfig::~TimeConfig() {
+
+}
+
+
+// -----------------------------------------------------------------------------------
+AlphaConfig::AlphaConfig(std::vector<float *> points) {
+
+}
+
+
 // -----------------------------------------------------------------------------------
 MPEGReaders::MPEGReaders() {
 
@@ -264,11 +287,11 @@ MPEGReaders::MPEGReaders() {
 
 
 MPEGReaders::MPEGReaders(unsigned int n_readers,
-		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_texture_index, unsigned int alpha_loc,
-		unsigned int time_height, unsigned int time_texture_index, unsigned int time_loc,
+		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_texture_index, unsigned int alpha_loc, , std::vector<AlphaConfig> alpha_configs,
+		unsigned int time_width, unsigned int time_texture_index, unsigned int time_loc, vector<TimeConfig> time_configs,
 		unsigned int index_time_texture_index, unsigned int index_time_loc) :
-	_alpha_width(alpha_width), _alpha_height(alpha_height), _alpha_depth(n_readers), _alpha_texture_index(alpha_texture_index), _alpha_loc(alpha_loc),
-	_time_width(n_readers), _time_height(time_height), _time_texture_index(time_texture_index), _time_loc(time_loc),
+	_alpha_width(alpha_width), _alpha_height(alpha_height), _alpha_depth(n_readers), _alpha_texture_index(alpha_texture_index), _alpha_loc(alpha_loc), _alpha_configs(alpha_configs)
+	_time_width(time_width), _time_height(n_readers), _time_texture_index(time_texture_index), _time_loc(time_loc), _time_configs(time_configs),
 	_index_time_width(n_readers), _index_time_texture_index(index_time_texture_index), _index_time_loc(index_time_loc)
 {
 	// -------------------
@@ -288,9 +311,6 @@ MPEGReaders::MPEGReaders(unsigned int n_readers,
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
 
-	/*for (unsigned int i=0; i<_alpha_depth; ++i) {
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, i, _width, _height, 1, GL_RGBA, GL_FLOAT, _data0[i]);
-	}*/
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
 	glUniform1i(_alpha_loc, _alpha_texture_index);
@@ -300,9 +320,30 @@ MPEGReaders::MPEGReaders(unsigned int n_readers,
 
 	_time_data= new float[_time_width* _time_height];
 	for (unsigned int i=0; i<_time_width* _time_height; ++i) {
-		//_time_data[i]= 0.0f;
-		_time_data[i]= rand_float(0.0f, 1.0f);
+		_time_data[i]= 0.0f;
+		//_time_data[i]= rand_float(0.0f, 1.0f);
 	}
+	for (unsigned int i=0; i<_time_height; ++i) {
+		for (unsigned int k=0; k<_time_configs[i]._time_checkpoints.size()- 1; ++k) {
+			float t0= _time_configs[i]._time_checkpoints[k].first;
+			float t1= _time_configs[i]._time_checkpoints[k+ 1].first;
+			float val0= _time_configs[i]._time_checkpoints[k].second;
+			float val1= _time_configs[i]._time_checkpoints[k+ 1].second;
+			unsigned int j0= (unsigned int)(t0* (float)(_time_width));
+			unsigned int j1= (unsigned int)(t1* (float)(_time_width));
+			for (unsigned int j=j0; j<j1; ++j) {
+				_time_data[_time_width* i+ j]= val0+ ((float)(j)/ (float)(_time_width)- t0)* (val1- val0)/ (t1- t0);
+			}
+		}
+	}
+
+	//cout << _time_width << " ; "  << _time_height << "\n";
+	/*for (unsigned int i=0; i<_time_height; ++i) {
+		for (unsigned int j=0; j<_time_width; ++j) {
+			cout << _time_data[_time_width* i+ j] << " ; ";
+		}
+		cout << "\n";
+	}*/
 
 	glActiveTexture(GL_TEXTURE0+ _time_texture_index);
 	glBindTexture(GL_TEXTURE_1D_ARRAY, _time_id);
@@ -319,14 +360,14 @@ MPEGReaders::MPEGReaders(unsigned int n_readers,
 	// -------------------
 	glGenTextures(1, &_index_time_id);
 
-	_index_time_data= new unsigned int[_index_time_width];
+	_index_time_data= new float[_index_time_width];
 	for (unsigned int i=0; i<_index_time_width; ++i) {
-		_index_time_data[i]= 0;
+		_index_time_data[i]= 0.0f;
 	}
 
 	glActiveTexture(GL_TEXTURE0+ _index_time_texture_index);
 	glBindTexture(GL_TEXTURE_1D, _index_time_id);
-	glTexImage1D(GL_TEXTURE_1D, 0, GL_R32UI, _index_time_width, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, _index_time_data);
+	glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, _index_time_width, 0, GL_RED, GL_FLOAT, _index_time_data);
 	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
@@ -342,115 +383,6 @@ MPEGReaders::~MPEGReaders() {
 	delete[] _time_data;
 	delete[] _index_time_data;
 }
-
-/*void MPEGReaders::hidden(float * data) {
-	for (unsigned int i=0; i<_width* _height* _depth* 4; ++i) {
-		data[i]= 0.0f;
-	}
-}
-
-
-void MPEGReaders::linear(float ** data, int depth, float z) {
-	float f_width= (float)(_width);
-	float f_height= (float)(_height);
-	for (unsigned int j=0; j<_height; ++j) {
-		for (unsigned int i=0; i<_width; ++i) {
-			data[depth][(j* _width+ i)* 4+ 0]= (float)(i)/ f_width;
-			data[depth][(j* _width+ i)* 4+ 1]= (float)(j)/ f_height;
-			data[depth][(j* _width+ i)* 4+ 2]= z;
-			data[depth][(j* _width+ i)* 4+ 3]= 0.5f;
-		}
-	}
-}
-
-
-void MPEGReaders::total_rand(float * data) {
-	for (unsigned int j=0; j<_depth; ++j) {
-		for (unsigned int i=0; i<_width* _height; ++i) {
-			data[(_width* _height* j+ i)* 3+ 0]= rand_float(0.0f, 1.0f);
-			data[(_width* _height* j+ i)* 3+ 1]= rand_float(0.0f, 1.0f);
-			data[(_width* _height* j+ i)* 3+ 2]= rand_float(0.0f, 1.0f);
-		}
-	}
-}
-
-
-void MPEGReaders::time_rand(float * data) {
-	for (unsigned int j=0; j<_depth; ++j) {
-		for (unsigned int i=0; i<_width* _height; ++i) {
-			float x= (float)(i % _width)/ (float)(_width);
-			float y= (float)(i / _width)/ (float)(_height);
-			data[(_width* _height* j+ i)* 3+ 0]= x;
-			data[(_width* _height* j+ i)* 3+ 1]= y;
-			data[(_width* _height* j+ i)* 3+ 2]= rand_float(0.0f, 1.0f);
-		}
-	}
-}
-
-
-void MPEGReaders::position_rand(float * data) {
-	for (unsigned int j=0; j<_depth; ++j) {
-		for (unsigned int i=0; i<_width* _height; ++i) {
-			data[(_width* _height* j+ i)* 3+ 0]= rand_float(0.0f, 1.0f);
-			data[(_width* _height* j+ i)* 3+ 1]= rand_float(0.0f, 1.0f);
-			data[(_width* _height* j+ i)* 3+ 2]= (float)(j)/ (float)(_depth);
-		}
-	}
-}
-
-
-void MPEGReaders::smooth_rand_time(float * data, int m) {
-	for (unsigned int j=0; j<_depth; ++j) {
-		float r= rand_float(0.0f, 1.0f);
-		int k= rand_int(-m, m);
-		for (unsigned int i=0; i<_width* _height; ++i) {
-			float x= (float)(i % _width)/ (float)(_width);
-			float y= (float)(i / _width)/ (float)(_height);
-			
-			data[(_width* _height* j+ i)* 3+ 0]= x;
-			data[(_width* _height* j+ i)* 3+ 1]= y;
-			
-			if (j== 0) {
-				data[(_width* _height* j+ i)* 3+ 2]= r;
-			}
-			else {
-				data[(_width* _height* j+ i)* 3+ 2]= data[(_width* _height* (j- 1)+ i)* 3+ 2]+ (float)(k)/ (float)(_depth);
-			}
-		}
-	}
-	for (unsigned int i=0; i<_width* _height* _depth* 3; ++i) {
-		if (data[i]< 0.0f) {
-			data[i]= 0.0f;
-		}
-		if (data[i]> 1.0f) {
-			data[i]= 1.0f;
-		}
-	}
-}
-
-
-void MPEGReaders::mosaic(float * data, int size) {
-	unsigned int * t= new unsigned int[size* size];
-	for (unsigned int i=0; i<size; ++i) {
-		for (unsigned int j=0; j<size; ++j) {
-			t[i+ j* size]= rand_int(0, _depth- 1);
-		}
-	}
-	for (unsigned int k=0; k<_depth; ++k) {
-		for (unsigned int i=0; i<_width; ++i) {
-			for (unsigned int j=0; j<_height; ++j) {
-				float x= (float)(i % size)/ (float)(size);
-				float y= (float)(j % size)/ (float)(size);
-				float z= (float)((t[(i / size)+ (j / size)* size]+ k) % _depth)/ (float)(_depth);
-				
-				data[(_width* _height* k+ _width* j+ i)* 3+ 0]= x;
-				data[(_width* _height* k+ _width* j+ i)* 3+ 1]= y;
-				data[(_width* _height* k+ _width* j+ i)* 3+ 2]= z;
-			}
-		}
-	}
-	delete[] t;
-}*/
 
 
 void MPEGReaders::prepare2draw() {
@@ -468,24 +400,6 @@ void MPEGReaders::prepare2draw() {
 }
 
 
-/*void MPEGReaders::next(unsigned int reader_idx) {
-	_idx+= 1;
-	if (_idx>= _depth) {
-		_idx= 0;
-	}
-	for (unsigned int i=0; i<N_MAX_READERS; ++i) {
-		_index_indices[i]= (float)(_idx)/ (float)(_depth);
-	}*/
-
-	/*_idx[reader_idx]+= 0.01f;
-	if (_idx[reader_idx]> 1.0f) {
-		_idx[reader_idx]= 0.0f;
-	}
-	
-	linear(reader_idx, _idx[reader_idx]);
-}*/
-
-
 void MPEGReaders::update_alpha(unsigned int depth) {
 	for (unsigned int i=0; i<_alpha_width* _alpha_height; ++i) {
 		_alpha_data[_alpha_width* _alpha_height* depth+ i]= rand_float(0.0f, 1.0f);
@@ -497,11 +411,11 @@ void MPEGReaders::update_alpha(unsigned int depth) {
 
 
 void MPEGReaders::next_index_time(unsigned int depth) {
-	_index_time_data[depth]++;
-	if (_index_time_data[depth]>= _time_height) {
-		_index_time_data[depth]= 0;
+	_index_time_data[depth]+= 0.01f;
+	if (_index_time_data[depth]>= 1.0f) {
+		_index_time_data[depth]= 0.0f;
 	}
 	glBindTexture(GL_TEXTURE_1D, _index_time_id);
-	glTexSubImage1D(GL_TEXTURE_1D, 0, depth, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, &_index_time_data[depth]);
+	glTexSubImage1D(GL_TEXTURE_1D, 0, depth, 1, GL_RED, GL_FLOAT, &_index_time_data[depth]);
 }
 

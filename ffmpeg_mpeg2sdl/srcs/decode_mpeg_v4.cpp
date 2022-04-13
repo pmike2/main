@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <vector>
+#include <utility>
 //#include <thread>
 
 #include <OpenGL/gl3.h>
@@ -163,13 +164,24 @@ void init_program() {
 	position_loc= glGetAttribLocation(prog_movie, "position_in");
 
 	cout << "loading textures\n";
+	
 	int movies_texture_index= 0;
 	vector<string> mpeg_paths{"../data/flower_04.mov", "../data/flower_06.mov"};
 	mpeg_textures= new MPEGTextures(mpeg_paths, movie_loc, movies_texture_index);
 
 	cout << "loading readers\n";
+	
 	unsigned int reader_texture_index= movies_texture_index+ N_MAX_TEXTURES;
-	mpeg_readers= new MPEGReaders(8, 512, 512, reader_texture_index, alpha_loc, 256, reader_texture_index+ 1, movie_time_loc, reader_texture_index+ 2, index_time_loc);
+	vector<TimeConfig> time_configs;
+	vector<pair<float, float> > basic{make_pair(0.0f, 0.0f), make_pair(1.0f, 1.0f)};
+	for (unsigned int i=0; i<8; ++i) {
+		time_configs.push_back(TimeConfig(basic));
+	}
+
+	mpeg_readers= new MPEGReaders(8, 512, 512, reader_texture_index, alpha_loc, 
+		256, reader_texture_index+ 1, movie_time_loc, time_configs, 
+		reader_texture_index+ 2, index_time_loc);
+	
 	cout << "loading end\n";
 
 	glUseProgram(0);
