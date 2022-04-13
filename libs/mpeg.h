@@ -52,13 +52,26 @@ public:
 };
 
 
+class AlphaPolygon {
+public:
+	AlphaPolygon();
+	AlphaPolygon(float * points, unsigned int n_points, float fadeout, float curve, float alpha_max);
+	~AlphaPolygon();
+
+	Polygon2D _polygon;
+	float _fadeout;
+	float _curve;
+	float _alpha_max;
+};
+
+
 class AlphaConfig {
 public:
 	AlphaConfig();
-	AlphaConfig(std::vector<float *> points);
+	AlphaConfig(std::vector<AlphaPolygon> polygons);
 	~AlphaConfig();
 
-	std::vector<Polygon2D> _polygons;
+	std::vector<AlphaPolygon> _polygons;
 };
 
 

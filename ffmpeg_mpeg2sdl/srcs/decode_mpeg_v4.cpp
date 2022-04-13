@@ -178,7 +178,19 @@ void init_program() {
 		time_configs.push_back(TimeConfig(basic));
 	}
 
-	mpeg_readers= new MPEGReaders(8, 512, 512, reader_texture_index, alpha_loc, 
+	vector<AlphaConfig> alpha_configs;
+	for (unsigned int i=0; i<8; ++i) {
+		vector<AlphaPolygon> alpha_polygons;
+		float points[8]= {0.3f, 0.3f, 0.6f, 0.3f, 0.6f, 0.6f, 0.3f, 0.6f};
+		float fadeout= 0.0f;
+		float curve= 1.0f;
+		float alpha_max= 1.0f;
+		alpha_polygons.push_back(AlphaPolygon(points, 4, fadeout, curve, alpha_max));
+		AlphaConfig alpha_config(alpha_polygons);
+		alpha_configs.push_back(alpha_config);
+	}
+
+	mpeg_readers= new MPEGReaders(8, 512, 512, reader_texture_index, alpha_loc, alpha_configs,
 		256, reader_texture_index+ 1, movie_time_loc, time_configs, 
 		reader_texture_index+ 2, index_time_loc);
 	

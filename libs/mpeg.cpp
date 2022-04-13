@@ -264,7 +264,7 @@ TimeConfig::TimeConfig() {
 }
 
 
-TimeConfig::TimeConfig(std::vector<std::pair<float, float> > time_checkpoints) : _time_checkpoints(time_checkpoints) {
+TimeConfig::TimeConfig(vector<pair<float, float> > time_checkpoints) : _time_checkpoints(time_checkpoints) {
 
 }
 
@@ -274,8 +274,37 @@ TimeConfig::~TimeConfig() {
 }
 
 
+
 // -----------------------------------------------------------------------------------
-AlphaConfig::AlphaConfig(std::vector<float *> points) {
+AlphaPolygon::AlphaPolygon() {
+
+}
+
+
+AlphaPolygon::AlphaPolygon(float * points, unsigned int n_points, float fadeout, float curve, float alpha_max) :
+	_fadeout(fadeout), _curve(curve), _alpha_max(alpha_max), _polygon(Polygon2D())
+{
+	_polygon.set_points(points, n_points, false);
+}
+
+
+AlphaPolygon::~AlphaPolygon() {
+
+}
+
+
+// -----------------------------------------------------------------------------------
+AlphaConfig::AlphaConfig() {
+
+}
+
+
+AlphaConfig::AlphaConfig(vector<AlphaPolygon> polygons) : _polygons(polygons) {
+
+}
+
+
+AlphaConfig::~AlphaConfig() {
 
 }
 
@@ -287,10 +316,10 @@ MPEGReaders::MPEGReaders() {
 
 
 MPEGReaders::MPEGReaders(unsigned int n_readers,
-		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_texture_index, unsigned int alpha_loc, , std::vector<AlphaConfig> alpha_configs,
+		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_texture_index, unsigned int alpha_loc, vector<AlphaConfig> alpha_configs,
 		unsigned int time_width, unsigned int time_texture_index, unsigned int time_loc, vector<TimeConfig> time_configs,
 		unsigned int index_time_texture_index, unsigned int index_time_loc) :
-	_alpha_width(alpha_width), _alpha_height(alpha_height), _alpha_depth(n_readers), _alpha_texture_index(alpha_texture_index), _alpha_loc(alpha_loc), _alpha_configs(alpha_configs)
+	_alpha_width(alpha_width), _alpha_height(alpha_height), _alpha_depth(n_readers), _alpha_texture_index(alpha_texture_index), _alpha_loc(alpha_loc), _alpha_configs(alpha_configs),
 	_time_width(time_width), _time_height(n_readers), _time_texture_index(time_texture_index), _time_loc(time_loc), _time_configs(time_configs),
 	_index_time_width(n_readers), _index_time_texture_index(index_time_texture_index), _index_time_loc(index_time_loc)
 {
@@ -300,6 +329,43 @@ MPEGReaders::MPEGReaders(unsigned int n_readers,
 	_alpha_data= new float[_alpha_width* _alpha_height* _alpha_depth];
 	for (unsigned int i=0; i<_alpha_width* _alpha_height* _alpha_depth; ++i) {
 		_alpha_data[i]= 0.0f;
+	}
+	for (unsigned int idx_reader=0; idx_reader<_alpha_depth; ++idx_reader) {
+		for (unsigned int idx_poly=0; idx_poly<_alpha_configs[idx_reader]._polygons.size(); ++idx_poly) {
+			AlphaPolygon alpha_poly= _alpha_configs[idx_reader]._polygons[idx_poly];
+			float xmin= alpha_poly._polygon._aabb->_pos.x;
+			float ymin= alpha_poly._polygon._aabb->_pos.y;
+			float xmax= xmin+ alpha_poly._polygon._aabb->_size.x;
+			float ymax= ymin+ alpha_poly._polygon._aabb->_size.y;
+			int imin= (int)((xmin- alpha_poly._fadeout)* (float)(_alpha_width));
+			if (imin< 0) {
+				imin= 0;
+			}
+			int imax= (int)((xmax+ alpha_poly._fadeout)* (float)(_alpha_width));
+			if (imax>= _alpha_width) {
+				imax= _alpha_width- 1;
+			}
+			int jmin= (int)((ymin- alpha_poly._fadeout)* (float)(_alpha_height));
+			if (jmin< 0) {
+				jmin= 0;
+			}
+			int jmax= (int)((ymax+ alpha_poly._fadeout)* (float)(_alpha_height));
+			if (jmax>= _alpha_height) {
+				jmax= _alpha_height- 1;
+			}
+			for (unsigned int i=imin; i<=imax; ++i) {
+				for (unsigned int j=jmin; j<=jmax; ++j) {
+					glm::vec2 pt((float)(i)/ (float)(_alpha_width)+ 0.5f/ _alpha_width, (float)(j)/ (float)(_alpha_height)+ 0.5f/ _alpha_height);
+					float d= distance_poly_pt(&alpha_poly._polygon, pt, 0);
+					_alpha_data[_alpha_width* _alpha_height* idx_reader+ i* _alpha_height+ j]+= (1.0f- pow(d/ alpha_poly._fadeout, alpha_poly._curve))* alpha_poly._alpha_max;
+				}
+			}
+		}
+	}
+	for (unsigned int i=0; i<_alpha_width* _alpha_height* _alpha_depth; ++i) {
+		if (_alpha_data[i]> 1.0f) {
+			_alpha_data[i]= 1.0f;
+		}
 	}
 
 	glActiveTexture(GL_TEXTURE0+ _alpha_texture_index);
