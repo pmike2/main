@@ -10,8 +10,8 @@ utilisation de SDL_CreateRGBSurfaceFrom et SDL_CreateTextureFromSurface
 ./decode_mpeg_v3 ../data/test.mp4
 idem v2 mais chaque frame est converti en dimensions écran au chargement (+ long du coup)
 et utilisation SDL_UpdateTexture
-
-Voir si V3 vaut le coup en terme de perfo
+Voir si vaut le coup en terme de perfo
 
 ./decode_mpeg_v4 ../data/test.mp4
 OPENGL Texture 3D
+beaucoup + élaboré !

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <algorithm>
 
 #define __STDC_CONSTANT_MACROS
 extern "C" {
@@ -212,14 +213,14 @@ MPEGTextures::MPEGTextures() {
 MPEGTextures::MPEGTextures(vector<string> mpeg_paths, int loc, int base_index) :
 	_base_index(base_index), _loc(loc)
 {
-	glGenTextures(N_MAX_TEXTURES, _ids);
-	for (unsigned int i=0; i<N_MAX_TEXTURES; ++i) {
+	glGenTextures(N_READERS, _ids);
+	for (unsigned int i=0; i<N_READERS; ++i) {
 		_indices[i]= _base_index+ i;
 	}
 
-	for (unsigned int i=0; i<N_MAX_TEXTURES; ++i) {
+	for (unsigned int i=0; i<N_READERS; ++i) {
 		if (i>= mpeg_paths.size()) {
-			_ids[i]= _ids[0];
+			_ids[i]= _ids[i % mpeg_paths.size()];
 			continue;
 		}
 		MPEG * mpeg= new MPEG(mpeg_paths[i]);
@@ -239,7 +240,7 @@ MPEGTextures::MPEGTextures(vector<string> mpeg_paths, int loc, int base_index) :
 		glBindTexture(GL_TEXTURE_3D, 0);
 	}
 
-	glUniform1iv(_loc, N_MAX_TEXTURES, &_indices[0]);
+	glUniform1iv(_loc, N_READERS, &_indices[0]);
 }
 
 
@@ -249,8 +250,8 @@ MPEGTextures::~MPEGTextures() {
 
 
 void MPEGTextures::prepare2draw() {
-	glUniform1iv(_loc, N_MAX_TEXTURES, &_indices[0]);
-	for (unsigned int i=0; i<N_MAX_TEXTURES; ++i) {
+	glUniform1iv(_loc, N_READERS, &_indices[0]);
+	for (unsigned int i=0; i<N_READERS; ++i) {
 		glActiveTexture(GL_TEXTURE0+ _base_index+ i);
 		glBindTexture(GL_TEXTURE_3D, _ids[i]);
 	}
@@ -264,8 +265,13 @@ TimeConfig::TimeConfig() {
 }
 
 
-TimeConfig::TimeConfig(vector<pair<float, float> > time_checkpoints) : _time_checkpoints(time_checkpoints) {
-
+TimeConfig::TimeConfig(vector<pair<float, float> > time_checkpoints, float speed) :
+	_time_checkpoints(time_checkpoints), _speed(speed) 
+{
+	sort(_time_checkpoints.begin(), _time_checkpoints.end(), [](const pair<float, float> & a, const pair<float, float> & b) -> bool
+	{
+		return a.first< b.first; 
+	});
 }
 
 
@@ -288,6 +294,13 @@ AlphaPolygon::AlphaPolygon(float * points, unsigned int n_points, float fadeout,
 }
 
 
+AlphaPolygon::AlphaPolygon(const AlphaPolygon & alpha_polygon) :
+	_polygon(alpha_polygon._polygon), _fadeout(alpha_polygon._fadeout), _curve(alpha_polygon._curve), _alpha_max(alpha_polygon._alpha_max)
+{
+	
+}
+
+
 AlphaPolygon::~AlphaPolygon() {
 
 }
@@ -299,7 +312,9 @@ AlphaConfig::AlphaConfig() {
 }
 
 
-AlphaConfig::AlphaConfig(vector<AlphaPolygon> polygons) : _polygons(polygons) {
+AlphaConfig::AlphaConfig(vector<AlphaPolygon> polygons, float decrease_speed) :
+	_polygons(polygons), _decrease_speed(decrease_speed) 
+{
 
 }
 
@@ -310,33 +325,93 @@ AlphaConfig::~AlphaConfig() {
 
 
 // -----------------------------------------------------------------------------------
+GlobalConfig::GlobalConfig() {
+
+}
+
+
+GlobalConfig::GlobalConfig(unsigned int alpha_width, unsigned int alpha_height, unsigned int time_width, 
+	vector<AlphaConfig> alpha_configs, vector<TimeConfig> time_configs) : 
+	_alpha_width(alpha_width), _alpha_height(alpha_height), _time_width(time_width), _alpha_configs(alpha_configs), _time_configs(time_configs)
+{
+
+}
+
+
+GlobalConfig::~GlobalConfig() {
+
+}
+
+
+// -----------------------------------------------------------------------------------
 MPEGReaders::MPEGReaders() {
 
 }
 
 
-MPEGReaders::MPEGReaders(unsigned int n_readers,
-		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_texture_index, unsigned int alpha_loc, vector<AlphaConfig> alpha_configs,
-		unsigned int time_width, unsigned int time_texture_index, unsigned int time_loc, vector<TimeConfig> time_configs,
+MPEGReaders::MPEGReaders(
+		unsigned int alpha_texture_index, unsigned int alpha_loc,
+		unsigned int time_texture_index, unsigned int time_loc,
 		unsigned int index_time_texture_index, unsigned int index_time_loc) :
-	_alpha_width(alpha_width), _alpha_height(alpha_height), _alpha_depth(n_readers), _alpha_texture_index(alpha_texture_index), _alpha_loc(alpha_loc), _alpha_configs(alpha_configs),
-	_time_width(time_width), _time_height(n_readers), _time_texture_index(time_texture_index), _time_loc(time_loc), _time_configs(time_configs),
-	_index_time_width(n_readers), _index_time_texture_index(index_time_texture_index), _index_time_loc(index_time_loc)
+	_alpha_depth(N_READERS), _alpha_texture_index(alpha_texture_index), _alpha_loc(alpha_loc),
+	_time_height(N_READERS), _time_texture_index(time_texture_index), _time_loc(time_loc),
+	_index_time_width(N_READERS), _index_time_texture_index(index_time_texture_index), _index_time_loc(index_time_loc)
 {
-	// -------------------
-	glGenTextures(1, &_alpha_id);
-
+	_alpha_data0= new float[_alpha_width* _alpha_height* _alpha_depth];
 	_alpha_data= new float[_alpha_width* _alpha_height* _alpha_depth];
+
 	for (unsigned int i=0; i<_alpha_width* _alpha_height* _alpha_depth; ++i) {
+		_alpha_data0[i]= 0.0f;
 		_alpha_data[i]= 0.0f;
 	}
+
+	_time_data= new float[_time_width* _time_height];
+	for (unsigned int i=0; i<_time_width* _time_height; ++i) {
+		_time_data[i]= 0.0f;
+	}
+
+	_index_time_data= new float[_index_time_width];
+	for (unsigned int i=0; i<_index_time_width; ++i) {
+		_index_time_data[i]= 0.0f;
+	}
+
+	for (unsigned int i=0; i<N_READERS; ++i) {
+		_note_ons.push_back(false);
+	}
+}
+
+
+MPEGReaders::~MPEGReaders() {
+	delete[] _alpha_data;
+	delete[] _time_data;
+	delete[] _index_time_data;
+}
+
+
+void MPEGReaders::set_config(GlobalConfig config) {
+
+}
+
+
+void MPEGReaders::parse_json(std::string json_path) {
+
+}
+
+
+void MPEGReaders::compute_alpha_data0() {
+	for (unsigned int i=0; i<_alpha_width* _alpha_height* _alpha_depth; ++i) {
+		_alpha_data0[i]= 0.0f;
+	}
 	for (unsigned int idx_reader=0; idx_reader<_alpha_depth; ++idx_reader) {
+		//cout << _alpha_configs[idx_reader]._polygons.size() << "\n";
 		for (unsigned int idx_poly=0; idx_poly<_alpha_configs[idx_reader]._polygons.size(); ++idx_poly) {
 			AlphaPolygon alpha_poly= _alpha_configs[idx_reader]._polygons[idx_poly];
+			//cout << alpha_poly._fadeout << " ; " << alpha_poly._curve << " ; " << alpha_poly._alpha_max << "\n";
 			float xmin= alpha_poly._polygon._aabb->_pos.x;
 			float ymin= alpha_poly._polygon._aabb->_pos.y;
 			float xmax= xmin+ alpha_poly._polygon._aabb->_size.x;
 			float ymax= ymin+ alpha_poly._polygon._aabb->_size.y;
+			//cout << xmin << " ; " << ymin << " ; " << xmax << " ; " << ymax << "\n";
 			int imin= (int)((xmin- alpha_poly._fadeout)* (float)(_alpha_width));
 			if (imin< 0) {
 				imin= 0;
@@ -357,37 +432,35 @@ MPEGReaders::MPEGReaders(unsigned int n_readers,
 				for (unsigned int j=jmin; j<=jmax; ++j) {
 					glm::vec2 pt((float)(i)/ (float)(_alpha_width)+ 0.5f/ _alpha_width, (float)(j)/ (float)(_alpha_height)+ 0.5f/ _alpha_height);
 					float d= distance_poly_pt(&alpha_poly._polygon, pt, 0);
-					_alpha_data[_alpha_width* _alpha_height* idx_reader+ i* _alpha_height+ j]+= (1.0f- pow(d/ alpha_poly._fadeout, alpha_poly._curve))* alpha_poly._alpha_max;
+					if ((alpha_poly._fadeout> 1e-5) && (d<= alpha_poly._fadeout)) {
+						_alpha_data0[_alpha_width* _alpha_height* idx_reader+ i* _alpha_height+ j]+= (1.0f- pow(d/ alpha_poly._fadeout, alpha_poly._curve))* alpha_poly._alpha_max;
+					}
+					else if (d< 1e-5) {
+						_alpha_data0[_alpha_width* _alpha_height* idx_reader+ i* _alpha_height+ j]= 1.0f;
+					}
 				}
 			}
 		}
 	}
 	for (unsigned int i=0; i<_alpha_width* _alpha_height* _alpha_depth; ++i) {
-		if (_alpha_data[i]> 1.0f) {
-			_alpha_data[i]= 1.0f;
+		if (_alpha_data0[i]> 1.0f) {
+			_alpha_data0[i]= 1.0f;
 		}
 	}
 
-	glActiveTexture(GL_TEXTURE0+ _alpha_texture_index);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _alpha_id);
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, _alpha_width, _alpha_height, _alpha_depth, 0, GL_RED, GL_FLOAT, _alpha_data);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+	/*unsigned int depth= 0;
+	for (unsigned int i=0; i<_alpha_width; ++i) {
+		for (unsigned int j=0; j<_alpha_height; ++j) {
+			cout << _alpha_data[_alpha_width* _alpha_height* depth+ i* _alpha_height+ j] << "|";
+		}
+		cout << "\n";
+	}*/
+}
 
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
-	glUniform1i(_alpha_loc, _alpha_texture_index);
-
-	// -------------------
-	glGenTextures(1, &_time_id);
-
-	_time_data= new float[_time_width* _time_height];
+void MPEGReaders::compute_time_data() {
 	for (unsigned int i=0; i<_time_width* _time_height; ++i) {
 		_time_data[i]= 0.0f;
-		//_time_data[i]= rand_float(0.0f, 1.0f);
 	}
 	for (unsigned int i=0; i<_time_height; ++i) {
 		for (unsigned int k=0; k<_time_configs[i]._time_checkpoints.size()- 1; ++k) {
@@ -410,6 +483,29 @@ MPEGReaders::MPEGReaders(unsigned int n_readers,
 		}
 		cout << "\n";
 	}*/
+}
+
+
+void MPEGReaders::init_alpha_texture() {
+	glGenTextures(1, &_alpha_id);
+
+	glActiveTexture(GL_TEXTURE0+ _alpha_texture_index);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _alpha_id);
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R32F, _alpha_width, _alpha_height, _alpha_depth, 0, GL_RED, GL_FLOAT, _alpha_data);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+	glUniform1i(_alpha_loc, _alpha_texture_index);
+}
+
+
+void MPEGReaders::init_time_texture() {
+	glGenTextures(1, &_time_id);
 
 	glActiveTexture(GL_TEXTURE0+ _time_texture_index);
 	glBindTexture(GL_TEXTURE_1D_ARRAY, _time_id);
@@ -422,14 +518,11 @@ MPEGReaders::MPEGReaders(unsigned int n_readers,
 	glBindTexture(GL_TEXTURE_1D_ARRAY, 0);
 
 	glUniform1i(_time_loc, _time_texture_index);
+}
 
-	// -------------------
+
+void MPEGReaders::init_index_time_texture() {
 	glGenTextures(1, &_index_time_id);
-
-	_index_time_data= new float[_index_time_width];
-	for (unsigned int i=0; i<_index_time_width; ++i) {
-		_index_time_data[i]= 0.0f;
-	}
 
 	glActiveTexture(GL_TEXTURE0+ _index_time_texture_index);
 	glBindTexture(GL_TEXTURE_1D, _index_time_id);
@@ -444,10 +537,35 @@ MPEGReaders::MPEGReaders(unsigned int n_readers,
 }
 
 
-MPEGReaders::~MPEGReaders() {
-	delete[] _alpha_data;
-	delete[] _time_data;
-	delete[] _index_time_data;
+void MPEGReaders::randomize() {
+	_time_configs.clear();
+	for (unsigned int i=0; i<_time_height; ++i) {
+		vector<pair<float, float> > checkpoints;
+		unsigned int n_checkpoints= rand_int(2, 10);
+		for (unsigned int j=0; j<n_checkpoints; ++j) {
+			checkpoints.push_back(make_pair(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
+		}
+		float speed= rand_float(0.01f, 0.1f);
+		_time_configs.push_back(TimeConfig(checkpoints, speed));
+	}
+
+	_alpha_configs.clear();
+	for (unsigned int i=0; i<_alpha_depth; ++i) {
+		vector<AlphaPolygon> alpha_polygons;
+		float xsize= rand_float(0.01f, 0.3f);
+		float ysize= rand_float(0.01f, 0.3f);
+		float xmin= rand_float(0.0f, 1.0f- xsize);
+		float ymin= rand_float(0.0f, 1.0f- ysize);
+		float points[8]= {xmin, ymin, xmin+ xsize, ymin, xmin+ xsize, ymin+ ysize, ymin+ ysize};
+		float fadeout= rand_float(0.0f, 0.4f);
+		float curve= rand_float(1.0f, 5.0f);
+		float alpha_max= rand_float(0.6f, 1.0f);
+		AlphaPolygon alpha_polygon(points, 4, fadeout, curve, alpha_max);
+		alpha_polygons.push_back(AlphaPolygon(alpha_polygon));
+		float decrease_speed= rand_float(0.01f, 0.1f);
+		AlphaConfig alpha_config(alpha_polygons, decrease_speed);
+		_alpha_configs.push_back(alpha_config);
+	}
 }
 
 
@@ -466,22 +584,77 @@ void MPEGReaders::prepare2draw() {
 }
 
 
-void MPEGReaders::update_alpha(unsigned int depth) {
-	for (unsigned int i=0; i<_alpha_width* _alpha_height; ++i) {
-		_alpha_data[_alpha_width* _alpha_height* depth+ i]= rand_float(0.0f, 1.0f);
+void MPEGReaders::update() {
+	for (int i=0; i<_alpha_depth; ++i) {
+		decrease_alpha(i);
+		next_index_time(i);
 	}
+}
 
+
+void MPEGReaders::update_alpha_texture(unsigned int depth) {
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _alpha_id);
 	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, depth, _alpha_width, _alpha_height, 1, GL_RED, GL_FLOAT, _alpha_data+ _alpha_width* _alpha_height* depth);
 }
 
 
+void MPEGReaders::update_index_time_texture(unsigned int depth) {
+	glBindTexture(GL_TEXTURE_1D, _index_time_id);
+	glTexSubImage1D(GL_TEXTURE_1D, 0, depth, 1, GL_RED, GL_FLOAT, &_index_time_data[depth]);
+}
+
+
+void MPEGReaders::decrease_alpha(unsigned int depth) {
+	if (_note_ons[depth]) {
+		return;
+	}
+
+	for (unsigned int i=0; i<_alpha_width* _alpha_height; ++i) {
+		_alpha_data[_alpha_width* _alpha_height* depth+ i]-= _alpha_configs[depth]._decrease_speed;
+		if (_alpha_data[_alpha_width* _alpha_height* depth+ i]< 0.0f) {
+			_alpha_data[_alpha_width* _alpha_height* depth+ i]= 0.0f;
+		}
+	}
+
+	update_alpha_texture(depth);
+}
+
+
 void MPEGReaders::next_index_time(unsigned int depth) {
-	_index_time_data[depth]+= 0.01f;
+	if (!_note_ons[depth]) {
+		return;
+	}
+
+	_index_time_data[depth]+= _time_configs[depth]._speed;
 	if (_index_time_data[depth]>= 1.0f) {
 		_index_time_data[depth]= 0.0f;
 	}
-	glBindTexture(GL_TEXTURE_1D, _index_time_id);
-	glTexSubImage1D(GL_TEXTURE_1D, 0, depth, 1, GL_RED, GL_FLOAT, &_index_time_data[depth]);
+	update_index_time_texture(depth);
+}
+
+
+void MPEGReaders::note_on(unsigned int depth) {
+	if (_note_ons[depth]) {
+		return;
+	}
+
+	//cout << "note_on " << depth << "\n";
+
+	_note_ons[depth]= true;
+
+	_index_time_data[depth]= 0.0f;
+	update_index_time_texture(depth);
+	
+	for (unsigned int i=0; i<_alpha_width* _alpha_height; ++i) {
+		_alpha_data[_alpha_width* _alpha_height* depth+ i]= _alpha_data0[_alpha_width* _alpha_height* depth+ i];
+	}
+	update_alpha_texture(depth);
+}
+
+
+void MPEGReaders::note_off(unsigned int depth) {
+	//cout << "note_off " << depth << "\n";
+	
+	_note_ons[depth]= false;
 }
 

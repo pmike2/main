@@ -11,13 +11,49 @@ out vec4 color;
 
 void main() {
 	vec2 uv = vec2(gl_FragCoord.x/ screen_width, gl_FragCoord.y/ screen_height);
-	
+
 	color= vec4(0.0);
 	for (int i=0; i<8; i++) {
 		vec4 k= texture(index_time, float(i)/ 8.0);
 		vec4 frame= texture(movie_time, vec2(k.r, float(i)));
-		vec4 tex= texture(movie[i], vec3(uv, frame.r));
-		vec4 a= texture(alpha, vec3(uv, i));
-		color+= vec4(vec3(tex), a.r);
+		
+		vec4 tex= vec4(0.0);
+		if (i== 0) { tex= texture(movie[0], vec3(uv, frame.r)); }
+		else if (i== 1) { tex= texture(movie[1], vec3(uv, frame.r)); }
+		else if (i== 2) { tex= texture(movie[2], vec3(uv, frame.r)); }
+		else if (i== 3) { tex= texture(movie[3], vec3(uv, frame.r)); }
+		else if (i== 4) { tex= texture(movie[4], vec3(uv, frame.r)); }
+		else if (i== 5) { tex= texture(movie[5], vec3(uv, frame.r)); }
+		else if (i== 6) { tex= texture(movie[6], vec3(uv, frame.r)); }
+		else if (i== 7) { tex= texture(movie[7], vec3(uv, frame.r)); }
+		
+		vec4 a= texture(alpha, vec3(uv, float(i)));
+		tex.rgb*= a.r;
+		color+= vec4(vec3(tex), 1);
 	}
+
+
+/*
+	color= vec4(0.0);
+	
+	int i0= 0;
+	vec4 k0= texture(index_time, 0.0);
+	vec4 frame0= texture(movie_time, vec2(k0.r, 0.0));
+	vec4 tex0;
+	if (i0==0) {
+		tex0= texture(movie[0], vec3(uv, frame0.r));
+	}
+	vec4 a0= texture(alpha, vec3(uv, 0.0));
+	tex0.rgb*= a0.r;
+	color+= vec4(vec3(tex0), 1);
+*/
+/*
+	int i1= 1;
+	vec4 k1= texture(index_time, 0.125);
+	vec4 frame1= texture(movie_time, vec2(k1.r, 1.0));
+	vec4 tex1= texture(movie[i1], vec3(uv, frame1.r));
+	vec4 a1= texture(alpha, vec3(uv, 1.0));
+	tex1.rgb*= a1.r;
+	color+= vec4(vec3(tex1), 1);
+*/
 }

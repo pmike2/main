@@ -8,7 +8,7 @@
 #include "geom_2d.h"
 
 
-const unsigned int N_MAX_TEXTURES= 4;
+const unsigned int N_READERS= 8;
 
 class MPEG {
 public:
@@ -35,20 +35,21 @@ public:
 	void prepare2draw();
 
 
-	unsigned int _ids[N_MAX_TEXTURES];
+	unsigned int _ids[N_READERS];
 	int _loc;
 	int _base_index;
-	int _indices[N_MAX_TEXTURES];
+	int _indices[N_READERS];
 };
 
 
 class TimeConfig {
 public:
 	TimeConfig();
-	TimeConfig(std::vector<std::pair<float, float> > time_checkpoints);
+	TimeConfig(std::vector<std::pair<float, float> > time_checkpoints, float speed);
 	~TimeConfig();
 
 	std::vector<std::pair<float, float> > _time_checkpoints;
+	float _speed;
 };
 
 
@@ -56,6 +57,7 @@ class AlphaPolygon {
 public:
 	AlphaPolygon();
 	AlphaPolygon(float * points, unsigned int n_points, float fadeout, float curve, float alpha_max);
+	AlphaPolygon(const AlphaPolygon & alpha_polygon);
 	~AlphaPolygon();
 
 	Polygon2D _polygon;
@@ -68,29 +70,59 @@ public:
 class AlphaConfig {
 public:
 	AlphaConfig();
-	AlphaConfig(std::vector<AlphaPolygon> polygons);
+	AlphaConfig(std::vector<AlphaPolygon> polygons, float decrease_speed);
 	~AlphaConfig();
 
 	std::vector<AlphaPolygon> _polygons;
+	float _decrease_speed;
+};
+
+
+class GlobalConfig {
+public:
+	GlobalConfig();
+	GlobalConfig(unsigned int alpha_width, unsigned int alpha_height, unsigned int time_width, 
+		std::vector<AlphaConfig> alpha_configs, std::vector<TimeConfig> time_configs);
+	~GlobalConfig();
+
+	unsigned int _alpha_width;
+	unsigned int _alpha_height;
+	unsigned int _time_width;
+	std::vector<AlphaConfig> _alpha_configs;
+	std::vector<TimeConfig> _time_configs;
 };
 
 
 class MPEGReaders {
 public:
 	MPEGReaders();
-	MPEGReaders(unsigned int n_readers,
-		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_texture_index, unsigned int alpha_loc, std::vector<AlphaConfig> alpha_configs,
-		unsigned int time_width, unsigned int time_texture_index, unsigned int time_loc, std::vector<TimeConfig> time_configs,
+	MPEGReaders(
+		unsigned int alpha_texture_index, unsigned int alpha_loc, 
+		unsigned int time_texture_index, unsigned int time_loc,
 		unsigned int index_time_texture_index, unsigned int index_time_loc
 	);
 	~MPEGReaders();
+	void set_config(GlobalConfig config);
+	void parse_json(std::string json_path);
+	void compute_alpha_data0();
+	void compute_time_data();
+	void init_alpha_texture();
+	void init_time_texture();
+	void init_index_time_texture();
+	void randomize();
 	void prepare2draw();
-	void update_alpha(unsigned int depth);
+	void update();
+	void update_alpha_texture(unsigned int depth);
+	void update_index_time_texture(unsigned int depth);
+	void decrease_alpha(unsigned int depth);
 	void next_index_time(unsigned int depth);
+	void note_on(unsigned int depth);
+	void note_off(unsigned int depth);
 
 
 	unsigned int _alpha_width, _alpha_height, _alpha_depth;
 	float * _alpha_data;
+	float * _alpha_data0;
 	unsigned int _alpha_id;
 	int _alpha_loc;
 	unsigned int _alpha_texture_index;
@@ -108,6 +140,8 @@ public:
 	unsigned int _index_time_id;
 	int _index_time_loc;
 	unsigned int _index_time_texture_index;
+
+	std::vector<bool> _note_ons;
 };
 
 

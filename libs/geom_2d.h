@@ -37,8 +37,10 @@ bool is_quad_convex(glm::vec2 * pts);
 class Polygon2D {
 public:
     Polygon2D();
+    Polygon2D(const Polygon2D & polygon);
     ~Polygon2D();
     void set_points(float * points, unsigned int n_points, bool convexhull=false);
+    void set_points(std::vector<glm::vec2> pts, bool convexhull=false);
     void randomize(unsigned int n_points, float radius=1.0f, glm::vec2 center=glm::vec2(0.0f), bool convexhull=false);
     void set_rectangle(glm::vec2 origin, glm::vec2 size);
     void update_attributes();

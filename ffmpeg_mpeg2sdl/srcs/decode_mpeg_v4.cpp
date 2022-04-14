@@ -47,12 +47,6 @@ chrono::system_clock::time_point t1, t2;
 MPEGTextures * mpeg_textures;
 MPEGReaders * mpeg_readers;
 
-/*
-vector<thread> thrs;
-atomic_bool stop_thr= ATOMIC_VAR_INIT(false);
-mutex mtx;
-const int N_THREADS= 8;
-*/
 
 
 void init_sdl() {
@@ -78,28 +72,23 @@ void init_sdl() {
 
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	//glClearDepth(1.0f);
-	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glClear(GL_COLOR_BUFFER_BIT);
 	
 	// frontfaces en counterclockwise
 	glFrontFace(GL_CCW);
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
 	
+	// je multiplie rgb par alpha dans le fragment shader, donc pas besoin de GL_BLEND qui me faisait galérer
 	// pour gérer l'alpha
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_BLEND);
 	
 	//glPointSize(4.0f);
 	
 	SDL_GL_SwapWindow(window);
 
 	screengl= new ScreenGL(SCREEN_WIDTH, SCREEN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-
-	/*int n;
-	glGetIntegerv(GL_MAX_3D_TEXTURE_SIZE, &n);
-	cout << n << "\n";*/
-	// 2048
 }
 
 
@@ -173,26 +162,36 @@ void init_program() {
 	
 	unsigned int reader_texture_index= movies_texture_index+ N_MAX_TEXTURES;
 	vector<TimeConfig> time_configs;
-	vector<pair<float, float> > basic{make_pair(0.0f, 0.0f), make_pair(1.0f, 1.0f)};
-	for (unsigned int i=0; i<8; ++i) {
-		time_configs.push_back(TimeConfig(basic));
+	for (unsigned int i=0; i<N_READERS; ++i) {
+		vector<pair<float, float> > checkpoints;
+		unsigned int n_checkpoints= rand_int(2, 10);
+		for (unsigned int j=0; j<n_checkpoints; ++j) {
+			checkpoints.push_back(make_pair(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
+		}
+		float speed= rand_float(0.01f, 0.1f);
+		time_configs.push_back(TimeConfig(checkpoints, speed));
 	}
 
 	vector<AlphaConfig> alpha_configs;
-	for (unsigned int i=0; i<8; ++i) {
+	for (unsigned int i=0; i<N_READERS; ++i) {
 		vector<AlphaPolygon> alpha_polygons;
-		float points[8]= {0.3f, 0.3f, 0.6f, 0.3f, 0.6f, 0.6f, 0.3f, 0.6f};
-		float fadeout= 0.0f;
-		float curve= 1.0f;
-		float alpha_max= 1.0f;
-		alpha_polygons.push_back(AlphaPolygon(points, 4, fadeout, curve, alpha_max));
-		AlphaConfig alpha_config(alpha_polygons);
+		float xsize= rand_float(0.01f, 0.3f);
+		float ysize= rand_float(0.01f, 0.3f);
+		float xmin= rand_float(0.0f, 1.0f- xsize);
+		float ymin= rand_float(0.0f, 1.0f- ysize);
+		float points[8]= {xmin, ymin, xmin+ xsize, ymin, xmin+ xsize, ymin+ ysize, ymin+ ysize};
+		float fadeout= rand_float(0.0f, 0.4f);
+		float curve= rand_float(1.0f, 5.0f);
+		float alpha_max= rand_float(0.6f, 1.0f);
+		AlphaPolygon alpha_polygon(points, 4, fadeout, curve, alpha_max);
+		alpha_polygons.push_back(AlphaPolygon(alpha_polygon));
+		float decrease_speed= rand_float(0.01f, 0.1f);
+		AlphaConfig alpha_config(alpha_polygons, decrease_speed);
 		alpha_configs.push_back(alpha_config);
 	}
 
-	mpeg_readers= new MPEGReaders(8, 512, 512, reader_texture_index, alpha_loc, alpha_configs,
-		256, reader_texture_index+ 1, movie_time_loc, time_configs, 
-		reader_texture_index+ 2, index_time_loc);
+	mpeg_readers= new MPEGReaders(256, 256, reader_texture_index, alpha_loc, 512, reader_texture_index+ 1, movie_time_loc, 
+		reader_texture_index+ 2, index_time_loc, alpha_configs, time_configs);
 	
 	cout << "loading end\n";
 
@@ -201,27 +200,8 @@ void init_program() {
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
 }
 
-/*
-void update_thread(int i) {
-	while (true) {
-		if (stop_thr) {
-			break;
-		}
-		//mtx.lock();
-		int n= mpeg_readers->_depth/ N_THREADS;
-		for (int j=i* n; j<(i+ 1)* n; ++j) {
-			mpeg_readers->next(j);
-		}
-		//mtx.unlock();
-	}
-}
-*/
-
 void update() {
-	for (int i=0; i<mpeg_readers->_alpha_depth; ++i) {
-		mpeg_readers->update_alpha(i);
-		mpeg_readers->next_index_time(i);
-	}
+	mpeg_readers->update();
 }
 
 
@@ -296,9 +276,19 @@ void main_loop() {
 						done= true;
 						return;
 					}
+					for (unsigned int i=0; i<8; ++i) {
+						if (event.key.keysym.sym== SDLK_a+ i) {
+							mpeg_readers->note_on(i);
+						}
+					}
 					break;
 					
 				case SDL_KEYUP:
+					for (unsigned int i=0; i<8; ++i) {
+						if (event.key.keysym.sym== SDLK_a+ i) {
+							mpeg_readers->note_off(i);
+						}
+					}
 					break;
 					
 				case SDL_QUIT:
@@ -315,13 +305,8 @@ void main_loop() {
 
 
 void clean() {
-	/*stop_thr= true;
-	for (thread & thr : thrs) {
-		if (thr.joinable()) {
-			thr.join();
-		}
-	}*/
-
+	delete mpeg_textures;
+	delete mpeg_readers;
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
