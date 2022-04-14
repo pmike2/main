@@ -159,19 +159,11 @@ void init_program() {
 	mpeg_textures= new MPEGTextures(mpeg_paths, movie_loc, movies_texture_index);
 
 	cout << "loading readers\n";
-	
-	unsigned int reader_texture_index= movies_texture_index+ N_MAX_TEXTURES;
-	vector<TimeConfig> time_configs;
-	for (unsigned int i=0; i<N_READERS; ++i) {
-		vector<pair<float, float> > checkpoints;
-		unsigned int n_checkpoints= rand_int(2, 10);
-		for (unsigned int j=0; j<n_checkpoints; ++j) {
-			checkpoints.push_back(make_pair(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
-		}
-		float speed= rand_float(0.01f, 0.1f);
-		time_configs.push_back(TimeConfig(checkpoints, speed));
-	}
 
+	unsigned int alpha_width= 256;
+	unsigned int alpha_height= 256;
+	unsigned int time_width= 512;
+	
 	vector<AlphaConfig> alpha_configs;
 	for (unsigned int i=0; i<N_READERS; ++i) {
 		vector<AlphaPolygon> alpha_polygons;
@@ -190,8 +182,25 @@ void init_program() {
 		alpha_configs.push_back(alpha_config);
 	}
 
-	mpeg_readers= new MPEGReaders(256, 256, reader_texture_index, alpha_loc, 512, reader_texture_index+ 1, movie_time_loc, 
-		reader_texture_index+ 2, index_time_loc, alpha_configs, time_configs);
+	vector<TimeConfig> time_configs;
+	for (unsigned int i=0; i<N_READERS; ++i) {
+		vector<pair<float, float> > checkpoints;
+		unsigned int n_checkpoints= rand_int(2, 10);
+		for (unsigned int j=0; j<n_checkpoints; ++j) {
+			checkpoints.push_back(make_pair(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
+		}
+		float speed= rand_float(0.01f, 0.1f);
+		time_configs.push_back(TimeConfig(checkpoints, speed));
+	}
+
+	GlobalConfig config(alpha_width, alpha_height, time_width, alpha_configs, time_configs);
+
+	unsigned int reader_texture_index= movies_texture_index+ N_READERS;
+	mpeg_readers= new MPEGReaders(reader_texture_index, alpha_loc, reader_texture_index+ 1, movie_time_loc, reader_texture_index+ 2, index_time_loc);
+	//mpeg_readers->randomize();
+	//mpeg_readers->set_config(config);
+	mpeg_readers->load_json("../data/config_01.json");
+	exit(0);
 	
 	cout << "loading end\n";
 

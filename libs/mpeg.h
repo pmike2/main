@@ -46,6 +46,7 @@ class TimeConfig {
 public:
 	TimeConfig();
 	TimeConfig(std::vector<std::pair<float, float> > time_checkpoints, float speed);
+	TimeConfig(const TimeConfig & time_config);
 	~TimeConfig();
 
 	std::vector<std::pair<float, float> > _time_checkpoints;
@@ -71,6 +72,7 @@ class AlphaConfig {
 public:
 	AlphaConfig();
 	AlphaConfig(std::vector<AlphaPolygon> polygons, float decrease_speed);
+	AlphaConfig(const AlphaConfig & alpha_config);
 	~AlphaConfig();
 
 	std::vector<AlphaPolygon> _polygons;
@@ -103,13 +105,14 @@ public:
 	);
 	~MPEGReaders();
 	void set_config(GlobalConfig config);
-	void parse_json(std::string json_path);
+	void load_json(std::string json_path);
+	void randomize();
+	void init_arrays();
 	void compute_alpha_data0();
 	void compute_time_data();
 	void init_alpha_texture();
 	void init_time_texture();
 	void init_index_time_texture();
-	void randomize();
 	void prepare2draw();
 	void update();
 	void update_alpha_texture(unsigned int depth);

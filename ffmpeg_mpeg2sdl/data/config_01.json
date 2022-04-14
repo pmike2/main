@@ -1,5 +1,4 @@
 {
-	"n_readers" : 8,
 	"alpha_width" : 256,
 	"alpha_height" : 256,
 	"alpha_configs" : [
