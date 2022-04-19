@@ -1,26 +1,41 @@
 {
+	"mpegs" : [
+		"../data/flower_04.mov",
+		"../data/flower_06.mov"
+	],
+	
 	"alpha_width" : 256,
 	"alpha_height" : 256,
-	"alpha_configs" : [
+	"time_width" : 512,
+	
+	"reader_configs" : [
 		{
-			"alpha_polygons" : [
-				{
-					"polygon" : [0.3, 0.3, 0.4, 0.3, 0.4, 0.4, 0.3, 0.4],
-					"fadeout" : 0.2,
-					"curve" : 2.0,
-					"alpha_max" : 0.9
-				}
-			],
-			"decrease_speed" : 0.05
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [0.3, 0.3, 0.4, 0.3, 0.4, 0.4, 0.3, 0.4],
+						"fadeout" : 0.2,
+						"curve" : 2.0,
+						"alpha_max" : 0.9
+					}
+				],
+				"decrease_speed" : 0.05
+			},
+			"time" : {
+				"checkpoints" : [
+					[0.0, 0.0], [1.0, 1.0]
+				],
+				"speed" : 0.03
+			}
 		}
 	],
-	"time_width" : 512,
-	"time_configs" : [
-		{
-			"checkpoints" : [
-				[0.0, 0.0], [1.0, 1.0]
-			],
-			"speed" : 0.03
+	
+	"keymapping" : {
+		"a" : {
+			"mpeg" : 0, "config" : 0
+		},
+		"b" : {
+			"mpeg" : 1, "config" : 0
 		}
-	]
+	}
 }

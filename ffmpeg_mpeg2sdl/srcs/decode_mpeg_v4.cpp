@@ -36,7 +36,7 @@ GLuint prog_movie;
 GLuint vao;
 GLuint vbo;
 GLint camera2clip_loc, model2world_loc, position_loc, screen_width_loc, screen_height_loc,
-	movie_loc, alpha_loc, movie_time_loc, index_time_loc;
+	movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc;
 glm::mat4 camera2clip;
 glm::mat4 model2world;
 
@@ -44,7 +44,6 @@ ScreenGL * screengl;
 bool done= false;
 chrono::system_clock::time_point t1, t2;
 
-MPEGTextures * mpeg_textures;
 MPEGReaders * mpeg_readers;
 
 
@@ -148,17 +147,18 @@ void init_program() {
 	alpha_loc= glGetUniformLocation(prog_movie, "alpha");
 	movie_time_loc= glGetUniformLocation(prog_movie, "movie_time");
 	index_time_loc= glGetUniformLocation(prog_movie, "index_time");
+	index_movie_loc= glGetUniformLocation(prog_movie, "index_movie");
 	screen_width_loc= glGetUniformLocation(prog_movie, "screen_width");
 	screen_height_loc= glGetUniformLocation(prog_movie, "screen_height");
 	position_loc= glGetAttribLocation(prog_movie, "position_in");
 
-	cout << "loading textures\n";
+	//cout << "loading textures\n";
 	
 	int movies_texture_index= 0;
 	vector<string> mpeg_paths{"../data/flower_04.mov", "../data/flower_06.mov"};
 	mpeg_textures= new MPEGTextures(mpeg_paths, movie_loc, movies_texture_index);
 
-	cout << "loading readers\n";
+	//cout << "loading readers\n";
 
 	unsigned int alpha_width= 256;
 	unsigned int alpha_height= 256;
@@ -197,12 +197,12 @@ void init_program() {
 
 	unsigned int reader_texture_index= movies_texture_index+ N_READERS;
 	mpeg_readers= new MPEGReaders(reader_texture_index, alpha_loc, reader_texture_index+ 1, movie_time_loc, reader_texture_index+ 2, index_time_loc);
-	//mpeg_readers->randomize();
+	mpeg_readers->randomize();
 	//mpeg_readers->set_config(config);
-	mpeg_readers->load_json("../data/config_01.json");
-	exit(0);
+	//mpeg_readers->load_json("../data/config_01.json");
+	//exit(0);
 	
-	cout << "loading end\n";
+	//cout << "loading end\n";
 
 	glUseProgram(0);
 	check_gl_program(prog_movie);
@@ -231,7 +231,7 @@ void draw() {
 	glUseProgram(prog_movie);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-	mpeg_textures->prepare2draw();
+	//mpeg_textures->prepare2draw();
 	mpeg_readers->prepare2draw();
 
 	glUniform1i(screen_width_loc, SCREEN_WIDTH);
@@ -285,6 +285,9 @@ void main_loop() {
 						done= true;
 						return;
 					}
+					if (event.key.keysym.sym== SDLK_r) {
+						mpeg_readers->randomize();
+					}
 					for (unsigned int i=0; i<8; ++i) {
 						if (event.key.keysym.sym== SDLK_a+ i) {
 							mpeg_readers->note_on(i);
@@ -314,7 +317,7 @@ void main_loop() {
 
 
 void clean() {
-	delete mpeg_textures;
+	//delete mpeg_textures;
 	delete mpeg_readers;
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);

@@ -4,6 +4,7 @@ uniform sampler3D movie[8];
 uniform sampler2DArray alpha;
 uniform sampler1DArray movie_time;
 uniform sampler1D index_time;
+uniform usampler1D index_movie;
 uniform int screen_width;
 uniform int screen_height;
 
@@ -14,46 +15,23 @@ void main() {
 
 	color= vec4(0.0);
 	for (int i=0; i<8; i++) {
-		vec4 k= texture(index_time, float(i)/ 8.0);
+		vec4 k= texture(index_time, float(i)* 0.125);
 		vec4 frame= texture(movie_time, vec2(k.r, float(i)));
+		uint idx_mov= texture(index_movie, float(i)* 0.125);
+		vec3 v= vec3(uv, frame.r);
 		
 		vec4 tex= vec4(0.0);
-		if (i== 0) { tex= texture(movie[0], vec3(uv, frame.r)); }
-		else if (i== 1) { tex= texture(movie[1], vec3(uv, frame.r)); }
-		else if (i== 2) { tex= texture(movie[2], vec3(uv, frame.r)); }
-		else if (i== 3) { tex= texture(movie[3], vec3(uv, frame.r)); }
-		else if (i== 4) { tex= texture(movie[4], vec3(uv, frame.r)); }
-		else if (i== 5) { tex= texture(movie[5], vec3(uv, frame.r)); }
-		else if (i== 6) { tex= texture(movie[6], vec3(uv, frame.r)); }
-		else if (i== 7) { tex= texture(movie[7], vec3(uv, frame.r)); }
+		if      (idx_mov== 0) { tex= texture(movie[0], v); }
+		else if (idx_mov== 1) { tex= texture(movie[1], v); }
+		else if (idx_mov== 2) { tex= texture(movie[2], v); }
+		else if (idx_mov== 3) { tex= texture(movie[3], v); }
+		else if (idx_mov== 4) { tex= texture(movie[4], v); }
+		else if (idx_mov== 5) { tex= texture(movie[5], v); }
+		else if (idx_mov== 6) { tex= texture(movie[6], v); }
+		else if (idx_mov== 7) { tex= texture(movie[7], v); }
 		
 		vec4 a= texture(alpha, vec3(uv, float(i)));
 		tex.rgb*= a.r;
 		color+= vec4(vec3(tex), 1);
 	}
-
-
-/*
-	color= vec4(0.0);
-	
-	int i0= 0;
-	vec4 k0= texture(index_time, 0.0);
-	vec4 frame0= texture(movie_time, vec2(k0.r, 0.0));
-	vec4 tex0;
-	if (i0==0) {
-		tex0= texture(movie[0], vec3(uv, frame0.r));
-	}
-	vec4 a0= texture(alpha, vec3(uv, 0.0));
-	tex0.rgb*= a0.r;
-	color+= vec4(vec3(tex0), 1);
-*/
-/*
-	int i1= 1;
-	vec4 k1= texture(index_time, 0.125);
-	vec4 frame1= texture(movie_time, vec2(k1.r, 1.0));
-	vec4 tex1= texture(movie[i1], vec3(uv, frame1.r));
-	vec4 a1= texture(alpha, vec3(uv, 1.0));
-	tex1.rgb*= a1.r;
-	color+= vec4(vec3(tex1), 1);
-*/
 }
