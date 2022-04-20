@@ -152,12 +152,6 @@ void init_program() {
 	screen_height_loc= glGetUniformLocation(prog_movie, "screen_height");
 	position_loc= glGetAttribLocation(prog_movie, "position_in");
 
-	//cout << "loading textures\n";
-	
-	//int movies_texture_index= 0;
-	//vector<string> mpeg_paths{"../data/flower_04.mov", "../data/flower_06.mov"};
-	//mpeg_textures= new MPEGTextures(mpeg_paths, movie_loc, movies_texture_index);
-
 	//cout << "loading readers\n";
 
 	/*unsigned int alpha_width= 256;
@@ -207,6 +201,7 @@ void init_program() {
 	glUseProgram(0);
 	check_gl_program(prog_movie);
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
+	//exit(0);
 }
 
 void update() {
@@ -231,7 +226,6 @@ void draw() {
 	glUseProgram(prog_movie);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-	//mpeg_textures->prepare2draw();
 	mpeg_readers->prepare2draw();
 
 	glUniform1i(screen_width_loc, SCREEN_WIDTH);
@@ -290,7 +284,7 @@ void main_loop() {
 					}
 					for (unsigned int i=0; i<8; ++i) {
 						if (event.key.keysym.sym== SDLK_a+ i) {
-							mpeg_readers->note_on(i);
+							mpeg_readers->note_on('a'+ i);
 						}
 					}
 					break;
@@ -298,7 +292,7 @@ void main_loop() {
 				case SDL_KEYUP:
 					for (unsigned int i=0; i<8; ++i) {
 						if (event.key.keysym.sym== SDLK_a+ i) {
-							mpeg_readers->note_off(i);
+							mpeg_readers->note_off('a'+ i);
 						}
 					}
 					break;
@@ -317,7 +311,6 @@ void main_loop() {
 
 
 void clean() {
-	//delete mpeg_textures;
 	delete mpeg_readers;
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);

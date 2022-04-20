@@ -372,7 +372,7 @@ ostream & operator << (ostream & stream, AlphaConfig & a) {
 	stream << "decrease_speed=" << a._decrease_speed << "\n";
 	stream << "polygons=\n";
 	for (auto p : a._polygons) {
-		stream << p << "\n";
+		stream << p;
 	}
 
 	return stream;
@@ -405,6 +405,7 @@ ReaderConfig::~ReaderConfig() {
 
 
 ostream & operator << (ostream & stream, ReaderConfig & r) {
+	stream << "mpeg_path=" << r._mpeg_path << " ; key=" << r._key << "\n";
 	stream << "alpha_config=\n";
 	stream << r._alpha_config;
 	stream << "time_config=\n";
@@ -488,6 +489,7 @@ MPEGReaders::MPEGReaders() {
 
 MPEGReaders::MPEGReaders(unsigned int base_index, unsigned int movie_loc, unsigned int alpha_loc, unsigned int time_loc,
 	unsigned int index_time_loc, unsigned int index_movie_loc) :
+	_movie_loc(movie_loc),
 	_alpha_data0(0), _alpha_data(0), _alpha_texture_index(base_index+ N_MAX_MOVIES), _alpha_loc(alpha_loc),
 	_time_data(0), _time_texture_index(base_index+ N_MAX_MOVIES+ 1), _time_loc(time_loc),
 	_index_time_data(0), _index_time_texture_index(base_index+ N_MAX_MOVIES+ 2), _index_time_loc(index_time_loc),
@@ -513,7 +515,7 @@ MPEGReaders::~MPEGReaders() {
 
 void MPEGReaders::set_config(GlobalConfig config) {
 	_config= config;
-
+	
 	load_mpegs();
 	init_arrays();
 	compute_alpha_data0();
@@ -564,7 +566,7 @@ void MPEGReaders::load_json(string json_path) {
 		for (unsigned int i=0; i<mappings.size(); i+=3) {
 			if (mappings[i]== compt) {
 				key= mappings[i+ 1];
-				mpeg_path= mpeg_paths[i+ 2];
+				mpeg_path= mpeg_paths[mappings[i+ 2]];
 				break;
 			}
 		}
@@ -596,7 +598,7 @@ void MPEGReaders::load_json(string json_path) {
 		for (auto & js_cp : js_time["checkpoints"]) {
 			time_config._time_checkpoints.push_back(make_pair(js_cp[0].get<float>(), js_cp[1].get<float>()));
 		}
-
+		
 		reader_configs.push_back(ReaderConfig(alpha_config, time_config, mpeg_path, key));
 	}
 	/*unsigned int n_alpha= alpha_configs.size();
@@ -668,13 +670,13 @@ void MPEGReaders::load_mpegs() {
 	//glDeleteTextures(N_MAX_MOVIES, _movies_ids);
 	
 	glGenTextures(N_MAX_MOVIES, _movies_ids);
-	
 	vector<string> mpegs_paths= get_mpegs_paths();
 	for (unsigned int i=0; i<N_MAX_MOVIES; ++i) {
 		if (i>= mpegs_paths.size()) {
-			//_ids[i]= _ids[i % mpegs_paths.size()];
+			_movies_ids[i]= _movies_ids[i % mpegs_paths.size()];
 			continue;
 		}
+		
 		MPEG * mpeg= new MPEG(mpegs_paths[i]);
 		
 		glActiveTexture(GL_TEXTURE0+ _movie_textures_indices[i]);
@@ -995,7 +997,7 @@ void MPEGReaders::note_on(unsigned int key) {
 		return;
 	}
 
-	//cout << "note_on " << key << "\n";
+	cout << "note_on " << key << "\n";
 
 	_notes_ons.push_back(key);
 
@@ -1018,9 +1020,11 @@ void MPEGReaders::note_off(unsigned int key) {
 	if (find(_notes_ons.begin(), _notes_ons.end(), key)== _notes_ons.end()) {
 		return;
 	}
-	//cout << "note_off " << key << "\n";
 	
-	remove(_notes_ons.begin(), _notes_ons.end(), key);
+	cout << "note_off " << key << "\n";
+	
+	_notes_ons.erase(remove(_notes_ons.begin(), _notes_ons.end(), key));
+
 }
 
 
@@ -1037,7 +1041,7 @@ int MPEGReaders::idx_reader(unsigned int key) {
 vector<string> MPEGReaders::get_mpegs_paths() {
 	vector<string> result;
 	for (auto & rc : _config._reader_configs) {
-		if (find(result.begin(), result.end(), rc._mpeg_path)!= result.end()) {
+		if (find(result.begin(), result.end(), rc._mpeg_path)== result.end()) {
 			result.push_back(rc._mpeg_path);
 		}
 	}
