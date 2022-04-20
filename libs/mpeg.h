@@ -104,7 +104,9 @@ public:
 		unsigned int time_width, unsigned int time_height,
 		unsigned int index_time_width, unsigned int index_movie_width,
 		std::vector<ReaderConfig> reader_configs);
+	GlobalConfig(const GlobalConfig & config);
 	~GlobalConfig();
+	GlobalConfig & operator=(const GlobalConfig & rhs);
 
 	unsigned int _alpha_width;
 	unsigned int _alpha_height;
@@ -130,25 +132,28 @@ public:
 	void init_arrays();
 	void compute_alpha_data0();
 	void compute_time_data();
+	void compute_index_movie_data();
 	void init_alpha_texture();
 	void init_time_texture();
 	void init_index_time_texture();
-	void init_movie_time_texture();
+	void init_index_movie_texture();
 	void prepare2draw();
 	void update();
 	void update_alpha_texture(unsigned int depth);
 	void update_index_time_texture(unsigned int depth);
-	void decrease_alpha(unsigned int depth);
-	void next_index_time(unsigned int depth);
+	void decrease_alpha(unsigned int key);
+	void next_index_time(unsigned int key);
 	void note_on(unsigned int key);
 	void note_off(unsigned int key);
+	int idx_reader(unsigned int key);
+	std::vector<std::string> get_mpegs_paths();
 
 
 	GlobalConfig _config;
 
 	unsigned int _movies_ids[N_MAX_MOVIES];
 	int _movie_loc;
-	unsigned int _movie_textures_indices[N_MAX_MOVIES];
+	int _movie_textures_indices[N_MAX_MOVIES];
 	//std::vector<std::string> _movies_paths;
 
 	//unsigned int _alpha_width, _alpha_height, _alpha_depth;
@@ -178,7 +183,7 @@ public:
 	int _index_movie_loc;
 	unsigned int _index_movie_texture_index;
 
-	//std::vector<bool> _note_ons;
+	std::vector<unsigned int> _notes_ons;
 };
 
 

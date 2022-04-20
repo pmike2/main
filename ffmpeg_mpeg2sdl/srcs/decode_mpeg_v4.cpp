@@ -154,13 +154,13 @@ void init_program() {
 
 	//cout << "loading textures\n";
 	
-	int movies_texture_index= 0;
-	vector<string> mpeg_paths{"../data/flower_04.mov", "../data/flower_06.mov"};
-	mpeg_textures= new MPEGTextures(mpeg_paths, movie_loc, movies_texture_index);
+	//int movies_texture_index= 0;
+	//vector<string> mpeg_paths{"../data/flower_04.mov", "../data/flower_06.mov"};
+	//mpeg_textures= new MPEGTextures(mpeg_paths, movie_loc, movies_texture_index);
 
 	//cout << "loading readers\n";
 
-	unsigned int alpha_width= 256;
+	/*unsigned int alpha_width= 256;
 	unsigned int alpha_height= 256;
 	unsigned int time_width= 512;
 	
@@ -193,13 +193,13 @@ void init_program() {
 		time_configs.push_back(TimeConfig(checkpoints, speed));
 	}
 
-	GlobalConfig config(alpha_width, alpha_height, time_width, alpha_configs, time_configs);
+	GlobalConfig config(alpha_width, alpha_height, time_width, alpha_configs, time_configs);*/
 
-	unsigned int reader_texture_index= movies_texture_index+ N_READERS;
-	mpeg_readers= new MPEGReaders(reader_texture_index, alpha_loc, reader_texture_index+ 1, movie_time_loc, reader_texture_index+ 2, index_time_loc);
-	mpeg_readers->randomize();
+	unsigned int base_index= 0;
+	mpeg_readers= new MPEGReaders(base_index, movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc);
+	//mpeg_readers->randomize();
 	//mpeg_readers->set_config(config);
-	//mpeg_readers->load_json("../data/config_01.json");
+	mpeg_readers->load_json("../data/config_01.json");
 	//exit(0);
 	
 	//cout << "loading end\n";
