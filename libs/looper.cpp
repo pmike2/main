@@ -806,10 +806,10 @@ Receiver::~Receiver() {
 void Receiver::init_data() {
 	// create shared memory object; renvoie un file descriptor
 	// O_RDONLY : lecture
-	_fd= shm_open(SHARED_MEM_OBJ_NAME.c_str(), O_RDONLY, 0666);
-	if (_fd< 0) {
-		perror("Receiver : ERROR shm_open");
-		return;
+	// le while sert ici à retenter tant que le shm_open de looper n'a pas été créé
+	_fd= -1;
+	while (_fd< 0) {
+		_fd= shm_open(SHARED_MEM_OBJ_NAME.c_str(), O_RDONLY, 0666);
 	}
 
 	// map file descriptor into memory

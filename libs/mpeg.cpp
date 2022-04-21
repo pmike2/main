@@ -962,9 +962,7 @@ void MPEGReaders::note_on_by_idx(unsigned int idx_reader, float amplitude) {
 	_index_time_data[idx_reader]= 0.0f;
 	update_index_time_texture(idx_reader);
 	
-	for (unsigned int i=0; i<_config._alpha_width* _config._alpha_height; ++i) {
-		_alpha_data[_config._alpha_width* _config._alpha_height* idx_reader+ i]= _alpha_data0[_config._alpha_width* _config._alpha_height* idx_reader+ i];
-	}
+	memcpy(_alpha_data+ _config._alpha_width* _config._alpha_height* idx_reader, _alpha_data0+ _config._alpha_width* _config._alpha_height* idx_reader, _config._alpha_width* _config._alpha_height* sizeof(float));
 	update_alpha_texture(idx_reader);
 
 	_global_alpha_data[idx_reader]= amplitude;

@@ -24,6 +24,8 @@ using namespace std;
 
 const int SCREEN_WIDTH= 1024;
 const int SCREEN_HEIGHT= 1024;
+const int WINDOW_X= 800;
+const int WINDOW_Y= 100;
 const float GL_WIDTH= 20.0f;
 const float GL_HEIGHT= GL_WIDTH* (float)(SCREEN_HEIGHT)/ (float)(SCREEN_WIDTH);
 const float Z_NEAR= -10.0f;
@@ -52,10 +54,10 @@ void init_sdl() {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	//SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	
-	window= SDL_CreateWindow("video_sampler", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	window= SDL_CreateWindow("video_sampler", WINDOW_X, WINDOW_Y, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
 
 	//cout << "OpenGL version=" << glGetString(GL_VERSION) << endl;

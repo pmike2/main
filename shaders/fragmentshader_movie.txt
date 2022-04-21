@@ -15,23 +15,23 @@ void main() {
 	vec2 uv = vec2(gl_FragCoord.x/ screen_width, gl_FragCoord.y/ screen_height);
 
 	color= vec4(0.0);
-	for (int i=0; i<8; i++) {
-		vec4 k= texture(index_time, float(i)* 0.125);
-		vec4 frame= texture(movie_time, vec2(k.r, float(i)));
-		vec4 idx_mov= texture(index_movie, float(i)* 0.125);
-		vec3 v= vec3(uv, frame.r);
-		vec4 global_a= texture(global_alpha, float(i)* 0.125);
-		vec4 a= texture(alpha, vec3(uv, float(i)));
+	for (int idx_track=0; idx_track<8; idx_track++) {
+		vec4 idx_time= texture(index_time, float(idx_track)* 0.125);
+		vec4 frame= texture(movie_time, vec2(idx_time.r, float(idx_track)));
+		vec4 idx_mov= texture(index_movie, float(idx_track)* 0.125);
+		vec3 vec_mov= vec3(uv, frame.r);
+		vec4 global_a= texture(global_alpha, float(idx_track)* 0.125);
+		vec4 a= texture(alpha, vec3(uv, float(idx_track)));
 		
 		vec4 tex= vec4(0.0);
-		if      (idx_mov.r== 0) { tex= texture(movie[0], v); }
-		else if (idx_mov.r== 1) { tex= texture(movie[1], v); }
-		else if (idx_mov.r== 2) { tex= texture(movie[2], v); }
-		else if (idx_mov.r== 3) { tex= texture(movie[3], v); }
-		else if (idx_mov.r== 4) { tex= texture(movie[4], v); }
-		else if (idx_mov.r== 5) { tex= texture(movie[5], v); }
-		else if (idx_mov.r== 6) { tex= texture(movie[6], v); }
-		else if (idx_mov.r== 7) { tex= texture(movie[7], v); }
+		if      (idx_mov.r== 0) { tex= texture(movie[0], vec_mov); }
+		else if (idx_mov.r== 1) { tex= texture(movie[1], vec_mov); }
+		else if (idx_mov.r== 2) { tex= texture(movie[2], vec_mov); }
+		else if (idx_mov.r== 3) { tex= texture(movie[3], vec_mov); }
+		else if (idx_mov.r== 4) { tex= texture(movie[4], vec_mov); }
+		else if (idx_mov.r== 5) { tex= texture(movie[5], vec_mov); }
+		else if (idx_mov.r== 6) { tex= texture(movie[6], vec_mov); }
+		else if (idx_mov.r== 7) { tex= texture(movie[7], vec_mov); }
 		
 		tex.rgb*= a.r;
 		tex.rgb*= global_a.r;

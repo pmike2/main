@@ -99,7 +99,7 @@ void init(string json_path) {
 	audio_sampler= new AudioSampler(json_path);
 
 	int idx_device_input= -1;
-	int idx_device_output= 2;
+	int idx_device_output= 0;
 	stream= pa_init(idx_device_input, idx_device_output, SAMPLE_RATE, FRAMES_PER_BUFFER, pa_callback, audio_sampler);
 }
 
