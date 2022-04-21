@@ -1,152 +1,214 @@
+#include <iostream>
+#include <chrono>
+#include <vector>
+#include <utility>
+
+#include <OpenGL/gl3.h>
 
 #include <SDL2/SDL.h>
 
-#include <iostream>
-#include <thread>
-#include <chrono>
+#define GLM_FORCE_RADIANS
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "gl_utils.h"
+#include "utile.h"
+#include "mpeg.h"
 
 #include "video_sampler.h"
 
 using namespace std;
 
 
-int SCREEN_WIDTH= 512;
-int SCREEN_HEIGHT= 512;
+const int SCREEN_WIDTH= 1024;
+const int SCREEN_HEIGHT= 1024;
+const float GL_WIDTH= 20.0f;
+const float GL_HEIGHT= GL_WIDTH* (float)(SCREEN_HEIGHT)/ (float)(SCREEN_WIDTH);
+const float Z_NEAR= -10.0f;
+const float Z_FAR= 10.0f;
 
 
 SDL_Window * window= 0;
-SDL_Renderer * renderer= 0;
-SDL_Surface * surf;
-SDL_Texture * tex;
-Uint32 rmask, gmask, bmask, amask;
+SDL_GLContext main_context;
+GLuint prog_movie;
+GLuint vao;
+GLuint vbo;
+GLint camera2clip_loc, model2world_loc, position_loc, screen_width_loc, screen_height_loc,
+	movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc, global_alpha_loc;
+glm::mat4 camera2clip;
+glm::mat4 model2world;
+
+ScreenGL * screengl;
 bool done= false;
 
 VideoSampler * video_sampler;
-thread thr;
-atomic_bool stop_thr= ATOMIC_VAR_INIT(false);
-mutex mtx;
-chrono::system_clock::time_point saved_tp;
-chrono::system_clock::time_point recent_tp;
 
 
-void update_thread() {
-	while (true) {
-		if (stop_thr) {
-			break;
-		}
-		//mtx.lock();
-		video_sampler->update();
-		//mtx.unlock();
-	}
+void init_sdl() {
+	SDL_Init(SDL_INIT_EVERYTHING);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	
+	window= SDL_CreateWindow("video_sampler", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	main_context= SDL_GL_CreateContext(window);
+
+	//cout << "OpenGL version=" << glGetString(GL_VERSION) << endl;
+
+	SDL_GL_SetSwapInterval(1);
+
+	/*glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LEQUAL);*/
+	glDisable(GL_DEPTH_TEST);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	//glClearDepth(1.0f);
+	
+	// frontfaces en counterclockwise
+	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+	
+	// je multiplie rgb par alpha dans le fragment shader, donc pas besoin de GL_BLEND qui me faisait galérer
+	// pour gérer l'alpha
+	//glEnable(GL_BLEND);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_BLEND);
+	
+	//glPointSize(4.0f);
+	
+	SDL_GL_SwapWindow(window);
+
+	screengl= new ScreenGL(SCREEN_WIDTH, SCREEN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+}
+
+
+void init_vao_vbo() {
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+	glGenBuffers(1, &vbo);
+
+	float vertices[18];
+	float x= -0.5f* screengl->_gl_width;
+	float y= -0.5f* screengl->_gl_height;
+	float z= 0.0f;
+	float w= screengl->_gl_width;
+	float h= screengl->_gl_height;
+
+	vertices[0]= x;
+	vertices[1]= y+ h;
+	vertices[2]= z;
+
+	vertices[3]= x;
+	vertices[4]= y;
+	vertices[5]= z;
+
+	vertices[6]= x+ w;
+	vertices[7]= y;
+	vertices[8]= z;
+
+	vertices[9]= x;
+	vertices[10]= y+ h;
+	vertices[11]= z;
+
+	vertices[12]= x+ w;
+	vertices[13]= y;
+	vertices[14]= z;
+
+	vertices[15]= x+ w;
+	vertices[16]= y+ h;
+	vertices[17]= z;
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glBufferData(GL_ARRAY_BUFFER, 18* sizeof(float), vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void init_program(string json_path) {
+	// cf https://community.khronos.org/t/2-samplers-fs-fails-different-sampler-types-for-same-sample-texture-unit-in-fragment/72598
+	// il faut faire les glUniform1i avant check_gl_program, d'où l'option check de create_prog à false, et check_gl_program + tard
+	prog_movie= create_prog("../../shaders/vertexshader_movie.txt"  , "../../shaders/fragmentshader_movie.txt", false);
+	camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
+	model2world= glm::mat4(1.0f);
+
+	glUseProgram(prog_movie);
+	camera2clip_loc= glGetUniformLocation(prog_movie, "camera2clip_matrix");
+	model2world_loc= glGetUniformLocation(prog_movie, "model2world_matrix");
+	screen_width_loc= glGetUniformLocation(prog_movie, "screen_width");
+	screen_height_loc= glGetUniformLocation(prog_movie, "screen_height");
+	movie_loc= glGetUniformLocation(prog_movie, "movie");
+	alpha_loc= glGetUniformLocation(prog_movie, "alpha");
+	movie_time_loc= glGetUniformLocation(prog_movie, "movie_time");
+	index_time_loc= glGetUniformLocation(prog_movie, "index_time");
+	index_movie_loc= glGetUniformLocation(prog_movie, "index_movie");
+	global_alpha_loc= glGetUniformLocation(prog_movie, "global_alpha");
+	position_loc= glGetAttribLocation(prog_movie, "position_in");
+
+	unsigned int base_index= 0;
+	video_sampler= new VideoSampler(base_index, movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc, global_alpha_loc, json_path);
+
+	glUseProgram(0);
+	check_gl_program(prog_movie);
+	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
 }
 
 
 void init(string json_path) {
-	video_sampler= new VideoSampler(json_path);
+	srand(time(NULL));
 
-	SDL_Init(SDL_INIT_EVERYTHING);
-
-	window= SDL_CreateWindow("video_sampler", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-	renderer= SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		rmask = 0xff000000;
-		gmask = 0x00ff0000;
-		bmask = 0x0000ff00;
-		amask = 0x000000ff;
-	#else
-		rmask = 0x000000ff;
-		gmask = 0x0000ff00;
-		bmask = 0x00ff0000;
-		amask = 0xff000000;
-	#endif
-
-	//thr= thread(update_thread);
-
-	saved_tp= chrono::system_clock::now();
+	init_sdl();
+	init_vao_vbo();
+	init_program(json_path);
 }
 
 
 void draw() {
-	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-	SDL_RenderClear(renderer);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT);
+	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	
+	glUseProgram(prog_movie);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
-		if (video_sampler->_track_samples[idx_track]->_playing) {
-			
-			if (DEBUG) {
-				if (video_sampler->_track_samples[idx_track]->_frame_idx== 0) {
-					time_type t= chrono::system_clock::now()- video_sampler->_debug_start_point;
-					video_sampler->_debug[video_sampler->_compt_debug++]= t;
-					if (video_sampler->_compt_debug>= N_DEBUG) {
-						video_sampler->_compt_debug= 0;
-					}
-				}
-			}
+	video_sampler->_mpeg_readers->prepare2draw();
 
-			key_type key= video_sampler->_track_samples[idx_track]->_info._key;
-			amplitude_type amplitude= video_sampler->_track_samples[idx_track]->_info._amplitude;
-			VideoSubSample * sub_sample= video_sampler->get_subsample(key);
-			if (!sub_sample) {
-				continue;
-			}
+	glUniform1i(screen_width_loc, SCREEN_WIDTH);
+	glUniform1i(screen_height_loc, SCREEN_HEIGHT);
+	glUniformMatrix4fv(camera2clip_loc, 1, GL_FALSE, glm::value_ptr(camera2clip));
+	glUniformMatrix4fv(model2world_loc, 1, GL_FALSE, glm::value_ptr(model2world));
+	
+	glEnableVertexAttribArray(position_loc);
 
-			VideoSample * video_sample= sub_sample->_sample;
+	glVertexAttribPointer(position_loc, 3, GL_FLOAT, GL_FALSE, 3* sizeof(float), (void*)0);
 
-			surf= SDL_CreateRGBSurfaceFrom(video_sample->get_frame(video_sampler->_track_samples[idx_track]->_frame_idx),
-				video_sample->_width, video_sample->_height, 24, video_sample->_width* 3, rmask, gmask, bmask, amask);
-			tex= SDL_CreateTextureFromSurface(renderer, surf);
-			SDL_FreeSurface(surf);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 
-			SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
-			unsigned int alpha= (unsigned int)(255.0f* amplitude);
-			SDL_SetTextureAlphaMod(tex, alpha);
+	glDisableVertexAttribArray(position_loc);
 
-			SDL_Rect texture_rect;
-			if ((sub_sample->_w== 0) || (sub_sample->_h== 0)) {
-				texture_rect.x= 0;
-				texture_rect.y= 0;
-				texture_rect.w= SCREEN_WIDTH;
-				texture_rect.h= SCREEN_HEIGHT;
-			}
-			else {
-				texture_rect.x= sub_sample->_x;
-				texture_rect.y= sub_sample->_y;
-				texture_rect.w= sub_sample->_w;
-				texture_rect.h= sub_sample->_h;
-			}
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
 
-			SDL_RenderCopy(renderer, tex, NULL, &texture_rect);
-			SDL_DestroyTexture(tex);
+	glBindTexture(GL_TEXTURE_3D, 0);
+	
+	SDL_GL_SwapWindow(window);
+}
 
-			recent_tp= chrono::system_clock::now();
-			unsigned int duration_ms= chrono::duration_cast<chrono::milliseconds>(recent_tp- saved_tp).count();
-			saved_tp= recent_tp;
 
-			video_sampler->_track_samples[idx_track]->_frame_idx_inc+= (double)(video_sample->_fps* duration_ms)/ 1000.0;
-			unsigned int int_part= (unsigned int)(video_sampler->_track_samples[idx_track]->_frame_idx_inc);
-			video_sampler->_track_samples[idx_track]->_frame_idx+= int_part;
-			video_sampler->_track_samples[idx_track]->_frame_idx_inc-= int_part;
-			if (video_sampler->_track_samples[idx_track]->_frame_idx>= video_sample->_n_frames) {
-				video_sampler->note_off(idx_track);
-			}
-
-			/*cout << "-------------\n";
-			cout << duration_ms << "\n";
-			cout << video_sampler->_track_samples[idx_track]->_frame_idx << "\n";
-			cout << video_sampler->_track_samples[idx_track]->_frame_idx_inc << "\n";*/
-		}
-	}
-
-	SDL_RenderPresent(renderer);
+void update() {
+	video_sampler->update();
 }
 
 
 void idle() {
-	//mtx.lock();
-	video_sampler->update();
+	update();
 	draw();
-	//mtx.unlock();
 }
 
 
@@ -180,11 +242,8 @@ void main_loop() {
 
 
 void clean() {
-	//stop_thr= true;
-	//thr.join();
-
 	delete video_sampler;
-	SDL_DestroyRenderer(renderer);
+	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 }

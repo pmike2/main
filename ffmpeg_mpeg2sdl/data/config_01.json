@@ -27,6 +27,25 @@
 				],
 				"speed" : 0.03
 			}
+		},
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [0.6, 0.6, 0.7, 0.6, 0.7, 0.7, 0.6, 0.7],
+						"fadeout" : 0.5,
+						"curve" : 1.0,
+						"alpha_max" : 1.0
+					}
+				],
+				"decrease_speed" : 0.2
+			},
+			"time" : {
+				"checkpoints" : [
+					[0.0, 0.0], [0.3, 1.0], [1.0, 0.4]
+				],
+				"speed" : 0.01
+			}
 		}
 	],
 	
@@ -36,6 +55,9 @@
 		},
 		"b" : {
 			"mpeg" : 1, "config" : 0
+		},
+		"c" : {
+			"mpeg" : 0, "config" : 1
 		}
 	}
 }

@@ -36,7 +36,7 @@ GLuint prog_movie;
 GLuint vao;
 GLuint vbo;
 GLint camera2clip_loc, model2world_loc, position_loc, screen_width_loc, screen_height_loc,
-	movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc;
+	movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc, global_alpha_loc;
 glm::mat4 camera2clip;
 glm::mat4 model2world;
 
@@ -143,69 +143,24 @@ void init_program() {
 	glUseProgram(prog_movie);
 	camera2clip_loc= glGetUniformLocation(prog_movie, "camera2clip_matrix");
 	model2world_loc= glGetUniformLocation(prog_movie, "model2world_matrix");
+	screen_width_loc= glGetUniformLocation(prog_movie, "screen_width");
+	screen_height_loc= glGetUniformLocation(prog_movie, "screen_height");
 	movie_loc= glGetUniformLocation(prog_movie, "movie");
 	alpha_loc= glGetUniformLocation(prog_movie, "alpha");
 	movie_time_loc= glGetUniformLocation(prog_movie, "movie_time");
 	index_time_loc= glGetUniformLocation(prog_movie, "index_time");
 	index_movie_loc= glGetUniformLocation(prog_movie, "index_movie");
-	screen_width_loc= glGetUniformLocation(prog_movie, "screen_width");
-	screen_height_loc= glGetUniformLocation(prog_movie, "screen_height");
+	global_alpha_loc= glGetUniformLocation(prog_movie, "global_alpha");
 	position_loc= glGetAttribLocation(prog_movie, "position_in");
 
-	//cout << "loading readers\n";
-
-	/*unsigned int alpha_width= 256;
-	unsigned int alpha_height= 256;
-	unsigned int time_width= 512;
-	
-	vector<AlphaConfig> alpha_configs;
-	for (unsigned int i=0; i<N_READERS; ++i) {
-		vector<AlphaPolygon> alpha_polygons;
-		float xsize= rand_float(0.01f, 0.3f);
-		float ysize= rand_float(0.01f, 0.3f);
-		float xmin= rand_float(0.0f, 1.0f- xsize);
-		float ymin= rand_float(0.0f, 1.0f- ysize);
-		float points[8]= {xmin, ymin, xmin+ xsize, ymin, xmin+ xsize, ymin+ ysize, ymin+ ysize};
-		float fadeout= rand_float(0.0f, 0.4f);
-		float curve= rand_float(1.0f, 5.0f);
-		float alpha_max= rand_float(0.6f, 1.0f);
-		AlphaPolygon alpha_polygon(points, 4, fadeout, curve, alpha_max);
-		alpha_polygons.push_back(AlphaPolygon(alpha_polygon));
-		float decrease_speed= rand_float(0.01f, 0.1f);
-		AlphaConfig alpha_config(alpha_polygons, decrease_speed);
-		alpha_configs.push_back(alpha_config);
-	}
-
-	vector<TimeConfig> time_configs;
-	for (unsigned int i=0; i<N_READERS; ++i) {
-		vector<pair<float, float> > checkpoints;
-		unsigned int n_checkpoints= rand_int(2, 10);
-		for (unsigned int j=0; j<n_checkpoints; ++j) {
-			checkpoints.push_back(make_pair(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
-		}
-		float speed= rand_float(0.01f, 0.1f);
-		time_configs.push_back(TimeConfig(checkpoints, speed));
-	}
-
-	GlobalConfig config(alpha_width, alpha_height, time_width, alpha_configs, time_configs);*/
-
 	unsigned int base_index= 0;
-	mpeg_readers= new MPEGReaders(base_index, movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc);
-	//mpeg_readers->randomize();
-	//mpeg_readers->set_config(config);
-	mpeg_readers->load_json("../data/config_01.json");
-	//exit(0);
+	mpeg_readers= new MPEGReaders(base_index, movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc, global_alpha_loc);
+	mpeg_readers->randomize();
+	//mpeg_readers->load_json("../data/config_01.json");
 	
-	//cout << "loading end\n";
-
 	glUseProgram(0);
 	check_gl_program(prog_movie);
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
-	//exit(0);
-}
-
-void update() {
-	mpeg_readers->update();
 }
 
 
@@ -250,6 +205,11 @@ void draw() {
 }
 
 
+void update() {
+	mpeg_readers->update();
+}
+
+
 void compute_fps() {
 	t2= chrono::system_clock::now();
 	auto d= chrono::duration_cast<chrono::milliseconds>(t2- t1).count();
@@ -284,7 +244,7 @@ void main_loop() {
 					}
 					for (unsigned int i=0; i<8; ++i) {
 						if (event.key.keysym.sym== SDLK_a+ i) {
-							mpeg_readers->note_on('a'+ i);
+							mpeg_readers->note_on_by_key('a'+ i);
 						}
 					}
 					break;
@@ -292,7 +252,7 @@ void main_loop() {
 				case SDL_KEYUP:
 					for (unsigned int i=0; i<8; ++i) {
 						if (event.key.keysym.sym== SDLK_a+ i) {
-							mpeg_readers->note_off('a'+ i);
+							mpeg_readers->note_off_by_key('a'+ i);
 						}
 					}
 					break;

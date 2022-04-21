@@ -28,21 +28,6 @@ public:
 	unsigned int _frame_size;
 };
 
-/*
-class MPEGTextures {
-public:
-	MPEGTextures();
-	MPEGTextures(std::vector<std::string> mpeg_paths, int loc, int base_index);
-	~MPEGTextures();
-	void prepare2draw();
-
-
-	unsigned int _ids[N_READERS];
-	int _loc;
-	int _base_index;
-	int _indices[N_READERS];
-};
-*/
 
 class TimeConfig {
 public:
@@ -85,7 +70,7 @@ public:
 class ReaderConfig {
 public:
 	ReaderConfig();
-	ReaderConfig(AlphaConfig alpha_config, TimeConfig time_config, std::string mpeg_path, unsigned int key);
+	ReaderConfig(AlphaConfig alpha_config, TimeConfig time_config, std::string mpeg_path= "", unsigned int key= 0);
 	ReaderConfig(const ReaderConfig & reader_config);
 	~ReaderConfig();
 
@@ -102,7 +87,7 @@ public:
 	GlobalConfig(
 		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_depth,
 		unsigned int time_width, unsigned int time_height,
-		unsigned int index_time_width, unsigned int index_movie_width,
+		unsigned int index_time_width, unsigned int index_movie_width, unsigned int global_alpha_width,
 		std::vector<ReaderConfig> reader_configs);
 	GlobalConfig(const GlobalConfig & config);
 	~GlobalConfig();
@@ -115,6 +100,7 @@ public:
 	unsigned int _time_height;
 	unsigned int _index_time_width;
 	unsigned int _index_movie_width;
+	unsigned int _global_alpha_width;
 	std::vector<ReaderConfig> _reader_configs;
 };
 
@@ -122,8 +108,8 @@ public:
 class MPEGReaders {
 public:
 	MPEGReaders();
-	MPEGReaders(unsigned int base_index, unsigned int movie_loc, unsigned int alpha_loc,
-		unsigned int time_loc, unsigned int index_time_loc, unsigned int index_movie_loc);
+	MPEGReaders(unsigned int base_index, int movie_loc, int alpha_loc, int time_loc, int index_time_loc,
+		int index_movie_loc, int global_alpha_loc);
 	~MPEGReaders();
 	void set_config(GlobalConfig config);
 	void load_json(std::string json_path);
@@ -137,15 +123,19 @@ public:
 	void init_time_texture();
 	void init_index_time_texture();
 	void init_index_movie_texture();
+	void init_global_alpha_texture();
 	void prepare2draw();
 	void update();
-	void update_alpha_texture(unsigned int depth);
-	void update_index_time_texture(unsigned int depth);
-	void decrease_alpha(unsigned int key);
-	void next_index_time(unsigned int key);
-	void note_on(unsigned int key);
-	void note_off(unsigned int key);
-	int idx_reader(unsigned int key);
+	void update_alpha_texture(unsigned int idx_reader);
+	void update_index_time_texture(unsigned int idx_reader);
+	void update_global_alpha_texture(unsigned int idx_reader);
+	void decrease_alpha(unsigned int idx_reader);
+	void next_index_time(unsigned int idx_reader);
+	void note_on_by_idx(unsigned int idx_reader, float amplitude=1.0f);
+	void note_off_by_idx(unsigned int idx_reader);
+	void note_on_by_key(unsigned int key, float amplitude=1.0f);
+	void note_off_by_key(unsigned int key);
+	int get_idx_reader(unsigned int key);
 	std::vector<std::string> get_mpegs_paths();
 
 
@@ -154,34 +144,32 @@ public:
 	unsigned int _movies_ids[N_MAX_MOVIES];
 	int _movie_loc;
 	int _movie_textures_indices[N_MAX_MOVIES];
-	//std::vector<std::string> _movies_paths;
 
-	//unsigned int _alpha_width, _alpha_height, _alpha_depth;
 	float * _alpha_data;
 	float * _alpha_data0;
 	unsigned int _alpha_id;
 	int _alpha_loc;
 	unsigned int _alpha_texture_index;
-	//std::vector<AlphaConfig> _alpha_configs;
 
-	//unsigned int _time_width, _time_height;
 	float * _time_data;
 	unsigned int _time_id;
 	int _time_loc;
 	unsigned int _time_texture_index;
-	//std::vector<TimeConfig> _time_configs;
 
-	//unsigned int _index_time_width;
 	float * _index_time_data;
 	unsigned int _index_time_id;
 	int _index_time_loc;
 	unsigned int _index_time_texture_index;
 
-	//unsigned int _index_movie_width;
 	unsigned int * _index_movie_data;
 	unsigned int _index_movie_id;
 	int _index_movie_loc;
 	unsigned int _index_movie_texture_index;
+
+	float * _global_alpha_data;
+	unsigned int _global_alpha_id;
+	int _global_alpha_loc;
+	unsigned int _global_alpha_texture_index;
 
 	std::vector<unsigned int> _notes_ons;
 };

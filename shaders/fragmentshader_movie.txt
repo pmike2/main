@@ -5,6 +5,7 @@ uniform sampler2DArray alpha;
 uniform sampler1DArray movie_time;
 uniform sampler1D index_time;
 uniform usampler1D index_movie;
+uniform sampler1D global_alpha;
 uniform int screen_width;
 uniform int screen_height;
 
@@ -17,21 +18,23 @@ void main() {
 	for (int i=0; i<8; i++) {
 		vec4 k= texture(index_time, float(i)* 0.125);
 		vec4 frame= texture(movie_time, vec2(k.r, float(i)));
-		uint idx_mov= texture(index_movie, float(i)* 0.125).r;
+		vec4 idx_mov= texture(index_movie, float(i)* 0.125);
 		vec3 v= vec3(uv, frame.r);
+		vec4 global_a= texture(global_alpha, float(i)* 0.125);
+		vec4 a= texture(alpha, vec3(uv, float(i)));
 		
 		vec4 tex= vec4(0.0);
-		if      (idx_mov== 0) { tex= texture(movie[0], v); }
-		else if (idx_mov== 1) { tex= texture(movie[1], v); }
-		else if (idx_mov== 2) { tex= texture(movie[2], v); }
-		else if (idx_mov== 3) { tex= texture(movie[3], v); }
-		else if (idx_mov== 4) { tex= texture(movie[4], v); }
-		else if (idx_mov== 5) { tex= texture(movie[5], v); }
-		else if (idx_mov== 6) { tex= texture(movie[6], v); }
-		else if (idx_mov== 7) { tex= texture(movie[7], v); }
+		if      (idx_mov.r== 0) { tex= texture(movie[0], v); }
+		else if (idx_mov.r== 1) { tex= texture(movie[1], v); }
+		else if (idx_mov.r== 2) { tex= texture(movie[2], v); }
+		else if (idx_mov.r== 3) { tex= texture(movie[3], v); }
+		else if (idx_mov.r== 4) { tex= texture(movie[4], v); }
+		else if (idx_mov.r== 5) { tex= texture(movie[5], v); }
+		else if (idx_mov.r== 6) { tex= texture(movie[6], v); }
+		else if (idx_mov.r== 7) { tex= texture(movie[7], v); }
 		
-		vec4 a= texture(alpha, vec3(uv, float(i)));
 		tex.rgb*= a.r;
-		color+= vec4(vec3(tex), 1);
+		tex.rgb*= global_a.r;
+		color+= vec4(vec3(tex), 1.0);
 	}
 }

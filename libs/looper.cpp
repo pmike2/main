@@ -830,7 +830,6 @@ void Receiver::close_data() {
 
 void Receiver::update() {
 	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
-
 		if (_data_current[idx_track]!= _data[idx_track]) {
 			if (!_data_current[idx_track].is_null()) {
 				note_off(idx_track);

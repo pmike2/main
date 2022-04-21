@@ -1,22 +1,63 @@
 {
-	"a" : {
-		"sample_path" : "../data/video_samples/test.mp4",
-		"mode" : "ALL"
-	},
-	"b" : {
-		"sample_path" : "../data/video_samples/test.mp4",
-		"mode" : "ALL",
-		"x" : 100,
-		"y" : 100,
-		"w" : 100,
-		"h" : 100
-	},
-	"c" : {
-		"sample_path" : "../data/video_samples/test.mp4",
-		"mode" : "ALL",
-		"x" : 0,
-		"y" : 100,
-		"w" : 100,
-		"h" : 100
+	"mpegs" : [
+		"../data/video_samples/flower_04.mov",
+		"../data/video_samples/flower_06.mov"
+	],
+	
+	"alpha_width" : 256,
+	"alpha_height" : 256,
+	"time_width" : 512,
+	
+	"reader_configs" : [
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [0.3, 0.3, 0.4, 0.3, 0.4, 0.4, 0.3, 0.4],
+						"fadeout" : 0.2,
+						"curve" : 2.0,
+						"alpha_max" : 0.9
+					}
+				],
+				"decrease_speed" : 0.05
+			},
+			"time" : {
+				"checkpoints" : [
+					[0.0, 0.0], [1.0, 1.0]
+				],
+				"speed" : 0.03
+			}
+		},
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [0.6, 0.6, 0.7, 0.6, 0.7, 0.7, 0.6, 0.7],
+						"fadeout" : 0.5,
+						"curve" : 1.0,
+						"alpha_max" : 1.0
+					}
+				],
+				"decrease_speed" : 0.2
+			},
+			"time" : {
+				"checkpoints" : [
+					[0.0, 0.0], [0.3, 1.0], [1.0, 0.4]
+				],
+				"speed" : 0.01
+			}
+		}
+	],
+	
+	"keymapping" : {
+		"a" : {
+			"mpeg" : 0, "config" : 0
+		},
+		"b" : {
+			"mpeg" : 1, "config" : 0
+		},
+		"c" : {
+			"mpeg" : 0, "config" : 1
+		}
 	}
 }
