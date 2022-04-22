@@ -19,6 +19,7 @@ add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)
 add_library(lib_mpeg STATIC ../libs/mpeg.cpp ../libs/mpeg.h)
 add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
 add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
+add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h)
 
 add_executable(decode_mpeg_v1 ./srcs/decode_mpeg_v1.cpp)
 add_executable(decode_mpeg_v2 ./srcs/decode_mpeg_v2.cpp)
@@ -31,4 +32,4 @@ set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lbz2
 target_link_libraries(decode_mpeg_v1 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS})
 target_link_libraries(decode_mpeg_v2 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS})
 target_link_libraries(decode_mpeg_v3 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS})
-target_link_libraries(decode_mpeg_v4 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS} ${OPENGL_LIBRARIES} lib_utile lib_gl_utils lib_mpeg lib_geom_2d lib_bbox_2d)
+target_link_libraries(decode_mpeg_v4 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS} ${OPENGL_LIBRARIES} lib_utile lib_gl_utils lib_mpeg lib_geom_2d lib_bbox_2d lib_input_state)

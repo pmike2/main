@@ -145,8 +145,8 @@ public:
 
 
 	GlobalConfig _config;
-	//std::vector<unsigned int> _notes_ons;
 	int _index_reader[N_TRACKS];
+	bool _note_on[N_TRACKS];
 
 	unsigned int _movies_ids[N_MAX_MOVIES];
 	int _movie_loc;

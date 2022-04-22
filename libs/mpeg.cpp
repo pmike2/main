@@ -458,6 +458,7 @@ MPEGReaders::MPEGReaders(unsigned int base_index, int movie_loc, int alpha_loc, 
 
 	for (unsigned int i=0; i<N_TRACKS; ++i) {
 		_index_reader[i]= -1;
+		_note_on[i]= false;
 	}
 }
 
@@ -572,7 +573,7 @@ void MPEGReaders::load_json(string json_path) {
 
 
 void MPEGReaders::randomize() {
-	unsigned int n_reader_configs= 12;
+	unsigned int n_reader_configs= 3;
 
 	unsigned int alpha_width= 256;
 	unsigned int alpha_height= 256;
@@ -659,7 +660,6 @@ void MPEGReaders::load_mpegs() {
 
 
 void MPEGReaders::init_arrays() {
-//cout << "_alpha_data0" << endl;
 	if (_alpha_data0) {
 		delete[] _alpha_data0;
 	}
@@ -667,7 +667,7 @@ void MPEGReaders::init_arrays() {
 	for (unsigned int i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth0; ++i) {
 		_alpha_data0[i]= 0.0f;
 	}
-//cout << "_alpha_data" << endl;
+
 	if (_alpha_data) {
 		delete[] _alpha_data;
 	}
@@ -675,7 +675,7 @@ void MPEGReaders::init_arrays() {
 	for (unsigned int i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth; ++i) {
 		_alpha_data[i]= 0.0f;
 	}
-//cout << "_time_data0" << endl;
+
 	if (_time_data0) {
 		delete[] _time_data0;
 	}
@@ -683,7 +683,7 @@ void MPEGReaders::init_arrays() {
 	for (unsigned int i=0; i<_config._time_width* _config._time_height0; ++i) {
 		_time_data0[i]= 0.0f;
 	}
-//cout << "_time_data" << endl;
+
 	if (_time_data) {
 		delete[] _time_data;
 	}
@@ -691,7 +691,7 @@ void MPEGReaders::init_arrays() {
 	for (unsigned int i=0; i<_config._time_width* _config._time_height; ++i) {
 		_time_data[i]= 0.0f;
 	}
-//cout << "_index_time_data" << endl;
+
 	if (_index_time_data) {
 		delete[] _index_time_data;
 	}
@@ -699,7 +699,7 @@ void MPEGReaders::init_arrays() {
 	for (unsigned int i=0; i<_config._index_time_width; ++i) {
 		_index_time_data[i]= 0.0f;
 	}
-//cout << "_index_movie_data0" << endl;
+
 	if (_index_movie_data0) {
 		delete[] _index_movie_data0;
 	}
@@ -707,7 +707,7 @@ void MPEGReaders::init_arrays() {
 	for (unsigned int i=0; i<_config._index_movie_width0; ++i) {
 		_index_movie_data0[i]= 0;
 	}
-//cout << "_index_movie_data" << endl;
+
 	if (_index_movie_data) {
 		delete[] _index_movie_data;
 	}
@@ -715,7 +715,7 @@ void MPEGReaders::init_arrays() {
 	for (unsigned int i=0; i<_config._index_movie_width; ++i) {
 		_index_movie_data[i]= 0;
 	}
-//cout << "_global_alpha_data" << endl;
+
 	if (_global_alpha_data) {
 		delete[] _global_alpha_data;
 	}
@@ -923,11 +923,11 @@ void MPEGReaders::prepare2draw() {
 
 void MPEGReaders::update() {
 	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
-		if (_index_reader[idx_track]< 0) {
-			decrease_alpha(idx_track);
-		}
-		else {
+		if (_index_reader[idx_track]>= 0) {
 			next_index_time(idx_track);
+			if (!_note_on[idx_track]) {
+				decrease_alpha(idx_track);
+			}
 		}
 	}
 }
@@ -941,7 +941,7 @@ void MPEGReaders::update_alpha_texture(unsigned int idx_track) {
 
 void MPEGReaders::update_time_texture(unsigned int idx_track) {
 	glBindTexture(GL_TEXTURE_1D_ARRAY, _time_id);
-	glTexSubImage2D(GL_TEXTURE_1D_ARRAY, 0, 0, idx_track, _config._alpha_width, 1, GL_RED, GL_FLOAT, _time_data+ _config._time_width* idx_track);
+	glTexSubImage2D(GL_TEXTURE_1D_ARRAY, 0, 0, idx_track, _config._time_width, 1, GL_RED, GL_FLOAT, _time_data+ _config._time_width* idx_track);
 }
 
 
@@ -964,15 +964,18 @@ void MPEGReaders::update_global_alpha_texture(unsigned int idx_track) {
 
 
 void MPEGReaders::decrease_alpha(unsigned int idx_track) {
-	/*if (find(_notes_ons.begin(), _notes_ons.end(), idx_track)!= _notes_ons.end()) {
-		return;
-	}*/
-
+	bool active= false;
 	for (unsigned int i=0; i<_config._alpha_width* _config._alpha_height; ++i) {
 		_alpha_data[_config._alpha_width* _config._alpha_height* idx_track+ i]-= _config._reader_configs[_index_reader[idx_track]]._alpha_config._decrease_speed;
-		if (_alpha_data[_config._alpha_width* _config._alpha_height* idx_track+ i]< 0.0f) {
+		if (_alpha_data[_config._alpha_width* _config._alpha_height* idx_track+ i]> 0.0f) {
+			active= true;
+		}
+		else {
 			_alpha_data[_config._alpha_width* _config._alpha_height* idx_track+ i]= 0.0f;
 		}
+	}
+	if (!active) {
+		_index_reader[idx_track]= -1;
 	}
 
 	update_alpha_texture(idx_track);
@@ -980,34 +983,26 @@ void MPEGReaders::decrease_alpha(unsigned int idx_track) {
 
 
 void MPEGReaders::next_index_time(unsigned int idx_track) {
-	/*if (find(_notes_ons.begin(), _notes_ons.end(), idx_track)== _notes_ons.end()) {
-		return;
-	}*/
-
 	_index_time_data[idx_track]+= _config._reader_configs[_index_reader[idx_track]]._time_config._speed;
-	if (_index_time_data[idx_track]>= 1.0f) {
-		_index_time_data[idx_track]= 0.0f;
+	while (_index_time_data[idx_track]>= 1.0f) {
+		_index_time_data[idx_track]-= 1.0f;
 	}
 	update_index_time_texture(idx_track);
 }
 
 
 void MPEGReaders::note_on(unsigned int idx_track, unsigned int key, float amplitude) {
-	/*if (find(_notes_ons.begin(), _notes_ons.end(), idx_track)!= _notes_ons.end()) {
-		return;
-	}*/
-
-	//_notes_ons.push_back(idx_reader);
-
 	int idx_reader= get_idx_reader(key);
 
-	if ((_index_reader[idx_track]== idx_reader) || (idx_reader< 0)) {
+	//if ((_index_reader[idx_track]== idx_reader) || (idx_reader< 0)) {
+	if (idx_reader< 0) {
 		return;
 	}
 
-	cout << "note_on " << idx_track << "\n";
+	//cout << "note_on " << idx_track << "\n";
 
 	_index_reader[idx_track]= idx_reader;
+	_note_on[idx_track]= true;
 
 	_index_time_data[idx_track]= 0.0f;
 	update_index_time_texture(idx_track);
@@ -1019,7 +1014,6 @@ void MPEGReaders::note_on(unsigned int idx_track, unsigned int key, float amplit
 	update_time_texture(idx_track);
 
 	_index_movie_data[idx_track]= _index_movie_data0[_index_reader[idx_track]];
-	cout << _index_reader[idx_track] << " ; " << _index_movie_data0[_index_reader[idx_track]] << "\n";
 	update_index_movie_texture(idx_track);
 
 	_global_alpha_data[idx_track]= amplitude;
@@ -1028,35 +1022,11 @@ void MPEGReaders::note_on(unsigned int idx_track, unsigned int key, float amplit
 
 
 void MPEGReaders::note_off(unsigned int idx_track) {
-	/*if (find(_notes_ons.begin(), _notes_ons.end(), idx_reader)== _notes_ons.end()) {
-		return;
-	}*/
-
-	_index_reader[idx_track]= -1;
+	//cout << "note_off " << idx_track << "\n";
 	
-	cout << "note_off " << idx_track << "\n";
-	
-	//_notes_ons.erase(remove(_notes_ons.begin(), _notes_ons.end(), idx_reader));
+	_note_on[idx_track]= false;
 }
 
-/*
-void MPEGReaders::note_on_by_key(unsigned int key, float amplitude) {
-	int idx_reader= get_idx_reader(key);
-	if (idx_reader< 0) {
-		return;
-	}
-	note_on_by_idx(idx_reader, amplitude);
-}
-
-
-void MPEGReaders::note_off_by_key(unsigned int key) {
-	int idx_reader= get_idx_reader(key);
-	if (idx_reader< 0) {
-		return;
-	}
-	note_off_by_idx(idx_reader);
-}
-*/
 
 int MPEGReaders::get_idx_reader(unsigned int key) {
 	for (int idx_reader=0; idx_reader<_config._reader_configs.size(); ++idx_reader) {

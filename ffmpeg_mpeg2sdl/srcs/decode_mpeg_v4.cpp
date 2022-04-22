@@ -17,6 +17,7 @@
 #include "gl_utils.h"
 #include "utile.h"
 #include "mpeg.h"
+#include "input_state.h"
 
 
 using namespace std;
@@ -41,6 +42,7 @@ glm::mat4 camera2clip;
 glm::mat4 model2world;
 
 ScreenGL * screengl;
+InputState * input_state;
 bool done= false;
 chrono::system_clock::time_point t1, t2;
 
@@ -88,6 +90,7 @@ void init_sdl() {
 	SDL_GL_SwapWindow(window);
 
 	screengl= new ScreenGL(SCREEN_WIDTH, SCREEN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+	input_state= new InputState();
 }
 
 
@@ -155,8 +158,8 @@ void init_program() {
 
 	unsigned int base_index= 0;
 	mpeg_readers= new MPEGReaders(base_index, movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc, global_alpha_loc);
-	//mpeg_readers->randomize();
-	mpeg_readers->load_json("../data/config_01.json");
+	mpeg_readers->randomize();
+	//mpeg_readers->load_json("../data/config_01.json");
 	//exit(0);	
 	glUseProgram(0);
 	check_gl_program(prog_movie);
@@ -227,6 +230,37 @@ void idle() {
 	compute_fps();
 }
 
+void key_down(SDL_Keycode key) {
+	if (key== SDLK_ESCAPE) {
+		done= true;
+		return;
+	}
+	if (key== SDLK_r) {
+		mpeg_readers->randomize();
+	}
+	for (unsigned int i=0; i<8; ++i) {
+		if (key== SDLK_a+ i) {
+			// ici pour tester la juxtaposition on déclenche sur des tracks distinctes
+			if (!input_state->get_key(key)) {
+				mpeg_readers->note_on(i, 'a'+ i);
+			}
+			input_state->key_down(key);
+			break;
+		}
+	}
+}
+
+
+void key_up(SDL_Keycode key) {
+	input_state->key_up(key);
+	for (unsigned int i=0; i<8; ++i) {
+		if (key== SDLK_a+ i) {
+			mpeg_readers->note_off(i);
+			break;
+		}
+	}
+}
+
 
 void main_loop() {
 	SDL_Event event;
@@ -235,26 +269,11 @@ void main_loop() {
 		while (SDL_PollEvent(& event)) {
 			switch (event.type) {
 				case SDL_KEYDOWN:
-					if (event.key.keysym.sym== SDLK_ESCAPE) {
-						done= true;
-						return;
-					}
-					if (event.key.keysym.sym== SDLK_r) {
-						mpeg_readers->randomize();
-					}
-					for (unsigned int i=0; i<8; ++i) {
-						if (event.key.keysym.sym== SDLK_a+ i) {
-							mpeg_readers->note_on(0, 'a'+ i);
-						}
-					}
+					key_down(event.key.keysym.sym);
 					break;
 					
 				case SDL_KEYUP:
-					for (unsigned int i=0; i<8; ++i) {
-						if (event.key.keysym.sym== SDLK_a+ i) {
-							mpeg_readers->note_off(0);
-						}
-					}
+					key_up(event.key.keysym.sym);
 					break;
 					
 				case SDL_QUIT:
@@ -272,6 +291,8 @@ void main_loop() {
 
 void clean() {
 	delete mpeg_readers;
+	delete screengl;
+	delete input_state;
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
