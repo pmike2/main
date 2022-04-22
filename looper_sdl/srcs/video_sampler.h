@@ -7,7 +7,7 @@
 #include "looper.h"
 #include "mpeg.h"
 
-
+/*
 class VideoTrackSample {
 public:
 	VideoTrackSample();
@@ -15,7 +15,7 @@ public:
 
 	sharedata_type _info;
 };
-
+*/
 
 class VideoSampler : public Receiver {
 public:
@@ -27,7 +27,7 @@ public:
 	void note_on(unsigned int idx_track);
 	void note_off(unsigned int idx_track);
 
-	VideoTrackSample * _track_samples[N_MAX_TRACKS];
+	//VideoTrackSample * _track_samples[N_MAX_TRACKS];
 	MPEGReaders * _mpeg_readers;
 };
 

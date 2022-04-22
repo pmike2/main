@@ -9,7 +9,7 @@
 
 
 const unsigned int N_MAX_MOVIES= 8;
-const unsigned int N_READERS= 8;
+const unsigned int N_TRACKS= 8;
 
 
 class MPEG {
@@ -85,9 +85,11 @@ class GlobalConfig {
 public:
 	GlobalConfig();
 	GlobalConfig(
-		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_depth,
-		unsigned int time_width, unsigned int time_height,
-		unsigned int index_time_width, unsigned int index_movie_width, unsigned int global_alpha_width,
+		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_depth, unsigned int alpha_depth0,
+		unsigned int time_width, unsigned int time_height, unsigned int time_height0,
+		unsigned int index_time_width, 
+		unsigned int index_movie_width, unsigned int index_movie_width0,
+		unsigned int global_alpha_width,
 		std::vector<ReaderConfig> reader_configs);
 	GlobalConfig(const GlobalConfig & config);
 	~GlobalConfig();
@@ -96,10 +98,13 @@ public:
 	unsigned int _alpha_width;
 	unsigned int _alpha_height;
 	unsigned int _alpha_depth;
+	unsigned int _alpha_depth0;
 	unsigned int _time_width;
 	unsigned int _time_height;
+	unsigned int _time_height0;
 	unsigned int _index_time_width;
 	unsigned int _index_movie_width;
+	unsigned int _index_movie_width0;
 	unsigned int _global_alpha_width;
 	std::vector<ReaderConfig> _reader_configs;
 };
@@ -117,8 +122,8 @@ public:
 	void load_mpegs();
 	void init_arrays();
 	void compute_alpha_data0();
-	void compute_time_data();
-	void compute_index_movie_data();
+	void compute_time_data0();
+	void compute_index_movie_data0();
 	void init_alpha_texture();
 	void init_time_texture();
 	void init_index_time_texture();
@@ -126,20 +131,22 @@ public:
 	void init_global_alpha_texture();
 	void prepare2draw();
 	void update();
-	void update_alpha_texture(unsigned int idx_reader);
-	void update_index_time_texture(unsigned int idx_reader);
-	void update_global_alpha_texture(unsigned int idx_reader);
-	void decrease_alpha(unsigned int idx_reader);
-	void next_index_time(unsigned int idx_reader);
-	void note_on_by_idx(unsigned int idx_reader, float amplitude=1.0f);
-	void note_off_by_idx(unsigned int idx_reader);
-	void note_on_by_key(unsigned int key, float amplitude=1.0f);
-	void note_off_by_key(unsigned int key);
+	void update_alpha_texture(unsigned int idx_track);
+	void update_time_texture(unsigned int idx_track);
+	void update_index_time_texture(unsigned int idx_track);
+	void update_index_movie_texture(unsigned int idx_track);
+	void update_global_alpha_texture(unsigned int idx_track);
+	void decrease_alpha(unsigned int idx_track);
+	void next_index_time(unsigned int idx_track);
+	void note_on(unsigned int idx_track, unsigned int key, float amplitude=1.0f);
+	void note_off(unsigned int idx_track);
 	int get_idx_reader(unsigned int key);
 	std::vector<std::string> get_mpegs_paths();
 
 
 	GlobalConfig _config;
+	//std::vector<unsigned int> _notes_ons;
+	int _index_reader[N_TRACKS];
 
 	unsigned int _movies_ids[N_MAX_MOVIES];
 	int _movie_loc;
@@ -152,6 +159,7 @@ public:
 	unsigned int _alpha_texture_index;
 
 	float * _time_data;
+	float * _time_data0;
 	unsigned int _time_id;
 	int _time_loc;
 	unsigned int _time_texture_index;
@@ -162,6 +170,7 @@ public:
 	unsigned int _index_time_texture_index;
 
 	unsigned int * _index_movie_data;
+	unsigned int * _index_movie_data0;
 	unsigned int _index_movie_id;
 	int _index_movie_loc;
 	unsigned int _index_movie_texture_index;
@@ -170,8 +179,6 @@ public:
 	unsigned int _global_alpha_id;
 	int _global_alpha_loc;
 	unsigned int _global_alpha_texture_index;
-
-	std::vector<unsigned int> _notes_ons;
 };
 
 

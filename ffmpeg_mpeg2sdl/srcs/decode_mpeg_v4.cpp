@@ -155,9 +155,9 @@ void init_program() {
 
 	unsigned int base_index= 0;
 	mpeg_readers= new MPEGReaders(base_index, movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc, global_alpha_loc);
-	mpeg_readers->randomize();
-	//mpeg_readers->load_json("../data/config_01.json");
-	
+	//mpeg_readers->randomize();
+	mpeg_readers->load_json("../data/config_01.json");
+	//exit(0);	
 	glUseProgram(0);
 	check_gl_program(prog_movie);
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
@@ -244,7 +244,7 @@ void main_loop() {
 					}
 					for (unsigned int i=0; i<8; ++i) {
 						if (event.key.keysym.sym== SDLK_a+ i) {
-							mpeg_readers->note_on_by_key('a'+ i);
+							mpeg_readers->note_on(0, 'a'+ i);
 						}
 					}
 					break;
@@ -252,7 +252,7 @@ void main_loop() {
 				case SDL_KEYUP:
 					for (unsigned int i=0; i<8; ++i) {
 						if (event.key.keysym.sym== SDLK_a+ i) {
-							mpeg_readers->note_off_by_key('a'+ i);
+							mpeg_readers->note_off(0);
 						}
 					}
 					break;
