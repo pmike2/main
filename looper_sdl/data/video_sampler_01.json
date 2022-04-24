@@ -14,7 +14,7 @@
 				"alpha_polygons" : [
 					{
 						"polygon" : [0.3, 0.3, 0.4, 0.3, 0.4, 0.4, 0.3, 0.4],
-						"fadeout" : 0.7,
+						"fadeout" : 0.1,
 						"curve" : 2.0,
 						"alpha_max" : 0.9
 					}

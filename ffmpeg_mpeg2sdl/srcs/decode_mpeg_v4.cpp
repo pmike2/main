@@ -37,7 +37,7 @@ GLuint prog_movie;
 GLuint vao;
 GLuint vbo;
 GLint camera2clip_loc, model2world_loc, position_loc, screen_width_loc, screen_height_loc,
-	movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc, global_alpha_loc;
+	movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc, global_alpha_loc, modifier_loc;
 glm::mat4 camera2clip;
 glm::mat4 model2world;
 
@@ -154,12 +154,13 @@ void init_program() {
 	index_time_loc= glGetUniformLocation(prog_movie, "index_time");
 	index_movie_loc= glGetUniformLocation(prog_movie, "index_movie");
 	global_alpha_loc= glGetUniformLocation(prog_movie, "global_alpha");
+	modifier_loc= glGetUniformLocation(prog_movie, "modifier");
 	position_loc= glGetAttribLocation(prog_movie, "position_in");
 
 	unsigned int base_index= 0;
-	mpeg_readers= new MPEGReaders(base_index, movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc, global_alpha_loc);
-	mpeg_readers->randomize();
-	//mpeg_readers->load_json("../data/config_01.json");
+	mpeg_readers= new MPEGReaders(base_index, movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc, global_alpha_loc, modifier_loc);
+	//mpeg_readers->randomize();
+	mpeg_readers->load_json("../data/config_01.json");
 	//exit(0);	
 	glUseProgram(0);
 	check_gl_program(prog_movie);

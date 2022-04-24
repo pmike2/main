@@ -360,6 +360,40 @@ ostream & operator << (ostream & stream, ReaderConfig & r) {
 
 
 // -----------------------------------------------------------------------------------
+ModifierConfig::ModifierConfig() {
+
+}
+
+
+ModifierConfig::ModifierConfig(const ModifierConfig & modifier_config) :
+	_time_mult(modifier_config._time_mult), _time_add(modifier_config._time_add)
+{
+	for (unsigned int i=0; i<4; ++i) {
+		_movie_mult[i]= modifier_config._movie_mult[i];
+		_alpha_mult[i]= modifier_config._alpha_mult[i];
+	}
+	for (unsigned int i=0; i<2; ++i) {
+		_movie_add[i]= modifier_config._movie_add[i];
+		_alpha_add[i]= modifier_config._alpha_add[i];
+	}
+}
+
+
+ModifierConfig::~ModifierConfig() {
+
+}
+
+
+ostream & operator << (ostream & stream, ModifierConfig & g) {
+	stream << "movie_mult=(" << g._movie_mult[0] << " ; " << g._movie_mult[1] << " ; " << g._movie_mult[2] << " ; " << g._movie_mult[3] << ")\n";
+	stream << "movie_add=(" << g._movie_add[0] << " ; " << g._movie_add[1] << ")\n"
+	stream << "alpha_mult=(" << g._alpha_mult[0] << " ; " << g._alpha_mult[1] << " ; " << g._alpha_mult[2] << " ; " << g._alpha_mult[3] << ")\n";
+	stream << "alpha_add=(" << g._alpha_add[0] << " ; " << g._alpha_add[1] << ")\n"
+	stream << "time_mult=" << g._time_mult << " ; time_add=" << g._time_add << "\n";
+}
+
+
+// -----------------------------------------------------------------------------------
 GlobalConfig::GlobalConfig() :
 	_alpha_width(0), _alpha_height(0), _alpha_depth(0), _time_width(0), _time_height(0), _index_time_width(0), _index_movie_width(0)
 {
@@ -370,12 +404,13 @@ GlobalConfig::GlobalConfig() :
 GlobalConfig::GlobalConfig(unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_depth, unsigned int alpha_depth0,
 	unsigned int time_width, unsigned int time_height, unsigned int time_height0,
 	unsigned int index_time_width, unsigned int index_movie_width, unsigned int index_movie_width0,
-	unsigned int global_alpha_width,
-	vector<ReaderConfig> reader_configs) :
+	unsigned int global_alpha_width, unsigned int modifier_width, unsigned int modifier_height,
+	vector<ReaderConfig> reader_configs, vector<ModifierConfig> modifier_configs) :
 	_alpha_width(alpha_width), _alpha_height(alpha_height), _alpha_depth(alpha_depth), _alpha_depth0(alpha_depth0),
 	_time_width(time_width), _time_height(time_height), _time_height0(time_height0),
 	_index_time_width(index_time_width), _index_movie_width(index_movie_width), _index_movie_width0(index_movie_width0), 
-	_global_alpha_width(global_alpha_width), _reader_configs(reader_configs)
+	_global_alpha_width(global_alpha_width), _modifier_width(modifier_width), _modifier_height(modifier_height),
+	_reader_configs(reader_configs), _modifier_configs(modifier_configs)
 {
 
 }
@@ -385,7 +420,8 @@ GlobalConfig::GlobalConfig(const GlobalConfig & config) :
 	_alpha_width(config._alpha_width), _alpha_height(config._alpha_height), _alpha_depth(config._alpha_depth), _alpha_depth0(config._alpha_depth0), 
 	_time_width(config._time_width), _time_height(config._time_height), _time_height0(config._time_height0),
 	_index_time_width(config._index_time_width), _index_movie_width(config._index_movie_width), _index_movie_width0(config._index_movie_width0),
-	_global_alpha_width(config._global_alpha_width), _reader_configs(config._reader_configs)
+	_global_alpha_width(config._global_alpha_width), _modifier_width(config._modifier_width), _modifier_height(config._modifier_height),
+	_reader_configs(config._reader_configs), _modifier_configs(config._modifier_configs)
 {
 
 }
@@ -427,10 +463,14 @@ ostream & operator << (ostream & stream, GlobalConfig & g) {
 	stream << "time_width=" << g._time_width << " ; time_height=" << g._time_height << " ; time_height0=" << g._time_height0 << "\n";
 	stream << "index_time_width=" << g._index_time_width << " ; index_movie_width=" << g._index_movie_width << " ; index_movie_width0=" << g._index_movie_width0 << "\n";
 	stream << "global_alpha_width=" << g._global_alpha_width << "\n";
+	stream << "modifier_width=" << g._modifier_width << "modifier_height=" << g._modifier_height << "\n";
 	stream << "reader_configs=\n";
 	for (auto & r : g._reader_configs) {
 		stream << r;
 	}
+	stream << "modifier_configs=\n";
+	for (auto & m : g._modifier_configs) {
+		stream << m
 
 	return stream;
 }
@@ -443,13 +483,14 @@ MPEGReaders::MPEGReaders() {
 
 
 MPEGReaders::MPEGReaders(unsigned int base_index, int movie_loc, int alpha_loc, int time_loc,
-	int index_time_loc, int index_movie_loc, int global_alpha_loc) :
+	int index_time_loc, int index_movie_loc, int global_alpha_loc, int modifier_loc) :
 	_movie_loc(movie_loc),
 	_alpha_data0(0), _alpha_data(0), _alpha_texture_index(base_index+ N_MAX_MOVIES), _alpha_loc(alpha_loc),
 	_time_data0(0), _time_data(0), _time_texture_index(base_index+ N_MAX_MOVIES+ 1), _time_loc(time_loc),
 	_index_time_data(0), _index_time_texture_index(base_index+ N_MAX_MOVIES+ 2), _index_time_loc(index_time_loc),
 	_index_movie_data0(0), _index_movie_data(0), _index_movie_texture_index(base_index+ N_MAX_MOVIES+ 3), _index_movie_loc(index_movie_loc),
-	_global_alpha_data(0), _global_alpha_texture_index(base_index+ N_MAX_MOVIES+ 4), _global_alpha_loc(global_alpha_loc)
+	_global_alpha_data(0), _global_alpha_texture_index(base_index+ N_MAX_MOVIES+ 4), _global_alpha_loc(global_alpha_loc),
+	_modifier_data(0), _modifier_texture_index(base_index+ N_MAX_MOVIES+ 5), _modifier_loc(modifier_loc)
 {
 	for (unsigned int i=0; i<N_MAX_MOVIES; ++i) {
 		_movies_ids[i]= 0;
@@ -472,6 +513,7 @@ MPEGReaders::~MPEGReaders() {
 	delete[] _index_movie_data;
 	delete[] _index_movie_data0;
 	delete[] _global_alpha_data;
+	delete[] _modifier_data;
 }
 
 
@@ -483,11 +525,13 @@ void MPEGReaders::set_config(GlobalConfig config) {
 	compute_alpha_data0();
 	compute_time_data0();
 	compute_index_movie_data0();
+	compute_modifier_data();
 	init_alpha_texture();
 	init_time_texture();
 	init_index_time_texture();
 	init_index_movie_texture();
 	init_global_alpha_texture();
+	init_modifier_texture();
 }
 
 
@@ -553,6 +597,8 @@ void MPEGReaders::load_json(string json_path) {
 		reader_configs.push_back(ReaderConfig(reader_config));
 	}
 
+	vector<ModifierConfig> modifier_configs;
+
 	unsigned int alpha_width= js["alpha_width"].get<int>();
 	unsigned int alpha_height= js["alpha_height"].get<int>();
 	unsigned int alpha_depth= N_TRACKS;
@@ -564,9 +610,12 @@ void MPEGReaders::load_json(string json_path) {
 	unsigned int index_movie_width= N_TRACKS;
 	unsigned int index_movie_width0= reader_configs.size();
 	unsigned int global_alpha_width= N_TRACKS;
+	unsigned int modifier_width= 32; // + petite puissance de 2 > 17 = (4+ 2+ 1)* 2+ 3
+	unsigned int modifier_height= N_TRACKS;
 
 	GlobalConfig config(alpha_width, alpha_height, alpha_depth, alpha_depth0, time_width, time_height, time_height0,
-		index_time_width, index_movie_width, index_movie_width0, global_alpha_width, reader_configs);
+		index_time_width, index_movie_width, index_movie_width0, global_alpha_width, modifier_width, modifier_height,
+		reader_configs, modifier_configs);
 	//cout << config;
 	set_config(config);
 }
@@ -648,8 +697,10 @@ void MPEGReaders::load_mpegs() {
 
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+		//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R    , GL_REPEAT);
+		//glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S    , GL_REPEAT);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
 		
 		glBindTexture(GL_TEXTURE_3D, 0);
@@ -809,6 +860,11 @@ void MPEGReaders::compute_index_movie_data0() {
 }
 
 
+void MPEGReaders::compute_modifier_data() {
+
+}
+
+
 void MPEGReaders::init_alpha_texture() {
 	glGenTextures(1, &_alpha_id);
 
@@ -889,6 +945,23 @@ void MPEGReaders::init_global_alpha_texture() {
 	glBindTexture(GL_TEXTURE_1D, 0);
 
 	glUniform1i(_global_alpha_loc, _global_alpha_texture_index);
+}
+
+
+void MPEGReaders::init_modifier_texture() {
+	glGenTextures(1, &_modifier_id);
+
+	glActiveTexture(GL_TEXTURE0+ _modifier_texture_index);
+	glBindTexture(GL_TEXTURE_1D_ARRAY, _modifier_id);
+	glTexImage2D(GL_TEXTURE_1D_ARRAY, 0, GL_R32F, _config._modifier_width, _config._modifier_height, 0, GL_RED, GL_FLOAT, _modifier_data);
+	glTexParameteri(GL_TEXTURE_1D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_1D_ARRAY, GL_TEXTURE_WRAP_R    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_1D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_1D_ARRAY, 0);
+
+	glUniform1i(_modifier_loc, _modifier_texture_index);
 }
 
 

@@ -81,6 +81,21 @@ public:
 };
 
 
+class ModifierConfig {
+public:
+	ModifierConfig();
+	ModifierConfig(const ModifierConfig & modifier_config);
+	~ModifierConfig();
+
+	float _movie_mult[4];
+	float _movie_add[2];
+	float _alpha_mult[4];
+	float _alpha_add[2];
+	float _time_mult;
+	float _time_add;
+};
+
+
 class GlobalConfig {
 public:
 	GlobalConfig();
@@ -90,7 +105,9 @@ public:
 		unsigned int index_time_width, 
 		unsigned int index_movie_width, unsigned int index_movie_width0,
 		unsigned int global_alpha_width,
-		std::vector<ReaderConfig> reader_configs);
+		unsigned int modifier_width, unsigned int modifier_height,
+		std::vector<ReaderConfig> reader_configs,
+		std::vector<ModifierConfig> modifier_configs);
 	GlobalConfig(const GlobalConfig & config);
 	~GlobalConfig();
 	GlobalConfig & operator=(const GlobalConfig & rhs);
@@ -106,7 +123,10 @@ public:
 	unsigned int _index_movie_width;
 	unsigned int _index_movie_width0;
 	unsigned int _global_alpha_width;
+	unsigned int _modifier_width;
+	unsigned int _modifier_height;
 	std::vector<ReaderConfig> _reader_configs;
+	std::vector<ModifierConfig> _modifier_configs;
 };
 
 
@@ -114,7 +134,7 @@ class MPEGReaders {
 public:
 	MPEGReaders();
 	MPEGReaders(unsigned int base_index, int movie_loc, int alpha_loc, int time_loc, int index_time_loc,
-		int index_movie_loc, int global_alpha_loc);
+		int index_movie_loc, int global_alpha_loc, int modifier_loc);
 	~MPEGReaders();
 	void set_config(GlobalConfig config);
 	void load_json(std::string json_path);
@@ -124,11 +144,13 @@ public:
 	void compute_alpha_data0();
 	void compute_time_data0();
 	void compute_index_movie_data0();
+	void compute_modifier_data();
 	void init_alpha_texture();
 	void init_time_texture();
 	void init_index_time_texture();
 	void init_index_movie_texture();
 	void init_global_alpha_texture();
+	void init_modifier_texture();
 	void prepare2draw();
 	void update();
 	void update_alpha_texture(unsigned int idx_track);
@@ -179,6 +201,11 @@ public:
 	unsigned int _global_alpha_id;
 	int _global_alpha_loc;
 	unsigned int _global_alpha_texture_index;
+
+	float * _modifier_data;
+	unsigned int _modifier_id;
+	int _modifier_loc;
+	unsigned int _modifier_texture_index;
 };
 
 

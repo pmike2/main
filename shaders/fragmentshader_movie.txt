@@ -6,6 +6,7 @@ uniform sampler1DArray movie_time;
 uniform sampler1D index_time;
 uniform usampler1D index_movie;
 uniform sampler1D global_alpha;
+uniform sampler1DArray modifier;
 uniform int screen_width;
 uniform int screen_height;
 
@@ -16,12 +17,20 @@ void main() {
 
 	color= vec4(0.0);
 	for (int idx_track=0; idx_track<8; idx_track++) {
-		vec4 idx_time= texture(index_time, float(idx_track)* 0.125);
-		vec4 frame= texture(movie_time, vec2(idx_time.r, float(idx_track)));
-		vec4 idx_mov= texture(index_movie, float(idx_track)* 0.125);
-		vec3 vec_mov= vec3(uv, frame.r);
-		vec4 global_a= texture(global_alpha, float(idx_track)* 0.125);
-		vec4 a= texture(alpha, vec3(uv, float(idx_track)));
+		float idx_track_f= float(idx_track);
+
+		mat2 mov_mult= mat2(
+			texture(modifier, vec2(0.0, idx_track_f)), texture(modifier, vec2(0.03125, idx_track_f)),
+			texture(modifier, vec2(0.0625, idx_track_f)), texture(modifier, vec2(0.09375, idx_track_f))
+		);
+		vec2 mov_add= vec2(texture(modifier, vec2(0.125, idx_track_f)), texture(modifier, vec2(0.15625, idx_track_f)));
+
+		vec4 idx_time= texture(index_time, idx_track_f* 0.125);
+		vec4 frame= texture(movie_time, vec2(idx_time.r, idx_track_f));
+		vec4 idx_mov= texture(index_movie, idx_track_f* 0.125);
+		vec3 vec_mov= vec3(mov_mult* uv+ mov_add, frame.r);
+		vec4 global_a= texture(global_alpha, idx_track_f* 0.125);
+		vec4 a= texture(alpha, vec3(uv, idx_track_f));
 		
 		vec4 tex= vec4(0.0);
 		if      (idx_mov.r== 0) { tex= texture(movie[0], vec_mov); }
