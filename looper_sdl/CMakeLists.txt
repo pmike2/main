@@ -48,4 +48,4 @@ target_link_libraries(receiver_test_main PUBLIC lib_looper)
 
 target_link_libraries(audio_sampler_main PUBLIC ${PORTAUDIO_LIBRARIES} ${LIBSNDFILE_LIBRARIES} lib_looper lib_pa_utils)
 
-target_link_libraries(video_sampler_main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${FFMPEG_OPTIONS} lib_looper lib_utile lib_gl_utils lib_mpeg lib_geom_2d lib_bbox_2d)
+target_link_libraries(video_sampler_main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${FFMPEG_OPTIONS} lib_looper lib_input_state lib_utile lib_gl_utils lib_mpeg lib_geom_2d lib_bbox_2d)

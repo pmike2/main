@@ -16,6 +16,7 @@
 #include "gl_utils.h"
 #include "utile.h"
 #include "mpeg.h"
+#include "input_state.h"
 
 #include "video_sampler.h"
 
@@ -43,7 +44,9 @@ glm::mat4 camera2clip;
 glm::mat4 model2world;
 
 ScreenGL * screengl;
+InputState * input_state;
 bool done= false;
+chrono::system_clock::time_point t1, t2;
 
 VideoSampler * video_sampler;
 
@@ -88,6 +91,7 @@ void init_sdl() {
 	SDL_GL_SwapWindow(window);
 
 	screengl= new ScreenGL(SCREEN_WIDTH, SCREEN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+	input_state= new InputState();
 }
 
 
@@ -210,9 +214,37 @@ void update() {
 }
 
 
+void compute_fps() {
+	t2= chrono::system_clock::now();
+	auto d= chrono::duration_cast<chrono::milliseconds>(t2- t1).count();
+	t1= t2;
+
+	char s_fps[256];
+	sprintf(s_fps, "%lld", d);
+	SDL_SetWindowTitle(window, s_fps);
+}
+
+
 void idle() {
 	update();
 	draw();
+	compute_fps();
+}
+
+
+void key_down(SDL_Keycode key) {
+	if (key== SDLK_ESCAPE) {
+		done= true;
+		return;
+	}
+	if (key== SDLK_r) {
+		video_sampler->_mpeg_readers->randomize();
+	}
+}
+
+
+void key_up(SDL_Keycode key) {
+	input_state->key_up(key);
 }
 
 
@@ -223,13 +255,11 @@ void main_loop() {
 		while (SDL_PollEvent(& event)) {
 			switch (event.type) {
 				case SDL_KEYDOWN:
-					if (event.key.keysym.sym== SDLK_ESCAPE) {
-						done= true;
-						return;
-					}
+					key_down(event.key.keysym.sym);
 					break;
 					
 				case SDL_KEYUP:
+					key_up(event.key.keysym.sym);
 					break;
 					
 				case SDL_QUIT:
@@ -247,6 +277,8 @@ void main_loop() {
 
 void clean() {
 	delete video_sampler;
+	delete screengl;
+	delete input_state;
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
 	SDL_Quit();

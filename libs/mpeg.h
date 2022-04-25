@@ -84,7 +84,6 @@ public:
 class ModifierConfig {
 public:
 	ModifierConfig();
-	//ModifierConfig(unsigned int idx_track= 0, unsigned int key= 0);
 	ModifierConfig(const ModifierConfig & modifier_config);
 	~ModifierConfig();
 

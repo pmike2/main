@@ -370,17 +370,6 @@ ModifierConfig::ModifierConfig() :
 	_alpha_add[0]= 0.0f; _alpha_add[1]= 0.0f;
 }
 
-/*
-ModifierConfig::ModifierConfig(unsigned int idx_track, unsigned int key) :
-	_movie_speed(0.0f), _alpha_speed(0.0f), _time_mult(1.0f), _time_add(0.0f), _time_speed(0.0f),
-	_idx_track(idx_track), _key(key)
-{
-	_movie_mult[0]= 1.0f; _movie_mult[1]= 0.0f; _movie_mult[2]= 0.0f; _movie_mult[3]= 1.0f;
-	_movie_add[0]= 0.0f; _movie_add[1]= 0.0f;
-	_alpha_mult[0]= 1.0f; _alpha_mult[1]= 0.0f; _alpha_mult[2]= 0.0f; _alpha_mult[3]= 1.0f;
-	_alpha_add[0]= 0.0f; _alpha_add[1]= 0.0f;
-}
-*/
 
 ModifierConfig::ModifierConfig(const ModifierConfig & modifier_config) :
 	_movie_speed(modifier_config._movie_speed), _alpha_speed(modifier_config._alpha_speed),
@@ -1253,7 +1242,6 @@ void MPEGReaders::note_on(unsigned int idx_track, unsigned int key, float amplit
 	int idx_reader= get_idx_reader(key);
 
 	if (idx_reader>= 0) {
-		//cout << "note_on " << idx_track << "\n";
 		_index_reader[idx_track]= idx_reader;
 		_note_on[idx_track]= true;
 
@@ -1285,8 +1273,6 @@ void MPEGReaders::note_on(unsigned int idx_track, unsigned int key, float amplit
 
 
 void MPEGReaders::note_off(unsigned int idx_track) {
-	//cout << "note_off " << idx_track << "\n";
-	
 	_note_on[idx_track]= false;
 }
 
