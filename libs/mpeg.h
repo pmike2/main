@@ -84,15 +84,21 @@ public:
 class ModifierConfig {
 public:
 	ModifierConfig();
+	//ModifierConfig(unsigned int idx_track= 0, unsigned int key= 0);
 	ModifierConfig(const ModifierConfig & modifier_config);
 	~ModifierConfig();
 
 	float _movie_mult[4];
 	float _movie_add[2];
+	float _movie_speed;
 	float _alpha_mult[4];
 	float _alpha_add[2];
+	float _alpha_speed;
 	float _time_mult;
 	float _time_add;
+	float _time_speed;
+	unsigned int _idx_track;
+	unsigned int _key;
 };
 
 
@@ -158,11 +164,15 @@ public:
 	void update_index_time_texture(unsigned int idx_track);
 	void update_index_movie_texture(unsigned int idx_track);
 	void update_global_alpha_texture(unsigned int idx_track);
+	void update_modifier_texture(unsigned int idx_track);
 	void decrease_alpha(unsigned int idx_track);
 	void next_index_time(unsigned int idx_track);
+	void next_index_modifier(unsigned int idx_track);
 	void note_on(unsigned int idx_track, unsigned int key, float amplitude=1.0f);
 	void note_off(unsigned int idx_track);
 	int get_idx_reader(unsigned int key);
+	int get_idx_modifier(unsigned int idx_track);
+	int get_idx_modifier_by_key(unsigned int key);
 	std::vector<std::string> get_mpegs_paths();
 
 

@@ -12,8 +12,8 @@ VideoSampler::VideoSampler() {
 
 
 VideoSampler::VideoSampler(unsigned int base_index, int movie_loc, int alpha_loc,
-	int time_loc, int index_time_loc, int index_movie_loc, int global_alpha_loc, string json_path) {
-	_mpeg_readers= new MPEGReaders(base_index, movie_loc, alpha_loc, time_loc, index_time_loc, index_movie_loc, global_alpha_loc);
+	int time_loc, int index_time_loc, int index_movie_loc, int global_alpha_loc, int modifier_loc, string json_path) {
+	_mpeg_readers= new MPEGReaders(base_index, movie_loc, alpha_loc, time_loc, index_time_loc, index_movie_loc, global_alpha_loc, modifier_loc);
 	_mpeg_readers->load_json(json_path);
 }
 

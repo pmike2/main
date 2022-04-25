@@ -10,40 +10,76 @@ uniform sampler1DArray modifier;
 uniform int screen_width;
 uniform int screen_height;
 
+layout(origin_upper_left) in vec4 gl_FragCoord;
+
 out vec4 color;
+
+/*
+0.0		0.03125	0.0625	0.09375
+0.125	0.15625	0.1875	0.21875
+0.25	0.28125	0.3125	0.34375
+0.375	0.40625	0.4375	0.46875
+0.5		0.53125	0.5625	0.59375
+0.625	0.65625	0.6875	0.71875
+0.75	0.78125	0.8125	0.84375
+0.875	0.90625	0.9375	0.96875
+*/
 
 void main() {
 	vec2 uv = vec2(gl_FragCoord.x/ screen_width, gl_FragCoord.y/ screen_height);
+	mat2 identity= mat2(1.0);
 
 	color= vec4(0.0);
 	for (int idx_track=0; idx_track<8; idx_track++) {
 		float idx_track_f= float(idx_track);
 
-		mat2 mov_mult= mat2(
-			texture(modifier, vec2(0.0, idx_track_f)), texture(modifier, vec2(0.03125, idx_track_f)),
-			texture(modifier, vec2(0.0625, idx_track_f)), texture(modifier, vec2(0.09375, idx_track_f))
+		mat2 mod_mov_mult= mat2(
+			texture(modifier, vec2(0.0, idx_track_f)).r, texture(modifier, vec2(0.03125, idx_track_f)).r,
+			texture(modifier, vec2(0.0625, idx_track_f)).r, texture(modifier, vec2(0.09375, idx_track_f)).r
 		);
-		vec2 mov_add= vec2(texture(modifier, vec2(0.125, idx_track_f)), texture(modifier, vec2(0.15625, idx_track_f)));
+		vec2 mod_mov_add= vec2(texture(modifier, vec2(0.125, idx_track_f)).r, texture(modifier, vec2(0.15625, idx_track_f)).r);
+		float mod_mov_idx= texture(modifier, vec2(0.1875, idx_track_f)).r;
+		mod_mov_mult= mod_mov_idx* identity+ (1.0- mod_mov_idx)* mod_mov_mult;
+		mod_mov_add= (1.0- mod_mov_idx)* mod_mov_add;
 
-		vec4 idx_time= texture(index_time, idx_track_f* 0.125);
-		vec4 frame= texture(movie_time, vec2(idx_time.r, idx_track_f));
-		vec4 idx_mov= texture(index_movie, idx_track_f* 0.125);
-		vec3 vec_mov= vec3(mov_mult* uv+ mov_add, frame.r);
-		vec4 global_a= texture(global_alpha, idx_track_f* 0.125);
-		vec4 a= texture(alpha, vec3(uv, idx_track_f));
+		mat2 mod_alpha_mult= mat2(
+			texture(modifier, vec2(0.21875, idx_track_f)).r, texture(modifier, vec2(0.25, idx_track_f)).r,
+			texture(modifier, vec2(0.28125, idx_track_f)).r, texture(modifier, vec2(0.3125, idx_track_f)).r
+		);
+		vec2 mod_alpha_add= vec2(texture(modifier, vec2(0.34375, idx_track_f)).r, texture(modifier, vec2(0.375, idx_track_f)).r);
+		float mod_alpha_idx= texture(modifier, vec2(0.40625, idx_track_f)).r;
+		mod_alpha_mult= mod_alpha_idx* identity+ (1.0- mod_alpha_idx)* mod_alpha_mult;
+		mod_alpha_add= (1.0- mod_alpha_idx)* mod_alpha_add;
+
+		float mod_time_mult= texture(modifier, vec2(0.4375, idx_track_f)).r;
+		float mod_time_add= texture(modifier, vec2(0.46875, idx_track_f)).r;
+		float mod_time_idx= texture(modifier, vec2(0.5, idx_track_f)).r;
+		mod_time_mult= mod_time_idx+ (1.0- mod_time_idx)* mod_time_mult;
+		mod_time_add= (1.0- mod_time_idx)* mod_time_add;
+
+		float idx_time= texture(index_time, idx_track_f* 0.125).r;
+		//float frame= mod_time_mult* texture(movie_time, vec2(idx_time, idx_track_f)).r+ mod_time_add;
+		float frame= clamp(mod_time_mult* texture(movie_time, vec2(idx_time, idx_track_f)).r+ mod_time_add, 0.0, 1.0);
+		vec3 vec_mov= vec3(clamp(mod_mov_mult* uv+ mod_mov_add, 0.0, 1.0), frame);
+		//vec3 vec_mov= vec3(uv, frame);
+		float idx_mov= texture(index_movie, idx_track_f* 0.125).r;
+		//float a= texture(alpha, vec3(clamp(mod_alpha_mult* uv+ mod_alpha_add, 0.0, 1.0), idx_track_f)).r;
+		float a= texture(alpha, vec3(clamp(uv+ mod_alpha_add, 0.0, 1.0), idx_track_f)).r;
+		//float a= texture(alpha, vec3(uv, idx_track_f)).r;
+		float global_a= texture(global_alpha, idx_track_f* 0.125).r;
 		
 		vec4 tex= vec4(0.0);
-		if      (idx_mov.r== 0) { tex= texture(movie[0], vec_mov); }
-		else if (idx_mov.r== 1) { tex= texture(movie[1], vec_mov); }
-		else if (idx_mov.r== 2) { tex= texture(movie[2], vec_mov); }
-		else if (idx_mov.r== 3) { tex= texture(movie[3], vec_mov); }
-		else if (idx_mov.r== 4) { tex= texture(movie[4], vec_mov); }
-		else if (idx_mov.r== 5) { tex= texture(movie[5], vec_mov); }
-		else if (idx_mov.r== 6) { tex= texture(movie[6], vec_mov); }
-		else if (idx_mov.r== 7) { tex= texture(movie[7], vec_mov); }
+		if      (idx_mov== 0) { tex= texture(movie[0], vec_mov); }
+		else if (idx_mov== 1) { tex= texture(movie[1], vec_mov); }
+		else if (idx_mov== 2) { tex= texture(movie[2], vec_mov); }
+		else if (idx_mov== 3) { tex= texture(movie[3], vec_mov); }
+		else if (idx_mov== 4) { tex= texture(movie[4], vec_mov); }
+		else if (idx_mov== 5) { tex= texture(movie[5], vec_mov); }
+		else if (idx_mov== 6) { tex= texture(movie[6], vec_mov); }
+		else if (idx_mov== 7) { tex= texture(movie[7], vec_mov); }
 		
-		tex.rgb*= a.r;
-		tex.rgb*= global_a.r;
+		tex.rgb*= a;
+		tex.rgb*= global_a;
 		color+= vec4(vec3(tex), 1.0);
 	}
 }

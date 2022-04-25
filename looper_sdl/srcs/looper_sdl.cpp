@@ -84,7 +84,8 @@ void LooperSDL::key_down(SDL_Keycode key) {
 			set_previous_track();
 		}
 		else if (key== SDLK_c) {
-			clear();
+			//clear();
+			_current_track->clear();
 		}
 		else if (key== SDLK_q) {
 			if (_current_track->_quantize== 0) {
@@ -146,7 +147,7 @@ void LooperSDL::draw() {
 		// rect track
 		if (_tracks[idx_track]== _current_track) {
 			SDL_Color c;
-			c.r= 40; c.g= 40; c.b= 40; c.a= 100;
+			c.r= 150; c.g= 150; c.b= 150; c.a= 100;
 			draw_rect(0, y, _screen_width, track_height, c);
 		}
 
@@ -181,7 +182,7 @@ void LooperSDL::draw() {
 			for (unsigned int i=0; i<_tracks[idx_track]->_quantize; ++i) {
 				int x= (int)((float)(i* _screen_width)/ (float)(_tracks[idx_track]->_quantize));
 				SDL_Color c;
-				c.r= 80; c.g= 80; c.b= 80; c.a= 200;
+				c.r= 150; c.g= 150; c.b= 150; c.a= 150;
 				draw_rect(x, y, 1, track_height, c);
 			}
 		}
