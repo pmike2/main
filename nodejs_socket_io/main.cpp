@@ -14,8 +14,7 @@ using namespace std;
 using json = nlohmann::json;
 
 // init de js_config
-json js_config;
-
+json js_config= {{"a", "init_value"}};
 
 
 // GET et mise à jour de js_config
@@ -46,10 +45,6 @@ void post() {
 
 // point d'entrée -----------------------------------------------------------------
 int main(int argc, char **argv) {
-	string json_path= "/Volumes/Data/perso/dev/main/ffmpeg_mpeg2sdl/data/config_01.json";
-	ifstream istr(json_path);
-	istr >> js_config;
-
 	if (string(argv[1])== "get") {
 		get();
 	}

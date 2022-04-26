@@ -1,0 +1,172 @@
+<!--
+Partie client
+-->
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>TEST</title>
+		<style>
+			div {
+				margin-left: 20px;
+			}
+			span {
+				margin-right: 15px;
+				margin-left: 10px;
+			}
+			input {
+				width: 60px;
+				border: 0;
+				background-color: rgb(200, 200, 100);
+			}
+			input.long-input {
+				width: 250px;
+			}
+			div.invisible {
+				display: none;
+			}
+			button {
+				width: 15px;
+				border: 0;
+			}
+			button.hide-button {
+				background-color: rgb(200, 100, 200);
+			}
+			button.randomize-button {
+				background-color: rgb(100, 200, 200);
+			}
+			button.add-button {
+				background-color: rgb(150, 200, 120);
+			}
+		</style>
+	</head>
+	<body>
+	
+		<script src="/socket.io/socket.io.js"></script>
+		<script>
+			var socket= io();
+			var js_config= {};
+			
+
+			function randomize(html_node) {
+				if (html_node.tagName.toLowerCase()== "input") {
+					if (!isNaN(html_node.value)) {
+						if (Number.isInteger(parseFloat(html_node.value))) {
+							html_node.value= Math.floor(Math.random()* 8.0);
+						}
+						else {
+							var val= Math.random()* 4.0- 2.0;
+							html_node.value= val.toFixed(3);
+						}
+					}
+				}
+				else {
+					for (var i=0; i<html_node.children.length; i++) {
+						randomize(html_node.children[i]);
+					}
+				}
+			}
+
+
+			function parse_node(js_key, js_node, parent_html_node) {
+				var sorted_keys= Object.keys(js_node).sort();
+				
+				var div_elmt= document.createElement("div");
+				
+				if (typeof(js_node)=== "object") {
+					var button_hide_elmt= document.createElement("button");
+					button_hide_elmt.innerHTML= ">";
+					button_hide_elmt.classList.add("hide-button");
+					button_hide_elmt.addEventListener("click", function(e) {
+						for (var i=0; i<div_elmt.children.length; i++) {
+							if (div_elmt.children[i].classList.contains("invisible")) {
+								div_elmt.children[i].classList.remove("invisible");
+							}
+							else {
+								div_elmt.children[i].classList.add("invisible");
+							}
+						}
+					});
+					div_elmt.appendChild(button_hide_elmt);
+					
+					if ((sorted_keys[0]== "0") || (sorted_keys[0].length== 1)) {
+						var button_add_elmt= document.createElement("button");
+						button_add_elmt.innerHTML= "+";
+						button_add_elmt.classList.add("add-button");
+						button_add_elmt.addEventListener("click", function(e) {
+							//var cloned= div_elmt.children[0].cloneNode(true);
+							var cloned= div_elmt.getElementsByTagName("div")[0].cloneNode(true);
+							console.log(cloned);
+							div_elmt.appendChild(cloned);
+						});
+						div_elmt.appendChild(button_add_elmt);
+					}
+				}
+
+				var button_randomize_elmt= document.createElement("button");
+				button_randomize_elmt.innerHTML= "R";
+				button_randomize_elmt.classList.add("randomize-button");
+				button_randomize_elmt.addEventListener("click", function(e) {
+					randomize(div_elmt);
+				});
+				div_elmt.appendChild(button_randomize_elmt);
+
+				if ((isNaN(js_key)) && (js_key!= "root")) {
+					if (js_key.length> 1) {
+						var span_elmt= document.createElement("span");
+						span_elmt.innerHTML= js_key;
+						div_elmt.appendChild(span_elmt);
+					}
+					else {
+						var input_elmt= document.createElement("input");
+						input_elmt.value= js_key;
+						input_elmt.setAttribute("maxlength", 1);
+						div_elmt.appendChild(input_elmt);
+					}
+				}
+
+				if ((typeof(js_node)=== "string") || (typeof(js_node)=== "number")) {
+					var input_elmt= document.createElement("input");
+					input_elmt.value= js_node;
+					if (typeof(js_node)=== "string") {
+						input_elmt.classList.add("long-input");
+					}
+					if (typeof(js_node)=== "number") {
+						input_elmt.setAttribute("type", "number");
+						if (Number.isInteger(js_node)) {
+							input_elmt.setAttribute("step", 1);
+						}
+						else {
+							input_elmt.setAttribute("step", 0.1);
+						}
+					}
+					input_elmt.addEventListener('input', function(e) {
+						js_config[js_key]= e.target.value;
+						socket.emit('send2server', js_config);
+					});
+					div_elmt.appendChild(input_elmt);
+				}
+				else {
+					for (var key in sorted_keys) {
+						var sorted_key= sorted_keys[key];
+						parse_node(sorted_key, js_node[sorted_key], div_elmt);
+					}
+				}
+
+				parent_html_node.appendChild(div_elmt);
+			}
+
+			
+			function sync_html() {
+				parse_node("root", js_config, document.body);
+			}
+
+
+			socket.on('send2client', (msg) => {
+				//console.log(JSON.stringify(msg));
+				js_config= msg;
+				sync_html();
+			});
+		</script>
+	</body>
+</html>

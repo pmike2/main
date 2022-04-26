@@ -1,0 +1,39 @@
+<!--
+Partie client
+-->
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>TEST</title>
+		<style>
+		</style>
+	</head>
+	<body>
+		<input id="input_id">
+		
+		<script src="/socket.io/socket.io.js"></script>
+		<script>
+			var socket= io();
+			
+			var js_config= {};
+
+			const input_elmt = document.getElementById('input_id');
+			
+			// on écoute les messages 'send2client' et on met à jour le champ input
+			socket.on('send2client', (msg) => {
+				//console.log('message: ' + JSON.stringify(msg));
+				js_config= msg;
+				input_elmt.value= js_config["a"];
+			});
+			
+			// si le input est modifié on met à jour emit cette valeur dans un message 'send2server'
+			const inputHandler = function(e) {
+				js_config["a"]= e.target.value;
+				socket.emit('send2server', js_config);
+			}
+
+			document.addEventListener('input', inputHandler);
+		</script>
+	</body>
+</html>
