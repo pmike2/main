@@ -42,12 +42,88 @@ Partie client
 	</head>
 	<body>
 	
-		<script src="/socket.io/socket.io.js"></script>
+		<!--<script src="/socket.io/socket.io.js"></script>-->
 		<script>
-			var socket= io();
+			//var socket= io();
 			var js_config= {};
 			
+			var js_model= {
+	"__const__" : {
+		"alphabet_keys" : ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l",
+			"m", "n", "o", "p", "r", "s", "t", "u", "v", "w", "x", "y", "z"],
+		"powers_of_2" : [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
+	},
+	"__root__" :			{"type" : "dict", "keys" : ["mpegs", "alpha_width", "alpha_height", "time_width", "reader_configs",
+		"keymapping", "modifiers", "keymapping_modifier"]},
+	"mpegs"					: {"type" : "list", "values" : "path", "min_number" : 1, "max_number" : 8},
+	"path"					: {"type" : "string", "default" : ""},
+	"alpha_width"			: {"type" : "int", "possible_values" : "powers_of_2", "default" : 512},
+	"alpha_height"			: {"type" : "int", "possible_values" : "powers_of_2", "default" : 512},
+	"time_width"			: {"type" : "int", "possible_values" : "powers_of_2", "default" : 1024},
+	"reader_configs"		: {"type" : "list", "values" : "alpha_time", "min_number" : 1, "max_number" : 32},
+	"alpha_time"			: {"type" : "dict", "keys" : ["reader.alpha", "reader.time"]},
+	"reader.alpha"			: {"type" : "dict", "keys" : ["alpha_polygons", "decrease_speed"]},
+	"alpha_polygons"		: {"type" : "list", "values" : "alpha_polygon"},
+	"alpha_polygon"			: {"type" : "dict", "keys" : ["polygon", "fadeout", "curve", "alpha_max"]},
+	"polygon"				: {"type" : "list", "values" : "coords", "min_number" : 3},
+	"coords"				: {"type" : "list", "values" : "coord", "number" : 2},
+	"coord"					: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 0.0},
+	"fadeout"				: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 0.0},
+	"curve"					: {"type" : "float", "min" : 0.1, "max" : 4.0, "default" : 1.0},
+	"alpha_max"				: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 1.0},
+	"decrease_speed"		: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
+	"reader.time"			: {"type" : "dict", "keys" : ["checkpoints", "reader.speed"]},
+	"checkpoints"			: {"type" : "list", "values" : "coord", "min_number" : 1},
+	"reader.speed"			: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
+	"keymapping"			: {"type" : "dict", "possible_keys" : "alphabet_keys", "values" : "keymap"},
+	"keymap"				: {"type" : "dict", "keys" : ["mpeg", "config"]},
+	"mpeg"					: {"type" : "int", "min" : 0, "max" : 7, "default" : 0},
+	"config"				: {"type" : "int", "min" : 0, "max" : 31, "default" : 0},
+	"modifiers"				: {"type" : "list", "values" : "modif", "max_number" : 32},
+	"modif"					: {"type" : "dict", "keys" : ["movie", "modifier.alpha", "modifier.time"]},
+	"movie"					: {"type" : "dict", "keys" : ["mult", "add", "modifier.speed"]},
+	"mult"					: {"type" : "list", "values" : "mult_elmt", "number" : 4},
+	"mult_elmt"				: {"type" : "float", "min" : -3.0, "max" : 3.0, "default" : 0.0},
+	"add"					: {"type" : "list", "values" : "add_elmt", "number" : 2},
+	"add_elmt"				: {"type" : "float", "min" : -2.0, "max" : 2.0, "default" : 0.0},
+	"modifier.speed"		: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
+	"modifier.alpha"		: {"type" : "dict", "keys" : ["mult", "add", "modifier.speed"]},
+	"modifier.time"			: {"type" : "dict", "keys" : ["modtime.mult", "modtime.add", "modifier.speed"]},
+	"modtime.mult"			: {"type" : "float", "min" : -2.0, "max" : 2.0, "default" : 0.0},
+	"modtime.add"			: {"type" : "float", "min" : -2.0, "max" : 2.0, "default" : 0.0},
+	"keymapping_modifier"	: {"type" : "dict", "possible_keys" : "alphabet_keys", "values" : "mod_keymap"},
+	"mod_keymap"			: {"type" : "dict", "keys" : ["modifier", "track"]},
+	"modifier"				: {"type" : "int", "min" : 0, "max" : 31, "default" : 0},
+	"track"					: {"type" : "int", "min" : 0, "max" : 7, "default" : 0}
+}
 
+			function parse_node(js_key, parent_html_node) {
+				if (js_model[js_key].type== "int") {
+					var input_elmt= document.createElement("input");
+					input_elmt.value= js_key;
+					parent_html_node.appendChild(input_elmt);
+				}
+				if (js_model[js_key].type== "dict") {
+					var div_elmt= document.createElement("div");
+					div_elmt.innerHTML= js_key;
+					parent_html_node.appendChild(div_elmt);
+					if ("keys" in js_model[js_key]) {
+						for (i=0; i<js_model[js_key].keys.length; ++i) {
+							parse_node(js_model[js_key].keys[i], div_elmt);
+						}
+					}
+				}
+				if (js_model[js_key].type== "list") {
+					var div_elmt= document.createElement("div");
+					div_elmt.innerHTML= js_key;
+					parent_html_node.appendChild(div_elmt);
+					parse_node(js_model[js_key].values, div_elmt);
+				}
+			}
+
+			parse_node("__root__", document.body);
+
+			/*
 			function randomize(html_node) {
 				if (html_node.tagName.toLowerCase()== "input") {
 					if (!isNaN(html_node.value)) {
@@ -166,7 +242,7 @@ Partie client
 				//console.log(JSON.stringify(msg));
 				js_config= msg;
 				sync_html();
-			});
+			});*/
 		</script>
 	</body>
 </html>
