@@ -9,15 +9,15 @@ Partie client
 		<style>
 			div {
 				margin-left: 20px;
-			}
-			span {
-				margin-right: 15px;
-				margin-left: 10px;
+				margin-bottom: 10px;
+				font-size : 20px;
 			}
 			input {
 				width: 60px;
+				margin-left: 10px;
 				border: 0;
 				background-color: rgb(200, 200, 100);
+				font-size : 15px;
 			}
 			input.long-input {
 				width: 250px;
@@ -25,23 +25,49 @@ Partie client
 			div.folded>div {
 				display: none;
 			}
+			#div_utilities {
+				float: right;
+			}
+			span {
+				background-color: rgb(200, 200, 200);
+				padding-left: 5px;
+				padding-right: 5px;
+				cursor: pointer;
+			}
 			button {
-				width: 15px;
-				border: 0;
+				width: 20px;
+				border: 0px;
+				font-size : 20px;
+				text-align: center;
+				padding: 0px;
+				cursor: pointer;
+			}
+			button.button_utilities {
+				width: 60px;
 			}
 			button.fold-button {
 				background-color: rgb(200, 100, 200);
 			}
 			button.randomize-button {
 				background-color: rgb(100, 200, 200);
+				margin-right: 10px;
 			}
 			button.add-button {
 				background-color: rgb(150, 200, 120);
 			}
+			button.remove-button {
+				background-color: rgb(150, 120, 120);
+			}
 		</style>
 	</head>
 	<body>
-	
+		<div id="div_utilities">
+			<button class="button_utilities" onclick="fold_all()">fold</button>
+			<button class="button_utilities" onclick="unfold_all()">unfold</button>
+			<button class="button_utilities" onclick="reset2default()">reset</button>
+		</div>
+		<div id="div_config"></div>
+
 		<!--<script src="/socket.io/socket.io.js"></script>-->
 		<script>
 			//var socket= io();
@@ -154,7 +180,7 @@ Partie client
 	"readers.alpha"			: {"type" : "dict", "keys" : ["alpha_polygons", "decrease_speed"]},
 	"alpha_polygons"		: {"type" : "list", "values" : "alpha_polygon", "min_number" : 1, "max_number" : 8},
 	"alpha_polygon"			: {"type" : "dict", "keys" : ["polygon", "fadeout", "curve", "alpha_max"]},
-	"polygon"				: {"type" : "list", "values" : "coords", "min_number" : 3, "max_number" : 16, "nodom" : true},
+	"polygon"				: {"type" : "list", "values" : "coords", "min_number" : 3, "max_number" : 16},
 	"coords"				: {"type" : "list", "values" : "coord", "number" : 2},
 	"coord"					: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 0.0},
 	"fadeout"				: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 0.0},
@@ -162,7 +188,7 @@ Partie client
 	"alpha_max"				: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 1.0},
 	"decrease_speed"		: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
 	"readers.time"			: {"type" : "dict", "keys" : ["checkpoints", "readers.speed"]},
-	"checkpoints"			: {"type" : "list", "values" : "coords", "min_number" : 1, "max_number" : 16, "nodom" : true},
+	"checkpoints"			: {"type" : "list", "values" : "coords", "min_number" : 1, "max_number" : 16},
 	"readers.speed"			: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
 	"keymapping_reader"		: {"type" : "dict", "possible_keys" : "alphabet_keys", "values" : "keymap"},
 	"keymap"				: {"type" : "dict", "keys" : ["mpeg", "reader"]},
@@ -192,6 +218,19 @@ Partie client
 					return "/"+ child_id;
 				}
 				return parent_id + "/"+ child_id;
+			}
+
+
+			function get_parent_id(id) {
+				if (id== "/") {
+					//return "/";
+					return null;
+				}
+				result= id.substring(0, id.lastIndexOf("/"));
+				if (result== "") {
+					result= "/";
+				}
+				return result;
 			}
 
 
@@ -322,8 +361,20 @@ Partie client
 			}
 
 
+			function reset2default() {
+				js_config= get_default("/");
+				gen_dom("/", document.getElementById("div_config"));
+			}
+
 			function add_default_to_list(node_id, i) {
 				var [js_parent_node, key]= get_config_node(node_id);
+				var model_node= get_model_node(node_id);
+				if ("number" in model_node) {
+					return;
+				}
+				if (("max_number" in model_node) && (model_node.max_number== js_parent_node[key].length)) {
+					return;
+				}
 				js_parent_node[key].push(get_default(concat_ids(node_id, i)));
 			}
 
@@ -331,6 +382,28 @@ Partie client
 			function add_default_to_dict(node_id, k) {
 				var [js_parent_node, key]= get_config_node(node_id);
 				js_parent_node[key][k]= get_default(concat_ids(node_id, k));
+			}
+
+
+			function delete_id(node_id) {
+				if (node_id== "/") {
+					js_config= {};
+					return;
+				}
+				var [js_parent_node, key]= get_config_node(node_id);
+				var parent_model_node= get_model_node(get_parent_id(node_id));
+				if (parent_model_node.type== "dict") {
+					delete js_parent_node[key];
+				}
+				else if (parent_model_node.type== "list") {
+					if ("number" in parent_model_node) {
+						return;
+					}
+					if (("min_number" in parent_model_node) && (parent_model_node.min_number== js_parent_node.length)) {
+						return;
+					}
+					js_parent_node.splice(key, 1);
+				}
 			}
 
 
@@ -441,6 +514,30 @@ Partie client
 				}
 			}
 
+			
+			function get_simplified_key(key) {
+				if (key.includes(".")) {
+					return key.split(".").pop();
+				}
+				return key;
+			}
+
+
+			function simplify_keys() {
+				var all_config_ids= get_all_config_ids();
+				all_config_ids.sort(function(a, b) {
+					return b.length- a.length;
+				});
+
+				for (var i=0; i<all_config_ids.length; ++i) {
+					var [js_parent_node, key]= get_config_node(all_config_ids[i]);
+					if ((key!== null) && (key.includes("."))) {
+						js_parent_node[get_simplified_key(key)]= js_parent_node[key];
+						delete js_parent_node[key];
+					}
+				}
+			}
+
 
 			function enforce_rules() {
 				for (var i=0; i<js_model["__rules__"].length; ++i) {
@@ -460,30 +557,34 @@ Partie client
 			}
 
 
+			function is_fold(node_id) {
+				var div_node= get_div_node(node_id);
+				return div_node.classList.contains("folded");
+			}
+			
+
 			function toggle_fold(node_id) {
 				var div_node= get_div_node(node_id);
 				var button_node= get_fold_button_node(node_id);
-				if (div_node.classList.contains("folded")) {
-					div_node.classList.remove("folded");
-					button_node.innerHTML= "v";
+				if (is_fold(node_id)) {
+					unfold(node_id);
 				}
 				else {
-					div_node.classList.add("folded");
-					button_node.innerHTML= ">";
+					fold(node_id);
 				}
 			}
-
 			
+
 			function fold(node_id) {
 				var div_node= get_div_node(node_id);
 				var button_node= get_fold_button_node(node_id);
 				if ((div_node=== null) || (button_node=== null)) {
 					return;
 				}
-				if (!(div_node.classList.contains("folded"))) {
+				if (!is_fold(node_id)) {
 					div_node.classList.add("folded");
-					button_node.innerHTML= ">";
 				}
+				button_node.innerHTML= ">";
 			}
 
 
@@ -493,10 +594,10 @@ Partie client
 				if ((div_node=== null) || (button_node=== null)) {
 					return;
 				}
-				if (div_node.classList.contains("folded")) {
+				if (is_fold(node_id)) {
 					div_node.classList.remove("folded");
-					button_node.innerHTML= "v";
 				}
+				button_node.innerHTML= "v";
 			}
 
 
@@ -527,9 +628,10 @@ Partie client
 				//console.log(model_node);
 				
 				var div_elmt= get_div_node(node_id);
+				var was_fold= null;
 				if (div_elmt!== null) {
-					//parent_html_node.removeChild(div_node);
 					div_elmt.innerHTML= "";
+					was_fold= is_fold(node_id);
 				}
 				else {
 					div_elmt= document.createElement("div");
@@ -537,7 +639,9 @@ Partie client
 					parent_html_node.appendChild(div_elmt);
 				}
 				
-				div_elmt.innerHTML= key;
+				if (key!== null) {
+					div_elmt.innerHTML= "<span>"+ get_simplified_key(key)+ "</span>";
+				}
 
 				var button_randomize_elmt= document.createElement("button");
 				button_randomize_elmt.setAttribute("node_id", node_id);
@@ -562,14 +666,16 @@ Partie client
 					});
 					div_elmt.insertBefore(button_add_elmt, div_elmt.firstChild);
 				}
-
-				if ((model_node.type== "dict") && ("possible_keys" in model_node)) {
+				else if ((model_node.type== "dict") && ("possible_keys" in model_node)) {
 					var button_add_elmt= document.createElement("button");
 					button_add_elmt.setAttribute("node_id", node_id);
 					button_add_elmt.innerHTML= "+";
 					button_add_elmt.classList.add("add-button");
 					button_add_elmt.addEventListener("click", function() {
-						idx_key= Math.max(...Object.keys(js_parent_node[key]).map(x => model_node.possible_keys.indexOf(x)))+ 1;
+						var idx_key= 0;
+						if (Object.keys(js_parent_node[key]).length> 0) {
+							idx_key= Math.max(...Object.keys(js_parent_node[key]).map(x => model_node.possible_keys.indexOf(x)))+ 1;
+						}
 						add_default_to_dict(node_id, model_node.possible_keys[idx_key]);
 						enforce_rules(js_config);
 						gen_dom(node_id, parent_html_node);
@@ -577,10 +683,30 @@ Partie client
 					div_elmt.insertBefore(button_add_elmt, div_elmt.firstChild);
 				}
 
+				var parent_node_id= get_parent_id(node_id);
+				if (parent_node_id!== null) {
+					var parent_model_node= get_model_node(parent_node_id);
+					if ((parent_model_node.type== "list") || ((parent_model_node.type== "dict") && ("possible_keys" in parent_model_node))) {
+						var button_remove_elmt= document.createElement("button");
+						button_remove_elmt.setAttribute("node_id", node_id);
+						button_remove_elmt.innerHTML= "-";
+						button_remove_elmt.classList.add("remove-button");
+						button_remove_elmt.addEventListener("click", function() {
+							delete_id(node_id);
+							gen_dom(parent_node_id, parent_html_node.parentNode);
+						});
+						div_elmt.insertBefore(button_remove_elmt, div_elmt.firstChild);
+					}
+				}
+
 				if ((model_node.type== "int") || (model_node.type== "float") || (model_node.type== "string")) {
 					var input_elmt= document.createElement("input");
 					input_elmt.value= js_parent_node[key];
 					div_elmt.appendChild(input_elmt);
+
+					if (model_node.type== "string") {
+						input_elmt.classList.add("long-input");
+					}
 					
 					if ("possible_values" in model_node) {
 						input_elmt.addEventListener('click', mouse_event => {
@@ -630,7 +756,15 @@ Partie client
 					});
 					
 					div_elmt.insertBefore(button_fold_elmt, div_elmt.firstChild);
-					fold(node_id);
+					if (was_fold=== true) {
+						fold(node_id);
+					}
+					else if (was_fold=== false) {
+						unfold(node_id);
+					}
+					else if (was_fold=== null) {
+						fold(node_id);
+					}
 
 					if (node_id== "/") {
 						for (var k in js_parent_node) {
@@ -648,136 +782,24 @@ Partie client
 
 			expand_const();
 			complexify_keys();
+			gen_dom("/", document.getElementById("div_config"));
 
-			node_id= "/";
+			//node_id= "/";
+			//console.log(get_parent_id(node_id));
 			//console.log(get_all_config_ids());
 			//console.log(get_config_node(node_id));
 			//console.log(get_model_node(node_id));
 			//console.log(get_default(node_id));
 			//add_default_to_list(node_id, 0);
 			//add_default_to_dict(node_id, "d");
+			//delete_id(node_id);
 			//randomize(node_id);
 			//enforce_rules(js_config);
+			//simplify_keys();
 			//console.log(js_config);
 			//fold_all();
 
-			gen_dom("/", document.body);
-
 			/*
-			function randomize(html_node) {
-				if (html_node.tagName.toLowerCase()== "input") {
-					if (!isNaN(html_node.value)) {
-						if (Number.isInteger(parseFloat(html_node.value))) {
-							html_node.value= Math.floor(Math.random()* 8.0);
-						}
-						else {
-							var val= Math.random()* 4.0- 2.0;
-							html_node.value= val.toFixed(3);
-						}
-					}
-				}
-				else {
-					for (var i=0; i<html_node.children.length; i++) {
-						randomize(html_node.children[i]);
-					}
-				}
-			}
-
-
-			function parse_node(js_key, js_node, parent_html_node) {
-				var sorted_keys= Object.keys(js_node).sort();
-				
-				var div_elmt= document.createElement("div");
-				
-				if (typeof(js_node)=== "object") {
-					var button_hide_elmt= document.createElement("button");
-					button_hide_elmt.innerHTML= ">";
-					button_hide_elmt.classList.add("hide-button");
-					button_hide_elmt.addEventListener("click", function(e) {
-						for (var i=0; i<div_elmt.children.length; i++) {
-							if (div_elmt.children[i].classList.contains("invisible")) {
-								div_elmt.children[i].classList.remove("invisible");
-							}
-							else {
-								div_elmt.children[i].classList.add("invisible");
-							}
-						}
-					});
-					div_elmt.appendChild(button_hide_elmt);
-					
-					if ((sorted_keys[0]== "0") || (sorted_keys[0].length== 1)) {
-						var button_add_elmt= document.createElement("button");
-						button_add_elmt.innerHTML= "+";
-						button_add_elmt.classList.add("add-button");
-						button_add_elmt.addEventListener("click", function(e) {
-							//var cloned= div_elmt.children[0].cloneNode(true);
-							var cloned= div_elmt.getElementsByTagName("div")[0].cloneNode(true);
-							console.log(cloned);
-							div_elmt.appendChild(cloned);
-						});
-						div_elmt.appendChild(button_add_elmt);
-					}
-				}
-
-				var button_randomize_elmt= document.createElement("button");
-				button_randomize_elmt.innerHTML= "R";
-				button_randomize_elmt.classList.add("randomize-button");
-				button_randomize_elmt.addEventListener("click", function(e) {
-					randomize(div_elmt);
-				});
-				div_elmt.appendChild(button_randomize_elmt);
-
-				if ((isNaN(js_key)) && (js_key!= "root")) {
-					if (js_key.length> 1) {
-						var span_elmt= document.createElement("span");
-						span_elmt.innerHTML= js_key;
-						div_elmt.appendChild(span_elmt);
-					}
-					else {
-						var input_elmt= document.createElement("input");
-						input_elmt.value= js_key;
-						input_elmt.setAttribute("maxlength", 1);
-						div_elmt.appendChild(input_elmt);
-					}
-				}
-
-				if ((typeof(js_node)=== "string") || (typeof(js_node)=== "number")) {
-					var input_elmt= document.createElement("input");
-					input_elmt.value= js_node;
-					if (typeof(js_node)=== "string") {
-						input_elmt.classList.add("long-input");
-					}
-					if (typeof(js_node)=== "number") {
-						input_elmt.setAttribute("type", "number");
-						if (Number.isInteger(js_node)) {
-							input_elmt.setAttribute("step", 1);
-						}
-						else {
-							input_elmt.setAttribute("step", 0.1);
-						}
-					}
-					input_elmt.addEventListener('input', function(e) {
-						js_config[js_key]= e.target.value;
-						socket.emit('send2server', js_config);
-					});
-					div_elmt.appendChild(input_elmt);
-				}
-				else {
-					for (var key in sorted_keys) {
-						var sorted_key= sorted_keys[key];
-						parse_node(sorted_key, js_node[sorted_key], div_elmt);
-					}
-				}
-
-				parent_html_node.appendChild(div_elmt);
-			}
-
-			
-			function sync_html() {
-				parse_node("root", js_config, document.body);
-			}
-
-
 			socket.on('send2client', (msg) => {
 				//console.log(JSON.stringify(msg));
 				js_config= msg;
