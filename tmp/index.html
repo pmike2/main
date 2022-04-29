@@ -22,14 +22,14 @@ Partie client
 			input.long-input {
 				width: 250px;
 			}
-			div.invisible {
+			div.folded>div {
 				display: none;
 			}
 			button {
 				width: 15px;
 				border: 0;
 			}
-			button.hide-button {
+			button.fold-button {
 				background-color: rgb(200, 100, 200);
 			}
 			button.randomize-button {
@@ -98,13 +98,13 @@ Partie client
 	
 	"keymapping_reader" : {
 		"a" : {
-			"mpeg" : 0, "config" : 0
+			"mpeg" : 0, "reader" : 0
 		},
 		"b" : {
-			"mpeg" : 1, "config" : 0
+			"mpeg" : 1, "reader" : 0
 		},
 		"c" : {
-			"mpeg" : 0, "config" : 1
+			"mpeg" : 0, "reader" : 1
 		}
 	},
 
@@ -138,6 +138,11 @@ Partie client
 		"alphabet_keys" : ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u", "v", "w", "x", "y", "z"],
 		"powers_of_2" : [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
 	},
+	"__rules__" : [
+		"for (var key in js_config['keymapping_reader']) {if (js_config['keymapping_reader'][key]['mpeg']>= js_config['mpegs'].length) {js_config['keymapping_reader'][key]['mpeg']= Math.floor(Math.random()* js_config['mpegs'].length);}}",
+		"for (var key in js_config['keymapping_reader']) {if (js_config['keymapping_reader'][key]['reader']>= js_config['readers'].length) {js_config['keymapping_reader'][key]['reader']= Math.floor(Math.random()* js_config['readers'].length);}}",
+		"for (var key in js_config['keymapping_modifier']) {if (js_config['keymapping_modifier'][key]['modifier']>= js_config['modifiers'].length) {js_config['keymapping_modifier'][key]['modifier']= Math.floor(Math.random()* js_config['modifiers'].length);}}"
+	],
 	"__root__" 				: {"type" : "dict", "keys" : ["mpegs", "alpha_width", "alpha_height", "time_width", "readers", "keymapping_reader", "modifiers", "keymapping_modifier"]},
 	"mpegs"					: {"type" : "list", "values" : "path", "min_number" : 1, "max_number" : 8},
 	"path"					: {"type" : "string", "default" : ""},
@@ -147,9 +152,9 @@ Partie client
 	"readers"				: {"type" : "list", "values" : "alpha_time", "min_number" : 1, "max_number" : 32},
 	"alpha_time"			: {"type" : "dict", "keys" : ["readers.alpha", "readers.time"]},
 	"readers.alpha"			: {"type" : "dict", "keys" : ["alpha_polygons", "decrease_speed"]},
-	"alpha_polygons"		: {"type" : "list", "values" : "alpha_polygon"},
+	"alpha_polygons"		: {"type" : "list", "values" : "alpha_polygon", "min_number" : 1, "max_number" : 8},
 	"alpha_polygon"			: {"type" : "dict", "keys" : ["polygon", "fadeout", "curve", "alpha_max"]},
-	"polygon"				: {"type" : "list", "values" : "coords", "min_number" : 3},
+	"polygon"				: {"type" : "list", "values" : "coords", "min_number" : 3, "max_number" : 16, "nodom" : true},
 	"coords"				: {"type" : "list", "values" : "coord", "number" : 2},
 	"coord"					: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 0.0},
 	"fadeout"				: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 0.0},
@@ -157,12 +162,12 @@ Partie client
 	"alpha_max"				: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 1.0},
 	"decrease_speed"		: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
 	"readers.time"			: {"type" : "dict", "keys" : ["checkpoints", "readers.speed"]},
-	"checkpoints"			: {"type" : "list", "values" : "coords", "min_number" : 1},
+	"checkpoints"			: {"type" : "list", "values" : "coords", "min_number" : 1, "max_number" : 16, "nodom" : true},
 	"readers.speed"			: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
 	"keymapping_reader"		: {"type" : "dict", "possible_keys" : "alphabet_keys", "values" : "keymap"},
-	"keymap"				: {"type" : "dict", "keys" : ["mpeg", "config"]},
+	"keymap"				: {"type" : "dict", "keys" : ["mpeg", "reader"]},
 	"mpeg"					: {"type" : "int", "min" : 0, "max" : 7, "default" : 0},
-	"config"				: {"type" : "int", "min" : 0, "max" : 31, "default" : 0},
+	"reader"				: {"type" : "int", "min" : 0, "max" : 31, "default" : 0},
 	"modifiers"				: {"type" : "list", "values" : "modif", "max_number" : 32},
 	"modif"					: {"type" : "dict", "keys" : ["movie", "modifiers.alpha", "modifiers.time"]},
 	"movie"					: {"type" : "dict", "keys" : ["movie.mult", "movie.add", "modifiers.speed"]},
@@ -182,14 +187,13 @@ Partie client
 	"modifier"				: {"type" : "int", "min" : 0, "max" : 31, "default" : 0},
 	"track"					: {"type" : "int", "min" : 0, "max" : 7, "default" : 0}
 }
-
-			/*function get_simplified_key(key) {
-				var simplified_key= key;
-				if (key.includes(".")) {
-					simplified_key= key.split(".").pop();
+			function concat_ids(parent_id, child_id) {
+				if (parent_id== "/") {
+					return "/"+ child_id;
 				}
-				return simplified_key;
-			}*/
+				return parent_id + "/"+ child_id;
+			}
+
 
 			function get_all_config_ids() {
 				result= [];
@@ -199,7 +203,7 @@ Partie client
 					if (typeof(js_node)== "object") {
 						for (var key in js_node) {
 							if (id!= "") {
-								get_node_id(js_node[key], id+ "/"+ key);
+								get_node_id(js_node[key], concat_ids(id, key));
 							}
 							else {
 								get_node_id(js_node[key], key);
@@ -208,13 +212,19 @@ Partie client
 					}
 				}
 
-				get_node_id(js_config, "");
+				get_node_id(js_config, "/");
 
 				return result;
 			}
 
 
 			function get_config_node(node_id) {
+				if (node_id[0]== "/") {
+					node_id= node_id.substring(1);
+				}
+				if (node_id=== "") {
+					return [js_config, null]
+				}
 				var keys= node_id.split("/");
 				var js_parent_node= js_config;
 				for (var i=0; i<keys.length- 1; ++i) {
@@ -234,6 +244,12 @@ Partie client
 
 
 			function get_model_node(node_id) {
+				if (node_id[0]== "/") {
+					node_id= node_id.substring(1);
+				}
+				if (node_id=== "") {
+					return js_model["__root__"];
+				}
 				var keys= node_id.split("/");
 				var model_node= js_model["__root__"];
 				for (var i=0; i<keys.length; ++i) {
@@ -276,12 +292,12 @@ Partie client
 						if ("keys" in model_node) {
 							js[key]= {};
 							for (var i=0; i<model_node.keys.length; ++i) {
-								get_default_node(js[key], node_id+ "/"+ model_node.keys[i]);
+								get_default_node(js[key], concat_ids(node_id, model_node.keys[i]));
 							}
 						}
 						else if ("possible_keys" in model_node) {
 							js[key]= {};
-							get_default_node(js[key], node_id+ "/"+ model_node.possible_keys[0]);
+							get_default_node(js[key], concat_ids(node_id, model_node.possible_keys[0]));
 						}
 					}
 					else if (model_node.type== "list") {
@@ -294,7 +310,7 @@ Partie client
 						}
 						js[key]= [];
 						for (var i=0; i<n; ++i) {
-							get_default_node(js[key], node_id+ "/"+ i);
+							get_default_node(js[key], concat_ids(node_id, i));
 						}
 					}
 				}
@@ -308,13 +324,13 @@ Partie client
 
 			function add_default_to_list(node_id, i) {
 				var [js_parent_node, key]= get_config_node(node_id);
-				js_parent_node[key].push(get_default(node_id+ "/"+ i));
+				js_parent_node[key].push(get_default(concat_ids(node_id, i)));
 			}
 
 
 			function add_default_to_dict(node_id, k) {
 				var [js_parent_node, key]= get_config_node(node_id);
-				js_parent_node[key][k]= get_default(node_id+ "/"+ k);
+				js_parent_node[key][k]= get_default(concat_ids(node_id, k));
 			}
 
 
@@ -325,7 +341,7 @@ Partie client
 				if (model_node.type== "list") {
 					js_parent_node[key]= [];
 					var min_number= 0;
-					var max_number= 100;
+					var max_number= 10; // TODO : forcer l'existence de model_node.max_number ?
 					if ("min_number" in model_node) {
 						min_number= model_node.min_number;
 					}
@@ -333,21 +349,26 @@ Partie client
 						max_number= model_node.max_number;
 					}
 					var n= min_number+ Math.floor(Math.random()* (max_number- min_number));
+					if ("number" in model_node) {
+						n= model_node.number;
+					}
 					for (var i=0; i<n; ++i) {
 						add_default_to_list(node_id, i);
-						randomize(node_id+ "/"+ i);
+						randomize(concat_ids(node_id, i));
 					}
 				}
 				else if (model_node.type== "dict") {
 					if ("keys" in model_node) {
 						for (var i=0; i<model_node.keys.length; ++i) {
-							randomize(node_id+ "/"+ model_node.keys[i]);
+							randomize(concat_ids(node_id, model_node.keys[i]));
 						}
 					}
 					else if ("possible_keys" in model_node) {
-						var n= 1; // todo : plus ?
+						js_parent_node[key]= {};
+						var n= Math.floor(Math.random()* model_node.possible_keys.length);
 						for (var i=0; i<n; ++i) {
 							add_default_to_dict(node_id, model_node.possible_keys[i]);
+							randomize(concat_ids(node_id, model_node.possible_keys[i]));
 						}
 					}
 				}
@@ -389,7 +410,6 @@ Partie client
 				for (var i=0; i<all_config_ids.length; ++i) {
 					var last_key= all_config_ids[i].split("/").pop();
 					if ((!(last_key in js_model)) && (isNaN(last_key))) {
-						//console.log(last_key);
 						ids2complexify.push(all_config_ids[i]);
 					}
 				}
@@ -403,12 +423,12 @@ Partie client
 					var keys= ids2complexify[i].split("/");
 					var last_key= keys[keys.length- 1];
 					found[ids2complexify[i]]= false;
-					//console.log(ids2complexify[i]);
 					for (var k in js_model) {
 						if ((k.includes(".")) && (k.split(".")[1]== last_key)) {
 							for (var j=keys.length- 1; j>=0; --j){
 								if (keys[j]== k.split(".")[0]) {
 									js_parent_node[k]= JSON.parse(JSON.stringify(js_parent_node[key]));
+									delete js_parent_node[key];
 									found[ids2complexify[i]]= true;
 									break;
 								}
@@ -418,20 +438,208 @@ Partie client
 							break;
 						}
 					}
-					//console.log(found[ids2complexify[i]]);
+				}
+			}
+
+
+			function enforce_rules() {
+				for (var i=0; i<js_model["__rules__"].length; ++i) {
+					var f = new Function("js_config", js_model["__rules__"][i]);
+					f(js_config);
+				}
+			}
+
+
+			function get_div_node(node_id) {
+				return document.querySelector('div[node_id="'+ node_id+ '"]');
+			}
+
+
+			function get_fold_button_node(node_id) {
+				return document.querySelector('button[node_id="'+ node_id+ '"].fold-button');
+			}
+
+
+			function toggle_fold(node_id) {
+				var div_node= get_div_node(node_id);
+				var button_node= get_fold_button_node(node_id);
+				if (div_node.classList.contains("folded")) {
+					div_node.classList.remove("folded");
+					button_node.innerHTML= "v";
+				}
+				else {
+					div_node.classList.add("folded");
+					button_node.innerHTML= ">";
+				}
+			}
+
+			
+			function fold(node_id) {
+				var div_node= get_div_node(node_id);
+				var button_node= get_fold_button_node(node_id);
+				if ((div_node=== null) || (button_node=== null)) {
+					return;
+				}
+				if (!(div_node.classList.contains("folded"))) {
+					div_node.classList.add("folded");
+					button_node.innerHTML= ">";
+				}
+			}
+
+
+			function unfold(node_id) {
+				var div_node= get_div_node(node_id);
+				var button_node= get_fold_button_node(node_id);
+				if ((div_node=== null) || (button_node=== null)) {
+					return;
+				}
+				if (div_node.classList.contains("folded")) {
+					div_node.classList.remove("folded");
+					button_node.innerHTML= "v";
+				}
+			}
+
+
+			function fold_all() {
+				node_ids= get_all_config_ids();
+				for (var i=0; i<node_ids.length; ++i) {
+					fold(node_ids[i]);
+				}
+			}
+
+
+			function unfold_all() {
+				node_ids= get_all_config_ids();
+				for (var i=0; i<node_ids.length; ++i) {
+					unfold(node_ids[i]);
+				}
+			}
+
+
+			function gen_dom(node_id, parent_html_node) {
+				var [js_parent_node, key]= get_config_node(node_id);
+				var model_node= get_model_node(node_id);
+				
+				//console.log("------");
+				//console.log(node_id);
+				//console.log(js_parent_node);
+				//console.log(key);
+				//console.log(model_node);
+				
+				var div_elmt= get_div_node(node_id);
+				if (div_elmt!== null) {
+					//parent_html_node.removeChild(div_node);
+					div_elmt.innerHTML= "";
+				}
+				else {
+					div_elmt= document.createElement("div");
+					div_elmt.setAttribute("node_id", node_id);
+					parent_html_node.appendChild(div_elmt);
+				}
+				
+				div_elmt.innerHTML= key;
+
+				var button_randomize_elmt= document.createElement("button");
+				button_randomize_elmt.setAttribute("node_id", node_id);
+				button_randomize_elmt.innerHTML= "R";
+				button_randomize_elmt.classList.add("randomize-button");
+				button_randomize_elmt.addEventListener("click", function() {
+					randomize(this.getAttribute("node_id"));
+					enforce_rules(js_config);
+					gen_dom(node_id, parent_html_node);
+				});
+				div_elmt.insertBefore(button_randomize_elmt, div_elmt.firstChild);
+
+				if (model_node.type== "list") {
+					var button_add_elmt= document.createElement("button");
+					button_add_elmt.setAttribute("node_id", node_id);
+					button_add_elmt.innerHTML= "+";
+					button_add_elmt.classList.add("add-button");
+					button_add_elmt.addEventListener("click", function() {
+						add_default_to_list(node_id, js_parent_node[key].length);
+						enforce_rules(js_config);
+						gen_dom(node_id, parent_html_node);
+					});
+					div_elmt.insertBefore(button_add_elmt, div_elmt.firstChild);
 				}
 
-				for (var i=0; i<ids2complexify.length; ++i) {
-					console.log("-------");
-					console.log(ids2complexify[i]);
-					if (found[ids2complexify[i]]) {
-						var [js_parent_node, key]= get_config_node(ids2complexify[i]);
-						console.log(js_parent_node);
-						console.log(key);
-						try {
-							delete js_parent_node[key];
-						} catch (error) {
-							//console.log("err");
+				if ((model_node.type== "dict") && ("possible_keys" in model_node)) {
+					var button_add_elmt= document.createElement("button");
+					button_add_elmt.setAttribute("node_id", node_id);
+					button_add_elmt.innerHTML= "+";
+					button_add_elmt.classList.add("add-button");
+					button_add_elmt.addEventListener("click", function() {
+						idx_key= Math.max(...Object.keys(js_parent_node[key]).map(x => model_node.possible_keys.indexOf(x)))+ 1;
+						add_default_to_dict(node_id, model_node.possible_keys[idx_key]);
+						enforce_rules(js_config);
+						gen_dom(node_id, parent_html_node);
+					});
+					div_elmt.insertBefore(button_add_elmt, div_elmt.firstChild);
+				}
+
+				if ((model_node.type== "int") || (model_node.type== "float") || (model_node.type== "string")) {
+					var input_elmt= document.createElement("input");
+					input_elmt.value= js_parent_node[key];
+					div_elmt.appendChild(input_elmt);
+					
+					if ("possible_values" in model_node) {
+						input_elmt.addEventListener('click', mouse_event => {
+							mouse_event.target.value = '' 
+						});
+						input_elmt.setAttribute("list", "possible_values_"+ key);
+						var datalist_elmt= document.createElement("datalist");
+						datalist_elmt.setAttribute("id", "possible_values_"+ key);
+						for (var i=0; i<model_node.possible_values.length; ++i) {
+							var option_elmt= document.createElement("option");
+							option_elmt.setAttribute("value", model_node.possible_values[i]);
+							datalist_elmt.appendChild(option_elmt);
+						}
+						div_elmt.appendChild(datalist_elmt);
+					}
+					else {
+						if ((model_node.type== "int") || (model_node.type== "float")) {
+							input_elmt.setAttribute("type", "number");
+							if ("min" in model_node) {
+								input_elmt.setAttribute("min", model_node.min);
+								input_elmt.addEventListener("change", function() {
+									if (parseFloat(this.value)< parseFloat(model_node.min)) {
+										this.value= model_node.min;
+									}
+								});
+							}
+							if ("max" in model_node) {
+								input_elmt.setAttribute("max", model_node.max);
+								input_elmt.addEventListener("change", function() {
+									if (parseFloat(this.value)> parseFloat(model_node.max)) {
+										this.value= model_node.max;
+									}
+								});
+							}
+							if (model_node.type== "float") {
+								input_elmt.setAttribute("step", 0.01);
+							}
+						}
+					}
+				}
+				else if ((model_node.type== "dict") || (model_node.type== "list")) {
+					var button_fold_elmt= document.createElement("button");
+					button_fold_elmt.setAttribute("node_id", node_id);
+					button_fold_elmt.classList.add("fold-button");
+					button_fold_elmt.addEventListener("click", function() {
+						toggle_fold(this.getAttribute("node_id"));
+					});
+					
+					div_elmt.insertBefore(button_fold_elmt, div_elmt.firstChild);
+					fold(node_id);
+
+					if (node_id== "/") {
+						for (var k in js_parent_node) {
+							gen_dom(concat_ids(node_id, k), div_elmt);
+						}
+					}
+					else {
+						for (var k in js_parent_node[key]) {
+							gen_dom(concat_ids(node_id, k), div_elmt);
 						}
 					}
 				}
@@ -440,100 +648,20 @@ Partie client
 
 			expand_const();
 			complexify_keys();
-			//console.log(get_all_config_ids());
 
-			//node_id= "modifiers";
+			node_id= "/";
+			//console.log(get_all_config_ids());
 			//console.log(get_config_node(node_id));
 			//console.log(get_model_node(node_id));
 			//console.log(get_default(node_id));
 			//add_default_to_list(node_id, 0);
 			//add_default_to_dict(node_id, "d");
 			//randomize(node_id);
-			console.log(js_config);
+			//enforce_rules(js_config);
+			//console.log(js_config);
+			//fold_all();
 
-			/*function parse_node(js_key, parent_html_node) {
-				if ((js_model[js_key].type== "int") || (js_model[js_key].type== "float") || (js_model[js_key].type== "string")) {
-					var div_elmt= document.createElement("div");
-					div_elmt.innerHTML= js_key;
-					var input_elmt= document.createElement("input");
-					div_elmt.appendChild(input_elmt);
-					if ("default" in js_model[js_key]) {
-						input_elmt.value= js_model[js_key].default;
-					}
-					if ("possible_values" in js_model[js_key]) {
-						input_elmt.addEventListener('click', mouse_event => {
-							mouse_event.target.value = '' 
-						});
-						input_elmt.setAttribute("list", "possible_values_"+ js_key);
-						var datalist_elmt= document.createElement("datalist");
-						datalist_elmt.setAttribute("id", "possible_values_"+ js_key);
-						for (var i=0; i<js_model[js_key].possible_values.length; ++i) {
-							var option_elmt= document.createElement("option");
-							option_elmt.setAttribute("value", js_model[js_key].possible_values[i]);
-							datalist_elmt.appendChild(option_elmt);
-						}
-						div_elmt.appendChild(datalist_elmt);
-					}
-					else {
-						if ((js_model[js_key].type== "int") || (js_model[js_key].type== "float")) {
-							input_elmt.setAttribute("type", "number");
-							if ("min" in js_model[js_key]) {
-								input_elmt.setAttribute("min", js_model[js_key].min);
-								input_elmt.addEventListener("change", function() {
-									let v = parseFloat(this.value);
-									if (v < parseFloat(js_model[js_key].min)) {
-										this.value= js_model[js_key].min;
-									}
-								});
-							}
-							if ("max" in js_model[js_key]) {
-								input_elmt.setAttribute("max", js_model[js_key].max);
-								input_elmt.addEventListener("change", function() {
-									let v = parseFloat(this.value);
-									if (v > parseFloat(js_model[js_key].max)) {
-										this.value= js_model[js_key].max;
-									}
-								});
-							}
-							if (js_model[js_key].type== "float") {
-								input_elmt.setAttribute("step", 0.01);
-							}
-						}
-					}
-					parent_html_node.appendChild(div_elmt);
-				}
-				else if (js_model[js_key].type== "dict") {
-					var div_elmt= document.createElement("div");
-					div_elmt.innerHTML= js_key;
-					parent_html_node.appendChild(div_elmt);
-					if ("keys" in js_model[js_key]) {
-						for (i=0; i<js_model[js_key].keys.length; ++i) {
-							parse_node(js_model[js_key].keys[i], div_elmt);
-						}
-					}
-					else if ("possible_keys" in js_model[js_key]) {
-
-					}
-				}
-				else if (js_model[js_key].type== "list") {
-					var div_elmt= document.createElement("div");
-					div_elmt.innerHTML= js_key;
-					parent_html_node.appendChild(div_elmt);
-					var n_elmts= 1;
-					if ("number" in js_model[js_key]) {
-						n_elmts= parseInt(js_model[js_key].number);
-					}
-					else if ("min_number" in js_model[js_key]) {
-						n_elmts= parseInt(js_model[js_key].min_number);
-					}
-					for (var i=0; i<n_elmts; ++i) {
-						parse_node(js_model[js_key].values, div_elmt);
-					}
-				}
-			}
-			
-			expand_const();
-			parse_node("__root__", document.body);*/
+			gen_dom("/", document.body);
 
 			/*
 			function randomize(html_node) {

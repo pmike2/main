@@ -8,7 +8,7 @@
 	"alpha_height" : 512,
 	"time_width" : 1024,
 	
-	"reader_configs" : [
+	"readers" : [
 		{
 			"alpha" : {
 				"alpha_polygons" : [
@@ -51,13 +51,13 @@
 	
 	"keymapping" : {
 		"a" : {
-			"mpeg" : 0, "config" : 0
+			"mpeg" : 0, "reader" : 0
 		},
 		"b" : {
-			"mpeg" : 1, "config" : 0
+			"mpeg" : 1, "reader" : 0
 		},
 		"c" : {
-			"mpeg" : 0, "config" : 1
+			"mpeg" : 0, "reader" : 1
 		}
 	},
 
