@@ -58,29 +58,9 @@ Partie client
 			button.remove-button {
 				background-color: rgb(150, 120, 120);
 			}
-			
-			
-			line {
-				stroke: rgb(255,0,0);
-				stroke-width: 2px;
-			}
-			line:hover {
-				stroke-width: 6px;
-			}
-			circle {
-				r: 3px;
-			}
-			circle:hover {
-				r: 6px;
-			}
 		</style>
 	</head>
-	<body>
-		<svg id="main_svg" width="600" height="400" onload="svg_init()">
-			<rect id="svg_emprise" width="100%" height="100%" fill="rgb(200,200,200)"/>
-			<g id="svg_group"></g>
-		</svg>
-
+	<body onload="init()">
 		<div id="div_utilities">
 			<button class="button_utilities" onclick="fold_all()">fold</button>
 			<button class="button_utilities" onclick="unfold_all()">unfold</button>
@@ -90,270 +70,8 @@ Partie client
 
 		<!--<script src="/socket.io/socket.io.js"></script>-->
 		<script>
-			var editing_mode= null;
-			var coords= [];
-			var svg_emprise, svg_group;
-			var current_point_id= null;
-			var current_line_id= null;
-			var svg_width, svg_height;
-
-
-			function norm(p) {
-				return Math.sqrt(p.x* p.x+ p.y* p.y);
-			}
-
-			function diff(p1, p2) {
-				return {"x" : p1.x- p2.x, "y" : p1.y- p2.y};
-			}
-
-			function simplify_coords(treshold) {
-				function alignement(p1, p2, p3) {
-					var scal= (p2.x- p1.x)* (p3.x- p1.x)+ (p2.y- p1.y)* (p3.y- p1.y);
-					var n12= Math.sqrt((p2.x- p1.x)* (p2.x- p1.x)+ (p2.y- p1.y)* (p2.y- p1.y));
-					var n13= Math.sqrt((p3.x- p1.x)* (p3.x- p1.x)+ (p3.y- p1.y)* (p3.y- p1.y));
-					if ((n12< 1e-7) || (n13< 1e-7)) {
-						console.log("pb simplify_coords")
-						return 1.0;
-					}
-					return scal/ (n12* n13);
-				}
-
-				if (coords.length< 3) {
-					return;
-				}
-
-				var result= [];
-				result.push(coords[0]);
-				var base= 0;
-				var base2= 1;
-				var tested= 2;
-				var done= false;
-				
-				while (true) {
-					while (norm(diff(coords[base], coords[base2]))< 5.0) {
-						//console.log(base+ " ; "+ base2);
-						base2+= 1;
-						if (base2== coords.length- 1) {
-							done= true;
-							result.push(coords[coords.length- 1]);
-							break;
-						}
-					}
-					if (done) {
-						break;
-					}
-					tested= base2+ 1;
-					//console.log(base+ " ; "+ base2+ " ; " + tested+ " ; "+ coords.length);
-					while (alignement(coords[base], coords[base2], coords[tested])> treshold) {
-						tested+= 1;
-						if (tested== coords.length) {
-							done= true;
-							result.push(coords[coords.length- 1]);
-							break;
-						}
-					}
-					if (done) {
-						break;
-					}
-					//console.log(tested- 1);
-					result.push(coords[tested- 1]);
-					base= tested- 1;
-					base2= tested;
-					if (base2== coords.length- 1) {
-						break;
-					}
-				}
-				coords= result;
-			}
-
-
-			function svg_init() {
-				svg_width= document.getElementById("main_svg").getAttribute("width");
-				svg_height= document.getElementById("main_svg").getAttribute("height");
-				svg_emprise= document.getElementById("svg_emprise");
-				svg_emprise.addEventListener("mousedown", mouse_down_emprise);
-				svg_emprise.addEventListener("mouseup", mouse_up_emprise);
-				svg_emprise.addEventListener("mousemove", mouse_move_emprise);
-				svg_emprise.addEventListener("mouseout", mouse_out_emprise);
-				svg_group= document.getElementById("svg_group");
-			}
-
-
-			function mouse_down_emprise(e) {
-				//console.log(e.offsetX+ " ; "+ e.offsetY);
-				editing_mode= "CREATE";
-				coords= [{"x" : e.offsetX, "y" : e.offsetY}];
-			}
-
-
-			function mouse_up_emprise(e) {
-				//console.log(e.offsetX+ " ; "+ e.offsetY);
-				if (editing_mode== "CREATE") {
-					simplify_coords(0.98);
-					//console.log(coords);
-					update_svg();
-				}
-				else if (editing_mode== "MOVE_POINT") {
-					current_point_id= null;
-				}
-				editing_mode= null;
-			}
-
-
-			function mouse_move_emprise(e) {
-				//console.log(editing_mode);
-				if (editing_mode== "CREATE") {
-					coords.push({"x" : e.offsetX, "y" : e.offsetY});
-				}
-				else if (editing_mode== "MOVE_POINT") {
-					coords[current_point_id].x= e.offsetX;
-					coords[current_point_id].y= e.offsetY;
-					var svg_point= document.getElementById("point_"+ current_point_id);
-					svg_point.setAttribute("cx", coords[current_point_id].x);
-					svg_point.setAttribute("cy", coords[current_point_id].y);
-					if (current_point_id> 0) {
-						var svg_line_before= document.getElementById("line_"+ (current_point_id- 1));
-						svg_line_before.setAttribute("x2", coords[current_point_id].x);
-						svg_line_before.setAttribute("y2", coords[current_point_id].y);
-					}
-					if (current_point_id< coords.length- 1) {
-						var svg_line_after= document.getElementById("line_"+ current_point_id);
-						svg_line_after.setAttribute("x1", coords[current_point_id].x);
-						svg_line_after.setAttribute("y1", coords[current_point_id].y);
-					}
-				}
-			}
-
-
-			function mouse_out_emprise(e) {
-				if ((e.offsetX< 2) || (e.offsetX> svg_width- 3) || (e.offsetY< 2) || (e.offsetY> svg_height- 3)) {
-					editing_mode= null;
-					current_point_id= null;
-				}
-			}
-
-
-			function mouse_down_point(e) {
-				current_point_id= parseInt(e.target.id.split("point_")[1]);
-
-				if (e.shiftKey) {/*shift is down*/
-					document.getElementById("point_"+ current_point_id).remove();
-					if (current_point_id> 0) {
-						document.getElementById("line_"+ (current_point_id- 1)).remove();
-					}
-					if (current_point_id< coords.length- 1) {
-						document.getElementById("line_"+ current_point_id).remove();
-					}
-					if ((current_point_id> 0) && (current_point_id< coords.length- 1)) {
-						var new_line= document.createElementNS("http://www.w3.org/2000/svg", "line");
-						new_line.setAttribute("x1", coords[current_point_id- 1].x);
-						new_line.setAttribute("y1", coords[current_point_id- 1].y);
-						new_line.setAttribute("x2", coords[current_point_id+ 1].x);
-						new_line.setAttribute("y2", coords[current_point_id+ 1].y);
-						new_line.classList.add("lines");
-						svg_group.insertBefore(new_line, document.getElementById("line_"+ (current_point_id+ 1)));
-					}
-
-					for (var i=current_point_id+ 1; i<coords.length; ++i) {
-						var svg_point= document.getElementById("point_"+ i);
-						svg_point.setAttribute("id", "point_"+ (i- 1));
-					}
-					for (var i=current_point_id+ 1; i<coords.length- 1; ++i) {
-						var svg_line= document.getElementById("line_"+ i);
-						svg_line.setAttribute("id", "line_"+ (i- 1));
-					}
-
-					new_line.setAttribute("id", "line_"+ (current_point_id- 1));
-
-					coords.splice(current_point_id, 1);
-					
-					current_point_id= null;
-				}
-				else {
-					editing_mode= "MOVE_POINT";
-				}
-				/*if (e.altKey) {}
-				if (e.ctrlKey) {}
-				if (e.metaKey) {}*/
-			}
-
-
-			function mouse_up_point(e) {
-				current_point_id= null;
-				editing_mode= null;
-				//console.log(current_point_id);
-			}
-
-
-			function mouse_down_line(e) {
-				var new_coord= {"x" : e.offsetX, "y" : e.offsetY};
-				
-				current_line_id= parseInt(e.target.id.split("line_")[1]);
-
-				document.getElementById("line_"+ current_line_id).remove();
-
-				var new_point= document.createElementNS("http://www.w3.org/2000/svg", "circle");
-				new_point.setAttribute("cx", new_coord.x);
-				new_point.setAttribute("cy", new_coord.y);
-				new_point.classList.add("points");
-				svg_group.insertBefore(new_point, document.getElementById("point_"+ current_line_id));
-
-				var new_line_1= document.createElementNS("http://www.w3.org/2000/svg", "line");
-				new_line_1.setAttribute("x1", coords[current_line_id].x);
-				new_line_1.setAttribute("y1", coords[current_line_id].y);
-				new_line_1.setAttribute("x2", new_coord.x);
-				new_line_1.setAttribute("y2", new_coord.y);
-				new_line_1.classList.add("lines");
-				svg_group.insertBefore(new_line_1, document.getElementById("line_"+ (current_line_id- 1)));
-
-				var new_line_2= document.createElementNS("http://www.w3.org/2000/svg", "line");
-				new_line_2.setAttribute("x1", new_coord.x);
-				new_line_2.setAttribute("y1", new_coord.y);
-				new_line_2.setAttribute("x2", coords[current_line_id+ 1].x);
-				new_line_2.setAttribute("y2", coords[current_line_id+ 1].y);
-				new_line_2.classList.add("lines");
-				svg_group.insertBefore(new_line_2, document.getElementById("line_"+ current_line_id));
-
-				for (var i=coords.length- 1; i>=current_line_id+ 1; --i) {
-					var svg_point= document.getElementById("point_"+ i);
-					svg_point.setAttribute("id", "point_"+ (i+ 1));
-				}
-				for (var i=coords.length- 2; i>=current_line_id+ 1; --i) {
-					var svg_line= document.getElementById("line_"+ i);
-					svg_line.setAttribute("id", "line_"+ (i+ 1));
-				}
-
-				new_point.setAttribute("id", "point_"+ (current_line_id+ 1));
-				new_line_1.setAttribute("id", "line_"+ current_line_id);
-				new_line_2.setAttribute("id", "line_"+ (current_line_id+ 1));
-				
-				coords.splice(current_line_id+ 1, 0, new_coord);
-
-				current_line_id= null;
-			}
-
-
-			function update_svg() {
-				svg_group.innerHTML= "";
-				for (var i=0; i<coords.length- 1; ++i) {
-					svg_group.innerHTML+= '<line x1="'+ coords[i].x+ '" y1="'+ coords[i].y+ '" x2="'+ coords[i+ 1].x+ '" y2="'+ coords[i+ 1].y+ '" class="lines" id="line_'+ i+ '" />\n';
-				}
-				for (var i=0; i<coords.length; ++i) {
-					svg_group.innerHTML+= '<circle cx="'+ coords[i].x+ '" cy="'+ coords[i].y+ '" class="points" id="point_'+ i+ '" />\n';
-				}
-				var svg_points= document.getElementsByClassName("points");
-				for (var i=0; i<svg_points.length; ++i) {
-					svg_points[i].addEventListener("mousedown", mouse_down_point);
-					svg_points[i].addEventListener("mouseup", mouse_up_point);
-				}
-				var svg_lines= document.getElementsByClassName("lines");
-				for (var i=0; i<svg_lines.length; ++i) {
-					svg_lines[i].addEventListener("mousedown", mouse_down_line);
-				}
-			}
-
-
 			//var socket= io();
+
 			var js_config= {
 	"mpegs" : [
 		"../data/video_samples/flower_04.mov",
@@ -1063,10 +781,13 @@ Partie client
 			}
 
 
-			//expand_const();
-			//complexify_keys();
-			//gen_dom("/", document.getElementById("div_config"));
+			function init() {
+				expand_const();
+				complexify_keys();
+				gen_dom("/", document.getElementById("div_config"));
+			}
 
+			
 			//node_id= "/";
 			//console.log(get_parent_id(node_id));
 			//console.log(get_all_config_ids());
