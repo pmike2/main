@@ -11,8 +11,12 @@ Quand le code c++ fait un get la partie serveur lui renvoie la valeur actuelle d
 
 
 const express = require('express');
+var path = require('path');
 const app = express();
 app.use(express.json());
+
+// pour pouvoir référencer des fichiers présents dans le dossier courant
+app.use(express.static(__dirname));
 const http = require('http');
 const server = http.createServer(app);
 const { Server } = require("socket.io");
@@ -26,6 +30,9 @@ app.get('/', (req, res) => {
 	res.sendFile(__dirname + '/index.html');
 });
 
+app.get('/test', (req, res) => {
+	res.sendFile(__dirname + '/polygons.html');
+});
 
 // renvoie la valeur de js_config
 app.get('/config', (req, res) => {
