@@ -32,6 +32,7 @@ const INSTRUCTIONS= {
 export class PolygonsContext {
 	constructor(id, keypresseds) {
 		this.id= id;
+		this.idx= parseInt(this.id.split("svg_main_")[1]);
 		
 		this.polygons= [];
 		this.keypresseds= keypresseds;
@@ -59,6 +60,8 @@ export class PolygonsContext {
 		this.svg_emprise.addEventListener("mouseup", this.mouse_up_emprise.bind(this));
 		this.svg_emprise.addEventListener("mousemove", this.mouse_move.bind(this));
 		this.svg_emprise.addEventListener("mouseout", this.mouse_out_emprise.bind(this));
+
+		this.event= new CustomEvent('svg_polygons_changed', {detail : {"svg_idx" : this.idx}});
 	
 		let text_base_x= 0.7;
 		let text_base2_x= 0.72;
@@ -82,6 +85,11 @@ export class PolygonsContext {
 				this.svg_main.appendChild(t);
 			}
 		}
+	}
+
+	
+	js_config_changed() {
+		console.log(js_config);
 	}
 
 
@@ -123,23 +131,40 @@ export class PolygonsContext {
 
 	clear() {
 		this.polygons= [];
+		document.dispatchEvent(this.event);
 	}
 	
 
 	add_polygon() {
 		this.polygons.push([]);
+		document.dispatchEvent(this.event);
 		return this.polygons.length- 1;
 	}
 
 
 	remove_polygon(idx_polygon) {
 		this.polygons.splice(idx_polygon, 1);
+		document.dispatchEvent(this.event);
 	}
 	
 
 	duplicate_polygon(idx_polygon) {
 		this.polygons.push(deepcopy(this.polygons[idx_polygon]));
 		this.move_polygon(this.polygons.length- 1, {"x" : 0.1, "y" : 0.1});
+		document.dispatchEvent(this.event);
+	}
+
+	
+	set_polygon(idx_polygon, polygon) {
+		this.polygons[idx_polygon]= [];
+		for (let i=0; i<polygon.length; ++i) {
+			if ("x" in polygon[i]) {
+				this.polygons[idx_polygon].push({"x" : polygon[i].x, "y" : polygon[i].y});
+			}
+			else {
+				this.polygons[idx_polygon].push({"x" : polygon[i][0], "y" : polygon[i][1]});
+			}
+		}
 	}
 	
 	
@@ -148,33 +173,39 @@ export class PolygonsContext {
 			this.polygons[idx_polygon][i].x+= v.x;
 			this.polygons[idx_polygon][i].y+= v.y;
 		}
+		document.dispatchEvent(this.event);
 	}
 		
 	
 	simplify_polygon(idx_polygon, treshold, min_dist) {
 		let simplified= simplify_coords(this.polygons[idx_polygon], treshold, min_dist);
 		this.polygons[idx_polygon]= simplified;
+		document.dispatchEvent(this.event);
 	}
 	
 
 	add_point(idx_polygon, coord) {
 		this.polygons[idx_polygon].push(coord);
 		return this.polygons[idx_polygon].length- 1;
+		document.dispatchEvent(this.event);
 	}
 			
 
 	add_point_on_line(idx_polygon, idx_line, coord) {
 		this.polygons[idx_polygon].splice(idx_line+ 1, 0, coord);
+		document.dispatchEvent(this.event);
 	}
 	
 	
 	remove_point(idx_polygon, idx_point) {
 		this.polygons[idx_polygon].splice(idx_point, 1);
+		document.dispatchEvent(this.event);
 	}
 	
 	
 	move_point(idx_polygon, idx_point, coord) {
 		this.polygons[idx_polygon][idx_point]= coord;
+		document.dispatchEvent(this.event);
 	}
 	
 
@@ -551,17 +582,3 @@ export class PolygonsContext {
 	}
 }
 
-
-/*
-function set_polygon(idx_polygon, polygon) {
-	polygons[idx_polygon]= [];
-	for (let i=0; i<polygon.length; ++i) {
-		if ("x" in polygon[i]) {
-			polygons[idx_polygon].push({"x" : polygon[i].x, "y" : polygon[i].y});
-		}
-		else {
-			polygons[idx_polygon].push({"x" : polygon[i][0], "y" : polygon[i][1]});
-		}
-	}
-}
-*/

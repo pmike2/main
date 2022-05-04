@@ -8,19 +8,85 @@
 		<script type="module">
 			import {PolygonsContext} from './polygons.js';
 
+			var js_config= {
+	"readers" : [
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [{"x" : 0.3, "y" : 0.3}, {"x" : 0.5, "y" : 0.3}, {"x" : 0.5, "y" : 0.5}, {"x" : 0.3, "y" : 0.5}],
+						"fadeout" : 0.1,
+						"curve" : 2.0,
+						"alpha_max" : 0.9
+					}
+				],
+				"decrease_speed" : 0.05
+			},
+			"time" : {
+				"checkpoints" : [
+					[0.0, 0.0], [1.0, 1.0]
+				],
+				"speed" : 0.01
+			}
+		},
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [{"x" : 0.6, "y" : 0.6}, {"x" : 0.7, "y" : 0.6}, {"x" : 0.7, "y" : 0.7}, {"x" : 0.6, "y" : 0.7}],
+						"fadeout" : 0.5,
+						"curve" : 1.0,
+						"alpha_max" : 1.0
+					}
+				],
+				"decrease_speed" : 0.2
+			},
+			"time" : {
+				"checkpoints" : [
+					[0.0, 0.0], [0.3, 1.0], [1.0, 0.4]
+				],
+				"speed" : 0.01
+			}
+		}
+	]};
+		
+			var polygons_contexts= [];
+			var keypresseds= {};
+
+
+			function svg_polygons_changed(detail) {
+				js_config["readers"][detail.svg_idx]["alpha"]["alpha_polygons"]= [];
+				for (let i=0; i<polygons_contexts[detail.svg_idx].polygons.length; ++i) {
+					js_config["readers"][detail.svg_idx]["alpha"]["alpha_polygons"].push({
+						"polygon" : polygons_contexts[detail.svg_idx].polygons[i], "fadeout" : 0.0, "curve" : 1.0, "alpha_max" : 1.0
+					});
+				}
+				//console.log(js_config);
+			}
+
 
 			window.onload= function () {
-				var keypresseds= {};
+				for (let i=0; i<js_config["readers"].length; ++i) {
+					let svg= document.createElementNS("http://www.w3.org/2000/svg", "svg");
+					svg.setAttribute("id", "svg_main_"+ i);
+					svg.setAttribute("width", 300);
+					svg.setAttribute("height", 300);
+					document.body.appendChild(svg);
+
+					let polygons_context= new PolygonsContext(svg.getAttribute("id"), keypresseds);
+					for (let j=0; j<js_config["readers"][i]["alpha"]["alpha_polygons"].length; ++j) {
+						polygons_context.set_polygon(j, js_config["readers"][i]["alpha"]["alpha_polygons"][j]["polygon"]);
+						polygons_context.update_polygon_group(j);
+					}
+					polygons_contexts.push(polygons_context);
+				}
+				
 				document.addEventListener("keydown", function (e) {keypresseds[e.key]= true;});
 				document.addEventListener("keyup", function (e) {keypresseds[e.key]= false;});
-				var context0= new PolygonsContext("svg_main_0", keypresseds);
-				var context1= new PolygonsContext("svg_main_1", keypresseds);
+				document.addEventListener("svg_polygons_changed", function (e) {svg_polygons_changed(e.detail)});
 			}
 		</script>
 	</head>
 	<body>
-		<svg id="svg_main_0" width="300" height="300"></svg>
-		<svg id="svg_main_1" width="300" height="300"></svg>
-
 	</body>
 </html>
