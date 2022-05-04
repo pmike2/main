@@ -49,7 +49,7 @@ export function inertia_center(coords) {
 		return null;
 	}
 
-	result= {"x" : 0.0, "y" : 0.0};
+	let result= {"x" : 0.0, "y" : 0.0};
 	for (let i=0; i<coords.length; ++i) {
 		result.x+= coords[i].x;
 		result.y+= coords[i].y;

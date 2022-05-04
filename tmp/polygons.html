@@ -6,18 +6,21 @@
 		<link rel="stylesheet" href="polygons.css">
 		<script src="./polygons.js" type="module"></script>
 		<script type="module">
-			import {svg_init} from './polygons.js';
+			import {PolygonsContext} from './polygons.js';
 
-			var polygons_array= [[], []];
 
-			window.svg_init_= function svg_init_(svg_main_id) {
-				let svg_main_idx= svg_main_id.split("svg_main_")[1];
-				svg_init(svg_main_id, polygons_array[svg_main_idx]);
+			window.onload= function () {
+				var keypresseds= {};
+				document.addEventListener("keydown", function (e) {keypresseds[e.key]= true;});
+				document.addEventListener("keyup", function (e) {keypresseds[e.key]= false;});
+				var context0= new PolygonsContext("svg_main_0", keypresseds);
+				var context1= new PolygonsContext("svg_main_1", keypresseds);
 			}
 		</script>
 	</head>
 	<body>
-		<svg id="svg_main_1" width="300" height="300" onload="svg_init_('svg_main_1')"></svg>
-		<svg id="svg_main_2" width="300" height="300" onload="svg_init_('svg_main_2')"></svg>
+		<svg id="svg_main_0" width="300" height="300"></svg>
+		<svg id="svg_main_1" width="300" height="300"></svg>
+
 	</body>
 </html>
