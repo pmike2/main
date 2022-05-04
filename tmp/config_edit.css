@@ -1,0 +1,51 @@
+div {
+	margin-left: 20px;
+	margin-bottom: 10px;
+	font-size : 20px;
+}
+input {
+	width: 60px;
+	margin-left: 10px;
+	border: 0;
+	background-color: rgb(200, 200, 100);
+	font-size : 15px;
+}
+input.long-input {
+	width: 250px;
+}
+div.folded>div {
+	display: none;
+}
+#div_utilities {
+	float: right;
+}
+span {
+	background-color: rgb(200, 200, 200);
+	padding-left: 5px;
+	padding-right: 5px;
+	cursor: pointer;
+}
+button {
+	width: 20px;
+	border: 0px;
+	font-size : 20px;
+	text-align: center;
+	padding: 0px;
+	cursor: pointer;
+}
+button.button_utilities {
+	width: 60px;
+}
+button.fold-button {
+	background-color: rgb(200, 100, 200);
+}
+button.randomize-button {
+	background-color: rgb(100, 200, 200);
+	margin-right: 10px;
+}
+button.add-button {
+	background-color: rgb(150, 200, 120);
+}
+button.remove-button {
+	background-color: rgb(150, 120, 120);
+}
