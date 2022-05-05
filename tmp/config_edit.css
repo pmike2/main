@@ -13,7 +13,7 @@ input {
 input.long-input {
 	width: 250px;
 }
-div.folded>div {
+div.folded>div, div.folded>svg {
 	display: none;
 }
 #div_utilities {

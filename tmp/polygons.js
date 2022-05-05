@@ -32,7 +32,6 @@ const INSTRUCTIONS= {
 export class PolygonsContext {
 	constructor(id, keypresseds) {
 		this.id= id;
-		this.idx= parseInt(this.id.split("svg_main_")[1]);
 		
 		this.polygons= [];
 		this.keypresseds= keypresseds;
@@ -61,7 +60,7 @@ export class PolygonsContext {
 		this.svg_emprise.addEventListener("mousemove", this.mouse_move.bind(this));
 		this.svg_emprise.addEventListener("mouseout", this.mouse_out_emprise.bind(this));
 
-		this.event= new CustomEvent('svg_polygons_changed', {detail : {"svg_idx" : this.idx}});
+		this.event= new CustomEvent('svg_polygons_changed', {detail : {"svg_id" : this.id}});
 	
 		let text_base_x= 0.7;
 		let text_base2_x= 0.72;

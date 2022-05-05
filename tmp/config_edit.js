@@ -1,11 +1,16 @@
 export class ConfigEdit {
-	constructor(div_id, js_model, js_config) {
-		this.div_main= document.getElementById(div_id);
+	constructor(js_model, js_config) {
 		this.js_model= js_model;
 		this.js_config= js_config;
 
+		this.gen_utilities();
+
 		this.expand_const();
 		this.complexify_keys();
+
+		this.div_main= document.createElement("div");
+		this.div_main.setAttribute("id", "div_config");
+		document.body.appendChild(this.div_main);
 		this.gen_dom("/", this.div_main);
 	}
 
@@ -34,7 +39,7 @@ export class ConfigEdit {
 	get_all_config_ids() {
 		let result= [];
 	
-		let get_node_id= function(js_node, id) {
+		let get_node_id= (js_node, id) => {
 			result.push(id);
 			if (typeof(js_node)== "object") {
 				for (let key in js_node) {
@@ -46,7 +51,7 @@ export class ConfigEdit {
 					}
 				}
 			}
-		}.bind(this);
+		}
 	
 		get_node_id(this.js_config, "/");
 	
@@ -119,7 +124,7 @@ export class ConfigEdit {
 
 	get_default(node_id) {
 	
-		function get_default_node(js, node_id) {
+		let get_default_node = (js, node_id) => {
 			let model_node= this.get_model_node(node_id);
 			let key= node_id.split("/").pop();
 	
@@ -161,7 +166,7 @@ export class ConfigEdit {
 	
 		
 	reset2default() {
-		this.js_config= get_default("/");
+		this.js_config= this.get_default("/");
 		this.gen_dom("/", this.div_main);
 	}
 	
@@ -169,9 +174,6 @@ export class ConfigEdit {
 	add_default_to_list(node_id, i) {
 		let [js_parent_node, key]= this.get_config_node(node_id);
 		let model_node= this.get_model_node(node_id);
-		if ("number" in model_node) {
-			return;
-		}
 		if (("max_number" in model_node) && (model_node.max_number== js_parent_node[key].length)) {
 			return;
 		}
@@ -191,7 +193,7 @@ export class ConfigEdit {
 			return;
 		}
 		let [js_parent_node, key]= this.get_config_node(node_id);
-		let parent_model_node= this.get_model_node(get_parent_id(node_id));
+		let parent_model_node= this.get_model_node(this.get_parent_id(node_id));
 		if (parent_model_node.type== "dict") {
 			delete js_parent_node[key];
 		}
@@ -207,10 +209,22 @@ export class ConfigEdit {
 	}
 
 	
+	send_event(node_id) {
+		document.dispatchEvent(new CustomEvent('js_config_changed', {detail : {"node_id" : node_id}}));
+	}
+
+	
 	randomize(node_id) {
 		let [js_parent_node, key]= this.get_config_node(node_id);
 		let model_node= this.get_model_node(node_id);
-	
+		/*
+		console.log("------");
+		console.log(node_id);
+		console.log(js_parent_node);
+		console.log(key);
+		console.log(model_node);
+		*/
+
 		if (model_node.type== "list") {
 			js_parent_node[key]= [];
 			let min_number= 0;
@@ -241,7 +255,7 @@ export class ConfigEdit {
 				let n= Math.floor(Math.random()* model_node.possible_keys.length);
 				for (let i=0; i<n; ++i) {
 					this.add_default_to_dict(node_id, model_node.possible_keys[i]);
-					this.randomize(concat_ids(node_id, model_node.possible_keys[i]));
+					this.randomize(this.concat_ids(node_id, model_node.possible_keys[i]));
 				}
 			}
 		}
@@ -405,7 +419,7 @@ export class ConfigEdit {
 
 
 	fold_all() {
-		node_ids= this.get_all_config_ids();
+		let node_ids= this.get_all_config_ids();
 		for (let i=0; i<node_ids.length; ++i) {
 			this.fold(node_ids[i]);
 		}
@@ -413,7 +427,7 @@ export class ConfigEdit {
 
 
 	unfold_all() {
-		node_ids= this.get_all_config_ids();
+		let node_ids= this.get_all_config_ids();
 		for (let i=0; i<node_ids.length; ++i) {
 			this.unfold(node_ids[i]);
 		}
@@ -423,13 +437,17 @@ export class ConfigEdit {
 	gen_dom(node_id, parent_html_node) {
 		let [js_parent_node, key]= this.get_config_node(node_id);
 		let model_node= this.get_model_node(node_id);
-		
+
 		/*console.log("------");
 		console.log(node_id);
 		console.log(js_parent_node);
 		console.log(key);
 		console.log(model_node);*/
-		
+
+		if ("nodom" in model_node) {
+			return;
+		}
+	
 		let div_elmt= this.get_div_node(node_id);
 		let was_fold= null;
 		if (div_elmt!== null) {
@@ -450,10 +468,11 @@ export class ConfigEdit {
 		button_randomize_elmt.setAttribute("node_id", node_id);
 		button_randomize_elmt.innerHTML= "R";
 		button_randomize_elmt.classList.add("randomize-button");
-		button_randomize_elmt.addEventListener("click", function() {
-			this.randomize(this.getAttribute("node_id"));
+		button_randomize_elmt.addEventListener("click", () => {
+			this.randomize(node_id);
 			this.enforce_rules();
 			this.gen_dom(node_id, parent_html_node);
+			this.send_event(node_id);
 		});
 		div_elmt.insertBefore(button_randomize_elmt, div_elmt.firstChild);
 
@@ -462,10 +481,11 @@ export class ConfigEdit {
 			button_add_elmt.setAttribute("node_id", node_id);
 			button_add_elmt.innerHTML= "+";
 			button_add_elmt.classList.add("add-button");
-			button_add_elmt.addEventListener("click", function() {
+			button_add_elmt.addEventListener("click", () => {
 				this.add_default_to_list(node_id, js_parent_node[key].length);
 				this.enforce_rules();
 				this.gen_dom(node_id, parent_html_node);
+				this.send_event(node_id);
 			});
 			div_elmt.insertBefore(button_add_elmt, div_elmt.firstChild);
 		}
@@ -474,7 +494,7 @@ export class ConfigEdit {
 			button_add_elmt.setAttribute("node_id", node_id);
 			button_add_elmt.innerHTML= "+";
 			button_add_elmt.classList.add("add-button");
-			button_add_elmt.addEventListener("click", function() {
+			button_add_elmt.addEventListener("click", () => {
 				let idx_key= 0;
 				if (Object.keys(js_parent_node[key]).length> 0) {
 					idx_key= Math.max(...Object.keys(js_parent_node[key]).map(x => model_node.possible_keys.indexOf(x)))+ 1;
@@ -482,6 +502,7 @@ export class ConfigEdit {
 				this.add_default_to_dict(node_id, model_node.possible_keys[idx_key]);
 				this.enforce_rules();
 				this.gen_dom(node_id, parent_html_node);
+				this.send_event(node_id);
 			});
 			div_elmt.insertBefore(button_add_elmt, div_elmt.firstChild);
 		}
@@ -494,9 +515,10 @@ export class ConfigEdit {
 				button_remove_elmt.setAttribute("node_id", node_id);
 				button_remove_elmt.innerHTML= "-";
 				button_remove_elmt.classList.add("remove-button");
-				button_remove_elmt.addEventListener("click", function() {
+				button_remove_elmt.addEventListener("click", () => {
 					this.delete_id(node_id);
 					this.gen_dom(parent_node_id, parent_html_node.parentNode);
+					this.send_event(parent_node_id);
 				});
 				div_elmt.insertBefore(button_remove_elmt, div_elmt.firstChild);
 			}
@@ -504,16 +526,11 @@ export class ConfigEdit {
 
 		if ((model_node.type== "int") || (model_node.type== "float") || (model_node.type== "string")) {
 			let input_elmt= document.createElement("input");
-			input_elmt.value= js_parent_node[key];
 			div_elmt.appendChild(input_elmt);
-
-			/*if (model_node.type== "string") {
-				input_elmt.classList.add("long-input");
-			}*/
 			
 			if ("possible_values" in model_node) {
-				input_elmt.addEventListener('click', mouse_event => {
-					mouse_event.target.value = '' 
+				input_elmt.addEventListener('click', (e) => {
+					e.target.value = '' 
 				});
 				input_elmt.setAttribute("list", "possible_values_"+ key);
 				let datalist_elmt= document.createElement("datalist");
@@ -531,6 +548,7 @@ export class ConfigEdit {
 				if ((model_node.type== "int") || (model_node.type== "float")) {
 					//input_elmt.setAttribute("type", "number");
 					input_elmt.setAttribute("type", "range"); // + sympa
+					
 					if ("min" in model_node) {
 						input_elmt.setAttribute("min", model_node.min);
 						input_elmt.addEventListener("change", function() {
@@ -561,13 +579,17 @@ export class ConfigEdit {
 					});
 				}
 			}
+
+			input_elmt.value= js_parent_node[key];
+			// pour que slider_value_elmt suive le changement
+			input_elmt.dispatchEvent(new Event('change'));
 		}
 		else if ((model_node.type== "dict") || (model_node.type== "list")) {
 			let button_fold_elmt= document.createElement("button");
 			button_fold_elmt.setAttribute("node_id", node_id);
 			button_fold_elmt.classList.add("fold-button");
 			button_fold_elmt.addEventListener("click", () => {
-				this.toggle_fold(this.getAttribute("node_id"));
+				this.toggle_fold(node_id);
 			});
 			
 			div_elmt.insertBefore(button_fold_elmt, div_elmt.firstChild);
@@ -595,20 +617,47 @@ export class ConfigEdit {
 	}
 
 
+	gen_utilities() {
+		let div_utilities= document.createElement("div");
+		div_utilities.setAttribute("id", "div_utilities");
+		document.body.appendChild(div_utilities);
+
+		let fold_button= document.createElement("button");
+		fold_button.classList.add("button_utilities");
+		fold_button.addEventListener("click", this.fold_all.bind(this));
+		fold_button.innerHTML= "fold";
+		div_utilities.appendChild(fold_button);
+
+		let unfold_button= document.createElement("button");
+		unfold_button.classList.add("button_utilities");
+		unfold_button.addEventListener("click", this.unfold_all.bind(this));
+		unfold_button.innerHTML= "unfold";
+		div_utilities.appendChild(unfold_button);
+
+		let reset_button= document.createElement("button");
+		reset_button.classList.add("button_utilities");
+		reset_button.addEventListener("click", this.reset2default.bind(this));
+		reset_button.innerHTML= "reset";
+		div_utilities.appendChild(reset_button);
+	}
+
+
 	test() {
-		//node_id= "/";
+		//let node_id= "/modifiers/0/movie/movie.mult";
 		//console.log(get_parent_id(node_id));
 		//console.log(get_all_config_ids());
-		//console.log(get_config_node(node_id));
+		//console.log(this.get_config_node(node_id));
 		//console.log(get_model_node(node_id));
 		//console.log(get_default(node_id));
-		//add_default_to_list(node_id, 0);
+		//let [js_parent_node, key]= this.get_config_node(node_id);
+		//js_parent_node[key]= [];
+		//this.add_default_to_list(node_id, 0);
 		//add_default_to_dict(node_id, "d");
 		//delete_id(node_id);
 		//randomize(node_id);
 		//enforce_rules(js_config);
 		//simplify_keys();
-		//console.log(js_config);
+		//console.log(this.js_config);
 		//fold_all();
 	}
 

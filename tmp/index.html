@@ -7,9 +7,12 @@ Partie client
 	<head>
 		<title>TEST</title>
 		<link rel="stylesheet" href="config_edit.css">
+		<link rel="stylesheet" href="polygons.css">
+		<script src="./polygons.js" type="module"></script>
 		<script src="./config_edit.js" type="module"></script>
 		<script type="module">
 			import {ConfigEdit} from './config_edit.js';
+			import {PolygonsContext} from './polygons.js';
 			
 			var js_config= {
 	"mpegs" : [
@@ -30,6 +33,12 @@ Partie client
 						"fadeout" : 0.1,
 						"curve" : 2.0,
 						"alpha_max" : 0.9
+					},
+					{
+						"polygon" : [{"x" : 0.6, "y" : 0.6}, {"x" : 0.7, "y" : 0.6}, {"x" : 0.7, "y" : 0.7}, {"x" : 0.6, "y" : 0.7}],
+						"fadeout" : 0.5,
+						"curve" : 1.0,
+						"alpha_max" : 1.0
 					}
 				],
 				"decrease_speed" : 0.05
@@ -120,7 +129,7 @@ Partie client
 	"readers.alpha"			: {"type" : "dict", "keys" : ["alpha_polygons", "decrease_speed"]},
 	"alpha_polygons"		: {"type" : "list", "values" : "alpha_polygon", "min_number" : 1, "max_number" : 8},
 	"alpha_polygon"			: {"type" : "dict", "keys" : ["polygon", "fadeout", "curve", "alpha_max"]},
-	"polygon"				: {"type" : "list", "values" : "coords", "min_number" : 3, "max_number" : 16},
+	"polygon"				: {"type" : "list", "values" : "coords", "min_number" : 3, "max_number" : 16, "nodom" : true},
 	"coords"				: {"type" : "dict", "keys" : ["x", "y"]},
 	"x"						: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 0.0},
 	"y"						: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 0.0},
@@ -154,20 +163,98 @@ Partie client
 	"modifier"				: {"type" : "int", "min" : 0, "max" : 31, "default" : 0},
 	"track"					: {"type" : "int", "min" : 0, "max" : 7, "default" : 0}
 }
+			var keypresseds= {};
+			var polygons_contexts= [];
+			var config_edit;
+
+
+			function svg_polygons_changed(detail) {
+				let idx= parseInt(detail.svg_id.split("svg_alpha_polygons_")[1]);
+				console.log("svg_polygons_changed : "+ idx);
+
+				config_edit.js_config["readers"][idx]["readers.alpha"]["alpha_polygons"]= [];
+				for (let i=0; i<polygons_contexts[idx].polygons.length; ++i) {
+					config_edit.js_config["readers"][idx]["readers.alpha"]["alpha_polygons"].push({
+						"polygon" : polygons_contexts[idx].polygons[i], "fadeout" : 0.0, "curve" : 1.0, "alpha_max" : 1.0
+					});
+				}
+				//console.log(config_edit.js_config);
+				config_edit.gen_dom("/readers/"+ idx+ "/readers.alpha/alpha_polygons", config_edit.get_div_node("/readers/"+ idx+ "/readers.alpha"));
+			}
+
+
+			function sync_alpha_polygons(reader_idx) {
+				console.log("sync_alpha_polygons : "+ reader_idx);
+				let svg_alpha_polygons= document.getElementById("svg_alpha_polygons_"+ reader_idx);
+				if (svg_alpha_polygons=== null) {
+					svg_alpha_polygons= document.createElementNS("http://www.w3.org/2000/svg", "svg");
+					svg_alpha_polygons.setAttribute("id", "svg_alpha_polygons_"+ reader_idx);
+					svg_alpha_polygons.setAttribute("width", 300);
+					svg_alpha_polygons.setAttribute("height", 300);
+					let div_alpha_polygons= config_edit.get_div_node("/readers/"+ reader_idx+ "/readers.alpha/alpha_polygons");
+					div_alpha_polygons.appendChild(svg_alpha_polygons);
+				}
+
+				if (reader_idx< polygons_contexts.length) {
+					delete polygons_contexts[reader_idx];
+				}
+				let polygons_context= new PolygonsContext(svg_alpha_polygons.getAttribute("id"), keypresseds);
+				polygons_contexts.splice(reader_idx, 0, polygons_context);
+
+				for (let j=0; j<js_config["readers"][reader_idx]["readers.alpha"]["alpha_polygons"].length; ++j) {
+					polygons_contexts[reader_idx].set_polygon(j, js_config["readers"][reader_idx]["readers.alpha"]["alpha_polygons"][j]["polygon"]);
+					polygons_contexts[reader_idx].update_polygon_group(j);
+				}
+			}
+
+
+			function js_config_changed(detail) {
+				let node_id= detail.node_id;
+				console.log("js_config_changed : "+ node_id);
+
+				if ((node_id== "/readers") || (node_id== "/")) {
+					polygons_contexts= [];
+					let svgs= document.getElementsByTagName("svg");
+					for (let i=0; i<svgs.length; ++i) {
+						svgs[i].remove();
+					}
+
+					for (let reader_idx=0; reader_idx<js_config["readers"].length; ++reader_idx) {
+						sync_alpha_polygons(reader_idx);
+					}
+				}
+				else {
+					const regex = new RegExp("/readers/([0-9])");
+					const found = node_id.match(regex);
+					if (found) {
+						let reader_idx= parseInt(found[1]);
+						sync_alpha_polygons(reader_idx);
+					}
+				}
+			}
+
 
 			window.onload= function () {
-				let config_edit= new ConfigEdit("div_config", js_model, js_config);
+				document.addEventListener("keydown", function (e) {keypresseds[e.key]= true;});
+				document.addEventListener("keyup", function (e) {keypresseds[e.key]= false;});
+				document.addEventListener("svg_polygons_changed", function (e) {svg_polygons_changed(e.detail)});
+				document.addEventListener("js_config_changed", function (e) {js_config_changed(e.detail)});
+
+				config_edit= new ConfigEdit(js_model, js_config);
+				config_edit.send_event("/");
+				//config_edit.test();
+
 			}
 
 		</script>
 	</head>
 	<body>
-		<div id="div_utilities">
+		<!--<div id="div_utilities">
 			<button class="button_utilities" onclick="fold_all()">fold</button>
 			<button class="button_utilities" onclick="unfold_all()">unfold</button>
 			<button class="button_utilities" onclick="reset2default()">reset</button>
-		</div>
-		<div id="div_config"></div>
+		</div>-->
+		<!--<div id="div_config"></div>-->
 
 		<!--<script src="/socket.io/socket.io.js"></script>-->
 		<script>

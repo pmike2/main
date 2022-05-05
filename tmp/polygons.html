@@ -55,10 +55,11 @@
 
 
 			function svg_polygons_changed(detail) {
-				js_config["readers"][detail.svg_idx]["alpha"]["alpha_polygons"]= [];
-				for (let i=0; i<polygons_contexts[detail.svg_idx].polygons.length; ++i) {
-					js_config["readers"][detail.svg_idx]["alpha"]["alpha_polygons"].push({
-						"polygon" : polygons_contexts[detail.svg_idx].polygons[i], "fadeout" : 0.0, "curve" : 1.0, "alpha_max" : 1.0
+				let idx= parseInt(detail.svg_id.split("svg_main_")[1]);
+				js_config["readers"][idx]["alpha"]["alpha_polygons"]= [];
+				for (let i=0; i<polygons_contexts[idx].polygons.length; ++i) {
+					js_config["readers"][idx]["alpha"]["alpha_polygons"].push({
+						"polygon" : polygons_contexts[idx].polygons[i], "fadeout" : 0.0, "curve" : 1.0, "alpha_max" : 1.0
 					});
 				}
 				//console.log(js_config);
