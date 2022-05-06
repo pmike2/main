@@ -1,8 +1,10 @@
 import {deepcopy} from "./utils.js";
-import {norm, normalized, diff, scalar_product, orthogonal, inertia_center, angle, rotate, simplify_coords} from "./geom.js";
+import {norm, normalized, diff, scalar_product, orthogonal, inertia_center, angle, rotate, simplify_coords, bbox} from "./geom.js";
 
 
 const N_POINTS_PER_CIRCLE= 16;
+const INDEX_POLYGON_TEXT_OFFSET_X= 0.01;
+const INDEX_POLYGON_TEXT_OFFSET_Y= 0.05;
 const DEBUG= false;
 const INSTRUCTIONS= {
 	"fond" : {
@@ -24,7 +26,7 @@ const INSTRUCTIONS= {
 		"p" : "move polygon",
 		"r" : "rotate polygon",
 		"s" : "scale polygon",
-		"x" : "delete point"
+		"x" : "delete polygon"
 	}
 };
 
@@ -60,8 +62,6 @@ export class PolygonsContext {
 		this.svg_emprise.addEventListener("mousemove", this.mouse_move.bind(this));
 		this.svg_emprise.addEventListener("mouseout", this.mouse_out_emprise.bind(this));
 
-		this.event= new CustomEvent('svg_polygons_changed', {detail : {"svg_id" : this.id}});
-	
 		let text_base_x= 0.7;
 		let text_base2_x= 0.72;
 		let text_base_y= 0.03;
@@ -87,8 +87,9 @@ export class PolygonsContext {
 	}
 
 	
-	js_config_changed() {
-		console.log(js_config);
+	send_event(detail) {
+		let merged_detail= Object.assign({}, {"svg_id" : this.id}, detail);
+		document.dispatchEvent(new CustomEvent("svg_polygons_changed", {detail : merged_detail}));
 	}
 
 
@@ -130,27 +131,27 @@ export class PolygonsContext {
 
 	clear() {
 		this.polygons= [];
-		document.dispatchEvent(this.event);
+		this.send_event({"type" : "clear"});
 	}
 	
 
 	add_polygon() {
 		this.polygons.push([]);
-		document.dispatchEvent(this.event);
+		this.send_event({"type" : "add_polygon"});
 		return this.polygons.length- 1;
 	}
 
 
 	remove_polygon(idx_polygon) {
 		this.polygons.splice(idx_polygon, 1);
-		document.dispatchEvent(this.event);
+		this.send_event({"type" : "remove_polygon", "idx_polygon" : idx_polygon});
 	}
 	
 
 	duplicate_polygon(idx_polygon) {
 		this.polygons.push(deepcopy(this.polygons[idx_polygon]));
+		this.send_event({"type" : "duplicate_polygon", "idx_polygon" : idx_polygon});
 		this.move_polygon(this.polygons.length- 1, {"x" : 0.1, "y" : 0.1});
-		document.dispatchEvent(this.event);
 	}
 
 	
@@ -172,45 +173,51 @@ export class PolygonsContext {
 			this.polygons[idx_polygon][i].x+= v.x;
 			this.polygons[idx_polygon][i].y+= v.y;
 		}
-		document.dispatchEvent(this.event);
+		this.send_event({"type" : "move_polygon", "idx_polygon" : idx_polygon});
 	}
 		
 	
 	simplify_polygon(idx_polygon, treshold, min_dist) {
 		let simplified= simplify_coords(this.polygons[idx_polygon], treshold, min_dist);
 		this.polygons[idx_polygon]= simplified;
-		document.dispatchEvent(this.event);
+		this.send_event({"type" : "simplify_polygon", "idx_polygon" : idx_polygon});
 	}
 	
 
 	add_point(idx_polygon, coord) {
 		this.polygons[idx_polygon].push(coord);
+		this.send_event({"type" : "add_point", "idx_polygon" : idx_polygon});
 		return this.polygons[idx_polygon].length- 1;
-		document.dispatchEvent(this.event);
 	}
 			
 
 	add_point_on_line(idx_polygon, idx_line, coord) {
 		this.polygons[idx_polygon].splice(idx_line+ 1, 0, coord);
-		document.dispatchEvent(this.event);
+		this.send_event({"type" : "add_point_on_line", "idx_polygon" : idx_polygon});
 	}
 	
 	
 	remove_point(idx_polygon, idx_point) {
 		this.polygons[idx_polygon].splice(idx_point, 1);
-		document.dispatchEvent(this.event);
+		this.send_event({"type" : "remove_point", "idx_polygon" : idx_polygon});
 	}
 	
 	
 	move_point(idx_polygon, idx_point, coord) {
 		this.polygons[idx_polygon][idx_point]= coord;
-		document.dispatchEvent(this.event);
+		this.send_event({"type" : "move_point", "idx_polygon" : idx_polygon});
 	}
 	
 
 	set_editing_null() {
 		this.editing_mode= null;
 		this.editing_data= null;
+	}
+
+
+	get_index_polygon_text_position(idx_polygon) {
+		let polygon_bbox= bbox(this.polygons[idx_polygon]);
+		return {"x" : polygon_bbox.xmin- INDEX_POLYGON_TEXT_OFFSET_X, "y" : 1.0- polygon_bbox.ymin+ INDEX_POLYGON_TEXT_OFFSET_Y};
 	}
 
 
@@ -235,6 +242,9 @@ export class PolygonsContext {
 			polygon_group.innerHTML+= '<circle cx="'+ this.polygons[idx_polygon][i].x+ '" cy="'+ this.polygons[idx_polygon][i].y+ 
 				'" class="points" id="'+ this.get_svg_point_id(idx_polygon, i)+ '" />\n';
 		}
+		let index_polygon_text_position= this.get_index_polygon_text_position(idx_polygon);
+		polygon_group.innerHTML+= '<text class="index_polygon_text" x="'+ index_polygon_text_position.x+ '" y="'+ index_polygon_text_position.y+ '">'+ idx_polygon+ '</text>\n';
+		
 		let svg_lines= polygon_group.getElementsByClassName("lines");
 		for (let i=0; i<svg_lines.length; ++i) {
 			svg_lines[i].addEventListener("mousedown", this.mouse_down_line.bind(this));
@@ -275,6 +285,10 @@ export class PolygonsContext {
 		point.addEventListener("mousedown", this.mouse_down_point.bind(this));
 		point.addEventListener("mouseup", this.mouse_up_point.bind(this));
 		point.addEventListener("mousemove", this.mouse_move.bind(this));
+
+		let index_polygon_text_position= this.get_index_polygon_text_position(idx_polygon);
+		polygon_group.getElementsByTagName("text")[0].setAttribute("x", index_polygon_text_position.x);
+		polygon_group.getElementsByTagName("text")[0].setAttribute("y", index_polygon_text_position.y);
 	}
 
 
@@ -321,6 +335,11 @@ export class PolygonsContext {
 		let svg_line_after= document.getElementById(this.get_svg_line_id(idx_polygon, idx_point));
 		svg_line_after.setAttribute("x1", this.polygons[idx_polygon][idx_point].x);
 		svg_line_after.setAttribute("y1", this.polygons[idx_polygon][idx_point].y);
+
+		let index_polygon_text_position= this.get_index_polygon_text_position(idx_polygon);
+		let polygon_group= document.getElementById(this.get_svg_polygon_id(idx_polygon));
+		polygon_group.getElementsByTagName("text")[0].setAttribute("x", index_polygon_text_position.x);
+		polygon_group.getElementsByTagName("text")[0].setAttribute("y", index_polygon_text_position.y);
 	}
 
 

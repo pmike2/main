@@ -1,30 +1,44 @@
 svg {
+	display: block;
 }
 
 .svg_emprise {
 	fill: rgb(200, 200, 200);
 }
+
 .svg_main_group {
 	
 }
+
 text {
 	font-size: 0.03px;
 	font-family: "Times New Roman";
 	pointer-events: none;
 	opacity: 0.5;
 }
+
+/* cf https://stackoverflow.com/questions/3846015/flip-svg-coordinate-system
+il faut réinverser le transform pour avoir le texte à l'endroit
++ cf get_index_polygon_text_position() faire 1- y ! */
+.index_polygon_text {
+	transform: matrix(1.0, 0.0, 0.0, -1.0, 0.0, 1.0);
+}
+
 svg line {
 	stroke: rgb(255,0,0);
 	stroke-width: 0.02;
 	opacity: 0.7;
 }
+
 line:hover {
 	stroke-width: 0.03;
 }
+
 circle {
 	r: 0.01;
 	opacity: 0.8;
 }
+
 circle:hover {
 	r: 0.02;
 }

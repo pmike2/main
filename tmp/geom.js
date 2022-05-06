@@ -61,6 +61,31 @@ export function inertia_center(coords) {
 }
 
 
+export function bbox(coords) {
+	if (coords.length== 0) {
+		return null;
+	}
+
+	let result= {"xmin" : 1e7, "ymin" : 1e7, "xmax" : -1e7, "ymax" : -1e7};
+	for (let i=0; i<coords.length; ++i) {
+		if (coords[i].x< result.xmin) {
+			result.xmin= coords[i].x;
+		}
+		if (coords[i].x> result.xmax) {
+			result.xmax= coords[i].x;
+		}
+		if (coords[i].y< result.ymin) {
+			result.ymin= coords[i].y;
+		}
+		if (coords[i].y> result.ymax) {
+			result.ymax= coords[i].y;
+		}
+	}
+
+	return result;
+}
+
+
 export function cos_angle(base, p1, p2) {
 	let n1= norm(diff(base, p1));
 	let n2= norm(diff(base, p2));

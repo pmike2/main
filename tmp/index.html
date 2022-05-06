@@ -10,187 +10,74 @@ Partie client
 		<link rel="stylesheet" href="polygons.css">
 		<script src="./polygons.js" type="module"></script>
 		<script src="./config_edit.js" type="module"></script>
+		<script src="/socket.io/socket.io.js"></script>
 		<script type="module">
 			import {ConfigEdit} from './config_edit.js';
 			import {PolygonsContext} from './polygons.js';
 			
-			var js_config= {
-	"mpegs" : [
-		"../data/video_samples/flower_04.mov",
-		"../data/video_samples/flower_06.mov"
-	],
-	
-	"alpha_width" : 512,
-	"alpha_height" : 512,
-	"time_width" : 1024,
-	
-	"readers" : [
-		{
-			"alpha" : {
-				"alpha_polygons" : [
-					{
-						"polygon" : [{"x" : 0.3, "y" : 0.3}, {"x" : 0.5, "y" : 0.3}, {"x" : 0.5, "y" : 0.5}, {"x" : 0.3, "y" : 0.5}],
-						"fadeout" : 0.1,
-						"curve" : 2.0,
-						"alpha_max" : 0.9
-					},
-					{
-						"polygon" : [{"x" : 0.6, "y" : 0.6}, {"x" : 0.7, "y" : 0.6}, {"x" : 0.7, "y" : 0.7}, {"x" : 0.6, "y" : 0.7}],
-						"fadeout" : 0.5,
-						"curve" : 1.0,
-						"alpha_max" : 1.0
-					}
-				],
-				"decrease_speed" : 0.05
-			},
-			"time" : {
-				"checkpoints" : [
-				{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 0.7}
-				],
-				"speed" : 0.01
-			}
-		},
-		{
-			"alpha" : {
-				"alpha_polygons" : [
-					{
-						"polygon" : [{"x" : 0.6, "y" : 0.6}, {"x" : 0.7, "y" : 0.6}, {"x" : 0.7, "y" : 0.7}, {"x" : 0.6, "y" : 0.7}],
-						"fadeout" : 0.5,
-						"curve" : 1.0,
-						"alpha_max" : 1.0
-					}
-				],
-				"decrease_speed" : 0.2
-			},
-			"time" : {
-				"checkpoints" : [
-					{"x" : 0.0, "y" : 0.0}, {"x" : 0.3, "y" : 1.0}, {"x" : 1.0, "y" : 0.7}
-				],
-				"speed" : 0.01
-			}
-		}
-	],
-	
-	"keymapping_reader" : {
-		"a" : {
-			"mpeg" : 0, "reader" : 0
-		},
-		"b" : {
-			"mpeg" : 1, "reader" : 0
-		},
-		"c" : {
-			"mpeg" : 0, "reader" : 1
-		}
-	},
-
-	"modifiers" : [
-		{
-			"movie" : {
-				"mult" : [0.5, 0.7, 0.2, 0.8], "add" : [0.4, 0.3], "speed" : 0.01
-			},
-			"alpha" : {
-				"mult" : [0.5, 0.7, 0.2, 0.8], "add" : [0.4, 0.3], "speed" : 0.01
-			},
-			"time" : {
-				"mult" : 0.4, "add" : 0.2, "speed" : 0.01
-			}
-		}
-	],
-
-	"keymapping_modifier" : {
-		"d" : {
-			"modifier" : 0, "track" : 0
-		},
-		"e" : {
-			"modifier" : 0, "track" : 1
-		}
-	}
-};
-
-			
-			var js_model= {
-	"__const__" : {
-		"alphabet_keys" : ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u", "v", "w", "x", "y", "z"],
-		"powers_of_2" : [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]
-	},
-	"__rules__" : [
-		"for (var key in js_config['keymapping_reader']) {if (js_config['keymapping_reader'][key]['mpeg']>= js_config['mpegs'].length) {js_config['keymapping_reader'][key]['mpeg']= Math.floor(Math.random()* js_config['mpegs'].length);}}",
-		"for (var key in js_config['keymapping_reader']) {if (js_config['keymapping_reader'][key]['reader']>= js_config['readers'].length) {js_config['keymapping_reader'][key]['reader']= Math.floor(Math.random()* js_config['readers'].length);}}",
-		"for (var key in js_config['keymapping_modifier']) {if (js_config['keymapping_modifier'][key]['modifier']>= js_config['modifiers'].length) {js_config['keymapping_modifier'][key]['modifier']= Math.floor(Math.random()* js_config['modifiers'].length);}}"
-	],
-	"__root__" 				: {"type" : "dict", "keys" : ["mpegs", "alpha_width", "alpha_height", "time_width", "readers", "keymapping_reader", "modifiers", "keymapping_modifier"]},
-	"mpegs"					: {"type" : "list", "values" : "path", "min_number" : 1, "max_number" : 8},
-	"path"					: {"type" : "string", "default" : ""},
-	"alpha_width"			: {"type" : "int", "possible_values" : "powers_of_2", "default" : 512},
-	"alpha_height"			: {"type" : "int", "possible_values" : "powers_of_2", "default" : 512},
-	"time_width"			: {"type" : "int", "possible_values" : "powers_of_2", "default" : 1024},
-	"readers"				: {"type" : "list", "values" : "alpha_time", "min_number" : 1, "max_number" : 32},
-	"alpha_time"			: {"type" : "dict", "keys" : ["readers.alpha", "readers.time"]},
-	"readers.alpha"			: {"type" : "dict", "keys" : ["alpha_polygons", "decrease_speed"]},
-	"alpha_polygons"		: {"type" : "list", "values" : "alpha_polygon", "min_number" : 1, "max_number" : 8},
-	"alpha_polygon"			: {"type" : "dict", "keys" : ["polygon", "fadeout", "curve", "alpha_max"]},
-	"polygon"				: {"type" : "list", "values" : "coords", "min_number" : 3, "max_number" : 16, "nodom" : true},
-	"coords"				: {"type" : "dict", "keys" : ["x", "y"]},
-	"x"						: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 0.0},
-	"y"						: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 0.0},
-	"fadeout"				: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 0.0},
-	"curve"					: {"type" : "float", "min" : 0.1, "max" : 4.0, "default" : 1.0},
-	"alpha_max"				: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 1.0},
-	"decrease_speed"		: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
-	"readers.time"			: {"type" : "dict", "keys" : ["checkpoints", "readers.speed"]},
-	"checkpoints"			: {"type" : "list", "values" : "coords", "min_number" : 1, "max_number" : 16},
-	"readers.speed"			: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
-	"keymapping_reader"		: {"type" : "dict", "possible_keys" : "alphabet_keys", "values" : "keymap"},
-	"keymap"				: {"type" : "dict", "keys" : ["mpeg", "reader"]},
-	"mpeg"					: {"type" : "int", "min" : 0, "max" : 7, "default" : 0},
-	"reader"				: {"type" : "int", "min" : 0, "max" : 31, "default" : 0},
-	"modifiers"				: {"type" : "list", "values" : "modif", "max_number" : 32},
-	"modif"					: {"type" : "dict", "keys" : ["movie", "modifiers.alpha", "modifiers.time"]},
-	"movie"					: {"type" : "dict", "keys" : ["movie.mult", "movie.add", "modifiers.speed"]},
-	"movie.mult"			: {"type" : "list", "values" : "mult_elmt", "number" : 4},
-	"mult_elmt"				: {"type" : "float", "min" : -3.0, "max" : 3.0, "default" : 0.0},
-	"movie.add"				: {"type" : "list", "values" : "add_elmt", "number" : 2},
-	"add_elmt"				: {"type" : "float", "min" : -2.0, "max" : 2.0, "default" : 0.0},
-	"modifiers.speed"		: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
-	"modifiers.alpha"		: {"type" : "dict", "keys" : ["alpha.mult", "alpha.add", "modifiers.speed"]},
-	"alpha.mult"			: {"type" : "list", "values" : "mult_elmt", "number" : 4},
-	"alpha.add"				: {"type" : "list", "values" : "add_elmt", "number" : 2},
-	"modifiers.time"		: {"type" : "dict", "keys" : ["time.mult", "time.add", "modifiers.speed"]},
-	"time.mult"				: {"type" : "float", "min" : -2.0, "max" : 2.0, "default" : 0.0},
-	"time.add"				: {"type" : "float", "min" : -2.0, "max" : 2.0, "default" : 0.0},
-	"keymapping_modifier"	: {"type" : "dict", "possible_keys" : "alphabet_keys", "values" : "mod_keymap"},
-	"mod_keymap"			: {"type" : "dict", "keys" : ["modifier", "track"]},
-	"modifier"				: {"type" : "int", "min" : 0, "max" : 31, "default" : 0},
-	"track"					: {"type" : "int", "min" : 0, "max" : 7, "default" : 0}
-}
+			var js_configs= null;
+			var js_model= null;
+			var config_edit= null;
 			var keypresseds= {};
 			var polygons_contexts= [];
-			var config_edit;
+			var socket= io();
+
 
 
 			function svg_polygons_changed(detail) {
-				let idx= parseInt(detail.svg_id.split("svg_alpha_polygons_")[1]);
-				console.log("svg_polygons_changed : "+ idx);
+				//console.log("svg_polygons_changed : ");
+				//console.log(detail);
 
-				config_edit.js_config["readers"][idx]["readers.alpha"]["alpha_polygons"]= [];
-				for (let i=0; i<polygons_contexts[idx].polygons.length; ++i) {
-					config_edit.js_config["readers"][idx]["readers.alpha"]["alpha_polygons"].push({
-						"polygon" : polygons_contexts[idx].polygons[i], "fadeout" : 0.0, "curve" : 1.0, "alpha_max" : 1.0
-					});
+				let reader_idx= parseInt(detail.svg_id.split("svg_alpha_polygons_")[1]);
+				let change_type= detail.type;
+				let node_alpha_polygons= "/readers/"+ reader_idx+ "/readers.alpha/alpha_polygons";
+				let child_nodes= config_edit.get_children_ids(node_alpha_polygons);
+
+				if (change_type== "clear") {
+					for (let i=0; i<child_nodes.length; ++i) {
+						config_edit.delete_id(config_edit.concat_ids(node_alpha_polygons, i));
+						config_edit.get_div_node(child_nodes[i]).remove();
+					}
 				}
-				//console.log(config_edit.js_config);
-				config_edit.gen_dom("/readers/"+ idx+ "/readers.alpha/alpha_polygons", config_edit.get_div_node("/readers/"+ idx+ "/readers.alpha"));
+				else if (change_type== "add_polygon") {
+					config_edit.add_default_to_list(node_alpha_polygons, child_nodes.length);
+					config_edit.gen_dom(config_edit.concat_ids(node_alpha_polygons, child_nodes.length), config_edit.get_div_node(node_alpha_polygons));
+				}
+				else if (change_type== "remove_polygon") {
+					let idx_polygon= detail.idx_polygon;
+					config_edit.delete_id(config_edit.concat_ids(node_alpha_polygons, idx_polygon));
+					config_edit.get_div_node(child_nodes[idx_polygon]).remove();
+				}
+				else if (change_type== "duplicate_polygon") {
+					let idx_polygon= detail.idx_polygon;
+					config_edit.add_default_to_list(node_alpha_polygons, child_nodes.length);
+					config_edit.gen_dom(config_edit.concat_ids(node_alpha_polygons, child_nodes.length), config_edit.get_div_node(node_alpha_polygons));
+				}
+				else {
+					let idx_polygon= detail.idx_polygon;
+					config_edit.js_config["readers"][reader_idx]["readers.alpha"]["alpha_polygons"][idx_polygon]["polygon"]=
+						polygons_contexts[reader_idx].polygons[idx_polygon];
+				}
+
+				socket.emit("config_changed", config_edit.js_config);
+			}
+
+
+			function sync_alpha_polygon(reader_idx, polygon_idx) {
+				polygons_contexts[reader_idx].set_polygon(polygon_idx, config_edit.js_config["readers"][reader_idx]["readers.alpha"]["alpha_polygons"][polygon_idx]["polygon"]);
+				polygons_contexts[reader_idx].update_polygon_group(polygon_idx);
 			}
 
 
 			function sync_alpha_polygons(reader_idx) {
-				console.log("sync_alpha_polygons : "+ reader_idx);
+				//console.log("sync_alpha_polygons : "+ reader_idx);
 				let svg_alpha_polygons= document.getElementById("svg_alpha_polygons_"+ reader_idx);
 				if (svg_alpha_polygons=== null) {
 					svg_alpha_polygons= document.createElementNS("http://www.w3.org/2000/svg", "svg");
 					svg_alpha_polygons.setAttribute("id", "svg_alpha_polygons_"+ reader_idx);
 					svg_alpha_polygons.setAttribute("width", 300);
 					svg_alpha_polygons.setAttribute("height", 300);
+					svg_alpha_polygons.classList.add("svg_alpha_polygons");
 					let div_alpha_polygons= config_edit.get_div_node("/readers/"+ reader_idx+ "/readers.alpha/alpha_polygons");
 					div_alpha_polygons.appendChild(svg_alpha_polygons);
 				}
@@ -200,10 +87,9 @@ Partie client
 				}
 				let polygons_context= new PolygonsContext(svg_alpha_polygons.getAttribute("id"), keypresseds);
 				polygons_contexts.splice(reader_idx, 0, polygons_context);
-
-				for (let j=0; j<js_config["readers"][reader_idx]["readers.alpha"]["alpha_polygons"].length; ++j) {
-					polygons_contexts[reader_idx].set_polygon(j, js_config["readers"][reader_idx]["readers.alpha"]["alpha_polygons"][j]["polygon"]);
-					polygons_contexts[reader_idx].update_polygon_group(j);
+				
+				for (let polygon_idx=0; polygon_idx<config_edit.js_config["readers"][reader_idx]["readers.alpha"]["alpha_polygons"].length; ++polygon_idx) {
+					sync_alpha_polygon(reader_idx, polygon_idx);
 				}
 			}
 
@@ -212,60 +98,66 @@ Partie client
 				let node_id= detail.node_id;
 				console.log("js_config_changed : "+ node_id);
 
+				const regex = new RegExp("^/readers/([0-9]+)/readers.alpha/alpha_polygons$");
+				const found = node_id.match(regex);
+				const regex2 = new RegExp("^/readers/([0-9]+)/readers.alpha/alpha_polygons/([0-9]+)$");
+				const found2 = node_id.match(regex2);
+
 				if ((node_id== "/readers") || (node_id== "/")) {
 					polygons_contexts= [];
-					let svgs= document.getElementsByTagName("svg");
-					for (let i=0; i<svgs.length; ++i) {
-						svgs[i].remove();
+					let svgs_alpha_polygons= document.getElementsByClassName("svg_alpha_polygons");
+					for (let i=0; i<svgs_alpha_polygons.length; ++i) {
+						svgs_alpha_polygons[i].remove();
 					}
 
-					for (let reader_idx=0; reader_idx<js_config["readers"].length; ++reader_idx) {
+					for (let reader_idx=0; reader_idx<config_edit.js_config["readers"].length; ++reader_idx) {
 						sync_alpha_polygons(reader_idx);
 					}
 				}
-				else {
-					const regex = new RegExp("/readers/([0-9])");
-					const found = node_id.match(regex);
-					if (found) {
-						let reader_idx= parseInt(found[1]);
-						sync_alpha_polygons(reader_idx);
-					}
+				else if (found) {
+					let reader_idx= parseInt(found[1]);
+					sync_alpha_polygons(reader_idx);
 				}
+				else if (found2) {
+					let reader_idx= parseInt(found2[1]);
+					let polygon_idx= parseInt(found2[2]);
+					sync_alpha_polygon(reader_idx, polygon_idx);
+				}
+
+				socket.emit("config_changed", config_edit.js_config);
 			}
 
-
+			
 			window.onload= function () {
-				document.addEventListener("keydown", function (e) {keypresseds[e.key]= true;});
-				document.addEventListener("keyup", function (e) {keypresseds[e.key]= false;});
-				document.addEventListener("svg_polygons_changed", function (e) {svg_polygons_changed(e.detail)});
-				document.addEventListener("js_config_changed", function (e) {js_config_changed(e.detail)});
+				socket.on('send_list_configs', (data) => {
+					js_configs= data["configs"];
+					js_model= data["model"];
+					config_edit= new ConfigEdit(js_model, js_configs);
+					config_edit.send_event("/");
+				});
+				
+				socket.on('config_saved', () => {
+					socket.emit("get_list_configs");
+				});
 
-				config_edit= new ConfigEdit(js_model, js_config);
-				config_edit.send_event("/");
-				//config_edit.test();
+				socket.emit("get_list_configs");
 
+				document.addEventListener("keydown", function (e) {
+					if (e.key== " ") {
+						console.log(config_edit.js_config);
+					}
+					keypresseds[e.key]= true;
+				});
+				document.addEventListener("keyup", (e) => {keypresseds[e.key]= false;});
+				document.addEventListener("svg_polygons_changed", (e) => {svg_polygons_changed(e.detail)});
+				document.addEventListener("js_config_changed", (e) => {js_config_changed(e.detail)});
+				document.addEventListener("js_config_save", () => {
+					socket.emit("save_config", config_edit.js_config);
+				});
 			}
 
 		</script>
 	</head>
 	<body>
-		<!--<div id="div_utilities">
-			<button class="button_utilities" onclick="fold_all()">fold</button>
-			<button class="button_utilities" onclick="unfold_all()">unfold</button>
-			<button class="button_utilities" onclick="reset2default()">reset</button>
-		</div>-->
-		<!--<div id="div_config"></div>-->
-
-		<!--<script src="/socket.io/socket.io.js"></script>-->
-		<script>
-			//var socket= io();
-
-			/*
-			socket.on('send2client', (msg) => {
-				//console.log(JSON.stringify(msg));
-				js_config= msg;
-				sync_html();
-			});*/
-		</script>
 	</body>
 </html>

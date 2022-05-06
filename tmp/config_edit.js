@@ -1,17 +1,29 @@
 export class ConfigEdit {
-	constructor(js_model, js_config) {
+	constructor(js_model, js_configs) {
 		this.js_model= js_model;
-		this.js_config= js_config;
+		this.js_configs= js_configs;
+		this.first_config_name= Object.keys(js_configs)[0];
+		this.js_config= this.js_configs[this.first_config_name];
 
 		this.gen_utilities();
 
 		this.expand_const();
 		this.complexify_keys();
 
+		this.div_main= document.getElementById("div_config");
+		if (this.div_main!== null) {
+			this.div_main.remove();
+		}
 		this.div_main= document.createElement("div");
 		this.div_main.setAttribute("id", "div_config");
 		document.body.appendChild(this.div_main);
 		this.gen_dom("/", this.div_main);
+		//this.send_event("/");
+	}
+
+
+	send_event(node_id) {
+		document.dispatchEvent(new CustomEvent("js_config_changed", {detail : {"node_id" : node_id}}));
 	}
 
 	
@@ -23,14 +35,24 @@ export class ConfigEdit {
 	}
 
 
-	get_parent_id(id) {
-		if (id== "/") {
+	get_parent_id(node_id) {
+		if (node_id== "/") {
 			//return "/";
 			return null;
 		}
-		let result= id.substring(0, id.lastIndexOf("/"));
+		let result= node_id.substring(0, node_id.lastIndexOf("/"));
 		if (result== "") {
 			result= "/";
+		}
+		return result;
+	}
+
+
+	get_children_ids(node_id) {
+		let result= [];
+		let [js_parent_node, key]= this.get_config_node(node_id);
+		for (let i in js_parent_node[key]) {
+			result.push(this.concat_ids(node_id, i));
 		}
 		return result;
 	}
@@ -129,7 +151,17 @@ export class ConfigEdit {
 			let key= node_id.split("/").pop();
 	
 			if ((model_node.type== "int") || (model_node.type== "float") || (model_node.type== "string")) {
-				js[key]= model_node.default;
+				if (model_node.default== "random") {
+					if (model_node.type== "int") {
+						js[key]= model_node.min+ Math.floor(Math.random()* (model_node.max- model_node.min));
+					}
+					else if (model_node.type== "float") {
+						js[key]= model_node.min+ Math.random()* (model_node.max- model_node.min);
+					}
+				}
+				else {
+					js[key]= model_node.default;
+				}
 			}
 			else if (model_node.type== "dict") {
 				if ("keys" in model_node) {
@@ -168,6 +200,7 @@ export class ConfigEdit {
 	reset2default() {
 		this.js_config= this.get_default("/");
 		this.gen_dom("/", this.div_main);
+		this.send_event("/");
 	}
 	
 
@@ -206,11 +239,6 @@ export class ConfigEdit {
 			}
 			js_parent_node.splice(key, 1);
 		}
-	}
-
-	
-	send_event(node_id) {
-		document.dispatchEvent(new CustomEvent('js_config_changed', {detail : {"node_id" : node_id}}));
 	}
 
 	
@@ -353,14 +381,12 @@ export class ConfigEdit {
 	}
 
 	
-
 	enforce_rules() {
 		for (let i=0; i<this.js_model["__rules__"].length; ++i) {
 			let f = new Function("js_config", this.js_model["__rules__"][i]);
 			f(this.js_config);
 		}
 	}
-
 
 
 	get_div_node(node_id) {
@@ -381,8 +407,6 @@ export class ConfigEdit {
 
 
 	toggle_fold(node_id) {
-		let div_node= this.get_div_node(node_id);
-		let button_node= this.get_fold_button_node(node_id);
 		if (this.is_fold(node_id)) {
 			this.unfold(node_id);
 		}
@@ -440,6 +464,7 @@ export class ConfigEdit {
 
 		/*console.log("------");
 		console.log(node_id);
+		console.log(parent_html_node);
 		console.log(js_parent_node);
 		console.log(key);
 		console.log(model_node);*/
@@ -457,7 +482,14 @@ export class ConfigEdit {
 		else {
 			div_elmt= document.createElement("div");
 			div_elmt.setAttribute("node_id", node_id);
-			parent_html_node.appendChild(div_elmt);
+			// on insere cette div après la dernière des div déjà présentes et notamment avant tout ce qui n'est pas div (svg...)
+			let siblings= document.querySelectorAll('div[node_id="'+ this.get_parent_id(node_id)+ '"] > div');
+			if (siblings.length> 0) {
+				parent_html_node.insertBefore(div_elmt, siblings[siblings.length- 1].nextSibling);
+			}
+			else {
+				parent_html_node.appendChild(div_elmt);
+			}
 		}
 		
 		if (key!== null) {
@@ -526,11 +558,23 @@ export class ConfigEdit {
 
 		if ((model_node.type== "int") || (model_node.type== "float") || (model_node.type== "string")) {
 			let input_elmt= document.createElement("input");
+			input_elmt.addEventListener('input', (e) => {
+				if (model_node.type== "int") {
+					js_parent_node[key]= parseInt(input_elmt.value);
+				}
+				else if (model_node.type== "float") {
+					js_parent_node[key]= parseFloat(input_elmt.value);
+				}
+				else if (model_node.type== "string") {
+					js_parent_node[key]= input_elmt.value;
+				}
+				this.send_event(node_id);
+			});
 			div_elmt.appendChild(input_elmt);
 			
 			if ("possible_values" in model_node) {
 				input_elmt.addEventListener('click', (e) => {
-					e.target.value = '' 
+					e.target.value = '';
 				});
 				input_elmt.setAttribute("list", "possible_values_"+ key);
 				let datalist_elmt= document.createElement("datalist");
@@ -618,9 +662,43 @@ export class ConfigEdit {
 
 
 	gen_utilities() {
-		let div_utilities= document.createElement("div");
+		let div_utilities= document.getElementById("div_utilities");
+		if (div_utilities!== null) {
+			div_utilities.remove();
+		}
+		div_utilities= document.createElement("div");
 		div_utilities.setAttribute("id", "div_utilities");
 		document.body.appendChild(div_utilities);
+
+		let load_input= document.createElement("input");
+		load_input.addEventListener('click', (e) => {
+			e.target.value = '' 
+		});
+		load_input.value= this.first_config_name;
+		load_input.classList.add("long-input");
+		load_input.setAttribute("list", "load_input_possible_values");
+		let datalist_elmt= document.createElement("datalist");
+		datalist_elmt.setAttribute("id", "load_input_possible_values");
+		for (let key in this.js_configs) {
+			let option_elmt= document.createElement("option");
+			option_elmt.setAttribute("value", key);
+			datalist_elmt.appendChild(option_elmt);
+		}
+		div_utilities.appendChild(load_input);
+		div_utilities.appendChild(datalist_elmt);
+		load_input.addEventListener("change", () => {
+			this.js_config= this.js_configs[load_input.value];
+			this.complexify_keys();
+			this.gen_dom("/", this.div_main);
+		});
+
+		let save_button= document.createElement("button");
+		save_button.classList.add("button_utilities");
+		save_button.addEventListener("click", () => {
+			document.dispatchEvent(new CustomEvent("js_config_save"));
+		});
+		save_button.innerHTML= "save";
+		div_utilities.appendChild(save_button);
 
 		let fold_button= document.createElement("button");
 		fold_button.classList.add("button_utilities");
@@ -639,26 +717,28 @@ export class ConfigEdit {
 		reset_button.addEventListener("click", this.reset2default.bind(this));
 		reset_button.innerHTML= "reset";
 		div_utilities.appendChild(reset_button);
+
 	}
 
 
 	test() {
-		//let node_id= "/modifiers/0/movie/movie.mult";
-		//console.log(get_parent_id(node_id));
-		//console.log(get_all_config_ids());
+		//let node_id= "/readers";
+		//console.log(this.get_children_ids(node_id));
+		//console.log(this.get_parent_id(node_id));
+		//console.log(this.get_all_config_ids());
 		//console.log(this.get_config_node(node_id));
-		//console.log(get_model_node(node_id));
-		//console.log(get_default(node_id));
+		//console.log(this.get_model_node(node_id));
+		//console.log(this.get_default(node_id));
 		//let [js_parent_node, key]= this.get_config_node(node_id);
 		//js_parent_node[key]= [];
 		//this.add_default_to_list(node_id, 0);
-		//add_default_to_dict(node_id, "d");
-		//delete_id(node_id);
-		//randomize(node_id);
-		//enforce_rules(js_config);
-		//simplify_keys();
+		//this.add_default_to_dict(node_id, "d");
+		//this.delete_id(node_id);
+		//this.randomize(node_id);
+		//this.enforce_rules(js_config);
+		//this.simplify_keys();
 		//console.log(this.js_config);
-		//fold_all();
+		//this.fold_all();
 	}
 
 }

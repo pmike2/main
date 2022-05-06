@@ -35,22 +35,22 @@ void get() {
 
 
 // POST de la valeur actuelle de js_config
-void post() {
+/*void post() {
 	string url= "http://localhost:3000/config";
 	string cmd= "curl -X POST "+ url+ " -H 'Content-Type: application/json' -d '"+ js_config.dump()+ "'";
 	//cout << cmd << "\n";
 	int status= system(cmd.c_str());
 	//cout << status << "\n";
-}
+}*/
 
 
 // point d'entrée -----------------------------------------------------------------
 int main(int argc, char **argv) {
-	string json_path= "/Volumes/Data/perso/dev/main/ffmpeg_mpeg2sdl/data/config_01.json";
+	/*string json_path= "/Volumes/Data/perso/dev/main/ffmpeg_mpeg2sdl/data/config_01.json";
 	ifstream istr(json_path);
-	istr >> js_config;
+	istr >> js_config;*/
 
-	if (string(argv[1])== "get") {
+	/*if (string(argv[1])== "get") {
 		get();
 	}
 	else if (string(argv[1])== "post") {
@@ -58,7 +58,9 @@ int main(int argc, char **argv) {
 	}
 	else {
 		cout << "arg doit valoir get ou post\n";
-	}
+	}*/
+
+	get();
 	
 	return 0;
 }
