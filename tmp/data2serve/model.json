@@ -28,7 +28,7 @@
 	"alpha_max"				: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 1.0},
 	"decrease_speed"		: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
 	"readers.time"			: {"type" : "dict", "keys" : ["checkpoints", "readers.speed"]},
-	"checkpoints"			: {"type" : "list", "values" : "coords", "min_number" : 1, "max_number" : 16},
+	"checkpoints"			: {"type" : "list", "values" : "coords", "min_number" : 1, "max_number" : 16, "nodom" : true},
 	"readers.speed"			: {"type" : "float", "min" : 0.005, "max" : 0.1, "default" : 0.01},
 	"keymapping_reader"		: {"type" : "dict", "possible_keys" : "alphabet_keys", "values" : "keymap"},
 	"keymap"				: {"type" : "dict", "keys" : ["mpeg", "reader"]},

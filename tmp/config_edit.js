@@ -2,23 +2,18 @@ export class ConfigEdit {
 	constructor(js_model, js_configs) {
 		this.js_model= js_model;
 		this.js_configs= js_configs;
-		this.first_config_name= Object.keys(js_configs)[0];
-		this.js_config= this.js_configs[this.first_config_name];
+		const first_config_key= Object.keys(this.js_configs)[0];
+		this.js_config= this.js_configs[first_config_key];
 
 		this.gen_utilities();
+		this.gen_load(first_config_key);
 
 		this.expand_const();
 		this.complexify_keys();
 
-		this.div_main= document.getElementById("div_config");
-		if (this.div_main!== null) {
-			this.div_main.remove();
-		}
-		this.div_main= document.createElement("div");
-		this.div_main.setAttribute("id", "div_config");
-		document.body.appendChild(this.div_main);
+		this.div_main= document.body;
+
 		this.gen_dom("/", this.div_main);
-		//this.send_event("/");
 	}
 
 
@@ -558,6 +553,9 @@ export class ConfigEdit {
 
 		if ((model_node.type== "int") || (model_node.type== "float") || (model_node.type== "string")) {
 			let input_elmt= document.createElement("input");
+			if (model_node.type== "string") {
+				input_elmt.classList.add("long-input");
+			}
 			input_elmt.addEventListener('input', (e) => {
 				if (model_node.type== "int") {
 					js_parent_node[key]= parseInt(input_elmt.value);
@@ -587,11 +585,11 @@ export class ConfigEdit {
 				div_elmt.appendChild(datalist_elmt);
 			}
 			else {
-				input_elmt.classList.add("long-input");
 
 				if ((model_node.type== "int") || (model_node.type== "float")) {
 					//input_elmt.setAttribute("type", "number");
 					input_elmt.setAttribute("type", "range"); // + sympa
+					input_elmt.classList.add("long-input");
 					
 					if ("min" in model_node) {
 						input_elmt.setAttribute("min", model_node.min);
@@ -670,28 +668,6 @@ export class ConfigEdit {
 		div_utilities.setAttribute("id", "div_utilities");
 		document.body.appendChild(div_utilities);
 
-		let load_input= document.createElement("input");
-		load_input.addEventListener('click', (e) => {
-			e.target.value = '' 
-		});
-		load_input.value= this.first_config_name;
-		load_input.classList.add("long-input");
-		load_input.setAttribute("list", "load_input_possible_values");
-		let datalist_elmt= document.createElement("datalist");
-		datalist_elmt.setAttribute("id", "load_input_possible_values");
-		for (let key in this.js_configs) {
-			let option_elmt= document.createElement("option");
-			option_elmt.setAttribute("value", key);
-			datalist_elmt.appendChild(option_elmt);
-		}
-		div_utilities.appendChild(load_input);
-		div_utilities.appendChild(datalist_elmt);
-		load_input.addEventListener("change", () => {
-			this.js_config= this.js_configs[load_input.value];
-			this.complexify_keys();
-			this.gen_dom("/", this.div_main);
-		});
-
 		let save_button= document.createElement("button");
 		save_button.classList.add("button_utilities");
 		save_button.addEventListener("click", () => {
@@ -718,6 +694,42 @@ export class ConfigEdit {
 		reset_button.innerHTML= "reset";
 		div_utilities.appendChild(reset_button);
 
+	}
+
+
+	gen_load(config_key) {
+		let load_input= document.getElementById("load_input");
+		if (load_input=== null) {
+			load_input= document.createElement("input");
+			load_input.setAttribute("id", "load_input");
+			load_input.setAttribute("list", "load_input_possible_values");
+			load_input.classList.add("long-input");
+			load_input.addEventListener("click", (e) => {
+				e.target.value = "";
+			});
+			load_input.addEventListener("change", () => {
+				this.js_config= this.js_configs[load_input.value];
+				this.complexify_keys();
+				this.gen_dom("/", this.div_main);
+			});
+			div_utilities.appendChild(load_input);
+		}
+
+		load_input.value= config_key;
+
+		let datalist_elmt= document.getElementById("load_input_possible_values");
+		if (datalist_elmt=== null) {
+			datalist_elmt= document.createElement("datalist");
+			datalist_elmt.setAttribute("id", "load_input_possible_values");
+			div_utilities.appendChild(datalist_elmt);
+		}
+		datalist_elmt.innerHTML= "";
+		for (let key in this.js_configs) {
+			let option_elmt= document.createElement("option");
+			option_elmt.setAttribute("value", key);
+			datalist_elmt.appendChild(option_elmt);
+		}
+		
 	}
 
 

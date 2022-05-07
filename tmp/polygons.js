@@ -57,10 +57,10 @@ export class PolygonsContext {
 		this.svg_main_group.setAttribute("transform", "matrix(1.0 0.0 0.0 -1.0 0.0 1.0)");
 		this.svg_main.appendChild(this.svg_main_group);
 		
-		this.svg_emprise.addEventListener("mousedown", this.mouse_down_emprise.bind(this));
-		this.svg_emprise.addEventListener("mouseup", this.mouse_up_emprise.bind(this));
+		this.svg_emprise.addEventListener("mousedown", this.mouse_down.bind(this));
+		this.svg_emprise.addEventListener("mouseup", this.mouse_up.bind(this));
 		this.svg_emprise.addEventListener("mousemove", this.mouse_move.bind(this));
-		this.svg_emprise.addEventListener("mouseout", this.mouse_out_emprise.bind(this));
+		this.svg_emprise.addEventListener("mouseout", this.mouse_out.bind(this));
 
 		let text_base_x= 0.7;
 		let text_base2_x= 0.72;
@@ -350,8 +350,8 @@ export class PolygonsContext {
 	}
 
 
-	mouse_down_emprise(e) {
-		if (DEBUG) { console.log("mouse_down_emprise") };
+	mouse_down(e) {
+		if (DEBUG) { console.log("mouse_down") };
 		
 		let current_position= this.normalized_coords(e.offsetX, e.offsetY);
 	
@@ -387,8 +387,8 @@ export class PolygonsContext {
 	}
 
 	
-	mouse_up_emprise(e) {
-		if (DEBUG) { console.log("mouse_up_emprise") };
+	mouse_up(e) {
+		if (DEBUG) { console.log("mouse_up") };
 		
 		//let current_position= this.normalized_coords(e.offsetX, e.offsetY);
 		this.set_editing_null();
@@ -473,8 +473,8 @@ export class PolygonsContext {
 	}
 
 
-	mouse_out_emprise(e) {
-		if (DEBUG) { console.log("mouse_out_emprise") };
+	mouse_out(e) {
+		if (DEBUG) { console.log("mouse_out") };
 		
 		if ((e.offsetX< 2) || (e.offsetX> this.svg_width- 3) || (e.offsetY< 2) || (e.offsetY> this.svg_height- 3)) {
 			this.set_editing_null();
