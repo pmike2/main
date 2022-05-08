@@ -3,8 +3,13 @@ svg {
 	margin-bottom: 5px;
 }
 
+.svg_emprise_with_margin {
+	fill: rgb(100, 100, 100);
+}
+
 .svg_emprise {
 	fill: rgb(200, 200, 200);
+	pointer-events: none;
 }
 
 .svg_main_group {

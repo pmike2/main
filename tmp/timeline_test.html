@@ -3,7 +3,7 @@
 <html>
 	<head>
 		<title>TEST</title>
-		<link rel="stylesheet" href="polygons.css">
+		<link rel="stylesheet" href="timeline.css">
 		<script src="./timeline.js" type="module"></script>
 		<script type="module">
 			import {TimeLineContext} from './timeline.js';
@@ -24,7 +24,7 @@
 			},
 			"time" : {
 				"checkpoints" : [
-					[0.0, 0.0], [1.0, 1.0]
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0}
 				],
 				"speed" : 0.01
 			}
@@ -43,7 +43,7 @@
 			},
 			"time" : {
 				"checkpoints" : [
-					[0.0, 0.0], [0.3, 1.0], [1.0, 0.4]
+				{"x" : 0.4, "y" : 0.7}, {"x" : 0.2, "y" : 1.0}, {"x" : 0.8, "y" : 0.2}
 				],
 				"speed" : 0.01
 			}
@@ -56,13 +56,8 @@
 
 			function svg_timeline_changed(detail) {
 				let idx= parseInt(detail.svg_id.split("svg_main_")[1]);
-				js_config["readers"][idx]["alpha"]["alpha_polygons"]= [];
-				for (let i=0; i<polygons_contexts[idx].polygons.length; ++i) {
-					js_config["readers"][idx]["alpha"]["alpha_polygons"].push({
-						"polygon" : polygons_contexts[idx].polygons[i], "fadeout" : 0.0, "curve" : 1.0, "alpha_max" : 1.0
-					});
-				}
-				//console.log(js_config);
+				js_config["readers"][idx]["time"]["chekpoints"]= timeline_contexts.checkpoints;
+				console.log(js_config);
 			}
 
 
@@ -70,21 +65,28 @@
 				for (let i=0; i<js_config["readers"].length; ++i) {
 					let svg= document.createElementNS("http://www.w3.org/2000/svg", "svg");
 					svg.setAttribute("id", "svg_main_"+ i);
-					svg.setAttribute("width", 300);
-					svg.setAttribute("height", 300);
+					svg.setAttribute("width", 400);
+					svg.setAttribute("height", 400);
 					document.body.appendChild(svg);
 
-					let polygons_context= new PolygonsContext(svg.getAttribute("id"), keypresseds);
-					for (let j=0; j<js_config["readers"][i]["alpha"]["alpha_polygons"].length; ++j) {
-						polygons_context.set_polygon(j, js_config["readers"][i]["alpha"]["alpha_polygons"][j]["polygon"]);
-						polygons_context.update_polygon_group(j);
-					}
-					polygons_contexts.push(polygons_context);
+					let timeline_context= new TimeLineContext(svg.getAttribute("id"), keypresseds);
+					timeline_context.set_checkpoints(js_config["readers"][i]["time"]["checkpoints"]);
+					timeline_context.update();
+					timeline_contexts.push(timeline_context);
 				}
 				
-				document.addEventListener("keydown", function (e) {keypresseds[e.key]= true;});
-				document.addEventListener("keyup", function (e) {keypresseds[e.key]= false;});
-				document.addEventListener("svg_polygons_changed", function (e) {svg_polygons_changed(e.detail)});
+				document.addEventListener("keydown", function (e) {
+					if (e.key== " ") {
+						for (let i=0; i<timeline_contexts.length; ++i) {
+							console.log(timeline_contexts[i].checkpoints);
+						}
+					}
+					keypresseds[e.key]= true;
+				});
+				document.addEventListener("keyup", (e) => {
+					keypresseds[e.key]= false;
+				});
+				document.addEventListener("svg_timeline_changed", function (e) {svg_timeline_changed(e.detail)});
 			}
 		</script>
 	</head>

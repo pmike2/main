@@ -44,6 +44,29 @@ export function orthogonal(p) {
 }
 
 
+export function segment_intersects_segment(p1_begin, p1_end, p2_begin, p2_end) {
+	let dir1= diff(p1_end, p1_begin);
+	let dir2= diff(p2_end, p2_begin);
+
+	let a= cross_product(dir1, dir2);
+	if (a== 0.0) {
+		return null;
+	}
+	
+	let t1= cross_product(diff(p2_begin, p1_begin), dir2)/ a;
+	if ((t1< 0.0) || (t1> 1.0)) {
+		return null;
+	}
+	
+	let t2= cross_product(diff(p2_begin, p1_begin), dir1)/ a;
+	if ((t2< 0.0) || (t2> 1.0)) {
+		return null;
+	}
+
+	return {"x" : p1_begin.x+ t1* dir1.x, "y" : p1_begin.y+ t1* dir1.y};
+}
+
+
 export function inertia_center(coords) {
 	if (coords.length== 0) {
 		return null;
@@ -159,5 +182,21 @@ export function simplify_coords(coords, treshold, min_dist) {
 			break;
 		}
 	}
+	return result;
+}
+
+
+export function functionalize_coords(coords) {
+	let result= [];
+
+	for (let i=0; i<coords.length; ++i) {
+		let j= result.length- 1;
+		while ((j>= 0) && (result[j].x> coords[i].x)) {
+			result.pop();
+			j--;
+		}
+		result.push(coords[i]);
+	}
+
 	return result;
 }
