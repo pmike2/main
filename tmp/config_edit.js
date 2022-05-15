@@ -460,7 +460,7 @@ export class ConfigEdit {
 		/*console.log("------");
 		console.log(node_id);
 		console.log(parent_html_node);
-		console.log(js_parent_node);
+		console.log(JSON.stringify(js_parent_node));
 		console.log(key);
 		console.log(model_node);*/
 

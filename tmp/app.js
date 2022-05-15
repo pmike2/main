@@ -42,7 +42,7 @@ app.get('/config', (req, res) => {
 io.on('connection', (socket) => {
 	//console.log('a user is connected');
 
-	socket.on('get_data', () => {
+	socket.on('client2server_get_data', () => {
 		let data2send= {};
 		const walker= walk.walk(root_data, {followLinks: false});
 
@@ -62,12 +62,12 @@ io.on('connection', (socket) => {
 			next();
 		}).on('end', () => {
 			//console.log(JSON.stringify(data2send));
-			io.sockets.emit("send_data", data2send);
+			io.sockets.emit("server2client_data_send", data2send);
 		});
 	});
 
 
-	socket.on('save_config', (js_config) => {
+	socket.on('client2server_save_config', (js_config) => {
 		let max_idx= 0;
 		fs.readdirSync(dir_configs).forEach(file => {
 			const regex = new RegExp("^config_([0-9]+).json$");
@@ -87,11 +87,11 @@ io.on('connection', (socket) => {
 				return;
 			}
 		})
-		io.sockets.emit("config_saved", saved_path);
+		io.sockets.emit("server2client_config_saved", saved_path);
 	});
 
 
-	socket.on('config_changed', (js_config) => {
+	socket.on('client2server_js_config_changed', (js_config) => {
 		js_config_server= js_config
 		//console.log(js_config_server);
 	});

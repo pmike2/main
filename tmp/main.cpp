@@ -30,7 +30,7 @@ void get() {
 	ifstream istr(curl_out);
 	istr >> js_config;
 	
-	cout << "js_config vaut maintenant : " << js_config.dump() << "\n";
+	cout << "js_config vaut maintenant : " << js_config.dump(4) << "\n";
 }
 
 

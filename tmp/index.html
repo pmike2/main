@@ -64,7 +64,7 @@
 						polygons_contexts[reader_idx].polygons[idx_polygon];
 				}
 
-				socket.emit("js_config_changed", config_edit.js_config);
+				socket.emit("client2server_js_config_changed", config_edit.js_config);
 			}
 
 
@@ -74,7 +74,7 @@
 				let reader_idx= parseInt(detail.svg_id.split("svg_timeline_")[1]);
 				config_edit.js_config["readers"][reader_idx]["readers.time"]["checkpoints"]= timeline_contexts[reader_idx].checkpoints;
 				
-				socket.emit("js_config_changed", config_edit.js_config);
+				socket.emit("client2server_js_config_changed", config_edit.js_config);
 			}
 
 
@@ -111,14 +111,14 @@
 
 			function sync_all_alpha_polygons() {
 				polygons_contexts= [];
-					let svgs_alpha_polygons= document.getElementsByClassName("svg_alpha_polygons");
-					for (let i=0; i<svgs_alpha_polygons.length; ++i) {
-						svgs_alpha_polygons[i].remove();
-					}
+				let svgs_alpha_polygons= document.getElementsByClassName("svg_alpha_polygons");
+				for (let i=0; i<svgs_alpha_polygons.length; ++i) {
+					svgs_alpha_polygons[i].remove();
+				}
 
-					for (let reader_idx=0; reader_idx<config_edit.js_config["readers"].length; ++reader_idx) {
-						sync_alpha_polygons(reader_idx);
-					}
+				for (let reader_idx=0; reader_idx<config_edit.js_config["readers"].length; ++reader_idx) {
+					sync_alpha_polygons(reader_idx);
+				}
 			}
 
 
@@ -161,7 +161,7 @@
 
 			function js_config_changed(detail) {
 				let node_id= detail.node_id;
-				console.log("js_config_changed : "+ node_id);
+				//console.log("js_config_changed : "+ node_id);
 
 				const found_alpha_polygons= node_id.match(regex_alpha_polygons);
 				const found_alpha_polygon= node_id.match(regex_alpha_polygon);
@@ -185,12 +185,12 @@
 					sync_timeline(reader_idx);
 				}
 
-				socket.emit("js_config_changed", config_edit.js_config);
+				socket.emit("client2server_js_config_changed", config_edit.js_config);
 			}
 
 			
 			window.onload= function () {
-				socket.on('send_data', (data) => {
+				socket.on('server2client_data_send', (data) => {
 					let js_configs= {};
 					let js_model= null;
 					let mpegs= [];
@@ -211,12 +211,12 @@
 					config_edit.send_event("/");
 				});
 				
-				socket.on('config_saved', (saved_path) => {
+				socket.on('server2client_config_saved', (saved_path) => {
 					config_edit.js_configs[saved_path]= config_edit.js_config;
 					config_edit.gen_load(saved_path);
 				});
 
-				socket.emit("get_data");
+				socket.emit("client2server_get_data");
 
 				document.addEventListener("keydown", function (e) {
 					if (e.key== " ") {
@@ -237,7 +237,7 @@
 					js_config_changed(e.detail)
 				});
 				document.addEventListener("js_config_save", () => {
-					socket.emit("save_config", config_edit.js_config);
+					socket.emit("client2server_save_config", config_edit.js_config);
 				});
 			}
 
