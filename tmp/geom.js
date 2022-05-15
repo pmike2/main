@@ -189,6 +189,10 @@ export function simplify_coords(coords, treshold, min_dist) {
 export function functionalize_coords(coords) {
 	let result= [];
 
+	if (coords[0].x> coords[coords.length- 1].x) {
+		coords.reverse();
+	}
+
 	for (let i=0; i<coords.length; ++i) {
 		let j= result.length- 1;
 		while ((j>= 0) && (result[j].x> coords[i].x)) {

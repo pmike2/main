@@ -3,9 +3,26 @@ import {segment_intersects_segment, functionalize_coords, simplify_coords} from 
 
 const COORD_MIN= {"x" : 0.0, "y" : 0.0};
 const COORD_MAX= {"x" : 1.0, "y" : 1.0};
-const DEBUG= true;
+const DEBUG= false;
 const MARGIN_X= 0.1;
 const MARGIN_Y= 0.1;
+const INSTRUCTIONS= {
+	"fond" : {
+		"t" : "create timeline",
+		"x" : "reinit"
+	},
+	"point" : {
+		"m" : "move point",
+		"t" : "move timeline",
+		"x" : "delete point"
+	},
+	"line" : {
+		"a" : "add point",
+		"m" : "move line",
+		"t" : "move timeline"
+	}
+};
+
 
 
 export class TimeLineContext {
@@ -55,6 +72,34 @@ export class TimeLineContext {
 		this.svg_emprise_with_margin.addEventListener("mouseup", this.mouse_up.bind(this));
 		this.svg_emprise_with_margin.addEventListener("mousemove", this.mouse_move.bind(this));
 		this.svg_emprise_with_margin.addEventListener("mouseout", this.mouse_out.bind(this));
+
+		let text_base_x= 0.7;
+		let text_base2_x= 0.72;
+		let text_base_y= 0.03;
+		let text_step_y= 0.03;
+		let compt= 0;
+		for (let key in INSTRUCTIONS) {
+			let t= document.createElementNS("http://www.w3.org/2000/svg", "text");
+			t.setAttribute("x", text_base_x);
+			t.setAttribute("y", text_base_y+ compt* text_step_y);
+			compt+= 1;
+			t.innerHTML= key;
+			this.svg_main.appendChild(t);
+	
+			for (let key2 in INSTRUCTIONS[key]) {
+				let t= document.createElementNS("http://www.w3.org/2000/svg", "text");
+				t.setAttribute("x", text_base2_x);
+				t.setAttribute("y", text_base_y+ compt* text_step_y);
+				compt+= 1;
+				t.innerHTML= key2+ " : "+ INSTRUCTIONS[key][key2];
+				this.svg_main.appendChild(t);
+			}
+		}
+	}
+
+
+	send_event() {
+		document.dispatchEvent(new CustomEvent("svg_timeline_changed", {detail : {"svg_id" : this.id}}));
 	}
 
 
@@ -85,6 +130,7 @@ export class TimeLineContext {
 
 	init_checkpoints() {
 		this.checkpoints= [COORD_MIN, COORD_MAX];
+		this.send_event();
 	}
 
 
@@ -99,21 +145,17 @@ export class TimeLineContext {
 			this.checkpoints[i].x+= v.x;
 			this.checkpoints[i].y+= v.y;
 		}
-		//this.send_event({"type" : "move_polygon", "idx_polygon" : idx_polygon});
+		this.send_event();
 	}
 		
 	
 	simplify_checkpoints(treshold, min_dist) {
 		let simplified= simplify_coords(this.checkpoints, treshold, min_dist);
 		this.checkpoints= simplified;
-		//this.send_event({"type" : "simplify_polygon", "idx_polygon" : idx_polygon});
 	}
 
 
-	functionalize() {
-		let functionalized= functionalize_coords(this.checkpoints);
-		this.checkpoints= functionalized;
-
+	crop_x() {
 		let first_x_ok= -1;
 		for (let i=0; i<this.checkpoints.length; ++i) {
 			if (this.checkpoints[i].x>= 0.0) {
@@ -127,13 +169,13 @@ export class TimeLineContext {
 		}
 		else if (first_x_ok== 0) {
 			if (this.checkpoints[0].x!= 0.0) {
-				this.checkpoints.splice(0, 0, COORD_MIN);
+				this.checkpoints.splice(0, 0, {"x" : 0.0, "y" : this.checkpoints[0].y});
 			}
 		}
 		else {
 			let inter= segment_intersects_segment(this.checkpoints[first_x_ok- 1], this.checkpoints[first_x_ok], {"x" : 0.0, "y" : 0.0}, {"x" : 0.0, "y" : 1.0});
 			if (inter=== null) {
-				this.checkpoints.splice(0, first_x_ok, COORD_MIN);
+				this.checkpoints.splice(0, first_x_ok, {"x" : 0.0, "y" : this.checkpoints[0].y});
 			}
 			else {
 				this.checkpoints.splice(0, first_x_ok, {"x" : 0.0, "y" : inter.y});
@@ -152,56 +194,64 @@ export class TimeLineContext {
 			return;
 		}
 		else if (last_x_ok== this.checkpoints.length- 1) {
-			if (this.checkpoints[this.checkpoints.length- 1].x!= 1.0) {
-				this.checkpoints.splice(0, 0, COORD_MAX);
+			if (this.checkpoints[last_x_ok].x!= 1.0) {
+				this.checkpoints.splice(last_x_ok+ 1, 0, {"x" : 1.0, "y" : this.checkpoints[last_x_ok].y});
 			}
 		}
 		else {
 			let inter= segment_intersects_segment(this.checkpoints[last_x_ok], this.checkpoints[last_x_ok+ 1], {"x" : 1.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0});
 			if (inter=== null) {
-				this.checkpoints.splice(last_x_ok+ 1, this.checkpoints.length- last_x_ok, COORD_MAX);
+				this.checkpoints.splice(last_x_ok+ 1, this.checkpoints.length- last_x_ok, {"x" : 1.0, "y" : this.checkpoints[last_x_ok].y});
 			}
 			else {
 				this.checkpoints.splice(last_x_ok+ 1, this.checkpoints.length- last_x_ok, {"x" : 1.0, "y" : inter.y});
 			}
 		}
 	}
+
+
+	crop_y() {
+		for (let i=0; i<this.checkpoints.length; ++i) {
+			if (this.checkpoints[i].y< 0.0) {
+				this.checkpoints[i].y= 0.0;
+			}
+			if (this.checkpoints[i].y> 1.0) {
+				this.checkpoints[i].y= 1.0;
+			}
+		}
+	}
+
+
+	functionalize() {
+		let functionalized= functionalize_coords(this.checkpoints);
+		this.checkpoints= functionalized;
+		this.crop_x();
+		this.crop_y();
+	}
 	
 
 	add_point(coord) {
 		this.checkpoints.push(coord);
-		//this.send_event({"type" : "add_point", "idx_polygon" : idx_polygon});
+		this.send_event();
 		return this.checkpoints.length- 1;
 	}
 			
 
 	add_point_on_line(idx_line, coord) {
 		this.checkpoints.splice(idx_line+ 1, 0, coord);
-		//this.send_event({"type" : "add_point_on_line", "idx_polygon" : idx_polygon});
+		this.send_event();
 	}
 	
 	
 	remove_point(idx_point) {
 		this.checkpoints.splice(idx_point, 1);
-		//this.send_event({"type" : "remove_point", "idx_polygon" : idx_polygon});
+		this.send_event();
 	}
 	
 	
 	move_point(idx_point, coord) {
-		/*if (idx_point== 0) {
-			this.checkpoints[idx_point].x= 0.0;
-			this.checkpoints[idx_point].y= coord.y;
-		}
-		else if (idx_point== this.checkpoints.length- 1) {
-			this.checkpoints[idx_point].x= 1.0;
-			this.checkpoints[idx_point].y= coord.y;
-		}
-		else {
-			this.checkpoints[idx_point]= coord;
-		}*/
 		this.checkpoints[idx_point]= coord;
-		
-		//this.send_event({"type" : "move_point", "idx_polygon" : idx_polygon});
+		this.send_event();
 	}
 
 	
@@ -456,6 +506,11 @@ export class TimeLineContext {
 		else if (this.editing_mode== "MOVE_POINT") {
 			this.functionalize();
 			this.update_point_position(this.editing_data["move_point_point_idx"]);
+			this.set_editing_null();
+		}
+		else if (this.editing_mode== "MOVE_TIMELINE") {
+			this.functionalize();
+			this.update();
 			this.set_editing_null();
 		}
 	

@@ -4,22 +4,27 @@
 		<title>TEST</title>
 		<link rel="stylesheet" href="config_edit.css">
 		<link rel="stylesheet" href="polygons.css">
+		<link rel="stylesheet" href="timeline.css">
 		<script src="./polygons.js" type="module"></script>
+		<script src="./timeline.js" type="module"></script>
 		<script src="./config_edit.js" type="module"></script>
 		<script src="/socket.io/socket.io.js"></script>
 		<script type="module">
 			import {ConfigEdit} from './config_edit.js';
 			import {PolygonsContext} from './polygons.js';
+			import {TimeLineContext} from './timeline.js';
 			
 			const regex_config= new RegExp("^config_[0-9]+\.json$");
 			const regex_model= new RegExp("^model\.json$");
 			const regex_mpeg= new RegExp("^[a-zA-Z0-9_]+\.mpeg$");
 			const regex_alpha_polygons= new RegExp("^/readers/([0-9]+)/readers.alpha/alpha_polygons$");
 			const regex_alpha_polygon= new RegExp("^/readers/([0-9]+)/readers.alpha/alpha_polygons/([0-9]+)$");
+			const regex_timeline= new RegExp("^/readers/([0-9]+)/time$");
 
 			var config_edit= null;
 			var keypresseds= {};
 			var polygons_contexts= [];
+			var timeline_contexts= [];
 			var socket= io();
 
 
@@ -59,7 +64,17 @@
 						polygons_contexts[reader_idx].polygons[idx_polygon];
 				}
 
-				socket.emit("config_changed", config_edit.js_config);
+				socket.emit("js_config_changed", config_edit.js_config);
+			}
+
+
+			function svg_timeline_changed(detail) {
+				//console.log(JSON.stringify(detail));
+				
+				let reader_idx= parseInt(detail.svg_id.split("svg_timeline_")[1]);
+				config_edit.js_config["readers"][reader_idx]["readers.time"]["checkpoints"]= timeline_contexts[reader_idx].checkpoints;
+				
+				socket.emit("js_config_changed", config_edit.js_config);
 			}
 
 
@@ -94,15 +109,8 @@
 			}
 
 
-			function js_config_changed(detail) {
-				let node_id= detail.node_id;
-				//console.log("js_config_changed : "+ node_id);
-
-				const found_alpha_polygons= node_id.match(regex_alpha_polygons);
-				const found_alpha_polygon= node_id.match(regex_alpha_polygon);
-
-				if ((node_id== "/readers") || (node_id== "/")) {
-					polygons_contexts= [];
+			function sync_all_alpha_polygons() {
+				polygons_contexts= [];
 					let svgs_alpha_polygons= document.getElementsByClassName("svg_alpha_polygons");
 					for (let i=0; i<svgs_alpha_polygons.length; ++i) {
 						svgs_alpha_polygons[i].remove();
@@ -111,6 +119,57 @@
 					for (let reader_idx=0; reader_idx<config_edit.js_config["readers"].length; ++reader_idx) {
 						sync_alpha_polygons(reader_idx);
 					}
+			}
+
+
+			function sync_timeline(reader_idx) {
+				let svg_timeline= document.getElementById("svg_timeline_"+ reader_idx);
+				if (svg_timeline=== null) {
+					svg_timeline= document.createElementNS("http://www.w3.org/2000/svg", "svg");
+					svg_timeline.setAttribute("id", "svg_timeline_"+ reader_idx);
+					svg_timeline.setAttribute("width", 300);
+					svg_timeline.setAttribute("height", 300);
+					svg_timeline.classList.add("svg_timeline");
+					let div_timeline= config_edit.get_div_node("/readers/"+ reader_idx+ "/readers.time");
+					div_timeline.appendChild(svg_timeline);
+				}
+
+				if (reader_idx< timeline_contexts.length) {
+					delete timeline_contexts[reader_idx];
+				}
+
+				let timeline_context= new TimeLineContext(svg_timeline.getAttribute("id"), keypresseds);
+				timeline_context.set_checkpoints(config_edit.js_config["readers"][reader_idx]["readers.time"]["checkpoints"]);
+				timeline_context.update();
+
+				timeline_contexts.splice(reader_idx, 0, timeline_context);
+			}
+
+
+			function sync_all_timelines() {
+				timeline_contexts= [];
+				let svgs_timeline= document.getElementsByClassName("svg_timeline");
+				for (let i=0; i<svgs_timeline.length; ++i) {
+					svgs_timeline[i].remove();
+				}
+
+				for (let reader_idx=0; reader_idx<config_edit.js_config["readers"].length; ++reader_idx) {
+					sync_timeline(reader_idx);
+				}
+			}
+
+
+			function js_config_changed(detail) {
+				let node_id= detail.node_id;
+				console.log("js_config_changed : "+ node_id);
+
+				const found_alpha_polygons= node_id.match(regex_alpha_polygons);
+				const found_alpha_polygon= node_id.match(regex_alpha_polygon);
+				const found_timeline= node_id.match(regex_timeline);
+
+				if ((node_id== "/readers") || (node_id== "/")) {
+					sync_all_alpha_polygons();
+					sync_all_timelines();
 				}
 				else if (found_alpha_polygons) {
 					let reader_idx= parseInt(found_alpha_polygons[1]);
@@ -121,8 +180,12 @@
 					let polygon_idx= parseInt(found_alpha_polygon[2]);
 					sync_alpha_polygon(reader_idx, polygon_idx);
 				}
+				else if (found_timeline) {
+					let reader_idx= parseInt(found_timeline[1]);
+					sync_timeline(reader_idx);
+				}
 
-				socket.emit("config_changed", config_edit.js_config);
+				socket.emit("js_config_changed", config_edit.js_config);
 			}
 
 			
@@ -166,6 +229,9 @@
 				});
 				document.addEventListener("svg_polygons_changed", (e) => {
 					svg_polygons_changed(e.detail)
+				});
+				document.addEventListener("svg_timeline_changed", (e) => {
+					svg_timeline_changed(e.detail)
 				});
 				document.addEventListener("js_config_changed", (e) => {
 					js_config_changed(e.detail)
