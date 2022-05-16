@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>TEST</title>
+		<link rel="stylesheet" href="affine_transfo.css">
+		<script src="./affine_transfo.js" type="module"></script>
+		<script type="module">
+			import {AffineTransfoContext} from './affine_transfo.js';
+
+			var js_config= {
+				"modifiers" : [
+					{
+						"movie" : {
+							"mult" : [0.5, 0.866, -0.866, 0.5], "add" : {"x" : 1.0, "y" : 0.5}, "speed" : 0.01
+						},
+						"alpha" : {
+							"mult" : [0.5, 0.7, 0.2, 0.8], "add" : {"x" : -0.4, "y" : 0.1}, "speed" : 0.02
+						},
+						"time" : {
+							"mult" : 0.4, "add" : 0.2, "speed" : 0.01
+						}
+					},
+					{
+						"movie" : {
+							"mult" : [0.5, 0.7, 0.2, 0.8], "add" : {"x" : 0.4, "y" : 0.3}, "speed" : 0.01
+						},
+						"alpha" : {
+							"mult" : [0.5, 0.7, 0.2, 0.8], "add" : {"x" : -0.4, "y" : 0.1}, "speed" : 0.02
+						},
+						"time" : {
+							"mult" : 0.4, "add" : 0.2, "speed" : 0.01
+						}
+					}
+				]
+			};
+		
+			var affine_transfo_contexts= [];
+			var keypresseds= {};
+
+
+			function svg_affine_transfo_changed(detail) {
+				let idx= parseInt(detail.svg_id.split("svg_main_")[1]);
+				js_config["modifiers"][idx]["movie"]["mult"]= affine_transfo_contexts[idx].mult_matrix;
+				js_config["modifiers"][idx]["movie"]["add"]= affine_transfo_contexts[idx].add_vector;
+				//console.log(js_config);
+			}
+
+
+			window.onload= function () {
+				for (let i=0; i<js_config["modifiers"].length; ++i) {
+					let svg= document.createElementNS("http://www.w3.org/2000/svg", "svg");
+					svg.setAttribute("id", "svg_main_"+ i);
+					svg.setAttribute("width", 400);
+					svg.setAttribute("height", 400);
+					document.body.appendChild(svg);
+
+					let affine_transfo_context= new AffineTransfoContext(svg.getAttribute("id"), keypresseds);
+					affine_transfo_context.set_transfo(js_config["modifiers"][i]["movie"]["mult"], js_config["modifiers"][i]["movie"]["add"]);
+					affine_transfo_context.update();
+					affine_transfo_contexts.push(affine_transfo_context);
+				}
+				
+				document.addEventListener("keydown", function (e) {
+					if (e.key== " ") {
+						for (let i=0; i<affine_transfo_contexts.length; ++i) {
+							affine_transfo_contexts[i].debug();
+						}
+					}
+					keypresseds[e.key]= true;
+				});
+				document.addEventListener("keyup", (e) => {
+					keypresseds[e.key]= false;
+				});
+				document.addEventListener("svg_affine_transfo_changed", function (e) {svg_affine_transfo_changed(e.detail)});
+			}
+		</script>
+	</head>
+	<body>
+	</body>
+</html>

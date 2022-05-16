@@ -137,6 +137,11 @@ export function rotate(pt, center, a) {
 }
 
 
+export function rad2deg(x) {
+	return x* 180.0/ Math.PI;
+}
+
+
 export function simplify_coords(coords, treshold, min_dist) {
 	if (coords.length< 3) {
 		return coords;

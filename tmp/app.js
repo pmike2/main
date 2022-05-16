@@ -30,6 +30,9 @@ app.get('/timeline_test', (req, res) => {
 	res.sendFile(path.resolve(__dirname, 'timeline_test.html'));
 });
 
+app.get('/affine_transfo_test', (req, res) => {
+	res.sendFile(path.resolve(__dirname, 'affine_transfo_test.html'));
+});
 
 // renvoie la valeur de js_config_server
 app.get('/config', (req, res) => {

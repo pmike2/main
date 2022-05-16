@@ -35,9 +35,7 @@ export class TimeLineContext {
 		this.editing_data= null;
 		
 		this.svg_main= document.getElementById(this.id);
-		//this.svg_main.setAttribute("viewBox", "0.0 0.0 1.0 1.0");
-		//this.svg_width= this.svg_main.getAttribute("width");
-		//this.svg_height= this.svg_main.getAttribute("height");
+		this.svg_main.classList.add("timeline_root");
 		this.svg_width= this.svg_main.getAttribute("width");
 		this.svg_height= this.svg_main.getAttribute("height");
 		let xmin= -MARGIN_X;
@@ -47,7 +45,7 @@ export class TimeLineContext {
 		this.svg_main.setAttribute("viewBox", xmin+ " "+ ymin+ " "+ width+ " "+ height);
 		
 		this.svg_emprise_with_margin= document.createElementNS("http://www.w3.org/2000/svg", "rect");
-		this.svg_emprise_with_margin.classList.add("svg_emprise_with_margin");
+		this.svg_emprise_with_margin.classList.add("timeline_emprise_with_margin");
 		this.svg_emprise_with_margin.setAttribute("x", xmin);
 		this.svg_emprise_with_margin.setAttribute("y", ymin);
 		this.svg_emprise_with_margin.setAttribute("width", width);
@@ -55,7 +53,7 @@ export class TimeLineContext {
 		this.svg_main.appendChild(this.svg_emprise_with_margin);
 
 		this.svg_emprise= document.createElementNS("http://www.w3.org/2000/svg", "rect");
-		this.svg_emprise.classList.add("svg_emprise");
+		this.svg_emprise.classList.add("timeline_emprise");
 		this.svg_emprise.setAttribute("x", 0.0);
 		this.svg_emprise.setAttribute("y", 0.0);
 		this.svg_emprise.setAttribute("width", 1.0);
@@ -63,7 +61,7 @@ export class TimeLineContext {
 		this.svg_main.appendChild(this.svg_emprise);
 		
 		this.svg_main_group= document.createElementNS("http://www.w3.org/2000/svg", "g");
-		this.svg_main_group.classList.add("svg_main_group");
+		this.svg_main_group.classList.add("timeline_main_group");
 		// transform sert à avoir une origine en bas à gauche
 		this.svg_main_group.setAttribute("transform", "matrix(1.0 0.0 0.0 -1.0 0.0 1.0)");
 		this.svg_main.appendChild(this.svg_main_group);
@@ -80,6 +78,7 @@ export class TimeLineContext {
 		let compt= 0;
 		for (let key in INSTRUCTIONS) {
 			let t= document.createElementNS("http://www.w3.org/2000/svg", "text");
+			t.classList.add("timeline_text");
 			t.setAttribute("x", text_base_x);
 			t.setAttribute("y", text_base_y+ compt* text_step_y);
 			compt+= 1;
@@ -88,6 +87,7 @@ export class TimeLineContext {
 	
 			for (let key2 in INSTRUCTIONS[key]) {
 				let t= document.createElementNS("http://www.w3.org/2000/svg", "text");
+				t.classList.add("timeline_text");
 				t.setAttribute("x", text_base2_x);
 				t.setAttribute("y", text_base_y+ compt* text_step_y);
 				compt+= 1;
@@ -268,20 +268,20 @@ export class TimeLineContext {
 			this.svg_main_group.innerHTML+= '<line x1="'+ this.checkpoints[i].x+ '" y1="'+ this.checkpoints[i].y+ 
 				'" x2="'+ this.checkpoints[i+ 1].x+
 				'" y2="'+ this.checkpoints[i+ 1].y+
-				'" class="lines" id="'+ this.get_svg_line_id(i)+ '" />\n';
+				'" class="timeline_line" id="'+ this.get_svg_line_id(i)+ '" />\n';
 		}
 		for (let i=0; i<this.checkpoints.length; ++i) {
 			this.svg_main_group.innerHTML+= '<circle cx="'+ this.checkpoints[i].x+ '" cy="'+ this.checkpoints[i].y+ 
-				'" class="points" id="'+ this.get_svg_point_id(i)+ '" />\n';
+				'" class="timeline_circle" id="'+ this.get_svg_point_id(i)+ '" />\n';
 		}
 		
-		let svg_lines= this.svg_main_group.getElementsByClassName("lines");
+		let svg_lines= this.svg_main_group.getElementsByClassName("timeline_line");
 		for (let i=0; i<svg_lines.length; ++i) {
 			svg_lines[i].addEventListener("mousedown", this.mouse_down_line.bind(this));
 			svg_lines[i].addEventListener("mouseup", this.mouse_up_line.bind(this));
 			svg_lines[i].addEventListener("mousemove", this.mouse_move.bind(this));
 		}
-		let svg_points= this.svg_main_group.getElementsByClassName("points");
+		let svg_points= this.svg_main_group.getElementsByClassName("timeline_circle");
 		for (let i=0; i<svg_points.length; ++i) {
 			svg_points[i].addEventListener("mousedown", this.mouse_down_point.bind(this));
 			svg_points[i].addEventListener("mouseup", this.mouse_up_point.bind(this));
@@ -300,7 +300,7 @@ export class TimeLineContext {
 		line.setAttribute("x2", this.checkpoints[idx_point- 1].x);
 		line.setAttribute("y2", this.checkpoints[idx_point- 1].y);
 		line.setAttribute("id", this.get_svg_line_id(idx_point));
-		line.classList.add("lines");
+		line.classList.add("timeline_line");
 		line.addEventListener("mousedown", this.mouse_down_line.bind(this));
 		line.addEventListener("mouseup", this.mouse_up_line.bind(this));
 		line.addEventListener("mousemove", this.mouse_move.bind(this));
@@ -310,7 +310,7 @@ export class TimeLineContext {
 		point.setAttribute("cx", this.checkpoints[idx_point].x);
 		point.setAttribute("cy", this.checkpoints[idx_point].y);
 		point.setAttribute("id", this.get_svg_point_id(idx_point));
-		point.classList.add("points");
+		point.classList.add("timeline_circle");
 		point.addEventListener("mousedown", this.mouse_down_point.bind(this));
 		point.addEventListener("mouseup", this.mouse_up_point.bind(this));
 		point.addEventListener("mousemove", this.mouse_move.bind(this));

@@ -1,3 +1,5 @@
+import {deepcopy} from "./utils.js";
+
 export class ConfigEdit {
 	constructor(js_model, js_configs) {
 		this.js_model= js_model;
@@ -76,15 +78,17 @@ export class ConfigEdit {
 	}
 
 
-	get_config_node(node_id) {
+	get_config_node(node_id, js_config) {
+		js_config= js_config || this.js_config;
+
 		if (node_id[0]== "/") {
 			node_id= node_id.substring(1);
 		}
 		if (node_id=== "") {
-			return [this.js_config, null]
+			return [js_config, null]
 		}
 		let keys= node_id.split("/");
-		let js_parent_node= this.js_config;
+		let js_parent_node= js_config;
 		for (let i=0; i<keys.length- 1; ++i) {
 			if (keys[i] in js_parent_node) {
 				js_parent_node= js_parent_node[keys[i]];
@@ -314,6 +318,29 @@ export class ConfigEdit {
 	}
 	
 
+	get_complexified_id(node_id) {
+		let keys= node_id.split("/");
+		for (let i=keys.length- 1; i>=0; --i) {
+			let found= false;
+			for (let k in this.js_model) {
+				if ((k.includes(".")) && (k.split(".")[1]== keys[i])) {
+					for (let j=i- 1; j>=0; --j){
+						if (keys[j]== k.split(".")[0]) {
+							keys[i]= k;
+							found= true;
+							break;
+						}
+					}
+				}
+				if (found) {
+					break;
+				}
+			}
+		}
+		return keys.join("/");
+	}
+
+
 	complexify_keys() {
 		let all_config_ids= this.get_all_config_ids();
 		let ids2complexify= [];
@@ -326,28 +353,12 @@ export class ConfigEdit {
 		ids2complexify.sort(function(a, b) {
 			return b.length- a.length;
 		});
-		//console.log(ids2complexify);
-		let found= {};
+		//console.log(JSON.stringify(ids2complexify, null, 4));
 		for (let i=0; i<ids2complexify.length; ++i) {
 			let [js_parent_node, key]= this.get_config_node(ids2complexify[i]);
-			let keys= ids2complexify[i].split("/");
-			let last_key= keys[keys.length- 1];
-			found[ids2complexify[i]]= false;
-			for (let k in this.js_model) {
-				if ((k.includes(".")) && (k.split(".")[1]== last_key)) {
-					for (let j=keys.length- 1; j>=0; --j){
-						if (keys[j]== k.split(".")[0]) {
-							js_parent_node[k]= JSON.parse(JSON.stringify(js_parent_node[key]));
-							delete js_parent_node[key];
-							found[ids2complexify[i]]= true;
-							break;
-						}
-					}
-				}
-				if (found[ids2complexify[i]]) {
-					break;
-				}
-			}
+			let complexified_id= this.get_complexified_id(ids2complexify[i]);
+			js_parent_node[complexified_id.split("/").pop()]= deepcopy(js_parent_node[key]);
+			delete js_parent_node[key];
 		}
 	}
 
@@ -360,19 +371,23 @@ export class ConfigEdit {
 	}
 
 
-	simplify_keys() {
+	get_simplified_config() {
 		let all_config_ids= this.get_all_config_ids();
 		all_config_ids.sort(function(a, b) {
 			return b.length- a.length;
 		});
+
+		let result= deepcopy(this.js_config);
 	
 		for (let i=0; i<all_config_ids.length; ++i) {
-			let [js_parent_node, key]= this.get_config_node(all_config_ids[i]);
+			let [js_parent_node, key]= this.get_config_node(all_config_ids[i], result);
 			if ((key!== null) && (key.includes("."))) {
-				js_parent_node[this.get_simplified_key(key)]= js_parent_node[key];
+				js_parent_node[this.get_simplified_key(key)]= deepcopy(js_parent_node[key]);
 				delete js_parent_node[key];
 			}
 		}
+
+		return result;
 	}
 
 	

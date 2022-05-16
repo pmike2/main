@@ -1,25 +1,13 @@
-//import {deepcopy} from "./utils.js";
-//import {segment_intersects_segment, functionalize_coords, simplify_coords} from "./geom.js";
+import {deepcopy} from "./utils.js";
+import {norm, add, diff, angle, rad2deg} from "./geom.js";
 
-//const COORD_MIN= {"x" : 0.0, "y" : 0.0};
-//const COORD_MAX= {"x" : 1.0, "y" : 1.0};
 const DEBUG= false;
-const MARGIN_X= 0.1;
-const MARGIN_Y= 0.1;
+const SIZE= 3.0;
+const MARGIN_X= 0.3;
+const MARGIN_Y= 0.3;
 const INSTRUCTIONS= {
 	"fond" : {
-		"t" : "create timeline",
 		"x" : "reinit"
-	},
-	"point" : {
-		"m" : "move point",
-		"t" : "move timeline",
-		"x" : "delete point"
-	},
-	"line" : {
-		"a" : "add point",
-		"m" : "move line",
-		"t" : "move timeline"
 	}
 };
 
@@ -29,25 +17,30 @@ export class AffineTransfoContext {
 	constructor(id, keypresseds) {
 		this.id= id;
 		
-		this.checkpoints= [];
+		this.center= {"x" : 0.0, "y" : 0.0};
+		this.angle= 0.0;
+		this.scale_x= 1.0;
+		this.scale_y= 1.0;
+		this.compute_u();
+		this.compute_v();
+		this.compute_mult_add();
+
 		this.keypresseds= keypresseds;
 		this.editing_mode= null;
 		this.editing_data= null;
 		
 		this.svg_main= document.getElementById(this.id);
-		//this.svg_main.setAttribute("viewBox", "0.0 0.0 1.0 1.0");
-		//this.svg_width= this.svg_main.getAttribute("width");
-		//this.svg_height= this.svg_main.getAttribute("height");
+		this.svg_main.classList.add("affine_transfo_root");
 		this.svg_width= this.svg_main.getAttribute("width");
 		this.svg_height= this.svg_main.getAttribute("height");
-		let xmin= -MARGIN_X;
-		let width= 1.0+ 2.0* MARGIN_X;
-		let ymin= -MARGIN_Y;
-		let height= 1.0+ 2.0* MARGIN_Y;
+		let xmin= -MARGIN_X- SIZE;
+		let width= 2.0* (MARGIN_X+ SIZE);
+		let ymin= -MARGIN_Y- SIZE;
+		let height= 2.0* (MARGIN_Y+ SIZE);
 		this.svg_main.setAttribute("viewBox", xmin+ " "+ ymin+ " "+ width+ " "+ height);
 		
 		this.svg_emprise_with_margin= document.createElementNS("http://www.w3.org/2000/svg", "rect");
-		this.svg_emprise_with_margin.classList.add("svg_emprise_with_margin");
+		this.svg_emprise_with_margin.classList.add("affine_transfo_emprise_with_margin");
 		this.svg_emprise_with_margin.setAttribute("x", xmin);
 		this.svg_emprise_with_margin.setAttribute("y", ymin);
 		this.svg_emprise_with_margin.setAttribute("width", width);
@@ -55,31 +48,34 @@ export class AffineTransfoContext {
 		this.svg_main.appendChild(this.svg_emprise_with_margin);
 
 		this.svg_emprise= document.createElementNS("http://www.w3.org/2000/svg", "rect");
-		this.svg_emprise.classList.add("svg_emprise");
-		this.svg_emprise.setAttribute("x", 0.0);
-		this.svg_emprise.setAttribute("y", 0.0);
-		this.svg_emprise.setAttribute("width", 1.0);
-		this.svg_emprise.setAttribute("height", 1.0);
+		this.svg_emprise.classList.add("affine_transfo_emprise");
+		this.svg_emprise.setAttribute("x", -SIZE);
+		this.svg_emprise.setAttribute("y", -SIZE);
+		this.svg_emprise.setAttribute("width", 2.0* SIZE);
+		this.svg_emprise.setAttribute("height", 2.0* SIZE);
 		this.svg_main.appendChild(this.svg_emprise);
 		
 		this.svg_main_group= document.createElementNS("http://www.w3.org/2000/svg", "g");
-		this.svg_main_group.classList.add("svg_main_group");
+		this.svg_main_group.classList.add("affine_transfo_main_group");
 		// transform sert à avoir une origine en bas à gauche
-		this.svg_main_group.setAttribute("transform", "matrix(1.0 0.0 0.0 -1.0 0.0 1.0)");
+		this.svg_main_group.setAttribute("transform", "matrix(1.0 0.0 0.0 -1.0 0.0 0.0)");
 		this.svg_main.appendChild(this.svg_main_group);
+
+		this.init_svg();
 		
 		this.svg_emprise_with_margin.addEventListener("mousedown", this.mouse_down.bind(this));
 		this.svg_emprise_with_margin.addEventListener("mouseup", this.mouse_up.bind(this));
 		this.svg_emprise_with_margin.addEventListener("mousemove", this.mouse_move.bind(this));
 		this.svg_emprise_with_margin.addEventListener("mouseout", this.mouse_out.bind(this));
 
-		let text_base_x= 0.7;
-		let text_base2_x= 0.72;
-		let text_base_y= 0.03;
-		let text_step_y= 0.03;
+		let text_base_x= 1.8;
+		let text_base2_x= 1.9;
+		let text_base_y= -2.0;
+		let text_step_y= 0.3;
 		let compt= 0;
 		for (let key in INSTRUCTIONS) {
 			let t= document.createElementNS("http://www.w3.org/2000/svg", "text");
+			t.classList.add("affine_transfo_text");
 			t.setAttribute("x", text_base_x);
 			t.setAttribute("y", text_base_y+ compt* text_step_y);
 			compt+= 1;
@@ -88,6 +84,7 @@ export class AffineTransfoContext {
 	
 			for (let key2 in INSTRUCTIONS[key]) {
 				let t= document.createElementNS("http://www.w3.org/2000/svg", "text");
+				t.classList.add("affine_transfo_text");
 				t.setAttribute("x", text_base2_x);
 				t.setAttribute("y", text_base_y+ compt* text_step_y);
 				compt+= 1;
@@ -98,159 +95,134 @@ export class AffineTransfoContext {
 	}
 
 
+	debug() {
+		if (this.id!= "svg_main_0") {
+			return;
+		}
+		console.log("center= "+ JSON.stringify(this.center));
+		console.log("u= "+ JSON.stringify(this.u));
+		console.log("v= "+ JSON.stringify(this.v));
+		console.log("angle= "+ JSON.stringify(this.angle));
+		console.log("scale_x= "+ JSON.stringify(this.scale_x));
+		console.log("scale_y= "+ JSON.stringify(this.scale_y));
+		console.log("mult_matrix= "+ JSON.stringify(this.mult_matrix));
+		console.log("add_vector= "+ JSON.stringify(this.add_vector));
+	}
+
+
 	send_event() {
-		document.dispatchEvent(new CustomEvent("svg_timeline_changed", {detail : {"svg_id" : this.id}}));
+		document.dispatchEvent(new CustomEvent("svg_affine_transfo_changed", {detail : {"svg_id" : this.id}}));
+	}
+
+	
+	get_svg_center_id() {
+		return this.id+ "_center";
 	}
 
 
-	get_point_idx(svg_id) {
-		return parseInt(svg_id.split("point_")[1]);
-	}
-	
-	
-	get_line_idx(svg_id) {
-		return parseInt(svg_id.split("line_")[1]);
+	get_svg_u_id() {
+		return this.id+ "_u";
 	}
 
 
-	get_svg_point_id(idx_point) {
-		return this.id+ "_point_"+ idx_point;
-	}
-	
-	
-	get_svg_line_id(idx_line) {
-		return this.id+ "_line_"+ idx_line;
+	get_svg_v_id() {
+		return this.id+ "_v";
 	}
 
 
 	normalized_coords(x, y) {
-		return {"x" : (1.0+ 2* MARGIN_X)* x/ this.svg_width- MARGIN_X, "y" : 1.0- (1.0+ 2* MARGIN_Y)* y/ this.svg_height+ MARGIN_Y};
+		return {"x" : 2* (SIZE+ MARGIN_X)* x/ this.svg_width- SIZE- MARGIN_X, "y" : SIZE- 2* (SIZE+ MARGIN_Y)* y/ this.svg_height+ MARGIN_Y};
 	}
 
 
-	init_checkpoints() {
-		this.checkpoints= [COORD_MIN, COORD_MAX];
+	compute_u() {
+		this.u= {"x" : this.center.x+ this.scale_x* Math.cos(this.angle), "y" : this.center.y+ this.scale_x* Math.sin(this.angle)};
+	}
+
+
+	compute_v() {
+		this.v= {"x" : this.center.x- this.scale_y* Math.sin(this.angle), "y" : this.center.y+ this.scale_y* Math.cos(this.angle)};
+	}
+
+
+	compute_angle_from_u() {
+		this.angle= angle(this.center, add(this.center, {"x" : 1.0, "y" : 0.0}), this.u);
+	}
+
+
+	compute_angle_from_v() {
+		this.angle= angle(this.center, add(this.center, {"x" : 0.0, "y" : 1.0}), this.v);
+	}
+
+
+	compute_scale_x() {
+		this.scale_x= norm(diff(this.center, this.u));
+	}
+
+
+	compute_scale_y() {
+		this.scale_y= norm(diff(this.center, this.v));
+	}
+
+
+	compute_mult_add() {
+		this.mult_matrix= [this.scale_x* Math.cos(this.angle), this.scale_x* Math.sin(this.angle), -this.scale_y* Math.sin(this.angle), this.scale_y* Math.cos(this.angle)];
+		this.add_vector= deepcopy(this.center);
+	}
+
+
+	init_transfo() {
+		this.center= {"x" : 0.0, "y" : 0.0};
+		this.angle= 0.0;
+		this.scale_x= 1.0;
+		this.scale_y= 1.0;
+		this.compute_u();
+		this.compute_v();
+		this.compute_mult_add();
+
 		this.send_event();
 	}
 
 
-	set_checkpoints(checkpoints) {
-		this.checkpoints= deepcopy(checkpoints);
-		this.functionalize();
+	set_transfo(mult_matrix, add_vector) {
+		this.center= deepcopy(add_vector);
+		this.scale_x= norm({"x" : mult_matrix[0], "y" : mult_matrix[1]});
+		this.scale_y= norm({"x" : mult_matrix[2], "y" : mult_matrix[3]});
+		this.angle= Math.acos(mult_matrix[0]/ this.scale_x);
+		this.compute_u();
+		this.compute_v();
+		this.compute_mult_add();
 	}
 
 
-	move_checkpoints(v) {
-		for (let i=0; i<this.checkpoints.length; ++i) {
-			this.checkpoints[i].x+= v.x;
-			this.checkpoints[i].y+= v.y;
-		}
+	move_center(coord) {
+		this.center= coord;
+		this.compute_u();
+		this.compute_v();
+		this.compute_mult_add();
+
 		this.send_event();
 	}
 		
 	
-	simplify_checkpoints(treshold, min_dist) {
-		let simplified= simplify_coords(this.checkpoints, treshold, min_dist);
-		this.checkpoints= simplified;
-	}
+	move_u(coord) {
+		this.u= coord;
+		this.compute_angle_from_u();
+		this.compute_scale_x();
+		this.compute_v();
+		this.compute_mult_add();
 
-
-	crop_x() {
-		let first_x_ok= -1;
-		for (let i=0; i<this.checkpoints.length; ++i) {
-			if (this.checkpoints[i].x>= 0.0) {
-				first_x_ok= i;
-				break;
-			}
-		}
-		if (first_x_ok< 0) {
-			this.init_checkpoints();
-			return;
-		}
-		else if (first_x_ok== 0) {
-			if (this.checkpoints[0].x!= 0.0) {
-				this.checkpoints.splice(0, 0, {"x" : 0.0, "y" : this.checkpoints[0].y});
-			}
-		}
-		else {
-			let inter= segment_intersects_segment(this.checkpoints[first_x_ok- 1], this.checkpoints[first_x_ok], {"x" : 0.0, "y" : 0.0}, {"x" : 0.0, "y" : 1.0});
-			if (inter=== null) {
-				this.checkpoints.splice(0, first_x_ok, {"x" : 0.0, "y" : this.checkpoints[0].y});
-			}
-			else {
-				this.checkpoints.splice(0, first_x_ok, {"x" : 0.0, "y" : inter.y});
-			}
-		}
-
-		let last_x_ok= -1;
-		for (let i=this.checkpoints.length- 1; i>=0; --i) {
-			if (this.checkpoints[i].x<= 1.0) {
-				last_x_ok= i;
-				break;
-			}
-		}
-		if (last_x_ok< 0) {
-			this.init_checkpoints();
-			return;
-		}
-		else if (last_x_ok== this.checkpoints.length- 1) {
-			if (this.checkpoints[last_x_ok].x!= 1.0) {
-				this.checkpoints.splice(last_x_ok+ 1, 0, {"x" : 1.0, "y" : this.checkpoints[last_x_ok].y});
-			}
-		}
-		else {
-			let inter= segment_intersects_segment(this.checkpoints[last_x_ok], this.checkpoints[last_x_ok+ 1], {"x" : 1.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0});
-			if (inter=== null) {
-				this.checkpoints.splice(last_x_ok+ 1, this.checkpoints.length- last_x_ok, {"x" : 1.0, "y" : this.checkpoints[last_x_ok].y});
-			}
-			else {
-				this.checkpoints.splice(last_x_ok+ 1, this.checkpoints.length- last_x_ok, {"x" : 1.0, "y" : inter.y});
-			}
-		}
-	}
-
-
-	crop_y() {
-		for (let i=0; i<this.checkpoints.length; ++i) {
-			if (this.checkpoints[i].y< 0.0) {
-				this.checkpoints[i].y= 0.0;
-			}
-			if (this.checkpoints[i].y> 1.0) {
-				this.checkpoints[i].y= 1.0;
-			}
-		}
-	}
-
-
-	functionalize() {
-		let functionalized= functionalize_coords(this.checkpoints);
-		this.checkpoints= functionalized;
-		this.crop_x();
-		this.crop_y();
-	}
-	
-
-	add_point(coord) {
-		this.checkpoints.push(coord);
-		this.send_event();
-		return this.checkpoints.length- 1;
-	}
-			
-
-	add_point_on_line(idx_line, coord) {
-		this.checkpoints.splice(idx_line+ 1, 0, coord);
 		this.send_event();
 	}
+
 	
-	
-	remove_point(idx_point) {
-		this.checkpoints.splice(idx_point, 1);
-		this.send_event();
-	}
-	
-	
-	move_point(idx_point, coord) {
-		this.checkpoints[idx_point]= coord;
+	move_v(coord) {
+		this.v= coord;
+		this.compute_angle_from_v();
+		this.compute_scale_y();
+		this.compute_u();
+		this.compute_mult_add();
+
 		this.send_event();
 	}
 
@@ -261,78 +233,68 @@ export class AffineTransfoContext {
 	}
 
 
-	update() {
-		//console.log(this.checkpoints);
+	init_svg() {
 		this.svg_main_group.innerHTML= "";
-		for (let i=0; i<this.checkpoints.length- 1; ++i) {
-			this.svg_main_group.innerHTML+= '<line x1="'+ this.checkpoints[i].x+ '" y1="'+ this.checkpoints[i].y+ 
-				'" x2="'+ this.checkpoints[i+ 1].x+
-				'" y2="'+ this.checkpoints[i+ 1].y+
-				'" class="lines" id="'+ this.get_svg_line_id(i)+ '" />\n';
-		}
-		for (let i=0; i<this.checkpoints.length; ++i) {
-			this.svg_main_group.innerHTML+= '<circle cx="'+ this.checkpoints[i].x+ '" cy="'+ this.checkpoints[i].y+ 
-				'" class="points" id="'+ this.get_svg_point_id(i)+ '" />\n';
-		}
+		this.svg_main_group.innerHTML+= '<circle cx="0.0" cy="0.0" r="1.0" class="affine_transfo_circle_init" />\n';
+		this.svg_main_group.innerHTML+= '<line x1="0.0" y1="0.0" x2="1.0" y2="0.0" class="affine_transfo_line_u_init" />\n';
+		this.svg_main_group.innerHTML+= '<line x1="0.0" y1="0.0" x2="0.0" y2="1.0" class="affine_transfo_line_v_init" />\n';
+
+		this.svg_main_group.innerHTML+= '<g class="affine_transfo_elliptic_group" transform="translate('+ this.center.x+ ' '+ this.center.y+ ') rotate('+ rad2deg(this.angle)+ ') scale('+ this.scale_x+ ' '+ this.scale_y+ ')"><circle cx="0.0" cy="0.0" r="1.0" class="affine_transfo_circle_init"></g>';
+
+		this.svg_main_group.innerHTML+= '<line x1="'+ this.center.x+ '" y1="'+ this.center.y+ 
+			'" x2="'+ this.u.x+
+			'" y2="'+ this.u.y+
+			'" class="affine_transfo_line_u" />\n';
+
+		this.svg_main_group.innerHTML+= '<line x1="'+ this.center.x+ '" y1="'+ this.center.y+ 
+		'" x2="'+ this.v.x+
+		'" y2="'+ this.v.y+
+		'" class="affine_transfo_line_v" />\n';
+
+		this.svg_main_group.innerHTML+= '<circle cx="'+ this.center.x+ '" cy="'+ this.center.y+ 
+			'" class="affine_transfo_circle" id="'+ this.get_svg_center_id()+ '" />\n';
 		
-		let svg_lines= this.svg_main_group.getElementsByClassName("lines");
-		for (let i=0; i<svg_lines.length; ++i) {
-			svg_lines[i].addEventListener("mousedown", this.mouse_down_line.bind(this));
-			svg_lines[i].addEventListener("mouseup", this.mouse_up_line.bind(this));
-			svg_lines[i].addEventListener("mousemove", this.mouse_move.bind(this));
-		}
-		let svg_points= this.svg_main_group.getElementsByClassName("points");
-		for (let i=0; i<svg_points.length; ++i) {
-			svg_points[i].addEventListener("mousedown", this.mouse_down_point.bind(this));
-			svg_points[i].addEventListener("mouseup", this.mouse_up_point.bind(this));
-			svg_points[i].addEventListener("mousemove", this.mouse_move.bind(this));
-		}
+		this.svg_main_group.innerHTML+= '<circle cx="'+ this.u.x+ '" cy="'+ this.u.y+ 
+		'" class="affine_transfo_circle" id="'+ this.get_svg_u_id()+ '" />\n';
+
+		this.svg_main_group.innerHTML+= '<circle cx="'+ this.v.x+ '" cy="'+ this.v.y+ 
+		'" class="affine_transfo_circle" id="'+ this.get_svg_v_id()+ '" />\n';
+
+		let svg_center= document.getElementById(this.get_svg_center_id());
+		let svg_u= document.getElementById(this.get_svg_u_id());
+		let svg_v= document.getElementById(this.get_svg_v_id());
+		[svg_center, svg_u, svg_v].forEach(svg_pt => {
+			svg_pt.addEventListener("mousedown", this.mouse_down_point.bind(this));
+			svg_pt.addEventListener("mouseup", this.mouse_up_point.bind(this));
+			svg_pt.addEventListener("mousemove", this.mouse_move.bind(this));
+		});
 	}
 
 
-	add_last_point_to_group() {
-		let idx_point= this.checkpoints.length- 1;
-		
-		let line= document.createElementNS("http://www.w3.org/2000/svg", "line");
-		this.svg_main_group.insertBefore(line, this.svg_main_group.getElementsByTagName("circle")[0]);
-		line.setAttribute("x1", this.checkpoints[idx_point].x);
-		line.setAttribute("y1", this.checkpoints[idx_point].y);
-		line.setAttribute("x2", this.checkpoints[idx_point- 1].x);
-		line.setAttribute("y2", this.checkpoints[idx_point- 1].y);
-		line.setAttribute("id", this.get_svg_line_id(idx_point));
-		line.classList.add("lines");
-		line.addEventListener("mousedown", this.mouse_down_line.bind(this));
-		line.addEventListener("mouseup", this.mouse_up_line.bind(this));
-		line.addEventListener("mousemove", this.mouse_move.bind(this));
-	
-		let point= document.createElementNS("http://www.w3.org/2000/svg", "circle");
-		this.svg_main_group.appendChild(point);
-		point.setAttribute("cx", this.checkpoints[idx_point].x);
-		point.setAttribute("cy", this.checkpoints[idx_point].y);
-		point.setAttribute("id", this.get_svg_point_id(idx_point));
-		point.classList.add("points");
-		point.addEventListener("mousedown", this.mouse_down_point.bind(this));
-		point.addEventListener("mouseup", this.mouse_up_point.bind(this));
-		point.addEventListener("mousemove", this.mouse_move.bind(this));
-	}
+	update() {
+		let elliptic_group= this.svg_main_group.getElementsByClassName("affine_transfo_elliptic_group")[0];
+		elliptic_group.setAttribute("transform", 'translate('+ this.center.x+ ' '+ this.center.y+ ') rotate('+ rad2deg(this.angle)+ ') scale('+ this.scale_x+ ' '+ this.scale_y+ ')');
 
+		let line_u= this.svg_main_group.getElementsByClassName("affine_transfo_line_u")[0];
+		let line_v= this.svg_main_group.getElementsByClassName("affine_transfo_line_v")[0];
+		line_u.setAttribute("x1", this.center.x);
+		line_u.setAttribute("y1", this.center.y);
+		line_u.setAttribute("x2", this.u.x);
+		line_u.setAttribute("y2", this.u.y);
+		line_v.setAttribute("x1", this.center.x);
+		line_v.setAttribute("y1", this.center.y);
+		line_v.setAttribute("x2", this.v.x);
+		line_v.setAttribute("y2", this.v.y);
 
-	update_point_position(idx_point) {
-		let svg_point= document.getElementById(this.get_svg_point_id(idx_point));
-		svg_point.setAttribute("cx", this.checkpoints[idx_point].x);
-		svg_point.setAttribute("cy", this.checkpoints[idx_point].y);
-	
-		if (idx_point> 0) {
-			let svg_line_before= document.getElementById(this.get_svg_line_id(idx_point- 1));
-			svg_line_before.setAttribute("x2", this.checkpoints[idx_point].x);
-			svg_line_before.setAttribute("y2", this.checkpoints[idx_point].y);
-		}
-		
-		if (idx_point< this.checkpoints.length- 1) {
-			let svg_line_after= document.getElementById(this.get_svg_line_id(idx_point));
-			svg_line_after.setAttribute("x1", this.checkpoints[idx_point].x);
-			svg_line_after.setAttribute("y1", this.checkpoints[idx_point].y);
-		}
+		let svg_center= document.getElementById(this.get_svg_center_id());
+		let svg_u= document.getElementById(this.get_svg_u_id());
+		let svg_v= document.getElementById(this.get_svg_v_id());
+		svg_center.setAttribute("cx", this.center.x);
+		svg_center.setAttribute("cy", this.center.y);
+		svg_u.setAttribute("cx", this.u.x);
+		svg_u.setAttribute("cy", this.u.y);
+		svg_v.setAttribute("cx", this.v.x);
+		svg_v.setAttribute("cy", this.v.y);
 	}
 
 
@@ -342,13 +304,7 @@ export class AffineTransfoContext {
 		let current_position= this.normalized_coords(e.offsetX, e.offsetY);
 
 		if (this.keypresseds['x']) {
-			this.init_checkpoints();
-			this.update();
-		}
-		else if (this.keypresseds['t']) {
-			this.editing_mode= "CREATE_TIMELINE";
-			this.checkpoints= [];
-			this.add_point(current_position);
+			this.init_transfo();
 			this.update();
 		}
 	}
@@ -358,9 +314,7 @@ export class AffineTransfoContext {
 		if (DEBUG) { console.log("mouse_up") };
 
 		//let current_position= this.normalized_coords(e.offsetX, e.offsetY);
-		this.mouse_up_line(e);
 		this.mouse_up_point(e);
-
 	}
 
 
@@ -369,34 +323,17 @@ export class AffineTransfoContext {
 
 		let current_position= this.normalized_coords(e.offsetX, e.offsetY);
 
-		if (this.editing_mode== "CREATE_TIMELINE") {
-			this.add_point(current_position);
-			this.add_last_point_to_group();
-		}
-		else if (this.editing_mode== "MOVE_POINT") {
-			this.move_point(this.editing_data["move_point_point_idx"], current_position);
-			this.update_point_position(this.editing_data["move_point_point_idx"]);
-		}
-		else if (this.editing_mode== "MOVE_TIMELINE") {
-			for (let i=0; i<this.checkpoints.length; ++i) {
-				this.move_point(i, {
-					"x" : this.editing_data["move_timeline_init"][i].x+ current_position.x- this.editing_data["move_timeline_start"].x,
-					"y" : this.editing_data["move_timeline_init"][i].y+ current_position.y- this.editing_data["move_timeline_start"].y
-				});
-			}
+		if (this.editing_mode== "MOVE_CENTER") {
+			this.move_center(current_position);
 			this.update();
 		}
-		else if (this.editing_mode== "MOVE_LINE") {
-			this.move_point(this.editing_data["move_line_p0_idx"], {
-				"x" : this.editing_data["move_line_p0"].x+ current_position.x- this.editing_data["move_line_start"].x,
-				"y" : this.editing_data["move_line_p0"].y+ current_position.y- this.editing_data["move_line_start"].y
-			});
-			this.move_point(this.editing_data["move_line_p1_idx"], {
-				"x" : this.editing_data["move_line_p1"].x+ current_position.x- this.editing_data["move_line_start"].x,
-				"y" : this.editing_data["move_line_p1"].y+ current_position.y- this.editing_data["move_line_start"].y
-			});
-			this.update_point_position(this.editing_data["move_line_p0_idx"]);
-			this.update_point_position(this.editing_data["move_line_p1_idx"]);
+		else if (this.editing_mode== "MOVE_U") {
+			this.move_u(current_position);
+			this.update();
+		}
+		else if (this.editing_mode== "MOVE_V") {
+			this.move_v(current_position);
+			this.update();
 		}
 	}
 
@@ -406,87 +343,24 @@ export class AffineTransfoContext {
 
 		//let current_position= this.normalized_coords(e.offsetX, e.offsetY);
 		if ((e.offsetX< 10) || (e.offsetX> this.svg_width- 10) || (e.offsetY< 10) || (e.offsetY> this.svg_height- 10)) {
-			this.mouse_up_line(e);
 			this.mouse_up_point(e);
 		}
-	}
-
-
-	mouse_down_line(e) {
-		if (DEBUG) { console.log("mouse_down_line") };
-
-		let current_position= this.normalized_coords(e.offsetX, e.offsetY);
-
-		let line_idx= this.get_line_idx(e.target.id);
-	
-		if (this.keypresseds['a']) {
-			this.add_point_on_line(line_idx, current_position);
-			this.update();
-			this.set_editing_null();
-		}
-		else if (this.keypresseds['m']) {
-			this.editing_mode= "MOVE_LINE";
-			this.editing_data= {
-				"move_line_p0_idx" : line_idx,
-				"move_line_p1_idx" : line_idx+ 1,
-				"move_line_start" : current_position,
-				"move_line_p0" : deepcopy(this.checkpoints[line_idx]),
-				"move_line_p1" : deepcopy(this.checkpoints[line_idx+ 1])
-			};
-		}
-		else if (this.keypresseds['t']) {
-			this.editing_mode= "MOVE_TIMELINE";
-			this.editing_data= {
-				"move_timeline_start" : current_position,
-				"move_timeline_init" : deepcopy(this.checkpoints)
-			};
-		}
-	}
-
-
-	mouse_up_line(e) {
-		if (DEBUG) { console.log("mouse_up_line"); };
-
-		//let current_position= this.normalized_coords(e.offsetX, e.offsetY);
-
-		if (this.editing_mode== "MOVE_LINE") {
-			this.functionalize();
-			this.update();
-			this.set_editing_null();
-		}
-		else if (this.editing_mode== "MOVE_TIMELINE") {
-			this.functionalize();
-			this.update();
-			this.set_editing_null();
-		}
-
 	}
 
 
 	mouse_down_point(e) {
 		if (DEBUG) { console.log("mouse_down_point") };
 
-		let current_position= this.normalized_coords(e.offsetX, e.offsetY);
+		//let current_position= this.normalized_coords(e.offsetX, e.offsetY);
 
-		let point_idx= this.get_point_idx(e.target.id);
-	
-		if (this.keypresseds['x']) {
-			this.remove_point(point_idx);
-			this.update();
-			this.set_editing_null();
+		if (e.target.id== this.get_svg_center_id()) {
+			this.editing_mode= "MOVE_CENTER";
 		}
-		else if (this.keypresseds['t']) {
-			this.editing_mode= "MOVE_TIMELINE";
-			this.editing_data= {
-				"move_timeline_start" : current_position,
-				"move_timeline_init" : deepcopy(this.checkpoints)
-			};
+		else if (e.target.id== this.get_svg_u_id()) {
+			this.editing_mode= "MOVE_U";
 		}
-		else if (this.keypresseds['m']) {
-			this.editing_mode= "MOVE_POINT";
-			this.editing_data= {
-				"move_point_point_idx" : point_idx
-			};
+		else if (e.target.id== this.get_svg_v_id()) {
+			this.editing_mode= "MOVE_V";
 		}
 	}
 
@@ -494,23 +368,15 @@ export class AffineTransfoContext {
 	mouse_up_point(e) {
 		if (DEBUG) { console.log("mouse_up_point") };
 
-		let current_position= this.normalized_coords(e.offsetX, e.offsetY);
+		//let current_position= this.normalized_coords(e.offsetX, e.offsetY);
 
-		if (this.editing_mode== "CREATE_TIMELINE") {
-			this.add_point(current_position);
-			this.simplify_checkpoints(0.01, 0.01);
-			this.functionalize();
-			this.update();
+		if (this.editing_mode== "MOVE_CENTER") {
 			this.set_editing_null();
 		}
-		else if (this.editing_mode== "MOVE_POINT") {
-			this.functionalize();
-			this.update_point_position(this.editing_data["move_point_point_idx"]);
+		else if (this.editing_mode== "MOVE_U") {
 			this.set_editing_null();
 		}
-		else if (this.editing_mode== "MOVE_TIMELINE") {
-			this.functionalize();
-			this.update();
+		else if (this.editing_mode== "MOVE_V") {
 			this.set_editing_null();
 		}
 	

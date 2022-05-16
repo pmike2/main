@@ -41,18 +41,19 @@ export class PolygonsContext {
 		this.editing_data= null;
 		
 		this.svg_main= document.getElementById(this.id);
+		this.svg_main.classList.add("polygon_root")
 		this.svg_main.setAttribute("viewBox", "0.0 0.0 1.0 1.0");
 		this.svg_width= this.svg_main.getAttribute("width");
 		this.svg_height= this.svg_main.getAttribute("height");
 	
 		this.svg_emprise= document.createElementNS("http://www.w3.org/2000/svg", "rect");
-		this.svg_emprise.classList.add("svg_emprise");
+		this.svg_emprise.classList.add("polygon_emprise");
 		this.svg_emprise.setAttribute("width", "100%");
 		this.svg_emprise.setAttribute("height", "100%");
 		this.svg_main.appendChild(this.svg_emprise);
 		
 		this.svg_main_group= document.createElementNS("http://www.w3.org/2000/svg", "g");
-		this.svg_main_group.classList.add("svg_main_group");
+		this.svg_main_group.classList.add("polygon_main_group");
 		// transform sert à avoir une origine en bas à gauche
 		this.svg_main_group.setAttribute("transform", "matrix(1.0 0.0 0.0 -1.0 0.0 1.0)");
 		this.svg_main.appendChild(this.svg_main_group);
@@ -69,6 +70,7 @@ export class PolygonsContext {
 		let compt= 0;
 		for (let key in INSTRUCTIONS) {
 			let t= document.createElementNS("http://www.w3.org/2000/svg", "text");
+			t.classList.add("polygon_text");
 			t.setAttribute("x", text_base_x);
 			t.setAttribute("y", text_base_y+ compt* text_step_y);
 			compt+= 1;
@@ -77,6 +79,7 @@ export class PolygonsContext {
 	
 			for (let key2 in INSTRUCTIONS[key]) {
 				let t= document.createElementNS("http://www.w3.org/2000/svg", "text");
+				t.classList.add("polygon_text");
 				t.setAttribute("x", text_base2_x);
 				t.setAttribute("y", text_base_y+ compt* text_step_y);
 				compt+= 1;
@@ -156,15 +159,7 @@ export class PolygonsContext {
 
 	
 	set_polygon(idx_polygon, polygon) {
-		this.polygons[idx_polygon]= [];
-		for (let i=0; i<polygon.length; ++i) {
-			if ("x" in polygon[i]) {
-				this.polygons[idx_polygon].push({"x" : polygon[i].x, "y" : polygon[i].y});
-			}
-			else {
-				this.polygons[idx_polygon].push({"x" : polygon[i][0], "y" : polygon[i][1]});
-			}
-		}
+		this.polygons[idx_polygon]= deepcopy(polygon);
 	}
 	
 	
@@ -236,22 +231,22 @@ export class PolygonsContext {
 			polygon_group.innerHTML+= '<line x1="'+ this.polygons[idx_polygon][i].x+ '" y1="'+ this.polygons[idx_polygon][i].y+ 
 				'" x2="'+ this.polygons[idx_polygon][(i+ 1) % this.polygons[idx_polygon].length].x+
 				'" y2="'+ this.polygons[idx_polygon][(i+ 1) % this.polygons[idx_polygon].length].y+
-				'" class="lines" id="'+ this.get_svg_line_id(idx_polygon, i)+ '" />\n';
+				'" class="polygon_line" id="'+ this.get_svg_line_id(idx_polygon, i)+ '" />\n';
 		}
 		for (let i=0; i<this.polygons[idx_polygon].length; ++i) {
 			polygon_group.innerHTML+= '<circle cx="'+ this.polygons[idx_polygon][i].x+ '" cy="'+ this.polygons[idx_polygon][i].y+ 
-				'" class="points" id="'+ this.get_svg_point_id(idx_polygon, i)+ '" />\n';
+				'" class="polygon_circle" id="'+ this.get_svg_point_id(idx_polygon, i)+ '" />\n';
 		}
 		let index_polygon_text_position= this.get_index_polygon_text_position(idx_polygon);
-		polygon_group.innerHTML+= '<text class="index_polygon_text" x="'+ index_polygon_text_position.x+ '" y="'+ index_polygon_text_position.y+ '">'+ idx_polygon+ '</text>\n';
+		polygon_group.innerHTML+= '<text class="polygon_index_text" x="'+ index_polygon_text_position.x+ '" y="'+ index_polygon_text_position.y+ '">'+ idx_polygon+ '</text>\n';
 		
-		let svg_lines= polygon_group.getElementsByClassName("lines");
+		let svg_lines= polygon_group.getElementsByClassName("polygon_line");
 		for (let i=0; i<svg_lines.length; ++i) {
 			svg_lines[i].addEventListener("mousedown", this.mouse_down_line.bind(this));
 			svg_lines[i].addEventListener("mouseup", this.mouse_up_line.bind(this));
 			svg_lines[i].addEventListener("mousemove", this.mouse_move.bind(this));
 		}
-		let svg_points= polygon_group.getElementsByClassName("points");
+		let svg_points= polygon_group.getElementsByClassName("polygon_circle");
 		for (let i=0; i<svg_points.length; ++i) {
 			svg_points[i].addEventListener("mousedown", this.mouse_down_point.bind(this));
 			svg_points[i].addEventListener("mouseup", this.mouse_up_point.bind(this));
@@ -271,7 +266,7 @@ export class PolygonsContext {
 		line.setAttribute("x2", this.polygons[idx_polygon][i- 1].x);
 		line.setAttribute("y2", this.polygons[idx_polygon][i- 1].y);
 		line.setAttribute("id", this.get_svg_line_id(idx_polygon, i));
-		line.classList.add("lines");
+		line.classList.add("polygon_line");
 		line.addEventListener("mousedown", this.mouse_down_line.bind(this));
 		line.addEventListener("mouseup", this.mouse_up_line.bind(this));
 		line.addEventListener("mousemove", this.mouse_move.bind(this));
@@ -281,7 +276,7 @@ export class PolygonsContext {
 		point.setAttribute("cx", this.polygons[idx_polygon][i].x);
 		point.setAttribute("cy", this.polygons[idx_polygon][i].y);
 		point.setAttribute("id", this.get_svg_point_id(idx_polygon, i));
-		point.classList.add("points");
+		point.classList.add("polygon_circle");
 		point.addEventListener("mousedown", this.mouse_down_point.bind(this));
 		point.addEventListener("mouseup", this.mouse_up_point.bind(this));
 		point.addEventListener("mousemove", this.mouse_move.bind(this));
