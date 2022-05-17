@@ -19,7 +19,7 @@
 			
 			const regex_config= new RegExp("^video_config_[0-9]+\.json$");
 			const regex_model= new RegExp("^video_model\.json$");
-			const regex_mpeg= new RegExp("^[a-zA-Z0-9_]+\.(mpeg|mov|mp4)$");
+			const regex_mpeg= new RegExp("[a-zA-Z0-9_]+\.(mpeg|mov|mp4)$");
 			const regex_alpha_polygons= new RegExp("^/readers/([0-9]+)/readers\.alpha/alpha_polygons$");
 			const regex_alpha_polygon= new RegExp("^/readers/([0-9]+)/readers\.alpha/alpha_polygons/([0-9]+)$");
 			const regex_timeline= new RegExp("^/readers/([0-9]+)/time$");
@@ -296,7 +296,6 @@
 						}
 					}
 					js_model.path.possible_values= mpegs;
-					//console.log(JSON.stringify(js_configs, null, 4));
 					
 					config_edit= new ConfigEdit(js_model, js_configs);
 					config_edit.send_event("/");

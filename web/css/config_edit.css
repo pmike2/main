@@ -11,7 +11,7 @@ div.folded>div, div.folded>svg {
 	float: right;
 }
 
-input {
+input, select {
 	width: 60px;
 	margin-left: 10px;
 	border: 0;
@@ -19,7 +19,7 @@ input {
 	font-size : 15px;
 }
 
-input.long-input {
+input.long-input, select.long-select {
 	width: 350px;
 }
 

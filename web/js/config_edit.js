@@ -570,40 +570,61 @@ export class ConfigEdit {
 		}
 
 		if ((model_node.type== "int") || (model_node.type== "float") || (model_node.type== "string")) {
-			let input_elmt= document.createElement("input");
-			if (model_node.type== "string") {
-				input_elmt.classList.add("long-input");
-			}
-			input_elmt.addEventListener('input', (e) => {
-				if (model_node.type== "int") {
-					js_parent_node[key]= parseInt(input_elmt.value);
-				}
-				else if (model_node.type== "float") {
-					js_parent_node[key]= parseFloat(input_elmt.value);
-				}
-				else if (model_node.type== "string") {
-					js_parent_node[key]= input_elmt.value;
-				}
-				this.send_event(node_id);
-			});
-			div_elmt.appendChild(input_elmt);
 			
 			if ("possible_values" in model_node) {
-				input_elmt.addEventListener('click', (e) => {
-					e.target.value = '';
-				});
-				input_elmt.setAttribute("list", "possible_values_"+ key);
-				let datalist_elmt= document.createElement("datalist");
-				datalist_elmt.setAttribute("id", "possible_values_"+ key);
+				let select_elmt= document.createElement("select");
+
 				for (let i=0; i<model_node.possible_values.length; ++i) {
+					let possible_value= model_node.possible_values[i];
 					let option_elmt= document.createElement("option");
-					option_elmt.setAttribute("value", model_node.possible_values[i]);
-					datalist_elmt.appendChild(option_elmt);
+					option_elmt.setAttribute("value", possible_value);
+					if ((typeof possible_value=== 'string') && (possible_value.includes("/"))) {
+						option_elmt.innerHTML= possible_value.split("/").pop();
+					}
+					else {
+						option_elmt.innerHTML= possible_value;
+					}
+					select_elmt.appendChild(option_elmt);
 				}
-				div_elmt.appendChild(datalist_elmt);
+
+				if (model_node.type== "string") {
+					select_elmt.classList.add("long-select");
+				}
+				
+				select_elmt.addEventListener('change', (e) => {
+					if (model_node.type== "int") {
+						js_parent_node[key]= parseInt(select_elmt.value);
+					}
+					else if (model_node.type== "float") {
+						js_parent_node[key]= parseFloat(select_elmt.value);
+					}
+					else if (model_node.type== "string") {
+						js_parent_node[key]= select_elmt.value;
+					}
+					this.send_event(node_id);
+				});
+
+				div_elmt.appendChild(select_elmt);
 			}
 			else {
+				let input_elmt= document.createElement("input");
 
+				input_elmt.value= js_parent_node[key];
+
+				input_elmt.addEventListener('input', (e) => {
+					if (model_node.type== "int") {
+						js_parent_node[key]= parseInt(input_elmt.value);
+					}
+					else if (model_node.type== "float") {
+						js_parent_node[key]= parseFloat(input_elmt.value);
+					}
+					else if (model_node.type== "string") {
+						js_parent_node[key]= input_elmt.value;
+					}
+					this.send_event(node_id);
+				});
+				div_elmt.appendChild(input_elmt);
+	
 				if ((model_node.type== "int") || (model_node.type== "float")) {
 					//input_elmt.setAttribute("type", "number");
 					input_elmt.setAttribute("type", "range"); // + sympa
@@ -637,12 +658,14 @@ export class ConfigEdit {
 					input_elmt.addEventListener("change", function () {
 						slider_value_elmt.value= this.value;
 					});
+
+					// pour que slider_value_elmt suive le changement
+					input_elmt.dispatchEvent(new Event('change'));
+				}
+				else if (model_node.type== "string") {
+					input_elmt.classList.add("long-input");
 				}
 			}
-
-			input_elmt.value= js_parent_node[key];
-			// pour que slider_value_elmt suive le changement
-			input_elmt.dispatchEvent(new Event('change'));
 		}
 		else if ((model_node.type== "dict") || (model_node.type== "list")) {
 			let button_fold_elmt= document.createElement("button");
@@ -716,38 +739,27 @@ export class ConfigEdit {
 
 
 	gen_load(config_key) {
-		let load_input= document.getElementById("load_input");
-		if (load_input=== null) {
-			load_input= document.createElement("input");
-			load_input.setAttribute("id", "load_input");
-			load_input.setAttribute("list", "load_input_possible_values");
-			load_input.classList.add("long-input");
-			load_input.addEventListener("click", (e) => {
-				e.target.value = "";
-			});
-			load_input.addEventListener("change", () => {
-				this.js_config= this.js_configs[load_input.value];
+		let load_select= document.getElementById("load_select");
+		if (load_select=== null) {
+			load_select= document.createElement("select");
+			
+			load_select.value= config_key;
+
+			for (let key in this.js_configs) {
+				let option_elmt= document.createElement("option");
+				option_elmt.setAttribute("value", key);
+				option_elmt.innerHTML= key.split("/").pop();
+				load_select.appendChild(option_elmt);
+			}
+			
+			load_select.classList.add("long-select");
+			load_select.addEventListener("change", () => {
+				this.js_config= this.js_configs[load_select.value];
 				this.complexify_keys();
 				this.gen_dom("/", this.div_main);
 			});
-			div_utilities.appendChild(load_input);
+			div_utilities.appendChild(load_select);
 		}
-
-		load_input.value= config_key;
-
-		let datalist_elmt= document.getElementById("load_input_possible_values");
-		if (datalist_elmt=== null) {
-			datalist_elmt= document.createElement("datalist");
-			datalist_elmt.setAttribute("id", "load_input_possible_values");
-			div_utilities.appendChild(datalist_elmt);
-		}
-		datalist_elmt.innerHTML= "";
-		for (let key in this.js_configs) {
-			let option_elmt= document.createElement("option");
-			option_elmt.setAttribute("value", key);
-			datalist_elmt.appendChild(option_elmt);
-		}
-		
 	}
 
 

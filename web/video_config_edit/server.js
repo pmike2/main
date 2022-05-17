@@ -68,7 +68,7 @@ io.on('connection', (socket) => {
 				}
 			}
 			else {
-				data2send[filename]= null;
+				data2send[abs_path]= null;
 			}
 		}
 

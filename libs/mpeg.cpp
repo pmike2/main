@@ -780,6 +780,8 @@ void MPEGReaders::load_mpegs() {
 			continue;
 		}
 		
+		cout << "loading " << mpegs_paths[i] << "\n";
+
 		MPEG * mpeg= new MPEG(mpegs_paths[i]);
 		
 		glActiveTexture(GL_TEXTURE0+ _movie_textures_indices[i]);
