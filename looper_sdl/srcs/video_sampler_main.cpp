@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include <chrono>
 #include <vector>
 #include <utility>
@@ -237,8 +238,25 @@ void key_down(SDL_Keycode key) {
 		done= true;
 		return;
 	}
-	if (key== SDLK_r) {
+	/*else if (key== SDLK_r) {
 		video_sampler->_mpeg_readers->randomize();
+	}*/
+	else if (key== SDLK_u) {
+		string url= "http://localhost:3000/config";
+		string json_tmp= "video_config_tmp.json";
+		// s : silent ; 
+		// --noproxy '*' : pour ignorer http_proxy
+		string cmd= "curl -s --noproxy '*' "+ url+ " > "+ json_tmp;
+		int status= system(cmd.c_str());
+
+		cout << "cmd=" << cmd << "\n";
+		cout << "status=" << status << "\n";
+		cout << "result=" << ifstream(json_tmp).rdbuf() << "\n";
+
+		video_sampler->_mpeg_readers->load_json(json_tmp);
+
+		string clean_cmd= "rm "+ json_tmp;
+		system(clean_cmd.c_str());
 	}
 }
 

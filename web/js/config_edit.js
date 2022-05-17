@@ -349,22 +349,19 @@ export class ConfigEdit {
 
 	complexify_keys() {
 		let all_config_ids= this.get_all_config_ids();
-		let ids2complexify= [];
-		for (let i=0; i<all_config_ids.length; ++i) {
-			let last_key= all_config_ids[i].split("/").pop();
-			if ((!(last_key in this.js_model)) && (isNaN(last_key))) {
-				ids2complexify.push(all_config_ids[i]);
-			}
-		}
-		ids2complexify.sort(function(a, b) {
+		all_config_ids.sort(function(a, b) {
 			return b.length- a.length;
 		});
-		//console.log(JSON.stringify(ids2complexify, null, 4));
-		for (let i=0; i<ids2complexify.length; ++i) {
-			let [js_parent_node, key]= this.get_config_node(ids2complexify[i]);
-			let complexified_id= this.get_complexified_id(ids2complexify[i]);
-			js_parent_node[complexified_id.split("/").pop()]= deepcopy(js_parent_node[key]);
-			delete js_parent_node[key];
+		for (let i=0; i<all_config_ids.length; ++i) {
+			let [js_parent_node, key]= this.get_config_node(all_config_ids[i]);
+			if (key=== null) {
+				continue;
+			}
+			let complexified_key= this.get_complexified_key(all_config_ids[i]);
+			if (complexified_key!= key) {
+				js_parent_node[complexified_key]= deepcopy(js_parent_node[key]);
+				delete js_parent_node[key];
+			}
 		}
 	}
 

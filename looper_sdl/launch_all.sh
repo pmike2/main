@@ -9,6 +9,6 @@ then
 fi
 
 ./looper_main &
-./video_sampler_main ../data/video_sampler_01.json &
-./audio_sampler_main ../data/audio_sampler_01.json
+./video_sampler_main ../data/video_configs/video_config_01.json &
+#./audio_sampler_main ../data/audio_configs/audio_config_01.json
 #./receiver_test_main

@@ -1,26 +1,25 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>TEST</title>
+		<title>VideoConfigEdit</title>
+		
 		<link rel="stylesheet" href="config_edit.css">
 		<link rel="stylesheet" href="polygons.css">
 		<link rel="stylesheet" href="timeline.css">
 		<link rel="stylesheet" href="affine_transfo.css">
-		<script src="./polygons.js" type="module"></script>
-		<script src="./timeline.js" type="module"></script>
-		<script src="./affine_transfo.js" type="module"></script>
-		<script src="./config_edit.js" type="module"></script>
+		
 		<script src="/socket.io/socket.io.js"></script>
+		
 		<script type="module">
-			import {ConfigEdit} from './config_edit.js';
-			import {PolygonsContext} from './polygons.js';
-			import {TimeLineContext} from './timeline.js';
-			import {AffineTransfoContext} from './affine_transfo.js';
-			import {deepcopy} from "./utils.js";
+			import {ConfigEdit} from '/config_edit.js';
+			import {PolygonsContext} from '/polygons.js';
+			import {TimeLineContext} from '/timeline.js';
+			import {AffineTransfoContext} from '/affine_transfo.js';
+			import {deepcopy} from "/utils.js";
 			
-			const regex_config= new RegExp("^config_[0-9]+\.json$");
-			const regex_model= new RegExp("^model\.json$");
-			const regex_mpeg= new RegExp("^[a-zA-Z0-9_]+\.mpeg$");
+			const regex_config= new RegExp("^video_config_[0-9]+\.json$");
+			const regex_model= new RegExp("^video_model\.json$");
+			const regex_mpeg= new RegExp("^[a-zA-Z0-9_]+\.(mpeg|mov|mp4)$");
 			const regex_alpha_polygons= new RegExp("^/readers/([0-9]+)/readers\.alpha/alpha_polygons$");
 			const regex_alpha_polygon= new RegExp("^/readers/([0-9]+)/readers\.alpha/alpha_polygons/([0-9]+)$");
 			const regex_timeline= new RegExp("^/readers/([0-9]+)/time$");
@@ -281,6 +280,7 @@
 			// --------------------------------------------------------------------------------------------------------------
 			window.onload= function () {
 				socket.on('server2client_data_send', (data) => {
+					//console.log(JSON.stringify(data, null, 4));
 					let js_configs= {};
 					let js_model= null;
 					let mpegs= [];
@@ -296,6 +296,7 @@
 						}
 					}
 					js_model.path.possible_values= mpegs;
+					//console.log(JSON.stringify(js_configs, null, 4));
 					
 					config_edit= new ConfigEdit(js_model, js_configs);
 					config_edit.send_event("/");

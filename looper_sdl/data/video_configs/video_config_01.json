@@ -8,22 +8,28 @@
 	"alpha_height" : 512,
 	"time_width" : 1024,
 	
-	"reader_configs" : [
+	"readers" : [
 		{
 			"alpha" : {
 				"alpha_polygons" : [
 					{
-						"polygon" : [[0.3, 0.3], [0.5, 0.3], [0.5, 0.5], [0.3, 0.5]],
+						"polygon" : [{"x" : 0.3, "y" : 0.3}, {"x" : 0.5, "y" : 0.3}, {"x" : 0.5, "y" : 0.5}, {"x" : 0.3, "y" : 0.5}],
 						"fadeout" : 0.1,
 						"curve" : 2.0,
 						"alpha_max" : 0.9
+					},
+					{
+						"polygon" : [{"x" : 0.6, "y" : 0.6}, {"x" : 0.7, "y" : 0.6}, {"x" : 0.7, "y" : 0.7}, {"x" : 0.6, "y" : 0.7}],
+						"fadeout" : 0.5,
+						"curve" : 1.0,
+						"alpha_max" : 1.0
 					}
 				],
 				"decrease_speed" : 0.05
 			},
 			"time" : {
 				"checkpoints" : [
-					[0.0, 0.0], [1.0, 1.0]
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 0.7}
 				],
 				"speed" : 0.01
 			}
@@ -32,7 +38,7 @@
 			"alpha" : {
 				"alpha_polygons" : [
 					{
-						"polygon" : [[0.6, 0.6], [0.7, 0.6], [0.7, 0.7], [0.6, 0.7]],
+						"polygon" : [{"x" : 0.6, "y" : 0.6}, {"x" : 0.7, "y" : 0.6}, {"x" : 0.7, "y" : 0.7}, {"x" : 0.6, "y" : 0.7}],
 						"fadeout" : 0.5,
 						"curve" : 1.0,
 						"alpha_max" : 1.0
@@ -42,32 +48,32 @@
 			},
 			"time" : {
 				"checkpoints" : [
-					[0.0, 0.0], [0.3, 1.0], [1.0, 0.4]
+					{"x" : 0.0, "y" : 0.0}, {"x" : 0.3, "y" : 1.0}, {"x" : 1.0, "y" : 0.7}
 				],
 				"speed" : 0.01
 			}
 		}
 	],
 	
-	"keymapping" : {
+	"keymapping_reader" : {
 		"a" : {
-			"mpeg" : 0, "config" : 0
+			"mpeg" : 0, "reader" : 0
 		},
 		"b" : {
-			"mpeg" : 1, "config" : 0
+			"mpeg" : 1, "reader" : 0
 		},
 		"c" : {
-			"mpeg" : 0, "config" : 1
+			"mpeg" : 0, "reader" : 1
 		}
 	},
 
 	"modifiers" : [
 		{
 			"movie" : {
-				"mult" : [0.5, 0.7, 0.2, 0.8], "add" : [0.4, 0.3], "speed" : 0.01
+				"mult" : [0.5, 0.7, 0.2, 0.8], "add" : {"x" : 0.4, "y" : 0.3}, "speed" : 0.01
 			},
 			"alpha" : {
-				"mult" : [0.5, 0.7, 0.2, 0.8], "add" : [0.4, 0.3], "speed" : 0.01
+				"mult" : [0.5, 0.7, 0.2, 0.8], "add" : {"x" : -0.4, "y" : 0.1}, "speed" : 0.02
 			},
 			"time" : {
 				"mult" : 0.4, "add" : 0.2, "speed" : 0.01

@@ -1,0 +1,95 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>TEST Timeline</title>
+		<link rel="stylesheet" href="timeline.css">
+		<script src="./timeline.js" type="module"></script>
+		<script type="module">
+			import {TimeLineContext} from './timeline.js';
+
+			var js_config= {
+	"readers" : [
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [{"x" : 0.3, "y" : 0.3}, {"x" : 0.5, "y" : 0.3}, {"x" : 0.5, "y" : 0.5}, {"x" : 0.3, "y" : 0.5}],
+						"fadeout" : 0.1,
+						"curve" : 2.0,
+						"alpha_max" : 0.9
+					}
+				],
+				"decrease_speed" : 0.05
+			},
+			"time" : {
+				"checkpoints" : [
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0}
+				],
+				"speed" : 0.01
+			}
+		},
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [{"x" : 0.6, "y" : 0.6}, {"x" : 0.7, "y" : 0.6}, {"x" : 0.7, "y" : 0.7}, {"x" : 0.6, "y" : 0.7}],
+						"fadeout" : 0.5,
+						"curve" : 1.0,
+						"alpha_max" : 1.0
+					}
+				],
+				"decrease_speed" : 0.2
+			},
+			"time" : {
+				"checkpoints" : [
+				{"x" : 0.8, "y" : 1.2}, {"x" : 0.2, "y" : 0.2}
+				],
+				"speed" : 0.01
+			}
+		}
+	]};
+		
+			var timeline_contexts= [];
+			var keypresseds= {};
+
+
+			function svg_timeline_changed(detail) {
+				let idx= parseInt(detail.svg_id.split("svg_main_")[1]);
+				js_config["readers"][idx]["time"]["checkpoints"]= timeline_contexts[idx].checkpoints;
+				console.log(js_config);
+			}
+
+
+			window.onload= function () {
+				for (let i=0; i<js_config["readers"].length; ++i) {
+					let svg= document.createElementNS("http://www.w3.org/2000/svg", "svg");
+					svg.setAttribute("id", "svg_main_"+ i);
+					svg.setAttribute("width", 400);
+					svg.setAttribute("height", 400);
+					document.body.appendChild(svg);
+
+					let timeline_context= new TimeLineContext(svg.getAttribute("id"), keypresseds);
+					timeline_context.set_checkpoints(js_config["readers"][i]["time"]["checkpoints"]);
+					timeline_context.update();
+					timeline_contexts.push(timeline_context);
+				}
+				
+				document.addEventListener("keydown", function (e) {
+					if (e.key== " ") {
+						for (let i=0; i<timeline_contexts.length; ++i) {
+							console.log(timeline_contexts[i].checkpoints);
+						}
+					}
+					keypresseds[e.key]= true;
+				});
+				document.addEventListener("keyup", (e) => {
+					keypresseds[e.key]= false;
+				});
+				document.addEventListener("svg_timeline_changed", function (e) {svg_timeline_changed(e.detail)});
+			}
+		</script>
+	</head>
+	<body>
+	</body>
+</html>

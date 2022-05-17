@@ -567,7 +567,7 @@ void MPEGReaders::load_json(string json_path) {
 
 	vector<ReaderConfig> reader_configs_availables;
 	unsigned int compt= 0;
-	for (auto & js_conf : js["reader_configs"]) {
+	for (auto & js_conf : js["readers"]) {
 
 		AlphaConfig alpha_config;
 		json js_alpha= js_conf["alpha"];
@@ -579,7 +579,7 @@ void MPEGReaders::load_json(string json_path) {
 			alpha_polygon._alpha_max= js_poly["alpha_max"].get<float>();
 			vector<glm::vec2> points;
 			for (unsigned int i=0; i<js_poly["polygon"].size(); ++i) {
-				points.push_back(glm::vec2(js_poly["polygon"][i][0].get<float>(), js_poly["polygon"][i][1].get<float>()));
+				points.push_back(glm::vec2(js_poly["polygon"][i]["x"].get<float>(), js_poly["polygon"][i]["y"].get<float>()));
 			}
 			alpha_polygon._polygon.set_points(points);
 			alpha_config._polygons.push_back(AlphaPolygon(alpha_polygon));
@@ -589,18 +589,18 @@ void MPEGReaders::load_json(string json_path) {
 		TimeConfig time_config;
 		time_config._speed= js_time["speed"].get<float>();
 		for (auto & js_cp : js_time["checkpoints"]) {
-			time_config._time_checkpoints.push_back(make_pair(js_cp[0].get<float>(), js_cp[1].get<float>()));
+			time_config._time_checkpoints.push_back(make_pair(js_cp["x"].get<float>(), js_cp["y"].get<float>()));
 		}
 		
 		reader_configs_availables.push_back(ReaderConfig(alpha_config, time_config));
 	}
 
 	vector<ReaderConfig> reader_configs;
-	for (auto & mapping : js["keymapping"].items()) {
+	for (auto & mapping : js["keymapping_reader"].items()) {
 		unsigned int key= mapping.key().c_str()[0];
 		json js_val= mapping.value();
 		unsigned int mpeg_idx= js_val["mpeg"].get<unsigned int>();
-		unsigned int config_idx= js_val["config"].get<unsigned int>();
+		unsigned int config_idx= js_val["reader"].get<unsigned int>();
 
 		if (mpeg_idx>= mpeg_paths.size()) {
 			cout << "mpeg_idx invalide\n";
@@ -624,16 +624,16 @@ void MPEGReaders::load_json(string json_path) {
 		modifier_config._movie_mult[1]= js_mod["movie"]["mult"][1].get<float>();
 		modifier_config._movie_mult[2]= js_mod["movie"]["mult"][2].get<float>();
 		modifier_config._movie_mult[3]= js_mod["movie"]["mult"][3].get<float>();
-		modifier_config._movie_add[0] = js_mod["movie"]["add"][0].get<float>();
-		modifier_config._movie_add[1] = js_mod["movie"]["add"][1].get<float>();
+		modifier_config._movie_add[0] = js_mod["movie"]["add"]["x"].get<float>();
+		modifier_config._movie_add[1] = js_mod["movie"]["add"]["y"].get<float>();
 		modifier_config._movie_speed  = js_mod["movie"]["speed"].get<float>();
 
 		modifier_config._alpha_mult[0]= js_mod["alpha"]["mult"][0].get<float>();
 		modifier_config._alpha_mult[1]= js_mod["alpha"]["mult"][1].get<float>();
 		modifier_config._alpha_mult[2]= js_mod["alpha"]["mult"][2].get<float>();
 		modifier_config._alpha_mult[3]= js_mod["alpha"]["mult"][3].get<float>();
-		modifier_config._alpha_add[0] = js_mod["alpha"]["add"][0].get<float>();
-		modifier_config._alpha_add[1] = js_mod["alpha"]["add"][1].get<float>();
+		modifier_config._alpha_add[0] = js_mod["alpha"]["add"]["x"].get<float>();
+		modifier_config._alpha_add[1] = js_mod["alpha"]["add"]["y"].get<float>();
 		modifier_config._alpha_speed  = js_mod["alpha"]["speed"].get<float>();
 
 		modifier_config._time_mult= js_mod["time"]["mult"].get<float>();
