@@ -52,8 +52,9 @@ app.post('/config', (req, res) => {
 io.on('connection', (socket) => {
 	console.log('a user is connected');
 	socket.on('send2server', (js_config) => {
+		console.log(JSON.stringify(js_config, null, 4));
 		js_config_server= js_config;
-		io.sockets.emit("send2client", JSON.stringify(js_config_server));
+		io.sockets.emit("send2client_cpp", JSON.stringify(js_config_server));
 	});
 });
 

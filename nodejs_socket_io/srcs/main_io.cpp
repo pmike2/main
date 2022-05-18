@@ -22,8 +22,14 @@ void config_changed(sio::event & e) {
 // point d'entrée -----------------------------------------------------------------
 int main(int argc, char **argv) {
 	sio::client io;
+
+	// sera appelé quand la connection sera établie
+	io.set_open_listener([&]() {
+		io.socket()->on("send2client_cpp", &config_changed);
+	});
+
 	io.connect("http://127.0.0.1:3000");
-	io.socket()->on("server2client_config_changed", &config_changed);
+	
 	
 	while (true) {}
 

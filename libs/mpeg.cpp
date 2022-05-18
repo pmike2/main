@@ -603,7 +603,7 @@ void MPEGReaders::load_json(string json_path) {
 }
 
 
-void MPEGReaders::load_json(json js)	{
+void MPEGReaders::load_json(json js) {
 	vector<string> mpeg_paths;
 	for (auto & js_mpeg : js["mpegs"]) {
 		mpeg_paths.push_back(js_mpeg);

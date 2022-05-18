@@ -56,6 +56,8 @@ chrono::system_clock::time_point t1, t2;
 
 VideoSampler * video_sampler;
 
+sio::client io;
+
 
 void init_sdl() {
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -176,18 +178,19 @@ void init_program(string json_path) {
 
 void video_config_changed(sio::event & e) {
 	string msg= e.get_message()->get_string();
-	// cout << msg << "\n";
-	json js_config;
-	ifstream istr(msg);
-	istr >> js_config;
+	//cout << msg << "\n";
+	json js_config= json::parse(msg);
 	video_sampler->_mpeg_readers->load_json(js_config);
 }
 
 
 void init_io_client() {
-	sio::client io;
-	io.connect("http://127.0.0.1:3000");
 	//io.socket()->on("server2client_config_changed", &video_config_changed);
+	io.set_open_listener([&]() {
+		io.socket()->on("server2client_config_changed", &video_config_changed);
+	});
+	io.connect("http://127.0.0.1:3000");
+
 }
 
 

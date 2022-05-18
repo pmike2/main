@@ -22,7 +22,7 @@ Partie client
 			
 			// on écoute les messages 'send2client' et on met à jour le champ input
 			socket.on('send2client', (msg) => {
-				//console.log('message: ' + JSON.stringify(msg));
+				console.log('message: ' + JSON.stringify(msg));
 				js_config= msg;
 				input_elmt.value= js_config["a"];
 			});
