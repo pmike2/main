@@ -55,6 +55,11 @@ io.on('connection', (socket) => {
 
 	socket.on('client2server_get_data', () => {
 		let data2send= {};
+
+		let model_path= "./json/video_model.json";
+		const json_data= fs.readFileSync(model_path, "utf8");
+		data2send[model_path.split("/").pop()]= JSON.parse(json_data);
+
 		const walker= walk.walk(root_data, {followLinks: true});
 
 		function walker_func(directory, filename) {
@@ -110,7 +115,7 @@ io.on('connection', (socket) => {
 
 	socket.on('client2server_js_config_changed', (js_config) => {
 		js_config_server= js_config
-		//console.log(js_config_server);
+		io.sockets.emit("server2client_config_changed", JSON.stringify(js_config_server));
 	});
 });
 

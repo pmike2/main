@@ -13,14 +13,13 @@ extern "C" {
 
 #include <OpenGL/gl3.h>
 #include <glm/glm.hpp>
-#include "json.hpp"
 
 #include "mpeg.h"
 #include "utile.h"
 
 
 using namespace std;
-using json = nlohmann::json;
+using json= nlohmann::json;
 
 
 MPEG::MPEG() : _n_frames(0), _fps(0), _data(0), _width(0), _height(0), _frame_size(0) {
@@ -444,6 +443,18 @@ GlobalConfig::~GlobalConfig() {
 }
 
 
+vector<string> GlobalConfig::get_mpegs_paths() {
+	vector<string> result;
+	for (auto & rc : _reader_configs) {
+		if (find(result.begin(), result.end(), rc._mpeg_path)== result.end()) {
+			result.push_back(rc._mpeg_path);
+		}
+	}
+	sort(result.begin(), result.end());
+	return result;
+}
+
+
 GlobalConfig & GlobalConfig::operator=(const GlobalConfig & rhs) {
 	if (this== &rhs) {
 		return *this;
@@ -538,19 +549,48 @@ MPEGReaders::~MPEGReaders() {
 
 
 void MPEGReaders::set_config(GlobalConfig config) {
+	bool reload_mpegs= false;
+	vector<string> old_mpegs_paths= _config.get_mpegs_paths();
+	vector<string> new_mpegs_paths= config.get_mpegs_paths();
+	if (old_mpegs_paths.size()!= new_mpegs_paths.size()) {
+		reload_mpegs= true;
+	}
+	else {
+		for (unsigned int i=0; i<old_mpegs_paths.size(); ++i) {
+			if (old_mpegs_paths[i]!= new_mpegs_paths[i]) {
+				reload_mpegs= true;
+				break;
+			}
+		}
+	}
+	
 	_config= config;
 	
-	load_mpegs();
+	if (reload_mpegs) {
+		cout << "load_mpegs\n";
+		load_mpegs();
+	}
+	cout << "init_arrays\n";
 	init_arrays();
+	cout << "compute_alpha_data0\n";
 	compute_alpha_data0();
+	cout << "compute_time_data0\n";
 	compute_time_data0();
+	cout << "compute_index_movie_data0\n";
 	compute_index_movie_data0();
+	cout << "compute_modifier_data\n";
 	compute_modifier_data();
+	cout << "init_alpha_texture\n";
 	init_alpha_texture();
+	cout << "init_time_texture\n";
 	init_time_texture();
+	cout << "init_index_time_texture\n";
 	init_index_time_texture();
+	cout << "init_index_movie_texture\n";
 	init_index_movie_texture();
+	cout << "init_global_alpha_texture\n";
 	init_global_alpha_texture();
+	cout << "init_modifier_texture\n";
 	init_modifier_texture();
 }
 
@@ -559,7 +599,11 @@ void MPEGReaders::load_json(string json_path) {
 	ifstream istr(json_path);
 	json js;
 	istr >> js;
-	
+	load_json(js);
+}
+
+
+void MPEGReaders::load_json(json js)	{
 	vector<string> mpeg_paths;
 	for (auto & js_mpeg : js["mpegs"]) {
 		mpeg_paths.push_back(js_mpeg);
@@ -773,7 +817,7 @@ void MPEGReaders::load_mpegs() {
 	glDeleteTextures(N_MAX_MOVIES, _movies_ids);
 	
 	glGenTextures(N_MAX_MOVIES, _movies_ids);
-	vector<string> mpegs_paths= get_mpegs_paths();
+	vector<string> mpegs_paths= _config.get_mpegs_paths();
 	for (unsigned int i=0; i<N_MAX_MOVIES; ++i) {
 		if (i>= mpegs_paths.size()) {
 			_movies_ids[i]= _movies_ids[i % mpegs_paths.size()];
@@ -955,7 +999,7 @@ void MPEGReaders::compute_time_data0() {
 
 
 void MPEGReaders::compute_index_movie_data0() {
-	vector<string> mpegs_paths= get_mpegs_paths();
+	vector<string> mpegs_paths= _config.get_mpegs_paths();
 	for (unsigned int idx_reader=0; idx_reader<_config._reader_configs.size(); ++idx_reader) {
 		unsigned int idx_mpeg= find(mpegs_paths.begin(), mpegs_paths.end(), _config._reader_configs[idx_reader]._mpeg_path)- mpegs_paths.begin();
 		_index_movie_data0[idx_reader]= idx_mpeg;
@@ -1308,13 +1352,3 @@ int MPEGReaders::get_idx_modifier_by_key(unsigned int key) {
 	return -1;
 }
 
-
-vector<string> MPEGReaders::get_mpegs_paths() {
-	vector<string> result;
-	for (auto & rc : _config._reader_configs) {
-		if (find(result.begin(), result.end(), rc._mpeg_path)== result.end()) {
-			result.push_back(rc._mpeg_path);
-		}
-	}
-	return result;
-}

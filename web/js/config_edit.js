@@ -604,6 +604,8 @@ export class ConfigEdit {
 					this.send_event(node_id);
 				});
 
+				select_elmt.dispatchEvent(new Event('change'));
+
 				div_elmt.appendChild(select_elmt);
 			}
 			else {

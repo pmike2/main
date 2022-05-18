@@ -14,6 +14,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "sio_client.h"
+#include "json.hpp"
+
 #include "gl_utils.h"
 #include "utile.h"
 #include "mpeg.h"
@@ -22,6 +25,8 @@
 #include "video_sampler.h"
 
 using namespace std;
+using json = nlohmann::json;
+using namespace sio;
 
 
 const int SCREEN_WIDTH= 1024;
@@ -169,12 +174,30 @@ void init_program(string json_path) {
 }
 
 
+void video_config_changed(sio::event & e) {
+	string msg= e.get_message()->get_string();
+	// cout << msg << "\n";
+	json js_config;
+	ifstream istr(msg);
+	istr >> js_config;
+	video_sampler->_mpeg_readers->load_json(js_config);
+}
+
+
+void init_io_client() {
+	sio::client io;
+	io.connect("http://127.0.0.1:3000");
+	//io.socket()->on("server2client_config_changed", &video_config_changed);
+}
+
+
 void init(string json_path) {
 	srand(time(NULL));
 
 	init_sdl();
 	init_vao_vbo();
 	init_program(json_path);
+	init_io_client();
 }
 
 
@@ -241,7 +264,7 @@ void key_down(SDL_Keycode key) {
 	/*else if (key== SDLK_r) {
 		video_sampler->_mpeg_readers->randomize();
 	}*/
-	else if (key== SDLK_u) {
+	/*else if (key== SDLK_u) {
 		string url= "http://localhost:3000/config";
 		string json_tmp= "video_config_tmp.json";
 		// s : silent
@@ -249,15 +272,15 @@ void key_down(SDL_Keycode key) {
 		string cmd= "curl -s --noproxy '*' "+ url+ " > "+ json_tmp;
 		int status= system(cmd.c_str());
 
-		/*cout << "cmd=" << cmd << "\n";
+		cout << "cmd=" << cmd << "\n";
 		cout << "status=" << status << "\n";
-		cout << "result=" << ifstream(json_tmp).rdbuf() << "\n";*/
+		cout << "result=" << ifstream(json_tmp).rdbuf() << "\n";
 
 		video_sampler->_mpeg_readers->load_json(json_tmp);
 
 		string clean_cmd= "rm "+ json_tmp;
 		system(clean_cmd.c_str());
-	}
+	}*/
 }
 
 

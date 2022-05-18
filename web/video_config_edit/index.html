@@ -230,6 +230,10 @@
 
 			// --------------------------------------------------------------------------------------------------------------
 			function js_config_changed(detail) {
+				if (config_edit=== null) {
+					return;
+				}
+				
 				let node_id= detail.node_id;
 				//console.log("js_config_changed : "+ node_id);
 

@@ -5,6 +5,8 @@
 #include <string>
 #include <utility>
 
+#include "json.hpp"
+
 #include "geom_2d.h"
 
 
@@ -115,6 +117,7 @@ public:
 		std::vector<ModifierConfig> modifier_configs);
 	GlobalConfig(const GlobalConfig & config);
 	~GlobalConfig();
+	std::vector<std::string> get_mpegs_paths();
 	GlobalConfig & operator=(const GlobalConfig & rhs);
 
 	unsigned int _alpha_width;
@@ -143,6 +146,7 @@ public:
 	~MPEGReaders();
 	void set_config(GlobalConfig config);
 	void load_json(std::string json_path);
+	void load_json(nlohmann::json js);
 	void randomize();
 	void load_mpegs();
 	void init_arrays();
@@ -172,7 +176,6 @@ public:
 	int get_idx_reader(unsigned int key);
 	int get_idx_modifier(unsigned int idx_track);
 	int get_idx_modifier_by_key(unsigned int key);
-	std::vector<std::string> get_mpegs_paths();
 
 
 	GlobalConfig _config;

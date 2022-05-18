@@ -18,7 +18,7 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-var js_config= {};
+var js_config_server= {};
 
 
 // dans un navigateur Web mettre http://localhost:3000/ affiche index.html
@@ -31,28 +31,29 @@ app.get('/', (req, res) => {
 app.get('/config', (req, res) => {
 	res.statusCode = 200;
 	res.setHeader('Content-Type', 'application/json');
-	res.end(JSON.stringify(js_config));
+	res.end(JSON.stringify(js_config_server));
 });
 
 
 // met à jour la valeur de js_config et emit
 app.post('/config', (req, res) => {
 	//console.log(req.body);
-	js_config= req.body;
+	js_config_server= req.body;
 	res.statusCode = 200;
 	/*res.setHeader('Content-Type', 'text/plain');
 	res.end('OK bien recu\n');*/
 	res.end();
-	io.sockets.emit("send2client", js_config);
+	io.sockets.emit("send2client", js_config_server);
 });
 
 
 // connection faite par client ; on écoute les messages 'send2server'
+// on fait un emit pour main_io
 io.on('connection', (socket) => {
 	console.log('a user is connected');
-	socket.on('send2server', (msg) => {
-		//console.log('message: ' + JSON.stringify(msg));
-		js_config= msg;
+	socket.on('send2server', (js_config) => {
+		js_config_server= js_config;
+		io.sockets.emit("send2client", JSON.stringify(js_config_server));
 	});
 });
 
