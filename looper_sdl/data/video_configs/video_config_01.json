@@ -1,7 +1,6 @@
 {
 	"mpegs" : [
-		"../data/video_samples/flower_04.mov",
-		"../data/video_samples/flower_06.mov"
+		"../data/video_samples/flower_01.mov"
 	],
 	
 	"alpha_width" : 512,
@@ -13,15 +12,9 @@
 			"alpha" : {
 				"alpha_polygons" : [
 					{
-						"polygon" : [{"x" : 0.3, "y" : 0.3}, {"x" : 0.5, "y" : 0.3}, {"x" : 0.5, "y" : 0.5}, {"x" : 0.3, "y" : 0.5}],
-						"fadeout" : 0.1,
+						"polygon" : [{"x" : 0.1, "y" : 0.1}, {"x" : 0.3, "y" : 0.1}, {"x" : 0.3, "y" : 0.3}, {"x" : 0.1, "y" : 0.3}],
+						"fadeout" : 0.0,
 						"curve" : 2.0,
-						"alpha_max" : 0.9
-					},
-					{
-						"polygon" : [{"x" : 0.6, "y" : 0.6}, {"x" : 0.7, "y" : 0.6}, {"x" : 0.7, "y" : 0.7}, {"x" : 0.6, "y" : 0.7}],
-						"fadeout" : 0.5,
-						"curve" : 1.0,
 						"alpha_max" : 1.0
 					}
 				],
@@ -29,28 +22,9 @@
 			},
 			"time" : {
 				"checkpoints" : [
-					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 0.7}
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0}
 				],
-				"speed" : 0.01
-			}
-		},
-		{
-			"alpha" : {
-				"alpha_polygons" : [
-					{
-						"polygon" : [{"x" : 0.6, "y" : 0.6}, {"x" : 0.7, "y" : 0.6}, {"x" : 0.7, "y" : 0.7}, {"x" : 0.6, "y" : 0.7}],
-						"fadeout" : 0.5,
-						"curve" : 1.0,
-						"alpha_max" : 1.0
-					}
-				],
-				"decrease_speed" : 0.2
-			},
-			"time" : {
-				"checkpoints" : [
-					{"x" : 0.0, "y" : 0.0}, {"x" : 0.3, "y" : 1.0}, {"x" : 1.0, "y" : 0.7}
-				],
-				"speed" : 0.01
+				"speed" : 0.05
 			}
 		}
 	],
@@ -58,12 +32,6 @@
 	"keymapping_reader" : {
 		"a" : {
 			"mpeg" : 0, "reader" : 0
-		},
-		"b" : {
-			"mpeg" : 1, "reader" : 0
-		},
-		"c" : {
-			"mpeg" : 0, "reader" : 1
 		}
 	},
 
@@ -84,9 +52,6 @@
 	"keymapping_modifier" : {
 		"d" : {
 			"modifier" : 0, "track" : 0
-		},
-		"e" : {
-			"modifier" : 0, "track" : 1
 		}
 	}
 }

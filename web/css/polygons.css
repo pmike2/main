@@ -1,6 +1,5 @@
 .polygon_root {
 	display: block;
-	margin-bottom: 5px;
 }
 
 .polygon_emprise_with_margin {
@@ -9,6 +8,7 @@
 
 .polygon_emprise {
 	fill: rgb(200, 200, 200);
+	pointer-events: none;
 }
 
 .polygon_main_group {

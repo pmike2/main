@@ -1,3 +1,7 @@
+body {
+	background-color: rgb(230, 230, 230);
+}
+
 div {
 	margin-left: 40px;
 	font-size : 20px;
@@ -13,36 +17,40 @@ div.folded>div, div.folded>svg {
 
 input, select {
 	width: 60px;
-	margin-left: 10px;
+	height: 28px;
 	border: 0;
 	background-color: rgb(200, 200, 100);
 	font-size : 15px;
+	vertical-align: bottom;
+}
+
+input[type=range] {
+	height: 15px;
 }
 
 input.long-input, select.long-select {
 	width: 350px;
 }
 
-span {
-	background-color: rgb(200, 200, 200);
-	padding-left: 5px;
-	padding-right: 5px;
-	cursor: pointer;
+input:read-only {
+	cursor: default;
+	outline: none;
 }
 
 button {
 	width: 20px;
-	border: 0px;
-	font-size : 20px;
+	height: 30px;
+	border: 0;
 	text-align: center;
-	padding: 0px;
 	cursor: pointer;
-	margin-right: 5px;
-	margin-bottom: 5px;
+}
+
+button.info-button {
+	width: 140px;
 }
 
 button.button_utilities {
-	width: 60px;
+	width: 100px;
 }
 
 button.button_utilities:hover {
@@ -59,7 +67,6 @@ button.fold-button:hover {
 
 button.randomize-button {
 	background-color: rgb(100, 200, 200);
-	/*margin-right: 10px;*/
 }
 
 button.randomize-button:hover {
@@ -80,4 +87,12 @@ button.remove-button {
 
 button.remove-button:hover {
 	background-color: rgb(200, 170, 170);
+}
+
+button.info-button {
+	background-color: rgb(150, 150, 150);
+}
+
+button.info-button:hover {
+	background-color: rgb(200, 200, 200);
 }

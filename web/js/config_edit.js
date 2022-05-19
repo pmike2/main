@@ -506,7 +506,11 @@ export class ConfigEdit {
 		}
 		
 		if (key!== null) {
-			div_elmt.innerHTML= "<span>"+ this.get_simplified_key(key)+ "</span>";
+			//div_elmt.innerHTML= "<span>"+ this.get_simplified_key(key)+ "</span>";
+			let button_info_elmt= document.createElement("button");
+			button_info_elmt.innerHTML= this.get_simplified_key(key);
+			button_info_elmt.classList.add("info-button");
+			div_elmt.insertBefore(button_info_elmt, div_elmt.firstChild);
 		}
 
 		let button_randomize_elmt= document.createElement("button");
@@ -604,14 +608,18 @@ export class ConfigEdit {
 					this.send_event(node_id);
 				});
 
-				select_elmt.dispatchEvent(new Event('change'));
+				// si le json contient une valeur en accord avec ce qui est possible on la sélectionne sinon on choisit la 1ere
+				if (model_node.possible_values.includes(js_parent_node[key])) {
+					select_elmt.value= js_parent_node[key];
+				}
+				else {
+					select_elmt.selectedIndex= 0;
+				}
 
 				div_elmt.appendChild(select_elmt);
 			}
 			else {
 				let input_elmt= document.createElement("input");
-
-				input_elmt.value= js_parent_node[key];
 
 				input_elmt.addEventListener('input', (e) => {
 					if (model_node.type== "int") {
@@ -660,6 +668,8 @@ export class ConfigEdit {
 					input_elmt.addEventListener("change", function () {
 						slider_value_elmt.value= this.value;
 					});
+
+					input_elmt.value= js_parent_node[key];
 
 					// pour que slider_value_elmt suive le changement
 					input_elmt.dispatchEvent(new Event('change'));
@@ -759,6 +769,7 @@ export class ConfigEdit {
 				this.js_config= this.js_configs[load_select.value];
 				this.complexify_keys();
 				this.gen_dom("/", this.div_main);
+				this.send_event("/");
 			});
 			div_utilities.appendChild(load_select);
 		}

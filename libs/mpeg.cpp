@@ -959,11 +959,12 @@ void MPEGReaders::compute_alpha_data0() {
 				for (unsigned int j=jmin; j<=jmax; ++j) {
 					glm::vec2 pt((float)(i)/ (float)(_config._alpha_width)+ 0.5f/ _config._alpha_width, (float)(j)/ (float)(_config._alpha_height)+ 0.5f/ _config._alpha_height);
 					float d= distance_poly_pt(&alpha_poly._polygon, pt, 0);
+					unsigned int idx= _config._alpha_width* _config._alpha_height* idx_reader+ j* _config._alpha_width+ i;
 					if ((alpha_poly._fadeout> 1e-5) && (d<= alpha_poly._fadeout)) {
-						_alpha_data0[_config._alpha_width* _config._alpha_height* idx_reader+ i* _config._alpha_height+ j]+= (1.0f- pow(d/ alpha_poly._fadeout, alpha_poly._curve))* alpha_poly._alpha_max;
+						_alpha_data0[idx]+= (1.0f- pow(d/ alpha_poly._fadeout, alpha_poly._curve))* alpha_poly._alpha_max;
 					}
 					else if (d< 1e-5) {
-						_alpha_data0[_config._alpha_width* _config._alpha_height* idx_reader+ i* _config._alpha_height+ j]= 1.0f;
+						_alpha_data0[idx]= 1.0f;
 					}
 				}
 			}
@@ -1286,7 +1287,6 @@ void MPEGReaders::next_index_modifier(unsigned int idx_track) {
 
 void MPEGReaders::note_on(unsigned int idx_track, unsigned int key, float amplitude) {
 	int idx_reader= get_idx_reader(key);
-
 	if (idx_reader>= 0) {
 		_index_reader[idx_track]= idx_reader;
 		_note_on[idx_track]= true;

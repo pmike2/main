@@ -3,6 +3,7 @@
 #include <chrono>
 #include <vector>
 #include <utility>
+#include <thread>
 
 #include <OpenGL/gl3.h>
 
@@ -38,6 +39,25 @@ const float GL_HEIGHT= GL_WIDTH* (float)(SCREEN_HEIGHT)/ (float)(SCREEN_WIDTH);
 const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
 
+
+struct socket_io_struct {
+	socket_io_struct() : _reload(false), _last_modified(chrono::system_clock::now()) {}
+	bool sleep_complete() {
+		chrono::system_clock::time_point now= chrono::system_clock::now();
+		chrono::system_clock::duration d= now- _last_modified;
+		unsigned int ms= chrono::duration_cast<chrono::milliseconds>(d).count();
+		if (ms> 2000) {
+			return true;
+		}
+		return false;
+	}
+
+	mutex _mtx;
+	json _js_config;
+	bool _reload;
+	std::chrono::system_clock::time_point _last_modified;
+};
+socket_io_struct socket_io;
 
 SDL_Window * window= 0;
 SDL_GLContext main_context;
@@ -177,20 +197,25 @@ void init_program(string json_path) {
 
 
 void video_config_changed(sio::event & e) {
+	// ici on est pas dans le thread principal -> mutex
 	string msg= e.get_message()->get_string();
 	//cout << msg << "\n";
-	json js_config= json::parse(msg);
-	video_sampler->_mpeg_readers->load_json(js_config);
+	socket_io._js_config= json::parse(msg);
+	socket_io._mtx.lock();
+	socket_io._reload= true;
+	socket_io._last_modified= chrono::system_clock::now();
+	socket_io._mtx.unlock();
 }
 
 
 void init_io_client() {
-	//io.socket()->on("server2client_config_changed", &video_config_changed);
+	// a désactiver si on veux avoir des infos
+	io.set_logs_quiet();
+	// sera exécuté lorsque connect sera établi
 	io.set_open_listener([&]() {
 		io.socket()->on("server2client_config_changed", &video_config_changed);
 	});
 	io.connect("http://127.0.0.1:3000");
-
 }
 
 
@@ -237,6 +262,13 @@ void draw() {
 
 
 void update() {
+	socket_io._mtx.lock();
+	if ((socket_io._reload) && (socket_io.sleep_complete())) {
+		video_sampler->_mpeg_readers->load_json(socket_io._js_config);
+		socket_io._reload= false;
+	}
+	socket_io._mtx.unlock();
+
 	video_sampler->update();
 }
 

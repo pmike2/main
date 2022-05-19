@@ -20,11 +20,19 @@
 			const regex_config= new RegExp("^video_config_[0-9]+\.json$");
 			const regex_model= new RegExp("^video_model\.json$");
 			const regex_mpeg= new RegExp("[a-zA-Z0-9_]+\.(mpeg|mov|mp4)$");
-			const regex_alpha_polygons= new RegExp("^/readers/([0-9]+)/readers\.alpha/alpha_polygons$");
-			const regex_alpha_polygon= new RegExp("^/readers/([0-9]+)/readers\.alpha/alpha_polygons/([0-9]+)$");
-			const regex_timeline= new RegExp("^/readers/([0-9]+)/time$");
-			const regex_modifier_movie= new RegExp("^/modifiers/([0-9]+)/movie$");
-			const regex_modifier_alpha= new RegExp("^/modifiers/([0-9]+)/modifiers\.alpha$");
+			
+			const regex_nodes= {
+				"root" : new RegExp("^/$"),
+				"readers" : new RegExp("^/readers$"),
+				"reader" : new RegExp("^/readers/([0-9]+)$"),
+				"reader_alpha_polygons" : new RegExp("^/readers/([0-9]+)/readers\.alpha(/alpha_polygons)?$"),
+				"reader_alpha_polygon" : new RegExp("^/readers/([0-9]+)/readers\.alpha/alpha_polygons/([0-9]+)$"),
+				"reader_timeline" : new RegExp("^/readers/([0-9]+)/readers\.time$"),
+				"modifiers" : new RegExp("^/modifiers$"),
+				"modifier" : new RegExp("^/modifiers/([0-9]+)$"),
+				"modifier_movie" : new RegExp("^/modifiers/([0-9]+)/movie$"),
+				"modifier_alpha" : new RegExp("^/modifiers/([0-9]+)/modifiers\.alpha$")
+			};
 
 			var config_edit= null;
 			var keypresseds= {};
@@ -237,43 +245,52 @@
 				let node_id= detail.node_id;
 				//console.log("js_config_changed : "+ node_id);
 
-				const found_alpha_polygons= node_id.match(regex_alpha_polygons);
-				const found_alpha_polygon= node_id.match(regex_alpha_polygon);
-				const found_timeline= node_id.match(regex_timeline);
-				const found_modifier_movie= node_id.match(regex_modifier_movie);
-				const found_modifier_alpha= node_id.match(regex_modifier_alpha);
+				let found_regexs= {};
+				for (let key in regex_nodes) {
+					found_regexs[key]= node_id.match(regex_nodes[key]);
+				}
 
-				if (node_id== "/") {
+				if (found_regexs["root"]) {
 					sync_all_alpha_polygons();
 					sync_all_timelines();
 					sync_all_affine_transfos();
 				}
-				else if (node_id== "/readers") {
+				else if (found_regexs["readers"]) {
 					sync_all_alpha_polygons();
 					sync_all_timelines();
 				}
-				else if (node_id== "/modifiers") {
-					sync_all_affine_transfos();
-				}
-				else if (found_alpha_polygons) {
-					let reader_idx= parseInt(found_alpha_polygons[1]);
+				else if (found_regexs["reader"]) {
+					let reader_idx= parseInt(found_regexs["reader"][1]);
 					sync_alpha_polygons(reader_idx);
-				}
-				else if (found_alpha_polygon) {
-					let reader_idx= parseInt(found_alpha_polygon[1]);
-					let polygon_idx= parseInt(found_alpha_polygon[2]);
-					sync_alpha_polygon(reader_idx, polygon_idx);
-				}
-				else if (found_timeline) {
-					let reader_idx= parseInt(found_timeline[1]);
 					sync_timeline(reader_idx);
 				}
-				else if (found_modifier_movie) {
-					let modifier_idx= parseInt(found_modifier_movie[1]);
+				else if (found_regexs["reader_alpha_polygons"]) {
+					let reader_idx= parseInt(found_regexs["reader_alpha_polygons"][1]);
+					sync_alpha_polygons(reader_idx);
+				}
+				else if (found_regexs["reader_alpha_polygon"]) {
+					let reader_idx= parseInt(found_regexs["reader_alpha_polygon"][1]);
+					let polygon_idx= parseInt(found_regexs["reader_alpha_polygon"][2]);
+					sync_alpha_polygon(reader_idx, polygon_idx);
+				}
+				else if (found_regexs["reader_timeline"]) {
+					let reader_idx= parseInt(found_regexs["reader_timeline"][1]);
+					sync_timeline(reader_idx);
+				}
+				else if (found_regexs["modifiers"]) {
+					sync_all_affine_transfos();
+				}
+				else if (found_regexs["modifier"]) {
+					let modifier_idx= parseInt(found_regexs["modifier"][1]);
+					sync_affine_transfo(modifier_idx, "movie");
+					sync_affine_transfo(modifier_idx, "alpha");
+				}
+				else if (found_regexs["modifier_movie"]) {
+					let modifier_idx= parseInt(found_regexs["modifier_movie"][1]);
 					sync_affine_transfo(modifier_idx, "movie");
 				}
-				else if (found_modifier_alpha) {
-					let modifier_idx= parseInt(found_modifier_alpha[1]);
+				else if (found_regexs["modifier_alpha"]) {
+					let modifier_idx= parseInt(found_regexs["modifier_alpha"][1]);
 					sync_affine_transfo(modifier_idx, "alpha");
 				}
 
