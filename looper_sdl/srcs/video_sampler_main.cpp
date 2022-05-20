@@ -40,23 +40,6 @@ const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
 
 
-struct socket_io_struct {
-	socket_io_struct() : _reload(false), _last_modified(chrono::system_clock::now()) {}
-	bool sleep_complete() {
-		chrono::system_clock::time_point now= chrono::system_clock::now();
-		chrono::system_clock::duration d= now- _last_modified;
-		unsigned int ms= chrono::duration_cast<chrono::milliseconds>(d).count();
-		if (ms> 2000) {
-			return true;
-		}
-		return false;
-	}
-
-	mutex _mtx;
-	json _js_config;
-	bool _reload;
-	std::chrono::system_clock::time_point _last_modified;
-};
 socket_io_struct socket_io;
 
 SDL_Window * window= 0;

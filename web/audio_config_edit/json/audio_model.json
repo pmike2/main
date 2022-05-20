@@ -1,0 +1,11 @@
+{
+	"__const__" : {
+		"alphabet_keys" : ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+	},
+	"__rules__" : [
+	],
+	"__root__" 				: {"type" : "dict", "possible_keys" : "alphabet_keys", "values" : "keymap"},
+	"keymap"				: {"type" : "dict", "keys" : ["sample_path", "mode"]},
+	"sample_path"			: {"type" : "string", "default" : ""},
+	"mode"					: {"type" : "string", "possible_values" : ["ALL"], "default" : "ALL"}
+}

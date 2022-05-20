@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>AudioConfigEdit</title>
+		
+		<link rel="stylesheet" href="config_edit.css">
+		
+		<script src="/socket.io/socket.io.js"></script>
+		
+		<script type="module">
+			import {ConfigEdit} from '/config_edit.js';
+			import {deepcopy} from "/utils.js";
+
+			const regex_config= new RegExp("^audio_config_[0-9]+\.json$");
+			const regex_model= new RegExp("^audio_model\.json$");
+			const regex_wav= new RegExp("[a-zA-Z0-9_]+\.wav$");
+
+			const regex_nodes= {
+				"root" : new RegExp("^/$"),
+			};
+
+			var config_edit= null;
+			var keypresseds= {};
+			var socket= io();
+
+
+			// --------------------------------------------------------------------------------------------------------------
+			function js_config_changed(detail) {
+				if (config_edit=== null) {
+					return;
+				}
+				
+				let node_id= detail.node_id;
+				//console.log("js_config_changed : "+ node_id);
+
+				let found_regexs= {};
+				for (let key in regex_nodes) {
+					found_regexs[key]= node_id.match(regex_nodes[key]);
+				}
+
+				if (found_regexs["root"]) {
+				}
+
+				socket.emit("client2server_js_config_changed", config_edit.get_simplified_config());
+			}
+
+			
+			// --------------------------------------------------------------------------------------------------------------
+			window.onload= function () {
+				socket.on('server2client_data_send', (data) => {
+					//console.log(JSON.stringify(data, null, 4));
+					let js_configs= {};
+					let js_model= null;
+					let wavs= [];
+					for (let filename in data) {
+						if (filename.match(regex_config)) {
+							js_configs[filename]= data[filename];
+						}
+						else if (filename.match(regex_model)) {
+							js_model= data[filename];
+						}
+						else if (filename.match(regex_wav)) {
+							wavs.push(filename);
+						}
+					}
+					js_model.sample_path.possible_values= wavs;
+					
+					config_edit= new ConfigEdit(js_model, js_configs);
+					config_edit.send_event("/");
+				});
+				
+				socket.on('server2client_config_saved', (saved_path) => {
+					config_edit.js_configs[saved_path]= config_edit.js_config;
+					config_edit.gen_load(saved_path);
+				});
+
+				socket.emit("client2server_get_data");
+
+				document.addEventListener("keydown", function (e) {
+					if (e.key== " ") {
+						console.log(JSON.stringify(config_edit.js_config, null, 4));
+					}
+					keypresseds[e.key]= true;
+				});
+				document.addEventListener("keyup", (e) => {
+					keypresseds[e.key]= false;
+				});
+				document.addEventListener("js_config_changed", (e) => {
+					js_config_changed(e.detail)
+				});
+				document.addEventListener("js_config_save", () => {
+					socket.emit("client2server_save_config", config_edit.js_config);
+				});
+			}
+
+		</script>
+	</head>
+	<body></body>
+</html>

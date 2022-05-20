@@ -133,6 +133,17 @@ int list_devices() {
 }
 
 
+unsigned int get_n_output_channels(int idx_device_output) {
+	PaError err= Pa_Initialize();
+	if (err!= paNoError) {
+		printf("ERROR: Pa_Initialize returned 0x%x\n", err);
+	}
+
+	const PaDeviceInfo * deviceInfo= Pa_GetDeviceInfo(idx_device_output);
+	return deviceInfo->maxOutputChannels;
+}
+
+
 PaStream * pa_init(int idx_device_input, int idx_device_output, const unsigned int sample_rate, const unsigned int frames_per_buffer,
 	int (* callback)(const void * input, void * output, unsigned long sample_count, const PaStreamCallbackTimeInfo * time_info, PaStreamCallbackFlags status_flags, void * user_data),
 	void * user_data) {
@@ -143,9 +154,6 @@ PaStream * pa_init(int idx_device_input, int idx_device_output, const unsigned i
 		printf("ERROR: Pa_Initialize returned 0x%x\n", err);
 	}
 	//printf("PortAudio version number = %d\nPortAudio version text = '%s'\n", Pa_GetVersion(), Pa_GetVersionText());
-	
-	//const PaDeviceInfo *deviceInfo= Pa_GetDeviceInfo(idx_device_output);
-	//printf("%i channels\n", deviceInfo->maxInputChannels);
 	
 	PaStreamParameters inputParameters;
 	PaStreamParameters * inputParametersPtr= 0;
@@ -164,7 +172,8 @@ PaStream * pa_init(int idx_device_input, int idx_device_output, const unsigned i
 	bzero(&outputParameters, sizeof(outputParameters));
 	if (idx_device_output>= 0) {
 		outputParameters.device= idx_device_output;
-		outputParameters.channelCount= 2;
+		//outputParameters.channelCount= 2;
+		outputParameters.channelCount= get_n_output_channels(idx_device_output);
 		outputParameters.sampleFormat= paFloat32;
 		outputParameters.suggestedLatency= Pa_GetDeviceInfo(idx_device_output)->defaultLowOutputLatency;
 		outputParameters.hostApiSpecificStreamInfo= NULL;
