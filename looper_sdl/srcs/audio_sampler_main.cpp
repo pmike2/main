@@ -11,10 +11,15 @@
 #endif
 #endif
 
+#include "json.hpp"
+
 #include "audio_sampler.h"
 #include "pa_utils.h"
+#include "sio_util.h"
+
 
 using namespace std;
+using json = nlohmann::json;
 
 
 // nombre de frames dans 1s d'audio
@@ -26,6 +31,7 @@ const unsigned int FRAMES_PER_BUFFER= 64;
 
 PaStream * stream;
 AudioSampler * audio_sampler;
+SocketIOUtil * sio_util;
 
 
 // callback PortAudio
@@ -83,6 +89,7 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 
 void clean() {
 	pa_close(stream);
+	delete sio_util;
 	delete audio_sampler;
 }
 
@@ -101,11 +108,15 @@ void init(string json_path) {
 	int idx_device_input= -1;
 	int idx_device_output= 0;
 	stream= pa_init(idx_device_input, idx_device_output, SAMPLE_RATE, FRAMES_PER_BUFFER, pa_callback, audio_sampler);
+	sio_util= new SocketIOUtil("http://127.0.0.1:3001", "server2client_config_changed", 2000);
 }
 
 
 void main_loop() {
 	while (true) {
+		if (sio_util->update()) {
+			audio_sampler->load_json(json::parse(sio_util->_last_msg));
+		}
 		audio_sampler->update();
 	}
 }

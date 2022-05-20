@@ -4,6 +4,8 @@
 #include <map>
 #include <string>
 
+#include "json.hpp"
+
 #include "looper.h"
 
 
@@ -30,6 +32,7 @@ public:
 	AudioSamplePool();
 	~AudioSamplePool();
 	AudioSample * get_sample(std::string sample_path);
+	void clear();
 
 	std::map<std::string, AudioSample *> _samples;
 };
@@ -64,6 +67,8 @@ public:
 	AudioSampler();
 	AudioSampler(std::string json_path);
 	~AudioSampler();
+	void load_json(std::string json_path);
+	void load_json(nlohmann::json js);
 	void note_on(unsigned int idx_track);
 	void note_off(unsigned int idx_track);
 	AudioSubSample * get_subsample(key_type key);

@@ -34,6 +34,7 @@ add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)
 add_library(lib_mpeg STATIC ../libs/mpeg.cpp ../libs/mpeg.h)
 add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
 add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
+add_library(lib_sio_util STATIC ../libs/sio_util.cpp ../libs/sio_util.h)
 
 add_executable(looper_main ./srcs/looper_main.cpp ./srcs/looper_sdl.cpp ./srcs/looper_sdl.h)
 add_executable(receiver_test_main ./srcs/receiver_test_main.cpp ./srcs/receiver_test.cpp ./srcs/receiver_test.h)
@@ -47,6 +48,6 @@ set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lbz2
 
 target_link_libraries(looper_main PUBLIC ${SDL2_LIBRARIES} lib_looper lib_input_state lib_utile)
 target_link_libraries(receiver_test_main PUBLIC lib_looper)
-target_link_libraries(audio_sampler_main PUBLIC ${PORTAUDIO_LIBRARIES} ${LIBSNDFILE_LIBRARIES} lib_looper lib_pa_utils)
-target_link_libraries(cv_player_main PUBLIC ${PORTAUDIO_LIBRARIES} lib_looper lib_pa_utils)
-target_link_libraries(video_sampler_main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${FFMPEG_OPTIONS} sioclient lib_looper lib_input_state lib_utile lib_gl_utils lib_mpeg lib_geom_2d lib_bbox_2d)
+target_link_libraries(audio_sampler_main PUBLIC ${PORTAUDIO_LIBRARIES} ${LIBSNDFILE_LIBRARIES} sioclient lib_looper lib_pa_utils lib_sio_util)
+target_link_libraries(cv_player_main PUBLIC ${PORTAUDIO_LIBRARIES} sioclient lib_looper lib_pa_utils lib_sio_util)
+target_link_libraries(video_sampler_main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${FFMPEG_OPTIONS} sioclient lib_looper lib_input_state lib_utile lib_gl_utils lib_mpeg lib_geom_2d lib_bbox_2d lib_sio_util)

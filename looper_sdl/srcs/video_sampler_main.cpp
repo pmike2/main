@@ -15,19 +15,18 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "sio_client.h"
 #include "json.hpp"
 
 #include "gl_utils.h"
 #include "utile.h"
 #include "mpeg.h"
 #include "input_state.h"
-
 #include "video_sampler.h"
+#include "sio_util.h"
+
 
 using namespace std;
 using json = nlohmann::json;
-using namespace sio;
 
 
 const int SCREEN_WIDTH= 1024;
@@ -39,8 +38,6 @@ const float GL_HEIGHT= GL_WIDTH* (float)(SCREEN_HEIGHT)/ (float)(SCREEN_WIDTH);
 const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
 
-
-socket_io_struct socket_io;
 
 SDL_Window * window= 0;
 SDL_GLContext main_context;
@@ -59,7 +56,7 @@ chrono::system_clock::time_point t1, t2;
 
 VideoSampler * video_sampler;
 
-sio::client io;
+SocketIOUtil * sio_util;
 
 
 void init_sdl() {
@@ -179,26 +176,9 @@ void init_program(string json_path) {
 }
 
 
-void video_config_changed(sio::event & e) {
-	// ici on est pas dans le thread principal -> mutex
-	string msg= e.get_message()->get_string();
-	//cout << msg << "\n";
-	socket_io._js_config= json::parse(msg);
-	socket_io._mtx.lock();
-	socket_io._reload= true;
-	socket_io._last_modified= chrono::system_clock::now();
-	socket_io._mtx.unlock();
-}
-
 
 void init_io_client() {
-	// a désactiver si on veux avoir des infos
-	io.set_logs_quiet();
-	// sera exécuté lorsque connect sera établi
-	io.set_open_listener([&]() {
-		io.socket()->on("server2client_config_changed", &video_config_changed);
-	});
-	io.connect("http://127.0.0.1:3000");
+	sio_util= new SocketIOUtil("http://127.0.0.1:3000", "server2client_config_changed", 2000);
 }
 
 
@@ -245,12 +225,9 @@ void draw() {
 
 
 void update() {
-	socket_io._mtx.lock();
-	if ((socket_io._reload) && (socket_io.sleep_complete())) {
-		video_sampler->_mpeg_readers->load_json(socket_io._js_config);
-		socket_io._reload= false;
+	if (sio_util->update()) {
+		video_sampler->_mpeg_readers->load_json(json::parse(sio_util->_last_msg));
 	}
-	socket_io._mtx.unlock();
 
 	video_sampler->update();
 }
@@ -335,6 +312,7 @@ void main_loop() {
 
 
 void clean() {
+	delete sio_util;
 	delete video_sampler;
 	delete screengl;
 	delete input_state;

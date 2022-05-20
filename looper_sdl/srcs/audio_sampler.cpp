@@ -2,7 +2,6 @@
 #include <fstream>
 
 #include "sndfile.h"
-#include "json.hpp"
 
 #include "audio_sampler.h"
 
@@ -65,9 +64,7 @@ AudioSamplePool::AudioSamplePool() {
 
 
 AudioSamplePool::~AudioSamplePool() {
-	for (const auto &x : _samples) {
-		delete x.second;
-	}
+	clear();
 }
 
 
@@ -77,6 +74,14 @@ AudioSample * AudioSamplePool::get_sample(string sample_path) {
 		_samples[sample_path]= sample;
 	}
 	return _samples[sample_path];
+}
+
+
+void AudioSamplePool::clear() {
+	for (const auto &x : _samples) {
+		delete x.second;
+	}
+	_samples.clear();
 }
 
 
@@ -124,10 +129,36 @@ AudioSampler::AudioSampler(string json_path) {
 		_track_samples[idx_track]= new AudioTrackSample();
 	}
 
+	_debug_path= "../data/debug/audio_sampler.txt";
+
+	load_json(json_path);
+}
+
+
+AudioSampler::~AudioSampler() {
+	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		delete _track_samples[idx_track];
+	}
+	for (const auto &x : _map) {
+		delete x.second;
+	}
+
+	delete _sample_pool;
+}
+
+
+void AudioSampler::load_json(string json_path) {
 	ifstream istr(json_path);
 	json js;
 	istr >> js;
-	
+	load_json(js);
+}
+
+
+void AudioSampler::load_json(json js) {
+	_sample_pool->clear();
+	_map.clear();
+
 	for (auto & mapping : js.items()) {
 		key_type key= (key_type)(mapping.key().c_str()[0]);
 		json val= mapping.value();
@@ -157,20 +188,6 @@ AudioSampler::AudioSampler(string json_path) {
 		AudioSample * sample= _sample_pool->get_sample(sample_path);
 		_map[key]= new AudioSubSample(sample, t_start, t_end, mode);
 	}
-
-	_debug_path= "../data/debug/audio_sampler.txt";
-}
-
-
-AudioSampler::~AudioSampler() {
-	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
-		delete _track_samples[idx_track];
-	}
-	for (const auto &x : _map) {
-		delete x.second;
-	}
-
-	delete _sample_pool;
 }
 
 
