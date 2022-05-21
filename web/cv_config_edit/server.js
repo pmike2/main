@@ -43,7 +43,7 @@ io.on('connection', (socket) => {
 	socket.on('client2server_get_data', () => {
 		let data2send= {};
 
-		let model_path= "./json/audio_model.json";
+		let model_path= "./json/cv_model.json";
 		const json_data= fs.readFileSync(model_path, "utf8");
 		data2send[model_path.split("/").pop()]= JSON.parse(json_data);
 
@@ -55,7 +55,7 @@ io.on('connection', (socket) => {
 			if (filename.split(".").pop()== "json") {
 				const json_data= fs.readFileSync(abs_path, "utf8");
 				data2send[filename]= JSON.parse(json_data);
-				if (filename.includes("audio")) {
+				if (filename.includes("cv")) {
 					dir_configs= directory;
 				}
 			}
@@ -79,7 +79,7 @@ io.on('connection', (socket) => {
 	socket.on('client2server_save_config', (js_config) => {
 		let max_idx= 0;
 		fs.readdirSync(dir_configs).forEach(file => {
-			const regex = new RegExp("^audio_config_([0-9]+).json$");
+			const regex = new RegExp("^cv_config_([0-9]+).json$");
 			const found = file.match(regex);
 			if (found) {
 				const idx= parseInt(found[1]);
@@ -89,7 +89,7 @@ io.on('connection', (socket) => {
 			}
 		});
 
-		let saved_path= "audio_config_"+ (max_idx+ 1).toLocaleString(undefined, {minimumIntegerDigits: 2})+ ".json";
+		let saved_path= "cv_config_"+ (max_idx+ 1).toLocaleString(undefined, {minimumIntegerDigits: 2})+ ".json";
 		fs.writeFile(path.resolve(dir_configs, saved_path), JSON.stringify(js_config, null, 2), err => {
 			if (err) {
 				console.error(err);
@@ -107,7 +107,7 @@ io.on('connection', (socket) => {
 });
 
 
-// on écoute sur le port 3001
-server.listen(3001, () => {
-	console.log('listening on *:3001');
+// on écoute sur le port 3002
+server.listen(3002, () => {
+	console.log('listening on *:3002');
 });

@@ -207,16 +207,32 @@ export class ConfigEdit {
 	add_default_to_list(node_id, i) {
 		let [js_parent_node, key]= this.get_config_node(node_id);
 		let model_node= this.get_model_node(node_id);
-		if (("max_number" in model_node) && (model_node.max_number== js_parent_node[key].length)) {
-			return;
+
+		if (key!== null) {
+			if (("max_number" in model_node) && (model_node.max_number== js_parent_node[key].length)) {
+				return;
+			}
+			js_parent_node[key].push(this.get_default(this.concat_ids(node_id, i)));
 		}
-		js_parent_node[key].push(this.get_default(this.concat_ids(node_id, i)));
+		// root
+		else {
+			if (("max_number" in model_node) && (model_node.max_number== js_parent_node.length)) {
+				return;
+			}
+			js_parent_node.push(this.get_default(this.concat_ids(node_id, i)));
+		}
 	}
 	
 
 	add_default_to_dict(node_id, k) {
 		let [js_parent_node, key]= this.get_config_node(node_id);
-		js_parent_node[key][k]= this.get_default(this.concat_ids(node_id, k));
+		if (key!== null) {
+			js_parent_node[key][k]= this.get_default(this.concat_ids(node_id, k));
+		}
+		// root
+		else {
+			js_parent_node[k]= this.get_default(this.concat_ids(node_id, k));
+		}
 	}
 
 	
@@ -245,16 +261,22 @@ export class ConfigEdit {
 	randomize(node_id) {
 		let [js_parent_node, key]= this.get_config_node(node_id);
 		let model_node= this.get_model_node(node_id);
-		/*
-		console.log("------");
+		
+		/*console.log("------");
 		console.log(node_id);
 		console.log(js_parent_node);
 		console.log(key);
-		console.log(model_node);
-		*/
+		console.log(model_node);*/
+		
 
 		if (model_node.type== "list") {
-			js_parent_node[key]= [];
+			if (key!== null) {
+				js_parent_node[key]= [];
+			}
+			// root
+			else {
+				this.js_config= [];
+			}
 			let min_number= 0;
 			let max_number= 10; // TODO : forcer l'existence de model_node.max_number ?
 			if ("min_number" in model_node) {
@@ -279,7 +301,13 @@ export class ConfigEdit {
 				}
 			}
 			else if ("possible_keys" in model_node) {
-				js_parent_node[key]= {};
+				if (key!== null) {
+					js_parent_node[key]= {};
+				}
+				// root
+				else {
+					this.js_config= {};
+				}
 				let n= Math.floor(Math.random()* model_node.possible_keys.length);
 				for (let i=0; i<n; ++i) {
 					this.add_default_to_dict(node_id, model_node.possible_keys[i]);
@@ -531,7 +559,13 @@ export class ConfigEdit {
 			button_add_elmt.innerHTML= "+";
 			button_add_elmt.classList.add("add-button");
 			button_add_elmt.addEventListener("click", () => {
-				this.add_default_to_list(node_id, js_parent_node[key].length);
+				if (key!== null) {
+					this.add_default_to_list(node_id, js_parent_node[key].length);
+				}
+				// root
+				else {
+					this.add_default_to_list(node_id, js_parent_node.length);
+				}
 				this.enforce_rules();
 				this.gen_dom(node_id, parent_html_node);
 				this.send_event(node_id);
@@ -545,8 +579,12 @@ export class ConfigEdit {
 			button_add_elmt.classList.add("add-button");
 			button_add_elmt.addEventListener("click", () => {
 				let idx_key= 0;
-				if (Object.keys(js_parent_node[key]).length> 0) {
+				if ((key!== null) && (Object.keys(js_parent_node[key]).length> 0)) {
 					idx_key= Math.max(...Object.keys(js_parent_node[key]).map(x => model_node.possible_keys.indexOf(x)))+ 1;
+				}
+				// root
+				else if ((key=== null) && (Object.keys(js_parent_node).length> 0)) {
+					idx_key= Math.max(...Object.keys(js_parent_node).map(x => model_node.possible_keys.indexOf(x)))+ 1;
 				}
 				this.add_default_to_dict(node_id, model_node.possible_keys[idx_key]);
 				this.enforce_rules();

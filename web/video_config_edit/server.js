@@ -92,7 +92,7 @@ io.on('connection', (socket) => {
 	socket.on('client2server_save_config', (js_config) => {
 		let max_idx= 0;
 		fs.readdirSync(dir_configs).forEach(file => {
-			const regex = new RegExp("^config_([0-9]+).json$");
+			const regex = new RegExp("^video_config_([0-9]+).json$");
 			const found = file.match(regex);
 			if (found) {
 				const idx= parseInt(found[1]);
@@ -102,7 +102,7 @@ io.on('connection', (socket) => {
 			}
 		});
 
-		let saved_path= "config_"+ (max_idx+ 1).toLocaleString(undefined, {minimumIntegerDigits: 2})+ ".json";
+		let saved_path= "video_config_"+ (max_idx+ 1).toLocaleString(undefined, {minimumIntegerDigits: 2})+ ".json";
 		fs.writeFile(path.resolve(dir_configs, saved_path), JSON.stringify(js_config, null, 2), err => {
 			if (err) {
 				console.error(err);
