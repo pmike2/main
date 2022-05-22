@@ -1,5 +1,5 @@
-#ifndef CV_PLAYER_H
-#define CV_PLAYER_H
+#ifndef CV_OUT_H
+#define CV_OUT_H
 
 #include <map>
 #include <string>
@@ -19,11 +19,11 @@ public:
 };
 
 
-class CVPlayer : public Receiver {
+class CVOut : public Receiver {
 public:
-	CVPlayer();
-	CVPlayer(std::string json_path, unsigned int n_output_channels);
-	~CVPlayer();
+	CVOut();
+	CVOut(std::string json_path, unsigned int n_output_channels);
+	~CVOut();
 	void note_on(unsigned int idx_track);
 	void note_off(unsigned int idx_track);
 	unsigned int get_idx_channel(key_type key);

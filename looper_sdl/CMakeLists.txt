@@ -26,6 +26,7 @@ include_directories(${SDL2_INCLUDE_DIRS} ${LIBSNDFILE_INCLUDE_DIRS} ${PORTAUDIO_
 
 link_directories(/usr/local/lib)
 
+add_library(lib_shared_mem STATIC ../libs/shared_mem.cpp ../libs/shared_mem.h)
 add_library(lib_looper STATIC ../libs/looper.cpp ../libs/looper.h)
 add_library(lib_pa_utils STATIC ../libs/pa_utils.cpp ../libs/pa_utils.h)
 add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h)
@@ -39,15 +40,17 @@ add_library(lib_sio_util STATIC ../libs/sio_util.cpp ../libs/sio_util.h)
 add_executable(looper_main ./srcs/looper_main.cpp ./srcs/looper_sdl.cpp ./srcs/looper_sdl.h)
 add_executable(receiver_test_main ./srcs/receiver_test_main.cpp ./srcs/receiver_test.cpp ./srcs/receiver_test.h)
 add_executable(audio_sampler_main ./srcs/audio_sampler_main.cpp ./srcs/audio_sampler.cpp ./srcs/audio_sampler.h)
-add_executable(cv_player_main ./srcs/cv_player_main.cpp ./srcs/cv_player.cpp ./srcs/cv_player.h)
+add_executable(cv_out_main ./srcs/cv_out_main.cpp ./srcs/cv_out.cpp ./srcs/cv_out.h)
+add_executable(cv_in_main ./srcs/cv_in_main.cpp ./srcs/cv_in.cpp ./srcs/cv_in.h)
 add_executable(video_sampler_main ./srcs/video_sampler_main.cpp ./srcs/video_sampler.cpp ./srcs/video_sampler.h)
 
 
 string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
 set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lbz2" "-liconv" "-lz" "-lavutil" "-lavcodec" "-lavdevice" "-lavformat" "-lavfilter" "-lswresample" "-lswscale" "-pthread" "-lm" "-framework AudioUnit" "-framework AudioToolbox" "-framework CoreAudio" "-framework VideoToolbox" "-framework CoreFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework CoreServices" "-framework Security")
 
-target_link_libraries(looper_main PUBLIC ${SDL2_LIBRARIES} lib_looper lib_input_state lib_utile)
-target_link_libraries(receiver_test_main PUBLIC lib_looper)
-target_link_libraries(audio_sampler_main PUBLIC ${PORTAUDIO_LIBRARIES} ${LIBSNDFILE_LIBRARIES} sioclient lib_looper lib_pa_utils lib_sio_util)
-target_link_libraries(cv_player_main PUBLIC ${PORTAUDIO_LIBRARIES} sioclient lib_looper lib_pa_utils lib_sio_util)
-target_link_libraries(video_sampler_main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${FFMPEG_OPTIONS} sioclient lib_looper lib_input_state lib_utile lib_gl_utils lib_mpeg lib_geom_2d lib_bbox_2d lib_sio_util)
+target_link_libraries(looper_main PUBLIC ${SDL2_LIBRARIES} lib_shared_mem lib_looper lib_input_state lib_utile)
+target_link_libraries(receiver_test_main PUBLIC lib_shared_mem)
+target_link_libraries(audio_sampler_main PUBLIC ${PORTAUDIO_LIBRARIES} ${LIBSNDFILE_LIBRARIES} sioclient lib_shared_mem lib_looper lib_pa_utils lib_sio_util)
+target_link_libraries(cv_out_main PUBLIC ${PORTAUDIO_LIBRARIES} sioclient lib_shared_mem lib_looper lib_pa_utils lib_sio_util)
+target_link_libraries(cv_in_main PUBLIC ${PORTAUDIO_LIBRARIES} sioclient lib_shared_mem lib_pa_utils lib_sio_util)
+target_link_libraries(video_sampler_main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${FFMPEG_OPTIONS} sioclient lib_shared_mem lib_looper lib_input_state lib_utile lib_gl_utils lib_mpeg lib_geom_2d lib_bbox_2d lib_sio_util)

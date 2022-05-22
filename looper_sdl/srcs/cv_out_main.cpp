@@ -11,7 +11,7 @@
 #endif
 #endif
 
-#include "cv_player.h"
+#include "cv_out.h"
 #include "pa_utils.h"
 
 using namespace std;
@@ -28,12 +28,12 @@ const unsigned int N_FRAMES_PULSE= 100;
 
 
 PaStream * stream;
-CVPlayer * cv_player;
+CVOut * cv_player;
 
 
 // callback PortAudio
 int pa_callback(const void * input, void * output, unsigned long frame_count, const PaStreamCallbackTimeInfo * time_info, PaStreamCallbackFlags status_flags, void * user_data) {
-	CVPlayer * cvp= (CVPlayer *)user_data;
+	CVOut * cvp= (CVOut *)user_data;
 	//float * in= (float *)input;
 	float * out= (float *)output;
 
@@ -96,7 +96,7 @@ void init(string json_path) {
 	int idx_device_input= -1;
 	int idx_device_output= 1;
 	unsigned int n_output_channels= get_n_output_channels(idx_device_output);
-	cv_player= new CVPlayer(json_path, n_output_channels);
+	cv_player= new CVOut(json_path, n_output_channels);
 	stream= pa_init(idx_device_input, idx_device_output, SAMPLE_RATE, FRAMES_PER_BUFFER, pa_callback, cv_player);
 }
 

@@ -133,13 +133,24 @@ int list_devices() {
 }
 
 
-unsigned int get_n_output_channels(int idx_device_output) {
+unsigned int get_n_input_channels(int idx_device) {
 	PaError err= Pa_Initialize();
 	if (err!= paNoError) {
 		printf("ERROR: Pa_Initialize returned 0x%x\n", err);
 	}
 
-	const PaDeviceInfo * deviceInfo= Pa_GetDeviceInfo(idx_device_output);
+	const PaDeviceInfo * deviceInfo= Pa_GetDeviceInfo(idx_device);
+	return deviceInfo->maxInputChannels;
+}
+
+
+unsigned int get_n_output_channels(int idx_device) {
+	PaError err= Pa_Initialize();
+	if (err!= paNoError) {
+		printf("ERROR: Pa_Initialize returned 0x%x\n", err);
+	}
+
+	const PaDeviceInfo * deviceInfo= Pa_GetDeviceInfo(idx_device);
 	return deviceInfo->maxOutputChannels;
 }
 
@@ -160,7 +171,8 @@ PaStream * pa_init(int idx_device_input, int idx_device_output, const unsigned i
 	bzero(&inputParameters, sizeof(inputParameters));
 	if (idx_device_input>= 0) {
 		inputParameters.device= idx_device_input;
-		inputParameters.channelCount= 2;
+		//inputParameters.channelCount= 2;
+		inputParameters.channelCount= get_n_output_channels(idx_device_output);
 		inputParameters.sampleFormat= paFloat32;
 		inputParameters.suggestedLatency= Pa_GetDeviceInfo(idx_device_input)->defaultLowInputLatency;
 		inputParameters.hostApiSpecificStreamInfo= NULL;
