@@ -456,11 +456,8 @@ void Track::emit_null() {
 	/*if (VERBOSE) {
 		cout << "Track::emit_null\n";
 	}*/
-	
-	_data->_key      = NULL_KEY;
-	_data->_t_start  = time_type::zero();
-	_data->_t_end    = time_type::zero();
-	_data->_amplitude= NULL_AMPLITUDE;
+
+	_data->set_null();
 }
 
 

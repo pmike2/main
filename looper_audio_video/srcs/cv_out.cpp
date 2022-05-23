@@ -32,17 +32,7 @@ CVOut::CVOut(string json_path, unsigned int n_output_channels) : _n_output_chann
 		_cv_tracks[idx_track]= new CVTrack();
 	}
 
-	ifstream istr(json_path);
-	json js;
-	istr >> js;
-	
-	for (auto & mapping : js.items()) {
-		key_type key= (key_type)(mapping.key().c_str()[0]);
-		json val= mapping.value();
-
-		_map[key]= val["channel"].get<unsigned int>();
-	}
-
+	load_json(json_path);
 	_debug_path= "../data/debug/cv_player.txt";
 }
 
@@ -50,6 +40,25 @@ CVOut::CVOut(string json_path, unsigned int n_output_channels) : _n_output_chann
 CVOut::~CVOut() {
 	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
 		delete _cv_tracks[idx_track];
+	}
+}
+
+
+void CVOut::load_json(string json_path) {
+	ifstream istr(json_path);
+	json js;
+	istr >> js;
+	load_json(js);
+}
+
+
+void CVOut::load_json(json js) {
+	_map.clear();
+	for (auto & mapping : js.items()) {
+		key_type key= (key_type)(mapping.key().c_str()[0]);
+		json val= mapping.value();
+
+		_map[key]= val["channel"].get<unsigned int>();
 	}
 }
 
@@ -73,4 +82,14 @@ unsigned int CVOut::get_idx_channel(key_type key) {
 		return 0;
 	}
 	return _map[key];
+}
+
+
+ostream & operator << (ostream & os, const CVOut & c) {
+	os << "n_output_channels=" << c._n_output_channels << "\n";
+	for (auto & m : c._map) {
+		os << "key=" << m.first << " ; channel_out=" << m.second << "\n";
+	}
+	
+	return os;
 }

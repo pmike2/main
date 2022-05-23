@@ -1,9 +1,13 @@
-# traditionnellement on fait :
 #
 # mkdir build && cd build
 # cmake ..
 # make
 # ./main
+#
+
+#
+# il doit y avoir un problème avec ce fichier car il faut que je fasse 2 fois cmake .. + make
+# pour que ca fonctionne ...
 #
 
 cmake_minimum_required(VERSION 3.13)
@@ -13,12 +17,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/")
 
-project(looper_sdl)
+project(looper_audio_video)
 
 find_package(SDL2 REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(LibSndFile REQUIRED)
 find_package(PORTAUDIO REQUIRED)
+
+#message(STATUS "PORTAUDIO_INCLUDE_DIRS: ${PORTAUDIO_INCLUDE_DIRS}")
+#message(STATUS "PORTAUDIO_LIBRARIES: ${PORTAUDIO_LIBRARIES}")
 
 include_directories(/usr/local/include)
 include_directories(../libs)
@@ -26,8 +33,6 @@ include_directories(${SDL2_INCLUDE_DIRS} ${LIBSNDFILE_INCLUDE_DIRS} ${PORTAUDIO_
 
 link_directories(/usr/local/lib)
 
-add_library(lib_shared_mem STATIC ../libs/shared_mem.cpp ../libs/shared_mem.h)
-add_library(lib_looper STATIC ../libs/looper.cpp ../libs/looper.h)
 add_library(lib_pa_utils STATIC ../libs/pa_utils.cpp ../libs/pa_utils.h)
 add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h)
 add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
@@ -36,6 +41,10 @@ add_library(lib_mpeg STATIC ../libs/mpeg.cpp ../libs/mpeg.h)
 add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
 add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
 add_library(lib_sio_util STATIC ../libs/sio_util.cpp ../libs/sio_util.h)
+
+add_library(lib_shared_mem STATIC ./srcs/shared_mem.cpp ./srcs/shared_mem.h)
+add_library(lib_looper STATIC ./srcs/looper.cpp ./srcs/looper.h)
+add_library(lib_mpeg_reader STATIC ./srcs/mpeg_reader.cpp ./srcs/mpeg_reader.h)
 
 add_executable(looper_main ./srcs/looper_main.cpp ./srcs/looper_sdl.cpp ./srcs/looper_sdl.h)
 add_executable(receiver_test_main ./srcs/receiver_test_main.cpp ./srcs/receiver_test.cpp ./srcs/receiver_test.h)
@@ -50,7 +59,7 @@ set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lbz2
 
 target_link_libraries(looper_main PUBLIC ${SDL2_LIBRARIES} lib_shared_mem lib_looper lib_input_state lib_utile)
 target_link_libraries(receiver_test_main PUBLIC lib_shared_mem)
-target_link_libraries(audio_sampler_main PUBLIC ${PORTAUDIO_LIBRARIES} ${LIBSNDFILE_LIBRARIES} sioclient lib_shared_mem lib_looper lib_pa_utils lib_sio_util)
-target_link_libraries(cv_out_main PUBLIC ${PORTAUDIO_LIBRARIES} sioclient lib_shared_mem lib_looper lib_pa_utils lib_sio_util)
+target_link_libraries(audio_sampler_main PUBLIC ${PORTAUDIO_LIBRARIES} ${LIBSNDFILE_LIBRARIES} sioclient lib_shared_mem lib_pa_utils lib_sio_util)
+target_link_libraries(cv_out_main PUBLIC ${PORTAUDIO_LIBRARIES} sioclient lib_shared_mem lib_pa_utils lib_sio_util)
 target_link_libraries(cv_in_main PUBLIC ${PORTAUDIO_LIBRARIES} sioclient lib_shared_mem lib_pa_utils lib_sio_util)
-target_link_libraries(video_sampler_main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${FFMPEG_OPTIONS} sioclient lib_shared_mem lib_looper lib_input_state lib_utile lib_gl_utils lib_mpeg lib_geom_2d lib_bbox_2d lib_sio_util)
+target_link_libraries(video_sampler_main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${FFMPEG_OPTIONS} sioclient lib_shared_mem lib_input_state lib_utile lib_gl_utils lib_mpeg lib_mpeg_reader lib_geom_2d lib_bbox_2d lib_sio_util)

@@ -23,7 +23,7 @@ var dir_configs= null;
 var js_config_server= {};
 
 
-// dans un navigateur Web mettre http://localhost:3001/ affiche index.html
+// dans un navigateur Web mettre http://localhost:3002/ affiche index.html
 app.get('/', (req, res) => {
 	res.sendFile(path.resolve(__dirname, 'index.html'));
 });
@@ -43,7 +43,7 @@ io.on('connection', (socket) => {
 	socket.on('client2server_get_data', () => {
 		let data2send= {};
 
-		let model_path= "./json/cv_model.json";
+		let model_path= "./json/cv_out_model.json";
 		const json_data= fs.readFileSync(model_path, "utf8");
 		data2send[model_path.split("/").pop()]= JSON.parse(json_data);
 
@@ -55,7 +55,7 @@ io.on('connection', (socket) => {
 			if (filename.split(".").pop()== "json") {
 				const json_data= fs.readFileSync(abs_path, "utf8");
 				data2send[filename]= JSON.parse(json_data);
-				if (filename.includes("cv")) {
+				if (filename.includes("cv_out")) {
 					dir_configs= directory;
 				}
 			}
@@ -79,7 +79,7 @@ io.on('connection', (socket) => {
 	socket.on('client2server_save_config', (js_config) => {
 		let max_idx= 0;
 		fs.readdirSync(dir_configs).forEach(file => {
-			const regex = new RegExp("^cv_config_([0-9]+).json$");
+			const regex = new RegExp("^cv_out_config_([0-9]+).json$");
 			const found = file.match(regex);
 			if (found) {
 				const idx= parseInt(found[1]);
@@ -89,7 +89,7 @@ io.on('connection', (socket) => {
 			}
 		});
 
-		let saved_path= "cv_config_"+ (max_idx+ 1).toLocaleString(undefined, {minimumIntegerDigits: 2})+ ".json";
+		let saved_path= "cv_out_config_"+ (max_idx+ 1).toLocaleString(undefined, {minimumIntegerDigits: 2})+ ".json";
 		fs.writeFile(path.resolve(dir_configs, saved_path), JSON.stringify(js_config, null, 2), err => {
 			if (err) {
 				console.error(err);

@@ -1,10 +1,14 @@
 {
 	"__const__" : {
+		"numeric_keys" : ["1", "2", "3", "4", "5", "6", "7", "8", "10", "11", "12", "13", "14", "15", "16"],
 		"alphabet_keys" : ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
 	},
 	"__rules__" : [
 	],
-	"__root__" 				: {"type" : "dict", "possible_keys" : "alphabet_keys", "values" : "keymap"},
-	"keymap"				: {"type" : "dict", "keys" : ["channel"]},
-	"channel"				: {"type" : "int", "min" : 0, "max" : 10, "default" : 0}
+	"__root__" 			: {"type" : "dict", "possible_keys" : "numeric_keys", "values" : "channel_maps"},
+	"channel_maps"		: {"type" : "list", "values" : "event"},
+	"event"				: {"type" : "dict", "keys" : ["track", "key", "amplitude"]},
+	"track"				: {"type" : "int", "min" : 1, "max" : 16, "default" : 1},
+	"key"				: {"type" : "string", "possible_values" : "alphabet_keys", "default" : "a"},
+	"amplitude"			: {"type" : "float", "min" : 0.0, "max" : 1.0, "default" : 1.0}
 }

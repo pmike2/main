@@ -6,7 +6,7 @@
 
 #include "json.hpp"
 
-#include "looper.h"
+#include "shared_mem.h"
 
 
 enum SUB_SAMPLE_MODE {HOLD, FROM_START, TO_END, ALL};

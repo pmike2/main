@@ -4,8 +4,8 @@
 #include <string>
 #include <map>
 
-#include "looper.h"
-#include "mpeg.h"
+#include "shared_mem.h"
+#include "mpeg_reader.h"
 
 
 

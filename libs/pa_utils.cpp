@@ -172,7 +172,7 @@ PaStream * pa_init(int idx_device_input, int idx_device_output, const unsigned i
 	if (idx_device_input>= 0) {
 		inputParameters.device= idx_device_input;
 		//inputParameters.channelCount= 2;
-		inputParameters.channelCount= get_n_output_channels(idx_device_output);
+		inputParameters.channelCount= get_n_input_channels(idx_device_input);
 		inputParameters.sampleFormat= paFloat32;
 		inputParameters.suggestedLatency= Pa_GetDeviceInfo(idx_device_input)->defaultLowInputLatency;
 		inputParameters.hostApiSpecificStreamInfo= NULL;
