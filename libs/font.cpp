@@ -100,7 +100,7 @@ void Font::draw(string text, float x, float y, float scale, glm::vec3 color) {
 			{ xpos,     ypos + h, 0.0f, 0.0f},
 			{ xpos + w, ypos,     1.0f, 1.0f},
 			{ xpos + w, ypos + h, 1.0f, 0.0f}
-	};
+		};
 
 		// Render glyph texture over quad
 		glBindTexture(GL_TEXTURE_2D, ch._texture_id);
