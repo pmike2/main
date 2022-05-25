@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 
+#include "constantes.h"
 #include "shared_mem.h"
 
 
@@ -95,11 +96,10 @@ public:
 	void set_next_track();
 	void set_previous_track();
 	void set_master_track_duration(time_type t);
-	//void init_data();
-	//void close_data();
+	unsigned int get_current_track_index();
 	void debug();
 
-	Track * _tracks[N_MAX_TRACKS];
+	Track * _tracks[N_TRACKS];
 	Track * _current_track;
 	std::chrono::system_clock::time_point _start_point;
 	SEQ_MODE _mode;

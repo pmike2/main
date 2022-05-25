@@ -86,7 +86,7 @@ Emitter::Emitter() {
 	// MAP_SHARED : d'autres processeurs auront accès à ce mapping
 	_data= (sharedata_type *)mmap(0, DATA_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, _fd, 0);
 
-	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+	for (unsigned idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		_data[idx_track].set_null();
 	}
 }
@@ -108,8 +108,8 @@ Emitter::~Emitter() {
 Receiver::Receiver() {
 	init_data();
 
-	_data_current= new sharedata_type[N_MAX_TRACKS];
-	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+	_data_current= new sharedata_type[N_TRACKS];
+	for (unsigned idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		_data_current[idx_track].set_null();
 	}
 
@@ -171,7 +171,7 @@ void Receiver::close_data() {
 
 
 void Receiver::update() {
-	for (unsigned idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+	for (unsigned idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		if (_data_current[idx_track]!= _data[idx_track]) {
 			if (!_data_current[idx_track].is_null()) {
 				note_off(idx_track);

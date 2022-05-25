@@ -6,6 +6,7 @@
 
 #include "json.hpp"
 
+#include "constantes.h"
 #include "shared_mem.h"
 
 
@@ -75,7 +76,7 @@ public:
 
 	AudioSamplePool * _sample_pool;
 	std::map<key_type, AudioSubSample *> _map;
-	AudioTrackSample * _track_samples[N_MAX_TRACKS];
+	AudioTrackSample * _track_samples[N_TRACKS];
 };
 
 

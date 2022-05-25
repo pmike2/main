@@ -134,6 +134,7 @@ void init() {
 
 void idle() {
 	//mtx.lock();
+	looper->update_vbo_time();
 	looper->draw();
 	SDL_GL_SwapWindow(window);
 	//mtx.unlock();

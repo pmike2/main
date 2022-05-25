@@ -28,7 +28,7 @@ CVOut::CVOut() {
 
 
 CVOut::CVOut(string json_path, unsigned int n_output_channels) : _n_output_channels(n_output_channels) {
-	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		_cv_tracks[idx_track]= new CVTrack();
 	}
 
@@ -38,7 +38,7 @@ CVOut::CVOut(string json_path, unsigned int n_output_channels) : _n_output_chann
 
 
 CVOut::~CVOut() {
-	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		delete _cv_tracks[idx_track];
 	}
 }

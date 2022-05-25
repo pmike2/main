@@ -125,7 +125,7 @@ AudioSampler::AudioSampler() {
 
 AudioSampler::AudioSampler(string json_path) {
 	_sample_pool= new AudioSamplePool();
-	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		_track_samples[idx_track]= new AudioTrackSample();
 	}
 
@@ -136,7 +136,7 @@ AudioSampler::AudioSampler(string json_path) {
 
 
 AudioSampler::~AudioSampler() {
-	for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		delete _track_samples[idx_track];
 	}
 	for (const auto &x : _map) {

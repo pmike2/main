@@ -7,6 +7,7 @@
 
 #include "json.hpp"
 
+#include "constantes.h"
 #include "shared_mem.h"
 
 
@@ -35,7 +36,7 @@ public:
 	friend std::ostream & operator << (std::ostream & os, const CVOut & c);
 
 
-	CVTrack * _cv_tracks[N_MAX_TRACKS];
+	CVTrack * _cv_tracks[N_TRACKS];
 	std::map<key_type, unsigned int> _map;
 	unsigned int _n_output_channels;
 };

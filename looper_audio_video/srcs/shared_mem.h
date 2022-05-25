@@ -4,6 +4,8 @@
 #include <iostream>
 #include <chrono>
 
+#include "constantes.h"
+
 
 typedef std::chrono::system_clock::duration time_type;
 typedef unsigned int key_type;
@@ -26,8 +28,7 @@ struct sharedata_type {
 
 const bool DEBUG= false;
 const unsigned int N_DEBUG= 1000;
-const unsigned int N_MAX_TRACKS= 8;
-const unsigned int DATA_SIZE= sizeof(sharedata_type)* N_MAX_TRACKS;
+const unsigned int DATA_SIZE= sizeof(sharedata_type)* N_TRACKS;
 const std::string SHARED_MEM_OBJ_NAME= "/shmem-looper";
 const key_type NULL_KEY= 0; 
 const amplitude_type NULL_AMPLITUDE= 0.0f;

@@ -9,10 +9,10 @@
 
 #include "mpeg.h"
 #include "geom_2d.h"
+#include "constantes.h"
 
 
 const unsigned int N_MAX_MOVIES= 8;
-const unsigned int N_TRACKS= 8;
 
 
 class TimeConfig {

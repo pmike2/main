@@ -50,7 +50,7 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 			out[i* cvout->_n_output_channels+ idx_channel]= 0.0f;
 		}
 
-		for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 			if (cvout->_cv_tracks[idx_track]->_playing) {
 				
 				/*if (DEBUG) {

@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <map>
 
 #include <OpenGL/gl3.h>
 
@@ -20,6 +21,29 @@
 #include "gl_utils.h"
 
 
+struct RectangleGL {
+	float _x;
+	float _y;
+	float _z;
+	float _w;
+	float _h;
+	float _r;
+	float _g;
+	float _b;
+	float _a;
+};
+
+
+const unsigned int N_VERTICES_PER_RECTANGLE= 6;
+const unsigned int N_FLOATS_PER_VERTEX= 7;
+const float GENERAL_INFO_WIDTH= 0.1f;
+const float TRACK_INFO_WIDTH= 0.1f;
+const float EPS= 0.01f;
+
+
+unsigned int add_rectangle(float * vertices, unsigned int idx, RectangleGL & rect);
+
+
 class LooperGL : public Sequence {
 public:
 	LooperGL();
@@ -28,9 +52,15 @@ public:
 	bool event_key(SDL_Keycode key);
 	void key_down(SDL_Keycode key);
 	void key_up(SDL_Keycode key);
-	void update_vbo();
+	void update_vbo_general();
+	void update_vbo_time();
+	void update_vbo_track_info(unsigned int idx_track);
+	void update_vbo_track_data(unsigned int idx_track);
 	void draw();
 	void tap_tempo();
+	glm::vec3 get_color(SDL_Keycode key);
+	float get_track_y(unsigned int idx_track);
+	float get_track_h();
 
 
 	InputState * _input_state;
@@ -41,8 +71,9 @@ public:
 	GLuint _prog_2d, _prog_font;
 	GLint _camera2clip_loc, _position_loc, _color_loc;
 	glm::mat4 _camera2clip;
-	GLuint _vbo;
-	unsigned int _n_triangles;
+	GLuint _vbos[2+ 2* N_TRACKS];
+	unsigned int _n_rectangles[2+ 2* N_TRACKS];
+	std::map<key_type, glm::vec3> _event_colors;
 };
 
 #endif

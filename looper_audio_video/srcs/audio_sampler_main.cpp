@@ -13,6 +13,7 @@
 
 #include "json.hpp"
 
+#include "constantes.h"
 #include "audio_sampler.h"
 #include "pa_utils.h"
 #include "sio_util.h"
@@ -44,7 +45,7 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 		out[2* i+ 0]= 0.0f;
 		out[2* i+ 1]= 0.0f;
 
-		for (unsigned int idx_track=0; idx_track<N_MAX_TRACKS; ++idx_track) {
+		for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 			if (s->_track_samples[idx_track]->_playing) {
 				
 				if (DEBUG) {
