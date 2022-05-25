@@ -42,7 +42,7 @@ LooperGL::LooperGL() {
 
 
 LooperGL::LooperGL(GLuint prog_2d, GLuint prog_font, ScreenGL * screengl) :
-	_prog_2d(prog_2d), _prog_font(prog_font), _tap(), _ratio_numerator(0), _screengl(screengl) 
+	_prog_2d(prog_2d), _prog_font(prog_font), _tap(), _ratio_numerator(0), _screengl(screengl), _insert_idx_track(-1), _insert_idx_event(-1)
 {
 	_input_state= new InputState();
 	_font= new Font(_prog_font, "../../fonts/Arial.ttf", 24, _screengl->_screen_width, _screengl->_screen_height);
@@ -85,9 +85,6 @@ void LooperGL::key_down(SDL_Keycode key) {
 	unsigned int idx_track= get_current_track_index();
 
 	if (_input_state->get_key(key)) {
-		if (event_key(key)) {
-			update_vbo_track_data(idx_track);
-		}
 		return;
 	}
 	
@@ -166,6 +163,8 @@ void LooperGL::key_down(SDL_Keycode key) {
 			}
 		}
 		note_on(key, amplitude);
+		_insert_idx_track= idx_track;
+		_insert_idx_event= _current_track->get_event_idx(_current_track->_inserted_event);
 		return;
 	}
 	
@@ -175,7 +174,7 @@ void LooperGL::key_down(SDL_Keycode key) {
 void LooperGL::key_up(SDL_Keycode key) {
 	//cout << "key up : " << key << "\n";
 
-	unsigned int idx_track= get_current_track_index();
+	//unsigned int idx_track= get_current_track_index();
 
 	_input_state->key_up(key);
 
@@ -186,7 +185,8 @@ void LooperGL::key_up(SDL_Keycode key) {
 
 	if (event_key(key)) {
 		note_off();
-		update_vbo_track_data(idx_track);
+		_insert_idx_track= -1;
+		_insert_idx_event= -1;
 		return;
 	}
 }
@@ -293,36 +293,50 @@ void LooperGL::update_vbo_track_data(unsigned int idx_track) {
 	track_data._a= 0.5f;
 
 	RectangleGL events[N_MAX_EVENTS];
-	unsigned int n_events= 0;
 	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		if (!_tracks[idx_track]->_events[idx_event]->is_null()) {
 			glm::vec3 event_color= get_color(_tracks[idx_track]->_events[idx_event]->_data._key);
 			float a= _tracks[idx_track]->_events[idx_event]->_data._amplitude;
 
-			events[n_events]._x= (-0.5f+ GENERAL_INFO_WIDTH+ TRACK_INFO_WIDTH)* _screengl->_gl_width+ _screengl->_gl_width* (1.0f- GENERAL_INFO_WIDTH- TRACK_INFO_WIDTH)* (float)(time_ms(_tracks[idx_track]->_events[idx_event]->_data._t_start))/ (float)(time_ms(_tracks[idx_track]->_duration));
-			events[n_events]._y= get_track_y(idx_track);
-			events[n_events]._z= 0.0f;
-			events[n_events]._w= _screengl->_gl_width* (1.0f- GENERAL_INFO_WIDTH- TRACK_INFO_WIDTH)* (float)(time_ms(_tracks[idx_track]->_events[idx_event]->_data._t_end)- time_ms(_tracks[idx_track]->_events[idx_event]->_data._t_start))/ (float)(time_ms(_tracks[idx_track]->_duration));
-			events[n_events]._h= get_track_h();
-			events[n_events]._r= event_color.x;
-			events[n_events]._g= event_color.y;
-			events[n_events]._b= event_color.z;
-			events[n_events]._a= a;
-
-			n_events++;
+			events[idx_event]._x= (-0.5f+ GENERAL_INFO_WIDTH+ TRACK_INFO_WIDTH)* _screengl->_gl_width+ _screengl->_gl_width* (1.0f- GENERAL_INFO_WIDTH- TRACK_INFO_WIDTH)* (float)(time_ms(_tracks[idx_track]->_events[idx_event]->_data._t_start))/ (float)(time_ms(_tracks[idx_track]->_duration));
+			events[idx_event]._y= get_track_y(idx_track);
+			events[idx_event]._z= 0.0f;
+			events[idx_event]._w= _screengl->_gl_width* (1.0f- GENERAL_INFO_WIDTH- TRACK_INFO_WIDTH)* (float)(time_ms(_tracks[idx_track]->_events[idx_event]->_data._t_end)- time_ms(_tracks[idx_track]->_events[idx_event]->_data._t_start))/ (float)(time_ms(_tracks[idx_track]->_duration));
+			events[idx_event]._h= get_track_h();
+			events[idx_event]._r= event_color.x;
+			events[idx_event]._g= event_color.y;
+			events[idx_event]._b= event_color.z;
+			events[idx_event]._a= a;
+		}
+		else {
+			events[idx_event]._x= events[idx_event]._y= events[idx_event]._z= events[idx_event]._w= events[idx_event]._h= events[idx_event]._r= events[idx_event]._g= events[idx_event]._b= events[idx_event]._a= 0.0f;
 		}
 	}
 
-	_n_rectangles[idx_vbo]= 1+ n_events;
+	_n_rectangles[idx_vbo]= 1+ N_MAX_EVENTS;
 	float vertices[_n_rectangles[idx_vbo]* N_VERTICES_PER_RECTANGLE* N_FLOATS_PER_VERTEX];
 	unsigned int idx= 0;
 	idx= add_rectangle(vertices, idx, track_data);
-	for (unsigned int idx_event=0; idx_event<n_events; ++idx_event) {
+	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		idx= add_rectangle(vertices, idx, events[idx_event]);
 	}
 	
 	glBindBuffer(GL_ARRAY_BUFFER, _vbos[idx_vbo]);
 	glBufferData(GL_ARRAY_BUFFER, _n_rectangles[idx_vbo]* N_VERTICES_PER_RECTANGLE* N_FLOATS_PER_VERTEX* sizeof(float), vertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void LooperGL::update_vbo_insert() {
+	if ((_insert_idx_track< 0) || (_insert_idx_event< 0)) {
+		return;
+	}
+
+	unsigned int idx_vbo= 2+ N_TRACKS+ _insert_idx_track;
+	time_type now_time= now();
+	float w= _screengl->_gl_width* (1.0f- GENERAL_INFO_WIDTH- TRACK_INFO_WIDTH)* (float)(time_ms(now_time)- time_ms(_tracks[_insert_idx_track]->_events[_insert_idx_event]->_data._t_start))/ (float)(time_ms(_tracks[_insert_idx_track]->_duration));
+	glBindBuffer(GL_ARRAY_BUFFER, _vbos[idx_vbo]);
+	glBufferSubData(GL_ARRAY_BUFFER, (1+ _insert_idx_event)* N_VERTICES_PER_RECTANGLE* N_FLOATS_PER_VERTEX* sizeof(float), sizeof(float), &w);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 

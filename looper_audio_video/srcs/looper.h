@@ -63,6 +63,7 @@ public:
 	void emit_current();
 	void emit_null();
 	void clear();
+	unsigned int get_event_idx(Event * event);
 
 	time_type _duration;
 	ratio_type _ratio_to_master_track;

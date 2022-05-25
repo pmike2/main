@@ -56,6 +56,7 @@ public:
 	void update_vbo_time();
 	void update_vbo_track_info(unsigned int idx_track);
 	void update_vbo_track_data(unsigned int idx_track);
+	void update_vbo_insert();
 	void draw();
 	void tap_tempo();
 	glm::vec3 get_color(SDL_Keycode key);
@@ -64,8 +65,6 @@ public:
 
 
 	InputState * _input_state;
-	std::chrono::system_clock::time_point _tap;
-	unsigned int _ratio_numerator;
 	Font * _font;
 	ScreenGL * _screengl;
 	GLuint _prog_2d, _prog_font;
@@ -74,6 +73,10 @@ public:
 	GLuint _vbos[2+ 2* N_TRACKS];
 	unsigned int _n_rectangles[2+ 2* N_TRACKS];
 	std::map<key_type, glm::vec3> _event_colors;
+	std::chrono::system_clock::time_point _tap;
+	unsigned int _ratio_numerator;
+	int _insert_idx_track;
+	int _insert_idx_event;
 };
 
 #endif

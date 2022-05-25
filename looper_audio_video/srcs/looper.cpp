@@ -471,6 +471,16 @@ void Track::clear() {
 }
 
 
+unsigned int Track::get_event_idx(Event * event) {
+	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+		if (_events[idx_event]== event) {
+			return idx_event;
+		}
+	}
+	return 0;
+}
+
+
 // ----------------------------------------------------------------
 Sequence::Sequence() : _start_point(chrono::system_clock::now()), _mode(RECORDING) {
 	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
