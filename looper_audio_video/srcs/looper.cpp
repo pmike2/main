@@ -471,13 +471,13 @@ void Track::clear() {
 }
 
 
-unsigned int Track::get_event_idx(Event * event) {
+int Track::get_event_idx(Event * event) {
 	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		if (_events[idx_event]== event) {
 			return idx_event;
 		}
 	}
-	return 0;
+	return -1;
 }
 
 
