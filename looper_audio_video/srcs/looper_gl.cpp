@@ -45,7 +45,6 @@ LooperGL::LooperGL(GLuint prog_2d, GLuint prog_font, ScreenGL * screengl) :
 	_prog_2d(prog_2d), _prog_font(prog_font), _tap(), _ratio_numerator(0), _screengl(screengl), _current_track_changed(false)/*, _insert_idx_track(-1), _insert_idx_event(-1)*/
 {
 	_input_state= new InputState();
-	_font= new Font(_prog_font, "../../fonts/Arial.ttf", 24, _screengl->_screen_width, _screengl->_screen_height);
 
 	glUseProgram(_prog_2d);
 	_camera2clip_loc= glGetUniformLocation(_prog_2d, "camera2clip_matrix");
@@ -63,6 +62,10 @@ LooperGL::LooperGL(GLuint prog_2d, GLuint prog_font, ScreenGL * screengl) :
 		update_vbo_track_info(idx_track);
 		update_vbo_track_data(idx_track);
 	}
+
+	_font= new Font(_prog_font, "../../fonts/Arial.ttf", 24, _screengl, 2);
+	_font->set_text("abcd", 512, 256, 1.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0);
+	_font->set_text("ghgf", 100, 100, 2.0f, glm::vec4(0.0f, 1.0f, 0.0f, 0.5f), 1);
 }
 
 
@@ -355,6 +358,9 @@ void LooperGL::draw() {
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, _screengl->_screen_width, _screengl->_screen_height);
+
+	_font->draw();
+	return;
 	
 	glUseProgram(_prog_2d);
 	for (unsigned int idx_vbo=0; idx_vbo<2+ 2* N_TRACKS; ++idx_vbo) {
@@ -382,9 +388,9 @@ void LooperGL::draw() {
 
 
 void LooperGL::write_info() {
-	for (int i=0; i<50; ++i) {
-		//_font->draw("hello", _screengl->_screen_width-50, _screengl->_screen_height-50, 1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-	}
+	/*for (int i=0; i<50; ++i) {
+		_font->draw("hello", _screengl->_screen_width-50, _screengl->_screen_height-50, 1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+	}*/
 }
 
 
