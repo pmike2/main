@@ -27,12 +27,25 @@ struct Character {
 };
 
 
+class Text {
+public:
+	Text();
+	Text(std::string text, glm::ivec2 pos, float scale, glm::vec4 color);
+	~Text();
+
+	std::string _text;
+	glm::ivec2 _pos;
+	float _scale;
+	glm::vec4 _color;
+};
+
 
 class Font {
 public:
 	Font();
-	Font(GLuint prog_draw, std::string font_path, unsigned int font_size, ScreenGL * screengl, unsigned int n_texts);
-	void set_text(std::string text, unsigned int i, unsigned int j, float scale, glm::vec4 color, unsigned int idx_text);
+	Font(GLuint prog_draw, std::string font_path, unsigned int font_size, ScreenGL * screengl, unsigned int n_text_groups);
+	void set_text_group(unsigned int idx_text_group, std::vector<Text> & texts);
+	void set_text_group(unsigned int idx_text_group, Text & text);
 	void clear();
 	void draw();
 	
@@ -48,7 +61,7 @@ public:
 	unsigned int _tex_width;
 	unsigned int _tex_height;
 	ScreenGL * _screengl;
-	unsigned int _n_texts;
+	unsigned int _n_text_groups;
 	unsigned int * _n_chars;
 };
 

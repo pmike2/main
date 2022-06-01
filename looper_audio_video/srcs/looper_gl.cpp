@@ -63,9 +63,11 @@ LooperGL::LooperGL(GLuint prog_2d, GLuint prog_font, ScreenGL * screengl) :
 		update_vbo_track_data(idx_track);
 	}
 
-	_font= new Font(_prog_font, "../../fonts/Arial.ttf", 24, _screengl, 2);
-	_font->set_text("abcd", 512, 256, 1.0f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), 0);
-	_font->set_text("ghgf", 100, 100, 2.0f, glm::vec4(0.0f, 1.0f, 0.0f, 0.5f), 1);
+	_font= new Font(_prog_font, "../../fonts/Arial.ttf", 24, _screengl, N_TRACKS+ 1);
+	update_text_general();
+	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+		update_text_track_info(idx_track);
+	}
 }
 
 
@@ -354,14 +356,29 @@ void LooperGL::update_vbo_track_data(unsigned int idx_track) {
 }*/
 
 
+void LooperGL::update_text_general() {
+	vector<Text> texts;
+	texts.push_back(Text("BPM", glm::ivec2(10, 450), 1.0f, glm::vec4(1.0f, 0.1f, 0.1f, 0.7f)));
+	texts.push_back(Text("KEYS", glm::ivec2(10, 420), 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)));
+	_font->set_text_group(0, texts);
+}
+
+
+void LooperGL::update_text_track_info(unsigned int idx_track) {
+	vector<Text> texts;
+	int i, j;
+	_screengl->gl2screen((-0.5f+ GENERAL_INFO_WIDTH)* _screengl->_gl_width, get_track_y(idx_track)+ EPS, i, j);
+	texts.push_back(Text(to_string(idx_track), glm::ivec2(i, j), 1.0f, glm::vec4(1.0f, 0.1f, 0.1f, 0.7f)));
+	//texts.push_back(Text("KEYS", glm::ivec2(10, 420), 1.0f, glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)));
+	_font->set_text_group(1+ idx_track, texts);
+}
+
+
 void LooperGL::draw() {
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glViewport(0, 0, _screengl->_screen_width, _screengl->_screen_height);
 
-	_font->draw();
-	return;
-	
 	glUseProgram(_prog_2d);
 	for (unsigned int idx_vbo=0; idx_vbo<2+ 2* N_TRACKS; ++idx_vbo) {
 		glBindBuffer(GL_ARRAY_BUFFER, _vbos[idx_vbo]);
@@ -383,14 +400,7 @@ void LooperGL::draw() {
 	}
 	glUseProgram(0);
 
-	write_info();
-}
-
-
-void LooperGL::write_info() {
-	/*for (int i=0; i<50; ++i) {
-		_font->draw("hello", _screengl->_screen_width-50, _screengl->_screen_height-50, 1.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-	}*/
+	_font->draw();
 }
 
 
