@@ -30,11 +30,11 @@ struct Character {
 class Text {
 public:
 	Text();
-	Text(std::string text, glm::ivec2 pos, float scale, glm::vec4 color);
+	Text(std::string text, glm::vec2 pos, float scale, glm::vec4 color);
 	~Text();
 
 	std::string _text;
-	glm::ivec2 _pos;
+	glm::vec2 _pos;
 	float _scale;
 	glm::vec4 _color;
 };

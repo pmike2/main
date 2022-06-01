@@ -42,6 +42,7 @@ const float EPS= 0.01f;
 
 
 unsigned int add_rectangle(float * vertices, unsigned int idx, RectangleGL & rect);
+std::string bool2onoff(bool b);
 
 
 class LooperGL : public Sequence {
@@ -67,6 +68,11 @@ public:
 	float get_event_x(unsigned int idx_track, unsigned int idx_event);
 	float get_event_w(unsigned int idx_track, unsigned int idx_event, bool until_now);
 	float get_track_now(unsigned int idx_track);
+	void get_general_rectangle(RectangleGL & rect);
+	void get_timeline_rectangle(RectangleGL & rect, unsigned int idx_track);
+	void get_track_info_rectangle(RectangleGL & rect, unsigned int idx_track);
+	void get_quantize_rectangle(RectangleGL & rect, unsigned int idx_track, unsigned int idx_quantize);
+	void get_track_data_rectangle(RectangleGL & rect, unsigned int idx_track);
 	void get_event_rectangle(RectangleGL & rect, unsigned int idx_track, unsigned int idx_event, bool until_now);
 
 

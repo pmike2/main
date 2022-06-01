@@ -16,7 +16,7 @@ Text::Text() {
 }
 
 
-Text::Text(string text, glm::ivec2 pos, float scale, glm::vec4 color) :
+Text::Text(string text, glm::vec2 pos, float scale, glm::vec4 color) :
 	_text(text), _pos(pos), _scale(scale), _color(color)
 {
 
@@ -97,7 +97,8 @@ Font::Font(GLuint prog_draw, string font_path, unsigned int font_size, ScreenGL 
 	FT_Done_Face(_face);
 	FT_Done_FreeType(_ft_lib);
 	
-	glm::mat4 glm_projection= glm::ortho(0.0f, float(_screengl->_screen_width), 0.0f, float(_screengl->_screen_height));
+	//glm::mat4 glm_projection= glm::ortho(0.0f, float(_screengl->_screen_width), 0.0f, float(_screengl->_screen_height));
+	glm::mat4 glm_projection= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f);
 	memcpy(_projection, glm::value_ptr(glm_projection), sizeof(float)* 16);
 	
 	glUseProgram(_prog_draw);
@@ -134,12 +135,12 @@ void Font::set_text_group(unsigned int idx_text_group, vector<Text> & texts) {
 
 	unsigned int idx= 0;
 	for (unsigned int idx_text=0; idx_text<texts.size(); ++idx_text) {
-		float x= (float)(texts[idx_text]._pos.x);
+		float x= texts[idx_text]._pos.x;
 		for (string::const_iterator c=texts[idx_text]._text.begin(); c!=texts[idx_text]._text.end(); c++) {
 			Character ch= _characters[*c];
 
 			float xpos= x+ (float)(ch._bearing.x)* texts[idx_text]._scale;
-			float ypos= (float)(texts[idx_text]._pos.y)- (float)(ch._size.y- ch._bearing.y)* texts[idx_text]._scale;
+			float ypos= texts[idx_text]._pos.y- (float)(ch._size.y- ch._bearing.y)* texts[idx_text]._scale;
 
 			float w= (float)(ch._size.x)* texts[idx_text]._scale;
 			float h= (float)(ch._size.y)* texts[idx_text]._scale;
@@ -226,7 +227,7 @@ void Font::draw() {
 		if (_n_chars[idx_text_group]== 0) {
 			continue;
 		}
-		
+
 		glBindBuffer(GL_ARRAY_BUFFER, _vbos[idx_text_group]);
 		glUniformMatrix4fv(_projection_loc, 1, GL_FALSE, _projection);
 
