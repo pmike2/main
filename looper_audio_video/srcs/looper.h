@@ -98,6 +98,7 @@ public:
 	void set_previous_track();
 	void set_master_track_duration(time_type t);
 	unsigned int get_current_track_index();
+	float get_bpm();
 	void debug();
 
 	Track * _tracks[N_TRACKS];

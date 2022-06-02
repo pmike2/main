@@ -25,9 +25,6 @@ find_package(LibSndFile REQUIRED)
 find_package(PORTAUDIO REQUIRED)
 find_package(Freetype REQUIRED)
 
-#message(STATUS "PORTAUDIO_INCLUDE_DIRS: ${PORTAUDIO_INCLUDE_DIRS}")
-#message(STATUS "PORTAUDIO_LIBRARIES: ${PORTAUDIO_LIBRARIES}")
-
 include_directories(/usr/local/include)
 include_directories(/usr/local/include/freetype2)
 include_directories(../libs)

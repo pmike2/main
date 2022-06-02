@@ -667,6 +667,18 @@ unsigned int Sequence::get_current_track_index() {
 }
 
 
+float Sequence::get_bpm() {
+	float bpm= 60000.0f/ (float)(time_ms(_tracks[1]->_duration));
+	while (bpm< 100.0f) {
+		bpm*= 2.0f;
+	}
+	while (bpm>= 200.0f) {
+		bpm*= 0.5f;
+	}
+	return bpm;
+}
+
+
 void Sequence::debug() {
 	for (unsigned idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		for (unsigned idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {

@@ -53,15 +53,15 @@ public:
 	bool event_key(SDL_Keycode key);
 	void key_down(SDL_Keycode key);
 	void key_up(SDL_Keycode key);
+	void tap_tempo();
 	void update_vbo_general();
 	void update_vbo_time();
 	void update_vbo_track_info(unsigned int idx_track);
 	void update_vbo_track_data(unsigned int idx_track);
-	//void update_vbo_insert();
 	void update_text_general();
 	void update_text_track_info(unsigned int idx_track);
+	void update_text_track_data(unsigned int idx_track);
 	void draw();
-	void tap_tempo();
 	glm::vec3 get_color(SDL_Keycode key);
 	float get_track_y(unsigned int idx_track);
 	float get_track_h();
@@ -87,8 +87,6 @@ public:
 	std::map<key_type, glm::vec3> _event_colors;
 	std::chrono::system_clock::time_point _tap;
 	unsigned int _ratio_numerator;
-	//int _insert_idx_track;
-	//int _insert_idx_event;
 	bool _current_track_changed;
 };
 

@@ -43,7 +43,7 @@ io.on('connection', (socket) => {
 	socket.on('client2server_get_data', () => {
 		let data2send= {};
 
-		let model_path= "./json/cv_in_model.json";
+		let model_path= path.join(__dirname, "./json/cv_in_model.json");
 		const json_data= fs.readFileSync(model_path, "utf8");
 		data2send[model_path.split("/").pop()]= JSON.parse(json_data);
 

@@ -49,8 +49,6 @@ public:
 	void clear();
 	void draw();
 	
-	FT_Library _ft_lib;
-	FT_Face _face;
 	GLuint _font_texture;
 	std::map<GLchar, Character> _characters;
 	float _projection[16];

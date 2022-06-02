@@ -38,32 +38,37 @@ Font::Font() {
 Font::Font(GLuint prog_draw, string font_path, unsigned int font_size, ScreenGL * screengl, unsigned int n_text_groups) :
 	_prog_draw(prog_draw), _screengl(screengl), _n_text_groups(n_text_groups)
 {
-	if (FT_Init_FreeType(&_ft_lib)) {
+	FT_Library ft_lib;
+	FT_Face face;
+
+	if (FT_Init_FreeType(&ft_lib)) {
 		cout << "Could not init FreeType Library" << endl;
 		return;
 	}
 
-	if (FT_New_Face(_ft_lib, font_path.c_str(), 0, &_face)) {
+	if (FT_New_Face(ft_lib, font_path.c_str(), 0, &face)) {
 		cout << "Failed to load font" << endl;
 		return;
 	}
 
-	FT_Set_Pixel_Sizes(_face, 0, font_size);
+	FT_Set_Pixel_Sizes(face, 0, font_size);
 	
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // Disable byte-alignment restriction
 
+	// on crée une texture qui va contenir tous les chars dans une bande horizontale
 	_tex_width= 0.0f;
 	_tex_height= 0.0f;
 	for (GLubyte c=32; c<128; c++) {
-		if (FT_Load_Char(_face, c, FT_LOAD_RENDER)) {
+		if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
 			cout << "Failed to load Glyph" << endl;
 			continue;
 		}
 
-		_tex_width+= _face->glyph->bitmap.width;
-		_tex_height= std::max(_tex_height, _face->glyph->bitmap.rows);
+		// somme des largeurs
+		_tex_width+= face->glyph->bitmap.width;
+		// max des hauteurs
+		_tex_height= std::max(_tex_height, face->glyph->bitmap.rows);
 	}
-	//cout << _tex_width << " ; " << _tex_height << "\n";
 
 	glGenTextures(1, &_font_texture);
 	glBindTexture(GL_TEXTURE_2D, _font_texture);
@@ -76,26 +81,26 @@ Font::Font(GLuint prog_draw, string font_path, unsigned int font_size, ScreenGL 
 
 	unsigned int x= 0;
 	for (GLubyte c=32; c<128; c++) {
-		if (FT_Load_Char(_face, c, FT_LOAD_RENDER)) {
+		if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
 			cout << "Failed to load Glyph" << endl;
 			continue;
 		}
 
 		Character character = {
-			glm::ivec2(_face->glyph->bitmap.width, _face->glyph->bitmap.rows),
-			glm::ivec2(_face->glyph->bitmap_left, _face->glyph->bitmap_top),
-			static_cast<GLuint>(_face->glyph->advance.x),
+			glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+			glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+			static_cast<GLuint>(face->glyph->advance.x),
 			(float)(x)/ (float)(_tex_width)
 		};
 		_characters.insert(std::pair<GLchar, Character>(c, character));
 
-		glTexSubImage2D(GL_TEXTURE_2D, 0, x, 0, _characters[c]._size.x, _characters[c]._size.y, GL_RED, GL_UNSIGNED_BYTE, _face->glyph->bitmap.buffer);
+		glTexSubImage2D(GL_TEXTURE_2D, 0, x, 0, _characters[c]._size.x, _characters[c]._size.y, GL_RED, GL_UNSIGNED_BYTE, face->glyph->bitmap.buffer);
 
 		x+= _characters[c]._size.x;
 	}
 	
-	FT_Done_Face(_face);
-	FT_Done_FreeType(_ft_lib);
+	FT_Done_Face(face);
+	FT_Done_FreeType(ft_lib);
 	
 	//glm::mat4 glm_projection= glm::ortho(0.0f, float(_screengl->_screen_width), 0.0f, float(_screengl->_screen_height));
 	glm::mat4 glm_projection= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f);
@@ -107,8 +112,10 @@ Font::Font(GLuint prog_draw, string font_path, unsigned int font_size, ScreenGL 
 	_projection_loc= glGetUniformLocation(_prog_draw, "projection");
 	glUseProgram(0);
 
+	// pour chaque groupe de textes le nombre de caracteres à dessiner
 	_n_chars= new unsigned int[_n_text_groups];
 
+	// chaque groupe de textes a son VBO ce qui permet de ne mettre à jour qu'un groupe de texte à la fois
 	_vbos= new GLuint[_n_text_groups];
 	glGenBuffers(_n_text_groups, _vbos);
 
@@ -146,8 +153,6 @@ void Font::set_text_group(unsigned int idx_text_group, vector<Text> & texts) {
 			float h= (float)(ch._size.y)* texts[idx_text]._scale;
 
 			float tex_w= (float)(ch._size.x)/ (float)(_tex_width);
-
-			//cout << idx << " ; " << xpos << " ; " << ypos << " ; " << w << " ; " << h << " ; " << ch._xoffset << " ; " << tex_w << "\n";
 
 			vertices[idx* 6* 8+ 0]= xpos;
 			vertices[idx* 6* 8+ 1]= ypos+ h;
@@ -199,6 +204,7 @@ void Font::set_text_group(unsigned int idx_text_group, vector<Text> & texts) {
 }
 
 
+// raccourci lorsque l'on a qu'un seul texte à afficher
 void Font::set_text_group(unsigned int idx_text_group, Text & text) {
 	vector<Text> texts;
 	texts.push_back(text);
