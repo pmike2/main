@@ -101,14 +101,11 @@ void interruption_handler(sig_atomic_t s) {
 }
 
 
-void init(string json_path) {
+void init(int idx_device_output, string json_path) {
 	signal(SIGINT, interruption_handler);
 
 	audio_sampler= new AudioSampler(json_path);
-
-	int idx_device_input= -1;
-	int idx_device_output= 0;
-	stream= pa_init(idx_device_input, idx_device_output, SAMPLE_RATE, FRAMES_PER_BUFFER, pa_callback, audio_sampler);
+	stream= pa_init(-1, idx_device_output, SAMPLE_RATE, FRAMES_PER_BUFFER, pa_callback, audio_sampler);
 	sio_util= new SocketIOUtil("http://127.0.0.1:3001", "server2client_config_changed", 2000);
 }
 
@@ -124,13 +121,11 @@ void main_loop() {
 
 
 int main(int argc, char **argv) {
-	//list_devices(); return 0;
-
-	if (argc!= 2) {
-		cout << "donner le chemin d'un json en entrée\n";
+	if (argc!= 3) {
+		cout << "donner 1- idx_device_output; 2- le chemin d'un json en entrée\n";
 		return 1;
 	}
-	init(string(argv[1]));
+	init(atoi(argv[1]), string(argv[2]));
 	main_loop();
 	clean();
 

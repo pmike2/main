@@ -5,7 +5,6 @@
 #include <OpenGL/gl3.h>
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 
 #define GLM_FORCE_RADIANS
 #define GLM_ENABLE_EXPERIMENTAL
@@ -18,8 +17,8 @@
 using namespace std;
 
 
-const int SCREEN_WIDTH= 128;
-const int SCREEN_HEIGHT= 128;
+const int SCREEN_WIDTH= 1024;
+const int SCREEN_HEIGHT= 512;
 const int WINDOW_X= 10;
 const int WINDOW_Y= 10;
 const float GL_WIDTH= 20.0f;
@@ -36,25 +35,12 @@ GLint camera2clip_loc, model2world_loc, z_loc, position_loc, color_loc;
 glm::mat4 camera2clip, model2world;
 GLuint vbo;
 float angle_rot;
-unsigned char * pixel_data;
-SDL_Surface * surf;
-unsigned int rmask, gmask, bmask, amask;
 
 
 void key_down(SDL_Keycode key) {
 	if (key== SDLK_ESCAPE) {
 		done= true;
 		return;
-	}
-
-	if (key== SDLK_SPACE) {
-		for (int j=0; j<SCREEN_HEIGHT; ++j) {
-			for (int i=0; i<SCREEN_WIDTH; ++i) {
-				cout << +pixel_data[3*(j* SCREEN_WIDTH+ i)+ 0] << ";" << +pixel_data[3*(j* SCREEN_WIDTH+ i)+ 1] << ";" << +pixel_data[3*(j* SCREEN_WIDTH+ i)+ 2];
-				cout << " ";
-			}
-			cout << "\n";
-		}
 	}
 }
 
@@ -163,23 +149,6 @@ void init() {
 	screengl= new ScreenGL(SCREEN_WIDTH, SCREEN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 
 	init_buffer();
-
-	pixel_data= new unsigned char[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
-	for (int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT* 3; ++i) {
-		pixel_data[i]= 0;
-	}
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		rmask = 0xff000000;
-		gmask = 0x00ff0000;
-		bmask = 0x0000ff00;
-		amask = 0x000000ff;
-	#else
-		rmask = 0x000000ff;
-		gmask = 0x0000ff00;
-		bmask = 0x00ff0000;
-		amask = 0xff000000;
-	#endif
-
 }
 
 
@@ -224,13 +193,6 @@ void idle() {
 	update();
 	draw();
 	SDL_GL_SwapWindow(window);
-
-	glReadBuffer(GL_BACK);
-	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
-	int pitch= SCREEN_WIDTH* 3;
-	surf= SDL_CreateRGBSurfaceFrom((void*)(pixel_data), SCREEN_WIDTH, SCREEN_HEIGHT, 24, pitch, rmask, gmask, bmask, amask);
-	IMG_SavePNG(surf, "../data/out.png");
-	SDL_FreeSurface(surf);
 }
 
 
@@ -262,7 +224,6 @@ void main_loop() {
 
 
 void clean() {
-	delete[] pixel_data;
 	delete screengl;
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);

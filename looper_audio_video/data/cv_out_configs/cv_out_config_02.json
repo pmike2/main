@@ -1,0 +1,14 @@
+{
+  "a": {
+    "channel": 2
+  },
+  "b": {
+    "channel": 3
+  },
+  "c": {
+    "channel": 4
+  },
+  "d": {
+    "channel": 5
+  }
+}

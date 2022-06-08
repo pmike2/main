@@ -12,12 +12,9 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/")
-
 project(tmp)
 
 find_package(SDL2 REQUIRED)
-find_package(SDL2_image)
 find_package(OpenGL REQUIRED)
 
 include_directories(/usr/local/include)
@@ -30,4 +27,4 @@ add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)
 
 add_executable(main ./srcs/main.cpp)
 
-target_link_libraries(main PUBLIC ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} lib_gl_utils lib_utile)
+target_link_libraries(main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} lib_gl_utils lib_utile)

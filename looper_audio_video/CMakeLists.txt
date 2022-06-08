@@ -52,6 +52,7 @@ add_executable(receiver_test_main ./srcs/receiver_test_main.cpp ./srcs/receiver_
 add_executable(audio_sampler_main ./srcs/audio_sampler_main.cpp ./srcs/audio_sampler.cpp ./srcs/audio_sampler.h)
 add_executable(cv_out_main ./srcs/cv_out_main.cpp ./srcs/cv_out.cpp ./srcs/cv_out.h)
 add_executable(cv_in_main ./srcs/cv_in_main.cpp ./srcs/cv_in.cpp ./srcs/cv_in.h)
+add_executable(list_audio_devices ./srcs/list_audio_devices.cpp)
 add_executable(video_sampler_main ./srcs/video_sampler_main.cpp ./srcs/video_sampler.cpp ./srcs/video_sampler.h)
 
 
@@ -64,4 +65,5 @@ target_link_libraries(receiver_test_main PUBLIC lib_shared_mem)
 target_link_libraries(audio_sampler_main PUBLIC ${PORTAUDIO_LIBRARIES} ${LIBSNDFILE_LIBRARIES} sioclient lib_shared_mem lib_pa_utils lib_sio_util)
 target_link_libraries(cv_out_main PUBLIC ${PORTAUDIO_LIBRARIES} sioclient lib_shared_mem lib_pa_utils lib_sio_util)
 target_link_libraries(cv_in_main PUBLIC ${PORTAUDIO_LIBRARIES} sioclient lib_shared_mem lib_pa_utils lib_sio_util)
+target_link_libraries(list_audio_devices PUBLIC ${PORTAUDIO_LIBRARIES} lib_pa_utils)
 target_link_libraries(video_sampler_main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${FFMPEG_OPTIONS} sioclient lib_shared_mem lib_input_state lib_utile lib_gl_utils lib_mpeg lib_mpeg_reader lib_geom_2d lib_bbox_2d lib_sio_util)
