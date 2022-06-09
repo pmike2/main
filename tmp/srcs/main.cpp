@@ -1,6 +1,10 @@
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <chrono>
 #include <math.h>
+#include <stdlib.h>
 
 #include <OpenGL/gl3.h>
 
@@ -18,8 +22,8 @@
 using namespace std;
 
 
-const int SCREEN_WIDTH= 128;
-const int SCREEN_HEIGHT= 128;
+const int SCREEN_WIDTH= 1024;
+const int SCREEN_HEIGHT= 1024;
 const int WINDOW_X= 10;
 const int WINDOW_Y= 10;
 const float GL_WIDTH= 20.0f;
@@ -39,6 +43,9 @@ float angle_rot;
 unsigned char * pixel_data;
 SDL_Surface * surf;
 unsigned int rmask, gmask, bmask, amask;
+chrono::system_clock::time_point start_point;
+chrono::system_clock::time_point t1, t2;
+unsigned int png_compt;
 
 
 void key_down(SDL_Keycode key) {
@@ -47,7 +54,7 @@ void key_down(SDL_Keycode key) {
 		return;
 	}
 
-	if (key== SDLK_SPACE) {
+	/*if (key== SDLK_SPACE) {
 		for (int j=0; j<SCREEN_HEIGHT; ++j) {
 			for (int i=0; i<SCREEN_WIDTH; ++i) {
 				cout << +pixel_data[3*(j* SCREEN_WIDTH+ i)+ 0] << ";" << +pixel_data[3*(j* SCREEN_WIDTH+ i)+ 1] << ";" << +pixel_data[3*(j* SCREEN_WIDTH+ i)+ 2];
@@ -55,7 +62,7 @@ void key_down(SDL_Keycode key) {
 			}
 			cout << "\n";
 		}
-	}
+	}*/
 }
 
 
@@ -180,6 +187,9 @@ void init() {
 		amask = 0xff000000;
 	#endif
 
+	start_point= chrono::system_clock::now();
+	system("rm ../data/*.png");
+	png_compt= 0;
 }
 
 
@@ -208,6 +218,8 @@ void draw() {
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
+
+	SDL_GL_SwapWindow(window);
 }
 
 
@@ -220,17 +232,39 @@ void update() {
 }
 
 
-void idle() {
-	update();
-	draw();
-	SDL_GL_SwapWindow(window);
-
+void save2file() {
+	chrono::system_clock::duration t= chrono::system_clock::now()- start_point;
+	unsigned int ms= chrono::duration_cast<chrono::milliseconds>(t).count();
+	
 	glReadBuffer(GL_BACK);
 	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
 	int pitch= SCREEN_WIDTH* 3;
 	surf= SDL_CreateRGBSurfaceFrom((void*)(pixel_data), SCREEN_WIDTH, SCREEN_HEIGHT, 24, pitch, rmask, gmask, bmask, amask);
-	IMG_SavePNG(surf, "../data/out.png");
+	//string png_path= "../data/out_"+ to_string(ms)+ ".png";
+
+	ostringstream ss;
+	ss << setw(5) << setfill('0') << png_compt;
+	string s(ss.str());
+	string png_path= "../data/out_"+ s+ ".png";
+	png_compt++;
+	//IMG_SavePNG(surf, png_path.c_str());
 	SDL_FreeSurface(surf);
+}
+
+
+void compute_fps() {
+	t2= chrono::system_clock::now();
+	auto d= chrono::duration_cast<chrono::milliseconds>(t2- t1).count();
+	t1= t2;
+	SDL_SetWindowTitle(window, to_string(d).c_str());
+}
+
+
+void idle() {
+	update();
+	draw();
+	save2file();
+	compute_fps();
 }
 
 
