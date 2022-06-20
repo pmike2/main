@@ -5,6 +5,7 @@
 #include <chrono>
 #include <math.h>
 #include <stdlib.h>
+#include <thread>
 
 #include <OpenGL/gl3.h>
 
@@ -18,6 +19,8 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "gl_utils.h"
+#include "thread.h"
+
 
 using namespace std;
 
@@ -39,13 +42,17 @@ GLuint vao;
 GLint camera2clip_loc, model2world_loc, z_loc, position_loc, color_loc;
 glm::mat4 camera2clip, model2world;
 GLuint vbo;
+
 float angle_rot;
-unsigned char * pixel_data;
-SDL_Surface * surf;
 unsigned int rmask, gmask, bmask, amask;
 chrono::system_clock::time_point start_point;
 chrono::system_clock::time_point t1, t2;
 unsigned int png_compt;
+
+SafeQueue<unsigned char *> safe_queue;
+thread thr;
+mutex mtx;
+atomic_bool stop_thr= ATOMIC_VAR_INIT(false);
 
 
 void key_down(SDL_Keycode key) {
@@ -159,6 +166,37 @@ void init_buffer() {
 }
 
 
+void write_png_thread() {
+	unsigned char * pixel_data;
+	SDL_Surface * surf;
+	string png_path;
+	
+	while (true) {
+		if (stop_thr) {
+			break;
+		}
+
+		if (safe_queue.next(pixel_data)) {
+			int pitch= SCREEN_WIDTH* 3;
+			surf= SDL_CreateRGBSurfaceFrom((void*)(pixel_data), SCREEN_WIDTH, SCREEN_HEIGHT, 24, pitch, rmask, gmask, bmask, amask);
+			
+			/*chrono::system_clock::duration t= chrono::system_clock::now()- start_point;
+			unsigned int ms= chrono::duration_cast<chrono::milliseconds>(t).count();
+			png_path= "../data/out_"+ to_string(ms)+ ".png";*/
+
+			ostringstream ss;
+			ss << setw(5) << setfill('0') << png_compt;
+			png_path= "../data/out_"+ ss.str()+ ".png";
+			png_compt++;
+
+			IMG_SavePNG(surf, png_path.c_str());
+			SDL_FreeSurface(surf);
+			delete[] pixel_data;
+		}
+	}
+}
+
+
 void init() {
 	init_sdl();
 
@@ -171,10 +209,6 @@ void init() {
 
 	init_buffer();
 
-	pixel_data= new unsigned char[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
-	for (int i=0; i<SCREEN_WIDTH* SCREEN_HEIGHT* 3; ++i) {
-		pixel_data[i]= 0;
-	}
 	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
 		rmask = 0xff000000;
 		gmask = 0x00ff0000;
@@ -190,6 +224,8 @@ void init() {
 	start_point= chrono::system_clock::now();
 	system("rm ../data/*.png");
 	png_compt= 0;
+
+	thr= thread(write_png_thread);
 }
 
 
@@ -233,22 +269,10 @@ void update() {
 
 
 void save2file() {
-	chrono::system_clock::duration t= chrono::system_clock::now()- start_point;
-	unsigned int ms= chrono::duration_cast<chrono::milliseconds>(t).count();
-	
 	glReadBuffer(GL_BACK);
+	unsigned char * pixel_data= new unsigned char[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
 	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
-	int pitch= SCREEN_WIDTH* 3;
-	surf= SDL_CreateRGBSurfaceFrom((void*)(pixel_data), SCREEN_WIDTH, SCREEN_HEIGHT, 24, pitch, rmask, gmask, bmask, amask);
-	//string png_path= "../data/out_"+ to_string(ms)+ ".png";
-
-	ostringstream ss;
-	ss << setw(5) << setfill('0') << png_compt;
-	string s(ss.str());
-	string png_path= "../data/out_"+ s+ ".png";
-	png_compt++;
-	//IMG_SavePNG(surf, png_path.c_str());
-	SDL_FreeSurface(surf);
+	safe_queue.push(pixel_data);
 }
 
 
@@ -296,7 +320,9 @@ void main_loop() {
 
 
 void clean() {
-	delete[] pixel_data;
+	stop_thr= true;
+	thr.join();
+
 	delete screengl;
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
