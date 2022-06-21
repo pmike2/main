@@ -27,7 +27,9 @@ link_directories(/usr/local/lib)
 
 add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
 add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)
+add_library(lib_mpeg STATIC ../libs/mpeg.cpp ../libs/mpeg.h)
 
 add_executable(main ./srcs/main.cpp)
 
-target_link_libraries(main PUBLIC ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} lib_gl_utils lib_utile)
+set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lbz2" "-liconv" "-lz" "-lavutil" "-lavcodec" "-lavdevice" "-lavformat" "-lavfilter" "-lswresample" "-lswscale" "-lx264" "-pthread" "-lm" "-framework AudioUnit" "-framework AudioToolbox" "-framework CoreAudio" "-framework VideoToolbox" "-framework CoreFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework CoreServices" "-framework Security")
+target_link_libraries(main PUBLIC ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} ${FFMPEG_OPTIONS} lib_gl_utils lib_utile lib_mpeg)
