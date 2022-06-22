@@ -199,7 +199,7 @@ MPEGWriter::MPEGWriter() {
 
 
 MPEGWriter::MPEGWriter(unsigned int width, unsigned int height, unsigned int fps, unsigned int bitrate, string output_path) :
-	_width(width), _height(height), _fps(fps), _bitrate(bitrate), _output_path(output_path)
+	_width(width), _height(height), _fps(fps), _bitrate(bitrate), _output_path(output_path), _frame_count(0)
 {	
 	int err;
 
@@ -279,27 +279,32 @@ MPEGWriter::MPEGWriter(unsigned int width, unsigned int height, unsigned int fps
 		return;
 	}
 
-	av_dump_format(_format_context, 0, _output_path.c_str(), 1);
+	//av_dump_format(_format_context, 0, _output_path.c_str(), 1);
 
 	_frame= av_frame_alloc();
 	_frame->format= AV_PIX_FMT_YUV420P;
-	_frame->width= _codec_context->width;
-	_frame->height= _codec_context->height;
+	_frame->width= _width;
+	_frame->height= _height;
 	if ((err= av_frame_get_buffer(_frame, 0))< 0) {
 		cout << "Failed to allocate picture" << err << "\n";
 		return;
 	}
 
 	_frame_rgb= av_frame_alloc();
-	/*_frame_rgb->format= AV_PIX_FMT_RGB24;
-	_frame_rgb->width= _codec_context->width;
-	_frame_rgb->height= _codec_context->height;
-	if ((err= av_frame_get_buffer(_frame_rgb, 0))< 0) {
+	_frame_rgb->format= AV_PIX_FMT_RGB24;
+	_frame_rgb->width= _width;
+	_frame_rgb->height= _height;
+	/*if ((err= av_frame_get_buffer(_frame_rgb, 0))< 0) {
 		cout << "Failed to allocate picture" << err << "\n";
 		return;
 	}*/
 
-	_sws_context= sws_getContext(_codec_context->width, _codec_context->height, AV_PIX_FMT_RGB24, _codec_context->width, _codec_context->height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, 0, 0, 0);
+	_sws_context= sws_getContext(_width, _height, AV_PIX_FMT_RGB24, _width, _height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, 0, 0, 0);
+
+	//int buffer_size= av_image_get_buffer_size(AV_PIX_FMT_RGB24, _width, _height, 32);
+	//_buffer= new unsigned char[buffer_size];
+
+	_pkt= av_packet_alloc();
 }
 
 
@@ -307,9 +312,9 @@ MPEGWriter::~MPEGWriter() {
 	if (_frame) {
 		av_frame_free(&_frame);
 	}
-	if (_frame_rgb) {
+	/*if (_frame_rgb) {
 		av_frame_free(&_frame_rgb);
-	}
+	}*/
 	if (_codec_context) {
 		avcodec_free_context(&_codec_context);
 	}
@@ -319,36 +324,56 @@ MPEGWriter::~MPEGWriter() {
 	if (_sws_context) {
 		sws_freeContext(_sws_context);
 	}
+	av_packet_free(&_pkt);
 }
 
 
 void MPEGWriter::push_frame(unsigned char * data) {
 	int err;
 
-	int buffer_size= av_image_get_buffer_size(AV_PIX_FMT_RGB24, _width, _height, 32);
-	unsigned char * buffer= (unsigned char *)av_malloc(buffer_size);
-	memcpy(buffer, data, buffer_size);
+	err= av_frame_make_writable(_frame);
+	if (err< 0) {
+		cout << "Erreur av_frame_make_writable\n";
+		return;
+	}
 
-	av_image_alloc(_frame_rgb->data, _frame_rgb->linesize, _width, _height, AV_PIX_FMT_RGB24, 32);
-	av_image_fill_arrays(_frame_rgb->data, _frame_rgb->linesize, buffer, AV_PIX_FMT_RGB24, _width, _height, 32);
+	//int buffer_size= av_image_get_buffer_size(AV_PIX_FMT_RGB24, _width, _height, 1);
+	//cout << buffer_size << "\n";
+	//unsigned char * buffer= (unsigned char *)av_malloc(buffer_size);
+	//memcpy(buffer, data, buffer_size);
+	//av_image_alloc(_frame_rgb->data, _frame_rgb->linesize, _width, _height, AV_PIX_FMT_RGB24, 32);
+	//av_image_fill_arrays(_frame_rgb->data, _frame_rgb->linesize, data, AV_PIX_FMT_RGB24, _width, _height, 32);
+	av_frame_get_buffer(_frame_rgb, 0);
+	_frame_rgb->data[0]= data;
+	_frame_rgb->linesize[0]= (int)(_width)* 3;
+	//unsigned char buffer[_width* _height* 3];
+	//memcpy(buffer, data, _width* _height* 3);
+	//av_freep(_frame_rgb->data[0]);
+	return;
+
+	//cout << &data << "\n";
 
 	// From RGB to YUV
-	err= sws_scale(_sws_context, (const unsigned char * const *)&_frame_rgb->data, _frame_rgb->linesize, 0, _codec_context->height, _frame->data, _frame->linesize);
+	cout << "BEFORE sws_scale\n";
+	err= sws_scale(_sws_context, (const unsigned char * const *)&_frame_rgb->data, _frame_rgb->linesize, 0, _height, _frame->data, _frame->linesize);
+	cout << "AFTER sws_scale\n";
+	//int linesize[1]= {(int)(_width)* 3};
+	//err= sws_scale(_sws_context, (const unsigned char * const *)&data, linesize, 0, _height, _frame->data, _frame->linesize);
+
 	if (err<= 0) {
 		cout << "Erreur sws_scale\n";
 		return;
 	}
 	_frame->pts= (1.0/ (double)(_fps))* _stream->time_base.den* (_frame_count++);
+	//cout << _frame->pts << "\n";
 
-	
 	if ((err= avcodec_send_frame(_codec_context, _frame))< 0) {
 		cout << "Failed to send frame : " << err << "\n";
 		return;
 	}
 
-	AVPacket * pkt= av_packet_alloc();
-	
-	if (avcodec_receive_packet(_codec_context, pkt)== 0) {
+	//AVPacket * pkt= av_packet_alloc();
+	if (avcodec_receive_packet(_codec_context, _pkt)== 0) {
 		/*int counter= 0;
 		if (counter == 0) {
 			FILE* fp = fopen("dump_first_frame1.dat", "wb");
@@ -356,36 +381,40 @@ void MPEGWriter::push_frame(unsigned char * data) {
 			fclose(fp);
 		}*/
 		
-		//cout << "pkt key: " << (pkt.flags & AV_PKT_FLAG_KEY) << " " << pkt.size << " " << (counter++) << endl;
+		//cout << "pkt key: " << (pkt->flags & AV_PKT_FLAG_KEY) << " " << pkt->size << " " << (_frame_count++) << endl;
 		
-		/*unsigned char * size = ((unsigned char *)pkt.data);
+		/*unsigned char * size = ((unsigned char *)pkt->data);
 		cout << "first: " << (int)size[0] << " " << (int)size[1] <<
 			" " << (int)size[2] << " " << (int)size[3] << " " << (int)size[4] <<
 			" " << (int)size[5] << " " << (int)size[6] << " " << (int)size[7] <<
 			endl;*/
 		
-		av_interleaved_write_frame(_format_context, pkt);
-		av_packet_unref(pkt);
+		av_interleaved_write_frame(_format_context, _pkt);
+		av_packet_unref(_pkt);
 	}
+//	av_packet_free(&pkt);
 
-	av_freep(_frame_rgb->data);
+	//av_freep(&_frame_rgb->data[0]);
+	//av_free(buffer);
+	//delete[] buffer;
 }
 
 
 void MPEGWriter::finish() {
 	// delayed frames
-	AVPacket * pkt= av_packet_alloc();
+	//AVPacket * pkt= av_packet_alloc();
 
 	while (true) {
 		avcodec_send_frame(_codec_context, NULL);
-		if (avcodec_receive_packet(_codec_context, pkt)== 0) {
-			av_interleaved_write_frame(_format_context, pkt);
-			av_packet_unref(pkt);
+		if (avcodec_receive_packet(_codec_context, _pkt)== 0) {
+			av_interleaved_write_frame(_format_context, _pkt);
+			av_packet_unref(_pkt);
 		}
 		else {
 			break;
 		}
 	}
+	//av_packet_free(&pkt);
 
 	av_write_trailer(_format_context);
 	if (!(_output_format->flags & AVFMT_NOFILE)) {

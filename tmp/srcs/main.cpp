@@ -6,6 +6,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include <thread>
+#include <algorithm>
+
 
 #include <OpenGL/gl3.h>
 
@@ -26,8 +28,8 @@
 using namespace std;
 
 
-const int SCREEN_WIDTH= 512;
-const int SCREEN_HEIGHT= 512;
+const int SCREEN_WIDTH= 1024;
+const int SCREEN_HEIGHT= 1024;
 const int WINDOW_X= 10;
 const int WINDOW_Y= 10;
 const float GL_WIDTH= 20.0f;
@@ -56,6 +58,7 @@ mutex mtx;
 atomic_bool stop_thr= ATOMIC_VAR_INIT(false);
 
 MPEGWriter * mpeg_writer;
+//unsigned char pixel_data[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
 
 
 void key_down(SDL_Keycode key) {
@@ -185,7 +188,25 @@ void write_thread() {
 
 			mpeg_writer->push_frame(debug);*/
 
-			mpeg_writer->push_frame(pixel_data);
+			//unsigned char tmp;
+			/*for (int i=0; i<SCREEN_WIDTH; ++i) {
+				for (int j=0; j<SCREEN_HEIGHT; ++j) {
+					for (int k=0; k<3; ++k) {
+						//cout << i << "; " << j << "; " << k << "\n";
+						//tmp= pixel_data[(i+ j* SCREEN_WIDTH)* 3+ k];
+						//pixel_data[(i+ j* SCREEN_WIDTH)* 3+ k]= 0;
+						//pixel_data[(i+ j* SCREEN_WIDTH)* 3+ k]= pixel_data[(i+ (SCREEN_HEIGHT- 1- j)* SCREEN_WIDTH)* 3+ k];
+						//pixel_data[(i+ (SCREEN_HEIGHT- 1- j)* SCREEN_WIDTH)* 3+ k]= tmp;
+						//swap(pixel_data[(i+ j* SCREEN_WIDTH)* 3+ k], pixel_data[(i+ (SCREEN_HEIGHT- 1- j)* SCREEN_WIDTH)* 3+ k]);
+						//swap(pixel_data[1], pixel_data[0]);
+					}
+				}
+			}*/
+			for (unsigned int i=0; i<3000000; ++i) {
+				swap(pixel_data[1], pixel_data[0]);
+			}
+
+			//mpeg_writer->push_frame(pixel_data);
 			
 			/*chrono::system_clock::duration t= chrono::system_clock::now()- start_point;
 			unsigned int ms= chrono::duration_cast<chrono::milliseconds>(t).count();
@@ -207,7 +228,6 @@ void write_thread() {
 
 
 void init() {
-	mpeg_writer= new MPEGWriter(SCREEN_WIDTH, SCREEN_HEIGHT, 30, 2000, "../data/test.mp4");
 
 	/*unsigned char * debug= new unsigned char[mpeg_writer->_width* mpeg_writer->_height* 4];
 	memset(debug, 100, mpeg_writer->_width* mpeg_writer->_height* 4);
@@ -245,6 +265,8 @@ void init() {
 	system("rm ../data/*.png 2>/dev/null");
 	png_compt= 0;
 
+	//pixel_data= new unsigned char[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
+	mpeg_writer= new MPEGWriter(SCREEN_WIDTH, SCREEN_HEIGHT, 30, 2000, "../data/test.mp4");
 
 	thr= thread(write_thread);
 }
@@ -292,13 +314,15 @@ void update() {
 void save2file() {
 	glReadBuffer(GL_BACK);
 	unsigned char * pixel_data= new unsigned char[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
+	//pixel_data= new unsigned char[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
+	//unsigned char pixel_data[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
 	/*for (int i=0; i<SCREEN_WIDTH * SCREEN_HEIGHT; ++i) {
 		pixel_data[i* 3+ 0]= 255;
 		pixel_data[i* 3+ 1]= 255;
 		pixel_data[i* 3+ 2]= 0;
 	}*/
-
 	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
+
 	safe_queue.push(pixel_data);
 
 	/*FILE* fp = fopen("../data/tmp.dat", "wb");
@@ -359,6 +383,7 @@ void clean() {
 
 	mpeg_writer->finish();
 	delete mpeg_writer;
+
 	delete screengl;
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);

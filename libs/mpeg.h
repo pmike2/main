@@ -55,6 +55,9 @@ public:
 	const AVOutputFormat * _output_format;
 	const AVCodec * _codec;
 	unsigned int _frame_count;
+	//unsigned char * _buffer;
+	//unsigned char _buffer[1024*1024*3];
+	AVPacket * _pkt;
 };
 
 #endif
