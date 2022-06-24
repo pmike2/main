@@ -202,9 +202,6 @@ void write_thread() {
 					}
 				}
 			}*/
-			for (unsigned int i=0; i<3000000; ++i) {
-				swap(pixel_data[1], pixel_data[0]);
-			}
 
 			//mpeg_writer->push_frame(pixel_data);
 			
@@ -323,14 +320,14 @@ void save2file() {
 	}*/
 	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
 
-	safe_queue.push(pixel_data);
+	//safe_queue.push(pixel_data);
 
 	/*FILE* fp = fopen("../data/tmp.dat", "wb");
 	fwrite(pixel_data, SCREEN_WIDTH* SCREEN_HEIGHT* 3, 1, fp);
 	fclose(fp);*/
 
-	//mpeg_writer->push_frame(pixel_data);
-	//delete[] pixel_data;
+	mpeg_writer->push_frame(pixel_data);
+	delete[] pixel_data;
 }
 
 

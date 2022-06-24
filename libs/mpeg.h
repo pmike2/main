@@ -4,13 +4,16 @@
 #include <string>
 
 extern "C" {
-#include<libavutil/avutil.h>
-#include<libavutil/imgutils.h>
+#include <libavutil/avutil.h>
+#include <libavutil/imgutils.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
 #include <libswscale/swscale.h>
 #include <libavutil/time.h>
 #include <libavutil/opt.h>
+#include <libavfilter/avfilter.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
 }
 
 
@@ -48,6 +51,7 @@ public:
 	
 	AVFrame * _frame;
 	AVFrame * _frame_rgb;
+	AVFrame * _filtered_frame;
 	AVCodecContext * _codec_context;
 	AVStream * _stream;
 	SwsContext * _sws_context;
@@ -55,9 +59,17 @@ public:
 	const AVOutputFormat * _output_format;
 	const AVCodec * _codec;
 	unsigned int _frame_count;
-	//unsigned char * _buffer;
-	//unsigned char _buffer[1024*1024*3];
 	AVPacket * _pkt;
+	
+	const AVFilter * _filter_buffer_sink;
+	const AVFilter * _filter_buffer;
+	const AVFilter * _filter_vflip;
+	AVFilterInOut * _filter_out;
+	AVFilterInOut * _filter_in;
+	AVFilterGraph * _filter_graph;
+	AVFilterContext * _filter_context_buffer;
+	AVFilterContext * _filter_context_buffer_sink;
+	AVFilterContext * _filter_context_vflip;
 };
 
 #endif

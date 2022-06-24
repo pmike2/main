@@ -1,5 +1,6 @@
 #include <iostream>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "mpeg.h"
 
@@ -290,31 +291,86 @@ MPEGWriter::MPEGWriter(unsigned int width, unsigned int height, unsigned int fps
 		return;
 	}
 
+	_filtered_frame= av_frame_alloc();
+
 	_frame_rgb= av_frame_alloc();
 	_frame_rgb->format= AV_PIX_FMT_RGB24;
 	_frame_rgb->width= _width;
 	_frame_rgb->height= _height;
-	/*if ((err= av_frame_get_buffer(_frame_rgb, 0))< 0) {
-		cout << "Failed to allocate picture" << err << "\n";
-		return;
-	}*/
 
 	_sws_context= sws_getContext(_width, _height, AV_PIX_FMT_RGB24, _width, _height, AV_PIX_FMT_YUV420P, SWS_BICUBIC, 0, 0, 0);
 
-	//int buffer_size= av_image_get_buffer_size(AV_PIX_FMT_RGB24, _width, _height, 32);
-	//_buffer= new unsigned char[buffer_size];
-
 	_pkt= av_packet_alloc();
-}
+
+
+	_filter_vflip= avfilter_get_by_name("vflip");
+	_filter_buffer= avfilter_get_by_name("buffer");
+	_filter_buffer_sink= avfilter_get_by_name("buffersink");
+	_filter_out= avfilter_inout_alloc();
+	_filter_in= avfilter_inout_alloc();
+	_filter_graph = avfilter_graph_alloc();
+
+	char args[512];
+	snprintf(args, sizeof(args),
+		"video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d",
+		_width, _height, _codec_context->pix_fmt,
+		_stream->time_base.num, _stream->time_base.den,
+		_codec_context->sample_aspect_ratio.num, _codec_context->sample_aspect_ratio.den);
+	
+	err= avfilter_graph_create_filter(&_filter_context_buffer, _filter_buffer, "in", args, NULL, _filter_graph);
+	if (err< 0) {
+		cout << "Erreur avfilter_graph_create_filter buffer" << err << "\n";
+		return;
+	}
+
+	err= avfilter_graph_create_filter(&_filter_context_buffer_sink, _filter_buffer_sink, "out", NULL, NULL, _filter_graph);
+	if (err< 0) {
+		cout << "Erreur avfilter_graph_create_filter buffer_sink" << err << "\n";
+		return;
+	}
+
+	enum AVPixelFormat pix_fmts[] = { AV_PIX_FMT_GRAY8, AV_PIX_FMT_NONE };
+	err= av_opt_set_int_list(_filter_context_buffer_sink, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
+	if (err< 0) {
+		cout << "Erreur av_opt_set_int_list" << err << "\n";
+		return;
+	}
+
+	_filter_out->name= av_strdup("in");
+	_filter_out->filter_ctx= _filter_context_buffer;
+	_filter_out->pad_idx= 0;
+	_filter_out->next= NULL;
+ 
+	_filter_in->name= av_strdup("out");
+	_filter_in->filter_ctx= _filter_context_buffer_sink;
+	_filter_in->pad_idx= 0;
+	_filter_in->next= NULL;
+
+	const char * filters_descr= "scale=78:24,transpose=cclock";
+	err= avfilter_graph_parse_ptr(_filter_graph, filters_descr, &_filter_in, &_filter_out, NULL);
+	if (err< 0) {
+		cout << "Erreur avfilter_graph_parse_ptr\n";
+		return;
+	}
+ 
+	err= avfilter_graph_config(_filter_graph, NULL);
+	if (err< 0) {
+		cout << "Erreur avfilter_graph_config\n";
+		return;
+	}
+
+	avfilter_inout_free(&_filter_in);
+	avfilter_inout_free(&_filter_out);
+ }
 
 
 MPEGWriter::~MPEGWriter() {
 	if (_frame) {
 		av_frame_free(&_frame);
 	}
-	/*if (_frame_rgb) {
-		av_frame_free(&_frame_rgb);
-	}*/
+	if (_filtered_frame) {
+		av_frame_free(&_filtered_frame);
+	}
 	if (_codec_context) {
 		avcodec_free_context(&_codec_context);
 	}
@@ -349,14 +405,13 @@ void MPEGWriter::push_frame(unsigned char * data) {
 	//unsigned char buffer[_width* _height* 3];
 	//memcpy(buffer, data, _width* _height* 3);
 	//av_freep(_frame_rgb->data[0]);
-	return;
 
 	//cout << &data << "\n";
 
 	// From RGB to YUV
-	cout << "BEFORE sws_scale\n";
+	//cout << "BEFORE sws_scale\n";
 	err= sws_scale(_sws_context, (const unsigned char * const *)&_frame_rgb->data, _frame_rgb->linesize, 0, _height, _frame->data, _frame->linesize);
-	cout << "AFTER sws_scale\n";
+	//cout << "AFTER sws_scale\n";
 	//int linesize[1]= {(int)(_width)* 3};
 	//err= sws_scale(_sws_context, (const unsigned char * const *)&data, linesize, 0, _height, _frame->data, _frame->linesize);
 
@@ -367,7 +422,19 @@ void MPEGWriter::push_frame(unsigned char * data) {
 	_frame->pts= (1.0/ (double)(_fps))* _stream->time_base.den* (_frame_count++);
 	//cout << _frame->pts << "\n";
 
-	if ((err= avcodec_send_frame(_codec_context, _frame))< 0) {
+	err= av_buffersrc_add_frame_flags(_filter_context_buffer, _frame, AV_BUFFERSRC_FLAG_KEEP_REF);
+	if (err< 0) {
+		cout << "Failed to av_buffersrc_add_frame_flags frame : " << err << "\n";
+		return;
+	}
+
+	err= av_buffersink_get_frame(_filter_context_buffer_sink, _filtered_frame);
+	if (err< 0) {
+		cout << "Failed to av_buffersink_get_frame frame : " << err << "\n";
+		return;
+	}
+
+	if ((err= avcodec_send_frame(_codec_context, _filtered_frame))< 0) {
 		cout << "Failed to send frame : " << err << "\n";
 		return;
 	}
@@ -397,6 +464,9 @@ void MPEGWriter::push_frame(unsigned char * data) {
 	//av_freep(&_frame_rgb->data[0]);
 	//av_free(buffer);
 	//delete[] buffer;
+
+	av_frame_unref(_frame);
+	av_frame_unref(_filtered_frame);
 }
 
 
