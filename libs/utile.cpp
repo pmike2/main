@@ -155,6 +155,17 @@ unsigned int diff_time_ms_from_now(struct timeval * begin) {
 }
 
 
+string current_date_time() {
+	time_t now = time(0);
+	struct tm tstruct;
+	char buf[256];
+	tstruct= *localtime(&now);
+	strftime(buf, sizeof(buf), "%Y_%m_%d_%H_%M_%S", &tstruct);
+
+	return buf;
+}
+
+
 glm::vec3 sum_over_e(glm::vec3* e, glm::vec3* e_prime, int& i) {
 	int k = 0;
 	glm::vec3 result;

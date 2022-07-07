@@ -2,6 +2,9 @@
 #define MPEG_H
 
 #include <string>
+#include <chrono>
+#include <vector>
+#include <thread>
 
 extern "C" {
 #include <libavutil/avutil.h>
@@ -15,6 +18,8 @@ extern "C" {
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
 }
+
+#include "thread.h"
 
 
 class MPEGReader {
@@ -37,9 +42,10 @@ public:
 class MPEGWriter {
 public:
 	MPEGWriter();
-	MPEGWriter(unsigned int width, unsigned int height, unsigned int fps, unsigned int bitrate, std::string output_path);
+	MPEGWriter(unsigned int width, unsigned int height, unsigned int fps, unsigned int bitrate, std::string output_path, bool vflip, bool use_global_fps);
 	~MPEGWriter();
-	void push_frame(unsigned char * data);
+	void init_filters();
+	void push_frame(unsigned char * data, unsigned int ms);
 	void finish();
 
 
@@ -48,10 +54,12 @@ public:
 	unsigned int _fps;
 	unsigned int _bitrate;
 	std::string _output_path;
+	std::string _output_path_vflipped;
+	bool _vflip;
+	bool _use_global_fps;
 	
 	AVFrame * _frame;
 	AVFrame * _frame_rgb;
-	AVFrame * _filtered_frame;
 	AVCodecContext * _codec_context;
 	AVStream * _stream;
 	SwsContext * _sws_context;
@@ -61,6 +69,8 @@ public:
 	unsigned int _frame_count;
 	AVPacket * _pkt;
 	
+	// a revoir
+	AVFrame * _filtered_frame;
 	const AVFilter * _filter_buffer_sink;
 	const AVFilter * _filter_buffer;
 	const AVFilter * _filter_vflip;
@@ -71,5 +81,28 @@ public:
 	AVFilterContext * _filter_context_buffer_sink;
 	AVFilterContext * _filter_context_vflip;
 };
+
+
+class MPEGWriterHelper : public MPEGWriter {
+public:
+	MPEGWriterHelper();
+	MPEGWriterHelper(unsigned int width, unsigned int height, unsigned int fps, unsigned int bitrate, std::string output_path, bool vflip, bool use_global_fps, unsigned int n_buffers);
+	~MPEGWriterHelper();
+	void next_buffer();
+	void add2queue();
+	void read_queue();
+	unsigned char * current_pixel_data();
+
+
+	unsigned int _n_buffers;
+	std::thread _thr;
+	SafeQueue<unsigned int> _safe_queue;
+	std::chrono::system_clock::time_point _start_point;
+	std::atomic_bool _stop_thr;
+	unsigned int _current_idx;
+	std::vector<unsigned char *> _pixel_datas;
+	std::vector<unsigned int> _time_points;
+};
+
 
 #endif

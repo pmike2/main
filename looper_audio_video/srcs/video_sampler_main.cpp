@@ -51,12 +51,15 @@ glm::mat4 model2world;
 
 ScreenGL * screengl;
 InputState * input_state;
-bool done= false;
+bool done;
 chrono::system_clock::time_point t1, t2;
 
 VideoSampler * video_sampler;
 
 SocketIOUtil * sio_util;
+
+MPEGWriterHelper * mpeg_writer_helper;
+bool recording;
 
 
 void init_sdl() {
@@ -95,6 +98,9 @@ void init_sdl() {
 	glDisable(GL_BLEND);
 	
 	//glPointSize(4.0f);
+
+	// sert à préciser à glReadPixels que l'on veut lire le buffer qui n'est pas en train d'etre écris
+	glReadBuffer(GL_BACK);
 	
 	SDL_GL_SwapWindow(window);
 
@@ -182,6 +188,12 @@ void init_io_client() {
 }
 
 
+void init_mpeg_writer() {
+	string save_mpeg_path= "../data/sessions/session_"+ current_date_time()+ ".mp4";
+	mpeg_writer_helper= new MPEGWriterHelper(SCREEN_WIDTH, SCREEN_HEIGHT, 30, 2000, save_mpeg_path, false, true, 8);
+}
+
+
 void init(string json_path) {
 	srand(time(NULL));
 
@@ -189,6 +201,10 @@ void init(string json_path) {
 	init_vao_vbo();
 	init_program(json_path);
 	init_io_client();
+	init_mpeg_writer();
+
+	done= false;
+	recording= false;
 }
 
 
@@ -233,6 +249,13 @@ void update() {
 }
 
 
+void save2file() {
+	mpeg_writer_helper->next_buffer();
+	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, mpeg_writer_helper->current_pixel_data());
+	mpeg_writer_helper->add2queue();
+}
+
+
 void compute_fps() {
 	t2= chrono::system_clock::now();
 	auto d= chrono::duration_cast<chrono::milliseconds>(t2- t1).count();
@@ -247,6 +270,9 @@ void compute_fps() {
 void idle() {
 	update();
 	draw();
+	if (recording) {
+		save2file();
+	}
 	compute_fps();
 }
 
@@ -256,9 +282,9 @@ void key_down(SDL_Keycode key) {
 		done= true;
 		return;
 	}
-	/*else if (key== SDLK_r) {
-		video_sampler->_mpeg_readers->randomize();
-	}*/
+	else if (key== SDLK_r) {
+		recording= !recording;
+	}
 	/*else if (key== SDLK_u) {
 		string url= "http://localhost:3000/config";
 		string json_tmp= "video_config_tmp.json";
@@ -312,6 +338,7 @@ void main_loop() {
 
 
 void clean() {
+	delete mpeg_writer_helper;
 	delete sio_util;
 	delete video_sampler;
 	delete screengl;

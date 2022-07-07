@@ -633,7 +633,7 @@ void MPEGReaders::load_mpegs() {
 		
 		cout << "loading " << mpegs_paths[i] << "\n";
 
-		MPEG * mpeg= new MPEG(mpegs_paths[i]);
+		MPEGReader * mpeg= new MPEGReader(mpegs_paths[i]);
 		
 		glActiveTexture(GL_TEXTURE0+ _movie_textures_indices[i]);
 		glBindTexture(GL_TEXTURE_3D, _movies_ids[i]);

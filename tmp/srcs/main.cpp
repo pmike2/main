@@ -5,9 +5,9 @@
 #include <chrono>
 #include <math.h>
 #include <stdlib.h>
-#include <thread>
+//#include <thread>
 #include <algorithm>
-
+#include <vector>
 
 #include <OpenGL/gl3.h>
 
@@ -21,7 +21,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "gl_utils.h"
-#include "thread.h"
+//#include "thread.h"
 #include "mpeg.h"
 
 
@@ -48,17 +48,9 @@ GLuint vbo;
 
 float angle_rot;
 unsigned int rmask, gmask, bmask, amask;
-chrono::system_clock::time_point start_point;
 chrono::system_clock::time_point t1, t2;
-unsigned int png_compt;
 
-SafeQueue<unsigned char *> safe_queue;
-thread thr;
-mutex mtx;
-atomic_bool stop_thr= ATOMIC_VAR_INIT(false);
-
-MPEGWriter * mpeg_writer;
-//unsigned char pixel_data[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
+MPEGWriterHelper * mpeg_writer_helper;
 
 
 void key_down(SDL_Keycode key) {
@@ -66,16 +58,6 @@ void key_down(SDL_Keycode key) {
 		done= true;
 		return;
 	}
-
-	/*if (key== SDLK_SPACE) {
-		for (int j=0; j<SCREEN_HEIGHT; ++j) {
-			for (int i=0; i<SCREEN_WIDTH; ++i) {
-				cout << +pixel_data[3*(j* SCREEN_WIDTH+ i)+ 0] << ";" << +pixel_data[3*(j* SCREEN_WIDTH+ i)+ 1] << ";" << +pixel_data[3*(j* SCREEN_WIDTH+ i)+ 2];
-				cout << " ";
-			}
-			cout << "\n";
-		}
-	}*/
 }
 
 
@@ -117,6 +99,9 @@ void init_sdl() {
 	//glDisable(GL_BLEND);
 	
 	//glPointSize(4.0f);
+
+	// sert à préciser à glReadPixels que l'on veut lire le buffer qui n'est pas en train d'etre écris
+	glReadBuffer(GL_BACK);
 	
 	SDL_GL_SwapWindow(window);
 }
@@ -172,69 +157,7 @@ void init_buffer() {
 }
 
 
-void write_thread() {
-	unsigned char * pixel_data;
-	//SDL_Surface * surf;
-	//string png_path;
-	
-	while (true) {
-		if (stop_thr) {
-			break;
-		}
-
-		if (safe_queue.next(pixel_data)) {
-			/*unsigned char * debug= new unsigned char[mpeg_writer->_width* mpeg_writer->_height* 4];
-			memset(debug, 100, mpeg_writer->_width* mpeg_writer->_height* 4);
-
-			mpeg_writer->push_frame(debug);*/
-
-			//unsigned char tmp;
-			/*for (int i=0; i<SCREEN_WIDTH; ++i) {
-				for (int j=0; j<SCREEN_HEIGHT; ++j) {
-					for (int k=0; k<3; ++k) {
-						//cout << i << "; " << j << "; " << k << "\n";
-						//tmp= pixel_data[(i+ j* SCREEN_WIDTH)* 3+ k];
-						//pixel_data[(i+ j* SCREEN_WIDTH)* 3+ k]= 0;
-						//pixel_data[(i+ j* SCREEN_WIDTH)* 3+ k]= pixel_data[(i+ (SCREEN_HEIGHT- 1- j)* SCREEN_WIDTH)* 3+ k];
-						//pixel_data[(i+ (SCREEN_HEIGHT- 1- j)* SCREEN_WIDTH)* 3+ k]= tmp;
-						//swap(pixel_data[(i+ j* SCREEN_WIDTH)* 3+ k], pixel_data[(i+ (SCREEN_HEIGHT- 1- j)* SCREEN_WIDTH)* 3+ k]);
-						//swap(pixel_data[1], pixel_data[0]);
-					}
-				}
-			}*/
-
-			//mpeg_writer->push_frame(pixel_data);
-			
-			/*chrono::system_clock::duration t= chrono::system_clock::now()- start_point;
-			unsigned int ms= chrono::duration_cast<chrono::milliseconds>(t).count();
-			png_path= "../data/out_"+ to_string(ms)+ ".png";*/
-
-			/*ostringstream ss;
-			ss << setw(5) << setfill('0') << png_compt;
-			png_path= "../data/out_"+ ss.str()+ ".png";
-			png_compt++;
-
-			int pitch= SCREEN_WIDTH* 3;
-			surf= SDL_CreateRGBSurfaceFrom((void*)(pixel_data), SCREEN_WIDTH, SCREEN_HEIGHT, 24, pitch, rmask, gmask, bmask, amask);
-			IMG_SavePNG(surf, png_path.c_str());
-			SDL_FreeSurface(surf);*/
-			delete[] pixel_data;
-		}
-	}
-}
-
-
 void init() {
-
-	/*unsigned char * debug= new unsigned char[mpeg_writer->_width* mpeg_writer->_height* 4];
-	memset(debug, 100, mpeg_writer->_width* mpeg_writer->_height* 4);
-	for (int i=0; i<100; ++i) {
-		mpeg_writer->push_frame(debug);
-	}
-	delete[] debug;
-	mpeg_writer->finish();
-	delete mpeg_writer;*/
-
 	init_sdl();
 
 	glGenVertexArrays(1, &vao);
@@ -258,14 +181,7 @@ void init() {
 		amask = 0xff000000;
 	#endif
 
-	start_point= chrono::system_clock::now();
-	system("rm ../data/*.png 2>/dev/null");
-	png_compt= 0;
-
-	//pixel_data= new unsigned char[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
-	mpeg_writer= new MPEGWriter(SCREEN_WIDTH, SCREEN_HEIGHT, 30, 2000, "../data/test.mp4");
-
-	thr= thread(write_thread);
+	mpeg_writer_helper= new MPEGWriterHelper(SCREEN_WIDTH, SCREEN_HEIGHT, 30, 2000, "../data/test.mp4", false, 8);
 }
 
 
@@ -309,25 +225,9 @@ void update() {
 
 
 void save2file() {
-	glReadBuffer(GL_BACK);
-	unsigned char * pixel_data= new unsigned char[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
-	//pixel_data= new unsigned char[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
-	//unsigned char pixel_data[SCREEN_WIDTH* SCREEN_HEIGHT* 3];
-	/*for (int i=0; i<SCREEN_WIDTH * SCREEN_HEIGHT; ++i) {
-		pixel_data[i* 3+ 0]= 255;
-		pixel_data[i* 3+ 1]= 255;
-		pixel_data[i* 3+ 2]= 0;
-	}*/
-	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, pixel_data);
-
-	//safe_queue.push(pixel_data);
-
-	/*FILE* fp = fopen("../data/tmp.dat", "wb");
-	fwrite(pixel_data, SCREEN_WIDTH* SCREEN_HEIGHT* 3, 1, fp);
-	fclose(fp);*/
-
-	mpeg_writer->push_frame(pixel_data);
-	delete[] pixel_data;
+	mpeg_writer_helper->next_buffer();
+	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, mpeg_writer_helper->current_pixel_data());
+	mpeg_writer_helper->add2queue();
 }
 
 
@@ -375,12 +275,7 @@ void main_loop() {
 
 
 void clean() {
-	stop_thr= true;
-	thr.join();
-
-	mpeg_writer->finish();
-	delete mpeg_writer;
-
+	delete mpeg_writer_helper;
 	delete screengl;
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
@@ -389,18 +284,6 @@ void clean() {
 
 
 int main() {
-	/*mpeg_writer= new MPEGWriter(SCREEN_WIDTH, SCREEN_HEIGHT, 30, 2000, "../data/test.mp4");
-	unsigned char * debug= new unsigned char[mpeg_writer->_width* mpeg_writer->_height* 4];
-	memset(debug, 100, mpeg_writer->_width* mpeg_writer->_height* 4);
-	for (int i=0; i<100; ++i) {
-		mpeg_writer->push_frame(debug);
-	}
-	delete[] debug;
-	mpeg_writer->finish();
-	delete mpeg_writer;
-
-	return 0;*/
-
 	init();
 	main_loop();
 	clean();

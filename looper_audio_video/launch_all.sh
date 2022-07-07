@@ -33,7 +33,7 @@ in_args() {
 kill_all() {
 	pkill node
 	pkill looper_gl_main
-	pkill video_sampler_main
+	#pkill video_sampler_main # non ! sinon pas d'enregistrement mp4 valide
 	pkill audio_sampler_main
 	pkill cv_in_main
 	pkill cv_out_main
