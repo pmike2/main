@@ -50,7 +50,8 @@ LooperGL::LooperGL() {
 
 
 LooperGL::LooperGL(GLuint prog_2d, GLuint prog_font, ScreenGL * screengl) :
-	_prog_2d(prog_2d), _prog_font(prog_font), _tap(), _ratio_numerator(0), _screengl(screengl), _current_track_changed(false)/*, _insert_idx_track(-1), _insert_idx_event(-1)*/
+	_prog_2d(prog_2d), _prog_font(prog_font), _tap(), _ratio_numerator(0), _screengl(screengl), _current_track_changed(false),
+	_screen_save(false)
 {
 	_input_state= new InputState();
 
@@ -125,6 +126,9 @@ void LooperGL::key_down(SDL_Keycode key) {
 
 		if (key== SDLK_d) {
 			debug();
+		}
+		else if (key== SDLK_s) {
+			_screen_save= !_screen_save;
 		}
 		else if (key== SDLK_SPACE) {
 			toggle_start();
@@ -313,7 +317,7 @@ void LooperGL::update_text_general() {
 	vector<Text> texts;
 	texts.push_back(Text(to_string(int(get_bpm()))+ " BPM", glm::vec2(rect_general._x, rect_general._y+ rect_general._h- 1.0f), 0.005f, glm::vec4(1.0f, 0.1f, 0.1f, 0.7f)));
 	texts.push_back(Text("SHIFT+", glm::vec2(rect_general._x, rect_general._y+ rect_general._h- 2.0f), 0.004f, glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)));
-	vector<string> shift_cmds= {"up:prev trk", "down:nxt trk", "1a9x2:ratio", "space:play", "r:record", "t:taptempo", "y:yank", "h:hold", "c:clear", "q:quantize", "d:debug"};
+	vector<string> shift_cmds= {"up:prev trk", "down:nxt trk", "1a9x2:ratio", "space:play", "r:record", "t:taptempo", "y:yank", "h:hold", "c:clear", "q:quantize", "d:debug", "s:screensave"};
 	for (unsigned int i=0; i<shift_cmds.size(); ++i) {
 		texts.push_back(Text(shift_cmds[i], glm::vec2(rect_general._x, rect_general._y+ rect_general._h- 2.5f- 0.5f* (float)(i)), 0.004f, glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)));
 	}

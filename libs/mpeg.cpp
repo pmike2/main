@@ -251,10 +251,10 @@ MPEGWriter::MPEGWriter(unsigned int width, unsigned int height, unsigned int fps
 
 	avcodec_parameters_to_context(_codec_context, _stream->codecpar);
 
-	_codec_context->time_base= {1,1};
-	_codec_context->max_b_frames= 2;
+	_codec_context->time_base= {1, (int)(_fps)};
+	_codec_context->max_b_frames= 2; // ?
 	_codec_context->gop_size= 12; // ?
-	_codec_context->framerate= { (int)(_fps), 1 };
+	_codec_context->framerate= {(int)(_fps), 1};
 
 	if (_stream->codecpar->codec_id== AV_CODEC_ID_H264) {
 		av_opt_set(_codec_context, "preset", "ultrafast", 0);
@@ -432,8 +432,8 @@ void MPEGWriter::push_frame(unsigned char * data, unsigned int ms) {
 
 	// From RGB to YUV
 	//cout << "BEFORE sws_scale\n";
-	_frame_rgb->data[0]= data;
-	//memcpy(_frame_rgb->data[0], data, _width* _height* 3);
+	//_frame_rgb->data[0]= data;
+	memcpy(_frame_rgb->data[0], data, _width* _height* 3);
 	err= sws_scale(_sws_context, _frame_rgb->data, _frame_rgb->linesize, 0, _height, _frame->data, _frame->linesize);
 	//int linesize[1]= {(int)(_width)* 3};
 	//unsigned char * d[8];
@@ -546,61 +546,44 @@ MPEGWriterHelper::MPEGWriterHelper() : MPEGWriter() {
 }
 
 
-MPEGWriterHelper::MPEGWriterHelper(unsigned int width, unsigned int height, unsigned int fps, unsigned int bitrate, std::string output_path, bool vflip, bool use_global_fps, unsigned int n_buffers) :
-	MPEGWriter(width, height, fps, bitrate, output_path, vflip, use_global_fps), _n_buffers(n_buffers), _stop_thr(ATOMIC_VAR_INIT(false)),
-	_current_idx(0), _thr(thread(&MPEGWriterHelper::read_queue, this)), _start_point(chrono::system_clock::now())
+/*
+J'ai essayé de mettre plusieurs threads en écriture mais cela fait foirer la timeline
+et ffmpeg utilise déjà plusieurs threads pour écrire un frame
+-> finalement un seul thread d'écriture
+*/
+MPEGWriterHelper::MPEGWriterHelper(unsigned int width, unsigned int height, unsigned int fps, unsigned int bitrate, std::string output_path, bool vflip, bool use_global_fps) :
+	MPEGWriter(width, height, fps, bitrate, output_path, vflip, use_global_fps), _stop_thr(false), _start_point(chrono::system_clock::now()),
+	_writing_thread(thread(&MPEGWriterHelper::read_queue, this))
 {
-	
-	for (unsigned int i=0; i<_n_buffers; ++i) {
-		_pixel_datas.push_back(new unsigned char[width* height* 3]);
-		_time_points.push_back(0);
-	}
+
 }
 
 
 MPEGWriterHelper::~MPEGWriterHelper() {
 	_stop_thr= true;
-	_thr.join();
+	_writing_thread.join();
 	finish();
-
-	for (auto & pixel_data : _pixel_datas) {
-		delete[] pixel_data;
-	}
-	_pixel_datas.clear();
-	_time_points.clear();
 }
 
 
-void MPEGWriterHelper::next_buffer() {
+void MPEGWriterHelper::add2queue(unsigned char * data) {
 	chrono::system_clock::duration t= chrono::system_clock::now()- _start_point;
 	unsigned int ms= chrono::duration_cast<chrono::milliseconds>(t).count();
-
-	_current_idx++;
-	if (_current_idx== _n_buffers) {
-		_current_idx= 0;
-	}
-	_time_points[_current_idx]= ms;
-}
-
-
-void MPEGWriterHelper::add2queue() {
-	_safe_queue.push(_current_idx);
-
+	
+	_safe_queue.push(make_pair(data, ms));
 }
 
 
 void MPEGWriterHelper::read_queue() {
+	pair<unsigned char *, unsigned int> p;
 	while (true) {
 		if (_stop_thr) {
 			break;
 		}
-
-		unsigned int idx= _safe_queue.next();
-		push_frame(_pixel_datas[idx], _time_points[idx]);
+		if (_safe_queue.next(p)) {
+			
+			push_frame(p.first, p.second);
+			delete[] p.first;
+		}
 	}
-}
-
-
-unsigned char * MPEGWriterHelper::current_pixel_data() {
-	return _pixel_datas[_current_idx];
 }

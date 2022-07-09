@@ -88,6 +88,7 @@ public:
 	std::chrono::system_clock::time_point _tap;
 	unsigned int _ratio_numerator;
 	bool _current_track_changed;
+	bool _screen_save;
 };
 
 #endif

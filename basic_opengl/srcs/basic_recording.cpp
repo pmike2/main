@@ -78,7 +78,7 @@ void init_sdl() {
 	glDepthFunc(GL_LEQUAL);*/
 	glDisable(GL_DEPTH_TEST);
 
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 	//glClearDepth(1.0f);
 	
 	// frontfaces en counterclockwise
@@ -116,7 +116,7 @@ void init_buffer() {
 
 	camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, -1.0f, 1.0f);
 	angle_rot= 0.0f;
-	model2world= glm::rotate(glm::mat4(1.0f), angle_rot, glm::vec3(0.f, 0.f, 1.f));
+	model2world= glm::rotate(glm::mat4(1.0f), angle_rot, glm::vec3(0.0f, 0.0f, 1.0f));
 
 	glGenBuffers(1, &vbo);
 
@@ -173,7 +173,7 @@ void init() {
 		amask = 0xff000000;
 	#endif
 
-	mpeg_writer_helper= new MPEGWriterHelper(SCREEN_WIDTH, SCREEN_HEIGHT, 30, 2000, "../data/test.mp4", false, false, 8);
+	mpeg_writer_helper= new MPEGWriterHelper(SCREEN_WIDTH, SCREEN_HEIGHT, 30, 2000, "../data/test.mp4", false, false);
 }
 
 
@@ -217,9 +217,9 @@ void update() {
 
 
 void save2file() {
-	mpeg_writer_helper->next_buffer();
-	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, mpeg_writer_helper->current_pixel_data());
-	mpeg_writer_helper->add2queue();
+	unsigned char * data= new unsigned char[3* SCREEN_WIDTH* SCREEN_HEIGHT]();
+	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, data);
+	mpeg_writer_helper->add2queue(data);
 }
 
 
@@ -275,8 +275,14 @@ void clean() {
 }
 
 
+
 int main() {
 	init();
+	
+	// sinon le 1er readpixels qui se fait sur GL_BACK sera tout à 0
+	update();
+	draw();
+
 	main_loop();
 	clean();
 	

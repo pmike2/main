@@ -190,7 +190,7 @@ void init_io_client() {
 
 void init_mpeg_writer() {
 	string save_mpeg_path= "../data/sessions/session_"+ current_date_time()+ ".mp4";
-	mpeg_writer_helper= new MPEGWriterHelper(SCREEN_WIDTH, SCREEN_HEIGHT, 30, 2000, save_mpeg_path, false, true, 8);
+	mpeg_writer_helper= new MPEGWriterHelper(SCREEN_WIDTH, SCREEN_HEIGHT, 30, 2000, save_mpeg_path, false, false);
 }
 
 
@@ -250,9 +250,9 @@ void update() {
 
 
 void save2file() {
-	mpeg_writer_helper->next_buffer();
-	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, mpeg_writer_helper->current_pixel_data());
-	mpeg_writer_helper->add2queue();
+	unsigned char * data= new unsigned char[3* SCREEN_WIDTH* SCREEN_HEIGHT]();
+	glReadPixels(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE, data);
+	mpeg_writer_helper->add2queue(data);
 }
 
 

@@ -5,6 +5,7 @@
 #include <chrono>
 #include <vector>
 #include <thread>
+#include <utility>
 
 extern "C" {
 #include <libavutil/avutil.h>
@@ -86,22 +87,16 @@ public:
 class MPEGWriterHelper : public MPEGWriter {
 public:
 	MPEGWriterHelper();
-	MPEGWriterHelper(unsigned int width, unsigned int height, unsigned int fps, unsigned int bitrate, std::string output_path, bool vflip, bool use_global_fps, unsigned int n_buffers);
+	MPEGWriterHelper(unsigned int width, unsigned int height, unsigned int fps, unsigned int bitrate, std::string output_path, bool vflip, bool use_global_fps);
 	~MPEGWriterHelper();
-	void next_buffer();
-	void add2queue();
+	void add2queue(unsigned char * data);
 	void read_queue();
-	unsigned char * current_pixel_data();
 
 
-	unsigned int _n_buffers;
-	std::thread _thr;
-	SafeQueue<unsigned int> _safe_queue;
+	std::thread _writing_thread;
+	SafeQueue<std::pair<unsigned char *, unsigned int> > _safe_queue;
 	std::chrono::system_clock::time_point _start_point;
 	std::atomic_bool _stop_thr;
-	unsigned int _current_idx;
-	std::vector<unsigned char *> _pixel_datas;
-	std::vector<unsigned int> _time_points;
 };
 
 
