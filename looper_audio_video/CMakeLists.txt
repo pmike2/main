@@ -57,7 +57,7 @@ add_executable(video_sampler_main ./srcs/video_sampler_main.cpp ./srcs/video_sam
 
 
 string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
-set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lbz2" "-liconv" "-lz" "-lavutil" "-lavcodec" "-lavdevice" "-lavformat" "-lavfilter" "-lpostproc" "-lswresample" "-lswscale" "-lx264" "-pthread" "-lm" "-framework AudioUnit" "-framework AudioToolbox" "-framework CoreAudio" "-framework VideoToolbox" "-framework CoreFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework CoreGraphics" "-framework CoreImage" "-framework CoreServices" "-framework Security" "-framework Foundation" "-framework AppKit")
+set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lass" "-lbz2" "-liconv" "-lz" "-lavutil" "-lavcodec" "-lavdevice" "-lavformat" "-lavfilter" "-lpostproc" "-lswresample" "-lswscale" "-lx264" "-pthread" "-lm" "-framework AudioUnit" "-framework AudioToolbox" "-framework CoreAudio" "-framework VideoToolbox" "-framework CoreFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework CoreGraphics" "-framework CoreImage" "-framework CoreServices" "-framework Security" "-framework Foundation" "-framework AppKit")
 
 #target_link_libraries(looper_sdl_main PUBLIC ${SDL2_LIBRARIES} lib_shared_mem lib_looper lib_input_state lib_utile)
 target_link_libraries(looper_gl_main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} lib_shared_mem lib_looper lib_input_state lib_gl_utils lib_font lib_utile)
