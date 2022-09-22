@@ -1,14 +1,19 @@
-<nav>
-	<ul>
-	  <li><a routerLink="/intro" routerLinkActive="active" ariaCurrentWhenActive="page">Intro</a></li>
-	  <li><a routerLink="/materiaux" routerLinkActive="active" ariaCurrentWhenActive="page">Matériaux</a></li>
-	  <li><a routerLink="/installation" routerLinkActive="active" ariaCurrentWhenActive="page">Installation</a></li>
-	  <li><a routerLink="/general" routerLinkActive="active" ariaCurrentWhenActive="page">Conseils généraux</a></li>
-	  <li><a routerLink="/piliers" routerLinkActive="active" ariaCurrentWhenActive="page">Les 4 piliers</a></li>
-	  <li><a routerLink="/deroulement" routerLinkActive="active" ariaCurrentWhenActive="page">Déroulement d'un portrait</a></li>
-	  <li><a routerLink="/references" routerLinkActive="active" ariaCurrentWhenActive="page">Références</a></li>
-	  <li><a routerLink="/glossaire" routerLinkActive="active" ariaCurrentWhenActive="page">Glossaire</a></li>
-	</ul>
-</nav>
+
+<mat-sidenav-container>
 	
-<router-outlet></router-outlet>
+	<mat-sidenav [(opened)]="sidenav_opened" #sidenav_tools mode="side">
+		<mat-nav-list>
+			<a *ngFor="let link of links" [routerLink]="link[0]" routerLinkActive="active" ariaCurrentWhenActive="page">
+				<mat-list-item>
+					<mat-icon mat-list-icon>{{link[2]}}</mat-icon>
+					<span>{{link[1]}}</span>
+				</mat-list-item>
+			</a>
+		</mat-nav-list>
+	</mat-sidenav>
+	
+	<mat-sidenav-content>
+		<router-outlet></router-outlet>
+	</mat-sidenav-content>
+
+</mat-sidenav-container>

@@ -1,0 +1,12 @@
+mat-sidenav {
+	width: 250px;
+	height: 800px;
+	margin-right: 4px;
+	margin-left: 4px;
+}
+
+mat-sidenav-content {
+	height: 800px;
+	padding-left: 10px;
+	padding-right: 10px;
+}

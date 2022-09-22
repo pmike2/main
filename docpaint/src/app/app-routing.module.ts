@@ -10,7 +10,10 @@ import { GeneralComponent } from './general/general.component';
 import { InstallationComponent } from './installation/installation.component';
 import { MateriauxComponent } from './materiaux/materiaux.component';
 import { PiliersComponent } from './piliers/piliers.component';
+import { HomeComponent } from './home/home.component';
 
+
+// l'ordre est important
 const routes: Routes = [
   {path : 'intro', component : IntroComponent},
   {path : 'references', component : ReferencesComponent},
@@ -20,6 +23,8 @@ const routes: Routes = [
   {path : 'installation', component : InstallationComponent},
   {path : 'materiaux', component : MateriauxComponent},
   {path : 'piliers', component : PiliersComponent},
+  { path: 'home', component: HomeComponent },
+  { path: '**', component: HomeComponent },
 ];
 
 @NgModule({

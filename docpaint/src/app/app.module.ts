@@ -24,6 +24,12 @@ import { BordComponent } from './piliers/shared/components/bord/bord.component';
 import { GlossaireComponent } from './glossaire/glossaire.component';
 import { DeroulementComponent } from './deroulement/deroulement.component';
 import { CouleurMatComponent } from './materiaux/shared/components/couleur-mat/couleur-mat.component';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import {MatListModule} from '@angular/material/list';
+import {MatIconModule} from '@angular/material/icon';
+import {MatSidenavModule} from '@angular/material/sidenav';
+import { HomeComponent } from './home/home.component';
+
 
 @NgModule({
   declarations: [
@@ -48,11 +54,16 @@ import { CouleurMatComponent } from './materiaux/shared/components/couleur-mat/c
     BordComponent,
     GlossaireComponent,
     DeroulementComponent,
-    CouleurMatComponent
+    CouleurMatComponent,
+    HomeComponent
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    BrowserAnimationsModule,
+    MatListModule,
+    MatIconModule,
+    MatSidenavModule,
   ],
   providers: [],
   bootstrap: [AppComponent]
