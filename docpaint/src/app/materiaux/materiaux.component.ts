@@ -13,7 +13,7 @@ export class MateriauxComponent implements OnInit {
     ["couleur-mat", "Couleurs", "invert_colors"],
     ["palette", "Palette", "palette"],
     ["nettoyage", "Nettoyage", "wash"],
-    ["back", "Retour", "arrow_back"]
+    ["../home", "Retour", "arrow_back"]
   ];
 
   sidenav_opened: boolean= false;

@@ -7,9 +7,9 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 })
 export class ReferencesComponent implements OnInit {
   links: any= [
-    ["artistes", "Artistes", ""],
-    ["livres", "Livres", ""],
-    ["back", "Retour", "arrow_back"]
+    ["artistes", "Artistes", "emoji_people"],
+    ["livres", "Livres", "menu_book"],
+    ["../home", "Retour", "arrow_back"]
   ];
 
   sidenav_opened: boolean= false;

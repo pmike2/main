@@ -7,11 +7,11 @@ import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 })
 export class PiliersComponent implements OnInit {
   links: any= [
-    ["dessin", "Dessin", ""],
-    ["valeur", "Valeur", ""],
-    ["couleur", "Couleur", ""],
-    ["bord", "Bord", ""],
-    ["back", "Retour", "arrow_back"]
+    ["dessin", "Dessin", "draw"],
+    ["valeur", "Valeur", "contrast"],
+    ["couleur", "Couleur", "palette"],
+    ["bord", "Bord", "blur_on"],
+    ["../home", "Retour", "arrow_back"]
   ];
 
   sidenav_opened: boolean= false;
