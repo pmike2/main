@@ -1,3 +1,23 @@
-<app-artiste></app-artiste>
+<!--<app-artiste></app-artiste>
 <hr>
 <app-livre></app-livre>
+-->
+
+<mat-sidenav-container>
+	
+	<mat-sidenav [(opened)]="sidenav_opened" #sidenav_tools mode="side">
+		<mat-nav-list>
+			<a *ngFor="let link of links" [routerLink]="link[0]" routerLinkActive="active" ariaCurrentWhenActive="page">
+				<mat-list-item>
+					<mat-icon mat-list-icon>{{link[2]}}</mat-icon>
+					<span>{{link[1]}}</span>
+				</mat-list-item>
+			</a>
+		</mat-nav-list>
+	</mat-sidenav>
+	
+	<mat-sidenav-content>
+		<router-outlet></router-outlet>
+	</mat-sidenav-content>
+
+</mat-sidenav-container>

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output } from '@angular/core';
 
 @Component({
   selector: 'app-references',
@@ -6,10 +6,31 @@ import { Component, OnInit } from '@angular/core';
   styleUrls: ['./references.component.css']
 })
 export class ReferencesComponent implements OnInit {
+  links: any= [
+    ["artistes", "Artistes", ""],
+    ["livres", "Livres", ""],
+    ["back", "Retour", "arrow_back"]
+  ];
+
+  sidenav_opened: boolean= false;
+
+  @Output() hideMenuEvent = new EventEmitter<boolean>();
 
   constructor() { }
 
   ngOnInit(): void {
+  }
+
+  activate() {
+    //console.log("activate ref");
+    this.sidenav_opened= true;
+    this.hideMenuEvent.emit(true);
+  }
+
+  deactivate() {
+    //console.log("deactivate ref");
+    this.sidenav_opened= false;
+    this.hideMenuEvent.emit(false);
   }
 
 }

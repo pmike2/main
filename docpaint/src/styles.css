@@ -2,3 +2,15 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+
+
+/* ajouté par moi */
+mat-sidenav {
+	/*height: 800px !important;*/
+}
+
+/* a supprimer a terme si contenu suffisamment grand ? */
+mat-sidenav-content {
+	height: 800px !important;
+}

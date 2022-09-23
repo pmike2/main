@@ -13,7 +13,7 @@
 	</mat-sidenav>
 	
 	<mat-sidenav-content>
-		<router-outlet></router-outlet>
+		<router-outlet (activate)="onActivate($event)" (deactivate)="onDeactivate($event)" (hideMenuEvent)="hide_menu($event)"></router-outlet>
 	</mat-sidenav-content>
 
 </mat-sidenav-container>
