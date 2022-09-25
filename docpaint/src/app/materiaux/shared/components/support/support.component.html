@@ -1,2 +1,16 @@
-Canevas, planche (préparation ?), alu (?)
-La taille peut être très variable; adapter sa sélection de pinceaux à la taille du support.
+<mat-card>Le support pourra être placé sur un chevalet</mat-card>
+
+ <mat-accordion>
+	<mat-expansion-panel hideToggle *ngFor="let support of supports">
+	  <mat-expansion-panel-header>
+		<mat-panel-title>{{support.nom}}</mat-panel-title>
+		<mat-panel-description>{{support.description}}</mat-panel-description>
+	  </mat-expansion-panel-header>
+	  <img [src]="support.img">
+	  <p>{{support.contenu}}</p>
+	  <mat-list>
+		<mat-list-item *ngFor="let avantage of support.avantages" class="avantage">{{avantage}}</mat-list-item>
+		<mat-list-item *ngFor="let inconvenient of support.inconvenients" class="inconvenient">{{inconvenient}}</mat-list-item>
+		</mat-list>
+	</mat-expansion-panel>
+</mat-accordion>

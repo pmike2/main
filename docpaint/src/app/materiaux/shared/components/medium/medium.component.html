@@ -1,2 +1,16 @@
-On peut utiliser un mix huile de lin / térébenthine 50/50 ou un gel (ce qui permet d'avoir moins de vapeurs toxiques)
-Il est utile dans les premières phases de placement et de recouvrement de la toile. On peut complètement s'en affranchir par la suite; peindre généreusement en pleine pâte permet d'obtenir une peinture plus lumineuse et riche. Cela facilite également les transitions car on peut déplacer la peinture.
+<mat-card>Il est utile dans les premières phases de placement et de recouvrement de la toile. On peut complètement s'en affranchir par la suite; peindre généreusement en pleine pâte permet d'obtenir une peinture plus lumineuse et riche. Cela facilite également les transitions car on peut déplacer la peinture.</mat-card>
+
+<mat-accordion>
+	<mat-expansion-panel hideToggle *ngFor="let medium of mediums">
+	  <mat-expansion-panel-header>
+		<mat-panel-title>{{medium.nom}}</mat-panel-title>
+		<mat-panel-description>{{medium.description}}</mat-panel-description>
+	  </mat-expansion-panel-header>
+	  <img [src]="medium.img">
+	  <p>{{medium.contenu}}</p>
+	  <mat-list>
+		<mat-list-item *ngFor="let avantage of medium.avantages" class="avantage">{{avantage}}</mat-list-item>
+		<mat-list-item *ngFor="let inconvenient of medium.inconvenients" class="inconvenient">{{inconvenient}}</mat-list-item>
+		</mat-list>
+	</mat-expansion-panel>
+</mat-accordion>

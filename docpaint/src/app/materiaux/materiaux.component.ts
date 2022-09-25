@@ -1,4 +1,5 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-materiaux',
@@ -20,15 +21,17 @@ export class MateriauxComponent implements OnInit {
 
   @Output() hideMenuEvent = new EventEmitter<boolean>();
 
-  constructor() { }
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
+    
   }
 
   activate() {
     //console.log("activate materiaux");
     this.sidenav_opened= true;
     this.hideMenuEvent.emit(true);
+    this.router.navigate(["materiaux/support"]);
   }
 
   deactivate() {

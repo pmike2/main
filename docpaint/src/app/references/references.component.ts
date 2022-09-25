@@ -1,4 +1,5 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-references',
@@ -16,7 +17,7 @@ export class ReferencesComponent implements OnInit {
 
   @Output() hideMenuEvent = new EventEmitter<boolean>();
 
-  constructor() { }
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
   }
@@ -25,6 +26,7 @@ export class ReferencesComponent implements OnInit {
     //console.log("activate ref");
     this.sidenav_opened= true;
     this.hideMenuEvent.emit(true);
+    this.router.navigate(["references/artistes"]);
   }
 
   deactivate() {

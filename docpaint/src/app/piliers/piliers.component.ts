@@ -1,4 +1,5 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-piliers',
@@ -18,7 +19,7 @@ export class PiliersComponent implements OnInit {
 
   @Output() hideMenuEvent = new EventEmitter<boolean>();
 
-  constructor() { }
+  constructor(private router: Router) { }
 
   ngOnInit(): void {
   }
@@ -27,6 +28,7 @@ export class PiliersComponent implements OnInit {
     //console.log("activate piliers");
     this.sidenav_opened= true;
     this.hideMenuEvent.emit(true);
+    this.router.navigate(["piliers/dessin"]);
   }
 
   deactivate() {

@@ -1,22 +1,56 @@
-Posture : la posture assise donne une impression de plus de précision mais ce n'est pas ce que l'on veut surtout dans les premières phases où l'on doit trouver le mouvement relatif au format de la toile, ce qui est falicité par la posture debout. Il est toujours possible de s'assoir lors des touches délicates, notamment la pose des spéculaires. On peut alors utiliser une baguette ou son avant-bras gauche (si on est droitier) pour poser son bras droit et assurer une plus grande précision.
+<mat-tab-group>
+	<mat-tab label="posture">
+		<mat-list>
+			<div mat-subheader>Assis</div>
+			<mat-list-item>La posture assise donne une impression de plus de précision</mat-list-item>
+			<mat-list-item>On peut utiliser une baguette ou son avant-bras gauche (si on est droitier) pour poser son bras droit et assurer une plus grande précision</mat-list-item>
+			<mat-divider></mat-divider>
+			<div mat-subheader>Debout</div>
+			<mat-list-item>Dans les premières phases la posture debout permet de trouver le mouvement relatif au format de la toile</mat-list-item>
+			<mat-list-item>Il est toujours possible de s'assoir lors des touches délicates, notamment la pose des spéculaires</mat-list-item>
+			<mat-divider></mat-divider>
+		</mat-list>
+	</mat-tab>
+	<mat-tab label="observation">
+		<mat-list>
+			<mat-list-item>Disposer son chevalet à côté du modèle et prendre du recul afin de comparer côte à côte le modèle et la toile. Avoir une vue d'ensemble est important et permet de rester sur l'idée général vers le particulier</mat-list-item>
+			<mat-list-item>Se placer de sorte que l'observation du modèle (ou de la photo) est à la gauche du chevalet lorsque l'on est droitier facilite</mat-list-item>
+			<mat-list-item>Regarder le modèle ou sa toile dans un miroir (inversion gauche / droite) ou à l'envers (inversion haut / bas) permet de supprimer en partie notre lecture réfléchie d'un visage afin de rester sur une lecture plus plastique</mat-list-item>
+		</mat-list>
+	</mat-tab>
+	<mat-tab label="source">
+		<div mat-subheader>Modèle vivant</div>
+		<mat-list-item>Le modèle ne sera pas complètement immobile</mat-list-item>
+		<mat-list-item>Cela force à corriger constamment sa peinture au niveau du dessin, ce qui est une bonne chose</mat-list-item>
+		<mat-divider></mat-divider>
+		<div mat-subheader>Photographie</div>
+		<mat-list-item>Utiliser une photo permet de plus facilement s'affranchir de la lecture réfléchie du visage</mat-list-item>
+		<mat-list-item>Se baser sur une photographie de quelqu'un que l'on connait peut poser problème car on recherche la ressemblance immédiatement et cela peut bloquer</mat-list-item>
+		<mat-list-item>Une photo peut être éditée, ce qui permet de tester des compositions plus originales (visage incomplet...)</mat-list-item>
+	</mat-tab>
+	<mat-tab label="la photo">
+		<mat-card>
+			<mat-card-title-group>
+				<mat-card-title>Impression</mat-card-title>
+				<img mat-card-sm-image src="https://material.angular.io/assets/img/examples/shiba2.jpg" >
+			</mat-card-title-group>
+			<mat-card-content>On peut imprimer la photo et fixer l'impression sur son chevalet</mat-card-content>
+		</mat-card>
 
-On peut régulièrement disposer son chevalet à côté du modèle et prendre du recul afin de comparer côte à côte le modèle et la toile. Avoir une vue d'ensemble est important et permet de rester sur l'idée général vers le particulier.
+		<mat-card>
+			<mat-card-title-group>
+				<mat-card-title>Trépied</mat-card-title>
+				<img mat-card-sm-image src="https://material.angular.io/assets/img/examples/shiba2.jpg" >
+			</mat-card-title-group>
+			<mat-card-content>On peut utiliser un trépied avec un adaptateur si l'on a une tablette</mat-card-content>
+		</mat-card>
 
-Photographie / modèle vivant :
-Utiliser une photo permet de plus facilement s'affranchir de la lecture réfléchie du visage; c'est plus difficile avec un modèle vivant.
-Le modèle ne sera pas complètement immobile. Cela force à corriger constamment sa peinture au niveau du dessin, ce qui est une bonne chose.
-Se baser sur une photographie de quelqu'un que l'on connait peut poser problème car on recherche la ressemblance immédiatement et cela peut bloquer.
-Une photo peut être éditée, ce qui permet de tester des compositions plus originales (visage incomplet...)
-
-Se placer de sorte que l'observation du modèle (ou de la photo) est à la gauche du chevalet lorsque l'on est droitier facilite.
-
-Utiliser une photo :
-On peut imprimer la photo et fixer l'impression sur son chevalet.
-On peut utiliser un trépied avec un adaptateur [IMAGE] si l'on a une tablette.
-On peut utiliser un écran d'ordinateur; il faut veiller à ce que le modèle et la toile soient à peu près au même niveau.
-
-on ne regarde pas le portrait d'une personne mais un assemblage de formes colorées.
--> regarder le modèle ou sa toile dans un miroir (inversion gauche / droite) ou à l'envers (inversion haut / bas) permet de supprimer en partie notre lecture réfléchie d'un visage afin de rester sur une lecture plus plastique.
-
-Si l'on souhaite retoucher une toile déjà peinte, soit travailler dans le frais (le lendemain par exemple la peinture appliquée sera encore modifiable), soit s'assurer qu'au contraire la peinture est complètement sèche, puis appliquer une fine couche d'huile de lin à l'aide d'un tampon sur la zone à modifier avant de peindre.
-
+		<mat-card>
+			<mat-card-title-group>
+				<mat-card-title>Ecran</mat-card-title>
+				<img mat-card-sm-image src="https://material.angular.io/assets/img/examples/shiba2.jpg" >
+			</mat-card-title-group>
+			<mat-card-content>On peut utiliser un écran d'ordinateur; il faut veiller à ce que le modèle et la toile soient à peu près au même niveau</mat-card-content>
+		</mat-card>
+	</mat-tab>
+</mat-tab-group>

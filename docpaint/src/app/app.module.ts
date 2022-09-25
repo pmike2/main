@@ -1,5 +1,13 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+
+import {MatListModule} from '@angular/material/list';
+import {MatIconModule} from '@angular/material/icon';
+import {MatSidenavModule} from '@angular/material/sidenav';
+import {MatExpansionModule} from '@angular/material/expansion';
+import {MatCardModule} from '@angular/material/card';
+import {MatTabsModule} from '@angular/material/tabs';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -24,10 +32,6 @@ import { BordComponent } from './piliers/shared/components/bord/bord.component';
 import { GlossaireComponent } from './glossaire/glossaire.component';
 import { DeroulementComponent } from './deroulement/deroulement.component';
 import { CouleurMatComponent } from './materiaux/shared/components/couleur-mat/couleur-mat.component';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import {MatListModule} from '@angular/material/list';
-import {MatIconModule} from '@angular/material/icon';
-import {MatSidenavModule} from '@angular/material/sidenav';
 import { HomeComponent } from './home/home.component';
 
 
@@ -64,6 +68,9 @@ import { HomeComponent } from './home/home.component';
     MatListModule,
     MatIconModule,
     MatSidenavModule,
+    MatExpansionModule,
+    MatCardModule,
+    MatTabsModule
   ],
   providers: [],
   bootstrap: [AppComponent]
