@@ -26,3 +26,10 @@ x.free;
 
 // reinit environment variables
 currentEnvironment.clear;
+
+// nombre de frames du buffer, mais .ir -> ce UGen ne calcule cette valeur qu'une fois
+BufFrames.ir(buf)
+
+// remplacent mul et add
+SinOsc().range(2.0, 12.0)
+SinOsc().exprange(2.0, 12.0)
