@@ -15,6 +15,13 @@ f= {arg x=0; x* 2};
 f.value; // ou f.value() ou value(f);
 f.value(3); // si arguments
 
+// # permet d'affecter une liste de valeurs
+(
+var x1, x2, x3;
+#x1, x2, x3= Array.rand(3, 0.0, 1.0);
+[x1, x2, x3].do({arg x; x.postln;});
+)
+
 // concaténation de 2 Arrays
 [1, 2, 3] ++ [7, 8];
 
@@ -63,6 +70,7 @@ SynthDef("test_peak", {
 t= Synth("test_peak");
 t.free;
 
+// serveur vers client -------------------------------------------------------
 // On receiving a trigger, sends a trigger message from the server back to the client.
 // "tr" est le message lié au Trig
 // 0.9 est la valeur envoyée
@@ -90,3 +98,18 @@ CmdPeriod.doOnce({o.remove; "removed the responder".postln;});
 // Trig -> trig to gate; ignore les trigs si gate high
 { Trig.ar(Dust.ar(4), 1.0) }.play;
 
+// groupes ------------------------------------------------------------------
+(
+g= Group.new;
+h = Group.after(g);
+
+SynthDef("tmp", {
+	arg freq;
+	Out.ar(0, SinOsc.ar(freq, mul:0.2));
+}).add;
+
+Array.fill(4, {Synth("tmp", ["freq", rand(200, 1000)], g, \addToHead)});
+)
+// tous les UGen du groupe auront freq = 2000 s'ils ont un arg freq
+g.set("freq", 2000);
+g.free; h.free;
