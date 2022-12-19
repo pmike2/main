@@ -8,6 +8,9 @@ cmd b -> boot ; s vaut server localhost
 cmd . -> stop sound (free all synths)
 cmd shift p -> clear log
 cmd d sur un mot-clef -> help
+
+Les extensions sont ici : /Volumes/Vol-Users/Users/pmbeau2/Library/Application Support/SuperCollider/Extensions/SC3plugins
+telechargées ici : https://github.com/supercollider/sc3-plugins
 */
 
 // evaluate function
@@ -22,11 +25,17 @@ var x1, x2, x3;
 [x1, x2, x3].do({arg x; x.postln;});
 )
 
+// concaténation de strings
+"aa" ++ "bb";
+
 // concaténation de 2 Arrays
 [1, 2, 3] ++ [7, 8];
 
 // map Array
 [1, 2, 3].collect({arg x, i; x* 2});
+
+// choix aléatoire
+[1, 2, 3].choose;
 
 // taille Array
 Array.fill(4, {arg i; i}).postln.size.postln;
@@ -48,6 +57,9 @@ x.free;
 
 // reinit environment variables
 currentEnvironment.clear;
+
+// alternative à postln : Post
+Post << "/Volumes/Data/perso/son/loops/*".pathMatch;
 
 // nombre de frames du buffer, mais .ir -> ce UGen ne calcule cette valeur qu'une fois
 BufFrames.ir(buf)
@@ -113,3 +125,13 @@ Array.fill(4, {Synth("tmp", ["freq", rand(200, 1000)], g, \addToHead)});
 // tous les UGen du groupe auront freq = 2000 s'ils ont un arg freq
 g.set("freq", 2000);
 g.free; h.free;
+
+
+// choisir un fichier, écrire un fichier ---------------------------------
+Dialog.openPanel({arg x; x.postln;});
+Dialog.savePanel({arg x; x.postln;});
+
+// remplir un buffer avec des valeurs
+a= Buffer.alloc(s, 128, 1);
+a.setn(0, Array.fill(a.numFrames, { rrand(0.0, 1.0) }));
+a.plot;

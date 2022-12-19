@@ -48,7 +48,7 @@ SynthDef("buf_player", {
     );
 }).add;
 
-SynthDef.new("delay", {
+SynthDef("delay", {
 	arg in, out=0, delaytime= 0.1;
 	var sig = In.ar(in, 2);
 	sig = Mix.ar([sig, AllpassC.ar(sig, 0.5, delaytime.poll, 0.01)]);
