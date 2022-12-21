@@ -1,105 +1,106 @@
-
 (
-// lire tous les samples d'un dossier
-var root_loops= "/Volumes/Data/perso/son/loops";
-~buffers= (root_loops ++ "/*").pathMatch.collect({
-	arg loop;
-	loop.postln;
-	Buffer.read(s, loop);
-});
-~idx_buffer= 1;
-
-~fft_n_frames= 1024;
-// FFT stereo
-~fft_buffers= Buffer.alloc(s, ~fft_n_frames, 1) ! 2;
-
-// pour test PV_BinDelay
-~delayBuf= Buffer.alloc(s, ~fft_n_frames/ 2, 1, completionMessage: {arg buff;
-	buff.numFrames.postln;
-	//buff.setnMsg(0, Array.fill(buff.numFrames, { arg i; rrand(0.0, 1.0) }));
-	buff.setnMsg(0, Array.fill(buff.numFrames, { arg i; if(i< 10, 0.0, 0.1) }));
-});
-~fdbBuf= Buffer.alloc(s, ~fft_n_frames/ 2, 1, completionMessage: {arg buff;
-	buff.numFrames.postln;
-	//buff.setnMsg(0, Array.fill(buff.numFrames, { arg i; rrand(0.0, 100.0) }));
-	buff.setnMsg(0, Array.fill(buff.numFrames, { arg i; 10.0 }));
-});
-)
-
-// on vérifie qu'il y a bien qqchose dans ~buffers
-Post << ~buffers[~idx_buffer];
-~buffers[~idx_buffer].plot;
-~fft_buffers[0].plot;
-~delayBuf.plot;
-~fdbBuf.plot;
-
-(
-SynthDef("test1", {
-	var in, chain, ifft, delayBuf, fbBuf, hop;
-	hop= 0.5; // défaut = 0.5
-	in= PlayBuf.ar(2, ~buffers[~idx_buffer], BufRateScale.kr(~buffers[~idx_buffer]), trigger:1, loop:1);
-	// on peut utiliser des buffers temporaires LocalBuf
-	//chain= FFT(Array.fill(2, { LocalBuf(2048, 1) }), in);
-	chain= FFT(~fft_buffers, in, hop:hop);
-	chain= chain[0];
-
-	// il existe pas mal de PV_...
-	//chain= PV_MagFreeze(chain, SinOsc.kr(1.0));
-	//chain = PV_MagSmear(chain, MouseX.kr(0, 100));
-	//chain = PV_SpectralEnhance(chain, 8, 2, MouseX.kr(0, 0.99));
-
-	chain = PV_BinDelay(chain, 2.0, ~delayBuf, ~fbBuf, hop:hop);
-
-	ifft= IFFT(chain);
-	Out.ar(0, ifft);
+SynthDef(\kick, {
+	arg t_trig= 0, out= 0, freq_env_amount=0.5, freq_env_dur=0.1, freq_min=40, freq_max=200, amp_dur=2.0, amp=0.8;
+	var amp_env, freq_env;
+	amp_env= Env.asr(0.001, amp, amp_dur, -4);
+	freq_env= Env.asr(0.001, freq_env_amount, freq_env_dur, -4);
+	//amp_env.plot;
+	Out.ar(out, Pan2.ar(EnvGen.ar(amp_env, t_trig)* SinOsc.ar(EnvGen.ar(freq_env, t_trig).exprange(freq_min, freq_max))));
 }).add;
 
-// detection de beat avec PV_JensenAndersen; voir aussi PV_HainsworthFoote
-SynthDef("test2", {
-	var in, chain, detect;
-	in= PlayBuf.ar(2, ~buffers[~idx_buffer], BufRateScale.kr(~buffers[~idx_buffer]), trigger:1, loop:1);
-	chain= FFT(~fft_buffers, in);
-	chain= chain[0];
-	detect= PV_JensenAndersen.ar(chain, threshold:0.1);
-	Out.ar(0, in* Decay.ar(0.1 * detect, 0.1));
+SynthDef(\hihat, {
+	arg t_trig= 0, out= 0, freq1= 600, freq2= 610, feedback=3.0, amp_dur=0.1, amp=0.5;
+	var amp_env;
+	amp_env= Env.asr(0.001, amp, amp_dur, -10);
+	Out.ar(out, EnvGen.ar(amp_env, t_trig)* SinOscFB.ar([freq1, freq2], feedback));
 }).add;
 
-// ici on applique une fonction pour chaque bin de la FFT
-SynthDef("test3", {
-	var in, chain, ifft, lfo;
+SynthDef(\snare, {
+	arg t_trig= 0, out= 0, amp_dur=0.1, amp_dur_2=0.1, amp=0.8, mix=0.4, room=0.5, damp=0.5;
+	var amp_env, amp_env_2, dry, rev;
+	amp_env= Env.asr(0.001, 1.0, amp_dur, -10);
+	amp_env_2= Env.asr(0.001, amp, amp_dur_2, -10);
+	dry= EnvGen.ar(amp_env, t_trig)* PinkNoise.ar();
+	rev = FreeVerb2.ar(dry, dry, mix, room, damp);
+	Out.ar(out, EnvGen.ar(amp_env_2, t_trig)* rev);
+}).add;
 
-	in= PlayBuf.ar(2, ~buffers[~idx_buffer], BufRateScale.kr(~buffers[~idx_buffer]), trigger:1, loop:1);
+SynthDef(\compressor, {
+	arg in, out=0, tresh=0.5, slope_below=2.0, slope_above=0.4, clamp_time=0.05, relax_time=0.1, mul=1.0;
+	var sig = In.ar(in, 2);
+	var fx= Compander.ar(sig, sig, tresh, slope_below, slope_above, clamp_time, relax_time, mul);
+	Out.ar(out, Pan2.ar(fx));
+}).add;
 
-	chain= FFT(~fft_buffers, in);
-
-	chain= chain[0];
-
-	lfo = LFPar.kr(0.5).range(0.1, 1);
-
-	//this function gets called once for every bin
-	// pas bien compris diff entre pvcollect et pvcalc
-	chain= chain.pvcollect(~fft_buffers[0].numFrames, { |mag, phase, index|
-	//chain= chain.pvcalc(~fft_buffers[0].numFrames, { |mag, phase|
-		// doit renvoyer (amplitude, phase) ou juste amplitude
-
-		// phase aléatoire
-		//[mag, pi.rand]
-
-		// spectral delay
-		if(index< 100, mag, mag + DelayN.kr(mag, 1, 0.1));
-	},frombin:0, tobin:250, zeroothers:1);
-
-	ifft= IFFT(chain);
-	Out.ar(0, ifft);
+SynthDef(\delay, {
+	arg in, out=0, delaytime=0.5, dry=0.5, wet=0.5;
+	var sig = In.ar(in, 2);
+	var fx= DelayC.ar(sig, 2.0, delaytime);
+	Out.ar(out, Pan2.ar(Mix([sig* dry, fx* wet])));
 }).add;
 )
 
 
-x= Synth("test1");
-x.free;
-y= Synth("test2");
-y.free;
-z= Synth("test3");
-z.free;
+(
+~bus_fx= Bus.audio(s, 2);
+~group_fx= Group.new;
+~group_instrus= Group(~group_fx, \addBefore);
+~compressor= Synth(\compressor, [\in, ~bus_fx], ~group_fx);
+~delay= Synth.after(~compressor, \delay, [\in, ~bus_fx]);
+//~delay= Synth.before(~compressor, \delay, [\in, ~bus_fx]);
+~kick= Synth(\kick, [\out, ~bus_fx], ~group_instrus);
+~hihat= Synth(\hihat, [\out, ~bus_fx], ~group_instrus);
+~snare= Synth(\snare, [\out, ~bus_fx], ~group_instrus);
 
+~clock= TempoClock(2);
+
+~task= Task({
+	var p_kick = Pseq([1, 0, 0, 1, 0, 0, Prand([0, 1], 1), 0], inf).asStream;
+	var p_hihat= Pseq([0, 1, 1, 0, 1, 1, 0, 1], inf).asStream;
+	var p_snare= Pseq([0, 0, 1, 0, 0, 1, 0, 0], inf).asStream;
+	loop({
+		~kick.set(\t_trig, p_kick.next);
+		~hihat.set(\t_trig, p_hihat.next);
+		~snare.set(\t_trig, p_snare.next);
+		0.25.wait;
+	});
+}, ~clock);
+
+~task.play;
+)
+
+~task.stop;
+
+(
+~kick.set(\freq_env_amount, 1.0);
+~kick.set(\freq_env_dur, 0.05);
+~kick.set(\freq_min, 20);
+~kick.set(\freq_max, 200);
+~kick.set(\amp_dur, 0.4);
+~kick.set(\amp, 0.5);
+
+~hihat.set(\freq1, 1000);
+~hihat.set(\freq2, 9000);
+~hihat.set(\feedback, 12.0);
+~hihat.set(\amp_dur, 0.4);
+~hihat.set(\amp, 0.03);
+
+~snare.set(\mix, 0.7);
+~snare.set(\room, 5.0);
+~snare.set(\damp, 0.3);
+~snare.set(\amp_dur, 0.1);
+~snare.set(\amp_dur_2, 0.8);
+~snare.set(\amp, 1.5);
+
+~compressor.set(\tresh, 0.1);
+~compressor.set(\slope_below, 1.0);
+~compressor.set(\slope_above, 0.1);
+~compressor.set(\clamp_time, 0.01);
+~compressor.set(\relax_time, 0.01);
+~compressor.set(\mul, 2.0);
+
+~delay.set(\delaytime, 0.2);
+~delay.set(\dry, 0.8);
+~delay.set(\wet, 0.5);
+)
 
