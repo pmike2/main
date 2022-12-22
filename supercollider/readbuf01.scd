@@ -1,6 +1,7 @@
 // reinit ----------------------------------------
 (
-s.freeAll;
+//s.freeAll;
+CmdPeriod.run; // plus complet que s.freeAll, car arrête aussi toutes les routines et autres threads
 currentEnvironment.clear;
 )
 
