@@ -91,15 +91,19 @@ SynthDef(\delay, {
 ~delay.set(\wet, 0.3);
 )
 
-
+// on envoie en plus u nmessage OSC avec ~net_addr pour synchro visuel Processing
 (
 ~clock= TempoClock(1);
+~net_addr= NetAddr.new("127.0.0.1", 57111);
 
 ~task_kick= Task({
 	var p_kick = Pseq([1, 0, 0, Prand([0, 1], 1), 0], inf).asStream;
 	//var p_kick = Pseq([1], inf).asStream;
+	var n_kick;
 	loop({
-		~kick.set(\t_trig, p_kick.next);
+		n_kick= p_kick.next;
+		~kick.set(\t_trig, n_kick);
+		~net_addr.sendMsg("kick", n_kick);
 		0.5.wait;
 	});
 }, ~clock);
@@ -107,8 +111,11 @@ SynthDef(\delay, {
 ~task_hihat= Task({
 	var p_hihat= Pseq([1, Prand([0, 1], 1)], inf).asStream;
 	//var p_hihat = Pseq([1], inf).asStream;
+	var n_hihat;
 	loop({
-		~hihat.set(\t_trig, p_hihat.next);
+		n_hihat= p_hihat.next;
+		~hihat.set(\t_trig, n_hihat);
+		~net_addr.sendMsg("hihat", n_hihat);
 		0.25.wait;
 	});
 }, ~clock);
@@ -116,8 +123,11 @@ SynthDef(\delay, {
 ~task_snare= Task({
 	var p_snare= Pseq([0, 0, 1, 0], inf).asStream;
 	//var p_snare = Pseq([1], inf).asStream;
+	var n_snare;
 	loop({
-		~snare.set(\t_trig, p_snare.next);
+		n_snare= p_snare.next;
+		~snare.set(\t_trig, n_snare);
+		~net_addr.sendMsg("snare", n_snare);
 		0.5.wait;
 	});
 }, ~clock);
