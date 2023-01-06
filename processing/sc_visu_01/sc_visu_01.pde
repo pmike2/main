@@ -70,14 +70,14 @@ class Instru {
       return;
     }
     stroke(0);
-    fill(rgba(red(_c), green(_c), blue(_c), _alpha));
+    fill(red(_c), green(_c), blue(_c), _alpha);
     rectMode(CENTER);
     rect(_xpos, _ypos, 50, 50);
   }
   
   void anim() {
     _count++;
-    _alpha= 255* _count/ _max_count;
+    _alpha= int(255.0* (1.0- float(_count)/ float(_max_count)));
   }
   
   void trig() {

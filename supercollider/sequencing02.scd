@@ -91,7 +91,7 @@ SynthDef(\delay, {
 ~delay.set(\wet, 0.3);
 )
 
-// on envoie en plus u nmessage OSC avec ~net_addr pour synchro visuel Processing
+// on envoie en plus un message OSC avec ~net_addr pour synchro visuel Processing
 (
 ~clock= TempoClock(1);
 ~net_addr= NetAddr.new("127.0.0.1", 57111);

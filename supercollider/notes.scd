@@ -52,6 +52,9 @@ s.reboot;
 // affiche tous les noeuds
 s.queryAllNodes;
 
+// permet d'attendre que tous les SynthDef soient faits avant de les instancier avec des Synth
+s.sync;
+
 // libère un synth
 x.free;
 
@@ -82,30 +85,8 @@ SynthDef("test_peak", {
 t= Synth("test_peak");
 t.free;
 
-// serveur vers client -------------------------------------------------------
-// On receiving a trigger, sends a trigger message from the server back to the client.
-// "tr" est le message lié au Trig
-// 0.9 est la valeur envoyée
-(
-SynthDef("test_trig", {
-	arg id;
-	SendTrig.kr(Dust.kr(1.0), id, 0.9);
-}).add;
-
-// dis que faire lorsque l'on recoit le message "/tr"
-o= OSCFunc({
-	arg msg, time;
-    [time, msg].postln;
-},"/tr", s.addr);
-
-// création d'un id unique
-~trig_id= UniqueID.next;
-Synth("test_trig", ["id", ~trig_id]);
-)
-o.free;
-
 // permet d'ajouter un comportement a cmd + .
-CmdPeriod.doOnce({o.remove; "removed the responder".postln;});
+CmdPeriod.doOnce({"cmd + . pressed".postln;});
 
 // Trig -> trig to gate; ignore les trigs si gate high
 { Trig.ar(Dust.ar(4), 1.0) }.play;
@@ -132,6 +113,38 @@ Dialog.openPanel({arg x; x.postln;});
 Dialog.savePanel({arg x; x.postln;});
 
 // remplir un buffer avec des valeurs
-a= Buffer.alloc(s, 128, 1);
-a.setn(0, Array.fill(a.numFrames, { rrand(0.0, 1.0) }));
+(
+a= Buffer.alloc(s, 128, 1, completionMessage: {
+	arg buf;
+	buf.setnMsg(0, Array.fill(buf.numFrames, { 1.0.rand }))
+});
 a.plot;
+)
+
+// on peut ajouter un tableau à une fonction; le résultat est une fonction qu'on peut évaluer avec .value
+(
+x= [1, 2, 3];
+y= x+ {1.0.rand};
+10.do({y.value.postln;});
+)
+
+// les arguments qui commencent par a_ peuvent lire un bus à audio rate
+(
+SynthDef(\test_modulated, {
+	arg a_fm= 0.0;
+	Out.ar(0, SinOsc.ar(400.0+ (a_fm* 100.0), mul:0.2));
+}).add;
+SynthDef(\test_modulator, {
+	arg out, freq= 100.0, amp=0.5;
+	Out.ar(out, SinOsc.ar(freq, mul:amp));
+}).add;
+)
+(
+~audio_bus= Bus.audio(s, 1);
+~audio_bus.scope();
+~modulator= Synth(\test_modulator, [\out, ~audio_bus]);
+~test_audio_rate= Synth(\test_modulated);
+~test_audio_rate.map(\a_fm, ~audio_bus);
+~modulator.set(\freq, 100.0);
+~modulator.set(\amp, 1.8);
+)
