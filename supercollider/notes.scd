@@ -148,3 +148,13 @@ SynthDef(\test_modulator, {
 ~modulator.set(\freq, 100.0);
 ~modulator.set(\amp, 1.8);
 )
+
+
+// \ir dans SynthDef rend constant certains arguments ; ici \ir ! 3 == [\ir, \ir, \ir] donc tous les args.
+// -> code plus performant en terme de CPU
+(
+SynthDef(\const_args, {
+	arg x, y, z;
+	Out.ar(0, SinOsc(x* y* z, mul:0.3));
+}, \ir ! 3).add;
+)
