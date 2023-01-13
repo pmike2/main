@@ -32,10 +32,14 @@ a = {
     SendReply.kr(trig, '/bleep', trig);
     sig ! 2
 }.play;
+)
 
+(
 o = OSCdef(\bleepResponder, { |msg|
     msg.postln;
 }, '/bleep', s.addr, argTemplate: [a.nodeID]);
 )
 
 a.free; o.remove;
+
+

@@ -44,11 +44,12 @@ Post << ~fft_buffers;
 SynthDef(\beat_detect, {
 	//arg out;
 	arg bufnum;
-	var in, chain, detect, env, rec;
+	var in, chain, detect, env, rec, onsets ;
 	in= PlayBuf.ar(2, ~buffers[~idx_buffer], BufRateScale.kr(~buffers[~idx_buffer]), trigger:1, loop:0, doneAction:0);
 	chain= FFT(~fft_buffers, in);
 	chain= chain[0];
-	detect= PV_JensenAndersen.ar(chain, threshold:0.5);
+	//detect= PV_JensenAndersen.ar(chain, threshold:0.5);
+	onsets= Onsets.kr(chain);
 
 	//Out.ar(out, in* Decay.ar(0.1 * detect, 0.1));
 	//env= Env([0.0, 1.0, 0.0], [0.001, 0.1], \lin, nil, nil, 0);
@@ -57,13 +58,14 @@ SynthDef(\beat_detect, {
 	//Impulse.ar(0)
 	//Out.ar(out, detect);
 	//Out.ar(out, SinOsc.ar(440));
-	rec= SinOsc.ar(440, 0, Decay.ar(0.5 * detect, 0.1));
+	//rec= SinOsc.ar(440, 0, Decay.ar(0.5 * detect, 0.1));
 	//rec= SinOsc.ar(440);
 	//rec= detect;
 	//rec= Line.ar(0.0, 1.0, 1.5, doneAction:2);
 	//rec= in[0];
 	//rec= chain;
-	RecordBuf.ar(rec, bufnum, recLevel:1.0, preLevel:0.0, loop:0, doneAction:0);
+	//RecordBuf.ar(rec, bufnum, recLevel:1.0, preLevel:0.0, loop:0, doneAction:0);
+	SendTrig.kr(onsets);
 }).add;
 
 SynthDef(\rec_buf, {
@@ -71,6 +73,13 @@ SynthDef(\rec_buf, {
 	RecordBuf.ar(In.ar(input), bufnum, recLevel:1.0, preLevel:0.0, loop:0, doneAction:2);
 	//RecordBuf.ar(SinOsc.ar(400), bufnum, recLevel:1.0, preLevel:0.0, loop:0, doneAction:2);
 }).add;
+)
+
+(
+o= OSCFunc({
+	arg msg, time;
+    [time, msg].postln;
+},"/tr", s.addr);
 )
 
 (
