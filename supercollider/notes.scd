@@ -28,6 +28,7 @@ var x1, x2, x3;
 // concaténation de strings
 "aa" ++ "bb";
 
+// -----------------------------------------
 // concaténation de 2 Arrays
 [1, 2, 3] ++ [7, 8];
 
@@ -42,6 +43,15 @@ Array.fill(4, {arg i; i}).postln.size.postln;
 
 // plot Array
 Array.fill(4, {arg i; i}).plot;
+
+// ajout d'un element
+(
+a= [1,2,3];
+a= a.add(4);
+a.postln;
+)
+
+// -----------------------------------------
 
 // scope de tout le son du server
 s.scope();
@@ -118,8 +128,8 @@ a= Buffer.alloc(s, 128, 1, completionMessage: {
 	arg buf;
 	buf.setnMsg(0, Array.fill(buf.numFrames, { 1.0.rand }))
 });
-a.plot;
 )
+a.plot;
 
 // on peut ajouter un tableau à une fonction; le résultat est une fonction qu'on peut évaluer avec .value
 (

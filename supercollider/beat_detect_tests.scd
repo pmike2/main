@@ -1,7 +1,7 @@
 (
 // lire tous les samples d'un dossier
-//var root_loops= "/Volumes/Data/perso/son/loops";
-var root_loops= "/Users/home/Desktop/pm/son/loops";
+var root_loops= "/Volumes/Data/perso/son/loops";
+//var root_loops= "/Users/home/Desktop/pm/son/loops";
 
 ~transient_buffers= [ ];
 
@@ -49,7 +49,7 @@ SynthDef(\beat_detect, {
 	chain= FFT(~fft_buffers, in);
 	chain= chain[0];
 	//detect= PV_JensenAndersen.ar(chain, threshold:0.5);
-	onsets= Onsets.kr(chain);
+	onsets= Onsets.kr(chain, treshold:0.1);
 
 	//Out.ar(out, in* Decay.ar(0.1 * detect, 0.1));
 	//env= Env([0.0, 1.0, 0.0], [0.001, 0.1], \lin, nil, nil, 0);
@@ -76,11 +76,42 @@ SynthDef(\rec_buf, {
 )
 
 (
+~initTime = nil;
+~checkpoints= [ ];
 o= OSCFunc({
 	arg msg, time;
-    [time, msg].postln;
+  //  msg.postln;
+	~initTime = ~initTime ?? { Main.elapsedTime };
+	time = time - ~initTime;
+	time.postln;
+	~checkpoints= ~checkpoints.add(time);
 },"/tr", s.addr);
 )
+
+o.remove;
+
+a= Array.fill(~transient_buffers[~idx_buffer].numFrames, 0.0);
+(
+~checkpoints.do({
+	arg cp;
+	var idx;
+	idx= (s.sampleRate* cp).round.asInteger;
+	idx= if(idx< 0, 0, idx);
+	idx.postln;
+	a.put(idx, 1.0);
+});
+)
+
+(
+b= Buffer.alloc(s, ~transient_buffers[~idx_buffer].numFrames, 1);
+)
+b.loadCollection(a);
+//b.write("/Users/home/Desktop/pm/son/loops/test.aiff");
+b.write("/Volumes/Data/perso/son/loops/test.aiff");
+b.plot;
+~checkpoints.postln;
+~transient_buffers[~idx_buffer].numFrames.postln;
+a.size.postln;
 
 (
 ~bus= Bus.audio(s, 1);
