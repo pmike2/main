@@ -63,11 +63,12 @@ OSCdef(\listen_onsets, {
 
 OSCdef(\listen_buf_is_done, {
 	arg msg, time;
-	var idx_buffer, onset_path;
+	var idx_buffer, onset_path_snd, onset_path_txt;
     //msg.postln;
 	idx_buffer= msg[3].asInteger;
 	//idx_buffer.postln;
-	onset_path= ~filenames[idx_buffer].pathOnly +/+ ~filenames[idx_buffer].fileNameWithoutExtension ++ "_onsets.aiff";
+	onset_path_snd= ~filenames[idx_buffer].pathOnly +/+ ~filenames[idx_buffer].fileNameWithoutExtension ++ "_onsets.aiff";
+	onset_path_txt= ~filenames[idx_buffer].pathOnly +/+ ~filenames[idx_buffer].fileNameWithoutExtension ++ "_onsets.txt";
 
 	~checkpoints[idx_buffer].do({
 		arg cp;
@@ -78,9 +79,18 @@ OSCdef(\listen_buf_is_done, {
 		~array_checkpoints[idx_buffer].put(idx, 1.0);
 	});
 
-	f= SoundFile.openWrite(onset_path, "AIFF", "float", 1, ~buffers[idx_buffer].sampleRate);
+	f= SoundFile.openWrite(onset_path_snd, "AIFF", "float", 1, ~buffers[idx_buffer].sampleRate);
 	f.writeData(~array_checkpoints[idx_buffer]);
 	f.close;
+
+	File.use(onset_path_txt, "w", {
+		arg f;
+		~checkpoints[idx_buffer].do({
+			arg cp;
+			f.write(cp.asString);
+			f.write("\n");
+		});
+	});
 
 }, '/buf_is_done', s.addr);
 )
