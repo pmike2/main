@@ -1,4 +1,22 @@
 (
+SynthDef(\beat_detect, {
+	arg buffer, id, duration, treshold, odftype, relaxtime;
+	var in, chain, onsets, done;
+
+	SendReply.ar(Impulse.ar(0), '/buf_start', id);
+
+	in= PlayBuf.ar(1, buffer, BufRateScale.kr(buffer), trigger:1, loop:0, doneAction:2);
+	chain= FFT(LocalBuf(512, 1), in);
+	onsets= Onsets.kr(chain, treshold, odftype, relaxtime:relaxtime);
+	SendReply.kr(onsets, '/onset', id);
+
+	done = Done.kr(Line.kr(dur:duration));
+	SendReply.kr(done, '/buf_is_done', id);
+}).add;
+)
+
+
+(
 ~load_loops= {
 	arg root_loops;
 //var root_loops= "/Volumes/Data/perso/son/loops";
@@ -22,11 +40,7 @@
 });
 
 ~n_buffers= ~buffers.size;
-~n_buffers.postln;
-
-//~fft_n_frames= 1024;
-// FFT mono
-//~fft_buffers= Array.fill(~n_buffers, {Buffer.alloc(s, ~fft_n_frames, 1)});
+~n_buffers;
 }
 )
 
@@ -34,39 +48,30 @@
 
 
 (
-SynthDef(\beat_detect, {
-	arg buffer, fft_buffer, id, duration, treshold, odftype, relaxtime;
-	var in, chain, onsets, done;
-	in= PlayBuf.ar(1, buffer, BufRateScale.kr(buffer), trigger:1, loop:0, doneAction:2);
-	//chain= FFT(fft_buffer, in);
-	chain= FFT(LocalBuf(1024, 1));
-	onsets= Onsets.kr(chain, treshold, odftype, relaxtime:relaxtime);
-	SendReply.kr(onsets, '/onset', id);
-
-	done = Done.kr(Line.kr(dur:duration));
-	SendReply.kr(done, '/buf_is_done', id);
-}).add;
-)
-
-(
 OSCdef(\listen_onsets, {
 	arg msg, time;
 	var idx_buffer;
 	idx_buffer= msg[3].asInteger;
-	~initTime[idx_buffer] = ~initTime[idx_buffer] ?? { Main.elapsedTime };
+	//~initTime[idx_buffer] = ~initTime[idx_buffer] ?? { Main.elapsedTime };
 	time= time - ~initTime[idx_buffer];
 	[msg, idx_buffer, time].postln;
 	time= if(time< 0, 0, time);
 	~checkpoints[idx_buffer]= ~checkpoints[idx_buffer].add(time);
-},'/onset', s.addr);
+}, '/onset', s.addr);
 
+OSCdef(\listen_buf_start, {
+	arg msg, time;
+	var idx_buffer;
+	idx_buffer= msg[3].asInteger;
+	[msg, idx_buffer].postln;
+	~initTime[idx_buffer]= time;
+}, '/buf_start', s.addr);
 
 OSCdef(\listen_buf_is_done, {
 	arg msg, time;
 	var idx_buffer, onset_path_snd, onset_path_txt;
-    //msg.postln;
 	idx_buffer= msg[3].asInteger;
-	//idx_buffer.postln;
+	[msg, idx_buffer].postln;
 	onset_path_snd= ~filenames[idx_buffer].pathOnly +/+ ~filenames[idx_buffer].fileNameWithoutExtension ++ "_onsets.aiff";
 	onset_path_txt= ~filenames[idx_buffer].pathOnly +/+ ~filenames[idx_buffer].fileNameWithoutExtension ++ "_onsets.txt";
 
@@ -74,7 +79,7 @@ OSCdef(\listen_buf_is_done, {
 		arg cp;
 		var idx;
 		idx= (~buffers[idx_buffer].sampleRate* cp).round.asInteger;
-		//[idx_buffer, idx].postln;
+		[idx_buffer, idx].postln;
 		~array_checkpoints[idx_buffer].put(idx, 1.0);
 	});
 
@@ -96,12 +101,17 @@ OSCdef(\listen_buf_is_done, {
 
 
 (
+Routine.run({
 ~initTime = Array.fill(~n_buffers, {nil});
 ~checkpoints= Array.fill(~n_buffers, {[ ]});
 
+s.sync();
+
 ~n_buffers.do({
 	arg idx_buffer;
-	Synth(\beat_detect, [\buffer, ~buffers[idx_buffer], \fft_buffer, ~fft_buffers[idx_buffer], \id, idx_buffer, \duration, ~buffers[idx_buffer].numFrames/ ~buffers[idx_buffer].sampleRate, \treshold, 0.5, \odftype, \rcomplex, \relaxtime, 1.0]);
+	Synth(\beat_detect, [\buffer, ~buffers[idx_buffer], \id, idx_buffer, \duration, ~buffers[idx_buffer].numFrames/ ~buffers[idx_buffer].sampleRate, \treshold, 0.1, \odftype, \power, \relaxtime, 1.0]);
+});
+
 });
 )
 
