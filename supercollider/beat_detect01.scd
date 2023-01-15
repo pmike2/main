@@ -1,6 +1,8 @@
 (
+~load_loops= {
+	arg root_loops;
 //var root_loops= "/Volumes/Data/perso/son/loops";
-var root_loops= "/Users/home/Desktop/pm/son/loops";
+//var root_loops= "/Users/home/Desktop/pm/son/loops/test_onset";
 
 // liste des temps des transients détectés
 ~array_checkpoints= [];
@@ -22,24 +24,23 @@ var root_loops= "/Users/home/Desktop/pm/son/loops";
 ~n_buffers= ~buffers.size;
 ~n_buffers.postln;
 
-~fft_n_frames= 1024;
+//~fft_n_frames= 1024;
 // FFT mono
-~fft_buffers= Array.fill(~n_buffers, {Buffer.alloc(s, ~fft_n_frames, 1)});
-
-~initTime = Array.fill(~n_buffers, {nil});
-~checkpoints= Array.fill(~n_buffers, {[]});
+//~fft_buffers= Array.fill(~n_buffers, {Buffer.alloc(s, ~fft_n_frames, 1)});
+}
 )
 
-~array_checkpoints.size.postln;
+~load_loops.value("/Users/home/Desktop/pm/son/loops/test_onset");
+
 
 (
 SynthDef(\beat_detect, {
-	arg buffer, fft_buffer, id, duration;
+	arg buffer, fft_buffer, id, duration, treshold, odftype, relaxtime;
 	var in, chain, onsets, done;
 	in= PlayBuf.ar(1, buffer, BufRateScale.kr(buffer), trigger:1, loop:0, doneAction:2);
-	chain= FFT(fft_buffer, in);
-	onsets= Onsets.kr(chain, 0.1, \power, relaxtime:1.0);
-	//SendTrig.kr(onsets);
+	//chain= FFT(fft_buffer, in);
+	chain= FFT(LocalBuf(1024, 1));
+	onsets= Onsets.kr(chain, treshold, odftype, relaxtime:relaxtime);
 	SendReply.kr(onsets, '/onset', id);
 
 	done = Done.kr(Line.kr(dur:duration));
@@ -51,12 +52,11 @@ SynthDef(\beat_detect, {
 OSCdef(\listen_onsets, {
 	arg msg, time;
 	var idx_buffer;
-    //msg.postln;
 	idx_buffer= msg[3].asInteger;
-	//idx.postln;
 	~initTime[idx_buffer] = ~initTime[idx_buffer] ?? { Main.elapsedTime };
 	time= time - ~initTime[idx_buffer];
-	//[idx, time].postln;
+	[msg, idx_buffer, time].postln;
+	time= if(time< 0, 0, time);
 	~checkpoints[idx_buffer]= ~checkpoints[idx_buffer].add(time);
 },'/onset', s.addr);
 
@@ -74,7 +74,6 @@ OSCdef(\listen_buf_is_done, {
 		arg cp;
 		var idx;
 		idx= (~buffers[idx_buffer].sampleRate* cp).round.asInteger;
-		idx= if(idx< 0, 0, idx);
 		//[idx_buffer, idx].postln;
 		~array_checkpoints[idx_buffer].put(idx, 1.0);
 	});
@@ -97,9 +96,12 @@ OSCdef(\listen_buf_is_done, {
 
 
 (
+~initTime = Array.fill(~n_buffers, {nil});
+~checkpoints= Array.fill(~n_buffers, {[ ]});
+
 ~n_buffers.do({
 	arg idx_buffer;
-	Synth(\beat_detect, [\buffer, ~buffers[idx_buffer], \fft_buffer, ~fft_buffers[idx_buffer], \id, idx_buffer, \duration, ~buffers[idx_buffer].numFrames/ ~buffers[idx_buffer].sampleRate]);
+	Synth(\beat_detect, [\buffer, ~buffers[idx_buffer], \fft_buffer, ~fft_buffers[idx_buffer], \id, idx_buffer, \duration, ~buffers[idx_buffer].numFrames/ ~buffers[idx_buffer].sampleRate, \treshold, 0.5, \odftype, \rcomplex, \relaxtime, 1.0]);
 });
 )
 
