@@ -13,6 +13,7 @@ Les extensions sont ici : /Volumes/Vol-Users/Users/pmbeau2/Library/Application S
 telechargées ici : https://github.com/supercollider/sc3-plugins
 */
 
+// -----------------------------------------
 // evaluate function
 f= {arg x=0; x* 2};
 f.value; // ou f.value() ou value(f);
@@ -52,7 +53,10 @@ a.postln;
 )
 
 // -----------------------------------------
+// point :
+12@45
 
+// -----------------------------------------
 // scope de tout le son du server
 s.scope();
 
