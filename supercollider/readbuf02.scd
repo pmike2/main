@@ -48,13 +48,6 @@ SynthDef("buf_player", {
     );
 }).add;
 
-SynthDef("delay", {
-	arg in, out=0, delaytime= 0.1;
-	var sig = In.ar(in, 2);
-	sig = Mix.ar([sig, AllpassC.ar(sig, 0.5, delaytime.poll, 0.01)]);
-	Out.ar(out, sig);
-}).add;
-
 SynthDef("rand_delaytime", {
 	arg out, trig= 1;
 	var drand, rand_float;
@@ -68,7 +61,7 @@ SynthDef("rand_delaytime", {
 // synths et task ------------------------------------
 (
 var delay_synth;
-delay_synth= Synth("delay", ["in", ~bus_delay]);
+delay_synth= Synth(\allpass_delay, ["in", ~bus_delay]);
 delay_synth.map("delaytime", ~bus_ctrl);
 
 ~seq_task= Task({

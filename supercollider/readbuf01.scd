@@ -5,6 +5,8 @@ CmdPeriod.run; // plus complet que s.freeAll, car arrête aussi toutes les routi
 currentEnvironment.clear;
 )
 
+"globals.scd".loadRelative();
+
 // global vars------------------------------------
 (
 ~buf1= Buffer.read(s, "/Volumes/Data/perso/son/loops/2022_10_10_001.wav");
@@ -64,12 +66,6 @@ SynthDef("rand_bufidx", {
 	Out.kr(out, rand_int);
 }).add;
 
-SynthDef.new("reverb", {
-	arg in, out=0, room=0.5, mix=0.5;
-	var sig = In.ar(in, 2);
-	var rev = FreeVerb2.ar(sig[0], sig[1], mix: mix, room: room);
-	Out.ar(out, rev);
-}).add
 )
 
 // Synths -------------------------------------------
@@ -87,7 +83,7 @@ rand_release_synth.map("trig", ~bus_ctrl);
 rand_bufidx_synth= Synth("rand_bufidx", ["out", ~bus_ctrl4]);
 rand_bufidx_synth.map("trig", ~bus_ctrl);
 
-Synth("reverb", ["in", ~bus_reverb]);
+Synth("freeverb", ["in", ~bus_reverb]);
 
 buf_player_synth = Synth("buf_player", ["out", ~bus_reverb]);
 buf_player_synth.map("trig", ~bus_ctrl);

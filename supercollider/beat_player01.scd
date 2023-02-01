@@ -1,21 +1,5 @@
 ~verbose= false;
-
-(
-SynthDef(\beat_player, {
-	arg out= 0, buffer= 0, trig= 1, start= 0, duration= 0.1;
-    Out.ar(
-		out,
-		PlayBuf.ar(
-			2, buffer,
-			rate: BufRateScale.kr(buffer),
-			trigger: trig,
-			startPos: start* BufSampleRate.kr(buffer),
-			loop: 0,
-			doneAction: 0
-		)* EnvGen.kr(Env([0, 1, 1, 0], [0.01, duration, 0.01], \lin), trig, doneAction: 2)
-    );
-}).add;
-)
+"globals.scd".loadRelative();
 
 (
 Routine.run({

@@ -1,21 +1,7 @@
 ~verbose= false;
+"globals.scd".loadRelative();
 
 (
-SynthDef(\beat_detect, {
-	arg buffer, id, duration, treshold, odftype, relaxtime;
-	var in, chain, onsets, done;
-
-	SendReply.ar(Impulse.ar(0), '/buf_start', id);
-
-	in= PlayBuf.ar(1, buffer, BufRateScale.kr(buffer), trigger:1, loop:0, doneAction:2);
-	chain= FFT(LocalBuf(512, 1), in);
-	onsets= Onsets.kr(chain, treshold, odftype, relaxtime:relaxtime);
-	SendReply.kr(onsets, '/onset', id);
-
-	done = Done.kr(Line.kr(dur:duration));
-	SendReply.kr(done, '/buf_is_done', id);
-}).add;
-
 OSCdef.freeAll;
 
 OSCdef(\listen_onsets, {

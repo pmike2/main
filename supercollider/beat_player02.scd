@@ -1,26 +1,5 @@
 ~verbose= false;
-
-(
-SynthDef(\beat_player, {
-	arg out= 0, buffer= 0, start= 0, duration= 0.1, amp= 0.5;
-    Out.ar(
-		out,
-		PlayBuf.ar(
-			2, buffer,
-			rate: BufRateScale.kr(buffer),
-			trigger: 1,
-			startPos: start* BufSampleRate.kr(buffer),
-			loop: 0,
-			doneAction: 0
-		)* EnvGen.kr(Env([0, 1, 1, 0], [0.001, duration, 0.001], \lin), 1, doneAction: 2, levelScale: amp)
-    );
-}).add;
-
-SynthDef(\tick, {
-	arg out= 0, amp= 0.4, duration=0.02, freq=800;
-	Out.ar(out, Blip.ar(freq)* EnvGen.kr(Env([0, 1, 1, 0], [0.001, duration, 0.001], \lin), 1, doneAction: 2, levelScale: amp));
-}).add;
-)
+"globals.scd".loadRelative();
 
 (
 Routine.run({

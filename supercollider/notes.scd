@@ -56,6 +56,16 @@ a.postln;
 // point :
 12@45
 
+
+// -----------------------------------------
+// Event hérite de IdentityDictionary qui hérite de Dictionary
+a= (bla: 56, ezt: 789);
+// loop sur keys
+a.keysDo({ |key| key.postln; });
+// loop sur (key, value)
+a.keysValuesDo({ |key, value| [key, value].postln; });
+
+
 // -----------------------------------------
 // scope de tout le son du server
 s.scope();
