@@ -23,3 +23,4 @@ h.set(\t_trig, 1);
 
 i= Synth(\snare);
 i.set(\t_trig, 1);
+
