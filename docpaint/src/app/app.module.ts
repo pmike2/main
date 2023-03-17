@@ -33,6 +33,7 @@ import { GlossaireComponent } from './glossaire/glossaire.component';
 import { DeroulementComponent } from './deroulement/deroulement.component';
 import { CouleurMatComponent } from './materiaux/shared/components/couleur-mat/couleur-mat.component';
 import { HomeComponent } from './home/home.component';
+import { CompositionComponent } from './piliers/shared/components/composition/composition.component';
 
 
 @NgModule({
@@ -59,7 +60,8 @@ import { HomeComponent } from './home/home.component';
     GlossaireComponent,
     DeroulementComponent,
     CouleurMatComponent,
-    HomeComponent
+    HomeComponent,
+    CompositionComponent
   ],
   imports: [
     BrowserModule,

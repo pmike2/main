@@ -8,6 +8,7 @@ import { Router } from '@angular/router';
 })
 export class PiliersComponent implements OnInit {
   links: any= [
+    ["composition", "Composition", "dashboard"],
     ["dessin", "Dessin", "draw"],
     ["valeur", "Valeur", "contrast"],
     ["couleur", "Couleur", "palette"],
@@ -28,7 +29,7 @@ export class PiliersComponent implements OnInit {
     //console.log("activate piliers");
     this.sidenav_opened= true;
     this.hideMenuEvent.emit(true);
-    this.router.navigate(["piliers/dessin"]);
+    this.router.navigate(["piliers/composition"]);
   }
 
   deactivate() {

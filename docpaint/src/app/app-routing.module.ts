@@ -10,13 +10,16 @@ import { InstallationComponent } from './installation/installation.component';
 import { MateriauxComponent } from './materiaux/materiaux.component';
 import { PiliersComponent } from './piliers/piliers.component';
 import { HomeComponent } from './home/home.component';
+
 import { MediumComponent } from './materiaux/shared/components/medium/medium.component';
 import { CouleurMatComponent } from './materiaux/shared/components/couleur-mat/couleur-mat.component';
 import { NettoyageComponent } from './materiaux/shared/components/nettoyage/nettoyage.component';
 import { PaletteComponent } from './materiaux/shared/components/palette/palette.component';
 import { PinceauComponent } from './materiaux/shared/components/pinceau/pinceau.component';
 import { SupportComponent } from './materiaux/shared/components/support/support.component';
+
 import { BordComponent } from './piliers/shared/components/bord/bord.component';
+import { CompositionComponent } from './piliers/shared/components/composition/composition.component';
 import { CouleurComponent } from './piliers/shared/components/couleur/couleur.component';
 import { DessinComponent } from './piliers/shared/components/dessin/dessin.component';
 import { ValeurComponent } from './piliers/shared/components/valeur/valeur.component';
@@ -45,6 +48,7 @@ const routes: Routes = [
   ]},
   {path : 'piliers', component : PiliersComponent, children : [
     {path : 'bord', component : BordComponent},
+    {path : 'composition', component : CompositionComponent},
     {path : 'couleur', component : CouleurComponent},
     {path : 'dessin', component : DessinComponent},
     {path : 'valeur', component : ValeurComponent},

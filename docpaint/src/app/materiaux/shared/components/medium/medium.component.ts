@@ -17,7 +17,7 @@ export class MediumComponent implements OnInit {
     },
     {
       "nom" : "gel", "description" : "gels de toute sorte",
-      "contenu" : "Il existe plusieurs types de médiums sous forme de gel. Liquin est brillant.",
+      "contenu" : "Il existe plusieurs types de médiums sous forme de gel. Liquin est brillant. Le gel medium Sennelier est non nocif et ne modifie pas le temps de séchage",
       "avantages" : ["moins de vapeurs toxiques", "peut se fixer sur une palette"],
       "inconvenients" : ["plus cher"],
       "img" : "assets/images/gel.jpg"

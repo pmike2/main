@@ -12,7 +12,7 @@ export class MenuComponent implements OnInit {
     ["materiaux", "Matériaux", "brush"],
     ["installation", "Installation", "build"],
     ["general", "Conseils généraux", "lightbulb"],
-    ["piliers", "Les 4 piliers", "foundation"],
+    ["piliers", "Les piliers", "foundation"],
     ["deroulement", "Déroulement d'un portrait", "fast_forward"],
     ["references", "Références", "menu_book"],
     ["glossaire", "Glossaire", "list"],
