@@ -9,7 +9,6 @@ from multiprocessing import Process, active_children
 
 import soundfile as sf
 import numpy as np
-#import matplotlib.pyplot as plt
 import pyqtgraph as pg
 import pyqtgraph.exporters
 
@@ -19,6 +18,9 @@ POINT_MODE= "point"
 LINE_MODE= "line"
 HISTO_MODE= "histo"
 DEFAULT_DRAW_MODE= LINE_MODE
+# pour délimiter ymax on ignore les bins situés avant cet idx
+# sinon on a toutes les grandes amplitudes des basses fréquences qui empechent de bien voir les autres
+DEFAULT_START_IDX_YMAX= 128
 
 
 def get_process_groups(l, n_procs):
@@ -72,7 +74,8 @@ def bloc_fft(bloc_group, sample_rate, logarithm, log_dir):
 
 		# cette option réduit les écarts d'amplitude et permet de mieux voir
 		if logarithm:
-			data_y= np.log(data_y)
+			#data_y= np.log(data_y)
+			data_y= pow(data_y, 0.5)
 
 		# fichier de log
 		os.system(f"rm {fft_log} 2>/dev/null")
@@ -81,16 +84,16 @@ def bloc_fft(bloc_group, sample_rate, logarithm, log_dir):
 				f.write(f"{data_x[i]}\t{data_y[i]}\n")
 
 
-def general_info(log_dir, bloc_size, logarithm):
+def general_info(log_dir, bloc_size, logarithm, start_idx_ymax):
 	log_info= os.path.join(log_dir, "_infos.json")
 	if not os.path.isfile(log_info):
-		info= {"bloc_size" : bloc_size, "logarithm" : logarithm}
+		info= {"bloc_size" : bloc_size, "logarithm" : logarithm, "start_idx_ymax" : start_idx_ymax}
 		fft_logs= [os.path.join(log_dir, x) for x in os.listdir(log_dir) if os.path.splitext(x)[1].lower()== ".log" and not x.startswith(".")]
 		xmin_total, xmax_total, ymin_total, ymax_total= 1e8, -1e8, 1e8, -1e8
 		for fft_log in fft_logs:
 			data= np.genfromtxt(fft_log)
 			xmin, xmax= min(data[:, 0]), max(data[:, 0])
-			ymin, ymax= min(data[:, 1]), max(data[:, 1])
+			ymin, ymax= min(data[:, 1]), max(data[start_idx_ymax:, 1])
 			if xmin< xmin_total:
 				xmin_total= xmin
 			if xmax> xmax_total:
@@ -109,35 +112,6 @@ def general_info(log_dir, bloc_size, logarithm):
 
 	return info
 	
-
-# TROP LENT
-# def bloc_plot_matplotlib(fft_log, fft_png, logarithm, tresh):
-# 	if os.path.isfile(fft_png):
-# 		return
-	
-# 	# lecture fichier
-# 	data= np.genfromtxt(fft_log)
-	
-# 	# nettoyage figure
-# 	plt.figure().clear()
-# 	plt.close()
-# 	plt.cla()
-# 	plt.clf()
-	
-# 	# affichage uniquement si amplitude > tresh
-# 	plt.xlim(0, 20000)
-# 	if logarithm:
-# 		color= [(0.0, 0.0, 0.0, 1.0) if x> math.log(tresh) else (0.0, 0.0, 0.0, 0.0) for x in data[:, 1]]
-# 		plt.ylim(-10, 10)
-# 	else:
-# 		color= [(0.0, 0.0, 0.0, 1.0) if x> tresh else (0.0, 0.0, 0.0, 0.0) for x in data[:, 1]]
-# 		plt.ylim(0, 1000)
-
-# 	plt.scatter(data[:, 0], data[:, 1], s=1.0, c=color)
-# 	#plt.show()
-# 	os.system(f"rm {fft_png} 2>/dev/null")
-# 	plt.savefig(fft_png)
-
 
 def bloc_plot_pyqtgraph(bloc_group, log_dir, png_dir, draw_mode, xmin, xmax, ymin, ymax):
 	blocs= bloc_group["data"]
@@ -177,7 +151,7 @@ def bloc_plot_pyqtgraph(bloc_group, log_dir, png_dir, draw_mode, xmin, xmax, ymi
 		exporter.export(fft_png)
 
 
-def wav_fft(wav, keep_logs=False, keep_pngs=False, clean_first=False, logarithm=False, bloc_size=None, n_procs=DEFAULT_NPROCS, draw_mode=DEFAULT_DRAW_MODE):
+def wav_fft(wav, keep_logs=False, keep_pngs=False, clean_first=False, logarithm=False, bloc_size=None, n_procs=DEFAULT_NPROCS, draw_mode=DEFAULT_DRAW_MODE, start_idx_ymax=DEFAULT_START_IDX_YMAX):
 	# lecture wav
 	data, sample_rate= sf.read(wav)
 
@@ -227,7 +201,7 @@ def wav_fft(wav, keep_logs=False, keep_pngs=False, clean_first=False, logarithm=
 	while active_children():
 		time.sleep(1)
 
-	info= general_info(log_dir, bloc_size, logarithm)
+	info= general_info(log_dir, bloc_size, logarithm, start_idx_ymax)
 	xmin, xmax= 0, 12000
 	ymin, ymax= info["ymin"], info["ymax"]
 
@@ -269,6 +243,7 @@ def main():
 	parser.add_argument("--bloc-size", default=None, type=int, help="taille bloc à analyser")
 	parser.add_argument("--nprocs", default=DEFAULT_NPROCS, type=int, help="nombre de processeurs")
 	parser.add_argument("--draw-mode", default=DEFAULT_DRAW_MODE, type=str, help="mode de dessin")
+	parser.add_argument("--start-idx-ymax", default=DEFAULT_START_IDX_YMAX, type=int, help="bins avant cet indice sont ignorés pour délimiter le ymax des png")
 	args= parser.parse_args()
 
 	l_wavs= [args.wav] if os.path.isfile(args.wav) else [os.path.join(args.wav, x) for x in os.listdir(args.wav) if os.path.splitext(x)[1].lower()== ".wav" and not x.startswith(".")]
@@ -282,7 +257,8 @@ def main():
 			logarithm=args.logarithm,
 			bloc_size=args.bloc_size,
 			n_procs=args.nprocs,
-			draw_mode=args.draw_mode
+			draw_mode=args.draw_mode,
+			start_idx_ymax=args.start_idx_ymax
 		)
 
 
