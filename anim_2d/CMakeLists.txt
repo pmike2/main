@@ -23,15 +23,16 @@ set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/")
 
 project(anim_2d)
 
-set(ENV{SDLDIR} /Volumes/Cezanne/Cezanne/perso_dev/External_tools)
+#set(ENV{SDLDIR} /Volumes/Cezanne/Cezanne/perso_dev/External_tools)
 
-find_package(SDL2 REQUIRED PATHS /Volumes/Cezanne/Cezanne/perso_dev/External_tools)
-find_package(SDL2_image)
+find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(OpenGL REQUIRED)
 
 
-include_directories(/Volumes/Cezanne/Cezanne/perso_dev/External_tools/include)
+#include_directories(/Library/Frameworks/SDL2.framework/Headers)
+#include_directories(/Library/Frameworks/SDL2_image.framework/Headers)
 include_directories(/usr/local/include)
 include_directories(/usr/local/include/freetype2)
 include_directories(../libs)
@@ -57,7 +58,7 @@ target_link_libraries(main PUBLIC lib_input_state)
 target_link_libraries(main PUBLIC lib_font)
 target_link_libraries(main PUBLIC lib_bbox_2d)
 # bug debile cf https://stackoverflow.com/questions/45730098/cmake-leading-or-trailing-whitespace-policy-cmp0004
-string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
+#string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
 target_link_libraries(main PUBLIC ${SDL2_LIBRARIES})
 target_link_libraries(main PUBLIC ${SDL2_IMAGE_LIBRARIES})
 target_link_libraries(main PUBLIC ${FREETYPE_LIBRARIES})
