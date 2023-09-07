@@ -43,7 +43,7 @@ public:
 class Font {
 public:
 	Font();
-	Font(GLuint prog_draw, std::string font_path, unsigned int font_size, ScreenGL * screengl, unsigned int n_text_groups);
+	Font(GLuint prog_draw, std::string font_path, unsigned int font_size, ScreenGL * screengl, unsigned int n_text_groups = 1);
 	void set_text_group(unsigned int idx_text_group, std::vector<Text> & texts);
 	void set_text_group(unsigned int idx_text_group, Text & text);
 	void clear();

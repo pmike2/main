@@ -29,7 +29,7 @@ GraphGrid::GraphGrid(unsigned int n_ligs, unsigned int n_cols, const glm::vec2 &
 			}*/
 			float x= _origin.x+ ((float)(col)/ (float)(_n_cols))* _size.x;
 			float y= _origin.y+ ((float)(lig)/ (float)(_n_ligs))* _size.y;
-			add_vertex(id, weight, x, y);
+			add_vertex(id, glm::vec3(x, y, 0.0f), weight);
 		}
 	}
 	
@@ -98,8 +98,8 @@ void GraphGrid::set_heavy_weight(AABB_2D * aabb) {
 			if ((col< 0) || (col>= _n_cols) || (lig< 0) || (lig>= _n_ligs)) {
 				continue;
 			}
-			//_vertices[col_lig2id(col, lig)]._weight= 10.0f;
-			_vertices[col_lig2id(col, lig)]._active= false;
+			_vertices[col_lig2id(col, lig)]._weight= 10.0f;
+			//_vertices[col_lig2id(col, lig)]._active= false;
 		}
 	}
 }
@@ -137,7 +137,8 @@ void PathFinder::update_grid() {
 	_grid->_it_v= _grid->_vertices.begin();
 	while (_grid->_it_v!= _grid->_vertices.end()) {
 		for (auto poly : _polygons) {
-			if (is_pt_inside_poly(_grid->_it_v->second._pos, poly)) {
+			glm::vec2 v(_grid->_it_v->second._pos);
+			if (is_pt_inside_poly(v, poly)) {
 			//if (distance_poly_pt(poly, _grid->_it_v->second._pos, NULL)< 0.1f) {
 				vertices_to_erase.push_back(_grid->_it_v->first);
 				break;
@@ -509,8 +510,8 @@ void PathFinderDebug::update(const PathFinder & path_finder, const vector<glm::v
 			data_pts[6* idx+ 5]= 0.2f;
 		}
 		else {
-			//if (path_finder._grid->_it_v->second._weight< 10.0f) {
-			if (path_finder._grid->_it_v->second._active) {
+			if (path_finder._grid->_it_v->second._weight< 10.0f) {
+			//if (path_finder._grid->_it_v->second._active) {
 				data_pts[6* idx+ 3]= 0.2f;
 				data_pts[6* idx+ 4]= 0.9f;
 				data_pts[6* idx+ 5]= 0.9f;

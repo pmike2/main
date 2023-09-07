@@ -5,10 +5,16 @@
 # ./main
 #
 
-#
+
+
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # il doit y avoir un problème avec ce fichier car il faut que je fasse 2 fois cmake .. + make
 # pour que ca fonctionne ...
-#
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
 
 cmake_minimum_required(VERSION 3.13)
 
@@ -56,8 +62,13 @@ add_executable(list_audio_devices ./srcs/list_audio_devices.cpp)
 add_executable(video_sampler_main ./srcs/video_sampler_main.cpp ./srcs/video_sampler.cpp ./srcs/video_sampler.h)
 
 
-string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
-set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lass" "-lbz2" "-liconv" "-lz" "-lavutil" "-lavcodec" "-lavdevice" "-lavformat" "-lavfilter" "-lpostproc" "-lswresample" "-lswscale" "-lx264" "-pthread" "-lm" "-framework AudioUnit" "-framework AudioToolbox" "-framework CoreAudio" "-framework VideoToolbox" "-framework CoreFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework CoreGraphics" "-framework CoreImage" "-framework CoreServices" "-framework Security" "-framework Foundation" "-framework AppKit")
+#string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
+set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lbz2" "-liconv" "-lz" "-lavutil" "-lavcodec" "-lavdevice" "-lavformat" "-lavfilter" "-lswresample" "-lswscale" "-pthread" "-lm" "-framework AudioUnit" "-framework AudioToolbox" "-framework CoreAudio" "-framework VideoToolbox" "-framework CoreFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework CoreGraphics" "-framework CoreImage" "-framework CoreServices" "-framework Security" "-framework Foundation" "-framework AppKit")
+
+
+#message(PORTAUDIO_LIBRARIES="${PORTAUDIO_LIBRARIES}")
+#message(PORTAUDIO_INCLUDE_DIRS="${PORTAUDIO_INCLUDE_DIRS}")
+
 
 #target_link_libraries(looper_sdl_main PUBLIC ${SDL2_LIBRARIES} lib_shared_mem lib_looper lib_input_state lib_utile)
 target_link_libraries(looper_gl_main PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} lib_shared_mem lib_looper lib_input_state lib_gl_utils lib_font lib_utile)

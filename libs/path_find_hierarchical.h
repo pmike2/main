@@ -9,6 +9,7 @@
 #include <glm/glm.hpp>
 
 #include "bbox_2d.h"
+#include "graph.h"
 
 
 struct HPAEdge {
@@ -17,7 +18,7 @@ struct HPAEdge {
 	
 	HPAEdge();
 	HPAEdge(float weight);
-	HPAEdge();
+	~HPAEdge();
 };
 
 
@@ -46,14 +47,14 @@ struct HPACluster {
 
 struct HPAGraph {
 	std::unordered_map<unsigned int, HPAVertex> _vertices;
-	std::unordered_map<unsigned int, GraphVertex>::iterator _it_v;
-	std::unordered_map<unsigned int, GraphEdge>::iterator _it_e;
+	std::unordered_map<unsigned int, HPAVertex>::iterator _it_v;
+	std::unordered_map<unsigned int, HPAEdge>::iterator _it_e;
 	std::vector<HPACluster *> _clusters;
 
 
 	HPAGraph();
 	~HPAGraph();
-	void add_vertex(unsigned int i, float weight=0.0f, glm::vec2 pos=glm::vec(0.0f));
+	void add_vertex(unsigned int i, float weight=0.0f, glm::vec2 pos= glm::vec2(0.0f, 0.0f));
 	void add_edge(unsigned int i, unsigned int j, float weight=0.0f);
 	void remove_vertex(unsigned int i);
 	void remove_edge(unsigned int i, unsigned int j);

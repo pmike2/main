@@ -34,7 +34,7 @@ struct Graph {
 	std::vector<unsigned int> neighbors(unsigned int i);
 	void clear();
 	//void rand();
-	//void reinit_weights();
+	void reinit_weights();
 	friend std::ostream & operator << (std::ostream & os, Graph & g);
 
 

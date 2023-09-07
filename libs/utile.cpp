@@ -215,8 +215,11 @@ vector<string> list_files(string ch_dir, string ext) {
 		while ((dir = readdir(d)) != NULL) {
 			string f= string(dir->d_name);
 			if ((ext== "") || (f.substr(f.find_last_of(".")+ 1)== ext))
-				//res.push_back(f);
-				res.push_back(ch_dir+ "/"+ f);
+
+				if (f.back()!= '.') {
+					//res.push_back(f);
+					res.push_back(ch_dir+ "/"+ f);
+				}
 		}
 		closedir(d);
 	}

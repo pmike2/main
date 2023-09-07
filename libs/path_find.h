@@ -18,13 +18,6 @@
 
 
 struct GraphGrid : public Graph {
-	unsigned int _n_ligs;
-	unsigned int _n_cols;
-	glm::vec2 _origin;
-	glm::vec2 _size;
-	AABB_2D * _aabb;
-
-
 	GraphGrid();
 	GraphGrid(unsigned int n_ligs, unsigned int n_cols, const glm::vec2 & origin, const glm::vec2 & size, bool is8connex=true);
 	~GraphGrid();
@@ -32,6 +25,13 @@ struct GraphGrid : public Graph {
 	unsigned int col_lig2id(unsigned int col, unsigned int lig);
 	void set_heavy_weight(AABB_2D * aabb);
 	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
+
+
+	unsigned int _n_ligs;
+	unsigned int _n_cols;
+	glm::vec2 _origin;
+	glm::vec2 _size;
+	AABB_2D * _aabb;
 };
 
 
@@ -39,10 +39,6 @@ bool frontier_cmp(std::pair<unsigned int, float> x, std::pair<unsigned int, floa
 
 
 struct PathFinder {
-	GraphGrid * _grid;
-	std::vector<Polygon2D *> _polygons;
-
-
 	PathFinder();
 	PathFinder(unsigned int n_ligs, unsigned int n_cols, const glm::vec2 & origin, const glm::vec2 & size, bool is8connex=true);
 	~PathFinder();
@@ -55,6 +51,10 @@ struct PathFinder {
 	bool path_find_nodes(unsigned int start, unsigned int goal, std::vector<unsigned int> & path, std::vector<unsigned int> & visited);
 	bool path_find(glm::vec2 start, glm::vec2 goal, std::vector<glm::vec2> & path, std::vector<unsigned int> & visited);
 	void draw_svg(const std::vector<unsigned int> & path, const std::vector<unsigned int> & visited, std::string svg_path);
+
+
+	GraphGrid * _grid;
+	std::vector<Polygon2D *> _polygons;
 };
 
 

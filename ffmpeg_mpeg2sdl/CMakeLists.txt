@@ -24,12 +24,10 @@ add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h
 add_executable(decode_mpeg_v1 ./srcs/decode_mpeg_v1.cpp)
 add_executable(decode_mpeg_v2 ./srcs/decode_mpeg_v2.cpp)
 add_executable(decode_mpeg_v3 ./srcs/decode_mpeg_v3.cpp)
-add_executable(decode_mpeg_v4 ./srcs/decode_mpeg_v4.cpp)
 
-string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
+#string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
 set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lbz2" "-liconv" "-lz" "-lavutil" "-lavcodec" "-lavdevice" "-lavformat" "-lavfilter" "-lswresample" "-lswscale" "-pthread" "-lm" "-framework AudioUnit" "-framework AudioToolbox" "-framework CoreAudio" "-framework VideoToolbox" "-framework CoreFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework CoreServices" "-framework Security")
 
 target_link_libraries(decode_mpeg_v1 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS})
 target_link_libraries(decode_mpeg_v2 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS})
 target_link_libraries(decode_mpeg_v3 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS})
-target_link_libraries(decode_mpeg_v4 ${SDL2_LIBRARIES} ${FFMPEG_OPTIONS} ${OPENGL_LIBRARIES} lib_utile lib_gl_utils lib_mpeg lib_geom_2d lib_bbox_2d lib_input_state)

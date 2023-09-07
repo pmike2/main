@@ -427,28 +427,25 @@ AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl, Obj
 	vector<string> l_dirs= list_files(root_pngs);
 	unsigned int compt= 0; // compteur courant permettant l'init de _first_idx
 	for (auto dir : l_dirs) {
-		if (dir[0]!= '.') {
-			Action * action= new Action();
-			action->_name= dir;
-			action->_first_idx= compt;
+		Action * action= new Action();
+		action->_name= basename(dir);
+		action->_first_idx= compt;
 
-			vector<string> l_files= list_files(root_pngs+ "/"+ dir);
-			sort(l_files.begin(), l_files.end());
-			for (auto f : l_files) {
-				if (f[0]!= '.') {
-					action->_pngs.push_back(root_pngs+ "/"+ dir+ "/"+ f);
-					action->_n_idx++;
-					compt++;
-				}
-			}
-			_actions.push_back(action);
+		vector<string> l_files= list_files(dir);
+		sort(l_files.begin(), l_files.end());
+		for (auto f : l_files) {
+			action->_pngs.push_back(f);
+			action->_n_idx++;
+			compt++;
 		}
+		_actions.push_back(action);
 	}
 
 	// utilisation de GL_TEXTURE_2D_ARRAY : on stocke dans un tableau de textures toutes les images de toutes les actions
 	glGenTextures(1, &_texture_id);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
 	
+
 	// on utilise la 1ere image de la 1ere action pour déterminer la taille de toutes les images
 	SDL_Surface * surface_0= IMG_Load(_actions[0]->_pngs[0].c_str());
 	glm::ivec2 model_size(surface_0->w, surface_0->h);

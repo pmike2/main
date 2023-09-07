@@ -45,15 +45,6 @@ add_library(lib_font STATIC ../libs/font.cpp ../libs/font.h)
 
 add_executable(main ./srcs/main.cpp ./srcs/constantes.h)
 
-target_link_libraries(main PUBLIC lib_physics_2d)
-target_link_libraries(main PUBLIC lib_gl_utils)
-target_link_libraries(main PUBLIC lib_utile)
-target_link_libraries(main PUBLIC lib_input_state)
-target_link_libraries(main PUBLIC lib_font)
-# bug debile cf https://stackoverflow.com/questions/45730098/cmake-leading-or-trailing-whitespace-policy-cmp0004
-string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
-target_link_libraries(main PUBLIC ${SDL2_LIBRARIES})
-target_link_libraries(main PUBLIC ${SDL2_IMAGE_LIBRARIES})
-target_link_libraries(main PUBLIC ${FREETYPE_LIBRARIES})
-target_link_libraries(main PUBLIC ${OPENGL_LIBRARIES})
+target_link_libraries(main PUBLIC ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${FREETYPE_LIBRARIES} ${OPENGL_LIBRARIES})
+target_link_libraries(main PUBLIC lib_physics_2d lib_gl_utils lib_utile lib_input_state lib_font)
 

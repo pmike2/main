@@ -59,7 +59,7 @@ target_link_libraries(main PUBLIC lib_geom)
 target_link_libraries(main PUBLIC lib_dungeon)
 
 # bug debile cf https://stackoverflow.com/questions/45730098/cmake-leading-or-trailing-whitespace-policy-cmp0004
-string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
+#string(STRIP ${SDL2_LIBRARIES} SDL2_LIBRARIES)
 target_link_libraries(main PUBLIC ${SDL2_LIBRARIES})
 target_link_libraries(main PUBLIC ${SDL2_IMAGE_LIBRARIES})
 target_link_libraries(main PUBLIC ${OPENGL_LIBRARIES})

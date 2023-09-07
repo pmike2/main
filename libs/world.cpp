@@ -859,52 +859,52 @@ void World::write(string ch_directory) {
 	ofstream xml_file(ch_world_file);
 	xml_document<> doc;
 	
-	xml_node<> * decl= doc.allocate_node(node_declaration);
+	xml_node<> * decl= doc.allocate_node(node_type::node_declaration);
 	decl->append_attribute(doc.allocate_attribute("version", "1.0"));
 	decl->append_attribute(doc.allocate_attribute("encoding", "UTF-8"));
 	doc.append_node(decl);
 	
-	xml_node<> * root= doc.allocate_node(node_element, "world");
+	xml_node<> * root= doc.allocate_node(node_type::node_element, "world");
 	doc.append_node(root);
 
 	// ---------------------------------------------------------------------
-	xml_node<> * terrain_node= doc.allocate_node(node_element, "terrain");
+	xml_node<> * terrain_node= doc.allocate_node(node_type::node_element, "terrain");
 	
-	xml_node<> * altis_node= doc.allocate_node(node_element, "altis");
+	xml_node<> * altis_node= doc.allocate_node(node_type::node_element, "altis");
 	string ch_alti_data= ch_directory+ "/altis.tif";
 	_terrain->save(ch_alti_data);
 	altis_node->value(ch_alti_data.c_str());
 	terrain_node->append_node(altis_node);
 
-	xml_node<> * config_node= doc.allocate_node(node_element, "config");
+	xml_node<> * config_node= doc.allocate_node(node_type::node_element, "config");
 	
-	xml_node<> * origin_node= doc.allocate_node(node_element, "origin");
-	xml_node<> * x_node= doc.allocate_node(node_element, "x");
+	xml_node<> * origin_node= doc.allocate_node(node_type::node_element, "origin");
+	xml_node<> * x_node= doc.allocate_node(node_type::node_element, "x");
 	x_node->value(to_string(_terrain->_config->_origin.x).c_str());
 	origin_node->append_node(x_node);
-	xml_node<> * y_node= doc.allocate_node(node_element, "y");
+	xml_node<> * y_node= doc.allocate_node(node_type::node_element, "y");
 	y_node->value(to_string(_terrain->_config->_origin.y).c_str());
 	origin_node->append_node(y_node);
 	config_node->append_node(origin_node);
 
-	xml_node<> * width_sub_node= doc.allocate_node(node_element, "width_sub");
+	xml_node<> * width_sub_node= doc.allocate_node(node_type::node_element, "width_sub");
 	width_sub_node->value(to_string(_terrain->_config->_width_sub).c_str());
 	config_node->append_node(width_sub_node);
-	xml_node<> * height_sub_node= doc.allocate_node(node_element, "height_sub");
+	xml_node<> * height_sub_node= doc.allocate_node(node_type::node_element, "height_sub");
 	height_sub_node->value(to_string(_terrain->_config->_height_sub).c_str());
 	config_node->append_node(height_sub_node);
 
-	xml_node<> * width_step_node= doc.allocate_node(node_element, "width_step");
+	xml_node<> * width_step_node= doc.allocate_node(node_type::node_element, "width_step");
 	width_step_node->value(to_string(_terrain->_config->_width_step).c_str());
 	config_node->append_node(width_step_node);
-	xml_node<> * height_step_node= doc.allocate_node(node_element, "height_step");
+	xml_node<> * height_step_node= doc.allocate_node(node_type::node_element, "height_step");
 	height_step_node->value(to_string(_terrain->_config->_height_step).c_str());
 	config_node->append_node(height_step_node);
 
-	xml_node<> * n_subs_x_node= doc.allocate_node(node_element, "n_subs_x");
+	xml_node<> * n_subs_x_node= doc.allocate_node(node_type::node_element, "n_subs_x");
 	n_subs_x_node->value(to_string(_terrain->_config->_n_subs_x).c_str());
 	config_node->append_node(n_subs_x_node);
-	xml_node<> * n_subs_y_node= doc.allocate_node(node_element, "n_subs_y");
+	xml_node<> * n_subs_y_node= doc.allocate_node(node_type::node_element, "n_subs_y");
 	n_subs_y_node->value(to_string(_terrain->_config->_n_subs_y).c_str());
 	config_node->append_node(n_subs_y_node);
 	
@@ -913,20 +913,20 @@ void World::write(string ch_directory) {
 	root->append_node(terrain_node);
 
 	// ---------------------------------------------------------------------
-	xml_node<> * static_models_node= doc.allocate_node(node_element, "static_models");
+	xml_node<> * static_models_node= doc.allocate_node(node_type::node_element, "static_models");
 	for (auto sm : _models_pool->_static_models) {
-		xml_node<> * static_model_node= doc.allocate_node(node_element, "static_model");
-		xml_node<> * ch_config_node= doc.allocate_node(node_element, "ch_config");
+		xml_node<> * static_model_node= doc.allocate_node(node_type::node_element, "static_model");
+		xml_node<> * ch_config_node= doc.allocate_node(node_type::node_element, "ch_config");
 		ch_config_node->value(sm->_ch_config_file.c_str());
 		static_model_node->append_node(ch_config_node);
 		static_models_node->append_node(static_model_node);
 	}
 	root->append_node(static_models_node);
 
-	xml_node<> * animated_models_node= doc.allocate_node(node_element, "animated_models");
+	xml_node<> * animated_models_node= doc.allocate_node(node_type::node_element, "animated_models");
 	for (auto am : _models_pool->_animated_models) {
-		xml_node<> * animated_model_node= doc.allocate_node(node_element, "animated_model");
-		xml_node<> * ch_config_node= doc.allocate_node(node_element, "ch_config");
+		xml_node<> * animated_model_node= doc.allocate_node(node_type::node_element, "animated_model");
+		xml_node<> * ch_config_node= doc.allocate_node(node_type::node_element, "ch_config");
 		ch_config_node->value(am->_ch_config_file.c_str());
 		animated_model_node->append_node(ch_config_node);
 		animated_models_node->append_node(animated_model_node);
@@ -934,25 +934,25 @@ void World::write(string ch_directory) {
 	root->append_node(animated_models_node);
 
 	// ---------------------------------------------------------------------
-	xml_node<> * static_instances_node= doc.allocate_node(node_element, "static_instances");
+	xml_node<> * static_instances_node= doc.allocate_node(node_type::node_element, "static_instances");
 	for (auto sg : _static_groups) {
 		for (auto pr : sg->_pos_rots) {
-			xml_node<> * static_instance_node= doc.allocate_node(node_element, "static_instance");
-			xml_node<> * ch_config_node= doc.allocate_node(node_element, "ch_config");
+			xml_node<> * static_instance_node= doc.allocate_node(node_type::node_element, "static_instance");
+			xml_node<> * ch_config_node= doc.allocate_node(node_type::node_element, "ch_config");
 			ch_config_node->value(sg->_ch_config_file.c_str());
 			static_instance_node->append_node(ch_config_node);
 
-			xml_node<> * position_node= doc.allocate_node(node_element, "position");
+			xml_node<> * position_node= doc.allocate_node(node_type::node_element, "position");
 			char * position_string= doc.allocate_string(glm::to_string(pr->_position).c_str());
 			position_node->value(position_string);
 			static_instance_node->append_node(position_node);
 
-			xml_node<> * rotation_node= doc.allocate_node(node_element, "rotation");
+			xml_node<> * rotation_node= doc.allocate_node(node_type::node_element, "rotation");
 			char * rotation_string= doc.allocate_string(glm::to_string(pr->_rotation).c_str());
 			rotation_node->value(rotation_string);
 			static_instance_node->append_node(rotation_node);
 
-			xml_node<> * scale_node= doc.allocate_node(node_element, "scale");
+			xml_node<> * scale_node= doc.allocate_node(node_type::node_element, "scale");
 			char * scale_string= doc.allocate_string(glm::to_string(pr->_scale).c_str());
 			scale_node->value(scale_string);
 			static_instance_node->append_node(scale_node);
@@ -963,19 +963,19 @@ void World::write(string ch_directory) {
 	
 	root->append_node(static_instances_node);
 
-	xml_node<> * animated_instances_node= doc.allocate_node(node_element, "animated_instances");
+	xml_node<> * animated_instances_node= doc.allocate_node(node_type::node_element, "animated_instances");
 	for (auto ai : _animated_instances) {
-		xml_node<> * animated_instance_node= doc.allocate_node(node_element, "animated_instance");
-		xml_node<> * ch_config_node= doc.allocate_node(node_element, "ch_config");
+		xml_node<> * animated_instance_node= doc.allocate_node(node_type::node_element, "animated_instance");
+		xml_node<> * ch_config_node= doc.allocate_node(node_type::node_element, "ch_config");
 		ch_config_node->value(ai->_model->_ch_config_file.c_str());
 		animated_instance_node->append_node(ch_config_node);
 
-		xml_node<> * position_node= doc.allocate_node(node_element, "position");
+		xml_node<> * position_node= doc.allocate_node(node_type::node_element, "position");
 		char * position_string= doc.allocate_string(glm::to_string(ai->_pos_rot->_position).c_str());
 		position_node->value(position_string);
 		animated_instance_node->append_node(position_node);
 
-		xml_node<> * scale_node= doc.allocate_node(node_element, "scale");
+		xml_node<> * scale_node= doc.allocate_node(node_type::node_element, "scale");
 		char * scale_string= doc.allocate_string(glm::to_string(ai->_pos_rot->_scale).c_str());
 		scale_node->value(scale_string);
 		animated_instance_node->append_node(scale_node);

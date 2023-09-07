@@ -247,9 +247,9 @@ void init() {
 	check_gl_error(); // verif que les shaders ont bien été compilés - linkés
 	
 	// --------------------------------------------------------------------------
-	arial_font= new Font(prog_font, "../../fonts/Arial.ttf", 24, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	input_state= new InputState();
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+	arial_font= new Font(prog_font, "../../fonts/Arial.ttf", 24, screengl);
+	input_state= new InputState();
 
 	done= false;
 	tikfps1= SDL_GetTicks();
@@ -321,12 +321,15 @@ void show_infos() {
 	font_str.precision(1);
 	font_str << fixed;
 
+	glm::vec2 position(10.0f, 15.0f);
 	float font_scale= 0.6f;
-	glm::vec3 font_color= glm::vec3(1.0f, 1.0f, 0.0f);
+	glm::vec4 font_color(1.0f, 1.0f, 0.0f, 0.5f);
 
 	font_str.str("");
 	font_str << "hello";
-	arial_font->draw(font_str.str(), 10.0f, 15.0f, font_scale, font_color);
+	Text t(font_str.str(), position, font_scale, font_color);
+	arial_font->set_text_group(0, t);
+	arial_font->draw();
 }
 
 

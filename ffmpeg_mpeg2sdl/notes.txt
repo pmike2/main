@@ -12,6 +12,4 @@ idem v2 mais chaque frame est converti en dimensions écran au chargement (+ lon
 et utilisation SDL_UpdateTexture
 Voir si vaut le coup en terme de perfo
 
-./decode_mpeg_v4 ../data/test.mp4
-OPENGL Texture 3D
-beaucoup + élaboré !
+voir looper_audio_video pour qqchose de + élaboré...

@@ -208,7 +208,8 @@ public:
 	
 	std::string _id;
 	glm::vec3 _color;
-	ModelObj _model;
+	StaticModel * _model;
+	StaticInstance * _instance;
 	std::vector<AppliedForce> _applied_forces;
 	ForcesDraw _forces_draw;
 	RigidBody _rigid_body;

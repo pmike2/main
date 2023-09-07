@@ -5,13 +5,17 @@
 # launch_all.sh LOOPER VIDEO AUDIO --audio-device 1
 
 
+# préciser où sont installés les packages npm ----------------------------
+export NODE_PATH=/usr/local/lib/node_modules
+
+
 # constantes --------------------------------------------------------------
 SCRIPT_DIR=`dirname $0`
 BUILD_DIR="${SCRIPT_DIR}/build"
 ROOT_DATA="${SCRIPT_DIR}/data"
 ROOT_WEB="${SCRIPT_DIR}/../web"
-#CHROME="/Applications/ADD_SOFTS/WEB/Google Chrome.app/Contents/MacOS/Google Chrome"
-CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+CHROME="/Applications/ADD_SOFTS/WEB/Google Chrome.app/Contents/MacOS/Google Chrome"
+#CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 
 
 # variables ---------------------------------------------------------------
