@@ -99,18 +99,13 @@ RigidBody::RigidBody() {
 }
 
 
-RigidBody::RigidBody(string model_path, bool is_paves, float size_factor) :
+RigidBody::RigidBody(string model_path, float size_factor) :
 	_linear_momentum(glm::vec3(0.0f)), _linear_v(glm::vec3(0.0f)), _position(glm::vec3(0.0f)),
 	_angular_momentum(glm::vec3(0.0f)), _angular_v(glm::vec3(0.0f)), _rotation_matrix(glm::mat3(1.0f)), _quaternion(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)),
 	_local_inertia_matrix(glm::mat3(1.0f)), _local_inertia_matrix_inverse(glm::mat3(1.0f)), _world_inertia_matrix_inverse(glm::mat3(1.0f)),
 	_xmin(1e8), _xmax(-1e8), _ymin(1e8), _ymax(-1e8), _zmin(1e8), _zmax(-1e8)
 {
-	if (is_paves) {
-		as_paves(model_path, size_factor);
-	}
-	else {
-		from_txt(model_path, size_factor);
-	}
+	from_txt(model_path, size_factor);
 	
 	/*
 	cout << model_path << endl;
@@ -146,7 +141,7 @@ RigidBody::RigidBody(string model_path, bool is_paves, float size_factor) :
 
 // calcul matrice inertie, bary d'un corps défini comme un assemblage de pavés droits
 // utilisé au début, plus maintenant. Conservé pour mémoire
-void RigidBody::as_paves(string model_path, float size_factor) {
+/*void RigidBody::as_paves(string model_path, float size_factor) {
 	string line;
 	float x, y, z;
 	float volume, mass;
@@ -162,7 +157,6 @@ void RigidBody::as_paves(string model_path, float size_factor) {
 	ymin= 1e10; ymax= -1e10;
 	zmin= 1e10; zmax= -1e10;
 	
-	// parcours objfile ------------------------------------------------------------------
 	ifstream obj_file(model_path.c_str());
 	if (obj_file.is_open()) {
 		obj_file.seekg(0, ios::beg);
@@ -170,7 +164,6 @@ void RigidBody::as_paves(string model_path, float size_factor) {
 			getline(obj_file, line);
 			
 			if (line.c_str()[0]== 'v') {
-				// Set first character to 0. This will allow us to use sscanf
 				line[0]= ' ';
 				sscanf(line.c_str(), "%f%f%f ", &x, &y, &z);
 				
@@ -237,7 +230,7 @@ void RigidBody::as_paves(string model_path, float size_factor) {
 		glm::mat3 mat2= glm::outerProduct(barys[i], barys[i]);
 		_local_inertia_matrix+= inertias[i]+ masses[i]* (mat1- mat2);
 	}
-}
+}*/
 
 
 // lecture matrice d'inertie, bary à partir d'un fichier txt généré par .../spaceship/modeles/compute_rigidbody.py
@@ -485,14 +478,10 @@ Bullet::Bullet() {
 }
 
 
-Bullet::Bullet(GLuint prog_draw, GLuint prog_draw_basic, std::string model_path, std::string material_path, const glm::vec3 & position, const glm::mat3 & rotation_matrix, float size_factor, const glm::vec3 & color) :
+Bullet::Bullet(GLuint prog_draw, GLuint prog_draw_basic, StaticModel * model, const glm::vec3 & position, const glm::mat3 & rotation_matrix, float size_factor, const glm::vec3 & color) :
 	_position(position), _rotation_matrix(rotation_matrix), _is_active(false)
 {
-	_model= ModelObj(prog_draw, prog_draw_basic);
-	_model.load(model_path, material_path, size_factor);
-	_model._ambient[0]= color.x;
-	_model._ambient[1]= color.y;
-	_model._ambient[2]= color.z;
+	_instance= new StaticInstance(model, glm::vec3(size_factor));
 }
 
 
@@ -516,6 +505,8 @@ void Bullet::anim(float * world2camera, float * camera2clip) {
 	glm::vec3 vec_advance= _rotation_matrix* glm::vec3(0.0f, 1.0f, 0.0f);
 	
 	_position+= BULLET_SPEED* vec_advance;
+
+	_instance->set_pos_rot_scale(_position, );
 	
 	glm::mat4 rotation= glm::mat4(_rotation_matrix);
 	glm::mat4 translation= glm::translate(glm::mat4(1.0f), _position);
@@ -716,17 +707,13 @@ Ship::Ship() {
 }
 
 
-Ship::Ship(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, string model_path, string material_path, bool is_paves, float size_factor, const glm::vec3 & color) :
+Ship::Ship(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, StaticModel * model_ship, StaticModel * model_bullet, bool is_paves, float size_factor, const glm::vec3 & color) :
 	_id(id), _is_shooting(false), _tik_shooting_1(0), _tik_shooting_2(0), _color(color)
 {
-	_model= ModelObj(prog_draw_3d, prog_draw_basic);
-	_model.load(model_path, material_path, size_factor);
-	_model._ambient[0]= _color.x;
-	_model._ambient[1]= _color.y;
-	_model._ambient[2]= _color.z;
+	_instance= StaticInstance(model_ship, glm::vec3(1.0f));
 	
 	_forces_draw= ForcesDraw(prog_draw_basic);
-	_rigid_body= RigidBody(model_path, is_paves, size_factor);
+	_rigid_body= RigidBody(model_ship->_ch_config_file, size_factor);
 	_follow_camera= FollowCamera(prog_draw_basic);
 
 	init_applied_forces();
@@ -739,7 +726,7 @@ Ship::Ship(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, string m
 	_keypresseds.insert(pair<string, bool>(KEY_BWD, false));
 	
 	for (unsigned int i=0; i<MAX_BULLETS; ++i)
-		_bullets.push_back(new Bullet(_model._prog_draw, _model._prog_bbox, "modeles/bullet.obj", "modeles/bullet.mtl", glm::vec3(0.0f), glm::mat3(1.0f), BULLET_SIZE_FACTOR, color));
+		_bullets.push_back(new Bullet(_model._prog_draw, _model._prog_bbox, model_bullet, glm::vec3(0.0f), glm::mat3(1.0f), BULLET_SIZE_FACTOR, color));
 }
 
 

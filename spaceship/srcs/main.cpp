@@ -74,6 +74,7 @@ vector<Light> lights;
 LightsUBO * lights_ubo;
 vector<IA *> enemies;
 vector<Ship *> all_ships;
+StaticModel * _ship_model;
 vector<Explosion *> little_explosions;
 vector<Explosion *> big_explosions;
 LevelMap * level_map;
@@ -242,8 +243,11 @@ void init() {
 	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_box= false;
 	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), M_PI* 0.2, 0.0f, 100.0f);
+
+	ship_model= new StaticModel("modeles/plane2.xml", prog_fog);
+	bullet_model= new StaticModel("modeles/bullet.xml", prog_fog);
 	
-	ship= new Ship("YOU", prog_fog, prog_basic, "modeles/plane2.obj", "modeles/plane2.mtl", false, SHIP_SIZE_FACTOR, HEROS_COLOR);
+	ship= new Ship("YOU", prog_fog, prog_basic, "", "modeles/plane2.mtl", false, SHIP_SIZE_FACTOR, HEROS_COLOR);
 	ship->_rigid_body._position.z= 400.0f;
 	all_ships.push_back(ship);
 	

@@ -118,13 +118,13 @@ public:
 class Bullet {
 public:
 	Bullet();
-	Bullet(GLuint prog_draw_3d, GLuint prog_draw_basic, std::string model_path, std::string material_path, const glm::vec3 & position, const glm::mat3 & rotation_matrix, float size_factor, const glm::vec3 & color);
+	Bullet(GLuint prog_draw_3d, GLuint prog_draw_basic, StaticModel * model, const glm::vec3 & position, const glm::mat3 & rotation_matrix, float size_factor, const glm::vec3 & color);
 	~Bullet();
 	void draw();
 	void anim(const glm::mat4 & world2camera, const glm::mat4 & camera2clip);
 	
 	bool _is_active;
-	ModelObj _model;
+	StaticInstance * _instance;
 	glm::vec3 _position; // position
 	glm::mat3 _rotation_matrix; // matrice de rotation
 };
@@ -195,12 +195,12 @@ class GlobalMsg;
 class Ship {
 public:
     Ship();
-    Ship(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, std::string model_path, std::string material_path, bool is_paves, float size_factor, const glm::vec3 & color);
+    Ship(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, StaticModel * model_ship, StaticModel * model_bullet, bool is_paves, float size_factor, const glm::vec3 & color);
 	~Ship();
 	
 	void init_applied_forces();
 	void draw(bool force_draw, bool draw_follow_camera);
-	void anim(const glm::mat4 & world2camera, const glm::mat4 & camera2clip);
+	void anim(ViewSystem * view_system);
 	void update_keys_pressed();
 	void sync_keys2forces();
 	void collision(RandTerrain * level, std::vector<Ship *> & ships, std::vector<Explosion *> & little_explosions, std::vector<Explosion *> & big_explosions, Ranking * ranking, GlobalMsg * global_msg);
@@ -208,7 +208,6 @@ public:
 	
 	std::string _id;
 	glm::vec3 _color;
-	StaticModel * _model;
 	StaticInstance * _instance;
 	std::vector<AppliedForce> _applied_forces;
 	ForcesDraw _forces_draw;
