@@ -8,6 +8,7 @@
 
 cmake_minimum_required(VERSION 3.13)
 
+project(test_triangulation)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,10 +20,6 @@ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 # mais par il ne connait pas SDL2_image, j'ai récupéré un .cmake que j'ai mis dans le dossier cmake
 # il faut faire la ligne ci-dessous pour lui dire d'aller chercher dans le dossier cmake
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
-
-
-project(test_triangulation)
-
 
 include_directories(/usr/local/include)
 include_directories(../libs)

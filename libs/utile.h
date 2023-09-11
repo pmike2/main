@@ -32,7 +32,6 @@ float perlin(float x, float y, float* gradient, unsigned int gradient_w, unsigne
 // a terme remplacer ça par un appel à glm
 void calculate_normal(float * coord1, float * coord2, float * coord3, float * norm);
 
-void absolute_path(const char * rel_path, char * abs_path);
 
 unsigned int diff_time_ms(struct timeval * after, struct timeval * before);
 unsigned int diff_time_ms_from_now(struct timeval * begin);
@@ -42,10 +41,7 @@ glm::vec3 sum_over_e(glm::vec3* e, glm::vec3* e_prime, int& i);
 void gram_schmidt(float * mat);
 
 std::vector<std::string> list_files(std::string ch_dir, std::string ext="");
-
-void ltrim(std::string & s);
-void rtrim(std::string & s);
-void trim(std::string & s);
 std::string basename(std::string s);
+std::string dirname(std::string s);
 
 #endif

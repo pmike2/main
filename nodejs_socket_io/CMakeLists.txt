@@ -8,10 +8,10 @@
 
 cmake_minimum_required(VERSION 3.13)
 
+project(nodejs_socket_io)
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-project(nodejs_socket_io)
 
 include_directories(/usr/local/include)
 include_directories(../libs)

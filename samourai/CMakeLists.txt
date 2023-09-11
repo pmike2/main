@@ -8,6 +8,7 @@
 
 cmake_minimum_required(VERSION 3.13)
 
+project(samourai)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -18,10 +19,7 @@ SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 # cmake peut faire par défaut des find_package sur des libs classiques
 # mais par il ne connait pas SDL2_image, j'ai récupéré un .cmake que j'ai mis dans le dossier cmake
 # il faut faire la ligne ci-dessous pour lui dire d'aller chercher dans le dossier cmake
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/")
-
-
-project(samourai)
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/../cmake_files/")
 
 
 find_package(SDL2 REQUIRED)

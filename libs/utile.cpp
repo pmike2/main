@@ -121,25 +121,6 @@ void calculate_normal(float *coord1, float *coord2, float *coord3, float *norm) 
 }
 
 
-void absolute_path(const char * rel_path, char * abs_path) {
-/*#ifdef __APPLE__
-	CFBundleRef mainBundle = CFBundleGetMainBundle();
-	CFURLRef resourcesURL = CFBundleCopyResourcesDirectoryURL(mainBundle);
-	char path[PATH_MAX];
-	if (!CFURLGetFileSystemRepresentation(resourcesURL, TRUE, (UInt8 *)path, PATH_MAX))
-		cout << "Erreur lors de la recherche du chemin courant" << endl;
-	CFRelease(resourcesURL);
-	
-	string s1(path);
-	string s2(rel_path);
-	string concat= s1+ "/"+ s2;
-	strcpy(abs_path, concat.c_str());
-#else*/
-	strcpy(abs_path, rel_path);
-//#endif
-}
-
-
 unsigned int diff_time_ms(struct timeval * after, struct timeval * before) {
 	struct timeval diff;
 	timersub(after, before, &diff);
@@ -228,25 +209,12 @@ vector<string> list_files(string ch_dir, string ext) {
 }
 
 
-// A RECODER, ptr_fun is deprecated
-
-// trim from start (in place)
-/*void ltrim(string & s) {
-	s.erase(s.begin(), find_if(s.begin(), s.end(), not1(ptr_fun<int, int>(isspace))));
-}
-
-// trim from end (in place)
-void rtrim(string & s) {
-	s.erase(find_if(s.rbegin(), s.rend(), not1(ptr_fun<int, int>(isspace))).base(), s.end());
-}
-
-// trim from both ends (in place)
-void trim(string & s) {
-	ltrim(s);
-	rtrim(s);
-}*/
-
 string basename(string s) {
 	string with_ext= s.substr(s.find_last_of("/")+ 1);
 	return with_ext.substr(0, with_ext.find("."));
+}
+
+
+string dirname(string s) {
+	return s.substr(0, s.find_last_of("/"));
 }

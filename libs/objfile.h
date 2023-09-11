@@ -92,7 +92,8 @@ public:
 	void draw();
 	void anim(ViewSystem * view_system);
 	void set_pos_rot_scale(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale);
-	//void set_pos_rot_scale(const glm::mat4 & mat);
+	// lent, mieux vaut utiliser l'autre
+	void set_pos_rot_scale(const glm::mat4 & mat);
 	void set_precision(unsigned int precision);
 	void print();
 	

@@ -181,13 +181,13 @@ void InstancePosRot::set_pos_rot_scale(const glm::vec3 & position, const glm::qu
 
 
 // lent, mieux vaut utiliser l'autre
-/*void InstancePosRot::set_pos_rot_scale(const glm::mat4 & mat) {
+void InstancePosRot::set_pos_rot_scale(const glm::mat4 & mat) {
 	glm::vec3 skew;
 	glm::vec4 perspective;
 	glm::decompose(mat, _scale, _rotation, _position, skew, perspective);
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox->set_model2world(_model2world);
-}*/
+}
 
 
 void InstancePosRot::update_dist2(glm::vec3 view_eye) {

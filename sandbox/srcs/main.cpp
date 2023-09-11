@@ -1,4 +1,3 @@
-// https://stackoverflow.com/questions/72791953/c-lib-ffmpeg-sws-scale-segfault
 
 
 #include <iostream>
@@ -7,8 +6,6 @@
 
 using namespace std;
 
-
-#include "mpeg.h"
 
 
 int main() {

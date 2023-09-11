@@ -1,0 +1,31 @@
+{
+    "connexions": [
+        {
+			"width" : 1,
+			"height" : 1,
+			"true_indices" : [
+				[0, 0]
+			]
+		}
+	],
+    "model_objs": [
+        {
+            "cfg": "../data/objs/tree_dead.xml",
+            "scale_x": 1.0,
+            "scale_y": 1.0,
+            "scale_z": 1.0
+        }
+    ],
+    "morphing_objs": [
+		{
+			"translate_x" : {
+				"attack" : 0.0,
+				"release" : 1.0,
+				"rest_value" : 10.0,
+				"stimulated_value" : 20.0,
+				"attack_power" : 1.0,
+				"release_power" : 1.0
+			}
+		}
+    ]
+}

@@ -1,11 +1,11 @@
 
 cmake_minimum_required(VERSION 3.13)
 
+project(decode_mpeg)
+
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
-
-project(decode_mpeg)
 
 find_package(SDL2 REQUIRED)
 find_package(OpenGL REQUIRED)

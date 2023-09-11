@@ -52,7 +52,8 @@ public:
 	InstancePosRot(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale, AABB * aabb);
 	~InstancePosRot();
 	void set_pos_rot_scale(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale);
-	//void set_pos_rot_scale(const glm::mat4 & mat);
+	// lent, mieux vaut utiliser l'autre
+	void set_pos_rot_scale(const glm::mat4 & mat);
 	void update_dist2(glm::vec3 view_eye);
 
 

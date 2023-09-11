@@ -8,6 +8,8 @@
 
 cmake_minimum_required(VERSION 3.13)
 
+project(anim_2d)
+
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -20,8 +22,6 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 # il faut faire la ligne ci-dessous pour lui dire d'aller chercher dans le dossier cmake
 set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/")
 
-
-project(anim_2d)
 
 #set(ENV{SDLDIR} /Volumes/Cezanne/Cezanne/perso_dev/External_tools)
 

@@ -141,12 +141,12 @@ char * load_source(const char * filename) {
 	long size;			/* taille du fichier */
 	long i;				/* compteur */
 	
-	char filename_complet[512];
+	//char filename_complet[512];
+	//absolute_path(filename, filename_complet);
+	//fp= fopen(filename_complet, "r");
 
-	absolute_path(filename, filename_complet);
-	
-	/* on ouvre le fichier */
-	fp= fopen(filename_complet, "r");
+	fp= fopen(filename, "r");
+
 	/* on verifie si l'ouverture a echoue */
 	if (fp== NULL) {
 		cout << "impossible d'ouvrir le fichier " << filename << endl;

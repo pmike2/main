@@ -281,7 +281,7 @@ void test2() {
 }
 
 
-void test3() {
+/*void test3() {
 	unsigned long n= 4294967295;
 	int b= 4;
 	int res[20];
@@ -290,7 +290,7 @@ void test3() {
 	for (i=0; i<k; ++i)
 		printf("%d ; ", res[i]);
 	printf("\n");
-}
+}*/
 
 
 void test3bis() {
@@ -375,9 +375,9 @@ int main() {
 	//test4();
 	//test5();
 	//test6();
-	test7();
+	//test7();
 	
-	//main_loop();
+	main_loop();
 	
 	return 0;
 }
