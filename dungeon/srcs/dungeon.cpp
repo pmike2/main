@@ -519,20 +519,24 @@ void Dungeon::update() {
 
 
 bool Dungeon::key_down(InputState * input_state, SDL_Keycode key) {
-	if (key== SDLK_KP_0) {
+	if (key== SDLK_a) {
 		_draw[0]= !_draw[0];
 		return true;
 	}
-	else if (key== SDLK_KP_1) {
+	else if (key== SDLK_b) {
 		_draw[1]= !_draw[1];
 		return true;
 	}
-	else if (key== SDLK_KP_2) {
+	else if (key== SDLK_c) {
 		_draw[2]= !_draw[2];
 		return true;
 	}
-	else if (key== SDLK_KP_3) {
+	else if (key== SDLK_d) {
 		_draw[3]= !_draw[3];
+		return true;
+	}
+	else if (key== SDLK_e) {
+		randomize();
 		return true;
 	}
 
