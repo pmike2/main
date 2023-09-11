@@ -40,7 +40,7 @@ bool done= false;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_draw, prog_repere;
+GLuint prog_draw, prog_repere, prog_select;
 GLuint g_vao;
 
 float eye_direction[3];
@@ -131,8 +131,9 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_draw  = create_prog("../shaders/vertexshader_repere.txt" , "../shaders/fragmentshader_basic.txt");
-	prog_repere= create_prog("../shaders/vertexshader_repere.txt", "../shaders/fragmentshader_basic.txt");
+	prog_draw  = create_prog("../../shaders/vertexshader_repere.txt" , "../../shaders/fragmentshader_basic.txt");
+	prog_repere= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
+	prog_select= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
 
 	float eye_direction[]= {0.0f, 0.0f, 1.0f};
 	GLuint progs_eye[]= {prog_draw};
@@ -147,7 +148,7 @@ void init() {
 	check_gl_error();
 
 	// --------------------------------------------------------------------------
-	view_system= new ViewSystem(prog_repere, SCREEN_WIDTH, SCREEN_HEIGHT);
+	view_system= new ViewSystem(prog_repere, prog_select, SCREEN_WIDTH, SCREEN_HEIGHT);
 	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_repere= false;
 	view_system->_repere->_is_box= false;
@@ -160,7 +161,7 @@ void init() {
 	ssgl= new SpringSystemGL(prog_draw);
 	ssgl->_ss= new CubeSystem();
 	//ssgl->_ss->rand_disposition(N_CUBES);
-	ssgl->_ss->load("./best.txt");
+	ssgl->_ss->load("../data/best.txt");
 }
 
 
@@ -256,7 +257,7 @@ void clean() {
 
 	SDL_GL_DeleteContext(mainContext);
 	SDL_DestroyWindow(window);
-	IMG_Quit();
+	//IMG_Quit();
 	SDL_Quit();
 }
 
@@ -274,7 +275,7 @@ void test2() {
 		cout << i << endl;
 		ssg->next_gen();
 	}
-	ssg->save_best("./best.txt");
+	ssg->save_best("../data/best.txt");
 	delete ssg;
 }
 
@@ -283,7 +284,7 @@ void test3() {
 	CubeSystem * cs= new CubeSystem();
 	cs->rand_disposition(N_CUBES);
 	cs->rand_contracts();
-	cs->save("./best.txt");
+	cs->save("../data/best.txt");
 	delete cs;
 }
 

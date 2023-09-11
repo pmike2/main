@@ -15,10 +15,9 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/norm.hpp>
-//#include <glm/gtc/constants.hpp>
-//#include <glm/gtc/type_ptr.hpp>
-//#include <glm/gtc/matrix_transform.hpp>
-//#include <glm/gtx/transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include <SDL2/SDL.h>
 
 #include "constantes.h"
 #include "utile.h"
