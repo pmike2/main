@@ -482,7 +482,8 @@ void ViewSystem::draw() {
 // permet a certaines vues d'ajuster les params de ViewSystem en fonction d'un but
 void ViewSystem::anim(const glm::vec3 & target, const glm::quat & rotation) {
 	if (_type== FREE_VIEW) {
-
+		_target_velocity+= _target_acceleration;
+		_target+= _target_velocity;
 	}
 	else if (_type== THIRD_PERSON_FREE) {
 		_target= target;

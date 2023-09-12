@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <world>
 	<terrain>
-		<altis>../data/world3/altis_f.tif</altis>
+		<altis>../data/world3/altis_flat_f.tif</altis>
 		<config>
 			<origin>
 				<x>0.0</x>
@@ -18,7 +18,7 @@
 	<path_finder>
 		<n_ligs>100</n_ligs>
 		<n_cols>100</n_cols>
-		<obstacles>../data/world3/obstacle.shp</obstacles>
+		<obstacles>../data/world3/altis_flat_obstacle.shp</obstacles>
 	</path_finder>
 	<static_models>
 		<static_model>
