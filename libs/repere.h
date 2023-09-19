@@ -36,7 +36,7 @@ const float FRUSTUM_HALFSIZE= 5.0f;
 //const float CONTAINS_POINT_TOLERANCE= 20.0f;
 
 // sensibilité souris
-const float LEFT_MOUSE_SENSIVITY= 3.0f;
+//const float LEFT_MOUSE_SENSIVITY= 3.0f;
 const float MIDDLE_MOUSE_SENSIVITY= 3.0f;
 const float RIGHT_MOUSE_SENSIVITY= 0.01f;
 
@@ -124,8 +124,8 @@ public:
 	float _frustum_near, _frustum_far, _frustum_halfsize;
 	unsigned int _screen_width, _screen_height;
 	glm::vec3 _target;
-	glm::vec3 _target_velocity;
-	glm::vec3 _target_acceleration;
+	//glm::vec3 _target_velocity;
+	//glm::vec3 _target_acceleration;
 
 	float _phi, _theta, _rho;
 	

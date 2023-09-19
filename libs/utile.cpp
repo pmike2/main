@@ -147,46 +147,6 @@ string current_date_time() {
 }
 
 
-glm::vec3 sum_over_e(glm::vec3* e, glm::vec3* e_prime, int& i) {
-	int k = 0;
-	glm::vec3 result;
-	while (k < i) {
-		float e_prime_k_squared = glm::dot(e_prime[k], e_prime[k]);
-		result += (glm::dot(e[i], e_prime[k]) / e_prime_k_squared) * e_prime[k];
-		k++;
-	}
-	return result;
-}
-
-
-void gram_schmidt(float * mat) {
-	glm::vec3 e[] = {
-		glm::vec3(mat[0], mat[1], mat[2]),
-		glm::vec3(mat[4], mat[5], mat[6]),
-		glm::vec3(mat[8], mat[9], mat[10])
-	};
-	glm::vec3 e_prime[3];
-	e_prime[0]= e[0];
-	int i= 0;
-
-	do {
-		e_prime[i]= e[i]- sum_over_e(e, e_prime, i);
-		i++;
-	} while (i< 3);
-	
-	for (i=0; i<3; i++)
-		e_prime[i]= glm::normalize(e_prime[i]);
-	
-	float * pt;
-	pt= glm::value_ptr(e_prime[0]);
-	memcpy(mat, pt, sizeof(float) * 3);
-	pt= glm::value_ptr(e_prime[1]);
-	memcpy(mat+ 4, pt, sizeof(float) * 3);
-	pt= glm::value_ptr(e_prime[2]);
-	memcpy(mat+ 8, pt, sizeof(float) * 3);
-}
-
-
 vector<string> list_files(string ch_dir, string ext) {
 	vector<string> res;
 	DIR *d;

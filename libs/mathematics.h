@@ -7,6 +7,10 @@
 #include <glm/glm.hpp>
 
 
+glm::vec3 sum_over_e(glm::vec3* e, glm::vec3* e_prime, int& i);
+void gram_schmidt(float * mat);
+
+
 class Polynomial {
 public:
 	Polynomial();

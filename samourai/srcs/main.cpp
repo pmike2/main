@@ -282,10 +282,12 @@ void init() {
 	// --------------------------------------------------------------------------
 	view_system= new ViewSystem(prog_repere, prog_select, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->_repere->_is_ground= false;
-	view_system->_repere->_is_repere= false;
+	view_system->_repere->_is_repere= true;
 	view_system->_repere->_is_box= false;
 	//view_system->set(glm::vec3(world->get_center().x, world->get_center().y, 0.0f), (float)(M_PI)* 1.5f, (float)(M_PI)* 0.35f, 300.0f);
-	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 0.0f, 1000.0f);
+	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), -0.5f* (float)(M_PI), 0.0f, 100.0f);
+
+	view_system->screen2world(glm::vec2(-1.0f, 0.0f), 0.0f);
 
 	// --------------------------------------------------------------------------
 	ihm= new IHM(prog_ihm, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);

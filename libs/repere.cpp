@@ -293,7 +293,16 @@ bool ViewSystem::mouse_motion(InputState * input_state) {
 		if (input_state->_left_mouse) {
 			// translation
 			if (input_state->_keys[SDLK_LSHIFT]) {
-				move_target(glm::vec3((float)(input_state->_xrel)* LEFT_MOUSE_SENSIVITY, (float)(input_state->_yrel)* LEFT_MOUSE_SENSIVITY, 0.0f));
+				/*
+				Avant j'utilisais move_target avec LEFT_MOUSE_SENSIVITY mais du coup la translation ne dépendait pas de l'altitude
+				et du coup à basse alti ça bougeait vite, haute alti lentement.
+				Ici il y a une meilleure corrélation entre mouvement curseur et translation terrain
+				A terme fournir en argument optionnel un Terrain afin de s'ajuster à un relief plus complexe que z = 0
+				*/
+				glm::vec2 v= screen2world(_screen_width*0.5- input_state->_xrel, _screen_height*0.5- input_state->_yrel, 0.0);
+				_target.x= v.x;
+				_target.y= v.y;
+				update();
 				return true;
 			}
 			// selection rectangulaire
@@ -482,8 +491,8 @@ void ViewSystem::draw() {
 // permet a certaines vues d'ajuster les params de ViewSystem en fonction d'un but
 void ViewSystem::anim(const glm::vec3 & target, const glm::quat & rotation) {
 	if (_type== FREE_VIEW) {
-		_target_velocity+= _target_acceleration;
-		_target+= _target_velocity;
+		//_target_velocity+= _target_acceleration;
+		//_target+= _target_velocity;
 	}
 	else if (_type== THIRD_PERSON_FREE) {
 		_target= target;
@@ -506,15 +515,23 @@ glm::vec2 ViewSystem::screen2world(unsigned int x, unsigned int y, float z) {
 
 glm::vec2 ViewSystem::screen2world(glm::vec2 gl_coords, float z) {
 	glm::vec4 ray_clip= glm::vec4(gl_coords.x, gl_coords.y, -1.0f, 1.0f);
+	//cout << "ray_clip=" << glm::to_string(ray_clip) << "\n";
 	
 	glm::vec4 ray_eye= glm::inverse(_camera2clip)* ray_clip;
 	ray_eye= glm::vec4(ray_eye.x, ray_eye.y, -1.0f, 0.0f);
+	//cout << "_camera2clip=" << glm::to_string(_camera2clip) << "\n";
+	//cout << "inverse(_camera2clip)=" << glm::to_string(glm::inverse(_camera2clip)) << "\n";
+	//cout << "ray_eye=" << glm::to_string(ray_eye) << "\n";
 	
 	glm::vec3 ray_world= glm::vec3(glm::inverse(_world2camera)* ray_eye);
 	ray_world= glm::normalize(ray_world);
+	//cout << "ray_world=" << glm::to_string(ray_world) << "\n";
 	
 	float lambda= (z- _eye.z)/ ray_world.z;
+	//cout << "lambda=" << lambda << "\n";
+	
 	glm::vec3 v= _eye+ lambda* ray_world;
+	//cout << "result=" << glm::to_string(v) << "\n";
 
 	return glm::vec2(v.x, v.y);
 }

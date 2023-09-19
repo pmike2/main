@@ -37,9 +37,6 @@ unsigned int diff_time_ms(struct timeval * after, struct timeval * before);
 unsigned int diff_time_ms_from_now(struct timeval * begin);
 std::string current_date_time();
 
-glm::vec3 sum_over_e(glm::vec3* e, glm::vec3* e_prime, int& i);
-void gram_schmidt(float * mat);
-
 
 std::vector<std::string> list_files(std::string ch_dir, std::string ext="");
 std::string basename(std::string s);
