@@ -100,7 +100,8 @@ public:
 	void draw();
 	void anim(const glm::vec3 & target, const glm::quat & rotation);
 	void set(const glm::vec3 & target, float phi, float theta, float rho);
-	void move_target(const glm::vec3 & v);
+	//void move_target(const glm::vec3 & v);
+	void move_target(int screen_delta_x, int screen_delta_y, float z);
 	void move_phi(float x);
 	void move_theta(float x);
 	void move_rho(float x);
@@ -124,8 +125,7 @@ public:
 	float _frustum_near, _frustum_far, _frustum_halfsize;
 	unsigned int _screen_width, _screen_height;
 	glm::vec3 _target;
-	//glm::vec3 _target_velocity;
-	//glm::vec3 _target_acceleration;
+	int _free_view_x, _free_view_y;
 
 	float _phi, _theta, _rho;
 	

@@ -237,7 +237,7 @@ ViewSystem::ViewSystem(GLuint prog_repere, GLuint prog_select, unsigned int scre
 	_target(glm::vec3(0.0f, 0.0f, 0.0f)), _eye(glm::vec3(0.0f, 0.0f, 0.0f)), _up(glm::vec3(0.0f, 0.0f, 0.0f)), 
 	_phi(0.0f), _theta(0.0f), _rho(1.0f), _screen_width(screen_width), _screen_height(screen_height),
 	_type(FREE_VIEW), _frustum_halfsize(FRUSTUM_HALFSIZE), _frustum_near(FRUSTUM_NEAR), _frustum_far(FRUSTUM_FAR),
-	_new_single_selection(false), _new_rect_selection(false), _new_destination(false)
+	_new_single_selection(false), _new_rect_selection(false), _new_destination(false), _free_view_x(0), _free_view_y(0)
 {
 	_camera2clip= glm::frustum(-_frustum_halfsize* (float)(_screen_width)/ (float)(_screen_height), _frustum_halfsize* (float)(_screen_width)/ (float)(_screen_height), -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
 
@@ -255,6 +255,9 @@ ViewSystem::~ViewSystem() {
 
 
 bool ViewSystem::mouse_button_down(InputState * input_state) {
+	_free_view_x= 0.0;
+	_free_view_y= 0.0;
+
 	if (input_state->_left_mouse) {
 		if (input_state->_keys[SDLK_m]) {
 			_new_destination= true;
@@ -272,6 +275,9 @@ bool ViewSystem::mouse_button_down(InputState * input_state) {
 
 
 bool ViewSystem::mouse_button_up(InputState * input_state) {
+	_free_view_x= input_state->_xrel;
+	_free_view_y= input_state->_yrel;
+
 	if (_rect_select->_is_active) {
 		_rect_select->set_active(false);
 		if (glm::distance2(_rect_select->_gl_origin, _rect_select->_gl_moving)< 0.0001f) {
@@ -293,16 +299,7 @@ bool ViewSystem::mouse_motion(InputState * input_state) {
 		if (input_state->_left_mouse) {
 			// translation
 			if (input_state->_keys[SDLK_LSHIFT]) {
-				/*
-				Avant j'utilisais move_target avec LEFT_MOUSE_SENSIVITY mais du coup la translation ne dépendait pas de l'altitude
-				et du coup à basse alti ça bougeait vite, haute alti lentement.
-				Ici il y a une meilleure corrélation entre mouvement curseur et translation terrain
-				A terme fournir en argument optionnel un Terrain afin de s'ajuster à un relief plus complexe que z = 0
-				*/
-				glm::vec2 v= screen2world(_screen_width*0.5- input_state->_xrel, _screen_height*0.5- input_state->_yrel, 0.0);
-				_target.x= v.x;
-				_target.y= v.y;
-				update();
+				move_target(input_state->_xrel, input_state->_yrel, 0.0f);
 				return true;
 			}
 			// selection rectangulaire
@@ -439,11 +436,24 @@ void ViewSystem::set(const glm::vec3 & target, float phi, float theta, float rho
 
 
 // les move sont des modif delta, contrairement a set ou anim qui font des modifs absolues
-void ViewSystem::move_target(const glm::vec3 & v) {
+/*void ViewSystem::move_target(const glm::vec3 & v) {
 	_target.x+= v.x* sin(_phi)- v.y* cos(_phi);
 	_target.y+= -v.x* cos(_phi)- v.y* sin(_phi);
 	_target.z+= v.z;
 	
+	update();
+}*/
+
+void ViewSystem::move_target(int screen_delta_x, int screen_delta_y, float z) {
+	/*
+	Avant j'utilisais move_target(glm::vec3) avec LEFT_MOUSE_SENSIVITY mais du coup la translation ne dépendait pas de l'altitude
+	et du coup à basse alti ça bougeait vite, haute alti lentement.
+	Ici il y a une meilleure corrélation entre mouvement curseur et translation terrain
+	A terme fournir en argument optionnel un Terrain afin de s'ajuster à un relief plus complexe que z = 0
+	*/
+	glm::vec2 v= screen2world(_screen_width*0.5- screen_delta_x, _screen_height*0.5- screen_delta_y, z);
+	_target.x= v.x;
+	_target.y= v.y;
 	update();
 }
 
@@ -491,8 +501,14 @@ void ViewSystem::draw() {
 // permet a certaines vues d'ajuster les params de ViewSystem en fonction d'un but
 void ViewSystem::anim(const glm::vec3 & target, const glm::quat & rotation) {
 	if (_type== FREE_VIEW) {
-		//_target_velocity+= _target_acceleration;
-		//_target+= _target_velocity;
+		// legère inertie aux translations
+		int tresh= 1e-7;
+		int decay_factor= 0.9;
+		if (abs(_free_view_x)> tresh) { _free_view_x*= decay_factor; }
+		if (abs(_free_view_y)> tresh) { _free_view_y*= decay_factor; }
+		if ((abs(_free_view_x)> tresh) || (abs(_free_view_y)> tresh)) {
+			move_target(_free_view_x, _free_view_y, 0.0f);
+		}
 	}
 	else if (_type== THIRD_PERSON_FREE) {
 		_target= target;
