@@ -237,7 +237,7 @@ ViewSystem::ViewSystem(GLuint prog_repere, GLuint prog_select, unsigned int scre
 	_target(glm::vec3(0.0f, 0.0f, 0.0f)), _eye(glm::vec3(0.0f, 0.0f, 0.0f)), _up(glm::vec3(0.0f, 0.0f, 0.0f)), 
 	_phi(0.0f), _theta(0.0f), _rho(1.0f), _screen_width(screen_width), _screen_height(screen_height),
 	_type(FREE_VIEW), _frustum_halfsize(FRUSTUM_HALFSIZE), _frustum_near(FRUSTUM_NEAR), _frustum_far(FRUSTUM_FAR),
-	_new_single_selection(false), _new_rect_selection(false), _new_destination(false), _free_view_x(0), _free_view_y(0)
+	_new_single_selection(false), _new_rect_selection(false), _new_destination(false), _free_view_x(0.0f), _free_view_y(0.0f)
 {
 	_camera2clip= glm::frustum(-_frustum_halfsize* (float)(_screen_width)/ (float)(_screen_height), _frustum_halfsize* (float)(_screen_width)/ (float)(_screen_height), -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
 
@@ -255,8 +255,8 @@ ViewSystem::~ViewSystem() {
 
 
 bool ViewSystem::mouse_button_down(InputState * input_state) {
-	_free_view_x= 0.0;
-	_free_view_y= 0.0;
+	_free_view_x= 0.0f;
+	_free_view_y= 0.0f;
 
 	if (input_state->_left_mouse) {
 		if (input_state->_keys[SDLK_m]) {
@@ -275,8 +275,8 @@ bool ViewSystem::mouse_button_down(InputState * input_state) {
 
 
 bool ViewSystem::mouse_button_up(InputState * input_state) {
-	_free_view_x= input_state->_xrel;
-	_free_view_y= input_state->_yrel;
+	_free_view_x= float(input_state->_xrel);
+	_free_view_y= float(input_state->_yrel);
 
 	if (_rect_select->_is_active) {
 		_rect_select->set_active(false);
@@ -498,23 +498,24 @@ void ViewSystem::draw() {
 }
 
 
-// permet a certaines vues d'ajuster les params de ViewSystem en fonction d'un but
 void ViewSystem::anim(const glm::vec3 & target, const glm::quat & rotation) {
 	if (_type== FREE_VIEW) {
 		// legère inertie aux translations
-		int tresh= 1e-7;
-		int decay_factor= 0.9;
+		float tresh= 1e-9;
+		float decay_factor= 0.95;
 		if (abs(_free_view_x)> tresh) { _free_view_x*= decay_factor; }
 		if (abs(_free_view_y)> tresh) { _free_view_y*= decay_factor; }
 		if ((abs(_free_view_x)> tresh) || (abs(_free_view_y)> tresh)) {
-			move_target(_free_view_x, _free_view_y, 0.0f);
+			move_target(int(_free_view_x), int(_free_view_y), 0.0f);
 		}
 	}
 	else if (_type== THIRD_PERSON_FREE) {
+		// ajuste les params de ViewSystem en fonction d'un but
 		_target= target;
 		update();
 	}
 	else if (_type== THIRD_PERSON_BEHIND) {
+		// ajuste les params de ViewSystem en fonction d'un but et d'une rotation
 		_target= target;
 		_phi= glm::roll(rotation);
 		update();

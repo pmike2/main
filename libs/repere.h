@@ -125,7 +125,7 @@ public:
 	float _frustum_near, _frustum_far, _frustum_halfsize;
 	unsigned int _screen_width, _screen_height;
 	glm::vec3 _target;
-	int _free_view_x, _free_view_y;
+	float _free_view_x, _free_view_y;
 
 	float _phi, _theta, _rho;
 	
