@@ -10,8 +10,4 @@ include_directories(../libs)
 
 link_directories(/usr/local/lib)
 
-add_library(lib_mathematics STATIC ../libs/mathematics.cpp ../libs/mathematics.h)
-
-add_executable(main ./srcs/main.cpp)
-
-target_link_libraries(main PUBLIC lib_mathematics)
+add_executable(main ./srcs/main.cpp ../libs/bst.h)

@@ -4,18 +4,29 @@
 #include <string>
 #include <vector>
 
-#include "mathematics.h"
+#include "bst.h"
 
 using namespace std;
 
 
 
 int main() {
-	vector<float> coeffs{0.1, 4.3, -8.1};
-	Polynomial p(coeffs);
-	cout << p;
-	cout << p[2] << "\n";
-	cout << p.valueat(2.0) << "\n";
+	BSTNode<int> * bst= new BSTNode<int>();
+	//BSTNode<int> * root= NULL;
+	/*root= bst->insert(root, 2);
+	bst->insert(root, 2);
+	bst->insert(root, 4);
+	bst->insert(root, 1);
+	bst->insert(root, 8);
+	bst->insert(root, 0);*/
+
+	//bst->loop_in_order(root);
+
+	bst->insert(8);
+	bst->insert(2);
+	bst->insert(7);
+	bst->insert(4);
+	delete bst;
 	
 	return 0;
 }
