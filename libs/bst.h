@@ -60,10 +60,8 @@ class BST {
 	Node<T> * insert(Node<T> * node, T data);
 	Node<T> * remove(Node<T> * node, T data);
 	Node<T> * search(Node<T> * node, T data);
-	void traversal(Node<T> * node, TraversalType tt);
 	void traversal(Node<T> * node, TraversalType tt, std::function<void(T)> f);
-	void export_html(std::string html_path, Node<T> * node, float x, int y);
-	void export_html(std::string html_path, Node<T> * node, float x, int y, std::function<std::string(T)> f);
+	void export_html(std::string html_path, Node<T> * node, float x, int y, std::function<std::string(T)> f_str);
 
 	
 	Node<T> * _root;
@@ -80,13 +78,8 @@ public:
 	void remove(T data);
 	Node<T> * search(T data);
 	void balance();
-	void traversal(TraversalType tt);
-	void traversal(TraversalType tt, std::function<void(T)> f);
-	void export_html(std::string html_path);
-	void export_html(std::string html_path, std::function<std::string(T)> f);
-
-
-	//Node<T> * _root;
+	void traversal(TraversalType tt, std::function<void(T)> f=[](T a){std::cout << a << " ";});
+	void export_html(std::string html_path, std::function<std::string(T)> f_str=[](T a){return std::to_string(a);});
 };
 
 
@@ -103,6 +96,7 @@ BST<T>::BST() {
 
 template <class T>
 BST<T>::BST(std::function<int(T, T)> cmp) {
+	_root= NULL;
 	_cmp= cmp;
 }
 
@@ -228,37 +222,6 @@ void BST<T>::balance() {
 
 
 template <class T>
-void BST<T>::traversal(TraversalType tt) {
-	traversal(_root, tt);
-	std::cout << "\n";
-}
-
-
-template <class T>
-void BST<T>::traversal(Node<T> * node, TraversalType tt) {
-	if (node== NULL) {
-		return;
-	}
-
-	if (tt== IN_ORDER) {
-		traversal(node->_left, tt);
-		std::cout << node->_data << " ";
-		traversal(node->_right, tt);
-	}
-	else if (tt== PRE_ORDER) {
-		std::cout << node->_data << " ";
-		traversal(node->_left, tt);
-		traversal(node->_right, tt);
-	}
-	else if (tt== POST_ORDER) {
-		traversal(node->_left, tt);
-		traversal(node->_right, tt);
-		std::cout << node->_data << " ";
-	}
-}
-
-
-template <class T>
 void BST<T>::traversal(TraversalType tt, std::function<void(T)> f) {
 	traversal(_root, tt, f);
 	std::cout << "\n";
@@ -271,7 +234,7 @@ void BST<T>::traversal(Node<T> * node, TraversalType tt, std::function<void(T)> 
 		return;
 	}
 
-		if (tt== IN_ORDER) {
+	if (tt== IN_ORDER) {
 		traversal(node->_left, tt, f);
 		f(node->_data);
 		traversal(node->_right, tt, f);
@@ -290,7 +253,7 @@ void BST<T>::traversal(Node<T> * node, TraversalType tt, std::function<void(T)> 
 
 
 template <class T>
-void BST<T>::export_html(std::string html_path) {
+void BST<T>::export_html(std::string html_path, std::function<std::string(T)> f_str) {
 	unsigned int svg_width= 700;
 	unsigned int svg_height= 700;
 
@@ -305,7 +268,7 @@ void BST<T>::export_html(std::string html_path) {
 	f << "<svg width=\"" << svg_width << "\" height=\"" << svg_height << "\" viewbox=\"" << -1.2 << " " << -0.2 << " " << 2.4 << " " << 2.4 << "\">\n";
 	f.close();
 
-	export_html(html_path, _root, 0.0f, 1);
+	export_html(html_path, _root, 0.0f, 1, f_str);
 	
 	f.open(html_path, std::ios_base::app);
 	f << "</svg>\n";
@@ -315,7 +278,7 @@ void BST<T>::export_html(std::string html_path) {
 
 
 template <class T>
-void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) {
+void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y, std::function<std::string(T)> f_str) {
 	if (node== NULL) {
 		return;
 	}
@@ -331,7 +294,7 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) 
 	
 	std::ofstream f;
 	f.open(html_path, std::ios_base::app);
-	f << "<text class=\"point_text_class\" x=\"" << pt_x+ 0.02f << "\" y=\"" << pt_y << "\" >" << node->_data << "</text>\n";
+	f << "<text class=\"point_text_class\" x=\"" << pt_x+ 0.02f << "\" y=\"" << pt_y << "\" >" << f_str(node->_data) << "</text>\n";
 	f << "<circle class=\"point_class\" cx=\"" << pt_x << "\" cy=\"" << pt_y << "\" r=\"" << 0.01f << "\" />\n";
 	if (node->_left!= NULL) {
 		f << "<line class=\"line_class\" x1=\"" << pt_x << "\" y1=\"" << pt_y << "\" x2=\"" << pt_left_x << "\" y2=\"" << pt_left_y << "\" />\n";
@@ -340,8 +303,8 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) 
 		f << "<line class=\"line_class\" x1=\"" << pt_x << "\" y1=\"" << pt_y << "\" x2=\"" << pt_right_x << "\" y2=\"" << pt_right_y << "\" />\n";
 	}
 	f.close();
-	export_html(html_path, node->_left, x- 1.0f/float(y), y+ 1);
-	export_html(html_path, node->_right, x+ 1.0f/float(y), y+ 1);
+	export_html(html_path, node->_left, x- 1.0f/float(y), y+ 1, f_str);
+	export_html(html_path, node->_right, x+ 1.0f/float(y), y+ 1, f_str);
 }
 
 #endif

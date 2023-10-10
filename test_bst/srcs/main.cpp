@@ -18,7 +18,7 @@ void test1() {
 	bst->insert(1);
 	bst->insert(7);
 
-	//bst->traversal(TraversalType::IN_ORDER);
+	bst->traversal(TraversalType::IN_ORDER);
 
 	//bst->remove(7);
 
@@ -55,7 +55,7 @@ void test2() {
 	bst->insert(glm::vec2(-3.0, 5.0));
 	bst->insert(glm::vec2(1.0, 3.0));
 
-	//bst->traversal(TraversalType::IN_ORDER, [](glm::vec2 v){std::cout << glm::to_string(v) << " ";});
+	bst->traversal(TraversalType::IN_ORDER, [](glm::vec2 v){std::cout << glm::to_string(v) << " ";});
 
 	//bst->remove(glm::vec2(0.0, 0.0));
 
@@ -69,7 +69,7 @@ void test2() {
 		std::cout << "NULL\n";
 	}*/
 
-	bst->export_html("../data/test2.html", );
+	bst->export_html("../data/test2.html", [](glm::vec2 v){return glm::to_string(v);});
 
 	delete bst;
 }
