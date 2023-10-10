@@ -1047,7 +1047,6 @@ void Triangulation::draw(std::string svg_path, bool verbose) {
 
 	f << "</body>\n</html>\n";
 	f.close();
-
 }
 
 

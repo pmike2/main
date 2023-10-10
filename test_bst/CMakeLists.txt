@@ -10,4 +10,4 @@ include_directories(../libs)
 
 link_directories(/usr/local/lib)
 
-add_executable(main ./srcs/main.cpp)
+add_executable(main ./srcs/main.cpp ../libs/bst.h)
