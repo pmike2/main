@@ -14,6 +14,7 @@ implémenté initialement pour voronoi
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <math.h>
 
 
 // ----------------------------------
@@ -60,6 +61,7 @@ class BST {
 	Node<T> * insert(Node<T> * node, T data);
 	Node<T> * remove(Node<T> * node, T data);
 	Node<T> * search(Node<T> * node, T data);
+	Node<T> * balance(std::vector<T> & sorted_array, int start, int end);
 	void traversal(Node<T> * node, TraversalType tt, std::function<void(T)> f);
 	void export_html(std::string html_path, Node<T> * node, float x, int y, std::function<std::string(T)> f_str);
 
@@ -77,6 +79,7 @@ public:
 	void insert(T data);
 	void remove(T data);
 	Node<T> * search(T data);
+	std::vector<T> get_sorted_array();
 	void balance();
 	void traversal(TraversalType tt, std::function<void(T)> f=[](T a){std::cout << a << " ";});
 	void export_html(std::string html_path, std::function<std::string(T)> f_str=[](T a){return std::to_string(a);});
@@ -216,15 +219,37 @@ Node<T> * BST<T>::search(T data) {
 
 
 template <class T>
-void BST<T>::balance() {
+std::vector<T> BST<T>::get_sorted_array() {
+	std::vector<T> result;
+	traversal(TraversalType::IN_ORDER, [&result](T x){result.push_back(x);});
+	return result;
+}
 
+
+template <class T>
+void BST<T>::balance() {
+	std::vector<T> sorted_array= get_sorted_array();
+	_root= balance(sorted_array, 0, sorted_array.size()- 1);
+}
+
+
+template <class T>
+Node<T> * BST<T>::balance(std::vector<T> & sorted_array, int start, int end) {
+	if (start> end) {
+		return NULL;
+	}
+
+	int mid= (start+ end)/ 2;
+	Node<T> * node= new Node<T>(sorted_array[mid]);
+	node->_left= balance(sorted_array, start, mid- 1);
+	node->_right= balance(sorted_array, mid+ 1, end);
+	return node;
 }
 
 
 template <class T>
 void BST<T>::traversal(TraversalType tt, std::function<void(T)> f) {
 	traversal(_root, tt, f);
-	std::cout << "\n";
 }
 
 
@@ -262,7 +287,7 @@ void BST<T>::export_html(std::string html_path, std::function<std::string(T)> f_
 	f << "<!DOCTYPE html>\n<html>\n<head>\n";
 	f << "<style>\n";
 	f << ".point_class {fill: black;}\n";
-	f << ".point_text_class {fill: red; font-size: 0.1px;}\n";
+	f << ".point_text_class {fill: red; font-size: 0.05px;}\n";
 	f << ".line_class {fill: transparent; stroke: black; stroke-width: 0.01; stroke-opacity: 0.3;}\n";
 	f << "</style>\n</head>\n<body>\n";
 	f << "<svg width=\"" << svg_width << "\" height=\"" << svg_height << "\" viewbox=\"" << -1.2 << " " << -0.2 << " " << 2.4 << " " << 2.4 << "\">\n";
@@ -283,12 +308,14 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y, 
 		return;
 	}
 
-	float x_factor= 0.5f;
-	float y_factor= 0.3f;
+	float x_factor= 1.0f;
+	float y_factor= 0.1f;
 	float pt_x= x* x_factor;
 	float pt_y= float(y)* y_factor;
-	float pt_left_x= (x- 1.0f/float(y))* x_factor;
-	float pt_right_x= (x+ 1.0f/float(y))* x_factor;
+	float left_x= x- 1.0f/ pow(2.0f, float(y));
+	float right_x= x+ 1.0f/ pow(2.0f, float(y));
+	float pt_left_x= left_x* x_factor;
+	float pt_right_x= right_x* x_factor;
 	float pt_left_y= float(y+ 1)* y_factor;
 	float pt_right_y= float(y+ 1)* y_factor;
 	
@@ -303,8 +330,8 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y, 
 		f << "<line class=\"line_class\" x1=\"" << pt_x << "\" y1=\"" << pt_y << "\" x2=\"" << pt_right_x << "\" y2=\"" << pt_right_y << "\" />\n";
 	}
 	f.close();
-	export_html(html_path, node->_left, x- 1.0f/float(y), y+ 1, f_str);
-	export_html(html_path, node->_right, x+ 1.0f/float(y), y+ 1, f_str);
+	export_html(html_path, node->_left, left_x, y+ 1, f_str);
+	export_html(html_path, node->_right, right_x, y+ 1, f_str);
 }
 
 #endif

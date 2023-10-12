@@ -6,6 +6,7 @@
 #include <glm/gtx/string_cast.hpp>
 
 #include "bst.h"
+#include "utile.h"
 
 
 void test1() {
@@ -75,9 +76,30 @@ void test2() {
 }
 
 
+void test3() {
+	BST<int> * bst= new BST<int>();
+	for (int i=0; i<50; ++i) {
+		bst->insert(rand_int(0, 1000));
+	}
+
+	/*std::vector<int> v= bst->get_sorted_array();
+	for (auto x : v) {
+		std::cout << x << " ";
+	}
+	std::cout << "\n";*/
+
+	bst->export_html("../data/test3_avant.html");
+
+	bst->balance();
+
+	bst->export_html("../data/test3_apres.html");
+}
+
+
 int main() {
 	//test1();
-	test2();
+	//test2();
+	test3();
 	
 	return 0;
 }
