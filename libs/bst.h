@@ -14,6 +14,7 @@ implémenté initialement pour voronoi
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <algorithm>
 #include <math.h>
 
 
@@ -27,6 +28,7 @@ class Node {
 public:
 	Node();
 	Node(T data);
+	Node(T data, Node * left, Node * right);
 	~Node();
 
 	T _data;
@@ -43,10 +45,12 @@ Node<T>::Node() {
 
 
 template <class T>
-Node<T>::Node(T data) {
-	_data= data;
-	_left= NULL;
-	_right= NULL;
+Node<T>::Node(T data) : _data(data), _left(NULL), _right(NULL) {
+}
+
+
+template <class T>
+Node<T>::Node(T data, Node * left, Node * right) : _data(data), _left(left), _right(right) {
 }
 
 
@@ -60,7 +64,7 @@ template <class T>
 class BST {
 	Node<T> * insert(Node<T> * node, T data);
 	Node<T> * remove(Node<T> * node, T data);
-	Node<T> * search(Node<T> * node, T data);
+	Node<T> * search(Node<T> * node, T data, bool exact_match);
 	Node<T> * balance(std::vector<T> & sorted_array, int start, int end);
 	void traversal(Node<T> * node, TraversalType tt, std::function<void(T)> f);
 	void export_html(std::string html_path, Node<T> * node, float x, int y, std::function<std::string(T)> f_str);
@@ -75,13 +79,14 @@ public:
 	BST(std::function<int(T, T)> cmp);
 	~BST();
 	void clear();
-	bool is_empty();
+	bool empty();
 	void insert(T data);
 	void remove(T data);
-	Node<T> * search(T data);
+	Node<T> * search(T data, bool exact_match=true);
 	std::vector<T> get_sorted_array();
 	void balance();
 	void traversal(TraversalType tt, std::function<void(T)> f=[](T a){std::cout << a << " ";});
+	std::pair<Node<T> *, Node<T> *> neighbours_leaf(Node<T> * node);
 	void export_html(std::string html_path, std::function<std::string(T)> f_str=[](T a){return std::to_string(a);});
 };
 
@@ -116,7 +121,7 @@ void BST<T>::clear() {
 
 
 template <class T>
-bool BST<T>::is_empty() {
+bool BST<T>::empty() {
 	if (_root== NULL) {
 		return true;
 	}
@@ -198,23 +203,26 @@ void BST<T>::remove(T data) {
 
 
 template <class T>
-Node<T> * BST<T>::search(Node<T> * node, T data) {
+Node<T> * BST<T>::search(Node<T> * node, T data, bool exact_match) {
 	if (node== NULL) {
 		return NULL;
+	}
+	if ((!exact_match) && (node->_right== NULL) && (node->_left== NULL)) {
+		return node;
 	}
 	if (_cmp(node->_data, data)== 0) {
 		return node;
 	}
 	if (_cmp(node->_data, data)< 0) {
-		return search(node->_right, data);
+		return search(node->_right, data, exact_match);
 	}
-	return search(node->_left, data);
+	return search(node->_left, data, exact_match);
 }
 
 
 template <class T>
-Node<T> * BST<T>::search(T data) {
-	return search(_root, data);
+Node<T> * BST<T>::search(T data, bool exact_match) {
+	return search(_root, data, exact_match);
 }
 
 
@@ -274,6 +282,29 @@ void BST<T>::traversal(Node<T> * node, TraversalType tt, std::function<void(T)> 
 		traversal(node->_right, tt, f);
 		f(node->_data);
 	}
+}
+
+
+template <class T>
+std::pair<Node<T> *, Node<T> *> BST<T>::neighbours_leaf(Node<T> * node) {
+	std::vector<T> array= get_sorted_array();
+	array.erase(std::remove_if(array.begin(), array.end(), 
+		[](const T & x){ return ((x._left!= NULL) || (x._right!= NULL));}
+	), array.end());
+
+	Node<T> * prev= NULL;
+	Node<T> * next= NULL;
+	for (int i=0; i<array.size(); ++i) {
+		if (array[i]== node->_data) {
+			if (i> 0) {
+				prev= search(array[i- 1]);
+			}
+			if (i< array.size()- 1) {
+				next= search(array[i+ 1]);
+			}
+		}
+	}
+	return std::make_pair(prev, next);
 }
 
 

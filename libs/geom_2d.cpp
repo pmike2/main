@@ -312,7 +312,7 @@ bool is_ccw(glm::vec2 & pt1, glm::vec2 & pt2, glm::vec2 & pt3) {
 }
 
 
-bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & pt) {
+std::pair<glm::vec2, float> circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3) {
 	glm::vec2 pt1, pt2, pt3;
 	if (is_ccw(circle_pt1, circle_pt2, circle_pt3)) {
 		pt1= circle_pt1;
@@ -330,11 +330,21 @@ bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::
 
 	// points alignés
 	if (d32.y* d21.x- d21.y* d32.x== 0.0f) {
-		return false; // true ?
+		return std::make_pair(glm::vec2(0.0f), 0.0f); // bof
 	}
 	float lambda= 0.5f* (d31.x* d32.x+ d32.y* d31.y)/ (d32.y* d21.x- d21.y* d32.x);
 	glm::vec2 center= glm::vec2(0.5f* (pt1.x+ pt2.x)- lambda* d21.y, 0.5f* (pt1.y+ pt2.y)+ lambda* d21.x);
-	return (center.x- pt.x)* (center.x- pt.x)+ (center.y- pt.y)* (center.y- pt.y)< (center.x- pt1.x)* (center.x- pt1.x)+ (center.y- pt1.y)* (center.y- pt1.y);
+	float radius= sqrt((center.x- pt1.x)* (center.x- pt1.x)+ (center.y- pt1.y)* (center.y- pt1.y));
+	return std::make_pair(center, radius);
+}
+
+
+bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & pt) {
+	std::pair<glm::vec2, float> circle= circumcircle(circle_pt1, circle_pt2, circle_pt3);
+	glm::vec2 center= circle.first;
+	float radius= circle.second;
+	float dist2center= sqrt((center.x- pt.x)* (center.x- pt.x)+ (center.y- pt.y)* (center.y- pt.y));
+	return dist2center< radius;
 }
 
 

@@ -15,9 +15,11 @@ include_directories(../libs)
 add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
 add_library(lib_dcel STATIC ../libs/dcel.cpp ../libs/dcel.h)
 add_library(lib_voronoi STATIC ../libs/voronoi.cpp ../libs/voronoi.h)
+add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
 
 add_executable(main ./srcs/main.cpp)
 
 target_link_libraries(main PUBLIC lib_utile)
 target_link_libraries(main PUBLIC lib_dcel)
 target_link_libraries(main PUBLIC lib_voronoi)
+target_link_libraries(main PUBLIC lib_geom_2d)

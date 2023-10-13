@@ -3,40 +3,28 @@
 
 #include <string>
 #include <vector>
-#include <queue>
-#include <algorithm>
+#include <set>
+#include <utility>
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 
 #include "dcel.h"
+#include "bst.h"
 
 
 typedef enum {CircleEvent, SiteEvent} EventType;
 
-
-bool cmp_site_x(glm::vec2 site1, glm::vec2 site2);
-bool cmp_site_y(glm::vec2 site1, glm::vec2 site2);
+std::pair<glm::vec2, glm::vec2> parabols_intersections(glm::vec2 & site1, glm::vec2 & site2, float yline);
+//glm::vec2 bisector_intersection(glm::vec2 & a, glm::vec2 & b, glm::vec2 & c);
 
 struct Event;
 
 struct BeachLineNode {
 	glm::vec2 _site;
-	BeachLineNode * _left;
-	BeachLineNode * _right;
-	Event * _circle_event;
+	Event * _circle_event; // pour nodes feuilles
+	DCEL_HalfEdge * _half_edge; // pour nodes internes
 };
-
-// A utility function to create a new BST node
-struct BeachLineNode* new_node(glm::vec2 site);
- 
-// A utility function to insert
-struct BeachLineNode* insert_node(struct BeachLineNode* node, glm::vec2 site);
- 
-// Utility function to search a key in a BST
-struct BeachLineNode* search_arc_above(struct BeachLineNode* root, glm::vec2 site);
-
-struct BeachLineNode* rebalance(struct BeachLineNode* root);
 
 
 struct Event {
@@ -47,34 +35,29 @@ struct Event {
 };
 
 
-class CmpSite {
+struct EventCmp {
+	bool operator()(const Event& lhs, const Event& rhs) const {
+		if (lhs._type== EventType::SiteEvent) {
+			return lhs._site.y< rhs._site.y;
+		}
+		else if (lhs._type== EventType::CircleEvent) {
+			return lhs._circle_lowest_point.y< rhs._circle_lowest_point.y;
+		}
+		return false; // n'arrive jamais
+	}
+};
+
+
+/*class EventQueue {
 public:
-	bool operator() (Event e1, Event e2);
-};
+	EventQueue();
+	~EventQueue();
+	void insert_event(Event & e);
+	bool empty();
 
 
-template<typename T, class Container=std::vector<T>, class Compare=std::less<typename Container::value_type> >
-class custom_priority_queue : public std::priority_queue<T, std::vector<T>, Compare> {
-  public:
-
-      bool remove(const T& value) {
-          auto it = std::find(this->c.begin(), this->c.end(), value);
-       
-          if (it == this->c.end()) {
-              return false;
-          }
-          if (it == this->c.begin()) {
-              // deque the top element
-              this->pop();
-          }    
-          else {
-              // remove element and re-heap
-              this->c.erase(it);
-              std::make_heap(this->c.begin(), this->c.end(), this->comp);
-         }
-         return true;
-     }
-};
+	std::set<Event, EventCmp> _events;
+};*/
 
 
 class Voronoi {
@@ -87,9 +70,9 @@ public:
 
 
 	DCEL _diagram;
-	BeachLineNode * _beachline_root;
-	//std::priority_queue<Event, std::vector<Event>, CmpSite> _queue;
-	custom_priority_queue<Event, std::vector<Event>, CmpSite> _queue;
+	BST<BeachLineNode> _beachline;
+	//EventQueue _queue;
+	std::set<Event, EventCmp> _queue;
 };
 
 #endif

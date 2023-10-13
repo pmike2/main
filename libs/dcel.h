@@ -39,6 +39,7 @@ public:
 	~DCEL();
 	
 	
+	
 	std::vector<DCEL_Vertex> _vertices;
 	std::vector<DCEL_HalfEdge> _half_edges;
 	std::vector<DCEL_Face> _faces;

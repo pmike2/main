@@ -1,113 +1,85 @@
 #include <iostream>
+#include "math.h"
 
-#include <glm/gtx/string_cast.hpp>
+//#include <glm/gtx/string_cast.hpp>
 
 #include "voronoi.h"
+#include "geom_2d.h"
 
 
 // -------------------------------
-bool cmp_site_x(glm::vec2 site1, glm::vec2 site2) {
-	return site1.x< site2.x;
+std::pair<glm::vec2, glm::vec2> parabols_intersections(glm::vec2 & site1, glm::vec2 & site2, float yline) {
+	auto y= [& site1, & yline](float x) {
+		return 0.5f* (x* x- 2.0f* site1.x* x+ site1.x* site1.x+ site1.y* site1.y- yline* yline)/ (site1.y- yline);
+	};
+	float a= 2.0f* (site2.y- site1.y);
+	float b= 4.0f* ((site1.y- yline)* site2.x- (site2.y- yline)* site1.x);
+	float c= 2.0f* (site2.y- yline)* (site1.x* site1.x+ site1.y* site1.y- yline* yline)
+			-2.0f* (site1.y- yline)* (site2.x* site2.x+ site2.y* site2.y- yline* yline);
+	if (a== 0.0f) {
+		std::cout << "parabols_intersections 1 seul pt\n";
+		float x= -1.0f* c/ b;
+		glm::vec2 inter(x, y(x));
+		return std::make_pair(inter, inter);
+	}
+	float delta= b* b- 4.0f* a* c;
+	if (delta< 0.0f) {
+		std::cout << "parabols_intersections 0 pt\n";
+		return std::make_pair(glm::vec2(0.0f), glm::vec2(0.0f));
+	}
+	float x1= 0.5f* (-1.0f* b- sqrt(delta))/ a;
+	float x2= 0.5f* (-1.0f* b+ sqrt(delta))/ a;
+	return std::make_pair(glm::vec2(x1, y(x1)), glm::vec2(x2, y(x2)));
 }
 
-
-bool cmp_site_y(glm::vec2 site1, glm::vec2 site2) {
-	return site1.y< site2.y;
-}
+/*glm::vec2 bisector_intersection(glm::vec2 & a, glm::vec2 & b, glm::vec2 & c) {
+	float mu= 0.5f* ((b.y- a.y)* (c.y- a.y)+ (a.x- b.x)* (c.x- a.x))/ ((b.y- c.y)* (b.x- a.x)+ (b.y- a.y)* (c.x- b.x));
+	float x= 0.5f* (b.x+ c.x)+ mu* (b.y- c.y);
+	float y= 0.5f* (b.y+ c.y)+ mu* (c.x- b.x);
+	return glm::vec2(x, y);
+}*/
 
 
 // -------------------------------
-// A utility function to create a new BST node
-struct BeachLineNode* new_node(glm::vec2 site) {
-	struct BeachLineNode* temp= new struct BeachLineNode;
-	temp->_site= site;
-	temp->_left= NULL;
-	temp->_right= NULL;
-	temp->_circle_event= NULL;
-	return temp;
-}
- 
-// A utility function to insert
-struct BeachLineNode* insert_node(struct BeachLineNode* node, glm::vec2 site) {
-	// If the tree is empty, return a new node
-	if (node == NULL)
-		return new_node(site);
-
-	// Otherwise, recur down the tree
-	if (cmp_site_x(site, node->_site)) {
-		node->_left= insert_node(node->_left, site);
-	}
-	else {
-		node->_right= insert_node(node->_right, site);
-	}
-
-	return node;
-}
- 
-// Utility function to search a key in a BST
-struct BeachLineNode* search_arc_above(struct BeachLineNode* root, glm::vec2 site) {
-	if (root->_left== NULL) {
-		return root;
-	}
-
-	if (cmp_site_x(site, root->_site)) {
-		return search_arc_above(root->_right, site);
-	}
-	else {
-		return search_arc_above(root->_left, site);
-	}
-}
-
-
-struct BeachLineNode* rebalance(struct BeachLineNode* root) {
+Voronoi::Voronoi() :
+_beachline([](BeachLineNode lhs, BeachLineNode rhs) {
+		if (lhs._site.x< rhs._site.x) {
+			return -1;
+		}
+		else if (lhs._site.x> rhs._site.x) {
+			return 1;
+		}
+		return 0;
+	})
+{
 
 }
 
 
-// -------------------------------
-// TODO : mieux comparer 2 glm::vec2 !!!!!!!!!!!!!!!!!!!!!!
-bool operator==(const Event& rhs, const Event& lhs) {
-	if (rhs._type== CircleEvent) {
-		return rhs._circle_lowest_point == lhs._circle_lowest_point;
-	}
-	else {
-		return rhs._site == lhs._site;
-	}
-}
-
-
-// -------------------------------
-bool CmpSite::operator() (Event e1, Event e2) {
-	if (e1._type== SiteEvent) {
-		return cmp_site_y(e1._site, e2._site);
-	}
-	else if (e1._type== CircleEvent) {
-		return cmp_site_y(e1._circle_lowest_point, e2._circle_lowest_point);
-	}
-	return false; // n'arrive jamais
-}
-
-
-// -------------------------------
-Voronoi::Voronoi() {
-
-}
-
-
-Voronoi::Voronoi(std::vector<glm::vec2> sites) : _beachline_root(NULL) {
+Voronoi::Voronoi(std::vector<glm::vec2> sites) :
+	_beachline([](BeachLineNode lhs, BeachLineNode rhs) {
+		if (lhs._site.x< rhs._site.x) {
+			return -1;
+		}
+		else if (lhs._site.x> rhs._site.x) {
+			return 1;
+		}
+		return 0;
+	})
+{
 	for (unsigned int i=0; i<sites.size(); ++i) {
-		Event e{SiteEvent, sites[i]};
-		_queue.push(e);
+		Event e{EventType::SiteEvent, sites[i]};
+		_queue.insert(e);
 	}
 	while (!_queue.empty()) {
-		Event e= _queue.top();
-		//std::cout << glm::to_string(site) << " ";
-		_queue.pop();
+		std::set<Event>::iterator it= _queue.begin();
+		Event e= *it;
+		_queue.erase(it);
 
-		if (e._type== SiteEvent) {
+		if (e._type== EventType::SiteEvent) {
 			handle_site_event(e);
 		}
-		else if (e._type== CircleEvent) {
+		else if (e._type== EventType::CircleEvent) {
 			handle_circle_event(e);
 		}
 	}
@@ -122,19 +94,66 @@ Voronoi::~Voronoi() {
 
 
 void Voronoi::handle_site_event(Event e) {
-	if (_beachline_root== NULL) {
-		insert_node(_beachline_root, e._site);
+	if (_beachline.empty()) {
+		_beachline.insert({e._site, NULL, NULL});
+		return;
 	}
-	else {
-		BeachLineNode* b= search_arc_above(_beachline_root, e._site);
-		if (b->_circle_event!= NULL) {
-			_queue.remove(*b->_circle_event);
+
+	BeachLineNode tmp{e._site, NULL};
+	Node<BeachLineNode> * b= _beachline.search(tmp, false);
+	if (b->_data._circle_event!= NULL) {
+		_queue.erase(*b->_data._circle_event);
+	}
+
+	std::pair<Node<BeachLineNode> *, Node<BeachLineNode> *> nl= _beachline.neighbours_leaf(b);
+	Node<BeachLineNode> * prev_site= nl.first;
+	Node<BeachLineNode> * next_site= nl.second;
+
+	std::pair<glm::vec2, glm::vec2> breakpoints= parabols_intersections(b->_data._site, e._site, e._site.y);
+	Node<BeachLineNode> * left_site= new Node<BeachLineNode>(b->_data);
+	Node<BeachLineNode> * middle_site= new Node<BeachLineNode>({e._site, NULL, NULL});
+	Node<BeachLineNode> * right_site= new Node<BeachLineNode>(b->_data);
+	DCEL_HalfEdge * he_left= new DCEL_HalfEdge();
+	DCEL_HalfEdge * he_right= new DCEL_HalfEdge();
+	Node<BeachLineNode> * left_middle_parent= new Node<BeachLineNode>({breakpoints.first, NULL, he_left}, left_site, middle_site);
+	b->_data= {breakpoints.second, NULL, he_right};
+	b->_left= left_middle_parent;
+	b->_right= right_site;
+	// _beachline.balance();
+
+	//_diagram._half_edges.push_back(*he_left);
+	//_diagram._half_edges.push_back(*he_right);
+
+	if (prev_site!= NULL) {
+		std::pair<glm::vec2, float> circle= circumcircle(prev_site->_data._site, b->_data._site, e._site);
+		//glm::vec2 v= bisector_intersection(prev_site->_data._site, b->_data._site, e._site);
+		glm::vec2 center= circle.first;
+		float radius= circle.second;
+		if (center.y< breakpoints.first.y) {
+			_queue.insert({EventType::CircleEvent, glm::vec2(0.0f), center- glm::vec2(0.0f, radius), NULL});
+		}
+	}
+
+	if (next_site!= NULL) {
+		std::pair<glm::vec2, float> circle= circumcircle(next_site->_data._site, b->_data._site, e._site);
+		glm::vec2 center= circle.first;
+		float radius= circle.second;
+		if (center.y< breakpoints.first.y) {
+			_queue.insert({EventType::CircleEvent, glm::vec2(0.0f), center- glm::vec2(0.0f, radius), NULL});
 		}
 	}
 }
 
 
 void Voronoi::handle_circle_event(Event e) {
-	
+	Node<BeachLineNode> * node= _beachline.search(*e._leaf);
+	std::pair<Node<BeachLineNode> *, Node<BeachLineNode> *> neighbours= _beachline.neighbours_leaf(node);
+	_beachline.remove(*e._leaf);
+	if (neighbours.first!= NULL) {
+		_beachline.remove(neighbours.first->_data);
+	}
+	if (neighbours.second!= NULL) {
+		_beachline.remove(neighbours.second->_data);
+	}
 }
 
