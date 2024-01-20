@@ -21,8 +21,6 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "gl_utils.h"
-//#include "thread.h"
-#include "mpeg.h"
 
 
 using namespace std;
@@ -46,11 +44,7 @@ GLint camera2clip_loc, model2world_loc, z_loc, position_loc, color_loc;
 glm::mat4 camera2clip, model2world;
 GLuint vbo;
 
-float angle_rot;
-unsigned int rmask, gmask, bmask, amask;
 chrono::system_clock::time_point t1, t2;
-
-MPEGWriterHelper * mpeg_writer_helper;
 
 
 void key_down(SDL_Keycode key) {
@@ -123,37 +117,8 @@ void init_buffer() {
 	glUseProgram(0);
 
 	camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, -1.0f, 1.0f);
-	angle_rot= 0.0f;
-	model2world= glm::rotate(glm::mat4(1.0f), angle_rot, glm::vec3(0.f, 0.f, 1.f));
 
 	glGenBuffers(1, &vbo);
-
-	float data[5* 3];
-	float ray= 3.0f;
-	float k[3]= {0.0f, 1.0f, 2.0f};
-	
-	data[0]= ray* cos(2.0f* M_PI* k[0]/ 3.0f);
-	data[1]= ray* sin(2.0f* M_PI* k[0]/ 3.0f);
-	data[2]= 1.0f;
-	data[3]= 0.0f;
-	data[4]= 0.0f;
-
-	data[5]= ray* cos(2.0f* M_PI* k[1]/ 3.0f);
-	data[6]= ray* sin(2.0f* M_PI* k[1]/ 3.0f);
-	data[7]= 0.0f;
-	data[8]= 1.0f;
-	data[9]= 0.0f;
-
-	data[10]= ray* cos(2.0f* M_PI* k[2]/ 3.0f);
-	data[11]= ray* sin(2.0f* M_PI* k[2]/ 3.0f);
-	data[12]= 0.0f;
-	data[13]= 0.0f;
-	data[14]= 1.0f;
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, 5* 3* sizeof(float), data, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
 }
 
 
@@ -168,20 +133,6 @@ void init() {
 	screengl= new ScreenGL(SCREEN_WIDTH, SCREEN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 
 	init_buffer();
-
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		rmask = 0xff000000;
-		gmask = 0x00ff0000;
-		bmask = 0x0000ff00;
-		amask = 0x000000ff;
-	#else
-		rmask = 0x000000ff;
-		gmask = 0x0000ff00;
-		bmask = 0x00ff0000;
-		amask = 0xff000000;
-	#endif
-
-	mpeg_writer_helper= new MPEGWriterHelper(SCREEN_WIDTH, SCREEN_HEIGHT, 30, 2000, "../data/test.mp4", false, 8);
 }
 
 
