@@ -1,5 +1,6 @@
 #include <iostream>
 
+#include "utile.h"
 #include "threebody.h"
 
 
@@ -46,9 +47,32 @@ void Body::print() {
 }
 
 
+void Body::randomize() {
+	float n= 10.0f;
+	_position.x= rand_float(-1.0f* n, n);
+	_position.y= rand_float(-1.0f* n, n);
+	_position.z= rand_float(-1.0f* n, n);
+	_speed.x= rand_float(-1.0f* n, n);
+	_speed.y= rand_float(-1.0f* n, n);
+	_speed.z= rand_float(-1.0f* n, n);
+	_acceleration.x= 0.0f;
+	_acceleration.y= 0.0f;
+	_acceleration.z= 0.0f;
+}
+
+
 // --------------------------------------------------
 ThreeBody::ThreeBody() {
 
+}
+
+
+ThreeBody::ThreeBody(GLuint prog_draw) {
+	glGenBuffers(4, _buffers);
+		
+	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
+	_diffuse_color_loc= glGetAttribLocation(_prog_draw, "color_in");
+	_world2clip_loc= glGetUniformLocation(_prog_draw, "world2clip_matrix");
 }
 
 
@@ -92,3 +116,9 @@ void ThreeBody::print() {
 	std::cout << "\n";
 }
 
+
+void ThreeBody::randomize() {
+	for (auto & body : _bodies) {
+		body.randomize();
+	}
+}
