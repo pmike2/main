@@ -17,7 +17,7 @@ const unsigned int DELTA_ANIM= 1;
 // dimensions écran
 const int MAIN_WIN_WIDTH= 1280;
 const int MAIN_WIN_HEIGHT= 1024;
-const float MAIN_BCK[]= {0.2f, 0.7f, 0.9f, 1.0f};
+const float MAIN_BCK[]= {0.2f, 0.2f, 0.2f, 1.0f};
 
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
@@ -29,26 +29,13 @@ float bck_factor= 1.0f;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_basic, prog_repere, prog_select;
+GLuint prog_repere, prog_select;
 GLuint g_vao;
 
 ViewSystem * view_system;
 
 ThreeBody * threebody;
 
-
-void test1() {
-	ThreeBody * threebody= new ThreeBody();
-	threebody->add_body(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
-	threebody->add_body(glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
-	threebody->add_body(glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
-	threebody->randomize();
-	for (unsigned int idx=0; idx<100; ++idx) {
-		threebody->anim(1.0f);
-		threebody->print();
-	}
-	delete threebody;
-}
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
@@ -90,6 +77,10 @@ void key_down(SDL_Keycode key) {
 	}
 
 	if (view_system->key_down(input_state, key)) {
+		return;
+	}
+
+	if (threebody->key_down(input_state, key)) {
 		return;
 	}
 }
@@ -146,7 +137,7 @@ void init() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glPointSize(4.0f);
+	glPointSize(2.0f);
 	
 	SDL_GL_SwapWindow(window);
 	
@@ -160,20 +151,9 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_basic           = create_prog("../../shaders/vertexshader_basic.txt"       , "../../shaders/fragmentshader_basic.txt");
-	prog_repere          = create_prog("../../shaders/vertexshader_repere.txt"      , "../../shaders/fragmentshader_basic.txt");
-	prog_select          = create_prog("../../shaders/vertexshader_select.txt"      , "../../shaders/fragmentshader_basic.txt");
+	prog_repere= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
+	prog_select= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
 
-	/*float eye_direction[]= {0.0f, 0.0f, 1.0f};
-	GLuint progs_eye[]= {prog_3d_anim, prog_3d_terrain, prog_3d_obj};
-	for (unsigned int i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
-		GLint eye_direction_loc= glGetUniformLocation(progs_eye[i], "eye_direction");
-		glUseProgram(progs_eye[i]);
-		glUniform3fv(eye_direction_loc, 1, eye_direction);
-		glUseProgram(0);
-	}*/
-
-	// verif que les shaders ont bien été compilés - linkés
 	check_gl_error();
 	
 	// --------------------------------------------------------------------------
@@ -185,8 +165,16 @@ void init() {
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
+	threebody= new ThreeBody(prog_repere);
+	
+	/*for (unsigned int i=0; i<3; ++i) {
+		threebody->add_body();
+	}
+	threebody->randomize(10.0f);*/
 
-	ThreeBody * threebody= new ThreeBody();
+	threebody->add_body(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
+	threebody->add_body(glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
+	threebody->add_body(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
 }
 
 
@@ -196,7 +184,6 @@ void draw() {
 	glClearColor(MAIN_BCK[0]* bck_factor, MAIN_BCK[1]* bck_factor, MAIN_BCK[2]* bck_factor, MAIN_BCK[3]);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	
 	view_system->draw();
 	threebody->draw(view_system->_world2clip);
 
@@ -211,6 +198,10 @@ void anim() {
 		return;
 	
 	tikanim1= SDL_GetTicks();
+
+	float delta_t= 0.1f;
+	threebody->anim(delta_t);
+	threebody->update();
 }
 
 
@@ -281,7 +272,6 @@ void clean() {
 
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
-	IMG_Quit();
 	SDL_Quit();
 }
 

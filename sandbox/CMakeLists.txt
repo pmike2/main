@@ -19,6 +19,8 @@ add_library(lib_repere STATIC ../libs/repere.cpp ../libs/repere.h)
 add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)
 add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
 add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h)
+add_library(lib_bbox STATIC ../libs/bbox.cpp ../libs/bbox.h)
+add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
 
 add_executable(main ./srcs/main.cpp)
  
@@ -27,6 +29,8 @@ target_link_libraries(main PUBLIC lib_repere)
 target_link_libraries(main PUBLIC lib_gl_utils)
 target_link_libraries(main PUBLIC lib_utile)
 target_link_libraries(main PUBLIC lib_input_state)
+target_link_libraries(main PUBLIC lib_bbox)
+target_link_libraries(main PUBLIC lib_bbox_2d)
 
 target_link_libraries(main PUBLIC ${SDL2_LIBRARIES})
 target_link_libraries(main PUBLIC ${OPENGL_LIBRARIES})
