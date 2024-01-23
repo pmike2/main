@@ -42,6 +42,7 @@ public:
 	~ThreeBody();
 	void add_body(glm::vec3 position, glm::vec3 speed, glm::vec3 acceleration, float mass);
 	void add_body();
+	void clear();
 	void anim(float delta_t);
 	void print();
 	void randomize(unsigned int n_bodies, float limit);
@@ -49,6 +50,7 @@ public:
 	void update();
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	void set_all_z2zero();
+	void read_file(std::string filepath);
 
 
 	std::vector<Body *> _bodies;

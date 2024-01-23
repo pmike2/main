@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -89,6 +91,14 @@ void ThreeBody::add_body(glm::vec3 position, glm::vec3 speed, glm::vec3 accelera
 void ThreeBody::add_body() {
 	Body * body= new Body();
 	_bodies.push_back(body);
+}
+
+
+void ThreeBody::clear() {
+	for (auto & body : _bodies) {
+		delete body;
+	}
+	_bodies.clear();
 }
 
 
@@ -226,6 +236,9 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 		randomize(300, 10.0f);
 		return true;
 	}
+	else if (key== SDLK_e) {
+		read_file("../data/bodies_01.txt");
+	}
 
 	return false;
 }
@@ -236,6 +249,27 @@ void ThreeBody::set_all_z2zero() {
 		body->_position.z= 0.0f;
 		body->_speed.z= 0.0f;
 		body->_acceleration.z= 0.0f;
+	}
+}
+
+
+void ThreeBody::read_file(std::string filepath) {
+	std::ifstream file_stream(filepath);
+	std::string line;
+	clear();
+	while (std::getline(file_stream, line)) {
+		if (line[0]== '#') {
+			continue;
+		}
+		std::istringstream iss(line);
+		add_body();
+		Body * body= _bodies[_bodies.size()- 1];
+		
+		iss >> body->_position.x >> body->_position.y >> body->_position.z;
+		iss >> body->_speed.x >> body->_speed.y >> body->_speed.z;
+		iss >> body->_acceleration.x >> body->_acceleration.y >> body->_acceleration.z;
+		iss >> body->_mass;
+		iss >> body->_color.x >> body->_color.y >> body->_color.z;
 	}
 }
 
