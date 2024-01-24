@@ -1,4 +1,6 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -92,9 +94,27 @@ void ThreeBody::add_body() {
 }
 
 
+void ThreeBody::clear() {
+	for (auto & body : _bodies) {
+		delete body;
+	}
+	_bodies.clear();
+}
+
+
 void ThreeBody::anim(float delta_t) {
+	const float WARNING_LIMIT= 300.0f;
+
 	for (unsigned int idx_body=0; idx_body<_bodies.size(); ++idx_body) {
 		glm::vec3 force(0.0f);
+
+		/*const float norm= sqrt(
+			_bodies[idx_body]->_position.x* _bodies[idx_body]->_position.x+ 
+			_bodies[idx_body]->_position.y* _bodies[idx_body]->_position.y+ 
+			_bodies[idx_body]->_position.z* _bodies[idx_body]->_position.z
+		);
+		force+= (-1.0f/ (WARNING_LIMIT- norm))* _bodies[idx_body]->_position;*/
+
 		for (unsigned int idx_body_2=0; idx_body_2<_bodies.size(); ++idx_body_2) {
 			if (idx_body== idx_body_2) {
 				continue;
@@ -102,23 +122,31 @@ void ThreeBody::anim(float delta_t) {
 			glm::vec3 body1tobody2= _bodies[idx_body_2]->_position- _bodies[idx_body]->_position;
 			float squared_dist= body1tobody2.x* body1tobody2.x+ body1tobody2.y* body1tobody2.y+ body1tobody2.z* body1tobody2.z;
 			if (squared_dist< 0.001f) {
-				std::cout << "Collision entre " << idx_body << " et " << idx_body_2 <<  "\n";
+				//std::cout << "Collision entre " << idx_body << " et " << idx_body_2 <<  "\n";
 				continue;
 			}
-			force+= (_bodies[idx_body]->_mass* _bodies[idx_body_2]->_mass/ squared_dist)* body1tobody2;
+			force+= (_bodies[idx_body]->_mass* _bodies[idx_body_2]->_mass/ (squared_dist* sqrt(squared_dist)))* body1tobody2;
 		}
+		
 		_bodies[idx_body]->_acceleration= (1.0f/ _bodies[idx_body]->_mass)* force;
 		_bodies[idx_body]->_speed+= delta_t* _bodies[idx_body]->_acceleration;
 		_bodies[idx_body]->_position+= delta_t* _bodies[idx_body]->_speed;
 
-		const float WARNING_LIMIT= 1000.0f;
-		if (
-			(_bodies[idx_body]->_position.x> WARNING_LIMIT) || (_bodies[idx_body]->_position.x< -1.0f* WARNING_LIMIT) ||
-			(_bodies[idx_body]->_position.y> WARNING_LIMIT) || (_bodies[idx_body]->_position.y< -1.0f* WARNING_LIMIT) ||
-			(_bodies[idx_body]->_position.z> WARNING_LIMIT) || (_bodies[idx_body]->_position.z< -1.0f* WARNING_LIMIT))
-		{
+		/*bool x_sup= _bodies[idx_body]->_position.x> WARNING_LIMIT;
+		bool x_inf= _bodies[idx_body]->_position.x< -1.0f* WARNING_LIMIT;
+		bool y_sup= _bodies[idx_body]->_position.y> WARNING_LIMIT;
+		bool y_inf= _bodies[idx_body]->_position.y< -1.0f* WARNING_LIMIT;
+		bool z_sup= _bodies[idx_body]->_position.z> WARNING_LIMIT;
+		bool z_inf= _bodies[idx_body]->_position.z< -1.0f* WARNING_LIMIT;*/
+		/*if ((x_sup) || (x_inf) || (y_sup) || (y_inf) || (z_sup) || (z_inf)) {
 			std::cout << "Body " << idx_body << " a franchi la limite " << WARNING_LIMIT << "\n";
-		}
+		}*/
+		/*if (x_sup) { _bodies[idx_body]->_position.x-= 2.0f* WARNING_LIMIT; }
+		if (x_inf) { _bodies[idx_body]->_position.x+= 2.0f* WARNING_LIMIT; }
+		if (y_sup) { _bodies[idx_body]->_position.y-= 2.0f* WARNING_LIMIT; }
+		if (y_inf) { _bodies[idx_body]->_position.y+= 2.0f* WARNING_LIMIT; }
+		if (z_sup) { _bodies[idx_body]->_position.z-= 2.0f* WARNING_LIMIT; }
+		if (z_inf) { _bodies[idx_body]->_position.z+= 2.0f* WARNING_LIMIT; }*/
 
 		if (_bodies[idx_body]->_histo_position.size()== MAX_HISTO_SIZE) {
 			_bodies[idx_body]->_histo_position.pop_front();
@@ -158,7 +186,6 @@ void ThreeBody::draw(const glm::mat4 & world2clip) {
 	glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
 	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
 	glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
-	//std::cout << _n_pts << "\n";
 	glDrawArrays(GL_POINTS, 0, _n_pts);
 
 	glDisableVertexAttribArray(_position_loc);
@@ -172,17 +199,9 @@ void ThreeBody::draw(const glm::mat4 & world2clip) {
 void ThreeBody::update() {
 	unsigned int histo_size= _bodies[0]->_histo_position.size();
 	_n_pts= _bodies.size()* histo_size;
-	//std::cout << "histo_size=" << histo_size << " ; _n_pts=" << _n_pts << "\n";
 	float data[6* _n_pts];
 	for (unsigned int idx_body=0; idx_body<_bodies.size(); ++idx_body) {
 		for (unsigned int idx_position=0; idx_position<histo_size; ++idx_position) {
-			/*std::cout << _bodies[idx_body]->_histo_position[idx_position].x << "\n";
-			std::cout << _bodies[idx_body]->_histo_position[idx_position].y << "\n";
-			std::cout << _bodies[idx_body]->_histo_position[idx_position].z << "\n";
-			std::cout << _bodies[idx_body]->_color.x << "\n";
-			std::cout << _bodies[idx_body]->_color.y << "\n";
-			std::cout << _bodies[idx_body]->_color.z << "\n";
-			std::cout << "------\n";*/
 			data[(idx_body* histo_size+ idx_position)* 6+ 0]= _bodies[idx_body]->_histo_position[idx_position].x;
 			data[(idx_body* histo_size+ idx_position)* 6+ 1]= _bodies[idx_body]->_histo_position[idx_position].y;
 			data[(idx_body* histo_size+ idx_position)* 6+ 2]= _bodies[idx_body]->_histo_position[idx_position].z;
@@ -217,6 +236,9 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 		randomize(300, 10.0f);
 		return true;
 	}
+	else if (key== SDLK_e) {
+		read_file("../data/bodies_01.txt");
+	}
 
 	return false;
 }
@@ -227,6 +249,27 @@ void ThreeBody::set_all_z2zero() {
 		body->_position.z= 0.0f;
 		body->_speed.z= 0.0f;
 		body->_acceleration.z= 0.0f;
+	}
+}
+
+
+void ThreeBody::read_file(std::string filepath) {
+	std::ifstream file_stream(filepath);
+	std::string line;
+	clear();
+	while (std::getline(file_stream, line)) {
+		if (line[0]== '#') {
+			continue;
+		}
+		std::istringstream iss(line);
+		add_body();
+		Body * body= _bodies[_bodies.size()- 1];
+		
+		iss >> body->_position.x >> body->_position.y >> body->_position.z;
+		iss >> body->_speed.x >> body->_speed.y >> body->_speed.z;
+		iss >> body->_acceleration.x >> body->_acceleration.y >> body->_acceleration.z;
+		iss >> body->_mass;
+		iss >> body->_color.x >> body->_color.y >> body->_color.z;
 	}
 }
 
