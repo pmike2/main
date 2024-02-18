@@ -82,11 +82,11 @@ void test3() {
 		bst->insert(rand_int(0, 1000));
 	}
 
-	/*std::vector<int> v= bst->get_sorted_array();
+	std::vector<int> v= bst->get_sorted_array();
 	for (auto x : v) {
 		std::cout << x << " ";
 	}
-	std::cout << "\n";*/
+	std::cout << "\n";
 
 	bst->export_html("../data/test3_avant.html");
 
@@ -96,10 +96,24 @@ void test3() {
 }
 
 
+void test4() {
+	BST<int> * bst= new BST<int>();
+	bst->insert(4);
+	bst->insert(8);
+	bst->insert(2);
+	bst->insert(3);
+	bst->insert(1);
+	bst->insert(7);
+	std::pair<Node<int> *, Node<int> *> res= bst->neighbours_leaf(8);
+	std::cout << res.first << " ; " << res.second << "\n";
+}
+
+
 int main() {
 	//test1();
 	//test2();
-	test3();
+	//test3();
+	test4();
 	
 	return 0;
 }
