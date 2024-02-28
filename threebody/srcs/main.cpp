@@ -1,5 +1,7 @@
 
 #include <iostream>
+#include <math.h>
+
 #include <OpenGL/gl3.h>
 
 #include <SDL2/SDL.h>
@@ -137,7 +139,7 @@ void init() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glPointSize(2.0f);
+	glPointSize(5.0f);
 	
 	SDL_GL_SwapWindow(window);
 	
@@ -159,22 +161,13 @@ void init() {
 	// --------------------------------------------------------------------------
 	view_system= new ViewSystem(prog_repere, prog_select, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->_repere->_is_ground= false;
-	view_system->_repere->_is_repere= true;
-	view_system->_repere->_is_box= true;
-	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 1.0f, 200.0f);
+	view_system->_repere->_is_repere= false;
+	view_system->_repere->_is_box= false;
+	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), -0.5f* M_PI, 0.0f, 300.0f);
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
 	threebody= new ThreeBody(prog_repere);
-	
-	/*for (unsigned int i=0; i<3; ++i) {
-		threebody->add_body();
-	}
-	threebody->randomize(10.0f);*/
-
-	threebody->add_body(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
-	threebody->add_body(glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
-	threebody->add_body(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
 }
 
 
@@ -199,8 +192,7 @@ void anim() {
 	
 	tikanim1= SDL_GetTicks();
 
-	float delta_t= 0.1f;
-	threebody->anim(delta_t);
+	threebody->anim();
 	threebody->update();
 }
 
