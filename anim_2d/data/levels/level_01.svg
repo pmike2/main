@@ -24,19 +24,19 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.81958225"
-     inkscape:cx="283.68111"
-     inkscape:cy="686.93533"
+     inkscape:zoom="2.3181287"
+     inkscape:cx="388.67558"
+     inkscape:cy="699.70232"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      inkscape:document-rotation="0"
      showgrid="true"
-     showguides="true"
+     showguides="false"
      inkscape:snap-to-guides="false"
      inkscape:window-width="1440"
      inkscape:window-height="811"
-     inkscape:window-x="1182"
-     inkscape:window-y="100"
+     inkscape:window-x="1381"
+     inkscape:window-y="216"
      inkscape:window-maximized="0"
      inkscape:showpageshadow="false"
      borderlayer="true"
@@ -46,12 +46,13 @@
     <inkscape:grid
        type="xygrid"
        id="grid1334"
-       originx="0"
-       originy="0"
+       originx="396.85039"
+       originy="561.25984"
        spacingy="1"
        spacingx="1"
        units="mm"
-       visible="true" />
+       visible="true"
+       dotted="false" />
   </sodipodi:namedview>
   <metadata
      id="metadata1329">
@@ -61,7 +62,6 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -113,7 +113,7 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image2138"
-       x="6.6145835"
+       x="6.614584"
        y="256.64584" />
     <image
        xlink:href="../static_textures/brick.png"
@@ -149,8 +149,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image26"
-       x="42.333332"
-       y="244.73959" />
+       x="53.309452"
+       y="256.66226" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -158,8 +158,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image28"
-       x="54.239586"
-       y="244.73959" />
+       x="64.892876"
+       y="256.6842" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -167,8 +167,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image30"
-       x="66.145836"
-       y="244.73958" />
+       x="76.799126"
+       y="256.6842" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -176,8 +176,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image32"
-       x="66.145836"
-       y="232.83333" />
+       x="88.818695"
+       y="256.76169" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -185,12 +185,12 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image34"
-       x="78.052078"
-       y="232.83333" />
+       x="112.67657"
+       y="256.6582" />
     <image
        xlink:href="../static_textures/grass.png"
-       y="244.73958"
-       x="6.6145902"
+       y="244.35358"
+       x="111.8504"
        id="image50"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
@@ -198,8 +198,8 @@
        width="11.906243" />
     <image
        xlink:href="../static_textures/grass.png"
-       y="244.73959"
-       x="18.520834"
+       y="244.85373"
+       x="52.761814"
        id="image52"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
@@ -207,8 +207,8 @@
        width="11.906243" />
     <image
        xlink:href="../static_textures/cloud.png"
-       y="74.083336"
-       x="12.082667"
+       y="76.259827"
+       x="10.141405"
        id="image68"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
@@ -216,8 +216,8 @@
        width="56.709" />
     <image
        xlink:href="../static_textures/cloud.png"
-       y="43.832668"
-       x="89.958336"
+       y="46.259827"
+       x="95.141403"
        id="image70"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
@@ -225,8 +225,8 @@
        width="56.709" />
     <image
        xlink:href="../static_textures/tree.png"
-       y="157.16252"
-       x="42.333332"
+       y="167.85954"
+       x="63.077385"
        id="image86"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
@@ -234,8 +234,8 @@
        width="79.452286" />
     <image
        xlink:href="../static_textures/platform.png"
-       y="205.1338"
-       x="14.633819"
+       y="203.26863"
+       x="11.850403"
        id="image132"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
@@ -243,8 +243,8 @@
        width="32.991184" />
     <image
        xlink:href="../static_textures/platform.png"
-       y="183.96712"
-       x="56.967155"
+       y="183.26863"
+       x="53.859222"
        id="image134"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
@@ -252,8 +252,8 @@
        width="32.991184" />
     <image
        xlink:href="../static_textures/platform.png"
-       y="162.80043"
-       x="14.633819"
+       y="163.26863"
+       x="11.850403"
        id="image136"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
@@ -266,8 +266,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image138"
-       x="56.885418"
-       y="148.16667" />
+       x="87.944153"
+       y="244.35358" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -275,8 +275,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image140"
-       x="68.791664"
-       y="148.16667" />
+       x="99.850403"
+       y="244.35358" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -284,8 +284,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image142"
-       x="79.375"
-       y="148.16667" />
+       x="75.944153"
+       y="244.35358" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -293,8 +293,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image144"
-       x="89.958336"
-       y="148.16667" />
+       x="124.67035"
+       y="256.53342" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -302,8 +302,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image146"
-       x="100.54166"
-       y="137.58333" />
+       x="111.8504"
+       y="158.3067" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -311,8 +311,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image148"
-       x="167.65134"
-       y="164.70081" />
+       x="146.8504"
+       y="164.35358" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -320,8 +320,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image150"
-       x="152.40851"
-       y="179.87367" />
+       x="148.48285"
+       y="256.53342" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -329,8 +329,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image152"
-       x="132.32327"
-       y="171.15735" />
+       x="131.8504"
+       y="154.35358" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -338,8 +338,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image154"
-       x="130.96875"
-       y="125.67709" />
+       x="0.85040283"
+       y="154.25983" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -347,8 +347,8 @@
        preserveAspectRatio="none"
        style="display:inline;image-rendering:optimizeSpeed"
        id="image156"
-       x="130.96875"
-       y="113.50629" />
+       x="94.897278"
+       y="137.35358" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -356,8 +356,8 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image158"
-       x="59.790863"
-       y="164.40463" />
+       x="136.5766"
+       y="256.53342" />
     <image
        xlink:href="../static_textures/brick.png"
        width="11.90625"
@@ -365,37 +365,37 @@
        preserveAspectRatio="none"
        style="display:inline;image-rendering:optimizeSpeed"
        id="image74"
-       x="40.105148"
-       y="161.09964" />
+       x="39.944153"
+       y="159.35358" />
     <path
-       style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 30.427083,182.5625 H 79.374999"
+       style="fill:none;stroke:#000000;stroke-width:0.399467px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       d="M 31.062221,181.25982 H 142.63859"
        id="path985"
        velocity="2.0" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 75.406249,202.40625 H 23.8125"
+       d="M 72.647278,201.25982 H 21.053529"
        id="path987"
        velocity="2.0" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 31.75,223.57291 H 64.822916"
+       d="M 30.313946,221.25982 H 63.386862"
        id="path989"
        velocity="2.0" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="M 42.333333,100.54167 H 190.5"
+       d="M 36.850404,101.39212 H 185.01707"
        id="path991"
        velocity="1.0" />
     <path
        style="fill:none;stroke:#000000;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-       d="m 121.70833,68.791666 h 79.375"
+       d="M 118.01707,71.259825 H 75.68374"
        id="path993"
        velocity="1.0" />
     <image
        xlink:href="../anim_textures/flower/pngs/moving/moving_00.png"
-       y="132.29164"
-       x="69.173447"
+       y="228.38483"
+       x="95.850403"
        id="image1009"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
@@ -403,8 +403,8 @@
        width="15.875" />
     <image
        xlink:href="../anim_textures/flower/pngs/moving/moving_00.png"
-       y="132.29164"
-       x="76.581764"
+       y="228.39465"
+       x="70.64666"
        id="image1011"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
@@ -412,8 +412,8 @@
        width="15.875" />
     <image
        xlink:href="../anim_textures/flower/pngs/moving/moving_00.png"
-       y="132.29164"
-       x="84.519264"
+       y="228.38483"
+       x="80.975403"
        id="image1013"
        style="image-rendering:optimizeSpeed"
        preserveAspectRatio="none"
@@ -445,22 +445,21 @@
        preserveAspectRatio="none"
        style="image-rendering:optimizeSpeed"
        id="image1"
-       x="103.69534"
-       y="161.49919" />
+       x="100.77032"
+       y="256.6582" />
   </g>
   <g
      inkscape:groupmode="layer"
      id="layer5"
      inkscape:label="View"
-     style="display:inline"
-     sodipodi:insensitive="true">
+     style="display:inline">
     <rect
-       style="fill:none;stroke:#000000;stroke-width:0.533842"
+       style="fill:none;stroke:#000000;stroke-width:0.533765"
        id="rect72"
-       width="183.99156"
-       height="183.99156"
-       x="3.1131027"
-       y="92.34333" />
+       width="100"
+       height="100"
+       x="0"
+       y="100" />
   </g>
   <g
      inkscape:groupmode="layer"

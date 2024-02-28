@@ -256,11 +256,16 @@ void ThreeBody::set_all_z2zero() {
 void ThreeBody::read_file(std::string filepath) {
 	std::ifstream file_stream(filepath);
 	std::string line;
+
 	clear();
+
 	while (std::getline(file_stream, line)) {
-		if (line[0]== '#') {
+		trim(line);
+		
+		if ((line[0]== '#') || (line.size()== 0)) {
 			continue;
 		}
+		
 		std::istringstream iss(line);
 		add_body();
 		Body * body= _bodies[_bodies.size()- 1];
@@ -272,4 +277,3 @@ void ThreeBody::read_file(std::string filepath) {
 		iss >> body->_color.x >> body->_color.y >> body->_color.z;
 	}
 }
-

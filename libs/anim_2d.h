@@ -274,6 +274,7 @@ public:
 	ScreenGL * _screengl;
 	Person2D * _hero;
 	glm::vec2 _viewpoint;
+	bool _draw;
 };
 
 

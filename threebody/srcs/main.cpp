@@ -9,6 +9,7 @@
 #include "utile.h"
 #include "gl_utils.h"
 #include "input_state.h"
+#include "threebody.h"
 
 // en ms; temps entre 2 anims
 const unsigned int DELTA_ANIM= 1;
@@ -32,6 +33,8 @@ GLuint prog_repere, prog_select;
 GLuint g_vao;
 
 ViewSystem * view_system;
+
+ThreeBody * threebody;
 
 
 
@@ -77,6 +80,9 @@ void key_down(SDL_Keycode key) {
 		return;
 	}
 
+	if (threebody->key_down(input_state, key)) {
+		return;
+	}
 }
 
 
@@ -102,7 +108,7 @@ void init() {
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	
-	window= SDL_CreateWindow("sandbox", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	window= SDL_CreateWindow("3body", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
 
 	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
@@ -159,6 +165,16 @@ void init() {
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
+	threebody= new ThreeBody(prog_repere);
+	
+	/*for (unsigned int i=0; i<3; ++i) {
+		threebody->add_body();
+	}
+	threebody->randomize(10.0f);*/
+
+	threebody->add_body(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
+	threebody->add_body(glm::vec3(5.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
+	threebody->add_body(glm::vec3(0.0f, 5.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f);
 }
 
 
@@ -169,6 +185,7 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->draw();
+	threebody->draw(view_system->_world2clip);
 
 	SDL_GL_SwapWindow(window);
 }
@@ -181,6 +198,10 @@ void anim() {
 		return;
 	
 	tikanim1= SDL_GetTicks();
+
+	float delta_t= 0.1f;
+	threebody->anim(delta_t);
+	threebody->update();
 }
 
 
@@ -247,6 +268,7 @@ void main_loop() {
 void clean() {
 	delete view_system;
 	delete input_state;
+	delete threebody;
 
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
@@ -255,10 +277,12 @@ void clean() {
 
 
 int main() {
+	//test1();
 
 	init();
 	main_loop();
 	clean();
+
 
 	return 0;
 }

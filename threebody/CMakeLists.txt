@@ -14,6 +14,7 @@ find_package(OpenGL REQUIRED)
 include_directories(/usr/local/include)
 include_directories(../libs)
 
+add_library(lib_3body STATIC ../srcs/threebody.h ../srcs/threebody.cpp)
 add_library(lib_repere STATIC ../libs/repere.cpp ../libs/repere.h)
 add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)
 add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
@@ -23,6 +24,7 @@ add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
 
 add_executable(main ./srcs/main.cpp)
  
+target_link_libraries(main PUBLIC lib_3body)
 target_link_libraries(main PUBLIC lib_repere)
 target_link_libraries(main PUBLIC lib_gl_utils)
 target_link_libraries(main PUBLIC lib_utile)

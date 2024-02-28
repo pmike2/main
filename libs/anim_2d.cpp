@@ -1065,6 +1065,13 @@ AABB_2D SVGParser::svg2screen(AABB_2D aabb) {
 	float y= ((_view->_pos.y+ _view->_size.y* 0.5f)- aabb._pos.y)* _screengl->_gl_height/ _view->_size.y;
 	float w= aabb._size.x* _screengl->_gl_width / _view->_size.x;
 	float h= aabb._size.y* _screengl->_gl_height/ _view->_size.y;
+
+	float snap= 0.2f;
+	x= round(x/ snap)* snap;
+	y= round(y/ snap)* snap;
+	w= round(w/ snap)* snap;
+	h= round(h/ snap)* snap;
+
 	return AABB_2D(glm::vec2(x, y- h), glm::vec2(w, h));
 }
 
@@ -1331,7 +1338,7 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 
 
 Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, string path, ScreenGL * screengl, bool verbose) :
-	_screengl(screengl), _viewpoint(glm::vec2(0.0f))
+	_screengl(screengl), _viewpoint(glm::vec2(0.0f)), _draw(true)
 {
 	SVGParser * svg_parser= new SVGParser(path, _screengl);
 	gen_textures(prog_draw_anim, prog_draw_static, screengl, svg_parser, verbose);
@@ -1647,8 +1654,10 @@ void Level::anim(float elapsed_time) {
 
 
 void Level::draw() {
-	for (auto texture : _textures) {
-		texture->draw();
+	if (_draw) {
+		for (auto texture : _textures) {
+			texture->draw();
+		}
 	}
 }
 
@@ -1660,6 +1669,10 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 	else if (key== SDLK_SPACE) {
 		cout << _hero->current_action() << "\n" << *(_hero->_obj) << "\n";
+		return true;
+	}
+	else if (key== SDLK_e) {
+		_draw= !_draw;
 		return true;
 	}
 
