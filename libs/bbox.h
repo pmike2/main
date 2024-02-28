@@ -2,6 +2,7 @@
 #define BBOX_H
 
 #include <vector>
+#include <iostream>
 
 #define GLM_FORCE_RADIANS
 #define GLM_ENABLE_EXPERIMENTAL
@@ -18,6 +19,9 @@ public:
 	~AABB();
 	void set_vmin_vmax(const glm::vec3 & vmin, const glm::vec3 & vmax);
 	static std::vector<std::vector<unsigned int> > triangles_idxs();
+	void translate(glm::vec3 v);
+	void scale(float x);
+	friend std::ostream & operator << (std::ostream & os, const AABB & aabb);
 
 
 	glm::vec3 _vmin, _vmax;

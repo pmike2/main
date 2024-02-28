@@ -63,6 +63,7 @@ public:
 	glm::vec3 _position;
 	glm::vec3 _speed;
 	glm::vec3 _acceleration;
+	glm::vec3 _force;
 	float _mass;
 	std::deque<glm::vec3> _histo_position;
 };

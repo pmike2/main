@@ -64,6 +64,22 @@ vector<vector<unsigned int> > AABB::triangles_idxs() {
 }
 
 
+void AABB::translate(glm::vec3 v) {
+	set_vmin_vmax(_vmin+ v, _vmax+ v);
+}
+
+
+void AABB::scale(float x) {
+	set_vmin_vmax(x* _vmin, x* _vmax);
+}
+
+
+ostream & operator << (ostream & os, const AABB & aabb) {
+	os << "vmin=" << glm::to_string(aabb._vmin) << " ; vmax=" << glm::to_string(aabb._vmax);
+	return os;
+}
+
+
 // ------------------------------------------------------------------------------------------------------
 BBox::BBox() : _vmin(glm::vec3(0.0f)), _vmax(glm::vec3(0.0f)), _radius(0.0f) {
 	
