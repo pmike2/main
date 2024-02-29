@@ -11,7 +11,7 @@
 #include "utile.h"
 #include "gl_utils.h"
 #include "input_state.h"
-#include "threebody.h"
+#include "threebody_v1.h"
 
 // en ms; temps entre 2 anims
 const unsigned int DELTA_ANIM= 1;
@@ -163,7 +163,7 @@ void init() {
 	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_repere= false;
 	view_system->_repere->_is_box= false;
-	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), -0.5f* M_PI, 0.0f, 370.0f);
+	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), -0.5f* M_PI, 0.0f, 300.0f);
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
