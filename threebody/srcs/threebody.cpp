@@ -186,15 +186,16 @@ void ThreeBody::anim() {
 				
 				glm::vec3 body1tobody2= body2->_position- body1->_position;	
 				float squared_dist= body1tobody2.x* body1tobody2.x+ body1tobody2.y* body1tobody2.y+ body1tobody2.z* body1tobody2.z;
+				float overlap= (body1->_radius+ body2->_radius)* (body1->_radius+ body2->_radius)- squared_dist;
 
 				// trop loin, pas d'interaction
 				if (squared_dist> body_interaction->_threshold* body_interaction->_threshold) {
 				}
 				// trop près, collision
-				else if (squared_dist< (body1->_radius+ body2->_radius)* (body1->_radius+ body2->_radius)) {
-					float force_coeff= 0.0001f;
-					body1->_force+= force_coeff* body1tobody2;
-					body2->_force-= force_coeff* body1tobody2;
+				else if (overlap> 0.0f ) {
+					float force_coeff= 0.01f* overlap;
+					body1->_force-= force_coeff* body1tobody2;
+					body2->_force+= force_coeff* body1tobody2;
 				}
 				// ni trop loin, ni trop près
 				else {
@@ -220,19 +221,30 @@ void ThreeBody::anim() {
 			body->_speed+= body->_acceleration;
 			body->_position+= body->_speed;
 
-			if ((body->_position.x< x.first->_limit._vmin.x) ||
-				(body->_position.x> x.first->_limit._vmax.x)) {
-				//body->_position.x*= -1.0f;
+			if (body->_position.x< x.first->_limit._vmin.x) {
+				body->_position.x= x.first->_limit._vmin.x;
 				body->_speed.x*= -1.0f;
 			}
-			if ((body->_position.y< x.first->_limit._vmin.y) ||
-				(body->_position.y> x.first->_limit._vmax.y)) {
-				//body->_position.y*= -1.0f;
+			else if (body->_position.x> x.first->_limit._vmax.x) {
+				body->_position.x= x.first->_limit._vmax.x;
+				body->_speed.x*= -1.0f;
+			}
+
+			if (body->_position.y< x.first->_limit._vmin.y) {
+				body->_position.y= x.first->_limit._vmin.y;
 				body->_speed.y*= -1.0f;
 			}
-			if ((body->_position.z< x.first->_limit._vmin.z) ||
-				(body->_position.z> x.first->_limit._vmax.z)) {
-				//body->_position.z*= -1.0f;
+			else if (body->_position.y> x.first->_limit._vmax.y) {
+				body->_position.y= x.first->_limit._vmax.y;
+				body->_speed.y*= -1.0f;
+			}
+
+			if (body->_position.z< x.first->_limit._vmin.z) {
+				body->_position.z= x.first->_limit._vmin.z;
+				body->_speed.z*= -1.0f;
+			}
+			else if (body->_position.z> x.first->_limit._vmax.z) {
+				body->_position.z= x.first->_limit._vmax.z;
 				body->_speed.z*= -1.0f;
 			}
 		}
@@ -350,42 +362,42 @@ void ThreeBody::update() {
 			data[compt+ 2]= body->_position.z;
 			data[compt+ 3]= x.first->_color.x;
 			data[compt+ 4]= x.first->_color.y;
-			data[compt+ 5]= x.first->_color.x;
+			data[compt+ 5]= x.first->_color.z;
 
 			data[compt+ 6]= body->_position.x+ body->_radius;
 			data[compt+ 7]= body->_position.y- body->_radius;
 			data[compt+ 8]= body->_position.z;
 			data[compt+ 9]= x.first->_color.x;
 			data[compt+ 10]= x.first->_color.y;
-			data[compt+ 11]= x.first->_color.x;
+			data[compt+ 11]= x.first->_color.z;
 
 			data[compt+ 12]= body->_position.x+ body->_radius;
 			data[compt+ 13]= body->_position.y+ body->_radius;
 			data[compt+ 14]= body->_position.z;
 			data[compt+ 15]= x.first->_color.x;
 			data[compt+ 16]= x.first->_color.y;
-			data[compt+ 17]= x.first->_color.x;
+			data[compt+ 17]= x.first->_color.z;
 
 			data[compt+ 18]= body->_position.x- body->_radius;
 			data[compt+ 19]= body->_position.y- body->_radius;
 			data[compt+ 20]= body->_position.z;
 			data[compt+ 21]= x.first->_color.x;
 			data[compt+ 22]= x.first->_color.y;
-			data[compt+ 23]= x.first->_color.x;
+			data[compt+ 23]= x.first->_color.z;
 
 			data[compt+ 24]= body->_position.x+ body->_radius;
 			data[compt+ 25]= body->_position.y+ body->_radius;
 			data[compt+ 26]= body->_position.z;
 			data[compt+ 27]= x.first->_color.x;
 			data[compt+ 28]= x.first->_color.y;
-			data[compt+ 29]= x.first->_color.x;
+			data[compt+ 29]= x.first->_color.z;
 
 			data[compt+ 30]= body->_position.x- body->_radius;
 			data[compt+ 31]= body->_position.y+ body->_radius;
 			data[compt+ 32]= body->_position.z;
 			data[compt+ 33]= x.first->_color.x;
 			data[compt+ 34]= x.first->_color.y;
-			data[compt+ 35]= x.first->_color.x;
+			data[compt+ 35]= x.first->_color.z;
 
 			compt+= 36;
 		}
@@ -471,13 +483,13 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 	else if (key== SDLK_e) {
 		randomize(
 			7, // n_types
-			AABB(glm::vec3(-100.0f), glm::vec3(100.0f)), // limit
+			AABB(glm::vec3(-50.0f), glm::vec3(50.0f)), // limit
 			glm::vec2(0.01f, 0.01f), // friction
 			glm::vec2(10.0f, 10.0f), // max_squared_norm
 			glm::vec2(1.0f, 1.0f), // mass_limit
 			glm::vec2(0.5f, 2.0f), // radius_limit
 			glm::vec2(10.0f, 60.0f), // threshold
-			glm::vec2(-0.1f, 0.1f), // attraction
+			glm::vec2(-0.1f, 0.05f), // attraction
 			glm::vec2(1.0f, 20.0f), // bias
 			glm::ivec2(60, 60) // n_bodies
 		);
