@@ -487,15 +487,15 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 	else if (key== SDLK_c) {
 		randomize(
 			7, // n_types
-			AABB(glm::vec3(-100.0f), glm::vec3(100.0f)), // limit
-			glm::vec2(0.01f, 0.1f), // friction
+			AABB(glm::vec3(-120.0f), glm::vec3(120.0f)), // limit
+			glm::vec2(0.05f, 0.1f), // friction
 			glm::vec2(1.0f, 1.0f), // max_squared_norm
 			glm::vec2(1.0f, 1.0f), // mass_limit (inutile pour l'instant car proportionnel a radius)
-			glm::vec2(0.5f, 8.0f), // radius_limit
-			glm::vec2(10.0f, 60.0f), // threshold
-			glm::vec2(-0.1f, 0.06f), // attraction
-			glm::vec2(1.0f, 2.0f), // bias
-			glm::ivec2(60, 90) // n_bodies
+			glm::vec2(0.4f, 4.0f), // radius_limit
+			glm::vec2(10.0f, 40.0f), // threshold
+			glm::vec2(-0.8f, 0.5f), // attraction
+			glm::vec2(1000.0f, 1000.0f), // bias
+			glm::ivec2(100, 100) // n_bodies
 		);
 
 		randomize_radius_per_type();
