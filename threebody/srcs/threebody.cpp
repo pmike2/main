@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -60,9 +61,12 @@ Body::~Body() {
 
 
 void Body::randomize() {
-	_position.x= rand_float(_body_type->_limit._vmin.x, _body_type->_limit._vmax.x);
-	_position.y= rand_float(_body_type->_limit._vmin.y, _body_type->_limit._vmax.y);
-	_position.z= rand_float(_body_type->_limit._vmin.z, _body_type->_limit._vmax.z);
+	AABB sublimit(_body_type->_limit);
+	sublimit.scale(0.5f);
+
+	_position.x= rand_float(sublimit._vmin.x, sublimit._vmax.x);
+	_position.y= rand_float(sublimit._vmin.y, sublimit._vmax.y);
+	_position.z= rand_float(sublimit._vmin.z, sublimit._vmax.z);
 	_speed.x= 0.0f;
 	_speed.y= 0.0f;
 	_speed.z= 0.0f;
@@ -71,7 +75,7 @@ void Body::randomize() {
 	_acceleration.z= 0.0f;
 	_radius= rand_float(_body_type->_radius_limit[0], _body_type->_radius_limit[1]);
 	//_mass= rand_float(_body_type->_mass_limit[0], _body_type->_mass_limit[1]);
-	_mass= _radius* 1.0f;
+	_mass= _radius* 1.0f; // masse proportionnelle a la taille
 }
 
 
@@ -81,13 +85,14 @@ ThreeBody::ThreeBody() {
 }
 
 
-ThreeBody::ThreeBody(GLuint prog_draw) : _prog_draw(prog_draw), _n_bodies(0) {
+ThreeBody::ThreeBody(GLuint prog_draw) : _prog_draw(prog_draw), _n_bodies(0), _paused(false) {
 	_bodies.clear();
 
-	glGenBuffers(2, _buffers);
+	glGenBuffers(1, &_buffer);
 		
 	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
-	_diffuse_color_loc= glGetAttribLocation(_prog_draw, "color_in");
+	_color_loc= glGetAttribLocation(_prog_draw, "color_in");
+	_tex_loc= glGetAttribLocation(_prog_draw, "tex_coord_in");
 	_world2clip_loc= glGetUniformLocation(_prog_draw, "world2clip_matrix");
 }
 
@@ -125,11 +130,11 @@ Body * ThreeBody::add_body(BodyType * body_type) {
 
 
 void ThreeBody::clear_bodies() {
-	for (auto & x : _bodies) {
-		for (auto & body : x.second) {
+	for (auto & b : _bodies) {
+		for (auto & body : b.second) {
 			delete body;
 		}
-		x.second.clear();
+		b.second.clear();
 	}
 }
 
@@ -137,8 +142,8 @@ void ThreeBody::clear_bodies() {
 void ThreeBody::clear_all() {
 	clear_bodies();
 
-	for (auto & x : _bodies) {
-		delete x.first;
+	for (auto & b : _bodies) {
+		delete b.first;
 	}
 	_bodies.clear();
 
@@ -149,23 +154,13 @@ void ThreeBody::clear_all() {
 }
 
 
-/*int ThreeBody::get_body_type_idx(BodyType * body_type) {
-	for (int idx=0; idx<_body_types.size(); ++idx) {
-		if (_body_types[idx]== body_type) {
-			return idx;
-		}
-	}
-	return -1;
-}*/
-
-
 void ThreeBody::anim() {
-	if (_bodies.size()== 0) {
+	if (_paused) {
 		return;
 	}
 
-	for (auto & x : _bodies) {
-		for (auto & body : x.second) {
+	for (auto & b : _bodies) {
+		for (auto & body : b.second) {
 			body->_force.x= 0.0f; body->_force.y= 0.0f; body->_force.z= 0.0f;
 		}
 	}
@@ -193,7 +188,7 @@ void ThreeBody::anim() {
 				}
 				// trop près, collision
 				else if (overlap> 0.0f ) {
-					float force_coeff= 0.01f* overlap;
+					float force_coeff= COLLISION_FACTOR* overlap;
 					body1->_force-= force_coeff* body1tobody2;
 					body2->_force+= force_coeff* body1tobody2;
 				}
@@ -208,44 +203,34 @@ void ThreeBody::anim() {
 		}
 	}
 
-	for (auto & x : _bodies) {
-		for (auto & body : x.second) {
-			body->_force+= -1.0f* x.first->_friction* body->_speed;
+	for (auto & b : _bodies) {
+		for (auto & body : b.second) {
+			body->_force+= -1.0f* b.first->_friction* body->_speed;
 
 			float squared_force_norm= body->_force.x* body->_force.x+ body->_force.y* body->_force.y+ body->_force.z* body->_force.z;
-			if (squared_force_norm> x.first->_max_force_squared_norm) {
-				body->_force*= (x.first->_max_force_squared_norm/ squared_force_norm);
+			if (squared_force_norm> b.first->_max_force_squared_norm) {
+				body->_force*= (b.first->_max_force_squared_norm/ squared_force_norm);
 			}
 
 			body->_acceleration= (1.0f/ body->_mass)* body->_force;
 			body->_speed+= body->_acceleration;
 			body->_position+= body->_speed;
 
-			if (body->_position.x< x.first->_limit._vmin.x) {
-				body->_position.x= x.first->_limit._vmin.x;
-				body->_speed.x*= -1.0f;
-			}
-			else if (body->_position.x> x.first->_limit._vmax.x) {
-				body->_position.x= x.first->_limit._vmax.x;
-				body->_speed.x*= -1.0f;
-			}
-
-			if (body->_position.y< x.first->_limit._vmin.y) {
-				body->_position.y= x.first->_limit._vmin.y;
-				body->_speed.y*= -1.0f;
-			}
-			else if (body->_position.y> x.first->_limit._vmax.y) {
-				body->_position.y= x.first->_limit._vmax.y;
-				body->_speed.y*= -1.0f;
-			}
-
-			if (body->_position.z< x.first->_limit._vmin.z) {
-				body->_position.z= x.first->_limit._vmin.z;
-				body->_speed.z*= -1.0f;
-			}
-			else if (body->_position.z> x.first->_limit._vmax.z) {
-				body->_position.z= x.first->_limit._vmax.z;
-				body->_speed.z*= -1.0f;
+			for (int i=0; i<3; ++i) {
+				if (body->_position[i]< b.first->_limit._vmin[i]) {
+					body->_position[i]= b.first->_limit._vmin[i]+ 0.01f;
+					body->_acceleration[i]= 0.0f;
+					if (body->_speed[i]< 0.0f) {
+						body->_speed[i]*= -1.0f;
+					}
+				}
+				else if (body->_position[i]> b.first->_limit._vmax[i]) {
+					body->_position[i]= b.first->_limit._vmax[i]- 0.01f;
+					body->_acceleration[i]= 0.0f;
+					if (body->_speed[i]> 0.0f) {
+						body->_speed[i]*= -1.0f;
+					}
+				}
 			}
 		}
 	}
@@ -272,42 +257,70 @@ void ThreeBody::randomize(int n_types, AABB limit, glm::vec2 friction, glm::vec2
 			mass_limit, radius_limit
 		);
 	}
-	for (auto & x : _bodies) {
+	for (auto & b : _bodies) {
 		for (auto & y : _bodies) {
-			add_interaction(x.first, y.first, rand_float(threshold[0], threshold[1]), rand_float(attraction[0], attraction[1]), rand_float(bias[0], bias[1]));
+			add_interaction(b.first, y.first, rand_float(threshold[0], threshold[1]), rand_float(attraction[0], attraction[1]), rand_float(bias[0], bias[1]));
 		}
 	}
-	for (auto & x : _bodies) {
-		add_random_bodies(x.first, rand_int(n_bodies[0], n_bodies[1]));
+	for (auto & b : _bodies) {
+		add_random_bodies(b.first, rand_int(n_bodies[0], n_bodies[1]));
 	}
 }
 
 
 void ThreeBody::randomize_radius_per_type() {
-	for (auto & x : _bodies) {
-		float radius= rand_float(x.first->_radius_limit[0], x.first->_radius_limit[1]);
-		for (auto & body : x.second) {
+	for (auto & b : _bodies) {
+		float radius= rand_float(b.first->_radius_limit[0], b.first->_radius_limit[1]);
+		for (auto & body : b.second) {
 			body->_radius= radius;
 		}
 	}
 }
 
 
+void ThreeBody::prune_with_radius() {
+	float min_radius= 1e6;
+	float max_radius= -1e6;
+	for (auto & b : _bodies) {
+		for (auto & body : b.second) {
+			if (body->_radius> max_radius) {
+				max_radius= body->_radius;
+			}
+			if (body->_radius< min_radius) {
+				min_radius= body->_radius;
+			}
+		}
+	}
+	for (auto & b : _bodies) {
+		b.second.erase(std::remove_if(b.second.begin(), b.second.end(), [min_radius, max_radius](Body * body) {
+			float x= rand_float(0.0f, 1.1f); // si 1.0f tous les objets de radius max seront supprimés
+			return x< (body->_radius- min_radius)/ (max_radius- min_radius);
+		}), b.second.end());
+	}
+
+	/*std::cout << "\n";
+	for (auto & b : _bodies) {
+		std::cout << b.second[0]->_radius << " ; " << b.second.size() << "\n";
+	}*/
+}
+
+
 void ThreeBody::dispatch_bodies(int group_size) {
-	for (auto & x : _bodies) {
+	for (auto & b : _bodies) {
 		int compt= group_size;
 		AABB sublimit;
-		for (auto & body : x.second) {
+		for (auto & body : b.second) {
 			//std::cout << sublimit << "\n";
 			compt++;
 			if (compt>= group_size) {
 				compt= 0;
-				sublimit= x.first->_limit;
-				sublimit.scale(rand_float(0.1f, 0.4f));
+				sublimit= b.first->_limit;
+				sublimit.scale(rand_float(0.1f, 0.2f));
+				float t= 0.9f;
 				sublimit.translate(glm::vec3(
-					rand_float(-0.9f* x.first->_limit._radius, x.first->_limit._radius* 0.9f),
-					rand_float(-0.9f* x.first->_limit._radius, x.first->_limit._radius* 0.9f),
-					rand_float(-0.9f* x.first->_limit._radius, x.first->_limit._radius* 0.9f)
+					rand_float(-1.0f* t* b.first->_limit._radius, t* b.first->_limit._radius),
+					rand_float(-1.0f* t* b.first->_limit._radius, t* b.first->_limit._radius),
+					rand_float(-1.0f* t* b.first->_limit._radius, t* b.first->_limit._radius)
 				));
 			}
 			body->_position.x= rand_float(sublimit._vmin.x, sublimit._vmax.x);
@@ -319,23 +332,23 @@ void ThreeBody::dispatch_bodies(int group_size) {
 
 
 void ThreeBody::draw(const glm::mat4 & world2clip) {
-	if (_bodies.size()== 0) {
-		return;
-	}
-
 	glUseProgram(_prog_draw);
-	glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
 	
 	glEnableVertexAttribArray(_position_loc);
-	glEnableVertexAttribArray(_diffuse_color_loc);
+	glEnableVertexAttribArray(_color_loc);
+	glEnableVertexAttribArray(_tex_loc);
 
 	glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
-	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-	glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 8* sizeof(float), (void*)0);
+	glVertexAttribPointer(_color_loc, 3, GL_FLOAT, GL_FALSE, 8* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(_tex_loc, 2, GL_FLOAT, GL_FALSE, 8* sizeof(float), (void*)(6* sizeof(float)));
+	
 	glDrawArrays(GL_TRIANGLES, 0, _n_bodies* 6);
 
 	glDisableVertexAttribArray(_position_loc);
-	glDisableVertexAttribArray(_diffuse_color_loc);
+	glDisableVertexAttribArray(_color_loc);
+	glDisableVertexAttribArray(_tex_loc);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
@@ -343,67 +356,76 @@ void ThreeBody::draw(const glm::mat4 & world2clip) {
 
 
 void ThreeBody::update() {
-	if (_bodies.size()== 0) {
+	_n_bodies= 0;
+	for (auto & b : _bodies) {
+		_n_bodies+= b.second.size();
+	}
+	if (_n_bodies== 0) {
 		return;
 	}
 
-	_n_bodies= 0;
-	for (auto & x : _bodies) {
-		_n_bodies+= x.second.size();
-	}
-
-	float data[36* _n_bodies];
+	float data[48* _n_bodies];
 
 	int compt= 0;
-	for (auto & x : _bodies) {
-		for (auto & body : x.second) {
-			data[compt+ 0]= body->_position.x- body->_radius;
-			data[compt+ 1]= body->_position.y- body->_radius;
-			data[compt+ 2]= body->_position.z;
-			data[compt+ 3]= x.first->_color.x;
-			data[compt+ 4]= x.first->_color.y;
-			data[compt+ 5]= x.first->_color.z;
+	for (auto & b : _bodies) {
+		for (auto & body : b.second) {
+			data[compt++]= body->_position.x- body->_radius;
+			data[compt++]= body->_position.y- body->_radius;
+			data[compt++]= body->_position.z;
+			data[compt++]= b.first->_color.x;
+			data[compt++]= b.first->_color.y;
+			data[compt++]= b.first->_color.z;
+			data[compt++]= 0.0f;
+			data[compt++]= 0.0f;
 
-			data[compt+ 6]= body->_position.x+ body->_radius;
-			data[compt+ 7]= body->_position.y- body->_radius;
-			data[compt+ 8]= body->_position.z;
-			data[compt+ 9]= x.first->_color.x;
-			data[compt+ 10]= x.first->_color.y;
-			data[compt+ 11]= x.first->_color.z;
+			data[compt++]= body->_position.x+ body->_radius;
+			data[compt++]= body->_position.y- body->_radius;
+			data[compt++]= body->_position.z;
+			data[compt++]= b.first->_color.x;
+			data[compt++]= b.first->_color.y;
+			data[compt++]= b.first->_color.z;
+			data[compt++]= 1.0f;
+			data[compt++]= 0.0f;
 
-			data[compt+ 12]= body->_position.x+ body->_radius;
-			data[compt+ 13]= body->_position.y+ body->_radius;
-			data[compt+ 14]= body->_position.z;
-			data[compt+ 15]= x.first->_color.x;
-			data[compt+ 16]= x.first->_color.y;
-			data[compt+ 17]= x.first->_color.z;
+			data[compt++]= body->_position.x+ body->_radius;
+			data[compt++]= body->_position.y+ body->_radius;
+			data[compt++]= body->_position.z;
+			data[compt++]= b.first->_color.x;
+			data[compt++]= b.first->_color.y;
+			data[compt++]= b.first->_color.z;
+			data[compt++]= 1.0f;
+			data[compt++]= 1.0f;
 
-			data[compt+ 18]= body->_position.x- body->_radius;
-			data[compt+ 19]= body->_position.y- body->_radius;
-			data[compt+ 20]= body->_position.z;
-			data[compt+ 21]= x.first->_color.x;
-			data[compt+ 22]= x.first->_color.y;
-			data[compt+ 23]= x.first->_color.z;
+			data[compt++]= body->_position.x- body->_radius;
+			data[compt++]= body->_position.y- body->_radius;
+			data[compt++]= body->_position.z;
+			data[compt++]= b.first->_color.x;
+			data[compt++]= b.first->_color.y;
+			data[compt++]= b.first->_color.z;
+			data[compt++]= 0.0f;
+			data[compt++]= 0.0f;
 
-			data[compt+ 24]= body->_position.x+ body->_radius;
-			data[compt+ 25]= body->_position.y+ body->_radius;
-			data[compt+ 26]= body->_position.z;
-			data[compt+ 27]= x.first->_color.x;
-			data[compt+ 28]= x.first->_color.y;
-			data[compt+ 29]= x.first->_color.z;
+			data[compt++]= body->_position.x+ body->_radius;
+			data[compt++]= body->_position.y+ body->_radius;
+			data[compt++]= body->_position.z;
+			data[compt++]= b.first->_color.x;
+			data[compt++]= b.first->_color.y;
+			data[compt++]= b.first->_color.z;
+			data[compt++]= 1.0f;
+			data[compt++]= 1.0f;
 
-			data[compt+ 30]= body->_position.x- body->_radius;
-			data[compt+ 31]= body->_position.y+ body->_radius;
-			data[compt+ 32]= body->_position.z;
-			data[compt+ 33]= x.first->_color.x;
-			data[compt+ 34]= x.first->_color.y;
-			data[compt+ 35]= x.first->_color.z;
-
-			compt+= 36;
+			data[compt++]= body->_position.x- body->_radius;
+			data[compt++]= body->_position.y+ body->_radius;
+			data[compt++]= body->_position.z;
+			data[compt++]= b.first->_color.x;
+			data[compt++]= b.first->_color.y;
+			data[compt++]= b.first->_color.z;
+			data[compt++]= 0.0f;
+			data[compt++]= 1.0f;
 		}
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(data), data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -413,18 +435,34 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 	if (key== SDLK_a) {
 		clear_all();
 		
-		// color, limit, friction, max_force_squared_norm
-		BodyType * type1= add_type(glm::vec3(1.0f, 0.0f, 0.0f), 
-			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), 0.001f, 10.0f, 
-			glm::vec2(DEFAULT_MASS, DEFAULT_MASS), glm::vec2(DEFAULT_RADIUS, DEFAULT_RADIUS));
+		BodyType * type1= add_type(
+			glm::vec3(1.0f, 0.0f, 0.0f), // color
+			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), // limit
+			0.001f, // friction
+			10.0f, // max_force_squared_norm
+			glm::vec2(DEFAULT_MASS, DEFAULT_MASS), // mass_limit
+			glm::vec2(DEFAULT_RADIUS, DEFAULT_RADIUS) // radius_limit
+		);
+
+		BodyType * type2= add_type(
+			glm::vec3(0.0f, 1.0f, 0.0f), // color
+			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), // limit
+			0.001f, // friction
+			10.0f, // max_force_squared_norm
+			glm::vec2(DEFAULT_MASS, DEFAULT_MASS), // mass_limit
+			glm::vec2(DEFAULT_RADIUS, DEFAULT_RADIUS) // radius_limit
+		);
 
 		// type1, type2, threshold, attraction, bias
-		add_interaction(type1, type1, 10.0f, 0.01f, 0.1f);
+		//add_interaction(type1, type1, 10.0f, 0.01f, 0.1f);
 
 		// type, n_bodies, limit
-		add_random_bodies(type1, 50);
+		//add_random_bodies(type1, 50);
+
+		add_body(type1, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 30.0f);
+		add_body(type2, glm::vec3(10.0f, 10.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 30.0f);
 		
-		set_all_z2zero();
+		//set_all_z2zero();
 		return true;
 	}
 	else if (key== SDLK_b) {
@@ -447,58 +485,36 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 		return true;
 	}
 	else if (key== SDLK_c) {
-		clear_all();
-		
-		BodyType * type1= add_type(glm::vec3(1.0f, 0.2f, 0.1f), 
-			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), 0.001f, 10.0f,
-			glm::vec2(DEFAULT_MASS, DEFAULT_MASS), glm::vec2(DEFAULT_RADIUS, DEFAULT_RADIUS));
-		BodyType * type2= add_type(glm::vec3(0.1f, 1.0f, 0.2f), 
-			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), 0.001f, 10.0f,
-			glm::vec2(DEFAULT_MASS, DEFAULT_MASS), glm::vec2(DEFAULT_RADIUS, DEFAULT_RADIUS));
-		BodyType * type3= add_type(glm::vec3(0.3f, 0.3f, 1.0f), 
-			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), 0.001f, 10.0f,
-			glm::vec2(DEFAULT_MASS, DEFAULT_MASS), glm::vec2(DEFAULT_RADIUS, DEFAULT_RADIUS));
-		add_interaction(type1, type1, 10.0f, 0.01f, 0.1f);
-		add_interaction(type2, type2, 10.0f, -0.01f, 0.1f);
-		add_interaction(type3, type3, 10.0f, 0.01f, 0.1f);
-		add_interaction(type1, type2, 10.0f, 0.01f, 0.1f);
-		add_interaction(type2, type1, 10.0f, -0.01f, 0.1f);
-		add_interaction(type1, type3, 10.0f, -0.01f, 0.1f);
-		add_interaction(type3, type1, 10.0f, -0.01f, 0.1f);
-		add_interaction(type2, type3, 10.0f, 0.01f, 0.1f);
-		add_interaction(type3, type2, 10.0f, 0.01f, 0.1f);
-		add_random_bodies(type1, 20);
-		add_random_bodies(type2, 40);
-		add_random_bodies(type3, 80);
-		
-		set_all_z2zero();
-
-		//write_json("../data/test.json");
-		return true;
-	}
-	else if (key== SDLK_d) {
-		//read_json("../data/test.json");
-		return true;
-	}
-	else if (key== SDLK_e) {
 		randomize(
 			7, // n_types
-			AABB(glm::vec3(-50.0f), glm::vec3(50.0f)), // limit
-			glm::vec2(0.01f, 0.01f), // friction
-			glm::vec2(10.0f, 10.0f), // max_squared_norm
-			glm::vec2(1.0f, 1.0f), // mass_limit
-			glm::vec2(0.5f, 2.0f), // radius_limit
+			AABB(glm::vec3(-100.0f), glm::vec3(100.0f)), // limit
+			glm::vec2(0.01f, 0.1f), // friction
+			glm::vec2(1.0f, 1.0f), // max_squared_norm
+			glm::vec2(1.0f, 1.0f), // mass_limit (inutile pour l'instant car proportionnel a radius)
+			glm::vec2(0.5f, 8.0f), // radius_limit
 			glm::vec2(10.0f, 60.0f), // threshold
-			glm::vec2(-0.1f, 0.05f), // attraction
-			glm::vec2(1.0f, 20.0f), // bias
-			glm::ivec2(60, 60) // n_bodies
+			glm::vec2(-0.1f, 0.06f), // attraction
+			glm::vec2(1.0f, 2.0f), // bias
+			glm::ivec2(60, 90) // n_bodies
 		);
 
 		randomize_radius_per_type();
-
-		dispatch_bodies(19);
-		
+		prune_with_radius();
+		dispatch_bodies(10);
 		set_all_z2zero();
+
+		return true;
+	}
+	else if (key== SDLK_p) {
+		_paused= !_paused;
+		return true;
+	}
+	else if (key== SDLK_w) {
+		write_json("../data/test.json");
+		return true;
+	}
+	else if (key== SDLK_x) {
+		read_json("../data/test.json");
 		return true;
 	}
 
@@ -507,8 +523,8 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 
 
 void ThreeBody::set_all_z2zero() {
-	for (auto & x : _bodies) {
-		for (auto & body : x.second) {
+	for (auto & b : _bodies) {
+		for (auto & body : b.second) {
 			body->_position.z= 0.0f;
 			body->_speed.z= 0.0f;
 			body->_acceleration.z= 0.0f;
@@ -516,41 +532,46 @@ void ThreeBody::set_all_z2zero() {
 	}
 }
 
-/*
+
 void ThreeBody::read_json(std::string filepath) {
 	std::ifstream ifs(filepath);
 	json js= json::parse(ifs);
+	std::map<unsigned long, BodyType *> body_type_map;
 
 	clear_all();
 
 	for (auto & type : js["types"]) {
-		add_type(
+		BodyType * body_type= add_type(
 			glm::vec3(type["color"][0], type["color"][1], type["color"][2]), 
 			AABB(
 				glm::vec3(type["limit"][0], type["limit"][1], type["limit"][2]),
 				glm::vec3(type["limit"][3], type["limit"][4], type["limit"][5])
 			),
-			type["friction"], type["max_force_squared_norm"]
+			type["friction"], type["max_force_squared_norm"],
+			glm::vec2(type["mass_limit"][0], type["mass_limit"][1]),
+			glm::vec2(type["radius_limit"][0], type["radius_limit"][1])
 		);
+
+		for (auto & body : type["bodies"]) {
+			add_body(
+				body_type,
+				glm::vec3(body["position"][0], body["position"][1], body["position"][2]),
+				glm::vec3(body["speed"][0], body["speed"][1], body["speed"][2]),
+				glm::vec3(body["acceleration"][0], body["acceleration"][1], body["acceleration"][2]),
+				body["mass"], body["radius"]
+			);
+		}
+
+		body_type_map[type["id"]]= body_type;
 	}
 	
 	for (auto & inter : js["interactions"]) {
 		add_interaction(
-			_body_types[inter["body_type_1"]],
-			_body_types[inter["body_type_2"]],
+			body_type_map[inter["body_type_1"]],
+			body_type_map[inter["body_type_2"]],
 			inter["threshold"],
 			inter["attraction"],
 			inter["bias"]
-		);
-	}
-
-	for (auto & body : js["bodies"]) {
-		add_body(
-			_body_types[body["body_type"]],
-			glm::vec3(body["position"][0], body["position"][1], body["position"][2]),
-			glm::vec3(body["speed"][0], body["speed"][1], body["speed"][2]),
-			glm::vec3(body["acceleration"][0], body["acceleration"][1], body["acceleration"][2]),
-			body["mass"]
 		);
 	}
 }
@@ -558,44 +579,46 @@ void ThreeBody::read_json(std::string filepath) {
 
 void ThreeBody::write_json(std::string filepath) {
 	json js;
-	js["interactions"]= {};
 	js["types"]= {};
+	js["interactions"]= {};
+
+	for (auto & b : _bodies) {
+		json js_bodies;
+		for (auto & body : b.second) {
+			js_bodies.push_back({
+				{"position", {body->_position.x, body->_position.y, body->_position.z}},
+				{"speed", {body->_speed.x, body->_speed.y, body->_speed.z}},
+				{"acceleration", {body->_acceleration.x, body->_acceleration.y, body->_acceleration.z}},
+				{"mass", body->_mass},
+				{"radius", body->_radius}
+			});
+		}
+		js["types"].push_back({
+			{"id", (unsigned long)(b.first)},
+			{"color", {b.first->_color.x, b.first->_color.y, b.first->_color.z}},
+			{"limit", {
+				b.first->_limit._vmin.x, b.first->_limit._vmin.y, b.first->_limit._vmin.z, 
+				b.first->_limit._vmax.x, b.first->_limit._vmax.y, b.first->_limit._vmax.z
+			}},
+			{"friction", b.first->_friction},
+			{"max_force_squared_norm", b.first->_max_force_squared_norm},
+			{"mass_limit", {b.first->_mass_limit[0], b.first->_mass_limit[1]}},
+			{"radius_limit", {b.first->_radius_limit[0], b.first->_radius_limit[1]}},
+			{"bodies", js_bodies}
+		});
+	}
 
 	for (auto & inter : _body_interactions) {
-		int idx1= get_body_type_idx(inter->_body_type_1);
-		int idx2= get_body_type_idx(inter->_body_type_2);
 		js["interactions"].push_back({
-			{"body_type_1", idx1},
-			{"body_type_2", idx2},
+			{"body_type_1", (unsigned long)(inter->_body_type_1)},
+			{"body_type_2", (unsigned long)(inter->_body_type_2)},
 			{"threshold", inter->_threshold},
 			{"attraction", inter->_attraction},
 			{"bias", inter->_bias}
 		});
 	}
 
-	for (auto & x : _bodies) {
-		json js_bodies;
-		for (auto & body : x.second) {
-			js_bodies.push_back({
-				{"position", {body->_position.x, body->_position.y, body->_position.z}},
-				{"speed", {body->_speed.x, body->_speed.y, body->_speed.z}},
-				{"acceleration", {body->_acceleration.x, body->_acceleration.y, body->_acceleration.z}},
-				{"mass", body->_mass}
-			});
-		}
-		js["types"].push_back({
-			{"color", {x.first->_color.x, x.first->_color.y, x.first->_color.z}},
-			{"limit", {
-				x.first->_limit._vmin.x, x.first->_limit._vmin.y, x.first->_limit._vmin.z, 
-				x.first->_limit._vmax.x, x.first->_limit._vmax.y, x.first->_limit._vmax.z
-			}},
-			{"friction", x.first->_friction},
-			{"max_force_squared_norm", x.first->_max_force_squared_norm},
-			{"bodies", js_bodies}
-		});
-	}
-
 	std::ofstream ofs(filepath);
 	ofs << std::setw(4) << js << std::endl;
 }
-*/
+

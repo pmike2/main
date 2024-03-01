@@ -13,29 +13,23 @@
 #include "input_state.h"
 #include "threebody.h"
 
-// en ms; temps entre 2 anims
-const unsigned int DELTA_ANIM= 1;
 
-// dimensions écran
+const unsigned int DELTA_ANIM= 1;
 const int MAIN_WIN_WIDTH= 1280;
 const int MAIN_WIN_HEIGHT= 1024;
 const float MAIN_BCK[]= {0.2f, 0.2f, 0.2f, 1.0f};
 
+
+bool done= false;
+unsigned int val_fps, compt_fps;
+unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+GLuint prog_repere, prog_select, prog_circle;
+GLuint g_vao;
+
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
 InputState * input_state;
-
-bool done= false;
-float bck_factor= 1.0f;
-
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
-
-GLuint prog_repere, prog_select;
-GLuint g_vao;
-
 ViewSystem * view_system;
-
 ThreeBody * threebody;
 
 
@@ -113,21 +107,19 @@ void init() {
 	window= SDL_CreateWindow("3body", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
 
-	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
-	/*int x= 0;
-	glGetIntegerv(GL_MAX_PATCH_VERTICES, &x); // 32
-	cout << x << endl;*/
+	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << "\n";
 
 	SDL_GL_SetSwapInterval(1);
-	// meme couleur que le brouillard
 	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
 	glClearDepth(1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	// https://stackoverflow.com/questions/3388294/opengl-question-about-the-usage-of-gldepthmask
+	// histoires d'opacité et de depth buffer
 	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LESS);
-	//glDepthFunc(GL_LEQUAL); // ne fonctionne pas je ne sais pas pourquoi; mais necessaire pour bumpmapping et autres
-	glDepthRange(0.0f, 1.0f);
+	glDepthMask(GL_FALSE);
+	//glDepthFunc(GL_LESS);
+	//glDepthRange(0.0f, 1.0f);
 	
 	// frontfaces en counterclockwise
 	glFrontFace(GL_CCW);
@@ -139,7 +131,7 @@ void init() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glPointSize(5.0f);
+	//glPointSize(5.0f);
 	
 	SDL_GL_SwapWindow(window);
 	
@@ -155,6 +147,7 @@ void init() {
 
 	prog_repere= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
 	prog_select= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
+	prog_circle= create_prog("../../shaders/vertexshader_circle.txt", "../../shaders/fragmentshader_circle.txt");
 
 	check_gl_error();
 	
@@ -167,14 +160,14 @@ void init() {
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
-	threebody= new ThreeBody(prog_repere);
+	threebody= new ThreeBody(prog_circle);
 }
 
 
 void draw() {
 	compt_fps++;
 
-	glClearColor(MAIN_BCK[0]* bck_factor, MAIN_BCK[1]* bck_factor, MAIN_BCK[2]* bck_factor, MAIN_BCK[3]);
+	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->draw();

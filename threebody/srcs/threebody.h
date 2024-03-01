@@ -18,7 +18,8 @@
 
 
 const float DEFAULT_MASS= 1.0f;
-const float DEFAULT_RADIUS= 0.1f;
+const float DEFAULT_RADIUS= 1.0f;
+const float COLLISION_FACTOR= 0.001f;
 
 
 class BodyType {
@@ -88,21 +89,23 @@ public:
 		glm::vec2 mass_limit, glm::vec2 radius_limit, glm::vec2 threshold, glm::vec2 attraction, 
 		glm::vec2 bias, glm::ivec2 n_bodies);
 	void randomize_radius_per_type();
+	void prune_with_radius();
 	void dispatch_bodies(int group_size);
 	void draw(const glm::mat4 & world2clip);
 	void update();
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	void set_all_z2zero();
-	//void read_json(std::string filepath);
-	//void write_json(std::string filepath);
+	void read_json(std::string filepath);
+	void write_json(std::string filepath);
 
 
 	std::map<BodyType *, std::vector<Body *> > _bodies;
 	std::vector<BodyInteraction *> _body_interactions;
+	bool _paused;
 
 	GLuint _prog_draw;
-	GLint _world2clip_loc, _position_loc, _diffuse_color_loc;
-	GLuint _buffers[2];
+	GLint _world2clip_loc, _position_loc, _color_loc, _tex_loc;
+	GLuint _buffer;
 	unsigned int _n_bodies;
 };
 
