@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>test</title>
+		
+		<link rel="stylesheet" href="threebody.css">
+		
+		<script src="/usr/local/lib/node_modules/socket.io/client-dist/socket.io.js"></script>
+		
+		<script type="module">
+			var bodies_types= [];
+			var button_add_type, button_clear_types, div_bodies, div_selected_body;
+			//var selected_body_type= -1;
+
+			
+			function sync_body_types() {
+				let inner= "";
+				for (let i=0; i<bodies_types.length; ++i) {
+					let r= bodies_types[i].color[0]* 255;
+					let g= bodies_types[i].color[1]* 255;
+					let b= bodies_types[i].color[2]* 255;
+					inner+= "<span id='body_type_"+ i+ "' class='rect_body' style='background-color:rgb("+ r+ ", "+ g+ ", "+ b+ ")'></span>";
+				}
+				div_bodies.innerHTML= inner;
+				
+				for (let i=0; i<bodies_types.length; ++i) {
+					document.getElementById("body_type_"+ i).addEventListener("click", () => {
+						sync_selected_body_type(i);
+
+					});
+				}
+			}
+
+
+			function sync_selected_body_type(i) {
+				let inner= "";
+				
+				div_selected_body.innerHTML= inner;
+			}
+
+
+			window.onload= function () {
+				button_add_type= document.createElement("button");
+				button_clear_types= document.createElement("button");
+				div_bodies= document.createElement("div");
+				div_selected_body= document.createElement("div");
+
+				button_add_type.innerHTML= "add type";
+				button_add_type.addEventListener("click", () => {
+					bodies_types.push({
+						"color" : [Math.random(), Math.random(), Math.random()],
+						"friction" : Math.random(),
+						"max_force_squared_norm" : Math.random(),
+						"mass_limit" : [0, 0],
+						"radius_limit" : [0, 0]
+					});
+					sync_body_types();
+				});
+
+				button_clear_types.innerHTML= "clear types";
+				button_clear_types.addEventListener("click", () => {
+					bodies_types= [];
+					sync_body_types();
+				});
+
+				document.body.appendChild(button_add_type);
+				document.body.appendChild(button_clear_types);
+				document.body.appendChild(div_bodies);
+				document.body.appendChild(div_selected_body);
+			}
+
+		</script>
+	</head>
+	<body></body>
+</html>
