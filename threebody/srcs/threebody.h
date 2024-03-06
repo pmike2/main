@@ -13,6 +13,8 @@
 
 #include "json.hpp"
 
+#include "sio_client.h"
+
 #include "input_state.h"
 #include "bbox.h"
 
@@ -95,7 +97,8 @@ public:
 	void update();
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	void set_all_z2zero();
-	void read_json(std::string filepath);
+	void read_json_file(std::string filepath);
+	void read_json(nlohmann::json js);
 	void write_json(std::string filepath);
 
 
@@ -107,6 +110,7 @@ public:
 	GLint _world2clip_loc, _position_loc, _color_loc, _tex_loc;
 	GLuint _buffer;
 	unsigned int _n_bodies;
+	sio::client _io;
 };
 
 #endif

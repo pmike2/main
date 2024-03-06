@@ -262,12 +262,9 @@ void clean() {
 
 
 int main() {
-	//test1();
-
 	init();
 	main_loop();
 	clean();
-
 
 	return 0;
 }

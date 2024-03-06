@@ -1,0 +1,34 @@
+.rect_body {
+	width:100px;
+	height:100px;
+	margin-right: 10px;
+	margin-top: 5px;
+	display:inline-block;
+}
+
+
+.rect_inter {
+	width:50px;
+	height:50px;
+	margin-right: 10px;
+	margin-top: 5px;
+	display:inline-block;
+}
+
+
+.div_inter {
+	margin-right: 30px;
+	display:inline-block;
+}
+
+
+fieldset {
+	/*width: 200px;*/
+	display:inline-block;
+	border: 0px;
+}
+
+
+label {
+	margin-right: 10px;
+}

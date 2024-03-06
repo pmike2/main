@@ -94,6 +94,21 @@ ThreeBody::ThreeBody(GLuint prog_draw) : _prog_draw(prog_draw), _n_bodies(0), _p
 	_color_loc= glGetAttribLocation(_prog_draw, "color_in");
 	_tex_loc= glGetAttribLocation(_prog_draw, "tex_coord_in");
 	_world2clip_loc= glGetUniformLocation(_prog_draw, "world2clip_matrix");
+
+	// sera appelé quand la connection sera établie
+	_io.set_open_listener([&]() {
+		_io.socket()->on("data", 
+		[&](sio::event& ev) {
+			std::string msg= ev.get_message()->get_string();
+			// std::cout << msg << "\n";
+			json js= json::parse(msg);
+			//std::cout << js["bodies_types"][0]["friction"] << "\n";
+			read_json(js);
+		});
+	});
+
+	_io.connect("http://127.0.0.1:3001");
+
 }
 
 
@@ -533,9 +548,7 @@ void ThreeBody::set_all_z2zero() {
 }
 
 
-void ThreeBody::read_json(std::string filepath) {
-	std::ifstream ifs(filepath);
-	json js= json::parse(ifs);
+void ThreeBody::read_json(json js) {
 	std::map<unsigned long, BodyType *> body_type_map;
 
 	clear_all();
@@ -574,6 +587,13 @@ void ThreeBody::read_json(std::string filepath) {
 			inter["bias"]
 		);
 	}
+}
+
+
+void ThreeBody::read_json_file(std::string filepath) {
+	std::ifstream ifs(filepath);
+	json js= json::parse(ifs);
+	read_json(js);
 }
 
 
@@ -621,4 +641,3 @@ void ThreeBody::write_json(std::string filepath) {
 	std::ofstream ofs(filepath);
 	ofs << std::setw(4) << js << std::endl;
 }
-
