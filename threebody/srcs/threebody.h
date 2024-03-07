@@ -19,15 +19,14 @@
 #include "bbox.h"
 
 
-const float DEFAULT_MASS= 1.0f;
-const float DEFAULT_RADIUS= 1.0f;
 const float COLLISION_FACTOR= 0.001f;
+const float COEFF_RADIUS2MASS= 0.1f;
 
 
 class BodyType {
 public:
 	BodyType();
-	BodyType(glm::vec3 color, AABB limit, float friction, float max_force_squared_norm, glm::vec2 mass_limit, glm::vec2 radius_limit);
+	BodyType(glm::vec3 color, AABB limit, float friction, float max_force_squared_norm, float radius);
 	~BodyType();
 
 	
@@ -35,8 +34,8 @@ public:
 	AABB _limit;
 	float _friction;
 	float _max_force_squared_norm;
-	glm::vec2 _mass_limit;
-	glm::vec2 _radius_limit;
+	float _mass;
+	float _radius;
 };
 
 
@@ -59,7 +58,7 @@ class Body {
 public:
 	Body();
 	Body(BodyType * body_type);
-	Body(BodyType * body_type, glm::vec3 position, glm::vec3 speed, glm::vec3 acceleration, float mass, float radius);
+	Body(BodyType * body_type, glm::vec3 position, glm::vec3 speed, glm::vec3 acceleration);
 	~Body();
 	void randomize();
 
@@ -69,8 +68,8 @@ public:
 	glm::vec3 _speed;
 	glm::vec3 _acceleration;
 	glm::vec3 _force;
-	float _mass;
-	float _radius;
+	//float _mass;
+	//float _radius;
 };
 
 
@@ -79,20 +78,13 @@ public:
 	ThreeBody();
 	ThreeBody(GLuint prog_draw);
 	~ThreeBody();
-	BodyType * add_type(glm::vec3 color, AABB limit, float friction, float max_force_squared_norm, glm::vec2 mass_limit, glm::vec2 radius_limit);
+	BodyType * add_type(glm::vec3 color, AABB limit, float friction, float max_force_squared_norm, float radius);
 	BodyInteraction * add_interaction(BodyType * body_type_1, BodyType * body_type_2, float threshold, float attraction, float bias);
-	Body * add_body(BodyType * body_type, glm::vec3 position, glm::vec3 speed, glm::vec3 acceleration, float mass, float radius);
+	Body * add_body(BodyType * body_type, glm::vec3 position, glm::vec3 speed, glm::vec3 acceleration);
 	Body * add_body(BodyType * body_type);
 	void clear_bodies();
 	void clear_all();
 	void anim();
-	void add_random_bodies(BodyType * body_type, unsigned int n_bodies);
-	void randomize(int n_types, AABB limit, glm::vec2 friction, glm::vec2 max_force_squared_norm, 
-		glm::vec2 mass_limit, glm::vec2 radius_limit, glm::vec2 threshold, glm::vec2 attraction, 
-		glm::vec2 bias, glm::ivec2 n_bodies);
-	void randomize_radius_per_type();
-	void prune_with_radius();
-	void dispatch_bodies(int group_size);
 	void draw(const glm::mat4 & world2clip);
 	void update();
 	bool key_down(InputState * input_state, SDL_Keycode key);
@@ -100,6 +92,13 @@ public:
 	void read_json_file(std::string filepath);
 	void read_json(nlohmann::json js);
 	void write_json(std::string filepath);
+	void add_random_bodies(BodyType * body_type, unsigned int n_bodies);
+	void add_random_bodies(glm::vec2 n_bodies);
+	void randomize(int n_types, AABB limit, glm::vec2 friction, glm::vec2 max_force_squared_norm, 
+		glm::vec2 radius, glm::vec2 threshold, glm::vec2 attraction, glm::vec2 bias);
+	//void randomize_radius_per_type();
+	//void prune_with_radius();
+	void dispatch_bodies(int group_size);
 
 
 	std::map<BodyType *, std::vector<Body *> > _bodies;

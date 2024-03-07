@@ -1,8 +1,7 @@
 .rect_body {
+	margin-right: 10px;
 	width:100px;
 	height:100px;
-	margin-right: 10px;
-	margin-top: 5px;
 	display:inline-block;
 }
 
@@ -10,25 +9,42 @@
 .rect_inter {
 	width:50px;
 	height:50px;
-	margin-right: 10px;
-	margin-top: 5px;
 	display:inline-block;
 }
 
 
 .div_inter {
-	margin-right: 30px;
+	margin-right: 10px;
 	display:inline-block;
+	padding: 0px;
+}
+
+
+.body_type_selected {
+	border: 5px solid;
+	border-color: rgb(200, 197, 0);
+}
+
+
+.inter_selected {
+	border: 5px solid;
+	border-color: rgb(200, 197, 0);
 }
 
 
 fieldset {
 	/*width: 200px;*/
-	display:inline-block;
+	/*display:inline-block;*/
 	border: 0px;
 }
 
 
-label {
+input {
+	margin-left: 10px;
+	margin-right: 10px;
+}
+
+
+button {
 	margin-right: 10px;
 }

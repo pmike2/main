@@ -20,6 +20,11 @@
 			const ATTRACTION_MAX= 2.0;
 			const BIAS_MIN= 1.0;
 			const BIAS_MAX= 1000.0;
+			const LIMIT_MIN= -120.0;
+			const LIMIT_MAX= 120.0;
+			const N_BODIES_MIN= 5;
+			const N_BODIES_MAX= 200;
+			const MIN_LIMIT_SIZE= 20.0;
 
 
 			var bodies_types= [];
@@ -39,6 +44,27 @@
 			}
 
 
+			function decorate_inputs(div) {
+				let inputs= div.getElementsByTagName('input');
+				for (let i=0; i<inputs.length; ++i) {
+					if (inputs[i].getAttribute("type")!= "range") {
+						continue;
+					}
+					let name= inputs[i].getAttribute("name");
+					let label= document.createElement("label");
+					let output= document.createElement("output");
+					let br= document.createElement("br");
+					label.setAttribute("for", name);
+					label.innerHTML= name;
+					output.innerHTML= parseFloat(inputs[i].value).toFixed(3);
+					inputs[i].parentNode.insertBefore(label, inputs[i]);
+					inputs[i].after(output);
+					output.after(br);
+					inputs[i].setAttribute("oninput", "this.nextElementSibling.value = parseFloat(this.value).toFixed(3)");
+				}
+			}
+
+
 			function sync_colors() {
 				for (let idx_body_type=0; idx_body_type<bodies_types.length; ++idx_body_type) {
 					let r= bodies_types[idx_body_type].color[0]* 255;
@@ -48,8 +74,8 @@
 				}
 
 				for (let idx_inter=0; idx_inter<bodies_interactions.length; ++idx_inter) {
-					let idx_body_type_1= bodies_interactions[idx_inter].idx_type_1;
-					let idx_body_type_2= bodies_interactions[idx_inter].idx_type_2;
+					let idx_body_type_1= bodies_interactions[idx_inter].body_type_1;
+					let idx_body_type_2= bodies_interactions[idx_inter].body_type_2;
 					let r1= bodies_types[idx_body_type_1].color[0]* 255;
 					let g1= bodies_types[idx_body_type_1].color[1]* 255;
 					let b1= bodies_types[idx_body_type_1].color[2]* 255;
@@ -62,6 +88,65 @@
 			}
 
 
+			function limit_valid() {
+				const limit= [["xmin", "xmax"], ["ymin", "ymax"], ["zmin", "zmax"]];
+
+				for (let i=0; i<limit.length; ++i) {
+					let min_element= document.getElementById("body_type_"+ limit[i][0]);
+					let max_element= document.getElementById("body_type_"+ limit[i][1]);
+					let min= parseFloat(min_element.value);
+					let max= parseFloat(max_element.value);
+					if (max- min< MIN_LIMIT_SIZE) {
+						if (min+ MIN_LIMIT_SIZE< LIMIT_MAX) {
+							max_element.value= min+ MIN_LIMIT_SIZE;
+							max_element.nextElementSibling.value= parseFloat(max_element.value).toFixed(3);
+						}
+						else {
+							min_element.value= max- MIN_LIMIT_SIZE;
+							min_element.nextElementSibling.value= parseFloat(min_element.value).toFixed(3);
+						}
+					}
+				}
+			}
+
+
+			function randomize(idx_body_type) {
+				bodies_types[idx_body_type].color= [Math.random(), Math.random(), Math.random()];
+				bodies_types[idx_body_type].friction= rand(FRICTION_MIN, FRICTION_MAX);
+				bodies_types[idx_body_type].max_force_squared_norm= rand(MAX_FORCE_SQUARED_NORM_MIN, MAX_FORCE_SQUARED_NORM_MAX);
+				bodies_types[idx_body_type].radius= rand(RADIUS_MIN, RADIUS_MAX);
+				bodies_types[idx_body_type].n_bodies= Math.ceil(rand(N_BODIES_MIN, N_BODIES_MAX));
+				let xmin= rand(LIMIT_MIN, LIMIT_MAX- MIN_LIMIT_SIZE);
+				let xmax= rand(xmin+ MIN_LIMIT_SIZE, LIMIT_MAX);
+				let ymin= rand(LIMIT_MIN, LIMIT_MAX- MIN_LIMIT_SIZE);
+				let ymax= rand(ymin+ MIN_LIMIT_SIZE, LIMIT_MAX);
+				let zmin= rand(LIMIT_MIN, LIMIT_MAX- MIN_LIMIT_SIZE);
+				let zmax= rand(zmin+ MIN_LIMIT_SIZE, LIMIT_MAX);
+				bodies_types[idx_body_type].limit= [xmin, ymin, zmin, xmax, ymax, zmax];
+			}
+
+
+			function delete_body_type(idx_body_type) {
+				bodies_types.splice(idx_body_type, 1);
+				
+				if (bodies_types.length== 0) {
+					bodies_interactions= [];
+					return;
+				}
+
+				for (let idx_inter=0; idx_inter<bodies_interactions.length; ++idx_inter) {
+					let idx_body_type_1= bodies_interactions[idx_inter].body_type_1;
+					let idx_body_type_2= bodies_interactions[idx_inter].body_type_2;
+					if (idx_body_type_1== idx_body_type) {
+						bodies_interactions[idx_inter].body_type_1= 0;
+					}
+					if (idx_body_type_2== idx_body_type) {
+						bodies_interactions[idx_inter].body_type_2= 0;
+					}
+				}
+			}
+
+
 			function sync_body_types() {
 				let inner= "";
 				
@@ -69,7 +154,7 @@
 					let r= bodies_types[idx_body_type].color[0]* 255;
 					let g= bodies_types[idx_body_type].color[1]* 255;
 					let b= bodies_types[idx_body_type].color[2]* 255;
-					inner+= "<span id='body_type_"+ idx_body_type+ "' class='rect_body' style='background-color:rgb("+ r+ ", "+ g+ ", "+ b+ ")'></span>";
+					inner+= "<div id='body_type_"+ idx_body_type+ "' class='rect_body' style='background-color:rgb("+ r+ ", "+ g+ ", "+ b+ ")'></div>";
 				}
 				div_bodies.innerHTML= inner;
 				
@@ -96,17 +181,17 @@
 				let inner= "";
 
 				for (let idx_inter=0; idx_inter<bodies_interactions.length; ++idx_inter) {
-					let idx_body_type_1= bodies_interactions[idx_inter].idx_type_1;
-					let idx_body_type_2= bodies_interactions[idx_inter].idx_type_2;
+					let idx_body_type_1= bodies_interactions[idx_inter].body_type_1;
+					let idx_body_type_2= bodies_interactions[idx_inter].body_type_2;
 					let r1= bodies_types[idx_body_type_1].color[0]* 255;
 					let g1= bodies_types[idx_body_type_1].color[1]* 255;
 					let b1= bodies_types[idx_body_type_1].color[2]* 255;
 					let r2= bodies_types[idx_body_type_2].color[0]* 255;
 					let g2= bodies_types[idx_body_type_2].color[1]* 255;
 					let b2= bodies_types[idx_body_type_2].color[2]* 255;
-					inner+= "<div class='div_inter'>";
-					inner+= "<span id='inter_"+ idx_inter+ "_1' class='rect_inter' style='background-color:rgb("+ r1+ ", "+ g1+ ", "+ b1+ ")'></span>";
-					inner+= "<span id='inter_"+ idx_inter+ "_2' class='rect_inter' style='background-color:rgb("+ r2+ ", "+ g2+ ", "+ b2+ ")'></span>";
+					inner+= "<div id='inter_"+ idx_inter+ "' class='div_inter'>";
+					inner+= "<div id='inter_"+ idx_inter+ "_1' class='rect_inter' style='background-color:rgb("+ r1+ ", "+ g1+ ", "+ b1+ ")'></div>";
+					inner+= "<div id='inter_"+ idx_inter+ "_2' class='rect_inter' style='background-color:rgb("+ r2+ ", "+ g2+ ", "+ b2+ ")'></div>";
 					inner+= "</div>";
 				}
 
@@ -129,109 +214,132 @@
 
 			function sync_selected_body_type(idx_body_type) {
 				let inner= '';
-				let color_components= ["red", "green", "blue"];
-				inner+= '<div>';
+				const color_components= ["red", "green", "blue"];
+				const limit= ["xmin", "ymin", "zmin", "xmax", "ymax", "zmax"];
+
+				let children= div_bodies.childNodes;
+				for (let i=0; i<children.length; ++i) {
+					if (children[i].id== "body_type_"+ idx_body_type) {
+						children[i].classList.add("body_type_selected");
+					}
+					else {
+						children[i].classList.remove("body_type_selected");
+					}
+				}
+				
+				inner+= '<button id="randomize">randomize</button>';
+				inner+= '<button id="delete">delete</button>';
+				inner+= "<br>";
 				for (let i=0; i<3; ++i) {
 					inner+= '<input type="range" id="body_type_'+ idx_body_type+ '_'+ color_components[i]+ '" name="'+ color_components[i]+ '" min="0" max="1" value="'+ bodies_types[idx_body_type].color[i]+ '" step="any" />';
-					inner+= '<label for="'+ color_components[i]+ '">'+ color_components[i]+ '</label>';
 				}
-				inner+= '</div>';
-				inner+= '<div>';
-				inner+= '<input type="range" id="body_type_'+ idx_body_type+ '_friction'+ '" name="friction" min="'+ FRICTION_MIN+ '" max="'+ FRICTION_MAX+ '" value="'+ bodies_types[idx_body_type].friction+ '" step="any" />';
-				inner+= '<label for="friction">friction</label>';
-				inner+= '<input type="range" id="body_type_'+ idx_body_type+ '_max_force_squared_norm'+ '" name="max_force_squared_norm" min="'+ MAX_FORCE_SQUARED_NORM_MIN+ '" max="'+ MAX_FORCE_SQUARED_NORM_MAX+ '" value="'+ bodies_types[idx_body_type].max_force_squared_norm+ '" step="any" />';
-				inner+= '<label for="max_force_squared_norm">max_force_squared_norm</label>';
-				inner+= '<input type="range" id="body_type_'+ idx_body_type+ '_radius'+ '" name="radius" min="'+ RADIUS_MIN+ '" max="'+ RADIUS_MAX+ '" value="'+ bodies_types[idx_body_type].radius+ '" step="any" />';
-				inner+= '<label for="radius">radius</label>';
-				inner+= '</div>';
+				for (let i=0; i<6; ++i) {
+					inner+= '<input type="range" id="body_type_'+ limit[i]+ '" name="'+ limit[i]+ '" min="'+ LIMIT_MIN+ '" max="'+ LIMIT_MAX+ '" value="'+ bodies_types[idx_body_type].limit[i]+ '" step="any" />';
+				}
+				inner+= '<input type="range" id="body_type_friction" name="friction" min="'+ FRICTION_MIN+ '" max="'+ FRICTION_MAX+ '" value="'+ bodies_types[idx_body_type].friction+ '" step="any" />';
+				inner+= '<input type="range" id="body_type_max_force_squared_norm" name="max_force_squared_norm" min="'+ MAX_FORCE_SQUARED_NORM_MIN+ '" max="'+ MAX_FORCE_SQUARED_NORM_MAX+ '" value="'+ bodies_types[idx_body_type].max_force_squared_norm+ '" step="any" />';
+				inner+= '<input type="range" id="body_type_radius" name="radius" min="'+ RADIUS_MIN+ '" max="'+ RADIUS_MAX+ '" value="'+ bodies_types[idx_body_type].radius+ '" step="any" />';
+				inner+= '<input type="range" id="body_type_n_bodies" name="n_bodies" min="'+ N_BODIES_MIN+ '" max="'+ N_BODIES_MAX+ '" value="'+ bodies_types[idx_body_type].n_bodies+ '" step="1" />';
 				
 				div_selected_body.innerHTML= inner;
+				decorate_inputs(div_selected_body);
+
+				document.getElementById("randomize").addEventListener("click", function () {
+					randomize(idx_body_type);
+					sync_selected_body_type(idx_body_type);
+					sync_colors();
+					emit();
+				});
 				
+				document.getElementById("delete").addEventListener("click", function () {
+					delete_body_type(idx_body_type);
+					sync_body_types();
+					sync_bodies_interactions();
+					emit();
+				});
+
 				for (let i=0; i<3; ++i) {
 					document.getElementById("body_type_"+ idx_body_type+ "_"+ color_components[i]).addEventListener("change", function() {
-						bodies_types[idx_body_type].color[i]= this.value;
+						bodies_types[idx_body_type].color[i]= parseFloat(this.value);
 						sync_colors();
 						emit();
 					});
 				}
-				document.getElementById("body_type_"+ idx_body_type+ "_friction").addEventListener("change", function() {
-					bodies_types[idx_body_type].friction= this.value;
-					emit();
-				});
-				document.getElementById("body_type_"+ idx_body_type+ "_max_force_squared_norm").addEventListener("change", function() {
-					bodies_types[idx_body_type].max_force_squared_norm= this.value;
-					emit();
-				});
-				document.getElementById("body_type_"+ idx_body_type+ "_radius").addEventListener("change", function() {
-					bodies_types[idx_body_type].radius= this.value;
-					emit();
-				});
+				for (let i=0; i<6; ++i) {
+					document.getElementById("body_type_"+ limit[i]).addEventListener("change", function() {
+						limit_valid();
+						bodies_types[idx_body_type].limit[i]= parseFloat(this.value);
+						emit();
+					});
+				}
+				const keys= ["friction", "max_force_squared_norm", "radius", "n_bodies"];
+				for (let i=0; i<keys.length; ++i) {
+					document.getElementById("body_type_"+ keys[i]).addEventListener("change", function() {
+						bodies_types[idx_body_type][keys[i]]= parseFloat(this.value);
+						emit();
+					});
+				}
 			}
 
 
 			function sync_selected_interaction(idx_inter) {
 				let inner= "";
 
-				inner+= "<div>";
+				let children= div_interactions.childNodes;
+				for (let i=0; i<children.length; ++i) {
+					if (children[i].id== "inter_"+ idx_inter) {
+						children[i].classList.add("inter_selected");
+					}
+					else {
+						children[i].classList.remove("inter_selected");
+					}
+				}
+
 				inner+= "<fieldset>";
 				inner+= "<legend>idx1</legend>";
 				for (let idx_body_type=0; idx_body_type<bodies_types.length; ++idx_body_type) {
-					let radio_id= "interidx1_"+ idx_inter+ "_"+ idx_body_type;
-					inner+= "<input type='radio' id='"+ radio_id+ "' name='interidx1_"+ idx_inter+ "' value="+ idx_body_type+ ">";
-					inner+= "<label for='"+ radio_id+ "'>"+ idx_body_type+ "</label>";
+					inner+= "<input type='radio' id='interidx1_"+ idx_body_type+ "' name='idx1' value="+ idx_body_type+ ">";
 				}
 				inner+= "</fieldset>";
 				
 				inner+= "<fieldset>";
 				inner+= "<legend>idx2</legend>";
 				for (let idx_body_type=0; idx_body_type<bodies_types.length; ++idx_body_type) {
-					let radio_id= "interidx2_"+ idx_inter+ "_"+ idx_body_type;
-					inner+= "<input type='radio' id='"+ radio_id+ "' name='interidx2_"+ idx_inter+ "' value="+ idx_body_type+ ">";
-					inner+= "<label for='"+ radio_id+ "'>"+ idx_body_type+ "</label>";
+					inner+= "<input type='radio' id='interidx2_"+ idx_body_type+ "' name='idx2' value="+ idx_body_type+ ">";
 				}
 				inner+= "</fieldset>";
-				inner+= "</div>";
 
-				inner+= '<input type="range" id="inter_'+ idx_inter+ '_threshold'+ '" name="threshold" min="'+ THRESHOLD_MIN+ '" max="'+ THRESHOLD_MAX+ '" value="'+ bodies_interactions[idx_inter].threshold+ '" step="any" />';
-				inner+= '<label for="threshold">threshold</label>';
-				inner+= '<input type="range" id="inter_'+ idx_inter+ '_attraction'+ '" name="attraction" min="'+ ATTRACTION_MIN+ '" max="'+ ATTRACTION_MAX+ '" value="'+ bodies_interactions[idx_inter].attraction+ '" step="any" />';
-				inner+= '<label for="attraction">attraction</label>';
-				inner+= '<input type="range" id="inter_'+ idx_inter+ '_bias'+ '" name="threshold" min="'+ BIAS_MIN+ '" max="'+ BIAS_MAX+ '" value="'+ bodies_interactions[idx_inter].bias+ '" step="any" />';
-				inner+= '<label for="bias">bias</label>';
+				inner+= '<input type="range" id="inter_threshold" name="threshold" min="'+ THRESHOLD_MIN+ '" max="'+ THRESHOLD_MAX+ '" value="'+ bodies_interactions[idx_inter].threshold+ '" step="any" />';
+				inner+= '<input type="range" id="inter_attraction" name="attraction" min="'+ ATTRACTION_MIN+ '" max="'+ ATTRACTION_MAX+ '" value="'+ bodies_interactions[idx_inter].attraction+ '" step="any" />';
+				inner+= '<input type="range" id="inter_bias" name="bias" min="'+ BIAS_MIN+ '" max="'+ BIAS_MAX+ '" value="'+ bodies_interactions[idx_inter].bias+ '" step="any" />';
 
 				div_selected_interaction.innerHTML= inner;
+				decorate_inputs(div_selected_interaction);
 
-				let radio_id1_checked= "interidx1_"+ idx_inter+ "_"+ bodies_interactions[idx_inter].idx_type_1;
+				let radio_id1_checked= "interidx1_"+ bodies_interactions[idx_inter].body_type_1;
 				document.getElementById(radio_id1_checked).checked= true;
-				let radio_id2_checked= "interidx2_"+ idx_inter+ "_"+ bodies_interactions[idx_inter].idx_type_2;
+				let radio_id2_checked= "interidx2_"+ bodies_interactions[idx_inter].body_type_2;
 				document.getElementById(radio_id2_checked).checked= true;
 				
 				for (let idx_body_type=0; idx_body_type<bodies_types.length; ++idx_body_type) {
-					let radio_id1= "interidx1_"+ idx_inter+ "_"+ idx_body_type;
-					document.getElementById(radio_id1).addEventListener("click", () => {
-						bodies_interactions[idx_inter].idx_type_1= idx_body_type;
+					document.getElementById("interidx1_"+ idx_body_type).addEventListener("click", () => {
+						bodies_interactions[idx_inter].body_type_1= idx_body_type;
 						sync_colors();
 						emit();
 					});
-					let radio_id2= "interidx2_"+ idx_inter+ "_"+ idx_body_type;
-					document.getElementById(radio_id2).addEventListener("click", () => {
-						bodies_interactions[idx_inter].idx_type_2= idx_body_type;
+					document.getElementById("interidx2_"+ idx_body_type).addEventListener("click", () => {
+						bodies_interactions[idx_inter].body_type_2= idx_body_type;
 						sync_colors();
 						emit();
 					});
 				}
-				document.getElementById("inter_"+ idx_inter+ "_threshold").addEventListener("change", function() {
-					bodies_interactions[idx_inter].threshold= this.value;
-					emit();
-				});
-				document.getElementById("inter_"+ idx_inter+ "_attraction").addEventListener("change", function() {
-					bodies_interactions[idx_inter].attraction= this.value;
-					emit();
-				});
-				document.getElementById("inter_"+ idx_inter+ "_bias").addEventListener("change", function() {
-					bodies_interactions[idx_inter].bias= this.value;
-					emit();
-				});
+				const keys= ["threshold", "attraction", "bias"];
+				for (let i=0; i<keys.length; ++i) {
+					document.getElementById("inter_"+ keys[i]).addEventListener("change", function() {
+						bodies_interactions[idx_inter][keys[i]]= parseFloat(this.value);
+						emit();
+					});
+				}
 			}
 
 
@@ -248,11 +356,15 @@
 				button_add_type.innerHTML= "add type";
 				button_add_type.addEventListener("click", () => {
 					bodies_types.push({
-						"color" : [Math.random(), Math.random(), Math.random()],
-						"friction" : rand(FRICTION_MIN, FRICTION_MAX),
-						"max_force_squared_norm" : rand(MAX_FORCE_SQUARED_NORM_MIN, MAX_FORCE_SQUARED_NORM_MAX),
-						"radius" : rand(RADIUS_MIN, RADIUS_MAX)
+						"id" : bodies_types.length,
+						"color" : null,
+						"friction" : null,
+						"max_force_squared_norm" : null,
+						"radius" : null,
+						"limit" : null,
+						"n_bodies" : null
 					});
+					randomize(bodies_types.length- 1);
 					sync_body_types();
 					emit();
 				});
@@ -269,8 +381,8 @@
 				button_add_interaction.addEventListener("click", () => {
 					if (bodies_types.length> 0) {
 						bodies_interactions.push({
-							"idx_type_1" : 0,
-							"idx_type_2" : 0,
+							"body_type_1" : 0,
+							"body_type_2" : 0,
 							"threshold" : rand(THRESHOLD_MIN, THRESHOLD_MAX),
 							"attraction" : rand(ATTRACTION_MIN, ATTRACTION_MAX),
 							"bias" : rand(BIAS_MIN, BIAS_MAX)
