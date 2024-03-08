@@ -31,6 +31,7 @@ SDL_GLContext main_context;
 InputState * input_state;
 ViewSystem * view_system;
 ThreeBody * threebody;
+sio::client io;
 
 
 
@@ -161,6 +162,17 @@ void init() {
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
 	threebody= new ThreeBody(prog_circle);
+
+	io.set_open_listener([&]() {
+		io.socket()->on("data", [&](sio::event& ev) {
+			std::cout << "msg received\n";
+			std::string msg= ev.get_message()->get_string();
+			std::cout << msg << "\n";
+			threebody->read_json(msg);
+			threebody->set_all_z2zero();
+		});
+	});
+	io.connect("http://127.0.0.1:3001");
 }
 
 

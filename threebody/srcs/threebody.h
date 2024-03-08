@@ -21,6 +21,7 @@
 
 const float COLLISION_FACTOR= 0.001f;
 const float COEFF_RADIUS2MASS= 0.1f;
+const bool DEBUG= false;
 
 
 class BodyType {
@@ -91,6 +92,7 @@ public:
 	void set_all_z2zero();
 	void read_json_file(std::string filepath);
 	void read_json(nlohmann::json js);
+	void read_json(std::string s);
 	void write_json(std::string filepath);
 	void add_random_bodies(BodyType * body_type, unsigned int n_bodies);
 	void add_random_bodies(glm::vec2 n_bodies);
@@ -109,7 +111,8 @@ public:
 	GLint _world2clip_loc, _position_loc, _color_loc, _tex_loc;
 	GLuint _buffer;
 	unsigned int _n_bodies;
-	sio::client _io;
+	//sio::client _io;
+	//std::mutex _lock;
 };
 
 #endif

@@ -86,8 +86,6 @@ ThreeBody::ThreeBody() {
 
 
 ThreeBody::ThreeBody(GLuint prog_draw) : _prog_draw(prog_draw), _n_bodies(0), _paused(false) {
-	_bodies.clear();
-
 	glGenBuffers(1, &_buffer);
 		
 	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
@@ -96,9 +94,10 @@ ThreeBody::ThreeBody(GLuint prog_draw) : _prog_draw(prog_draw), _n_bodies(0), _p
 	_world2clip_loc= glGetUniformLocation(_prog_draw, "world2clip_matrix");
 
 	// sera appelé quand la connection sera établie
-	_io.set_open_listener([&]() {
+	/*_io.set_open_listener([&]() {
 		_io.socket()->on("data", 
 		[&](sio::event& ev) {
+			_lock.lock();
 			std::cout << "msg received\n";
 			std::string msg= ev.get_message()->get_string();
 			// std::cout << msg << "\n";
@@ -106,10 +105,11 @@ ThreeBody::ThreeBody(GLuint prog_draw) : _prog_draw(prog_draw), _n_bodies(0), _p
 			//std::cout << js["bodies_types"][0]["friction"] << "\n";
 			read_json(js);
 			set_all_z2zero();
+			_lock.unlock();
 		});
 	});
 
-	_io.connect("http://127.0.0.1:3001");
+	_io.connect("http://127.0.0.1:3001");*/
 
 }
 
@@ -140,11 +140,11 @@ Body * ThreeBody::add_body(BodyType * body_type, glm::vec3 position, glm::vec3 s
 
 
 Body * ThreeBody::add_body(BodyType * body_type) {
-	std::cout << "add_body_start\n";
+	if (DEBUG) {std::cout << "add_body_start\n";};
 	Body * body= new Body(body_type);
-	std::cout << "add_body_middle\n";
+	if (DEBUG) {std::cout << "add_body_middle\n";};
 	_bodies[body_type].push_back(body);
-	std::cout << "add_body_end\n";
+	if (DEBUG) {std::cout << "add_body_end\n";};
 	return body;
 }
 
@@ -457,12 +457,12 @@ void ThreeBody::set_all_z2zero() {
 void ThreeBody::read_json(json js) {
 	std::map<unsigned long, BodyType *> body_type_map;
 
-	std::cout << "read_json_start\n";
+	if (DEBUG) {std::cout << "read_json_start\n";};
 
 	clear_all();
 
 	for (auto & type : js["types"]) {
-		std::cout << "ok1\n";
+		if (DEBUG) {std::cout << "ok1\n";};
 		BodyType * body_type= add_type(
 			glm::vec3(type["color"][0], type["color"][1], type["color"][2]), 
 			AABB(
@@ -471,7 +471,7 @@ void ThreeBody::read_json(json js) {
 			),
 			type["friction"], type["max_force_squared_norm"], type["radius"]
 		);
-		std::cout << "ok2\n";
+		if (DEBUG) {std::cout << "ok2\n";};
 		if (type["bodies"]!= nullptr) {
 			for (auto & body : type["bodies"]) {
 				add_body(
@@ -485,12 +485,12 @@ void ThreeBody::read_json(json js) {
 		else if (type["n_bodies"]!= nullptr) {
 			add_random_bodies(body_type, type["n_bodies"]);
 		}
-		std::cout << "ok3\n";
+		if (DEBUG) {std::cout << "ok3\n";};
 		body_type_map[type["id"]]= body_type;
 	}
 	
 	for (auto & inter : js["interactions"]) {
-		std::cout << "ok4\n";
+		if (DEBUG) {std::cout << "ok4\n";};
 		add_interaction(
 			body_type_map[inter["body_type_1"]],
 			body_type_map[inter["body_type_2"]],
@@ -498,10 +498,15 @@ void ThreeBody::read_json(json js) {
 			inter["attraction"],
 			inter["bias"]
 		);
-		std::cout << "ok5\n";
+		if (DEBUG) {std::cout << "ok5\n";};
 	}
 
-	std::cout << "read_json_end\n";
+	if (DEBUG) {std::cout << "read_json_end\n";};
+}
+
+
+void ThreeBody::read_json(std::string s) {
+	read_json(json::parse(s));
 }
 
 
@@ -557,11 +562,11 @@ void ThreeBody::write_json(std::string filepath) {
 
 void ThreeBody::add_random_bodies(BodyType * body_type, unsigned int n_bodies) {
 	for (unsigned int idx_body=0; idx_body<n_bodies; ++idx_body) {
-		std::cout << "add_random_bodies_start\n";
+		if (DEBUG) {std::cout << "add_random_bodies_start\n";};
 		Body * body= add_body(body_type);
-		std::cout << "add_random_bodies_middle\n";
+		if (DEBUG) {std::cout << "add_random_bodies_middle\n";};
 		body->randomize();
-		std::cout << "add_random_bodies_end\n";
+		if (DEBUG) {std::cout << "add_random_bodies_end\n";};
 	}
 }
 
