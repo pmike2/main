@@ -1,6 +1,8 @@
 
 #include <iostream>
 #include <math.h>
+#include <mutex>
+#include <string>
 
 #include <OpenGL/gl3.h>
 
@@ -32,6 +34,9 @@ InputState * input_state;
 ViewSystem * view_system;
 ThreeBody * threebody;
 sio::client io;
+bool data_send= false;
+std::string data_string= "";
+std::mutex mut;
 
 
 
@@ -165,11 +170,10 @@ void init() {
 
 	io.set_open_listener([&]() {
 		io.socket()->on("data", [&](sio::event& ev) {
-			std::cout << "msg received\n";
-			std::string msg= ev.get_message()->get_string();
-			std::cout << msg << "\n";
-			threebody->read_json(msg);
-			threebody->set_all_z2zero();
+			mut.lock();
+			data_string= ev.get_message()->get_string();
+			data_send= true;
+			mut.unlock();
 		});
 	});
 	io.connect("http://127.0.0.1:3001");
@@ -216,10 +220,26 @@ void compute_fps() {
 }
 
 
+void check_data_send() {
+	mut.lock();
+	bool data_send_= data_send;
+	std::string data_string_= data_string;
+	mut.unlock();
+	if (data_send_) {
+		threebody->read_json(data_string_);
+		threebody->set_all_z2zero();
+		mut.lock();
+		data_send= false;
+		mut.unlock();
+	}
+}
+
+
 void idle() {
 	anim();
 	draw();
 	compute_fps();
+	check_data_send();
 }
 
 

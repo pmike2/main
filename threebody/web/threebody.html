@@ -29,13 +29,17 @@
 
 			var bodies_types= [];
 			var bodies_interactions= [];
-			var button_add_type, button_clear_types, button_add_interaction, button_clear_interactions;
 			var div_bodies, div_selected_body, div_interactions, div_selected_interaction;
 			var socket= io();
 			
 
 			function rand(min, max) {
 				return min+ Math.random()* (max- min);
+			}
+
+
+			function rand_int(min, max) {
+				return min+ Math.floor(Math.random()* (max- min));
 			}
 
 			
@@ -110,7 +114,7 @@
 			}
 
 
-			function randomize(idx_body_type) {
+			function randomize_body_type(idx_body_type) {
 				bodies_types[idx_body_type].color= [Math.random(), Math.random(), Math.random()];
 				bodies_types[idx_body_type].friction= rand(FRICTION_MIN, FRICTION_MAX);
 				bodies_types[idx_body_type].max_force_squared_norm= rand(MAX_FORCE_SQUARED_NORM_MIN, MAX_FORCE_SQUARED_NORM_MAX);
@@ -123,6 +127,15 @@
 				let zmin= rand(LIMIT_MIN, LIMIT_MAX- MIN_LIMIT_SIZE);
 				let zmax= rand(zmin+ MIN_LIMIT_SIZE, LIMIT_MAX);
 				bodies_types[idx_body_type].limit= [xmin, ymin, zmin, xmax, ymax, zmax];
+			}
+
+
+			function randomize_interaction(idx_inter) {
+				bodies_interactions[idx_inter].body_type_1= rand_int(0, bodies_types.length);
+				bodies_interactions[idx_inter].body_type_2= rand_int(0, bodies_types.length);
+				bodies_interactions[idx_inter].threshold= rand(THRESHOLD_MIN, THRESHOLD_MAX);
+				bodies_interactions[idx_inter].attraction= rand(ATTRACTION_MIN, ATTRACTION_MAX);
+				bodies_interactions[idx_inter].bias= rand(BIAS_MIN, BIAS_MAX);
 			}
 
 
@@ -140,10 +153,21 @@
 					if (idx_body_type_1== idx_body_type) {
 						bodies_interactions[idx_inter].body_type_1= 0;
 					}
+					else if (idx_body_type_1> idx_body_type) {
+						bodies_interactions[idx_inter].body_type_1--;
+					}
 					if (idx_body_type_2== idx_body_type) {
 						bodies_interactions[idx_inter].body_type_2= 0;
 					}
+					else if (idx_body_type_2> idx_body_type) {
+						bodies_interactions[idx_inter].body_type_2--;
+					}
 				}
+			}
+
+
+			function delete_interaction(idx_inter) {
+				bodies_interactions.splice(idx_inter, 1);
 			}
 
 
@@ -167,8 +191,10 @@
 				if (bodies_types.length== 0) {
 					div_selected_body.innerHTML= "";
 					div_interactions.innerHTML= "";
+					div_selected_interaction.innerHTML= "";
 				}
 				else {
+					sync_selected_body_type(0);
 					sync_bodies_interactions();
 					if (bodies_interactions.length> 0) {
 						sync_selected_interaction(0);
@@ -179,8 +205,10 @@
 
 			function sync_bodies_interactions() {
 				let inner= "";
-
+				
+				//console.log(JSON.stringify(bodies_interactions));
 				for (let idx_inter=0; idx_inter<bodies_interactions.length; ++idx_inter) {
+					//console.log("idx_inter="+ idx_inter);
 					let idx_body_type_1= bodies_interactions[idx_inter].body_type_1;
 					let idx_body_type_2= bodies_interactions[idx_inter].body_type_2;
 					let r1= bodies_types[idx_body_type_1].color[0]* 255;
@@ -207,7 +235,11 @@
 				}
 
 				if (bodies_interactions.length== 0) {
+					div_interactions.innerHTML= "";
 					div_selected_interaction.innerHTML= "";
+				}
+				else {
+					sync_selected_interaction(0);
 				}
 			}
 
@@ -227,8 +259,8 @@
 					}
 				}
 				
-				inner+= '<button id="randomize">randomize</button>';
-				inner+= '<button id="delete">delete</button>';
+				inner+= '<button id="randomize_body">randomize</button>';
+				inner+= '<button id="delete_body">delete</button>';
 				inner+= "<br>";
 				for (let i=0; i<3; ++i) {
 					inner+= '<input type="range" id="body_type_'+ idx_body_type+ '_'+ color_components[i]+ '" name="'+ color_components[i]+ '" min="0" max="1" value="'+ bodies_types[idx_body_type].color[i]+ '" step="any" />';
@@ -244,14 +276,14 @@
 				div_selected_body.innerHTML= inner;
 				decorate_inputs(div_selected_body);
 
-				document.getElementById("randomize").addEventListener("click", function () {
-					randomize(idx_body_type);
+				document.getElementById("randomize_body").addEventListener("click", function () {
+					randomize_body_type(idx_body_type);
 					sync_selected_body_type(idx_body_type);
 					sync_colors();
 					emit();
 				});
 				
-				document.getElementById("delete").addEventListener("click", function () {
+				document.getElementById("delete_body").addEventListener("click", function () {
 					delete_body_type(idx_body_type);
 					sync_body_types();
 					sync_bodies_interactions();
@@ -295,6 +327,9 @@
 					}
 				}
 
+				inner+= '<button id="randomize_inter">randomize</button>';
+				inner+= '<button id="delete_inter">delete</button>';
+				inner+= "<br>";
 				inner+= "<fieldset>";
 				inner+= "<legend>idx1</legend>";
 				for (let idx_body_type=0; idx_body_type<bodies_types.length; ++idx_body_type) {
@@ -315,6 +350,19 @@
 
 				div_selected_interaction.innerHTML= inner;
 				decorate_inputs(div_selected_interaction);
+
+				document.getElementById("randomize_inter").addEventListener("click", function () {
+					randomize_interaction(idx_inter);
+					sync_selected_interaction(idx_inter);
+					sync_colors();
+					emit();
+				});
+				
+				document.getElementById("delete_inter").addEventListener("click", function () {
+					delete_interaction(idx_inter);
+					sync_bodies_interactions();
+					emit();
+				});
 
 				let radio_id1_checked= "interidx1_"+ bodies_interactions[idx_inter].body_type_1;
 				document.getElementById(radio_id1_checked).checked= true;
@@ -344,10 +392,16 @@
 
 
 			window.onload= function () {
+				let button_add_type, button_clear_types, button_rand_types;
+				let button_add_interaction, button_clear_interactions, button_rand_interactions;
+
 				button_add_type= document.createElement("button");
 				button_clear_types= document.createElement("button");
+				button_rand_types= document.createElement("button");
 				button_add_interaction= document.createElement("button");
 				button_clear_interactions= document.createElement("button");
+				button_rand_interactions= document.createElement("button");
+				
 				div_bodies= document.createElement("div");
 				div_selected_body= document.createElement("div");
 				div_interactions= document.createElement("div");
@@ -364,7 +418,7 @@
 						"limit" : null,
 						"n_bodies" : null
 					});
-					randomize(bodies_types.length- 1);
+					randomize_body_type(bodies_types.length- 1);
 					sync_body_types();
 					emit();
 				});
@@ -377,16 +431,26 @@
 					emit();
 				});
 
+				button_rand_types.innerHTML= "rand types";
+				button_rand_types.addEventListener("click", () => {
+					for (let i=0; i<bodies_types.length; ++i) {
+						randomize_body_type(i);
+					}
+					sync_body_types();
+					emit();
+				});
+
 				button_add_interaction.innerHTML= "add inter";
 				button_add_interaction.addEventListener("click", () => {
 					if (bodies_types.length> 0) {
 						bodies_interactions.push({
-							"body_type_1" : 0,
-							"body_type_2" : 0,
-							"threshold" : rand(THRESHOLD_MIN, THRESHOLD_MAX),
-							"attraction" : rand(ATTRACTION_MIN, ATTRACTION_MAX),
-							"bias" : rand(BIAS_MIN, BIAS_MAX)
+							"body_type_1" : null,
+							"body_type_2" : null,
+							"threshold" : null,
+							"attraction" : null,
+							"bias" : null
 						});
+						randomize_interaction(bodies_interactions.length- 1);
 					}
 					sync_bodies_interactions();
 					emit();
@@ -399,10 +463,21 @@
 					emit();
 				});
 
+				button_rand_interactions.innerHTML= "rand inters";
+				button_rand_interactions.addEventListener("click", () => {
+					for (let i=0; i<bodies_interactions.length; ++i) {
+						randomize_interaction(i);
+					}
+					sync_bodies_interactions();
+					emit();
+				});
+
 				document.body.appendChild(button_add_type);
 				document.body.appendChild(button_clear_types);
+				document.body.appendChild(button_rand_types);
 				document.body.appendChild(button_add_interaction);
 				document.body.appendChild(button_clear_interactions);
+				document.body.appendChild(button_rand_interactions);
 				document.body.appendChild(div_bodies);
 				document.body.appendChild(div_selected_body);
 				document.body.appendChild(div_interactions);

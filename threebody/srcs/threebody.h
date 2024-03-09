@@ -6,6 +6,7 @@
 #include <vector>
 #include <map>
 #include <utility>
+#include <iostream>
 
 #include <OpenGL/gl3.h>
 #include <SDL2/SDL_keycode.h>
@@ -29,6 +30,7 @@ public:
 	BodyType();
 	BodyType(glm::vec3 color, AABB limit, float friction, float max_force_squared_norm, float radius);
 	~BodyType();
+	friend std::ostream & operator << (std::ostream & os, const BodyType & bt);
 
 	
 	glm::vec3 _color;
@@ -45,6 +47,7 @@ public:
 	BodyInteraction();
 	BodyInteraction(BodyType * body_type_1, BodyType * body_type_2, float threshold, float attraction, float bias);
 	~BodyInteraction();
+	friend std::ostream & operator << (std::ostream & os, const BodyInteraction & bi);
 
 
 	BodyType * _body_type_1;
@@ -62,6 +65,7 @@ public:
 	Body(BodyType * body_type, glm::vec3 position, glm::vec3 speed, glm::vec3 acceleration);
 	~Body();
 	void randomize();
+	friend std::ostream & operator << (std::ostream & os, const Body & b);
 
 
 	BodyType * _body_type;
@@ -101,6 +105,7 @@ public:
 	//void randomize_radius_per_type();
 	//void prune_with_radius();
 	void dispatch_bodies(int group_size);
+	friend std::ostream & operator << (std::ostream & os, const ThreeBody & tb);
 
 
 	std::map<BodyType *, std::vector<Body *> > _bodies;

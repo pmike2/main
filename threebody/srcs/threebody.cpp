@@ -31,6 +31,19 @@ BodyType::BodyType(glm::vec3 color, AABB limit, float friction, float max_force_
 BodyType::~BodyType() {}
 
 
+std::ostream & operator << (std::ostream & os, const BodyType & bt) {
+	os << "addr=" << &bt << " ; ";
+	os << "color=" << glm::to_string(bt._color) << " ; ";
+	os << "limit=" << bt._limit << " ; ";
+	os << "friction=" << bt._friction << " ; ";
+	os << "max_force_squared_norm=" << bt._max_force_squared_norm << " ; ";
+	os << "mass=" << bt._mass << " ; ";
+	os << "radius=" << bt._radius;
+	os << "\n";
+	return os;
+}
+
+
 // ----------------------------------------------------------------------------
 BodyInteraction::BodyInteraction() {}
 
@@ -41,6 +54,17 @@ BodyInteraction::BodyInteraction(BodyType * body_type_1, BodyType * body_type_2,
 
 
 BodyInteraction::~BodyInteraction() {}
+
+
+std::ostream & operator << (std::ostream & os, const BodyInteraction & bi) {
+	os << "body_type_1=" << bi._body_type_1 << " ; ";
+	os << "body_type_2=" << bi._body_type_2 << " ; ";
+	os << "threshold=" << bi._threshold << " ; ";
+	os << "attraction=" << bi._attraction << " ; ";
+	os << "bias=" << bi._bias << " ; ";
+	os << "\n";
+	return os;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -76,6 +100,16 @@ void Body::randomize() {
 	_acceleration.x= 0.0f;
 	_acceleration.y= 0.0f;
 	_acceleration.z= 0.0f;
+}
+
+
+std::ostream & operator << (std::ostream & os, const Body & b) {
+	os << "body_type=" << b._body_type << " ; ";
+	os << "position=" << glm::to_string(b._position) << " ; ";
+	os << "speed=" << glm::to_string(b._speed) << " ; ";
+	os << "acceleration=" << glm::to_string(b._acceleration) << " ; ";
+	os << "\n";
+	return os;
 }
 
 
@@ -426,6 +460,9 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 
 		return true;
 	}
+	else if (key== SDLK_d) {
+		std::cout << *this;
+	}
 	else if (key== SDLK_p) {
 		_paused= !_paused;
 		return true;
@@ -666,3 +703,21 @@ void ThreeBody::dispatch_bodies(int group_size) {
 		}
 	}
 }
+
+
+std::ostream & operator << (std::ostream & os, const ThreeBody & tb) {
+	os << "bodies -------------\n";
+	for (auto & b : tb._bodies) {
+		os << *b.first;
+		/*for (auto & body : b.second) {
+			os << *body;
+		}*/
+	}
+	os << "interactions -------------\n";
+	for (auto & inter : tb._body_interactions) {
+		os << *inter;
+	}
+	os << "\n";
+	return os;
+}
+
