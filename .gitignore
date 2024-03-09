@@ -7,3 +7,5 @@ build
 build/
 *.pgm
 *.ppm
+node_modules
+node_modules/
