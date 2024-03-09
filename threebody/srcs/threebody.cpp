@@ -174,11 +174,8 @@ Body * ThreeBody::add_body(BodyType * body_type, glm::vec3 position, glm::vec3 s
 
 
 Body * ThreeBody::add_body(BodyType * body_type) {
-	if (DEBUG) {std::cout << "add_body_start\n";};
 	Body * body= new Body(body_type);
-	if (DEBUG) {std::cout << "add_body_middle\n";};
 	_bodies[body_type].push_back(body);
-	if (DEBUG) {std::cout << "add_body_end\n";};
 	return body;
 }
 
@@ -482,6 +479,8 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 
 void ThreeBody::set_all_z2zero() {
 	for (auto & b : _bodies) {
+		// on modifie les limites de BodyType pour que z = 0 soit autorisé
+		b.first->_limit.set_vmin_vmax(glm::vec3(b.first->_limit._vmin.x, b.first->_limit._vmin.y, -1.0f), glm::vec3(b.first->_limit._vmax.x, b.first->_limit._vmax.y, -1.0f));
 		for (auto & body : b.second) {
 			body->_position.z= 0.0f;
 			body->_speed.z= 0.0f;
@@ -494,12 +493,9 @@ void ThreeBody::set_all_z2zero() {
 void ThreeBody::read_json(json js) {
 	std::map<unsigned long, BodyType *> body_type_map;
 
-	if (DEBUG) {std::cout << "read_json_start\n";};
-
 	clear_all();
 
 	for (auto & type : js["types"]) {
-		if (DEBUG) {std::cout << "ok1\n";};
 		BodyType * body_type= add_type(
 			glm::vec3(type["color"][0], type["color"][1], type["color"][2]), 
 			AABB(
@@ -508,7 +504,6 @@ void ThreeBody::read_json(json js) {
 			),
 			type["friction"], type["max_force_squared_norm"], type["radius"]
 		);
-		if (DEBUG) {std::cout << "ok2\n";};
 		if (type["bodies"]!= nullptr) {
 			for (auto & body : type["bodies"]) {
 				add_body(
@@ -522,12 +517,10 @@ void ThreeBody::read_json(json js) {
 		else if (type["n_bodies"]!= nullptr) {
 			add_random_bodies(body_type, type["n_bodies"]);
 		}
-		if (DEBUG) {std::cout << "ok3\n";};
 		body_type_map[type["id"]]= body_type;
 	}
 	
 	for (auto & inter : js["interactions"]) {
-		if (DEBUG) {std::cout << "ok4\n";};
 		add_interaction(
 			body_type_map[inter["body_type_1"]],
 			body_type_map[inter["body_type_2"]],
@@ -535,10 +528,7 @@ void ThreeBody::read_json(json js) {
 			inter["attraction"],
 			inter["bias"]
 		);
-		if (DEBUG) {std::cout << "ok5\n";};
 	}
-
-	if (DEBUG) {std::cout << "read_json_end\n";};
 }
 
 
@@ -599,11 +589,8 @@ void ThreeBody::write_json(std::string filepath) {
 
 void ThreeBody::add_random_bodies(BodyType * body_type, unsigned int n_bodies) {
 	for (unsigned int idx_body=0; idx_body<n_bodies; ++idx_body) {
-		if (DEBUG) {std::cout << "add_random_bodies_start\n";};
 		Body * body= add_body(body_type);
-		if (DEBUG) {std::cout << "add_random_bodies_middle\n";};
 		body->randomize();
-		if (DEBUG) {std::cout << "add_random_bodies_end\n";};
 	}
 }
 
@@ -645,16 +632,6 @@ void ThreeBody::randomize(int n_types, AABB limit, glm::vec2 friction, glm::vec2
 		}
 	}
 }
-
-
-/*void ThreeBody::randomize_radius_per_type() {
-	for (auto & b : _bodies) {
-		float radius= rand_float(b.first->_radius_limit[0], b.first->_radius_limit[1]);
-		for (auto & body : b.second) {
-			body->_radius= radius;
-		}
-	}
-}*/
 
 
 /*void ThreeBody::prune_with_radius() {
@@ -709,9 +686,9 @@ std::ostream & operator << (std::ostream & os, const ThreeBody & tb) {
 	os << "bodies -------------\n";
 	for (auto & b : tb._bodies) {
 		os << *b.first;
-		/*for (auto & body : b.second) {
+		for (auto & body : b.second) {
 			os << *body;
-		}*/
+		}
 	}
 	os << "interactions -------------\n";
 	for (auto & inter : tb._body_interactions) {

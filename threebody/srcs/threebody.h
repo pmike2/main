@@ -22,7 +22,6 @@
 
 const float COLLISION_FACTOR= 0.001f;
 const float COEFF_RADIUS2MASS= 0.1f;
-const bool DEBUG= false;
 
 
 class BodyType {
@@ -102,7 +101,6 @@ public:
 	void add_random_bodies(glm::vec2 n_bodies);
 	void randomize(int n_types, AABB limit, glm::vec2 friction, glm::vec2 max_force_squared_norm, 
 		glm::vec2 radius, glm::vec2 threshold, glm::vec2 attraction, glm::vec2 bias);
-	//void randomize_radius_per_type();
 	//void prune_with_radius();
 	void dispatch_bodies(int group_size);
 	friend std::ostream & operator << (std::ostream & os, const ThreeBody & tb);

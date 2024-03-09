@@ -30,6 +30,7 @@
 			var bodies_types= [];
 			var bodies_interactions= [];
 			var div_bodies, div_selected_body, div_interactions, div_selected_interaction;
+			var full_limit= false;
 			var socket= io();
 			
 
@@ -54,17 +55,28 @@
 					if (inputs[i].getAttribute("type")!= "range") {
 						continue;
 					}
+					
 					let name= inputs[i].getAttribute("name");
 					let label= document.createElement("label");
-					let output= document.createElement("output");
+					let input= document.createElement("input");
 					let br= document.createElement("br");
+					
 					label.setAttribute("for", name);
 					label.innerHTML= name;
-					output.innerHTML= parseFloat(inputs[i].value).toFixed(3);
+					input.setAttribute("type", "number");
+					input.setAttribute("step", "0.001");
+					input.value= parseFloat(inputs[i].value).toFixed(3);
+
 					inputs[i].parentNode.insertBefore(label, inputs[i]);
-					inputs[i].after(output);
-					output.after(br);
-					inputs[i].setAttribute("oninput", "this.nextElementSibling.value = parseFloat(this.value).toFixed(3)");
+					inputs[i].after(input);
+					input.after(br);
+
+					inputs[i].addEventListener("change", function() {
+						input.value= parseFloat(this.value).toFixed(3);
+					});
+					input.addEventListener("change", function() {
+						inputs[i].value= input.value;
+					});
 				}
 			}
 
@@ -120,12 +132,24 @@
 				bodies_types[idx_body_type].max_force_squared_norm= rand(MAX_FORCE_SQUARED_NORM_MIN, MAX_FORCE_SQUARED_NORM_MAX);
 				bodies_types[idx_body_type].radius= rand(RADIUS_MIN, RADIUS_MAX);
 				bodies_types[idx_body_type].n_bodies= Math.ceil(rand(N_BODIES_MIN, N_BODIES_MAX));
-				let xmin= rand(LIMIT_MIN, LIMIT_MAX- MIN_LIMIT_SIZE);
-				let xmax= rand(xmin+ MIN_LIMIT_SIZE, LIMIT_MAX);
-				let ymin= rand(LIMIT_MIN, LIMIT_MAX- MIN_LIMIT_SIZE);
-				let ymax= rand(ymin+ MIN_LIMIT_SIZE, LIMIT_MAX);
-				let zmin= rand(LIMIT_MIN, LIMIT_MAX- MIN_LIMIT_SIZE);
-				let zmax= rand(zmin+ MIN_LIMIT_SIZE, LIMIT_MAX);
+				
+				let xmin, xmax, ymin, ymax, zmin, zmax;
+				if (full_limit) {
+					xmin= LIMIT_MIN;
+					ymin= LIMIT_MIN;
+					zmin= LIMIT_MIN;
+					xmax= LIMIT_MAX;
+					ymax= LIMIT_MAX;
+					zmax= LIMIT_MAX;
+				}
+				else {
+					xmin= rand(LIMIT_MIN, LIMIT_MAX- MIN_LIMIT_SIZE);
+					xmax= rand(xmin+ MIN_LIMIT_SIZE, LIMIT_MAX);
+					ymin= rand(LIMIT_MIN, LIMIT_MAX- MIN_LIMIT_SIZE);
+					ymax= rand(ymin+ MIN_LIMIT_SIZE, LIMIT_MAX);
+					zmin= rand(LIMIT_MIN, LIMIT_MAX- MIN_LIMIT_SIZE);
+					zmax= rand(zmin+ MIN_LIMIT_SIZE, LIMIT_MAX);
+				}
 				bodies_types[idx_body_type].limit= [xmin, ymin, zmin, xmax, ymax, zmax];
 			}
 
@@ -394,6 +418,7 @@
 			window.onload= function () {
 				let button_add_type, button_clear_types, button_rand_types;
 				let button_add_interaction, button_clear_interactions, button_rand_interactions;
+				let checkbox_limit, checkbox_limit_label;
 
 				button_add_type= document.createElement("button");
 				button_clear_types= document.createElement("button");
@@ -401,6 +426,8 @@
 				button_add_interaction= document.createElement("button");
 				button_clear_interactions= document.createElement("button");
 				button_rand_interactions= document.createElement("button");
+				checkbox_limit= document.createElement("input");
+				checkbox_limit_label= document.createElement("label");
 				
 				div_bodies= document.createElement("div");
 				div_selected_body= document.createElement("div");
@@ -472,12 +499,27 @@
 					emit();
 				});
 
+				checkbox_limit.setAttribute("type", "checkbox");
+				checkbox_limit.setAttribute("id", "full_limit");
+				checkbox_limit_label.setAttribute("for", "full_limit");
+				checkbox_limit_label.innerHTML= "Full limit";
+				checkbox_limit.addEventListener("change", function() {
+					if (this.checked) {
+						full_limit= true;
+					}
+					else {
+						full_limit= false;
+					}
+				});
+
 				document.body.appendChild(button_add_type);
 				document.body.appendChild(button_clear_types);
 				document.body.appendChild(button_rand_types);
 				document.body.appendChild(button_add_interaction);
 				document.body.appendChild(button_clear_interactions);
 				document.body.appendChild(button_rand_interactions);
+				document.body.appendChild(checkbox_limit);
+				document.body.appendChild(checkbox_limit_label);
 				document.body.appendChild(div_bodies);
 				document.body.appendChild(div_selected_body);
 				document.body.appendChild(div_interactions);

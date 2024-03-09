@@ -230,6 +230,7 @@ void check_data_send() {
 		threebody->set_all_z2zero();
 		mut.lock();
 		data_send= false;
+		data_string= "";
 		mut.unlock();
 	}
 }
