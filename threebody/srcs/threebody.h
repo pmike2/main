@@ -20,7 +20,7 @@
 #include "bbox.h"
 
 
-const float COLLISION_FACTOR= 0.001f;
+//const float COLLISION_FACTOR= 0.001f;
 const float COEFF_RADIUS2MASS= 0.1f;
 
 

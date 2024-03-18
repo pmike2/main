@@ -233,22 +233,20 @@ void ThreeBody::anim() {
 				glm::vec3 body1tobody2= body2->_position- body1->_position;	
 				float squared_dist= body1tobody2.x* body1tobody2.x+ body1tobody2.y* body1tobody2.y+ body1tobody2.z* body1tobody2.z;
 				float overlap= (body1->_body_type->_radius+ body2->_body_type->_radius)* (body1->_body_type->_radius+ body2->_body_type->_radius)- squared_dist;
-				std::cout << overlap << "\n";
 
 				// trop loin, pas d'interaction
 				if (squared_dist> body_interaction->_threshold* body_interaction->_threshold) {
 				}
 				// trop près, collision
 				else if (overlap> 0.0f ) {
-					std::cout << "collision\n";
 					/*float force_coeff= COLLISION_FACTOR* overlap;
 					body1->_force-= force_coeff* body1tobody2;
 					body2->_force+= force_coeff* body1tobody2;*/
-					float scal1= body1->_force.x* body1tobody2.x+ body1->_force.y* body1tobody2.y+ body1->_force.z* body1tobody2.z;
+					
+					/*float scal1= body1->_force.x* body1tobody2.x+ body1->_force.y* body1tobody2.y+ body1->_force.z* body1tobody2.z;
 					float scal2= body2->_force.x* body1tobody2.x+ body2->_force.y* body1tobody2.y+ body2->_force.z* body1tobody2.z;
-					std::cout << "scal1=" << scal1 << " ; scal2=" << scal2 << "\n";
 					body1->_force-= scal1* body1tobody2;
-					body2->_force-= scal2* body1tobody2;
+					body2->_force-= scal2* body1tobody2;*/
 				}
 				// ni trop loin, ni trop près
 				else {

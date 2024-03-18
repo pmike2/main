@@ -418,6 +418,7 @@
 			window.onload= function () {
 				let button_add_type, button_clear_types, button_rand_types;
 				let button_add_interaction, button_clear_interactions, button_rand_interactions;
+				let button_regen;
 				let checkbox_limit, checkbox_limit_label;
 
 				button_add_type= document.createElement("button");
@@ -426,6 +427,7 @@
 				button_add_interaction= document.createElement("button");
 				button_clear_interactions= document.createElement("button");
 				button_rand_interactions= document.createElement("button");
+				button_regen= document.createElement("button");
 				checkbox_limit= document.createElement("input");
 				checkbox_limit_label= document.createElement("label");
 				
@@ -499,6 +501,11 @@
 					emit();
 				});
 
+				button_regen.innerHTML= "regen";
+				button_regen.addEventListener("click", () => {
+					emit();
+				});
+
 				checkbox_limit.setAttribute("type", "checkbox");
 				checkbox_limit.setAttribute("id", "full_limit");
 				checkbox_limit_label.setAttribute("for", "full_limit");
@@ -511,19 +518,11 @@
 						full_limit= false;
 					}
 				});
-
-				document.body.appendChild(button_add_type);
-				document.body.appendChild(button_clear_types);
-				document.body.appendChild(button_rand_types);
-				document.body.appendChild(button_add_interaction);
-				document.body.appendChild(button_clear_interactions);
-				document.body.appendChild(button_rand_interactions);
-				document.body.appendChild(checkbox_limit);
-				document.body.appendChild(checkbox_limit_label);
-				document.body.appendChild(div_bodies);
-				document.body.appendChild(div_selected_body);
-				document.body.appendChild(div_interactions);
-				document.body.appendChild(div_selected_interaction);
+				
+				for (let elmt of [button_add_type, button_clear_types, button_rand_types, button_add_interaction, button_clear_interactions,
+					button_rand_interactions, button_regen, checkbox_limit, checkbox_limit_label, div_bodies, div_selected_body, div_interactions, div_selected_interaction]) {
+						document.body.appendChild(elmt);
+					}
 			}
 
 		</script>
