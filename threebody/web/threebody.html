@@ -10,8 +10,8 @@
 		<script type="module">
 			const FRICTION_MIN= 0.001;
 			const FRICTION_MAX= 0.2;
-			const MAX_FORCE_SQUARED_NORM_MIN= 0.1;
-			const MAX_FORCE_SQUARED_NORM_MAX= 50.0;
+			const max_force_MIN= 0.1;
+			const max_force_MAX= 50.0;
 			const RADIUS_MIN= 0.3;
 			const RADIUS_MAX= 6.0;
 			const THRESHOLD_MIN= 1.0;
@@ -129,7 +129,7 @@
 			function randomize_body_type(idx_body_type) {
 				bodies_types[idx_body_type].color= [Math.random(), Math.random(), Math.random()];
 				bodies_types[idx_body_type].friction= rand(FRICTION_MIN, FRICTION_MAX);
-				bodies_types[idx_body_type].max_force_squared_norm= rand(MAX_FORCE_SQUARED_NORM_MIN, MAX_FORCE_SQUARED_NORM_MAX);
+				bodies_types[idx_body_type].max_force= rand(max_force_MIN, max_force_MAX);
 				bodies_types[idx_body_type].radius= rand(RADIUS_MIN, RADIUS_MAX);
 				bodies_types[idx_body_type].n_bodies= Math.ceil(rand(N_BODIES_MIN, N_BODIES_MAX));
 				
@@ -293,7 +293,7 @@
 					inner+= '<input type="range" id="body_type_'+ limit[i]+ '" name="'+ limit[i]+ '" min="'+ LIMIT_MIN+ '" max="'+ LIMIT_MAX+ '" value="'+ bodies_types[idx_body_type].limit[i]+ '" step="any" />';
 				}
 				inner+= '<input type="range" id="body_type_friction" name="friction" min="'+ FRICTION_MIN+ '" max="'+ FRICTION_MAX+ '" value="'+ bodies_types[idx_body_type].friction+ '" step="any" />';
-				inner+= '<input type="range" id="body_type_max_force_squared_norm" name="max_force_squared_norm" min="'+ MAX_FORCE_SQUARED_NORM_MIN+ '" max="'+ MAX_FORCE_SQUARED_NORM_MAX+ '" value="'+ bodies_types[idx_body_type].max_force_squared_norm+ '" step="any" />';
+				inner+= '<input type="range" id="body_type_max_force" name="max_force" min="'+ max_force_MIN+ '" max="'+ max_force_MAX+ '" value="'+ bodies_types[idx_body_type].max_force+ '" step="any" />';
 				inner+= '<input type="range" id="body_type_radius" name="radius" min="'+ RADIUS_MIN+ '" max="'+ RADIUS_MAX+ '" value="'+ bodies_types[idx_body_type].radius+ '" step="any" />';
 				inner+= '<input type="range" id="body_type_n_bodies" name="n_bodies" min="'+ N_BODIES_MIN+ '" max="'+ N_BODIES_MAX+ '" value="'+ bodies_types[idx_body_type].n_bodies+ '" step="1" />';
 				
@@ -328,7 +328,7 @@
 						emit();
 					});
 				}
-				const keys= ["friction", "max_force_squared_norm", "radius", "n_bodies"];
+				const keys= ["friction", "max_force", "radius", "n_bodies"];
 				for (let i=0; i<keys.length; ++i) {
 					document.getElementById("body_type_"+ keys[i]).addEventListener("change", function() {
 						bodies_types[idx_body_type][keys[i]]= parseFloat(this.value);
@@ -440,7 +440,7 @@
 						"id" : bodies_types.length,
 						"color" : null,
 						"friction" : null,
-						"max_force_squared_norm" : null,
+						"max_force" : null,
 						"radius" : null,
 						"limit" : null,
 						"n_bodies" : null

@@ -20,8 +20,8 @@ BodyType::BodyType() :
 {}
 
 
-BodyType::BodyType(glm::vec3 color, AABB limit, float friction, float max_force_squared_norm, float radius) :
-	_color(color), _limit(limit), _friction(friction), _max_force_squared_norm(max_force_squared_norm), _radius(radius)
+BodyType::BodyType(glm::vec3 color, AABB limit, float friction, float max_force, float radius) :
+	_color(color), _limit(limit), _friction(friction), _max_force(max_force), _radius(radius)
 {
 	// on relie radius et mass
 	_mass= _radius* COEFF_RADIUS2MASS;
@@ -36,7 +36,7 @@ std::ostream & operator << (std::ostream & os, const BodyType & bt) {
 	os << "color=" << glm::to_string(bt._color) << " ; ";
 	os << "limit=" << bt._limit << " ; ";
 	os << "friction=" << bt._friction << " ; ";
-	os << "max_force_squared_norm=" << bt._max_force_squared_norm << " ; ";
+	os << "max_force=" << bt._max_force << " ; ";
 	os << "mass=" << bt._mass << " ; ";
 	os << "radius=" << bt._radius;
 	os << "\n";
@@ -153,8 +153,8 @@ ThreeBody::~ThreeBody() {
 }
 
 
-BodyType * ThreeBody::add_type(glm::vec3 color, AABB limit, float friction, float max_force_squared_norm, float radius) {
-	BodyType * body_type= new BodyType(color, limit, friction, max_force_squared_norm, radius);
+BodyType * ThreeBody::add_type(glm::vec3 color, AABB limit, float friction, float max_force, float radius) {
+	BodyType * body_type= new BodyType(color, limit, friction, max_force, radius);
 	_bodies[body_type]= std::vector<Body *>();
 	return body_type;
 }
@@ -259,8 +259,8 @@ void ThreeBody::anim() {
 			body->_force+= -1.0f* b.first->_friction* body->_speed;
 
 			float squared_force_norm= body->_force.x* body->_force.x+ body->_force.y* body->_force.y+ body->_force.z* body->_force.z;
-			if (squared_force_norm> b.first->_max_force_squared_norm) {
-				body->_force*= (b.first->_max_force_squared_norm/ squared_force_norm);
+			if (squared_force_norm> b.first->_max_force) {
+				body->_force*= (b.first->_max_force/ squared_force_norm);
 			}
 
 			body->_acceleration= (1.0f/ body->_body_type->_mass)* body->_force;
@@ -396,7 +396,7 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 			glm::vec3(1.0f, 0.0f, 0.0f), // color
 			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), // limit
 			0.001f, // friction
-			10.0f, // max_force_squared_norm
+			10.0f, // max_force
 			1.0f // radius
 		);
 
@@ -404,7 +404,7 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 			glm::vec3(0.0f, 1.0f, 0.0f), // color
 			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), // limit
 			0.001f, // friction
-			10.0f, // max_force_squared_norm
+			10.0f, // max_force
 			1.0f // radius_limit
 		);
 
@@ -502,7 +502,7 @@ void ThreeBody::read_json(json js) {
 				glm::vec3(type["limit"][0], type["limit"][1], type["limit"][2]),
 				glm::vec3(type["limit"][3], type["limit"][4], type["limit"][5])
 			),
-			type["friction"], type["max_force_squared_norm"], type["radius"]
+			type["friction"], type["max_force"], type["radius"]
 		);
 		if (type["bodies"]!= nullptr) {
 			for (auto & body : type["bodies"]) {
@@ -566,7 +566,7 @@ void ThreeBody::write_json(std::string filepath) {
 				b.first->_limit._vmax.x, b.first->_limit._vmax.y, b.first->_limit._vmax.z
 			}},
 			{"friction", b.first->_friction},
-			{"max_force_squared_norm", b.first->_max_force_squared_norm},
+			{"max_force", b.first->_max_force},
 			{"radius", b.first->_radius},
 			{"bodies", js_bodies}
 		});
@@ -615,14 +615,14 @@ void ThreeBody::add_random_bodies(glm::vec2 n_bodies) {
 }
 
 
-void ThreeBody::randomize(int n_types, AABB limit, glm::vec2 friction, glm::vec2 max_force_squared_norm,
+void ThreeBody::randomize(int n_types, AABB limit, glm::vec2 friction, glm::vec2 max_force,
 	glm::vec2 radius, glm::vec2 threshold, glm::vec2 attraction, glm::vec2 bias) {
 	
 	clear_all();
 
 	for (int i=0; i<n_types; ++i) {
 		add_type(glm::vec3(rand_float(0.2f, 1.0f), rand_float(0.2f, 1.0f), rand_float(0.2f, 1.0f)), 
-			limit, rand_float(friction[0], friction[1]), rand_float(max_force_squared_norm[0], max_force_squared_norm[1]),
+			limit, rand_float(friction[0], friction[1]), rand_float(max_force[0], max_force[1]),
 			rand_float(radius[0], radius[1])
 		);
 	}
