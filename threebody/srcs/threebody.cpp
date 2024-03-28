@@ -239,9 +239,14 @@ void ThreeBody::anim() {
 				}
 				// trop près, collision
 				else if (overlap> 0.0f ) {
-					float force_coeff= COLLISION_FACTOR* overlap;
+					/*float force_coeff= COLLISION_FACTOR* overlap;
 					body1->_force-= force_coeff* body1tobody2;
-					body2->_force+= force_coeff* body1tobody2;
+					body2->_force+= force_coeff* body1tobody2;*/
+					
+					/*float scal1= body1->_force.x* body1tobody2.x+ body1->_force.y* body1tobody2.y+ body1->_force.z* body1tobody2.z;
+					float scal2= body2->_force.x* body1tobody2.x+ body2->_force.y* body1tobody2.y+ body2->_force.z* body1tobody2.z;
+					body1->_force-= scal1* body1tobody2;
+					body2->_force-= scal2* body1tobody2;*/
 				}
 				// ni trop loin, ni trop près
 				else {
