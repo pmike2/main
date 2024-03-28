@@ -160,6 +160,7 @@
 				bodies_interactions[idx_inter].threshold= rand(THRESHOLD_MIN, THRESHOLD_MAX);
 				bodies_interactions[idx_inter].attraction= rand(ATTRACTION_MIN, ATTRACTION_MAX);
 				bodies_interactions[idx_inter].bias= rand(BIAS_MIN, BIAS_MAX);
+				bodies_interactions[idx_inter].no_overlap= false;
 			}
 
 
@@ -371,6 +372,7 @@
 				inner+= '<input type="range" id="inter_threshold" name="threshold" min="'+ THRESHOLD_MIN+ '" max="'+ THRESHOLD_MAX+ '" value="'+ bodies_interactions[idx_inter].threshold+ '" step="any" />';
 				inner+= '<input type="range" id="inter_attraction" name="attraction" min="'+ ATTRACTION_MIN+ '" max="'+ ATTRACTION_MAX+ '" value="'+ bodies_interactions[idx_inter].attraction+ '" step="any" />';
 				inner+= '<input type="range" id="inter_bias" name="bias" min="'+ BIAS_MIN+ '" max="'+ BIAS_MAX+ '" value="'+ bodies_interactions[idx_inter].bias+ '" step="any" />';
+				inner+= '<input type="checkbox" id="inter_no_overlap" name="inter_no_overlap" /><label for="inter_no_overlap">no overlap</label>';
 
 				div_selected_interaction.innerHTML= inner;
 				decorate_inputs(div_selected_interaction);
@@ -412,6 +414,10 @@
 						emit();
 					});
 				}
+				document.getElementById("inter_no_overlap").addEventListener("change", function() {
+					bodies_interactions[idx_inter]["no_overlap"]= this.checked;
+					emit();
+				});
 			}
 
 
@@ -477,7 +483,8 @@
 							"body_type_2" : null,
 							"threshold" : null,
 							"attraction" : null,
-							"bias" : null
+							"bias" : null,
+							"no_overlap" : null
 						});
 						randomize_interaction(bodies_interactions.length- 1);
 					}

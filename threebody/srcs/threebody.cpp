@@ -48,8 +48,8 @@ std::ostream & operator << (std::ostream & os, const BodyType & bt) {
 BodyInteraction::BodyInteraction() {}
 
 
-BodyInteraction::BodyInteraction(BodyType * body_type_1, BodyType * body_type_2, float threshold, float attraction, float bias) :
-	_body_type_1(body_type_1), _body_type_2(body_type_2), _threshold(threshold), _attraction(attraction), _bias(bias)
+BodyInteraction::BodyInteraction(BodyType * body_type_1, BodyType * body_type_2, float threshold, float attraction, float bias, bool no_overlap) :
+	_body_type_1(body_type_1), _body_type_2(body_type_2), _threshold(threshold), _attraction(attraction), _bias(bias), _no_overlap(no_overlap)
 {}
 
 
@@ -160,8 +160,8 @@ BodyType * ThreeBody::add_type(glm::vec3 color, AABB limit, float friction, floa
 }
 
 
-BodyInteraction * ThreeBody::add_interaction(BodyType * body_type_1, BodyType * body_type_2, float threshold, float attraction, float bias) {
-	_body_interactions.push_back(new BodyInteraction(body_type_1, body_type_2, threshold, attraction, bias));
+BodyInteraction * ThreeBody::add_interaction(BodyType * body_type_1, BodyType * body_type_2, float threshold, float attraction, float bias, bool no_overlap) {
+	_body_interactions.push_back(new BodyInteraction(body_type_1, body_type_2, threshold, attraction, bias, no_overlap));
 	return _body_interactions[_body_interactions.size()- 1];
 }
 
@@ -217,6 +217,10 @@ void ThreeBody::anim() {
 	}
 
 	for (auto & body_interaction : _body_interactions) {
+		/*if (body_interaction->_no_overlap) {
+			continue;
+		}*/
+
 		std::vector<Body *> bodies1= _bodies[body_interaction->_body_type_1];
 		std::vector<Body *> bodies2= _bodies[body_interaction->_body_type_2];
 		int n1= bodies1.size();
@@ -227,33 +231,49 @@ void ThreeBody::anim() {
 				if ((body_interaction->_body_type_1== body_interaction->_body_type_2) && (idx_body_1== idx_body_2)) {
 					continue;
 				}
+
 				Body * body1= bodies1[idx_body_1];
 				Body * body2= bodies2[idx_body_2];
 				
 				glm::vec3 body1tobody2= body2->_position- body1->_position;	
-				float squared_dist= body1tobody2.x* body1tobody2.x+ body1tobody2.y* body1tobody2.y+ body1tobody2.z* body1tobody2.z;
-				float overlap= (body1->_body_type->_radius+ body2->_body_type->_radius)* (body1->_body_type->_radius+ body2->_body_type->_radius)- squared_dist;
 
-				// trop loin, pas d'interaction
-				if (squared_dist> body_interaction->_threshold* body_interaction->_threshold) {
-				}
-				// trop près, collision
-				else if (overlap> 0.0f ) {
-					/*float force_coeff= COLLISION_FACTOR* overlap;
-					body1->_force-= force_coeff* body1tobody2;
-					body2->_force+= force_coeff* body1tobody2;*/
+				if (!body_interaction->_no_overlap) {
+					float squared_dist= body1tobody2.x* body1tobody2.x+ body1tobody2.y* body1tobody2.y+ body1tobody2.z* body1tobody2.z;
 					
-					/*float scal1= body1->_force.x* body1tobody2.x+ body1->_force.y* body1tobody2.y+ body1->_force.z* body1tobody2.z;
-					float scal2= body2->_force.x* body1tobody2.x+ body2->_force.y* body1tobody2.y+ body2->_force.z* body1tobody2.z;
-					body1->_force-= scal1* body1tobody2;
-					body2->_force-= scal2* body1tobody2;*/
+					// trop loin, pas d'interaction
+					if (squared_dist> body_interaction->_threshold* body_interaction->_threshold) {
+					}
+					// trop près, collision
+					//else if (overlap> 0.0f ) {
+						/*float force_coeff= COLLISION_FACTOR* overlap;
+						body1->_force-= force_coeff* body1tobody2;
+						body2->_force+= force_coeff* body1tobody2;*/
+						
+					//}
+					// ni trop loin, ni trop près
+					else {
+						// normalement c'est dist**3 mais avec dist**2 c'est plus joli
+						float force_coeff= (body_interaction->_attraction* body1->_body_type->_mass* body2->_body_type->_mass/ (body_interaction->_bias+ squared_dist* sqrt(squared_dist)));
+						body1->_force+= force_coeff* body1tobody2;
+						//body2->_force-= force_coeff* body1tobody2;
+					}
 				}
-				// ni trop loin, ni trop près
 				else {
-					// normalement c'est dist**3 mais avec dist**2 c'est plus joli
-					float force_coeff= (body_interaction->_attraction* body1->_body_type->_mass* body2->_body_type->_mass/ (body_interaction->_bias+ squared_dist));
-					body1->_force+= force_coeff* body1tobody2;
-					body2->_force-= force_coeff* body1tobody2;
+					float dist= sqrt(body1tobody2.x* body1tobody2.x+ body1tobody2.y* body1tobody2.y+ body1tobody2.z* body1tobody2.z);
+					float overlap= body1->_body_type->_radius+ body2->_body_type->_radius- dist;
+
+					//std::cout << "x=" << body1tobody2.x << " ; y=" << body1tobody2.y << " ; r1=" << body1->_body_type->_radius << " ; r2=" << body2->_body_type->_radius << " ; dist=" << dist << " ; overlap=" << overlap << "\n";
+
+					if (overlap> 0.0f) {
+						std::cout << "overlap\n";
+						float scal1= body1->_force.x* body1tobody2.x+ body1->_force.y* body1tobody2.y+ body1->_force.z* body1tobody2.z;
+						//float scal2= body2->_force.x* body1tobody2.x+ body2->_force.y* body1tobody2.y+ body2->_force.z* body1tobody2.z;
+						body1->_force-= scal1* body1tobody2;
+						//body2->_force-= scal2* body1tobody2;
+						/*std::cout << "------------\n";
+						std::cout << glm::to_string(body1tobody2) << "\n";
+						std::cout << glm::to_string(body1->_force) << "\n";*/
+					}
 				}
 			}
 		}
@@ -265,7 +285,7 @@ void ThreeBody::anim() {
 
 			float squared_force_norm= body->_force.x* body->_force.x+ body->_force.y* body->_force.y+ body->_force.z* body->_force.z;
 			if (squared_force_norm> b.first->_max_force) {
-				body->_force*= (b.first->_max_force/ squared_force_norm);
+				body->_force*= sqrt(b.first->_max_force/ squared_force_norm);
 			}
 
 			body->_acceleration= (1.0f/ body->_body_type->_mass)* body->_force;
@@ -290,6 +310,36 @@ void ThreeBody::anim() {
 			}
 		}
 	}
+
+	/*for (auto & body_interaction : _body_interactions) {
+		if (!body_interaction->_no_overlap) {
+			continue;
+		}
+
+		std::vector<Body *> bodies1= _bodies[body_interaction->_body_type_1];
+		std::vector<Body *> bodies2= _bodies[body_interaction->_body_type_2];
+		int n1= bodies1.size();
+		int n2= bodies2.size();
+
+		for (unsigned int idx_body_1=0; idx_body_1<n1; ++idx_body_1) {
+			for (unsigned int idx_body_2=0; idx_body_2<n2; ++idx_body_2) {
+				if ((body_interaction->_body_type_1== body_interaction->_body_type_2) && (idx_body_1== idx_body_2)) {
+					continue;
+				}
+				Body * body1= bodies1[idx_body_1];
+				Body * body2= bodies2[idx_body_2];
+				
+				glm::vec3 body1tobody2= body2->_position- body1->_position;	
+				float dist= sqrt(body1tobody2.x* body1tobody2.x+ body1tobody2.y* body1tobody2.y+ body1tobody2.z* body1tobody2.z);
+				float overlap= body_interaction->_body_type_1->_radius+ body_interaction->_body_type_2->_radius- dist;
+
+				if (overlap> 0.0f ) {
+					body1->_position-= 0.5f* overlap* body1tobody2;
+					body2->_position+= 0.5f* overlap* body1tobody2;
+				}
+			}
+		}
+	}*/
 }
 
 
@@ -396,33 +446,36 @@ void ThreeBody::update() {
 bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 	if (key== SDLK_a) {
 		clear_all();
+
+		float limit= 100.0f;
 		
 		BodyType * type1= add_type(
 			glm::vec3(1.0f, 0.0f, 0.0f), // color
-			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), // limit
-			0.001f, // friction
-			10.0f, // max_force
-			1.0f // radius
+			AABB(glm::vec3(-1.0f* limit), glm::vec3(limit)), // limit
+			0.0f, // friction
+			1000.0f, // max_force
+			5.0f // radius
 		);
 
 		BodyType * type2= add_type(
 			glm::vec3(0.0f, 1.0f, 0.0f), // color
-			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), // limit
-			0.001f, // friction
-			10.0f, // max_force
-			1.0f // radius_limit
+			AABB(glm::vec3(-1.0f* limit), glm::vec3(limit)), // limit
+			0.0f, // friction
+			1000.0f, // max_force
+			5.0f // radius
 		);
 
 		// type1, type2, threshold, attraction, bias
-		//add_interaction(type1, type1, 10.0f, 0.01f, 0.1f);
+		add_interaction(type1, type2, 100.0f, 0.5f, 0.0f, false);
+		add_interaction(type2, type1, 100.0f, 0.5f, 0.0f, true);
 
 		// type, n_bodies, limit
 		//add_random_bodies(type1, 50);
 
 		add_body(type1, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-		add_body(type2, glm::vec3(10.0f, 10.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+		add_body(type2, glm::vec3(30.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 		
-		//set_all_z2zero();
+		set_all_z2zero();
 		return true;
 	}
 	else if (key== SDLK_b) {
@@ -432,10 +485,10 @@ bool ThreeBody::key_down(InputState * input_state, SDL_Keycode key) {
 			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), 0.001f, 10.0f, 1.0f);
 		BodyType * type2= add_type(glm::vec3(0.0f, 1.0f, 0.0f), 
 			AABB(glm::vec3(-50.0f, -50.0f, -50.0f), glm::vec3(50.0f, 50.0f, 50.0f)), 0.001f, 10.0f, 1.0f);
-		add_interaction(type1, type1, 10.0f, 0.01f, 0.1f);
-		add_interaction(type2, type2, 10.0f, 0.01f, 0.1f);
-		add_interaction(type1, type2, 5.0f, -0.1f, 0.1f);
-		add_interaction(type2, type1, 5.0f, -0.1f, 0.1f);
+		add_interaction(type1, type1, 10.0f, 0.01f, 0.1f, false);
+		add_interaction(type2, type2, 10.0f, 0.01f, 0.1f, false);
+		add_interaction(type1, type2, 5.0f, -0.1f, 0.1f, false);
+		add_interaction(type2, type1, 5.0f, -0.1f, 0.1f, false);
 		add_random_bodies(type1, 20);
 		add_random_bodies(type2, 20);
 		
@@ -531,7 +584,8 @@ void ThreeBody::read_json(json js) {
 			body_type_map[inter["body_type_2"]],
 			inter["threshold"],
 			inter["attraction"],
-			inter["bias"]
+			inter["bias"],
+			inter["no_overlap"]
 		);
 	}
 }
@@ -583,7 +637,8 @@ void ThreeBody::write_json(std::string filepath) {
 			{"body_type_2", (unsigned long)(inter->_body_type_2)},
 			{"threshold", inter->_threshold},
 			{"attraction", inter->_attraction},
-			{"bias", inter->_bias}
+			{"bias", inter->_bias},
+			{"no_overlap", inter->_no_overlap}
 		});
 	}
 
@@ -633,7 +688,7 @@ void ThreeBody::randomize(int n_types, AABB limit, glm::vec2 friction, glm::vec2
 	}
 	for (auto & b : _bodies) {
 		for (auto & y : _bodies) {
-			add_interaction(b.first, y.first, rand_float(threshold[0], threshold[1]), rand_float(attraction[0], attraction[1]), rand_float(bias[0], bias[1]));
+			add_interaction(b.first, y.first, rand_float(threshold[0], threshold[1]), rand_float(attraction[0], attraction[1]), rand_float(bias[0], bias[1]), rand_bool());
 		}
 	}
 }

@@ -44,7 +44,7 @@ public:
 class BodyInteraction {
 public:
 	BodyInteraction();
-	BodyInteraction(BodyType * body_type_1, BodyType * body_type_2, float threshold, float attraction, float bias);
+	BodyInteraction(BodyType * body_type_1, BodyType * body_type_2, float threshold, float attraction, float bias, bool no_overlap);
 	~BodyInteraction();
 	friend std::ostream & operator << (std::ostream & os, const BodyInteraction & bi);
 
@@ -54,6 +54,7 @@ public:
 	float _threshold;
 	float _attraction;
 	float _bias;
+	bool _no_overlap;
 };
 
 
@@ -83,7 +84,7 @@ public:
 	ThreeBody(GLuint prog_draw);
 	~ThreeBody();
 	BodyType * add_type(glm::vec3 color, AABB limit, float friction, float max_force, float radius);
-	BodyInteraction * add_interaction(BodyType * body_type_1, BodyType * body_type_2, float threshold, float attraction, float bias);
+	BodyInteraction * add_interaction(BodyType * body_type_1, BodyType * body_type_2, float threshold, float attraction, float bias, bool no_overlap);
 	Body * add_body(BodyType * body_type, glm::vec3 position, glm::vec3 speed, glm::vec3 acceleration);
 	Body * add_body(BodyType * body_type);
 	void clear_bodies();
