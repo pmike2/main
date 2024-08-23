@@ -1,11 +1,25 @@
 #include <algorithm>
-#include <iostream>
 #include <fstream>
 
 #include "dcel.h"
 
 
 // ----------------------------------------------------------------------
+DCEL_Vertex::DCEL_Vertex() : _x(0.0f), _y(0.0f), _incident_edge(NULL) {
+
+}
+
+
+DCEL_Vertex::DCEL_Vertex(float x, float y) : _x(x), _y(y), _incident_edge(NULL) {
+
+}
+
+
+DCEL_Vertex::~DCEL_Vertex() {
+
+}
+
+
 std::vector<DCEL_HalfEdge *> DCEL_Vertex::get_incident_edges() {
 	std::vector<DCEL_HalfEdge *> result;
 	result.push_back(_incident_edge);
@@ -24,7 +38,28 @@ std::vector<DCEL_HalfEdge *> DCEL_Vertex::get_incident_edges() {
 }
 
 
+std::ostream & operator << (std::ostream & os, DCEL_Vertex & v) {
+	os << "(" << v._x << " ; " << v._y << ")";
+	return os;
+}
+
+
 // ----------------------------------------------------------------------
+DCEL_HalfEdge::DCEL_HalfEdge() : _origin(NULL), _twin(NULL), _next(NULL), _previous(NULL), _incident_face(NULL) {
+
+}
+
+
+DCEL_HalfEdge::DCEL_HalfEdge(DCEL_Vertex * origin) : _origin(origin), _twin(NULL), _next(NULL), _previous(NULL), _incident_face(NULL) {
+
+}
+
+
+DCEL_HalfEdge::~DCEL_HalfEdge() {
+
+}
+
+
 DCEL_Vertex * DCEL_HalfEdge::destination() {
 	return _twin->_origin;
 }
@@ -35,7 +70,30 @@ DCEL_Face * DCEL_HalfEdge::opposite_face() {
 }
 
 
+std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
+	os << "origin=" << *e._origin;
+	os << " ; ";
+	os << "destination=" << *e.destination();
+	return os;
+}
+
+
 // ----------------------------------------------------------------------
+DCEL_Face::DCEL_Face() : _outer_edge(NULL) {
+
+}
+
+
+DCEL_Face::DCEL_Face(DCEL_HalfEdge * outer_edge) : _outer_edge(outer_edge) {
+	
+}
+
+
+DCEL_Face::~DCEL_Face() {
+
+}
+
+
 std::vector<DCEL_Vertex *> DCEL_Face::get_vertices() {
 	std::vector<DCEL_Vertex *> result;
 	DCEL_HalfEdge * first_edge= _outer_edge;
@@ -54,6 +112,9 @@ std::vector<DCEL_HalfEdge *> DCEL_Face::get_edges() {
 	DCEL_HalfEdge * first_edge= _outer_edge;
 	DCEL_HalfEdge * current_edge= _outer_edge;
 	do {
+		/*std::cout << *current_edge << "\n";
+		std::cout << current_edge->_next << "\n";
+		std::cout << "--------\n";*/
 		result.push_back(current_edge);
 		current_edge= current_edge->_next;
 	} while(current_edge!= first_edge);
@@ -79,8 +140,16 @@ std::vector<DCEL_Face *> DCEL_Face::get_adjacent_faces() {
 }
 
 
+std::ostream & operator << (std::ostream & os, DCEL_Face & f) {
+	for (auto edge : f.get_edges()) {
+		os << *edge << "\n";
+	}
+	return os;
+}
+
+
 // ----------------------------------------------------------------------
-DCEL::DCEL() {
+DCEL::DCEL() : _xmin(1e8), _xmax(-1e8), _ymin(1e8), _ymax(-1e8) {
 
 }
 
@@ -90,9 +159,61 @@ DCEL::~DCEL() {
 }
 
 
+DCEL_Vertex * DCEL::add_vertex(float x, float y) {
+	DCEL_Vertex * v= new DCEL_Vertex(x, y);
+	_vertices.push_back(v);
+	if (x< _xmin) {
+		_xmin= x;
+	}
+	if (x> _xmax) {
+		_xmax= x;
+	}
+	if (y< _ymin) {
+		_ymin= y;
+	}
+	if (y> _ymax) {
+		_ymax= y;
+	}
+	return v;
+}
+
+
+DCEL_HalfEdge * DCEL::add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2) {
+	DCEL_HalfEdge * hedge1= new DCEL_HalfEdge(v1);
+	DCEL_HalfEdge * hedge2= new DCEL_HalfEdge(v2);
+	hedge1->_twin= hedge2;
+	hedge2->_twin= hedge1;
+	_half_edges.push_back(hedge1);
+	_half_edges.push_back(hedge2);
+	return hedge1;
+}
+
+
+DCEL_Face * DCEL::add_face(std::vector<DCEL_HalfEdge *> edges) {
+	DCEL_Face * face= new DCEL_Face(edges[0]);
+	for (auto edge : edges) {
+		edge->_incident_face= face;
+	}
+	for (unsigned int i=0; i<edges.size()- 1; ++i) {
+		edges[i]->_next= edges[i+ 1];
+		edges[i+ 1]->_previous= edges[i];
+	}
+	edges[edges.size()- 1]->_next= edges[0];
+	edges[0]->_previous= edges[edges.size()- 1];
+
+	_faces.push_back(face);
+	return face;
+}
+
+
 void DCEL::export_html(std::string html_path) {
 	unsigned int svg_width= 700;
 	unsigned int svg_height= 700;
+
+	float view_xmin= _xmin* 1.1f;
+	float view_ymin= _ymin* 1.1f;
+	float view_xmax= _xmax* 1.1f;
+	float view_ymax= _ymax* 1.1f;
 
 	std::ofstream f;
 	f.open(html_path);
@@ -101,17 +222,25 @@ void DCEL::export_html(std::string html_path) {
 	f << ".point_class {fill: black;}\n";
 	f << ".line_class {fill: transparent; stroke: black; stroke-width: 0.01; stroke-opacity: 0.3;}\n";
 	f << "</style>\n</head>\n<body>\n";
-	f << "<svg width=\"" << svg_width << "\" height=\"" << svg_height << "\" viewbox=\"" << -1.2 << " " << -0.2 << " " << 2.4 << " " << 2.4 << "\">\n";
+	f << "<svg width=\"" << svg_width << "\" height=\"" << svg_height << "\" ";
+	f << "viewbox=\"" << view_xmin << " " << view_ymin << " " << view_xmax << " " << view_ymax << "\" ";
+	f << "style=\"background-color:rgb(200,240,220)\"";
+	f << "\">\n";
 
-	//f << "<text class=\"point_text_class\" x=\"" << pt_x+ 0.02f << "\" y=\"" << pt_y << "\" >" << f_str(node->_data) << "</text>\n";
 	for (auto face : _faces) {
 		std::vector<DCEL_HalfEdge *> edges= face->get_edges();
 		for (auto edge : edges) {
 			DCEL_Vertex * v1= edge->_origin;
 			DCEL_Vertex * v2= edge->destination();
-			f << "<circle class=\"point_class\" cx=\"" << v1->_x << "\" cy=\"" << v1->_y << "\" r=\"" << 0.01f << "\" />\n";
-			f << "<circle class=\"point_class\" cx=\"" << v2->_x << "\" cy=\"" << v2->_y << "\" r=\"" << 0.01f << "\" />\n";
-			f << "<line class=\"line_class\" x1=\"" << v1->_x << "\" y1=\"" << v1->_y << "\" x2=\"" << v2->_x << "\" y2=\"" << v2->_y << "\" />\n";
+			
+			float x1= v1->_x;
+			float y1= view_ymin+ view_ymax- v1->_y;
+			float x2= v2->_x;
+			float y2= view_ymin+ view_ymax- v2->_y;
+			float radius= 0.01f;
+			f << "<circle class=\"point_class\" cx=\"" << x1 << "\" cy=\"" << y1 << "\" r=\"" << radius << "\" />\n";
+			f << "<circle class=\"point_class\" cx=\"" << x2 << "\" cy=\"" << y2 << "\" r=\"" << radius << "\" />\n";
+			f << "<line class=\"line_class\" x1=\"" << x1 << "\" y1=\"" << y1 << "\" x2=\"" << x2 << "\" y2=\"" << y2 << "\" />\n";
 		}
 	}
 
@@ -119,5 +248,13 @@ void DCEL::export_html(std::string html_path) {
 	f << "</body>\n</html>\n";
 	f.close();
 
+}
+
+
+std::ostream & operator << (std::ostream & os, DCEL & d) {
+	for (auto face : d._faces) {
+		os << *face << "\n";
+	}
+	return os;
 }
 
