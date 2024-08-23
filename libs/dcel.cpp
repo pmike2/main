@@ -71,9 +71,9 @@ DCEL_Face * DCEL_HalfEdge::opposite_face() {
 
 
 std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
-	os << "origin=" << *e._origin;
-	os << " ; ";
-	os << "destination=" << *e.destination();
+	os << *e._origin;
+	os << " -> ";
+	os << *e.destination();
 	return os;
 }
 
@@ -101,7 +101,7 @@ std::vector<DCEL_Vertex *> DCEL_Face::get_vertices() {
 	do {
 		result.push_back(current_edge->_origin);
 		current_edge= current_edge->_next;
-	} while(current_edge!= first_edge);
+	} while (current_edge!= first_edge);
 
 	return result;
 }
@@ -112,12 +112,9 @@ std::vector<DCEL_HalfEdge *> DCEL_Face::get_edges() {
 	DCEL_HalfEdge * first_edge= _outer_edge;
 	DCEL_HalfEdge * current_edge= _outer_edge;
 	do {
-		/*std::cout << *current_edge << "\n";
-		std::cout << current_edge->_next << "\n";
-		std::cout << "--------\n";*/
 		result.push_back(current_edge);
 		current_edge= current_edge->_next;
-	} while(current_edge!= first_edge);
+	} while (current_edge!= first_edge);
 
 	return result;
 }
@@ -134,7 +131,7 @@ std::vector<DCEL_Face *> DCEL_Face::get_adjacent_faces() {
 			result.push_back(face);
 		}
 		current_edge= current_edge->_next;
-	} while(current_edge!= first_edge);
+	} while (current_edge!= first_edge);
 
 	return result;
 }
@@ -210,10 +207,11 @@ void DCEL::export_html(std::string html_path) {
 	unsigned int svg_width= 700;
 	unsigned int svg_height= 700;
 
-	float view_xmin= _xmin* 1.1f;
-	float view_ymin= _ymin* 1.1f;
-	float view_xmax= _xmax* 1.1f;
-	float view_ymax= _ymax* 1.1f;
+	float margin_factor= 1.5f;
+	float view_xmin= (_xmin- 0.5f* (_xmin+ _xmax))* margin_factor+ 0.5f* (_xmin+ _xmax);
+	float view_ymin= (_ymin- 0.5f* (_ymin+ _ymax))* margin_factor+ 0.5f* (_ymin+ _ymax);
+	float view_xmax= (_xmax- 0.5f* (_xmin+ _xmax))* margin_factor+ 0.5f* (_xmin+ _xmax);
+	float view_ymax= (_ymax- 0.5f* (_ymin+ _ymax))* margin_factor+ 0.5f* (_ymin+ _ymax);
 
 	std::ofstream f;
 	f.open(html_path);
@@ -223,7 +221,8 @@ void DCEL::export_html(std::string html_path) {
 	f << ".line_class {fill: transparent; stroke: black; stroke-width: 0.01; stroke-opacity: 0.3;}\n";
 	f << "</style>\n</head>\n<body>\n";
 	f << "<svg width=\"" << svg_width << "\" height=\"" << svg_height << "\" ";
-	f << "viewbox=\"" << view_xmin << " " << view_ymin << " " << view_xmax << " " << view_ymax << "\" ";
+	// viewbox = xmin, ymin, width, height
+	f << "viewbox=\"" << view_xmin << " " << view_ymin << " " << view_xmax- view_xmin << " " << view_ymax- view_ymin << "\" ";
 	f << "style=\"background-color:rgb(200,240,220)\"";
 	f << "\">\n";
 

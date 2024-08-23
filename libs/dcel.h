@@ -48,7 +48,7 @@ struct DCEL_Face {
 	friend std::ostream & operator << (std::ostream & os, DCEL_Face & f);
 
 	DCEL_HalfEdge * _outer_edge; // 1 des edges délimitant la face; NULL pour la face infinie
-	std::vector<DCEL_HalfEdge *> _inner_edges; // trous
+	std::vector<DCEL_HalfEdge *> _inner_edges; // trous, pas utilisé pour l'instant
 };
 
 
