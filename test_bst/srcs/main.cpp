@@ -19,11 +19,9 @@ void test1() {
 	bst->insert(1);
 	bst->insert(7);
 
-	bst->traversal(TraversalType::IN_ORDER);
-
-	//bst->remove(7);
-
 	//bst->traversal(TraversalType::IN_ORDER);
+
+	//bst->remove(4);
 
 	/*Node<int> * node= bst->search(4);
 	if (node!= NULL) {
@@ -112,8 +110,8 @@ void test4() {
 int main() {
 	//test1();
 	//test2();
-	//test3();
-	test4();
+	test3();
+	//test4();
 	
 	return 0;
 }

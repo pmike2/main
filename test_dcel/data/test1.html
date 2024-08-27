@@ -3,29 +3,55 @@
 <head>
 <style>
 .point_class {fill: black;}
+.repere_point_class {fill: red;}
 .line_class {fill: transparent; stroke: black; stroke-width: 0.01; stroke-opacity: 0.3;}
+.repere_line_class {fill: transparent; stroke: red; stroke-width: 0.01; stroke-opacity: 0.3;}
+.arrow_line_class {fill: transparent; stroke: rgb(100,100,100); stroke-width: 0.01; stroke-opacity: 0.3;}
 </style>
 </head>
 <body>
-<svg width="700" height="700" viewbox="-0.25 -0.75 1.5 4.5" style="background-color:rgb(200,240,220)"">
-<circle class="point_class" cx="0" cy="3" r="0.01" />
-<circle class="point_class" cx="1" cy="3" r="0.01" />
-<line class="line_class" x1="0" y1="3" x2="1" y2="3" />
-<circle class="point_class" cx="1" cy="3" r="0.01" />
-<circle class="point_class" cx="0" cy="2" r="0.01" />
-<line class="line_class" x1="1" y1="3" x2="0" y2="2" />
-<circle class="point_class" cx="0" cy="2" r="0.01" />
-<circle class="point_class" cx="0" cy="3" r="0.01" />
-<line class="line_class" x1="0" y1="2" x2="0" y2="3" />
-<circle class="point_class" cx="1" cy="3" r="0.01" />
-<circle class="point_class" cx="1" cy="0" r="0.01" />
-<line class="line_class" x1="1" y1="3" x2="1" y2="0" />
-<circle class="point_class" cx="1" cy="0" r="0.01" />
-<circle class="point_class" cx="0" cy="2" r="0.01" />
-<line class="line_class" x1="1" y1="0" x2="0" y2="2" />
-<circle class="point_class" cx="0" cy="2" r="0.01" />
-<circle class="point_class" cx="1" cy="3" r="0.01" />
-<line class="line_class" x1="0" y1="2" x2="1" y2="3" />
+<svg width="700" height="700" viewbox="-0.25 -0.75 1.5 4.5" style="background-color:rgb(220,240,230)"">
+<circle class="repere_point_class" cx="0" cy="3" r="0.01" />
+<circle class="repere_point_class" cx="1" cy="3" r="0.01" />
+<circle class="repere_point_class" cx="0" cy="2" r="0.01" />
+<line class="repere_line_class" x1="0" y1="3" x2="1" y2="3" />
+<line class="repere_line_class" x1="0" y1="3" x2="0" y2="2" />
+<circle class="point_class" cx="0.0353553" cy="2.96272" r="0.01" />
+<circle class="point_class" cx="0.955279" cy="2.97638" r="0.01" />
+<line class="line_class" x1="0.0353553" y1="2.96272" x2="0.955279" y2="2.97638" />
+<line class="arrow_line_class" x1="0.545311" y1="2.97029" x2="0.445768" y2="2.93881" />
+<line class="arrow_line_class" x1="0.445768" y1="2.93881" x2="0.444877" y2="2.99881" />
+<line class="arrow_line_class" x1="0.444877" y1="2.99881" x2="0.545311" y2="2.97029" />
+<circle class="point_class" cx="0.955279" cy="2.97638" r="0.01" />
+<circle class="point_class" cx="0.0223607" cy="2.04531" r="0.01" />
+<line class="line_class" x1="0.955279" y1="2.97638" x2="0.0223607" y2="2.04531" />
+<line class="arrow_line_class" x1="0.453429" y1="2.47553" x2="0.503018" y2="2.5674" />
+<line class="arrow_line_class" x1="0.503018" y1="2.5674" x2="0.545402" y2="2.52493" />
+<line class="arrow_line_class" x1="0.545402" y1="2.52493" x2="0.453429" y2="2.47553" />
+<circle class="point_class" cx="0.0223607" cy="2.04531" r="0.01" />
+<circle class="point_class" cx="0.0353553" cy="2.96272" r="0.01" />
+<line class="line_class" x1="0.0223607" y1="2.04531" x2="0.0353553" y2="2.96272" />
+<line class="arrow_line_class" x1="0.0295662" y1="2.55401" x2="0.0581468" y2="2.4536" />
+<line class="arrow_line_class" x1="0.0581468" y1="2.4536" x2="-0.00184713" y2="2.45445" />
+<line class="arrow_line_class" x1="-0.00184713" y1="2.45445" x2="0.0295662" y2="2.55401" />
+<circle class="point_class" cx="0.987873" cy="2.95139" r="0.01" />
+<circle class="point_class" cx="0.990194" cy="0.0490837" r="0.01" />
+<line class="line_class" x1="0.987873" y1="2.95139" x2="0.990194" y2="0.0490837" />
+<line class="arrow_line_class" x1="0.989074" y1="1.45024" x2="0.958994" y2="1.55021" />
+<line class="arrow_line_class" x1="0.958994" y1="1.55021" x2="1.01899" y2="1.55026" />
+<line class="arrow_line_class" x1="1.01899" y1="1.55026" x2="0.989074" y2="1.45024" />
+<circle class="point_class" cx="0.990194" cy="0.0490837" r="0.01" />
+<circle class="point_class" cx="0.0447214" cy="1.97638" r="0.01" />
+<line class="line_class" x1="0.990194" y1="0.0490837" x2="0.0447214" y2="1.97638" />
+<line class="arrow_line_class" x1="0.495436" y1="1.05762" x2="0.566413" y2="0.981056" />
+<line class="arrow_line_class" x1="0.566413" y1="0.981056" x2="0.512546" y2="0.95463" />
+<line class="arrow_line_class" x1="0.512546" y1="0.95463" x2="0.495436" y2="1.05762" />
+<circle class="point_class" cx="0.0447214" cy="1.97638" r="0.01" />
+<circle class="point_class" cx="0.987873" cy="2.95139" r="0.01" />
+<line class="line_class" x1="0.0447214" y1="1.97638" x2="0.987873" y2="2.95139" />
+<line class="arrow_line_class" x1="0.551061" y1="2.49982" x2="0.503097" y2="2.40709" />
+<line class="arrow_line_class" x1="0.503097" y1="2.40709" x2="0.459971" y2="2.44881" />
+<line class="arrow_line_class" x1="0.459971" y1="2.44881" x2="0.551061" y2="2.49982" />
 </svg>
 </body>
 </html>

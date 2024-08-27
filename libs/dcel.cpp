@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <fstream>
+#include <cmath>
 
 #include "dcel.h"
 
@@ -137,6 +138,20 @@ std::vector<DCEL_Face *> DCEL_Face::get_adjacent_faces() {
 }
 
 
+std::pair<float , float> DCEL_Face::get_gravity_center() {
+	float x= 0.0f;
+	float y= 0.0f;
+	std::vector<DCEL_Vertex *> vertices= get_vertices();
+	for (auto v : vertices) {
+		x+= v->_x;
+		y+= v->_y;
+	}
+	x/= vertices.size();
+	y/= vertices.size();
+	return std::make_pair(x, y);
+}
+
+
 std::ostream & operator << (std::ostream & os, DCEL_Face & f) {
 	for (auto edge : f.get_edges()) {
 		os << *edge << "\n";
@@ -204,49 +219,87 @@ DCEL_Face * DCEL::add_face(std::vector<DCEL_HalfEdge *> edges) {
 
 
 void DCEL::export_html(std::string html_path) {
-	unsigned int svg_width= 700;
-	unsigned int svg_height= 700;
+	const unsigned int SVG_WIDTH= 700;
+	const unsigned int SVG_HEIGHT= 700;
+	const float MARGIN_FACTOR= 1.5f;
+	const float VIEW_XMIN= (_xmin- 0.5f* (_xmin+ _xmax))* MARGIN_FACTOR+ 0.5f* (_xmin+ _xmax);
+	const float VIEW_YMIN= (_ymin- 0.5f* (_ymin+ _ymax))* MARGIN_FACTOR+ 0.5f* (_ymin+ _ymax);
+	const float VIEW_XMAX= (_xmax- 0.5f* (_xmin+ _xmax))* MARGIN_FACTOR+ 0.5f* (_xmin+ _xmax);
+	const float VIEW_YMAX= (_ymax- 0.5f* (_ymin+ _ymax))* MARGIN_FACTOR+ 0.5f* (_ymin+ _ymax);
+	const float POINT_RADIUS= 0.01f;
+	const float DELTA_BUFFER= 0.05f;
+	const float ARROW_SIZE= 0.1f;
+	const float ARROW_SIZE_2= 0.03f;
 
-	float margin_factor= 1.5f;
-	float view_xmin= (_xmin- 0.5f* (_xmin+ _xmax))* margin_factor+ 0.5f* (_xmin+ _xmax);
-	float view_ymin= (_ymin- 0.5f* (_ymin+ _ymax))* margin_factor+ 0.5f* (_ymin+ _ymax);
-	float view_xmax= (_xmax- 0.5f* (_xmin+ _xmax))* margin_factor+ 0.5f* (_xmin+ _xmax);
-	float view_ymax= (_ymax- 0.5f* (_ymin+ _ymax))* margin_factor+ 0.5f* (_ymin+ _ymax);
+	auto y_html= [VIEW_YMIN, VIEW_YMAX](float y) -> float {return VIEW_YMIN+ VIEW_YMAX- y;};
 
 	std::ofstream f;
 	f.open(html_path);
 	f << "<!DOCTYPE html>\n<html>\n<head>\n";
 	f << "<style>\n";
 	f << ".point_class {fill: black;}\n";
+	f << ".repere_point_class {fill: red;}\n";
 	f << ".line_class {fill: transparent; stroke: black; stroke-width: 0.01; stroke-opacity: 0.3;}\n";
+	f << ".repere_line_class {fill: transparent; stroke: red; stroke-width: 0.01; stroke-opacity: 0.3;}\n";
+	f << ".arrow_line_class {fill: transparent; stroke: rgb(100,100,100); stroke-width: 0.01; stroke-opacity: 0.3;}\n";
 	f << "</style>\n</head>\n<body>\n";
-	f << "<svg width=\"" << svg_width << "\" height=\"" << svg_height << "\" ";
+	f << "<svg width=\"" << SVG_WIDTH << "\" height=\"" << SVG_HEIGHT << "\" ";
 	// viewbox = xmin, ymin, width, height
-	f << "viewbox=\"" << view_xmin << " " << view_ymin << " " << view_xmax- view_xmin << " " << view_ymax- view_ymin << "\" ";
-	f << "style=\"background-color:rgb(200,240,220)\"";
+	f << "viewbox=\"" << VIEW_XMIN << " " << VIEW_YMIN << " " << VIEW_XMAX- VIEW_XMIN << " " << VIEW_YMAX- VIEW_YMIN << "\" ";
+	f << "style=\"background-color:rgb(220,240,230)\"";
 	f << "\">\n";
+
+	// repère
+	f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+	f << "<circle class=\"repere_point_class\" cx=\"" << 1 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+	f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+	f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 1 << "\" y2=\"" << y_html(0) << "\" />\n";
+	f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 0 << "\" y2=\"" << y_html(1) << "\" />\n";
 
 	for (auto face : _faces) {
 		std::vector<DCEL_HalfEdge *> edges= face->get_edges();
+		std::pair<float, float> gravity_center= face->get_gravity_center();
+		float xg= gravity_center.first;
+		float yg= gravity_center.second;
+		std::cout << "-----\n" << xg << " ; " << yg << "\n";
+		
 		for (auto edge : edges) {
 			DCEL_Vertex * v1= edge->_origin;
 			DCEL_Vertex * v2= edge->destination();
 			
 			float x1= v1->_x;
-			float y1= view_ymin+ view_ymax- v1->_y;
+			float y1= v1->_y;
 			float x2= v2->_x;
-			float y2= view_ymin+ view_ymax- v2->_y;
-			float radius= 0.01f;
-			f << "<circle class=\"point_class\" cx=\"" << x1 << "\" cy=\"" << y1 << "\" r=\"" << radius << "\" />\n";
-			f << "<circle class=\"point_class\" cx=\"" << x2 << "\" cy=\"" << y2 << "\" r=\"" << radius << "\" />\n";
-			f << "<line class=\"line_class\" x1=\"" << x1 << "\" y1=\"" << y1 << "\" x2=\"" << x2 << "\" y2=\"" << y2 << "\" />\n";
+			float y2= v2->_y;
+
+			// buffer inversé vers centre de gravité (moche mais bon)
+			x1+= DELTA_BUFFER* (xg- x1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
+			y1+= DELTA_BUFFER* (yg- y1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
+			x2+= DELTA_BUFFER* (xg- x2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
+			y2+= DELTA_BUFFER* (yg- y2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
+
+			f << "<circle class=\"point_class\" cx=\"" << x1 << "\" cy=\"" << y_html(y1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+			f << "<circle class=\"point_class\" cx=\"" << x2 << "\" cy=\"" << y_html(y2) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+			f << "<line class=\"line_class\" x1=\"" << x1 << "\" y1=\"" << y_html(y1) << "\" x2=\"" << x2 << "\" y2=\"" << y_html(y2) << "\" />\n";
+
+			// fleche
+			float u= (x2- x1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
+			float v= (y2- y1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
+			float x_arrow_1= 0.5f* (x1+ x2)+ 0.5f* ARROW_SIZE* u;
+			float y_arrow_1= 0.5f* (y1+ y2)+ 0.5f* ARROW_SIZE* v;
+			float x_arrow_2= x_arrow_1- ARROW_SIZE* u- ARROW_SIZE_2* v;
+			float y_arrow_2= y_arrow_1- ARROW_SIZE* v+ ARROW_SIZE_2* u;
+			float x_arrow_3= x_arrow_1- ARROW_SIZE* u+ ARROW_SIZE_2* v;
+			float y_arrow_3= y_arrow_1- ARROW_SIZE* v- ARROW_SIZE_2* u;
+			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_1 << "\" y1=\"" << y_html(y_arrow_1) << "\" x2=\"" << x_arrow_2 << "\" y2=\"" << y_html(y_arrow_2) << "\" />\n";
+			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_2 << "\" y1=\"" << y_html(y_arrow_2) << "\" x2=\"" << x_arrow_3 << "\" y2=\"" << y_html(y_arrow_3) << "\" />\n";
+			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_3 << "\" y1=\"" << y_html(y_arrow_3) << "\" x2=\"" << x_arrow_1 << "\" y2=\"" << y_html(y_arrow_1) << "\" />\n";
 		}
 	}
 
 	f << "</svg>\n";
 	f << "</body>\n</html>\n";
 	f.close();
-
 }
 
 

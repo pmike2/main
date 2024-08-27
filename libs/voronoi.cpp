@@ -83,8 +83,6 @@ Voronoi::Voronoi(std::vector<glm::vec2> sites) :
 			handle_circle_event(e);
 		}
 	}
-	//std::cout << "\n";
-
 }
 
 

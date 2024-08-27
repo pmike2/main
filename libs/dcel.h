@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <utility>
 
 
 struct DCEL_HalfEdge;
@@ -45,6 +46,7 @@ struct DCEL_Face {
 	std::vector<DCEL_Vertex *> get_vertices();
 	std::vector<DCEL_HalfEdge *> get_edges();
 	std::vector<DCEL_Face *> get_adjacent_faces();
+	std::pair<float , float> get_gravity_center();
 	friend std::ostream & operator << (std::ostream & os, DCEL_Face & f);
 
 	DCEL_HalfEdge * _outer_edge; // 1 des edges délimitant la face; NULL pour la face infinie

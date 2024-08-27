@@ -83,7 +83,7 @@ public:
 	void insert(T data);
 	void remove(T data);
 	Node<T> * search(T data, bool exact_match=true);
-	std::vector<Node<T> *> get_sorted_array();
+	std::vector<T> get_sorted_array();
 	void balance();
 	void traversal(TraversalType tt, std::function<void(T)> f=[](T a){std::cout << a << " ";});
 	std::pair<Node<T> *, Node<T> *> neighbours_leaf(T data);
@@ -166,6 +166,7 @@ Node<T> * BST<T>::remove(Node<T> * node, T data) {
 		return node;
 	}
 
+	// node->_data == data
 	if (node->_left== NULL) {
 		Node<T> * tmp= node->_right;
 		delete node;
@@ -227,8 +228,8 @@ Node<T> * BST<T>::search(T data, bool exact_match) {
 
 
 template <class T>
-std::vector<Node<T>* > BST<T>::get_sorted_array() {
-	std::vector<Node<T>* > result;
+std::vector<T> BST<T>::get_sorted_array() {
+	std::vector<T> result;
 	traversal(TraversalType::IN_ORDER, [&result](T x){result.push_back(x);});
 	return result;
 }
@@ -288,9 +289,9 @@ void BST<T>::traversal(Node<T> * node, TraversalType tt, std::function<void(T)> 
 template <class T>
 std::pair<Node<T> *, Node<T> *> BST<T>::neighbours_leaf(T data) {
 	std::vector<T> array= get_sorted_array();
-	array.erase(std::remove_if(array.begin(), array.end(), 
+	/*array.erase(std::remove_if(array.begin(), array.end(), 
 		[](const T & x){ return ((x._left!= NULL) || (x._right!= NULL));}
-	), array.end());
+	), array.end());*/
 
 	Node<T> * prev= NULL;
 	Node<T> * next= NULL;
