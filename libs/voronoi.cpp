@@ -17,7 +17,7 @@ std::pair<glm::vec2, glm::vec2> parabols_intersections(glm::vec2 & site1, glm::v
 	float c= 2.0f* (site2.y- yline)* (site1.x* site1.x+ site1.y* site1.y- yline* yline)
 			-2.0f* (site1.y- yline)* (site2.x* site2.x+ site2.y* site2.y- yline* yline);
 	if (a== 0.0f) {
-		std::cout << "parabols_intersections 1 seul pt\n";
+		//std::cout << "parabols_intersections 1 seul pt\n";
 		float x= -1.0f* c/ b;
 		glm::vec2 inter(x, y(x));
 		return std::make_pair(inter, inter);
@@ -27,6 +27,7 @@ std::pair<glm::vec2, glm::vec2> parabols_intersections(glm::vec2 & site1, glm::v
 		std::cout << "parabols_intersections 0 pt\n";
 		return std::make_pair(glm::vec2(0.0f), glm::vec2(0.0f));
 	}
+	std::cout << "parabols_intersections 2 pts\n";
 	float x1= 0.5f* (-1.0f* b- sqrt(delta))/ a;
 	float x2= 0.5f* (-1.0f* b+ sqrt(delta))/ a;
 	return std::make_pair(glm::vec2(x1, y(x1)), glm::vec2(x2, y(x2)));
@@ -41,31 +42,44 @@ std::pair<glm::vec2, glm::vec2> parabols_intersections(glm::vec2 & site1, glm::v
 
 
 // -------------------------------
-Voronoi::Voronoi() :
-_beachline([](BeachLineNode lhs, BeachLineNode rhs) {
-		if (lhs._site.x< rhs._site.x) {
-			return -1;
-		}
-		else if (lhs._site.x> rhs._site.x) {
-			return 1;
-		}
-		return 0;
-	})
-{
+Voronoi::Voronoi() {
 
 }
 
 
 Voronoi::Voronoi(std::vector<glm::vec2> sites) :
-	_beachline([](BeachLineNode lhs, BeachLineNode rhs) {
-		if (lhs._site.x< rhs._site.x) {
+	_beachline([this](BeachLineNode lhs, BeachLineNode rhs) {
+		float lhx= 0.0f;
+		float rhx= 0.0f;
+		
+		// dans le cas d'un Arc (feuille du BST) on considère le x du site associé
+		// sinon on calcule le x du breakpoint = intersection des 2 arcs définissant le breakpoint
+		if (lhs._type== Arc) {
+			lhx= lhs._site.x;
+		}
+		else if (lhs._type== BreakPoint) {
+			std::pair<glm::vec2, glm::vec2> inter_pair= parabols_intersections(lhs._sites.first, lhs._sites.second, _current_y);
+			// a priori une seule intersection, on prend la 1ere
+			lhx= inter_pair.first.x;
+		}
+
+		if (rhs._type== Arc) {
+			rhx= rhs._site.x;
+		}
+		else if (lhs._type== BreakPoint) {
+			std::pair<glm::vec2, glm::vec2> inter_pair= parabols_intersections(rhs._sites.first, rhs._sites.second, _current_y);
+			// a priori une seule intersection, on prend la 1ere
+			rhx= inter_pair.first.x;
+		}
+
+		if (lhx< rhx) {
 			return -1;
 		}
-		else if (lhs._site.x> rhs._site.x) {
+		else if (lhx> rhx) {
 			return 1;
 		}
 		return 0;
-	})
+	}), _current_y(0.0f)
 {
 	for (unsigned int i=0; i<sites.size(); ++i) {
 		Event e{EventType::SiteEvent, sites[i]};
@@ -92,17 +106,23 @@ Voronoi::~Voronoi() {
 
 
 void Voronoi::handle_site_event(Event e) {
+	// si la beachline est vide on insère un nouvel arc et on sort
 	if (_beachline.empty()) {
-		_beachline.insert({e._site, NULL, NULL});
+		_beachline.insert({Arc, e._site});
 		return;
 	}
 
-	BeachLineNode tmp{e._site, NULL};
-	Node<BeachLineNode> * b= _beachline.search(tmp, false);
-	if (b->_data._circle_event!= NULL) {
-		_queue.erase(*b->_data._circle_event);
+	// recherche de l'arc au dessus du site
+	BeachLineNode tmp{Arc, e._site};
+	Node<BeachLineNode> * arc_above_site= _beachline.search(tmp, false);
+
+	// si cet arc a un circle event associé, on supprime cet event, les 2 edges ne se rencontront jamais
+	if (arc_above_site->_data._circle_event!= NULL) {
+		_queue.erase(*arc_above_site->_data._circle_event);
 	}
 
+	// remplacer arc_above_site par 3 arcs dont les sites sont (arc_above_site->_site, e._site, arc_above_site->_site)
+	// avec les breakpoints qui vont bien
 	std::pair<Node<BeachLineNode> *, Node<BeachLineNode> *> nl= _beachline.neighbours_leaf(b);
 	Node<BeachLineNode> * prev_site= nl.first;
 	Node<BeachLineNode> * next_site= nl.second;

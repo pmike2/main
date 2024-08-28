@@ -28,46 +28,74 @@ class Node {
 public:
 	Node();
 	Node(T data);
-	Node(T data, Node * left, Node * right);
+	//Node(T data, Node left, Node right, Node parent);
 	~Node();
+
+	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
+	template <class U>
+	friend std::ostream & operator << (std::ostream & os, const Node<U> & node);
 
 	T _data;
 	Node * _left;
 	Node * _right;
+	Node * _parent; // parent du noeud; pas nécessaire à priori mais facilite certaines méthodes
 };
 
 
 template <class T>
-Node<T>::Node() {
-	_left= NULL;
-	_right= NULL;
+Node<T>::Node() : _left(NULL), _right(NULL), _parent(NULL) {
 }
 
 
 template <class T>
-Node<T>::Node(T data) : _data(data), _left(NULL), _right(NULL) {
+Node<T>::Node(T data) : _data(data), _left(NULL), _right(NULL), _parent(NULL) {
 }
 
 
-template <class T>
-Node<T>::Node(T data, Node * left, Node * right) : _data(data), _left(left), _right(right) {
+/*template <class T>
+Node<T>::Node(T data, Node left, Node right, Node parent) : 
+	_data(data), _left(left), _right(right), _parent(parent) {
 }
-
+*/
 
 template <class T>
 Node<T>::~Node() {
 }
 
 
+template <class T>
+std::ostream & operator << (std::ostream & os, const Node<T> & node) {
+	os << "node = (" << &node << " , " << node._data << ") ; ";
+	if (node._left!= NULL) {
+		os << "left = (" << node._left << " , " << node._left->_data << ") ; ";
+	}
+	else {
+		os << "left = NULL ; ";
+	}
+	if (node._right!= NULL) {
+		os << "right = (" << node._right << " , " << node._right->_data << ") ; ";
+	}
+	else {
+		os << "right = NULL ; ";
+	}
+	return os;
+}
+
+
 // ----------------------------------
 template <class T>
 class BST {
-	Node<T> * insert(Node<T> * node, T data);
-	Node<T> * remove(Node<T> * node, T data);
-	Node<T> * search(Node<T> * node, T data, bool exact_match);
+	//Node<T> * insert(Node<T> * node, T data);
+	//Node<T> * remove(Node<T> * node, T data);
+	//Node<T> * search(Node<T> * node, T data, bool exact_match);
+	void transplant(Node<T> * old_subtree, Node<T> * new_subtree);
 	Node<T> * balance(std::vector<T> & sorted_array, int start, int end);
 	void traversal(Node<T> * node, TraversalType tt, std::function<void(T)> f);
 	void export_html(std::string html_path, Node<T> * node, float x, int y, std::function<std::string(T)> f_str);
+
+	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
+	template <class U>
+	friend std::ostream & operator << (std::ostream & os, const BST<U> & bst);
 
 	
 	Node<T> * _root;
@@ -80,13 +108,18 @@ public:
 	~BST();
 	void clear();
 	bool empty();
+	Node<T> * minimum(Node<T> * node);
+	Node<T> * maximum(Node<T> * node);
+	Node<T> * successor(Node<T> * node);
+	Node<T> * predecessor(Node<T> * node);
 	void insert(T data);
 	void remove(T data);
+	Node<T> * search(Node<T> * node, T data, bool exact_match);
 	Node<T> * search(T data, bool exact_match=true);
 	std::vector<T> get_sorted_array();
 	void balance();
 	void traversal(TraversalType tt, std::function<void(T)> f=[](T a){std::cout << a << " ";});
-	std::pair<Node<T> *, Node<T> *> neighbours_leaf(T data);
+	//std::pair<Node<T> *, Node<T> *> neighbours_leaf(T data);
 	void export_html(std::string html_path, std::function<std::string(T)> f_str=[](T a){return std::to_string(a);});
 };
 
@@ -120,6 +153,7 @@ void BST<T>::clear() {
 }
 
 
+// le BST est-il vide
 template <class T>
 bool BST<T>::empty() {
 	if (_root== NULL) {
@@ -129,7 +163,61 @@ bool BST<T>::empty() {
 }
 
 
+// renvoie le noeud min dans le sous-arbre de racine node
 template <class T>
+Node<T> * BST<T>::minimum(Node<T> * node) {
+	while (node->_left!= NULL) {
+		node= node->_left;
+	}
+	return node;
+}
+
+
+// renvoie le noeud min dans le sous-arbre de racine node
+template <class T>
+Node<T> * BST<T>::maximum(Node<T> * node) {
+	while (node->_right!= NULL) {
+		node= node->_right;
+	}
+	return node;
+}
+
+
+// renvoie le noeud directement supérieur à node
+template <class T>
+Node<T> * BST<T>::successor(Node<T> * node) {
+	// si node a un enfant _right, on renvoie le node minimum de node._right
+	if (node->_right!= NULL) {
+		return minimum(node->_right);
+	}
+	// sinon on cherche le parent le plus bas dont le left child est un parent de node
+	Node<T> * y= node->_parent;
+	while ((y!= NULL) && (node== y->_right)) {
+		node= y;
+		y= y->_parent;
+	}
+	return y;
+}
+
+
+// renvoie le noeud directement inférieur à node
+template <class T>
+Node<T> * BST<T>::predecessor(Node<T> * node) {
+	// si node a un enfant _left, on renvoie le node maximum de node._left
+	if (node->_left!= NULL) {
+		return maximum(node->_left);
+	}
+	// sinon on cherche le parent le plus bas dont le right child est un parent de node
+	Node<T> * y= node->_parent;
+	while ((y!= NULL) && (node== y->_left)) {
+		node= y;
+		y= y->_parent;
+	}
+	return y;
+}
+
+
+/*template <class T>
 Node<T> * BST<T>::insert(Node<T> * node, T data) {
 	if (node== NULL) {
 		return new Node<T>(data);
@@ -138,20 +226,70 @@ Node<T> * BST<T>::insert(Node<T> * node, T data) {
 	if (_cmp(data, node->_data)> 0) {
 		node->_right= insert(node->_right, data);
 	}
-	else if (_cmp(data, node->_data)< 0) {
+	else if (_cmp(data, node->_data)<= 0) {
 		node->_left= insert(node->_left, data);
 	}
 	return node;
-}
+}*/
 
 
 template <class T>
 void BST<T>::insert(T data) {
-	_root= insert(_root, data);
+	//_root= insert(_root, data);
+
+	// noeud à insérer
+	Node<T> * z= new Node<T>(data);
+	// noeud comparé à z
+	Node<T> * x= _root;
+	// sera le parent de z
+	Node<T> * y= NULL;
+
+	// on cherche y, qui sera le parent de z
+	while (x!= NULL) {
+		y= x;
+		if (_cmp(z->_data, x->_data)< 0) {
+			x= x->_left;
+		}
+		else {
+			x= x->_right;
+		}
+	}
+	z->_parent= y;
+
+	// BST était vide
+	if (y== NULL) {
+		_root= z;
+	}
+	else if (_cmp(z->_data, y->_data)< 0) {
+		y->_left= z;
+	}
+	else {
+		y->_right= z;
+	}
 }
 
 
+// remplacement de sous-arbres : new_subtree va remplacer old_subtree
+// new_subtree peut valoir NULL si l'on veut supprimer old_subtree
 template <class T>
+void BST<T>::transplant(Node<T> * old_subtree, Node<T> * new_subtree) {
+	if (old_subtree== NULL) {
+		_root= new_subtree;
+	}
+	else if (old_subtree== old_subtree->_parent->_left) {
+		old_subtree->_parent->_left= new_subtree;
+	}
+	else {
+		old_subtree->_parent->_right= new_subtree;
+	}
+	
+	if (new_subtree!= NULL) {
+		new_subtree->_parent= old_subtree->_parent;
+	}
+}
+
+
+/*template <class T>
 Node<T> * BST<T>::remove(Node<T> * node, T data) {
 	if (node== NULL) {
 		return NULL;
@@ -194,16 +332,43 @@ Node<T> * BST<T>::remove(Node<T> * node, T data) {
 		delete succ;
 		return node;
 	}
-}
+}*/
 
 
+// suppression de data ; suppose qu'il ne peut pas y avoir la même valeur 2 fois dans l'arbre !
 template <class T>
 void BST<T>::remove(T data) {
-	_root= remove(_root, data);
+	//_root= remove(_root, data);
+	Node<T> * node= search(data, true);
+	// data n'est pas dans l'arbre, on sort
+	if (node== NULL) {
+		return;
+	}
+
+	// si node n'a pas d'enfant left on remplace le subtree node par le subtree node._right
+	if (node->_left== NULL) {
+		transplant(node, node->_right);
+	}
+	// si node n'a pas d'enfant right on remplace le subtree node par le subtree node._left
+	else if (node->_right== NULL) {
+		transplant(node, node->_left);
+	}
+	// sinon voir schéma livre algo p323
+	else {
+		Node<T> * y= minimum(node->_right);
+		if (y!= node->_right) {
+			transplant(y, y->_right);
+			y->_right= node->_right;
+			y->_right->_parent= y->_right;
+		}
+		transplant(node, y);
+		y->_left= node->_left;
+		y->_left->_parent= y->_left;
+	}
 }
 
 
-template <class T>
+/*template <class T>
 Node<T> * BST<T>::search(Node<T> * node, T data, bool exact_match) {
 	if (node== NULL) {
 		return NULL;
@@ -218,9 +383,31 @@ Node<T> * BST<T>::search(Node<T> * node, T data, bool exact_match) {
 		return search(node->_right, data, exact_match);
 	}
 	return search(node->_left, data, exact_match);
+}*/
+
+
+// recherche de data dans le sous-arbre de sommet node
+template <class T>
+Node<T> * BST<T>::search(Node<T> * node, T data, bool exact_match) {
+	while ((node!= NULL) && (node->_data!= data)) {
+		if (_cmp(node->_data, data)< 0) {
+			if ((node->_right== NULL) && (!exact_match)) {
+				return node;
+			}
+			node= node->_right;
+		}
+		else {
+			if ((node->_left== NULL) && (!exact_match)) {
+				return node;
+			}
+			node= node->_left;
+		}
+	}
+	return node;
 }
 
 
+// recherche de data dans tout l'arbre
 template <class T>
 Node<T> * BST<T>::search(T data, bool exact_match) {
 	return search(_root, data, exact_match);
@@ -285,7 +472,7 @@ void BST<T>::traversal(Node<T> * node, TraversalType tt, std::function<void(T)> 
 	}
 }
 
-
+/*
 template <class T>
 std::pair<Node<T> *, Node<T> *> BST<T>::neighbours_leaf(T data) {
 	std::vector<T> array= get_sorted_array();
@@ -293,7 +480,7 @@ std::pair<Node<T> *, Node<T> *> BST<T>::neighbours_leaf(T data) {
 		[](const T & x){ return ((x._left!= NULL) || (x._right!= NULL));}
 	), array.end());*/
 
-	Node<T> * prev= NULL;
+	/*Node<T> * prev= NULL;
 	Node<T> * next= NULL;
 	for (int i=0; i<array.size(); ++i) {
 		if (array[i]== data) {
@@ -306,6 +493,13 @@ std::pair<Node<T> *, Node<T> *> BST<T>::neighbours_leaf(T data) {
 		}
 	}
 	return std::make_pair(prev, next);
+}*/
+
+
+template <class T>
+std::ostream & operator << (std::ostream & os, const BST<T> & bst) {
+	traversal(IN_ORDER, [os](T node)->std::ostream{os << node << "\n";});
+	return os;
 }
 
 

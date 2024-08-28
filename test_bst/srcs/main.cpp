@@ -23,13 +23,13 @@ void test1() {
 
 	//bst->remove(4);
 
-	/*Node<int> * node= bst->search(4);
+	Node<int> * node= bst->search(8);
 	if (node!= NULL) {
-		std::cout << node->_data << "\n";
+		std::cout << *node << "\n";
 	}
 	else {
 		std::cout << "NULL\n";
-	}*/
+	}
 
 	/*std::cout << bst->_root->_data << "\n";
 	std::cout << bst->_root->_left->_data << "\n";
@@ -94,24 +94,10 @@ void test3() {
 }
 
 
-void test4() {
-	BST<int> * bst= new BST<int>();
-	bst->insert(4);
-	bst->insert(8);
-	bst->insert(2);
-	bst->insert(3);
-	bst->insert(1);
-	bst->insert(7);
-	std::pair<Node<int> *, Node<int> *> res= bst->neighbours_leaf(8);
-	std::cout << res.first << " ; " << res.second << "\n";
-}
-
-
 int main() {
-	//test1();
+	test1();
 	//test2();
-	test3();
-	//test4();
-	
+	//test3();
+
 	return 0;
 }
