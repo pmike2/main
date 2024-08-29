@@ -19,44 +19,50 @@ implémenté initialement pour voronoi
 
 
 // ----------------------------------
+// type de traversée d'un arbre
 typedef enum {IN_ORDER, PRE_ORDER, POST_ORDER} TraversalType;
 
 
 // ----------------------------------
+// noeud d'un arbre
 template <class T>
 class Node {
 public:
 	Node();
 	Node(T data);
-	//Node(T data, Node left, Node right, Node parent);
+	Node(T data, std::function<std::string(T)> fprint);
 	~Node();
+	bool is_left();
 
 	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
 	template <class U>
 	friend std::ostream & operator << (std::ostream & os, const Node<U> & node);
 
-	T _data;
 	Node * _left;
 	Node * _right;
 	Node * _parent; // parent du noeud; pas nécessaire à priori mais facilite certaines méthodes
+	T _data;
+	std::function<std::string(T)> _fprint;
 };
 
 
 template <class T>
-Node<T>::Node() : _left(NULL), _right(NULL), _parent(NULL) {
-}
+Node<T>::Node() :
+_left(NULL), _right(NULL), _parent(NULL), _fprint([](T data){return std::to_string(data);}) 
+{ }
 
 
 template <class T>
-Node<T>::Node(T data) : _data(data), _left(NULL), _right(NULL), _parent(NULL) {
-}
+Node<T>::Node(T data) :
+_data(data), _left(NULL), _right(NULL), _parent(NULL), _fprint([](T data){return std::to_string(data);}) 
+{ }
 
 
-/*template <class T>
-Node<T>::Node(T data, Node left, Node right, Node parent) : 
-	_data(data), _left(left), _right(right), _parent(parent) {
-}
-*/
+template <class T>
+Node<T>::Node(T data, std::function<std::string(T)> fprint) :
+_data(data), _fprint(fprint), _left(NULL), _right(NULL), _parent(NULL) 
+{ }
+
 
 template <class T>
 Node<T>::~Node() {
@@ -64,82 +70,113 @@ Node<T>::~Node() {
 
 
 template <class T>
+bool Node<T>::is_left() {
+	if (_parent== NULL) {
+		return false;
+	}
+	if (_parent->_left== this) {
+		return true;
+	}
+	return false;
+}
+
+
+template <class T>
 std::ostream & operator << (std::ostream & os, const Node<T> & node) {
-	os << "node = (" << &node << " , " << node._data << ") ; ";
+	os << "node = (" << &node << " , " << node._fprint(node._data) << ") ; ";
 	if (node._left!= NULL) {
-		os << "left = (" << node._left << " , " << node._left->_data << ") ; ";
+		os << "left = (" << node._left << " , " << node._left->_fprint(node._data) << ") ; ";
 	}
 	else {
 		os << "left = NULL ; ";
 	}
 	if (node._right!= NULL) {
-		os << "right = (" << node._right << " , " << node._right->_data << ") ; ";
+		os << "right = (" << node._right << " , " << node._right->_fprint(node._data) << ") ; ";
 	}
 	else {
 		os << "right = NULL ; ";
+	}
+	if (node._parent!= NULL) {
+		os << "parent = (" << node._parent << " , " << node._parent->_fprint(node._data) << ") ; ";
+	}
+	else {
+		os << "parent = NULL ; ";
 	}
 	return os;
 }
 
 
 // ----------------------------------
+// arbre binaire
 template <class T>
 class BST {
-	//Node<T> * insert(Node<T> * node, T data);
-	//Node<T> * remove(Node<T> * node, T data);
-	//Node<T> * search(Node<T> * node, T data, bool exact_match);
-	void transplant(Node<T> * old_subtree, Node<T> * new_subtree);
+	// méthodes privées
 	Node<T> * balance(std::vector<T> & sorted_array, int start, int end);
-	void traversal(Node<T> * node, TraversalType tt, std::function<void(T)> f);
-	void export_html(std::string html_path, Node<T> * node, float x, int y, std::function<std::string(T)> f_str);
-
+	void traversal(Node<T> * node, TraversalType tt, std::function<void(Node<T> *)> f);
+	void export_html(std::string html_path, Node<T> * node, float x, int y);
 	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
 	template <class U>
-	friend std::ostream & operator << (std::ostream & os, const BST<U> & bst);
-
+	friend std::ostream & operator << (std::ostream & os, BST<U> & bst);
 	
-	Node<T> * _root;
-	std::function<int(T, T)> _cmp;
-
-
 public:
 	BST();
 	BST(std::function<int(T, T)> cmp);
+	BST(std::function<int(T, T)> cmp, std::function<std::string(T)> node_print);
 	~BST();
 	void clear();
 	bool empty();
 	Node<T> * minimum(Node<T> * node);
+	Node<T> * minimum();
 	Node<T> * maximum(Node<T> * node);
+	Node<T> * maximum();
 	Node<T> * successor(Node<T> * node);
 	Node<T> * predecessor(Node<T> * node);
+	void insert(Node<T> * node);
 	void insert(T data);
+	void remove(Node<T> * node);
 	void remove(T data);
+	void transplant(Node<T> * old_subtree, Node<T> * new_subtree);
 	Node<T> * search(Node<T> * node, T data, bool exact_match);
 	Node<T> * search(T data, bool exact_match=true);
 	std::vector<T> get_sorted_array();
 	void balance();
-	void traversal(TraversalType tt, std::function<void(T)> f=[](T a){std::cout << a << " ";});
-	//std::pair<Node<T> *, Node<T> *> neighbours_leaf(T data);
-	void export_html(std::string html_path, std::function<std::string(T)> f_str=[](T a){return std::to_string(a);});
+	void traversal(TraversalType tt, std::function<void(Node<T> *)> f=[](Node<T> * node){std::cout << *node << "\n";});
+	void export_html(std::string html_path);
+
+
+	// racine
+	Node<T> * _root;
+	// fonction de comparaison entre 2 noeuds
+	std::function<int(T, T)> _cmp;
+	// fonction d'impression de node._data
+	std::function<std::string(T)> _node_print;
 };
 
 
 template <class T>
-BST<T>::BST() {
-	_root= NULL;
-	_cmp= [](T a, T b) { 
+BST<T>::BST() : 
+	_root(NULL),
+	_cmp([](T a, T b) { 
 		if (a < b) return -1;
 		else if (a > b) return 1;
 		else return 0;
-	};
-}
+	}),
+	_node_print([](T data){return std::to_string(data);})
+{ }
 
 
 template <class T>
-BST<T>::BST(std::function<int(T, T)> cmp) {
-	_root= NULL;
-	_cmp= cmp;
-}
+BST<T>::BST(std::function<int(T, T)> cmp) :
+	_root(NULL),
+	_cmp(cmp),
+	_node_print([](T data){return std::to_string(data);})
+{ }
+
+
+template <class T>
+BST<T>::BST(std::function<int(T, T)> cmp, std::function<std::string(T)> node_print) :
+	_root(NULL), _cmp(cmp), _node_print(node_print)
+{ }
 
 
 template <class T>
@@ -147,6 +184,7 @@ BST<T>::~BST() {
 }
 
 
+// vidage
 template <class T>
 void BST<T>::clear() {
 	remove(_root);
@@ -173,13 +211,27 @@ Node<T> * BST<T>::minimum(Node<T> * node) {
 }
 
 
-// renvoie le noeud min dans le sous-arbre de racine node
+// minimum de tout l'arbre
+template <class T>
+Node<T> * BST<T>::minimum() {
+	return minimum(_root);
+}
+
+
+// renvoie le noeud max dans le sous-arbre de racine node
 template <class T>
 Node<T> * BST<T>::maximum(Node<T> * node) {
 	while (node->_right!= NULL) {
 		node= node->_right;
 	}
 	return node;
+}
+
+
+// maximum de tout l'arbre
+template <class T>
+Node<T> * BST<T>::maximum() {
+	return maximum(_root);
 }
 
 
@@ -217,134 +269,51 @@ Node<T> * BST<T>::predecessor(Node<T> * node) {
 }
 
 
-/*template <class T>
-Node<T> * BST<T>::insert(Node<T> * node, T data) {
-	if (node== NULL) {
-		return new Node<T>(data);
-	}
-
-	if (_cmp(data, node->_data)> 0) {
-		node->_right= insert(node->_right, data);
-	}
-	else if (_cmp(data, node->_data)<= 0) {
-		node->_left= insert(node->_left, data);
-	}
-	return node;
-}*/
-
-
+// insertion d'un noeud
 template <class T>
-void BST<T>::insert(T data) {
-	//_root= insert(_root, data);
-
-	// noeud à insérer
-	Node<T> * z= new Node<T>(data);
-	// noeud comparé à z
+void BST<T>::insert(Node<T> * node) {
+	// noeud comparé à node
 	Node<T> * x= _root;
-	// sera le parent de z
+	// sera le parent de node
 	Node<T> * y= NULL;
 
-	// on cherche y, qui sera le parent de z
+	// on cherche y, qui sera le parent de node
 	while (x!= NULL) {
 		y= x;
-		if (_cmp(z->_data, x->_data)< 0) {
+		if (_cmp(node->_data, x->_data)< 0) {
 			x= x->_left;
 		}
 		else {
 			x= x->_right;
 		}
 	}
-	z->_parent= y;
+	node->_parent= y;
 
 	// BST était vide
 	if (y== NULL) {
-		_root= z;
+		_root= node;
 	}
-	else if (_cmp(z->_data, y->_data)< 0) {
-		y->_left= z;
+	else if (_cmp(node->_data, y->_data)< 0) {
+		y->_left= node;
 	}
 	else {
-		y->_right= z;
+		y->_right= node;
 	}
 }
 
 
-// remplacement de sous-arbres : new_subtree va remplacer old_subtree
-// new_subtree peut valoir NULL si l'on veut supprimer old_subtree
+// insertion de donnée
 template <class T>
-void BST<T>::transplant(Node<T> * old_subtree, Node<T> * new_subtree) {
-	if (old_subtree== NULL) {
-		_root= new_subtree;
-	}
-	else if (old_subtree== old_subtree->_parent->_left) {
-		old_subtree->_parent->_left= new_subtree;
-	}
-	else {
-		old_subtree->_parent->_right= new_subtree;
-	}
-	
-	if (new_subtree!= NULL) {
-		new_subtree->_parent= old_subtree->_parent;
-	}
+void BST<T>::insert(T data) {
+	// noeud à insérer
+	Node<T> * new_node= new Node<T>(data, _node_print);
+	insert(new_node);
 }
 
 
-/*template <class T>
-Node<T> * BST<T>::remove(Node<T> * node, T data) {
-	if (node== NULL) {
-		return NULL;
-	}
-	
-	if (_cmp(node->_data, data)> 0) {
-		node->_left= remove(node->_left, data);
-		return node;
-	}
-	else if (_cmp(node->_data, data)< 0) {
-		node->_right= remove(node->_right, data);
-		return node;
-	}
-
-	// node->_data == data
-	if (node->_left== NULL) {
-		Node<T> * tmp= node->_right;
-		delete node;
-		return tmp;
-	}
-	else if (node->_right== NULL) {
-		Node<T> * tmp= node->_left;
-		delete node;
-		return tmp;
-	}
-	else {
-		Node<T> * succ_parent= node;
-		Node<T> * succ= node->_right;
-		while (succ->_left!= NULL) {
-			succ_parent= succ;
-			succ= succ->_left;
-		}
-		if (succ_parent!= node) {
-			succ_parent->_left= succ->_right;
-		}
-		else {
-			succ_parent->_right= succ->_right;
-		}
-		node->_data= succ->_data;
-		delete succ;
-		return node;
-	}
-}*/
-
-
-// suppression de data ; suppose qu'il ne peut pas y avoir la même valeur 2 fois dans l'arbre !
+// suppression d'un noeud
 template <class T>
-void BST<T>::remove(T data) {
-	//_root= remove(_root, data);
-	Node<T> * node= search(data, true);
-	// data n'est pas dans l'arbre, on sort
-	if (node== NULL) {
-		return;
-	}
-
+void BST<T>::remove(Node<T> * node) {
 	// si node n'a pas d'enfant left on remplace le subtree node par le subtree node._right
 	if (node->_left== NULL) {
 		transplant(node, node->_right);
@@ -359,31 +328,45 @@ void BST<T>::remove(T data) {
 		if (y!= node->_right) {
 			transplant(y, y->_right);
 			y->_right= node->_right;
-			y->_right->_parent= y->_right;
+			y->_right->_parent= y;
 		}
 		transplant(node, y);
 		y->_left= node->_left;
-		y->_left->_parent= y->_left;
+		y->_left->_parent= y;
 	}
 }
 
-
-/*template <class T>
-Node<T> * BST<T>::search(Node<T> * node, T data, bool exact_match) {
+// suppression de data ; suppose qu'il ne peut pas y avoir la même valeur 2 fois dans l'arbre !
+template <class T>
+void BST<T>::remove(T data) {
+	// on cherche le noeud correspodant à data
+	Node<T> * node= search(data, true);
+	// data n'est pas dans l'arbre, on sort
 	if (node== NULL) {
-		return NULL;
+		return;
 	}
-	if ((!exact_match) && (node->_right== NULL) && (node->_left== NULL)) {
-		return node;
+	remove(node);
+}
+
+
+// remplacement de sous-arbres : new_subtree va remplacer old_subtree
+// new_subtree peut valoir NULL si l'on veut supprimer old_subtree
+template <class T>
+void BST<T>::transplant(Node<T> * old_subtree, Node<T> * new_subtree) {
+	if (old_subtree->_parent== NULL) {
+		_root= new_subtree;
 	}
-	if (_cmp(node->_data, data)== 0) {
-		return node;
+	else if (old_subtree== old_subtree->_parent->_left) {
+		old_subtree->_parent->_left= new_subtree;
 	}
-	if (_cmp(node->_data, data)< 0) {
-		return search(node->_right, data, exact_match);
+	else {
+		old_subtree->_parent->_right= new_subtree;
 	}
-	return search(node->_left, data, exact_match);
-}*/
+	
+	if (new_subtree!= NULL) {
+		new_subtree->_parent= old_subtree->_parent;
+	}
+}
 
 
 // recherche de data dans le sous-arbre de sommet node
@@ -414,18 +397,12 @@ Node<T> * BST<T>::search(T data, bool exact_match) {
 }
 
 
+// renvoie le tableau trié des valeurs des noeuds
 template <class T>
 std::vector<T> BST<T>::get_sorted_array() {
 	std::vector<T> result;
-	traversal(TraversalType::IN_ORDER, [&result](T x){result.push_back(x);});
+	traversal(TraversalType::IN_ORDER, [&result](Node<T> * node){result.push_back(node->_data);});
 	return result;
-}
-
-
-template <class T>
-void BST<T>::balance() {
-	std::vector<T> sorted_array= get_sorted_array();
-	_root= balance(sorted_array, 0, sorted_array.size()- 1);
 }
 
 
@@ -436,100 +413,62 @@ Node<T> * BST<T>::balance(std::vector<T> & sorted_array, int start, int end) {
 	}
 
 	int mid= (start+ end)/ 2;
-	Node<T> * node= new Node<T>(sorted_array[mid]);
+	Node<T> * node= new Node<T>(sorted_array[mid], _node_print);
 	node->_left= balance(sorted_array, start, mid- 1);
 	node->_right= balance(sorted_array, mid+ 1, end);
 	return node;
 }
 
 
+// balance l'arbre, ie minimise sa hauteur
 template <class T>
-void BST<T>::traversal(TraversalType tt, std::function<void(T)> f) {
-	traversal(_root, tt, f);
+void BST<T>::balance() {
+	std::vector<T> sorted_array= get_sorted_array();
+	_root= balance(sorted_array, 0, sorted_array.size()- 1);
 }
 
 
 template <class T>
-void BST<T>::traversal(Node<T> * node, TraversalType tt, std::function<void(T)> f) {
+void BST<T>::traversal(Node<T> * node, TraversalType tt, std::function<void(Node<T> *)> f) {
 	if (node== NULL) {
 		return;
 	}
 
 	if (tt== IN_ORDER) {
 		traversal(node->_left, tt, f);
-		f(node->_data);
+		f(node);
 		traversal(node->_right, tt, f);
 	}
 	else if (tt== PRE_ORDER) {
-		f(node->_data);
+		f(node);
 		traversal(node->_left, tt, f);
 		traversal(node->_right, tt, f);
 	}
 	else if (tt== POST_ORDER) {
 		traversal(node->_left, tt, f);
 		traversal(node->_right, tt, f);
-		f(node->_data);
+		f(node);
 	}
 }
 
-/*
-template <class T>
-std::pair<Node<T> *, Node<T> *> BST<T>::neighbours_leaf(T data) {
-	std::vector<T> array= get_sorted_array();
-	/*array.erase(std::remove_if(array.begin(), array.end(), 
-		[](const T & x){ return ((x._left!= NULL) || (x._right!= NULL));}
-	), array.end());*/
 
-	/*Node<T> * prev= NULL;
-	Node<T> * next= NULL;
-	for (int i=0; i<array.size(); ++i) {
-		if (array[i]== data) {
-			if (i> 0) {
-				prev= search(array[i- 1]);
-			}
-			if (i< array.size()- 1) {
-				next= search(array[i+ 1]);
-			}
-		}
-	}
-	return std::make_pair(prev, next);
-}*/
+// traversée de l'arbre
+template <class T>
+void BST<T>::traversal(TraversalType tt, std::function<void(Node<T> *)> f) {
+	traversal(_root, tt, f);
+}
 
 
 template <class T>
-std::ostream & operator << (std::ostream & os, const BST<T> & bst) {
-	traversal(IN_ORDER, [os](T node)->std::ostream{os << node << "\n";});
+std::ostream & operator << (std::ostream & os, BST<T> & bst) {
+	//bst.traversal(IN_ORDER, [&os](Node<T> * node){os << *node << "\n";});
+	bst.traversal(IN_ORDER);
 	return os;
 }
 
 
 template <class T>
-void BST<T>::export_html(std::string html_path, std::function<std::string(T)> f_str) {
-	unsigned int svg_width= 700;
-	unsigned int svg_height= 700;
-
-	std::ofstream f;
-	f.open(html_path);
-	f << "<!DOCTYPE html>\n<html>\n<head>\n";
-	f << "<style>\n";
-	f << ".point_class {fill: black;}\n";
-	f << ".point_text_class {fill: red; font-size: 0.05px;}\n";
-	f << ".line_class {fill: transparent; stroke: black; stroke-width: 0.01; stroke-opacity: 0.3;}\n";
-	f << "</style>\n</head>\n<body>\n";
-	f << "<svg width=\"" << svg_width << "\" height=\"" << svg_height << "\" viewbox=\"" << -1.2 << " " << -0.2 << " " << 2.4 << " " << 2.4 << "\">\n";
-	f.close();
-
-	export_html(html_path, _root, 0.0f, 1, f_str);
-	
-	f.open(html_path, std::ios_base::app);
-	f << "</svg>\n";
-	f << "</body>\n</html>\n";
-	f.close();
-}
-
-
-template <class T>
-void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y, std::function<std::string(T)> f_str) {
+void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) {
 	if (node== NULL) {
 		return;
 	}
@@ -547,7 +486,8 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y, 
 	
 	std::ofstream f;
 	f.open(html_path, std::ios_base::app);
-	f << "<text class=\"point_text_class\" x=\"" << pt_x+ 0.02f << "\" y=\"" << pt_y << "\" >" << f_str(node->_data) << "</text>\n";
+	//f << "<text class=\"point_text_class\" x=\"" << pt_x+ 0.02f << "\" y=\"" << pt_y << "\" >" << *node << "</text>\n";
+	f << "<text class=\"point_text_class\" x=\"" << pt_x+ 0.02f << "\" y=\"" << pt_y << "\" >" << _node_print(node->_data) << "</text>\n";
 	f << "<circle class=\"point_class\" cx=\"" << pt_x << "\" cy=\"" << pt_y << "\" r=\"" << 0.01f << "\" />\n";
 	if (node->_left!= NULL) {
 		f << "<line class=\"line_class\" x1=\"" << pt_x << "\" y1=\"" << pt_y << "\" x2=\"" << pt_left_x << "\" y2=\"" << pt_left_y << "\" />\n";
@@ -556,8 +496,35 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y, 
 		f << "<line class=\"line_class\" x1=\"" << pt_x << "\" y1=\"" << pt_y << "\" x2=\"" << pt_right_x << "\" y2=\"" << pt_right_y << "\" />\n";
 	}
 	f.close();
-	export_html(html_path, node->_left, left_x, y+ 1, f_str);
-	export_html(html_path, node->_right, right_x, y+ 1, f_str);
+	export_html(html_path, node->_left, left_x, y+ 1);
+	export_html(html_path, node->_right, right_x, y+ 1);
 }
+
+
+// export html pour debug
+template <class T>
+void BST<T>::export_html(std::string html_path) {
+	unsigned int svg_width= 700;
+	unsigned int svg_height= 700;
+
+	std::ofstream f;
+	f.open(html_path);
+	f << "<!DOCTYPE html>\n<html>\n<head>\n";
+	f << "<style>\n";
+	f << ".point_class {fill: black;}\n";
+	f << ".point_text_class {fill: red; font-size: 0.05px;}\n";
+	f << ".line_class {fill: transparent; stroke: black; stroke-width: 0.01; stroke-opacity: 0.3;}\n";
+	f << "</style>\n</head>\n<body>\n";
+	f << "<svg width=\"" << svg_width << "\" height=\"" << svg_height << "\" viewbox=\"" << -1.2 << " " << -0.2 << " " << 2.4 << " " << 2.4 << "\">\n";
+	f.close();
+
+	export_html(html_path, _root, 0.0f, 1);
+	
+	f.open(html_path, std::ios_base::app);
+	f << "</svg>\n";
+	f << "</body>\n</html>\n";
+	f.close();
+}
+
 
 #endif

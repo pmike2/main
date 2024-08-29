@@ -16,7 +16,8 @@
 typedef enum {CircleEvent, SiteEvent} EventType;
 typedef enum {Arc, BreakPoint} BeachLineNodeType;
 
-std::pair<glm::vec2, glm::vec2> parabols_intersections(glm::vec2 & site1, glm::vec2 & site2, float yline);
+float y_parabola(glm::vec2 & site, float yline, float x);
+std::pair<glm::vec2, glm::vec2> parabolas_intersection(glm::vec2 & site1, glm::vec2 & site2, float yline);
 //glm::vec2 bisector_intersection(glm::vec2 & a, glm::vec2 & b, glm::vec2 & c);
 
 struct Event;
@@ -35,6 +36,8 @@ struct BeachLineNode {
 
 
 struct Event {
+	friend std::ostream & operator << (std::ostream & os, const Event & event);
+
 	EventType _type;
 
 	// SiteEvent : on ne stocke que le site lié à l'event
@@ -76,6 +79,8 @@ public:
 	Voronoi();
 	Voronoi(std::vector<glm::vec2> sites);
 	~Voronoi();
+	Node<BeachLineNode> * prev_arc(Node<BeachLineNode> * node);
+	Node<BeachLineNode> * next_arc(Node<BeachLineNode> * node);
 	void handle_site_event(Event e);
 	void handle_circle_event(Event e);
 
