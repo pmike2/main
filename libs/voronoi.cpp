@@ -141,88 +141,99 @@ Voronoi::~Voronoi() {
 }
 
 
-Node<BeachLineNode> * Voronoi::prev_arc(Node<BeachLineNode> * node) {
-	if (node->is_left()) {
-		return node->_parent->_parent->_left;
-	}
-	return node->_parent->_left;
-}
-
-
-Node<BeachLineNode> * Voronoi::next_arc(Node<BeachLineNode> * node) {
-	if (node->is_left()) {
-		return node->_parent->_right;
-	}
-	return node->_parent->_parent->_right;
-}
-
-
 void Voronoi::handle_site_event(Event e) {
 	// si la beachline est vide on insère un nouvel arc et on sort
 	if (_beachline.empty()) {
-		_beachline.insert({Arc, e._site});
+		BeachLineNode new_arc{Arc};
+		new_arc._site= e._site;
+		_beachline.insert(new_arc);
 		return;
 	}
 
 	// recherche de l'arc au dessus du site
-	BeachLineNode tmp{Arc};
-	tmp._site= e._site;
-	Node<BeachLineNode> * arc_above_site= _beachline.search(tmp, false);
+	BeachLineNode new_arc{Arc};
+	new_arc._site= e._site;
+	Node<BeachLineNode> * node_above_site= _beachline.search(new_arc, false);
 
 	// si cet arc a un circle event associé, on supprime cet event, les 2 edges ne se rencontront jamais
-	if (arc_above_site->_data._circle_event!= NULL) {
-		_queue.erase(*arc_above_site->_data._circle_event);
+	if (node_above_site->_data._circle_event!= NULL) {
+		_queue.erase(*node_above_site->_data._circle_event);
 	}
+
+	// ajout du half-edge
+	DCEL_Vertex * v= _diagram.add_vertex(e._site.x, y_parabola(node_above_site->_data._site, _current_y, e._site.x));
+	DCEL_HalfEdge * he= _diagram.add_edge(v, NULL);
+
+	// création des 2 nouveaux breakpoints
+	Node<BeachLineNode> * prev_site= _beachline.predecessor_leaf(node_above_site);
+	Node<BeachLineNode> * next_site= _beachline.successor_leaf(node_above_site);
+	BeachLineNode breakpoint_left{BreakPoint};
+	breakpoint_left._sites= std::make_pair(prev_site->_data._site, new_arc._site);
+	breakpoint_left._half_edge= he;
+	BeachLineNode breakpoint_right{BreakPoint};
+	breakpoint_right._sites= std::make_pair(new_arc._site, next_site->_data._site);
+	breakpoint_right._half_edge= he;
 
 	// remplacer arc_above_site par 3 arcs dont les sites sont (arc_above_site->_site, e._site, arc_above_site->_site)
 	// avec les breakpoints qui vont bien
-	Node<BeachLineNode> * prev_site= prev_arc(arc_above_site);
-	Node<BeachLineNode> * next_site= next_arc(arc_above_site);
-
-	DCEL_Vertex * v= _diagram.add_vertex(e._site.x, y_parabola(arc_above_site->_data._site, _current_y, e._site.x));
-	DCEL_HalfEdge * he= _diagram.add_edge(v, NULL);
-
-	BeachLineNode breakpoint1{BreakPoint};
-	breakpoint1._sites= std::make_pair(prev_site->_data._site, arc_above_site->_data._site);
-	breakpoint1._half_edge= he;
-	BeachLineNode breakpoint2{BreakPoint};
-	breakpoint2._sites= std::make_pair(arc_above_site->_data._site, next_site->_data._site);
-	breakpoint2._half_edge= he;
-
-	BST<BeachLineNode> subtree(_beachline._cmp, _beachline._node_print);
+	/*BST<BeachLineNode> subtree(_beachline._cmp, _beachline._node_print);
 	subtree.insert(breakpoint1);
 	subtree.insert(breakpoint2);
 	subtree.insert(prev_site->_data);
 	subtree.insert(arc_above_site->_data);
 	subtree.insert(next_site->_data);
-	_beachline.transplant(arc_above_site, subtree._root);
-	_beachline.balance();
+	_beachline.transplant(arc_above_site, subtree._root);*/
 
+	Node<BeachLineNode> * breakpoint_left_node= new Node<BeachLineNode>(breakpoint_left, _beachline._node_print);
+	Node<BeachLineNode> * breakpoint_right_node= new Node<BeachLineNode>(breakpoint_right, _beachline._node_print);
+	Node<BeachLineNode> * new_node= new Node<BeachLineNode>(new_arc, _beachline._node_print);
+	Node<BeachLineNode> * node_above_site_left_copy= new Node<BeachLineNode>(node_above_site->_data, _beachline._node_print);
+	Node<BeachLineNode> * node_above_site_right_copy= new Node<BeachLineNode>(node_above_site->_data, _beachline._node_print);
+	breakpoint_left_node->_left= node_above_site_left_copy;
+	breakpoint_left_node->_right= breakpoint_right_node;
+	node_above_site_left_copy->_parent= breakpoint_left_node;
+	breakpoint_right_node->_parent= breakpoint_left_node;
+	breakpoint_right_node->_left= new_node;
+	breakpoint_right_node->_right= node_above_site_right_copy;
+	new_node->_parent= breakpoint_right_node;
+	node_above_site_right_copy->_parent= breakpoint_right_node;
+	_beachline.transplant(node_above_site, breakpoint_left_node);
+
+	// rebalance ; pour l'instant non j'ai peur que cela mette en l'air l'arbre vu la fonction de comparaison basée sur _site.x
+	//_beachline.balance();
+
+	// voir si les breakpoints convergent
 	if (prev_site!= NULL) {
-		std::pair<glm::vec2, float> circle= circumcircle(prev_site->_data._site, b->_data._site, e._site);
-		//glm::vec2 v= bisector_intersection(prev_site->_data._site, b->_data._site, e._site);
+		std::pair<glm::vec2, float> circle= circumcircle(prev_site->_data._site, node_above_site->_data._site, new_arc._site);
 		glm::vec2 center= circle.first;
 		float radius= circle.second;
-		if (center.y< breakpoints.first.y) {
-			_queue.insert({EventType::CircleEvent, glm::vec2(0.0f), center- glm::vec2(0.0f, radius), NULL});
+		if (center.y< _current_y) {
+			Event new_circle_event{EventType::CircleEvent};
+			new_circle_event._circle_lowest_point= center- glm::vec2(0.0f, radius);
+			new_circle_event._leaf= node_above_site_left_copy;
+			_queue.insert(new_circle_event);
 		}
 	}
 
 	if (next_site!= NULL) {
-		std::pair<glm::vec2, float> circle= circumcircle(next_site->_data._site, b->_data._site, e._site);
+		std::pair<glm::vec2, float> circle= circumcircle(new_arc._site, node_above_site->_data._site, next_site->_data._site);
 		glm::vec2 center= circle.first;
 		float radius= circle.second;
-		if (center.y< breakpoints.first.y) {
-			_queue.insert({EventType::CircleEvent, glm::vec2(0.0f), center- glm::vec2(0.0f, radius), NULL});
+		if (center.y< _current_y) {
+			Event new_circle_event{EventType::CircleEvent};
+			new_circle_event._circle_lowest_point= center- glm::vec2(0.0f, radius);
+			new_circle_event._leaf= node_above_site_right_copy;
+			_queue.insert(new_circle_event);
 		}
 	}
 }
 
 
 void Voronoi::handle_circle_event(Event e) {
-	Node<BeachLineNode> * node= _beachline.search(*e._leaf);
+	Node<BeachLineNode> * node= _beachline.search(e._leaf->_data);
+	_beachline.remove(node);
+
 	std::pair<Node<BeachLineNode> *, Node<BeachLineNode> *> neighbours= _beachline.neighbours_leaf(node);
-	_beachline.remove(*e._leaf);
 	if (neighbours.first!= NULL) {
 		_beachline.remove(neighbours.first->_data);
 	}

@@ -33,6 +33,7 @@ public:
 	Node(T data, std::function<std::string(T)> fprint);
 	~Node();
 	bool is_left();
+	bool is_leaf();
 
 	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
 	template <class U>
@@ -69,12 +70,23 @@ Node<T>::~Node() {
 }
 
 
+// le noeud est-il l'enfant gauche de son parent
 template <class T>
 bool Node<T>::is_left() {
 	if (_parent== NULL) {
 		return false;
 	}
 	if (_parent->_left== this) {
+		return true;
+	}
+	return false;
+}
+
+
+// est-ce une feuille
+template <class T>
+bool Node<T>::is_leaf() {
+	if ((_left== NULL) && (_right== NULL)) {
 		return true;
 	}
 	return false;
@@ -131,6 +143,8 @@ public:
 	Node<T> * maximum();
 	Node<T> * successor(Node<T> * node);
 	Node<T> * predecessor(Node<T> * node);
+	Node<T> * successor_leaf(Node<T> * node);
+	Node<T> * predecessor_leaf(Node<T> * node);
 	void insert(Node<T> * node);
 	void insert(T data);
 	void remove(Node<T> * node);
@@ -266,6 +280,70 @@ Node<T> * BST<T>::predecessor(Node<T> * node) {
 		y= y->_parent;
 	}
 	return y;
+}
+
+
+// renvoie la feuille la plus petite, supérieure à node
+template <class T>
+Node<T> * BST<T>::successor_leaf(Node<T> * node) {
+	Node<T> * succ= successor(node);
+	// node est le noeud max
+	if (succ== NULL) {
+		return NULL;
+	}
+	
+	if (succ->_right== NULL) {
+		// succ est la feuille que l'on cherchait
+		if (succ->is_leaf()) {
+			return succ;
+		}
+		else {
+			// node est déjà la feuille max
+			return NULL;
+		}
+	}
+	succ= succ->_right;
+	while ((succ->_left!= NULL) || (succ->_right!= NULL)) {
+		if (succ->_left!= NULL) {
+			succ= succ->_left;
+		}
+		else if (succ->_right!= NULL) {
+			succ= succ->_right;
+		}
+	}
+	return succ;
+}
+
+
+// renvoie la feuille la plus petite, supérieure à node
+template <class T>
+Node<T> * BST<T>::predecessor_leaf(Node<T> * node) {
+	Node<T> * pred= predecessor(node);
+	// node est le noeud min
+	if (pred== NULL) {
+		return NULL;
+	}
+	
+	if (pred->_left== NULL) {
+		// pred est la feuille que l'on cherchait
+		if (pred->is_leaf()) {
+			return pred;
+		}
+		else {
+			// node est déjà la feuille min
+			return NULL;
+		}
+	}
+	pred= pred->_left;
+	while ((pred->_left!= NULL) || (pred->_right!= NULL)) {
+		if (pred->_right!= NULL) {
+			pred= pred->_right;
+		}
+		else if (pred->_left!= NULL) {
+			pred= pred->_left;
+		}
+	}
+	return pred;
 }
 
 

@@ -45,7 +45,7 @@ struct Event {
 
 	// CircleEvent : on stocke le point le plus bas du cercle et l'arc qui sera supprimé par cet event
 	glm::vec2 _circle_lowest_point = glm::vec2(0.0f, 0.0f);
-	BeachLineNode * _leaf = NULL;
+	Node<BeachLineNode> * _leaf = NULL;
 };
 
 
@@ -79,8 +79,6 @@ public:
 	Voronoi();
 	Voronoi(std::vector<glm::vec2> sites);
 	~Voronoi();
-	Node<BeachLineNode> * prev_arc(Node<BeachLineNode> * node);
-	Node<BeachLineNode> * next_arc(Node<BeachLineNode> * node);
 	void handle_site_event(Event e);
 	void handle_circle_event(Event e);
 

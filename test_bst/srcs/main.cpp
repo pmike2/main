@@ -20,18 +20,24 @@ void test1() {
 	bst->insert(1);
 	bst->insert(7);
 
-	std::cout << *bst;
+	//std::cout << *bst;
+
+	//std::cout << "min = " << *bst->minimum(bst->search(1)) << "\n";
 
 	//std::cout << "min = " << *bst->minimum() << "\nmax = " << *bst->maximum() << "\n";
 
-	//std::cout << "succ = " << *bst->successor(bst->search(4)) << "\npred = " << *bst->predecessor(bst->search(4)) << "\n";
+	//std::cout << "succ = " << *bst->successor(bst->search(3)) << "\n";
+	//std::cout << "pred = " << *bst->predecessor(bst->search(4)) << "\n";
+
+	//std::cout << "succ_leaf = " << *bst->successor_leaf(bst->search(3)) << "\n";
+	//std::cout << "pred_leaf = " << *bst->predecessor_leaf(bst->search(7)) << "\n";
 
 	//bst->traversal(TraversalType::IN_ORDER);
 
 	//bst->remove(4);
 
-	Node<int> * node= bst->search(7);
-	std::cout << node->is_left() << "\n";
+	//Node<int> * node= bst->search(7);
+	//std::cout << node->is_left() << "\n";
 	/*if (node!= NULL) {
 		std::cout << *node << "\n";
 	}
