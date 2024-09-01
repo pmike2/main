@@ -230,15 +230,29 @@ void Voronoi::handle_site_event(Event e) {
 
 
 void Voronoi::handle_circle_event(Event e) {
-	Node<BeachLineNode> * node= _beachline.search(e._leaf->_data);
-	_beachline.remove(node);
+	Node<BeachLineNode> * event_node= _beachline.search(e._leaf->_data);
 
-	std::pair<Node<BeachLineNode> *, Node<BeachLineNode> *> neighbours= _beachline.neighbours_leaf(node);
-	if (neighbours.first!= NULL) {
-		_beachline.remove(neighbours.first->_data);
+	Event * predecessor_circle_event= _beachline.predecessor_leaf(event_node)->_data._circle_event;
+	if (predecessor_circle_event!= NULL) {
+		_queue.erase(*predecessor_circle_event);
 	}
-	if (neighbours.second!= NULL) {
-		_beachline.remove(neighbours.second->_data);
+	
+	Event * successor_circle_event= _beachline.successor_leaf(event_node)->_data._circle_event;
+	if (successor_circle_event!= NULL) {
+		_queue.erase(*successor_circle_event);
 	}
+	
+	Node<BeachLineNode> * event_parent= event_node->_parent;
+	Node<BeachLineNode> * event_grand_parent= event_parent->_parent;
+	Node<BeachLineNode> * event_sibling= event_node->sibling();
+
+	_beachline.transplant();
+	
+	_beachline.remove(event_node);
+
+	//_beachline.balance();
+
+
+
 }
 

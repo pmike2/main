@@ -34,6 +34,7 @@ public:
 	~Node();
 	bool is_left();
 	bool is_leaf();
+	Node * sibling();
 
 	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
 	template <class U>
@@ -90,6 +91,18 @@ bool Node<T>::is_leaf() {
 		return true;
 	}
 	return false;
+}
+
+
+template <class T>
+Node<T> * Node<T>::sibling() {
+	if (!is_leaf()) {
+		return NULL;
+	}
+	if (is_left()) {
+		return _parent->_right;
+	}
+	return _parent->_left;
 }
 
 

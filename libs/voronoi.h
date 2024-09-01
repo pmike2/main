@@ -51,13 +51,22 @@ struct Event {
 
 struct EventCmp {
 	bool operator()(const Event& lhs, const Event& rhs) const {
+		float ly= 0.0f;
+		float ry= 0.0f;
 		if (lhs._type== EventType::SiteEvent) {
-			return lhs._site.y< rhs._site.y;
+			ly= lhs._site.y;
 		}
 		else if (lhs._type== EventType::CircleEvent) {
-			return lhs._circle_lowest_point.y< rhs._circle_lowest_point.y;
+			return ly= lhs._circle_lowest_point.y;
 		}
-		return false; // n'arrive jamais
+		if (rhs._type== EventType::SiteEvent) {
+			ry= rhs._site.y;
+		}
+		else if (rhs._type== EventType::CircleEvent) {
+			return ry= rhs._circle_lowest_point.y;
+		}
+		
+		return ly< ry;
 	}
 };
 
