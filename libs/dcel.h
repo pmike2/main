@@ -62,7 +62,8 @@ public:
 	~DCEL();
 	DCEL_Vertex * add_vertex(float x, float y);
 	DCEL_HalfEdge * add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2);
-	DCEL_Face * add_face(std::vector<DCEL_HalfEdge *> edges);
+	DCEL_Face * add_face(std::vector<DCEL_HalfEdge *> edges= std::vector<DCEL_HalfEdge *>());
+	void create_faces_from_half_edges();
 	void export_html(std::string html_path);
 	friend std::ostream & operator << (std::ostream & os, DCEL & d);
 	

@@ -230,6 +230,29 @@ DCEL_Face * DCEL::add_face(std::vector<DCEL_HalfEdge *> edges) {
 }
 
 
+void DCEL::create_faces_from_half_edges() {
+	bool found_unattached_he= false;
+	while (true) {
+		found_unattached_he= false;
+		for (auto he : _half_edges) {
+			if (he->_incident_face== NULL) {
+				found_unattached_he= true;
+				DCEL_Face * face= add_face();
+				face->_outer_edge= he;
+				DCEL_HalfEdge * he2= he;
+				while (he2!= he) {
+					he2->_incident_face= face;
+					he2= he2->_next;
+				}
+			}
+		}
+		if (!found_unattached_he) {
+			break;
+		}
+	}
+}
+
+
 void DCEL::export_html(std::string html_path) {
 	const unsigned int SVG_WIDTH= 700;
 	const unsigned int SVG_HEIGHT= 700;
