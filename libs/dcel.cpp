@@ -71,6 +71,18 @@ DCEL_Face * DCEL_HalfEdge::opposite_face() {
 }
 
 
+void DCEL_HalfEdge::set_twin(DCEL_HalfEdge * hedge) {
+	_twin= hedge;
+	hedge->_twin= this;
+}
+
+
+void DCEL_HalfEdge::set_next(DCEL_HalfEdge * hedge) {
+	_next= hedge;
+	hedge->_previous= this;
+}
+
+
 std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
 	os << *e._origin;
 	os << " -> ";

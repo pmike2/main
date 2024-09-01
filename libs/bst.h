@@ -33,6 +33,7 @@ public:
 	Node(T data, std::function<std::string(T)> fprint);
 	~Node();
 	bool is_left();
+	bool is_right();
 	bool is_leaf();
 	Node * sibling();
 
@@ -84,6 +85,19 @@ bool Node<T>::is_left() {
 }
 
 
+// le noeud est-il l'enfant droit de son parent
+template <class T>
+bool Node<T>::is_right() {
+	if (_parent== NULL) {
+		return false;
+	}
+	if (_parent->_right== this) {
+		return true;
+	}
+	return false;
+}
+
+
 // est-ce une feuille
 template <class T>
 bool Node<T>::is_leaf() {
@@ -94,6 +108,7 @@ bool Node<T>::is_leaf() {
 }
 
 
+// renvoie la feuille soeur si this est une feuille sinon NULL
 template <class T>
 Node<T> * Node<T>::sibling() {
 	if (!is_leaf()) {
@@ -106,6 +121,7 @@ Node<T> * Node<T>::sibling() {
 }
 
 
+// surcharge <<
 template <class T>
 std::ostream & operator << (std::ostream & os, const Node<T> & node) {
 	os << "node = (" << &node << " , " << node._fprint(node._data) << ") ; ";
@@ -550,6 +566,7 @@ void BST<T>::traversal(TraversalType tt, std::function<void(Node<T> *)> f) {
 }
 
 
+// surcharge <<
 template <class T>
 std::ostream & operator << (std::ostream & os, BST<T> & bst) {
 	//bst.traversal(IN_ORDER, [&os](Node<T> * node){os << *node << "\n";});

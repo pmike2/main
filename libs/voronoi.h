@@ -44,7 +44,9 @@ struct Event {
 	glm::vec2 _site = glm::vec2(0.0f, 0.0f);
 
 	// CircleEvent : on stocke le point le plus bas du cercle et l'arc qui sera supprimé par cet event
-	glm::vec2 _circle_lowest_point = glm::vec2(0.0f, 0.0f);
+	//glm::vec2 _circle_lowest_point = glm::vec2(0.0f, 0.0f);
+	glm::vec2 _circle_center = glm::vec2(0.0f, 0.0f);
+	float _circle_radius= 0.0f;
 	Node<BeachLineNode> * _leaf = NULL;
 };
 
@@ -57,13 +59,13 @@ struct EventCmp {
 			ly= lhs._site.y;
 		}
 		else if (lhs._type== EventType::CircleEvent) {
-			return ly= lhs._circle_lowest_point.y;
+			return ly= lhs._circle_center.y+ lhs._circle_radius;
 		}
 		if (rhs._type== EventType::SiteEvent) {
 			ry= rhs._site.y;
 		}
 		else if (rhs._type== EventType::CircleEvent) {
-			return ry= rhs._circle_lowest_point.y;
+			return ry= rhs._circle_center.y+ rhs._circle_radius;
 		}
 		
 		return ly< ry;

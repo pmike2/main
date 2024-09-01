@@ -29,6 +29,8 @@ struct DCEL_HalfEdge {
 	~DCEL_HalfEdge();
 	DCEL_Vertex * destination();
 	DCEL_Face * opposite_face();
+	void set_twin(DCEL_HalfEdge * hedge);
+	void set_next(DCEL_HalfEdge * hedge);
 	friend std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e);
 
 	DCEL_Vertex * _origin;

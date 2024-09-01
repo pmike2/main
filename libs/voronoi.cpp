@@ -50,7 +50,7 @@ std::pair<glm::vec2, glm::vec2> parabolas_intersection(glm::vec2 & site1, glm::v
 // -------------------------------
 std::ostream & operator << (std::ostream & os, const Event & event) {
 	if (event._type== CircleEvent) {
-		os << "CircleEvent : circle_lowest_point = " << glm::to_string(event._circle_lowest_point);
+		os << "CircleEvent : circle = " << glm::to_string(event._circle_center) << " ; radius = " << event._circle_radius;
 	}
 	else if (event._type== SiteEvent) {
 		os << "SiteEvent : site = " << glm::to_string(event._site);
@@ -160,19 +160,21 @@ void Voronoi::handle_site_event(Event e) {
 		_queue.erase(*node_above_site->_data._circle_event);
 	}
 
-	// ajout du half-edge
+	// ajout des 2 half-edge
 	DCEL_Vertex * v= _diagram.add_vertex(e._site.x, y_parabola(node_above_site->_data._site, _current_y, e._site.x));
-	DCEL_HalfEdge * he= _diagram.add_edge(v, NULL);
+	DCEL_HalfEdge * he1= _diagram.add_edge(v, NULL);
+	DCEL_HalfEdge * he2= _diagram.add_edge(NULL, v);
+	he1->set_twin(he2);
 
 	// création des 2 nouveaux breakpoints
 	Node<BeachLineNode> * prev_site= _beachline.predecessor_leaf(node_above_site);
 	Node<BeachLineNode> * next_site= _beachline.successor_leaf(node_above_site);
 	BeachLineNode breakpoint_left{BreakPoint};
 	breakpoint_left._sites= std::make_pair(prev_site->_data._site, new_arc._site);
-	breakpoint_left._half_edge= he;
+	breakpoint_left._half_edge= he1;
 	BeachLineNode breakpoint_right{BreakPoint};
 	breakpoint_right._sites= std::make_pair(new_arc._site, next_site->_data._site);
-	breakpoint_right._half_edge= he;
+	breakpoint_right._half_edge= he1; // et he2 alors ?
 
 	// remplacer arc_above_site par 3 arcs dont les sites sont (arc_above_site->_site, e._site, arc_above_site->_site)
 	// avec les breakpoints qui vont bien
@@ -209,7 +211,8 @@ void Voronoi::handle_site_event(Event e) {
 		float radius= circle.second;
 		if (center.y< _current_y) {
 			Event new_circle_event{EventType::CircleEvent};
-			new_circle_event._circle_lowest_point= center- glm::vec2(0.0f, radius);
+			new_circle_event._circle_center= center;
+			new_circle_event._circle_radius= radius;
 			new_circle_event._leaf= node_above_site_left_copy;
 			_queue.insert(new_circle_event);
 		}
@@ -221,7 +224,8 @@ void Voronoi::handle_site_event(Event e) {
 		float radius= circle.second;
 		if (center.y< _current_y) {
 			Event new_circle_event{EventType::CircleEvent};
-			new_circle_event._circle_lowest_point= center- glm::vec2(0.0f, radius);
+			new_circle_event._circle_center= center;
+			new_circle_event._circle_radius= radius;
 			new_circle_event._leaf= node_above_site_right_copy;
 			_queue.insert(new_circle_event);
 		}
@@ -232,27 +236,65 @@ void Voronoi::handle_site_event(Event e) {
 void Voronoi::handle_circle_event(Event e) {
 	Node<BeachLineNode> * event_node= _beachline.search(e._leaf->_data);
 
-	Event * predecessor_circle_event= _beachline.predecessor_leaf(event_node)->_data._circle_event;
-	if (predecessor_circle_event!= NULL) {
-		_queue.erase(*predecessor_circle_event);
-	}
-	
-	Event * successor_circle_event= _beachline.successor_leaf(event_node)->_data._circle_event;
-	if (successor_circle_event!= NULL) {
-		_queue.erase(*successor_circle_event);
-	}
-	
-	Node<BeachLineNode> * event_parent= event_node->_parent;
-	Node<BeachLineNode> * event_grand_parent= event_parent->_parent;
-	Node<BeachLineNode> * event_sibling= event_node->sibling();
+	Node<BeachLineNode> * predecessor_leaf= _beachline.predecessor_leaf(event_node); // arc à gauche
+	Node<BeachLineNode> * successor_leaf= _beachline.successor_leaf(event_node); // arc à droite
+	Node<BeachLineNode> * predecessor= _beachline.predecessor(event_node); // breakpoint à gauche
+	Node<BeachLineNode> * successor= _beachline.successor(event_node); // breakpoint à droite
+	Node<BeachLineNode> * parent= event_node->_parent;
+	Node<BeachLineNode> * grand_parent= parent->_parent;
+	Node<BeachLineNode> * sibling= event_node->sibling();
 
-	_beachline.transplant();
-	
-	_beachline.remove(event_node);
+	if ( (event_node->is_left()) && (parent->_right!= NULL) && (grand_parent!= NULL)) {
+		if (parent->is_left()) {
+			grand_parent->_left= parent->_right;
+			parent->_right->_parent= grand_parent->_left;
+		}
+		else {
+			grand_parent->_right= parent->_right;
+			parent->_right->_parent= grand_parent->_right;
+		}
+	}
+	else if ( (event_node->is_right()) && (parent->_left!= NULL) && (grand_parent!= NULL)) {
+		if (parent->is_left()) {
+			grand_parent->_left= parent->_left;
+			parent->_left->_parent= grand_parent->_left;
+		}
+		else {
+			grand_parent->_right= parent->_left;
+			parent->_left->_parent= grand_parent->_right;
+		}
+	}
 
+	if (predecessor_leaf== sibling) {
+		successor_leaf->_parent->_data._sites.first= predecessor_leaf->_data._site;
+		successor_leaf->_parent->_data._sites.second= successor_leaf->_data._site;
+	}
+	else if (successor_leaf== sibling) {
+		predecessor_leaf->_parent->_data._sites.first= predecessor_leaf->_data._site;
+		predecessor_leaf->_parent->_data._sites.second= successor_leaf->_data._site;
+	}
+
+	// ici il manque du nettoyage...
+	//_beachline.transplant(event_node, NULL);
+	//_beachline.remove(event_node);
+
+	// a voir après
 	//_beachline.balance();
 
+	if (predecessor->_data._circle_event!= NULL) {
+		_queue.erase(*predecessor->_data._circle_event);
+	}
+	if (successor->_data._circle_event!= NULL) {
+		_queue.erase(*successor->_data._circle_event);
+	}
 
+	DCEL_Vertex * vertex= _diagram.add_vertex(e._circle_center.x, e._circle_center.y);
+	DCEL_HalfEdge * he1= _diagram.add_edge(vertex, NULL);
+	DCEL_HalfEdge * he2= _diagram.add_edge(NULL, vertex);
+	he1->set_twin(he2);
+	predecessor->_data._half_edge->set_next(he1); // a reverifier
+	successor->_data._half_edge->set_next(he2); // a reverifier
 
+	
 }
 
