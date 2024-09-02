@@ -192,9 +192,9 @@ void ltrim(string &s) {
 
 // trim from end (in place)
 void rtrim(string &s) {
-    s.erase(find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-        return !isspace(ch);
-    }).base(), s.end());
+	s.erase(find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
+		return !isspace(ch);
+	}).base(), s.end());
 }
 
 
@@ -203,3 +203,18 @@ void trim(string &s) {
 	rtrim(s);
 	ltrim(s);
 }
+
+
+// remplace glm::to_string en supprimant les 0 dans les décimales
+std::string glm_to_string(glm::vec2 v) {
+	std::string str_x= std::to_string (v.x);
+	str_x.erase(str_x.find_last_not_of('0')+ 1, std::string::npos);
+	str_x.erase(str_x.find_last_not_of('.')+ 1, std::string::npos);
+
+	std::string str_y= std::to_string (v.y);
+	str_y.erase(str_y.find_last_not_of('0')+ 1, std::string::npos);
+	str_y.erase(str_y.find_last_not_of('.')+ 1, std::string::npos);
+
+	return "("+ str_x+ ", "+ str_y+ ")";
+}
+

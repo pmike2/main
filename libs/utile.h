@@ -47,4 +47,6 @@ void ltrim(std::string &s);
 void rtrim(std::string &s);
 void trim(std::string &s);
 
+std::string glm_to_string(glm::vec2 v);
+
 #endif

@@ -2,26 +2,28 @@
 #include <sstream>
 #include "math.h"
 
-#include <glm/gtx/string_cast.hpp>
+//#include <glm/gtx/string_cast.hpp>
 
 #include "voronoi.h"
 #include "geom_2d.h"
+#include "utile.h"
 
 
 const float EPS= 1e-7;
 const bool VERBOSE= true;
 
+
 // ---------------------------------------------------------------------------------------------
 float y_parabola(glm::vec2 & site, float yline, float x) {
 	if (site.y- yline< EPS) {
-		std::cout << "y_parabola problème : site = " << glm::to_string(site) << " ; yline = " << yline << " ; x = " << x << "\n";
+		std::cout << "y_parabola problème : site = " << glm_to_string(site) << " ; yline = " << yline << " ; x = " << x << "\n";
 		return 0.0f;
 	}
 	return (x- site.x)* (x- site.x)* 0.5f/ (site.y- yline)+ 0.5f* (site.y+ yline);
 }
 
 
-std::pair<glm::vec2, glm::vec2> parabolas_intersection(glm::vec2 & site1, glm::vec2 & site2, float yline) {
+glm::vec2 parabolas_intersection(glm::vec2 & site1, glm::vec2 & site2, float yline) {
 	auto y= [& site1, & yline](float x) {
 		return 0.5f* (x* x- 2.0f* site1.x* x+ site1.x* site1.x+ site1.y* site1.y- yline* yline)/ (site1.y- yline);
 	};
@@ -32,18 +34,23 @@ std::pair<glm::vec2, glm::vec2> parabolas_intersection(glm::vec2 & site1, glm::v
 	if (a== 0.0f) {
 		//std::cout << "parabolas_intersection 1 seul pt\n";
 		float x= -1.0f* c/ b;
-		glm::vec2 inter(x, y(x));
-		return std::make_pair(inter, inter);
+		return glm::vec2(x, y(x));
 	}
 	float delta= b* b- 4.0f* a* c;
 	if (delta< 0.0f) {
-		std::cout << "parabolas_intersection 0 pt\n";
-		return std::make_pair(glm::vec2(0.0f), glm::vec2(0.0f));
+		std::cout << "parabolas_intersection 0 pt : site1=" << glm_to_string(site1) << " ; site2=" << glm_to_string(site2) << " ; yline=" << yline << "\n";
+		return glm::vec2(0.0f);
 	}
-	std::cout << "parabolas_intersection 2 pts\n";
 	float x1= 0.5f* (-1.0f* b- sqrt(delta))/ a;
 	float x2= 0.5f* (-1.0f* b+ sqrt(delta))/ a;
-	return std::make_pair(glm::vec2(x1, y(x1)), glm::vec2(x2, y(x2)));
+	/*glm::vec2 inter1= glm::vec2(x1, y(x1));
+	glm::vec2 inter2= glm::vec2(x2, y(x2));
+	std::cout << "parabolas_intersection 2 pts inter1=" << glm_to_string(inter1) << " ; inter2=" << glm_to_string(inter2) << " ; site1=" << glm_to_string(site1) << " ; site2=" << glm_to_string(site2) << " ; yline=" << yline << "\n";
+	return std::make_pair(inter1, inter2);*/
+	if ( ((x1>= site1.x) && (x1<= site2.x)) || ((x1>= site2.x) && (x1<= site1.x)) ) {
+		return glm::vec2(x1, y(x1));
+	}
+	return glm::vec2(x2, y(x2));
 }
 
 /*glm::vec2 bisector_intersection(glm::vec2 & a, glm::vec2 & b, glm::vec2 & c) {
@@ -76,12 +83,12 @@ BeachLineNode::~BeachLineNode() {
 
 std::ostream & operator << (std::ostream & os, const BeachLineNode & b) {
 	if (b._type== Arc) {
-		//os << "Arc : event = " << b._circle_event << " ; site = " << glm::to_string(b._site);
-		os << "Arc " << glm::to_string(b._site);
+		//os << "Arc : event = " << b._circle_event << " ; site = " << glm_to_string(b._site);
+		os << "Arc " << glm_to_string(b._site);
 	}
 	else if (b._type== BreakPoint) {
-		//os << "BreakPoint : sites = [ " << glm::to_string(b._sites.first) << " ; " << glm::to_string(b._sites.second) << " ] ; half_edge = " << b._half_edge;
-		os << "BrkPt [" << glm::to_string(b._sites.first) << " ; " << glm::to_string(b._sites.second) << "]";
+		//os << "BreakPoint : sites = [ " << glm_to_string(b._sites.first) << " ; " << glm_to_string(b._sites.second) << " ] ; half_edge = " << b._half_edge;
+		os << "BrkPt [" << glm_to_string(b._sites.first) << " ; " << glm_to_string(b._sites.second) << "]";
 	}
 	return os;
 }
@@ -109,10 +116,10 @@ Event::~Event() {
 
 std::ostream & operator << (std::ostream & os, const Event & event) {
 	if (event._type== CircleEvent) {
-		os << "CircleEvent : circle = " << glm::to_string(event._circle_center) << " ; radius = " << event._circle_radius;
+		os << "CircleEvent : circle = " << glm_to_string(event._circle_center) << " ; radius = " << event._circle_radius;
 	}
 	else if (event._type== SiteEvent) {
-		os << "SiteEvent : site = " << glm::to_string(event._site);
+		os << "SiteEvent : site = " << glm_to_string(event._site);
 	}
 	
 	return os;
@@ -131,18 +138,16 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 			lhx= lhs._site.x;
 		}
 		else if (lhs._type== BreakPoint) {
-			std::pair<glm::vec2, glm::vec2> inter_pair= parabolas_intersection(lhs._sites.first, lhs._sites.second, _current_y);
-			// a priori une seule intersection, on prend la 1ere
-			lhx= inter_pair.first.x;
+			glm::vec2 inter= parabolas_intersection(lhs._sites.first, lhs._sites.second, _current_y);
+			lhx= inter.x;
 		}
 
 		if (rhs._type== Arc) {
 			rhx= rhs._site.x;
 		}
 		else if (rhs._type== BreakPoint) {
-			std::pair<glm::vec2, glm::vec2> inter_pair= parabolas_intersection(rhs._sites.first, rhs._sites.second, _current_y);
-			// a priori une seule intersection, on prend la 1ere
-			rhx= inter_pair.first.x;
+			glm::vec2 inter= parabolas_intersection(rhs._sites.first, rhs._sites.second, _current_y);
+			rhx= inter.x;
 		}
 
 		if (lhx< rhx) {
@@ -158,12 +163,12 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 		if (node._type== Arc) {
 			std::stringstream ss;
 			ss << node._circle_event;
-			return "Arc : site = "+ glm::to_string(node._site)+ " circle_event = "+ ss.str();
+			return "Arc : site = "+ glm_to_string(node._site)+ " circle_event = "+ ss.str();
 		}
 		else {
 			std::stringstream ss;
 			ss << node._half_edge;
-			return "BreakPoint : sites = ["+ glm::to_string(node._sites.first)+ " ; "+ glm::to_string(node._sites.second)+ " ] ; half_edge = "+ ss.str();
+			return "BreakPoint : sites = ["+ glm_to_string(node._sites.first)+ " ; "+ glm_to_string(node._sites.second)+ " ] ; half_edge = "+ ss.str();
 		}
 	};*/
 	std::function<std::string(BeachLineNode)> node_print= [](BeachLineNode node) {
@@ -201,12 +206,19 @@ Voronoi::Voronoi(std::vector<glm::vec2> sites) : Voronoi()
 		}
 		else if (e->_type== CircleEvent) {
 			_current_y= e->_circle_center.y- e->_circle_radius;
-			//handle_circle_event(e);
+			handle_circle_event(e);
+		}
+
+		if (VERBOSE) {
+			std::cout << "beachline =\n" << *_beachline;
 		}
 
 		_queue.erase(it);
 	}
 	
+	if (VERBOSE) {
+		std::cout << "calcul faces DCEL\n";
+	}
 	_diagram->create_faces_from_half_edges();
 }
 
