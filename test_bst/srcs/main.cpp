@@ -22,6 +22,10 @@ void test1() {
 
 	//std::cout << *bst;
 
+	bst->clear();
+
+	std::cout << *bst;
+
 	//std::cout << "min = " << *bst->minimum(bst->search(1)) << "\n";
 
 	//std::cout << "min = " << *bst->minimum() << "\nmax = " << *bst->maximum() << "\n";
@@ -45,7 +49,7 @@ void test1() {
 		std::cout << "NULL\n";
 	}*/
 
-	bst->export_html("../data/test1.html");
+	//bst->export_html("../data/test1.html");
 
 	delete bst;
 }

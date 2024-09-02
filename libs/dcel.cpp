@@ -52,7 +52,7 @@ DCEL_HalfEdge::DCEL_HalfEdge() : _origin(NULL), _twin(NULL), _next(NULL), _previ
 
 
 DCEL_HalfEdge::DCEL_HalfEdge(DCEL_Vertex * origin) : _origin(origin), _twin(NULL), _next(NULL), _previous(NULL), _incident_face(NULL) {
-
+	//std::cout << "DCEL_HalfEdge constr : " << _origin << "\n";
 }
 
 
@@ -84,9 +84,20 @@ void DCEL_HalfEdge::set_next(DCEL_HalfEdge * hedge) {
 
 
 std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
-	os << *e._origin;
+	if (e._origin!= NULL) {
+		os << *e._origin;
+	}
+	else {
+		os << "NULL";
+	}
 	os << " -> ";
-	os << *e.destination();
+	if (e.destination()!= NULL) {
+		os << *e.destination();
+	}
+	else {
+		os << "NULL";
+	}
+	
 	return os;
 }
 
@@ -179,7 +190,20 @@ DCEL::DCEL() : _xmin(1e8), _xmax(-1e8), _ymin(1e8), _ymax(-1e8) {
 
 
 DCEL::~DCEL() {
+	for (auto & f : _faces) {
+		delete f;
+	}
+	_faces.clear();
 
+	for (auto & he : _half_edges) {
+		delete he;
+	}
+	_half_edges.clear();
+
+	for (auto & v : _vertices) {
+		delete v;
+	}
+	_vertices.clear();
 }
 
 

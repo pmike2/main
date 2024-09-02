@@ -25,14 +25,9 @@ vector<glm::vec2> pts;
 
 void test1() {
 	pts.push_back(glm::vec2(0.0f, 0.0f));
-	pts.push_back(glm::vec2(1.0f, 0.0f));
-	pts.push_back(glm::vec2(1.0f, 1.0f));
-	pts.push_back(glm::vec2(0.0f, 1.0f));
-
-	pts.push_back(glm::vec2(0.3f, 0.3f));
-	pts.push_back(glm::vec2(0.6f, 0.3f));
-	pts.push_back(glm::vec2(0.6f, 0.6f));
-	pts.push_back(glm::vec2(0.3f, 0.6f));
+	pts.push_back(glm::vec2(1.0f, 0.5f));
+	pts.push_back(glm::vec2(1.2f, 1.0f));
+	pts.push_back(glm::vec2(0.5f, 1.5f));
 }
 
 
@@ -76,7 +71,7 @@ int main(int argc, char * argv[]) {
 	auto ms= duration_cast<milliseconds>(t2- t1);
 	cout << ms.count() << " ms\n";
 
-	//v->draw("../data/result.html", true);
+	//v->_diagram->export_html("../data/result.html");
 	delete v;
 
 	return 0;

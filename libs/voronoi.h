@@ -5,6 +5,7 @@
 #include <vector>
 #include <set>
 #include <utility>
+#include <functional>
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
@@ -27,6 +28,8 @@ public:
 	BeachLineNode();
 	BeachLineNode(BeachLineNodeType type);
 	~BeachLineNode();
+	friend std::ostream & operator << (std::ostream & os, const BeachLineNode & b);
+
 
 	BeachLineNodeType _type;
 
@@ -64,20 +67,25 @@ struct EventCmp {
 	bool operator()(const Event * lhs, const Event * rhs) const {
 		float ly= 0.0f;
 		float ry= 0.0f;
+
+		//std::cout << "lhs= " << *lhs << " ; rhs= " << *rhs << "\n";
+		
 		if (lhs->_type== EventType::SiteEvent) {
 			ly= lhs->_site.y;
 		}
 		else if (lhs->_type== EventType::CircleEvent) {
-			return ly= lhs->_circle_center.y+ lhs->_circle_radius;
+			return ly= lhs->_circle_center.y- lhs->_circle_radius;
 		}
+		
 		if (rhs->_type== EventType::SiteEvent) {
 			ry= rhs->_site.y;
 		}
 		else if (rhs->_type== EventType::CircleEvent) {
-			return ry= rhs->_circle_center.y+ rhs->_circle_radius;
+			return ry= rhs->_circle_center.y- rhs->_circle_radius;
 		}
 		
-		return ly< ry;
+		// les y + grands doivent être traités en 1er
+		return ly> ry;
 	}
 };
 
@@ -103,11 +111,12 @@ public:
 	void handle_circle_event(Event * e);
 
 
-	DCEL _diagram;
-	BST<BeachLineNode *> _beachline;
+	DCEL * _diagram;
+	BST<BeachLineNode> * _beachline;
 	//EventQueue _queue;
 	std::set<Event *, EventCmp> _queue;
 	float _current_y;
+	unsigned int _debug_count= 0;
 };
 
 #endif

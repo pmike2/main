@@ -6,6 +6,8 @@
 
 void test1() {
 	DCEL * dcel= new DCEL();
+
+	//dcel->create_faces_from_half_edges();
 	
 	DCEL_Vertex * v1= dcel->add_vertex(0.0f, 0.0f);
 	DCEL_Vertex * v2= dcel->add_vertex(1.0f, 0.0f);

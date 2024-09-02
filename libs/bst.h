@@ -30,7 +30,7 @@ class Node {
 public:
 	Node();
 	Node(T data);
-	Node(T data, std::function<std::string(T)> fprint);
+	Node(T data, std::function<std::string()> fprint);
 	~Node();
 	bool is_left();
 	bool is_right();
@@ -45,30 +45,33 @@ public:
 	Node * _right;
 	Node * _parent; // parent du noeud; pas nécessaire à priori mais facilite certaines méthodes
 	T _data;
-	std::function<std::string(T)> _fprint;
+	std::function<std::string()> _fprint;
 };
 
 
 template <class T>
 Node<T>::Node() :
-_left(NULL), _right(NULL), _parent(NULL), _fprint([](T data){return std::to_string(data);}) 
+_left(NULL), _right(NULL), _parent(NULL), 
+_fprint([this](){return std::to_string(_data);})
 { }
 
 
 template <class T>
 Node<T>::Node(T data) :
-_data(data), _left(NULL), _right(NULL), _parent(NULL), _fprint([](T data){return std::to_string(data);}) 
+_data(data), _left(NULL), _right(NULL), _parent(NULL),
+_fprint([this](){return std::to_string(_data);})
 { }
 
 
 template <class T>
-Node<T>::Node(T data, std::function<std::string(T)> fprint) :
+Node<T>::Node(T data, std::function<std::string()> fprint) :
 _data(data), _fprint(fprint), _left(NULL), _right(NULL), _parent(NULL) 
 { }
 
 
 template <class T>
 Node<T>::~Node() {
+	
 }
 
 
@@ -124,24 +127,24 @@ Node<T> * Node<T>::sibling() {
 // surcharge <<
 template <class T>
 std::ostream & operator << (std::ostream & os, const Node<T> & node) {
-	os << "node = (" << &node << " , " << node._fprint(node._data) << ") ; ";
+	os << "node = (" << &node << " , " << node._fprint() << ") ; ";
 	if (node._left!= NULL) {
-		os << "left = (" << node._left << " , " << node._left->_fprint(node._data) << ") ; ";
+		os << "left = (" << node._left << " , " << node._left->_fprint() << ") ; ";
 	}
 	else {
-		os << "left = NULL ; ";
+		os << "left = --------NULL-------- ; ";
 	}
 	if (node._right!= NULL) {
-		os << "right = (" << node._right << " , " << node._right->_fprint(node._data) << ") ; ";
+		os << "right = (" << node._right << " , " << node._right->_fprint() << ") ; ";
 	}
 	else {
-		os << "right = NULL ; ";
+		os << "right = --------NULL-------- ; ";
 	}
 	if (node._parent!= NULL) {
-		os << "parent = (" << node._parent << " , " << node._parent->_fprint(node._data) << ") ; ";
+		os << "parent = (" << node._parent << " , " << node._parent->_fprint() << ")";
 	}
 	else {
-		os << "parent = NULL ; ";
+		os << "parent = --------NULL--------";
 	}
 	return os;
 }
@@ -164,7 +167,6 @@ public:
 	BST(std::function<int(T, T)> cmp);
 	BST(std::function<int(T, T)> cmp, std::function<std::string(T)> node_print);
 	~BST();
-	void clear();
 	bool empty();
 	Node<T> * minimum(Node<T> * node);
 	Node<T> * minimum();
@@ -174,8 +176,11 @@ public:
 	Node<T> * predecessor(Node<T> * node);
 	Node<T> * successor_leaf(Node<T> * node);
 	Node<T> * predecessor_leaf(Node<T> * node);
+	Node<T> * gen_node(T data);
 	void insert(Node<T> * node);
 	void insert(T data);
+	void delete_tree(Node<T> * node);
+	void clear();
 	void remove(Node<T> * node);
 	void remove(T data);
 	void transplant(Node<T> * old_subtree, Node<T> * new_subtree);
@@ -224,13 +229,6 @@ BST<T>::BST(std::function<int(T, T)> cmp, std::function<std::string(T)> node_pri
 
 template <class T>
 BST<T>::~BST() {
-}
-
-
-// vidage
-template <class T>
-void BST<T>::clear() {
-	remove(_root);
 }
 
 
@@ -376,6 +374,13 @@ Node<T> * BST<T>::predecessor_leaf(Node<T> * node) {
 }
 
 
+// génération d'un noeud pas encore rattaché à l'arbre
+template <class T>
+Node<T> * BST<T>::gen_node(T data) {
+	return new Node<T>(data, [this, data](){return _node_print(data);});
+}
+
+
 // insertion d'un noeud
 template <class T>
 void BST<T>::insert(Node<T> * node) {
@@ -413,8 +418,33 @@ void BST<T>::insert(Node<T> * node) {
 template <class T>
 void BST<T>::insert(T data) {
 	// noeud à insérer
-	Node<T> * new_node= new Node<T>(data, _node_print);
+	Node<T> * new_node= gen_node(data);
 	insert(new_node);
+}
+
+
+// suppression d'un sous-arbre
+template <class T>
+void BST<T>::delete_tree(Node<T> * node) {
+	if (node!= NULL) {
+		if (node->_left!= NULL) {
+			delete_tree(node->_left);
+		}
+		if (node->_right!= NULL) {
+			delete_tree(node->_right);
+		}
+		
+		delete node;
+		node= NULL;
+	}
+}
+
+
+// vidage de tout l'arbre
+template <class T>
+void BST<T>::clear() {
+	delete_tree(_root);
+	_root= NULL;
 }
 
 
@@ -479,7 +509,7 @@ void BST<T>::transplant(Node<T> * old_subtree, Node<T> * new_subtree) {
 // recherche de data dans le sous-arbre de sommet node
 template <class T>
 Node<T> * BST<T>::search(Node<T> * node, T data, bool exact_match) {
-	while ((node!= NULL) && (node->_data!= data)) {
+	while ((node!= NULL) && (_cmp(node->_data, data)!= 0)) {
 		if (_cmp(node->_data, data)< 0) {
 			if ((node->_right== NULL) && (!exact_match)) {
 				return node;
@@ -520,7 +550,7 @@ Node<T> * BST<T>::balance(std::vector<T> & sorted_array, int start, int end) {
 	}
 
 	int mid= (start+ end)/ 2;
-	Node<T> * node= new Node<T>(sorted_array[mid], _node_print);
+	Node<T> * node= new Node<T>(sorted_array[mid], [this, sorted_array, mid](){return _node_print(sorted_array[mid]);});
 	node->_left= balance(sorted_array, start, mid- 1);
 	node->_right= balance(sorted_array, mid+ 1, end);
 	return node;
@@ -582,7 +612,7 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) 
 	}
 
 	float x_factor= 1.0f;
-	float y_factor= 0.1f;
+	float y_factor= 0.4f;
 	float pt_x= x* x_factor;
 	float pt_y= float(y)* y_factor;
 	float left_x= x- 1.0f/ pow(2.0f, float(y));
@@ -594,8 +624,19 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) 
 	
 	std::ofstream f;
 	f.open(html_path, std::ios_base::app);
-	//f << "<text class=\"point_text_class\" x=\"" << pt_x+ 0.02f << "\" y=\"" << pt_y << "\" >" << *node << "</text>\n";
-	f << "<text class=\"point_text_class\" x=\"" << pt_x+ 0.02f << "\" y=\"" << pt_y << "\" >" << _node_print(node->_data) << "</text>\n";
+
+	float x_text= 0.0f;
+	float y_text= 0.0f;
+	if (node->is_left()) {
+		x_text= pt_x- 0.5f;
+		y_text= pt_y+ 0.05f;
+	}
+	else {
+		x_text= pt_x+ 0.02f;
+		y_text= pt_y;
+	}
+	f << "<text class=\"point_text_class\" x=\"" << x_text << "\" y=\"" << y_text << "\" >" << _node_print(node->_data) << "</text>\n";
+
 	f << "<circle class=\"point_class\" cx=\"" << pt_x << "\" cy=\"" << pt_y << "\" r=\"" << 0.01f << "\" />\n";
 	if (node->_left!= NULL) {
 		f << "<line class=\"line_class\" x1=\"" << pt_x << "\" y1=\"" << pt_y << "\" x2=\"" << pt_left_x << "\" y2=\"" << pt_left_y << "\" />\n";
@@ -612,8 +653,12 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) 
 // export html pour debug
 template <class T>
 void BST<T>::export_html(std::string html_path) {
-	unsigned int svg_width= 700;
-	unsigned int svg_height= 700;
+	unsigned int svg_width= 1400;
+	unsigned int svg_height= 1200;
+	float view_xmin= -2.0f;
+	float view_xmax= 2.0f;
+	float view_ymin= -2.0f;
+	float view_ymax= 2.0f;
 
 	std::ofstream f;
 	f.open(html_path);
@@ -623,7 +668,7 @@ void BST<T>::export_html(std::string html_path) {
 	f << ".point_text_class {fill: red; font-size: 0.05px;}\n";
 	f << ".line_class {fill: transparent; stroke: black; stroke-width: 0.01; stroke-opacity: 0.3;}\n";
 	f << "</style>\n</head>\n<body>\n";
-	f << "<svg width=\"" << svg_width << "\" height=\"" << svg_height << "\" viewbox=\"" << -1.2 << " " << -0.2 << " " << 2.4 << " " << 2.4 << "\">\n";
+	f << "<svg width=\"" << svg_width << "\" height=\"" << svg_height << "\" viewbox=\"" << view_xmin << " " << view_ymin << " " << view_xmax- view_xmin << " " << view_ymax- view_ymin << "\">\n";
 	f.close();
 
 	export_html(html_path, _root, 0.0f, 1);
