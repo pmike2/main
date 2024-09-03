@@ -9,7 +9,11 @@ implémenté initialement pour voronoi
 #ifndef BST_H
 #define BST_H
 
+// à activer si on veut voir les adresses des pointeurs des Node
+//#define BST_NODE_SHOW_ADDRESS
+
 #include <iostream>
+#include <iomanip>
 #include <functional>
 #include <fstream>
 #include <sstream>
@@ -127,25 +131,67 @@ Node<T> * Node<T>::sibling() {
 // surcharge <<
 template <class T>
 std::ostream & operator << (std::ostream & os, const Node<T> & node) {
-	os << "node = (" << &node << " , " << node._fprint() << ") ; ";
+	//std::string NULL_STRING= "--------NULL--------";
+	std::string NULL_STRING= "NULL";
+	std::string SEPARATOR= "|";
+	unsigned int str_width= 30;
+
+
+	#ifdef BST_NODE_SHOW_ADDRESS
+	os << "(" << &node << " , " << node._fprint() << ")";
+	os <<  SEPARATOR;
 	if (node._left!= NULL) {
-		os << "left = (" << node._left << " , " << node._left->_fprint() << ") ; ";
+		os << "left = (" << node._left << " , " << node._left->_fprint() << ")";
 	}
 	else {
-		os << "left = --------NULL-------- ; ";
+		os << "left = " << NULL_STRING;
 	}
+	os <<  SEPARATOR;
 	if (node._right!= NULL) {
-		os << "right = (" << node._right << " , " << node._right->_fprint() << ") ; ";
+		os << "right = (" << node._right << " , " << node._right->_fprint() << ")";
 	}
 	else {
-		os << "right = --------NULL-------- ; ";
+		os << "right = " << NULL_STRING;
 	}
+	os <<  SEPARATOR;
 	if (node._parent!= NULL) {
 		os << "parent = (" << node._parent << " , " << node._parent->_fprint() << ")";
 	}
 	else {
-		os << "parent = --------NULL--------";
+		os << "parent = " << NULL_STRING;
 	}
+	#else
+	os << std::left;
+	os << std::setw(str_width);
+	os << node._fprint();
+	os <<  SEPARATOR;
+	os << "left = ";
+	os << std::setw(str_width);
+	if (node._left!= NULL) {
+		os << node._left->_fprint();
+	}
+	else {
+		os << NULL_STRING;
+	}
+	os <<  SEPARATOR;
+	os << "right = ";
+	os << std::setw(str_width);
+	if (node._right!= NULL) {
+		os << node._right->_fprint();
+	}
+	else {
+		os << NULL_STRING;
+	}
+	os <<  SEPARATOR;
+	os << "parent = ";
+	os << std::setw(str_width);
+	if (node._parent!= NULL) {
+		os << node._parent->_fprint();
+	}
+	else {
+		os << NULL_STRING;
+	}
+	#endif
 	return os;
 }
 
@@ -628,11 +674,11 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) 
 	float x_text= 0.0f;
 	float y_text= 0.0f;
 	if (node->is_left()) {
-		x_text= pt_x- 0.5f;
+		x_text= pt_x- 0.1f;
 		y_text= pt_y+ 0.05f;
 	}
 	else {
-		x_text= pt_x+ 0.02f;
+		x_text= pt_x- 0.1f;
 		y_text= pt_y;
 	}
 	f << "<text class=\"point_text_class\" x=\"" << x_text << "\" y=\"" << y_text << "\" >" << _node_print(node->_data) << "</text>\n";
@@ -657,7 +703,7 @@ void BST<T>::export_html(std::string html_path) {
 	unsigned int svg_height= 1200;
 	float view_xmin= -2.0f;
 	float view_xmax= 2.0f;
-	float view_ymin= -2.0f;
+	float view_ymin= 0.0f;
 	float view_ymax= 2.0f;
 
 	std::ofstream f;

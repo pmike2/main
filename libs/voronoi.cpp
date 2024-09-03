@@ -23,35 +23,50 @@ float y_parabola(glm::vec2 & site, float yline, float x) {
 }
 
 
-glm::vec2 parabolas_intersection(glm::vec2 & site1, glm::vec2 & site2, float yline) {
-	auto y= [& site1, & yline](float x) {
-		return 0.5f* (x* x- 2.0f* site1.x* x+ site1.x* site1.x+ site1.y* site1.y- yline* yline)/ (site1.y- yline);
-	};
-	float a= 2.0f* (site2.y- site1.y);
-	float b= 4.0f* ((site1.y- yline)* site2.x- (site2.y- yline)* site1.x);
-	float c= 2.0f* (site2.y- yline)* (site1.x* site1.x+ site1.y* site1.y- yline* yline)
-			-2.0f* (site1.y- yline)* (site2.x* site2.x+ site2.y* site2.y- yline* yline);
-	if (a== 0.0f) {
-		//std::cout << "parabolas_intersection 1 seul pt\n";
-		float x= -1.0f* c/ b;
-		return glm::vec2(x, y(x));
+float y_derivative_parabola(glm::vec2 & site, float yline, float x) {
+	if (site.y- yline< EPS) {
+		std::cout << "y_parabola problème : site = " << glm_to_string(site) << " ; yline = " << yline << " ; x = " << x << "\n";
+		return 0.0f;
 	}
+	return (x- site.x)/ (site.y- yline);
+}
+
+
+glm::vec2 parabolas_intersection(glm::vec2 & site_left, glm::vec2 & site_right, float yline) {
+	float a= 2.0f* (site_right.y- site_left.y);
+	float b= 4.0f* ((site_left.y- yline)* site_right.x- (site_right.y- yline)* site_left.x);
+	float c= 2.0f* (site_right.y- yline)* (site_left.x* site_left.x+ site_left.y* site_left.y- yline* yline)
+			-2.0f* (site_left.y- yline)* (site_right.x* site_right.x+ site_right.y* site_right.y- yline* yline);
+
+	if (a== 0.0f) {
+		float x= -1.0f* c/ b;
+		return glm::vec2(x, y_parabola(site_left, yline, x));
+	}
+
 	float delta= b* b- 4.0f* a* c;
 	if (delta< 0.0f) {
-		std::cout << "parabolas_intersection 0 pt : site1=" << glm_to_string(site1) << " ; site2=" << glm_to_string(site2) << " ; yline=" << yline << "\n";
+		std::cout << "parabolas_intersection 0 pt : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
 		return glm::vec2(0.0f);
 	}
+
 	float x1= 0.5f* (-1.0f* b- sqrt(delta))/ a;
 	float x2= 0.5f* (-1.0f* b+ sqrt(delta))/ a;
-	/*glm::vec2 inter1= glm::vec2(x1, y(x1));
-	glm::vec2 inter2= glm::vec2(x2, y(x2));
-	std::cout << "parabolas_intersection 2 pts inter1=" << glm_to_string(inter1) << " ; inter2=" << glm_to_string(inter2) << " ; site1=" << glm_to_string(site1) << " ; site2=" << glm_to_string(site2) << " ; yline=" << yline << "\n";
-	return std::make_pair(inter1, inter2);*/
-	if ( ((x1>= site1.x) && (x1<= site2.x)) || ((x1>= site2.x) && (x1<= site1.x)) ) {
-		return glm::vec2(x1, y(x1));
+	float dleft_x1= y_derivative_parabola(site_left, yline, x1);
+	float dright_x1= y_derivative_parabola(site_right, yline, x1);
+	float dleft_x2= y_derivative_parabola(site_left, yline, x2);
+	float dright_x2= y_derivative_parabola(site_right, yline, x2);
+
+	if (dleft_x1>= dright_x1) {
+		return glm::vec2(x1, y_parabola(site_left, yline, x1));
 	}
-	return glm::vec2(x2, y(x2));
+	else if (dleft_x2>= dright_x2) {
+		return glm::vec2(x2, y_parabola(site_left, yline, x2));
+	}
+
+	std::cout << "parabolas_intersection derivative problem : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
+	return glm::vec2(0.0f);
 }
+
 
 /*glm::vec2 bisector_intersection(glm::vec2 & a, glm::vec2 & b, glm::vec2 & c) {
 	float mu= 0.5f* ((b.y- a.y)* (c.y- a.y)+ (a.x- b.x)* (c.x- a.x))/ ((b.y- c.y)* (b.x- a.x)+ (b.y- a.y)* (c.x- b.x));
@@ -84,11 +99,11 @@ BeachLineNode::~BeachLineNode() {
 std::ostream & operator << (std::ostream & os, const BeachLineNode & b) {
 	if (b._type== Arc) {
 		//os << "Arc : event = " << b._circle_event << " ; site = " << glm_to_string(b._site);
-		os << "Arc " << glm_to_string(b._site);
+		os << "Arc" << glm_to_string(b._site);
 	}
 	else if (b._type== BreakPoint) {
 		//os << "BreakPoint : sites = [ " << glm_to_string(b._sites.first) << " ; " << glm_to_string(b._sites.second) << " ] ; half_edge = " << b._half_edge;
-		os << "BrkPt [" << glm_to_string(b._sites.first) << " ; " << glm_to_string(b._sites.second) << "]";
+		os << "BrkPt[" << glm_to_string(b._sites.first) << " , " << glm_to_string(b._sites.second) << "]";
 	}
 	return os;
 }
@@ -244,7 +259,7 @@ void Voronoi::handle_site_event(Event * e) {
 	Node<BeachLineNode> * node_above_site= _beachline->search(*new_arc, false);
 
 	if (VERBOSE) {
-		std::cout << "node_above_site = " << *node_above_site << "\n";
+		std::cout << "node_above_site =\n" << *node_above_site << "\n";
 	}
 
 	// si cet arc a un circle event associé, on supprime cet event, les 2 edges ne se rencontront jamais
@@ -292,7 +307,7 @@ void Voronoi::handle_site_event(Event * e) {
 	breakpoint_left->_sites= std::make_pair(node_above_site_left_copy->_data._site, new_arc->_site);
 	breakpoint_left->_half_edge= he;
 	if (VERBOSE) {
-		std::cout << "breakpoint_left = " << *breakpoint_left << "\n";
+		std::cout << "breakpoint_left =  " << *breakpoint_left << "\n";
 	}
 
 	BeachLineNode * breakpoint_right= new BeachLineNode(BreakPoint);
@@ -336,6 +351,13 @@ void Voronoi::handle_site_event(Event * e) {
 			new_circle_event->_circle_radius= radius;
 			new_circle_event->_leaf= node_above_site_left_copy;
 			_queue.insert(new_circle_event);
+			if (VERBOSE) {
+				std::cout << "New CircleEvent : ";
+				std::cout << "left = " << prev_site->_data;
+				std::cout << " ; middle = " << node_above_site->_data;
+				std::cout << " ; right = " << *new_arc;
+				std::cout << " ; " << *new_circle_event << "\n";
+			}
 		}
 	}
 
@@ -349,6 +371,9 @@ void Voronoi::handle_site_event(Event * e) {
 			new_circle_event->_circle_radius= radius;
 			new_circle_event->_leaf= node_above_site_right_copy;
 			_queue.insert(new_circle_event);
+			if (VERBOSE) {
+				std::cout << "New CircleEvent(2) : " << *new_circle_event << "\n";
+			}
 		}
 	}
 }
