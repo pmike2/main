@@ -31,6 +31,7 @@ struct DCEL_HalfEdge {
 	DCEL_Face * opposite_face();
 	void set_twin(DCEL_HalfEdge * hedge);
 	void set_next(DCEL_HalfEdge * hedge);
+	void set_tmp_data(glm::vec2 direction, glm::vec2 position=glm::vec2(0.0f));
 	friend std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e);
 
 	DCEL_Vertex * _origin;

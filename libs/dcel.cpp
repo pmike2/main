@@ -93,6 +93,20 @@ void DCEL_HalfEdge::set_next(DCEL_HalfEdge * hedge) {
 }
 
 
+void DCEL_HalfEdge::set_tmp_data(glm::vec2 direction, glm::vec2 position) {
+	_dx= direction.x;
+	_dy= direction.y;
+	_tmp_x= position.x;
+	_tmp_y= position.y;
+	if (_twin!= NULL) {
+		_twin->_dx= -direction.x;
+		_twin->_dy= -direction.y;
+		_twin->_tmp_x= position.x;
+		_twin->_tmp_y= position.y;
+	}
+}
+
+
 std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
 	if (e._origin!= NULL) {
 		os << *e._origin;
@@ -442,22 +456,22 @@ void DCEL::add_bbox(float bbox_expand) {
 	DCEL_HalfEdge * last_he= NULL;
 	DCEL_HalfEdge * first_he= NULL;
 
-	for (unsigned int i=0; i<origin_bottom.size()- 1; ++i) {
+	for (int i=0; i<int(origin_bottom.size())- 1; ++i) {
 		bbox_he= add_edge(origin_bottom[i]->_origin, origin_bottom[i+ 1]->_origin);
 		origin_bottom[i]->_twin->set_next(bbox_he);
 		bbox_he->set_next(origin_bottom[i+ 1]);
 	}
-	for (unsigned int i=0; i<origin_top.size()- 1; ++i) {
+	for (int i=0; i<int(origin_top.size())- 1; ++i) {
 		bbox_he= add_edge(origin_top[i]->_origin, origin_top[i+ 1]->_origin);
 		origin_top[i]->_twin->set_next(bbox_he);
 		bbox_he->set_next(origin_top[i+ 1]);
 	}
-	for (unsigned int i=0; i<origin_right.size()- 1; ++i) {
+	for (int i=0; i<int(origin_right.size())- 1; ++i) {
 		bbox_he= add_edge(origin_right[i]->_origin, origin_right[i+ 1]->_origin);
 		origin_right[i]->_twin->set_next(bbox_he);
 		bbox_he->set_next(origin_right[i+ 1]);
 	}
-	for (unsigned int i=0; i<origin_left.size()- 1; ++i) {
+	for (int i=0; i<int(origin_left.size())- 1; ++i) {
 		bbox_he= add_edge(origin_left[i]->_origin, origin_left[i+ 1]->_origin);
 		origin_left[i]->_twin->set_next(bbox_he);
 		bbox_he->set_next(origin_left[i+ 1]);
@@ -527,13 +541,14 @@ void DCEL::create_faces_from_half_edges() {
 		for (auto he : _half_edges) {
 			// le cas he->_next== NULL devrait correspondre forcément au cas de la face infinie
 			if ((he->_incident_face== NULL) && (he->_next!= NULL)) {
+				std::cout << *he << "\n";
 				found_unattached_he= true;
 				DCEL_Face * face= add_face();
 				face->_outer_edge= he;
 				DCEL_HalfEdge * he2= he;
 				do {
 					if (he2->_next== NULL) {
-						std::cout << "DCEL::create_faces_from_half_edges : face non close\n";
+						std::cout << "DCEL::create_faces_from_half_edges : face non close ; he2= " << *he2 << "\n";
 						return;
 					}
 					he2->_incident_face= face;

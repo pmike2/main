@@ -1,6 +1,9 @@
 #include <iostream>
 #include <vector>
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+
 #include "dcel.h"
 
 
@@ -54,9 +57,31 @@ void test2() {
 }
 
 
+void test3() {
+	DCEL * dcel= new DCEL();
+
+	DCEL_Vertex * v1= dcel->add_vertex(0.5f, 0.5f);
+
+	DCEL_HalfEdge * he1= dcel->add_edge(v1, NULL);
+	he1->set_tmp_data(glm::vec2(1.0f, -2.0f));
+
+	DCEL_HalfEdge * he2= dcel->add_edge(v1, NULL);
+	he2->set_tmp_data(glm::vec2(1.0f, 2.0f));
+
+	DCEL_HalfEdge * he3= dcel->add_edge(v1, NULL);
+	he3->set_tmp_data(glm::vec2(1.0f, 0.5f));
+
+	dcel->add_bbox();
+	dcel->create_faces_from_half_edges();
+	std::cout << *dcel;
+	dcel->export_html("../data/test3.html");
+}
+
+
 int main() {
 	//test1();
-	test2();
+	//test2();
+	test3();
 	
 	return 0;
 }
