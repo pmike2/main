@@ -14,12 +14,23 @@
 #include "bst.h"
 
 
+// pour comparaison à 0.0f
+const float EPS= 1e-7;
+// pour debug
+const bool VERBOSE= true;
+// facteur d'expansion de la bbox englobante
+const float BBOX_EXPAND= 0.2f;
+
+
 typedef enum {CircleEvent, SiteEvent} EventType;
 typedef enum {Arc, BreakPoint} BeachLineNodeType;
 
+
 float y_parabola(glm::vec2 & site, float yline, float x);
+float y_derivative_parabola(glm::vec2 & site, float yline, float x);
 glm::vec2 parabolas_intersection(glm::vec2 & site1, glm::vec2 & site2, float yline);
 //glm::vec2 bisector_intersection(glm::vec2 & a, glm::vec2 & b, glm::vec2 & c);
+
 
 class Event;
 

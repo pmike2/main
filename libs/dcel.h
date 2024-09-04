@@ -38,12 +38,16 @@ struct DCEL_HalfEdge {
 	DCEL_HalfEdge * _next;
 	DCEL_HalfEdge * _previous;
 	DCEL_Face * _incident_face;
+	float _dx;
+	float _dy;
+	float _tmp_x;
+	float _tmp_y;
 };
 
 
 struct DCEL_Face {
 	DCEL_Face();
-	DCEL_Face(DCEL_HalfEdge * outer_edge);
+	//DCEL_Face(DCEL_HalfEdge * outer_edge);
 	~DCEL_Face();
 	std::vector<DCEL_Vertex *> get_vertices();
 	std::vector<DCEL_HalfEdge *> get_edges();
@@ -62,7 +66,11 @@ public:
 	~DCEL();
 	DCEL_Vertex * add_vertex(float x, float y);
 	DCEL_HalfEdge * add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2);
-	DCEL_Face * add_face(std::vector<DCEL_HalfEdge *> edges= std::vector<DCEL_HalfEdge *>());
+	//DCEL_Face * add_face(std::vector<DCEL_HalfEdge *> edges= std::vector<DCEL_HalfEdge *>());
+	DCEL_Face * add_face();
+	bool is_empty();
+	void compute_bbox();
+	void add_bbox(float bbox_expand=0.1f);
 	void create_faces_from_half_edges();
 	void export_html(std::string html_path);
 	friend std::ostream & operator << (std::ostream & os, DCEL & d);

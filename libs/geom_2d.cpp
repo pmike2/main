@@ -107,7 +107,7 @@ bool segment_intersects_segment(glm::vec2 & pt1_begin, glm::vec2 & pt1_end, glm:
 }
 
 
-bool ray_intersects_segment(glm::vec2 & origin, glm::vec2 & direction, glm::vec2 & pt_begin, glm::vec2 & pt_end, glm::vec2 * result) {
+bool ray_intersects_segment(const glm::vec2 & origin, const glm::vec2 & direction, const glm::vec2 & pt_begin, const glm::vec2 & pt_end, glm::vec2 * result) {
 	glm::vec2 dir_segment= pt_end- pt_begin;
 	// parallèles
 	float a= cross2d(direction, dir_segment);

@@ -9,10 +9,6 @@
 #include "utile.h"
 
 
-const float EPS= 1e-7;
-const bool VERBOSE= true;
-
-
 // ---------------------------------------------------------------------------------------------
 float y_parabola(glm::vec2 & site, float yline, float x) {
 	if (site.y- yline< EPS) {
@@ -230,6 +226,12 @@ Voronoi::Voronoi(std::vector<glm::vec2> sites) : Voronoi()
 
 		_queue.erase(it);
 	}
+
+	if (VERBOSE) {
+		std::cout << "ajout BBOX\n";
+	}
+	_diagram->add_bbox(BBOX_EXPAND);
+
 	
 	if (VERBOSE) {
 		std::cout << "calcul faces DCEL\n";
@@ -271,14 +273,19 @@ void Voronoi::handle_site_event(Event * e) {
 	}
 
 	// ajout des 2 half-edge
-	DCEL_Vertex * v= _diagram->add_vertex(e->_site.x, y_parabola(node_above_site->_data._site, _current_y, e->_site.x));
+	/*DCEL_Vertex * v= _diagram->add_vertex(e->_site.x, y_parabola(node_above_site->_data._site, _current_y, e->_site.x));
 	if (VERBOSE) {
 		std::cout << "ajout vertex : " << *v << "\n";
-	}
-	DCEL_HalfEdge * he= _diagram->add_edge(v, NULL);
-	if (VERBOSE) {
+	}*/
+	DCEL_HalfEdge * he= _diagram->add_edge(NULL, NULL);
+	// pente he = tangente à la parabole
+	he->_dx= 1.0f;
+	he->_dy= y_derivative_parabola(node_above_site->_data._site, _current_y, e->_site.x);
+	he->_tmp_x= e->_site.x;
+	he->_tmp_y= y_parabola(node_above_site->_data._site, _current_y, e->_site.x);
+	/*if (VERBOSE) {
 		std::cout << "ajout half edge : " << *he << " ; twin = " << *he->_twin << "\n";
-	}
+	}*/
 
 	// création des 2 nouveaux breakpoints
 	/*Node<BeachLineNode> * prev_site= _beachline->predecessor_leaf(node_above_site);
@@ -436,12 +443,21 @@ void Voronoi::handle_circle_event(Event * e) {
 		_queue.erase(successor->_data._circle_event);
 	}
 
+	// ajout du centre du cercle comme sommet du diagram et d'un nouveau he délimitant les breakpoints voisins
 	DCEL_Vertex * vertex= _diagram->add_vertex(e->_circle_center.x, e->_circle_center.y);
-	DCEL_HalfEdge * he1= _diagram->add_edge(vertex, NULL);
-	DCEL_HalfEdge * he2= _diagram->add_edge(NULL, vertex);
-	he1->set_twin(he2);
-	predecessor->_data._half_edge->set_next(he1); // a reverifier
-	successor->_data._half_edge->set_next(he2); // a reverifier
+	DCEL_HalfEdge * he= _diagram->add_edge(vertex, NULL);
+	// direction du nouveau he perpendiculaire à bkpt2-bkpt1 et pointant vers les y< 0
+	glm::vec2 v= successor->_data._site- predecessor->_data._site;
+	he->_dx= v.y;
+	he->_dy= -v.x;
+	//he->_tmp_x= e->_circle_center.x; // pas nécessaire car vertex référence déjà le centre du cercle
+	//he->_tmp_y= e->_circle_center.y;
+
+	// rattacher le nouveau vertex et les 2 nouveaux he aux he existants
+	predecessor->_data._half_edge->_origin= vertex;
+	successor->_data._half_edge->_twin->_origin= vertex;
+	he->_twin->set_next(predecessor->_data._half_edge);
+	successor->_data._half_edge->set_next(he);
 
 
 	if (predecessor_predecessor_leaf!= NULL) {

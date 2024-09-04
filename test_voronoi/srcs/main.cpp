@@ -24,10 +24,10 @@ vector<glm::vec2> pts;
 
 
 void test1() {
-	pts.push_back(glm::vec2(0.0f, 0.0f));
+	/*pts.push_back(glm::vec2(0.0f, 0.0f));
 	pts.push_back(glm::vec2(1.0f, 0.5f));
 	pts.push_back(glm::vec2(1.2f, 1.0f));
-	pts.push_back(glm::vec2(0.5f, 1.5f));
+	pts.push_back(glm::vec2(0.5f, 1.5f));*/
 }
 
 
