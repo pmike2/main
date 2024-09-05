@@ -331,7 +331,7 @@ void DCEL::add_bbox(float bbox_expand) {
 
 	compute_bbox();
 
-	float width= _xmax- _xmin;
+	/*float width= _xmax- _xmin;
 	float height= _ymax- _ymin;
 	if (width< 1e-7) {
 		width= 1.0f;
@@ -342,7 +342,12 @@ void DCEL::add_bbox(float bbox_expand) {
 	_xmin-= width* bbox_expand;
 	_xmax+= width* bbox_expand;
 	_ymin-= height* bbox_expand;
-	_ymax+= height* bbox_expand;
+	_ymax+= height* bbox_expand;*/
+
+	_xmin= -10.0f;
+	_xmax= 10.0f;
+	_ymin= -10.0f;
+	_ymax= 10.0f;
 
 	DCEL_Vertex * bottom_left_corner= add_vertex(_xmin, _ymin);
 	DCEL_Vertex * bottom_right_corner= add_vertex(_xmax, _ymin);
@@ -354,82 +359,122 @@ void DCEL::add_bbox(float bbox_expand) {
 	std::vector<DCEL_HalfEdge *> origin_left;
 	std::vector<DCEL_HalfEdge *> origin_right;
 
-	std::vector<std::tuple<DCEL_HalfEdge *, glm::vec2, glm::vec2> > v;
+	glm::vec2 inter;
+	bool is_inter;
 
 	for (auto he : _half_edges) {
-		if (he->_origin== NULL) {
-			if (he->_twin->_origin!= NULL) {
-				glm::vec2 origin(he->_twin->_origin->_x, he->_twin->_origin->_y);
-				glm::vec2 direction(he->_dx, he->_dy);
-				v.push_back(std::make_tuple(he, origin, direction));
+		if ((he->_origin== NULL) && (he->_twin->_origin!= NULL)) {
+			glm::vec2 origin(he->_twin->_origin->_x, he->_twin->_origin->_y);
+			glm::vec2 direction(he->_twin->_dx, he->_twin->_dy);
+
+			//std::cout << "he= " << *he << " ; origin= " << glm_to_string(origin) << " ; direction= " << glm_to_string(direction) << "\n";
+
+			is_inter= ray_intersects_segment(origin, direction,
+				glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y), glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_origin= add_vertex(inter.x, inter.y);
+				origin_bottom.push_back(he);
+				continue;
 			}
-			else {
-				bool already_in= false;
-				for (auto & t : v) {
-					if (std::get<0>(t)== he->_twin) {
-						already_in= true;
-						break;
-					}
-				}
-				if (already_in) {
-					continue;
-				}
-				//std::cout << "ok\n";
-				glm::vec2 origin(he->_tmp_x, he->_tmp_y);
-				glm::vec2 direction(he->_dx, he->_dy);
-				v.push_back(std::make_tuple(he, origin, direction));
-				glm::vec2 opposite_direction(-he->_dx, -he->_dy);
-				v.push_back(std::make_tuple(he->_twin, origin, opposite_direction));
+
+			is_inter= ray_intersects_segment(origin, direction,
+				glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y), glm::vec2(top_right_corner->_x, top_right_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_origin= add_vertex(inter.x, inter.y);
+				origin_right.push_back(he);
+				continue;
 			}
+
+			is_inter= ray_intersects_segment(origin, direction,
+				glm::vec2(top_right_corner->_x, top_right_corner->_y), glm::vec2(top_left_corner->_x, top_left_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_origin= add_vertex(inter.x, inter.y);
+				origin_top.push_back(he);
+				continue;
+			}
+
+			is_inter= ray_intersects_segment(origin, direction,
+				glm::vec2(top_left_corner->_x, top_left_corner->_y), glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_origin= add_vertex(inter.x, inter.y);
+				origin_left.push_back(he);
+				continue;
+			}
+
+			std::cout << "add_bbox problème\n";
 		}
 	}
 
-	glm::vec2 inter;
-	bool is_inter;
-	for (auto & t : v) {
-		DCEL_HalfEdge * he= std::get<0>(t);
-		glm::vec2 origin= std::get<1>(t);
-		glm::vec2 direction= std::get<2>(t);
+	for (auto he : _half_edges) {
+		if ((he->_origin== NULL) && (he->_twin->_origin== NULL)) {
+			glm::vec2 origin(he->_tmp_x, he->_tmp_y);
+			glm::vec2 direction(he->_dx, he->_dy);
+			glm::vec2 twin_direction(-he->_dx, -he->_dy);
 
-		std::cout << "he= " << *he << " ; origin= " << glm_to_string(origin) << " ; direction= " << glm_to_string(direction) << "\n";
+			is_inter= ray_intersects_segment(origin, direction,
+				glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y), glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_twin->_origin= add_vertex(inter.x, inter.y);
+				origin_bottom.push_back(he->_twin);
+			}
+			is_inter= ray_intersects_segment(origin, twin_direction,
+				glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y), glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_origin= add_vertex(inter.x, inter.y);
+				origin_bottom.push_back(he);
+			}
 
-		is_inter= ray_intersects_segment(origin, direction,
-			glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y), glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y),
-			&inter);
-		if (is_inter) {
-			he->_origin= add_vertex(inter.x, inter.y);
-			origin_bottom.push_back(he);
-			continue;
+			is_inter= ray_intersects_segment(origin, direction,
+				glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y), glm::vec2(top_right_corner->_x, top_right_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_twin->_origin= add_vertex(inter.x, inter.y);
+				origin_right.push_back(he->_twin);
+			}
+			is_inter= ray_intersects_segment(origin, twin_direction,
+				glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y), glm::vec2(top_right_corner->_x, top_right_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_origin= add_vertex(inter.x, inter.y);
+				origin_right.push_back(he);
+			}
+
+			is_inter= ray_intersects_segment(origin, direction,
+				glm::vec2(top_right_corner->_x, top_right_corner->_y), glm::vec2(top_left_corner->_x, top_left_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_twin->_origin= add_vertex(inter.x, inter.y);
+				origin_top.push_back(he->_twin);
+			}
+			is_inter= ray_intersects_segment(origin, twin_direction,
+				glm::vec2(top_right_corner->_x, top_right_corner->_y), glm::vec2(top_left_corner->_x, top_left_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_origin= add_vertex(inter.x, inter.y);
+				origin_top.push_back(he);
+			}
+
+			is_inter= ray_intersects_segment(origin, direction,
+				glm::vec2(top_left_corner->_x, top_left_corner->_y), glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_twin->_origin= add_vertex(inter.x, inter.y);
+				origin_left.push_back(he->_twin);
+			}
+			is_inter= ray_intersects_segment(origin, twin_direction,
+				glm::vec2(top_left_corner->_x, top_left_corner->_y), glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y),
+				&inter);
+			if (is_inter) {
+				he->_origin= add_vertex(inter.x, inter.y);
+				origin_left.push_back(he);
+			}
 		}
-
-		is_inter= ray_intersects_segment(origin, direction,
-			glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y), glm::vec2(top_right_corner->_x, top_right_corner->_y),
-			&inter);
-		if (is_inter) {
-			he->_origin= add_vertex(inter.x, inter.y);
-			origin_right.push_back(he);
-			continue;
-		}
-
-		is_inter= ray_intersects_segment(origin, direction,
-			glm::vec2(top_right_corner->_x, top_right_corner->_y), glm::vec2(top_left_corner->_x, top_left_corner->_y),
-			&inter);
-		if (is_inter) {
-			he->_origin= add_vertex(inter.x, inter.y);
-			origin_top.push_back(he);
-			continue;
-		}
-
-		is_inter= ray_intersects_segment(origin, direction,
-			glm::vec2(top_left_corner->_x, top_left_corner->_y), glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y),
-			&inter);
-		if (is_inter) {
-			he->_origin= add_vertex(inter.x, inter.y);
-			origin_left.push_back(he);
-			continue;
-		}
-
-		std::cout << "add_bbox problème\n";
 	}
 
 	sort(origin_bottom.begin(), origin_bottom.end(),
@@ -480,6 +525,7 @@ void DCEL::add_bbox(float bbox_expand) {
 	if (!origin_bottom.empty()) {
 		bbox_he= add_edge(bottom_left_corner, origin_bottom[0]->_origin);
 		//last_he->set_next(bbox_he); // ici non last_he==NULL
+		first_he= bbox_he;
 		bbox_he->set_next(origin_bottom[0]);
 		bbox_he= add_edge(origin_bottom[origin_bottom.size()- 1]->_origin, bottom_right_corner);
 		origin_bottom[origin_bottom.size()- 1]->_twin->set_next(bbox_he);
@@ -487,9 +533,9 @@ void DCEL::add_bbox(float bbox_expand) {
 	else {
 		bbox_he= add_edge(bottom_left_corner, bottom_right_corner);
 		//last_he->set_next(bbox_he); // ici non last_he==NULL
+		first_he= bbox_he;
 	}
 	last_he= bbox_he;
-	first_he= bbox_he;
 	
 	if (!origin_right.empty()) {
 		bbox_he= add_edge(bottom_right_corner, origin_right[0]->_origin);
@@ -512,7 +558,7 @@ void DCEL::add_bbox(float bbox_expand) {
 		origin_top[origin_top.size()- 1]->_twin->set_next(bbox_he);
 	}
 	else {
-		bbox_he= add_edge(bottom_right_corner, top_right_corner);
+		bbox_he= add_edge(top_right_corner, top_left_corner);
 		last_he->set_next(bbox_he);
 	}
 	last_he= bbox_he;
@@ -525,7 +571,7 @@ void DCEL::add_bbox(float bbox_expand) {
 		origin_left[origin_left.size()- 1]->_twin->set_next(bbox_he);
 	}
 	else {
-		bbox_he= add_edge(bottom_right_corner, top_right_corner);
+		bbox_he= add_edge(top_left_corner, bottom_left_corner);
 		last_he->set_next(bbox_he);
 	}
 	last_he= bbox_he;
@@ -541,19 +587,22 @@ void DCEL::create_faces_from_half_edges() {
 		for (auto he : _half_edges) {
 			// le cas he->_next== NULL devrait correspondre forcément au cas de la face infinie
 			if ((he->_incident_face== NULL) && (he->_next!= NULL)) {
-				std::cout << *he << "\n";
+				//std::cout << "----\n";
+				//std::cout << *he << "\n";
 				found_unattached_he= true;
 				DCEL_Face * face= add_face();
 				face->_outer_edge= he;
 				DCEL_HalfEdge * he2= he;
 				do {
 					if (he2->_next== NULL) {
-						std::cout << "DCEL::create_faces_from_half_edges : face non close ; he2= " << *he2 << "\n";
+						std::cout << "DCEL::create_faces_from_half_edges : face non close\n";
 						return;
 					}
 					he2->_incident_face= face;
 					he2= he2->_next;
+					//std::cout << *he2 << "\n";
 				} while (he2!= he);
+				//std::cout << "done\n";
 			}
 		}
 		if (!found_unattached_he) {
@@ -573,10 +622,12 @@ void DCEL::export_html(std::string html_path) {
 	const float VIEW_YMIN= (_ymin- 0.5f* (_ymin+ _ymax))* MARGIN_FACTOR+ 0.5f* (_ymin+ _ymax);
 	const float VIEW_XMAX= (_xmax- 0.5f* (_xmin+ _xmax))* MARGIN_FACTOR+ 0.5f* (_xmin+ _xmax);
 	const float VIEW_YMAX= (_ymax- 0.5f* (_ymin+ _ymax))* MARGIN_FACTOR+ 0.5f* (_ymin+ _ymax);
-	const float POINT_RADIUS= 0.01f;
-	const float DELTA_BUFFER= 0.05f;
-	const float ARROW_SIZE= 0.1f;
-	const float ARROW_SIZE_2= 0.03f;
+	const float SIZE= std::max(_xmax- _xmin, _ymax- _ymin);
+	const float POINT_RADIUS= 0.005f* SIZE;
+	const float DELTA_BUFFER= 0.05f* SIZE;
+	const float ARROW_SIZE= 0.05f* SIZE;
+	const float ARROW_SIZE_2= 0.01f* SIZE;
+	const float STROKE_WIDTH= 0.002f* SIZE;
 
 	auto y_html= [VIEW_YMIN, VIEW_YMAX](float y) -> float {return VIEW_YMIN+ VIEW_YMAX- y;};
 
@@ -586,9 +637,9 @@ void DCEL::export_html(std::string html_path) {
 	f << "<style>\n";
 	f << ".point_class {fill: black;}\n";
 	f << ".repere_point_class {fill: red;}\n";
-	f << ".line_class {fill: transparent; stroke: black; stroke-width: 0.01; stroke-opacity: 0.3;}\n";
-	f << ".repere_line_class {fill: transparent; stroke: red; stroke-width: 0.01; stroke-opacity: 0.3;}\n";
-	f << ".arrow_line_class {fill: transparent; stroke: rgb(100,100,100); stroke-width: 0.01; stroke-opacity: 0.3;}\n";
+	f << ".line_class {fill: transparent; stroke: black; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
+	f << ".repere_line_class {fill: transparent; stroke: red; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
+	f << ".arrow_line_class {fill: transparent; stroke: rgb(100,100,100); stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
 	f << "</style>\n</head>\n<body>\n";
 	f << "<svg width=\"" << SVG_WIDTH << "\" height=\"" << SVG_HEIGHT << "\" ";
 	// viewbox = xmin, ymin, width, height

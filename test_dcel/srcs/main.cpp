@@ -52,7 +52,7 @@ void test2() {
 
 	dcel->add_bbox();
 	dcel->create_faces_from_half_edges();
-	std::cout << *dcel;
+	//std::cout << *dcel;
 	dcel->export_html("../data/test2.html");
 }
 
@@ -69,19 +69,23 @@ void test3() {
 	he2->set_tmp_data(glm::vec2(1.0f, 2.0f));
 
 	DCEL_HalfEdge * he3= dcel->add_edge(v1, NULL);
-	he3->set_tmp_data(glm::vec2(1.0f, 0.5f));
+	he3->set_tmp_data(glm::vec2(-1.0f, 0.0f));
+
+	he1->_twin->set_next(he3);
+	he3->_twin->set_next(he2);
+	he2->_twin->set_next(he1);
 
 	dcel->add_bbox();
 	dcel->create_faces_from_half_edges();
-	std::cout << *dcel;
+	//std::cout << *dcel;
 	dcel->export_html("../data/test3.html");
 }
 
 
 int main() {
 	//test1();
-	//test2();
-	test3();
+	test2();
+	//test3();
 	
 	return 0;
 }
