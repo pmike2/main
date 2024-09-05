@@ -72,6 +72,52 @@ glm::vec2 parabolas_intersection(glm::vec2 & site_left, glm::vec2 & site_right, 
 }*/
 
 
+void draw_parabolas(std::vector<glm::vec2> & sites, float yline, std::string html_path) {
+	float xmin= 1e8;
+	float ymin= 1e8;
+	float xmax= -1e8;
+	float ymax= -1e8;
+
+	const unsigned int SVG_WIDTH= 700;
+	const unsigned int SVG_HEIGHT= 700;
+	const float MARGIN_FACTOR= 1.5f;
+	const float VIEW_XMIN= (xmin- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
+	const float VIEW_YMIN= (ymin- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
+	const float VIEW_XMAX= (xmax- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
+	const float VIEW_YMAX= (ymax- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
+	const float SIZE= std::max(xmax- xmin, ymax- ymin);
+	const float POINT_RADIUS= 0.005f* SIZE;
+	const float DELTA_BUFFER= 0.05f* SIZE;
+	const float ARROW_SIZE= 0.05f* SIZE;
+	const float ARROW_SIZE_2= 0.01f* SIZE;
+	const float STROKE_WIDTH= 0.002f* SIZE;
+
+	auto y_html= [VIEW_YMIN, VIEW_YMAX](float y) -> float {return VIEW_YMIN+ VIEW_YMAX- y;};
+
+	std::ofstream f;
+	f.open(html_path);
+	f << "<!DOCTYPE html>\n<html>\n<head>\n";
+	f << "<style>\n";
+	f << ".point_class {fill: black;}\n";
+	f << ".repere_point_class {fill: red;}\n";
+	f << ".line_class {fill: transparent; stroke: black; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
+	f << ".repere_line_class {fill: transparent; stroke: red; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
+	f << ".arrow_line_class {fill: transparent; stroke: rgb(100,100,100); stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
+	f << "</style>\n</head>\n<body>\n";
+	f << "<svg width=\"" << SVG_WIDTH << "\" height=\"" << SVG_HEIGHT << "\" ";
+	// viewbox = xmin, ymin, width, height
+	f << "viewbox=\"" << VIEW_XMIN << " " << VIEW_YMIN << " " << VIEW_XMAX- VIEW_XMIN << " " << VIEW_YMAX- VIEW_YMIN << "\" ";
+	f << "style=\"background-color:rgb(220,240,230)\"";
+	f << "\">\n";
+
+
+
+	f << "</svg>\n";
+	f << "</body>\n</html>\n";
+	f.close();
+}
+
+
 // ---------------------------------------------------------------------------------------------
 BeachLineNode::BeachLineNode() :
 	_type(Arc), _site(glm::vec2(0.0f, 0.0f)), _circle_event(NULL), _sites(std::make_pair(glm::vec2(0.0f, 0.0f), glm::vec2(0.0f, 0.0f))), _half_edge(NULL) 

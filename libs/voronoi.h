@@ -30,6 +30,7 @@ float y_parabola(glm::vec2 & site, float yline, float x);
 float y_derivative_parabola(glm::vec2 & site, float yline, float x);
 glm::vec2 parabolas_intersection(glm::vec2 & site1, glm::vec2 & site2, float yline);
 //glm::vec2 bisector_intersection(glm::vec2 & a, glm::vec2 & b, glm::vec2 & c);
+void draw_parabolas(std::vector<glm::vec2> & sites, float yline, std::string html_path);
 
 
 class Event;
