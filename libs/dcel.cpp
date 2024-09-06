@@ -121,6 +121,7 @@ std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
 	else {
 		os << "NULL";
 	}
+	os << " ; dx = " << e._dx << " ; dy = " << e._dy << " ; _tmp_x = " << e._tmp_x << " ; _tmp_y = " << e._tmp_y;
 	
 	return os;
 }
@@ -587,8 +588,8 @@ void DCEL::create_faces_from_half_edges() {
 		for (auto he : _half_edges) {
 			// le cas he->_next== NULL devrait correspondre forcément au cas de la face infinie
 			if ((he->_incident_face== NULL) && (he->_next!= NULL)) {
-				//std::cout << "----\n";
-				//std::cout << *he << "\n";
+				std::cout << "----\n";
+				std::cout << *he << "\n";
 				found_unattached_he= true;
 				DCEL_Face * face= add_face();
 				face->_outer_edge= he;
@@ -600,9 +601,9 @@ void DCEL::create_faces_from_half_edges() {
 					}
 					he2->_incident_face= face;
 					he2= he2->_next;
-					//std::cout << *he2 << "\n";
+					std::cout << *he2 << "\n";
 				} while (he2!= he);
-				//std::cout << "done\n";
+				std::cout << "done\n";
 			}
 		}
 		if (!found_unattached_he) {
@@ -702,9 +703,13 @@ void DCEL::export_html(std::string html_path) {
 
 
 std::ostream & operator << (std::ostream & os, DCEL & d) {
-	for (auto face : d._faces) {
+	/*for (auto face : d._faces) {
 		os << *face << "\n";
+	}*/
+	for (auto he : d._half_edges) {
+		os << *he << "\n";
 	}
+
 	return os;
 }
 

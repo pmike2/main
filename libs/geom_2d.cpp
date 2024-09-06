@@ -109,8 +109,8 @@ bool segment_intersects_segment(glm::vec2 & pt1_begin, glm::vec2 & pt1_end, glm:
 
 bool ray_intersects_segment(const glm::vec2 & origin, const glm::vec2 & direction, const glm::vec2 & pt_begin, const glm::vec2 & pt_end, glm::vec2 * result) {
 	glm::vec2 dir_segment= pt_end- pt_begin;
-	// parallèles
 	float a= cross2d(direction, dir_segment);
+	// parallèles
 	if (abs(a)< EPSILON) {
 		return false;
 	}
@@ -124,6 +124,26 @@ bool ray_intersects_segment(const glm::vec2 & origin, const glm::vec2 & directio
 	}
 	result->x= origin.x+ t1* direction.x;
 	result->y= origin.y+ t1* direction.y;
+	return true;
+}
+
+
+bool ray_intersects_ray(const glm::vec2 & origin1, const glm::vec2 & direction1, const glm::vec2 & origin2, const glm::vec2 & direction2, glm::vec2 * result) {
+	float a= cross2d(direction1, direction2);
+	// parallèles
+	if (abs(a)< EPSILON) {
+		return false;
+	}
+	float t1= cross2d(origin2- origin1, direction1)/ a;
+	if (t1< 0.0f) {
+		return false;
+	}
+	float t2= cross2d(origin2- origin1, direction2)/ a;
+	if (t2< 0.0f) {
+		return false;
+	}
+	result->x= origin1.x+ t1* direction1.x;
+	result->y= origin1.y+ t1* direction1.y;
 	return true;
 }
 

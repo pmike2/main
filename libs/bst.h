@@ -40,6 +40,8 @@ public:
 	bool is_right();
 	bool is_leaf();
 	Node * sibling();
+	void set_left(Node * n);
+	void set_right(Node * n);
 
 	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
 	template <class U>
@@ -125,6 +127,20 @@ Node<T> * Node<T>::sibling() {
 		return _parent->_right;
 	}
 	return _parent->_left;
+}
+
+
+template <class T>
+void Node<T>::set_left(Node<T> * n) {
+	_left= n;
+	n->_parent= this;
+}
+
+
+template <class T>
+void Node<T>::set_right(Node<T> * n) {
+	_right= n;
+	n->_parent= this;
 }
 
 

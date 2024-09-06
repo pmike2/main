@@ -32,7 +32,7 @@ void test1() {
 
 
 void test2() {
-	for (unsigned int i=0; i<100; ++i) {
+	for (unsigned int i=0; i<10; ++i) {
 		pts.push_back(glm::vec2(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
 	}
 
@@ -64,8 +64,8 @@ int main(int argc, char * argv[]) {
 	srand(time(NULL));
 	auto t1= high_resolution_clock::now();
 
-	test1();
-	//test2();
+	//test1();
+	test2();
 	//test3();
 	Voronoi * v= new Voronoi(pts);
 
@@ -73,8 +73,8 @@ int main(int argc, char * argv[]) {
 	auto ms= duration_cast<milliseconds>(t2- t1);
 	cout << ms.count() << " ms\n";
 
-	v->_diagram->export_html("../data/result1.html");
-	//v->_diagram->export_html("../data/result2.html");
+	//v->_diagram->export_html("../data/result1.html");
+	v->_diagram->export_html("../data/result2.html");
 	//v->_diagram->export_html("../data/result3.html");
 	
 	delete v;

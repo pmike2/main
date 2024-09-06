@@ -22,19 +22,19 @@ void test1() {
 
 	//std::cout << *bst;
 
-	bst->clear();
+	//bst->clear();
 
-	std::cout << *bst;
+	//std::cout << *bst;
 
 	//std::cout << "min = " << *bst->minimum(bst->search(1)) << "\n";
 
 	//std::cout << "min = " << *bst->minimum() << "\nmax = " << *bst->maximum() << "\n";
 
 	//std::cout << "succ = " << *bst->successor(bst->search(3)) << "\n";
-	//std::cout << "pred = " << *bst->predecessor(bst->search(4)) << "\n";
+	//std::cout << "pred = " << *bst->predecessor(bst->search(1)) << "\n";
 
 	//std::cout << "succ_leaf = " << *bst->successor_leaf(bst->search(3)) << "\n";
-	//std::cout << "pred_leaf = " << *bst->predecessor_leaf(bst->search(7)) << "\n";
+	//std::cout << "pred_leaf = " << *bst->predecessor_leaf(bst->search(1)) << "\n";
 
 	//bst->traversal(TraversalType::IN_ORDER);
 
@@ -49,7 +49,7 @@ void test1() {
 		std::cout << "NULL\n";
 	}*/
 
-	//bst->export_html("../data/test1.html");
+	bst->export_html("../data/test1.html");
 
 	delete bst;
 }
