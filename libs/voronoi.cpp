@@ -109,10 +109,10 @@ void draw_parabolas(std::vector<glm::vec2> & sites, float yline, std::string htm
 	const float VIEW_XMAX= (xmax- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
 	const float VIEW_YMAX= (ymax- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);*/
 
-	const float VIEW_XMIN= 0.0f;
-	const float VIEW_XMAX= 1.0f;
-	const float VIEW_YMIN= 0.0f;
-	const float VIEW_YMAX= 1.0f;
+	const float VIEW_XMIN= -1.0f;
+	const float VIEW_XMAX= 2.0f;
+	const float VIEW_YMIN= -1.0f;
+	const float VIEW_YMAX= 2.0f;
 	
 	const float SIZE= std::max(xmax- xmin, ymax- ymin);
 	const float POINT_RADIUS= 0.01f* SIZE;
@@ -129,6 +129,7 @@ void draw_parabolas(std::vector<glm::vec2> & sites, float yline, std::string htm
 	f << ".repere_point_class {fill: red;}\n";
 	f << ".poly_class {fill: transparent; stroke: black; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
 	f << ".repere_line_class {fill: transparent; stroke: red; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
+	f << ".current_line_class {fill: transparent; stroke: blue; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
 	f << "</style>\n</head>\n<body>\n";
 	f << "<svg width=\"" << SVG_WIDTH << "\" height=\"" << SVG_HEIGHT << "\" ";
 	// viewbox = xmin, ymin, width, height
@@ -143,14 +144,17 @@ void draw_parabolas(std::vector<glm::vec2> & sites, float yline, std::string htm
 	f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 1 << "\" y2=\"" << y_html(0) << "\" />\n";
 	f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 0 << "\" y2=\"" << y_html(1) << "\" />\n";
 
+	// current line
+	f << "<line class=\"current_line_class\" x1=\"" << VIEW_XMIN << "\" y1=\"" << y_html(yline) << "\" x2=\"" << VIEW_XMAX << "\" y2=\"" << y_html(yline) << "\" />\n";
+
 	for (auto s : sites) {
-		f << "<circle class=\"repere_point_class\" cx=\"" << s.x << "\" cy=\"" << y_html(s.y) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+		f << "<circle class=\"point_class\" cx=\"" << s.x << "\" cy=\"" << y_html(s.y) << "\" r=\"" << POINT_RADIUS << "\" />\n";
 
 		if (s.y<= yline) {
 			continue;
 		}
 
-		float x= xmin;
+		float x= VIEW_XMIN;
 		std::string poly= "";
 		while (true) {
 			float y= y_parabola(s, yline, x);
@@ -170,7 +174,7 @@ void draw_parabolas(std::vector<glm::vec2> & sites, float yline, std::string htm
 
 
 bool breakpoints_converge(BeachLineNode * bkpt1, BeachLineNode * bkpt2) {
-	std::cout << "DEBUG --- " <<  *bkpt1 << " ; " << *bkpt2 << "\n";
+	//std::cout << "DEBUG --- " <<  *bkpt1 << " ; " << *bkpt2 << "\n";
 	glm::vec2 origin1= glm::vec2(bkpt1->_half_edge->_tmp_x, bkpt1->_half_edge->_tmp_y);
 	glm::vec2 direction1= glm::vec2(bkpt1->_half_edge->_dx, bkpt1->_half_edge->_dy);
 	glm::vec2 origin2= glm::vec2(bkpt2->_half_edge->_tmp_x, bkpt2->_half_edge->_tmp_y);
@@ -304,8 +308,6 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 
 Voronoi::Voronoi(std::vector<glm::vec2> sites) : Voronoi()
 {
-	system("rm ../data/*");
-
 	for (unsigned int i=0; i<sites.size(); ++i) {
 		Event * e= new Event(SiteEvent);
 		e->_site= sites[i];
@@ -393,18 +395,18 @@ void Voronoi::handle_site_event(Event * e) {
 	Node<BeachLineNode> * next_bkpt= _beachline->successor(node_above_site);
 
 	if (VERBOSE) {
-		std::cout << "node_above_site =" << *node_above_site << "\n";
+		std::cout << "node_above_site = " << *node_above_site << "\n";
 		if (prev_bkpt!= NULL) {
-			std::cout << "prev_bkpt=" << *prev_bkpt << "\n";
+			std::cout << "prev_bkpt = " << *prev_bkpt << "\n";
 		}
 		else {
-			std::cout << "prev_bkpt=NULL\n";
+			std::cout << "prev_bkpt = NULL\n";
 		}
 		if (next_bkpt!= NULL) {
-			std::cout << "next_bkpt=" << *next_bkpt << "\n";
+			std::cout << "next_bkpt = " << *next_bkpt << "\n";
 		}
 		else {
-			std::cout << "next_bkpt=NULL\n";
+			std::cout << "next_bkpt = NULL\n";
 		}
 	}
 

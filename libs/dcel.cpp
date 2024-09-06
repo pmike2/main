@@ -345,10 +345,10 @@ void DCEL::add_bbox(float bbox_expand) {
 	_ymin-= height* bbox_expand;
 	_ymax+= height* bbox_expand;*/
 
-	_xmin= -10.0f;
-	_xmax= 10.0f;
-	_ymin= -10.0f;
-	_ymax= 10.0f;
+	_xmin= -5.0f;
+	_xmax= 5.0f;
+	_ymin= -5.0f;
+	_ymax= 5.0f;
 
 	DCEL_Vertex * bottom_left_corner= add_vertex(_xmin, _ymin);
 	DCEL_Vertex * bottom_right_corner= add_vertex(_xmax, _ymin);
@@ -625,10 +625,10 @@ void DCEL::export_html(std::string html_path) {
 	const float VIEW_YMAX= (_ymax- 0.5f* (_ymin+ _ymax))* MARGIN_FACTOR+ 0.5f* (_ymin+ _ymax);
 	const float SIZE= std::max(_xmax- _xmin, _ymax- _ymin);
 	const float POINT_RADIUS= 0.005f* SIZE;
-	const float DELTA_BUFFER= 0.05f* SIZE;
+	const float DELTA_BUFFER= 0.01f* SIZE;
 	const float ARROW_SIZE= 0.05f* SIZE;
 	const float ARROW_SIZE_2= 0.01f* SIZE;
-	const float STROKE_WIDTH= 0.002f* SIZE;
+	const float STROKE_WIDTH= 0.005f* SIZE;
 
 	auto y_html= [VIEW_YMIN, VIEW_YMAX](float y) -> float {return VIEW_YMIN+ VIEW_YMAX- y;};
 
@@ -638,9 +638,9 @@ void DCEL::export_html(std::string html_path) {
 	f << "<style>\n";
 	f << ".point_class {fill: black;}\n";
 	f << ".repere_point_class {fill: red;}\n";
-	f << ".line_class {fill: transparent; stroke: black; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
-	f << ".repere_line_class {fill: transparent; stroke: red; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
-	f << ".arrow_line_class {fill: transparent; stroke: rgb(100,100,100); stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
+	f << ".line_class {fill: transparent; stroke: black; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.6;}\n";
+	f << ".repere_line_class {fill: transparent; stroke: red; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.6;}\n";
+	f << ".arrow_line_class {fill: transparent; stroke: rgb(100,100,100); stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.6;}\n";
 	f << "</style>\n</head>\n<body>\n";
 	f << "<svg width=\"" << SVG_WIDTH << "\" height=\"" << SVG_HEIGHT << "\" ";
 	// viewbox = xmin, ymin, width, height
@@ -661,6 +661,7 @@ void DCEL::export_html(std::string html_path) {
 		float xg= gravity_center.first;
 		float yg= gravity_center.second;
 		//std::cout << "-----\n" << xg << " ; " << yg << "\n";
+		std::string str_color= "rgb("+ std::to_string(rand_int(0, 120))+ ", "+ std::to_string(rand_int(0, 120))+ ", "+ std::to_string(rand_int(0, 120))+ ")";
 		
 		for (auto edge : edges) {
 			DCEL_Vertex * v1= edge->_origin;
@@ -679,7 +680,7 @@ void DCEL::export_html(std::string html_path) {
 
 			f << "<circle class=\"point_class\" cx=\"" << x1 << "\" cy=\"" << y_html(y1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
 			f << "<circle class=\"point_class\" cx=\"" << x2 << "\" cy=\"" << y_html(y2) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-			f << "<line class=\"line_class\" x1=\"" << x1 << "\" y1=\"" << y_html(y1) << "\" x2=\"" << x2 << "\" y2=\"" << y_html(y2) << "\" />\n";
+			f << "<line class=\"line_class\" x1=\"" << x1 << "\" y1=\"" << y_html(y1) << "\" x2=\"" << x2 << "\" y2=\"" << y_html(y2) << "\" style=\"stroke:" << str_color << "\" />\n";
 
 			// fleche
 			float u= (x2- x1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
@@ -690,9 +691,9 @@ void DCEL::export_html(std::string html_path) {
 			float y_arrow_2= y_arrow_1- ARROW_SIZE* v+ ARROW_SIZE_2* u;
 			float x_arrow_3= x_arrow_1- ARROW_SIZE* u+ ARROW_SIZE_2* v;
 			float y_arrow_3= y_arrow_1- ARROW_SIZE* v- ARROW_SIZE_2* u;
-			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_1 << "\" y1=\"" << y_html(y_arrow_1) << "\" x2=\"" << x_arrow_2 << "\" y2=\"" << y_html(y_arrow_2) << "\" />\n";
-			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_2 << "\" y1=\"" << y_html(y_arrow_2) << "\" x2=\"" << x_arrow_3 << "\" y2=\"" << y_html(y_arrow_3) << "\" />\n";
-			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_3 << "\" y1=\"" << y_html(y_arrow_3) << "\" x2=\"" << x_arrow_1 << "\" y2=\"" << y_html(y_arrow_1) << "\" />\n";
+			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_1 << "\" y1=\"" << y_html(y_arrow_1) << "\" x2=\"" << x_arrow_2 << "\" y2=\"" << y_html(y_arrow_2) << "\" style=\"stroke:" << str_color << "\" />\n";
+			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_2 << "\" y1=\"" << y_html(y_arrow_2) << "\" x2=\"" << x_arrow_3 << "\" y2=\"" << y_html(y_arrow_3) << "\" style=\"stroke:" << str_color << "\" />\n";
+			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_3 << "\" y1=\"" << y_html(y_arrow_3) << "\" x2=\"" << x_arrow_1 << "\" y2=\"" << y_html(y_arrow_1) << "\" style=\"stroke:" << str_color << "\" />\n";
 		}
 	}
 
