@@ -39,6 +39,7 @@ public:
 	bool is_left();
 	bool is_right();
 	bool is_leaf();
+	bool is_root();
 	Node * sibling();
 	void set_left(Node * n);
 	void set_right(Node * n);
@@ -111,6 +112,16 @@ bool Node<T>::is_right() {
 template <class T>
 bool Node<T>::is_leaf() {
 	if ((_left== NULL) && (_right== NULL)) {
+		return true;
+	}
+	return false;
+}
+
+
+// est-ce root
+template <class T>
+bool Node<T>::is_root() {
+	if (_parent== NULL) {
 		return true;
 	}
 	return false;
@@ -635,6 +646,8 @@ void BST<T>::traversal(Node<T> * node, TraversalType tt, std::function<void(Node
 
 	if (tt== IN_ORDER) {
 		traversal(node->_left, tt, f);
+		std::cout << "*node                    = " << *node << "\n";
+		std::cout << "_node_print(node->_data) = " << _node_print(node->_data) << "\n";
 		f(node);
 		traversal(node->_right, tt, f);
 	}
@@ -672,6 +685,8 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) 
 	if (node== NULL) {
 		return;
 	}
+
+	//std::cout << "aaaaaa : " << _node_print(node->_data) << "\n";
 
 	float x_factor= 1.0f;
 	float y_factor= 0.4f;

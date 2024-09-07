@@ -345,10 +345,10 @@ void DCEL::add_bbox(float bbox_expand) {
 	_ymin-= height* bbox_expand;
 	_ymax+= height* bbox_expand;*/
 
-	_xmin= -5.0f;
-	_xmax= 5.0f;
-	_ymin= -5.0f;
-	_ymax= 5.0f;
+	_xmin= -2.0f;
+	_xmax= 2.0f;
+	_ymin= -2.0f;
+	_ymax= 2.0f;
 
 	DCEL_Vertex * bottom_left_corner= add_vertex(_xmin, _ymin);
 	DCEL_Vertex * bottom_right_corner= add_vertex(_xmax, _ymin);

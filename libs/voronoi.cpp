@@ -80,101 +80,9 @@ glm::vec2 parabolas_intersection(glm::vec2 & site_left, glm::vec2 & site_right, 
 }*/
 
 
-void draw_parabolas(std::vector<glm::vec2> & sites, float yline, std::string html_path) {
-	float xmin= 1e8;
-	float ymin= 1e8;
-	float xmax= -1e8;
-	float ymax= -1e8;
-	for (auto s : sites) {
-		if (s.x< xmin) {
-			xmin= s.x;
-		}
-		if (s.x> xmax) {
-			xmax= s.x;
-		}
-		if (s.y< ymin) {
-			ymin= s.y;
-		}
-		if (s.y> ymax) {
-			ymax= s.y;
-		}
-	}
-
-	const unsigned int SVG_WIDTH= 1200;
-	const unsigned int SVG_HEIGHT= 1000;
-	
-	/*const float MARGIN_FACTOR= 1.5f;
-	const float VIEW_XMIN= (xmin- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
-	const float VIEW_YMIN= (ymin- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
-	const float VIEW_XMAX= (xmax- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
-	const float VIEW_YMAX= (ymax- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);*/
-
-	const float VIEW_XMIN= -1.0f;
-	const float VIEW_XMAX= 2.0f;
-	const float VIEW_YMIN= -1.0f;
-	const float VIEW_YMAX= 2.0f;
-	
-	const float SIZE= std::max(xmax- xmin, ymax- ymin);
-	const float POINT_RADIUS= 0.01f* SIZE;
-	const float STROKE_WIDTH= 0.01f* SIZE;
-	const float STEP= 0.01f;
-
-	auto y_html= [VIEW_YMIN, VIEW_YMAX](float y) -> float {return VIEW_YMIN+ VIEW_YMAX- y;};
-
-	std::ofstream f;
-	f.open(html_path);
-	f << "<!DOCTYPE html>\n<html>\n<head>\n";
-	f << "<style>\n";
-	f << ".point_class {fill: black;}\n";
-	f << ".repere_point_class {fill: red;}\n";
-	f << ".poly_class {fill: transparent; stroke: black; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
-	f << ".repere_line_class {fill: transparent; stroke: red; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
-	f << ".current_line_class {fill: transparent; stroke: blue; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.3;}\n";
-	f << "</style>\n</head>\n<body>\n";
-	f << "<svg width=\"" << SVG_WIDTH << "\" height=\"" << SVG_HEIGHT << "\" ";
-	// viewbox = xmin, ymin, width, height
-	f << "viewbox=\"" << VIEW_XMIN << " " << VIEW_YMIN << " " << VIEW_XMAX- VIEW_XMIN << " " << VIEW_YMAX- VIEW_YMIN << "\" ";
-	f << "style=\"background-color:rgb(220,240,230)\"";
-	f << "\">\n";
-
-	// repère
-	f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-	f << "<circle class=\"repere_point_class\" cx=\"" << 1 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-	f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-	f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 1 << "\" y2=\"" << y_html(0) << "\" />\n";
-	f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 0 << "\" y2=\"" << y_html(1) << "\" />\n";
-
-	// current line
-	f << "<line class=\"current_line_class\" x1=\"" << VIEW_XMIN << "\" y1=\"" << y_html(yline) << "\" x2=\"" << VIEW_XMAX << "\" y2=\"" << y_html(yline) << "\" />\n";
-
-	for (auto s : sites) {
-		f << "<circle class=\"point_class\" cx=\"" << s.x << "\" cy=\"" << y_html(s.y) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-
-		if (s.y<= yline) {
-			continue;
-		}
-
-		float x= VIEW_XMIN;
-		std::string poly= "";
-		while (true) {
-			float y= y_parabola(s, yline, x);
-			poly+= std::to_string(x)+ ","+ std::to_string(y_html(y))+ " ";
-			x+= STEP;
-			if (x> VIEW_XMAX) {
-				break;
-			}
-		}
-		f << "<polyline class=\"poly_class\" points=\""+ poly+ "\" />\n";
-	}
-
-	f << "</svg>\n";
-	f << "</body>\n</html>\n";
-	f.close();
-}
-
-
 bool breakpoints_converge(BeachLineNode * bkpt1, BeachLineNode * bkpt2) {
-	//std::cout << "DEBUG --- " <<  *bkpt1 << " ; " << *bkpt2 << "\n";
+	std::cout << "DEBUG --- " <<  *bkpt1 << " ; " << *bkpt2 << "\n";
+	std::cout << "DEBUG2 --- " <<  *bkpt1->_half_edge << " ; " << *bkpt2->_half_edge << "\n";
 	glm::vec2 origin1= glm::vec2(bkpt1->_half_edge->_tmp_x, bkpt1->_half_edge->_tmp_y);
 	glm::vec2 direction1= glm::vec2(bkpt1->_half_edge->_dx, bkpt1->_half_edge->_dy);
 	glm::vec2 origin2= glm::vec2(bkpt2->_half_edge->_tmp_x, bkpt2->_half_edge->_tmp_y);
@@ -306,8 +214,10 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 }
 
 
-Voronoi::Voronoi(std::vector<glm::vec2> sites) : Voronoi()
+Voronoi::Voronoi(std::vector<glm::vec2> & sites) : Voronoi()
 {
+	_sites= sites;
+
 	for (unsigned int i=0; i<sites.size(); ++i) {
 		Event * e= new Event(SiteEvent);
 		e->_site= sites[i];
@@ -337,15 +247,18 @@ Voronoi::Voronoi(std::vector<glm::vec2> sites) : Voronoi()
 
 		if (VERBOSE) {
 			std::cout << "beachline =\n" << *_beachline;
-			draw_parabolas(sites, _current_y, "../data/parabolas"+ std::to_string(_debug_count)+ ".html");
 			_beachline->export_html("../data/beachline"+ std::to_string(_debug_count)+ ".html");
-			for (auto s : sites) {
+
+			export_html("../data/debug"+ std::to_string(_debug_count)+ ".html");
+
+			/*for (auto s : sites) {
 				if (s.y<= _current_y) {
 					continue;
 				}
 				std::cout << glm_to_string(s) << " : " << parabola_equation(s, _current_y) << " ; ";
 			}
-			std::cout << "\n";
+			std::cout << "\n";*/
+
 			_debug_count++;
 		}
 
@@ -386,7 +299,7 @@ void Voronoi::handle_site_event(Event * e) {
 
 	// recherche de l'arc au dessus du site
 	BeachLineNode * new_arc= new BeachLineNode(Arc);
-	new_arc->_site= e->_site;
+	new_arc->_site= glm::vec2(e->_site);
 	Node<BeachLineNode> * node_above_site= _beachline->search(*new_arc, false);
 
 	Node<BeachLineNode> * prev_site= _beachline->predecessor_leaf(node_above_site);
@@ -453,8 +366,15 @@ void Voronoi::handle_site_event(Event * e) {
 	subtree.insert(next_site->_data);
 	_beachline.transplant(arc_above_site, subtree._root);*/
 
-	Node<BeachLineNode> * node_above_site_left_copy= _beachline->gen_node(node_above_site->_data);
-	Node<BeachLineNode> * node_above_site_right_copy= _beachline->gen_node(node_above_site->_data);
+	BeachLineNode * above_site_copy1= new BeachLineNode(Arc);
+	above_site_copy1->_site= glm::vec2(node_above_site->_data._site);
+	above_site_copy1->_circle_event= node_above_site->_data._circle_event;
+	BeachLineNode * above_site_copy2= new BeachLineNode(Arc);
+	above_site_copy2->_site= glm::vec2(node_above_site->_data._site);
+	above_site_copy2->_circle_event= node_above_site->_data._circle_event;
+
+	Node<BeachLineNode> * node_above_site_left_copy= _beachline->gen_node(*above_site_copy1);
+	Node<BeachLineNode> * node_above_site_right_copy= _beachline->gen_node(*above_site_copy2);
 
 	// on associe au bkpt gauche le half-edge qui va vers la gauche
 	BeachLineNode * breakpoint_left= new BeachLineNode(BreakPoint);
@@ -469,15 +389,28 @@ void Voronoi::handle_site_event(Event * e) {
 	Node<BeachLineNode> * breakpoint_left_node= _beachline->gen_node(*breakpoint_left);
 	Node<BeachLineNode> * breakpoint_right_node= _beachline->gen_node(*breakpoint_right);
 	Node<BeachLineNode> * new_node= _beachline->gen_node(*new_arc);
-	breakpoint_left_node->_left= node_above_site_left_copy;
-	breakpoint_left_node->_right= breakpoint_right_node;
-	node_above_site_left_copy->_parent= breakpoint_left_node;
-	breakpoint_right_node->_parent= breakpoint_left_node;
-	breakpoint_right_node->_left= new_node;
-	breakpoint_right_node->_right= node_above_site_right_copy;
-	new_node->_parent= breakpoint_right_node;
-	node_above_site_right_copy->_parent= breakpoint_right_node;
-	_beachline->transplant(node_above_site, breakpoint_left_node);
+	breakpoint_left_node->set_left(node_above_site_left_copy);
+	breakpoint_left_node->set_right(breakpoint_right_node);
+	//node_above_site_left_copy->_parent= breakpoint_left_node;
+	//breakpoint_right_node->_parent= breakpoint_left_node;
+	breakpoint_right_node->set_left(new_node);
+	breakpoint_right_node->set_right(node_above_site_right_copy);
+	//new_node->_parent= breakpoint_right_node;
+	//node_above_site_right_copy->_parent= breakpoint_right_node;
+	
+	//_beachline->transplant(node_above_site, breakpoint_left_node);
+
+	if (node_above_site->is_root()) {
+		_beachline->_root= breakpoint_left_node;
+	}
+	else {
+		if (node_above_site->is_left()) {
+			node_above_site->_parent->set_left(breakpoint_left_node);
+		}
+		else {
+			node_above_site->_parent->set_right(breakpoint_left_node);
+		}
+	}
 
 	// rebalance ; pour l'instant non j'ai peur que cela mette en l'air l'arbre vu la fonction de comparaison basée sur _site.x
 	//_beachline.balance();
@@ -553,7 +486,7 @@ void Voronoi::handle_circle_event(Event * e) {
 		else {
 			grand_parent->set_right(parent->_right);
 		}
-		predecessor->_data._sites.second= successor_leaf->_data._site;
+		predecessor->_data._sites.second= glm::vec2(successor_leaf->_data._site);
 	}
 	else if ( (e->_leaf->is_right()) && (parent->_left!= NULL) && (grand_parent!= NULL)) {
 		if (parent->is_left()) {
@@ -562,7 +495,7 @@ void Voronoi::handle_circle_event(Event * e) {
 		else {
 			grand_parent->set_right(parent->_left);
 		}
-		successor->_data._sites.first= predecessor_leaf->_data._site;
+		successor->_data._sites.first= glm::vec2(predecessor_leaf->_data._site);
 	}
 
 	/*if (predecessor_leaf== sibling) {
@@ -653,3 +586,135 @@ void Voronoi::handle_circle_event(Event * e) {
 	}
 }
 
+
+void Voronoi::export_html(std::string html_path) {
+	float xmin= 1e8;
+	float ymin= 1e8;
+	float xmax= -1e8;
+	float ymax= -1e8;
+	for (auto s : _sites) {
+		if (s.x< xmin) {
+			xmin= s.x;
+		}
+		if (s.x> xmax) {
+			xmax= s.x;
+		}
+		if (s.y< ymin) {
+			ymin= s.y;
+		}
+		if (s.y> ymax) {
+			ymax= s.y;
+		}
+	}
+
+	const unsigned int SVG_WIDTH= 1000;
+	const unsigned int SVG_HEIGHT= 800;
+	
+	/*const float MARGIN_FACTOR= 1.5f;
+	const float VIEW_XMIN= (xmin- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
+	const float VIEW_YMIN= (ymin- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
+	const float VIEW_XMAX= (xmax- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
+	const float VIEW_YMAX= (ymax- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);*/
+
+	const float VIEW_XMIN= -1.0f;
+	const float VIEW_XMAX= 2.0f;
+	const float VIEW_YMIN= -1.0f;
+	const float VIEW_YMAX= 2.0f;
+	
+	const float SIZE= std::max(xmax- xmin, ymax- ymin);
+	const float POINT_RADIUS= 0.02f* SIZE;
+	const float STROKE_WIDTH= 0.01f* SIZE;
+	const float STEP= 0.01f;
+
+	const float OPACITY_MIN= 0.2f;
+	const float OPACITY_MAX= 0.6f;
+
+	auto y_html= [VIEW_YMIN, VIEW_YMAX](float y) -> float {return VIEW_YMIN+ VIEW_YMAX- y;};
+
+	std::ofstream f;
+	f.open(html_path);
+	f << "<!DOCTYPE html>\n<html>\n<head>\n";
+	f << "<style>\n";
+	
+	f << ".site_point_class {fill: black; fill-opacity:" << OPACITY_MAX << "}\n";
+	//f << ".repere_point_class {fill: red;}\n";
+	f << ".half_edge_origin_point_class {fill: green; fill-opacity:" << OPACITY_MAX << "}\n";
+	f << ".half_edge_destination_point_class {fill: royalblue; fill-opacity:" << OPACITY_MAX << "}\n";
+	f << ".half_edge_tmp_point_class {fill: grey; fill-opacity:" << OPACITY_MAX << "}\n";
+
+	f << ".parabola_class {fill: transparent; stroke: black; stroke-width: " << STROKE_WIDTH << "; stroke-opacity:" << OPACITY_MIN << "}\n";
+	f << ".repere_line_class {fill: transparent; stroke: red; stroke-width: " << STROKE_WIDTH << "; stroke-opacity:" << OPACITY_MIN << "}\n";
+	f << ".current_line_class {fill: transparent; stroke: purple; stroke-width: " << STROKE_WIDTH << "; stroke-opacity:" << OPACITY_MIN << "}\n";
+	f << ".complete_half_edge_class {fill: transparent; stroke: green; stroke-width: " << STROKE_WIDTH << "; stroke-opacity:" << OPACITY_MAX << "}\n";
+	f << ".origincomplete_half_edge_class {fill: transparent; stroke: olive; stroke-width: " << STROKE_WIDTH << "; stroke-opacity:" << OPACITY_MAX << "}\n";
+	f << ".destinationcomplete_half_edge_class {fill: transparent; stroke: royalblue; stroke-width: " << STROKE_WIDTH << "; stroke-opacity:" << OPACITY_MAX << "}\n";
+	f << ".incomplete_half_edge_class {fill: transparent; stroke: grey; stroke-width: " << STROKE_WIDTH << "; stroke-opacity:" << OPACITY_MAX << "}\n";
+	
+	f << "</style>\n</head>\n<body>\n";
+	f << "<svg width=\"" << SVG_WIDTH << "\" height=\"" << SVG_HEIGHT << "\" ";
+	// viewbox = xmin, ymin, width, height
+	f << "viewbox=\"" << VIEW_XMIN << " " << VIEW_YMIN << " " << VIEW_XMAX- VIEW_XMIN << " " << VIEW_YMAX- VIEW_YMIN << "\" ";
+	f << "style=\"background-color:rgb(220,240,230)\"";
+	f << "\">\n";
+
+	// repère
+	//f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+	//f << "<circle class=\"repere_point_class\" cx=\"" << 1 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+	//f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+	f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 1 << "\" y2=\"" << y_html(0) << "\" />\n";
+	f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 0 << "\" y2=\"" << y_html(1) << "\" />\n";
+
+	// current line
+	f << "<line class=\"current_line_class\" x1=\"" << VIEW_XMIN << "\" y1=\"" << y_html(_current_y) << "\" x2=\"" << VIEW_XMAX << "\" y2=\"" << y_html(_current_y) << "\" />\n";
+
+	for (auto s : _sites) {
+		f << "<circle class=\"site_point_class\" cx=\"" << s.x << "\" cy=\"" << y_html(s.y) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+
+		if (s.y<= _current_y) {
+			continue;
+		}
+
+		float x= VIEW_XMIN;
+		std::string poly= "";
+		while (true) {
+			float y= y_parabola(s, _current_y, x);
+			poly+= std::to_string(x)+ ","+ std::to_string(y_html(y))+ " ";
+			x+= STEP;
+			if (x> VIEW_XMAX) {
+				break;
+			}
+		}
+		f << "<polyline class=\"parabola_class\" points=\""+ poly+ "\" />\n";
+	}
+
+	for (auto he : _diagram->_half_edges) {
+		if (he->_twin== NULL) {
+			std::cout << "twin == NULL !\n";
+			continue;
+		}
+
+		if (he->_origin!= NULL) {
+			f << "<circle class=\"half_edge_origin_point_class\" cx=\"" << he->_origin->_x << "\" cy=\"" << y_html(he->_origin->_y) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+			if (he->destination()!= NULL) {
+				f << "<line class=\"complete_half_edge_class\" x1=\"" << he->_origin->_x << "\" y1=\"" << y_html(he->_origin->_y) << "\" x2=\"" << he->_twin->_origin->_x << "\" y2=\"" << y_html(he->_twin->_origin->_y) << "\" />\n";
+			}
+			else {
+				f << "<line class=\"origincomplete_half_edge_class\" x1=\"" << he->_origin->_x << "\" y1=\"" << y_html(he->_origin->_y) << "\" x2=\"" << he->_origin->_x+ he->_dx << "\" y2=\"" << y_html(he->_origin->_y+ he->_dy) << "\" />\n";
+			}
+		}
+		else {
+			if (he->destination()!= NULL) {
+				//f << "<circle class=\"half_edge_destination_point_class\" cx=\"" << he->_twin->_origin->_x << "\" cy=\"" << y_html(he->_twin->_origin->_y) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+				//f << "<line class=\"destinationcomplete_half_edge_class\" x1=\"" << he->_twin->_origin->_x << "\" y1=\"" << y_html(he->_twin->_origin->_y) << "\" x2=\"" << he->_twin->_origin->_x- he->_dx << "\" y2=\"" << y_html(he->_twin->_origin->_y- he->_dy) << "\" />\n";
+			}
+			else {
+				f << "<circle class=\"half_edge_tmp_point_class\" cx=\"" << he->_tmp_x << "\" cy=\"" << y_html(he->_tmp_y) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+				f << "<line class=\"incomplete_half_edge_class\" x1=\"" << he->_tmp_x- he->_dx << "\" y1=\"" << y_html(he->_tmp_y- he->_dy) << "\" x2=\"" << he->_tmp_x+ he->_dx << "\" y2=\"" << y_html(he->_tmp_y+ he->_dy) << "\" />\n";
+			}
+		}
+	}
+
+	f << "</svg>\n";
+	f << "</body>\n</html>\n";
+	f.close();
+}

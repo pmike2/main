@@ -31,7 +31,6 @@ float y_derivative_parabola(glm::vec2 & site, float yline, float x);
 std::string parabola_equation(glm::vec2 & site, float yline);
 glm::vec2 parabolas_intersection(glm::vec2 & site1, glm::vec2 & site2, float yline);
 //glm::vec2 bisector_intersection(glm::vec2 & a, glm::vec2 & b, glm::vec2 & c);
-void draw_parabolas(std::vector<glm::vec2> & sites, float yline, std::string html_path);
 
 class BeachLineNode;
 
@@ -122,12 +121,14 @@ public:
 class Voronoi {
 public:
 	Voronoi();
-	Voronoi(std::vector<glm::vec2> sites);
+	Voronoi(std::vector<glm::vec2> & sites);
 	~Voronoi();
 	void handle_site_event(Event * e);
 	void handle_circle_event(Event * e);
+	void export_html(std::string html_path);
 
 
+	std::vector<glm::vec2> _sites;
 	DCEL * _diagram;
 	BST<BeachLineNode> * _beachline;
 	//EventQueue _queue;
