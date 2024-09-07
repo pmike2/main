@@ -190,12 +190,14 @@ std::ostream & operator << (std::ostream & os, const Node<T> & node) {
 	#else
 	os << std::left;
 	os << std::setw(str_width);
-	os << node._fprint();
+	//os << node._fprint();
+	os << node._data;
 	os <<  SEPARATOR;
 	os << "left = ";
 	os << std::setw(str_width);
 	if (node._left!= NULL) {
-		os << node._left->_fprint();
+		//os << node._left->_fprint();
+		os << node._left;
 	}
 	else {
 		os << NULL_STRING;
@@ -204,7 +206,8 @@ std::ostream & operator << (std::ostream & os, const Node<T> & node) {
 	os << "right = ";
 	os << std::setw(str_width);
 	if (node._right!= NULL) {
-		os << node._right->_fprint();
+		//os << node._right->_fprint();
+		os << node._right;
 	}
 	else {
 		os << NULL_STRING;
@@ -213,7 +216,8 @@ std::ostream & operator << (std::ostream & os, const Node<T> & node) {
 	os << "parent = ";
 	os << std::setw(str_width);
 	if (node._parent!= NULL) {
-		os << node._parent->_fprint();
+		//os << node._parent->_fprint();
+		os << node._parent;
 	}
 	else {
 		os << NULL_STRING;
@@ -646,8 +650,10 @@ void BST<T>::traversal(Node<T> * node, TraversalType tt, std::function<void(Node
 
 	if (tt== IN_ORDER) {
 		traversal(node->_left, tt, f);
+		std::cout << "----------------------------------------------\n";
 		std::cout << "*node                    = " << *node << "\n";
 		std::cout << "_node_print(node->_data) = " << _node_print(node->_data) << "\n";
+		std::cout << "node->_data              = " << node->_data << "\n";
 		f(node);
 		traversal(node->_right, tt, f);
 	}

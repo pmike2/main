@@ -116,10 +116,13 @@ std::ostream & operator << (std::ostream & os, const BeachLineNode & b) {
 	if (b._type== Arc) {
 		//os << "Arc : event = " << b._circle_event << " ; site = " << glm_to_string(b._site);
 		os << "Arc" << glm_to_string(b._site);
+		//os << " ; addr = " << &b;
 	}
 	else if (b._type== BreakPoint) {
 		//os << "BreakPoint : sites = [ " << glm_to_string(b._sites.first) << " ; " << glm_to_string(b._sites.second) << " ] ; half_edge = " << b._half_edge;
 		os << "BrkPt[" << glm_to_string(b._sites.first) << " , " << glm_to_string(b._sites.second) << "]";
+		//os <<  " ; half_edge = " << b._half_edge;
+		//os << " ; addr = " << &b;
 	}
 	return os;
 }
@@ -206,6 +209,7 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 	std::function<std::string(BeachLineNode)> node_print= [](BeachLineNode node) {
 		std::stringstream ss;
 		ss << node;
+		//ss << "aaa";
 		return ss.str();
 	};
 
