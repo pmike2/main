@@ -17,7 +17,8 @@
 // pour comparaison à 0.0f
 const float EPS= 1e-7;
 // pour debug
-const bool VERBOSE= true;
+//const bool VERBOSE= true;
+const bool VERBOSE= false;
 // facteur d'expansion de la bbox englobante
 const float BBOX_EXPAND= 0.2f;
 
@@ -34,7 +35,8 @@ glm::vec2 parabolas_intersection(glm::vec2 & site1, glm::vec2 & site2, float yli
 
 class BeachLineNode;
 
-bool breakpoints_converge(BeachLineNode * bkpt1, BeachLineNode * bkpt2);
+//bool breakpoints_converge(BeachLineNode * bkpt1, BeachLineNode * bkpt2);
+bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2);
 
 
 class Event;
@@ -90,14 +92,14 @@ struct EventCmp {
 			ly= lhs->_site.y;
 		}
 		else if (lhs->_type== EventType::CircleEvent) {
-			return ly= lhs->_circle_center.y- lhs->_circle_radius;
+			ly= lhs->_circle_center.y- lhs->_circle_radius;
 		}
 		
 		if (rhs->_type== EventType::SiteEvent) {
 			ry= rhs->_site.y;
 		}
 		else if (rhs->_type== EventType::CircleEvent) {
-			return ry= rhs->_circle_center.y- rhs->_circle_radius;
+			ry= rhs->_circle_center.y- rhs->_circle_radius;
 		}
 		
 		// les y + grands doivent être traités en 1er
@@ -121,7 +123,7 @@ public:
 class Voronoi {
 public:
 	Voronoi();
-	Voronoi(std::vector<glm::vec2> & sites);
+	Voronoi(std::vector<glm::vec2> & sites, std::string debug_path);
 	~Voronoi();
 	void handle_site_event(Event * e);
 	void handle_circle_event(Event * e);

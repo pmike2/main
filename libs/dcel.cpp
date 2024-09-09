@@ -312,7 +312,7 @@ void DCEL::compute_bbox() {
 }
 
 
-void DCEL::add_bbox(float bbox_expand) {
+bool DCEL::add_bbox(float bbox_expand) {
 	if (is_empty()) {
 		DCEL_Vertex * v1= add_vertex(0.0f, 0.0f);
 		DCEL_Vertex * v2= add_vertex(1.0f, 0.0f);
@@ -326,13 +326,12 @@ void DCEL::add_bbox(float bbox_expand) {
 		he2->set_next(he3);
 		he3->set_next(he4);
 		he4->set_next(he1);
-		create_faces_from_half_edges();
-		return;
+		return true;
 	}
 
 	compute_bbox();
 
-	/*float width= _xmax- _xmin;
+	float width= _xmax- _xmin;
 	float height= _ymax- _ymin;
 	if (width< 1e-7) {
 		width= 1.0f;
@@ -343,12 +342,12 @@ void DCEL::add_bbox(float bbox_expand) {
 	_xmin-= width* bbox_expand;
 	_xmax+= width* bbox_expand;
 	_ymin-= height* bbox_expand;
-	_ymax+= height* bbox_expand;*/
+	_ymax+= height* bbox_expand;
 
-	_xmin= -2.0f;
+	/*_xmin= -2.0f;
 	_xmax= 2.0f;
 	_ymin= -2.0f;
-	_ymax= 2.0f;
+	_ymax= 2.0f;*/
 
 	DCEL_Vertex * bottom_left_corner= add_vertex(_xmin, _ymin);
 	DCEL_Vertex * bottom_right_corner= add_vertex(_xmax, _ymin);
@@ -407,6 +406,7 @@ void DCEL::add_bbox(float bbox_expand) {
 			}
 
 			std::cout << "add_bbox problème\n";
+			return false;
 		}
 	}
 
@@ -578,18 +578,20 @@ void DCEL::add_bbox(float bbox_expand) {
 	last_he= bbox_he;
 	
 	last_he->set_next(first_he);
+
+	return true;
 }
 
 
-void DCEL::create_faces_from_half_edges() {
+bool DCEL::create_faces_from_half_edges() {
 	bool found_unattached_he= false;
 	while (true) {
 		found_unattached_he= false;
 		for (auto he : _half_edges) {
 			// le cas he->_next== NULL devrait correspondre forcément au cas de la face infinie
 			if ((he->_incident_face== NULL) && (he->_next!= NULL)) {
-				std::cout << "----\n";
-				std::cout << *he << "\n";
+				//std::cout << "----\n";
+				//std::cout << *he << "\n";
 				found_unattached_he= true;
 				DCEL_Face * face= add_face();
 				face->_outer_edge= he;
@@ -597,38 +599,37 @@ void DCEL::create_faces_from_half_edges() {
 				do {
 					if (he2->_next== NULL) {
 						std::cout << "DCEL::create_faces_from_half_edges : face non close\n";
-						return;
+						return false;
 					}
 					he2->_incident_face= face;
 					he2= he2->_next;
-					std::cout << *he2 << "\n";
+					//std::cout << *he2 << "\n";
 				} while (he2!= he);
-				std::cout << "done\n";
+				//std::cout << "done\n";
 			}
 		}
 		if (!found_unattached_he) {
 			break;
 		}
 	}
+	return true;
 }
 
 
-void DCEL::export_html(std::string html_path) {
-	compute_bbox();
-
+void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax) {
 	const unsigned int SVG_WIDTH= 700;
 	const unsigned int SVG_HEIGHT= 700;
 	const float MARGIN_FACTOR= 1.5f;
-	const float VIEW_XMIN= (_xmin- 0.5f* (_xmin+ _xmax))* MARGIN_FACTOR+ 0.5f* (_xmin+ _xmax);
-	const float VIEW_YMIN= (_ymin- 0.5f* (_ymin+ _ymax))* MARGIN_FACTOR+ 0.5f* (_ymin+ _ymax);
-	const float VIEW_XMAX= (_xmax- 0.5f* (_xmin+ _xmax))* MARGIN_FACTOR+ 0.5f* (_xmin+ _xmax);
-	const float VIEW_YMAX= (_ymax- 0.5f* (_ymin+ _ymax))* MARGIN_FACTOR+ 0.5f* (_ymin+ _ymax);
-	const float SIZE= std::max(_xmax- _xmin, _ymax- _ymin);
-	const float POINT_RADIUS= 0.005f* SIZE;
+	const float VIEW_XMIN= (xmin- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
+	const float VIEW_YMIN= (ymin- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
+	const float VIEW_XMAX= (xmax- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
+	const float VIEW_YMAX= (ymax- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
+	const float SIZE= std::max(xmax- xmin, ymax- ymin);
+	const float POINT_RADIUS= 0.002f* SIZE;
 	const float DELTA_BUFFER= 0.01f* SIZE;
 	const float ARROW_SIZE= 0.05f* SIZE;
 	const float ARROW_SIZE_2= 0.01f* SIZE;
-	const float STROKE_WIDTH= 0.005f* SIZE;
+	const float STROKE_WIDTH= 0.001f* SIZE;
 
 	auto y_html= [VIEW_YMIN, VIEW_YMAX](float y) -> float {return VIEW_YMIN+ VIEW_YMAX- y;};
 
@@ -649,11 +650,13 @@ void DCEL::export_html(std::string html_path) {
 	f << "\">\n";
 
 	// repère
-	f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-	f << "<circle class=\"repere_point_class\" cx=\"" << 1 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-	f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-	f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 1 << "\" y2=\"" << y_html(0) << "\" />\n";
-	f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 0 << "\" y2=\"" << y_html(1) << "\" />\n";
+	if (!simple) {
+		f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+		f << "<circle class=\"repere_point_class\" cx=\"" << 1 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+		f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+		f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 1 << "\" y2=\"" << y_html(0) << "\" />\n";
+		f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 0 << "\" y2=\"" << y_html(1) << "\" />\n";
+	}
 
 	for (auto face : _faces) {
 		std::vector<DCEL_HalfEdge *> edges= face->get_edges();
@@ -673,33 +676,42 @@ void DCEL::export_html(std::string html_path) {
 			float y2= v2->_y;
 
 			// buffer inversé vers centre de gravité (moche mais bon)
-			x1+= DELTA_BUFFER* (xg- x1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
-			y1+= DELTA_BUFFER* (yg- y1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
-			x2+= DELTA_BUFFER* (xg- x2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
-			y2+= DELTA_BUFFER* (yg- y2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
+			if (!simple) {
+				x1+= DELTA_BUFFER* (xg- x1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
+				y1+= DELTA_BUFFER* (yg- y1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
+				x2+= DELTA_BUFFER* (xg- x2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
+				y2+= DELTA_BUFFER* (yg- y2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
+			}
 
 			f << "<circle class=\"point_class\" cx=\"" << x1 << "\" cy=\"" << y_html(y1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
 			f << "<circle class=\"point_class\" cx=\"" << x2 << "\" cy=\"" << y_html(y2) << "\" r=\"" << POINT_RADIUS << "\" />\n";
 			f << "<line class=\"line_class\" x1=\"" << x1 << "\" y1=\"" << y_html(y1) << "\" x2=\"" << x2 << "\" y2=\"" << y_html(y2) << "\" style=\"stroke:" << str_color << "\" />\n";
 
 			// fleche
-			float u= (x2- x1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
-			float v= (y2- y1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
-			float x_arrow_1= 0.5f* (x1+ x2)+ 0.5f* ARROW_SIZE* u;
-			float y_arrow_1= 0.5f* (y1+ y2)+ 0.5f* ARROW_SIZE* v;
-			float x_arrow_2= x_arrow_1- ARROW_SIZE* u- ARROW_SIZE_2* v;
-			float y_arrow_2= y_arrow_1- ARROW_SIZE* v+ ARROW_SIZE_2* u;
-			float x_arrow_3= x_arrow_1- ARROW_SIZE* u+ ARROW_SIZE_2* v;
-			float y_arrow_3= y_arrow_1- ARROW_SIZE* v- ARROW_SIZE_2* u;
-			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_1 << "\" y1=\"" << y_html(y_arrow_1) << "\" x2=\"" << x_arrow_2 << "\" y2=\"" << y_html(y_arrow_2) << "\" style=\"stroke:" << str_color << "\" />\n";
-			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_2 << "\" y1=\"" << y_html(y_arrow_2) << "\" x2=\"" << x_arrow_3 << "\" y2=\"" << y_html(y_arrow_3) << "\" style=\"stroke:" << str_color << "\" />\n";
-			f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_3 << "\" y1=\"" << y_html(y_arrow_3) << "\" x2=\"" << x_arrow_1 << "\" y2=\"" << y_html(y_arrow_1) << "\" style=\"stroke:" << str_color << "\" />\n";
+			if (!simple) {
+				float u= (x2- x1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
+				float v= (y2- y1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
+				float x_arrow_1= 0.5f* (x1+ x2)+ 0.5f* ARROW_SIZE* u;
+				float y_arrow_1= 0.5f* (y1+ y2)+ 0.5f* ARROW_SIZE* v;
+				float x_arrow_2= x_arrow_1- ARROW_SIZE* u- ARROW_SIZE_2* v;
+				float y_arrow_2= y_arrow_1- ARROW_SIZE* v+ ARROW_SIZE_2* u;
+				float x_arrow_3= x_arrow_1- ARROW_SIZE* u+ ARROW_SIZE_2* v;
+				float y_arrow_3= y_arrow_1- ARROW_SIZE* v- ARROW_SIZE_2* u;
+				f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_1 << "\" y1=\"" << y_html(y_arrow_1) << "\" x2=\"" << x_arrow_2 << "\" y2=\"" << y_html(y_arrow_2) << "\" style=\"stroke:" << str_color << "\" />\n";
+				f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_2 << "\" y1=\"" << y_html(y_arrow_2) << "\" x2=\"" << x_arrow_3 << "\" y2=\"" << y_html(y_arrow_3) << "\" style=\"stroke:" << str_color << "\" />\n";
+				f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_3 << "\" y1=\"" << y_html(y_arrow_3) << "\" x2=\"" << x_arrow_1 << "\" y2=\"" << y_html(y_arrow_1) << "\" style=\"stroke:" << str_color << "\" />\n";
+			}
 		}
 	}
 
 	f << "</svg>\n";
 	f << "</body>\n</html>\n";
 	f.close();
+}
+
+
+void DCEL::export_html(std::string html_path, bool simple) {
+	export_html(html_path, simple, _xmin, _ymin, _xmax, _ymax);
 }
 
 

@@ -71,9 +71,10 @@ public:
 	DCEL_Face * add_face();
 	bool is_empty();
 	void compute_bbox();
-	void add_bbox(float bbox_expand=0.5f);
-	void create_faces_from_half_edges();
-	void export_html(std::string html_path);
+	bool add_bbox(float bbox_expand=0.5f);
+	bool create_faces_from_half_edges();
+	void export_html(std::string html_path, bool simple);
+	void export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax);
 	friend std::ostream & operator << (std::ostream & os, DCEL & d);
 	
 	

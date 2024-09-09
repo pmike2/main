@@ -34,7 +34,7 @@ class Node {
 public:
 	Node();
 	Node(T data);
-	Node(T data, std::function<std::string()> fprint);
+	//Node(T data, std::function<std::string()> fprint);
 	~Node();
 	bool is_left();
 	bool is_right();
@@ -52,28 +52,28 @@ public:
 	Node * _right;
 	Node * _parent; // parent du noeud; pas nécessaire à priori mais facilite certaines méthodes
 	T _data;
-	std::function<std::string()> _fprint;
+	//std::function<std::string()> _fprint;
 };
 
 
 template <class T>
 Node<T>::Node() :
-_left(NULL), _right(NULL), _parent(NULL), 
-_fprint([this](){return std::to_string(_data);})
+_left(NULL), _right(NULL), _parent(NULL)
+//, _fprint([this](){return std::to_string(_data);})
 { }
 
 
 template <class T>
 Node<T>::Node(T data) :
-_data(data), _left(NULL), _right(NULL), _parent(NULL),
-_fprint([this](){return std::to_string(_data);})
+_data(data), _left(NULL), _right(NULL), _parent(NULL)
+//,_fprint([this](){return std::to_string(_data);})
 { }
 
 
-template <class T>
+/*template <class T>
 Node<T>::Node(T data, std::function<std::string()> fprint) :
 _data(data), _fprint(fprint), _left(NULL), _right(NULL), _parent(NULL) 
-{ }
+{ }*/
 
 
 template <class T>
@@ -160,7 +160,7 @@ template <class T>
 std::ostream & operator << (std::ostream & os, const Node<T> & node) {
 	//std::string NULL_STRING= "--------NULL--------";
 	std::string NULL_STRING= "NULL";
-	std::string SEPARATOR= "|";
+	std::string SEPARATOR= " | ";
 	unsigned int str_width= 30;
 
 
@@ -188,36 +188,32 @@ std::ostream & operator << (std::ostream & os, const Node<T> & node) {
 		os << "parent = " << NULL_STRING;
 	}
 	#else
-	os << std::left;
-	os << std::setw(str_width);
-	//os << node._fprint();
+	//os << std::left;
+	//os << std::setw(str_width);
 	os << node._data;
 	os <<  SEPARATOR;
 	os << "left = ";
-	os << std::setw(str_width);
+	//os << std::setw(str_width);
 	if (node._left!= NULL) {
-		//os << node._left->_fprint();
-		os << node._left;
+		os << node._left->_data;
 	}
 	else {
 		os << NULL_STRING;
 	}
 	os <<  SEPARATOR;
 	os << "right = ";
-	os << std::setw(str_width);
+	//os << std::setw(str_width);
 	if (node._right!= NULL) {
-		//os << node._right->_fprint();
-		os << node._right;
+		os << node._right->_data;
 	}
 	else {
 		os << NULL_STRING;
 	}
 	os <<  SEPARATOR;
 	os << "parent = ";
-	os << std::setw(str_width);
+	//os << std::setw(str_width);
 	if (node._parent!= NULL) {
-		//os << node._parent->_fprint();
-		os << node._parent;
+		os << node._parent->_data;
 	}
 	else {
 		os << NULL_STRING;
@@ -242,7 +238,7 @@ class BST {
 public:
 	BST();
 	BST(std::function<int(T, T)> cmp);
-	BST(std::function<int(T, T)> cmp, std::function<std::string(T)> node_print);
+	//BST(std::function<int(T, T)> cmp, std::function<std::string(T)> node_print);
 	~BST();
 	bool empty();
 	Node<T> * minimum(Node<T> * node);
@@ -274,7 +270,7 @@ public:
 	// fonction de comparaison entre 2 noeuds
 	std::function<int(T, T)> _cmp;
 	// fonction d'impression de node._data
-	std::function<std::string(T)> _node_print;
+	//std::function<std::string(T)> _node_print;
 };
 
 
@@ -285,23 +281,23 @@ BST<T>::BST() :
 		if (a < b) return -1;
 		else if (a > b) return 1;
 		else return 0;
-	}),
-	_node_print([](T data){return std::to_string(data);})
+	})
+	//,_node_print([](T data){return std::to_string(data);})
 { }
 
 
 template <class T>
 BST<T>::BST(std::function<int(T, T)> cmp) :
 	_root(NULL),
-	_cmp(cmp),
-	_node_print([](T data){return std::to_string(data);})
+	_cmp(cmp)
+	//,_node_print([](T data){return std::to_string(data);})
 { }
 
 
-template <class T>
+/*template <class T>
 BST<T>::BST(std::function<int(T, T)> cmp, std::function<std::string(T)> node_print) :
 	_root(NULL), _cmp(cmp), _node_print(node_print)
-{ }
+{ }*/
 
 
 template <class T>
@@ -454,7 +450,8 @@ Node<T> * BST<T>::predecessor_leaf(Node<T> * node) {
 // génération d'un noeud pas encore rattaché à l'arbre
 template <class T>
 Node<T> * BST<T>::gen_node(T data) {
-	return new Node<T>(data, [this, data](){return _node_print(data);});
+	//return new Node<T>(data, [this, data](){return _node_print(data);});
+	return new Node<T>(data);
 }
 
 
@@ -627,7 +624,8 @@ Node<T> * BST<T>::balance(std::vector<T> & sorted_array, int start, int end) {
 	}
 
 	int mid= (start+ end)/ 2;
-	Node<T> * node= new Node<T>(sorted_array[mid], [this, sorted_array, mid](){return _node_print(sorted_array[mid]);});
+	//Node<T> * node= new Node<T>(sorted_array[mid], [this, sorted_array, mid](){return _node_print(sorted_array[mid]);});
+	Node<T> * node= gen_node(sorted_array[mid]);
 	node->_left= balance(sorted_array, start, mid- 1);
 	node->_right= balance(sorted_array, mid+ 1, end);
 	return node;
@@ -650,10 +648,10 @@ void BST<T>::traversal(Node<T> * node, TraversalType tt, std::function<void(Node
 
 	if (tt== IN_ORDER) {
 		traversal(node->_left, tt, f);
-		std::cout << "----------------------------------------------\n";
-		std::cout << "*node                    = " << *node << "\n";
-		std::cout << "_node_print(node->_data) = " << _node_print(node->_data) << "\n";
-		std::cout << "node->_data              = " << node->_data << "\n";
+		//std::cout << "----------------------------------------------\n";
+		//std::cout << "*node                    = " << *node << "\n";
+		//std::cout << "_node_print(node->_data) = " << _node_print(node->_data) << "\n";
+		//std::cout << "node->_data              = " << node->_data << "\n";
 		f(node);
 		traversal(node->_right, tt, f);
 	}
@@ -718,7 +716,7 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) 
 		x_text= pt_x- 0.1f;
 		y_text= pt_y;
 	}
-	f << "<text class=\"point_text_class\" x=\"" << x_text << "\" y=\"" << y_text << "\" >" << _node_print(node->_data) << "</text>\n";
+	f << "<text class=\"point_text_class\" x=\"" << x_text << "\" y=\"" << y_text << "\" >" << node->_data << "</text>\n";
 
 	f << "<circle class=\"point_class\" cx=\"" << pt_x << "\" cy=\"" << pt_y << "\" r=\"" << 0.01f << "\" />\n";
 	if (node->_left!= NULL) {
