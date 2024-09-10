@@ -5,12 +5,8 @@ implémenté initialement pour voronoi
 
 */
 
-
 #ifndef BST_H
 #define BST_H
-
-// à activer si on veut voir les adresses des pointeurs des Node
-//#define BST_NODE_SHOW_ADDRESS
 
 #include <iostream>
 #include <iomanip>
@@ -34,7 +30,6 @@ class Node {
 public:
 	Node();
 	Node(T data);
-	//Node(T data, std::function<std::string()> fprint);
 	~Node();
 	bool is_left();
 	bool is_right();
@@ -52,28 +47,19 @@ public:
 	Node * _right;
 	Node * _parent; // parent du noeud; pas nécessaire à priori mais facilite certaines méthodes
 	T _data;
-	//std::function<std::string()> _fprint;
 };
 
 
 template <class T>
 Node<T>::Node() :
 _left(NULL), _right(NULL), _parent(NULL)
-//, _fprint([this](){return std::to_string(_data);})
 { }
 
 
 template <class T>
 Node<T>::Node(T data) :
 _data(data), _left(NULL), _right(NULL), _parent(NULL)
-//,_fprint([this](){return std::to_string(_data);})
 { }
-
-
-/*template <class T>
-Node<T>::Node(T data, std::function<std::string()> fprint) :
-_data(data), _fprint(fprint), _left(NULL), _right(NULL), _parent(NULL) 
-{ }*/
 
 
 template <class T>
@@ -163,31 +149,6 @@ std::ostream & operator << (std::ostream & os, const Node<T> & node) {
 	std::string SEPARATOR= " | ";
 	unsigned int str_width= 30;
 
-
-	#ifdef BST_NODE_SHOW_ADDRESS
-	os << "(" << &node << " , " << node._fprint() << ")";
-	os <<  SEPARATOR;
-	if (node._left!= NULL) {
-		os << "left = (" << node._left << " , " << node._left->_fprint() << ")";
-	}
-	else {
-		os << "left = " << NULL_STRING;
-	}
-	os <<  SEPARATOR;
-	if (node._right!= NULL) {
-		os << "right = (" << node._right << " , " << node._right->_fprint() << ")";
-	}
-	else {
-		os << "right = " << NULL_STRING;
-	}
-	os <<  SEPARATOR;
-	if (node._parent!= NULL) {
-		os << "parent = (" << node._parent << " , " << node._parent->_fprint() << ")";
-	}
-	else {
-		os << "parent = " << NULL_STRING;
-	}
-	#else
 	//os << std::left;
 	//os << std::setw(str_width);
 	os << node._data;
@@ -218,7 +179,6 @@ std::ostream & operator << (std::ostream & os, const Node<T> & node) {
 	else {
 		os << NULL_STRING;
 	}
-	#endif
 	return os;
 }
 
@@ -238,7 +198,6 @@ class BST {
 public:
 	BST();
 	BST(std::function<int(T, T)> cmp);
-	//BST(std::function<int(T, T)> cmp, std::function<std::string(T)> node_print);
 	~BST();
 	bool empty();
 	Node<T> * minimum(Node<T> * node);
@@ -269,8 +228,6 @@ public:
 	Node<T> * _root;
 	// fonction de comparaison entre 2 noeuds
 	std::function<int(T, T)> _cmp;
-	// fonction d'impression de node._data
-	//std::function<std::string(T)> _node_print;
 };
 
 
@@ -282,7 +239,6 @@ BST<T>::BST() :
 		else if (a > b) return 1;
 		else return 0;
 	})
-	//,_node_print([](T data){return std::to_string(data);})
 { }
 
 
@@ -290,14 +246,7 @@ template <class T>
 BST<T>::BST(std::function<int(T, T)> cmp) :
 	_root(NULL),
 	_cmp(cmp)
-	//,_node_print([](T data){return std::to_string(data);})
 { }
-
-
-/*template <class T>
-BST<T>::BST(std::function<int(T, T)> cmp, std::function<std::string(T)> node_print) :
-	_root(NULL), _cmp(cmp), _node_print(node_print)
-{ }*/
 
 
 template <class T>
@@ -450,7 +399,6 @@ Node<T> * BST<T>::predecessor_leaf(Node<T> * node) {
 // génération d'un noeud pas encore rattaché à l'arbre
 template <class T>
 Node<T> * BST<T>::gen_node(T data) {
-	//return new Node<T>(data, [this, data](){return _node_print(data);});
 	return new Node<T>(data);
 }
 
@@ -624,7 +572,6 @@ Node<T> * BST<T>::balance(std::vector<T> & sorted_array, int start, int end) {
 	}
 
 	int mid= (start+ end)/ 2;
-	//Node<T> * node= new Node<T>(sorted_array[mid], [this, sorted_array, mid](){return _node_print(sorted_array[mid]);});
 	Node<T> * node= gen_node(sorted_array[mid]);
 	node->_left= balance(sorted_array, start, mid- 1);
 	node->_right= balance(sorted_array, mid+ 1, end);
@@ -648,10 +595,6 @@ void BST<T>::traversal(Node<T> * node, TraversalType tt, std::function<void(Node
 
 	if (tt== IN_ORDER) {
 		traversal(node->_left, tt, f);
-		//std::cout << "----------------------------------------------\n";
-		//std::cout << "*node                    = " << *node << "\n";
-		//std::cout << "_node_print(node->_data) = " << _node_print(node->_data) << "\n";
-		//std::cout << "node->_data              = " << node->_data << "\n";
 		f(node);
 		traversal(node->_right, tt, f);
 	}
@@ -678,7 +621,6 @@ void BST<T>::traversal(TraversalType tt, std::function<void(Node<T> *)> f) {
 // surcharge <<
 template <class T>
 std::ostream & operator << (std::ostream & os, BST<T> & bst) {
-	//bst.traversal(IN_ORDER, [&os](Node<T> * node){os << *node << "\n";});
 	bst.traversal(IN_ORDER);
 	return os;
 }
@@ -689,8 +631,6 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) 
 	if (node== NULL) {
 		return;
 	}
-
-	//std::cout << "aaaaaa : " << _node_print(node->_data) << "\n";
 
 	float x_factor= 1.0f;
 	float y_factor= 0.4f;

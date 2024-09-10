@@ -14,7 +14,7 @@
 // 1.0 / 3.0
 const float THIRD= 1.0f/ 3.0f;
 // utilisé pour comparaison float à 0.0f
-const float EPSILON= 1e-8f;
+const float EPSILON= 1e-6f;
 
 
 class Polygon2D;
@@ -23,7 +23,7 @@ float cross2d(glm::vec2 v1, glm::vec2 v2);
 bool cmp_points(glm::vec2 & pt1, glm::vec2 & pt2);
 bool is_left(glm::vec2 pt_ref, glm::vec2 dir_ref, glm::vec2 pt_test);
 bool is_pt_inside_poly(glm::vec2 & pt, Polygon2D * poly);
-bool segment_intersects_segment(glm::vec2 & pt1_begin, glm::vec2 & pt1_end, glm::vec2 & pt2_begin, glm::vec2 & pt2_end, glm::vec2 * result, bool exclude_seg1_extremities=false, bool exclude_seg2_extremities=false);
+bool segment_intersects_segment(const glm::vec2 & pt1_begin, const glm::vec2 & pt1_end, const glm::vec2 & pt2_begin, const glm::vec2 & pt2_end, glm::vec2 * result, bool exclude_seg1_extremities=false, bool exclude_seg2_extremities=false);
 bool ray_intersects_segment(const glm::vec2 & origin, const glm::vec2 & direction, const glm::vec2 & pt_begin, const glm::vec2 & pt_end, glm::vec2 * result);
 bool ray_intersects_ray(const glm::vec2 & origin1, const glm::vec2 & direction1, const glm::vec2 & origin2, const glm::vec2 & direction2, glm::vec2 * result);
 bool segment_intersects_poly(glm::vec2 & pt_begin, glm::vec2 & pt_end, Polygon2D * poly, glm::vec2 * result);

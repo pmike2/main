@@ -133,11 +133,6 @@ DCEL_Face::DCEL_Face() : _outer_edge(NULL) {
 }
 
 
-/*DCEL_Face::DCEL_Face(DCEL_HalfEdge * outer_edge) : _outer_edge(outer_edge) {
-	
-}*/
-
-
 DCEL_Face::~DCEL_Face() {
 
 }
@@ -248,23 +243,6 @@ DCEL_HalfEdge * DCEL::add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2) {
 	_half_edges.push_back(hedge2);
 	return hedge1;
 }
-
-
-/*DCEL_Face * DCEL::add_face(std::vector<DCEL_HalfEdge *> edges) {
-	DCEL_Face * face= new DCEL_Face(edges[0]);
-	for (auto edge : edges) {
-		edge->_incident_face= face;
-	}
-	for (unsigned int i=0; i<edges.size()- 1; ++i) {
-		edges[i]->_next= edges[i+ 1];
-		edges[i+ 1]->_previous= edges[i];
-	}
-	edges[edges.size()- 1]->_next= edges[0];
-	edges[0]->_previous= edges[edges.size()- 1];
-
-	_faces.push_back(face);
-	return face;
-}*/
 
 
 DCEL_Face * DCEL::add_face() {
@@ -616,7 +594,35 @@ bool DCEL::create_faces_from_half_edges() {
 }
 
 
-void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax) {
+bool DCEL::is_valid() {
+	glm::vec2 inter;
+	for (auto he1 : _half_edges) {
+		for (auto he2 : _half_edges) {
+			if (he1== he2) {
+				continue;
+			}
+			if ((he1->_origin== NULL) || (he2->_origin== NULL)) {
+				continue;
+			}
+			DCEL_Vertex * he1_destination= he1->destination();
+			DCEL_Vertex * he2_destination= he2->destination();
+			if ((he1_destination== NULL) || (he2_destination== NULL)) {
+				continue;
+			}
+			if (segment_intersects_segment(
+				glm::vec2(he1->_origin->_x, he1->_origin->_y), glm::vec2(he1_destination->_x, he1_destination->_y),
+				glm::vec2(he2->_origin->_x, he2->_origin->_y), glm::vec2(he2_destination->_x, he2_destination->_y),
+				&inter, true, true)) {
+				std::cout << "DCEL not_valid : " << *he1 << " || " << *he2 << "\n";
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+
+void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax, std::vector<glm::vec2> sites) {
 	const unsigned int SVG_WIDTH= 700;
 	const unsigned int SVG_HEIGHT= 700;
 	const float MARGIN_FACTOR= 1.5f;
@@ -626,6 +632,7 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 	const float VIEW_YMAX= (ymax- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
 	const float SIZE= std::max(xmax- xmin, ymax- ymin);
 	const float POINT_RADIUS= 0.002f* SIZE;
+	const float SITE_POINT_RADIUS= 0.004f* SIZE;
 	const float DELTA_BUFFER= 0.01f* SIZE;
 	const float ARROW_SIZE= 0.05f* SIZE;
 	const float ARROW_SIZE_2= 0.01f* SIZE;
@@ -637,7 +644,8 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 	f.open(html_path);
 	f << "<!DOCTYPE html>\n<html>\n<head>\n";
 	f << "<style>\n";
-	f << ".point_class {fill: black;}\n";
+	f << ".point_class {fill: red;}\n";
+	f << ".site_point_class {fill: black;}\n";
 	f << ".repere_point_class {fill: red;}\n";
 	f << ".line_class {fill: transparent; stroke: black; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.6;}\n";
 	f << ".repere_line_class {fill: transparent; stroke: red; stroke-width: " << STROKE_WIDTH << "; stroke-opacity: 0.6;}\n";
@@ -650,21 +658,24 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 	f << "\">\n";
 
 	// repère
-	if (!simple) {
-		f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-		f << "<circle class=\"repere_point_class\" cx=\"" << 1 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-		f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+	//if (!simple) {
+		//f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+		//f << "<circle class=\"repere_point_class\" cx=\"" << 1 << "\" cy=\"" << y_html(0) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+		//f << "<circle class=\"repere_point_class\" cx=\"" << 0 << "\" cy=\"" << y_html(1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
 		f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 1 << "\" y2=\"" << y_html(0) << "\" />\n";
 		f << "<line class=\"repere_line_class\" x1=\"" << 0 << "\" y1=\"" << y_html(0) << "\" x2=\"" << 0 << "\" y2=\"" << y_html(1) << "\" />\n";
-	}
+	//}
 
 	for (auto face : _faces) {
 		std::vector<DCEL_HalfEdge *> edges= face->get_edges();
-		std::pair<float, float> gravity_center= face->get_gravity_center();
-		float xg= gravity_center.first;
-		float yg= gravity_center.second;
-		//std::cout << "-----\n" << xg << " ; " << yg << "\n";
-		std::string str_color= "rgb("+ std::to_string(rand_int(0, 120))+ ", "+ std::to_string(rand_int(0, 120))+ ", "+ std::to_string(rand_int(0, 120))+ ")";
+
+		std::string str_color;
+		if (!simple) {
+			str_color= "rgb("+ std::to_string(rand_int(0, 120))+ ", "+ std::to_string(rand_int(0, 120))+ ", "+ std::to_string(rand_int(0, 120))+ ")";
+		}
+		else {
+			str_color= "rgb(100, 100, 100)";
+		}
 		
 		for (auto edge : edges) {
 			DCEL_Vertex * v1= edge->_origin;
@@ -677,6 +688,9 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 
 			// buffer inversé vers centre de gravité (moche mais bon)
 			if (!simple) {
+				std::pair<float, float> gravity_center= face->get_gravity_center();
+				float xg= gravity_center.first;
+				float yg= gravity_center.second;
 				x1+= DELTA_BUFFER* (xg- x1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
 				y1+= DELTA_BUFFER* (yg- y1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
 				x2+= DELTA_BUFFER* (xg- x2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
@@ -704,14 +718,18 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 		}
 	}
 
+	for (auto & site : sites) {
+		f << "<circle class=\"site_point_class\" cx=\""+ std::to_string(site.x)+ "\" cy=\""+ std::to_string(y_html(site.y))+ "\" r=\""+ std::to_string(SITE_POINT_RADIUS)+ "\" />\n";
+	}
+
 	f << "</svg>\n";
 	f << "</body>\n</html>\n";
 	f.close();
 }
 
 
-void DCEL::export_html(std::string html_path, bool simple) {
-	export_html(html_path, simple, _xmin, _ymin, _xmax, _ymax);
+void DCEL::export_html(std::string html_path, bool simple, std::vector<glm::vec2> sites) {
+	export_html(html_path, simple, _xmin, _ymin, _xmax, _ymax, sites);
 }
 
 

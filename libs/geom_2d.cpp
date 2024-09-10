@@ -64,7 +64,7 @@ bool is_pt_inside_poly(glm::vec2 & pt, Polygon2D * poly) {
 
 
 // cf https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-bool segment_intersects_segment(glm::vec2 & pt1_begin, glm::vec2 & pt1_end, glm::vec2 & pt2_begin, glm::vec2 & pt2_end, glm::vec2 * result, bool exclude_seg1_extremities, bool exclude_seg2_extremities) {
+bool segment_intersects_segment(const glm::vec2 & pt1_begin, const glm::vec2 & pt1_end, const glm::vec2 & pt2_begin, const glm::vec2 & pt2_end, glm::vec2 * result, bool exclude_seg1_extremities, bool exclude_seg2_extremities) {
 	glm::vec2 dir1= pt1_end- pt1_begin;
 	glm::vec2 dir2= pt2_end- pt2_begin;
 	
@@ -77,8 +77,8 @@ bool segment_intersects_segment(glm::vec2 & pt1_begin, glm::vec2 & pt1_end, glm:
 	
 	float t1= cross2d(pt2_begin- pt1_begin, dir2)/ a;
 	if (exclude_seg1_extremities) {
-		//if ((t1<= EPSILON) || (t1>= 1.0f- EPSILON)) {
-		if ((t1<= 0.0f) || (t1>= 1.0f)) {
+		if ((t1<= EPSILON) || (t1>= 1.0f- EPSILON)) {
+		//if ((t1<= 0.0f) || (t1>= 1.0f)) {
 			return false;
 		}
 	}
@@ -90,8 +90,8 @@ bool segment_intersects_segment(glm::vec2 & pt1_begin, glm::vec2 & pt1_end, glm:
 	
 	float t2= cross2d(pt2_begin- pt1_begin, dir1)/ a;
 	if (exclude_seg2_extremities) {
-		//if ((t2<= EPSILON) || (t2>= 1.0f- EPSILON)) {
-		if ((t2<= 0.0f) || (t2>= 1.0f)) {
+		if ((t2<= EPSILON) || (t2>= 1.0f- EPSILON)) {
+		//if ((t2<= 0.0f) || (t2>= 1.0f)) {
 			return false;
 		}
 	}

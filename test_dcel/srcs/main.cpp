@@ -35,7 +35,7 @@ void test1() {
 	//DCEL_Face * f2= dcel->add_face(std::vector<DCEL_HalfEdge *>{e24, e43, e32});
 
 	std::cout << *dcel;
-	dcel->export_html("../data/test1.html");
+	dcel->export_html("../data/test1.html", false);
 	
 	delete dcel;
 }
@@ -53,7 +53,7 @@ void test2() {
 	dcel->add_bbox();
 	dcel->create_faces_from_half_edges();
 	//std::cout << *dcel;
-	dcel->export_html("../data/test2.html");
+	dcel->export_html("../data/test2.html", false);
 }
 
 
@@ -78,7 +78,7 @@ void test3() {
 	dcel->add_bbox();
 	dcel->create_faces_from_half_edges();
 	//std::cout << *dcel;
-	dcel->export_html("../data/test3.html");
+	dcel->export_html("../data/test3.html" , false);
 }
 
 

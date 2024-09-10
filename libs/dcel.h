@@ -48,7 +48,6 @@ struct DCEL_HalfEdge {
 
 struct DCEL_Face {
 	DCEL_Face();
-	//DCEL_Face(DCEL_HalfEdge * outer_edge);
 	~DCEL_Face();
 	std::vector<DCEL_Vertex *> get_vertices();
 	std::vector<DCEL_HalfEdge *> get_edges();
@@ -67,14 +66,14 @@ public:
 	~DCEL();
 	DCEL_Vertex * add_vertex(float x, float y);
 	DCEL_HalfEdge * add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2);
-	//DCEL_Face * add_face(std::vector<DCEL_HalfEdge *> edges= std::vector<DCEL_HalfEdge *>());
 	DCEL_Face * add_face();
 	bool is_empty();
 	void compute_bbox();
 	bool add_bbox(float bbox_expand=0.5f);
 	bool create_faces_from_half_edges();
-	void export_html(std::string html_path, bool simple);
-	void export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax);
+	bool is_valid();
+	void export_html(std::string html_path, bool simple, std::vector<glm::vec2> sites=std::vector<glm::vec2>());
+	void export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax, std::vector<glm::vec2> sites);
 	friend std::ostream & operator << (std::ostream & os, DCEL & d);
 	
 	
