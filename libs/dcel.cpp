@@ -456,6 +456,13 @@ bool DCEL::add_bbox(float bbox_expand) {
 		}
 	}
 
+	for (auto he : _half_edges) {
+		if (he->_origin== NULL) {
+			std::cout << "HalfEdge sans origine\n";
+		}
+	}
+
+
 	sort(origin_bottom.begin(), origin_bottom.end(),
 	[](const DCEL_HalfEdge * a, const DCEL_HalfEdge * b) -> bool {
 		return a->_origin->_x< b->_origin->_x;

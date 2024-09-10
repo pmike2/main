@@ -33,10 +33,17 @@ void test1() {
 	pts.push_back(glm::vec2(0.3, 0.3));
 	pts.push_back(glm::vec2(0.5, 0.4));*/
 
-	pts.push_back(glm::vec2(0.4, 0.6));
+	// jeu test où les sites les + hauts sont alignés
+	/*pts.push_back(glm::vec2(0.4, 0.6));
 	pts.push_back(glm::vec2(0.1, 0.6));
 	pts.push_back(glm::vec2(0.6, 0.6));
-	pts.push_back(glm::vec2(0.3, 0.2));
+	pts.push_back(glm::vec2(0.3, 0.2));*/
+
+	// jeu test où des sites sont alignés mais pas tout en haut
+	pts.push_back(glm::vec2(0.4, 0.8));
+	pts.push_back(glm::vec2(0.1, 0.6));
+	pts.push_back(glm::vec2(0.6, 0.6));
+	pts.push_back(glm::vec2(0.3, 0.6));
 
 	Voronoi * v= new Voronoi(pts, true, "../data/test1");
 	v->_diagram->export_html("../data/test1/result.html", true, pts);
@@ -46,7 +53,7 @@ void test1() {
 
 
 void test2() {
-	int n_pts= 1000;
+	int n_pts= 2000;
 	for (unsigned int i=0; i<n_pts; ++i) {
 		pts.push_back(glm::vec2(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
 		//std::cout << pts[i].x << ", " << pts[i].y << " | ";
@@ -123,8 +130,8 @@ void test3() {
 
 
 void test4() {
-	//ifstream f("../data/test2/pts.txt");
-	ifstream f("../data/test3/pts.txt");
+	ifstream f("../data/test2/pts.txt");
+	//ifstream f("../data/test3/pts.txt");
 	while (f.good()) {
 		string line;
 		getline(f, line);
@@ -136,8 +143,7 @@ void test4() {
 	}
 
 	Voronoi * v= new Voronoi(pts);
-	//v->_diagram->export_html("../data/test2/result.html", true, -0.1f, -0.1f, 1.1f, 1.1f, pts);
-	v->_diagram->export_html("../data/test3/result.html", true, -0.1f, -0.1f, 1.1f, 1.1f, pts);
+	v->_diagram->export_html("../data/test4/result.html", true, -0.1f, -0.1f, 1.1f, 1.1f, pts);
 	delete v;
 }
 

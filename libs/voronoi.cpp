@@ -225,7 +225,7 @@ Voronoi::Voronoi(std::vector<glm::vec2> & sites, bool verbose, std::string debug
 		std::set<Event *>::iterator it= _queue.begin();
 		Event * e= *it;
 
-		//std::cout << *e << "\n";
+		std::cout << *e << "\n";
 
 		if (_verbose) {
 			std::cout << "------------------------------------\n";
@@ -275,6 +275,8 @@ Voronoi::Voronoi(std::vector<glm::vec2> & sites, bool verbose, std::string debug
 			_queue.erase(it);
 		//}
 	}
+
+	//std::cout << "Fin queue\n";
 
 	if (_verbose) {
 		bool diagram_valid= _diagram->is_valid();
@@ -431,7 +433,7 @@ void Voronoi::handle_site_event(Event * e) {
 
 	// voir si les breakpoints convergent
 	if ((prev_site!= NULL) && (prev_bkpt!= NULL) && (breakpoints_converge(prev_bkpt->_data._half_edge, breakpoint_left->_half_edge))) {
-		
+
 		std::pair<glm::vec2, float> circle= circumcircle(prev_site->_data._site, node_above_site->_data._site, new_arc->_site);
 		glm::vec2 center= circle.first;
 		float radius= circle.second;
@@ -448,8 +450,8 @@ void Voronoi::handle_site_event(Event * e) {
 			new_circle_event->_circle_radius= radius;
 			new_circle_event->_leaf= node_above_site_left_copy;
 			node_above_site_left_copy->_data._circle_event= new_circle_event;
-			if (_queue.count(new_circle_event)> 0) {
-				std::cout << "Event deja en queue 1 : " << *new_circle_event << "\n";
+			if (auto search = _queue.find(new_circle_event); search != _queue.end()) {
+				std::cout << "Event deja en queue 1 : " << *new_circle_event << " || " << *(*search) << "\n";
 			}
 			_queue.insert(new_circle_event);
 			if (_verbose) {
@@ -474,8 +476,8 @@ void Voronoi::handle_site_event(Event * e) {
 			new_circle_event->_circle_radius= radius;
 			new_circle_event->_leaf= node_above_site_right_copy;
 			node_above_site_right_copy->_data._circle_event= new_circle_event;
-			if (_queue.count(new_circle_event)> 0) {
-				std::cout << "Event deja en queue 2 : " << *new_circle_event << "\n";
+			if (auto search = _queue.find(new_circle_event); search != _queue.end()) {
+				std::cout << "Event deja en queue 2 : " << *new_circle_event << " || " << *(*search) << "\n";
 			}
 			_queue.insert(new_circle_event);
 			if (_verbose) {

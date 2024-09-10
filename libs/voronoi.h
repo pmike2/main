@@ -122,11 +122,23 @@ struct EventCmp {
 			return false;
 		}
 
+		std::cout << "equality : " << *lhs << " || " << *rhs << "\n";
 
-		// ici je ne sais pas pourquoi mais il faut mettre false ou erase ne fonctionne pas bien
+		if ((lhs->_type== EventType::SiteEvent) && (rhs->_type== EventType::CircleEvent)) {
+			return true;
+		}
+		if ((lhs->_type== EventType::CircleEvent) && (rhs->_type== EventType::SiteEvent)) {
+			return false;
+		}
+		if ((lhs->_type== EventType::SiteEvent) && (rhs->_type== EventType::SiteEvent)) {
+			// 2 sites identiques ; true fait planter je ne sais pquoi
+			return true;
+		}
+		if ((lhs->_type== EventType::CircleEvent) && (rhs->_type== EventType::CircleEvent)) {
+			return true;
+		}
+
 		return false;
-
-		// si 2 pts ont les memes x et y, le fonctionnement de std::set fait qu'un seul sera traité
 	}
 };
 
@@ -145,7 +157,7 @@ public:
 	std::vector<glm::vec2> _sites;
 	DCEL * _diagram;
 	BST<BeachLineNode> * _beachline;
-	std::set<Event *, EventCmp> _queue;
+	std::multiset<Event *, EventCmp> _queue;
 	float _current_y;
 	float _first_y;
 	unsigned int _debug_count= 0;
