@@ -8,6 +8,7 @@
 #include <vector>
 #include <chrono>
 #include <csignal>
+#include <map>
 
 
 #include <glm/glm.hpp>
@@ -26,34 +27,46 @@ bool end_loop= false;
 
 
 void test1() {
+	std::map<std::string, std::vector<glm::vec2> > m;
 	
+	// jeu test de base, sans ambiguité
+	m["simple"]= std::vector<glm::vec2> {glm::vec2(0.1, 0.7), glm::vec2(0.2, 0.8), glm::vec2(0.4, 0.1), glm::vec2(0.5, 0.4)};
 	// jeu test où un site est situé pile en dessous d'un bkpt
-	/*pts.push_back(glm::vec2(0.1, 0.7));
-	pts.push_back(glm::vec2(0.2, 0.8));
-	pts.push_back(glm::vec2(0.3, 0.3));
-	pts.push_back(glm::vec2(0.5, 0.4));*/
-
+	m["site_bkpt_x_align"]= std::vector<glm::vec2> {glm::vec2(0.1, 0.7), glm::vec2(0.2, 0.8), glm::vec2(0.3, 0.3), glm::vec2(0.5, 0.4)};
 	// jeu test où les sites les + hauts sont alignés
-	/*pts.push_back(glm::vec2(0.4, 0.6));
-	pts.push_back(glm::vec2(0.1, 0.6));
-	pts.push_back(glm::vec2(0.6, 0.6));
-	pts.push_back(glm::vec2(0.3, 0.2));*/
-
+	m["higher_y_align"]= std::vector<glm::vec2> {glm::vec2(0.4, 0.6), glm::vec2(0.1, 0.6), glm::vec2(0.6, 0.6), glm::vec2(0.3, 0.2)};
 	// jeu test où des sites sont alignés mais pas tout en haut
-	pts.push_back(glm::vec2(0.4, 0.8));
-	pts.push_back(glm::vec2(0.1, 0.6));
-	pts.push_back(glm::vec2(0.6, 0.6));
-	pts.push_back(glm::vec2(0.3, 0.6));
+	m["y_align"]= std::vector<glm::vec2> {glm::vec2(0.4, 0.8), glm::vec2(0.1, 0.6), glm::vec2(0.6, 0.6), glm::vec2(0.3, 0.6)};
+	// jeu test avec 2 fois le même site
+	m["site_doublon"]= std::vector<glm::vec2> {glm::vec2(0.4, 0.8), glm::vec2(0.1, 0.6), glm::vec2(0.1, 0.6), glm::vec2(0.3, 0.2)};
+	// jeu test carré
+	m["square"]= std::vector<glm::vec2> {glm::vec2(0.1, 0.1), glm::vec2(0.3, 0.1), glm::vec2(0.1, 0.3), glm::vec2(0.3, 0.3)};
+	// racine niemes de l'unité
+	int n1= 5;
+	m["unit_root"]= std::vector<glm::vec2> {};
+	for (int i=0; i<n1; ++i) {
+		m["unit_root"].push_back(glm::vec2(cos(2.0* M_PI* (double)(i)/ (double)(n1)), sin(2.0* M_PI* (double)(i)/ (double)(n1))));
+	}
+	// racine niemes de l'unité avec centre
+	int n2= 5;
+	m["unit_root_center"]= std::vector<glm::vec2> {};
+	for (int i=0; i<n2; ++i) {
+		m["unit_root_center"].push_back(glm::vec2(cos(2.0* M_PI* (double)(i)/ (double)(n2)), sin(2.0* M_PI* (double)(i)/ (double)(n2))));
+	}
+	m["unit_root_center"].push_back(glm::vec2(0.0, 0.0));
 
-	Voronoi * v= new Voronoi(pts, true, "../data/test1");
-	v->_diagram->export_html("../data/test1/result.html", true, pts);
-	
-	delete v;
+	for (auto const & x : m) {
+		if (x.first!= "site_bkpt_x_align") {continue;}
+		Voronoi * v= new Voronoi(x.second, true, "../data/test1/"+ x.first);
+		//Voronoi * v= new Voronoi(pts);
+		v->_diagram->export_html("../data/test1/"+ x.first+ "/result.html", true, x.second);
+		delete v;
+	}
 }
 
 
 void test2() {
-	int n_pts= 2000;
+	int n_pts= 3000;
 	for (unsigned int i=0; i<n_pts; ++i) {
 		pts.push_back(glm::vec2(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
 		//std::cout << pts[i].x << ", " << pts[i].y << " | ";
@@ -69,7 +82,7 @@ void test2() {
 
 	auto t1= high_resolution_clock::now();
 	Voronoi * v= new Voronoi(pts);
-	//Voronoi * v= new Voronoi(pts, false, "../data/test2");
+	//Voronoi * v= new Voronoi(pts, true, "../data/test2");
 	auto t2= high_resolution_clock::now();
 	auto ms= duration_cast<milliseconds>(t2- t1);
 	cout << ms.count() << " ms\n";
@@ -152,10 +165,13 @@ void test4() {
 int main(int argc, char * argv[]) {
 	srand(time(NULL));
 
-	//test1();
+	test1();
 	//test2();
 	//test3();
-	test4();
+	//test4();
+
+	//glm::vec2 result= parabolas_intersection(glm::vec2(-1.0f, 0.0f), glm::vec2(0.0f, 0.0f), -1.0);
+	//std::cout << glm_to_string(result) << "\n";
 
 	return 0;
 }

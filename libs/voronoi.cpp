@@ -11,7 +11,7 @@
 
 
 // ---------------------------------------------------------------------------------------------
-float y_parabola(glm::vec2 & site, float yline, float x) {
+float y_parabola(const glm::vec2 & site, float yline, float x) {
 	if (site.y== yline) {
 		std::cout << "y_parabola problème : site = " << glm_to_string(site) << " ; yline = " << yline << " ; x = " << x << "\n";
 		return 0.0f;
@@ -20,7 +20,7 @@ float y_parabola(glm::vec2 & site, float yline, float x) {
 }
 
 
-float y_derivative_parabola(glm::vec2 & site, float yline, float x) {
+float y_derivative_parabola(const glm::vec2 & site, float yline, float x) {
 	if (site.y== yline) {
 		std::cout << "y_derivative_parabola problème : site = " << glm_to_string(site) << " ; yline = " << yline << " ; x = " << x << "\n";
 		return 0.0f;
@@ -29,7 +29,7 @@ float y_derivative_parabola(glm::vec2 & site, float yline, float x) {
 }
 
 
-std::string parabola_equation(glm::vec2 & site, float yline) {
+std::string parabola_equation(const glm::vec2 & site, float yline) {
 	if (site.y== yline) {
 		std::cout << "parabola_equation problème : site = " << glm_to_string(site) << " ; yline = " << yline << "\n";
 		return "";
@@ -41,17 +41,21 @@ std::string parabola_equation(glm::vec2 & site, float yline) {
 }
 
 
-glm::vec2 parabolas_intersection(glm::vec2 & site_left, glm::vec2 & site_right, float yline) {
+glm::vec2 parabolas_intersection(const glm::vec2 & site_left, const glm::vec2 & site_right, float yline) {
+	//std::cout << "DEBUG : " << glm_to_string(site_left) << " ; " << glm_to_string(site_right) << " ; " << yline << "\n";
 	// cas limite des sites situés sur yline
-	if (site_left.y== yline) {
-		if (site_right.y== yline) {
+	//if (site_left.y== yline) {
+	if (abs(site_left.y- yline)< EPS) {
+		//if (site_right.y== yline) {
+		if (abs(site_right.y- yline)< EPS) {
 			std::cout << "parabolas_intersection 0 pt (2 sites sur yline) : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
 		}
 		else {
 			return glm::vec2(site_left.x, y_parabola(site_right, yline, site_left.x));
 		}
 	}
-	else if (site_right.y== yline) {
+	//else if (site_right.y== yline) {
+	else if (abs(site_right.y- yline)< EPS) {
 		return glm::vec2(site_right.x, y_parabola(site_left, yline, site_right.x));
 	}
 
@@ -60,7 +64,8 @@ glm::vec2 parabolas_intersection(glm::vec2 & site_left, glm::vec2 & site_right, 
 	float c= 2.0f* (site_right.y- yline)* (site_left.x* site_left.x+ site_left.y* site_left.y- yline* yline)
 			-2.0f* (site_left.y- yline)* (site_right.x* site_right.x+ site_right.y* site_right.y- yline* yline);
 
-	if (a== 0.0f) {
+	//if (a== 0.0f) {
+	if (abs(a)< EPS) {
 		float x= -1.0f* c/ b;
 		return glm::vec2(x, y_parabola(site_left, yline, x));
 	}
@@ -71,14 +76,19 @@ glm::vec2 parabolas_intersection(glm::vec2 & site_left, glm::vec2 & site_right, 
 		return glm::vec2(0.0f);
 	}
 
+	// 2 intersections dans la majorité des cas
 	float x1= 0.5f* (-1.0f* b- sqrt(delta))/ a;
 	float x2= 0.5f* (-1.0f* b+ sqrt(delta))/ a;
+
+	// je compare les tangentes aux 2 pts pour savoir lequel respecte left-right
 	float dleft_x1= y_derivative_parabola(site_left, yline, x1);
 	float dright_x1= y_derivative_parabola(site_right, yline, x1);
 	float dleft_x2= y_derivative_parabola(site_left, yline, x2);
 	float dright_x2= y_derivative_parabola(site_right, yline, x2);
 
 	if (dleft_x1>= dright_x1) {
+	std::cout << "ok : " << a << " ; " << b << " ; " << c << " ; " << delta << "\n";
+
 		return glm::vec2(x1, y_parabola(site_left, yline, x1));
 	}
 	else if (dleft_x2>= dright_x2) {
@@ -91,12 +101,20 @@ glm::vec2 parabolas_intersection(glm::vec2 & site_left, glm::vec2 & site_right, 
 
 
 bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
+	std::cout << "DEBUG : " << *he1 << " ; " << *he2 << "\n";
 	glm::vec2 origin1= glm::vec2(he1->_tmp_x, he1->_tmp_y);
 	glm::vec2 direction1= glm::vec2(he1->_dx, he1->_dy);
 	glm::vec2 origin2= glm::vec2(he2->_tmp_x, he2->_tmp_y);
 	glm::vec2 direction2= glm::vec2(he2->_dx, he2->_dy);
 	glm::vec2 result;
-	return ray_intersects_ray(origin1, direction1, origin2, direction2, &result);
+	bool is_inter= ray_intersects_ray(origin1, direction1, origin2, direction2, &result);
+	
+	// faire un truc ici
+	
+	/*if ((result.y>= he1->_tmp_y) || (result.y>= he2->_tmp_y)) {
+		return false;
+	}*/
+	return is_inter;
 }
 
 
@@ -170,7 +188,7 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 	std::function<int(BeachLineNode, BeachLineNode)> cmp= [this](BeachLineNode lhs, BeachLineNode rhs) {
 		float lhx= 0.0f;
 		float rhx= 0.0f;
-		
+
 		// dans le cas d'un Arc (feuille du BST) on considère le x du site associé
 		// sinon on calcule le x du breakpoint = intersection des 2 arcs définissant le breakpoint
 		if (lhs._type== Arc) {
@@ -189,6 +207,8 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 			rhx= inter.x;
 		}
 
+		//std::cout << "DEBUG2 : " << lhs << " || " << rhs << " || " << lhx << " ; " << rhx << "\n";
+		
 		if (lhx< rhx) {
 			return -1;
 		}
@@ -203,7 +223,7 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 }
 
 
-Voronoi::Voronoi(std::vector<glm::vec2> & sites, bool verbose, std::string debug_path, float bbox_expand) : Voronoi()
+Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string debug_path, float bbox_expand) : Voronoi()
 {
 	_sites= sites;
 	_debug_path= debug_path;
@@ -217,15 +237,26 @@ Voronoi::Voronoi(std::vector<glm::vec2> & sites, bool verbose, std::string debug
 	for (unsigned int i=0; i<sites.size(); ++i) {
 		Event * e= new Event(SiteEvent);
 		e->_site= sites[i];
-		_queue.insert(e);
+		//_queue.insert(e);
+		_queue.push(e);
 	}
 
 	_debug_count= 0;
+	float last_site_x= 1e8;
+	float last_site_y= 1e8;
 	while (!_queue.empty()) {
-		std::set<Event *>::iterator it= _queue.begin();
-		Event * e= *it;
+		//std::set<Event *>::iterator it= _queue.begin();
+		//Event * e= *it;
+		Event * e= _queue.top();
+		_queue.pop();
+		if (!e->_is_valid) {
+			continue;
+		}
+		if ((e->_site.x== last_site_x) && (e->_site.y== last_site_y)) {
+			continue;
+		}
 
-		std::cout << *e << "\n";
+		//std::cout << *e << "\n";
 
 		if (_verbose) {
 			std::cout << "------------------------------------\n";
@@ -235,6 +266,8 @@ Voronoi::Voronoi(std::vector<glm::vec2> & sites, bool verbose, std::string debug
 		}
 
 		if (e->_type== SiteEvent) {
+			last_site_x= e->_site.x;
+			last_site_y= e->_site.y;
 			_current_y= e->_site.y;
 			if (_debug_count== 0) {
 				_first_y= e->_site.y;
@@ -272,11 +305,11 @@ Voronoi::Voronoi(std::vector<glm::vec2> & sites, bool verbose, std::string debug
 		//std::cout << _debug_count << "\n";
 
 		//if (_queue.count(e)> 0) {
-			_queue.erase(it);
+			//_queue.erase(it);
 		//}
 	}
 
-	//std::cout << "Fin queue\n";
+	std::cout << "Fin queue\n";
 
 	if (_verbose) {
 		bool diagram_valid= _diagram->is_valid();
@@ -289,16 +322,16 @@ Voronoi::Voronoi(std::vector<glm::vec2> & sites, bool verbose, std::string debug
 	}
 	if (!_diagram->add_bbox(bbox_expand)) {
 		std::cout << "problème BBOX\n";
-		//std::raise(SIGABRT);
 		return;
 	}
+
+	std::cout << "fin bbox\n";
 	
 	if (_verbose) {
 		std::cout << "calcul faces DCEL\n";
 	}
 	if (!_diagram->create_faces_from_half_edges()) {
 		std::cout << "problème create_faces_from_half_edges\n";
-		//std::raise(SIGTERM);
 	}
 }
 
@@ -376,7 +409,8 @@ void Voronoi::handle_site_event(Event * e) {
 		if (_verbose) {
 			std::cout << "suppression circle event : " << *node_above_site->_data._circle_event << "\n";
 		}
-		_queue.erase(node_above_site->_data._circle_event);
+		//_queue.erase(node_above_site->_data._circle_event);
+		node_above_site->_data._circle_event->_is_valid= false;
 	}
 
 	// ajout des 2 half-edge
@@ -438,25 +472,20 @@ void Voronoi::handle_site_event(Event * e) {
 		glm::vec2 center= circle.first;
 		float radius= circle.second;
 
+		Event * new_circle_event= new Event(CircleEvent);
+		new_circle_event->_circle_center= center;
+		new_circle_event->_circle_radius= radius;
+		new_circle_event->_leaf= node_above_site_left_copy;
+		node_above_site_left_copy->_data._circle_event= new_circle_event;
+		/*if (auto search = _queue.find(new_circle_event); search != _queue.end()) {
+			std::cout << "Event deja en queue 1 : " << *new_circle_event << " || " << *(*search) << "\n";
+		}*/
+		//_queue.insert(new_circle_event);
+		_queue.push(new_circle_event);
 		if (_verbose) {
-			std::cout << "circumcircle prev " << prev_site->_data << " ; " << node_above_site->_data << " ; " << *new_arc;
-			std::cout << " ; center = " << glm_to_string(center) << " ; radius = " << radius << "\n";
-		}
-
-		// cas limite du = si un site est pile en dessous du bkpt
-		if (center.y- radius<= _current_y) {
-			Event * new_circle_event= new Event(CircleEvent);
-			new_circle_event->_circle_center= center;
-			new_circle_event->_circle_radius= radius;
-			new_circle_event->_leaf= node_above_site_left_copy;
-			node_above_site_left_copy->_data._circle_event= new_circle_event;
-			if (auto search = _queue.find(new_circle_event); search != _queue.end()) {
-				std::cout << "Event deja en queue 1 : " << *new_circle_event << " || " << *(*search) << "\n";
-			}
-			_queue.insert(new_circle_event);
-			if (_verbose) {
-				std::cout << "New CircleEvent prev : " << *new_circle_event << "\n";
-			}
+			//std::cout << "circumcircle prev " << prev_site->_data << " ; " << node_above_site->_data << " ; " << *new_arc;
+			//std::cout << " ; center = " << glm_to_string(center) << " ; radius = " << radius << "\n";
+			std::cout << "New CircleEvent prev : " << *new_circle_event << "\n";
 		}
 	}
 
@@ -465,24 +494,20 @@ void Voronoi::handle_site_event(Event * e) {
 		glm::vec2 center= circle.first;
 		float radius= circle.second;
 
+		Event * new_circle_event= new Event(CircleEvent);
+		new_circle_event->_circle_center= center;
+		new_circle_event->_circle_radius= radius;
+		new_circle_event->_leaf= node_above_site_right_copy;
+		node_above_site_right_copy->_data._circle_event= new_circle_event;
+		/*if (auto search = _queue.find(new_circle_event); search != _queue.end()) {
+			std::cout << "Event deja en queue 2 : " << *new_circle_event << " || " << *(*search) << "\n";
+		}*/
+		//_queue.insert(new_circle_event);
+		_queue.push(new_circle_event);
 		if (_verbose) {
-			std::cout << "circumcircle next " << *new_arc << " ; " << node_above_site->_data << " ; " << next_site->_data;
-			std::cout << " ; center = " << glm_to_string(center) << " ; radius = " << radius << "\n";
-		}
-
-		if (center.y- radius<= _current_y) {
-			Event * new_circle_event= new Event(CircleEvent);
-			new_circle_event->_circle_center= center;
-			new_circle_event->_circle_radius= radius;
-			new_circle_event->_leaf= node_above_site_right_copy;
-			node_above_site_right_copy->_data._circle_event= new_circle_event;
-			if (auto search = _queue.find(new_circle_event); search != _queue.end()) {
-				std::cout << "Event deja en queue 2 : " << *new_circle_event << " || " << *(*search) << "\n";
-			}
-			_queue.insert(new_circle_event);
-			if (_verbose) {
-				std::cout << "New CircleEvent next : " << *new_circle_event << "\n";
-			}
+			//std::cout << "circumcircle next " << *new_arc << " ; " << node_above_site->_data << " ; " << next_site->_data;
+			//std::cout << " ; center = " << glm_to_string(center) << " ; radius = " << radius << "\n";
+			std::cout << "New CircleEvent next : " << *new_circle_event << "\n";
 		}
 	}
 }
@@ -520,17 +545,19 @@ void Voronoi::handle_circle_event(Event * e) {
 	//_beachline.balance();
 
 	// suppression des CircleEvent des arcs voisins
-	if (predecessor_leaf->_data._circle_event!= NULL) {
+	if ((predecessor_leaf->_data._circle_event!= NULL)) {
 		if (_verbose) {
 			std::cout << "suppression CircleEvent predecessor : " << *predecessor_leaf->_data._circle_event << "\n";
 		}
-		_queue.erase(predecessor_leaf->_data._circle_event);
+		//_queue.erase(predecessor_leaf->_data._circle_event);
+		predecessor_leaf->_data._circle_event->_is_valid= false;
 	}
-	if (successor_leaf->_data._circle_event!= NULL) {
+	if ((successor_leaf->_data._circle_event!= NULL)) {
 		if (_verbose) {
 			std::cout << "suppression CircleEvent successor : " << *successor_leaf->_data._circle_event << "\n";
 		}
-		_queue.erase(successor_leaf->_data._circle_event);
+		//_queue.erase(successor_leaf->_data._circle_event);
+		successor_leaf->_data._circle_event->_is_valid= false;
 	}
 
 	// rattacher le nouveau vertex et les 2 nouveaux he aux he existants
@@ -545,25 +572,20 @@ void Voronoi::handle_circle_event(Event * e) {
 		glm::vec2 center= circle.first;
 		float radius= circle.second;
 
+		Event * new_circle_event= new Event(CircleEvent);
+		new_circle_event->_circle_center= center;
+		new_circle_event->_circle_radius= radius;
+		new_circle_event->_leaf= predecessor_leaf;
+		predecessor_leaf->_data._circle_event= new_circle_event;
+		/*if (auto search = _queue.find(new_circle_event); search != _queue.end()) {
+			std::cout << "Event deja en queue 3 : " << *new_circle_event << " || " << *(*search) << "\n";
+		}*/
+		//_queue.insert(new_circle_event);
+		_queue.push(new_circle_event);
 		if (_verbose) {
-			std::cout << "circumcircle pp " << predecessor_predecessor_leaf->_data << " ; " << predecessor_leaf->_data << " ; " << successor_leaf->_data;
-			std::cout << " ; center = " << glm_to_string(center) << " ; radius = " << radius << "\n";
-		}
-
-		// ici contrairement à handle_site_event il ne faut pas mettre <=, sinon on recrée un CircleEvent de trop
-		if (center.y- radius< _current_y) {
-			Event * new_circle_event= new Event(CircleEvent);
-			new_circle_event->_circle_center= center;
-			new_circle_event->_circle_radius= radius;
-			new_circle_event->_leaf= predecessor_leaf;
-			predecessor_leaf->_data._circle_event= new_circle_event;
-			if (auto search = _queue.find(new_circle_event); search != _queue.end()) {
-				std::cout << "Event deja en queue 3 : " << *new_circle_event << " || " << *(*search) << "\n";
-			}
-			_queue.insert(new_circle_event);
-			if (_verbose) {
-				std::cout << "New CircleEvent pp : " << *new_circle_event << "\n";
-			}
+			//std::cout << "circumcircle pp " << predecessor_predecessor_leaf->_data << " ; " << predecessor_leaf->_data << " ; " << successor_leaf->_data;
+			//std::cout << " ; center = " << glm_to_string(center) << " ; radius = " << radius << "\n";
+			std::cout << "New CircleEvent pp : " << *new_circle_event << "\n";
 		}
 	}
 
@@ -572,24 +594,20 @@ void Voronoi::handle_circle_event(Event * e) {
 		glm::vec2 center= circle.first;
 		float radius= circle.second;
 
+		Event * new_circle_event= new Event(CircleEvent);
+		new_circle_event->_circle_center= center;
+		new_circle_event->_circle_radius= radius;
+		new_circle_event->_leaf= successor_leaf;
+		successor_leaf->_data._circle_event= new_circle_event;
+		/*if (auto search = _queue.find(new_circle_event); search != _queue.end()) {
+			std::cout << "Event deja en queue 4 : " << *new_circle_event << " || " << *search << "\n";
+		}*/
+		//_queue.insert(new_circle_event);
+		_queue.push(new_circle_event);
 		if (_verbose) {
-			std::cout << "circumcircle ss " << predecessor_leaf->_data << " ; " << successor_leaf->_data << " ; " << successor_successor_leaf->_data;
-			std::cout << " ; center = " << glm_to_string(center) << " ; radius = " << radius << "\n";
-		}
-
-		if (center.y- radius< _current_y) {
-			Event * new_circle_event= new Event(CircleEvent);
-			new_circle_event->_circle_center= center;
-			new_circle_event->_circle_radius= radius;
-			new_circle_event->_leaf= successor_leaf;
-			successor_leaf->_data._circle_event= new_circle_event;
-			if (auto search = _queue.find(new_circle_event); search != _queue.end()) {
-				std::cout << "Event deja en queue 4 : " << *new_circle_event << " || " << *search << "\n";
-			}
-			_queue.insert(new_circle_event);
-			if (_verbose) {
-				std::cout << "New CircleEvent ss : " << *new_circle_event << "\n";
-			}
+			//std::cout << "circumcircle ss " << predecessor_leaf->_data << " ; " << successor_leaf->_data << " ; " << successor_successor_leaf->_data;
+			//std::cout << " ; center = " << glm_to_string(center) << " ; radius = " << radius << "\n";
+			std::cout << "New CircleEvent ss : " << *new_circle_event << "\n";
 		}
 	}
 
@@ -652,11 +670,11 @@ void Voronoi::export_debug_html(std::string html_path) {
 	const float VIEW_YMAX= 2.0f;*/
 	
 	const float SIZE= std::max(VIEW_XMAX- VIEW_XMIN, VIEW_YMAX- VIEW_YMIN);
-	const float POINT_RADIUS= 0.004f* SIZE;
-	const float STROKE_WIDTH= 0.002f* SIZE;
+	const float POINT_RADIUS= 0.006f* SIZE;
+	const float STROKE_WIDTH= 0.004f* SIZE;
 	const float STEP= 0.01f;
 
-	const float OPACITY_MIN= 0.3f;
+	const float OPACITY_MIN= 0.2f;
 	const float OPACITY_MAX= 0.6f;
 
 	auto y_html= [VIEW_YMIN, VIEW_YMAX](float y) -> float {return VIEW_YMIN+ VIEW_YMAX- y;};

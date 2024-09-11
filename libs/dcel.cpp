@@ -639,11 +639,11 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 	const float VIEW_YMAX= (ymax- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
 	const float SIZE= std::max(xmax- xmin, ymax- ymin);
 	const float POINT_RADIUS= 0.002f* SIZE;
-	const float SITE_POINT_RADIUS= 0.004f* SIZE;
+	const float SITE_POINT_RADIUS= 0.006f* SIZE;
 	const float DELTA_BUFFER= 0.01f* SIZE;
 	const float ARROW_SIZE= 0.05f* SIZE;
 	const float ARROW_SIZE_2= 0.01f* SIZE;
-	const float STROKE_WIDTH= 0.001f* SIZE;
+	const float STROKE_WIDTH= 0.002f* SIZE;
 
 	auto y_html= [VIEW_YMIN, VIEW_YMAX](float y) -> float {return VIEW_YMIN+ VIEW_YMAX- y;};
 
