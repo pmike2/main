@@ -56,7 +56,7 @@ void test1() {
 	m["unit_root_center"].push_back(glm::vec2(0.0, 0.0));
 
 	for (auto const & x : m) {
-		if (x.first!= "site_bkpt_x_align") {continue;}
+		//if (x.first!= "site_bkpt_x_align") {continue;}
 		Voronoi * v= new Voronoi(x.second, true, "../data/test1/"+ x.first);
 		//Voronoi * v= new Voronoi(pts);
 		v->_diagram->export_html("../data/test1/"+ x.first+ "/result.html", true, x.second);
@@ -66,9 +66,13 @@ void test1() {
 
 
 void test2() {
-	int n_pts= 3000;
+	int n_pts= 20;
+	float xmin= 0.0f;
+	float xmax= 0.5f;
+	float ymin= 0.0f;
+	float ymax= 0.5f;
 	for (unsigned int i=0; i<n_pts; ++i) {
-		pts.push_back(glm::vec2(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
+		pts.push_back(glm::vec2(rand_float(xmin, xmax), rand_float(ymin, ymax)));
 		//std::cout << pts[i].x << ", " << pts[i].y << " | ";
 	}
 
@@ -87,37 +91,28 @@ void test2() {
 	auto ms= duration_cast<milliseconds>(t2- t1);
 	cout << ms.count() << " ms\n";
 
-	v->_diagram->export_html("../data/test2/result.html", true, -0.1f, -0.1f, 1.1f, 1.1f, pts);
+	v->_diagram->export_html("../data/test2/result.html", true, xmin- 0.01f, ymin- 0.01f, xmax+ 0.01f, ymax+ 0.01f, pts);
 	//v->_diagram->export_html("../data/test2/result.html", true, pts);
+
+	std::cout << "diagram_valid= " << v->_diagram->is_valid() << "\n";
 
 	delete v;
 }
 
 
 void test3() {
-	/*std::signal(SIGTERM, [](int signal){
-		end_loop= true;
-	});
-
-	std::signal(SIGABRT, [](int signal){
-	});
-
-	// Ctrl-C
-	std::signal(SIGINT, [](int signal){
-		end_loop= true;
-	});*/
-
+	int n_pts= 100;
+	float xmin= 0.0f;
+	float xmax= 0.5f;
+	float ymin= 0.0f;
+	float ymax= 0.5f;
 	int compt= 0;
-	int n_pts= 10;
 	while (true) {
-		//std::cout << "-----------------------\n";
 		std::cout << compt++ << "\n";
 		pts.clear();
 		for (unsigned int i=0; i<n_pts; ++i) {
-			pts.push_back(glm::vec2(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
-			//std::cout << pts[i].x << ", " << pts[i].y << " | ";
+			pts.push_back(glm::vec2(rand_float(xmin, xmax), rand_float(ymin, ymax)));
 		}
-		//std::cout << "\n";
 
 		ofstream f;
 		f.open("../data/test3/pts.txt");
@@ -127,17 +122,11 @@ void test3() {
 		f.close();
 
 		Voronoi * v= new Voronoi(pts);
+		v->_diagram->export_html("../data/test3/result.html", true, xmin- 0.01f, ymin- 0.01f, xmax+ 0.01f, ymax+ 0.01f, pts);
 		if (!v->_diagram->is_valid()) {
 			break;
 		}
 		delete v;
-
-		/*if (end_loop) {
-			break;
-		}*/
-		if (compt> 100) {
-			break;
-		}
 	}
 }
 
@@ -165,13 +154,10 @@ void test4() {
 int main(int argc, char * argv[]) {
 	srand(time(NULL));
 
-	test1();
+	//test1();
 	//test2();
-	//test3();
+	test3();
 	//test4();
-
-	//glm::vec2 result= parabolas_intersection(glm::vec2(-1.0f, 0.0f), glm::vec2(0.0f, 0.0f), -1.0);
-	//std::cout << glm_to_string(result) << "\n";
 
 	return 0;
 }

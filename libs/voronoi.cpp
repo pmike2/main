@@ -11,8 +11,19 @@
 
 
 // ---------------------------------------------------------------------------------------------
+bool float_equals_strict(float x, float y) {
+	return x== y;
+	//return abs(x- y)< 1e-11;
+}
+
+
+bool float_equals_epsilon(float x, float y) {
+	return abs(x- y)< 1e-11;
+}
+
+
 float y_parabola(const glm::vec2 & site, float yline, float x) {
-	if (site.y== yline) {
+	if (float_equals_strict(site.y, yline)) {
 		std::cout << "y_parabola problème : site = " << glm_to_string(site) << " ; yline = " << yline << " ; x = " << x << "\n";
 		return 0.0f;
 	}
@@ -21,7 +32,7 @@ float y_parabola(const glm::vec2 & site, float yline, float x) {
 
 
 float y_derivative_parabola(const glm::vec2 & site, float yline, float x) {
-	if (site.y== yline) {
+	if (float_equals_strict(site.y, yline)) {
 		std::cout << "y_derivative_parabola problème : site = " << glm_to_string(site) << " ; yline = " << yline << " ; x = " << x << "\n";
 		return 0.0f;
 	}
@@ -30,7 +41,7 @@ float y_derivative_parabola(const glm::vec2 & site, float yline, float x) {
 
 
 std::string parabola_equation(const glm::vec2 & site, float yline) {
-	if (site.y== yline) {
+	if (float_equals_strict(site.y, yline)) {
 		std::cout << "parabola_equation problème : site = " << glm_to_string(site) << " ; yline = " << yline << "\n";
 		return "";
 	}
@@ -44,18 +55,15 @@ std::string parabola_equation(const glm::vec2 & site, float yline) {
 glm::vec2 parabolas_intersection(const glm::vec2 & site_left, const glm::vec2 & site_right, float yline) {
 	//std::cout << "DEBUG : " << glm_to_string(site_left) << " ; " << glm_to_string(site_right) << " ; " << yline << "\n";
 	// cas limite des sites situés sur yline
-	//if (site_left.y== yline) {
-	if (abs(site_left.y- yline)< EPS) {
-		//if (site_right.y== yline) {
-		if (abs(site_right.y- yline)< EPS) {
+	if (float_equals_epsilon(site_left.y, yline)) {
+		if (float_equals_epsilon(site_right.y,yline)) {
 			std::cout << "parabolas_intersection 0 pt (2 sites sur yline) : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
 		}
 		else {
 			return glm::vec2(site_left.x, y_parabola(site_right, yline, site_left.x));
 		}
 	}
-	//else if (site_right.y== yline) {
-	else if (abs(site_right.y- yline)< EPS) {
+	else if (float_equals_epsilon(site_right.y, yline)) {
 		return glm::vec2(site_right.x, y_parabola(site_left, yline, site_right.x));
 	}
 
@@ -64,8 +72,7 @@ glm::vec2 parabolas_intersection(const glm::vec2 & site_left, const glm::vec2 & 
 	float c= 2.0f* (site_right.y- yline)* (site_left.x* site_left.x+ site_left.y* site_left.y- yline* yline)
 			-2.0f* (site_left.y- yline)* (site_right.x* site_right.x+ site_right.y* site_right.y- yline* yline);
 
-	//if (a== 0.0f) {
-	if (abs(a)< EPS) {
+	if (float_equals_epsilon(a, 0.0f)) {
 		float x= -1.0f* c/ b;
 		return glm::vec2(x, y_parabola(site_left, yline, x));
 	}
@@ -87,8 +94,6 @@ glm::vec2 parabolas_intersection(const glm::vec2 & site_left, const glm::vec2 & 
 	float dright_x2= y_derivative_parabola(site_right, yline, x2);
 
 	if (dleft_x1>= dright_x1) {
-	std::cout << "ok : " << a << " ; " << b << " ; " << c << " ; " << delta << "\n";
-
 		return glm::vec2(x1, y_parabola(site_left, yline, x1));
 	}
 	else if (dleft_x2>= dright_x2) {
@@ -101,7 +106,6 @@ glm::vec2 parabolas_intersection(const glm::vec2 & site_left, const glm::vec2 & 
 
 
 bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
-	std::cout << "DEBUG : " << *he1 << " ; " << *he2 << "\n";
 	glm::vec2 origin1= glm::vec2(he1->_tmp_x, he1->_tmp_y);
 	glm::vec2 direction1= glm::vec2(he1->_dx, he1->_dy);
 	glm::vec2 origin2= glm::vec2(he2->_tmp_x, he2->_tmp_y);
@@ -109,11 +113,13 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 	glm::vec2 result;
 	bool is_inter= ray_intersects_ray(origin1, direction1, origin2, direction2, &result);
 	
-	// faire un truc ici
-	
-	/*if ((result.y>= he1->_tmp_y) || (result.y>= he2->_tmp_y)) {
-		return false;
-	}*/
+	// faire un truc ici peut-être
+	if ((he1->_origin!= NULL) && (he2->_origin!= NULL)) {
+		if ((float_equals_strict(he1->_origin->_x, he2->_origin->_x)) || (float_equals_strict(he1->_origin->_y, he2->_origin->_y))) {
+			return false;
+		}
+	}
+
 	return is_inter;
 }
 
@@ -237,7 +243,6 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	for (unsigned int i=0; i<sites.size(); ++i) {
 		Event * e= new Event(SiteEvent);
 		e->_site= sites[i];
-		//_queue.insert(e);
 		_queue.push(e);
 	}
 
@@ -245,14 +250,12 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	float last_site_x= 1e8;
 	float last_site_y= 1e8;
 	while (!_queue.empty()) {
-		//std::set<Event *>::iterator it= _queue.begin();
-		//Event * e= *it;
 		Event * e= _queue.top();
 		_queue.pop();
 		if (!e->_is_valid) {
 			continue;
 		}
-		if ((e->_site.x== last_site_x) && (e->_site.y== last_site_y)) {
+		if ((float_equals_strict(e->_site.x, last_site_x)) && (float_equals_strict(e->_site.y, last_site_y))) {
 			continue;
 		}
 
@@ -272,7 +275,7 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 			if (_debug_count== 0) {
 				_first_y= e->_site.y;
 			}
-			if (_current_y== _first_y) {
+			if (float_equals_strict(_current_y, _first_y)) {
 				handle_first_sites_event(e);
 			}
 			else {
@@ -284,17 +287,17 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 			handle_circle_event(e);
 		}
 
-		if (_verbose) {
-			//std::cout << "beachline =\n" << *_beachline;
+		/*if (_verbose) {
+			std::cout << "beachline =\n" << *_beachline;
 			
-			/*for (auto s : sites) {
+			for (auto s : sites) {
 				if (s.y<= _current_y) {
 					continue;
 				}
 				std::cout << glm_to_string(s) << " : " << parabola_equation(s, _current_y) << " ; ";
 			}
-			std::cout << "\n";*/
-		}
+			std::cout << "\n";
+		}*/
 
 		if (_debug_path!= "") {
 			_beachline->export_html(_debug_path+ "/beachline"+ std::to_string(_debug_count)+ ".html");
@@ -302,22 +305,17 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 		}
 
 		_debug_count++;
-		//std::cout << _debug_count << "\n";
-
-		//if (_queue.count(e)> 0) {
-			//_queue.erase(it);
-		//}
-	}
-
-	std::cout << "Fin queue\n";
-
-	if (_verbose) {
-		bool diagram_valid= _diagram->is_valid();
-		std::cout << "diagram_valid= " << diagram_valid << "\n";
 	}
 
 	if (_verbose) {
 		std::cout << "------------------------------------\n";
+	}
+	
+	if (_verbose) {
+		std::cout << "diagram_valid= " << _diagram->is_valid() << "\n";
+	}
+
+	if (_verbose) {
 		std::cout << "ajout BBOX\n";
 	}
 	if (!_diagram->add_bbox(bbox_expand)) {
@@ -325,8 +323,6 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 		return;
 	}
 
-	std::cout << "fin bbox\n";
-	
 	if (_verbose) {
 		std::cout << "calcul faces DCEL\n";
 	}

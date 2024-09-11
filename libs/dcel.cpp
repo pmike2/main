@@ -620,8 +620,15 @@ bool DCEL::is_valid() {
 				glm::vec2(he1->_origin->_x, he1->_origin->_y), glm::vec2(he1_destination->_x, he1_destination->_y),
 				glm::vec2(he2->_origin->_x, he2->_origin->_y), glm::vec2(he2_destination->_x, he2_destination->_y),
 				&inter, true, true)) {
-				std::cout << "DCEL not_valid : " << *he1 << " || " << *he2 << "\n";
-				return false;
+				if (
+					((he1->_origin->_x- inter.x)* (he1->_origin->_x- inter.x)+ (he1->_origin->_y- inter.y)* (he1->_origin->_y- inter.y)> 1e-6)
+				&&  ((he2->_origin->_x- inter.x)* (he2->_origin->_x- inter.x)+ (he2->_origin->_y- inter.y)* (he2->_origin->_y- inter.y)> 1e-6)
+				&&  ((he1_destination->_x- inter.x)* (he1_destination->_x- inter.x)+ (he1_destination->_y- inter.y)* (he1_destination->_y- inter.y)> 1e-6)
+				&&  ((he2_destination->_x- inter.x)* (he2_destination->_x- inter.x)+ (he2_destination->_y- inter.y)* (he2_destination->_y- inter.y)> 1e-6)
+				) {
+					std::cout << "DCEL not_valid : " << *he1 << " || " << *he2 << "\n";
+					return false;
+				}
 			}
 		}
 	}
