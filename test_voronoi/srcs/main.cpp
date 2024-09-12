@@ -91,7 +91,7 @@ void test2() {
 	auto ms= duration_cast<milliseconds>(t2- t1);
 	cout << ms.count() << " ms\n";
 
-	v->_diagram->export_html("../data/test2/result.html", true, xmin- 0.01f, ymin- 0.01f, xmax+ 0.01f, ymax+ 0.01f, pts);
+	v->_diagram->export_html("../data/test2/result.html", true, xmin- 0.5f, ymin- 0.5f, xmax+ 0.5f, ymax+ 0.5f, pts);
 	//v->_diagram->export_html("../data/test2/result.html", true, pts);
 
 	//std::cout << "diagram_valid= " << v->_diagram->is_valid() << "\n";
@@ -145,7 +145,7 @@ void test4() {
 	}
 
 	Voronoi * v= new Voronoi(pts);
-	v->_diagram->export_html("../data/test4/result.html", true, -2.01f, -100.2f, 2.01f, 100.01f, pts);
+	v->_diagram->export_html("../data/test4/result.html", true, -2.1f, -2.1f, 2.1f, 2.1f, pts);
 	delete v;
 }
 

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 #include "math.h"
 
 #include "voronoi.h"
@@ -245,10 +246,15 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 		system(cmd.c_str());
 	}
 
+	float xmin= 1e8; float xmax= -1e8; float ymin= 1e8; float ymax= -1e8;
 	for (unsigned int i=0; i<sites.size(); ++i) {
 		Event * e= new Event(SiteEvent);
 		e->_site= sites[i];
 		_queue.push(e);
+		if (sites[i].x< xmin) { xmin= sites[i].x; }
+		if (sites[i].x> xmax) { xmax= sites[i].x; }
+		if (sites[i].y< ymin) { ymin= sites[i].y; }
+		if (sites[i].y> ymax) { ymax= sites[i].y; }
 	}
 
 	_debug_count= 0;
@@ -323,7 +329,7 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	if (_verbose) {
 		std::cout << "ajout BBOX\n";
 	}
-	if (!_diagram->add_bbox(-1.1f, -1.1f, 2.1f, 2.1f)) {
+	if (!_diagram->add_bbox(xmin- 0.1f, ymin- 0.1f, xmax+ 0.1f, ymax+ 0.1f)) {
 		std::cout << "problème BBOX\n";
 		return;
 	}

@@ -363,12 +363,14 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 	}*/
 	//_half_edges.erase(std::remove_if(_half_edges.begin(), _half_edges.end(), [in_bbox](DCEL_HalfEdge * he){ return ((!in_bbox(he->_origin)) && (!in_bbox(he->destination()))); }), _half_edges.end());
 
+	std::cout << "xmin= " << xmin << " ; ymin= " << ymin << " ; xmax= " << xmax << " ; ymax= " << ymax << "\n";
 	for (auto he : _half_edges) {
 		if (he->_origin!= NULL && he->destination()!= NULL && !in_bbox(he->_origin)) {
 			std::cout << *he << "\n";
 			//he->_dx= he->destination()->_x- he->_origin->_x;
 			//he->_dy= he->destination()->_y- he->_origin->_y;
 			he->_origin= NULL;
+			std::cout << *he->_twin << "\n";
 		}
 	}
 
