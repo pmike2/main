@@ -10,10 +10,10 @@
 
 void test1() {
 	glm::vec2 result(0.0f);
-	glm::vec2 origin1(1.0f, 1.0f);
-	glm::vec2 direction1(-1.0f, -1.0f);
-	glm::vec2 origin2(3.0f, 0.0f);
-	glm::vec2 direction2(-2.0f, -1.0f);
+	glm::vec2 origin1(-0.809017f, 0.0f);
+	glm::vec2 direction1(1.0f, 0.0f);
+	glm::vec2 origin2(-0.0f, -0.0f);
+	glm::vec2 direction2(-1.538842f, -1.118034f);
 
 	bool is_inter= ray_intersects_ray(origin1, direction1, origin2, direction2, &result);
 	std::cout << "is_inter = " << is_inter << " ; inter = " << glm_to_string(result) << "\n";

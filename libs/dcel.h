@@ -31,6 +31,7 @@ struct DCEL_HalfEdge {
 	DCEL_Face * opposite_face();
 	void set_twin(DCEL_HalfEdge * hedge);
 	void set_next(DCEL_HalfEdge * hedge);
+	void set_previous(DCEL_HalfEdge * hedge);
 	void set_tmp_data(glm::vec2 direction, glm::vec2 position=glm::vec2(0.0f));
 	friend std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e);
 
@@ -67,20 +68,21 @@ public:
 	DCEL_Vertex * add_vertex(float x, float y);
 	DCEL_HalfEdge * add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2);
 	DCEL_Face * add_face();
+	//void delete_vertex(DCEL_Vertex * v);
 	bool is_empty();
-	void compute_bbox();
-	bool add_bbox(float bbox_expand=0.5f);
+	//void compute_bbox();
+	bool add_bbox(float xmin, float ymin, float xmax, float ymax);
 	bool create_faces_from_half_edges();
 	bool is_valid();
-	void export_html(std::string html_path, bool simple, std::vector<glm::vec2> sites=std::vector<glm::vec2>());
-	void export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax, std::vector<glm::vec2> sites);
+	//void export_html(std::string html_path, bool simple, const std::vector<glm::vec2> & sites=std::vector<glm::vec2>());
+	void export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax, const std::vector<glm::vec2> & sites);
 	friend std::ostream & operator << (std::ostream & os, DCEL & d);
 	
 	
 	std::vector<DCEL_Vertex *> _vertices;
 	std::vector<DCEL_HalfEdge *> _half_edges;
 	std::vector<DCEL_Face *> _faces;
-	float _xmin, _xmax, _ymin, _ymax;
+	//float _xmin, _xmax, _ymin, _ymax;
 };
 
 #endif

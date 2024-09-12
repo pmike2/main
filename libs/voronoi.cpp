@@ -1,9 +1,6 @@
 #include <iostream>
 #include <sstream>
-#include <csignal>
 #include "math.h"
-
-//#include <glm/gtx/string_cast.hpp>
 
 #include "voronoi.h"
 #include "geom_2d.h"
@@ -13,7 +10,6 @@
 // ---------------------------------------------------------------------------------------------
 bool float_equals_strict(float x, float y) {
 	return x== y;
-	//return abs(x- y)< 1e-11;
 }
 
 
@@ -53,7 +49,6 @@ std::string parabola_equation(const glm::vec2 & site, float yline) {
 
 
 glm::vec2 parabolas_intersection(const glm::vec2 & site_left, const glm::vec2 & site_right, float yline) {
-	//std::cout << "DEBUG : " << glm_to_string(site_left) << " ; " << glm_to_string(site_right) << " ; " << yline << "\n";
 	// cas limite des sites situés sur yline
 	if (float_equals_epsilon(site_left.y, yline)) {
 		if (float_equals_epsilon(site_right.y,yline)) {
@@ -87,7 +82,7 @@ glm::vec2 parabolas_intersection(const glm::vec2 & site_left, const glm::vec2 & 
 	float x1= 0.5f* (-1.0f* b- sqrt(delta))/ a;
 	float x2= 0.5f* (-1.0f* b+ sqrt(delta))/ a;
 
-	// je compare les tangentes aux 2 pts pour savoir lequel respecte left-right
+	// je compare les tangentes aux 2 pts pour savoir quel pt respecte left-right
 	float dleft_x1= y_derivative_parabola(site_left, yline, x1);
 	float dright_x1= y_derivative_parabola(site_right, yline, x1);
 	float dleft_x2= y_derivative_parabola(site_left, yline, x2);
@@ -111,14 +106,24 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 	glm::vec2 origin2= glm::vec2(he2->_tmp_x, he2->_tmp_y);
 	glm::vec2 direction2= glm::vec2(he2->_dx, he2->_dy);
 	glm::vec2 result;
+
+	const float EPS= 1e-6;
+	origin1-= EPS* direction1;
+	origin2-= EPS* direction2;
+
 	bool is_inter= ray_intersects_ray(origin1, direction1, origin2, direction2, &result);
+
+	/*std::cout << "DEBUG : ";
+	std::cout << glm_to_string(origin1) << " ; " << glm_to_string(direction1) << " ; ";
+	std::cout << glm_to_string(origin2) << " ; " << glm_to_string(direction2) << " ; ";
+	std::cout << is_inter << "\n";*/
 	
 	// faire un truc ici peut-être
-	if ((he1->_origin!= NULL) && (he2->_origin!= NULL)) {
+	/*if ((he1->_origin!= NULL) && (he2->_origin!= NULL)) {
 		if ((float_equals_strict(he1->_origin->_x, he2->_origin->_x)) || (float_equals_strict(he1->_origin->_y, he2->_origin->_y))) {
 			return false;
 		}
-	}
+	}*/
 
 	return is_inter;
 }
@@ -213,7 +218,7 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 			rhx= inter.x;
 		}
 
-		//std::cout << "DEBUG2 : " << lhs << " || " << rhs << " || " << lhx << " ; " << rhx << "\n";
+		//std::cout << "DEBUG : " << lhs << " || " << rhs << " || " << lhx << " ; " << rhx << "\n";
 		
 		if (lhx< rhx) {
 			return -1;
@@ -318,7 +323,7 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	if (_verbose) {
 		std::cout << "ajout BBOX\n";
 	}
-	if (!_diagram->add_bbox(bbox_expand)) {
+	if (!_diagram->add_bbox(-1.1f, -1.1f, 2.1f, 2.1f)) {
 		std::cout << "problème BBOX\n";
 		return;
 	}
