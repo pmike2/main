@@ -57,7 +57,8 @@ struct DCEL_Face {
 	friend std::ostream & operator << (std::ostream & os, DCEL_Face & f);
 
 	DCEL_HalfEdge * _outer_edge; // 1 des edges délimitant la face; NULL pour la face infinie
-	std::vector<DCEL_HalfEdge *> _inner_edges; // trous, pas utilisé pour l'instant
+	std::vector<DCEL_HalfEdge *> _inner_edges; // edges de trous, 1 par trou
+	bool _unbounded; // est-ce la face infinie
 };
 
 
@@ -67,15 +68,17 @@ public:
 	~DCEL();
 	DCEL_Vertex * add_vertex(float x, float y);
 	DCEL_HalfEdge * add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2);
-	DCEL_Face * add_face();
+	DCEL_Face * add_face(DCEL_HalfEdge * outer_edge=NULL);
 	//void delete_vertex(DCEL_Vertex * v);
+	void delete_edge(DCEL_HalfEdge * he);
 	bool is_empty();
 	//void compute_bbox();
+	void add_unbounded_face();
 	bool add_bbox(float xmin, float ymin, float xmax, float ymax);
 	bool create_faces_from_half_edges();
 	bool is_valid();
 	//void export_html(std::string html_path, bool simple, const std::vector<glm::vec2> & sites=std::vector<glm::vec2>());
-	void export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax, const std::vector<glm::vec2> & sites);
+	void export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax, const std::vector<glm::vec2> & sites=std::vector<glm::vec2>());
 	friend std::ostream & operator << (std::ostream & os, DCEL & d);
 	
 	

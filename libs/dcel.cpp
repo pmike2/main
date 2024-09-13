@@ -128,13 +128,15 @@ std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
 		os << "NULL";
 	}
 	os << " ; dx = " << e._dx << " ; dy = " << e._dy << " ; _tmp_x = " << e._tmp_x << " ; _tmp_y = " << e._tmp_y;
-	
+
+	os << " ; previous = " << e._previous << " ; next = " << e._next << "\n";
+
 	return os;
 }
 
 
 // ----------------------------------------------------------------------
-DCEL_Face::DCEL_Face() : _outer_edge(NULL) {
+DCEL_Face::DCEL_Face() : _outer_edge(NULL), _unbounded(false) {
 
 }
 
@@ -251,8 +253,12 @@ DCEL_HalfEdge * DCEL::add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2) {
 }
 
 
-DCEL_Face * DCEL::add_face() {
+DCEL_Face * DCEL::add_face(DCEL_HalfEdge * outer_edge) {
 	DCEL_Face * face= new DCEL_Face();
+	if (outer_edge!= NULL) {
+		face->_outer_edge= outer_edge;
+		outer_edge->_incident_face= face;
+	}
 	_faces.push_back(face);
 	return face;
 }
@@ -264,8 +270,70 @@ DCEL_Face * DCEL::add_face() {
 }*/
 
 
+void DCEL::delete_edge(DCEL_HalfEdge * he) {
+	he->_previous->set_next(he->_twin->_next);
+	he->_twin->_previous->set_next(he->_next);
+	_half_edges.erase(std::remove(_half_edges.begin(), _half_edges.end(), he->_twin), _half_edges.end());
+	_half_edges.erase(std::remove(_half_edges.begin(), _half_edges.end(), he), _half_edges.end());
+}
+
+
 bool DCEL::is_empty() {
 	return _vertices.empty() && _half_edges.empty();
+}
+
+
+void DCEL::add_unbounded_face() {
+	/*for (auto he : _half_edges) {
+		if (he->_next== NULL) {
+			std::cout << "---------------------------------\n";
+			std::cout << "he= " << *he << "\n";
+		}
+	}
+	return;*/
+	DCEL_Face * unbounded_face= add_face();
+	unbounded_face->_unbounded= true;
+
+	while (true) {
+		bool found_no_next= false;
+		for (auto he : _half_edges) {
+			if (he->_next== NULL) {
+				std::cout << "---------------------------------\n";
+				std::cout << "he= " << *he << "\n";
+
+				found_no_next= true;
+				unbounded_face->_inner_edges.push_back(he);
+				DCEL_HalfEdge * first_he= he;
+				DCEL_HalfEdge * current_he= he;
+				DCEL_HalfEdge * next_he= NULL;
+				do {
+					std::cout << "---------------------\n";
+					if (current_he->_twin->_previous== NULL) {
+						std::cout << "add_unbounded_face problem : " << *current_he << "\n";
+						break;
+					}
+					next_he= current_he->_twin->_previous->_twin;
+					//std::cout << "next he= " << *next_he << "\n";
+					//std::cout << "next he previous= " << next_he->_previous << "\n";
+					//std::cout << "next he next= " << next_he->_next << "\n";
+					//std::cout << "next he->_twin= " << *next_he->_twin << "\n";
+					//std::cout << "next he->_twin->_next= " << *next_he->_twin->_next << "\n";
+					//std::cout << "next he->_twin->_previous= " << *next_he->_twin->_previous << "\n";
+					while (next_he->_previous!= NULL) {
+						next_he= next_he->_previous->_twin;
+					}
+					std::cout << "current he : " << *current_he << " set next( " << *next_he << " )\n";
+					current_he->set_next(next_he);
+					current_he= next_he;
+
+				} while (current_he!= first_he);
+				break;
+			}
+		}
+		if (!found_no_next) {
+			break;
+		}
+	}
 }
 
 
@@ -631,8 +699,7 @@ bool DCEL::create_faces_from_half_edges() {
 				//std::cout << "----\n";
 				//std::cout << *he << "\n";
 				found_unattached_he= true;
-				DCEL_Face * face= add_face();
-				face->_outer_edge= he;
+				DCEL_Face * face= add_face(he);
 				DCEL_HalfEdge * he2= he;
 				do {
 					if (he2->_next== NULL) {
@@ -754,10 +821,18 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 				std::pair<float, float> gravity_center= face->get_gravity_center();
 				float xg= gravity_center.first;
 				float yg= gravity_center.second;
-				x1+= DELTA_BUFFER* (xg- x1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
-				y1+= DELTA_BUFFER* (yg- y1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
-				x2+= DELTA_BUFFER* (xg- x2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
-				y2+= DELTA_BUFFER* (yg- y2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
+				if (!face->_unbounded) {
+					x1+= DELTA_BUFFER* (xg- x1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
+					y1+= DELTA_BUFFER* (yg- y1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
+					x2+= DELTA_BUFFER* (xg- x2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
+					y2+= DELTA_BUFFER* (yg- y2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
+				}
+				else {
+					x1-= DELTA_BUFFER* (xg- x1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
+					y1-= DELTA_BUFFER* (yg- y1)/ sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
+					x2-= DELTA_BUFFER* (xg- x2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
+					y2-= DELTA_BUFFER* (yg- y2)/ sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
+				}
 			}
 
 			f << "<circle class=\"point_class\" cx=\"" << x1 << "\" cy=\"" << y_html(y1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
