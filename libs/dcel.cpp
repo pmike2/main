@@ -131,9 +131,9 @@ std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
 	else {
 		os << "NULL";
 	}
-	os << " ; dx = " << e._dx << " ; dy = " << e._dy << " ; _tmp_x = " << e._tmp_x << " ; _tmp_y = " << e._tmp_y;
+	//os << " ; dx = " << e._dx << " ; dy = " << e._dy << " ; _tmp_x = " << e._tmp_x << " ; _tmp_y = " << e._tmp_y;
 
-	os << " ; previous = " << e._previous << " ; next = " << e._next << "\n";
+	//os << " ; previous = " << e._previous << " ; next = " << e._next;
 
 	return os;
 }
@@ -183,7 +183,7 @@ std::vector<DCEL_HalfEdge *> DCEL_Face::get_edges() {
 	if (!_unbounded) {
 		DCEL_HalfEdge * first_edge= _outer_edge;
 		DCEL_HalfEdge * current_edge= _outer_edge;
-		//std::cout << "-------------\n";
+		//std::cout << "!_unbounded-------------\n";
 		do {
 			//std::cout << *current_edge << "\n";
 			result.push_back(current_edge);
@@ -191,11 +191,13 @@ std::vector<DCEL_HalfEdge *> DCEL_Face::get_edges() {
 		} while (current_edge!= first_edge);
 	}
 	else {
+		//std::cout << "_unbounded-------------\n";
 		// dans le cas unbounded on concatène tous les edges des trous
 		for (auto edge : _inner_edges) {
 			DCEL_HalfEdge * first_edge= edge;
 			DCEL_HalfEdge * current_edge= edge;
 			do {
+				//std::cout << *current_edge << "\n";
 				result.push_back(current_edge);
 				current_edge= current_edge->_next;
 			} while (current_edge!= first_edge);
@@ -238,8 +240,17 @@ std::pair<float , float> DCEL_Face::get_gravity_center() {
 
 
 std::ostream & operator << (std::ostream & os, DCEL_Face & f) {
-	for (auto edge : f.get_edges()) {
-		os << *edge << "\n";
+	os << "face _unbounded = " << f._unbounded << "\n";
+	if (!f._unbounded) {
+		os << "outer_edge = " << *f._outer_edge << "\n";
+	}
+	else {
+		os << "inner_edges.size = " << f._inner_edges.size() << "\n";
+	}
+	std::vector<DCEL_HalfEdge *> edges= f.get_edges();
+	os << "edges.size = " << edges.size() << "\n";
+	for (auto edge : edges) {
+		os << *edge << " || ";
 	}
 	return os;
 }
@@ -306,41 +317,43 @@ DCEL_Face * DCEL::add_face(DCEL_HalfEdge * outer_edge) {
 
 void DCEL::delete_edge(DCEL_HalfEdge * he) {
 	//std::cout << "ok0\n";
-	if (he->_incident_face!= NULL) {
-		if (!he->_incident_face->_unbounded) {
-			for (auto edge : he->_incident_face->get_edges()) {
-				std::cout << "edge->_incident_face= NULL : " << *edge << "\n";
-				edge->_incident_face= NULL;
-			}
-			_faces.erase(std::remove(_faces.begin(), _faces.end(), he->_incident_face), _faces.end());
-		}
-		else {
-			for (auto edge : he->_incident_face->_inner_edges) {
-				if (edge->_twin->_incident_face== he->_twin->_incident_face) {
-					he->_incident_face->_inner_edges.erase(std::remove(he->_incident_face->_inner_edges.begin(), he->_incident_face->_inner_edges.end(), edge), he->_incident_face->_inner_edges.end());
-					break;
-				}
+	if ((he->_incident_face!= NULL) && (he->_incident_face->_unbounded)) {
+		for (auto edge : he->_incident_face->_inner_edges) {
+			if (edge->_twin->_incident_face== he->_twin->_incident_face) {
+				//std::cout << "inner_edges.erase : " << *edge << "\n";
+				he->_incident_face->_inner_edges.erase(std::remove(he->_incident_face->_inner_edges.begin(), he->_incident_face->_inner_edges.end(), edge), he->_incident_face->_inner_edges.end());
+				break;
 			}
 		}
 	}
 	//std::cout << "ok0BIS\n";
-	if (he->_twin->_incident_face!= NULL) {
-		if (!he->_twin->_incident_face->_unbounded) {
-			for (auto edge : he->_twin->_incident_face->get_edges()) {
-				edge->_incident_face= NULL;
-			}
-			_faces.erase(std::remove(_faces.begin(), _faces.end(), he->_twin->_incident_face), _faces.end());
-		}
-		else {
-			for (auto edge : he->_twin->_incident_face->_inner_edges) {
-				if (edge->_twin->_incident_face== he->_incident_face) {
-					std::cout << "inner_edges.erase : " << *edge << "\n";
-					he->_twin->_incident_face->_inner_edges.erase(std::remove(he->_twin->_incident_face->_inner_edges.begin(), he->_incident_face->_inner_edges.end(), edge), he->_twin->_incident_face->_inner_edges.end());
-					break;
-				}
+	if ((he->_twin->_incident_face!= NULL) && (he->_twin->_incident_face->_unbounded)) {
+		for (auto edge : he->_twin->_incident_face->_inner_edges) {
+			if (edge->_twin->_incident_face== he->_incident_face) {
+				//std::cout << "inner_edges.erase : " << *edge << "\n";
+				he->_twin->_incident_face->_inner_edges.erase(std::remove(he->_twin->_incident_face->_inner_edges.begin(), he->_twin->_incident_face->_inner_edges.end(), edge), he->_twin->_incident_face->_inner_edges.end());
+				break;
 			}
 		}
 	}
+
+	if ((he->_incident_face!= NULL) && (!he->_incident_face->_unbounded)) {
+		std::vector<DCEL_HalfEdge *> edges= he->_incident_face->get_edges();
+		_faces.erase(std::remove(_faces.begin(), _faces.end(), he->_incident_face), _faces.end());
+		for (auto edge : edges) {
+			//std::cout << "edge->_incident_face= NULL : " << *edge << "\n";
+			edge->_incident_face= NULL;
+		}
+	}
+	if ((he->_twin->_incident_face!= NULL) && (!he->_twin->_incident_face->_unbounded)) {
+		std::vector<DCEL_HalfEdge *> edges= he->_twin->_incident_face->get_edges();
+		_faces.erase(std::remove(_faces.begin(), _faces.end(), he->_twin->_incident_face), _faces.end());
+		for (auto edge : edges) {
+			//std::cout << "edge->_incident_face= NULL : " << *edge << "\n";
+			edge->_incident_face= NULL;
+		}
+	}
+
 	//std::cout << "okTER\n";
 	he->_previous->set_next(he->_twin->_next);
 	he->_twin->_previous->set_next(he->_next);
@@ -931,8 +944,8 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 	}
 
 	for (auto face : _faces) {
-		std::cout << "----------------------------\n";
-		std::cout << face->_unbounded << "\n";
+		//std::cout << "----------------------------\n";
+		//std::cout << face->_unbounded << "\n";
 		//std::cout << *face << "\n";
 		std::vector<DCEL_HalfEdge *> edges= face->get_edges();
 
@@ -1011,12 +1024,17 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 
 
 std::ostream & operator << (std::ostream & os, DCEL & d) {
-	/*for (auto face : d._faces) {
+	os << "DCEL ***************************************\n";
+	os << "faces ============================\n";
+	for (auto face : d._faces) {
+		os << "----------------------\n";
 		os << *face << "\n";
-	}*/
+	}
+	os << "edges ============================\n";
 	for (auto he : d._half_edges) {
 		os << *he << "\n";
 	}
+	os << "********************************************\n";
 
 	return os;
 }

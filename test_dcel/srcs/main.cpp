@@ -39,12 +39,12 @@ void test1() {
 	std::cout << "create_faces_from_half_edges : " << dcel->create_faces_from_half_edges() << "\n";
 	std::cout << "add_unbounded_face : " << dcel->add_unbounded_face() << "\n";
 
-	//dcel->delete_edge(e23);
-	dcel->delete_edge(e56);
+	dcel->delete_edge(e23);
+	//dcel->delete_edge(e56);
 
-	//std::cout << *dcel;
-	//std:: cout << "export HTML\n";
-	//dcel->export_html("../data/test1.html", false, -1.0f, -1.0f, 5.0f, 5.0f);
+	std::cout << *dcel;
+	std:: cout << "export HTML\n";
+	dcel->export_html("../data/test1.html", false, -1.0f, -1.0f, 5.0f, 5.0f);
 	
 	delete dcel;
 }
