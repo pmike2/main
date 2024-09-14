@@ -43,6 +43,7 @@ void test1() {
 	dcel->delete_edge(e56);
 
 	//std::cout << *dcel;
+	//std:: cout << "export HTML\n";
 	//dcel->export_html("../data/test1.html", false, -1.0f, -1.0f, 5.0f, 5.0f);
 	
 	delete dcel;
