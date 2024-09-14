@@ -71,9 +71,10 @@ public:
 	DCEL_Face * add_face(DCEL_HalfEdge * outer_edge=NULL);
 	//void delete_vertex(DCEL_Vertex * v);
 	void delete_edge(DCEL_HalfEdge * he);
+	void delete_next_twin_edges();
 	bool is_empty();
 	//void compute_bbox();
-	void add_unbounded_face();
+	bool add_unbounded_face();
 	bool add_bbox(float xmin, float ymin, float xmax, float ymax);
 	bool create_faces_from_half_edges();
 	bool is_valid();

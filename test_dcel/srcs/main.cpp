@@ -14,7 +14,6 @@ void test1() {
 	DCEL_Vertex * v2= dcel->add_vertex(1.0f, 0.0f);
 	DCEL_Vertex * v3= dcel->add_vertex(0.0f, 1.0f);
 	DCEL_Vertex * v4= dcel->add_vertex(1.0f, 3.0f);
-	
 	DCEL_HalfEdge * e12= dcel->add_edge(v1, v2);
 	DCEL_HalfEdge * e23= dcel->add_edge(v2, v3);
 	DCEL_HalfEdge * e31= dcel->add_edge(v3, v1);
@@ -27,12 +26,24 @@ void test1() {
 	e43->set_next(e23->_twin);
 	e23->_twin->set_next(e24);
 
-	dcel->create_faces_from_half_edges();
+	DCEL_Vertex * v5= dcel->add_vertex(5.0f, 5.0f);
+	DCEL_Vertex * v6= dcel->add_vertex(6.0f, 5.0f);
+	DCEL_Vertex * v7= dcel->add_vertex(5.0f, 6.0f);
+	DCEL_HalfEdge * e56= dcel->add_edge(v5, v6);
+	DCEL_HalfEdge * e67= dcel->add_edge(v6, v7);
+	DCEL_HalfEdge * e75= dcel->add_edge(v7, v5);
+	e56->set_next(e67);
+	e67->set_next(e75);
+	e75->set_next(e56);
 
-	dcel->add_unbounded_face();
+	std::cout << "create_faces_from_half_edges : " << dcel->create_faces_from_half_edges() << "\n";
+	std::cout << "add_unbounded_face : " << dcel->add_unbounded_face() << "\n";
+
+	//dcel->delete_edge(e23);
+	dcel->delete_edge(e56);
 
 	//std::cout << *dcel;
-	dcel->export_html("../data/test1.html", false, -1.0f, -1.0f, 5.0f, 5.0f);
+	//dcel->export_html("../data/test1.html", false, -1.0f, -1.0f, 5.0f, 5.0f);
 	
 	delete dcel;
 }
