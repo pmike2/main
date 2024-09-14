@@ -294,6 +294,12 @@ DCEL_HalfEdge * DCEL::add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2) {
 	hedge2->_twin= hedge1;
 	_half_edges.push_back(hedge1);
 	_half_edges.push_back(hedge2);
+	if (v1->_incident_edge== NULL) {
+		v1->_incident_edge= hedge1;
+	}
+	if (v2->_incident_edge== NULL) {
+		v2->_incident_edge= hedge2;
+	}
 	return hedge1;
 }
 
@@ -309,10 +315,13 @@ DCEL_Face * DCEL::add_face(DCEL_HalfEdge * outer_edge) {
 }
 
 
-/*void DCEL::delete_vertex(DCEL_Vertex * v) {
+void DCEL::delete_vertex(DCEL_Vertex * v) {
 	std::vector<DCEL_HalfEdge *> edges= v->get_incident_edges();
-
-}*/
+	for (auto edge : edges) {
+		//std::cout << *edge << "\n";
+		delete_edge(edge);
+	}
+}
 
 
 void DCEL::delete_edge(DCEL_HalfEdge * he) {
@@ -367,7 +376,10 @@ void DCEL::delete_edge(DCEL_HalfEdge * he) {
 		for (auto edge : _half_edges) {
 			if (edge->_twin== edge->_next) {
 				found_next_twin_edge= true;
-				//std::cout << "next twin : " << *he << "\n";
+				/*std::cout << "DEBUG : " << *edge << "\n";
+				std::cout << *edge->_previous << "\n";
+				std::cout << *edge->_next << "\n";
+				std::cout << *edge->_twin << "\n";*/
 				edge->_previous->set_next(edge->_twin->_next);
 				_half_edges.erase(std::remove(_half_edges.begin(), _half_edges.end(), edge->_twin), _half_edges.end());
 				_half_edges.erase(std::remove(_half_edges.begin(), _half_edges.end(), edge), _half_edges.end());

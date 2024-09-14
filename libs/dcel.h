@@ -69,7 +69,7 @@ public:
 	DCEL_Vertex * add_vertex(float x, float y);
 	DCEL_HalfEdge * add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2);
 	DCEL_Face * add_face(DCEL_HalfEdge * outer_edge=NULL);
-	//void delete_vertex(DCEL_Vertex * v);
+	void delete_vertex(DCEL_Vertex * v);
 	void delete_edge(DCEL_HalfEdge * he);
 	//void delete_face(DCEL_Face * face);
 	//void delete_next_twin_edges();
