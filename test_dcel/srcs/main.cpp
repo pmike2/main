@@ -80,10 +80,7 @@ void test1() {
 	DCEL_HalfEdge * e35= dcel->add_edge(v3, v5);
 	DCEL_HalfEdge * e34= dcel->add_edge(v3, v4);
 	DCEL_HalfEdge * e45= dcel->add_edge(v4, v5);
-	//DCEL_HalfEdge * e12= dcel->add_edge(v5, v3);
 	DCEL_HalfEdge * e41= dcel->add_edge(v4, v1);
-	//DCEL_HalfEdge * e12= dcel->add_edge(v1, v5);
-	//DCEL_HalfEdge * e12= dcel->add_edge(v5, v4);
 	e12->set_next(e25);
 	e25->set_next(e51);
 	e51->set_next(e12);
@@ -101,11 +98,20 @@ void test1() {
 	std::cout << "create_faces_from_half_edges : " << dcel->create_faces_from_half_edges() << "\n";
 	std::cout << "add_unbounded_face : " << dcel->add_unbounded_face() << "\n";
 
+	//v5->get_incident_edges();
+	//std::cout << *e23 << " ; " << *e23->_next << "\n";
+	//return;
+
 	//dcel->delete_edge(e23);
 	//dcel->delete_edge(e56);
 	//dcel->delete_edge(e76);
 	dcel->delete_edge(e25);
+	dcel->delete_edge(e35);
 	//dcel->delete_vertex(v5);
+
+	dcel->delete_disconnected_vertices();
+	dcel->create_faces_from_half_edges();
+
 
 	//std::cout << *dcel;
 	std:: cout << "export HTML\n";
