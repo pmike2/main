@@ -106,14 +106,25 @@ void DCEL_HalfEdge::set_twin(DCEL_HalfEdge * hedge) {
 
 
 void DCEL_HalfEdge::set_next(DCEL_HalfEdge * hedge) {
+	if (hedge!= NULL) {
+		hedge->_previous= this;
+	}
+	else if (_next!= NULL) {
+		_next->_previous= NULL;
+	}
 	_next= hedge;
-	hedge->_previous= this;
 }
 
 
 void DCEL_HalfEdge::set_previous(DCEL_HalfEdge * hedge) {
+	if (hedge!= NULL) {
+		hedge->_next= this;
+	}
+	else if (_previous!= NULL) {
+		_previous->_next= NULL;
+	}
 	_previous= hedge;
-	hedge->_next= this;
+	
 }
 
 
@@ -137,6 +148,20 @@ void DCEL_HalfEdge::set_tmp_data(glm::vec2 direction) {
 	if (_twin!= NULL) {
 		_twin->_dx= -direction.x;
 		_twin->_dy= -direction.y;
+	}
+}
+
+
+void DCEL_HalfEdge::set_tmp_data() {
+	if (_origin== NULL || destination()== NULL) {
+		std::cout << "set_tmp_data() impossible !\n";
+		return;
+	}
+	_dx= destination()->_x- _origin->_x;
+	_dy= destination()->_y- _origin->_y;
+	if (_twin!= NULL) {
+		_twin->_dx= -_dx;
+		_twin->_dy= -_dy;
 	}
 }
 
@@ -647,13 +672,14 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 			std::cout << *he << "\n";
 			if (in_bbox(he->destination())) {
 				std::cout << "dst in box\n";
-				he->set_tmp_data(glm::vec2(he->destination()->_x- he->_origin->_x, he->destination()->_y- he->_origin->_y));
-				he->_twin->set_tmp_data(glm::vec2(he->_origin->_x- he->destination()->_x, he->_origin->_y- he->destination()->_y));
-				he->_origin= NULL;
+				he->set_tmp_data();
+				//he->_twin->set_tmp_data(glm::vec2(he->_origin->_x- he->destination()->_x, he->_origin->_y- he->destination()->_y));
 				if (he->_previous!= NULL) {
-					he->_previous->_next= NULL;
-					he->_previous= NULL;
+					std::cout << "previous = " << *he->_previous << "\n";
+					he->_previous->set_tmp_data();
+					he->set_previous(NULL);
 				}
+				he->_origin= NULL;
 			}
 			else {
 				glm::vec2 result;
@@ -662,7 +688,7 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 				if (segment_intersects_poly(glm::vec2(he->_origin->_x, he->_origin->_y), glm::vec2(he->destination()->_x, he->destination()->_y), poly, &result)) {
 					std::cout << "inter\n";
 					he->set_tmp_data(glm::vec2(he->destination()->_x- he->_origin->_x, he->destination()->_y- he->_origin->_y), result);
-					he->_twin->set_tmp_data(glm::vec2(he->_origin->_x- he->destination()->_x, he->_origin->_y- he->destination()->_y), result);
+					//he->_twin->set_tmp_data(glm::vec2(he->_origin->_x- he->destination()->_x, he->_origin->_y- he->destination()->_y), result);
 					he->_origin= NULL;
 					he->_twin->_origin= NULL;
 					if (he->_previous!= NULL) {
