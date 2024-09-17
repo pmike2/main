@@ -149,7 +149,7 @@ bool ray_intersects_ray(const glm::vec2 & origin1, const glm::vec2 & direction1,
 
 
 // si existe intersection la + proche du pt de départ du segment avec le poly
-bool segment_intersects_poly(glm::vec2 & pt_begin, glm::vec2 & pt_end, Polygon2D * poly, glm::vec2 * result) {
+bool segment_intersects_poly(const glm::vec2 & pt_begin, const glm::vec2 & pt_end, const Polygon2D * poly, glm::vec2 * result) {
 	if ((pt_begin.x< poly->_aabb->_pos.x) && (pt_end.x< poly->_aabb->_pos.x)) {
 		return false;
 	}

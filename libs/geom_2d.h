@@ -26,7 +26,7 @@ bool is_pt_inside_poly(glm::vec2 & pt, Polygon2D * poly);
 bool segment_intersects_segment(const glm::vec2 & pt1_begin, const glm::vec2 & pt1_end, const glm::vec2 & pt2_begin, const glm::vec2 & pt2_end, glm::vec2 * result, bool exclude_seg1_extremities=false, bool exclude_seg2_extremities=false);
 bool ray_intersects_segment(const glm::vec2 & origin, const glm::vec2 & direction, const glm::vec2 & pt_begin, const glm::vec2 & pt_end, glm::vec2 * result);
 bool ray_intersects_ray(const glm::vec2 & origin1, const glm::vec2 & direction1, const glm::vec2 & origin2, const glm::vec2 & direction2, glm::vec2 * result);
-bool segment_intersects_poly(glm::vec2 & pt_begin, glm::vec2 & pt_end, Polygon2D * poly, glm::vec2 * result);
+bool segment_intersects_poly(const glm::vec2 & pt_begin, const glm::vec2 & pt_end, const Polygon2D * poly, glm::vec2 * result);
 bool distance_segment_pt(glm::vec2 & seg1, glm::vec2 & seg2, glm::vec2 & pt, float * dist, glm::vec2 * proj);
 float distance_poly_pt(Polygon2D * poly, glm::vec2 & pt, glm::vec2 * proj);
 float distance_poly_segment(Polygon2D * poly, glm::vec2 & seg1, glm::vec2 & seg2, glm::vec2 * proj);

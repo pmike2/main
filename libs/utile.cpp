@@ -205,15 +205,31 @@ void trim(string &s) {
 }
 
 
-// remplace glm::to_string en supprimant les 0 dans les décimales
-std::string glm_to_string(glm::vec2 v) {
-	std::string str_x= std::to_string (v.x);
-	str_x.erase(str_x.find_last_not_of('0')+ 1, std::string::npos);
-	str_x.erase(str_x.find_last_not_of('.')+ 1, std::string::npos);
+vector<string> split(const string & s, const string & delimiter) {
+	size_t pos_start= 0, pos_end, delim_len= delimiter.length();
+	string token;
+	vector<string> res;
 
-	std::string str_y= std::to_string (v.y);
-	str_y.erase(str_y.find_last_not_of('0')+ 1, std::string::npos);
-	str_y.erase(str_y.find_last_not_of('.')+ 1, std::string::npos);
+	while ((pos_end= s.find(delimiter, pos_start))!= string::npos) {
+		token= s.substr(pos_start, pos_end- pos_start);
+		pos_start= pos_end+ delim_len;
+		res.push_back(token);
+	}
+
+	res.push_back(s.substr(pos_start));
+	return res;
+}
+
+
+// remplace glm::to_string en supprimant les 0 dans les décimales
+string glm_to_string(glm::vec2 v) {
+	string str_x= to_string (v.x);
+	str_x.erase(str_x.find_last_not_of('0')+ 1, string::npos);
+	str_x.erase(str_x.find_last_not_of('.')+ 1, string::npos);
+
+	string str_y= to_string (v.y);
+	str_y.erase(str_y.find_last_not_of('0')+ 1, string::npos);
+	str_y.erase(str_y.find_last_not_of('.')+ 1, string::npos);
 
 	return "("+ str_x+ ", "+ str_y+ ")";
 }

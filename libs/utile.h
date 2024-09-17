@@ -47,6 +47,8 @@ void ltrim(std::string &s);
 void rtrim(std::string &s);
 void trim(std::string &s);
 
+std::vector<std::string> split(const std::string& s, const std::string& delimiter);
+
 std::string glm_to_string(glm::vec2 v);
 
 #endif

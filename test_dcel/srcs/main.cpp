@@ -10,112 +10,29 @@
 void test1() {
 	DCEL * dcel= new DCEL();
 	
-	/*DCEL_Vertex * v1= dcel->add_vertex(0.0f, 0.0f);
-	DCEL_Vertex * v2= dcel->add_vertex(1.0f, 0.0f);
-	DCEL_Vertex * v3= dcel->add_vertex(0.0f, 1.0f);
-	DCEL_Vertex * v4= dcel->add_vertex(1.0f, 3.0f);
-	DCEL_HalfEdge * e12= dcel->add_edge(v1, v2);
-	DCEL_HalfEdge * e23= dcel->add_edge(v2, v3);
-	DCEL_HalfEdge * e31= dcel->add_edge(v3, v1);
-	DCEL_HalfEdge * e24= dcel->add_edge(v2, v4);
-	DCEL_HalfEdge * e43= dcel->add_edge(v4, v3);
-	e12->set_next(e23);
-	e23->set_next(e31);
-	e31->set_next(e12);
-	e24->set_next(e43);
-	e43->set_next(e23->_twin);
-	e23->_twin->set_next(e24);
-
-	DCEL_Vertex * v5= dcel->add_vertex(5.0f, 5.0f);
-	DCEL_Vertex * v6= dcel->add_vertex(6.0f, 5.0f);
-	DCEL_Vertex * v7= dcel->add_vertex(5.0f, 6.0f);
-	DCEL_HalfEdge * e56= dcel->add_edge(v5, v6);
-	DCEL_HalfEdge * e67= dcel->add_edge(v6, v7);
-	DCEL_HalfEdge * e75= dcel->add_edge(v7, v5);
-	e56->set_next(e67);
-	e67->set_next(e75);
-	e75->set_next(e56);*/
-
-	/*DCEL_Vertex * v1= dcel->add_vertex(0.0f, 0.0f);
-	DCEL_Vertex * v2= dcel->add_vertex(1.0f, 0.0f);
-	DCEL_Vertex * v3= dcel->add_vertex(1.0f, 1.0f);
-	DCEL_Vertex * v4= dcel->add_vertex(0.0f, 1.0f);
-	DCEL_Vertex * v5= dcel->add_vertex(0.1f, 0.1f);
-	DCEL_Vertex * v6= dcel->add_vertex(0.2f, 0.2f);
-	DCEL_Vertex * v7= dcel->add_vertex(0.3f, 0.3f);
-	DCEL_Vertex * v8= dcel->add_vertex(0.4f, 0.4f);
-	DCEL_HalfEdge * e12= dcel->add_edge(v1, v2);
-	DCEL_HalfEdge * e23= dcel->add_edge(v2, v3);
-	DCEL_HalfEdge * e38= dcel->add_edge(v3, v8);
-	DCEL_HalfEdge * e87= dcel->add_edge(v8, v7);
-	DCEL_HalfEdge * e76= dcel->add_edge(v7, v6);
-	DCEL_HalfEdge * e65= dcel->add_edge(v6, v5);
-	DCEL_HalfEdge * e51= dcel->add_edge(v5, v1);
-	DCEL_HalfEdge * e34= dcel->add_edge(v3, v4);
-	DCEL_HalfEdge * e41= dcel->add_edge(v4, v1);
-	e12->set_next(e23);
-	e23->set_next(e38);
-	e38->set_next(e87);
-	e87->set_next(e76);
-	e76->set_next(e65);
-	e65->set_next(e51);
-	e51->set_next(e12);
-	e34->set_next(e41);
-	e41->set_next(e51->_twin);
-	e51->_twin->set_next(e65->_twin);
-	e65->_twin->set_next(e76->_twin);
-	e76->_twin->set_next(e87->_twin);
-	e87->_twin->set_next(e38->_twin);
-	e38->_twin->set_next(e34);*/
-
-	DCEL_Vertex * v1= dcel->add_vertex(0.0f, 0.0f);
-	DCEL_Vertex * v2= dcel->add_vertex(1.0f, 0.0f);
-	DCEL_Vertex * v3= dcel->add_vertex(1.0f, 1.0f);
-	DCEL_Vertex * v4= dcel->add_vertex(0.0f, 1.0f);
-	DCEL_Vertex * v5= dcel->add_vertex(0.5f, 0.5f);
-	DCEL_HalfEdge * e12= dcel->add_edge(v1, v2);
-	DCEL_HalfEdge * e25= dcel->add_edge(v2, v5);
-	DCEL_HalfEdge * e51= dcel->add_edge(v5, v1);
-	DCEL_HalfEdge * e23= dcel->add_edge(v2, v3);
-	DCEL_HalfEdge * e35= dcel->add_edge(v3, v5);
-	DCEL_HalfEdge * e34= dcel->add_edge(v3, v4);
-	DCEL_HalfEdge * e45= dcel->add_edge(v4, v5);
-	DCEL_HalfEdge * e41= dcel->add_edge(v4, v1);
-	e12->set_next(e25);
-	e25->set_next(e51);
-	e51->set_next(e12);
-	e23->set_next(e35);
-	e35->set_next(e25->_twin);
-	e25->_twin->set_next(e23);
-	e34->set_next(e45);
-	e45->set_next(e35->_twin);
-	e35->_twin->set_next(e34);
-	e41->set_next(e51->_twin);
-	e51->_twin->set_next(e45->_twin);
-	e45->_twin->set_next(e41);
-
-
-	std::cout << "create_faces_from_half_edges : " << dcel->create_faces_from_half_edges() << "\n";
-	std::cout << "add_unbounded_face : " << dcel->add_unbounded_face() << "\n";
-
-	//v5->get_incident_edges();
-	//std::cout << *e23 << " ; " << *e23->_next << "\n";
+	dcel->import("0,0 -> 1,0 -> 0,1 | 1,0 -> 1,3 -> 0,1 | 5,5 -> 6,5 -> 5,6");
+	dcel->make_valid();
+	dcel->add_bbox(-1.0, -1.0, 2.0, 2.0);
+	//std::vector<DCEL_HalfEdge *> edges= dcel->get_vertex(0, 0)->get_incident_edges();
+	dcel->make_valid();
+	//std::cout << *dcel;
 	//return;
 
-	//dcel->delete_edge(e23);
-	//dcel->delete_edge(e56);
-	//dcel->delete_edge(e76);
-	dcel->delete_edge(e25);
-	dcel->delete_edge(e35);
-	//dcel->delete_vertex(v5);
+	/*dcel->import("0,0 -> 1,0 -> 1,1 -> 0.4,0.4 -> 0.3,0.3 -> 0.2,0.2 -> 0.1,0.1 | 0,0 -> 0.1,0.1 -> 0.2,0.2 -> 0.3,0.3 -> 0.4,0.4 -> 1,1 -> 0,1");
+	dcel->make_valid();
+	dcel->delete_edge(dcel->get_edge(0.2, 0.2, 0.3, 0.3));
+	dcel->make_valid();*/
 
-	dcel->delete_disconnected_vertices();
-	dcel->create_faces_from_half_edges();
-
+	/*dcel->import("0,0 -> 1,0 -> 0.5,0.5 | 1,0 -> 1,1 -> 0.5,0.5 | 0.5,0.5 -> 1,1 -> 0,1 | 0,1 -> 0,0 -> 0.5,0.5");
+	dcel->make_valid();
+	dcel->delete_edge(dcel->get_edge(0.5, 0.5, 1.0, 0.0));
+	dcel->delete_vertex(dcel->get_vertex(0.5, 0.5));
+	dcel->make_valid();*/
 
 	//std::cout << *dcel;
-	std:: cout << "export HTML\n";
-	dcel->export_html("../data/test1.html", false, -0.1f, -0.1f, 1.1f, 1.1f);
+	float xmin, ymin, xmax, ymax;
+	dcel->bbox(&xmin, &ymin, &xmax, &ymax);
+	dcel->export_html("../data/test1.html", false, xmin- 0.1f, ymin- 0.1f, xmax+ 0.1f, ymax+ 0.1f);
 	
 	delete dcel;
 }
