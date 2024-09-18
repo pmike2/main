@@ -12,9 +12,11 @@ void test1() {
 	
 	dcel->import("0,0 -> 1,0 -> 0,1 | 1,0 -> 1,3 -> 0,1 | 5,5 -> 6,5 -> 5,6");
 	dcel->make_valid();
-	dcel->add_bbox(-1.0, -1.0, 2.0, 2.0);
+	dcel->add_bbox(0.1, -1.0, 2.0, 2.0);
+
 	//std::vector<DCEL_HalfEdge *> edges= dcel->get_vertex(0, 0)->get_incident_edges();
 	dcel->make_valid();
+	//dcel->get_vertex(1,3)->get_incident_edges();
 	//std::cout << *dcel;
 	//return;
 
@@ -32,6 +34,7 @@ void test1() {
 	//std::cout << *dcel;
 	float xmin, ymin, xmax, ymax;
 	dcel->bbox(&xmin, &ymin, &xmax, &ymax);
+	//std::cout << xmin << " ; " << ymin << " ; " << xmax << " ; " << ymax << "\n";
 	dcel->export_html("../data/test1.html", false, xmin- 0.1f, ymin- 0.1f, xmax+ 0.1f, ymax+ 0.1f);
 	
 	delete dcel;

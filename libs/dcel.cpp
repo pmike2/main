@@ -42,10 +42,11 @@ std::vector<DCEL_HalfEdge *> DCEL_Vertex::get_incident_edges() {
 
 		current= current->_next;
 
-		//std::cout << *current << "\n";
 		if (current== NULL) {
 			break;
 		}
+		//std::cout << *current << "\n";
+
 		if (current->destination()== this) {
 			//std::cout << "dst == this : " << *current << "\n";
 			current= current->_twin;
@@ -125,6 +126,20 @@ void DCEL_HalfEdge::set_previous(DCEL_HalfEdge * hedge) {
 	}
 	_previous= hedge;
 	
+}
+
+
+void DCEL_HalfEdge::set_origin(DCEL_Vertex * v) {
+	if (_origin!= NULL && _origin->_incident_edge== this) {
+		std::vector<DCEL_HalfEdge * > edges= _origin->get_incident_edges();
+		if (edges.size()> 1) {
+			_origin->_incident_edge= edges[1];
+		}
+		else {
+			_origin->_incident_edge= NULL;
+		}
+	}
+	_origin= v;
 }
 
 
@@ -417,7 +432,9 @@ void DCEL::delete_edge(DCEL_HalfEdge * he) {
 	}
 
 	// si l'origine de he ou he->_twin a comme _incident_edge he ou he->_twin, on cherche le edge suivant pour représenter _incident_edge
-	if (he->_origin->_incident_edge== he) {
+	he->set_origin(NULL);
+	he->_twin->set_origin(NULL);
+	/*if (he->_origin->_incident_edge== he) {
 		std::vector<DCEL_HalfEdge *> edges= he->_origin->get_incident_edges();
 		if (edges.size()< 2) {
 			he->_origin->_incident_edge= NULL;
@@ -434,7 +451,7 @@ void DCEL::delete_edge(DCEL_HalfEdge * he) {
 		else {
 			he->_twin->_origin->_incident_edge= edges[1];
 		}
-	}
+	}*/
 
 	/*std::cout << "he= " << *he << "\n";
 	std::cout << "he->_previous= " << *he->_previous << "\n";
@@ -505,7 +522,7 @@ bool DCEL::recreate_unbounded_face() {
 		bool found_no_next= false;
 		for (auto he : _half_edges) {
 			if (he->_next== NULL) {
-				//std::cout << *he << "\n";
+				//std::cout << "he->_next== NULL : " << *he << "\n";
 
 				found_no_next= true;
 				_unbounded_face->_inner_edges.push_back(he);
@@ -667,19 +684,25 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 		return true;
 	};
 
+	for (auto edge : _unbounded_face->get_edges()) {
+		edge->_incident_face= NULL;
+	}
+	_unbounded_face->_inner_edges.clear();
+
 	for (auto he : _half_edges) {
 		if (he->_origin!= NULL && he->destination()!= NULL && !in_bbox(he->_origin)) {
 			std::cout << *he << "\n";
 			if (in_bbox(he->destination())) {
 				std::cout << "dst in box\n";
 				he->set_tmp_data();
-				//he->_twin->set_tmp_data(glm::vec2(he->_origin->_x- he->destination()->_x, he->_origin->_y- he->destination()->_y));
 				if (he->_previous!= NULL) {
-					std::cout << "previous = " << *he->_previous << "\n";
-					he->_previous->set_tmp_data();
+					//std::cout << "previous = " << *he->_previous << "\n";
+					if (he->_previous->destination()!= NULL) {
+						he->_previous->set_tmp_data();
+					}
 					he->set_previous(NULL);
 				}
-				he->_origin= NULL;
+				he->set_origin(NULL);
 			}
 			else {
 				glm::vec2 result;
@@ -688,17 +711,23 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 				if (segment_intersects_poly(glm::vec2(he->_origin->_x, he->_origin->_y), glm::vec2(he->destination()->_x, he->destination()->_y), poly, &result)) {
 					std::cout << "inter\n";
 					he->set_tmp_data(glm::vec2(he->destination()->_x- he->_origin->_x, he->destination()->_y- he->_origin->_y), result);
-					//he->_twin->set_tmp_data(glm::vec2(he->_origin->_x- he->destination()->_x, he->_origin->_y- he->destination()->_y), result);
-					he->_origin= NULL;
-					he->_twin->_origin= NULL;
+
 					if (he->_previous!= NULL) {
-						he->_previous->_next= NULL;
-						he->_previous= NULL;
+						if (he->_previous->destination()!= NULL) {
+							he->_previous->set_tmp_data();
+						}
+						he->set_previous(NULL);
 					}
-					if (he->_next!= NULL) {
-						he->_next->_previous= NULL;
-						he->_next= NULL;
+					he->set_origin(NULL);
+
+					/*if (he->_next!= NULL) {
+						if (he->_next->destination()!= NULL) {
+							he->_next->set_tmp_data();
+						}
+						he->set_next(NULL);
 					}
+					he->set_origin(NULL);*/
+
 				} else {
 					std::cout << "del\n";
 					delete_edge(he);
@@ -839,11 +868,11 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 	}
 
 	// ne devrait pas arriver
-	for (auto he : _half_edges) {
+	/*for (auto he : _half_edges) {
 		if (he->_origin== NULL) {
-			std::cout << "HalfEdge sans origine\n";
+			std::cout << "HalfEdge sans origine : " << *he << "\n";
 		}
-	}
+	}*/
 
 	// tris dans le sens trigo en partant par le bas des intersections sur la bbox
 	sort(origin_bottom.begin(), origin_bottom.end(),

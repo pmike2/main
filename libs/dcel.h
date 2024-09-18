@@ -33,6 +33,7 @@ struct DCEL_HalfEdge {
 	void set_twin(DCEL_HalfEdge * hedge);
 	void set_next(DCEL_HalfEdge * hedge);
 	void set_previous(DCEL_HalfEdge * hedge);
+	void set_origin(DCEL_Vertex * v);
 	void set_tmp_data(glm::vec2 direction, glm::vec2 position);
 	void set_tmp_data(glm::vec2 direction);
 	void set_tmp_data();
