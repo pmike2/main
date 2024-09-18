@@ -78,6 +78,7 @@ public:
 	void delete_vertex(DCEL_Vertex * v);
 	void delete_edge(DCEL_HalfEdge * he);
 	void delete_face(DCEL_Face * face);
+	void delete_face_without_edges(DCEL_Face * face);
 	void clear();
 	bool recreate_unbounded_face();
 	bool create_faces_from_half_edges();

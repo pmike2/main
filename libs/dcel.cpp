@@ -36,8 +36,8 @@ std::vector<DCEL_HalfEdge *> DCEL_Vertex::get_incident_edges() {
 	
 	result.push_back(_incident_edge);
 	DCEL_HalfEdge * current= _incident_edge;
-	//std::cout << "-------------\n";
-	//std::cout << *current << "\n";
+	std::cout << "-------------\n";
+	std::cout << *current << "\n";
 	while(true) {
 
 		current= current->_next;
@@ -45,17 +45,17 @@ std::vector<DCEL_HalfEdge *> DCEL_Vertex::get_incident_edges() {
 		if (current== NULL) {
 			break;
 		}
-		//std::cout << *current << "\n";
+		std::cout << *current << "\n";
 
 		if (current->destination()== this) {
-			//std::cout << "dst == this : " << *current << "\n";
+			std::cout << "dst == this : " << *current << "\n";
 			current= current->_twin;
 			if (current== _incident_edge) {
 				break;
 			}
 			if (!current->_delete_mark) {
 				result.push_back(current);
-				//std::cout << "ajout : " << *current << "\n";
+				std::cout << "ajout : " << *current << "\n";
 			}
 		}
 	}
@@ -248,6 +248,7 @@ std::vector<DCEL_HalfEdge *> DCEL_Face::get_edges() {
 		DCEL_HalfEdge * first_edge= _outer_edge;
 		DCEL_HalfEdge * current_edge= _outer_edge;
 		do {
+			//std::cout << *current_edge << "\n";
 			result.push_back(current_edge);
 			current_edge= current_edge->_next;
 		} while (current_edge!= first_edge);
@@ -414,26 +415,19 @@ void DCEL::delete_edge(DCEL_HalfEdge * he) {
 			}
 		}
 	}
-
+std::cout << "deledge\n";
 	// si he ou he->_twin délimite une face finie on supprime cette face et on assigne NULL au _incident_face de tous les edges de cette face
 	if ((he->_incident_face!= NULL) && (he->_incident_face!= _unbounded_face)) {
-		std::vector<DCEL_HalfEdge *> edges= he->_incident_face->get_edges();
-		_faces.erase(std::remove(_faces.begin(), _faces.end(), he->_incident_face), _faces.end());
-		for (auto edge : edges) {
-			edge->_incident_face= NULL;
-		}
+		delete_face_without_edges(he->_incident_face);
 	}
 	if ((he->_twin->_incident_face!= NULL) && (he->_twin->_incident_face!= _unbounded_face)) {
-		std::vector<DCEL_HalfEdge *> edges= he->_twin->_incident_face->get_edges();
-		_faces.erase(std::remove(_faces.begin(), _faces.end(), he->_twin->_incident_face), _faces.end());
-		for (auto edge : edges) {
-			edge->_incident_face= NULL;
-		}
+		delete_face_without_edges(he->_twin->_incident_face);
 	}
 
 	// si l'origine de he ou he->_twin a comme _incident_edge he ou he->_twin, on cherche le edge suivant pour représenter _incident_edge
 	he->set_origin(NULL);
 	he->_twin->set_origin(NULL);
+	std::cout << "deledgefin\n";
 	/*if (he->_origin->_incident_edge== he) {
 		std::vector<DCEL_HalfEdge *> edges= he->_origin->get_incident_edges();
 		if (edges.size()< 2) {
@@ -500,6 +494,21 @@ void DCEL::delete_face(DCEL_Face * face) {
 	//_half_edges.erase(std::remove_if(_half_edges.begin(), _half_edges.begin(), [](DCEL_HalfEdge * e){return e->_delete_mark== true;}), _half_edges.end());
 	//_faces.erase(std::remove(_faces.begin(), _faces.end(), face), _faces.end());
 	face->_delete_mark= true;
+}
+
+
+void DCEL::delete_face_without_edges(DCEL_Face * face) {
+	if (face== NULL) {
+		return;
+	}
+	
+	std::vector<DCEL_HalfEdge *> edges= face->get_edges();
+	
+	//_faces.erase(std::remove(_faces.begin(), _faces.end(), face), _faces.end());
+	face->_delete_mark= true;
+	for (auto edge : edges) {
+		edge->_incident_face= NULL;
+	}
 }
 
 
@@ -695,6 +704,7 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 			if (in_bbox(he->destination())) {
 				std::cout << "dst in box\n";
 				he->set_tmp_data();
+				delete_face_without_edges(he->_incident_face);
 				if (he->_previous!= NULL) {
 					//std::cout << "previous = " << *he->_previous << "\n";
 					if (he->_previous->destination()!= NULL) {
@@ -731,6 +741,7 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 				} else {
 					std::cout << "del\n";
 					delete_edge(he);
+					std::cout << "delfin\n";
 				}
 			}
 		}
