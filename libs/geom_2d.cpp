@@ -186,6 +186,42 @@ bool segment_intersects_poly(const glm::vec2 & pt_begin, const glm::vec2 & pt_en
 }
 
 
+// version multi où on récupère toutes les intersections
+bool segment_intersects_poly_multi(const glm::vec2 & pt_begin, const glm::vec2 & pt_end, const Polygon2D * poly, vector<glm::vec2> * result) {
+	if ((pt_begin.x< poly->_aabb->_pos.x) && (pt_end.x< poly->_aabb->_pos.x)) {
+		return false;
+	}
+	if ((pt_begin.x> poly->_aabb->_pos.x+ poly->_aabb->_size.x) && (pt_end.x> poly->_aabb->_pos.x+ poly->_aabb->_size.x)) {
+		return false;
+	}
+	if ((pt_begin.y< poly->_aabb->_pos.y) && (pt_end.y< poly->_aabb->_pos.y)) {
+		return false;
+	}
+	if ((pt_begin.y> poly->_aabb->_pos.y+ poly->_aabb->_size.y) && (pt_end.y> poly->_aabb->_pos.y+ poly->_aabb->_size.y)) {
+		return false;
+	}
+
+	float min_dist= FLT_MAX;
+	bool is_inter= false;
+	glm::vec2 inter(0.0f);
+	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+		glm::vec2 pt1= poly->_pts[i];
+		glm::vec2 pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
+		
+		if (segment_intersects_segment(pt1, pt2, pt_begin, pt_end, &inter)) {
+			float dist2= glm::distance2(pt_begin, inter);
+			if (dist2< min_dist) {
+				is_inter= true;
+				min_dist= dist2;
+				if (result!= NULL) {
+					result->push_back(inter);
+				}
+			}
+		}
+	}
+	return is_inter;
+}
+
 // d(pt, [seg1, seg2])
 bool distance_segment_pt(glm::vec2 & seg1, glm::vec2 & seg2, glm::vec2 & pt, float * dist, glm::vec2 * proj) {
 	float seg_norm2= glm::distance2(seg1, seg2);

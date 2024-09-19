@@ -26,7 +26,6 @@ struct DCEL_Vertex {
 
 struct DCEL_HalfEdge {
 	DCEL_HalfEdge();
-	//DCEL_HalfEdge(DCEL_Vertex * origin);
 	~DCEL_HalfEdge();
 	DCEL_Vertex * destination();
 	DCEL_Face * opposite_face();
