@@ -6,6 +6,11 @@
 #include <vector>
 #include <utility>
 
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+
+#include "geom_2d.h"
+
 
 struct DCEL_HalfEdge;
 struct DCEL_Face;
@@ -13,12 +18,12 @@ struct DCEL_Face;
 
 struct DCEL_Vertex {
 	DCEL_Vertex();
-	DCEL_Vertex(float x, float y);
+	DCEL_Vertex(const glm::vec2 & coords);
 	~DCEL_Vertex();
 	std::vector<DCEL_HalfEdge *> get_incident_edges();
 	friend std::ostream & operator << (std::ostream & os, DCEL_Vertex & v);
 
-	float _x, _y;
+	glm::vec2 _coords;
 	DCEL_HalfEdge * _incident_edge; // 1 des edges ayant ce vertex comme origine
 	bool _delete_mark;
 };
@@ -33,8 +38,8 @@ struct DCEL_HalfEdge {
 	void set_next(DCEL_HalfEdge * hedge);
 	void set_previous(DCEL_HalfEdge * hedge);
 	void set_origin(DCEL_Vertex * v);
-	void set_tmp_data(glm::vec2 direction, glm::vec2 position);
-	void set_tmp_data(glm::vec2 direction);
+	void set_tmp_data(const glm::vec2 & direction, const glm::vec2 & position);
+	void set_tmp_data(const glm::vec2 & direction);
 	void set_tmp_data();
 	friend std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e);
 
@@ -43,10 +48,8 @@ struct DCEL_HalfEdge {
 	DCEL_HalfEdge * _next;
 	DCEL_HalfEdge * _previous;
 	DCEL_Face * _incident_face;
-	float _dx;
-	float _dy;
-	float _tmp_x;
-	float _tmp_y;
+	glm::vec2 _tmp_direction;
+	glm::vec2 _tmp_position;
 	bool _delete_mark;
 };
 
@@ -55,9 +58,12 @@ struct DCEL_Face {
 	DCEL_Face();
 	~DCEL_Face();
 	std::vector<DCEL_Vertex *> get_vertices();
-	std::vector<DCEL_HalfEdge *> get_edges();
+	Polygon2D * get_polygon();
+	std::vector<DCEL_HalfEdge *> get_outer_edges();
+	std::vector<DCEL_HalfEdge *> get_inner_edges();
 	std::vector<DCEL_Face *> get_adjacent_faces();
-	std::pair<float , float> get_gravity_center();
+	glm::vec2 get_gravity_center();
+	bool ccw();
 	friend std::ostream & operator << (std::ostream & os, DCEL_Face & f);
 
 	DCEL_HalfEdge * _outer_edge; // 1 des edges délimitant la face; NULL pour la face infinie
@@ -71,7 +77,7 @@ class DCEL {
 public:
 	DCEL();
 	~DCEL();
-	DCEL_Vertex * add_vertex(float x, float y);
+	DCEL_Vertex * add_vertex(const glm::vec2 & coords);
 	DCEL_HalfEdge * add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2);
 	DCEL_Face * add_face(DCEL_HalfEdge * outer_edge=NULL);
 	void delete_vertex(DCEL_Vertex * v);
@@ -79,17 +85,22 @@ public:
 	void delete_face(DCEL_Face * face);
 	void delete_face_without_edges(DCEL_Face * face);
 	void clear();
-	bool recreate_unbounded_face();
+	//void clear_unbounded_face();
+	void clear_next_equals_twin_edges();
+	void clear_unconnected_vertices();
+	bool create_nexts_from_twins();
 	bool create_faces_from_half_edges();
+	void check_ccw_faces();
+	void delete_markeds();
 	void make_valid();
 	bool is_empty();
-	bool add_bbox(float xmin, float ymin, float xmax, float ymax);
+	bool add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max);
 	bool is_valid();
 	void import(std::string s);
-	DCEL_Vertex * get_vertex(float x, float y);
-	DCEL_HalfEdge * get_edge(float x_ori, float y_ori, float x_dst, float y_dst);
-	void bbox(float * xmin, float * ymin, float * xmax, float * ymax);
-	void export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax, const std::vector<glm::vec2> & sites=std::vector<glm::vec2>());
+	DCEL_Vertex * get_vertex(const glm::vec2 & coords);
+	DCEL_HalfEdge * get_edge(const glm::vec2 & ori, const glm::vec2 & dst);
+	void bbox(glm::vec2 * bbox_min, glm::vec2 * bbox_max);
+	void export_html(std::string html_path, bool simple, const glm::vec2 & bbox_min, const glm::vec2 & bbox_max, const std::vector<glm::vec2> & sites=std::vector<glm::vec2>());
 	friend std::ostream & operator << (std::ostream & os, DCEL & d);
 	
 	

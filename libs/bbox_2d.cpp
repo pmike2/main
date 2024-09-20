@@ -57,6 +57,10 @@ bool aabb_intersects_aabb(const AABB_2D * aabb_1, const AABB_2D * aabb_2) {
 	return ((aabb_1->_pos.x<= aabb_2->_pos.x+ aabb_2->_size.x) && (aabb_1->_pos.x+ aabb_1->_size.x>= aabb_2->_pos.x) && (aabb_1->_pos.y<= aabb_2->_pos.y+ aabb_2->_size.y) && (aabb_1->_pos.y+ aabb_1->_size.y>= aabb_2->_pos.y));
 }
 
+bool aabb_contains_aabb(const AABB_2D * big_aabb, const AABB_2D * small_aabb) {
+	return (big_aabb->_pos.x<= small_aabb->_pos.x && big_aabb->_pos.y<= small_aabb->_pos.y && big_aabb->_size.x>= small_aabb->_size.x && big_aabb->_size.y>= small_aabb->_size.y);
+}
+
 
 bool ray_intersects_aabb(const glm::vec2 & ray_origin, const glm::vec2 & ray_dir, const AABB_2D * aabb, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & t_hit_near) {
 	contact_pt.x= 0.0f;

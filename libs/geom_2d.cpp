@@ -58,8 +58,21 @@ bool is_pt_inside_poly(glm::vec2 & pt, Polygon2D * poly) {
 		) {
 			c= !c;
 		}
-  	}
-  	return c;
+	}
+	return c;
+}
+
+
+bool is_poly_inside_poly(Polygon2D * small_poly, Polygon2D * big_poly) {
+	if (!aabb_contains_aabb(big_poly->_aabb, small_poly->_aabb)) {
+		return false;
+	}
+	for (auto pt : small_poly->_pts) {
+		if (!is_pt_inside_poly(pt, big_poly)) {
+			return false;
+		}
+	}
+	return true;
 }
 
 
@@ -363,8 +376,37 @@ void convex_hull_2d(std::vector<glm::vec2> & pts) {
 }
 
 
-bool is_ccw(glm::vec2 & pt1, glm::vec2 & pt2, glm::vec2 & pt3) {
+bool is_ccw(const glm::vec2 & pt1, const glm::vec2 & pt2, const glm::vec2 & pt3) {
 	return (pt2.x- pt1.x)* (pt3.y- pt1.y)- (pt3.x- pt1.x)* (pt2.y- pt1.y)> 0.0f;
+}
+
+
+// cf https://en.wikipedia.org/wiki/Curve_orientation
+bool is_ccw(const vector<glm::vec2> & pts) {
+	float xmin= 1e6;
+	float ymin= 1e6;
+	int idx_min= 0;
+	for (int i=0; i<pts.size(); ++i) {
+		if (pts[i].x< xmin) {
+			xmin= pts[i].x;
+			ymin= pts[i].y;
+			idx_min= i;
+		}
+		else if (pts[i].x== xmin) {
+			ymin= pts[i].y;
+			idx_min= i;
+		}
+	}
+	// pts[idx_min] appartient forcément à l'enveloppe convexe
+	int idx_before= idx_min- 1;
+	if (idx_before== -1) {
+		idx_before= pts.size()- 1;
+	}
+	int idx_after= idx_min+ 1;
+	if (idx_after== pts.size()) {
+		idx_after= 0;
+	}
+	return is_ccw(pts[idx_before], pts[idx_min], pts[idx_after]);
 }
 
 

@@ -31,6 +31,7 @@ public:
 
 bool point_in_aabb(const glm::vec2 & pt, const AABB_2D * aabb);
 bool aabb_intersects_aabb(const AABB_2D * aabb_1, const AABB_2D * aabb_2);
+bool aabb_contains_aabb(const AABB_2D * big_aabb, const AABB_2D * small_aabb);
 bool ray_intersects_aabb(const glm::vec2 & ray_origin, const glm::vec2 & ray_dir, const AABB_2D * aabb, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & t_hit_near);
 
 

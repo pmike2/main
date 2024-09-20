@@ -4,21 +4,19 @@
 #include <cmath>
 #include <tuple>
 
-#define GLM_FORCE_RADIANS
-#include <glm/glm.hpp>
-
 #include "dcel.h"
-#include "geom_2d.h"
 #include "utile.h"
+
+#include <glm/gtx/norm.hpp>
 
 
 // ----------------------------------------------------------------------
-DCEL_Vertex::DCEL_Vertex() : _x(0.0f), _y(0.0f), _incident_edge(NULL), _delete_mark(false) {
+DCEL_Vertex::DCEL_Vertex() : _coords(glm::vec2(0.0f)), _incident_edge(NULL), _delete_mark(false) {
 
 }
 
 
-DCEL_Vertex::DCEL_Vertex(float x, float y) : _x(x), _y(y), _incident_edge(NULL), _delete_mark(false) {
+DCEL_Vertex::DCEL_Vertex(const glm::vec2 & coords) : _coords(coords), _incident_edge(NULL), _delete_mark(false) {
 
 }
 
@@ -31,36 +29,46 @@ DCEL_Vertex::~DCEL_Vertex() {
 // renvoie les hedges dont l'origine est le vertex
 std::vector<DCEL_HalfEdge *> DCEL_Vertex::get_incident_edges() {
 	bool verbose= false;
+	
+	if (verbose) {
+		std::cout << "DCEL_Vertex::get_incident_edges : v == " << *this << "\n";
+	}
+
 	std::vector<DCEL_HalfEdge *> result;
 	if (_incident_edge== NULL) {
+		if (verbose) {
+			std::cout << "DCEL_Vertex::get_incident_edges : _incident_edge== NULL\n";
+		}
 		return std::vector<DCEL_HalfEdge *>{};
 	}
 	
 	// _incident_edge est 1 des hedges concernés
+	if (verbose) {
+		std::cout << "DCEL_Vertex::get_incident_edges : init avec = " << *_incident_edge << "\n";
+	}
 	result.push_back(_incident_edge);
 	DCEL_HalfEdge * current= _incident_edge;
 
 	if (verbose) {
-		std::cout << "-------------\n";
-		std::cout << *current << "\n";
+		std::cout << "DCEL_Vertex::get_incident_edges : current = " << *current << "\n";
 	}
 	while(true) {
 		current= current->_next;
 
 		// ne devrait pas arriver si DCEL::make_valid() a été appelé
 		if (current== NULL) {
-			std::cout << "DCEL_Vertex::get_incident_edges current== NULL\n";
+			std::cerr << "ERR : DCEL_Vertex::get_incident_edges : current == NULL\n";
 			break;
 		}
 
 		if (verbose) {
-			std::cout << "current = " << *current << "\n";
+			std::cout << "DCEL_Vertex::get_incident_edges : current = " << *current << "\n";
 		}
 
 		// on parcourt tous les edges de la face et quand destination() == this on prend le twin et on enchaine sur une autre face
 		if (current->destination()== this) {
 			if (verbose) {
-				std::cout << "dst == this : " << *current << " ; ajout de : " << *current->_twin << "\n";
+				std::cout << "DCEL_Vertex::get_incident_edges : dst == this : " << *current << " ; ajout de : " << *current->_twin << "\n";
 			}
 			current= current->_twin;
 
@@ -77,14 +85,14 @@ std::vector<DCEL_HalfEdge *> DCEL_Vertex::get_incident_edges() {
 
 
 std::ostream & operator << (std::ostream & os, DCEL_Vertex & v) {
-	os << "(" << v._x << " ; " << v._y << ")";
+	os << "(" << v._coords.x << " ; " << v._coords.y << ")";
 	return os;
 }
 
 
 // ----------------------------------------------------------------------
 DCEL_HalfEdge::DCEL_HalfEdge() : 
-_origin(NULL), _twin(NULL), _next(NULL), _previous(NULL), _incident_face(NULL), _dx(0.0f), _dy(0.0f), _tmp_x(0.0f), _tmp_y(0.0f), _delete_mark(false)
+_origin(NULL), _twin(NULL), _next(NULL), _previous(NULL), _incident_face(NULL), _tmp_direction(glm::vec2(0.0f)), _tmp_position(glm::vec2(0.0f)), _delete_mark(false)
 {
 
 }
@@ -98,7 +106,7 @@ DCEL_HalfEdge::~DCEL_HalfEdge() {
 // renvoie le vertex destination
 DCEL_Vertex * DCEL_HalfEdge::destination() {
 	if (_twin== NULL) {
-		std::cout << "DCEL_HalfEdge::destination() : _twin == NULL\n";
+		std::cerr << "ERR : DCEL_HalfEdge::destination() : _twin == NULL\n";
 		return NULL;
 	}
 	return _twin->_origin;
@@ -108,7 +116,7 @@ DCEL_Vertex * DCEL_HalfEdge::destination() {
 // renvoie la face opposée
 DCEL_Face * DCEL_HalfEdge::opposite_face() {
 	if (_twin== NULL) {
-		std::cout << "DCEL_HalfEdge::opposite_face() : _twin == NULL\n";
+		std::cerr << "ERR : DCEL_HalfEdge::opposite_face() : _twin == NULL\n";
 	}
 	return _twin->_incident_face;
 }
@@ -167,40 +175,32 @@ void DCEL_HalfEdge::set_origin(DCEL_Vertex * v) {
 
 
 // maj des données temporaires
-void DCEL_HalfEdge::set_tmp_data(glm::vec2 direction, glm::vec2 position) {
-	_dx= direction.x;
-	_dy= direction.y;
-	_tmp_x= position.x;
-	_tmp_y= position.y;
+void DCEL_HalfEdge::set_tmp_data(const glm::vec2 & direction, const glm::vec2 & position) {
+	_tmp_direction= direction;
+	_tmp_position= position;
 	if (_twin!= NULL) {
-		_twin->_dx= -_dx;
-		_twin->_dy= -_dy;
-		_twin->_tmp_x= _tmp_x;
-		_twin->_tmp_y= _tmp_y;
+		_twin->_tmp_direction= -_tmp_direction;
+		_twin->_tmp_position= -_tmp_position;
 	}
 }
 
 
-void DCEL_HalfEdge::set_tmp_data(glm::vec2 direction) {
-	_dx= direction.x;
-	_dy= direction.y;
+void DCEL_HalfEdge::set_tmp_data(const glm::vec2 & direction) {
+	_tmp_direction= direction;
 	if (_twin!= NULL) {
-		_twin->_dx= -direction.x;
-		_twin->_dy= -direction.y;
+		_twin->_tmp_direction= -_tmp_direction;
 	}
 }
 
 
 void DCEL_HalfEdge::set_tmp_data() {
 	if (_origin== NULL || destination()== NULL) {
-		std::cout << "set_tmp_data() impossible !\n";
+		std::cerr << "ERR : DCEL_HalfEdge::set_tmp_data() impossible !\n";
 		return;
 	}
-	_dx= destination()->_x- _origin->_x;
-	_dy= destination()->_y- _origin->_y;
+	_tmp_direction= destination()->_coords- _origin->_coords;
 	if (_twin!= NULL) {
-		_twin->_dx= -_dx;
-		_twin->_dy= -_dy;
+		_twin->_tmp_direction= -_tmp_direction;
 	}
 }
 
@@ -241,10 +241,10 @@ DCEL_Face::~DCEL_Face() {
 std::vector<DCEL_Vertex *> DCEL_Face::get_vertices() {
 	std::vector<DCEL_Vertex *> result;
 
-	std::vector<DCEL_HalfEdge *> edges= get_edges();
+	std::vector<DCEL_HalfEdge *> edges= get_outer_edges();
 	for (auto edge : edges) {
 		if (edge->_origin== NULL) {
-			std::cout << "DCEL_Face::get_vertices() : edge->_origin== NULL\n";
+			std::cerr << "ERR : DCEL_Face::get_vertices() : edge->_origin== NULL\n";
 			continue;
 		}
 		result.push_back(edge->_origin);
@@ -254,36 +254,43 @@ std::vector<DCEL_Vertex *> DCEL_Face::get_vertices() {
 }
 
 
-// renvoie la liste des edges de la face
-std::vector<DCEL_HalfEdge *> DCEL_Face::get_edges() {
-	std::vector<DCEL_HalfEdge *> result;
+// renvoie la liste des outer edges de la face
+std::vector<DCEL_HalfEdge *> DCEL_Face::get_outer_edges() {
+	if (_unbounded) {
+		return std::vector<DCEL_HalfEdge *>{};
+	}
 
-	if (!_unbounded) {
-		DCEL_HalfEdge * first_edge= _outer_edge;
-		DCEL_HalfEdge * current_edge= _outer_edge;
+	std::vector<DCEL_HalfEdge *> result;
+	DCEL_HalfEdge * first_edge= _outer_edge;
+	DCEL_HalfEdge * current_edge= _outer_edge;
+	do {
+		if (current_edge== NULL) {
+			std::cerr << "ERR : DCEL_Face::get_outer_edges() : current_edge== NULL\n";
+			break;
+		}
+		result.push_back(current_edge);
+		current_edge= current_edge->_next;
+	} while (current_edge!= first_edge);
+
+	return result;
+}
+
+
+// renvoie la liste des inner edges de la face
+std::vector<DCEL_HalfEdge *> DCEL_Face::get_inner_edges() {
+	std::vector<DCEL_HalfEdge *> result;
+	// on concatène tous les inner edges
+	for (auto inner_edge : _inner_edges) {
+		DCEL_HalfEdge * first_edge= inner_edge;
+		DCEL_HalfEdge * current_edge= inner_edge;
 		do {
 			if (current_edge== NULL) {
-				std::cout << "DCEL_Face::get_edges() : current_edge== NULL\n";
+				std::cerr << "ERR : DCEL_Face::get_inner_edges() : current_edge== NULL\n";
 				break;
 			}
 			result.push_back(current_edge);
 			current_edge= current_edge->_next;
 		} while (current_edge!= first_edge);
-	}
-	else {
-		// dans le cas unbounded on concatène tous les edges des trous
-		for (auto edge : _inner_edges) {
-			DCEL_HalfEdge * first_edge= edge;
-			DCEL_HalfEdge * current_edge= edge;
-			do {
-				if (current_edge== NULL) {
-					std::cout << "DCEL_Face::get_edges() : current_edge== NULL\n";
-					break;
-				}
-				result.push_back(current_edge);
-				current_edge= current_edge->_next;
-			} while (current_edge!= first_edge);
-		}
 	}
 
 	return result;
@@ -297,7 +304,7 @@ std::vector<DCEL_Face *> DCEL_Face::get_adjacent_faces() {
 	DCEL_HalfEdge * current_edge= _outer_edge;
 	do {
 		if (current_edge== NULL) {
-			std::cout << "DCEL_Face::get_adjacent_faces() : current_edge== NULL\n";
+			std::cerr << "ERR : DCEL_Face::get_adjacent_faces() : current_edge== NULL\n";
 			break;
 		}
 		DCEL_Face * face= current_edge->opposite_face();
@@ -314,17 +321,35 @@ std::vector<DCEL_Face *> DCEL_Face::get_adjacent_faces() {
 
 
 // renvoie le centre de gravité, utile pour le html
-std::pair<float , float> DCEL_Face::get_gravity_center() {
-	float x= 0.0f;
-	float y= 0.0f;
+glm::vec2 DCEL_Face::get_gravity_center() {
+	glm::vec2 result(0.0f);
 	std::vector<DCEL_Vertex *> vertices= get_vertices();
 	for (auto v : vertices) {
-		x+= v->_x;
-		y+= v->_y;
+		result+= v->_coords;
 	}
-	x/= vertices.size();
-	y/= vertices.size();
-	return std::make_pair(x, y);
+	result/= vertices.size();
+	return result;
+}
+
+
+Polygon2D * DCEL_Face::get_polygon() {
+	std::vector<glm::vec2> pts;
+	for (auto v : get_vertices()) {
+		pts.push_back(v->_coords);
+	}
+	Polygon2D * poly= new Polygon2D();
+	poly->set_points(pts);
+	return poly;
+}
+
+
+// renvoie True si la face est en counterclockwise
+bool DCEL_Face::ccw() {
+	std::vector<glm::vec2> pts;
+	for (auto v : get_vertices()) {
+		pts.push_back(v->_coords);
+	}
+	return is_ccw(pts);
 }
 
 
@@ -332,14 +357,25 @@ std::ostream & operator << (std::ostream & os, DCEL_Face & f) {
 	os << "face _unbounded = " << f._unbounded << "\n";
 	if (!f._unbounded) {
 		os << "outer_edge = " << *f._outer_edge << "\n";
+		std::vector<DCEL_HalfEdge *> outer_edges= f.get_outer_edges();
+		os << "outer edges.size = " << outer_edges.size() << "\n";
+		for (auto edge : outer_edges) {
+			os << *edge;
+			if (edge!= outer_edges.back()) {
+				os << " | ";
+			}
+		}
 	}
 	else {
 		os << "inner_edges.size = " << f._inner_edges.size() << "\n";
-	}
-	std::vector<DCEL_HalfEdge *> edges= f.get_edges();
-	os << "edges.size = " << edges.size() << "\n";
-	for (auto edge : edges) {
-		os << *edge << " || ";
+		std::vector<DCEL_HalfEdge *> inner_edges= f.get_inner_edges();
+		os << "inner_edges.size (total) = " << inner_edges.size() << "\n";
+		for (auto edge : inner_edges) {
+			os << *edge;
+			if (edge!= inner_edges.back()) {
+				os << " | ";
+			}
+		}
 	}
 	return os;
 }
@@ -371,9 +407,9 @@ DCEL::~DCEL() {
 }
 
 
-// ajout d'un sommet (x, y)
-DCEL_Vertex * DCEL::add_vertex(float x, float y) {
-	DCEL_Vertex * v= new DCEL_Vertex(x, y);
+// ajout d'un sommet
+DCEL_Vertex * DCEL::add_vertex(const glm::vec2 & coords) {
+	DCEL_Vertex * v= new DCEL_Vertex(coords);
 	_vertices.push_back(v);
 	return v;
 }
@@ -405,7 +441,7 @@ DCEL_Face * DCEL::add_face(DCEL_HalfEdge * outer_edge) {
 	if (outer_edge!= NULL) {
 		face->_outer_edge= outer_edge;
 		if (outer_edge->_incident_face!= NULL) {
-			std::cout << "DCEL::add_face : outer_edge->_incident_face!= NULL\n";
+			std::cerr << "ERR : DCEL::add_face : outer_edge->_incident_face!= NULL\n";
 		}
 	}
 	_faces.push_back(face);
@@ -416,7 +452,7 @@ DCEL_Face * DCEL::add_face(DCEL_HalfEdge * outer_edge) {
 // suppression d'un sommet
 void DCEL::delete_vertex(DCEL_Vertex * v) {
 	if (v== NULL) {
-		std::cout << "delete_vertex  : v== NULL\n";
+		std::cerr << "ERR : DCEL::delete_vertex  : v== NULL\n";
 		return;
 	}
 
@@ -429,7 +465,7 @@ void DCEL::delete_vertex(DCEL_Vertex * v) {
 // suppression d'un edge, ie de 2 half-edges
 void DCEL::delete_edge(DCEL_HalfEdge * he) {
 	if (he== NULL) {
-		std::cout << "DCEL::delete_edge NULL\n";
+		std::cerr << "ERR : DCEL::delete_edge NULL\n";
 		return;
 	}
 
@@ -483,12 +519,12 @@ void DCEL::delete_edge(DCEL_HalfEdge * he) {
 // a mieux faire, ne gère pas les trous ...
 void DCEL::delete_face(DCEL_Face * face) {
 	if (face== NULL) {
-		std::cout << "DCEL::delete_face NULL\n";
+		std::cerr << "ERR : DCEL::delete_face NULL\n";
 		return;
 	}
 
 	if (face->_unbounded) {
-		std::cout << "DCEL::delete_face : on ne peut pas supprimer la face infinie\n";
+		std::cerr << "ERR : DCEL::delete_face : on ne peut pas supprimer la face infinie\n";
 		return;
 	}
 
@@ -511,18 +547,23 @@ void DCEL::delete_face(DCEL_Face * face) {
 // suppression d'une face en laissant les edges intacts
 void DCEL::delete_face_without_edges(DCEL_Face * face) {
 	if (face== NULL) {
-		std::cout << "DCEL::delete_face_without_edges NULL\n";
+		std::cerr << "ERR : DCEL::delete_face_without_edges NULL\n";
 		return;
 	}
 	
 	if (face->_unbounded) {
-		std::cout << "DCEL::delete_face_without_edges : on ne peut pas supprimer la face infinie\n";
+		std::cerr << "ERR : DCEL::delete_face_without_edges : on ne peut pas supprimer la face infinie\n";
 		return;
 	}
 
 	face->_delete_mark= true;
-	std::vector<DCEL_HalfEdge *> edges= face->get_edges();
-	for (auto edge : edges) {
+
+	std::vector<DCEL_HalfEdge *> outer_edges= face->get_outer_edges();
+	for (auto edge : outer_edges) {
+		edge->_incident_face= NULL;
+	}
+	std::vector<DCEL_HalfEdge *> inner_edges= face->get_inner_edges();
+	for (auto edge : inner_edges) {
 		edge->_incident_face= NULL;
 	}
 }
@@ -536,30 +577,68 @@ void DCEL::clear() {
 }
 
 
-// on recrée la face infinie
-bool DCEL::recreate_unbounded_face() {
-	// on reinitialise _unbounded_face
+/*void DCEL::clear_unbounded_face() {
 	for (auto edge : _unbounded_face->get_edges()) {
 		edge->_incident_face= NULL;
-		edge->_next= NULL;
-		edge->_previous= NULL;
 	}
 	_unbounded_face->_inner_edges.clear();
+}*/
 
+
+void DCEL::clear_next_equals_twin_edges() {
+	while (true) {
+		bool found_bad_edge= false;
+		for (auto edge : _half_edges) {
+			if (edge->_twin== edge->_next && !edge->_delete_mark) {
+				found_bad_edge= true;
+				delete_edge(edge);
+			}
+		}
+		if (!found_bad_edge) {
+			break;
+		}
+	}
+}
+
+
+void DCEL::clear_unconnected_vertices() {
+	bool verbose= false;
+
+	for (auto v : _vertices) {
+		if (verbose) {
+			std::cout << "DCEL::clear_unconnected_vertices : v = " << *v << "\n";
+		}
+		std::vector<DCEL_HalfEdge * > edges= v->get_incident_edges();
+		bool connected= false;
+		for (auto e : edges) {
+			if (e->_delete_mark== false) {
+				connected= true;
+				break;
+			}
+		}
+		if (!connected) {
+			if (verbose) {
+				std::cout << "DCEL::clear_unconnected_vertices : v->_delete_mark= true : " << *v << "\n";
+			}
+			v->_delete_mark= true;
+		}
+	}
+}
+
+
+bool DCEL::create_nexts_from_twins() {
 	// on cherche les hedges qui n'ont pas de next
 	while (true) {
-		bool found_no_next= false;
+		bool found= false;
 		for (auto he : _half_edges) {
 			if (he->_next== NULL) {
-
-				found_no_next= true;
-				_unbounded_face->_inner_edges.push_back(he);
+				found= true;
 				DCEL_HalfEdge * first_he= he;
 				DCEL_HalfEdge * current_he= he;
 				DCEL_HalfEdge * next_he= NULL;
 				do {
 					if (current_he->_twin->_previous== NULL) {
-						std::cout << "DCEL::recreate_unbounded_face : current_he->_twin->_previous== NULL : current_he = " << *current_he << " ; twin = " << *current_he->_twin << "\n";
+						std::cerr << "ERR : DCEL::create_nexts_from_twins : current_he->_twin->_previous== NULL : current_he = " << *current_he << " ; twin = " << *current_he->_twin << "\n";
 						return false;
 					}
 					next_he= current_he->_twin->_previous->_twin;
@@ -567,14 +646,12 @@ bool DCEL::recreate_unbounded_face() {
 						next_he= next_he->_previous->_twin;
 					}
 					current_he->set_next(next_he);
-					current_he->_incident_face= _unbounded_face;
 					current_he= next_he;
-
 				} while (current_he!= first_he);
 				break;
 			}
 		}
-		if (!found_no_next) {
+		if (!found) {
 			break;
 		}
 	}
@@ -584,17 +661,23 @@ bool DCEL::recreate_unbounded_face() {
 
 // création des faces à partir des hedges qui n'ont pas de face associée
 bool DCEL::create_faces_from_half_edges() {
+	bool verbose= true;
+
 	bool found_unattached_he= false;
+	
 	while (true) {
 		found_unattached_he= false;
 		for (auto he : _half_edges) {
 			if (he->_incident_face== NULL) {
+				if (verbose) {
+					std::cout << "DCEL::create_faces_from_half_edges : he->_incident_face== NULL : " << *he << "\n";
+				}
 				found_unattached_he= true;
 				DCEL_Face * face= add_face(he);
 				DCEL_HalfEdge * he2= he;
 				do {
 					if (he2->_next== NULL) {
-						std::cout << "DCEL::create_faces_from_half_edges : face non close\n";
+						std::cerr << "ERR : DCEL::create_faces_from_half_edges : face non close\n";
 						return false;
 					}
 					he2->_incident_face= face;
@@ -610,42 +693,109 @@ bool DCEL::create_faces_from_half_edges() {
 }
 
 
+// gestion trous et face infinie
+void DCEL::check_ccw_faces() {
+	bool verbose= true;
+	
+	for (auto f : _faces) {
+		f->_inner_edges.clear();
+	}
+
+	for (auto f : _faces) {
+		if (f== _unbounded_face) {
+			continue;
+		}
+
+		if (!f->ccw()) {
+			if (verbose) {
+				std::cout << "DCEL::check_ccw_faces face ccw =\n" << *f << "\n";
+			}
+			bool is_hole= false;
+			Polygon2D * fpoly= f->get_polygon();
+			for (auto f2 : _faces) {
+				if (f2== _unbounded_face || f2== f || !f2->ccw()) {
+					continue;
+				}
+				Polygon2D * fpoly2= f2->get_polygon();
+				if (is_poly_inside_poly(fpoly, fpoly2)) {
+					if (verbose) {
+						std::cout << "DCEL::check_ccw_faces face inside :\n" << *f << "\n";
+					}
+					is_hole= true;
+					f2->_inner_edges.push_back(f->_outer_edge);
+					break;
+				}
+			}
+			// trou de la face infinie
+			if (!is_hole) {
+				if (verbose) {
+					std::cout << "DCEL::check_ccw_faces face inside infinite face:\n";
+				}
+				_unbounded_face->_inner_edges.push_back(f->_outer_edge);
+			}
+			
+			f->_delete_mark= true;
+		}
+	}
+}
+
+
+// suppression des _delete_mark à True
+void DCEL::delete_markeds() {
+	_vertices.erase(std::remove_if(_vertices.begin(), _vertices.end(), [](DCEL_Vertex * v){return v->_delete_mark== true;}), _vertices.end());
+	_half_edges.erase(std::remove_if(_half_edges.begin(), _half_edges.end(), [](DCEL_HalfEdge * e){return e->_delete_mark== true;}), _half_edges.end());
+	_faces.erase(std::remove_if(_faces.begin(), _faces.end(), [](DCEL_Face * f){return f->_delete_mark== true;}), _faces.end());
+}
+
+
 // on rend valide le DCEL après l'avoir modifié avec des ajouts ou des suppressions
 void DCEL::make_valid() {
-	// on recalcule la face infinie
-	recreate_unbounded_face();
+	bool verbose= true;
+
+	// on renseigne les hedges qui n'ont pas de next à partir de leurs twins
+	if (verbose) {
+		std::cout << "make_valid : create_nexts_from_twins\n";
+	}
+	create_nexts_from_twins();
 
 	// on supprime les edges e où e->_next == e->_twin qui ont pu être créés par delete_edge
-	while (true) {
-		bool found_bad_edge= false;
-		for (auto edge : _half_edges) {
-			if (edge->_twin== edge->_next && !edge->_delete_mark) {
-				found_bad_edge= true;
-				delete_edge(edge);
-			}
-		}
-		if (!found_bad_edge) {
-			break;
-		}
+	if (verbose) {
+		std::cout << "make_valid : clear_next_equals_twin_edges\n";
 	}
-
-	// suppression réelle, jusqu'ici on ne faisait que _delete_mark= true
-	_half_edges.erase(std::remove_if(_half_edges.begin(), _half_edges.end(), [](DCEL_HalfEdge * e){return e->_delete_mark== true;}), _half_edges.end());
+	clear_next_equals_twin_edges();
 
 	// on supprime les sommets qui ne sont connectés à aucun edge
-	for (auto v : _vertices) {
-		if (v->get_incident_edges().size()== 0) {
-			v->_delete_mark= true;
-		}
+	if (verbose) {
+		std::cout << "make_valid : clear_unconnected_vertices\n";
 	}
+	clear_unconnected_vertices();
 	
-	_vertices.erase(std::remove_if(_vertices.begin(), _vertices.end(), [](DCEL_Vertex * v){return v->_delete_mark== true;}), _vertices.end());
-	_faces.erase(std::remove_if(_faces.begin(), _faces.end(), [](DCEL_Face * f){return f->_delete_mark== true;}), _faces.end());
-	
-	//std::cout << _vertices.size() << " ; " << _half_edges.size() << " ; " << _faces.size() << "\n";
+	// on vide la face infinie
+	/*if (verbose) {
+		std::cout << "make_valid : clear_unbounded_face\n";
+	}
+	clear_unbounded_face();*/
+
+	// suppression réelle, jusqu'ici on ne faisait que _delete_mark= true
+	if (verbose) {
+		std::cout << "make_valid : delete_markeds\n";
+	}
+	delete_markeds();
 
 	// on crée les faces des edges qui n'ont pas encore de face
+	if (verbose) {
+		std::cout << "make_valid : create_faces_from_half_edges\n";
+	}
 	create_faces_from_half_edges();
+
+	if (verbose) {
+		std::cout << "make_valid : check_ccw_faces\n";
+	}
+	check_ccw_faces();
+
+	if (verbose) {
+		std::cout << "make_valid : FIN : n_vertices = " << _vertices.size() << " ; n_edges = " << _half_edges.size() << " ; n_faces = " << _faces.size() << "\n";
+	}
 }
 
 
@@ -656,15 +806,15 @@ bool DCEL::is_empty() {
 
 
 // ajout d'une bounding box qui peut en fait rogner sur le DCEL
-bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
+bool DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 	bool verbose= false;
 
 	// si vide on crée un carré de taille 1
 	if (is_empty()) {
-		DCEL_Vertex * v1= add_vertex(0.0f, 0.0f);
-		DCEL_Vertex * v2= add_vertex(1.0f, 0.0f);
-		DCEL_Vertex * v3= add_vertex(1.0f, 1.0f);
-		DCEL_Vertex * v4= add_vertex(0.0f, 1.0f);
+		DCEL_Vertex * v1= add_vertex(glm::vec2(0.0f, 0.0f));
+		DCEL_Vertex * v2= add_vertex(glm::vec2(1.0f, 0.0f));
+		DCEL_Vertex * v3= add_vertex(glm::vec2(1.0f, 1.0f));
+		DCEL_Vertex * v4= add_vertex(glm::vec2(0.0f, 1.0f));
 		DCEL_HalfEdge * he1= add_edge(v1, v2);
 		DCEL_HalfEdge * he2= add_edge(v2, v3);
 		DCEL_HalfEdge * he3= add_edge(v3, v4);
@@ -677,15 +827,15 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 	}
 
 	// un vertex est-il dans une emprise
-	auto in_bbox= [xmin, ymin, xmax, ymax](DCEL_Vertex * v) -> bool{
-		if ((v->_x< xmin) || (v->_x> xmax) || (v->_y< ymin) || (v->_y> ymax)) {
+	auto in_bbox= [bbox_min, bbox_max](DCEL_Vertex * v) -> bool{
+		if ((v->_coords.x< bbox_min.x) || (v->_coords.x> bbox_max.x) || (v->_coords.y< bbox_min.y) || (v->_coords.y> bbox_max.y)) {
 			return false;
 		}
 		return true;
 	};
 
 	// la nouvelle face infinie va devenir la bbox, donc on reinit l'ancienne mais on garde les liens previous / next
-	for (auto edge : _unbounded_face->get_edges()) {
+	for (auto edge : _unbounded_face->get_inner_edges()) {
 		edge->_incident_face= NULL;
 	}
 	_unbounded_face->_inner_edges.clear();
@@ -696,12 +846,12 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 	for (auto he : _half_edges) {
 		if (he->_origin!= NULL && he->destination()!= NULL && !in_bbox(he->_origin)) {
 			if (verbose) {
-				std::cout << "add_bbox phase1 : he = " << *he << "\n";
+				std::cout << "DCEL::add_bbox phase1 : he = " << *he << "\n";
 			}
 			// on transforme en 1/2 droite
 			if (in_bbox(he->destination())) {
 				if (verbose) {
-					std::cout << "add_bbox phase1 : dst in box\n";
+					std::cout << "DCEL::add_bbox phase1 : dst in box\n";
 				}
 				he->set_tmp_data();
 				delete_face_without_edges(he->_incident_face);
@@ -714,14 +864,14 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 			else {
 				std::vector<glm::vec2> result;
 				Polygon2D * poly= new Polygon2D();
-				poly->set_rectangle(glm::vec2(xmin, ymin), glm::vec2(xmax- xmin, ymax- ymin));
+				poly->set_rectangle(bbox_min, bbox_max- bbox_min);
 				// le segment a ses extrémités en dehors de la bbox mais intersecte la bbox
-				if (segment_intersects_poly_multi(glm::vec2(he->_origin->_x, he->_origin->_y), glm::vec2(he->destination()->_x, he->destination()->_y), poly, &result) && result.size()> 1) {
+				if (segment_intersects_poly_multi(he->_origin->_coords, he->destination()->_coords, poly, &result) && result.size()> 1) {
 					if (verbose) {
-						std::cout << "add_bbox phase1 : intersection\n";
+						std::cout << "DCEL::add_bbox phase1 : intersection\n";
 					}
 					// on prend comme centre temporaire le milieu des 2 intersections avec la bbox
-					he->set_tmp_data(glm::vec2(he->destination()->_x- he->_origin->_x, he->destination()->_y- he->_origin->_y), 0.5f* (result[0]+ result[1]));
+					he->set_tmp_data(he->destination()->_coords- he->_origin->_coords, 0.5f* (result[0]+ result[1]));
 
 					if (he->_previous!= NULL) {
 						he->_previous->set_tmp_data();
@@ -743,10 +893,10 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 	// ------------------------------------------------------------------------------------------------------------------------
 	// phase 2 : création des nouveaux sommets intersections des droites et 1/2 droites avec la bbox
 	// ajout des sommets de la bbox
-	DCEL_Vertex * bottom_left_corner= add_vertex(xmin, ymin);
-	DCEL_Vertex * bottom_right_corner= add_vertex(xmax, ymin);
-	DCEL_Vertex * top_left_corner= add_vertex(xmin, ymax);
-	DCEL_Vertex * top_right_corner= add_vertex(xmax, ymax);
+	DCEL_Vertex * bottom_left_corner= add_vertex(bbox_min);
+	DCEL_Vertex * bottom_right_corner= add_vertex(glm::vec2(bbox_max.x, bbox_min.y));
+	DCEL_Vertex * top_left_corner= add_vertex(glm::vec2(bbox_min.x, bbox_max.y));
+	DCEL_Vertex * top_right_corner= add_vertex(bbox_max);
 
 	std::vector<DCEL_HalfEdge *> origin_top;
 	std::vector<DCEL_HalfEdge *> origin_bottom;
@@ -758,50 +908,47 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 	// boucle sur les edges qui n'ont pas d'origine mais une destination et cherche l'intersection du twin avec la bbox
 	for (auto he : _half_edges) {
 		if ((he->_origin== NULL) && (he->_twin->_origin!= NULL)) {
-			glm::vec2 origin(he->_twin->_origin->_x, he->_twin->_origin->_y);
-			glm::vec2 direction(he->_twin->_dx, he->_twin->_dy);
-
 			if (verbose) {
-				std::cout << "add_bbox phase2 : he = " << *he << "\n";
+				std::cout << "DCEL::add_bbox phase2 : he = " << *he << "\n";
 			}
 
-			is_inter= ray_intersects_segment(origin, direction,
-				glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y), glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y),
+			is_inter= ray_intersects_segment(he->_twin->_origin->_coords, he->_twin->_tmp_direction,
+				bottom_left_corner->_coords, bottom_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter.x, inter.y);
+				he->_origin= add_vertex(inter);
 				origin_bottom.push_back(he);
 				continue;
 			}
 
-			is_inter= ray_intersects_segment(origin, direction,
-				glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y), glm::vec2(top_right_corner->_x, top_right_corner->_y),
+			is_inter= ray_intersects_segment(he->_twin->_origin->_coords, he->_twin->_tmp_direction,
+				bottom_right_corner->_coords, top_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter.x, inter.y);
+				he->_origin= add_vertex(inter);
 				origin_right.push_back(he);
 				continue;
 			}
 
-			is_inter= ray_intersects_segment(origin, direction,
-				glm::vec2(top_right_corner->_x, top_right_corner->_y), glm::vec2(top_left_corner->_x, top_left_corner->_y),
+			is_inter= ray_intersects_segment(he->_twin->_origin->_coords, he->_twin->_tmp_direction,
+				top_right_corner->_coords, top_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter.x, inter.y);
+				he->_origin= add_vertex(inter);
 				origin_top.push_back(he);
 				continue;
 			}
 
-			is_inter= ray_intersects_segment(origin, direction,
-				glm::vec2(top_left_corner->_x, top_left_corner->_y), glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y),
+			is_inter= ray_intersects_segment(he->_twin->_origin->_coords, he->_twin->_tmp_direction,
+				top_left_corner->_coords, bottom_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter.x, inter.y);
+				he->_origin= add_vertex(inter);
 				origin_left.push_back(he);
 				continue;
 			}
 
-			std::cout << "add_bbox phase2 pas d'intersection trouvée he = " << *he << "\n";
+			std::cerr<< "ERR : DCEL::add_bbox phase2 pas d'intersection trouvée he = " << *he << "\n";
 			return false;
 		}
 	}
@@ -809,67 +956,63 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 	// boucle sur les edges qui n'ont ni origine ni destination et cherche les intersections de la droite dans les 2 sens avec la bbox
 	for (auto he : _half_edges) {
 		if ((he->_origin== NULL) && (he->_twin->_origin== NULL)) {
-			glm::vec2 origin(he->_tmp_x, he->_tmp_y);
-			glm::vec2 direction(he->_dx, he->_dy);
-			glm::vec2 twin_direction(-he->_dx, -he->_dy);
-
-			is_inter= ray_intersects_segment(origin, direction,
-				glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y), glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y),
+			is_inter= ray_intersects_segment(he->_tmp_position, he->_tmp_direction,
+				bottom_left_corner->_coords, bottom_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_twin->_origin= add_vertex(inter.x, inter.y);
+				he->_twin->_origin= add_vertex(inter);
 				origin_bottom.push_back(he->_twin);
 			}
-			is_inter= ray_intersects_segment(origin, twin_direction,
-				glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y), glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y),
+			is_inter= ray_intersects_segment(he->_tmp_position, he->_twin->_tmp_direction,
+				bottom_left_corner->_coords, bottom_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter.x, inter.y);
+				he->_origin= add_vertex(inter);
 				origin_bottom.push_back(he);
 			}
 
-			is_inter= ray_intersects_segment(origin, direction,
-				glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y), glm::vec2(top_right_corner->_x, top_right_corner->_y),
+			is_inter= ray_intersects_segment(he->_tmp_position, he->_tmp_direction,
+				bottom_right_corner->_coords, top_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_twin->_origin= add_vertex(inter.x, inter.y);
+				he->_twin->_origin= add_vertex(inter);
 				origin_right.push_back(he->_twin);
 			}
-			is_inter= ray_intersects_segment(origin, twin_direction,
-				glm::vec2(bottom_right_corner->_x, bottom_right_corner->_y), glm::vec2(top_right_corner->_x, top_right_corner->_y),
+			is_inter= ray_intersects_segment(he->_tmp_position, he->_twin->_tmp_direction,
+				bottom_right_corner->_coords, top_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter.x, inter.y);
+				he->_origin= add_vertex(inter);
 				origin_right.push_back(he);
 			}
 
-			is_inter= ray_intersects_segment(origin, direction,
-				glm::vec2(top_right_corner->_x, top_right_corner->_y), glm::vec2(top_left_corner->_x, top_left_corner->_y),
+			is_inter= ray_intersects_segment(he->_tmp_position, he->_tmp_direction,
+				top_right_corner->_coords, top_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_twin->_origin= add_vertex(inter.x, inter.y);
+				he->_twin->_origin= add_vertex(inter);
 				origin_top.push_back(he->_twin);
 			}
-			is_inter= ray_intersects_segment(origin, twin_direction,
-				glm::vec2(top_right_corner->_x, top_right_corner->_y), glm::vec2(top_left_corner->_x, top_left_corner->_y),
+			is_inter= ray_intersects_segment(he->_tmp_position, he->_twin->_tmp_direction,
+				top_right_corner->_coords, top_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter.x, inter.y);
+				he->_origin= add_vertex(inter);
 				origin_top.push_back(he);
 			}
 
-			is_inter= ray_intersects_segment(origin, direction,
-				glm::vec2(top_left_corner->_x, top_left_corner->_y), glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y),
+			is_inter= ray_intersects_segment(he->_tmp_position, he->_tmp_direction,
+				top_left_corner->_coords, bottom_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_twin->_origin= add_vertex(inter.x, inter.y);
+				he->_twin->_origin= add_vertex(inter);
 				origin_left.push_back(he->_twin);
 			}
-			is_inter= ray_intersects_segment(origin, twin_direction,
-				glm::vec2(top_left_corner->_x, top_left_corner->_y), glm::vec2(bottom_left_corner->_x, bottom_left_corner->_y),
+			is_inter= ray_intersects_segment(he->_tmp_position, he->_twin->_tmp_direction,
+				top_left_corner->_coords, bottom_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter.x, inter.y);
+				he->_origin= add_vertex(inter);
 				origin_left.push_back(he);
 			}
 		}
@@ -878,22 +1021,22 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 	// tris dans le sens trigo en partant par le bas des intersections sur la bbox
 	sort(origin_bottom.begin(), origin_bottom.end(),
 	[](const DCEL_HalfEdge * a, const DCEL_HalfEdge * b) -> bool {
-		return a->_origin->_x< b->_origin->_x;
+		return a->_origin->_coords.x< b->_origin->_coords.x;
 	});
 
 	sort(origin_right.begin(), origin_right.end(),
 	[](const DCEL_HalfEdge * a, const DCEL_HalfEdge * b) -> bool {
-		return a->_origin->_y< b->_origin->_y;
+		return a->_origin->_coords.y< b->_origin->_coords.y;
 	});
 
 	sort(origin_top.begin(), origin_top.end(),
 	[](const DCEL_HalfEdge * a, const DCEL_HalfEdge * b) -> bool {
-		return a->_origin->_x> b->_origin->_x;
+		return a->_origin->_coords.x> b->_origin->_coords.x;
 	});
 
 	sort(origin_left.begin(), origin_left.end(),
 	[](const DCEL_HalfEdge * a, const DCEL_HalfEdge * b) -> bool {
-		return a->_origin->_y> b->_origin->_y;
+		return a->_origin->_coords.y> b->_origin->_coords.y;
 	});
 
 	DCEL_HalfEdge * bbox_he= NULL;
@@ -987,7 +1130,9 @@ bool DCEL::add_bbox(float xmin, float ymin, float xmax, float ymax) {
 
 // est-ce que le DCEL s'autointersecte
 bool DCEL::is_valid() {
+	const float EPS= 1e-7;
 	glm::vec2 inter;
+	
 	for (auto he1 : _half_edges) {
 		for (auto he2 : _half_edges) {
 			if (he1== he2) {
@@ -1001,15 +1146,10 @@ bool DCEL::is_valid() {
 			if ((he1_destination== NULL) || (he2_destination== NULL)) {
 				continue;
 			}
-			if (segment_intersects_segment(
-				glm::vec2(he1->_origin->_x, he1->_origin->_y), glm::vec2(he1_destination->_x, he1_destination->_y),
-				glm::vec2(he2->_origin->_x, he2->_origin->_y), glm::vec2(he2_destination->_x, he2_destination->_y),
-				&inter, true, true)) {
+			if (segment_intersects_segment(he1->_origin->_coords, he1_destination->_coords,	he2->_origin->_coords, he2_destination->_coords, &inter, true, true)) {
 				if (
-					((he1->_origin->_x- inter.x)* (he1->_origin->_x- inter.x)+ (he1->_origin->_y- inter.y)* (he1->_origin->_y- inter.y)> 1e-6)
-				&&  ((he2->_origin->_x- inter.x)* (he2->_origin->_x- inter.x)+ (he2->_origin->_y- inter.y)* (he2->_origin->_y- inter.y)> 1e-6)
-				&&  ((he1_destination->_x- inter.x)* (he1_destination->_x- inter.x)+ (he1_destination->_y- inter.y)* (he1_destination->_y- inter.y)> 1e-6)
-				&&  ((he2_destination->_x- inter.x)* (he2_destination->_x- inter.x)+ (he2_destination->_y- inter.y)* (he2_destination->_y- inter.y)> 1e-6)
+					glm::distance2(he1->_origin->_coords, inter)< EPS || glm::distance2(he2->_origin->_coords, inter)< EPS ||
+					glm::distance2(he1_destination->_coords, inter)< EPS || glm::distance2(he2_destination->_coords, inter)< EPS
 				) {
 					std::cout << "DCEL not_valid : " << *he1 << " || " << *he2 << "\n";
 					return false;
@@ -1043,7 +1183,7 @@ void DCEL::import(std::string s) {
 			float y= std::stof(coords[1]);
 			DCEL_Vertex * v= NULL;
 			for (auto vv : _vertices) {
-				if ((vv->_x- x)* (vv->_x- x)+ (vv->_y- y)* (vv->_y- y)< EPS) {
+				if ((vv->_coords.x- x)* (vv->_coords.x- x)+ (vv->_coords.y- y)* (vv->_coords.y- y)< EPS) {
 					if (verbose) {
 						std::cout << "import : found vertex : " << "x=" << x << " ; y=" << y << "\n";
 					}
@@ -1055,7 +1195,7 @@ void DCEL::import(std::string s) {
 				if (verbose) {
 					std::cout << "import : new vertex : " << "x=" << x << " ; y=" << y << "\n";
 				}
-				v= add_vertex(x, y);
+				v= add_vertex(glm::vec2(x, y));
 			}
 			if (first_v== NULL) {
 				first_v= v;
@@ -1066,14 +1206,14 @@ void DCEL::import(std::string s) {
 					if (edge->_origin== last_v && edge->destination()== v) {
 						e= edge;
 						if (verbose) {
-							std::cout << "import : found edge : " << last_v->_x << " ; " << last_v->_y << " -> " << v->_x << " ; " << v->_y << "\n";
+							std::cout << "import : found edge : " << last_v->_coords.x << " ; " << last_v->_coords.y << " -> " << v->_coords.x << " ; " << v->_coords.y << "\n";
 						}
 						break;
 					}
 				}
 				if (e== NULL) {
 					if (verbose) {
-						std::cout << "import : new edge : " << last_v->_x << " ; " << last_v->_y << " -> " << v->_x << " ; " << v->_y << "\n";
+						std::cout << "import : new edge : " << last_v->_coords.x << " ; " << last_v->_coords.y << " -> " << v->_coords.x << " ; " << v->_coords.y << "\n";
 					}
 					e= add_edge(last_v, v);
 				}
@@ -1096,14 +1236,14 @@ void DCEL::import(std::string s) {
 			if (edge->_origin== last_v && edge->destination()== first_v) {
 				e= edge;
 				if (verbose) {
-					std::cout << "import : found last edge : " << last_v->_x << " ; " << last_v->_y << " -> " << first_v->_x << " ; " << first_v->_y << "\n";
+					std::cout << "import : found last edge : " << last_v->_coords.x << " ; " << last_v->_coords.y << " -> " << first_v->_coords.x << " ; " << first_v->_coords.y << "\n";
 				}
 				break;
 			}
 		}
 		if (e== NULL) {
 			if (verbose) {
-				std::cout << "import : new last edge : " << last_v->_x << " ; " << last_v->_y << " -> " << first_v->_x << " ; " << first_v->_y << "\n";
+				std::cout << "import : new last edge : " << last_v->_coords.x << " ; " << last_v->_coords.y << " -> " << first_v->_coords.x << " ; " << first_v->_coords.y << "\n";
 			}
 			e= add_edge(last_v, first_v);
 		}
@@ -1119,11 +1259,11 @@ void DCEL::import(std::string s) {
 }
 
 
-// renvoie si existe le vertex à (x, y)
-DCEL_Vertex * DCEL::get_vertex(float x, float y) {
+// renvoie si existe le vertex à coords
+DCEL_Vertex * DCEL::get_vertex(const glm::vec2 & coords) {
 	const float EPS= 1e-7;
 	for (auto v : _vertices) {
-		if ((v->_x- x)* (v->_x- x)+ (v->_y- y)* (v->_y- y)< EPS) {
+		if (glm::distance2(v->_coords, coords)< EPS) {
 			return v;
 		}
 	}
@@ -1131,10 +1271,10 @@ DCEL_Vertex * DCEL::get_vertex(float x, float y) {
 }
 
 
-// renvoie si possible le edge allant de (x_ori, y_ori) à (x_dst, y_dst)
-DCEL_HalfEdge * DCEL::get_edge(float x_ori, float y_ori, float x_dst, float y_dst) {
-	DCEL_Vertex * origin= get_vertex(x_ori, y_ori);
-	DCEL_Vertex * destination= get_vertex(x_dst, y_dst);
+// renvoie si possible le edge allant de ori à dst
+DCEL_HalfEdge * DCEL::get_edge(const glm::vec2 & ori, const glm::vec2 & dst) {
+	DCEL_Vertex * origin= get_vertex(ori);
+	DCEL_Vertex * destination= get_vertex(dst);
 	if (origin== NULL || destination== NULL) {
 		return NULL;
 	}
@@ -1148,35 +1288,37 @@ DCEL_HalfEdge * DCEL::get_edge(float x_ori, float y_ori, float x_dst, float y_ds
 
 
 // calcul des limites de vertices
-void DCEL::bbox(float * xmin, float * ymin, float * xmax, float * ymax) {
-	*xmin= 1e8; *ymin= 1e8; *xmax= -1e8; *ymax= -1e8;
+void DCEL::bbox(glm::vec2 * bbox_min, glm::vec2 * bbox_max) {
+	bbox_min->x= 1e8; bbox_min->y= 1e8; bbox_max->x= -1e8; bbox_max->y= -1e8;
 	for (auto v : _vertices) {
-		if (v->_x< *xmin) {
-			*xmin= v->_x;
+		if (v->_coords.x< bbox_min->x) {
+			bbox_min->x= v->_coords.x;
 		}
-		if (v->_x> *xmax) {
-			*xmax= v->_x;
+		if (v->_coords.x> bbox_max->x) {
+			bbox_max->x= v->_coords.x;
 		}
-		if (v->_y< *ymin) {
-			*ymin= v->_y;
+		if (v->_coords.y< bbox_min->y) {
+			bbox_min->y= v->_coords.y;
 		}
-		if (v->_y> *ymax) {
-			*ymax= v->_y;
+		if (v->_coords.y> bbox_max->y) {
+			bbox_max->y= v->_coords.y;
 		}
 	}
 }
 
 
 // export sous forme de html
-void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymin, float xmax, float ymax, const std::vector<glm::vec2> & sites) {
+void DCEL::export_html(std::string html_path, bool simple, const glm::vec2 & bbox_min, const glm::vec2 & bbox_max, const std::vector<glm::vec2> & sites) {
 	const unsigned int SVG_WIDTH= 1200;
 	const unsigned int SVG_HEIGHT= 700;
 	const float MARGIN_FACTOR= 1.5f;
-	const float VIEW_XMIN= (xmin- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
-	const float VIEW_YMIN= (ymin- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
+	const glm::vec2 VIEW_MIN= (bbox_min- 0.5f* (bbox_min+ bbox_max))* MARGIN_FACTOR+ 0.5f* (bbox_min+ bbox_max);
+	const glm::vec2 VIEW_MAX= (bbox_max- 0.5f* (bbox_min+ bbox_max))* MARGIN_FACTOR+ 0.5f* (bbox_min+ bbox_max);
+	// (xmin- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
+	/*const float VIEW_YMIN= (ymin- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
 	const float VIEW_XMAX= (xmax- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
-	const float VIEW_YMAX= (ymax- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
-	const float SIZE= std::max(xmax- xmin, ymax- ymin);
+	const float VIEW_YMAX= (ymax- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);*/
+	const float SIZE= std::max((VIEW_MAX- VIEW_MIN).x, (VIEW_MAX- VIEW_MIN).y);
 	const float POINT_RADIUS= 0.002f* SIZE;
 	const float SITE_POINT_RADIUS= 0.003f* SIZE;
 	const float DELTA_BUFFER= 0.01f* SIZE;
@@ -1184,7 +1326,7 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 	const float ARROW_SIZE_2= 0.01f* SIZE;
 	const float STROKE_WIDTH= 0.002f* SIZE;
 
-	auto y_html= [VIEW_YMIN, VIEW_YMAX](float y) -> float {return VIEW_YMIN+ VIEW_YMAX- y;};
+	auto y_html= [VIEW_MIN, VIEW_MAX](float y) -> float {return VIEW_MIN.y+ VIEW_MAX.y- y;};
 
 	std::ofstream f;
 	f.open(html_path);
@@ -1198,7 +1340,7 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 	f << "</style>\n</head>\n<body>\n";
 	f << "<svg width=\"" << SVG_WIDTH << "\" height=\"" << SVG_HEIGHT << "\" ";
 	// viewbox = xmin, ymin, width, height
-	f << "viewbox=\"" << VIEW_XMIN << " " << VIEW_YMIN << " " << VIEW_XMAX- VIEW_XMIN << " " << VIEW_YMAX- VIEW_YMIN << "\" ";
+	f << "viewbox=\"" << VIEW_MIN.x << " " << VIEW_MIN.y << " " << VIEW_MAX.x- VIEW_MIN.x << " " << VIEW_MAX.y- VIEW_MIN.y << "\" ";
 	f << "style=\"background-color:rgb(220,240,230)\"";
 	f << "\">\n";
 
@@ -1209,7 +1351,9 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 	}
 
 	for (auto face : _faces) {
-		std::vector<DCEL_HalfEdge *> edges= face->get_edges();
+		std::vector<DCEL_HalfEdge *> edges= face->get_outer_edges();
+		std::vector<DCEL_HalfEdge *> inner_edges= face->get_inner_edges();
+		edges.insert(edges.end(), inner_edges.begin(), inner_edges.end());
 
 		std::string str_color;
 		if (!simple) {
@@ -1223,16 +1367,16 @@ void DCEL::export_html(std::string html_path, bool simple, float xmin, float ymi
 			DCEL_Vertex * v1= edge->_origin;
 			DCEL_Vertex * v2= edge->destination();
 
-			float x1= v1->_x;
-			float y1= v1->_y;
-			float x2= v2->_x;
-			float y2= v2->_y;
+			float x1= v1->_coords.x;
+			float y1= v1->_coords.y;
+			float x2= v2->_coords.x;
+			float y2= v2->_coords.y;
 
 			// buffer inversé vers centre de gravité (moche mais bon)
 			if (!simple) {
-				std::pair<float, float> gravity_center= face->get_gravity_center();
-				float xg= gravity_center.first;
-				float yg= gravity_center.second;
+				glm::vec2 gravity_center= face->get_gravity_center();
+				float xg= gravity_center.x;
+				float yg= gravity_center.y;
 				float d1= sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
 				float d2= sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
 				if (!face->_unbounded) {
