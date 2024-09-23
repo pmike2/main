@@ -174,6 +174,23 @@ void DCEL_HalfEdge::set_origin(DCEL_Vertex * v) {
 }
 
 
+// set incident face
+void DCEL_HalfEdge::set_incident_face(DCEL_Face * f) {
+	if (f== NULL) {
+		std::cerr << "DCEL_HalfEdge::set_incident_face : face == NULL\n";
+	}
+	DCEL_HalfEdge * he= this;
+	do {
+		he->_incident_face= f;
+		he= he->_next;
+		if (he== NULL) {
+			std::cerr << "ERR : DCEL_HalfEdge::set_incident_face : face non close\n";
+			return;
+		}
+	} while (he!= this);
+}
+
+
 // maj des données temporaires
 void DCEL_HalfEdge::set_tmp_data(const glm::vec2 & direction, const glm::vec2 & position) {
 	_tmp_direction= direction;
@@ -348,6 +365,7 @@ bool DCEL_Face::ccw() {
 	std::vector<glm::vec2> pts;
 	for (auto v : get_vertices()) {
 		pts.push_back(v->_coords);
+		//std::cout << "DEBUG : " << glm_to_string(v->_coords) << "\n";
 	}
 	return is_ccw(pts);
 }
@@ -469,21 +487,17 @@ void DCEL::delete_edge(DCEL_HalfEdge * he) {
 		return;
 	}
 
-	// si he ou he->_twin délimite la face infinie on cherche le edge représentant he parmi _inner_edges et on le supprime
-	if (he->_incident_face== _unbounded_face) {
-		for (auto edge : he->_incident_face->_inner_edges) {
-			if (edge->_twin->_incident_face== he->_twin->_incident_face) {
-				he->_incident_face->_inner_edges.erase(std::remove(he->_incident_face->_inner_edges.begin(), he->_incident_face->_inner_edges.end(), edge), he->_incident_face->_inner_edges.end());
-				break;
-			}
+	// si he ou he->_twin délimite la face infinie OU si un trou dans une autre face on cherche le edge représentant he parmi _inner_edges et on le supprime
+	for (auto edge : he->_incident_face->_inner_edges) {
+		if (edge->_twin->_incident_face== he->_twin->_incident_face) {
+			he->_incident_face->_inner_edges.erase(std::remove(he->_incident_face->_inner_edges.begin(), he->_incident_face->_inner_edges.end(), edge), he->_incident_face->_inner_edges.end());
+			break;
 		}
 	}
-	if (he->_twin->_incident_face== _unbounded_face) {
-		for (auto edge : he->_twin->_incident_face->_inner_edges) {
-			if (edge->_twin->_incident_face== he->_incident_face) {
-				he->_twin->_incident_face->_inner_edges.erase(std::remove(he->_twin->_incident_face->_inner_edges.begin(), he->_twin->_incident_face->_inner_edges.end(), edge), he->_twin->_incident_face->_inner_edges.end());
-				break;
-			}
+	for (auto edge : he->_twin->_incident_face->_inner_edges) {
+		if (edge->_twin->_incident_face== he->_incident_face) {
+			he->_twin->_incident_face->_inner_edges.erase(std::remove(he->_twin->_incident_face->_inner_edges.begin(), he->_twin->_incident_face->_inner_edges.end(), edge), he->_twin->_incident_face->_inner_edges.end());
+			break;
 		}
 	}
 
@@ -626,7 +640,7 @@ void DCEL::clear_unconnected_vertices() {
 }
 
 
-bool DCEL::create_nexts_from_twins() {
+void DCEL::create_nexts_from_twins() {
 	// on cherche les hedges qui n'ont pas de next
 	while (true) {
 		bool found= false;
@@ -639,7 +653,7 @@ bool DCEL::create_nexts_from_twins() {
 				do {
 					if (current_he->_twin->_previous== NULL) {
 						std::cerr << "ERR : DCEL::create_nexts_from_twins : current_he->_twin->_previous== NULL : current_he = " << *current_he << " ; twin = " << *current_he->_twin << "\n";
-						return false;
+						return;
 					}
 					next_he= current_he->_twin->_previous->_twin;
 					while (next_he->_previous!= NULL) {
@@ -655,12 +669,11 @@ bool DCEL::create_nexts_from_twins() {
 			break;
 		}
 	}
-	return true;
 }
 
 
 // création des faces à partir des hedges qui n'ont pas de face associée
-bool DCEL::create_faces_from_half_edges() {
+void DCEL::create_faces_from_half_edges() {
 	bool verbose= true;
 
 	bool found_unattached_he= false;
@@ -674,22 +687,13 @@ bool DCEL::create_faces_from_half_edges() {
 				}
 				found_unattached_he= true;
 				DCEL_Face * face= add_face(he);
-				DCEL_HalfEdge * he2= he;
-				do {
-					if (he2->_next== NULL) {
-						std::cerr << "ERR : DCEL::create_faces_from_half_edges : face non close\n";
-						return false;
-					}
-					he2->_incident_face= face;
-					he2= he2->_next;
-				} while (he2!= he);
+				he->set_incident_face(face);
 			}
 		}
 		if (!found_unattached_he) {
 			break;
 		}
 	}
-	return true;
 }
 
 
@@ -697,9 +701,9 @@ bool DCEL::create_faces_from_half_edges() {
 void DCEL::check_ccw_faces() {
 	bool verbose= true;
 	
-	for (auto f : _faces) {
+	/*for (auto f : _faces) {
 		f->_inner_edges.clear();
-	}
+	}*/
 
 	for (auto f : _faces) {
 		if (f== _unbounded_face) {
@@ -719,19 +723,21 @@ void DCEL::check_ccw_faces() {
 				Polygon2D * fpoly2= f2->get_polygon();
 				if (is_poly_inside_poly(fpoly, fpoly2)) {
 					if (verbose) {
-						std::cout << "DCEL::check_ccw_faces face inside :\n" << *f << "\n";
+						std::cout << "DCEL::check_ccw_faces face inside :\n" << *f2 << "\n";
 					}
 					is_hole= true;
 					f2->_inner_edges.push_back(f->_outer_edge);
+					f->_outer_edge->set_incident_face(f2);
 					break;
 				}
 			}
 			// trou de la face infinie
 			if (!is_hole) {
 				if (verbose) {
-					std::cout << "DCEL::check_ccw_faces face inside infinite face:\n";
+					std::cout << "DCEL::check_ccw_faces face inside infinite face\n";
 				}
 				_unbounded_face->_inner_edges.push_back(f->_outer_edge);
+				f->_outer_edge->set_incident_face(_unbounded_face);
 			}
 			
 			f->_delete_mark= true;
@@ -754,19 +760,19 @@ void DCEL::make_valid() {
 
 	// on renseigne les hedges qui n'ont pas de next à partir de leurs twins
 	if (verbose) {
-		std::cout << "make_valid : create_nexts_from_twins\n";
+		std::cout << "DCEL::make_valid : create_nexts_from_twins\n";
 	}
 	create_nexts_from_twins();
 
 	// on supprime les edges e où e->_next == e->_twin qui ont pu être créés par delete_edge
 	if (verbose) {
-		std::cout << "make_valid : clear_next_equals_twin_edges\n";
+		std::cout << "DCEL::make_valid : clear_next_equals_twin_edges\n";
 	}
 	clear_next_equals_twin_edges();
 
 	// on supprime les sommets qui ne sont connectés à aucun edge
 	if (verbose) {
-		std::cout << "make_valid : clear_unconnected_vertices\n";
+		std::cout << "DCEL::make_valid : clear_unconnected_vertices\n";
 	}
 	clear_unconnected_vertices();
 	
@@ -778,23 +784,26 @@ void DCEL::make_valid() {
 
 	// suppression réelle, jusqu'ici on ne faisait que _delete_mark= true
 	if (verbose) {
-		std::cout << "make_valid : delete_markeds\n";
+		std::cout << "DCEL::make_valid : delete_markeds\n";
 	}
 	delete_markeds();
 
 	// on crée les faces des edges qui n'ont pas encore de face
 	if (verbose) {
-		std::cout << "make_valid : create_faces_from_half_edges\n";
+		std::cout << "DCEL::make_valid : create_faces_from_half_edges\n";
 	}
 	create_faces_from_half_edges();
 
 	if (verbose) {
-		std::cout << "make_valid : check_ccw_faces\n";
+		std::cout << "DCEL::make_valid : check_ccw_faces\n";
 	}
 	check_ccw_faces();
 
+	// il faut le refaire à cause de check_ccw_faces
+	delete_markeds();
+
 	if (verbose) {
-		std::cout << "make_valid : FIN : n_vertices = " << _vertices.size() << " ; n_edges = " << _half_edges.size() << " ; n_faces = " << _faces.size() << "\n";
+		std::cout << "DCEL::make_valid : FIN : n_vertices = " << _vertices.size() << " ; n_edges = " << _half_edges.size() << " ; n_faces = " << _faces.size() << "\n";
 	}
 }
 
@@ -806,7 +815,7 @@ bool DCEL::is_empty() {
 
 
 // ajout d'une bounding box qui peut en fait rogner sur le DCEL
-bool DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
+void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 	bool verbose= false;
 
 	// si vide on crée un carré de taille 1
@@ -823,7 +832,7 @@ bool DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 		he2->set_next(he3);
 		he3->set_next(he4);
 		he4->set_next(he1);
-		return true;
+		return;
 	}
 
 	// un vertex est-il dans une emprise
@@ -949,7 +958,7 @@ bool DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 			}
 
 			std::cerr<< "ERR : DCEL::add_bbox phase2 pas d'intersection trouvée he = " << *he << "\n";
-			return false;
+			return;
 		}
 	}
 
@@ -1123,8 +1132,6 @@ bool DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 	
 	// on clos la boucle
 	last_he->set_next(first_he);
-
-	return true;
 }
 
 

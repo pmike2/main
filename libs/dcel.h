@@ -38,6 +38,7 @@ struct DCEL_HalfEdge {
 	void set_next(DCEL_HalfEdge * hedge);
 	void set_previous(DCEL_HalfEdge * hedge);
 	void set_origin(DCEL_Vertex * v);
+	void set_incident_face(DCEL_Face * f);
 	void set_tmp_data(const glm::vec2 & direction, const glm::vec2 & position);
 	void set_tmp_data(const glm::vec2 & direction);
 	void set_tmp_data();
@@ -88,13 +89,13 @@ public:
 	//void clear_unbounded_face();
 	void clear_next_equals_twin_edges();
 	void clear_unconnected_vertices();
-	bool create_nexts_from_twins();
-	bool create_faces_from_half_edges();
+	void create_nexts_from_twins();
+	void create_faces_from_half_edges();
 	void check_ccw_faces();
 	void delete_markeds();
 	void make_valid();
 	bool is_empty();
-	bool add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max);
+	void add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max);
 	bool is_valid();
 	void import(std::string s);
 	DCEL_Vertex * get_vertex(const glm::vec2 & coords);
