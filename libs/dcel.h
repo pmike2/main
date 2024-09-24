@@ -93,6 +93,7 @@ public:
 	void create_faces_from_half_edges();
 	void check_ccw_faces();
 	void delete_markeds();
+	void set_edges_tmp_datas();
 	void make_valid();
 	bool is_empty();
 	void add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max);

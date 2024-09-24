@@ -28,7 +28,7 @@ DCEL_Vertex::~DCEL_Vertex() {
 
 // renvoie les hedges dont l'origine est le vertex
 std::vector<DCEL_HalfEdge *> DCEL_Vertex::get_incident_edges() {
-	bool verbose= true;
+	bool verbose= false;
 	
 	if (verbose) {
 		std::cout << "DCEL_Vertex::get_incident_edges : v == " << *this << "\n";
@@ -163,7 +163,7 @@ void DCEL_HalfEdge::set_origin(DCEL_Vertex * v) {
 	bool verbose= true;
 
 	// si this est l incident edge de v il faut chercher un autre hedge pour devenir le nouveau incident edge de v
-	if (_origin!= NULL && _origin->_incident_edge== this) {
+	/*if (_origin!= NULL && _origin->_incident_edge== this) {
 		if (verbose) {
 			std::cout << "DCEL_HalfEdge::set_origin : _origin->_incident_edge== this\n";
 		}
@@ -174,7 +174,11 @@ void DCEL_HalfEdge::set_origin(DCEL_Vertex * v) {
 		else {
 			_origin->_incident_edge= NULL;
 		}
+	}*/
+	if (_origin!= NULL && _origin->_incident_edge== this) {
+		_origin->_incident_edge= NULL;
 	}
+
 	_origin= v;
 }
 
@@ -216,11 +220,12 @@ void DCEL_HalfEdge::set_tmp_data(const glm::vec2 & direction) {
 
 
 void DCEL_HalfEdge::set_tmp_data() {
-	if (_origin== NULL || destination()== NULL) {
-		std::cerr << "ERR : DCEL_HalfEdge::set_tmp_data() impossible !\n";
-		return;
+	if (_origin!= NULL) {
+		_tmp_position= _origin->_coords;
 	}
-	_tmp_direction= destination()->_coords- _origin->_coords;
+	if (_origin!= NULL && destination()!= NULL) {
+		_tmp_direction= destination()->_coords- _origin->_coords;
+	}
 	if (_twin!= NULL) {
 		_twin->_tmp_direction= -_tmp_direction;
 	}
@@ -241,7 +246,7 @@ std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
 	else {
 		os << "NULL";
 	}
-	//os << " ; dx = " << e._dx << " ; dy = " << e._dy << " ; _tmp_x = " << e._tmp_x << " ; _tmp_y = " << e._tmp_y;
+	os << " ; _tmp_position = " << glm_to_string(e._tmp_position) << " ; _tmp_direction = " << glm_to_string(e._tmp_direction);
 	//os << " ; previous = " << e._previous << " ; next = " << e._next;
 
 	return os;
@@ -666,6 +671,17 @@ void DCEL::clear_unconnected_vertices() {
 	bool verbose= false;
 
 	for (auto v : _vertices) {
+		if (v->_incident_edge== NULL) {
+			for (auto e : _half_edges) {
+				if (e->destination()== v) {
+					v->_incident_edge= e->_twin;
+					break;
+				}
+			}
+		}
+	}
+
+	for (auto v : _vertices) {
 		if (verbose) {
 			std::cout << "DCEL::clear_unconnected_vertices : v = " << *v << "\n";
 		}
@@ -688,11 +704,17 @@ void DCEL::clear_unconnected_vertices() {
 
 
 void DCEL::create_nexts_from_twins() {
+	bool verbose= true;
+
 	// on cherche les hedges qui n'ont pas de next
 	while (true) {
 		bool found= false;
 		for (auto he : _half_edges) {
 			if (he->_next== NULL) {
+				if (verbose) {
+					std::cout << "DCEL::create_nexts_from_twins : he = " << *he << "\n";
+				}
+
 				found= true;
 				DCEL_HalfEdge * first_he= he;
 				DCEL_HalfEdge * current_he= he;
@@ -703,6 +725,11 @@ void DCEL::create_nexts_from_twins() {
 						return;
 					}
 					next_he= current_he->_twin->_previous->_twin;
+
+					if (verbose) {
+						std::cout << "DCEL::create_nexts_from_twins : next_he = " << *next_he << "\n";
+					}
+
 					while (next_he->_previous!= NULL) {
 						next_he= next_he->_previous->_twin;
 					}
@@ -801,9 +828,16 @@ void DCEL::delete_markeds() {
 }
 
 
+void DCEL::set_edges_tmp_datas() {
+	for (auto e : _half_edges) {
+		e->set_tmp_data();
+	}
+}
+
+
 // on rend valide le DCEL après l'avoir modifié avec des ajouts ou des suppressions
 void DCEL::make_valid() {
-	bool verbose= false;
+	bool verbose= true;
 
 	// on renseigne les hedges qui n'ont pas de next à partir de leurs twins
 	if (verbose) {
@@ -896,10 +930,12 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 	}
 	_unbounded_face->_inner_edges.clear();
 
+	set_edges_tmp_datas();
+
 	// ------------------------------------------------------------------------------------------------------------------------
 	// phase 1 : on supprime les hedges et vertices en dehors de la bbox et on transforme en demi-droite ceux qui ont 1 des 2
 	// extremités en dehors
-	for (auto he : _half_edges) {
+	/*for (auto he : _half_edges) {
 		if (he->_origin!= NULL && he->destination()!= NULL && !in_bbox(he->_origin)) {
 			if (verbose) {
 				std::cout << "DCEL::add_bbox phase1 : he = " << *he << "\n";
@@ -949,7 +985,7 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 				}
 			}
 		}
-	}
+	}*/
 
 	// ------------------------------------------------------------------------------------------------------------------------
 	// phase 2 : création des nouveaux sommets intersections des droites et 1/2 droites avec la bbox
@@ -966,18 +1002,28 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 	glm::vec2 inter;
 	bool is_inter;
 
-	// boucle sur les edges qui n'ont pas d'origine mais une destination et cherche l'intersection du twin avec la bbox
+	// edges qui n'ont pas d'origine mais une destination et cherche l'intersection du twin avec la bbox
 	for (auto he : _half_edges) {
-		if ((he->_origin== NULL) && (he->_twin->_origin!= NULL)) {
+		bool ori_in_bbox= false;
+		if (he->_origin!= NULL) {
+			ori_in_bbox= in_bbox(he->_origin);
+		}
+		
+		bool dst_in_bbox= false;
+		if (he->destination()!= NULL) {
+			dst_in_bbox= in_bbox(he->destination());
+		}
+
+		if (!ori_in_bbox && dst_in_bbox) {
 			if (verbose) {
-				std::cout << "DCEL::add_bbox phase2 : he = " << *he << "\n";
+				std::cout << "DCEL::add_bbox phase 2 !ori_in_bbox && dst_in_bbox : he = " << *he << "\n";
 			}
 
 			is_inter= ray_intersects_segment(he->_twin->_origin->_coords, he->_twin->_tmp_direction,
 				bottom_left_corner->_coords, bottom_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter);
+				he->set_origin(add_vertex(inter));
 				origin_bottom.push_back(he);
 				continue;
 			}
@@ -986,7 +1032,7 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 				bottom_right_corner->_coords, top_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter);
+				he->set_origin(add_vertex(inter));
 				origin_right.push_back(he);
 				continue;
 			}
@@ -995,7 +1041,7 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 				top_right_corner->_coords, top_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter);
+				he->set_origin(add_vertex(inter));
 				origin_top.push_back(he);
 				continue;
 			}
@@ -1004,31 +1050,33 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 				top_left_corner->_coords, bottom_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter);
+				he->set_origin(add_vertex(inter));
 				origin_left.push_back(he);
 				continue;
 			}
 
-			std::cerr<< "ERR : DCEL::add_bbox phase2 pas d'intersection trouvée he = " << *he << "\n";
+			std::cerr<< "ERR : DCEL::add_bbox phase 2 pas d'intersection trouvée he = " << *he << "\n";
 			return;
 		}
-	}
 
-	// boucle sur les edges qui n'ont ni origine ni destination et cherche les intersections de la droite dans les 2 sens avec la bbox
-	for (auto he : _half_edges) {
-		if ((he->_origin== NULL) && (he->_twin->_origin== NULL)) {
+		// edges qui n'ont ni origine ni destination et cherche les intersections de la droite dans les 2 sens avec la bbox
+		if (!ori_in_bbox && !dst_in_bbox) {
+			if (verbose) {
+				std::cout << "DCEL::add_bbox phase 2 !ori_in_bbox && !dst_in_bbox : he = " << *he << "\n";
+			}
+
 			is_inter= ray_intersects_segment(he->_tmp_position, he->_tmp_direction,
 				bottom_left_corner->_coords, bottom_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_twin->_origin= add_vertex(inter);
+				he->_twin->set_origin(add_vertex(inter));
 				origin_bottom.push_back(he->_twin);
 			}
 			is_inter= ray_intersects_segment(he->_tmp_position, he->_twin->_tmp_direction,
 				bottom_left_corner->_coords, bottom_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter);
+				he->set_origin(add_vertex(inter));
 				origin_bottom.push_back(he);
 			}
 
@@ -1036,14 +1084,14 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 				bottom_right_corner->_coords, top_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_twin->_origin= add_vertex(inter);
+				he->_twin->set_origin(add_vertex(inter));
 				origin_right.push_back(he->_twin);
 			}
 			is_inter= ray_intersects_segment(he->_tmp_position, he->_twin->_tmp_direction,
 				bottom_right_corner->_coords, top_right_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter);
+				he->set_origin(add_vertex(inter));
 				origin_right.push_back(he);
 			}
 
@@ -1051,14 +1099,14 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 				top_right_corner->_coords, top_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_twin->_origin= add_vertex(inter);
+				he->_twin->set_origin(add_vertex(inter));
 				origin_top.push_back(he->_twin);
 			}
 			is_inter= ray_intersects_segment(he->_tmp_position, he->_twin->_tmp_direction,
 				top_right_corner->_coords, top_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter);
+				he->set_origin(add_vertex(inter));
 				origin_top.push_back(he);
 			}
 
@@ -1066,17 +1114,21 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 				top_left_corner->_coords, bottom_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_twin->_origin= add_vertex(inter);
+				he->_twin->set_origin(add_vertex(inter));
 				origin_left.push_back(he->_twin);
 			}
 			is_inter= ray_intersects_segment(he->_tmp_position, he->_twin->_tmp_direction,
 				top_left_corner->_coords, bottom_left_corner->_coords,
 				&inter);
 			if (is_inter) {
-				he->_origin= add_vertex(inter);
+				he->set_origin(add_vertex(inter));
 				origin_left.push_back(he);
 			}
 		}
+	}
+
+	if (verbose) {
+		std::cout << "DCEL::add_bbox phase 3 : tri des intersections\n";
 	}
 
 	// tris dans le sens trigo en partant par le bas des intersections sur la bbox
@@ -1105,7 +1157,10 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 	DCEL_HalfEdge * first_he= NULL;
 
 	// ------------------------------------------------------------------------------------------------------------------------
-	// phase 3 : ajout des edges sur la bbox
+	if (verbose) {
+		std::cout << "DCEL::add_bbox phase 4 : ajout des edges sur la bbox\n";
+	}
+
 	for (int i=0; i<int(origin_bottom.size())- 1; ++i) {
 		bbox_he= add_edge(origin_bottom[i]->_origin, origin_bottom[i+ 1]->_origin);
 		origin_bottom[i]->_twin->set_next(bbox_he);
@@ -1127,7 +1182,9 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 		bbox_he->set_next(origin_left[i+ 1]);
 	}
 
-	// ajouts des edges entre les coins de la bbox et les segments de bbox déjà ajoutés
+	if (verbose) {
+		std::cout << "DCEL::add_bbox phase 5 : ajouts des edges entre les coins de la bbox et les segments de bbox déjà ajoutés\n";
+	}
 	if (!origin_bottom.empty()) {
 		bbox_he= add_edge(bottom_left_corner, origin_bottom[0]->_origin);
 		//last_he->set_next(bbox_he); // ici non last_he==NULL
