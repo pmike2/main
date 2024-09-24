@@ -28,7 +28,7 @@ DCEL_Vertex::~DCEL_Vertex() {
 
 // renvoie les hedges dont l'origine est le vertex
 std::vector<DCEL_HalfEdge *> DCEL_Vertex::get_incident_edges() {
-	bool verbose= false;
+	bool verbose= true;
 	
 	if (verbose) {
 		std::cout << "DCEL_Vertex::get_incident_edges : v == " << *this << "\n";
@@ -160,8 +160,13 @@ void DCEL_HalfEdge::set_previous(DCEL_HalfEdge * hedge) {
 
 // set origin ; v peut valoir NULL
 void DCEL_HalfEdge::set_origin(DCEL_Vertex * v) {
+	bool verbose= true;
+
 	// si this est l incident edge de v il faut chercher un autre hedge pour devenir le nouveau incident edge de v
 	if (_origin!= NULL && _origin->_incident_edge== this) {
+		if (verbose) {
+			std::cout << "DCEL_HalfEdge::set_origin : _origin->_incident_edge== this\n";
+		}
 		std::vector<DCEL_HalfEdge * > edges= _origin->get_incident_edges();
 		if (edges.size()> 1) {
 			_origin->_incident_edge= edges[1];
@@ -256,6 +261,8 @@ DCEL_Face::~DCEL_Face() {
 
 // renvoie la liste des vertices entourant la face
 std::vector<DCEL_Vertex *> DCEL_Face::get_vertices() {
+	bool verbose= false;
+
 	std::vector<DCEL_Vertex *> result;
 
 	std::vector<DCEL_HalfEdge *> edges= get_outer_edges();
@@ -264,6 +271,11 @@ std::vector<DCEL_Vertex *> DCEL_Face::get_vertices() {
 			std::cerr << "ERR : DCEL_Face::get_vertices() : edge->_origin== NULL\n";
 			continue;
 		}
+
+		if (verbose) {
+			std::cout << "DCEL_Face::get_vertices : ajout vertex : " << *edge->_origin << "\n";
+		}
+
 		result.push_back(edge->_origin);
 	}
 
@@ -273,6 +285,8 @@ std::vector<DCEL_Vertex *> DCEL_Face::get_vertices() {
 
 // renvoie la liste des outer edges de la face
 std::vector<DCEL_HalfEdge *> DCEL_Face::get_outer_edges() {
+	bool verbose= false;
+
 	if (_unbounded) {
 		return std::vector<DCEL_HalfEdge *>{};
 	}
@@ -282,9 +296,13 @@ std::vector<DCEL_HalfEdge *> DCEL_Face::get_outer_edges() {
 	DCEL_HalfEdge * current_edge= _outer_edge;
 	do {
 		if (current_edge== NULL) {
-			std::cerr << "ERR : DCEL_Face::get_outer_edges() : current_edge== NULL\n";
+			std::cerr << "ERR : DCEL_Face::get_outer_edges : current_edge== NULL\n";
 			break;
 		}
+		if (verbose) {
+			std::cout << "DCEL_Face::get_outer_edges : ajout edge : " << *current_edge << "\n";
+		}
+		
 		result.push_back(current_edge);
 		current_edge= current_edge->_next;
 	} while (current_edge!= first_edge);
@@ -362,10 +380,14 @@ Polygon2D * DCEL_Face::get_polygon() {
 
 // renvoie True si la face est en counterclockwise
 bool DCEL_Face::ccw() {
+	bool verbose= false;
+
 	std::vector<glm::vec2> pts;
 	for (auto v : get_vertices()) {
 		pts.push_back(v->_coords);
-		//std::cout << "DEBUG : " << glm_to_string(v->_coords) << "\n";
+		if (verbose) {
+			std::cout << "DCEL_Face::ccw : " << glm_to_string(v->_coords) << "\n";
+		}
 	}
 	return is_ccw(pts);
 }
@@ -482,30 +504,58 @@ void DCEL::delete_vertex(DCEL_Vertex * v) {
 
 // suppression d'un edge, ie de 2 half-edges
 void DCEL::delete_edge(DCEL_HalfEdge * he) {
+	bool verbose= true;
+	
 	if (he== NULL) {
 		std::cerr << "ERR : DCEL::delete_edge NULL\n";
 		return;
 	}
 
+	if (verbose) {
+		std::cout << "DCEL::delete_edge : he= " << *he << "\n";
+		/*std::cout << "DCEL::delete_edge : he->_previous= " << *he->_previous << "\n";
+		std::cout << "DCEL::delete_edge : he->_next= " << *he->_next << "\n";
+		std::cout << "DCEL::delete_edge : he->_twin= " << *he->_twin << "\n";
+		std::cout << "DCEL::delete_edge : he->_twin->_previous= " << *he->_twin->_previous << "\n";
+		std::cout << "DCEL::delete_edge : he->_twin->_next= " << *he->_twin->_next << "\n";*/
+	}
+
 	// si he ou he->_twin délimite la face infinie OU si un trou dans une autre face on cherche le edge représentant he parmi _inner_edges et on le supprime
-	for (auto edge : he->_incident_face->_inner_edges) {
-		if (edge->_twin->_incident_face== he->_twin->_incident_face) {
-			he->_incident_face->_inner_edges.erase(std::remove(he->_incident_face->_inner_edges.begin(), he->_incident_face->_inner_edges.end(), edge), he->_incident_face->_inner_edges.end());
-			break;
+	if (he->_incident_face!= NULL) {
+		for (auto edge : he->_incident_face->_inner_edges) {
+			if (edge->_twin->_incident_face== he->_twin->_incident_face) {
+				if (verbose) {
+					std::cout << "DCEL::delete_edge : inner_edges.erase\n";
+				}
+				he->_incident_face->_inner_edges.erase(std::remove(he->_incident_face->_inner_edges.begin(), he->_incident_face->_inner_edges.end(), edge), he->_incident_face->_inner_edges.end());
+				break;
+			}
 		}
 	}
-	for (auto edge : he->_twin->_incident_face->_inner_edges) {
-		if (edge->_twin->_incident_face== he->_incident_face) {
-			he->_twin->_incident_face->_inner_edges.erase(std::remove(he->_twin->_incident_face->_inner_edges.begin(), he->_twin->_incident_face->_inner_edges.end(), edge), he->_twin->_incident_face->_inner_edges.end());
-			break;
+
+	if (he->_twin->_incident_face!= NULL) {
+		for (auto edge : he->_twin->_incident_face->_inner_edges) {
+			if (edge->_twin->_incident_face== he->_incident_face) {
+				if (verbose) {
+					std::cout << "DCEL::delete_edge : twin inner_edges.erase\n";
+				}
+				he->_twin->_incident_face->_inner_edges.erase(std::remove(he->_twin->_incident_face->_inner_edges.begin(), he->_twin->_incident_face->_inner_edges.end(), edge), he->_twin->_incident_face->_inner_edges.end());
+				break;
+			}
 		}
 	}
 
 	// si he ou he->_twin délimite une face finie on supprime cette face et on assigne NULL au _incident_face de tous les edges de cette face
-	if ((he->_incident_face!= NULL) && (he->_incident_face!= _unbounded_face)) {
+	if (he->_incident_face!= NULL && he->_incident_face!= _unbounded_face) {
+		if (verbose) {
+			std::cout << "DCEL::delete_edge : delete_face_without_edges\n";
+		}
 		delete_face_without_edges(he->_incident_face);
 	}
-	if ((he->_twin->_incident_face!= NULL) && (he->_twin->_incident_face!= _unbounded_face)) {
+	if (he->_twin->_incident_face!= NULL && he->_twin->_incident_face!= _unbounded_face) {
+		if (verbose) {
+			std::cout << "DCEL::delete_edge : twin delete_face_without_edges\n";
+		}
 		delete_face_without_edges(he->_twin->_incident_face);
 	}
 
@@ -513,13 +563,6 @@ void DCEL::delete_edge(DCEL_HalfEdge * he) {
 	he->set_origin(NULL);
 	he->_twin->set_origin(NULL);
 	
-	/*std::cout << "he= " << *he << "\n";
-	std::cout << "he->_previous= " << *he->_previous << "\n";
-	std::cout << "he->_next= " << *he->_next << "\n";
-	std::cout << "he->_twin= " << *he->_twin << "\n";
-	std::cout << "he->_twin->_previous= " << *he->_twin->_previous << "\n";
-	std::cout << "he->_twin->_next= " << *he->_twin->_next << "\n";*/
-
 	// on s'occupe de he->_previous et he->_twin->_previous
 	he->_previous->set_next(he->_twin->_next);
 	he->_twin->_previous->set_next(he->_next);
@@ -600,10 +643,14 @@ void DCEL::clear() {
 
 
 void DCEL::clear_next_equals_twin_edges() {
+	bool verbose= false;
 	while (true) {
 		bool found_bad_edge= false;
 		for (auto edge : _half_edges) {
 			if (edge->_twin== edge->_next && !edge->_delete_mark) {
+				if (verbose) {
+					std::cout << "DCEL::clear_next_equals_twin_edges : " << *edge << "\n";
+				}
 				found_bad_edge= true;
 				delete_edge(edge);
 			}
@@ -674,7 +721,7 @@ void DCEL::create_nexts_from_twins() {
 
 // création des faces à partir des hedges qui n'ont pas de face associée
 void DCEL::create_faces_from_half_edges() {
-	bool verbose= true;
+	bool verbose= false;
 
 	bool found_unattached_he= false;
 	
@@ -699,7 +746,7 @@ void DCEL::create_faces_from_half_edges() {
 
 // gestion trous et face infinie
 void DCEL::check_ccw_faces() {
-	bool verbose= true;
+	bool verbose= false;
 	
 	/*for (auto f : _faces) {
 		f->_inner_edges.clear();
@@ -756,7 +803,7 @@ void DCEL::delete_markeds() {
 
 // on rend valide le DCEL après l'avoir modifié avec des ajouts ou des suppressions
 void DCEL::make_valid() {
-	bool verbose= true;
+	bool verbose= false;
 
 	// on renseigne les hedges qui n'ont pas de next à partir de leurs twins
 	if (verbose) {
@@ -816,7 +863,7 @@ bool DCEL::is_empty() {
 
 // ajout d'une bounding box qui peut en fait rogner sur le DCEL
 void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
-	bool verbose= false;
+	bool verbose= true;
 
 	// si vide on crée un carré de taille 1
 	if (is_empty()) {
@@ -857,15 +904,20 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 			if (verbose) {
 				std::cout << "DCEL::add_bbox phase1 : he = " << *he << "\n";
 			}
+			
 			// on transforme en 1/2 droite
 			if (in_bbox(he->destination())) {
 				if (verbose) {
 					std::cout << "DCEL::add_bbox phase1 : dst in box\n";
 				}
 				he->set_tmp_data();
-				delete_face_without_edges(he->_incident_face);
+				if (he->_incident_face!= NULL) {
+					delete_face_without_edges(he->_incident_face);
+				}
 				if (he->_previous!= NULL) {
-					he->_previous->set_tmp_data();
+					if (he->_previous->_origin!= NULL && he->_previous->destination()!= NULL) {
+						he->_previous->set_tmp_data();
+					}
 					he->set_previous(NULL);
 				}
 				he->set_origin(NULL);
@@ -1316,15 +1368,13 @@ void DCEL::bbox(glm::vec2 * bbox_min, glm::vec2 * bbox_max) {
 
 // export sous forme de html
 void DCEL::export_html(std::string html_path, bool simple, const glm::vec2 & bbox_min, const glm::vec2 & bbox_max, const std::vector<glm::vec2> & sites) {
+	bool verbose= false;
+
 	const unsigned int SVG_WIDTH= 1200;
 	const unsigned int SVG_HEIGHT= 700;
 	const float MARGIN_FACTOR= 1.5f;
 	const glm::vec2 VIEW_MIN= (bbox_min- 0.5f* (bbox_min+ bbox_max))* MARGIN_FACTOR+ 0.5f* (bbox_min+ bbox_max);
 	const glm::vec2 VIEW_MAX= (bbox_max- 0.5f* (bbox_min+ bbox_max))* MARGIN_FACTOR+ 0.5f* (bbox_min+ bbox_max);
-	// (xmin- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
-	/*const float VIEW_YMIN= (ymin- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
-	const float VIEW_XMAX= (xmax- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
-	const float VIEW_YMAX= (ymax- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);*/
 	const float SIZE= std::max((VIEW_MAX- VIEW_MIN).x, (VIEW_MAX- VIEW_MIN).y);
 	const float POINT_RADIUS= 0.002f* SIZE;
 	const float SITE_POINT_RADIUS= 0.003f* SIZE;
@@ -1358,6 +1408,10 @@ void DCEL::export_html(std::string html_path, bool simple, const glm::vec2 & bbo
 	}
 
 	for (auto face : _faces) {
+		if (verbose) {
+			std::cout << "DCEL::export_html : " << *face << "\n";
+		}
+
 		std::vector<DCEL_HalfEdge *> edges= face->get_outer_edges();
 		std::vector<DCEL_HalfEdge *> inner_edges= face->get_inner_edges();
 		edges.insert(edges.end(), inner_edges.begin(), inner_edges.end());
@@ -1381,12 +1435,12 @@ void DCEL::export_html(std::string html_path, bool simple, const glm::vec2 & bbo
 
 			// buffer inversé vers centre de gravité (moche mais bon)
 			if (!simple) {
-				glm::vec2 gravity_center= face->get_gravity_center();
+				/*glm::vec2 gravity_center= face->get_gravity_center();
 				float xg= gravity_center.x;
 				float yg= gravity_center.y;
 				float d1= sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
 				float d2= sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
-				if (!face->_unbounded) {
+				if (face== _unbounded_face || !face->ccw()) {
 					if (d1> 1e-3) {
 						x1+= DELTA_BUFFER* (xg- x1)/ d1;
 						y1+= DELTA_BUFFER* (yg- y1)/ d1;
@@ -1405,17 +1459,30 @@ void DCEL::export_html(std::string html_path, bool simple, const glm::vec2 & bbo
 						x2-= DELTA_BUFFER* (xg- x2)/ d2;
 						y2-= DELTA_BUFFER* (yg- y2)/ d2;
 					}
-				}
-			}
-
-			f << "<circle class=\"point_class\" cx=\"" << x1 << "\" cy=\"" << y_html(y1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-			f << "<circle class=\"point_class\" cx=\"" << x2 << "\" cy=\"" << y_html(y2) << "\" r=\"" << POINT_RADIUS << "\" />\n";
-			f << "<line class=\"line_class\" x1=\"" << x1 << "\" y1=\"" << y_html(y1) << "\" x2=\"" << x2 << "\" y2=\"" << y_html(y2) << "\" style=\"stroke:" << str_color << "\" />\n";
-
-			// fleche
-			if (!simple) {
+				}*/
 				float u= (x2- x1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
 				float v= (y2- y1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
+				x1-= DELTA_BUFFER* v;
+				y1+= DELTA_BUFFER* u;
+				x2-= DELTA_BUFFER* v;
+				y2+= DELTA_BUFFER* u;
+				u= (x2- x1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
+				v= (y2- y1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
+
+				if (face== _unbounded_face || !face->ccw()) {
+					x1-= DELTA_BUFFER* u;
+					y1-= DELTA_BUFFER* v;
+					x2+= DELTA_BUFFER* u;
+					y2+= DELTA_BUFFER* v;
+				}
+				else {
+					x1+= DELTA_BUFFER* u;
+					y1+= DELTA_BUFFER* v;
+					x2-= DELTA_BUFFER* u;
+					y2-= DELTA_BUFFER* v;
+				}
+
+				// fleche
 				float x_arrow_1= 0.5f* (x1+ x2)+ 0.5f* ARROW_SIZE* u;
 				float y_arrow_1= 0.5f* (y1+ y2)+ 0.5f* ARROW_SIZE* v;
 				float x_arrow_2= x_arrow_1- ARROW_SIZE* u- ARROW_SIZE_2* v;
@@ -1426,6 +1493,10 @@ void DCEL::export_html(std::string html_path, bool simple, const glm::vec2 & bbo
 				f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_2 << "\" y1=\"" << y_html(y_arrow_2) << "\" x2=\"" << x_arrow_3 << "\" y2=\"" << y_html(y_arrow_3) << "\" style=\"stroke:" << str_color << "\" />\n";
 				f << "<line class=\"arrow_line_class\" x1=\"" << x_arrow_3 << "\" y1=\"" << y_html(y_arrow_3) << "\" x2=\"" << x_arrow_1 << "\" y2=\"" << y_html(y_arrow_1) << "\" style=\"stroke:" << str_color << "\" />\n";
 			}
+
+			f << "<circle class=\"point_class\" cx=\"" << x1 << "\" cy=\"" << y_html(y1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+			f << "<circle class=\"point_class\" cx=\"" << x2 << "\" cy=\"" << y_html(y2) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+			f << "<line class=\"line_class\" x1=\"" << x1 << "\" y1=\"" << y_html(y1) << "\" x2=\"" << x2 << "\" y2=\"" << y_html(y2) << "\" style=\"stroke:" << str_color << "\" />\n";
 		}
 	}
 

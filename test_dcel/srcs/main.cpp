@@ -13,20 +13,20 @@ void test1() {
 	//dcel->import("0,0 -> 1,0 -> 0,1");
 	//dcel->make_valid();
 
-	//dcel->import("0,0 -> 1,0 -> 0,1 | 1,0 -> 1,3 -> 0,1 | 5,5 -> 6,5 -> 5,6");
-	//dcel->make_valid();
+	dcel->import("0,0 -> 1,0 -> 0,1 | 1,0 -> 1,3 -> 0,1 | 5,5 -> 6,5 -> 5,6");
+	dcel->make_valid();
 	//dcel->add_bbox(glm::vec2(-1.0, -1.0), glm::vec2(7.0, 7.0));
 	//dcel->add_bbox(glm::vec2(-1.0, -1.0), glm::vec2(2.0, 2.0));
-	//dcel->add_bbox(glm::vec2(0.1, -1.0), glm::vec2(2.0, 2.0));
+	dcel->add_bbox(glm::vec2(0.1, -1.0), glm::vec2(2.0, 2.0));
+	dcel->make_valid();
+
+	//dcel->import("0,0 -> 1,0 -> 1,1 -> 0.4,0.4 -> 0.3,0.3 -> 0.2,0.2 -> 0.1,0.1 | 0,0 -> 0.1,0.1 -> 0.2,0.2 -> 0.3,0.3 -> 0.4,0.4 -> 1,1 -> 0,1");
+	//dcel->make_valid();
+	//dcel->delete_edge(dcel->get_edge(glm::vec2(0.2, 0.2), glm::vec2(0.3, 0.3)));
 	//dcel->make_valid();
 
-	dcel->import("0,0 -> 1,0 -> 1,1 -> 0.4,0.4 -> 0.3,0.3 -> 0.2,0.2 -> 0.1,0.1 | 0,0 -> 0.1,0.1 -> 0.2,0.2 -> 0.3,0.3 -> 0.4,0.4 -> 1,1 -> 0,1");
-	dcel->make_valid();
-	dcel->delete_edge(dcel->get_edge(glm::vec2(0.2, 0.2), glm::vec2(0.3, 0.3)));
-	dcel->make_valid();
-
-	std::cout << "----\n";
-	std::cout << dcel->get_edge(glm::vec2(1, 0), glm::vec2(0, 0))->_incident_face->ccw() << "\n";
+	//std::cout << "----\n";
+	//std::cout << dcel->get_edge(glm::vec2(1, 0), glm::vec2(0, 0))->_incident_face->ccw() << "\n";
 	//std::cout << *dcel->get_edge(glm::vec2(0, 0), glm::vec2(1, 0))->_incident_face << "\n";
 
 	//dcel->import("0,0 -> 1,0 -> 0.5,0.5 | 1,0 -> 1,1 -> 0.5,0.5 | 0.5,0.5 -> 1,1 -> 0,1 | 0,1 -> 0,0 -> 0.5,0.5");
