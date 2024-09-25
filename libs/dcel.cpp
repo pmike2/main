@@ -544,6 +544,8 @@ DCEL_HalfEdge * DCEL::split_edge(DCEL_HalfEdge * he, const glm::vec2 & coords) {
 	he->set_next(he2);
 	he->_twin->set_origin(v);
 	he2->_twin->set_next(he->_twin);
+	he2->_incident_face= he->_incident_face;
+	he2->_twin->_incident_face= he->_twin->_incident_face;
 	return he2;
 }
 
@@ -847,12 +849,14 @@ void DCEL::delete_queue() {
 			bool looped= false;
 			while (current->_twin->_next== current->_previous->_twin) {
 				current= current->_previous;
+				std::cout << "DEBG : " << *current << "\n";
 				if (current== he) {
 					looped= true;
 					break;
 				}
 				add2queue({HALF_EDGE, current});
 			}
+			
 			if (!looped) {
 				current->_previous->set_next(current->_twin->_next);
 			}
@@ -1241,8 +1245,19 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 	// on clos la boucle
 	last_he->set_next(first_he);
 
-	delete_queue();
 	create_nexts_from_twins();
+	for (auto e : _half_edges) {
+		if (e->_previous== NULL) {
+			std::cout << "PREVIOUS == NULL : " << *e << "\n";
+		}
+		if (e->_next== NULL) {
+			std::cout << "NEXT == NULL : " << *e << "\n";
+		}
+		if (e->_twin== NULL) {
+			std::cout << "TWIN == NULL : " << *e << "\n";
+		}
+	}
+	delete_queue();
 	create_faces_from_half_edges();
 	check_ccw_faces();
 }

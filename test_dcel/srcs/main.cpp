@@ -14,8 +14,8 @@ void test1() {
 
 	dcel->import("0,0 -> 1,0 -> 0,1 | 1,0 -> 1,3 -> 0,1 | 5,5 -> 6,5 -> 5,6");
 	//dcel->add_bbox(glm::vec2(-1.0, -1.0), glm::vec2(7.0, 7.0));
-	//dcel->add_bbox(glm::vec2(-1.0, -1.0), glm::vec2(2.0, 2.0));
-	dcel->add_bbox(glm::vec2(0.1, -1.0), glm::vec2(2.0, 2.0));
+	dcel->add_bbox(glm::vec2(-1.0, -1.0), glm::vec2(2.0, 2.0));
+	//dcel->add_bbox(glm::vec2(0.1, -1.0), glm::vec2(2.0, 2.0));
 
 	//dcel->import("0,0 -> 1,0 -> 1,1 -> 0.4,0.4 -> 0.3,0.3 -> 0.2,0.2 -> 0.1,0.1 | 0,0 -> 0.1,0.1 -> 0.2,0.2 -> 0.3,0.3 -> 0.4,0.4 -> 1,1 -> 0,1");
 	//dcel->delete_edge(dcel->get_edge(glm::vec2(0.2, 0.2), glm::vec2(0.3, 0.3)));
