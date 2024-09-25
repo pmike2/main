@@ -5,11 +5,22 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <deque>
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 
 #include "geom_2d.h"
+
+
+typedef enum {VERTEX, HALF_EDGE, FACE} DCEL_Type;
+
+
+struct DeleteEvent {
+	DCEL_Type _type;
+	void * _ptr;
+	bool operator==(const DeleteEvent& rhs) { return rhs._type == _type && rhs._ptr== _ptr;}
+};
 
 
 struct DCEL_HalfEdge;
@@ -25,7 +36,7 @@ struct DCEL_Vertex {
 
 	glm::vec2 _coords;
 	DCEL_HalfEdge * _incident_edge; // 1 des edges ayant ce vertex comme origine
-	bool _delete_mark;
+	//bool _delete_mark;
 };
 
 
@@ -39,9 +50,9 @@ struct DCEL_HalfEdge {
 	void set_previous(DCEL_HalfEdge * hedge);
 	void set_origin(DCEL_Vertex * v);
 	void set_incident_face(DCEL_Face * f);
-	void set_tmp_data(const glm::vec2 & direction, const glm::vec2 & position);
-	void set_tmp_data(const glm::vec2 & direction);
-	void set_tmp_data();
+	//void set_tmp_data(const glm::vec2 & direction, const glm::vec2 & position);
+	//void set_tmp_data(const glm::vec2 & direction);
+	//void set_tmp_data();
 	friend std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e);
 
 	DCEL_Vertex * _origin;
@@ -49,9 +60,9 @@ struct DCEL_HalfEdge {
 	DCEL_HalfEdge * _next;
 	DCEL_HalfEdge * _previous;
 	DCEL_Face * _incident_face;
-	glm::vec2 _tmp_direction;
-	glm::vec2 _tmp_position;
-	bool _delete_mark;
+	//glm::vec2 _tmp_direction;
+	//glm::vec2 _tmp_position;
+	//bool _delete_mark;
 };
 
 
@@ -69,8 +80,8 @@ struct DCEL_Face {
 
 	DCEL_HalfEdge * _outer_edge; // 1 des edges délimitant la face; NULL pour la face infinie
 	std::vector<DCEL_HalfEdge *> _inner_edges; // edges de trous, 1 par trou
-	bool _unbounded; // est-ce la face infinie
-	bool _delete_mark;
+	//bool _unbounded; // est-ce la face infinie
+	//bool _delete_mark;
 };
 
 
@@ -84,17 +95,20 @@ public:
 	void delete_vertex(DCEL_Vertex * v);
 	void delete_edge(DCEL_HalfEdge * he);
 	void delete_face(DCEL_Face * face);
-	void delete_face_without_edges(DCEL_Face * face);
+	DCEL_HalfEdge * split_edge(DCEL_HalfEdge * he, const glm::vec2 & coords);
+	//void delete_face_without_edges(DCEL_Face * face);
 	void clear();
 	//void clear_unbounded_face();
-	void clear_next_equals_twin_edges();
-	void clear_unconnected_vertices();
+	//void clear_next_equals_twin_edges();
+	//void clear_unconnected_vertices();
 	void create_nexts_from_twins();
 	void create_faces_from_half_edges();
 	void check_ccw_faces();
-	void delete_markeds();
-	void set_edges_tmp_datas();
-	void make_valid();
+	void add2queue(DeleteEvent evt);
+	void delete_queue();
+	//void delete_markeds();
+	//void set_edges_tmp_datas();
+	//void make_valid();
 	bool is_empty();
 	void add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max);
 	bool is_valid();
@@ -110,6 +124,7 @@ public:
 	std::vector<DCEL_HalfEdge *> _half_edges;
 	std::vector<DCEL_Face *> _faces;
 	DCEL_Face * _unbounded_face;
+	std::deque<DeleteEvent> _delete_queue;
 };
 
 #endif
