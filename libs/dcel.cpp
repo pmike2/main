@@ -11,12 +11,12 @@
 
 
 // ----------------------------------------------------------------------
-DCEL_Vertex::DCEL_Vertex() : _coords(glm::vec2(0.0f)), _incident_edge(NULL)/*, _delete_mark(false)*/ {
+DCEL_Vertex::DCEL_Vertex() : _coords(glm::vec2(0.0f)), _incident_edge(NULL) {
 
 }
 
 
-DCEL_Vertex::DCEL_Vertex(const glm::vec2 & coords) : _coords(coords), _incident_edge(NULL)/*, _delete_mark(false)*/ {
+DCEL_Vertex::DCEL_Vertex(const glm::vec2 & coords) : _coords(coords), _incident_edge(NULL) {
 
 }
 
@@ -28,7 +28,7 @@ DCEL_Vertex::~DCEL_Vertex() {
 
 // renvoie les hedges dont l'origine est le vertex
 std::vector<DCEL_HalfEdge *> DCEL_Vertex::get_incident_edges() {
-	bool verbose= true;
+	bool verbose= false;
 	
 	if (verbose) {
 		std::cout << "DCEL_Vertex::get_incident_edges : v == " << *this << "\n";
@@ -92,8 +92,7 @@ std::ostream & operator << (std::ostream & os, DCEL_Vertex & v) {
 
 // ----------------------------------------------------------------------
 DCEL_HalfEdge::DCEL_HalfEdge() : 
-_origin(NULL), _twin(NULL), _next(NULL), _previous(NULL), _incident_face(NULL)//, _tmp_direction(glm::vec2(0.0f)), _tmp_position(glm::vec2(0.0f)), _delete_mark(false)
-{
+_origin(NULL), _twin(NULL), _next(NULL), _previous(NULL), _incident_face(NULL) {
 
 }
 
@@ -160,78 +159,37 @@ void DCEL_HalfEdge::set_previous(DCEL_HalfEdge * hedge) {
 
 // set origin ; v peut valoir NULL
 void DCEL_HalfEdge::set_origin(DCEL_Vertex * v) {
-	bool verbose= false;
-
-	// si this est l incident edge de v il faut chercher un autre hedge pour devenir le nouveau incident edge de v
-	/*if (_origin!= NULL && _origin->_incident_edge== this) {
-		if (verbose) {
-			std::cout << "DCEL_HalfEdge::set_origin : _origin->_incident_edge== this\n";
-		}
-		std::vector<DCEL_HalfEdge * > edges= _origin->get_incident_edges();
-		if (edges.size()> 1) {
-			_origin->_incident_edge= edges[1];
-		}
-		else {
-			_origin->_incident_edge= NULL;
-		}
-	}*/
-	
-	/*if (_origin!= NULL && _origin->_incident_edge== this) {
-		_origin->_incident_edge= NULL;
-	}*/
-
 	_origin= v;
 }
 
 
 // set incident face
 void DCEL_HalfEdge::set_incident_face(DCEL_Face * f) {
-	if (f== NULL) {
-		std::cerr << "DCEL_HalfEdge::set_incident_face : face == NULL\n";
-	}
+	bool verbose= false;
+
 	DCEL_HalfEdge * he= this;
+	bool outer_edge_ok= false;
 	do {
+		if (verbose) {
+			std::cout << "DCEL_HalfEdge::set_incident_face : he == " << *he << "\n";
+		}
+
 		he->_incident_face= f;
+		if (he== f->_outer_edge) {
+			outer_edge_ok= true;
+		}
 		he= he->_next;
 		if (he== NULL) {
 			std::cerr << "ERR : DCEL_HalfEdge::set_incident_face : face non close\n";
 			return;
 		}
 	} while (he!= this);
-}
 
-
-// maj des données temporaires
-/*void DCEL_HalfEdge::set_tmp_data(const glm::vec2 & direction, const glm::vec2 & position) {
-	_tmp_direction= direction;
-	_tmp_position= position;
-	if (_twin!= NULL) {
-		_twin->_tmp_direction= -_tmp_direction;
-		_twin->_tmp_position= -_tmp_position;
+	if (!outer_edge_ok) {
+		f->_outer_edge= this;
 	}
 }
 
-
-void DCEL_HalfEdge::set_tmp_data(const glm::vec2 & direction) {
-	_tmp_direction= direction;
-	if (_twin!= NULL) {
-		_twin->_tmp_direction= -_tmp_direction;
-	}
-}
-
-
-void DCEL_HalfEdge::set_tmp_data() {
-	if (_origin!= NULL) {
-		_tmp_position= _origin->_coords;
-	}
-	if (_origin!= NULL && destination()!= NULL) {
-		_tmp_direction= destination()->_coords- _origin->_coords;
-	}
-	if (_twin!= NULL) {
-		_twin->_tmp_direction= -_tmp_direction;
-	}
-}
-*/
 
 std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
 	if (e._origin!= NULL) {
@@ -247,7 +205,6 @@ std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
 	else {
 		os << "NULL";
 	}
-	//os << " ; _tmp_position = " << glm_to_string(e._tmp_position) << " ; _tmp_direction = " << glm_to_string(e._tmp_direction);
 	//os << " ; previous = " << e._previous << " ; next = " << e._next;
 
 	return os;
@@ -255,7 +212,7 @@ std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
 
 
 // ----------------------------------------------------------------------
-DCEL_Face::DCEL_Face() : _outer_edge(NULL)/*, _unbounded(false), _delete_mark(false)*/ {
+DCEL_Face::DCEL_Face() : _outer_edge(NULL) {
 
 }
 
@@ -400,7 +357,10 @@ bool DCEL_Face::ccw() {
 
 
 std::ostream & operator << (std::ostream & os, DCEL_Face & f) {
-	//os << "face _unbounded = " << f._unbounded << "\n";
+	if (!f.ccw()) {
+		os << "unbounded face\n";
+	}
+
 	if (f._outer_edge!= NULL) {
 		os << "outer_edge = " << *f._outer_edge << "\n";
 		std::vector<DCEL_HalfEdge *> outer_edges= f.get_outer_edges();
@@ -413,6 +373,7 @@ std::ostream & operator << (std::ostream & os, DCEL_Face & f) {
 		}
 		os << "\n";
 	}
+
 	os << "inner_edges.size = " << f._inner_edges.size() << "\n";
 	std::vector<DCEL_HalfEdge *> inner_edges= f.get_inner_edges();
 	os << "inner_edges.size (total) = " << inner_edges.size() << "\n";
@@ -428,8 +389,6 @@ std::ostream & operator << (std::ostream & os, DCEL_Face & f) {
 
 // ----------------------------------------------------------------------
 DCEL::DCEL() {
-	// on crée dès le départ la face infinie
-	_unbounded_face= add_face();
 }
 
 
@@ -484,14 +443,8 @@ DCEL_HalfEdge * DCEL::add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2) {
 
 
 // ajout d'une face
-DCEL_Face * DCEL::add_face(DCEL_HalfEdge * outer_edge) {
+DCEL_Face * DCEL::add_face() {
 	DCEL_Face * face= new DCEL_Face();
-	if (outer_edge!= NULL) {
-		face->_outer_edge= outer_edge;
-		if (outer_edge->_incident_face!= NULL) {
-			std::cerr << "ERR : DCEL::add_face : outer_edge->_incident_face!= NULL\n";
-		}
-	}
 	_faces.push_back(face);
 	return face;
 }
@@ -510,8 +463,6 @@ void DCEL::delete_vertex(DCEL_Vertex * v) {
 
 // suppression d'un edge, ie de 2 half-edges
 void DCEL::delete_edge(DCEL_HalfEdge * he) {
-	bool verbose= false;
-	
 	if (he== NULL) {
 		std::cerr << "ERR : DCEL::delete_edge NULL\n";
 		return;
@@ -528,11 +479,6 @@ void DCEL::delete_face(DCEL_Face * face) {
 		return;
 	}
 
-	if (face== _unbounded_face) {
-		std::cerr << "ERR : DCEL::delete_face : on ne peut pas supprimer la face infinie\n";
-		return;
-	}
-
 	add2queue({FACE, face});
 }
 
@@ -543,6 +489,7 @@ DCEL_HalfEdge * DCEL::split_edge(DCEL_HalfEdge * he, const glm::vec2 & coords) {
 	he2->set_next(he->_next);
 	he->set_next(he2);
 	he->_twin->set_origin(v);
+	he2->_twin->set_previous(he->_twin->_previous);
 	he2->_twin->set_next(he->_twin);
 	he2->_incident_face= he->_incident_face;
 	he2->_twin->_incident_face= he->_twin->_incident_face;
@@ -550,29 +497,34 @@ DCEL_HalfEdge * DCEL::split_edge(DCEL_HalfEdge * he, const glm::vec2 & coords) {
 }
 
 
-// suppression d'une face en laissant les edges intacts
-/*void DCEL::delete_face_without_edges(DCEL_Face * face) {
-	if (face== NULL) {
-		std::cerr << "ERR : DCEL::delete_face_without_edges NULL\n";
-		return;
+DCEL_HalfEdge * DCEL::cut_face(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
+	bool verbose= false;
+
+	DCEL_HalfEdge * cut_he= add_edge(he1->_origin, he2->_origin);
+
+	if (verbose) {
+		std::cout << "DCEL::cut_face : he1 = " << *he1 << " ; he2 = " << *he2 << "\n";
 	}
+
+	// il faut le stocker car modifié par la ligne suivante
+	DCEL_HalfEdge * he2_previous= he2->_previous;
 	
-	if (face== _unbounded_face) {
-		std::cerr << "ERR : DCEL::delete_face_without_edges : on ne peut pas supprimer la face infinie\n";
-		return;
+	cut_he->set_next(he2);
+	cut_he->set_previous(he1->_previous);
+	cut_he->_twin->set_next(he1);
+	cut_he->_twin->set_previous(he2_previous);
+	if (he1->_incident_face!= NULL) {
+		delete_face(he1->_incident_face);
+		he1->_incident_face= NULL;
+		he2->_incident_face= NULL;
 	}
+	DCEL_Face * face1= add_face();
+	he1->set_incident_face(face1);
+	DCEL_Face * face2= add_face();
+	he2->set_incident_face(face2);
 
-	//face->_delete_mark= true;
-
-	std::vector<DCEL_HalfEdge *> outer_edges= face->get_outer_edges();
-	for (auto edge : outer_edges) {
-		edge->_incident_face= NULL;
-	}
-	std::vector<DCEL_HalfEdge *> inner_edges= face->get_inner_edges();
-	for (auto edge : inner_edges) {
-		edge->_incident_face= NULL;
-	}
-}*/
+	return cut_he;
+}
 
 
 // suppression de tout
@@ -581,62 +533,6 @@ void DCEL::clear() {
 	_half_edges.clear();
 	_faces.clear();
 }
-
-
-/*void DCEL::clear_unbounded_face() {
-	for (auto edge : _unbounded_face->get_edges()) {
-		edge->_incident_face= NULL;
-	}
-	_unbounded_face->_inner_edges.clear();
-}*/
-
-
-/*void DCEL::clear_next_equals_twin_edges() {
-	bool verbose= false;
-	while (true) {
-		bool found_bad_edge= false;
-		for (auto edge : _half_edges) {
-			if (edge->_twin== edge->_next) {
-				if (verbose) {
-					std::cout << "DCEL::clear_next_equals_twin_edges : " << *edge << "\n";
-				}
-				found_bad_edge= true;
-				delete_edge(edge);
-			}
-		}
-		if (!found_bad_edge) {
-			break;
-		}
-	}
-}*/
-
-
-/*void DCEL::clear_unconnected_vertices() {
-	bool verbose= false;
-
-	for (auto v : _vertices) {
-		if (v->_incident_edge== NULL) {
-			for (auto e : _half_edges) {
-				if (e->destination()== v) {
-					v->_incident_edge= e->_twin;
-					break;
-				}
-			}
-		}
-	}
-
-	for (auto v : _vertices) {
-		if (verbose) {
-			std::cout << "DCEL::clear_unconnected_vertices : v = " << *v << "\n";
-		}
-		if (v->_incident_edge== NULL) {
-			if (verbose) {
-				std::cout << "DCEL::clear_unconnected_vertices : v->_delete_mark= true : " << *v << "\n";
-			}
-			//v->_delete_mark= true;
-		}
-	}
-}*/
 
 
 void DCEL::create_nexts_from_twins() {
@@ -687,6 +583,11 @@ void DCEL::create_faces_from_half_edges() {
 	bool verbose= false;
 
 	bool found_unattached_he= false;
+
+	for (auto he : _half_edges) {
+		he->_incident_face= NULL;
+	}
+	_faces.clear();
 	
 	while (true) {
 		found_unattached_he= false;
@@ -696,7 +597,7 @@ void DCEL::create_faces_from_half_edges() {
 					std::cout << "DCEL::create_faces_from_half_edges : he->_incident_face== NULL : " << *he << "\n";
 				}
 				found_unattached_he= true;
-				DCEL_Face * face= add_face(he);
+				DCEL_Face * face= add_face();
 				he->set_incident_face(face);
 			}
 		}
@@ -711,12 +612,8 @@ void DCEL::create_faces_from_half_edges() {
 void DCEL::check_ccw_faces() {
 	bool verbose= false;
 	
-	/*for (auto f : _faces) {
-		f->_inner_edges.clear();
-	}*/
-
 	for (auto f : _faces) {
-		if (f== _unbounded_face) {
+		if (f->_outer_edge== NULL) {
 			continue;
 		}
 
@@ -727,7 +624,7 @@ void DCEL::check_ccw_faces() {
 			bool is_hole= false;
 			Polygon2D * fpoly= f->get_polygon();
 			for (auto f2 : _faces) {
-				if (f2== _unbounded_face || f2== f || !f2->ccw()) {
+				if (f2== f || !f2->ccw()) {
 					continue;
 				}
 				Polygon2D * fpoly2= f2->get_polygon();
@@ -742,20 +639,32 @@ void DCEL::check_ccw_faces() {
 				}
 			}
 			// trou de la face infinie
-			if (!is_hole) {
+			/*if (!is_hole) {
 				if (verbose) {
 					std::cout << "DCEL::check_ccw_faces face inside infinite face\n";
 				}
 				_unbounded_face->_inner_edges.push_back(f->_outer_edge);
 				f->_outer_edge->set_incident_face(_unbounded_face);
-			}
+			}*/
 			
-			//f->_delete_mark= true;
 			add2queue({FACE, f});
 		}
 	}
+}
 
-	//delete_queue();
+
+void DCEL::check_integrity() {
+	for (auto e : _half_edges) {
+		if (e->_previous== NULL) {
+			std::cout << "ERR : DCEL::check_integrity : previous == NULL : " << *e << "\n";
+		}
+		if (e->_next== NULL) {
+			std::cout << "ERR : DCEL::check_integrity : next == NULL : " << *e << "\n";
+		}
+		if (e->_twin== NULL) {
+			std::cout << "ERR : DCEL::check_integrity : twin == NULL : " << *e << "\n";
+		}
+	}
 }
 
 
@@ -773,7 +682,7 @@ void DCEL::add2queue(DeleteEvent evt) {
 
 
 void DCEL::delete_queue() {
-	bool verbose= true;
+	bool verbose= false;
 
 	std::vector<DCEL_Vertex *> vertices2delete;
 	std::vector<DCEL_HalfEdge *> edges2delete;
@@ -782,10 +691,6 @@ void DCEL::delete_queue() {
 	while (!_delete_queue.empty()) {
 		DeleteEvent evt= _delete_queue.front();
 		_delete_queue.pop_front();
-
-		/*if (verbose) {
-			std::cout << "DCEL::delete_queue : evt_type= " << evt._type << "\n";
-		}*/
 
 		if (evt._type== VERTEX) {
 			DCEL_Vertex * v= (DCEL_Vertex *)evt._ptr;
@@ -798,10 +703,6 @@ void DCEL::delete_queue() {
 			}
 
 			vertices2delete.push_back(v);
-			std::vector<DCEL_HalfEdge *> edges= v->get_incident_edges();
-			std::for_each(edges.begin(), edges.end(), [this](DCEL_HalfEdge * e){
-				add2queue({HALF_EDGE, e});
-			});
 		}
 		
 		else if (evt._type== HALF_EDGE) {
@@ -814,52 +715,10 @@ void DCEL::delete_queue() {
 				std::cout << "DCEL::delete_queue : he= " << *he << "\n";
 			}
 
+			// on supprime le twin du coup
 			add2queue({HALF_EDGE, he->_twin});
 
 			edges2delete.push_back(he);
-
-			// si he délimite la face infinie OU si un trou dans une autre face on cherche le edge représentant he parmi _inner_edges et on le supprime
-			/*if (he->_incident_face!= NULL) {
-				for (auto edge : he->_incident_face->_inner_edges) {
-					if (edge->_twin->_incident_face== he->_twin->_incident_face) {
-						if (verbose) {
-							std::cout << "DCEL::delete_queue : inner_edges.erase\n";
-						}
-						he->_incident_face->_inner_edges.erase(std::remove(he->_incident_face->_inner_edges.begin(), he->_incident_face->_inner_edges.end(), edge), he->_incident_face->_inner_edges.end());
-						break;
-					}
-				}
-			}*/
-
-			if (he->_incident_face!= NULL) {
-				//delete_face_without_edges(he->_incident_face);
-				add2queue({FACE, he->_incident_face});
-			}
-
-			//he->set_origin(NULL);
-			std::vector<DCEL_HalfEdge * > edges= he->_origin->get_incident_edges();
-			if (edges.size()== 1) {
-				add2queue({VERTEX, he->_origin});
-			}
-			else if (he->_origin->_incident_edge== he) {
-				he->_origin->_incident_edge= edges[1];
-			}
-
-			DCEL_HalfEdge * current= he;
-			bool looped= false;
-			while (current->_twin->_next== current->_previous->_twin) {
-				current= current->_previous;
-				std::cout << "DEBG : " << *current << "\n";
-				if (current== he) {
-					looped= true;
-					break;
-				}
-				add2queue({HALF_EDGE, current});
-			}
-			
-			if (!looped) {
-				current->_previous->set_next(current->_twin->_next);
-			}
 		}
 
 		else if (evt._type== FACE) {
@@ -873,12 +732,6 @@ void DCEL::delete_queue() {
 			}
 
 			faces2delete.push_back(f);
-
-			/*if (f->_outer_edge!= NULL) {
-				for (auto e : f->get_outer_edges()) {
-					add2queue({HALF_EDGE, e});
-				}
-			}*/
 		}
 	}
 
@@ -892,70 +745,6 @@ void DCEL::delete_queue() {
 		return std::find(faces2delete.begin(), faces2delete.end(), f)!= faces2delete.end();
 	}), _faces.end());
 }
-
-/*void DCEL::set_edges_tmp_datas() {
-	for (auto e : _half_edges) {
-		e->set_tmp_data();
-	}
-}*/
-
-
-// on rend valide le DCEL après l'avoir modifié avec des ajouts ou des suppressions
-/*void DCEL::make_valid() {
-	bool verbose= true;
-
-	delete_queue();
-
-	// on renseigne les hedges qui n'ont pas de next à partir de leurs twins
-	if (verbose) {
-		std::cout << "DCEL::make_valid : create_nexts_from_twins\n";
-	}
-	create_nexts_from_twins();
-
-	// on supprime les edges e où e->_next == e->_twin qui ont pu être créés par delete_edge
-	/*if (verbose) {
-		std::cout << "DCEL::make_valid : clear_next_equals_twin_edges\n";
-	}
-	clear_next_equals_twin_edges();*/
-
-	// on supprime les sommets qui ne sont connectés à aucun edge
-	/*if (verbose) {
-		std::cout << "DCEL::make_valid : clear_unconnected_vertices\n";
-	}
-	clear_unconnected_vertices();*/
-	
-	// on vide la face infinie
-	/*if (verbose) {
-		std::cout << "make_valid : clear_unbounded_face\n";
-	}
-	clear_unbounded_face();*/
-
-	// suppression réelle, jusqu'ici on ne faisait que _delete_mark= true
-	/*if (verbose) {
-		std::cout << "DCEL::make_valid : delete_markeds\n";
-	}
-	delete_markeds();*/
-
-	// on crée les faces des edges qui n'ont pas encore de face
-	/*if (verbose) {
-		std::cout << "DCEL::make_valid : create_faces_from_half_edges\n";
-	}
-	create_faces_from_half_edges();
-
-	if (verbose) {
-		std::cout << "DCEL::make_valid : check_ccw_faces\n";
-	}
-	check_ccw_faces();
-
-	// il faut le refaire à cause de check_ccw_faces
-	//delete_markeds();
-
-	delete_queue();
-
-	if (verbose) {
-		std::cout << "DCEL::make_valid : FIN : n_vertices = " << _vertices.size() << " ; n_edges = " << _half_edges.size() << " ; n_faces = " << _faces.size() << "\n";
-	}
-}*/
 
 
 // est-ce vide
@@ -993,12 +782,6 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 		return true;
 	};
 
-	// la nouvelle face infinie va devenir la bbox, donc on reinit l'ancienne mais on garde les liens previous / next
-	/*for (auto edge : _unbounded_face->get_inner_edges()) {
-		edge->_incident_face= NULL;
-	}
-	_unbounded_face->_inner_edges.clear();*/
-
 	// ------------------------------------------------------------------------------------------------------------------------
 	// phase 2 : création des nouveaux sommets intersections des droites et 1/2 droites avec la bbox
 	// ajout des sommets de la bbox
@@ -1010,8 +793,8 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 	std::vector<DCEL_HalfEdge *> origin_top, origin_bottom, origin_left, origin_right, ignore;
 
 	// edges qui n'ont pas d'origine mais une destination et cherche l'intersection du twin avec la bbox
+	// on ne fait pas (auto e : _half_edges) car on fait des push_back dans la boucle
 	const int nhes= _half_edges.size();
-	//for (auto he : _half_edges) {
 	for (int i=0; i<nhes; ++i) {
 		DCEL_HalfEdge * he= _half_edges[i];
 
@@ -1030,6 +813,13 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 			std::cout << "DCEL::add_bbox phase 1 : he = " << *he << "\n";
 		}
 
+		add2queue({HALF_EDGE, he});
+		add2queue({VERTEX, he->_origin});
+		if (!dst_in_bbox) {
+			add2queue({VERTEX, he->destination()});
+		}
+		ignore.push_back(he->_twin);
+
 		bool is_inter_bottom= false, is_inter_top= false, is_inter_left= false, is_inter_right= false;
 		glm::vec2 inter_bottom, inter_top, inter_left, inter_right;
 		is_inter_bottom= segment_intersects_segment(he->_origin->_coords, he->destination()->_coords, bottom_left_corner->_coords , bottom_right_corner->_coords, &inter_bottom);
@@ -1038,6 +828,9 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 		is_inter_right = segment_intersects_segment(he->_origin->_coords, he->destination()->_coords, bottom_right_corner->_coords, top_right_corner->_coords   , &inter_right);
 
 		if (is_inter_bottom) {
+			if (verbose) {
+				std::cout << "DCEL::add_bbox phase 1 : inter_bottom\n";
+			}
 			if (dst_in_bbox) {
 				origin_bottom.push_back(split_edge(he, inter_bottom));
 			}
@@ -1059,6 +852,9 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 			}
 		}
 		else if (is_inter_top) {
+			if (verbose) {
+				std::cout << "DCEL::add_bbox phase 1 : inter_top\n";
+			}
 			if (dst_in_bbox) {
 				origin_top.push_back(split_edge(he, inter_top));
 			}
@@ -1080,6 +876,9 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 			}
 		}
 		else if (is_inter_left) {
+			if (verbose) {
+				std::cout << "DCEL::add_bbox phase 1 : inter_left\n";
+			}
 			if (dst_in_bbox) {
 				origin_left.push_back(split_edge(he, inter_left));
 			}
@@ -1101,6 +900,9 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 			}
 		}
 		else if (is_inter_right) {
+			if (verbose) {
+				std::cout << "DCEL::add_bbox phase 1 : inter_right\n";
+			}
 			if (dst_in_bbox) {
 				origin_right.push_back(split_edge(he, inter_right));
 			}
@@ -1121,14 +923,10 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 				}
 			}
 		}
-
-		add2queue({HALF_EDGE, he});
-		ignore.push_back(he->_twin);
+		else {
+			add2queue({FACE, he->_incident_face});
+		}
 	}
-
-	/*_half_edges.erase(std::remove_if(_half_edges.begin(), _half_edges.end(), [outside_edges](DCEL_HalfEdge * e){
-		return std::find(outside_edges.begin(), outside_edges.end(), e)!= outside_edges.end();
-	}), _half_edges.end());*/
 
 	if (verbose) {
 		std::cout << "DCEL::add_bbox phase 2 : tri des intersections\n";
@@ -1155,110 +953,137 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 		return a->_origin->_coords.y> b->_origin->_coords.y;
 	});
 
+	// ------------------------------------------------------------------------------------------------------------------------
+	if (verbose) {
+		std::cout << "DCEL::add_bbox phase 3 : ajouts des edges sur la bbox\n";
+	}
 	DCEL_HalfEdge * bbox_he= NULL;
 	DCEL_HalfEdge * last_he= NULL;
 	DCEL_HalfEdge * first_he= NULL;
 
-	// ------------------------------------------------------------------------------------------------------------------------
-	if (verbose) {
-		std::cout << "DCEL::add_bbox phase 3 : ajout des edges sur la bbox\n";
-	}
+	std::vector<DCEL_HalfEdge * > unbounded_edges;
 
-	for (int i=0; i<int(origin_bottom.size())- 1; ++i) {
-		bbox_he= add_edge(origin_bottom[i]->_origin, origin_bottom[i+ 1]->_origin);
-		origin_bottom[i]->_twin->set_next(bbox_he);
-		bbox_he->set_next(origin_bottom[i+ 1]);
-	}
-	for (int i=0; i<int(origin_top.size())- 1; ++i) {
-		bbox_he= add_edge(origin_top[i]->_origin, origin_top[i+ 1]->_origin);
-		origin_top[i]->_twin->set_next(bbox_he);
-		bbox_he->set_next(origin_top[i+ 1]);
-	}
-	for (int i=0; i<int(origin_right.size())- 1; ++i) {
-		bbox_he= add_edge(origin_right[i]->_origin, origin_right[i+ 1]->_origin);
-		origin_right[i]->_twin->set_next(bbox_he);
-		bbox_he->set_next(origin_right[i+ 1]);
-	}
-	for (int i=0; i<int(origin_left.size())- 1; ++i) {
-		bbox_he= add_edge(origin_left[i]->_origin, origin_left[i+ 1]->_origin);
-		origin_left[i]->_twin->set_next(bbox_he);
-		bbox_he->set_next(origin_left[i+ 1]);
-	}
-
-	if (verbose) {
-		std::cout << "DCEL::add_bbox phase 4 : ajouts des edges entre les coins de la bbox et les segments de bbox déjà ajoutés\n";
-	}
 	if (!origin_bottom.empty()) {
 		bbox_he= add_edge(bottom_left_corner, origin_bottom[0]->_origin);
+		unbounded_edges.push_back(bbox_he->_twin);
 		//last_he->set_next(bbox_he); // ici non last_he==NULL
 		first_he= bbox_he;
 		bbox_he->set_next(origin_bottom[0]);
+
+		for (int i=0; i<int(origin_bottom.size())- 1; ++i) {
+			DCEL_HalfEdge * cut_edge= cut_face(origin_bottom[i]->_twin->_next, origin_bottom[i+ 1]);
+			unbounded_edges.push_back(cut_edge->_twin);
+		}
+
 		bbox_he= add_edge(origin_bottom[origin_bottom.size()- 1]->_origin, bottom_right_corner);
 		origin_bottom[origin_bottom.size()- 1]->_twin->set_next(bbox_he);
+		unbounded_edges.push_back(bbox_he->_twin);
 	}
 	else {
 		bbox_he= add_edge(bottom_left_corner, bottom_right_corner);
 		//last_he->set_next(bbox_he); // ici non last_he==NULL
 		first_he= bbox_he;
+		unbounded_edges.push_back(bbox_he->_twin);
 	}
 	last_he= bbox_he;
 	
 	if (!origin_right.empty()) {
 		bbox_he= add_edge(bottom_right_corner, origin_right[0]->_origin);
+		unbounded_edges.push_back(bbox_he->_twin);
 		last_he->set_next(bbox_he);
 		bbox_he->set_next(origin_right[0]);
+
+		for (int i=0; i<int(origin_right.size())- 1; ++i) {
+			DCEL_HalfEdge * cut_edge= cut_face(origin_right[i]->_twin->_next, origin_right[i+ 1]);
+			unbounded_edges.push_back(cut_edge->_twin);
+		}
+
 		bbox_he= add_edge(origin_right[origin_right.size()- 1]->_origin, top_right_corner);
 		origin_right[origin_right.size()- 1]->_twin->set_next(bbox_he);
+		unbounded_edges.push_back(bbox_he->_twin);
 	}
 	else {
 		bbox_he= add_edge(bottom_right_corner, top_right_corner);
 		last_he->set_next(bbox_he);
+		unbounded_edges.push_back(bbox_he->_twin);
 	}
 	last_he= bbox_he;
 	
 	if (!origin_top.empty()) {
 		bbox_he= add_edge(top_right_corner, origin_top[0]->_origin);
+		unbounded_edges.push_back(bbox_he->_twin);
 		last_he->set_next(bbox_he);
 		bbox_he->set_next(origin_top[0]);
+
+		for (int i=0; i<int(origin_top.size())- 1; ++i) {
+			DCEL_HalfEdge * cut_edge= cut_face(origin_top[i]->_twin->_next, origin_top[i+ 1]);
+			unbounded_edges.push_back(cut_edge->_twin);
+		}
+
 		bbox_he= add_edge(origin_top[origin_top.size()- 1]->_origin, top_left_corner);
 		origin_top[origin_top.size()- 1]->_twin->set_next(bbox_he);
+		unbounded_edges.push_back(bbox_he->_twin);
 	}
 	else {
 		bbox_he= add_edge(top_right_corner, top_left_corner);
 		last_he->set_next(bbox_he);
+		unbounded_edges.push_back(bbox_he->_twin);
 	}
 	last_he= bbox_he;
 	
 	if (!origin_left.empty()) {
 		bbox_he= add_edge(top_left_corner, origin_left[0]->_origin);
+		unbounded_edges.push_back(bbox_he->_twin);
 		last_he->set_next(bbox_he);
 		bbox_he->set_next(origin_left[0]);
+
+		for (int i=0; i<int(origin_left.size())- 1; ++i) {
+			DCEL_HalfEdge * cut_edge= cut_face(origin_left[i]->_twin->_next, origin_left[i+ 1]);
+			unbounded_edges.push_back(cut_edge->_twin);
+		}
+
 		bbox_he= add_edge(origin_left[origin_left.size()- 1]->_origin, bottom_left_corner);
 		origin_left[origin_left.size()- 1]->_twin->set_next(bbox_he);
+		unbounded_edges.push_back(bbox_he->_twin);
 	}
 	else {
 		bbox_he= add_edge(top_left_corner, bottom_left_corner);
 		last_he->set_next(bbox_he);
+		unbounded_edges.push_back(bbox_he->_twin);
 	}
 	last_he= bbox_he;
 	
 	// on clos la boucle
 	last_he->set_next(first_he);
 
-	create_nexts_from_twins();
-	for (auto e : _half_edges) {
-		if (e->_previous== NULL) {
-			std::cout << "PREVIOUS == NULL : " << *e << "\n";
-		}
-		if (e->_next== NULL) {
-			std::cout << "NEXT == NULL : " << *e << "\n";
-		}
-		if (e->_twin== NULL) {
-			std::cout << "TWIN == NULL : " << *e << "\n";
-		}
+	// ------------------------------------------------------------------------------------------------------------------------
+	if (verbose) {
+		std::cout << "DCEL::add_bbox phase 4 : delete_queue\n";
 	}
 	delete_queue();
+
+	// ------------------------------------------------------------------------------------------------------------------------
+	if (verbose) {
+		std::cout << "DCEL::add_bbox phase 5 : unbounded edges\n";
+	}
+	for (int i=0; i<int(unbounded_edges.size())- 1; ++i) {
+		unbounded_edges[i]->set_previous(unbounded_edges[i+ 1]);
+	}
+	unbounded_edges[unbounded_edges.size()- 1]->set_previous(unbounded_edges[0]);
+	/*for (auto he : unbounded_edges) {
+		he->set_incident_face(_unbounded_face);
+	}*/
+
+	// ------------------------------------------------------------------------------------------------------------------------
+	if (verbose) {
+		std::cout << "DCEL::add_bbox phase 6 : create_faces_from_half_edges\n";
+	}
 	create_faces_from_half_edges();
+
+	// ------------------------------------------------------------------------------------------------------------------------
+	if (verbose) {
+		std::cout << "DCEL::add_bbox phase 7 : check_ccw_faces\n";
+	}
 	check_ccw_faces();
 }
 
@@ -1513,33 +1338,7 @@ void DCEL::export_html(std::string html_path, bool simple, const glm::vec2 & bbo
 			float x2= v2->_coords.x;
 			float y2= v2->_coords.y;
 
-			// buffer inversé vers centre de gravité (moche mais bon)
 			if (!simple) {
-				/*glm::vec2 gravity_center= face->get_gravity_center();
-				float xg= gravity_center.x;
-				float yg= gravity_center.y;
-				float d1= sqrt((xg- x1)* (xg- x1)+ (yg- y1)* (yg- y1));
-				float d2= sqrt((xg- x2)* (xg- x2)+ (yg- y2)* (yg- y2));
-				if (face== _unbounded_face || !face->ccw()) {
-					if (d1> 1e-3) {
-						x1+= DELTA_BUFFER* (xg- x1)/ d1;
-						y1+= DELTA_BUFFER* (yg- y1)/ d1;
-					}
-					if (d2> 1e-3) {
-						x2+= DELTA_BUFFER* (xg- x2)/ d2;
-						y2+= DELTA_BUFFER* (yg- y2)/ d2;
-					}
-				}
-				else {
-					if (d1> 1e-3) {
-						x1-= DELTA_BUFFER* (xg- x1)/ d1;
-						y1-= DELTA_BUFFER* (yg- y1)/ d1;
-					}
-					if (d2> 1e-3) {
-						x2-= DELTA_BUFFER* (xg- x2)/ d2;
-						y2-= DELTA_BUFFER* (yg- y2)/ d2;
-					}
-				}*/
 				float u= (x2- x1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
 				float v= (y2- y1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
 				x1-= DELTA_BUFFER* v;
@@ -1549,7 +1348,7 @@ void DCEL::export_html(std::string html_path, bool simple, const glm::vec2 & bbo
 				u= (x2- x1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
 				v= (y2- y1)/ sqrt((x2- x1)* (x2- x1)+ (y2- y1)* (y2- y1));
 
-				if (face== _unbounded_face || !face->ccw()) {
+				if (!face->ccw()) {
 					x1-= DELTA_BUFFER* u;
 					y1-= DELTA_BUFFER* v;
 					x2+= DELTA_BUFFER* u;
@@ -1592,12 +1391,13 @@ void DCEL::export_html(std::string html_path, bool simple, const glm::vec2 & bbo
 
 std::ostream & operator << (std::ostream & os, DCEL & d) {
 	os << "DCEL ***************************************\n";
+	os << "n_vertices = " << d._vertices.size() << "n_half_edges = " << d._half_edges.size() << "n_faces = " << d._faces.size() << "\n";
 	os << "faces ============================\n";
 	for (auto face : d._faces) {
 		os << "----------------------\n";
 		os << *face << "\n";
 	}
-	os << "edges ============================\n";
+	os << "\nedges ============================\n";
 	for (auto he : d._half_edges) {
 		os << *he << "\n";
 	}
