@@ -167,17 +167,18 @@ void DCEL_HalfEdge::set_origin(DCEL_Vertex * v) {
 void DCEL_HalfEdge::set_incident_face(DCEL_Face * f) {
 	bool verbose= false;
 
+	// on ne sait pas si f.ccw() donc f->_outer_edge= this n'est pas forcément vrai
 	DCEL_HalfEdge * he= this;
-	bool outer_edge_ok= false;
+	//bool outer_edge_ok= false;
 	do {
 		if (verbose) {
 			std::cout << "DCEL_HalfEdge::set_incident_face : he == " << *he << "\n";
 		}
 
 		he->_incident_face= f;
-		if (he== f->_outer_edge) {
+		/*if (he== f->_outer_edge) {
 			outer_edge_ok= true;
-		}
+		}*/
 		he= he->_next;
 		if (he== NULL) {
 			std::cerr << "ERR : DCEL_HalfEdge::set_incident_face : face non close\n";
@@ -185,9 +186,9 @@ void DCEL_HalfEdge::set_incident_face(DCEL_Face * f) {
 		}
 	} while (he!= this);
 
-	if (!outer_edge_ok) {
+	/*if (!outer_edge_ok) {
 		f->_outer_edge= this;
-	}
+	}*/
 }
 
 
@@ -352,12 +353,16 @@ bool DCEL_Face::ccw() {
 			std::cout << "DCEL_Face::ccw : " << glm_to_string(v->_coords) << "\n";
 		}
 	}
+	if (pts.size()< 3) {
+		std::cerr << "ERR : DCEL_Face::ccw : moins de 3 pts\n";
+		return false;
+	}
 	return is_ccw(pts);
 }
 
 
 std::ostream & operator << (std::ostream & os, DCEL_Face & f) {
-	if (!f.ccw()) {
+	if (f._outer_edge== NULL) {
 		os << "unbounded face\n";
 	}
 
@@ -520,8 +525,10 @@ DCEL_HalfEdge * DCEL::cut_face(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 	}
 	DCEL_Face * face1= add_face();
 	he1->set_incident_face(face1);
+	face1->_outer_edge= he1;
 	DCEL_Face * face2= add_face();
 	he2->set_incident_face(face2);
+	face2->_outer_edge= he2;
 
 	return cut_he;
 }
@@ -599,6 +606,7 @@ void DCEL::create_faces_from_half_edges() {
 				found_unattached_he= true;
 				DCEL_Face * face= add_face();
 				he->set_incident_face(face);
+				face->_outer_edge= he;
 			}
 		}
 		if (!found_unattached_he) {
@@ -610,12 +618,18 @@ void DCEL::create_faces_from_half_edges() {
 
 // gestion trous et face infinie
 void DCEL::check_ccw_faces() {
-	bool verbose= false;
+	bool verbose= true;
 	
 	for (auto f : _faces) {
-		if (f->_outer_edge== NULL) {
+		f->_inner_edges.clear();
+	}
+	
+	DCEL_Face * unbounded_face= NULL;
+
+	for (auto f : _faces) {
+		/*if (f->_outer_edge== NULL) {
 			continue;
-		}
+		}*/
 
 		if (!f->ccw()) {
 			if (verbose) {
@@ -635,21 +649,33 @@ void DCEL::check_ccw_faces() {
 					is_hole= true;
 					f2->_inner_edges.push_back(f->_outer_edge);
 					f->_outer_edge->set_incident_face(f2);
+					add2queue({FACE, f});
 					break;
 				}
 			}
 			// trou de la face infinie
-			/*if (!is_hole) {
+			if (!is_hole) {
 				if (verbose) {
 					std::cout << "DCEL::check_ccw_faces face inside infinite face\n";
 				}
-				_unbounded_face->_inner_edges.push_back(f->_outer_edge);
-				f->_outer_edge->set_incident_face(_unbounded_face);
-			}*/
-			
-			add2queue({FACE, f});
+				//_unbounded_face->_inner_edges.push_back(f->_outer_edge);
+				//f->_outer_edge->set_incident_face(_unbounded_face);
+				if (unbounded_face== NULL) {
+					unbounded_face= f;
+				}
+				else {
+					add2queue({FACE, f});
+				}
+				unbounded_face->_inner_edges.push_back(f->_outer_edge);
+			}
 		}
 	}
+
+	if (unbounded_face== NULL) {
+		std::cerr << "ERR : DCEL::check_ccw_faces : unbounded_face== NULL\n";
+		return;
+	}
+	unbounded_face->_outer_edge= NULL;
 }
 
 
@@ -1391,7 +1417,7 @@ void DCEL::export_html(std::string html_path, bool simple, const glm::vec2 & bbo
 
 std::ostream & operator << (std::ostream & os, DCEL & d) {
 	os << "DCEL ***************************************\n";
-	os << "n_vertices = " << d._vertices.size() << "n_half_edges = " << d._half_edges.size() << "n_faces = " << d._faces.size() << "\n";
+	os << "n_vertices = " << d._vertices.size() << " ; n_half_edges = " << d._half_edges.size() << " ; n_faces = " << d._faces.size() << "\n";
 	os << "faces ============================\n";
 	for (auto face : d._faces) {
 		os << "----------------------\n";
