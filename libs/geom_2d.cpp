@@ -147,11 +147,11 @@ bool ray_intersects_ray(const glm::vec2 & origin1, const glm::vec2 & direction1,
 	if (abs(a)< EPSILON) {
 		return false;
 	}
-	float t1= cross2d(origin2- origin1, direction1)/ a;
+	float t1= cross2d(origin2- origin1, direction2)/ a;
 	if (t1< 0.0f) {
 		return false;
 	}
-	float t2= cross2d(origin2- origin1, direction2)/ a;
+	float t2= cross2d(origin2- origin1, direction1)/ a;
 	if (t2< 0.0f) {
 		return false;
 	}

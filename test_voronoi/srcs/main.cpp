@@ -56,10 +56,13 @@ void test1() {
 	m["unit_root_center"].push_back(glm::vec2(0.0, 0.0));
 
 	for (auto const & x : m) {
-		if (x.first!= "unit_root") {continue;}
+		if (x.first!= "simple") {continue;}
 		Voronoi * v= new Voronoi(x.second, true, "../data/test1/"+ x.first);
 		//Voronoi * v= new Voronoi(pts);
-		v->_diagram->export_html("../data/test1/"+ x.first+ "/result.html", true, -0.1f, -0.1f, 1.1f, 1.1f, x.second);
+
+		glm::vec2 bbox_min, bbox_max;
+		v->_diagram->get_bbox(&bbox_min, &bbox_max);
+		v->_diagram->export_html("../data/test1/"+ x.first+ "/result.html", true, bbox_min- glm::vec2(-0.1f, -0.1f), bbox_max+ glm::vec2(0.1f, 0.1f), x.second);
 		delete v;
 	}
 }
@@ -91,10 +94,9 @@ void test2() {
 	auto ms= duration_cast<milliseconds>(t2- t1);
 	cout << ms.count() << " ms\n";
 
-	v->_diagram->export_html("../data/test2/result.html", true, xmin- 0.5f, ymin- 0.5f, xmax+ 0.5f, ymax+ 0.5f, pts);
-	//v->_diagram->export_html("../data/test2/result.html", true, pts);
-
-	//std::cout << "diagram_valid= " << v->_diagram->is_valid() << "\n";
+	glm::vec2 bbox_min, bbox_max;
+	v->_diagram->get_bbox(&bbox_min, &bbox_max);
+	v->_diagram->export_html("../data/test2/result.html", true, bbox_min- glm::vec2(-0.1f, -0.1f), bbox_max+ glm::vec2(0.1f, 0.1f), pts);
 
 	delete v;
 }
@@ -122,7 +124,10 @@ void test3() {
 		f.close();
 
 		Voronoi * v= new Voronoi(pts);
-		v->_diagram->export_html("../data/test3/result.html", true, xmin- 0.01f, ymin- 0.01f, xmax+ 0.01f, ymax+ 0.01f, pts);
+		
+		glm::vec2 bbox_min, bbox_max;
+		v->_diagram->get_bbox(&bbox_min, &bbox_max);
+		v->_diagram->export_html("../data/test3/result.html", true, bbox_min- glm::vec2(-0.1f, -0.1f), bbox_max+ glm::vec2(0.1f, 0.1f), pts);
 		if (!v->_diagram->is_valid()) {
 			break;
 		}
@@ -145,7 +150,10 @@ void test4() {
 	}
 
 	Voronoi * v= new Voronoi(pts);
-	v->_diagram->export_html("../data/test4/result.html", true, -2.1f, -2.1f, 2.1f, 2.1f, pts);
+
+	glm::vec2 bbox_min, bbox_max;
+	v->_diagram->get_bbox(&bbox_min, &bbox_max);
+	v->_diagram->export_html("../data/test4/result.html", true, bbox_min- glm::vec2(-0.1f, -0.1f), bbox_max+ glm::vec2(0.1f, 0.1f), pts);
 	delete v;
 }
 
@@ -154,10 +162,10 @@ void test4() {
 int main(int argc, char * argv[]) {
 	srand(time(NULL));
 
-	//test1();
+	test1();
 	//test2();
 	//test3();
-	test4();
+	//test4();
 
 	return 0;
 }

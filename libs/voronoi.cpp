@@ -102,7 +102,7 @@ glm::vec2 parabolas_intersection(const glm::vec2 & site_left, const glm::vec2 & 
 
 
 bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
-	glm::vec2 origin1= glm::vec2(he1->_tmp_x, he1->_tmp_y);
+	/*glm::vec2 origin1= glm::vec2(he1->_tmp_x, he1->_tmp_y);
 	glm::vec2 direction1= glm::vec2(he1->_dx, he1->_dy);
 	glm::vec2 origin2= glm::vec2(he2->_tmp_x, he2->_tmp_y);
 	glm::vec2 direction2= glm::vec2(he2->_dx, he2->_dy);
@@ -112,13 +112,14 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 	origin1-= EPS* direction1;
 	origin2-= EPS* direction2;
 
-	bool is_inter= ray_intersects_ray(origin1, direction1, origin2, direction2, &result);
+	bool is_inter= ray_intersects_ray(origin1, direction1, origin2, direction2, &result);*/
 
-	/*std::cout << "DEBUG : ";
-	std::cout << glm_to_string(origin1) << " ; " << glm_to_string(direction1) << " ; ";
-	std::cout << glm_to_string(origin2) << " ; " << glm_to_string(direction2) << " ; ";
-	std::cout << is_inter << "\n";*/
-	
+	glm::vec2 result;
+	bool is_inter= segment_intersects_segment(
+		he1->_origin->_coords, he1->destination()->_coords,
+		he2->_origin->_coords, he2->destination()->_coords, 
+	&result);
+
 	// faire un truc ici peut-être
 	/*if ((he1->_origin!= NULL) && (he2->_origin!= NULL)) {
 		if ((float_equals_strict(he1->_origin->_x, he2->_origin->_x)) || (float_equals_strict(he1->_origin->_y, he2->_origin->_y))) {
@@ -242,19 +243,19 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	_verbose= verbose;
 
 	if (_debug_path!= "") {
-		std::string cmd= "rm -rf "+ _debug_path+ " && mkdir "+ _debug_path;
+		std::string cmd= "rm -rf "+ _debug_path+ " && mkdir -p "+ _debug_path;
 		system(cmd.c_str());
 	}
 
-	float xmin= 1e8; float xmax= -1e8; float ymin= 1e8; float ymax= -1e8;
+	_bbox_min.x= 1e8; _bbox_min.y= 1e8; _bbox_max.x= -1e8; _bbox_max.y= -1e8;
 	for (unsigned int i=0; i<sites.size(); ++i) {
 		Event * e= new Event(SiteEvent);
 		e->_site= sites[i];
 		_queue.push(e);
-		if (sites[i].x< xmin) { xmin= sites[i].x; }
-		if (sites[i].x> xmax) { xmax= sites[i].x; }
-		if (sites[i].y< ymin) { ymin= sites[i].y; }
-		if (sites[i].y> ymax) { ymax= sites[i].y; }
+		if (sites[i].x< _bbox_min.x) { _bbox_min.x= sites[i].x; }
+		if (sites[i].x> _bbox_max.x) { _bbox_max.x= sites[i].x; }
+		if (sites[i].y< _bbox_min.y) { _bbox_min.y= sites[i].y; }
+		if (sites[i].y> _bbox_max.y) { _bbox_max.y= sites[i].y; }
 	}
 
 	_debug_count= 0;
@@ -312,7 +313,7 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 
 		if (_debug_path!= "") {
 			_beachline->export_html(_debug_path+ "/beachline"+ std::to_string(_debug_count)+ ".html");
-			export_debug_html(_debug_path+ "/debug"+ std::to_string(_debug_count)+ ".html");
+			//export_debug_html(_debug_path+ "/debug"+ std::to_string(_debug_count)+ ".html");
 		}
 
 		_debug_count++;
@@ -329,17 +330,7 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	if (_verbose) {
 		std::cout << "ajout BBOX\n";
 	}
-	if (!_diagram->add_bbox(xmin- 0.1f, ymin- 0.1f, xmax+ 0.1f, ymax+ 0.1f)) {
-		std::cout << "problème BBOX\n";
-		return;
-	}
-
-	if (_verbose) {
-		std::cout << "calcul faces DCEL\n";
-	}
-	if (!_diagram->create_faces_from_half_edges()) {
-		std::cout << "problème create_faces_from_half_edges\n";
-	}
+	_diagram->add_bbox(_bbox_min- glm::vec2(0.1, 0.1), _bbox_max+ glm::vec2(0.1, 0.1));
 }
 
 
@@ -363,10 +354,16 @@ void Voronoi::handle_first_sites_event(Event * e) {
 		BeachLineNode * new_bkpt= new BeachLineNode(BreakPoint);
 		new_bkpt->_sites= std::make_pair(max_node->_data._site, e->_site);
 
-		DCEL_HalfEdge * he= _diagram->add_edge(NULL, NULL);
+		/*DCEL_HalfEdge * he= _diagram->add_edge(NULL, NULL);
 		float x= (max_node->_data._site.x+ e->_site.x)* 0.5f;
 		float y= _current_y;
-		he->set_tmp_data(glm::vec2(0.0f, -1.0f), glm::vec2(x, y));
+		he->set_tmp_data(glm::vec2(0.0f, -1.0f), glm::vec2(x, y));*/
+
+		DCEL_HalfEdge * he= _diagram->add_edge(
+			glm::vec2((max_node->_data._site.x+ e->_site.x)* 0.5f, _bbox_max.y+ 0.1),
+			glm::vec2((max_node->_data._site.x+ e->_site.x)* 0.5f, _bbox_min.y- 0.1)
+		);
+
 		new_bkpt->_half_edge= he;
 
 		Node<BeachLineNode> * new_arc_node= _beachline->gen_node(*new_arc);
@@ -421,11 +418,18 @@ void Voronoi::handle_site_event(Event * e) {
 	}
 
 	// ajout des 2 half-edge
-	DCEL_HalfEdge * he= _diagram->add_edge(NULL, NULL);
 	// pente he = tangente à la parabole
 	float y= y_parabola(node_above_site->_data._site, _current_y, e->_site.x);
 	float dy= y_derivative_parabola(node_above_site->_data._site, _current_y, e->_site.x);
-	he->set_tmp_data(glm::vec2(1.0f, dy), glm::vec2(e->_site.x, y));
+
+	/*DCEL_HalfEdge * he= _diagram->add_edge(NULL, NULL);
+	he->set_tmp_data(glm::vec2(1.0f, dy), glm::vec2(e->_site.x, y));*/
+
+	float lambda= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
+	DCEL_HalfEdge * he= _diagram->add_edge(
+		glm::vec2(e->_site.x, y)- lambda* glm::vec2(1.0f, dy),
+		glm::vec2(e->_site.x, y)+ lambda* glm::vec2(1.0f, dy)
+	);
 
 	BeachLineNode * above_site_copy1= new BeachLineNode(Arc);
 	above_site_copy1->_site= glm::vec2(node_above_site->_data._site);
@@ -534,11 +538,17 @@ void Voronoi::handle_circle_event(Event * e) {
 	Node<BeachLineNode> * successor_bkpt= _beachline->successor(successor_leaf);
 
 	// ajout du centre du cercle comme sommet du diagram et d'un nouveau he délimitant les breakpoints voisins
-	DCEL_Vertex * vertex= _diagram->add_vertex(e->_circle_center.x, e->_circle_center.y);
-	DCEL_HalfEdge * he= _diagram->add_edge(vertex, NULL);
+	DCEL_Vertex * vertex= _diagram->add_vertex(glm::vec2(e->_circle_center.x, e->_circle_center.y));
 	// direction du nouveau he perpendiculaire à site_droit - site_gauche et pointant vers les y< 0
 	glm::vec2 v= successor_leaf->_data._site- predecessor_leaf->_data._site;
-	he->set_tmp_data(glm::vec2(v.y, -v.x), e->_circle_center);
+
+	/*DCEL_HalfEdge * he= _diagram->add_edge(vertex, NULL);
+	he->set_tmp_data(glm::vec2(v.y, -v.x), e->_circle_center);*/
+
+	float lambda= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
+	float norm= sqrt(v.x* v.x+ v.y* v.y);
+	DCEL_HalfEdge * he= _diagram->add_edge(vertex->_coords, vertex->_coords+ lambda* glm::vec2(v.y, -v.x)/ norm);
+	
 	if (_verbose) {
 		std::cout << "New Vertex = " << *vertex << "\n";
 		std::cout << "New Edge = " << *he << "\n";
@@ -642,7 +652,7 @@ void Voronoi::handle_circle_event(Event * e) {
 }
 
 
-void Voronoi::export_debug_html(std::string html_path) {
+/*void Voronoi::export_debug_html(std::string html_path) {
 	float xmin= 1e8;
 	float ymin= 1e8;
 	float xmax= -1e8;
@@ -670,11 +680,6 @@ void Voronoi::export_debug_html(std::string html_path) {
 	const float VIEW_YMIN= (ymin- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
 	const float VIEW_XMAX= (xmax- 0.5f* (xmin+ xmax))* MARGIN_FACTOR+ 0.5f* (xmin+ xmax);
 	const float VIEW_YMAX= (ymax- 0.5f* (ymin+ ymax))* MARGIN_FACTOR+ 0.5f* (ymin+ ymax);
-
-	/*const float VIEW_XMIN= -1.0f;
-	const float VIEW_XMAX= 2.0f;
-	const float VIEW_YMIN= -1.0f;
-	const float VIEW_YMAX= 2.0f;*/
 	
 	const float SIZE= std::max(VIEW_XMAX- VIEW_XMIN, VIEW_YMAX- VIEW_YMIN);
 	const float POINT_RADIUS= 0.006f* SIZE;
@@ -786,4 +791,4 @@ void Voronoi::export_debug_html(std::string html_path) {
 	f << "</svg>\n";
 	f << "</body>\n</html>\n";
 	f.close();
-}
+}*/

@@ -65,7 +65,7 @@ struct DCEL_Face {
 	std::vector<DCEL_Vertex *> get_vertices();
 	Polygon2D * get_polygon();
 	std::vector<DCEL_HalfEdge *> get_outer_edges();
-	std::vector<DCEL_HalfEdge *> get_inner_edges();
+	std::vector<std::vector<DCEL_HalfEdge *> > get_inner_edges();
 	std::vector<DCEL_Face *> get_adjacent_faces();
 	glm::vec2 get_gravity_center();
 	bool ccw();
@@ -82,10 +82,11 @@ public:
 	~DCEL();
 	DCEL_Vertex * add_vertex(const glm::vec2 & coords);
 	DCEL_HalfEdge * add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2);
+	DCEL_HalfEdge * add_edge(const glm::vec2 & ori, const glm::vec2 & dst);
 	DCEL_Face * add_face();
-	void delete_vertex(DCEL_Vertex * v);
+	/*void delete_vertex(DCEL_Vertex * v);
 	void delete_edge(DCEL_HalfEdge * he);
-	void delete_face(DCEL_Face * face);
+	void delete_face(DCEL_Face * face);*/
 	DCEL_HalfEdge * split_edge(DCEL_HalfEdge * he, const glm::vec2 & coords);
 	DCEL_HalfEdge * cut_face(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2);
 	void clear();
@@ -101,7 +102,7 @@ public:
 	void import(std::string s);
 	DCEL_Vertex * get_vertex(const glm::vec2 & coords);
 	DCEL_HalfEdge * get_edge(const glm::vec2 & ori, const glm::vec2 & dst);
-	void bbox(glm::vec2 * bbox_min, glm::vec2 * bbox_max);
+	void get_bbox(glm::vec2 * bbox_min, glm::vec2 * bbox_max);
 	void export_html(std::string html_path, bool simple, const glm::vec2 & bbox_min, const glm::vec2 & bbox_max, const std::vector<glm::vec2> & sites=std::vector<glm::vec2>());
 	friend std::ostream & operator << (std::ostream & os, DCEL & d);
 	
@@ -109,7 +110,6 @@ public:
 	std::vector<DCEL_Vertex *> _vertices;
 	std::vector<DCEL_HalfEdge *> _half_edges;
 	std::vector<DCEL_Face *> _faces;
-	//DCEL_Face * _unbounded_face;
 	std::deque<DeleteEvent> _delete_queue;
 };
 

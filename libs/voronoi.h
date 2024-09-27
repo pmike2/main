@@ -145,7 +145,7 @@ public:
 	void handle_first_sites_event(Event * e);
 	void handle_site_event(Event * e);
 	void handle_circle_event(Event * e);
-	void export_debug_html(std::string html_path);
+	//void export_debug_html(std::string html_path);
 
 
 	std::vector<glm::vec2> _sites;
@@ -157,6 +157,8 @@ public:
 	unsigned int _debug_count= 0;
 	std::string _debug_path;
 	bool _verbose;
+	glm::vec2 _bbox_min;
+	glm::vec2 _bbox_max;
 };
 
 #endif
