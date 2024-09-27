@@ -62,7 +62,7 @@ void test1() {
 
 		glm::vec2 bbox_min, bbox_max;
 		v->_diagram->get_bbox(&bbox_min, &bbox_max);
-		v->_diagram->export_html("../data/test1/"+ x.first+ "/result.html", true, bbox_min- glm::vec2(-0.1f, -0.1f), bbox_max+ glm::vec2(0.1f, 0.1f), x.second);
+		v->_diagram->export_html("../data/test1/"+ x.first+ "/result.html", false, bbox_min- glm::vec2(-0.1f, -0.1f), bbox_max+ glm::vec2(0.1f, 0.1f), x.second);
 		delete v;
 	}
 }

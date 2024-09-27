@@ -327,6 +327,17 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 		std::cout << "diagram_valid= " << _diagram->is_valid() << "\n";
 	}
 
+	for (auto v : _diagram->_vertices) {
+		if (v->_incident_edge== NULL) {
+			_diagram->add2queue({VERTEX, v});
+		}
+	}
+	_diagram->delete_queue();
+
+	_diagram->create_nexts_from_twins();
+	_diagram->create_faces_from_half_edges();
+
+
 	if (_verbose) {
 		std::cout << "ajout BBOX\n";
 	}
@@ -425,7 +436,7 @@ void Voronoi::handle_site_event(Event * e) {
 	/*DCEL_HalfEdge * he= _diagram->add_edge(NULL, NULL);
 	he->set_tmp_data(glm::vec2(1.0f, dy), glm::vec2(e->_site.x, y));*/
 
-	float lambda= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
+	float lambda= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y)/ sqrt(1.0f+ dy* dy);
 	DCEL_HalfEdge * he= _diagram->add_edge(
 		glm::vec2(e->_site.x, y)- lambda* glm::vec2(1.0f, dy),
 		glm::vec2(e->_site.x, y)+ lambda* glm::vec2(1.0f, dy)
@@ -538,19 +549,19 @@ void Voronoi::handle_circle_event(Event * e) {
 	Node<BeachLineNode> * successor_bkpt= _beachline->successor(successor_leaf);
 
 	// ajout du centre du cercle comme sommet du diagram et d'un nouveau he délimitant les breakpoints voisins
-	DCEL_Vertex * vertex= _diagram->add_vertex(glm::vec2(e->_circle_center.x, e->_circle_center.y));
+	DCEL_Vertex * vertex= _diagram->add_vertex(e->_circle_center);
 	// direction du nouveau he perpendiculaire à site_droit - site_gauche et pointant vers les y< 0
 	glm::vec2 v= successor_leaf->_data._site- predecessor_leaf->_data._site;
 
 	/*DCEL_HalfEdge * he= _diagram->add_edge(vertex, NULL);
 	he->set_tmp_data(glm::vec2(v.y, -v.x), e->_circle_center);*/
 
-	float lambda= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
-	float norm= sqrt(v.x* v.x+ v.y* v.y);
-	DCEL_HalfEdge * he= _diagram->add_edge(vertex->_coords, vertex->_coords+ lambda* glm::vec2(v.y, -v.x)/ norm);
+	float lambda= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y)/ sqrt(v.x* v.x+ v.y* v.y);
+	DCEL_Vertex * vertex2= _diagram->add_vertex(e->_circle_center+ lambda* glm::vec2(v.y, -v.x));
+	DCEL_HalfEdge * he= _diagram->add_edge(vertex, vertex2);
 	
 	if (_verbose) {
-		std::cout << "New Vertex = " << *vertex << "\n";
+		//std::cout << "New Vertex = " << *vertex << "\n";
 		std::cout << "New Edge = " << *he << "\n";
 	}
 
@@ -578,8 +589,8 @@ void Voronoi::handle_circle_event(Event * e) {
 	}
 
 	// rattacher le nouveau vertex et les 2 nouveaux he aux he existants
-	predecessor->_data._half_edge->_twin->_origin= vertex;
-	successor->_data._half_edge->_twin->_origin= vertex;
+	predecessor->_data._half_edge->_twin->set_origin(vertex);
+	successor->_data._half_edge->_twin->set_origin(vertex);
 	he->_twin->set_next(predecessor->_data._half_edge->_twin);
 	successor->_data._half_edge->set_next(he);
 	predecessor->_data._half_edge->set_next(successor->_data._half_edge->_twin);

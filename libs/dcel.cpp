@@ -159,7 +159,11 @@ void DCEL_HalfEdge::set_previous(DCEL_HalfEdge * hedge) {
 
 // set origin ; v peut valoir NULL
 void DCEL_HalfEdge::set_origin(DCEL_Vertex * v) {
+	if (_origin!= NULL) {
+		_origin->_incident_edge= NULL; // OK ?
+	}
 	_origin= v;
+	v->_incident_edge= this; // OK ?
 }
 
 
