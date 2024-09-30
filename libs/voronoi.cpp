@@ -445,7 +445,8 @@ void Voronoi::handle_site_event(Event * e) {
 	/*DCEL_HalfEdge * he= _diagram->add_edge(NULL, NULL);
 	he->set_tmp_data(glm::vec2(1.0f, dy), glm::vec2(e->_site.x, y));*/
 
-	float lambda= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y)/ sqrt(1.0f+ dy* dy);
+	// doit être + grand que la diagonale
+	float lambda= 2.0f* std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
 	DCEL_HalfEdge * he= _diagram->add_edge(
 		glm::vec2(e->_site.x, y)- lambda* glm::vec2(1.0f, dy),
 		glm::vec2(e->_site.x, y)+ lambda* glm::vec2(1.0f, dy)
