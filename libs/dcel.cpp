@@ -135,6 +135,7 @@ void DCEL_HalfEdge::set_twin(DCEL_HalfEdge * hedge) {
 
 // set next ; hedge peut valoir NULL
 void DCEL_HalfEdge::set_next(DCEL_HalfEdge * hedge) {
+	std::cout << "DEBUG__ : " << *this << " | " << *hedge << "\n";
 	if (hedge!= NULL) {
 		hedge->_previous= this;
 	}
@@ -551,7 +552,7 @@ void DCEL::clear() {
 
 
 void DCEL::create_nexts_from_twins() {
-	bool verbose= false;
+	bool verbose= true;
 
 	// on cherche les hedges qui n'ont pas de next
 	while (true) {

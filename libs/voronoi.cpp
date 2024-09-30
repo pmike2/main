@@ -114,12 +114,17 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 
 	bool is_inter= ray_intersects_ray(origin1, direction1, origin2, direction2, &result);*/
 
+	std::cout << "DEBUG : " << *he1 << " | " << *he2 << "\n";
+
 	glm::vec2 result;
 	bool is_inter= segment_intersects_segment(
 		he1->_origin->_coords, he1->destination()->_coords,
 		he2->_origin->_coords, he2->destination()->_coords, 
 	&result);
 
+	if ((float_equals_strict(he1->_origin->_coords.x, he2->_origin->_coords.x)) || (float_equals_strict(he1->_origin->_coords.y, he2->_origin->_coords.y))) {
+		return false;
+	}
 	// faire un truc ici peut-être
 	/*if ((he1->_origin!= NULL) && (he2->_origin!= NULL)) {
 		if ((float_equals_strict(he1->_origin->_x, he2->_origin->_x)) || (float_equals_strict(he1->_origin->_y, he2->_origin->_y))) {
@@ -313,7 +318,7 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 
 		if (_debug_path!= "") {
 			_beachline->export_html(_debug_path+ "/beachline"+ std::to_string(_debug_count)+ ".html");
-			//export_debug_html(_debug_path+ "/debug"+ std::to_string(_debug_count)+ ".html");
+			export_debug_html(_debug_path+ "/debug"+ std::to_string(_debug_count)+ ".html");
 		}
 
 		_debug_count++;
@@ -323,10 +328,6 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 		std::cout << "------------------------------------\n";
 	}
 	
-	if (_verbose) {
-		std::cout << "diagram_valid= " << _diagram->is_valid() << "\n";
-	}
-
 	for (auto v : _diagram->_vertices) {
 		if (v->_incident_edge== NULL) {
 			_diagram->add2queue({VERTEX, v});
@@ -334,14 +335,22 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	}
 	_diagram->delete_queue();
 
-	_diagram->create_nexts_from_twins();
-	_diagram->create_faces_from_half_edges();
+	//std::cout << *_diagram << "\n";
 
+	//_diagram->create_nexts_from_twins();
+	//_diagram->create_faces_from_half_edges();
+
+
+	if (_verbose) {
+		std::cout << "diagram_valid= " << _diagram->is_valid() << "\n";
+	}
 
 	if (_verbose) {
 		std::cout << "ajout BBOX\n";
 	}
-	_diagram->add_bbox(_bbox_min- glm::vec2(0.1, 0.1), _bbox_max+ glm::vec2(0.1, 0.1));
+	_diagram->add_bbox(_bbox_min- glm::vec2(0.2, 0.2), _bbox_max+ glm::vec2(0.2, 0.2));
+
+	std::cout << *_diagram << "\n";
 }
 
 
@@ -663,7 +672,7 @@ void Voronoi::handle_circle_event(Event * e) {
 }
 
 
-/*void Voronoi::export_debug_html(std::string html_path) {
+void Voronoi::export_debug_html(std::string html_path) {
 	float xmin= 1e8;
 	float ymin= 1e8;
 	float xmax= -1e8;
@@ -777,11 +786,18 @@ void Voronoi::handle_circle_event(Event * e) {
 			std::cout << "twin == NULL !\n";
 			continue;
 		}
+		float x1= he->_origin->_coords.x;
+		float y1= he->_origin->_coords.y;
+		float x2= he->destination()->_coords.x;
+		float y2= he->destination()->_coords.y;
 
-		if (he->_origin!= NULL) {
-			f << "<circle class=\"half_edge_origin_point_class\" cx=\"" << he->_origin->_x << "\" cy=\"" << y_html(he->_origin->_y) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+		f << "<circle class=\"half_edge_origin_point_class\" cx=\"" << x1 << "\" cy=\"" << y_html(y1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
+		f << "<line class=\"complete_half_edge_class\" x1=\"" << x1 << "\" y1=\"" << y_html(y1) << "\" x2=\"" << x2 << "\" y2=\"" << y_html(y2) << "\" />\n";
+
+		/*if (he->_origin!= NULL) {
+			f << "<circle class=\"half_edge_origin_point_class\" cx=\"" << he->_origin->_coords.x << "\" cy=\"" << y_html(he->_origin->_coords.y) << "\" r=\"" << POINT_RADIUS << "\" />\n";
 			if (he->destination()!= NULL) {
-				f << "<line class=\"complete_half_edge_class\" x1=\"" << he->_origin->_x << "\" y1=\"" << y_html(he->_origin->_y) << "\" x2=\"" << he->_twin->_origin->_x << "\" y2=\"" << y_html(he->_twin->_origin->_y) << "\" />\n";
+				f << "<line class=\"complete_half_edge_class\" x1=\"" << he->_origin->_coords.x << "\" y1=\"" << y_html(he->_origin->_coords.y) << "\" x2=\"" << he->_twin->_origin->_x << "\" y2=\"" << y_html(he->_twin->_origin->_y) << "\" />\n";
 			}
 			else {
 				f << "<line class=\"origincomplete_half_edge_class\" x1=\"" << he->_origin->_x << "\" y1=\"" << y_html(he->_origin->_y) << "\" x2=\"" << he->_origin->_x+ he->_dx << "\" y2=\"" << y_html(he->_origin->_y+ he->_dy) << "\" />\n";
@@ -796,10 +812,10 @@ void Voronoi::handle_circle_event(Event * e) {
 				f << "<circle class=\"half_edge_tmp_point_class\" cx=\"" << he->_tmp_x << "\" cy=\"" << y_html(he->_tmp_y) << "\" r=\"" << POINT_RADIUS << "\" />\n";
 				f << "<line class=\"incomplete_half_edge_class\" x1=\"" << he->_tmp_x- he->_dx << "\" y1=\"" << y_html(he->_tmp_y- he->_dy) << "\" x2=\"" << he->_tmp_x+ he->_dx << "\" y2=\"" << y_html(he->_tmp_y+ he->_dy) << "\" />\n";
 			}
-		}
+		}*/
 	}
 
 	f << "</svg>\n";
 	f << "</body>\n</html>\n";
 	f.close();
-}*/
+}

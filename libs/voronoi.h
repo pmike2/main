@@ -145,7 +145,7 @@ public:
 	void handle_first_sites_event(Event * e);
 	void handle_site_event(Event * e);
 	void handle_circle_event(Event * e);
-	//void export_debug_html(std::string html_path);
+	void export_debug_html(std::string html_path);
 
 
 	std::vector<glm::vec2> _sites;

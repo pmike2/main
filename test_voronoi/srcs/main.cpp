@@ -56,7 +56,7 @@ void test1() {
 	m["unit_root_center"].push_back(glm::vec2(0.0, 0.0));
 
 	for (auto const & x : m) {
-		if (x.first!= "simple") {continue;}
+		//if (x.first!= "simple") {continue;}
 		Voronoi * v= new Voronoi(x.second, true, "../data/test1/"+ x.first);
 		//Voronoi * v= new Voronoi(pts);
 
