@@ -14,6 +14,8 @@
 #include "bst.h"
 
 
+const float BBOX_MARGIN_PERCENT= 0.4f;
+
 
 typedef enum {CircleEvent, SiteEvent} EventType;
 typedef enum {Arc, BreakPoint} BeachLineNodeType;
@@ -142,6 +144,8 @@ public:
 	Voronoi();
 	Voronoi(const std::vector<glm::vec2> & sites, bool verbose=false, std::string debug_path="", float bbox_expand=2.0f);
 	~Voronoi();
+	glm::vec4 full_segment(glm::vec2 position, glm::vec2 direction);
+	glm::vec2 half_segment(glm::vec2 position, glm::vec2 direction);
 	void handle_first_sites_event(Event * e);
 	void handle_site_event(Event * e);
 	void handle_circle_event(Event * e);

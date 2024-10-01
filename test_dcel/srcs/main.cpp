@@ -27,10 +27,13 @@ void test1() {
 	//dcel->import("0,0 -> 4,0 -> 4,4 -> 0,4 | 1,1 -> 3,1 -> 3,3 -> 1,3");
 	//dcel->add_bbox(glm::vec2(-1.0, 0.5), glm::vec2(5.0, 3.5));
 
-	dcel->import("0,0 -> 5,0 -> 5,5 -> 0,5 | 1,1 -> 2,1 -> 2,2 -> 1,2 | 3,3 -> 4,3 -> 4,4 -> 3,4");
-	dcel->add_bbox(glm::vec2(-1.0, 1.5), glm::vec2(6.0, 3.5));
+	//dcel->import("0,0 -> 5,0 -> 5,5 -> 0,5 | 1,1 -> 2,1 -> 2,2 -> 1,2 | 3,3 -> 4,3 -> 4,4 -> 3,4");
+	//dcel->add_bbox(glm::vec2(-1.0, 1.5), glm::vec2(6.0, 3.5));
 
-	//std::cout << *dcel;
+	dcel->import("1,-1 -> 1,1 -> 0.5, 0.5");
+	dcel->add_bbox(glm::vec2(0.0, 0.0), glm::vec2(0.7, 0.7));
+
+	std::cout << *dcel;
 
 	glm::vec2 bbox_min, bbox_max;
 	dcel->get_bbox(&bbox_min, &bbox_max);

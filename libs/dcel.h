@@ -83,6 +83,7 @@ public:
 	DCEL_Vertex * add_vertex(const glm::vec2 & coords);
 	DCEL_HalfEdge * add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2);
 	DCEL_HalfEdge * add_edge(const glm::vec2 & ori, const glm::vec2 & dst);
+	DCEL_HalfEdge * add_edge(const glm::vec4 & ori_and_dst);
 	DCEL_Face * add_face();
 	/*void delete_vertex(DCEL_Vertex * v);
 	void delete_edge(DCEL_HalfEdge * he);
