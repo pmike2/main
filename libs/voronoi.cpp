@@ -114,17 +114,39 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 
 	bool is_inter= ray_intersects_ray(origin1, direction1, origin2, direction2, &result);*/
 
-	//std::cout << "DEBUG : " << *he1 << " | " << *he2 << "\n";
 
 	glm::vec2 result;
+	glm::vec2 he1_origin, he2_origin;
+	DCEL_HalfEdgeData * he1_data= (DCEL_HalfEdgeData *)(he1->_data);
+	DCEL_HalfEdgeData * he2_data= (DCEL_HalfEdgeData *)(he2->_data);
+
+	if (he1_data->_is_full_line) {
+		he1_origin= he1_data->_center;
+	}
+	else {
+		he1_origin= he1->_origin->_coords;
+	}
+
+	if (he2_data->_is_full_line) {
+		he2_origin= he2_data->_center;
+	}
+	else {
+		he2_origin= he2->_origin->_coords;
+	}
+
+	//std::cout << "DEBUG : " << *he1 << " | " << *he2 << "\n";
+	//std::cout << "DEBUG2 : " << *he1_data << " | " << *he2_data << "\n";
+	//std::cout << "DEBUG3 : " << glm_to_string(he1_origin) << " | " << glm_to_string(he2_origin) << "\n";
+
 	bool is_inter= segment_intersects_segment(
-		he1->_origin->_coords, he1->destination()->_coords,
-		he2->_origin->_coords, he2->destination()->_coords, 
+		he1_origin, he1->destination()->_coords,
+		he2_origin, he2->destination()->_coords, 
 	&result);
 
-	if ((float_equals_strict(he1->_origin->_coords.x, he2->_origin->_coords.x)) || (float_equals_strict(he1->_origin->_coords.y, he2->_origin->_coords.y))) {
+	/*if ((float_equals_strict(he1_origin.x, he2_origin.x)) || (float_equals_strict(he1_origin.y, he2_origin.y))) {
 		return false;
-	}
+	}*/
+
 	// faire un truc ici peut-être
 	/*if ((he1->_origin!= NULL) && (he2->_origin!= NULL)) {
 		if ((float_equals_strict(he1->_origin->_x, he2->_origin->_x)) || (float_equals_strict(he1->_origin->_y, he2->_origin->_y))) {
@@ -135,6 +157,31 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 	return is_inter;
 }
 
+// ---------------------------------------------------------------------------------------------
+DCEL_HalfEdgeData::DCEL_HalfEdgeData() : _is_full_line(false), _center(glm::vec2(0.0f)) {
+
+}
+
+
+DCEL_HalfEdgeData::DCEL_HalfEdgeData(bool is_full_line) : _is_full_line(is_full_line), _center(glm::vec2(0.0f)) {
+
+}
+
+
+DCEL_HalfEdgeData::DCEL_HalfEdgeData(bool is_full_line, glm::vec2 center) : _is_full_line(is_full_line), _center(center) {
+	
+}
+
+
+DCEL_HalfEdgeData::~DCEL_HalfEdgeData() {
+
+}
+
+
+std::ostream & operator << (std::ostream & os, const DCEL_HalfEdgeData & d) {
+	os << "is_full_line = " << d._is_full_line << " ; center = " << glm_to_string(d._center);
+	return os;
+}
 
 // ---------------------------------------------------------------------------------------------
 BeachLineNode::BeachLineNode() :
@@ -335,15 +382,11 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	}
 	_diagram->delete_queue();
 
-	//std::cout << *_diagram << "\n";
+	std::cout << *_diagram << "\n";
 
-	//_diagram->create_nexts_from_twins();
-	//_diagram->create_faces_from_half_edges();
-
-
-	if (_verbose) {
+	/*if (_verbose) {
 		std::cout << "diagram_valid= " << _diagram->is_valid() << "\n";
-	}
+	}*/
 
 	if (_verbose) {
 		std::cout << "ajout BBOX\n";
@@ -354,7 +397,7 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	glm::vec2 bbox_max= glm::vec2(_bbox_max.x+ BBOX_MARGIN_PERCENT* max_size, _bbox_max.y+ BBOX_MARGIN_PERCENT* max_size);
 	_diagram->add_bbox(bbox_min, bbox_max);
 
-	std::cout << *_diagram << "\n";
+	//std::cout << *_diagram << "\n";
 }
 
 
@@ -364,17 +407,23 @@ Voronoi::~Voronoi() {
 }
 
 
-glm::vec4 Voronoi::full_segment(glm::vec2 position, glm::vec2 direction) {
+DCEL_HalfEdge * Voronoi::add_full_segment(glm::vec2 position, glm::vec2 direction) {
 	float max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
 	float size= (1.0f+ BBOX_MARGIN_PERCENT)* max_size* 2.0f;
-	return glm::vec4(position- size* direction, position+ size* direction);
+	DCEL_HalfEdge * he= _diagram->add_edge(position- size* direction, position+ size* direction);
+	he->_data= new DCEL_HalfEdgeData(true, position);
+	he->_twin->_data= new DCEL_HalfEdgeData(true, position);
+	return he;
 }
 
 
-glm::vec2 Voronoi::half_segment(glm::vec2 position, glm::vec2 direction) {
+DCEL_HalfEdge * Voronoi::add_half_segment(glm::vec2 position, glm::vec2 direction) {
 	float max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
 	float size= (1.0f+ BBOX_MARGIN_PERCENT)* max_size* 2.0f;
-	return position+ size* direction/ sqrt(direction.x* direction.x+ direction.y* direction.y);
+	DCEL_HalfEdge * he= _diagram->add_edge(position, position+ size* direction/ sqrt(direction.x* direction.x+ direction.y* direction.y));
+	he->_data= new DCEL_HalfEdgeData(false);
+	he->_twin->_data= new DCEL_HalfEdgeData(false);
+	return he;
 }
 
 
@@ -404,7 +453,7 @@ void Voronoi::handle_first_sites_event(Event * e) {
 
 		glm::vec2 position= glm::vec2((max_node->_data._site.x+ e->_site.x)* 0.5f, _current_y);
 		glm::vec2 direction= glm::vec2(0.0f, -1.0f);
-		DCEL_HalfEdge * he= _diagram->add_edge(full_segment(position, direction));
+		DCEL_HalfEdge * he= add_full_segment(position, direction);
 
 		new_bkpt->_half_edge= he;
 
@@ -476,7 +525,7 @@ void Voronoi::handle_site_event(Event * e) {
 
 	glm::vec2 position= glm::vec2(e->_site.x, y);
 	glm::vec2 direction= glm::vec2(1.0f, dy);
-	DCEL_HalfEdge * he= _diagram->add_edge(full_segment(position, direction));
+	DCEL_HalfEdge * he= add_full_segment(position, direction);
 
 	BeachLineNode * above_site_copy1= new BeachLineNode(Arc);
 	above_site_copy1->_site= glm::vec2(node_above_site->_data._site);
@@ -598,7 +647,7 @@ void Voronoi::handle_circle_event(Event * e) {
 
 	// direction du nouveau he perpendiculaire à site_droit - site_gauche et pointant vers les y< 0
 	glm::vec2 v= successor_leaf->_data._site- predecessor_leaf->_data._site;
-	DCEL_HalfEdge * he= _diagram->add_edge(e->_circle_center, half_segment(e->_circle_center, glm::vec2(v.y, -v.x)));
+	DCEL_HalfEdge * he= add_half_segment(e->_circle_center, glm::vec2(v.y, -v.x));
 	DCEL_Vertex * circle_center_vertex= he->_origin;
 	
 	if (_verbose) {
@@ -630,6 +679,8 @@ void Voronoi::handle_circle_event(Event * e) {
 	}
 
 	// rattacher le nouveau vertex et les 2 nouveaux he aux he existants
+	//std::cout << "DDDD : " << glm_to_string(circle_center_vertex->_coords) << " ; " << glm_to_string(predecessor->_data._half_edge->_twin->destination()->_coords) << "\n";
+	//std::cout << "EEEE : " << glm_to_string(circle_center_vertex->_coords) << " ; " << glm_to_string(successor->_data._half_edge->_twin->destination()->_coords) << "\n";
 	predecessor->_data._half_edge->_twin->set_origin(circle_center_vertex);
 	successor->_data._half_edge->_twin->set_origin(circle_center_vertex);
 	he->_twin->set_next(predecessor->_data._half_edge->_twin);

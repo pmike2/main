@@ -36,6 +36,7 @@ struct DCEL_Vertex {
 
 	glm::vec2 _coords;
 	DCEL_HalfEdge * _incident_edge; // 1 des edges ayant ce vertex comme origine
+	void * _data; // on pourra utiliser _data pour ajouter des infos par sommet, edge ou face
 };
 
 
@@ -56,6 +57,7 @@ struct DCEL_HalfEdge {
 	DCEL_HalfEdge * _next;
 	DCEL_HalfEdge * _previous;
 	DCEL_Face * _incident_face;
+	void * _data;
 };
 
 
@@ -73,6 +75,7 @@ struct DCEL_Face {
 
 	DCEL_HalfEdge * _outer_edge; // 1 des edges délimitant la face; NULL pour la face infinie
 	std::vector<DCEL_HalfEdge *> _inner_edges; // edges de trous, 1 par trou
+	void * _data;
 };
 
 

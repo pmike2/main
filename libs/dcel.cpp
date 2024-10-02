@@ -11,18 +11,20 @@
 
 
 // ----------------------------------------------------------------------
-DCEL_Vertex::DCEL_Vertex() : _coords(glm::vec2(0.0f)), _incident_edge(NULL) {
+DCEL_Vertex::DCEL_Vertex() : _coords(glm::vec2(0.0f)), _incident_edge(NULL), _data(NULL) {
 
 }
 
 
-DCEL_Vertex::DCEL_Vertex(const glm::vec2 & coords) : _coords(coords), _incident_edge(NULL) {
+DCEL_Vertex::DCEL_Vertex(const glm::vec2 & coords) : _coords(coords), _incident_edge(NULL), _data(NULL) {
 
 }
 
 
 DCEL_Vertex::~DCEL_Vertex() {
-
+	if (_data!= NULL) {
+		delete _data;
+	}
 }
 
 
@@ -92,13 +94,15 @@ std::ostream & operator << (std::ostream & os, DCEL_Vertex & v) {
 
 // ----------------------------------------------------------------------
 DCEL_HalfEdge::DCEL_HalfEdge() : 
-_origin(NULL), _twin(NULL), _next(NULL), _previous(NULL), _incident_face(NULL) {
+_origin(NULL), _twin(NULL), _next(NULL), _previous(NULL), _incident_face(NULL), _data(NULL) {
 
 }
 
 
 DCEL_HalfEdge::~DCEL_HalfEdge() {
-
+	if (_data!= NULL) {
+		delete _data;
+	}
 }
 
 
@@ -160,6 +164,9 @@ void DCEL_HalfEdge::set_previous(DCEL_HalfEdge * hedge) {
 
 // set origin ; v peut valoir NULL
 void DCEL_HalfEdge::set_origin(DCEL_Vertex * v) {
+	if (_twin!= NULL && destination()== v) {
+		std::cerr << "ERR : DCEL_HalfEdge::set_origin : v == destination : " << *v << "\n";
+	}
 	if (_origin!= NULL) {
 		_origin->_incident_edge= NULL; // OK ?
 	}
@@ -210,13 +217,15 @@ std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
 
 
 // ----------------------------------------------------------------------
-DCEL_Face::DCEL_Face() : _outer_edge(NULL) {
+DCEL_Face::DCEL_Face() : _outer_edge(NULL), _data(NULL) {
 
 }
 
 
 DCEL_Face::~DCEL_Face() {
-
+	if (_data!= NULL) {
+		delete _data;
+	}
 }
 
 

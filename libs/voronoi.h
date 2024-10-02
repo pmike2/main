@@ -27,11 +27,21 @@ float y_parabola(const glm::vec2 & site, float yline, float x);
 float y_derivative_parabola(const glm::vec2 & site, float yline, float x);
 std::string parabola_equation(const glm::vec2 & site, float yline);
 glm::vec2 parabolas_intersection(const glm::vec2 & site1, const glm::vec2 & site2, float yline);
-
-class BeachLineNode;
-
 bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2);
 
+
+class DCEL_HalfEdgeData {
+public:
+	DCEL_HalfEdgeData();
+	DCEL_HalfEdgeData(bool is_full_line);
+	DCEL_HalfEdgeData(bool is_full_line, glm::vec2 center);
+	~DCEL_HalfEdgeData();
+	friend std::ostream & operator << (std::ostream & os, const DCEL_HalfEdgeData & d);
+
+
+	bool _is_full_line;
+	glm::vec2 _center;
+};
 
 class Event;
 
@@ -126,11 +136,11 @@ struct EventCmp {
 		}
 		if ((lhs->_type== EventType::CircleEvent) && (rhs->_type== EventType::SiteEvent)) {
 			return false;
-		}*/
-		/*if ((lhs->_type== EventType::SiteEvent) && (rhs->_type== EventType::SiteEvent)) {
+		}
+		if ((lhs->_type== EventType::SiteEvent) && (rhs->_type== EventType::SiteEvent)) {
 			return true;
-		}*/
-		/*if ((lhs->_type== EventType::CircleEvent) && (rhs->_type== EventType::CircleEvent)) {
+		}
+		if ((lhs->_type== EventType::CircleEvent) && (rhs->_type== EventType::CircleEvent)) {
 			return true;
 		}*/
 
@@ -144,8 +154,8 @@ public:
 	Voronoi();
 	Voronoi(const std::vector<glm::vec2> & sites, bool verbose=false, std::string debug_path="", float bbox_expand=2.0f);
 	~Voronoi();
-	glm::vec4 full_segment(glm::vec2 position, glm::vec2 direction);
-	glm::vec2 half_segment(glm::vec2 position, glm::vec2 direction);
+	DCEL_HalfEdge * add_full_segment(glm::vec2 position, glm::vec2 direction);
+	DCEL_HalfEdge * add_half_segment(glm::vec2 position, glm::vec2 direction);
 	void handle_first_sites_event(Event * e);
 	void handle_site_event(Event * e);
 	void handle_circle_event(Event * e);

@@ -56,7 +56,7 @@ void test1() {
 	m["unit_root_center"].push_back(glm::vec2(0.0, 0.0));
 
 	for (auto const & x : m) {
-		if (x.first!= "site_doublon") {continue;}
+		if (x.first!= "square") {continue;}
 		Voronoi * v= new Voronoi(x.second, true, "../data/test1/"+ x.first);
 		//Voronoi * v= new Voronoi(pts);
 
