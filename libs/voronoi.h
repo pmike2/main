@@ -156,6 +156,7 @@ public:
 	~Voronoi();
 	DCEL_HalfEdge * add_full_segment(glm::vec2 position, glm::vec2 direction);
 	DCEL_HalfEdge * add_half_segment(glm::vec2 position, glm::vec2 direction);
+	void set_halfedge_origin(DCEL_HalfEdge * he, DCEL_Vertex * v);
 	void handle_first_sites_event(Event * e);
 	void handle_site_event(Event * e);
 	void handle_circle_event(Event * e);

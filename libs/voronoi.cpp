@@ -427,6 +427,13 @@ DCEL_HalfEdge * Voronoi::add_half_segment(glm::vec2 position, glm::vec2 directio
 }
 
 
+void Voronoi::set_halfedge_origin(DCEL_HalfEdge * he, DCEL_Vertex * v) {
+	he->set_origin(v);
+	DCEL_HalfEdgeData * he_data= (DCEL_HalfEdgeData *)(he->_data);
+	he_data->_is_full_line= false;
+}
+
+
 void Voronoi::handle_first_sites_event(Event * e) {
 	if (_beachline->empty()) {
 		BeachLineNode * new_arc= new BeachLineNode(Arc);
@@ -681,8 +688,10 @@ void Voronoi::handle_circle_event(Event * e) {
 	// rattacher le nouveau vertex et les 2 nouveaux he aux he existants
 	//std::cout << "DDDD : " << glm_to_string(circle_center_vertex->_coords) << " ; " << glm_to_string(predecessor->_data._half_edge->_twin->destination()->_coords) << "\n";
 	//std::cout << "EEEE : " << glm_to_string(circle_center_vertex->_coords) << " ; " << glm_to_string(successor->_data._half_edge->_twin->destination()->_coords) << "\n";
-	predecessor->_data._half_edge->_twin->set_origin(circle_center_vertex);
-	successor->_data._half_edge->_twin->set_origin(circle_center_vertex);
+	//predecessor->_data._half_edge->_twin->set_origin(circle_center_vertex);
+	set_halfedge_origin(predecessor->_data._half_edge->_twin, circle_center_vertex);
+	//successor->_data._half_edge->_twin->set_origin(circle_center_vertex);
+	set_halfedge_origin(successor->_data._half_edge->_twin, circle_center_vertex);
 	he->_twin->set_next(predecessor->_data._half_edge->_twin);
 	successor->_data._half_edge->set_next(he);
 	predecessor->_data._half_edge->set_next(successor->_data._half_edge->_twin);
