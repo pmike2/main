@@ -20,6 +20,8 @@ const float BBOX_MARGIN_PERCENT= 0.4f;
 typedef enum {CircleEvent, SiteEvent} EventType;
 typedef enum {Arc, BreakPoint} BeachLineNodeType;
 
+class Event;
+
 
 inline bool float_equals_strict(float x, float y);
 inline bool float_equals_epsilon(float x, float y);
@@ -28,6 +30,7 @@ float y_derivative_parabola(const glm::vec2 & site, float yline, float x);
 std::string parabola_equation(const glm::vec2 & site, float yline);
 glm::vec2 parabolas_intersection(const glm::vec2 & site1, const glm::vec2 & site2, float yline);
 bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2);
+bool events_are_equal(Event * lhs, Event * rhs);
 
 
 class DCEL_HalfEdgeData {
@@ -43,7 +46,6 @@ public:
 	glm::vec2 _center;
 };
 
-class Event;
 
 class BeachLineNode {
 public:

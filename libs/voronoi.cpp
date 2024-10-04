@@ -157,6 +157,37 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 	return is_inter;
 }
 
+
+bool events_are_equal(Event * lhs, Event * rhs) {
+	float lx= 0.0f;
+	float rx= 0.0f;
+	float ly= 0.0f;
+	float ry= 0.0f;
+
+	if (lhs->_type== EventType::SiteEvent) {
+		lx= lhs->_site.x;
+		ly= lhs->_site.y;
+	}
+	else if (lhs->_type== EventType::CircleEvent) {
+		lx= lhs->_circle_center.x;
+		ly= lhs->_circle_center.y- lhs->_circle_radius;
+	}
+	
+	if (rhs->_type== EventType::SiteEvent) {
+		rx= rhs->_site.x;
+		ry= rhs->_site.y;
+	}
+	else if (rhs->_type== EventType::CircleEvent) {
+		rx= rhs->_circle_center.x;
+		ry= rhs->_circle_center.y- rhs->_circle_radius;
+	}
+
+	//std::cout << "DEBUG : " << lx << " ; " << rx << " ; " << ly << " ; " << ry << " ; " << float_equals_strict(lx, rx) << " ; " << float_equals_strict(ly, ry) << "\n";
+	//return (float_equals_strict(lx, rx) && float_equals_strict(ly, ry));
+	return (float_equals_epsilon(lx, rx) && float_equals_epsilon(ly, ry));
+}
+
+
 // ---------------------------------------------------------------------------------------------
 DCEL_HalfEdgeData::DCEL_HalfEdgeData() : _is_full_line(false), _center(glm::vec2(0.0f)) {
 
@@ -313,9 +344,14 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	_debug_count= 0;
 	float last_site_x= 1e8;
 	float last_site_y= 1e8;
+	Event * last_event= NULL;
 	while (!_queue.empty()) {
 		Event * e= _queue.top();
 		_queue.pop();
+		if (last_event!= NULL && events_are_equal(last_event, e)) {
+			continue;
+		}
+		last_event= e;
 		if (!e->_is_valid) {
 			continue;
 		}
