@@ -15,7 +15,7 @@ bool float_equals_strict(float x, float y) {
 
 
 bool float_equals_epsilon(float x, float y) {
-	return abs(x- y)< 1e-11;
+	return abs(x- y)< 1e-9;
 }
 
 
@@ -182,7 +182,7 @@ bool events_are_equal(Event * lhs, Event * rhs) {
 		ry= rhs->_circle_center.y- rhs->_circle_radius;
 	}
 
-	//std::cout << "DEBUG : " << lx << " ; " << rx << " ; " << ly << " ; " << ry << " ; " << float_equals_strict(lx, rx) << " ; " << float_equals_strict(ly, ry) << "\n";
+	std::cout << "DEBUG : " << lx << " ; " << rx << " ; " << ly << " ; " << ry << " ; " << float_equals_epsilon(lx, rx) << " ; " << float_equals_epsilon(ly, ry) << "\n";
 	//return (float_equals_strict(lx, rx) && float_equals_strict(ly, ry));
 	return (float_equals_epsilon(lx, rx) && float_equals_epsilon(ly, ry));
 }
@@ -349,6 +349,9 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 		Event * e= _queue.top();
 		_queue.pop();
 		if (last_event!= NULL && events_are_equal(last_event, e)) {
+			if (_verbose) {
+				std::cout << "last_event == e\n";
+			}
 			continue;
 		}
 		last_event= e;

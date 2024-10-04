@@ -48,7 +48,7 @@ void test1() {
 		m["unit_root"].push_back(glm::vec2(cos(2.0* M_PI* (double)(i)/ (double)(n1)), sin(2.0* M_PI* (double)(i)/ (double)(n1))));
 	}
 	// racine niemes de l'unité avec centre
-	int n2= 5;
+	int n2= 4;
 	m["unit_root_center"]= std::vector<glm::vec2> {};
 	for (int i=0; i<n2; ++i) {
 		m["unit_root_center"].push_back(glm::vec2(cos(2.0* M_PI* (double)(i)/ (double)(n2)), sin(2.0* M_PI* (double)(i)/ (double)(n2))));
@@ -56,7 +56,7 @@ void test1() {
 	m["unit_root_center"].push_back(glm::vec2(0.0, 0.0));
 
 	for (auto const & x : m) {
-		if (x.first!= "unit_root") {continue;}
+		if (x.first!= "unit_root_center") {continue;}
 		Voronoi * v= new Voronoi(x.second, true, "../data/test1/"+ x.first);
 
 		glm::vec2 bbox_min, bbox_max;
@@ -68,7 +68,7 @@ void test1() {
 
 
 void test2() {
-	int n_pts= 3000;
+	int n_pts= 300;
 	float xmin= 0.0f;
 	float xmax= 1.0f;
 	float ymin= 0.0f;
@@ -95,7 +95,7 @@ void test2() {
 
 	glm::vec2 bbox_min, bbox_max;
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);
-	v->_diagram->export_html("../data/test2/result.html", true, bbox_min- glm::vec2(0.5f), bbox_max+ glm::vec2(0.5f), pts);
+	v->_diagram->export_html("../data/test2/result.html", true, bbox_min- glm::vec2(0.2f), bbox_max+ glm::vec2(0.2f), pts);
 
 	delete v;
 }
@@ -161,8 +161,8 @@ void test4() {
 int main(int argc, char * argv[]) {
 	srand(time(NULL));
 
-	test1();
-	//test2();
+	//test1();
+	test2();
 	//test3();
 	//test4();
 
