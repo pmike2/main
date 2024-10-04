@@ -42,7 +42,7 @@ void test1() {
 	// jeu test carré
 	m["square"]= std::vector<glm::vec2> {glm::vec2(0.1, 0.1), glm::vec2(0.3, 0.1), glm::vec2(0.1, 0.3), glm::vec2(0.3, 0.3)};
 	// racine niemes de l'unité
-	int n1= 13;
+	int n1= 5;
 	m["unit_root"]= std::vector<glm::vec2> {};
 	for (int i=0; i<n1; ++i) {
 		m["unit_root"].push_back(glm::vec2(cos(2.0* M_PI* (double)(i)/ (double)(n1)), sin(2.0* M_PI* (double)(i)/ (double)(n1))));
@@ -56,7 +56,7 @@ void test1() {
 	m["unit_root_center"].push_back(glm::vec2(0.0, 0.0));
 
 	for (auto const & x : m) {
-		if (x.first!= "unit_root_center") {continue;}
+		if (x.first!= "unit_root") {continue;}
 		Voronoi * v= new Voronoi(x.second, true, "../data/test1/"+ x.first);
 
 		glm::vec2 bbox_min, bbox_max;
@@ -161,8 +161,8 @@ void test4() {
 int main(int argc, char * argv[]) {
 	srand(time(NULL));
 
-	//test1();
-	test2();
+	test1();
+	//test2();
 	//test3();
 	//test4();
 

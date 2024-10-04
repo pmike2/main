@@ -143,9 +143,9 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 		he2_origin, he2->destination()->_coords, 
 	&result);
 
-	/*if ((float_equals_strict(he1_origin.x, he2_origin.x)) || (float_equals_strict(he1_origin.y, he2_origin.y))) {
+	if ((float_equals_strict(he1_origin.x, he2_origin.x)) || (float_equals_strict(he1_origin.y, he2_origin.y))) {
 		return false;
-	}*/
+	}
 
 	// faire un truc ici peut-être
 	/*if ((he1->_origin!= NULL) && (he2->_origin!= NULL)) {
@@ -472,6 +472,8 @@ void Voronoi::set_halfedge_origin(DCEL_HalfEdge * he, DCEL_Vertex * v) {
 	he->set_origin(v);
 	DCEL_HalfEdgeData * he_data= (DCEL_HalfEdgeData *)(he->_data);
 	he_data->_is_full_line= false;
+	DCEL_HalfEdgeData * he_twin_data= (DCEL_HalfEdgeData *)(he->_twin->_data);
+	he_twin_data->_is_full_line= false;
 }
 
 
@@ -905,6 +907,7 @@ void Voronoi::export_debug_html(std::string html_path) {
 		float y1= he->_origin->_coords.y;
 		float x2= he->destination()->_coords.x;
 		float y2= he->destination()->_coords.y;
+		DCEL_HalfEdgeData * he_data= (DCEL_HalfEdgeData *)(he->_data);
 
 		f << "<circle class=\"half_edge_origin_point_class\" cx=\"" << x1 << "\" cy=\"" << y_html(y1) << "\" r=\"" << POINT_RADIUS << "\" />\n";
 		f << "<line class=\"complete_half_edge_class\" x1=\"" << x1 << "\" y1=\"" << y_html(y1) << "\" x2=\"" << x2 << "\" y2=\"" << y_html(y2) << "\" />\n";
