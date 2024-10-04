@@ -56,13 +56,12 @@ void test1() {
 	m["unit_root_center"].push_back(glm::vec2(0.0, 0.0));
 
 	for (auto const & x : m) {
-		if (x.first!= "square") {continue;}
+		if (x.first!= "unit_root") {continue;}
 		Voronoi * v= new Voronoi(x.second, true, "../data/test1/"+ x.first);
-		//Voronoi * v= new Voronoi(pts);
 
 		glm::vec2 bbox_min, bbox_max;
 		v->_diagram->get_bbox(&bbox_min, &bbox_max);
-		v->_diagram->export_html("../data/test1/"+ x.first+ "/result.html", false, bbox_min- glm::vec2(-0.1f, -0.1f), bbox_max+ glm::vec2(0.1f, 0.1f), x.second);
+		v->_diagram->export_html("../data/test1/"+ x.first+ "/result.html", false, bbox_min- glm::vec2(0.2f), bbox_max+ glm::vec2(0.2f), x.second);
 		delete v;
 	}
 }
@@ -96,7 +95,7 @@ void test2() {
 
 	glm::vec2 bbox_min, bbox_max;
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);
-	v->_diagram->export_html("../data/test2/result.html", true, bbox_min- glm::vec2(-0.1f, -0.1f), bbox_max+ glm::vec2(0.1f, 0.1f), pts);
+	v->_diagram->export_html("../data/test2/result.html", true, bbox_min- glm::vec2(0.5f), bbox_max+ glm::vec2(0.5f), pts);
 
 	delete v;
 }
@@ -127,7 +126,7 @@ void test3() {
 		
 		glm::vec2 bbox_min, bbox_max;
 		v->_diagram->get_bbox(&bbox_min, &bbox_max);
-		v->_diagram->export_html("../data/test3/result.html", true, bbox_min- glm::vec2(-0.1f, -0.1f), bbox_max+ glm::vec2(0.1f, 0.1f), pts);
+		v->_diagram->export_html("../data/test3/result.html", true, bbox_min- glm::vec2(0.5f), bbox_max+ glm::vec2(0.5f), pts);
 		if (!v->_diagram->is_valid()) {
 			break;
 		}
@@ -153,7 +152,7 @@ void test4() {
 
 	glm::vec2 bbox_min, bbox_max;
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);
-	v->_diagram->export_html("../data/test4/result.html", true, bbox_min- glm::vec2(-0.1f, -0.1f), bbox_max+ glm::vec2(0.1f, 0.1f), pts);
+	v->_diagram->export_html("../data/test4/result.html", true, bbox_min- glm::vec2(0.5f), bbox_max+ glm::vec2(0.5f), pts);
 	delete v;
 }
 

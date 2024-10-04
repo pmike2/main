@@ -197,6 +197,8 @@ void DCEL_HalfEdge::set_incident_face(DCEL_Face * f) {
 
 
 std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
+	os << &e << " : ";
+
 	if (e._origin!= NULL) {
 		os << *e._origin;
 	}
@@ -210,7 +212,18 @@ std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
 	else {
 		os << "NULL";
 	}
-	//os << " ; previous = " << e._previous << " ; next = " << e._next;
+	/*if (e._previous!= NULL) {
+		os << " ; previous = " << *e._previous;
+	}
+	else {
+		os << " ; previous = NULL";
+	}
+	if (e._next!= NULL) {
+	 	os << " ; next = " << *e._next;
+	}
+	else {
+		os << " ; next = NULL";
+	}*/
 
 	return os;
 }
@@ -744,6 +757,22 @@ void DCEL::check_integrity() {
 			std::cout << "ERR : DCEL::check_integrity : twin == NULL : " << *e << "\n";
 		}
 	}
+}
+
+
+void DCEL::delete_loop_edge() {
+	for (auto e : _half_edges) {
+		if (e->_origin!= NULL && e->destination()!= NULL && e->_origin== e->destination()) {
+			add2queue({HALF_EDGE, e});
+			if (e->_previous!= NULL) {
+				e->_previous->set_next(e->_next);
+			}
+			else if (e->_next!= NULL) {
+				e->_next->set_next(e->_previous);
+			}
+		}
+	}
+	delete_queue();
 }
 
 
@@ -1618,7 +1647,14 @@ std::ostream & operator << (std::ostream & os, DCEL & d) {
 
 	os << "edges ============================\n";
 	for (auto he : d._half_edges) {
-		os << *he << "\n";
+		os << *he;
+		if (he->_previous!= NULL) {
+			os << " | previous = " << *he->_previous;
+		}
+		if (he->_next!= NULL) {
+			os << " | next = " << *he->_next;
+		}
+		os << "\n";
 	}
 
 	os << "vertices ============================\n";

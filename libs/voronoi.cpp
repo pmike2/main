@@ -417,6 +417,8 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 		}
 	}
 	_diagram->delete_queue();
+	
+	_diagram->delete_loop_edge();
 
 	std::cout << *_diagram << "\n";
 
