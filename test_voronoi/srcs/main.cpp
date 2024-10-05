@@ -42,7 +42,7 @@ void test1() {
 	// jeu test carré
 	m["square"]= std::vector<glm::vec2> {glm::vec2(0.1, 0.1), glm::vec2(0.3, 0.1), glm::vec2(0.1, 0.3), glm::vec2(0.3, 0.3)};
 	// racine niemes de l'unité
-	int n1= 5;
+	int n1= 4;
 	m["unit_root"]= std::vector<glm::vec2> {};
 	for (int i=0; i<n1; ++i) {
 		m["unit_root"].push_back(glm::vec2(cos(2.0* M_PI* (double)(i)/ (double)(n1)), sin(2.0* M_PI* (double)(i)/ (double)(n1))));

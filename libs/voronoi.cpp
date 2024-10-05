@@ -159,6 +159,10 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 
 
 bool events_are_equal(Event * lhs, Event * rhs) {
+	if (lhs->_type!= rhs->_type) {
+		return false;
+	}
+	
 	float lx= 0.0f;
 	float rx= 0.0f;
 	float ly= 0.0f;
