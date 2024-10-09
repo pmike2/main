@@ -142,8 +142,10 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 		he1_origin, he1->destination()->_coords,
 		he2_origin, he2->destination()->_coords, 
 	&result);
+	//std::cout << "DEBUG4 : " << is_inter << " ; " << glm_to_string(result) << "\n";
 
-	if ((float_equals_strict(he1_origin.x, he2_origin.x)) || (float_equals_strict(he1_origin.y, he2_origin.y))) {
+	if (float_equals_strict(he1_origin.x, he2_origin.x) && float_equals_strict(he1_origin.y, he2_origin.y)) {
+		//std::cout << "DEBUG5 origin equals\n";
 		return false;
 	}
 
@@ -186,7 +188,7 @@ bool events_are_equal(Event * lhs, Event * rhs) {
 		ry= rhs->_circle_center.y- rhs->_circle_radius;
 	}
 
-	std::cout << "DEBUG : " << lx << " ; " << rx << " ; " << ly << " ; " << ry << " ; " << float_equals_epsilon(lx, rx) << " ; " << float_equals_epsilon(ly, ry) << "\n";
+	//std::cout << "DEBUG : " << lx << " ; " << rx << " ; " << ly << " ; " << ry << " ; " << float_equals_epsilon(lx, rx) << " ; " << float_equals_epsilon(ly, ry) << "\n";
 	//return (float_equals_strict(lx, rx) && float_equals_strict(ly, ry));
 	return (float_equals_epsilon(lx, rx) && float_equals_epsilon(ly, ry));
 }
@@ -356,7 +358,7 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 			if (_verbose) {
 				std::cout << "last_event == e\n";
 			}
-			continue;
+			//continue;
 		}
 		last_event= e;
 		if (!e->_is_valid) {
@@ -473,6 +475,9 @@ DCEL_HalfEdge * Voronoi::add_half_segment(glm::vec2 position, glm::vec2 directio
 
 
 void Voronoi::set_halfedge_origin(DCEL_HalfEdge * he, DCEL_Vertex * v) {
+	if (_verbose) {
+		std::cout << "set_halfedge_origin : he = " << *he << " ; v = " << *v << "\n";
+	}
 	he->set_origin(v);
 	DCEL_HalfEdgeData * he_data= (DCEL_HalfEdgeData *)(he->_data);
 	he_data->_is_full_line= false;
@@ -627,8 +632,7 @@ void Voronoi::handle_site_event(Event * e) {
 	//_beachline.balance();
 
 	// voir si les breakpoints convergent
-	if ((prev_site!= NULL) && (prev_bkpt!= NULL) && (breakpoints_converge(prev_bkpt->_data._half_edge, breakpoint_left->_half_edge))) {
-
+	if (prev_site!= NULL && prev_bkpt!= NULL && breakpoints_converge(prev_bkpt->_data._half_edge, breakpoint_left->_half_edge)) {
 		std::pair<glm::vec2, float> circle= circumcircle(prev_site->_data._site, node_above_site->_data._site, new_arc->_site);
 		glm::vec2 center= circle.first;
 		float radius= circle.second;
@@ -705,7 +709,8 @@ void Voronoi::handle_circle_event(Event * e) {
 	DCEL_Vertex * circle_center_vertex= he->_origin;
 	
 	if (_verbose) {
-		//std::cout << "New Vertex = " << *vertex << "\n";
+		std::cout << "predecessor_leaf = " << *predecessor_leaf << "\n";
+		std::cout << "successor_leaf = " << *successor_leaf << "\n";
 		std::cout << "New Edge = " << *he << "\n";
 	}
 

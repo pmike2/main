@@ -197,7 +197,7 @@ void DCEL_HalfEdge::set_incident_face(DCEL_Face * f) {
 
 
 std::ostream & operator << (std::ostream & os, DCEL_HalfEdge & e) {
-	os << &e << " : ";
+	//os << &e << " : ";
 
 	if (e._origin!= NULL) {
 		os << *e._origin;
@@ -945,127 +945,141 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 		is_inter_left  = segment_intersects_segment(he->_origin->_coords, he->destination()->_coords, bottom_left_corner->_coords , top_left_corner->_coords    , &inter_left);
 		is_inter_right = segment_intersects_segment(he->_origin->_coords, he->destination()->_coords, bottom_right_corner->_coords, top_right_corner->_coords   , &inter_right);
 
-		if (is_inter_bottom) {
-			if (dst_in_bbox) {
+		if (verbose) {
+			std::cout << "bottom : " << is_inter_bottom << " ; pt1_begin = " << glm_to_string(he->_origin->_coords) << " ; pt1_end = " << glm_to_string(he->destination()->_coords) << " ; pt2_begin = " << glm_to_string(bottom_left_corner->_coords) << " ; pt2_end = " << glm_to_string(bottom_right_corner->_coords) << "\n";
+			std::cout << "top : " << is_inter_bottom << " ; pt1_begin = " << glm_to_string(he->_origin->_coords) << " ; pt1_end = " << glm_to_string(he->destination()->_coords) << " ; pt2_begin = " << glm_to_string(top_left_corner->_coords) << " ; pt2_end = " << glm_to_string(top_right_corner->_coords) << "\n";
+			std::cout << "left : " << is_inter_bottom << " ; pt1_begin = " << glm_to_string(he->_origin->_coords) << " ; pt1_end = " << glm_to_string(he->destination()->_coords) << " ; pt2_begin = " << glm_to_string(bottom_left_corner->_coords) << " ; pt2_end = " << glm_to_string(top_left_corner->_coords) << "\n";
+			std::cout << "right : " << is_inter_bottom << " ; pt1_begin = " << glm_to_string(he->_origin->_coords) << " ; pt1_end = " << glm_to_string(he->destination()->_coords) << " ; pt2_begin = " << glm_to_string(bottom_right_corner->_coords) << " ; pt2_end = " << glm_to_string(top_right_corner->_coords) << "\n";
+		}
+
+		if (dst_in_bbox) {
+			if (is_inter_bottom) {
 				if (verbose) {
 					std::cout << "DCEL::add_bbox phase 1 : inter_bottom et dst_in_bbox\n";
 				}
 				origin_bottom.push_back(split_edge(he, inter_bottom));
-				continue;
 			}
-			else if (he->_origin->_coords.y<= bbox_min.y) {
-				if (verbose) {
-					std::cout << "DCEL::add_bbox phase 1 : inter_bottom et !dst_in_bbox\n";
-				}
-				DCEL_HalfEdge * he2= split_edge(he, inter_bottom);
-				origin_bottom.push_back(he2);
-				if (is_inter_top) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_top)});
-					origin_top.push_back(he2->_twin);
-				}
-				else if (is_inter_left) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_left)});
-					origin_left.push_back(he2->_twin);
-				}
-				else if (is_inter_right) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_right)});
-					origin_right.push_back(he2->_twin);
-				}
-				continue;
-			}
-		}
-		
-		if (is_inter_top) {
-			if (dst_in_bbox) {
+			else if (is_inter_top) {
 				if (verbose) {
 					std::cout << "DCEL::add_bbox phase 1 : inter_top et dst_in_bbox\n";
 				}
 				origin_top.push_back(split_edge(he, inter_top));
-				continue;
 			}
-			else if (he->_origin->_coords.y>= bbox_max.y) {
-				if (verbose) {
-					std::cout << "DCEL::add_bbox phase 1 : inter_top et !dst_in_bbox\n";
-				}
-				DCEL_HalfEdge * he2= split_edge(he, inter_top);
-				origin_top.push_back(he2);
-				if (is_inter_bottom) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_bottom)});
-					origin_bottom.push_back(he2->_twin);
-				}
-				else if (is_inter_left) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_left)});
-					origin_left.push_back(he2->_twin);
-				}
-				else if (is_inter_right) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_right)});
-					origin_right.push_back(he2->_twin);
-				}
-				continue;
-			}
-		}
-		
-		if (is_inter_left) {
-			if (dst_in_bbox) {
+			else if (is_inter_left) {
 				if (verbose) {
 					std::cout << "DCEL::add_bbox phase 1 : inter_left et dst_in_bbox\n";
 				}
 				origin_left.push_back(split_edge(he, inter_left));
-				continue;
 			}
-			else if (he->_origin->_coords.x<= bbox_min.y) {
-				if (verbose) {
-					std::cout << "DCEL::add_bbox phase 1 : inter_left et !dst_in_bbox\n";
-				}
-				DCEL_HalfEdge * he2= split_edge(he, inter_left);
-				origin_left.push_back(he2);
-				if (is_inter_top) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_top)});
-					origin_top.push_back(he2->_twin);
-				}
-				else if (is_inter_bottom) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_bottom)});
-					origin_bottom.push_back(he2->_twin);
-				}
-				else if (is_inter_right) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_right)});
-					origin_right.push_back(he2->_twin);
-				}
-				continue;
-			}
-		}
-		
-		if (is_inter_right) {
-			if (dst_in_bbox) {
+			else if (is_inter_right) {
 				if (verbose) {
 					std::cout << "DCEL::add_bbox phase 1 : inter_right et dst_in_bbox\n";
 				}
 				origin_right.push_back(split_edge(he, inter_right));
-				continue;
 			}
-			else if (he->_origin->_coords.x>= bbox_max.y) {
-				if (verbose) {
-					std::cout << "DCEL::add_bbox phase 1 : inter_right et !dst_in_bbox\n";
+			else {
+				// cas foireux où segment_intersects_segment n'a pas bien fonctionné car l'intersection est sur une extrémité de segment
+				// c'est forcement un de ces 2 cas il me semble
+				if (he->_origin->_coords.y<= bbox_min.y) {
+					if (verbose) {
+						std::cout << "DCEL::add_bbox phase 1 : inter_bottom (cas limite) et dst_in_bbox\n";
+					}
+					origin_bottom.push_back(split_edge(he, inter_bottom));
 				}
-				DCEL_HalfEdge * he2= split_edge(he, inter_right);
-				origin_bottom.push_back(he2);
-				if (is_inter_top) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_top)});
-					origin_top.push_back(he2->_twin);
+				else if (he->_origin->_coords.y> bbox_max.y) {
+					if (verbose) {
+						std::cout << "DCEL::add_bbox phase 1 : inter_top (cas limite) et dst_in_bbox\n";
+					}
+					origin_top.push_back(split_edge(he, inter_top));
 				}
-				else if (is_inter_left) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_left)});
-					origin_left.push_back(he2->_twin);
+				else {
+					std::cerr << "ERR : cas limite\n";
 				}
-				else if (is_inter_bottom) {
-					add2queue({HALF_EDGE, split_edge(he2, inter_bottom)});
-					origin_bottom.push_back(he2->_twin);
-				}
-				continue;
+			}
+			continue;
+		}
+
+		if (is_inter_bottom && he->_origin->_coords.y<= bbox_min.y) {
+			if (verbose) {
+				std::cout << "DCEL::add_bbox phase 1 : inter_bottom et !dst_in_bbox\n";
+			}
+			DCEL_HalfEdge * he2= split_edge(he, inter_bottom);
+			origin_bottom.push_back(he2);
+			if (is_inter_top) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_top)});
+				origin_top.push_back(he2->_twin);
+			}
+			else if (is_inter_left) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_left)});
+				origin_left.push_back(he2->_twin);
+			}
+			else if (is_inter_right) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_right)});
+				origin_right.push_back(he2->_twin);
 			}
 		}
 		
-		if (!is_inter_bottom && !is_inter_top && !is_inter_left && !is_inter_right) {
+		else if (is_inter_top && he->_origin->_coords.y>= bbox_max.y) {
+			if (verbose) {
+				std::cout << "DCEL::add_bbox phase 1 : inter_top et !dst_in_bbox\n";
+			}
+			DCEL_HalfEdge * he2= split_edge(he, inter_top);
+			origin_top.push_back(he2);
+			if (is_inter_bottom) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_bottom)});
+				origin_bottom.push_back(he2->_twin);
+			}
+			else if (is_inter_left) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_left)});
+				origin_left.push_back(he2->_twin);
+			}
+			else if (is_inter_right) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_right)});
+				origin_right.push_back(he2->_twin);
+			}
+		}
+		
+		else if (is_inter_left && he->_origin->_coords.x<= bbox_min.y) {
+			if (verbose) {
+				std::cout << "DCEL::add_bbox phase 1 : inter_left et !dst_in_bbox\n";
+			}
+			DCEL_HalfEdge * he2= split_edge(he, inter_left);
+			origin_left.push_back(he2);
+			if (is_inter_top) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_top)});
+				origin_top.push_back(he2->_twin);
+			}
+			else if (is_inter_bottom) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_bottom)});
+				origin_bottom.push_back(he2->_twin);
+			}
+			else if (is_inter_right) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_right)});
+				origin_right.push_back(he2->_twin);
+			}
+		}
+		
+		else if (is_inter_right && he->_origin->_coords.x>= bbox_max.y) {
+			if (verbose) {
+				std::cout << "DCEL::add_bbox phase 1 : inter_right et !dst_in_bbox\n";
+			}
+			DCEL_HalfEdge * he2= split_edge(he, inter_right);
+			origin_bottom.push_back(he2);
+			if (is_inter_top) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_top)});
+				origin_top.push_back(he2->_twin);
+			}
+			else if (is_inter_left) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_left)});
+				origin_left.push_back(he2->_twin);
+			}
+			else if (is_inter_bottom) {
+				add2queue({HALF_EDGE, split_edge(he2, inter_bottom)});
+				origin_bottom.push_back(he2->_twin);
+			}
+		}
+		
+		else {
 			if (verbose) {
 				std::cout << "DCEL::add_bbox phase 1 : no inter\n";
 			}
@@ -1134,7 +1148,7 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 		}
 
 		if (origin_bottom[origin_bottom.size()- 1]->_origin== bottom_right_corner) {
-			bbox_he= origin_bottom[origin_bottom.size()- 1];
+			bbox_he= origin_bottom[origin_bottom.size()- 1]->_twin;
 		}
 		else {
 			bbox_he= add_edge(origin_bottom[origin_bottom.size()- 1]->_origin, bottom_right_corner);
@@ -1148,7 +1162,7 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 		unbounded_edges.push_back(bbox_he->_twin);
 	}
 	last_he= bbox_he;
-	
+
 	if (!origin_right.empty()) {
 		if (bottom_right_corner== origin_right[0]->_origin) {
 			last_he->set_next(origin_right[0]);
@@ -1168,7 +1182,7 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 		}
 
 		if (origin_right[origin_right.size()- 1]->_origin== top_right_corner) {
-			bbox_he= origin_right[origin_right.size()- 1];
+			bbox_he= origin_right[origin_right.size()- 1]->_twin;
 		}
 		else {
 			bbox_he= add_edge(origin_right[origin_right.size()- 1]->_origin, top_right_corner);
@@ -1202,7 +1216,7 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 		}
 
 		if (origin_top[origin_top.size()- 1]->_origin== top_left_corner) {
-			bbox_he= origin_top[origin_top.size()- 1];
+			bbox_he= origin_top[origin_top.size()- 1]->_twin;
 		}
 		else {
 			bbox_he= add_edge(origin_top[origin_top.size()- 1]->_origin, top_left_corner);
@@ -1236,7 +1250,7 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 		}
 
 		if (origin_left[origin_left.size()- 1]->_origin== bottom_left_corner) {
-			bbox_he= origin_left[origin_left.size()- 1];
+			bbox_he= origin_left[origin_left.size()- 1]->_twin;
 		}
 		else {
 			bbox_he= add_edge(origin_left[origin_left.size()- 1]->_origin, bottom_left_corner);
@@ -1267,6 +1281,7 @@ void DCEL::add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max) {
 	if (verbose) {
 		std::cout << "DCEL::add_bbox phase 6 : creation des faces\n";
 	}
+
 	create_faces_from_half_edges();
 }
 
@@ -1411,7 +1426,7 @@ void DCEL::import(std::string s) {
 
 // renvoie si existe le vertex à coords
 DCEL_Vertex * DCEL::get_vertex(const glm::vec2 & coords) {
-	const float EPS= 1e-7;
+	const float EPS= 1e-9;
 	for (auto v : _vertices) {
 		if (glm::distance2(v->_coords, coords)< EPS) {
 			return v;

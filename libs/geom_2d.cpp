@@ -89,6 +89,11 @@ bool segment_intersects_segment(const glm::vec2 & pt1_begin, const glm::vec2 & p
 	}
 	
 	float t1= cross2d(pt2_begin- pt1_begin, dir2)/ a;
+
+	// on fait ca ici meme si on renvoie false c'est utile dans les cas limites
+	result->x= pt1_begin.x+ t1* dir1.x;
+	result->y= pt1_begin.y+ t1* dir1.y;
+
 	if (exclude_seg1_extremities) {
 		if ((t1<= EPSILON) || (t1>= 1.0f- EPSILON)) {
 		//if ((t1<= 0.0f) || (t1>= 1.0f)) {
@@ -114,8 +119,6 @@ bool segment_intersects_segment(const glm::vec2 & pt1_begin, const glm::vec2 & p
 		}
 	}
 
-	result->x= pt1_begin.x+ t1* dir1.x;
-	result->y= pt1_begin.y+ t1* dir1.y;
 	return true;
 }
 

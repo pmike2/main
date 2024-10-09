@@ -32,10 +32,24 @@ void test2() {
 }
 
 
+void test3() {
+	glm::vec2 pt1_begin(-1, -1);
+	glm::vec2 pt1_end(1, 1);
+	glm::vec2 pt2_begin(-1, 1);
+	glm::vec2 pt2_end(1, 1);
+	glm::vec2 result;
+	bool exclude_seg1_extremities=false;
+	bool exclude_seg2_extremities=false;
+	bool is_inter= segment_intersects_segment(pt1_begin, pt1_end, pt2_begin, pt2_end, &result, exclude_seg1_extremities, exclude_seg2_extremities);
+	std::cout << "is_inter = " << is_inter << " ; inter = " << glm_to_string(result) << "\n";
+}
+
+
 
 int main() {
-	test1();
+	//test1();
 	//test2();
+	test3();
 	
 	return 0;
 }
