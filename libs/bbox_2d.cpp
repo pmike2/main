@@ -11,19 +11,19 @@
 using namespace std;
 
 
-AABB_2D::AABB_2D() : _pos(glm::vec2(0.0f)), _size(glm::vec2(0.0f)) {
+AABB_2D::AABB_2D() : _pos(pt_type(0.0)), _size(pt_type(0.0)) {
 
 }
 
 
-AABB_2D::AABB_2D(glm::vec2 pos, glm::vec2 size) : _pos(pos), _size(size) {
+AABB_2D::AABB_2D(pt_type pos, pt_type size) : _pos(pos), _size(size) {
 
 }
 
 
 AABB_2D::AABB_2D(const AABB_2D & aabb) {
-	_pos= glm::vec2(aabb._pos);
-	_size= glm::vec2(aabb._size);
+	_pos= pt_type(aabb._pos);
+	_size= pt_type(aabb._size);
 }
 
 
@@ -32,13 +32,13 @@ AABB_2D::~AABB_2D() {
 }
 
 
-glm::vec2 AABB_2D::center() {
-	return _pos+ 0.5f* _size;
+pt_type AABB_2D::center() {
+	return _pos+ (number)(0.5)* _size;
 }
 
 
-AABB_2D * AABB_2D::buffered(float size) {
-	return new AABB_2D(_pos- glm::vec2(size, size), _size+ 2.0f* glm::vec2(size, size));
+AABB_2D * AABB_2D::buffered(number size) {
+	return new AABB_2D(_pos- pt_type(size, size), _size+ (number)(2.0)* pt_type(size, size));
 }
 
 
@@ -48,7 +48,7 @@ ostream & operator << (ostream & os, const AABB_2D & aabb) {
 }
 
 
-bool point_in_aabb(const glm::vec2 & pt, const AABB_2D * aabb) {
+bool point_in_aabb(const pt_type & pt, const AABB_2D * aabb) {
 	return ((pt.x>= aabb->_pos.x) && (pt.x<= aabb->_pos.x+ aabb->_size.x) && (pt.y>= aabb->_pos.y) && (pt.y<= aabb->_pos.y+ aabb->_size.y));
 }
 
@@ -62,23 +62,23 @@ bool aabb_contains_aabb(const AABB_2D * big_aabb, const AABB_2D * small_aabb) {
 }
 
 
-bool ray_intersects_aabb(const glm::vec2 & ray_origin, const glm::vec2 & ray_dir, const AABB_2D * aabb, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & t_hit_near) {
-	contact_pt.x= 0.0f;
-	contact_pt.y= 0.0f;
-	contact_normal.x= 0.0f;
-	contact_normal.y= 0.0f;
-	t_hit_near= 0.0f;
+bool ray_intersects_aabb(const pt_type & ray_origin, const pt_type & ray_dir, const AABB_2D * aabb, pt_type & contact_pt, pt_type & contact_normal, number & t_hit_near) {
+	contact_pt.x= 0.0;
+	contact_pt.y= 0.0;
+	contact_normal.x= 0.0;
+	contact_normal.y= 0.0;
+	t_hit_near= 0.0;
 
 	// choisir ici une valeur suffisamment petite, dans le code original il fait un std::isnan
-	//if (glm::length2(ray_dir)< 1e-9f) {
-	if ((ray_dir.x== 0.0f) && (ray_dir.y== 0.0f)) {
+	//if (glm::length2(ray_dir)< 1e-9) {
+	if ((ray_dir.x== 0.0) && (ray_dir.y== 0.0)) {
 		return false;
 	}
 
-	glm::vec2 ray_dir_inv= 1.0f/ ray_dir;
+	pt_type ray_dir_inv= (number)(1.0)/ ray_dir;
 
-	glm::vec2 k_near= (aabb->_pos- ray_origin)* ray_dir_inv;
-	glm::vec2 k_far = (aabb->_pos+ aabb->_size- ray_origin)* ray_dir_inv;
+	pt_type k_near= (aabb->_pos- ray_origin)* ray_dir_inv;
+	pt_type k_far = (aabb->_pos+ aabb->_size- ray_origin)* ray_dir_inv;
 
 	/*
 	cout << "___\n";
@@ -100,33 +100,33 @@ bool ray_intersects_aabb(const glm::vec2 & ray_origin, const glm::vec2 & ray_dir
 		return false;
 	}
 
-	t_hit_near= (float)(max(k_near.x, k_near.y));
-	float t_hit_far= (float)(min(k_far.x, k_far.y));
+	t_hit_near= (number)(max(k_near.x, k_near.y));
+	number t_hit_far= (number)(min(k_far.x, k_far.y));
 
-	if (t_hit_far< 0.0f) {
+	if (t_hit_far< 0.0) {
 		return false;
 	}
 
 	contact_pt= ray_origin+ t_hit_near* ray_dir;
 
 	if (k_near.x> k_near.y) {
-		if (ray_dir.x< 0.0f) {
-			contact_normal.x= 1.0f;
-			contact_normal.y= 0.0f;
+		if (ray_dir.x< 0.0) {
+			contact_normal.x= 1.0;
+			contact_normal.y= 0.0;
 		}
 		else {
-			contact_normal.x= -1.0f;
-			contact_normal.y= 0.0f;
+			contact_normal.x= -1.0;
+			contact_normal.y= 0.0;
 		}
 	}
 	else if (k_near.x< k_near.y) {
-		if (ray_dir.y< 0.0f) {
-			contact_normal.x= 0.0f;
-			contact_normal.y= 1.0f;
+		if (ray_dir.y< 0.0) {
+			contact_normal.x= 0.0;
+			contact_normal.y= 1.0;
 		}
 		else {
-			contact_normal.x= 0.0f;
-			contact_normal.y= -1.0f;
+			contact_normal.x= 0.0;
+			contact_normal.y= -1.0;
 		}
 	}
 

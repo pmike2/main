@@ -14,31 +14,31 @@ using namespace std;
 
 
 // renvoie la norme de la composante z du prod vectoriel
-float cross2d(glm::vec2 v1, glm::vec2 v2) {
+number cross2d(pt_type v1, pt_type v2) {
 	return v1.x* v2.y- v1.y* v2.x;
 }
 
 
 // tri de points selon x ; utile au calcul de convex hull
-bool cmp_points(glm::vec2 & pt1, glm::vec2 & pt2) {
+bool cmp_points(pt_type & pt1, pt_type & pt2) {
 	return pt1.x< pt2.x;
 }
 
 
 // est-ce que situé en pt_ref, regardant vers dir_ref, pt_test est à gauche
-bool is_left(glm::vec2 pt_ref, glm::vec2 dir_ref, glm::vec2 pt_test) {
-	return cross2d(glm::vec2(pt_test- pt_ref), dir_ref)<= 0.0f;
+bool is_left(pt_type pt_ref, pt_type dir_ref, pt_type pt_test) {
+	return cross2d(pt_type(pt_test- pt_ref), dir_ref)<= 0.0;
 }
 
 
-bool is_pt_inside_poly(glm::vec2 & pt, Polygon2D * poly) {
+bool is_pt_inside_poly(pt_type & pt, Polygon2D * poly) {
 	// ne fonctionne que pour les polygones convexes
 	/*if (glm::distance(pt, poly->_centroid)> poly->_radius) {
 		return false;
 	}*/
 	/*for (unsigned int i=0; i<poly->_pts.size(); ++i) {
-		glm::vec2 pt1= poly->_pts[i];
-		glm::vec2 pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
+		pt_type pt1= poly->_pts[i];
+		pt_type pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
 		if (!is_left(pt1, pt2- pt1, pt)) {
 			return false;
 		}
@@ -77,44 +77,44 @@ bool is_poly_inside_poly(Polygon2D * small_poly, Polygon2D * big_poly) {
 
 
 // cf https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
-bool segment_intersects_segment(const glm::vec2 & pt1_begin, const glm::vec2 & pt1_end, const glm::vec2 & pt2_begin, const glm::vec2 & pt2_end, glm::vec2 * result, bool exclude_seg1_extremities, bool exclude_seg2_extremities) {
-	glm::vec2 dir1= pt1_end- pt1_begin;
-	glm::vec2 dir2= pt2_end- pt2_begin;
+bool segment_intersects_segment(const pt_type & pt1_begin, const pt_type & pt1_end, const pt_type & pt2_begin, const pt_type & pt2_end, pt_type * result, bool exclude_seg1_extremities, bool exclude_seg2_extremities) {
+	pt_type dir1= pt1_end- pt1_begin;
+	pt_type dir2= pt2_end- pt2_begin;
 	
 	// parallèles
-	float a= cross2d(dir1, dir2);
+	number a= cross2d(dir1, dir2);
 	//if (abs(a)<= EPSILON) {
-	if (a== 0.0f) {
+	if (a== 0.0) {
 		return false;
 	}
 	
-	float t1= cross2d(pt2_begin- pt1_begin, dir2)/ a;
+	number t1= cross2d(pt2_begin- pt1_begin, dir2)/ a;
 
 	// on fait ca ici meme si on renvoie false c'est utile dans les cas limites
 	result->x= pt1_begin.x+ t1* dir1.x;
 	result->y= pt1_begin.y+ t1* dir1.y;
 
 	if (exclude_seg1_extremities) {
-		if ((t1<= EPSILON) || (t1>= 1.0f- EPSILON)) {
-		//if ((t1<= 0.0f) || (t1>= 1.0f)) {
+		if ((t1<= EPSILON) || (t1>= 1.0- EPSILON)) {
+		//if ((t1<= 0.0) || (t1>= 1.0)) {
 			return false;
 		}
 	}
 	else {
-		if ((t1< 0.0f) || (t1> 1.0f)) {
+		if ((t1< 0.0) || (t1> 1.0)) {
 			return false;
 		}
 	}
 	
-	float t2= cross2d(pt2_begin- pt1_begin, dir1)/ a;
+	number t2= cross2d(pt2_begin- pt1_begin, dir1)/ a;
 	if (exclude_seg2_extremities) {
-		if ((t2<= EPSILON) || (t2>= 1.0f- EPSILON)) {
-		//if ((t2<= 0.0f) || (t2>= 1.0f)) {
+		if ((t2<= EPSILON) || (t2>= 1.0- EPSILON)) {
+		//if ((t2<= 0.0) || (t2>= 1.0)) {
 			return false;
 		}
 	}
 	else {
-		if ((t2< 0.0f) || (t2> 1.0f)) {
+		if ((t2< 0.0) || (t2> 1.0)) {
 			return false;
 		}
 	}
@@ -123,19 +123,19 @@ bool segment_intersects_segment(const glm::vec2 & pt1_begin, const glm::vec2 & p
 }
 
 
-bool ray_intersects_segment(const glm::vec2 & origin, const glm::vec2 & direction, const glm::vec2 & pt_begin, const glm::vec2 & pt_end, glm::vec2 * result) {
-	glm::vec2 dir_segment= pt_end- pt_begin;
-	float a= cross2d(direction, dir_segment);
+bool ray_intersects_segment(const pt_type & origin, const pt_type & direction, const pt_type & pt_begin, const pt_type & pt_end, pt_type * result) {
+	pt_type dir_segment= pt_end- pt_begin;
+	number a= cross2d(direction, dir_segment);
 	// parallèles
 	if (abs(a)< EPSILON) {
 		return false;
 	}
-	float t1= cross2d(pt_begin- origin, dir_segment)/ a;
-	if (t1< 0.0f) {
+	number t1= cross2d(pt_begin- origin, dir_segment)/ a;
+	if (t1< 0.0) {
 		return false;
 	}
-	float t2= cross2d(pt_begin- origin, direction)/ a;
-	if ((t2< 0.0f) || (t2> 1.0f)) {
+	number t2= cross2d(pt_begin- origin, direction)/ a;
+	if ((t2< 0.0) || (t2> 1.0)) {
 		return false;
 	}
 	result->x= origin.x+ t1* direction.x;
@@ -144,18 +144,18 @@ bool ray_intersects_segment(const glm::vec2 & origin, const glm::vec2 & directio
 }
 
 
-bool ray_intersects_ray(const glm::vec2 & origin1, const glm::vec2 & direction1, const glm::vec2 & origin2, const glm::vec2 & direction2, glm::vec2 * result) {
-	float a= cross2d(direction1, direction2);
+bool ray_intersects_ray(const pt_type & origin1, const pt_type & direction1, const pt_type & origin2, const pt_type & direction2, pt_type * result) {
+	number a= cross2d(direction1, direction2);
 	// parallèles
 	if (abs(a)< EPSILON) {
 		return false;
 	}
-	float t1= cross2d(origin2- origin1, direction2)/ a;
-	if (t1< 0.0f) {
+	number t1= cross2d(origin2- origin1, direction2)/ a;
+	if (t1< 0.0) {
 		return false;
 	}
-	float t2= cross2d(origin2- origin1, direction1)/ a;
-	if (t2< 0.0f) {
+	number t2= cross2d(origin2- origin1, direction1)/ a;
+	if (t2< 0.0) {
 		return false;
 	}
 	result->x= origin1.x+ t1* direction1.x;
@@ -165,7 +165,7 @@ bool ray_intersects_ray(const glm::vec2 & origin1, const glm::vec2 & direction1,
 
 
 // si existe intersection la + proche du pt de départ du segment avec le poly
-bool segment_intersects_poly(const glm::vec2 & pt_begin, const glm::vec2 & pt_end, const Polygon2D * poly, glm::vec2 * result) {
+bool segment_intersects_poly(const pt_type & pt_begin, const pt_type & pt_end, const Polygon2D * poly, pt_type * result) {
 	if ((pt_begin.x< poly->_aabb->_pos.x) && (pt_end.x< poly->_aabb->_pos.x)) {
 		return false;
 	}
@@ -179,15 +179,15 @@ bool segment_intersects_poly(const glm::vec2 & pt_begin, const glm::vec2 & pt_en
 		return false;
 	}
 
-	float min_dist= FLT_MAX;
+	number min_dist= FLT_MAX;
 	bool is_inter= false;
-	glm::vec2 inter(0.0f);
+	pt_type inter(0.0);
 	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
-		glm::vec2 pt1= poly->_pts[i];
-		glm::vec2 pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
+		pt_type pt1= poly->_pts[i];
+		pt_type pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
 		
 		if (segment_intersects_segment(pt1, pt2, pt_begin, pt_end, &inter)) {
-			float dist2= glm::distance2(pt_begin, inter);
+			number dist2= glm::distance2(pt_begin, inter);
 			if (dist2< min_dist) {
 				is_inter= true;
 				min_dist= dist2;
@@ -203,7 +203,7 @@ bool segment_intersects_poly(const glm::vec2 & pt_begin, const glm::vec2 & pt_en
 
 
 // version multi où on récupère toutes les intersections
-bool segment_intersects_poly_multi(const glm::vec2 & pt_begin, const glm::vec2 & pt_end, const Polygon2D * poly, vector<glm::vec2> * result) {
+bool segment_intersects_poly_multi(const pt_type & pt_begin, const pt_type & pt_end, const Polygon2D * poly, vector<pt_type> * result) {
 	if ((pt_begin.x< poly->_aabb->_pos.x) && (pt_end.x< poly->_aabb->_pos.x)) {
 		return false;
 	}
@@ -217,15 +217,15 @@ bool segment_intersects_poly_multi(const glm::vec2 & pt_begin, const glm::vec2 &
 		return false;
 	}
 
-	float min_dist= FLT_MAX;
+	number min_dist= FLT_MAX;
 	bool is_inter= false;
-	glm::vec2 inter(0.0f);
+	pt_type inter(0.0);
 	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
-		glm::vec2 pt1= poly->_pts[i];
-		glm::vec2 pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
+		pt_type pt1= poly->_pts[i];
+		pt_type pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
 		
 		if (segment_intersects_segment(pt1, pt2, pt_begin, pt_end, &inter)) {
-			float dist2= glm::distance2(pt_begin, inter);
+			number dist2= glm::distance2(pt_begin, inter);
 			if (dist2< min_dist) {
 				is_inter= true;
 				min_dist= dist2;
@@ -239,17 +239,17 @@ bool segment_intersects_poly_multi(const glm::vec2 & pt_begin, const glm::vec2 &
 }
 
 // d(pt, [seg1, seg2])
-bool distance_segment_pt(glm::vec2 & seg1, glm::vec2 & seg2, glm::vec2 & pt, float * dist, glm::vec2 * proj) {
-	float seg_norm2= glm::distance2(seg1, seg2);
+bool distance_segment_pt(pt_type & seg1, pt_type & seg2, pt_type & pt, number * dist, pt_type * proj) {
+	number seg_norm2= glm::distance2(seg1, seg2);
 	bool proj_in_segment= true;
 	
 	if (seg_norm2< EPSILON) {
 		return glm::distance(seg1, pt);
 	}
 	
-	float t= glm::dot(pt- seg1, seg2- seg1)/ seg_norm2;
-	if ((t< 0.0f) || (t> 1.0f)) {
-		t= max(0.0f, min(1.0f, t));
+	number t= glm::dot(pt- seg1, seg2- seg1)/ seg_norm2;
+	if ((t< 0.0) || (t> 1.0)) {
+		t= max((number)(0.0), min((number)(1.0), t));
 		proj_in_segment= false;
 	}
 	
@@ -260,22 +260,22 @@ bool distance_segment_pt(glm::vec2 & seg1, glm::vec2 & seg2, glm::vec2 & pt, flo
 }
 
 
-float distance_poly_pt(Polygon2D * poly, glm::vec2 & pt, glm::vec2 * proj) {
-	float dist_min= FLT_MAX;
-	float dist;
-	glm::vec2 proj2;
+number distance_poly_pt(Polygon2D * poly, pt_type & pt, pt_type * proj) {
+	number dist_min= FLT_MAX;
+	number dist;
+	pt_type proj2;
 
 	if (is_pt_inside_poly(pt, poly)) {
 		if (proj!= NULL) {
 			proj->x= pt.x;
 			proj->y= pt.y;
 		}
-		return 0.0f;
+		return 0.0;
 	}
 
 	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
-		glm::vec2 pt1= poly->_pts[i];
-		glm::vec2 pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
+		pt_type pt1= poly->_pts[i];
+		pt_type pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
 
 		bool x= distance_segment_pt(pt1, pt2, pt, &dist, &proj2);
 		if (dist< dist_min) {
@@ -290,14 +290,14 @@ float distance_poly_pt(Polygon2D * poly, glm::vec2 & pt, glm::vec2 * proj) {
 }
 
 
-float distance_poly_segment(Polygon2D * poly, glm::vec2 & seg1, glm::vec2 & seg2, glm::vec2 * proj) {
-	float dist_min= FLT_MAX;
-	float dist;
-	glm::vec2 proj2;
+number distance_poly_segment(Polygon2D * poly, pt_type & seg1, pt_type & seg2, pt_type * proj) {
+	number dist_min= FLT_MAX;
+	number dist;
+	pt_type proj2;
 
 	if (is_pt_inside_poly(seg1, poly)) {
 		// proj ?
-		return 0.0f;
+		return 0.0;
 	}
 
 	if (segment_intersects_poly(seg1, seg2, poly, &proj2)) {
@@ -305,12 +305,12 @@ float distance_poly_segment(Polygon2D * poly, glm::vec2 & seg1, glm::vec2 & seg2
 			proj->x= proj2.x;
 			proj->y= proj2.y;
 		}
-		return 0.0f;
+		return 0.0;
 	}
 
 	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
-		glm::vec2 pt1= poly->_pts[i];
-		glm::vec2 pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
+		pt_type pt1= poly->_pts[i];
+		pt_type pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
 
 		bool x1= distance_segment_pt(pt1, pt2, seg1, &dist, &proj2);
 		if (dist< dist_min) {
@@ -347,10 +347,10 @@ float distance_poly_segment(Polygon2D * poly, glm::vec2 & seg1, glm::vec2 & seg2
 
 
 // calcul convex hull 2D bouquin computational geom
-void convex_hull_2d(std::vector<glm::vec2> & pts) {
+void convex_hull_2d(std::vector<pt_type> & pts) {
 	sort(pts.begin(), pts.end(), cmp_points);
 
-	vector<glm::vec2> pts_upper;
+	vector<pt_type> pts_upper;
 	pts_upper.push_back(pts[0]);
 	pts_upper.push_back(pts[1]);
 	for (unsigned int i=2; i<pts.size(); ++i) {
@@ -360,7 +360,7 @@ void convex_hull_2d(std::vector<glm::vec2> & pts) {
 		}
 	}
 
-	vector<glm::vec2> pts_lower;
+	vector<pt_type> pts_lower;
 	pts_lower.push_back(pts[pts.size()- 1]);
 	pts_lower.push_back(pts[pts.size()- 2]);
 	for (int i=pts.size()- 3; i>=0; --i) {
@@ -379,15 +379,15 @@ void convex_hull_2d(std::vector<glm::vec2> & pts) {
 }
 
 
-bool is_ccw(const glm::vec2 & pt1, const glm::vec2 & pt2, const glm::vec2 & pt3) {
-	return (pt2.x- pt1.x)* (pt3.y- pt1.y)- (pt3.x- pt1.x)* (pt2.y- pt1.y)> 0.0f;
+bool is_ccw(const pt_type & pt1, const pt_type & pt2, const pt_type & pt3) {
+	return (pt2.x- pt1.x)* (pt3.y- pt1.y)- (pt3.x- pt1.x)* (pt2.y- pt1.y)> 0.0;
 }
 
 
 // cf https://en.wikipedia.org/wiki/Curve_orientation
-bool is_ccw(const vector<glm::vec2> & pts) {
-	float xmin= 1e6;
-	float ymin= 1e6;
+bool is_ccw(const vector<pt_type> & pts) {
+	number xmin= 1e6;
+	number ymin= 1e6;
 	int idx_min= 0;
 	for (int i=0; i<pts.size(); ++i) {
 		if (pts[i].x< xmin) {
@@ -413,8 +413,8 @@ bool is_ccw(const vector<glm::vec2> & pts) {
 }
 
 
-std::pair<glm::vec2, float> circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3) {
-	glm::vec2 pt1, pt2, pt3;
+std::pair<pt_type, number> circumcircle(pt_type & circle_pt1, pt_type & circle_pt2, pt_type & circle_pt3) {
+	pt_type pt1, pt2, pt3;
 	if (is_ccw(circle_pt1, circle_pt2, circle_pt3)) {
 		pt1= circle_pt1;
 		pt2= circle_pt2;
@@ -425,33 +425,33 @@ std::pair<glm::vec2, float> circumcircle(glm::vec2 & circle_pt1, glm::vec2 & cir
 		pt2= circle_pt3;
 		pt3= circle_pt2;
 	}
-	glm::vec2 d21= pt2- pt1;
-	glm::vec2 d31= pt3- pt1;
-	glm::vec2 d32= pt3- pt2;
+	pt_type d21= pt2- pt1;
+	pt_type d31= pt3- pt1;
+	pt_type d32= pt3- pt2;
 
 	// points alignés
-	if (d32.y* d21.x- d21.y* d32.x== 0.0f) {
-		return std::make_pair(glm::vec2(0.0f), 0.0f); // bof
+	if (d32.y* d21.x- d21.y* d32.x== 0.0) {
+		return std::make_pair(pt_type(0.0), 0.0); // bof
 	}
-	float lambda= 0.5f* (d31.x* d32.x+ d32.y* d31.y)/ (d32.y* d21.x- d21.y* d32.x);
-	glm::vec2 center= glm::vec2(0.5f* (pt1.x+ pt2.x)- lambda* d21.y, 0.5f* (pt1.y+ pt2.y)+ lambda* d21.x);
-	float radius= sqrt((center.x- pt1.x)* (center.x- pt1.x)+ (center.y- pt1.y)* (center.y- pt1.y));
+	number lambda= 0.5f* (d31.x* d32.x+ d32.y* d31.y)/ (d32.y* d21.x- d21.y* d32.x);
+	pt_type center= pt_type(0.5f* (pt1.x+ pt2.x)- lambda* d21.y, 0.5f* (pt1.y+ pt2.y)+ lambda* d21.x);
+	number radius= sqrt((center.x- pt1.x)* (center.x- pt1.x)+ (center.y- pt1.y)* (center.y- pt1.y));
 	return std::make_pair(center, radius);
 }
 
 
-bool point_in_circumcircle(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & pt) {
-	std::pair<glm::vec2, float> circle= circumcircle(circle_pt1, circle_pt2, circle_pt3);
-	glm::vec2 center= circle.first;
-	float radius= circle.second;
-	float dist2center= sqrt((center.x- pt.x)* (center.x- pt.x)+ (center.y- pt.y)* (center.y- pt.y));
+bool point_in_circumcircle(pt_type & circle_pt1, pt_type & circle_pt2, pt_type & circle_pt3, pt_type & pt) {
+	std::pair<pt_type, number> circle= circumcircle(circle_pt1, circle_pt2, circle_pt3);
+	pt_type center= circle.first;
+	number radius= circle.second;
+	number dist2center= sqrt((center.x- pt.x)* (center.x- pt.x)+ (center.y- pt.y)* (center.y- pt.y));
 	return dist2center< radius;
 }
 
 
 // utilisé pour debug test_triangulation
-void get_circle_center(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2 & circle_pt3, glm::vec2 & center, float * radius) {
-	glm::vec2 pt1, pt2, pt3;
+void get_circle_center(pt_type & circle_pt1, pt_type & circle_pt2, pt_type & circle_pt3, pt_type & center, number * radius) {
+	pt_type pt1, pt2, pt3;
 	if (is_ccw(circle_pt1, circle_pt2, circle_pt3)) {
 		pt1= circle_pt1;
 		pt2= circle_pt2;
@@ -463,35 +463,35 @@ void get_circle_center(glm::vec2 & circle_pt1, glm::vec2 & circle_pt2, glm::vec2
 		pt3= circle_pt2;
 	}
 
-	glm::vec2 d21= pt2- pt1;
-	glm::vec2 d31= pt3- pt1;
-	glm::vec2 d32= pt3- pt2;
+	pt_type d21= pt2- pt1;
+	pt_type d31= pt3- pt1;
+	pt_type d32= pt3- pt2;
 
-	float lambda= 0.5f* (d31.x* d32.x+ d32.y* d31.y)/ (d32.y* d21.x- d21.y* d32.x);
-	center= glm::vec2(0.5f* (pt1.x+ pt2.x)- lambda* d21.y, 0.5f* (pt1.y+ pt2.y)+ lambda* d21.x);
+	number lambda= 0.5f* (d31.x* d32.x+ d32.y* d31.y)/ (d32.y* d21.x- d21.y* d32.x);
+	center= pt_type(0.5f* (pt1.x+ pt2.x)- lambda* d21.y, 0.5f* (pt1.y+ pt2.y)+ lambda* d21.x);
 
 	*radius= sqrt((center.x- pt1.x)* (center.x- pt1.x)+ (center.y- pt1.y)* (center.y- pt1.y));
 }
 
 
-bool is_quad_convex(glm::vec2 * pts) {
+bool is_quad_convex(pt_type * pts) {
 	bool is_positive= false;
 	for (unsigned int i=0; i<4; ++i) {
-		glm::vec2 v1= pts[(i+ 1) % 4]- pts[i];
-		glm::vec2 v2= pts[(i+ 2) % 4]- pts[(i+ 1) % 4];
-		float crossprod= cross2d(v1, v2);
-		/*float dx1= pts[(i+ 1) % 4].x- pts[i].x;
-		float dy1= pts[(i+ 1) % 4].y- pts[i].y;
-		float dx2= pts[(i+ 2) % 4].x- pts[(i+ 1) % 4].x;
-		float dy2= pts[(i+ 2) % 4].y- pts[(i+ 1) % 4].y;
-		float crossprod= dx1* dy2- dy1* dx2;*/
+		pt_type v1= pts[(i+ 1) % 4]- pts[i];
+		pt_type v2= pts[(i+ 2) % 4]- pts[(i+ 1) % 4];
+		number crossprod= cross2d(v1, v2);
+		/*number dx1= pts[(i+ 1) % 4].x- pts[i].x;
+		number dy1= pts[(i+ 1) % 4].y- pts[i].y;
+		number dx2= pts[(i+ 2) % 4].x- pts[(i+ 1) % 4].x;
+		number dy2= pts[(i+ 2) % 4].y- pts[(i+ 1) % 4].y;
+		number crossprod= dx1* dy2- dy1* dx2;*/
 		if (i== 0) {
-			if (crossprod> 0.0f) {
+			if (crossprod> 0.0) {
 				is_positive= true;
 			}
 		}
 		else {
-			if (((is_positive) && (crossprod< 0.0f)) || ((!is_positive) && (crossprod> 0.0f))) {
+			if (((is_positive) && (crossprod< 0.0)) || ((!is_positive) && (crossprod> 0.0))) {
 				return false;
 			}
 		}
@@ -501,7 +501,7 @@ bool is_quad_convex(glm::vec2 * pts) {
 
 
 // ---------------------------------------------------------------------------------------------------
-Polygon2D::Polygon2D() : _area(0.0f), _centroid(glm::vec2(0.0f)), _radius(0.0f) {
+Polygon2D::Polygon2D() : _area(0.0), _centroid(pt_type(0.0)), _radius(0.0) {
 	_aabb= new AABB_2D();
 }
 
@@ -519,10 +519,10 @@ Polygon2D::~Polygon2D() {
 }
 
 
-void Polygon2D::set_points(float * points, unsigned int n_points, bool convexhull) {
+void Polygon2D::set_points(number * points, unsigned int n_points, bool convexhull) {
 	_pts.clear();
 	for (unsigned int i=0; i<n_points; ++i) {
-		_pts.push_back(glm::vec2(points[2* i], points[2* i+ 1]));
+		_pts.push_back(pt_type(points[2* i], points[2* i+ 1]));
 	}
 	if (convexhull) {
 		convex_hull_2d(_pts);
@@ -531,10 +531,10 @@ void Polygon2D::set_points(float * points, unsigned int n_points, bool convexhul
 }
 
 
-void Polygon2D::set_points(std::vector<glm::vec2> pts, bool convexhull) {
+void Polygon2D::set_points(std::vector<pt_type> pts, bool convexhull) {
 	_pts.clear();
 	for (auto & pt : pts) {
-		_pts.push_back(glm::vec2(pt));
+		_pts.push_back(pt_type(pt));
 	}
 	if (convexhull) {
 		convex_hull_2d(_pts);
@@ -543,12 +543,12 @@ void Polygon2D::set_points(std::vector<glm::vec2> pts, bool convexhull) {
 }
 
 
-void Polygon2D::randomize(unsigned int n_points, float radius, glm::vec2 center, bool convexhull) {
+void Polygon2D::randomize(unsigned int n_points, number radius, pt_type center, bool convexhull) {
 	_pts.clear();
 	for (unsigned int i=0; i<n_points; ++i) {
-		float x= center.x+ rand_float(-radius, radius);
-		float y= center.y+ rand_float(-radius, radius);
-		_pts.push_back(glm::vec2(x, y));
+		number x= center.x+ rand_number(-radius, radius);
+		number y= center.y+ rand_number(-radius, radius);
+		_pts.push_back(pt_type(x, y));
 	}
 	if (convexhull) {
 		convex_hull_2d(_pts);
@@ -557,30 +557,30 @@ void Polygon2D::randomize(unsigned int n_points, float radius, glm::vec2 center,
 }
 
 
-void Polygon2D::set_rectangle(glm::vec2 origin, glm::vec2 size) {
+void Polygon2D::set_rectangle(pt_type origin, pt_type size) {
 	_pts.clear();
 	_pts.push_back(origin);
-	_pts.push_back(origin+ glm::vec2(size.x, 0.0f));
+	_pts.push_back(origin+ pt_type(size.x, 0.0));
 	_pts.push_back(origin+ size);
-	_pts.push_back(origin+ glm::vec2(0.0f, size.y));
+	_pts.push_back(origin+ pt_type(0.0, size.y));
 	update_attributes();
 }
 
 
 void Polygon2D::update_attributes() {
 	// calcul aire
-	_area= 0.0f;
+	_area= 0.0;
 	for (unsigned int i=0; i<_pts.size(); ++i) {
-		glm::vec2 pt1= _pts[i];
-		glm::vec2 pt2= _pts[(i+ 1)% _pts.size()];
+		pt_type pt1= _pts[i];
+		pt_type pt2= _pts[(i+ 1)% _pts.size()];
 		_area+= 0.5f* (pt1.x* pt2.y- pt1.y* pt2.x);
 	}
 
 	// calcul centre de gravité
-	_centroid= glm::vec2(0.0f);
+	_centroid= pt_type(0.0);
 	for (unsigned int i=0; i<_pts.size(); ++i) {
-		glm::vec2 pt1= _pts[i];
-		glm::vec2 pt2= _pts[(i+ 1)% _pts.size()];
+		pt_type pt1= _pts[i];
+		pt_type pt2= _pts[(i+ 1)% _pts.size()];
 		_centroid+= (0.5f* THIRD/ _area)* (pt1.x* pt2.y- pt1.y* pt2.x)* (pt1+ pt2);
 	}
 
@@ -589,11 +589,11 @@ void Polygon2D::update_attributes() {
 	/*for (unsigned int i=0; i<_pts.size(); ++i) {
 		_pts[i]-= _centroid;
 	}
-	_centroid= glm::vec2(0.0f);*/
+	_centroid= pt_type(0.0);*/
 
 	// si clockwise -> anticlockwise
-	if (_area< 0.0f) {
-		_area*= -1.0f;
+	if (_area< 0.0) {
+		_area*= -1.0;
 		reverse(_pts.begin(), _pts.end());
 	}
 
@@ -602,15 +602,15 @@ void Polygon2D::update_attributes() {
 	// pour que la normale pointe vers l'extérieur du polygone
 	_normals.clear();
 	for (unsigned int i=0; i<_pts.size(); ++i) {
-		glm::vec2 pt1= _pts[i];
-		glm::vec2 pt2= _pts[(i+ 1)% _pts.size()];
-		_normals.push_back(glm::normalize(glm::vec2(pt2.y- pt1.y, pt1.x- pt2.x)));
+		pt_type pt1= _pts[i];
+		pt_type pt2= _pts[(i+ 1)% _pts.size()];
+		_normals.push_back(glm::normalize(pt_type(pt2.y- pt1.y, pt1.x- pt2.x)));
 	}
 
 	// calcul rayon cercle englobant ; n'est pertinent que si le poly est convexe...
-	_radius= 0.0f;
+	_radius= 0.0;
 	for (auto it_pt : _pts) {
-		float dist2= glm::distance2(it_pt, _centroid);
+		number dist2= glm::distance2(it_pt, _centroid);
 		if (dist2> _radius) {
 			_radius= dist2;
 		}
@@ -618,10 +618,10 @@ void Polygon2D::update_attributes() {
 	_radius= sqrt(_radius);
 
 	// calcul AABB
-	float xmin= 1e8;
-	float ymin= 1e8;
-	float xmax= -1e8;
-	float ymax= -1e8;
+	number xmin= 1e8;
+	number ymin= 1e8;
+	number xmax= -1e8;
+	number ymax= -1e8;
 	for (auto it_pt : _pts) {
 		if (it_pt.x< xmin) xmin= it_pt.x;
 		if (it_pt.y< ymin) ymin= it_pt.y;
@@ -636,11 +636,11 @@ void Polygon2D::update_attributes() {
 
 
 // pt du polygon le + éloigné le long d'une direction
-glm::vec2 Polygon2D::farthest_pt_along_dir(glm::vec2 direction) {
-	float dist_max= -FLT_MAX;
-	glm::vec2 farthest_pt;
+pt_type Polygon2D::farthest_pt_along_dir(pt_type direction) {
+	number dist_max= -FLT_MAX;
+	pt_type farthest_pt;
 	for (unsigned int idx_pt=0; idx_pt<_pts.size(); ++idx_pt) {
-		float dist= glm::dot(direction, _pts[idx_pt]);
+		number dist= glm::dot(direction, _pts[idx_pt]);
 		if (dist> dist_max) {
 			dist_max= dist;
 			farthest_pt= _pts[idx_pt];

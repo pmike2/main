@@ -9,7 +9,7 @@
 
 #include <glm/glm.hpp>
 
-
+#include "typedefs.h"
 
 
 // renvoie un double aléatoire entre x0 et x1
@@ -17,6 +17,8 @@ double rand_double(double x0, double x1);
 
 // renvoie un float aléatoire entre x0 et x1
 float rand_float(float x0, float x1);
+
+number rand_number(number x0, number x1);
 
 // renvoie un int aléatoire entre x0 et x1 compris
 int rand_int(int x0, int x1);

@@ -36,6 +36,14 @@ float rand_float(float x0, float x1) {
 }
 
 
+number rand_number(number x0, number x1) {
+	if (x1> x0)
+		return x0+ (x1- x0)* (number)(rand()% 10000)/ 10000;
+	else
+		return x1+ (x0- x1)* (number)(rand()% 10000)/ 10000;
+}
+
+
 // renvoie un int aléatoire entre x0 et x1 compris
 int rand_int(int x0, int x1) {
 	if (x1> x0)

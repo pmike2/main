@@ -10,6 +10,7 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 
+#include "typedefs.h"
 #include "geom_2d.h"
 
 
@@ -29,12 +30,12 @@ struct DCEL_Face;
 
 struct DCEL_Vertex {
 	DCEL_Vertex();
-	DCEL_Vertex(const glm::vec2 & coords);
+	DCEL_Vertex(const pt_type & coords);
 	~DCEL_Vertex();
 	std::vector<DCEL_HalfEdge *> get_incident_edges();
 	friend std::ostream & operator << (std::ostream & os, DCEL_Vertex & v);
 
-	glm::vec2 _coords;
+	pt_type _coords;
 	DCEL_HalfEdge * _incident_edge; // 1 des edges ayant ce vertex comme origine
 	void * _data; // on pourra utiliser _data pour ajouter des infos par sommet, edge ou face
 };
@@ -69,7 +70,7 @@ struct DCEL_Face {
 	std::vector<DCEL_HalfEdge *> get_outer_edges();
 	std::vector<std::vector<DCEL_HalfEdge *> > get_inner_edges();
 	std::vector<DCEL_Face *> get_adjacent_faces();
-	glm::vec2 get_gravity_center();
+	pt_type get_gravity_center();
 	bool ccw();
 	friend std::ostream & operator << (std::ostream & os, DCEL_Face & f);
 
@@ -83,15 +84,14 @@ class DCEL {
 public:
 	DCEL();
 	~DCEL();
-	DCEL_Vertex * add_vertex(const glm::vec2 & coords);
+	DCEL_Vertex * add_vertex(const pt_type & coords);
 	DCEL_HalfEdge * add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2);
-	DCEL_HalfEdge * add_edge(const glm::vec2 & ori, const glm::vec2 & dst);
-	DCEL_HalfEdge * add_edge(const glm::vec4 & ori_and_dst);
+	DCEL_HalfEdge * add_edge(const pt_type & ori, const pt_type & dst);
 	DCEL_Face * add_face();
 	/*void delete_vertex(DCEL_Vertex * v);
 	void delete_edge(DCEL_HalfEdge * he);
 	void delete_face(DCEL_Face * face);*/
-	DCEL_HalfEdge * split_edge(DCEL_HalfEdge * he, const glm::vec2 & coords);
+	DCEL_HalfEdge * split_edge(DCEL_HalfEdge * he, const pt_type & coords);
 	DCEL_HalfEdge * cut_face(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2);
 	void clear();
 	void create_nexts_from_twins();
@@ -102,13 +102,14 @@ public:
 	void add2queue(DeleteEvent evt);
 	void delete_queue();
 	bool is_empty();
-	void add_bbox(const glm::vec2 & bbox_min, const glm::vec2 & bbox_max);
+	void add_bbox(const pt_type & bbox_min, const pt_type & bbox_max);
 	bool is_valid();
 	void import(std::string s);
-	DCEL_Vertex * get_vertex(const glm::vec2 & coords);
-	DCEL_HalfEdge * get_edge(const glm::vec2 & ori, const glm::vec2 & dst);
-	void get_bbox(glm::vec2 * bbox_min, glm::vec2 * bbox_max);
-	void export_html(std::string html_path, bool simple, const glm::vec2 & bbox_min, const glm::vec2 & bbox_max, const std::vector<glm::vec2> & sites=std::vector<glm::vec2>());
+	DCEL_Vertex * get_vertex(const pt_type & coords);
+	DCEL_HalfEdge * get_edge(const pt_type & ori, const pt_type & dst);
+	void get_bbox(pt_type * bbox_min, pt_type * bbox_max);
+	number smallest_edge();
+	void export_html(std::string html_path, bool simple, const pt_type & bbox_min, const pt_type & bbox_max, const std::vector<pt_type> & sites=std::vector<pt_type>());
 	friend std::ostream & operator << (std::ostream & os, DCEL & d);
 	
 	

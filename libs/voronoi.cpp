@@ -9,114 +9,114 @@
 
 
 // ---------------------------------------------------------------------------------------------
-bool float_equals_strict(float x, float y) {
+bool number_equals_strict(number x, number y) {
 	return x== y;
 }
 
 
-bool float_equals_epsilon(float x, float y) {
+bool number_equals_epsilon(number x, number y) {
 	return abs(x- y)< 1e-9;
 }
 
 
-float y_parabola(const glm::vec2 & site, float yline, float x) {
-	if (float_equals_strict(site.y, yline)) {
+number y_parabola(const pt_type & site, number yline, number x) {
+	if (number_equals_strict(site.y, yline)) {
 		std::cout << "y_parabola problème : site = " << glm_to_string(site) << " ; yline = " << yline << " ; x = " << x << "\n";
 		return 0.0f;
 	}
-	return (x- site.x)* (x- site.x)* 0.5f/ (site.y- yline)+ 0.5f* (site.y+ yline);
+	return (x- site.x)* (x- site.x)* 0.5/ (site.y- yline)+ 0.5* (site.y+ yline);
 }
 
 
-float y_derivative_parabola(const glm::vec2 & site, float yline, float x) {
-	if (float_equals_strict(site.y, yline)) {
+number y_derivative_parabola(const pt_type & site, number yline, number x) {
+	if (number_equals_strict(site.y, yline)) {
 		std::cout << "y_derivative_parabola problème : site = " << glm_to_string(site) << " ; yline = " << yline << " ; x = " << x << "\n";
-		return 0.0f;
+		return 0.0;
 	}
 	return (x- site.x)/ (site.y- yline);
 }
 
 
-std::string parabola_equation(const glm::vec2 & site, float yline) {
-	if (float_equals_strict(site.y, yline)) {
+std::string parabola_equation(const pt_type & site, number yline) {
+	if (number_equals_strict(site.y, yline)) {
 		std::cout << "parabola_equation problème : site = " << glm_to_string(site) << " ; yline = " << yline << "\n";
 		return "";
 	}
-	float a= 0.5f/ (site.y- yline);
-	float b= site.x/ (yline- site.y);
-	float c= 0.5f* site.x* site.x/ (site.y- yline)+ 0.5f* (site.y+ yline);
+	number a= 0.5/ (site.y- yline);
+	number b= site.x/ (yline- site.y);
+	number c= 0.5* site.x* site.x/ (site.y- yline)+ 0.5* (site.y+ yline);
 	return std::to_string(a)+ "x2 + "+ std::to_string(b)+ "x + "+ std::to_string(c);
 }
 
 
-glm::vec2 parabolas_intersection(const glm::vec2 & site_left, const glm::vec2 & site_right, float yline) {
+pt_type parabolas_intersection(const pt_type & site_left, const pt_type & site_right, number yline) {
 	// cas limite des sites situés sur yline
-	if (float_equals_epsilon(site_left.y, yline)) {
-		if (float_equals_epsilon(site_right.y,yline)) {
+	if (number_equals_epsilon(site_left.y, yline)) {
+		if (number_equals_epsilon(site_right.y,yline)) {
 			std::cout << "parabolas_intersection 0 pt (2 sites sur yline) : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
 		}
 		else {
-			return glm::vec2(site_left.x, y_parabola(site_right, yline, site_left.x));
+			return pt_type(site_left.x, y_parabola(site_right, yline, site_left.x));
 		}
 	}
-	else if (float_equals_epsilon(site_right.y, yline)) {
-		return glm::vec2(site_right.x, y_parabola(site_left, yline, site_right.x));
+	else if (number_equals_epsilon(site_right.y, yline)) {
+		return pt_type(site_right.x, y_parabola(site_left, yline, site_right.x));
 	}
 
-	float a= 2.0f* (site_right.y- site_left.y);
-	float b= 4.0f* ((site_left.y- yline)* site_right.x- (site_right.y- yline)* site_left.x);
-	float c= 2.0f* (site_right.y- yline)* (site_left.x* site_left.x+ site_left.y* site_left.y- yline* yline)
-			-2.0f* (site_left.y- yline)* (site_right.x* site_right.x+ site_right.y* site_right.y- yline* yline);
+	number a= 2.0* (site_right.y- site_left.y);
+	number b= 4.0* ((site_left.y- yline)* site_right.x- (site_right.y- yline)* site_left.x);
+	number c= 2.0* (site_right.y- yline)* (site_left.x* site_left.x+ site_left.y* site_left.y- yline* yline)
+			-2.0* (site_left.y- yline)* (site_right.x* site_right.x+ site_right.y* site_right.y- yline* yline);
 
-	if (float_equals_epsilon(a, 0.0f)) {
-		float x= -1.0f* c/ b;
-		return glm::vec2(x, y_parabola(site_left, yline, x));
+	if (number_equals_epsilon(a, 0.0)) {
+		number x= -1.0* c/ b;
+		return pt_type(x, y_parabola(site_left, yline, x));
 	}
 
-	float delta= b* b- 4.0f* a* c;
-	if (delta< 0.0f) {
+	number delta= b* b- 4.0* a* c;
+	if (delta< 0.0) {
 		std::cout << "parabolas_intersection 0 pt : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
-		return glm::vec2(0.0f);
+		return pt_type(0.0);
 	}
 
 	// 2 intersections dans la majorité des cas
-	float x1= 0.5f* (-1.0f* b- sqrt(delta))/ a;
-	float x2= 0.5f* (-1.0f* b+ sqrt(delta))/ a;
+	number x1= 0.5* (-1.0* b- sqrt(delta))/ a;
+	number x2= 0.5* (-1.0* b+ sqrt(delta))/ a;
 
 	// je compare les tangentes aux 2 pts pour savoir quel pt respecte left-right
-	float dleft_x1= y_derivative_parabola(site_left, yline, x1);
-	float dright_x1= y_derivative_parabola(site_right, yline, x1);
-	float dleft_x2= y_derivative_parabola(site_left, yline, x2);
-	float dright_x2= y_derivative_parabola(site_right, yline, x2);
+	number dleft_x1= y_derivative_parabola(site_left, yline, x1);
+	number dright_x1= y_derivative_parabola(site_right, yline, x1);
+	number dleft_x2= y_derivative_parabola(site_left, yline, x2);
+	number dright_x2= y_derivative_parabola(site_right, yline, x2);
 
 	if (dleft_x1>= dright_x1) {
-		return glm::vec2(x1, y_parabola(site_left, yline, x1));
+		return pt_type(x1, y_parabola(site_left, yline, x1));
 	}
 	else if (dleft_x2>= dright_x2) {
-		return glm::vec2(x2, y_parabola(site_left, yline, x2));
+		return pt_type(x2, y_parabola(site_left, yline, x2));
 	}
 
 	std::cout << "parabolas_intersection derivative problem : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
-	return glm::vec2(0.0f);
+	return pt_type(0.0);
 }
 
 
 bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
-	/*glm::vec2 origin1= glm::vec2(he1->_tmp_x, he1->_tmp_y);
-	glm::vec2 direction1= glm::vec2(he1->_dx, he1->_dy);
-	glm::vec2 origin2= glm::vec2(he2->_tmp_x, he2->_tmp_y);
-	glm::vec2 direction2= glm::vec2(he2->_dx, he2->_dy);
-	glm::vec2 result;
+	/*pt_type origin1= pt_type(he1->_tmp_x, he1->_tmp_y);
+	pt_type direction1= pt_type(he1->_dx, he1->_dy);
+	pt_type origin2= pt_type(he2->_tmp_x, he2->_tmp_y);
+	pt_type direction2= pt_type(he2->_dx, he2->_dy);
+	pt_type result;
 
-	const float EPS= 1e-6;
+	const number EPS= 1e-6;
 	origin1-= EPS* direction1;
 	origin2-= EPS* direction2;
 
 	bool is_inter= ray_intersects_ray(origin1, direction1, origin2, direction2, &result);*/
 
 
-	glm::vec2 result;
-	glm::vec2 he1_origin, he2_origin;
+	pt_type result;
+	pt_type he1_origin, he2_origin;
 	DCEL_HalfEdgeData * he1_data= (DCEL_HalfEdgeData *)(he1->_data);
 	DCEL_HalfEdgeData * he2_data= (DCEL_HalfEdgeData *)(he2->_data);
 
@@ -144,14 +144,14 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 	&result);
 	//std::cout << "DEBUG4 : " << is_inter << " ; " << glm_to_string(result) << "\n";
 
-	if (float_equals_strict(he1_origin.x, he2_origin.x) && float_equals_strict(he1_origin.y, he2_origin.y)) {
+	if (number_equals_strict(he1_origin.x, he2_origin.x) && number_equals_strict(he1_origin.y, he2_origin.y)) {
 		//std::cout << "DEBUG5 origin equals\n";
 		return false;
 	}
 
 	// faire un truc ici peut-être
 	/*if ((he1->_origin!= NULL) && (he2->_origin!= NULL)) {
-		if ((float_equals_strict(he1->_origin->_x, he2->_origin->_x)) || (float_equals_strict(he1->_origin->_y, he2->_origin->_y))) {
+		if ((number_equals_strict(he1->_origin->_x, he2->_origin->_x)) || (number_equals_strict(he1->_origin->_y, he2->_origin->_y))) {
 			return false;
 		}
 	}*/
@@ -165,10 +165,10 @@ bool events_are_equal(Event * lhs, Event * rhs) {
 		return false;
 	}
 	
-	float lx= 0.0f;
-	float rx= 0.0f;
-	float ly= 0.0f;
-	float ry= 0.0f;
+	number lx= 0.0f;
+	number rx= 0.0f;
+	number ly= 0.0f;
+	number ry= 0.0f;
 
 	if (lhs->_type== EventType::SiteEvent) {
 		lx= lhs->_site.x;
@@ -188,24 +188,24 @@ bool events_are_equal(Event * lhs, Event * rhs) {
 		ry= rhs->_circle_center.y- rhs->_circle_radius;
 	}
 
-	//std::cout << "DEBUG : " << lx << " ; " << rx << " ; " << ly << " ; " << ry << " ; " << float_equals_epsilon(lx, rx) << " ; " << float_equals_epsilon(ly, ry) << "\n";
-	//return (float_equals_strict(lx, rx) && float_equals_strict(ly, ry));
-	return (float_equals_epsilon(lx, rx) && float_equals_epsilon(ly, ry));
+	//std::cout << "DEBUG : " << lx << " ; " << rx << " ; " << ly << " ; " << ry << " ; " << number_equals_epsilon(lx, rx) << " ; " << number_equals_epsilon(ly, ry) << "\n";
+	//return (number_equals_strict(lx, rx) && number_equals_strict(ly, ry));
+	return (number_equals_epsilon(lx, rx) && number_equals_epsilon(ly, ry));
 }
 
 
 // ---------------------------------------------------------------------------------------------
-DCEL_HalfEdgeData::DCEL_HalfEdgeData() : _is_full_line(false), _center(glm::vec2(0.0f)) {
+DCEL_HalfEdgeData::DCEL_HalfEdgeData() : _is_full_line(false), _center(pt_type(0.0f)) {
 
 }
 
 
-DCEL_HalfEdgeData::DCEL_HalfEdgeData(bool is_full_line) : _is_full_line(is_full_line), _center(glm::vec2(0.0f)) {
+DCEL_HalfEdgeData::DCEL_HalfEdgeData(bool is_full_line) : _is_full_line(is_full_line), _center(pt_type(0.0f)) {
 
 }
 
 
-DCEL_HalfEdgeData::DCEL_HalfEdgeData(bool is_full_line, glm::vec2 center) : _is_full_line(is_full_line), _center(center) {
+DCEL_HalfEdgeData::DCEL_HalfEdgeData(bool is_full_line, pt_type center) : _is_full_line(is_full_line), _center(center) {
 	
 }
 
@@ -222,14 +222,14 @@ std::ostream & operator << (std::ostream & os, const DCEL_HalfEdgeData & d) {
 
 // ---------------------------------------------------------------------------------------------
 BeachLineNode::BeachLineNode() :
-	_type(Arc), _site(glm::vec2(0.0f, 0.0f)), _circle_event(NULL), _sites(std::make_pair(glm::vec2(0.0f, 0.0f), glm::vec2(0.0f, 0.0f))), _half_edge(NULL) 
+	_type(Arc), _site(pt_type(0.0f, 0.0f)), _circle_event(NULL), _sites(std::make_pair(pt_type(0.0f, 0.0f), pt_type(0.0f, 0.0f))), _half_edge(NULL) 
 {
 
 }
 
 
 BeachLineNode::BeachLineNode(BeachLineNodeType type) :
-	_type(type), _site(glm::vec2(0.0f, 0.0f)), _circle_event(NULL), _sites(std::make_pair(glm::vec2(0.0f, 0.0f), glm::vec2(0.0f, 0.0f))), _half_edge(NULL) 
+	_type(type), _site(pt_type(0.0f, 0.0f)), _circle_event(NULL), _sites(std::make_pair(pt_type(0.0f, 0.0f), pt_type(0.0f, 0.0f))), _half_edge(NULL) 
 {
 
 }
@@ -254,14 +254,14 @@ std::ostream & operator << (std::ostream & os, const BeachLineNode & b) {
 
 // ---------------------------------------------------------------------------------------------
 Event::Event() :
-	_type(CircleEvent), _site(glm::vec2(0.0f, 0.0f)), _circle_center(glm::vec2(0.0f, 0.0f)), _circle_radius(0.0f), _leaf(NULL)
+	_type(CircleEvent), _site(pt_type(0.0f, 0.0f)), _circle_center(pt_type(0.0f, 0.0f)), _circle_radius(0.0f), _leaf(NULL)
 {
 
 }
 
 
 Event::Event(EventType type) :
-	_type(type), _site(glm::vec2(0.0f, 0.0f)), _circle_center(glm::vec2(0.0f, 0.0f)), _circle_radius(0.0f), _leaf(NULL)
+	_type(type), _site(pt_type(0.0f, 0.0f)), _circle_center(pt_type(0.0f, 0.0f)), _circle_radius(0.0f), _leaf(NULL)
 {
 
 }
@@ -288,8 +288,8 @@ std::ostream & operator << (std::ostream & os, const Event & event) {
 // ---------------------------------------------------------------------------------------------
 Voronoi::Voronoi() : _current_y(0.0f) {
 	std::function<int(BeachLineNode, BeachLineNode)> cmp= [this](BeachLineNode lhs, BeachLineNode rhs) {
-		float lhx= 0.0f;
-		float rhx= 0.0f;
+		number lhx= 0.0f;
+		number rhx= 0.0f;
 
 		// dans le cas d'un Arc (feuille du BST) on considère le x du site associé
 		// sinon on calcule le x du breakpoint = intersection des 2 arcs définissant le breakpoint
@@ -297,7 +297,7 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 			lhx= lhs._site.x;
 		}
 		else if (lhs._type== BreakPoint) {
-			glm::vec2 inter= parabolas_intersection(lhs._sites.first, lhs._sites.second, _current_y);
+			pt_type inter= parabolas_intersection(lhs._sites.first, lhs._sites.second, _current_y);
 			lhx= inter.x;
 		}
 
@@ -305,7 +305,7 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 			rhx= rhs._site.x;
 		}
 		else if (rhs._type== BreakPoint) {
-			glm::vec2 inter= parabolas_intersection(rhs._sites.first, rhs._sites.second, _current_y);
+			pt_type inter= parabolas_intersection(rhs._sites.first, rhs._sites.second, _current_y);
 			rhx= inter.x;
 		}
 
@@ -325,7 +325,7 @@ Voronoi::Voronoi() : _current_y(0.0f) {
 }
 
 
-Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string debug_path, float bbox_expand) : Voronoi()
+Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string debug_path, number bbox_expand) : Voronoi()
 {
 	_sites= sites;
 	_debug_path= debug_path;
@@ -348,23 +348,26 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	}
 
 	_debug_count= 0;
-	float last_site_x= 1e8;
-	float last_site_y= 1e8;
+	number last_site_x= 1e8;
+	number last_site_y= 1e8;
 	Event * last_event= NULL;
 	while (!_queue.empty()) {
 		Event * e= _queue.top();
 		_queue.pop();
-		if (last_event!= NULL && events_are_equal(last_event, e)) {
+		
+		/*if (last_event!= NULL && events_are_equal(last_event, e)) {
 			if (_verbose) {
 				std::cout << "last_event == e\n";
 			}
-			//continue;
+			continue;
 		}
-		last_event= e;
+		last_event= e;*/
+		
 		if (!e->_is_valid) {
 			continue;
 		}
-		if ((float_equals_strict(e->_site.x, last_site_x)) && (float_equals_strict(e->_site.y, last_site_y))) {
+		
+		if ((number_equals_strict(e->_site.x, last_site_x)) && (number_equals_strict(e->_site.y, last_site_y))) {
 			continue;
 		}
 
@@ -384,7 +387,7 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 			if (_debug_count== 0) {
 				_first_y= e->_site.y;
 			}
-			if (float_equals_strict(_current_y, _first_y)) {
+			if (number_equals_strict(_current_y, _first_y)) {
 				handle_first_sites_event(e);
 			}
 			else {
@@ -429,7 +432,7 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 	
 	_diagram->delete_loop_edge();
 
-	std::cout << *_diagram << "\n";
+	//std::cout << *_diagram << "\n";
 
 	/*if (_verbose) {
 		std::cout << "diagram_valid= " << _diagram->is_valid() << "\n";
@@ -439,9 +442,9 @@ Voronoi::Voronoi(const std::vector<glm::vec2> & sites, bool verbose, std::string
 		std::cout << "ajout BBOX\n";
 	}
 
-	float max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
-	glm::vec2 bbox_min= glm::vec2(_bbox_min.x- BBOX_MARGIN_PERCENT* max_size, _bbox_min.y- BBOX_MARGIN_PERCENT* max_size);
-	glm::vec2 bbox_max= glm::vec2(_bbox_max.x+ BBOX_MARGIN_PERCENT* max_size, _bbox_max.y+ BBOX_MARGIN_PERCENT* max_size);
+	number max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
+	pt_type bbox_min= pt_type(_bbox_min.x- BBOX_MARGIN_PERCENT* max_size, _bbox_min.y- BBOX_MARGIN_PERCENT* max_size);
+	pt_type bbox_max= pt_type(_bbox_max.x+ BBOX_MARGIN_PERCENT* max_size, _bbox_max.y+ BBOX_MARGIN_PERCENT* max_size);
 	_diagram->add_bbox(bbox_min, bbox_max);
 
 	//std::cout << *_diagram << "\n";
@@ -454,9 +457,9 @@ Voronoi::~Voronoi() {
 }
 
 
-DCEL_HalfEdge * Voronoi::add_full_segment(glm::vec2 position, glm::vec2 direction) {
-	float max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
-	float size= (1.0f+ BBOX_MARGIN_PERCENT)* max_size* 2.0f;
+DCEL_HalfEdge * Voronoi::add_full_segment(pt_type position, pt_type direction) {
+	number max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
+	number size= (1.0f+ BBOX_MARGIN_PERCENT)* max_size* 2.0f;
 	DCEL_HalfEdge * he= _diagram->add_edge(position- size* direction, position+ size* direction);
 	he->_data= new DCEL_HalfEdgeData(true, position);
 	he->_twin->_data= new DCEL_HalfEdgeData(true, position);
@@ -464,9 +467,9 @@ DCEL_HalfEdge * Voronoi::add_full_segment(glm::vec2 position, glm::vec2 directio
 }
 
 
-DCEL_HalfEdge * Voronoi::add_half_segment(glm::vec2 position, glm::vec2 direction) {
-	float max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
-	float size= (1.0f+ BBOX_MARGIN_PERCENT)* max_size* 2.0f;
+DCEL_HalfEdge * Voronoi::add_half_segment(pt_type position, pt_type direction) {
+	number max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
+	number size= (1.0f+ BBOX_MARGIN_PERCENT)* max_size* 2.0f;
 	DCEL_HalfEdge * he= _diagram->add_edge(position, position+ size* direction/ sqrt(direction.x* direction.x+ direction.y* direction.y));
 	he->_data= new DCEL_HalfEdgeData(false);
 	he->_twin->_data= new DCEL_HalfEdgeData(false);
@@ -501,17 +504,17 @@ void Voronoi::handle_first_sites_event(Event * e) {
 		new_bkpt->_sites= std::make_pair(max_node->_data._site, e->_site);
 
 		/*DCEL_HalfEdge * he= _diagram->add_edge(NULL, NULL);
-		float x= (max_node->_data._site.x+ e->_site.x)* 0.5f;
-		float y= _current_y;
-		he->set_tmp_data(glm::vec2(0.0f, -1.0f), glm::vec2(x, y));*/
+		number x= (max_node->_data._site.x+ e->_site.x)* 0.5;
+		number y= _current_y;
+		he->set_tmp_data(pt_type(0.0, -1.0), pt_type(x, y));*/
 
 		/*DCEL_HalfEdge * he= _diagram->add_edge(
-			glm::vec2((max_node->_data._site.x+ e->_site.x)* 0.5f, _bbox_max.y+ 0.1),
-			glm::vec2((max_node->_data._site.x+ e->_site.x)* 0.5f, _bbox_min.y- 0.1)
+			pt_type((max_node->_data._site.x+ e->_site.x)* 0.5f, _bbox_max.y+ 0.1),
+			pt_type((max_node->_data._site.x+ e->_site.x)* 0.5f, _bbox_min.y- 0.1)
 		);*/
 
-		glm::vec2 position= glm::vec2((max_node->_data._site.x+ e->_site.x)* 0.5f, _current_y);
-		glm::vec2 direction= glm::vec2(0.0f, -1.0f);
+		pt_type position= pt_type((max_node->_data._site.x+ e->_site.x)* 0.5, _current_y);
+		pt_type direction= pt_type(0.0, -1.0);
 		DCEL_HalfEdge * he= add_full_segment(position, direction);
 
 		new_bkpt->_half_edge= he;
@@ -534,7 +537,7 @@ void Voronoi::handle_first_sites_event(Event * e) {
 void Voronoi::handle_site_event(Event * e) {
 	// recherche de l'arc au dessus du site
 	BeachLineNode * new_arc= new BeachLineNode(Arc);
-	new_arc->_site= glm::vec2(e->_site);
+	new_arc->_site= pt_type(e->_site);
 	Node<BeachLineNode> * node_above_site= _beachline->search(*new_arc, false);
 
 	Node<BeachLineNode> * prev_site= _beachline->predecessor_leaf(node_above_site);
@@ -569,28 +572,28 @@ void Voronoi::handle_site_event(Event * e) {
 
 	// ajout des 2 half-edge
 	// pente he = tangente à la parabole
-	float y= y_parabola(node_above_site->_data._site, _current_y, e->_site.x);
-	float dy= y_derivative_parabola(node_above_site->_data._site, _current_y, e->_site.x);
+	number y= y_parabola(node_above_site->_data._site, _current_y, e->_site.x);
+	number dy= y_derivative_parabola(node_above_site->_data._site, _current_y, e->_site.x);
 
 	/*DCEL_HalfEdge * he= _diagram->add_edge(NULL, NULL);
-	he->set_tmp_data(glm::vec2(1.0f, dy), glm::vec2(e->_site.x, y));*/
+	he->set_tmp_data(pt_type(1.0, dy), pt_type(e->_site.x, y));*/
 
 	// doit être + grand que la diagonale
-	/*float lambda= 2.0f* std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
+	/*number lambda= 2.0* std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
 	DCEL_HalfEdge * he= _diagram->add_edge(
-		glm::vec2(e->_site.x, y)- lambda* glm::vec2(1.0f, dy),
-		glm::vec2(e->_site.x, y)+ lambda* glm::vec2(1.0f, dy)
+		pt_type(e->_site.x, y)- lambda* pt_type(1.0, dy),
+		pt_type(e->_site.x, y)+ lambda* pt_type(1.0, dy)
 	);*/
 
-	glm::vec2 position= glm::vec2(e->_site.x, y);
-	glm::vec2 direction= glm::vec2(1.0f, dy);
+	pt_type position= pt_type(e->_site.x, y);
+	pt_type direction= pt_type(1.0, dy);
 	DCEL_HalfEdge * he= add_full_segment(position, direction);
 
 	BeachLineNode * above_site_copy1= new BeachLineNode(Arc);
-	above_site_copy1->_site= glm::vec2(node_above_site->_data._site);
+	above_site_copy1->_site= pt_type(node_above_site->_data._site);
 	above_site_copy1->_circle_event= node_above_site->_data._circle_event;
 	BeachLineNode * above_site_copy2= new BeachLineNode(Arc);
-	above_site_copy2->_site= glm::vec2(node_above_site->_data._site);
+	above_site_copy2->_site= pt_type(node_above_site->_data._site);
 	above_site_copy2->_circle_event= node_above_site->_data._circle_event;
 
 	Node<BeachLineNode> * node_above_site_left_copy= _beachline->gen_node(*above_site_copy1);
@@ -629,13 +632,13 @@ void Voronoi::handle_site_event(Event * e) {
 	}
 
 	// rebalance ; pour l'instant non j'ai peur que cela mette en l'air l'arbre vu la fonction de comparaison basée sur _site.x
-	//_beachline.balance();
+	//_beachline->balance();
 
 	// voir si les breakpoints convergent
 	if (prev_site!= NULL && prev_bkpt!= NULL && breakpoints_converge(prev_bkpt->_data._half_edge, breakpoint_left->_half_edge)) {
-		std::pair<glm::vec2, float> circle= circumcircle(prev_site->_data._site, node_above_site->_data._site, new_arc->_site);
-		glm::vec2 center= circle.first;
-		float radius= circle.second;
+		std::pair<pt_type, number> circle= circumcircle(prev_site->_data._site, node_above_site->_data._site, new_arc->_site);
+		pt_type center= circle.first;
+		number radius= circle.second;
 
 		Event * new_circle_event= new Event(CircleEvent);
 		new_circle_event->_circle_center= center;
@@ -656,9 +659,9 @@ void Voronoi::handle_site_event(Event * e) {
 	}
 
 	if ((next_site!= NULL) && (next_bkpt!= NULL) && (breakpoints_converge(next_bkpt->_data._half_edge, breakpoint_right->_half_edge))) {
-		std::pair<glm::vec2, float> circle= circumcircle(new_arc->_site, node_above_site->_data._site, next_site->_data._site);
-		glm::vec2 center= circle.first;
-		float radius= circle.second;
+		std::pair<pt_type, number> circle= circumcircle(new_arc->_site, node_above_site->_data._site, next_site->_data._site);
+		pt_type center= circle.first;
+		number radius= circle.second;
 
 		Event * new_circle_event= new Event(CircleEvent);
 		new_circle_event->_circle_center= center;
@@ -697,15 +700,15 @@ void Voronoi::handle_circle_event(Event * e) {
 	//DCEL_Vertex * vertex= _diagram->add_vertex(e->_circle_center);
 
 	/*DCEL_HalfEdge * he= _diagram->add_edge(vertex, NULL);
-	he->set_tmp_data(glm::vec2(v.y, -v.x), e->_circle_center);*/
+	he->set_tmp_data(pt_type(v.y, -v.x), e->_circle_center);*/
 
-	/*float lambda= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y)/ sqrt(v.x* v.x+ v.y* v.y);
-	DCEL_Vertex * vertex2= _diagram->add_vertex(e->_circle_center+ lambda* glm::vec2(v.y, -v.x));
+	/*number lambda= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y)/ sqrt(v.x* v.x+ v.y* v.y);
+	DCEL_Vertex * vertex2= _diagram->add_vertex(e->_circle_center+ lambda* pt_type(v.y, -v.x));
 	DCEL_HalfEdge * he= _diagram->add_edge(vertex, vertex2);*/
 
 	// direction du nouveau he perpendiculaire à site_droit - site_gauche et pointant vers les y< 0
-	glm::vec2 v= successor_leaf->_data._site- predecessor_leaf->_data._site;
-	DCEL_HalfEdge * he= add_half_segment(e->_circle_center, glm::vec2(v.y, -v.x));
+	pt_type v= successor_leaf->_data._site- predecessor_leaf->_data._site;
+	DCEL_HalfEdge * he= add_half_segment(e->_circle_center, pt_type(v.y, -v.x));
 	DCEL_Vertex * circle_center_vertex= he->_origin;
 	
 	if (_verbose) {
@@ -749,9 +752,9 @@ void Voronoi::handle_circle_event(Event * e) {
 	predecessor->_data._half_edge->set_next(successor->_data._half_edge->_twin);
 
 	if ((predecessor_predecessor_leaf!= NULL) && (breakpoints_converge(predecessor_bkpt->_data._half_edge, he))) {
-		std::pair<glm::vec2, float> circle= circumcircle(predecessor_predecessor_leaf->_data._site, predecessor_leaf->_data._site, successor_leaf->_data._site);
-		glm::vec2 center= circle.first;
-		float radius= circle.second;
+		std::pair<pt_type, number> circle= circumcircle(predecessor_predecessor_leaf->_data._site, predecessor_leaf->_data._site, successor_leaf->_data._site);
+		pt_type center= circle.first;
+		number radius= circle.second;
 
 		Event * new_circle_event= new Event(CircleEvent);
 		new_circle_event->_circle_center= center;
@@ -771,9 +774,9 @@ void Voronoi::handle_circle_event(Event * e) {
 	}
 
 	if ((successor_successor_leaf!= NULL) && (breakpoints_converge(successor_bkpt->_data._half_edge, he))) {
-		std::pair<glm::vec2, float> circle= circumcircle(predecessor_leaf->_data._site, successor_leaf->_data._site, successor_successor_leaf->_data._site);
-		glm::vec2 center= circle.first;
-		float radius= circle.second;
+		std::pair<pt_type, number> circle= circumcircle(predecessor_leaf->_data._site, successor_leaf->_data._site, successor_successor_leaf->_data._site);
+		pt_type center= circle.first;
+		number radius= circle.second;
 
 		Event * new_circle_event= new Event(CircleEvent);
 		new_circle_event->_circle_center= center;
@@ -800,7 +803,7 @@ void Voronoi::handle_circle_event(Event * e) {
 		else {
 			grand_parent->set_right(parent->_right);
 		}
-		predecessor->_data._sites.second= glm::vec2(successor_leaf->_data._site);
+		predecessor->_data._sites.second= pt_type(successor_leaf->_data._site);
 		predecessor->_data._half_edge= he;
 	}
 	else if ( (e->_leaf->is_right()) && (parent->_left!= NULL) && (grand_parent!= NULL)) {
@@ -810,7 +813,7 @@ void Voronoi::handle_circle_event(Event * e) {
 		else {
 			grand_parent->set_right(parent->_left);
 		}
-		successor->_data._sites.first= glm::vec2(predecessor_leaf->_data._site);
+		successor->_data._sites.first= pt_type(predecessor_leaf->_data._site);
 		successor->_data._half_edge= he;
 	}
 }
@@ -820,30 +823,30 @@ void Voronoi::export_debug_html(std::string html_path) {
 	const unsigned int SVG_WIDTH= 1000;
 	const unsigned int SVG_HEIGHT= 800;
 	
-	//const float MARGIN_FACTOR= 2.0f;
-	float max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
-	const float VIEW_XMIN= _bbox_min.x- BBOX_MARGIN_PERCENT* 5.0f* max_size;
-	const float VIEW_YMIN= _bbox_min.y- BBOX_MARGIN_PERCENT* 5.0f* max_size;
-	const float VIEW_XMAX= _bbox_max.x+ BBOX_MARGIN_PERCENT* 5.0f* max_size;
-	const float VIEW_YMAX= _bbox_max.y+ BBOX_MARGIN_PERCENT* 5.0f* max_size;
+	//const number MARGIN_FACTOR= 2.0f;
+	number max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
+	const number VIEW_XMIN= _bbox_min.x- BBOX_MARGIN_PERCENT* 5.0* max_size;
+	const number VIEW_YMIN= _bbox_min.y- BBOX_MARGIN_PERCENT* 5.0* max_size;
+	const number VIEW_XMAX= _bbox_max.x+ BBOX_MARGIN_PERCENT* 5.0* max_size;
+	const number VIEW_YMAX= _bbox_max.y+ BBOX_MARGIN_PERCENT* 5.0* max_size;
 	
-	const float SIZE= std::max(VIEW_XMAX- VIEW_XMIN, VIEW_YMAX- VIEW_YMIN);
-	const float POINT_RADIUS= 0.006f* SIZE;
-	const float STROKE_WIDTH= 0.004f* SIZE;
-	const float STEP= 0.01f;
+	const number SIZE= std::max(VIEW_XMAX- VIEW_XMIN, VIEW_YMAX- VIEW_YMIN);
+	const number POINT_RADIUS= 0.006* SIZE;
+	const number STROKE_WIDTH= 0.004* SIZE;
+	const number STEP= 0.01;
 
-	const float OPACITY_MIN= 0.2f;
-	const float OPACITY_MAX= 0.6f;
+	const number OPACITY_MIN= 0.2;
+	const number OPACITY_MAX= 0.6;
 
-	auto y_html= [VIEW_YMIN, VIEW_YMAX](float y) -> float {return VIEW_YMIN+ VIEW_YMAX- y;};
+	auto y_html= [VIEW_YMIN, VIEW_YMAX](number y) -> number {return VIEW_YMIN+ VIEW_YMAX- y;};
 
-	auto site_color= [](glm::vec2 s) -> glm::ivec3 {
-		float intpart;
-		float fractpartx= modf(s.x, &intpart);
-		float fractparty= modf(s.y, &intpart);
-		int x= int(255.0f* abs(cos(fractpartx* 6)));
-		int y= int(255.0f* fractparty);
-		int z= int(255.0f* fractpartx* fractparty);
+	auto site_color= [](pt_type s) -> glm::ivec3 {
+		number intpart;
+		number fractpartx= modf(s.x, &intpart);
+		number fractparty= modf(s.y, &intpart);
+		int x= int(255.0* abs(cos(fractpartx* 6)));
+		int y= int(255.0* fractparty);
+		int z= int(255.0* fractpartx* fractparty);
 		return glm::vec3(x, y, z);
 	};
 
@@ -894,10 +897,10 @@ void Voronoi::export_debug_html(std::string html_path) {
 			continue;
 		}
 
-		float x= VIEW_XMIN;
+		number x= VIEW_XMIN;
 		std::string poly= "";
 		while (true) {
-			float y= y_parabola(s, _current_y, x);
+			number y= y_parabola(s, _current_y, x);
 			poly+= std::to_string(x)+ ","+ std::to_string(y_html(y))+ " ";
 			x+= STEP;
 			if (x> VIEW_XMAX) {
@@ -912,10 +915,10 @@ void Voronoi::export_debug_html(std::string html_path) {
 			std::cout << "twin == NULL !\n";
 			continue;
 		}
-		float x1= he->_origin->_coords.x;
-		float y1= he->_origin->_coords.y;
-		float x2= he->destination()->_coords.x;
-		float y2= he->destination()->_coords.y;
+		number x1= he->_origin->_coords.x;
+		number y1= he->_origin->_coords.y;
+		number x2= he->destination()->_coords.x;
+		number y2= he->destination()->_coords.y;
 		DCEL_HalfEdgeData * he_data= (DCEL_HalfEdgeData *)(he->_data);
 
 		f << "<circle class=\"half_edge_origin_point_class\" cx=\"" << x1 << "\" cy=\"" << y_html(y1) << "\" r=\"" << POINT_RADIUS << "\" />\n";

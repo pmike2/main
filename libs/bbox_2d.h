@@ -12,27 +12,29 @@ https://github.com/OneLoneCoder/olcPixelGameEngine/blob/master/Videos/OneLoneCod
 
 #include <glm/glm.hpp>
 
+#include "typedefs.h"
+
 
 class AABB_2D {
 public:
 	AABB_2D();
-	AABB_2D(glm::vec2 pos, glm::vec2 size);
+	AABB_2D(pt_type pos, pt_type size);
 	AABB_2D(const AABB_2D & aabb);
 	~AABB_2D();
-	glm::vec2 center();
-	AABB_2D * buffered(float size);
+	pt_type center();
+	AABB_2D * buffered(number size);
 	friend std::ostream & operator << (std::ostream & os, const AABB_2D & aabb);
 
 
-	glm::vec2 _pos;
-	glm::vec2 _size;
+	pt_type _pos;
+	pt_type _size;
 };
 
 
-bool point_in_aabb(const glm::vec2 & pt, const AABB_2D * aabb);
+bool point_in_aabb(const pt_type & pt, const AABB_2D * aabb);
 bool aabb_intersects_aabb(const AABB_2D * aabb_1, const AABB_2D * aabb_2);
 bool aabb_contains_aabb(const AABB_2D * big_aabb, const AABB_2D * small_aabb);
-bool ray_intersects_aabb(const glm::vec2 & ray_origin, const glm::vec2 & ray_dir, const AABB_2D * aabb, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & t_hit_near);
+bool ray_intersects_aabb(const pt_type & ray_origin, const pt_type & ray_dir, const AABB_2D * aabb, pt_type & contact_pt, pt_type & contact_normal, number & t_hit_near);
 
 
 #endif
