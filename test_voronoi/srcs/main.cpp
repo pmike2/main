@@ -41,10 +41,8 @@ void test1() {
 	m["y_align"]= std::vector<pt_type> {pt_type(0.4, 0.8), pt_type(0.1, 0.6), pt_type(0.6, 0.6), pt_type(0.3, 0.6)};
 	// jeu test avec 2 fois le même site
 	m["site_doublon"]= std::vector<pt_type> {pt_type(0.4, 0.8), pt_type(0.1, 0.6), pt_type(0.1, 0.6), pt_type(0.3, 0.2)};
-	// jeu test carré
-	m["square"]= std::vector<pt_type> {pt_type(0.1, 0.1), pt_type(0.3, 0.1), pt_type(0.1, 0.3), pt_type(0.3, 0.3)};
 	// racine niemes de l'unité
-	int n1= 7;
+	int n1= 5;
 	m["unit_root"]= std::vector<pt_type> {};
 	for (int i=0; i<n1; ++i) {
 		m["unit_root"].push_back(pt_type(cos(2.0* M_PI* (double)(i)/ (double)(n1)), sin(2.0* M_PI* (double)(i)/ (double)(n1))));
@@ -56,9 +54,19 @@ void test1() {
 		m["unit_root_center"].push_back(pt_type(cos(2.0* M_PI* (double)(i)/ (double)(n2)), sin(2.0* M_PI* (double)(i)/ (double)(n2))));
 	}
 	m["unit_root_center"].push_back(pt_type(0.0, 0.0));
+	// grille
+	int n3= 4;
+	m["grid"]= std::vector<pt_type> {};
+	for (int i=0; i<n3; ++i) {
+		for (int j=0; j<n3; ++j) {
+			m["grid"].push_back(pt_type(number(i)/ number(n3), number(j)/ number(n3)));
+		}
+	}
 
 	for (auto const & x : m) {
 		if (x.first!= "simple") {continue;}
+
+		std::cout << "TEST1 " << x.first << " ----------------------\n";
 		Voronoi * v= new Voronoi(x.second, true, "../data/test1/"+ x.first);
 
 		pt_type bbox_min, bbox_max;
@@ -72,24 +80,29 @@ void test1() {
 void test2() {
 	int n_pts= 2000;
 	number xmin= 0.0;
-	number xmax= 10.0;
+	number xmax= 100.0;
 	number ymin= 0.0;
-	number ymax= 10.0;
+	number ymax= 100.0;
 	number min_dist= 0.3;
+	
 	for (unsigned int i=0; i<n_pts; ++i) {
 		pt_type pt(rand_number(xmin, xmax), rand_number(ymin, ymax));
 		bool ok= true;
-		for (auto pt2 : pts) {
+		/*for (auto pt2 : pts) {
 			if (glm::distance2(pt, pt2)< min_dist* min_dist) {
 				ok= false;
 				break;
 			}
-		}
+		}*/
 		if (ok) {
 			pts.push_back(pt);
 		}
-		//std::cout << pts[i].x << ", " << pts[i].y << " | ";
 	}
+	
+	/*for (unsigned int i=0; i<n_pts; ++i) {
+		pt_type pt(rand_number(xmin, xmax), number(i)* 0.1);
+		pts.push_back(pt);
+	}*/
 
 	std::sort(pts.begin(), pts.end(), [](const pt_type &a, const pt_type &b) { return a.y > b.y; });
 	ofstream f;
@@ -110,7 +123,7 @@ void test2() {
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);
 	v->_diagram->export_html("../data/test2/result.html", true, bbox_min- pt_type(0.2), bbox_max+ pt_type(0.2), pts);
 
-	std::cout << "smallest edge = " << v->_diagram->smallest_edge() << "\n";
+	//std::cout << "smallest edge = " << v->_diagram->smallest_edge() << "\n";
 
 	delete v;
 }
@@ -151,7 +164,7 @@ void test3() {
 
 
 void test4() {
-	ifstream f("../data/test2/pts.txt");
+	ifstream f("../data/test4_bad/pts.txt");
 	//ifstream f("../data/test3/pts.txt");
 	while (f.good()) {
 		string line;
@@ -163,12 +176,22 @@ void test4() {
 		pts.push_back(pt);
 	}
 
-	Voronoi * v= new Voronoi(pts);
+	//Voronoi * v= new Voronoi(pts);
+	Voronoi * v= new Voronoi(pts, true, "../data/test4");
 
 	pt_type bbox_min, bbox_max;
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);
 	v->_diagram->export_html("../data/test4/result.html", true, bbox_min- pt_type(0.5), bbox_max+ pt_type(0.5), pts);
 	delete v;
+}
+
+
+void test5() {
+	pt_type site_left(3, 9.98);
+	pt_type site_right(2, 9.996);
+	number yline= 9.975;
+	pt_type result= parabolas_intersection(site_left, site_right, yline);
+	std::cout << glm_to_string(result) << "\n";
 }
 
 
@@ -180,6 +203,7 @@ int main(int argc, char * argv[]) {
 	test2();
 	//test3();
 	//test4();
+	//test5();
 
 	return 0;
 }

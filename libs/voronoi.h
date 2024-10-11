@@ -37,14 +37,15 @@ bool events_are_equal(Event * lhs, Event * rhs);
 class DCEL_HalfEdgeData {
 public:
 	DCEL_HalfEdgeData();
-	DCEL_HalfEdgeData(bool is_full_line);
-	DCEL_HalfEdgeData(bool is_full_line, pt_type center);
+	DCEL_HalfEdgeData(bool is_full_line, pt_type direction);
+	DCEL_HalfEdgeData(bool is_full_line, pt_type center, pt_type direction);
 	~DCEL_HalfEdgeData();
 	friend std::ostream & operator << (std::ostream & os, const DCEL_HalfEdgeData & d);
 
 
 	bool _is_full_line;
 	pt_type _center;
+	pt_type _direction;
 };
 
 
@@ -93,62 +94,7 @@ public:
 
 
 struct EventCmp {
-	bool operator()(const Event * lhs, const Event * rhs) const {
-		number lx= 0.0f;
-		number rx= 0.0f;
-		number ly= 0.0f;
-		number ry= 0.0f;
-
-		if (lhs->_type== EventType::SiteEvent) {
-			lx= lhs->_site.x;
-			ly= lhs->_site.y;
-		}
-		else if (lhs->_type== EventType::CircleEvent) {
-			lx= lhs->_circle_center.x;
-			ly= lhs->_circle_center.y- lhs->_circle_radius;
-		}
-		
-		if (rhs->_type== EventType::SiteEvent) {
-			rx= rhs->_site.x;
-			ry= rhs->_site.y;
-		}
-		else if (rhs->_type== EventType::CircleEvent) {
-			rx= rhs->_circle_center.x;
-			ry= rhs->_circle_center.y- rhs->_circle_radius;
-		}
-		
-		// les y + grands doivent être traités en 1er
-		if (ly< ry) {
-			return true;
-		}
-		else if (ly> ry) {
-			return false;
-		}
-		// en cas d'égalité des y on compare les x
-		if (lx> rx) {
-			return true;
-		}
-		else if (lx< rx) {
-			return false;
-		}
-
-		std::cout << "equality : " << *lhs << " || " << *rhs << "\n";
-
-		/*if ((lhs->_type== EventType::SiteEvent) && (rhs->_type== EventType::CircleEvent)) {
-			return true;
-		}
-		if ((lhs->_type== EventType::CircleEvent) && (rhs->_type== EventType::SiteEvent)) {
-			return false;
-		}
-		if ((lhs->_type== EventType::SiteEvent) && (rhs->_type== EventType::SiteEvent)) {
-			return true;
-		}
-		if ((lhs->_type== EventType::CircleEvent) && (rhs->_type== EventType::CircleEvent)) {
-			return true;
-		}*/
-
-		return false;
-	}
+	bool operator()(const Event * lhs, const Event * rhs) const;
 };
 
 

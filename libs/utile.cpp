@@ -230,7 +230,7 @@ vector<string> split(const string & s, const string & delimiter) {
 
 
 // remplace glm::to_string en supprimant les 0 dans les décimales
-string glm_to_string(glm::vec2 v) {
+string glm_to_string(pt_type v) {
 	string str_x= to_string (v.x);
 	str_x.erase(str_x.find_last_not_of('0')+ 1, string::npos);
 	str_x.erase(str_x.find_last_not_of('.')+ 1, string::npos);

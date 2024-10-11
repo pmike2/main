@@ -1493,8 +1493,8 @@ void DCEL::export_html(std::string html_path, bool simple, const pt_type & bbox_
 	const pt_type VIEW_MIN= (bbox_min- (number)(0.5)* (bbox_min+ bbox_max))* MARGIN_FACTOR+ (number)(0.5)* (bbox_min+ bbox_max);
 	const pt_type VIEW_MAX= (bbox_max- (number)(0.5)* (bbox_min+ bbox_max))* MARGIN_FACTOR+ (number)(0.5)* (bbox_min+ bbox_max);
 	const number SIZE= std::max((VIEW_MAX- VIEW_MIN).x, (VIEW_MAX- VIEW_MIN).y);
-	const number POINT_RADIUS= 0.002* SIZE;
-	const number SITE_POINT_RADIUS= 0.003* SIZE;
+	const number POINT_RADIUS= 0.001* SIZE;
+	const number SITE_POINT_RADIUS= 0.001* SIZE;
 	const number DELTA_BUFFER= 0.006* SIZE;
 	const number ARROW_SIZE= 0.02* SIZE;
 	const number ARROW_SIZE_2= 0.005* SIZE;
