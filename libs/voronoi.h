@@ -24,12 +24,10 @@ typedef enum {Arc, BreakPoint} BeachLineNodeType;
 class Event;
 
 
-inline bool number_equals_strict(number x, number y);
-inline bool number_equals_epsilon(number x, number y);
 number y_parabola(const pt_type & site, number yline, number x);
 number y_derivative_parabola(const pt_type & site, number yline, number x);
 std::string parabola_equation(const pt_type & site, number yline);
-pt_type parabolas_intersection(const pt_type & site1, const pt_type & site2, number yline);
+number parabolas_intersection(const pt_type & site1, const pt_type & site2, number yline);
 bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2);
 bool events_are_equal(Event * lhs, Event * rhs);
 
@@ -118,11 +116,16 @@ public:
 	std::priority_queue<Event *, std::vector<Event *>, EventCmp> _queue;
 	number _current_y;
 	number _first_y;
-	unsigned int _debug_count= 0;
-	std::string _debug_path;
 	bool _verbose;
 	pt_type _bbox_min;
 	pt_type _bbox_max;
+
+	// pour debug, optimisation
+	unsigned int _debug_count= 0;
+	std::string _debug_path;
+	std::vector<number> _site_times;
+	std::vector<number> _circle_times;
+	std::vector<std::pair<unsigned int, unsigned int> > _tree_stats;
 };
 
 #endif

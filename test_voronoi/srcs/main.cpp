@@ -112,12 +112,8 @@ void test2() {
 	}
 	f.close();
 
-	auto t1= high_resolution_clock::now();
 	Voronoi * v= new Voronoi(pts);
 	//Voronoi * v= new Voronoi(pts, true, "../data/test2");
-	auto t2= high_resolution_clock::now();
-	auto ms= duration_cast<milliseconds>(t2- t1);
-	cout << ms.count() << " ms\n";
 
 	pt_type bbox_min, bbox_max;
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);
@@ -190,8 +186,8 @@ void test5() {
 	pt_type site_left(3, 9.98);
 	pt_type site_right(2, 9.996);
 	number yline= 9.975;
-	pt_type result= parabolas_intersection(site_left, site_right, yline);
-	std::cout << glm_to_string(result) << "\n";
+	number x= parabolas_intersection(site_left, site_right, yline);
+	std::cout << x << "\n";
 }
 
 

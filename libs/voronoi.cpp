@@ -2,23 +2,15 @@
 #include <sstream>
 #include <algorithm>
 #include "math.h"
+#include <chrono>
 
 #include "voronoi.h"
 #include "geom_2d.h"
 #include "utile.h"
 
 
-// ---------------------------------------------------------------------------------------------
-bool number_equals_strict(number x, number y) {
-	return x== y;
-}
 
-
-bool number_equals_epsilon(number x, number y) {
-	return abs(x- y)< 1e-9;
-}
-
-
+// renvoie le y du pt de la parabole définie par site et yline, en x
 number y_parabola(const pt_type & site, number yline, number x) {
 	bool verbose= false;
 
@@ -36,6 +28,7 @@ number y_parabola(const pt_type & site, number yline, number x) {
 }
 
 
+// renvoie la dérivée de la parabole définie par site et yline, en x
 number y_derivative_parabola(const pt_type & site, number yline, number x) {
 	if (number_equals_strict(site.y, yline)) {
 		std::cerr << "y_derivative_parabola problème : site = " << glm_to_string(site) << " ; yline = " << yline << " ; x = " << x << "\n";
@@ -45,6 +38,7 @@ number y_derivative_parabola(const pt_type & site, number yline, number x) {
 }
 
 
+// string pour debug de l'équation de la parabole définie par site et yline
 std::string parabola_equation(const pt_type & site, number yline) {
 	if (number_equals_strict(site.y, yline)) {
 		std::cerr << "parabola_equation problème : site = " << glm_to_string(site) << " ; yline = " << yline << "\n";
@@ -57,27 +51,28 @@ std::string parabola_equation(const pt_type & site, number yline) {
 }
 
 
-pt_type parabolas_intersection(const pt_type & site_left, const pt_type & site_right, number yline) {
+// x de l'intersection de 2 paraboles définies par site_left, site_right et yline
+number parabolas_intersection(const pt_type & site_left, const pt_type & site_right, number yline) {
 	bool verbose= false;
 
 	// cas limite des sites situés sur yline
 	if (number_equals_epsilon(site_left.y, yline)) {
 		if (number_equals_epsilon(site_right.y, yline)) {
 			std::cerr << "parabolas_intersection 0 pt (2 sites sur yline) : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
-			return pt_type(0.0);
+			return 0.0;
 		}
 		else {
 			if (verbose) {
 				std::cout << "parabolas_intersection site_left sur yline : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
 			}
-			return pt_type(site_left.x, y_parabola(site_right, yline, site_left.x));
+			return site_left.x;
 		}
 	}
 	else if (number_equals_epsilon(site_right.y, yline)) {
 		if (verbose) {
 			std::cout << "parabolas_intersection site_right sur yline : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
 		}
-		return pt_type(site_right.x, y_parabola(site_left, yline, site_right.x));
+		return site_right.x;
 	}
 
 	number a= 2.0* (site_right.y- site_left.y);
@@ -89,38 +84,35 @@ pt_type parabolas_intersection(const pt_type & site_left, const pt_type & site_r
 		if (verbose) {
 			std::cout << "parabolas_intersection site_left.y == site_right.y : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
 		}
-		number x= -1.0* c/ b;
-		return pt_type(x, y_parabola(site_left, yline, x));
+		return -1.0* c/ b;
 	}
 
 	number delta= b* b- 4.0* a* c;
 	if (delta< 0.0) {
 		std::cerr << "parabolas_intersection 0 pt : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
-		return pt_type(0.0);
+		return 0.0;
 	}
 
 	// 2 intersections dans la majorité des cas
-	number x1= 0.5* (-1.0* b- sqrt(delta))/ a;
-	number x2= 0.5* (-1.0* b+ sqrt(delta))/ a;
+	number delta_sqroot= sqrt(delta);
+	number x1= 0.5* (-1.0* b- delta_sqroot)/ a;
+	number x2= 0.5* (-1.0* b+ delta_sqroot)/ a;
 
 	// je compare les tangentes aux 2 pts pour savoir quel pt respecte left-right
-	number dleft_x1= y_derivative_parabola(site_left, yline, x1);
-	number dright_x1= y_derivative_parabola(site_right, yline, x1);
-	number dleft_x2= y_derivative_parabola(site_left, yline, x2);
-	number dright_x2= y_derivative_parabola(site_right, yline, x2);
-
-	if (dleft_x1>= dright_x1) {
-		return pt_type(x1, y_parabola(site_left, yline, x1));
+	// je ne passe pas par y_derivative_parabola pour éviter les divisions
+	//number dleft_x1= y_derivative_parabola(site_left, yline, x1);
+	//number dright_x1= y_derivative_parabola(site_right, yline, x1);
+	//if (dleft_x1>= dright_x1) {
+	if ((x1- site_left.x)* (site_right.y- yline)> (x1- site_right.x)* (site_left.y- yline)) {
+		return x1;
 	}
-	else if (dleft_x2>= dright_x2) {
-		return pt_type(x2, y_parabola(site_left, yline, x2));
+	else {
+		return x2;
 	}
-
-	std::cerr << "parabolas_intersection derivative problem : site_left=" << glm_to_string(site_left) << " ; site_right=" << glm_to_string(site_right) << " ; yline=" << yline << "\n";
-	return pt_type(0.0);
 }
 
 
+// est-ce que les 2 breakpoints représentés par 2 half-edges convergent
 bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 	bool verbose= false;
 
@@ -166,39 +158,6 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 	}
 
 	return is_inter;
-}
-
-
-bool events_are_equal(Event * lhs, Event * rhs) {
-	if (lhs->_type!= rhs->_type) {
-		return false;
-	}
-	
-	number lx= 0.0;
-	number rx= 0.0;
-	number ly= 0.0;
-	number ry= 0.0;
-
-	if (lhs->_type== EventType::SiteEvent) {
-		lx= lhs->_site.x;
-		ly= lhs->_site.y;
-	}
-	else if (lhs->_type== EventType::CircleEvent) {
-		lx= lhs->_circle_center.x;
-		ly= lhs->_circle_center.y- lhs->_circle_radius;
-	}
-	
-	if (rhs->_type== EventType::SiteEvent) {
-		rx= rhs->_site.x;
-		ry= rhs->_site.y;
-	}
-	else if (rhs->_type== EventType::CircleEvent) {
-		rx= rhs->_circle_center.x;
-		ry= rhs->_circle_center.y- rhs->_circle_radius;
-	}
-
-	return (number_equals_strict(lx, rx) && number_equals_strict(ly, ry));
-	//return (number_equals_epsilon(lx, rx) && number_equals_epsilon(ly, ry));
 }
 
 
@@ -297,6 +256,7 @@ std::ostream & operator << (std::ostream & os, const Event & event) {
 
 
 // ---------------------------------------------------------------------------------------------
+// utilisé par la queue d'événements lors de l'insertion des sites puis des CircleEvent
 bool EventCmp::operator()(const Event * lhs, const Event * rhs) const {
 	number lx= 0.0;
 	number rx= 0.0;
@@ -357,6 +317,8 @@ bool EventCmp::operator()(const Event * lhs, const Event * rhs) const {
 
 // ---------------------------------------------------------------------------------------------
 Voronoi::Voronoi() : _current_y(0.0) {
+
+	// fonction de comparaison utilisée lors de la recherche dans le BST _beachline
 	std::function<int(BeachLineNode, BeachLineNode)> cmp= [this](BeachLineNode lhs, BeachLineNode rhs) {
 		bool verbose= false;
 
@@ -369,16 +331,14 @@ Voronoi::Voronoi() : _current_y(0.0) {
 			lhx= lhs._site.x;
 		}
 		else if (lhs._type== BreakPoint) {
-			pt_type inter= parabolas_intersection(lhs._sites.first, lhs._sites.second, _current_y);
-			lhx= inter.x;
+			lhx= parabolas_intersection(lhs._sites.first, lhs._sites.second, _current_y);
 		}
 
 		if (rhs._type== Arc) {
 			rhx= rhs._site.x;
 		}
 		else if (rhs._type== BreakPoint) {
-			pt_type inter= parabolas_intersection(rhs._sites.first, rhs._sites.second, _current_y);
-			rhx= inter.x;
+			rhx= parabolas_intersection(rhs._sites.first, rhs._sites.second, _current_y);
 		}
 
 		if (verbose) {
@@ -413,6 +373,7 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string d
 		system(cmd.c_str());
 	}
 
+	// _bbox est la bounding box des sites, utilisée lors de l'ajout de la bbox englobante du DCEL _diagram
 	_bbox_min.x= 1e8; _bbox_min.y= 1e8; _bbox_max.x= -1e8; _bbox_max.y= -1e8;
 	for (unsigned int i=0; i<sites.size(); ++i) {
 		Event * e= new Event(SiteEvent);
@@ -427,23 +388,17 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string d
 	_debug_count= 0;
 	number last_site_x= 1e8;
 	number last_site_y= 1e8;
-	//Event * last_event= NULL;
+	
 	while (!_queue.empty()) {
 		Event * e= _queue.top();
 		_queue.pop();
 		
-		/*if (last_event!= NULL && events_are_equal(last_event, e)) {
-			if (_verbose) {
-				std::cout << "last_event == e\n";
-			}
-			continue;
-		}
-		last_event= e;*/
-		
+		// un evnmt peut être rendu invalide par un autre evnmt
 		if (!e->_is_valid) {
 			continue;
 		}
 		
+		// on évite les sites doublons
 		if ((number_equals_strict(e->_site.x, last_site_x)) && (number_equals_strict(e->_site.y, last_site_y))) {
 			continue;
 		}
@@ -459,9 +414,12 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string d
 			last_site_x= e->_site.x;
 			last_site_y= e->_site.y;
 			_current_y= e->_site.y;
+
 			if (_debug_count== 0) {
 				_first_y= e->_site.y;
 			}
+
+			// il faut une méthode spéciale pour les sites qui ont tous le même y et sont les 1ers à être traités
 			if (number_equals_strict(_current_y, _first_y)) {
 				handle_first_sites_event(e);
 			}
@@ -486,10 +444,13 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string d
 			std::cout << "\n";
 		}*/
 
+		// pour débugger on exporte l'état du BST _beachline ainsi qu'un état intermédiaire du _diagram
 		if (_debug_path!= "") {
 			_beachline->export_html(_debug_path+ "/beachline"+ std::to_string(_debug_count)+ ".html");
 			export_debug_html(_debug_path+ "/debug"+ std::to_string(_debug_count)+ ".html");
 		}
+
+		_tree_stats.push_back(std::make_pair(_beachline->height(), _beachline->n_nodes()));
 
 		_debug_count++;
 	}
@@ -497,26 +458,45 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string d
 	if (_verbose) {
 		std::cout << "------------------------------------\n";
 	}
-	
-	for (auto v : _diagram->_vertices) {
-		if (v->_incident_edge== NULL) {
-			_diagram->add2queue({VERTEX, v});
+
+	std::cout << "n sites = " << _site_times.size() << " ; n circles = " << _circle_times.size() << "\n";
+	number t_sites= 0.0;
+	for (auto t : _site_times) {
+		t_sites+= t;
+	}
+	t_sites/= _site_times.size();
+
+	number t_circles= 0.0;
+	for (auto t : _circle_times) {
+		t_circles+= t;
+	}
+	t_circles/= _circle_times.size();
+	std::cout << "t_sites = " << t_sites << " ; t_circles = " << t_circles << "\n";
+
+	unsigned int max_height= 0;
+	unsigned int n_nodes= 0;
+	for (auto s : _tree_stats) {
+		if (s.first> max_height) {
+			max_height= s.first;
+			n_nodes= s.second;
 		}
 	}
-	_diagram->delete_queue();
-	
+	std::cout << "max_height = " << max_height << " ; n_nodes = " << n_nodes << "\n";
+
+	// suppression des sommets isolés
+	_diagram->delete_isolated_vertices();
+	// suppression des edges ton la destination == origine
 	_diagram->delete_loop_edge();
 
-	//std::cout << *_diagram << "\n";
-
-	/*if (_verbose) {
+	if (_verbose) {
 		std::cout << "diagram_valid= " << _diagram->is_valid() << "\n";
-	}*/
+	}
 
 	if (_verbose) {
 		std::cout << "ajout BBOX\n";
 	}
 
+	// aojut bbox englobante
 	number max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
 	pt_type bbox_min= pt_type(_bbox_min.x- BBOX_MARGIN_PERCENT* max_size, _bbox_min.y- BBOX_MARGIN_PERCENT* max_size);
 	pt_type bbox_max= pt_type(_bbox_max.x+ BBOX_MARGIN_PERCENT* max_size, _bbox_max.y+ BBOX_MARGIN_PERCENT* max_size);
@@ -537,7 +517,6 @@ Voronoi::~Voronoi() {
 // si je prends size trop faible ca bugge
 DCEL_HalfEdge * Voronoi::add_full_segment(pt_type position, pt_type direction) {
 	// dans le cas add_full_segment on sait que norm(direction)> 1, donc pas besoin de diviser pas sa norme
-	// pour etre sur que la ligne intersectera la bbox
 	number size= 1e9;
 	DCEL_HalfEdge * he= _diagram->add_edge(position- size* direction, position+ size* direction);
 	//DCEL_HalfEdge * he= _diagram->add_edge(position- direction, position+ direction);
@@ -604,6 +583,8 @@ void Voronoi::handle_first_sites_event(Event * e) {
 
 
 void Voronoi::handle_site_event(Event * e) {
+	const auto t1= std::chrono::high_resolution_clock::now();
+
 	// recherche de l'arc au dessus du site
 	BeachLineNode * new_arc= new BeachLineNode(Arc);
 	new_arc->_site= pt_type(e->_site);
@@ -732,10 +713,16 @@ void Voronoi::handle_site_event(Event * e) {
 			std::cout << "New CircleEvent next : " << *new_circle_event << "\n";
 		}
 	}
+
+	const auto t2= std::chrono::high_resolution_clock::now();
+	const std::chrono::duration<number, std::milli> dt= t2- t1;
+	_site_times.push_back(dt.count());
 }
 
 
 void Voronoi::handle_circle_event(Event * e) {
+	const auto t1= std::chrono::high_resolution_clock::now();
+
 	// ici e->_leaf est l'arc qui disparait de la beachline
 	Node<BeachLineNode> * predecessor_leaf= _beachline->predecessor_leaf(e->_leaf); // arc à gauche
 	Node<BeachLineNode> * successor_leaf= _beachline->successor_leaf(e->_leaf); // arc à droite
@@ -842,6 +829,10 @@ void Voronoi::handle_circle_event(Event * e) {
 		successor->_data._sites.first= pt_type(predecessor_leaf->_data._site);
 		successor->_data._half_edge= he;
 	}
+
+	const auto t2= std::chrono::high_resolution_clock::now();
+	const std::chrono::duration<number, std::milli> dt= t2- t1;
+	_circle_times.push_back(dt.count());
 }
 
 

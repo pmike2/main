@@ -755,6 +755,7 @@ void DCEL::check_integrity() {
 }
 
 
+// suppression des edges ton la destination == origine
 void DCEL::delete_loop_edge() {
 	for (auto e : _half_edges) {
 		if (e->_origin!= NULL && e->destination()!= NULL && e->_origin== e->destination()) {
@@ -771,6 +772,18 @@ void DCEL::delete_loop_edge() {
 }
 
 
+// suppression des sommets isolés
+void DCEL::delete_isolated_vertices() {
+	for (auto v : _vertices) {
+		if (v->_incident_edge== NULL) {
+			add2queue({VERTEX, v});
+		}
+	}
+	delete_queue();
+}
+
+
+// ajout d'un élmt à la queue de suppression
 void DCEL::add2queue(DeleteEvent evt) {
 	bool verbose= false;
 

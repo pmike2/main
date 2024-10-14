@@ -12,6 +12,12 @@
 #include "typedefs.h"
 
 
+// test égalité stricte
+bool number_equals_strict(number x, number y);
+
+// test égalité avec marge
+bool number_equals_epsilon(number x, number y, number threshold=1e-9);
+
 // renvoie un double aléatoire entre x0 et x1
 double rand_double(double x0, double x1);
 

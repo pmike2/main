@@ -20,6 +20,9 @@ void test1() {
 	bst->insert(1);
 	bst->insert(7);
 
+	std::cout << "height = " << bst->height() << "\n";
+	std::cout << "n_nodes = " << bst->n_nodes() << "\n";
+
 	//std::cout << *bst;
 
 	//bst->clear();
@@ -61,9 +64,7 @@ void test2() {
 		if (a.x< b.x) return -1;
 		else if (a.x> b.x) return 1;
 		else return 0;
-	},
-		[](glm::vec2 v){return glm::to_string(v);}
-	);
+	});
 
 	bst->insert(glm::vec2(0.0, 0.0));
 	bst->insert(glm::vec2(1.01, -2.01));

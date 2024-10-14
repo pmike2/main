@@ -18,12 +18,12 @@ implémenté initialement pour voronoi
 #include <math.h>
 
 
-// ----------------------------------
+// ------------------------------------------------------------------------------------------------------
 // type de traversée d'un arbre
 typedef enum {IN_ORDER, PRE_ORDER, POST_ORDER} TraversalType;
 
 
-// ----------------------------------
+// ------------------------------------------------------------------------------------------------------
 // noeud d'un arbre
 template <class T>
 class Node {
@@ -183,11 +183,13 @@ std::ostream & operator << (std::ostream & os, const Node<T> & node) {
 }
 
 
-// ----------------------------------
+// ------------------------------------------------------------------------------------------------------
 // arbre binaire
 template <class T>
 class BST {
 	// méthodes privées
+	unsigned int height(Node<T> * node);
+	unsigned int n_nodes(Node<T> * node);
 	Node<T> * balance(std::vector<T> & sorted_array, int start, int end);
 	void traversal(Node<T> * node, TraversalType tt, std::function<void(Node<T> *)> f);
 	void export_html(std::string html_path, Node<T> * node, float x, int y);
@@ -200,6 +202,8 @@ public:
 	BST(std::function<int(T, T)> cmp);
 	~BST();
 	bool empty();
+	unsigned int height();
+	unsigned int n_nodes();
 	Node<T> * minimum(Node<T> * node);
 	Node<T> * minimum();
 	Node<T> * maximum(Node<T> * node);
@@ -261,6 +265,48 @@ bool BST<T>::empty() {
 		return true;
 	}
 	return false;
+}
+
+
+// nombre de noeuds sous node
+template <class T>
+unsigned int BST<T>::n_nodes(Node<T> * node) {
+	if (node== NULL) {
+		return 0;
+	}
+
+	unsigned int n_nodes_left= n_nodes(node->_left);
+	unsigned int n_nodes_right= n_nodes(node->_right);
+	
+	return n_nodes_left+ n_nodes_right+ 1;
+}
+
+
+// nombre de noeuds de l'arbre
+template <class T>
+unsigned int BST<T>::n_nodes() {
+	return n_nodes(_root);
+}
+
+
+// hauteur du sous-arbre de root node
+template <class T>
+unsigned int BST<T>::height(Node<T> * node) {
+	if (node== NULL) {
+		return 0;
+	}
+
+	unsigned int height_left= height(node->_left);
+	unsigned int height_right= height(node->_right);
+	
+	return std::max(height_left, height_right)+ 1;
+}
+
+
+// hauteur de l'arbre
+template <class T>
+unsigned int BST<T>::height() {
+	return height(_root);
 }
 
 

@@ -99,6 +99,7 @@ public:
 	void check_ccw_faces();
 	void check_integrity();
 	void delete_loop_edge();
+	void delete_isolated_vertices();
 	void add2queue(DeleteEvent evt);
 	void delete_queue();
 	bool is_empty();
