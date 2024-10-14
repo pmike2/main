@@ -1,3 +1,13 @@
+/*
+
+Implémentation diagramme Voronoi
+
+TODO : faire un BST plus malin car pour l'instant je ne peux pas faire de balance
+cf https://pvigier.github.io/2018/11/18/fortune-algorithm-details.html
+
+*/
+
+
 #ifndef VORONOI_H
 #define VORONOI_H
 
