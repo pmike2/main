@@ -1,3 +1,7 @@
+/*
+DCEL: https://en.wikipedia.org/wiki/Doubly_connected_edge_list
+*/
+
 #ifndef DCEL_H
 #define DCEL_H
 
@@ -14,9 +18,10 @@
 #include "geom_2d.h"
 
 
+// type d'objet du DCEL ; sert à la suppression
 typedef enum {VERTEX, HALF_EDGE, FACE} DCEL_Type;
 
-
+// sert à la suppression
 struct DeleteEvent {
 	DCEL_Type _type;
 	void * _ptr;
@@ -28,6 +33,7 @@ struct DCEL_HalfEdge;
 struct DCEL_Face;
 
 
+// sommet
 struct DCEL_Vertex {
 	DCEL_Vertex();
 	DCEL_Vertex(const pt_type & coords);
@@ -37,10 +43,11 @@ struct DCEL_Vertex {
 
 	pt_type _coords;
 	DCEL_HalfEdge * _incident_edge; // 1 des edges ayant ce vertex comme origine
-	void * _data; // on pourra utiliser _data pour ajouter des infos par sommet, edge ou face
+	void * _data; // on peut utiliser _data pour ajouter des infos par sommet, edge ou face
 };
 
 
+// half-edge
 struct DCEL_HalfEdge {
 	DCEL_HalfEdge();
 	~DCEL_HalfEdge();
@@ -62,6 +69,7 @@ struct DCEL_HalfEdge {
 };
 
 
+// face
 struct DCEL_Face {
 	DCEL_Face();
 	~DCEL_Face();
@@ -80,6 +88,7 @@ struct DCEL_Face {
 };
 
 
+// diagramme
 class DCEL {
 public:
 	DCEL();
@@ -117,7 +126,7 @@ public:
 	std::vector<DCEL_Vertex *> _vertices;
 	std::vector<DCEL_HalfEdge *> _half_edges;
 	std::vector<DCEL_Face *> _faces;
-	std::deque<DeleteEvent> _delete_queue;
+	std::deque<DeleteEvent> _delete_queue; // sert à la suppression
 };
 
 #endif

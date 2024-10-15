@@ -352,6 +352,7 @@ pt_type DCEL_Face::get_gravity_center() {
 }
 
 
+// renvoie un objet de type Polygon2D
 Polygon2D * DCEL_Face::get_polygon() {
 	std::vector<pt_type> pts;
 	for (auto v : get_vertices()) {
@@ -488,6 +489,7 @@ DCEL_HalfEdge * DCEL::add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2) {
 }
 
 
+// ajout de 2 hedges
 DCEL_HalfEdge * DCEL::add_edge(const pt_type & ori, const pt_type & dst) {
 	DCEL_Vertex * v_ori= add_vertex(ori);
 	DCEL_Vertex * v_dst= add_vertex(dst);
@@ -535,6 +537,7 @@ void DCEL::delete_face(DCEL_Face * face) {
 }*/
 
 
+// scinde he en 2 via coords
 DCEL_HalfEdge * DCEL::split_edge(DCEL_HalfEdge * he, const pt_type & coords) {
 	DCEL_Vertex * v= add_vertex(coords);
 	DCEL_HalfEdge * he2= add_edge(v, he->destination());
@@ -549,6 +552,7 @@ DCEL_HalfEdge * DCEL::split_edge(DCEL_HalfEdge * he, const pt_type & coords) {
 }
 
 
+// création d'un half-edge qui va de he1->_origin à he2->_origin et va couper la face commune à he1 et he2 en 2
 DCEL_HalfEdge * DCEL::cut_face(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 	bool verbose= false;
 
@@ -598,6 +602,7 @@ void DCEL::clear() {
 }
 
 
+// pour tous les half-edges qui n'ont pas de next on essaie de les renseigner en regardant leurs twins
 void DCEL::create_nexts_from_twins() {
 	bool verbose= false;
 
@@ -740,6 +745,7 @@ void DCEL::check_ccw_faces() {
 }
 
 
+// vérification intégrité
 void DCEL::check_integrity() {
 	for (auto e : _half_edges) {
 		if (e->_previous== NULL) {
@@ -797,6 +803,7 @@ void DCEL::add2queue(DeleteEvent evt) {
 }
 
 
+// suppression des objets qui ont été mis en queue
 void DCEL::delete_queue() {
 	bool verbose= false;
 
@@ -869,7 +876,7 @@ bool DCEL::is_empty() {
 }
 
 
-// ajout d'une bounding box qui peut rogner le DCEL
+// ajout d'une bounding box qui peut rogner le DCEL ; code à simplifier ?
 void DCEL::add_bbox(const pt_type & bbox_min, const pt_type & bbox_max) {
 	bool verbose= false;
 
@@ -916,14 +923,17 @@ void DCEL::add_bbox(const pt_type & bbox_min, const pt_type & bbox_max) {
 	DCEL_Vertex * top_left_corner= add_vertex(pt_type(bbox_min.x, bbox_max.y));
 	DCEL_Vertex * top_right_corner= add_vertex(bbox_max);
 
+	// les origin_* contiendront les hedges dont l'origine est sur la bbox
 	std::vector<DCEL_HalfEdge *> origin_top, origin_bottom, origin_left, origin_right, ignore;
 
-	// edges qui n'ont pas d'origine mais une destination et cherche l'intersection du twin avec la bbox
-	// on ne fait pas (auto e : _half_edges) car on fait des push_back dans la boucle
-	const int nhes= _half_edges.size();
-	for (int i=0; i<nhes; ++i) {
+	// recherche des hedges qui n'ont pas l'origine dans la bbox
+	// on ne fait pas auto he car il y a des insertions dans _half_edges dans la boucle
+	//for (auto he : _half_edges) {
+	unsigned int nhe= _half_edges.size();
+	for (unsigned int i=0; i<nhe; ++i) {
 		DCEL_HalfEdge * he= _half_edges[i];
 
+		// ignore contient les twin des hedges qu'on a déjà traités
 		if (std::find(ignore.begin(), ignore.end(), he)!= ignore.end()) {
 			continue;
 		}
@@ -939,13 +949,16 @@ void DCEL::add_bbox(const pt_type & bbox_min, const pt_type & bbox_max) {
 			std::cout << "DCEL::add_bbox phase 1 : he = " << *he << "\n";
 		}
 
+		// ajout à la queue de suppression
 		add2queue({HALF_EDGE, he});
 		add2queue({VERTEX, he->_origin});
 		if (!dst_in_bbox) {
 			add2queue({VERTEX, he->destination()});
 		}
+
 		ignore.push_back(he->_twin);
 
+		// recherche des intersections avec les 4 cotés de la bbox
 		bool is_inter_bottom= false, is_inter_top= false, is_inter_left= false, is_inter_right= false;
 		pt_type inter_bottom, inter_top, inter_left, inter_right;
 		is_inter_bottom= segment_intersects_segment(he->_origin->_coords, he->destination()->_coords, bottom_left_corner->_coords , bottom_right_corner->_coords, &inter_bottom);
@@ -960,6 +973,8 @@ void DCEL::add_bbox(const pt_type & bbox_min, const pt_type & bbox_max) {
 			std::cout << "right : " << is_inter_bottom << " ; pt1_begin = " << glm_to_string(he->_origin->_coords) << " ; pt1_end = " << glm_to_string(he->destination()->_coords) << " ; pt2_begin = " << glm_to_string(bottom_right_corner->_coords) << " ; pt2_end = " << glm_to_string(top_right_corner->_coords) << "\n";
 		}
 
+		// cas où la fin du hedge est dans la bbox
+		// on fait split_edge pour sectionner le he au niveau de l'intersection
 		if (dst_in_bbox) {
 			if (is_inter_bottom) {
 				if (verbose) {
@@ -1007,6 +1022,7 @@ void DCEL::add_bbox(const pt_type & bbox_min, const pt_type & bbox_max) {
 			continue;
 		}
 
+		// cas où la fin du hedge n'est pas dans la bbox; dans ce cas le hedge est sectionné en 3 et on ne garde que la partie du milieu
 		if (is_inter_bottom && he->_origin->_coords.y<= bbox_min.y) {
 			if (verbose) {
 				std::cout << "DCEL::add_bbox phase 1 : inter_bottom et !dst_in_bbox\n";
@@ -1135,19 +1151,25 @@ void DCEL::add_bbox(const pt_type & bbox_min, const pt_type & bbox_max) {
 	DCEL_HalfEdge * last_he= NULL;
 	DCEL_HalfEdge * first_he= NULL;
 
+	// unbounded_edges contiendra les hedges qui formeront la face infinie
 	std::vector<DCEL_HalfEdge * > unbounded_edges;
 
+	// si il y a des hedges dont l'origine est sur la partie basse de la bbox
 	if (!origin_bottom.empty()) {
+		// si l'origine du hedge le + à gauche est le coin bas-gauche de la bbox
 		if (bottom_left_corner== origin_bottom[0]->_origin) {
 			first_he= origin_bottom[0];
 		}
 		else {
+			// ajout d'un hedge entre le coin bas-gauche et l'origine la + à gauche
 			bbox_he= add_edge(bottom_left_corner, origin_bottom[0]->_origin);
 			unbounded_edges.push_back(bbox_he->_twin);
 			first_he= bbox_he;
 			bbox_he->set_next(origin_bottom[0]);
 		}
 
+		// pour chaque hedge consécutifs dont l'origine se trouve sur la partie basse de la bbox
+		// on crée un hedge entre ces 2 origines avec les next gérés dans cut_face
 		for (int i=0; i<int(origin_bottom.size())- 1; ++i) {
 			DCEL_HalfEdge * cut_edge= cut_face(origin_bottom[i]->_twin->_next, origin_bottom[i+ 1]);
 			if (cut_edge!= NULL) {
@@ -1155,15 +1177,18 @@ void DCEL::add_bbox(const pt_type & bbox_min, const pt_type & bbox_max) {
 			}
 		}
 
+		// si l'origine du hedge le + à droite est le coin bas-droit de la bbox
 		if (origin_bottom[origin_bottom.size()- 1]->_origin== bottom_right_corner) {
 			bbox_he= origin_bottom[origin_bottom.size()- 1]->_twin;
 		}
 		else {
+			// ajout d'un hedge entre l'origine la + à droite et le coin bas-droit
 			bbox_he= add_edge(origin_bottom[origin_bottom.size()- 1]->_origin, bottom_right_corner);
 			origin_bottom[origin_bottom.size()- 1]->_twin->set_next(bbox_he);
 			unbounded_edges.push_back(bbox_he->_twin);
 		}
 	}
+	// si il n'y a pas de hedge dont l'origine est sur la partie basse de la bbox
 	else {
 		bbox_he= add_edge(bottom_left_corner, bottom_right_corner);
 		first_he= bbox_he;
@@ -1480,6 +1505,7 @@ void DCEL::get_bbox(pt_type * bbox_min, pt_type * bbox_max) {
 }
 
 
+// renvoie la taille du plus petit edge
 number DCEL::smallest_edge() {
 	number smallest= 1e8;
 	for (unsigned int i=0; i<_half_edges.size()- 1; ++i) {

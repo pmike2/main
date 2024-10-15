@@ -55,7 +55,7 @@ void test1() {
 	}
 	m["unit_root_center"].push_back(pt_type(0.0, 0.0));
 	// grille
-	int n3= 4;
+	int n3= 3;
 	m["grid"]= std::vector<pt_type> {};
 	for (int i=0; i<n3; ++i) {
 		for (int j=0; j<n3; ++j) {
@@ -64,7 +64,7 @@ void test1() {
 	}
 
 	for (auto const & x : m) {
-		if (x.first!= "simple") {continue;}
+		if (x.first!= "grid") {continue;}
 
 		std::cout << "TEST1 " << x.first << " ----------------------\n";
 		Voronoi * v= new Voronoi(x.second, true, "../data/test1/"+ x.first);
@@ -106,7 +106,7 @@ void test2() {
 
 	std::sort(pts.begin(), pts.end(), [](const pt_type &a, const pt_type &b) { return a.y > b.y; });
 	ofstream f;
-	f.open("../data/test2/pts.txt");
+	f.open("../data/test4/pts.txt");
 	for (auto pt : pts) {
 		f << pt.x << " " << pt.y << "\n";
 	}
@@ -160,8 +160,7 @@ void test3() {
 
 
 void test4() {
-	ifstream f("../data/test4_bad/pts.txt");
-	//ifstream f("../data/test3/pts.txt");
+	ifstream f("../data/test4/pts.txt");
 	while (f.good()) {
 		string line;
 		getline(f, line);

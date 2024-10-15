@@ -389,6 +389,7 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string d
 	number last_site_x= 1e8;
 	number last_site_y= 1e8;
 	
+	const auto t1= std::chrono::high_resolution_clock::now();
 	while (!_queue.empty()) {
 		Event * e= _queue.top();
 		_queue.pop();
@@ -454,10 +455,39 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string d
 
 		_debug_count++;
 	}
+	const auto t2= std::chrono::high_resolution_clock::now();
+	const std::chrono::duration<number, std::milli> dt= t2- t1;
+	std::cout << "temps traitement queue = " << dt.count() << "\n";
+
 
 	if (_verbose) {
 		std::cout << "------------------------------------\n";
 	}
+
+	const auto t3= std::chrono::high_resolution_clock::now();
+
+	// suppression des sommets isolés
+	_diagram->delete_isolated_vertices();
+	// suppression des edges ton la destination == origine
+	_diagram->delete_loop_edge();
+
+	if (_verbose) {
+		std::cout << "diagram_valid= " << _diagram->is_valid() << "\n";
+	}
+
+	if (_verbose) {
+		std::cout << "ajout BBOX\n";
+	}
+
+	// aojut bbox englobante
+	number max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
+	pt_type bbox_min= pt_type(_bbox_min.x- BBOX_MARGIN_PERCENT* max_size, _bbox_min.y- BBOX_MARGIN_PERCENT* max_size);
+	pt_type bbox_max= pt_type(_bbox_max.x+ BBOX_MARGIN_PERCENT* max_size, _bbox_max.y+ BBOX_MARGIN_PERCENT* max_size);
+	_diagram->add_bbox(bbox_min, bbox_max);
+
+	const auto t4= std::chrono::high_resolution_clock::now();
+	const std::chrono::duration<number, std::milli> dt2= t4- t3;
+	std::cout << "temps post-traitement (bbox) = " << dt2.count() << "\n";
 
 	std::cout << "n sites = " << _site_times.size() << " ; n circles = " << _circle_times.size() << "\n";
 	number t_sites= 0.0;
@@ -483,25 +513,6 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string d
 	}
 	std::cout << "max_height = " << max_height << " ; n_nodes = " << n_nodes << "\n";
 
-	// suppression des sommets isolés
-	_diagram->delete_isolated_vertices();
-	// suppression des edges ton la destination == origine
-	_diagram->delete_loop_edge();
-
-	if (_verbose) {
-		std::cout << "diagram_valid= " << _diagram->is_valid() << "\n";
-	}
-
-	if (_verbose) {
-		std::cout << "ajout BBOX\n";
-	}
-
-	// aojut bbox englobante
-	number max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
-	pt_type bbox_min= pt_type(_bbox_min.x- BBOX_MARGIN_PERCENT* max_size, _bbox_min.y- BBOX_MARGIN_PERCENT* max_size);
-	pt_type bbox_max= pt_type(_bbox_max.x+ BBOX_MARGIN_PERCENT* max_size, _bbox_max.y+ BBOX_MARGIN_PERCENT* max_size);
-	_diagram->add_bbox(bbox_min, bbox_max);
-
 	//std::cout << *_diagram << "\n";
 }
 
@@ -515,7 +526,7 @@ Voronoi::~Voronoi() {
 // dans ces 2 fonctions que choisir pour size ? on veut être surs que ces lignes intersecteront la bbox 
 // mais position peut être n'importe où
 // si je prends size trop faible ca bugge
-DCEL_HalfEdge * Voronoi::add_full_segment(pt_type position, pt_type direction) {
+DCEL_HalfEdge * Voronoi::add_full_line(pt_type position, pt_type direction) {
 	// dans le cas add_full_segment on sait que norm(direction)> 1, donc pas besoin de diviser pas sa norme
 	number size= 1e9;
 	DCEL_HalfEdge * he= _diagram->add_edge(position- size* direction, position+ size* direction);
@@ -526,7 +537,8 @@ DCEL_HalfEdge * Voronoi::add_full_segment(pt_type position, pt_type direction) {
 }
 
 
-DCEL_HalfEdge * Voronoi::add_half_segment(pt_type position, pt_type direction) {
+// ajout d'une demi-ligne
+DCEL_HalfEdge * Voronoi::add_half_line(pt_type position, pt_type direction) {
 	number size= 1e9;
 	DCEL_HalfEdge * he= _diagram->add_edge(position, position+ size* direction/ sqrt(direction.x* direction.x+ direction.y* direction.y));
 	he->_data= new DCEL_HalfEdgeData(false, direction);
@@ -535,6 +547,7 @@ DCEL_HalfEdge * Voronoi::add_half_segment(pt_type position, pt_type direction) {
 }
 
 
+// set origine d'un half-edge
 void Voronoi::set_halfedge_origin(DCEL_HalfEdge * he, DCEL_Vertex * v) {
 	if (_verbose) {
 		std::cout << "set_halfedge_origin : he = " << *he << " ; v = " << *v << "\n";
@@ -547,6 +560,7 @@ void Voronoi::set_halfedge_origin(DCEL_HalfEdge * he, DCEL_Vertex * v) {
 }
 
 
+// gestion des 1ers sites qui ont tous le même y
 void Voronoi::handle_first_sites_event(Event * e) {
 	if (_beachline->empty()) {
 		BeachLineNode * new_arc= new BeachLineNode(Arc);
@@ -563,7 +577,7 @@ void Voronoi::handle_first_sites_event(Event * e) {
 
 		pt_type position= pt_type((max_node->_data._site.x+ e->_site.x)* 0.5, _current_y);
 		pt_type direction= pt_type(0.0, -1.0);
-		DCEL_HalfEdge * he= add_full_segment(position, direction);
+		DCEL_HalfEdge * he= add_full_line(position, direction);
 
 		new_bkpt->_half_edge= he;
 
@@ -582,6 +596,7 @@ void Voronoi::handle_first_sites_event(Event * e) {
 }
 
 
+// gestion des énévements de type site
 void Voronoi::handle_site_event(Event * e) {
 	const auto t1= std::chrono::high_resolution_clock::now();
 
@@ -590,6 +605,7 @@ void Voronoi::handle_site_event(Event * e) {
 	new_arc->_site= pt_type(e->_site);
 	Node<BeachLineNode> * node_above_site= _beachline->search(*new_arc, false);
 
+	// sites et breakpoints voisins
 	Node<BeachLineNode> * prev_site= _beachline->predecessor_leaf(node_above_site);
 	Node<BeachLineNode> * next_site= _beachline->successor_leaf(node_above_site);
 	Node<BeachLineNode> * prev_bkpt= _beachline->predecessor(node_above_site);
@@ -619,28 +635,21 @@ void Voronoi::handle_site_event(Event * e) {
 		node_above_site->_data._circle_event->_is_valid= false;
 	}
 
-	// ajout des 2 half-edge
-	// pente he = tangente à la parabole
+	// ajout des 2 half-edge jumeaux qui sont pour l'instant 2 lignes
+	// y = valeur de la parabole au dessus du site en site.x ; pente = tangente à la parabole
 	number y= y_parabola(node_above_site->_data._site, _current_y, e->_site.x);
 	number dy= y_derivative_parabola(node_above_site->_data._site, _current_y, e->_site.x);
-
 	pt_type position= pt_type(e->_site.x, y);
 	pt_type direction= pt_type(1.0, dy);
-	DCEL_HalfEdge * he= add_full_segment(position, direction);
+	DCEL_HalfEdge * he= add_full_line(position, direction);
 
 	if (_verbose) {
 		std::cout << "New line : position = " << glm_to_string(position) << " ; direction = " << glm_to_string(direction) << "\n";
 	}
 
-	BeachLineNode * above_site_copy1= new BeachLineNode(Arc);
-	above_site_copy1->_site= pt_type(node_above_site->_data._site);
-	above_site_copy1->_circle_event= node_above_site->_data._circle_event;
-	BeachLineNode * above_site_copy2= new BeachLineNode(Arc);
-	above_site_copy2->_site= pt_type(node_above_site->_data._site);
-	above_site_copy2->_circle_event= node_above_site->_data._circle_event;
-
-	Node<BeachLineNode> * node_above_site_left_copy= _beachline->gen_node(*above_site_copy1);
-	Node<BeachLineNode> * node_above_site_right_copy= _beachline->gen_node(*above_site_copy2);
+	// on crée 2 copies de node_above_site qui seront les 2 portions du même arc séparées par le nouvel arc
+	Node<BeachLineNode> * node_above_site_left_copy= _beachline->gen_node(node_above_site->_data);
+	Node<BeachLineNode> * node_above_site_right_copy= _beachline->gen_node(node_above_site->_data);
 
 	// on associe au bkpt gauche le half-edge qui va vers la gauche
 	BeachLineNode * breakpoint_left= new BeachLineNode(BreakPoint);
@@ -652,34 +661,7 @@ void Voronoi::handle_site_event(Event * e) {
 	breakpoint_right->_sites= std::make_pair(new_arc->_site, node_above_site_right_copy->_data._site);
 	breakpoint_right->_half_edge= he;
 
-	Node<BeachLineNode> * breakpoint_left_node= _beachline->gen_node(*breakpoint_left);
-	Node<BeachLineNode> * breakpoint_right_node= _beachline->gen_node(*breakpoint_right);
-	Node<BeachLineNode> * new_node= _beachline->gen_node(*new_arc);
-	breakpoint_left_node->set_left(node_above_site_left_copy);
-	breakpoint_left_node->set_right(breakpoint_right_node);
-	breakpoint_right_node->set_left(new_node);
-	breakpoint_right_node->set_right(node_above_site_right_copy);
-	
-	//_beachline->transplant(node_above_site, breakpoint_left_node);
-
-	if (node_above_site->is_root()) {
-		_beachline->_root= breakpoint_left_node;
-	}
-	else {
-		if (node_above_site->is_left()) {
-			node_above_site->_parent->set_left(breakpoint_left_node);
-		}
-		else {
-			node_above_site->_parent->set_right(breakpoint_left_node);
-		}
-	}
-
-	// rebalance ; pour l'instant non j'ai peur que cela mette en l'air l'arbre vu la fonction de comparaison basée sur _site.x
-	// cf https://stackoverflow.com/questions/8688251/fortunes-algorithm-beach-line-data-structure
-	// pas compris pour l'instant
-	//_beachline->balance();
-
-	// voir si les breakpoints convergent
+	// voir si les nouveaux breakpoints consécutifs convergent ; si c'est le cas on crée un circle event
 	if (prev_site!= NULL && prev_bkpt!= NULL && breakpoints_converge(prev_bkpt->_data._half_edge, breakpoint_left->_half_edge)) {
 		std::pair<pt_type, number> circle= circumcircle(prev_site->_data._site, node_above_site->_data._site, new_arc->_site);
 		pt_type center= circle.first;
@@ -714,12 +696,34 @@ void Voronoi::handle_site_event(Event * e) {
 		}
 	}
 
+	// construction du sous-arbre à insérer dans la beachline
+	Node<BeachLineNode> * breakpoint_left_node= _beachline->gen_node(*breakpoint_left);
+	Node<BeachLineNode> * breakpoint_right_node= _beachline->gen_node(*breakpoint_right);
+	Node<BeachLineNode> * new_node= _beachline->gen_node(*new_arc);
+	breakpoint_left_node->set_left(node_above_site_left_copy);
+	breakpoint_left_node->set_right(breakpoint_right_node);
+	breakpoint_right_node->set_left(new_node);
+	breakpoint_right_node->set_right(node_above_site_right_copy);
+	
+	// insertion du sous-arbre
+	_beachline->transplant(node_above_site, breakpoint_left_node);
+	
+	// ne fonctionne pas pour l'instant, cf commentaires voronoi.h
+	//_beachline->balance();
+	if (_beachline->_root->_right->_data._type== BreakPoint && _beachline->height(_beachline->_root->_right)> _beachline->height(_beachline->_root->_left)) {
+		_beachline->rotate_left(_beachline->_root);
+	}
+	else if (_beachline->_root->_left->_data._type== BreakPoint && _beachline->height(_beachline->_root->_right)< _beachline->height(_beachline->_root->_left)) {
+		_beachline->rotate_right(_beachline->_root);
+	}
+
 	const auto t2= std::chrono::high_resolution_clock::now();
 	const std::chrono::duration<number, std::milli> dt= t2- t1;
 	_site_times.push_back(dt.count());
 }
 
 
+// gestion événement de type cercle (ie quand des edges du _diagram convergent en un point)
 void Voronoi::handle_circle_event(Event * e) {
 	const auto t1= std::chrono::high_resolution_clock::now();
 
@@ -735,11 +739,10 @@ void Voronoi::handle_circle_event(Event * e) {
 	Node<BeachLineNode> * predecessor_bkpt= _beachline->predecessor(predecessor_leaf);
 	Node<BeachLineNode> * successor_bkpt= _beachline->successor(successor_leaf);
 
-	
 	// ajout du centre du cercle comme sommet du diagram et d'un nouveau he délimitant les breakpoints voisins
 	// direction du nouveau he perpendiculaire à site_droit - site_gauche et pointant vers les y< 0
 	pt_type v= successor_leaf->_data._site- predecessor_leaf->_data._site;
-	DCEL_HalfEdge * he= add_half_segment(e->_circle_center, pt_type(v.y, -v.x));
+	DCEL_HalfEdge * he= add_half_line(e->_circle_center, pt_type(v.y, -v.x));
 	DCEL_Vertex * circle_center_vertex= he->_origin;
 	
 	if (_verbose) {
@@ -747,13 +750,6 @@ void Voronoi::handle_circle_event(Event * e) {
 		std::cout << "successor_leaf = " << *successor_leaf << "\n";
 		std::cout << "New Edge = " << *he << "\n";
 	}
-
-	// ici il manque du nettoyage...
-	//_beachline.transplant(event_node, NULL);
-	//_beachline.remove(event_node);
-
-	// a voir après
-	//_beachline.balance();
 
 	// suppression des CircleEvent des arcs voisins
 	if ((predecessor_leaf->_data._circle_event!= NULL)) {
@@ -776,6 +772,7 @@ void Voronoi::handle_circle_event(Event * e) {
 	successor->_data._half_edge->set_next(he);
 	predecessor->_data._half_edge->set_next(successor->_data._half_edge->_twin);
 
+	// on regarde si le nouveau half-edge converge avec ses voisins ; si oui création d'un nouveau circle event
 	if ((predecessor_predecessor_leaf!= NULL) && (breakpoints_converge(predecessor_bkpt->_data._half_edge, he))) {
 		std::pair<pt_type, number> circle= circumcircle(predecessor_predecessor_leaf->_data._site, predecessor_leaf->_data._site, successor_leaf->_data._site);
 		pt_type center= circle.first;
@@ -809,7 +806,7 @@ void Voronoi::handle_circle_event(Event * e) {
 	}
 
 	// suppression de l'arc dans le BST
-	if ( (e->_leaf->is_left()) && (parent->_right!= NULL) && (grand_parent!= NULL)) {
+	if ((e->_leaf->is_left()) && (parent->_right!= NULL) && (grand_parent!= NULL)) {
 		if (parent->is_left()) {
 			grand_parent->set_left(parent->_right);
 		}
@@ -819,7 +816,7 @@ void Voronoi::handle_circle_event(Event * e) {
 		predecessor->_data._sites.second= pt_type(successor_leaf->_data._site);
 		predecessor->_data._half_edge= he;
 	}
-	else if ( (e->_leaf->is_right()) && (parent->_left!= NULL) && (grand_parent!= NULL)) {
+	else if ((e->_leaf->is_right()) && (parent->_left!= NULL) && (grand_parent!= NULL)) {
 		if (parent->is_left()) {
 			grand_parent->set_left(parent->_left);
 		}
@@ -830,12 +827,22 @@ void Voronoi::handle_circle_event(Event * e) {
 		successor->_data._half_edge= he;
 	}
 
+	// ne fonctionne pas pour l'instant, cf commentaires voronoi.h
+	//_beachline.balance();
+	if (_beachline->_root->_right->_data._type== BreakPoint && _beachline->height(_beachline->_root->_right)> _beachline->height(_beachline->_root->_left)) {
+		_beachline->rotate_left(_beachline->_root);
+	}
+	else if (_beachline->_root->_left->_data._type== BreakPoint && _beachline->height(_beachline->_root->_right)< _beachline->height(_beachline->_root->_left)) {
+		_beachline->rotate_right(_beachline->_root);
+	}
+
 	const auto t2= std::chrono::high_resolution_clock::now();
 	const std::chrono::duration<number, std::milli> dt= t2- t1;
 	_circle_times.push_back(dt.count());
 }
 
 
+// export sous forme de HTML pour debug
 void Voronoi::export_debug_html(std::string html_path) {
 	const unsigned int SVG_WIDTH= 1000;
 	const unsigned int SVG_HEIGHT= 800;

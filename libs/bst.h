@@ -50,6 +50,61 @@ public:
 };
 
 
+// ------------------------------------------------------------------------------------------------------
+// arbre binaire
+template <class T>
+class BST {
+	// méthodes privées
+	unsigned int n_nodes(Node<T> * node);
+	Node<T> * balance(std::vector<T> & sorted_array, int start, int end);
+	void traversal(Node<T> * node, TraversalType tt, std::function<void(Node<T> *)> f);
+	void export_html(std::string html_path, Node<T> * node, float x, int y);
+	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
+	template <class U>
+	friend std::ostream & operator << (std::ostream & os, BST<U> & bst);
+	
+public:
+	BST();
+	BST(std::function<int(T, T)> cmp);
+	~BST();
+	bool empty();
+	unsigned int height(Node<T> * node);
+	unsigned int height();
+	unsigned int n_nodes();
+	Node<T> * minimum(Node<T> * node);
+	Node<T> * minimum();
+	Node<T> * maximum(Node<T> * node);
+	Node<T> * maximum();
+	Node<T> * successor(Node<T> * node);
+	Node<T> * predecessor(Node<T> * node);
+	Node<T> * successor_leaf(Node<T> * node);
+	Node<T> * predecessor_leaf(Node<T> * node);
+	Node<T> * gen_node(T data);
+	void insert(Node<T> * node);
+	void insert(T data);
+	void delete_tree(Node<T> * node);
+	void clear();
+	void remove(Node<T> * node);
+	void remove(T data);
+	void transplant(Node<T> * old_subtree, Node<T> * new_subtree);
+	void rotate_left(Node<T> * node);
+	void rotate_right(Node<T> * node);
+	Node<T> * search(Node<T> * node, T data, bool exact_match);
+	Node<T> * search(T data, bool exact_match=true);
+	std::vector<T> get_sorted_array();
+	void balance();
+	void traversal(TraversalType tt, std::function<void(Node<T> *)> f=[](Node<T> * node){std::cout << *node << "\n";});
+	void export_html(std::string html_path);
+
+
+	// racine
+	Node<T> * _root;
+	// fonction de comparaison entre 2 noeuds
+	std::function<int(T, T)> _cmp;
+};
+
+
+// ------------------------------------------------------------------------------------------------------
 template <class T>
 Node<T>::Node() :
 _left(NULL), _right(NULL), _parent(NULL)
@@ -130,14 +185,18 @@ Node<T> * Node<T>::sibling() {
 template <class T>
 void Node<T>::set_left(Node<T> * n) {
 	_left= n;
-	n->_parent= this;
+	if (n!= NULL) {
+		n->_parent= this;
+	}
 }
 
 
 template <class T>
 void Node<T>::set_right(Node<T> * n) {
 	_right= n;
-	n->_parent= this;
+	if (n!= NULL) {
+		n->_parent= this;
+	}
 }
 
 
@@ -184,57 +243,6 @@ std::ostream & operator << (std::ostream & os, const Node<T> & node) {
 
 
 // ------------------------------------------------------------------------------------------------------
-// arbre binaire
-template <class T>
-class BST {
-	// méthodes privées
-	unsigned int height(Node<T> * node);
-	unsigned int n_nodes(Node<T> * node);
-	Node<T> * balance(std::vector<T> & sorted_array, int start, int end);
-	void traversal(Node<T> * node, TraversalType tt, std::function<void(Node<T> *)> f);
-	void export_html(std::string html_path, Node<T> * node, float x, int y);
-	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
-	template <class U>
-	friend std::ostream & operator << (std::ostream & os, BST<U> & bst);
-	
-public:
-	BST();
-	BST(std::function<int(T, T)> cmp);
-	~BST();
-	bool empty();
-	unsigned int height();
-	unsigned int n_nodes();
-	Node<T> * minimum(Node<T> * node);
-	Node<T> * minimum();
-	Node<T> * maximum(Node<T> * node);
-	Node<T> * maximum();
-	Node<T> * successor(Node<T> * node);
-	Node<T> * predecessor(Node<T> * node);
-	Node<T> * successor_leaf(Node<T> * node);
-	Node<T> * predecessor_leaf(Node<T> * node);
-	Node<T> * gen_node(T data);
-	void insert(Node<T> * node);
-	void insert(T data);
-	void delete_tree(Node<T> * node);
-	void clear();
-	void remove(Node<T> * node);
-	void remove(T data);
-	void transplant(Node<T> * old_subtree, Node<T> * new_subtree);
-	Node<T> * search(Node<T> * node, T data, bool exact_match);
-	Node<T> * search(T data, bool exact_match=true);
-	std::vector<T> get_sorted_array();
-	void balance();
-	void traversal(TraversalType tt, std::function<void(Node<T> *)> f=[](Node<T> * node){std::cout << *node << "\n";});
-	void export_html(std::string html_path);
-
-
-	// racine
-	Node<T> * _root;
-	// fonction de comparaison entre 2 noeuds
-	std::function<int(T, T)> _cmp;
-};
-
-
 template <class T>
 BST<T>::BST() : 
 	_root(NULL),
@@ -570,6 +578,68 @@ void BST<T>::transplant(Node<T> * old_subtree, Node<T> * new_subtree) {
 	
 	if (new_subtree!= NULL) {
 		new_subtree->_parent= old_subtree->_parent;
+	}
+}
+
+
+// rotation à gauche, cf https://en.wikipedia.org/wiki/Tree_rotation
+template <class T>
+void BST<T>::rotate_left(Node<T> * node) {
+	if (node== NULL) {
+		return;
+	}
+	
+	Node<T> * pivot= node->_right;
+	if (pivot== NULL) {
+		return;
+	}
+	
+	Node<T> * node_parent= node->_parent;
+	bool is_node_left= node->is_left();
+	node->set_right(pivot->_left);
+	pivot->set_left(node);
+
+	if (node== _root) {
+		_root= pivot;
+	}
+	else {
+		if (is_node_left) {
+			node_parent->set_left(pivot);
+		}
+		else {
+			node_parent->set_right(pivot);
+		}
+	}
+}
+
+
+// rotation à droite, cf https://en.wikipedia.org/wiki/Tree_rotation
+template <class T>
+void BST<T>::rotate_right(Node<T> * node) {
+	if (node== NULL) {
+		return;
+	}
+	
+	Node<T> * pivot= node->_left;
+	if (pivot== NULL) {
+		return;
+	}
+	
+	Node<T> * node_parent= node->_parent;
+	bool is_node_left= node->is_left();
+	node->set_left(pivot->_right);
+	pivot->set_right(node);
+
+	if (node== _root) {
+		_root= pivot;
+	}
+	else {
+		if (is_node_left) {
+			node_parent->set_left(pivot);
+		}
+		else {
+			node_parent->set_right(pivot);
+		}
 	}
 }
 
