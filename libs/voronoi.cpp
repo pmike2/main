@@ -316,7 +316,7 @@ bool EventCmp::operator()(const Event * lhs, const Event * rhs) const {
 
 
 // ---------------------------------------------------------------------------------------------
-Voronoi::Voronoi() : _current_y(0.0) {
+Voronoi::Voronoi() : _current_y(0.0), _max_height(0), _max_height_n_nodes(0) {
 
 	// fonction de comparaison utilisée lors de la recherche dans le BST _beachline
 	std::function<int(BeachLineNode, BeachLineNode)> cmp= [this](BeachLineNode lhs, BeachLineNode rhs) {
@@ -362,7 +362,7 @@ Voronoi::Voronoi() : _current_y(0.0) {
 }
 
 
-Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string debug_path, number bbox_expand) : Voronoi()
+Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, bool output_beachline, bool output_intermediate, bool output_stat, std::string debug_path) : Voronoi()
 {
 	_sites= sites;
 	_debug_path= debug_path;
@@ -446,12 +446,24 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string d
 		}*/
 
 		// pour débugger on exporte l'état du BST _beachline ainsi qu'un état intermédiaire du _diagram
-		if (_debug_path!= "") {
+		if (output_beachline) {
 			_beachline->export_html(_debug_path+ "/beachline"+ std::to_string(_debug_count)+ ".html");
+		}
+		
+		if (output_intermediate) {
 			export_debug_html(_debug_path+ "/debug"+ std::to_string(_debug_count)+ ".html");
 		}
 
-		_tree_stats.push_back(std::make_pair(_beachline->height(), _beachline->n_nodes()));
+		if (output_stat) {
+			unsigned height= _beachline->height();
+			if (height> _max_height) {
+				_max_height= height;
+				_max_height_n_nodes= _beachline->n_nodes();
+				if (_debug_path!= "") {
+					_beachline->draw(_debug_path+ "/beachline.pbm");
+				}
+			}
+		}
 
 		_debug_count++;
 	}
@@ -485,35 +497,27 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, std::string d
 	pt_type bbox_max= pt_type(_bbox_max.x+ BBOX_MARGIN_PERCENT* max_size, _bbox_max.y+ BBOX_MARGIN_PERCENT* max_size);
 	_diagram->add_bbox(bbox_min, bbox_max);
 
-	const auto t4= std::chrono::high_resolution_clock::now();
-	const std::chrono::duration<number, std::milli> dt2= t4- t3;
-	std::cout << "temps post-traitement (bbox) = " << dt2.count() << "\n";
+	if (output_stat) {
+		const auto t4= std::chrono::high_resolution_clock::now();
+		const std::chrono::duration<number, std::milli> dt2= t4- t3;
+		std::cout << "temps post-traitement (bbox) = " << dt2.count() << "\n";
 
-	std::cout << "n sites = " << _site_times.size() << " ; n circles = " << _circle_times.size() << "\n";
-	number t_sites= 0.0;
-	for (auto t : _site_times) {
-		t_sites+= t;
-	}
-	t_sites/= _site_times.size();
-
-	number t_circles= 0.0;
-	for (auto t : _circle_times) {
-		t_circles+= t;
-	}
-	t_circles/= _circle_times.size();
-	std::cout << "t_sites = " << t_sites << " ; t_circles = " << t_circles << "\n";
-
-	unsigned int max_height= 0;
-	unsigned int n_nodes= 0;
-	for (auto s : _tree_stats) {
-		if (s.first> max_height) {
-			max_height= s.first;
-			n_nodes= s.second;
+		std::cout << "n sites = " << _site_times.size() << " ; n circles = " << _circle_times.size() << "\n";
+		number t_sites= 0.0;
+		for (auto t : _site_times) {
+			t_sites+= t;
 		}
-	}
-	std::cout << "max_height = " << max_height << " ; n_nodes = " << n_nodes << "\n";
+		t_sites/= _site_times.size();
 
-	//std::cout << *_diagram << "\n";
+		number t_circles= 0.0;
+		for (auto t : _circle_times) {
+			t_circles+= t;
+		}
+		t_circles/= _circle_times.size();
+		std::cout << "t_sites = " << t_sites << " ; t_circles = " << t_circles << "\n";
+
+		std::cout << "max_height = " << _max_height << " ; n_nodes = " << _max_height_n_nodes << "\n";
+	}
 }
 
 
@@ -726,6 +730,10 @@ void Voronoi::handle_site_event(Event * e) {
 // gestion événement de type cercle (ie quand des edges du _diagram convergent en un point)
 void Voronoi::handle_circle_event(Event * e) {
 	const auto t1= std::chrono::high_resolution_clock::now();
+
+	/*std::cout << "---\n";
+	std::cout << *_beachline;
+	std::cout << "---\n";*/
 
 	// ici e->_leaf est l'arc qui disparait de la beachline
 	Node<BeachLineNode> * predecessor_leaf= _beachline->predecessor_leaf(e->_leaf); // arc à gauche

@@ -58,6 +58,7 @@ class BST {
 	unsigned int n_nodes(Node<T> * node);
 	Node<T> * balance(std::vector<T> & sorted_array, int start, int end);
 	void traversal(Node<T> * node, TraversalType tt, std::function<void(Node<T> *)> f);
+	void draw(bool * bits, Node<T> * node, unsigned int i, unsigned int j, unsigned int width);
 	void export_html(std::string html_path, Node<T> * node, float x, int y);
 	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
 	template <class U>
@@ -95,6 +96,7 @@ public:
 	void balance();
 	void traversal(TraversalType tt, std::function<void(Node<T> *)> f=[](Node<T> * node){std::cout << *node << "\n";});
 	void export_html(std::string html_path);
+	void draw(std::string output);
 
 
 	// racine
@@ -600,6 +602,7 @@ void BST<T>::rotate_left(Node<T> * node) {
 	pivot->set_left(node);
 
 	if (node== _root) {
+		pivot->_parent= NULL;
 		_root= pivot;
 	}
 	else {
@@ -631,6 +634,7 @@ void BST<T>::rotate_right(Node<T> * node) {
 	pivot->set_right(node);
 
 	if (node== _root) {
+		pivot->_parent= NULL;
 		_root= pivot;
 	}
 	else {
@@ -814,6 +818,47 @@ void BST<T>::export_html(std::string html_path) {
 	f << "</svg>\n";
 	f << "</body>\n</html>\n";
 	f.close();
+}
+
+
+template <class T>
+void BST<T>::draw(bool * bits, Node<T> * node, unsigned int i, unsigned int j, unsigned int width) {
+	if (node== NULL) {
+		return;
+	}
+
+	bits[i+ j* width]= 1;
+	draw(bits, node->_left, i- 1, j+ 1, width);
+	draw(bits, node->_right, i+ 1, j+ 1, width);
+}
+
+
+template <class T>
+void BST<T>::draw(std::string output) {
+	unsigned int width= n_nodes()* 2;
+	unsigned int height_= height();
+	bool * bits= new bool[width* height_];
+	for (int i=0; i<width* height_; ++i) {
+		bits[i]= 0;
+	}
+	
+	draw(bits, _root, width/ 2, 0, width);
+	
+	std::ofstream f;
+	f.open(output);
+	f << "P1\n";
+	f << width << " " << height_ << "\n";
+	for (int j=0; j<height_; ++j) {
+		for (int i=0; i<width; ++i) {
+			f << bits[i+ j* width];
+			if (i!= width- 1) {
+				f << " ";
+			}
+		}
+		f << "\n";
+	}
+	f.close();
+	delete[] bits;
 }
 
 

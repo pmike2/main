@@ -64,10 +64,10 @@ void test1() {
 	}
 
 	for (auto const & x : m) {
-		if (x.first!= "grid") {continue;}
+		//if (x.first!= "higher_y_align") {continue;}
 
 		std::cout << "TEST1 " << x.first << " ----------------------\n";
-		Voronoi * v= new Voronoi(x.second, true, "../data/test1/"+ x.first);
+		Voronoi * v= new Voronoi(x.second, true, true, true, true, "../data/test1/"+ x.first);
 
 		pt_type bbox_min, bbox_max;
 		v->_diagram->get_bbox(&bbox_min, &bbox_max);
@@ -112,12 +112,13 @@ void test2() {
 	}
 	f.close();
 
-	Voronoi * v= new Voronoi(pts);
-	//Voronoi * v= new Voronoi(pts, true, "../data/test2");
+	Voronoi * v= new Voronoi(pts, false, false, false, true, "../data/test2");
 
 	pt_type bbox_min, bbox_max;
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);
 	v->_diagram->export_html("../data/test2/result.html", true, bbox_min- pt_type(0.2), bbox_max+ pt_type(0.2), pts);
+
+	//v->_beachline->draw("../data/test2/beachline.pbm");
 
 	//std::cout << "smallest edge = " << v->_diagram->smallest_edge() << "\n";
 
@@ -171,8 +172,7 @@ void test4() {
 		pts.push_back(pt);
 	}
 
-	//Voronoi * v= new Voronoi(pts);
-	Voronoi * v= new Voronoi(pts, true, "../data/test4");
+	Voronoi * v= new Voronoi(pts);
 
 	pt_type bbox_min, bbox_max;
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);

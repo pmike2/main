@@ -5,6 +5,7 @@ Implémentation diagramme Voronoi
 TODO : faire un BST plus malin car pour l'instant je ne peux pas faire de balance
 cf https://pvigier.github.io/2018/11/18/fortune-algorithm-details.html
 cf https://stackoverflow.com/questions/8688251/fortunes-algorithm-beach-line-data-structure
+cf https://www.geeksforgeeks.org/insertion-in-an-avl-tree
 
 */
 
@@ -119,7 +120,8 @@ struct EventCmp {
 class Voronoi {
 public:
 	Voronoi();
-	Voronoi(const std::vector<pt_type> & sites, bool verbose=false, std::string debug_path="", number bbox_expand=2.0f);
+	Voronoi(const std::vector<pt_type> & sites, bool verbose=false, bool output_beachline=false,
+		bool output_intermediate=false, bool output_stat=false, std::string debug_path=std::string(getenv("HOME"))+ "/voronoi");
 	~Voronoi();
 	DCEL_HalfEdge * add_full_line(pt_type position, pt_type direction);
 	DCEL_HalfEdge * add_half_line(pt_type position, pt_type direction);
@@ -145,7 +147,8 @@ public:
 	std::string _debug_path;
 	std::vector<number> _site_times;
 	std::vector<number> _circle_times;
-	std::vector<std::pair<unsigned int, unsigned int> > _tree_stats;
+	unsigned int _max_height;
+	unsigned int _max_height_n_nodes;
 };
 
 #endif

@@ -13,18 +13,16 @@
 void test1() {
 	BST<int> * bst= new BST<int>();
 
-	bst->insert(2);
-	/*bst->insert(1);
 	bst->insert(6);
+	bst->insert(2);
+	bst->insert(1);
 	bst->insert(4);
-	bst->insert(8);
 	bst->insert(3);
 	bst->insert(5);
 	bst->insert(7);
-	bst->insert(9);*/
 
-	bst->rotate_left(bst->search(2));
-	//bst->rotate_right(bst->search(1));
+	//bst->rotate_left(bst->search(2));
+	bst->rotate_right(bst->search(6));
 
 	std::cout << "height = " << bst->height() << "\n";
 	std::cout << "n_nodes = " << bst->n_nodes() << "\n";
@@ -40,10 +38,10 @@ void test1() {
 	//std::cout << "min = " << *bst->minimum() << "\nmax = " << *bst->maximum() << "\n";
 
 	//std::cout << "succ = " << *bst->successor(bst->search(3)) << "\n";
-	//std::cout << "pred = " << *bst->predecessor(bst->search(1)) << "\n";
+	//std::cout << "pred = " << bst->predecessor(bst->search(1)) << "\n";
 
 	//std::cout << "succ_leaf = " << *bst->successor_leaf(bst->search(3)) << "\n";
-	//std::cout << "pred_leaf = " << *bst->predecessor_leaf(bst->search(1)) << "\n";
+	//std::cout << "pred_leaf = " << bst->predecessor_leaf(bst->search(1)) << "\n";
 
 	//bst->traversal(TraversalType::IN_ORDER);
 
@@ -59,6 +57,8 @@ void test1() {
 	}*/
 
 	bst->export_html("../data/test1.html");
+
+	bst->draw("../data/test1.pbm");
 
 	delete bst;
 }
