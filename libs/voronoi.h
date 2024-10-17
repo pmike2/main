@@ -149,6 +149,8 @@ public:
 	std::vector<number> _circle_times;
 	unsigned int _max_height;
 	unsigned int _max_height_n_nodes;
+	int _max_imbalance;
+	unsigned int _max_imbalance_n_nodes;
 };
 
 #endif

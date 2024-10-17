@@ -56,9 +56,10 @@ template <class T>
 class BST {
 	// méthodes privées
 	unsigned int n_nodes(Node<T> * node);
+	void max_imbalance(Node<T> * node, int * maximb);
 	Node<T> * balance(std::vector<T> & sorted_array, int start, int end);
 	void traversal(Node<T> * node, TraversalType tt, std::function<void(Node<T> *)> f);
-	void draw(bool * bits, Node<T> * node, unsigned int i, unsigned int j, unsigned int width);
+	void draw(bool * bits, Node<T> * node, int i, int j, unsigned int width, unsigned int height, unsigned int n);
 	void export_html(std::string html_path, Node<T> * node, float x, int y);
 	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
 	template <class U>
@@ -72,6 +73,7 @@ public:
 	unsigned int height(Node<T> * node);
 	unsigned int height();
 	unsigned int n_nodes();
+	int max_imbalance();
 	Node<T> * minimum(Node<T> * node);
 	Node<T> * minimum();
 	Node<T> * maximum(Node<T> * node);
@@ -296,6 +298,31 @@ unsigned int BST<T>::n_nodes(Node<T> * node) {
 template <class T>
 unsigned int BST<T>::n_nodes() {
 	return n_nodes(_root);
+}
+
+
+template <class T>
+void BST<T>::max_imbalance(Node<T> * node, int * maximb) {
+	if (node== NULL) {
+		return;
+	}
+
+	unsigned int n_nodes_left= n_nodes(node->_left);
+	unsigned int n_nodes_right= n_nodes(node->_right);
+	int imbalance= (int)(n_nodes_right)- (int)(n_nodes_left);
+	if (abs(imbalance)> abs(*maximb)) {
+		*maximb= imbalance;
+	}
+	max_imbalance(node->_left, maximb);
+	max_imbalance(node->_right, maximb);
+}
+
+
+template <class T>
+int BST<T>::max_imbalance() {
+	int maximb= 0;
+	max_imbalance(_root, &maximb);
+	return maximb;
 }
 
 
@@ -822,27 +849,36 @@ void BST<T>::export_html(std::string html_path) {
 
 
 template <class T>
-void BST<T>::draw(bool * bits, Node<T> * node, unsigned int i, unsigned int j, unsigned int width) {
+void BST<T>::draw(bool * bits, Node<T> * node, int i, int j, unsigned int width, unsigned int height, unsigned int n) {
 	if (node== NULL) {
 		return;
 	}
 
+	if (i< 0 || i>= width || j< 0 || j>= height) {
+		std::cerr << "BST::draw probleme : i = " << i << " ; j = " << j << " ; width = " << width << " ; height = " << height << " ; n = " << n << "\n";
+		return;
+	}
+
+	//std::cout << *node << " ; " << "i = " << i << " ; j = " << j << " ; width = " << width << " ; height = " << height <<  " ; n = " << n << "\n";
+
 	bits[i+ j* width]= 1;
-	draw(bits, node->_left, i- 1, j+ 1, width);
-	draw(bits, node->_right, i+ 1, j+ 1, width);
+	
+	draw(bits, node->_left, i- pow(2, n- 2- j), j+ 1, width, height, n);
+	draw(bits, node->_right, i+ pow(2, n- 2- j), j+ 1, width, height, n);
 }
 
 
 template <class T>
 void BST<T>::draw(std::string output) {
-	unsigned int width= n_nodes()* 2;
+	unsigned int n= n_nodes();
+	unsigned int width= pow(2, n)- 1;
 	unsigned int height_= height();
 	bool * bits= new bool[width* height_];
 	for (int i=0; i<width* height_; ++i) {
 		bits[i]= 0;
 	}
 	
-	draw(bits, _root, width/ 2, 0, width);
+	draw(bits, _root, int(width- 1)/ 2, 0, width, height_, n);
 	
 	std::ofstream f;
 	f.open(output);

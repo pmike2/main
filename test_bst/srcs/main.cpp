@@ -22,10 +22,11 @@ void test1() {
 	bst->insert(7);
 
 	//bst->rotate_left(bst->search(2));
-	bst->rotate_right(bst->search(6));
+	//bst->rotate_right(bst->search(6));
 
 	std::cout << "height = " << bst->height() << "\n";
 	std::cout << "n_nodes = " << bst->n_nodes() << "\n";
+	std::cout << "max_imbalance = " << bst->max_imbalance() << "\n";
 
 	std::cout << *bst;
 

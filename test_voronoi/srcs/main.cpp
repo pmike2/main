@@ -78,7 +78,7 @@ void test1() {
 
 
 void test2() {
-	int n_pts= 2000;
+	int n_pts= 200;
 	number xmin= 0.0;
 	number xmax= 100.0;
 	number ymin= 0.0;

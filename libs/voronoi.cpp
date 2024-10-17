@@ -316,7 +316,7 @@ bool EventCmp::operator()(const Event * lhs, const Event * rhs) const {
 
 
 // ---------------------------------------------------------------------------------------------
-Voronoi::Voronoi() : _current_y(0.0), _max_height(0), _max_height_n_nodes(0) {
+Voronoi::Voronoi() : _current_y(0.0), _max_height(0), _max_height_n_nodes(0), _max_imbalance(0) {
 
 	// fonction de comparaison utilisée lors de la recherche dans le BST _beachline
 	std::function<int(BeachLineNode, BeachLineNode)> cmp= [this](BeachLineNode lhs, BeachLineNode rhs) {
@@ -460,7 +460,15 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, bool output_b
 				_max_height= height;
 				_max_height_n_nodes= _beachline->n_nodes();
 				if (_debug_path!= "") {
-					_beachline->draw(_debug_path+ "/beachline.pbm");
+					_beachline->draw(_debug_path+ "/beachline_max_height.pbm");
+				}
+			}
+			int max_imbalance= _beachline->max_imbalance();
+			if (abs(max_imbalance)> abs(_max_imbalance)) {
+				_max_imbalance= max_imbalance;
+				_max_imbalance_n_nodes= _beachline->n_nodes();
+				if (_debug_path!= "") {
+					_beachline->draw(_debug_path+ "/beachline_max_imbalance.pbm");
 				}
 			}
 		}
@@ -516,7 +524,11 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, bool output_b
 		t_circles/= _circle_times.size();
 		std::cout << "t_sites = " << t_sites << " ; t_circles = " << t_circles << "\n";
 
-		std::cout << "max_height = " << _max_height << " ; n_nodes = " << _max_height_n_nodes << "\n";
+		std::cout << "max_height = " << _max_height;
+		std::cout << " ; max_height_n_nodes = " << _max_height_n_nodes;
+		std::cout << " ; max_imbalance = " << _max_imbalance;
+		std::cout << " ; max_imbalance_n_nodes = " << _max_imbalance_n_nodes;
+		std::cout << "\n";
 	}
 }
 
