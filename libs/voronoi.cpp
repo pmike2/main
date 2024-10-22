@@ -460,7 +460,8 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, bool output_b
 				_max_height= height;
 				_max_height_n_nodes= _beachline->n_nodes();
 				if (_debug_path!= "") {
-					_beachline->draw(_debug_path+ "/beachline_max_height.pbm");
+					// pas possible le pbm résultat devient vite énorme
+					//_beachline->draw(_debug_path+ "/beachline_max_height.pbm");
 				}
 			}
 			int max_imbalance= _beachline->max_imbalance();
@@ -468,7 +469,7 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, bool output_b
 				_max_imbalance= max_imbalance;
 				_max_imbalance_n_nodes= _beachline->n_nodes();
 				if (_debug_path!= "") {
-					_beachline->draw(_debug_path+ "/beachline_max_imbalance.pbm");
+					//_beachline->draw(_debug_path+ "/beachline_max_imbalance.pbm");
 				}
 			}
 		}
@@ -726,12 +727,15 @@ void Voronoi::handle_site_event(Event * e) {
 	
 	// ne fonctionne pas pour l'instant, cf commentaires voronoi.h
 	//_beachline->balance();
-	if (_beachline->_root->_right->_data._type== BreakPoint && _beachline->height(_beachline->_root->_right)> _beachline->height(_beachline->_root->_left)) {
+	
+	// il faudrait implémenter les rotations à faire dans BST pour le conserver balanced lors des insertions (cf AVL tree)
+	// mais je ne suis pas sur que cela s'applique dans ce contexte où les feuilles doivent rester feuilles
+	/*if (_beachline->_root->_right->_data._type== BreakPoint && _beachline->height(_beachline->_root->_right)> _beachline->height(_beachline->_root->_left)) {
 		_beachline->rotate_left(_beachline->_root);
 	}
 	else if (_beachline->_root->_left->_data._type== BreakPoint && _beachline->height(_beachline->_root->_right)< _beachline->height(_beachline->_root->_left)) {
 		_beachline->rotate_right(_beachline->_root);
-	}
+	}*/
 
 	const auto t2= std::chrono::high_resolution_clock::now();
 	const std::chrono::duration<number, std::milli> dt= t2- t1;
@@ -849,12 +853,14 @@ void Voronoi::handle_circle_event(Event * e) {
 
 	// ne fonctionne pas pour l'instant, cf commentaires voronoi.h
 	//_beachline.balance();
-	if (_beachline->_root->_right->_data._type== BreakPoint && _beachline->height(_beachline->_root->_right)> _beachline->height(_beachline->_root->_left)) {
+	
+	// voir commentaires dans handle_site_event
+	/*if (_beachline->_root->_right->_data._type== BreakPoint && _beachline->height(_beachline->_root->_right)> _beachline->height(_beachline->_root->_left)) {
 		_beachline->rotate_left(_beachline->_root);
 	}
 	else if (_beachline->_root->_left->_data._type== BreakPoint && _beachline->height(_beachline->_root->_right)< _beachline->height(_beachline->_root->_left)) {
 		_beachline->rotate_right(_beachline->_root);
-	}
+	}*/
 
 	const auto t2= std::chrono::high_resolution_clock::now();
 	const std::chrono::duration<number, std::milli> dt= t2- t1;

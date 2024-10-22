@@ -59,7 +59,7 @@ class BST {
 	void max_imbalance(Node<T> * node, int * maximb);
 	Node<T> * balance(std::vector<T> & sorted_array, int start, int end);
 	void traversal(Node<T> * node, TraversalType tt, std::function<void(Node<T> *)> f);
-	void draw(bool * bits, Node<T> * node, int i, int j, unsigned int width, unsigned int height, unsigned int n);
+	//void draw(bool * bits, Node<T> * node, int i, int j, unsigned int width, unsigned int height, unsigned int n);
 	void export_html(std::string html_path, Node<T> * node, float x, int y);
 	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
 	template <class U>
@@ -98,7 +98,7 @@ public:
 	void balance();
 	void traversal(TraversalType tt, std::function<void(Node<T> *)> f=[](Node<T> * node){std::cout << *node << "\n";});
 	void export_html(std::string html_path);
-	void draw(std::string output);
+	//void draw(std::string output);
 
 
 	// racine
@@ -848,7 +848,9 @@ void BST<T>::export_html(std::string html_path) {
 }
 
 
-template <class T>
+// gardé pour mémoire mais très inefficace; le fichier pbm résultat peut devenir énorme
+
+/*template <class T>
 void BST<T>::draw(bool * bits, Node<T> * node, int i, int j, unsigned int width, unsigned int height, unsigned int n) {
 	if (node== NULL) {
 		return;
@@ -896,6 +898,6 @@ void BST<T>::draw(std::string output) {
 	f.close();
 	delete[] bits;
 }
-
+*/
 
 #endif
