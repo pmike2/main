@@ -478,8 +478,9 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, bool output_b
 	}
 	const auto t2= std::chrono::high_resolution_clock::now();
 	const std::chrono::duration<number, std::milli> dt= t2- t1;
-	std::cout << "temps traitement queue = " << dt.count() << "\n";
-
+	if (verbose) {
+		std::cout << "temps traitement queue = " << dt.count() << "\n";
+	}
 
 	if (_verbose) {
 		std::cout << "------------------------------------\n";
@@ -535,7 +536,8 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, bool output_b
 
 
 Voronoi::~Voronoi() {
-	delete _diagram;
+	// je ne supprime pas _diagram pour pouvoir l'utiliser même après la destruction de Voronoi
+	//delete _diagram;
 	delete _beachline;
 }
 

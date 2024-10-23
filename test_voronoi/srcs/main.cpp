@@ -78,7 +78,7 @@ void test1() {
 
 
 void test2() {
-	int n_pts= 200;
+	int n_pts= 20;
 	number xmin= 0.0;
 	number xmax= 100.0;
 	number ymin= 0.0;
@@ -113,7 +113,13 @@ void test2() {
 	f.close();
 
 	Voronoi * v= new Voronoi(pts, false, false, false, true, "../data/test2");
-
+	for (auto face : v->_diagram->_faces) {
+		if (face->_outer_edge== NULL) {
+			continue;
+		}
+		std::cout << face->get_adjacent_faces().size() << "\n";
+	}
+	
 	pt_type bbox_min, bbox_max;
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);
 	v->_diagram->export_html("../data/test2/result.html", true, bbox_min- pt_type(0.2), bbox_max+ pt_type(0.2), pts);

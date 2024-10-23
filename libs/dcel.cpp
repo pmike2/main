@@ -325,11 +325,11 @@ std::vector<DCEL_Face *> DCEL_Face::get_adjacent_faces() {
 	do {
 		if (current_edge== NULL) {
 			std::cerr << "ERR : DCEL_Face::get_adjacent_faces() : current_edge== NULL\n";
-			break;
+			return std::vector<DCEL_Face *>{};
 		}
 		DCEL_Face * face= current_edge->opposite_face();
 		std::vector<DCEL_Face *>::iterator it= find(result.begin(), result.end(), face);
-		if (it!= result.end()) {
+		if (it== result.end()) {
 			result.push_back(face);
 		}
 		current_edge= current_edge->_next;

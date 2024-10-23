@@ -13,6 +13,7 @@ cf https://www.geeksforgeeks.org/insertion-in-an-avl-tree
 #ifndef VORONOI_H
 #define VORONOI_H
 
+#include <iostream>
 #include <string>
 #include <vector>
 #include <queue>
