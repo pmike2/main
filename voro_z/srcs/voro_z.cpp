@@ -116,8 +116,10 @@ VoroZ::VoroZ(GLuint prog_draw_simple, GLuint prog_draw_texture) {
 	glActiveTexture(GL_TEXTURE0);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+	//glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_REPEAT);
+	//glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_REPEAT);
 	glActiveTexture(0);
 	
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
@@ -378,7 +380,7 @@ void VoroZ::draw_side_texture(const glm::mat4 & world2clip) {
 	glVertexAttribPointer(_context_side_texture._locs["tex_coord"], 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 	glVertexAttribPointer(_context_side_texture._locs["current_layer"], 1, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(5* sizeof(float)));
 
-	glDrawArrays(GL_TRIANGLES, 0, _n_pts_tops);
+	glDrawArrays(GL_TRIANGLES, 0, _n_pts_sides);
 
 	glDisableVertexAttribArray(_context_side_texture._locs["position"]);
 	glDisableVertexAttribArray(_context_side_texture._locs["tex_coord"]);
@@ -396,8 +398,8 @@ void VoroZ::draw(const glm::mat4 & world2clip) {
 	//draw_top_simple(world2clip);
 	draw_top_texture(world2clip);
 	
-	//draw_side_simple(world2clip);
-	draw_side_texture(world2clip);
+	draw_side_simple(world2clip);
+	//draw_side_texture(world2clip);
 }
 
 
@@ -484,14 +486,14 @@ void VoroZ::update_top_texture() {
 			vdata.push_back(float(vertices[idx_vertex2]->_coords.y));
 			vdata.push_back(float(face_data->_z));
 			vdata.push_back(0.0);
-			vdata.push_back(0.2);
+			vdata.push_back(1.0);
 			vdata.push_back(float(face_data->_biome->_idx_texture));
 
 			vdata.push_back(float(g.x));
 			vdata.push_back(float(g.y));
 			vdata.push_back(float(face_data->_z));
-			vdata.push_back(0.2);
-			vdata.push_back(0.2);
+			vdata.push_back(1.0);
+			vdata.push_back(1.0);
 			vdata.push_back(float(face_data->_biome->_idx_texture));
 		}
 	}
@@ -621,15 +623,15 @@ void VoroZ::update_side_texture() {
 				vdata.push_back(float(p2.x));
 				vdata.push_back(float(p2.y));
 				vdata.push_back(float(face_z));
-				vdata.push_back(0.0);
+				vdata.push_back(1.0);
 				vdata.push_back(0.0);
 				vdata.push_back(float(face_data->_biome->_idx_texture));
 
 				vdata.push_back(float(p2.x));
 				vdata.push_back(float(p2.y));
 				vdata.push_back(float(face_adj_z));
-				vdata.push_back(0.0);
-				vdata.push_back(0.0);
+				vdata.push_back(1.0);
+				vdata.push_back(1.0);
 				vdata.push_back(float(face_data->_biome->_idx_texture));
 
 				vdata.push_back(float(p1.x));
@@ -642,29 +644,29 @@ void VoroZ::update_side_texture() {
 				vdata.push_back(float(p2.x));
 				vdata.push_back(float(p2.y));
 				vdata.push_back(float(face_adj_z));
-				vdata.push_back(0.0);
-				vdata.push_back(0.0);
+				vdata.push_back(1.0);
+				vdata.push_back(1.0);
 				vdata.push_back(float(face_data->_biome->_idx_texture));
 
 				vdata.push_back(float(p1.x));
 				vdata.push_back(float(p1.y));
 				vdata.push_back(float(face_adj_z));
 				vdata.push_back(0.0);
-				vdata.push_back(0.0);
+				vdata.push_back(1.0);
 				vdata.push_back(float(face_data->_biome->_idx_texture));
 			}
 		}
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, _context_side_simple._buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, _context_side_texture._buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* _n_pts_sides* 6, vdata.data(), GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
 void VoroZ::update() {
-	//update_top_simple();
-	//update_side_simple();
+	update_top_simple();
+	update_side_simple();
 	update_top_texture();
 	update_side_texture();
 }
