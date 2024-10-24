@@ -119,6 +119,7 @@ public:
 	DCEL_HalfEdge * get_edge(const pt_type & ori, const pt_type & dst);
 	void get_bbox(pt_type * bbox_min, pt_type * bbox_max);
 	number smallest_edge();
+	DCEL_HalfEdge * get_dividing_edge(DCEL_Face * face1, DCEL_Face * face2);
 	void export_html(std::string html_path, bool simple, const pt_type & bbox_min, const pt_type & bbox_max, const std::vector<pt_type> & sites=std::vector<pt_type>());
 	friend std::ostream & operator << (std::ostream & os, DCEL & d);
 	

@@ -33,7 +33,7 @@ bool done= false;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_repere, prog_select;
+GLuint prog_repere, prog_select, prog_texture;
 GLuint g_vao;
 
 ViewSystem * view_system;
@@ -52,9 +52,9 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 
 
 void mouse_button_up(int x, int y, unsigned short button) {
+std::cout << "mouse up\n";
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
-
 	if (view_system->mouse_button_up(input_state)) {
 		return;
 	}
@@ -62,9 +62,9 @@ void mouse_button_up(int x, int y, unsigned short button) {
 
 
 void mouse_button_down(int x, int y, unsigned short button) {
+std::cout << "mouse down\n";
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
-
 	if (view_system->mouse_button_down(input_state)) {
 		return;
 	}
@@ -112,7 +112,7 @@ void init() {
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	
-	window= SDL_CreateWindow("sandbox", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	window= SDL_CreateWindow("voro_z", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
 
 	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
@@ -155,6 +155,7 @@ void init() {
 
 	prog_repere= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
 	prog_select= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
+	prog_texture= create_prog("../../shaders/vertexshader_3d_tex.txt", "../../shaders/fragmentshader_3d_tex.txt");
 
 	check_gl_error();
 	
@@ -168,7 +169,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
 
-	voroz= new VoroZ(prog_repere);
+	voroz= new VoroZ(prog_repere, prog_texture);
 
 }
 
@@ -212,7 +213,7 @@ void compute_fps() {
 
 
 void idle() {
-	anim();
+	//anim();
 	draw();
 	compute_fps();
 }

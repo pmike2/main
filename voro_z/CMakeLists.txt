@@ -7,7 +7,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/")
+
 find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
 find_package(OpenGL REQUIRED)
 
 
@@ -39,4 +42,5 @@ target_link_libraries(main PUBLIC lib_geom_2d)
 target_link_libraries(main PUBLIC lib_voro_z)
 
 target_link_libraries(main PUBLIC ${SDL2_LIBRARIES})
+target_link_libraries(main PUBLIC ${SDL2_IMAGE_LIBRARIES})
 target_link_libraries(main PUBLIC ${OPENGL_LIBRARIES})

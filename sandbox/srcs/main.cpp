@@ -106,9 +106,10 @@ void init() {
 	main_context= SDL_GL_CreateContext(window);
 
 	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
+	
 	/*int x= 0;
-	glGetIntegerv(GL_MAX_PATCH_VERTICES, &x); // 32
-	cout << x << endl;*/
+	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &x); // 2048
+	std::cout << x << "\n";*/
 
 	SDL_GL_SetSwapInterval(1);
 	// meme couleur que le brouillard

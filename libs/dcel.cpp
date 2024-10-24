@@ -1522,6 +1522,19 @@ number DCEL::smallest_edge() {
 }
 
 
+// renvoie le hedge séparant face1 et face2 et qui un outer edge de face1
+DCEL_HalfEdge * DCEL::get_dividing_edge(DCEL_Face * face1, DCEL_Face * face2) {
+	std::vector<DCEL_HalfEdge * > edges1= face1->get_outer_edges();
+	std::vector<DCEL_HalfEdge * > edges2= face2->get_outer_edges();
+	for (auto edge1 : edges1) {
+		if (std::find(edges2.begin(), edges2.end(), edge1->_twin)!= edges2.end()) {
+			return edge1;
+		}
+	}
+	return NULL;
+}
+
+
 // export sous forme de html
 void DCEL::export_html(std::string html_path, bool simple, const pt_type & bbox_min, const pt_type & bbox_max, const std::vector<pt_type> & sites) {
 	bool verbose= false;
