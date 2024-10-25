@@ -1535,6 +1535,17 @@ DCEL_HalfEdge * DCEL::get_dividing_edge(DCEL_Face * face1, DCEL_Face * face2) {
 }
 
 
+// renvoie la face non bornée
+DCEL_Face * DCEL::get_unbounded_face() {
+	for (const auto & face :_faces) {
+		if (face->_outer_edge== NULL) {
+			return face;
+		}
+	}
+	return NULL;
+}
+
+
 // export sous forme de html
 void DCEL::export_html(std::string html_path, bool simple, const pt_type & bbox_min, const pt_type & bbox_max, const std::vector<pt_type> & sites) {
 	bool verbose= false;

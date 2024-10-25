@@ -14,24 +14,24 @@ using namespace std;
 
 
 // renvoie la norme de la composante z du prod vectoriel
-number cross2d(pt_type v1, pt_type v2) {
+number cross2d(const pt_type & v1, const pt_type & v2) {
 	return v1.x* v2.y- v1.y* v2.x;
 }
 
 
 // tri de points selon x ; utile au calcul de convex hull
-bool cmp_points(pt_type & pt1, pt_type & pt2) {
+bool cmp_points(const pt_type & pt1, const pt_type & pt2) {
 	return pt1.x< pt2.x;
 }
 
 
 // est-ce que situé en pt_ref, regardant vers dir_ref, pt_test est à gauche
-bool is_left(pt_type pt_ref, pt_type dir_ref, pt_type pt_test) {
+bool is_left(const pt_type & pt_ref, const pt_type & dir_ref, const pt_type & pt_test) {
 	return cross2d(pt_type(pt_test- pt_ref), dir_ref)<= 0.0;
 }
 
 
-bool is_pt_inside_poly(pt_type & pt, Polygon2D * poly) {
+bool is_pt_inside_poly(const pt_type & pt, const Polygon2D * poly) {
 	// ne fonctionne que pour les polygones convexes
 	/*if (glm::distance(pt, poly->_centroid)> poly->_radius) {
 		return false;
@@ -63,7 +63,7 @@ bool is_pt_inside_poly(pt_type & pt, Polygon2D * poly) {
 }
 
 
-bool is_poly_inside_poly(Polygon2D * small_poly, Polygon2D * big_poly) {
+bool is_poly_inside_poly(const Polygon2D * small_poly, const Polygon2D * big_poly) {
 	if (!aabb_contains_aabb(big_poly->_aabb, small_poly->_aabb)) {
 		return false;
 	}
@@ -239,7 +239,7 @@ bool segment_intersects_poly_multi(const pt_type & pt_begin, const pt_type & pt_
 }
 
 // d(pt, [seg1, seg2])
-bool distance_segment_pt(pt_type & seg1, pt_type & seg2, pt_type & pt, number * dist, pt_type * proj) {
+bool distance_segment_pt(const pt_type & seg1, const pt_type & seg2, const pt_type & pt, number * dist, pt_type * proj) {
 	number seg_norm2= glm::distance2(seg1, seg2);
 	bool proj_in_segment= true;
 	
@@ -260,7 +260,7 @@ bool distance_segment_pt(pt_type & seg1, pt_type & seg2, pt_type & pt, number * 
 }
 
 
-number distance_poly_pt(Polygon2D * poly, pt_type & pt, pt_type * proj) {
+number distance_poly_pt(const Polygon2D * poly, const pt_type & pt, pt_type * proj) {
 	number dist_min= FLT_MAX;
 	number dist;
 	pt_type proj2;
@@ -290,7 +290,7 @@ number distance_poly_pt(Polygon2D * poly, pt_type & pt, pt_type * proj) {
 }
 
 
-number distance_poly_segment(Polygon2D * poly, pt_type & seg1, pt_type & seg2, pt_type * proj) {
+number distance_poly_segment(const Polygon2D * poly, const pt_type & seg1, const pt_type & seg2, pt_type * proj) {
 	number dist_min= FLT_MAX;
 	number dist;
 	pt_type proj2;
@@ -413,7 +413,7 @@ bool is_ccw(const vector<pt_type> & pts) {
 }
 
 
-std::pair<pt_type, number> circumcircle(pt_type & circle_pt1, pt_type & circle_pt2, pt_type & circle_pt3) {
+std::pair<pt_type, number> circumcircle(const pt_type & circle_pt1, const pt_type & circle_pt2, const pt_type & circle_pt3) {
 	pt_type pt1, pt2, pt3;
 	if (is_ccw(circle_pt1, circle_pt2, circle_pt3)) {
 		pt1= circle_pt1;
@@ -440,17 +440,21 @@ std::pair<pt_type, number> circumcircle(pt_type & circle_pt1, pt_type & circle_p
 }
 
 
-bool point_in_circumcircle(pt_type & circle_pt1, pt_type & circle_pt2, pt_type & circle_pt3, pt_type & pt) {
+bool point_in_circumcircle(const pt_type & circle_pt1, const pt_type & circle_pt2, const pt_type & circle_pt3, const pt_type & pt) {
 	std::pair<pt_type, number> circle= circumcircle(circle_pt1, circle_pt2, circle_pt3);
 	pt_type center= circle.first;
 	number radius= circle.second;
+	return point_in_circle(center, radius, pt);
+}
+
+
+bool point_in_circle(const pt_type & center, number radius, const pt_type & pt) {
 	number dist2center= sqrt((center.x- pt.x)* (center.x- pt.x)+ (center.y- pt.y)* (center.y- pt.y));
 	return dist2center< radius;
 }
 
-
 // utilisé pour debug test_triangulation
-void get_circle_center(pt_type & circle_pt1, pt_type & circle_pt2, pt_type & circle_pt3, pt_type & center, number * radius) {
+void get_circle_center(const pt_type & circle_pt1, const pt_type & circle_pt2, const pt_type & circle_pt3, pt_type & center, number * radius) {
 	pt_type pt1, pt2, pt3;
 	if (is_ccw(circle_pt1, circle_pt2, circle_pt3)) {
 		pt1= circle_pt1;
@@ -474,7 +478,7 @@ void get_circle_center(pt_type & circle_pt1, pt_type & circle_pt2, pt_type & cir
 }
 
 
-bool is_quad_convex(pt_type * pts) {
+bool is_quad_convex(const pt_type * pts) {
 	bool is_positive= false;
 	for (unsigned int i=0; i<4; ++i) {
 		pt_type v1= pts[(i+ 1) % 4]- pts[i];
@@ -519,7 +523,7 @@ Polygon2D::~Polygon2D() {
 }
 
 
-void Polygon2D::set_points(number * points, unsigned int n_points, bool convexhull) {
+void Polygon2D::set_points(const number * points, unsigned int n_points, bool convexhull) {
 	_pts.clear();
 	for (unsigned int i=0; i<n_points; ++i) {
 		_pts.push_back(pt_type(points[2* i], points[2* i+ 1]));
@@ -531,7 +535,7 @@ void Polygon2D::set_points(number * points, unsigned int n_points, bool convexhu
 }
 
 
-void Polygon2D::set_points(std::vector<pt_type> pts, bool convexhull) {
+void Polygon2D::set_points(const std::vector<pt_type> pts, bool convexhull) {
 	_pts.clear();
 	for (auto & pt : pts) {
 		_pts.push_back(pt_type(pt));
@@ -557,7 +561,7 @@ void Polygon2D::randomize(unsigned int n_points, number radius, pt_type center, 
 }
 
 
-void Polygon2D::set_rectangle(pt_type origin, pt_type size) {
+void Polygon2D::set_rectangle(const pt_type origin, const pt_type size) {
 	_pts.clear();
 	_pts.push_back(origin);
 	_pts.push_back(origin+ pt_type(size.x, 0.0));
@@ -636,7 +640,7 @@ void Polygon2D::update_attributes() {
 
 
 // pt du polygon le + éloigné le long d'une direction
-pt_type Polygon2D::farthest_pt_along_dir(pt_type direction) {
+pt_type Polygon2D::farthest_pt_along_dir(const pt_type direction) {
 	number dist_max= -FLT_MAX;
 	pt_type farthest_pt;
 	for (unsigned int idx_pt=0; idx_pt<_pts.size(); ++idx_pt) {

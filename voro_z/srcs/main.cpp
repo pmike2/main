@@ -33,7 +33,7 @@ bool done= false;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_repere, prog_select, prog_texture;
+GLuint prog_repere, prog_select, prog_texture, prog_light;
 GLuint g_vao;
 
 ViewSystem * view_system;
@@ -52,7 +52,6 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 
 
 void mouse_button_up(int x, int y, unsigned short button) {
-std::cout << "mouse up\n";
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 	if (view_system->mouse_button_up(input_state)) {
@@ -62,7 +61,6 @@ std::cout << "mouse up\n";
 
 
 void mouse_button_down(int x, int y, unsigned short button) {
-std::cout << "mouse down\n";
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 	if (view_system->mouse_button_down(input_state)) {
@@ -156,20 +154,21 @@ void init() {
 	prog_repere= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
 	prog_select= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
 	prog_texture= create_prog("../../shaders/vertexshader_3d_tex.txt", "../../shaders/fragmentshader_3d_tex.txt");
+	prog_light= create_prog("../../shaders/vertexshader_3d_light.txt", "../../shaders/fragmentshader_3d_light.txt");
 
 	check_gl_error();
 	
 	// --------------------------------------------------------------------------
 	view_system= new ViewSystem(prog_repere, prog_select, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->_repere->_is_ground= false;
-	view_system->_repere->_is_repere= true;
-	view_system->_repere->_is_box= true;
+	view_system->_repere->_is_repere= false;
+	view_system->_repere->_is_box= false;
 	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 1.0f, 200.0f);
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
 
-	voroz= new VoroZ(prog_repere, prog_texture);
+	voroz= new VoroZ(prog_repere, prog_texture, prog_light);
 
 }
 
@@ -182,19 +181,21 @@ void draw() {
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->draw();
 
-	voroz->draw(view_system->_world2clip);
+	voroz->draw(view_system->_world2clip, view_system->_eye);
 
 	SDL_GL_SwapWindow(window);
 }
 
 
 void anim() {
-	tikanim2= SDL_GetTicks();
+	/*tikanim2= SDL_GetTicks();
 	int tikanim_delta= tikanim2- tikanim1;
 	if (tikanim_delta< DELTA_ANIM)
 		return;
 	
-	tikanim1= SDL_GetTicks();
+	tikanim1= SDL_GetTicks();*/
+
+	voroz->anim();
 }
 
 
@@ -213,7 +214,7 @@ void compute_fps() {
 
 
 void idle() {
-	//anim();
+	anim();
 	draw();
 	compute_fps();
 }

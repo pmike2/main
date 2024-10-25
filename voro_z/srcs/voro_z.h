@@ -44,39 +44,69 @@ public:
 };
 
 
-struct DrawContext {
+class DrawContext {
+public:
+	DrawContext();
+	DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform);
+	~DrawContext();
+
 	GLuint _prog;
 	std::map<std::string, GLint> _locs;
 	GLuint _buffer;
 };
 
 
+class Light {
+public:
+	Light();
+	Light(glm::vec3 position_ini, glm::vec3 color);
+	~Light();
+	void anim();
+
+
+	glm::vec3 _position_ini;
+	glm::vec3 _position;
+	glm::vec3 _color;
+	bool _animated;
+};
+
+
 class VoroZ {
 public:
 	VoroZ();
-	VoroZ(GLuint prog_draw_simple, GLuint prog_draw_texture);
+	VoroZ(GLuint prog_draw_simple, GLuint prog_draw_texture, GLuint prog_draw_light);
 	~VoroZ();
 
-	void draw_top_simple(const glm::mat4 & world2clip);
-	void draw_top_texture(const glm::mat4 & world2clip);
-	void draw_side_simple(const glm::mat4 & world2clip);
-	void draw_side_texture(const glm::mat4 & world2clip);
-	void draw(const glm::mat4 & world2clip);
+	void init_biome();
+	void init_context(GLuint prog_draw_simple, GLuint prog_draw_texture, GLuint prog_draw_light);
+	void init_texture();
+	void init_light();
+	void init_dcel();
 
-	void update_top_simple();
-	void update_top_texture();
-	void update_side_simple();
-	void update_side_texture();
+	void draw_simple(const glm::mat4 & world2clip);
+	void draw_texture(const glm::mat4 & world2clip);
+	void draw_light(const glm::mat4 & world2clip, const glm::vec3 & camera_position);
+	void draw(const glm::mat4 & world2clip, const glm::vec3 & camera_position);
+
+	void update_simple();
+	void update_texture();
+	void update_light();
 	void update();
+
+	void anim();
 
 	bool key_down(InputState * input_state, SDL_Keycode key);
 
 
-	DrawContext _context_top_simple, _context_side_simple, _context_top_texture, _context_side_texture;
-	unsigned int _n_pts_tops, _n_pts_sides;
+	unsigned int _n_pts;
 	DCEL * _dcel;
 	std::map<BiomeType, Biome *> _biomes;
+	
+	DrawContext * _context_simple;
+	DrawContext * _context_texture;
+	DrawContext *  _context_light;
 	GLuint _texture_id;
+	Light * _light;
 };
 
 
