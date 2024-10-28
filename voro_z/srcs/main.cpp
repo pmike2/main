@@ -33,7 +33,7 @@ bool done= false;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_repere, prog_select, prog_texture, prog_light;
+GLuint prog_repere, prog_select, prog_texture, prog_light, prog_normal;
 GLuint g_vao;
 
 ViewSystem * view_system;
@@ -158,6 +158,7 @@ void init() {
 	prog_select= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
 	prog_texture= create_prog("../../shaders/vertexshader_3d_tex.txt", "../../shaders/fragmentshader_3d_tex.txt");
 	prog_light= create_prog("../../shaders/vertexshader_3d_light.txt", "../../shaders/fragmentshader_3d_light.txt");
+	prog_normal= create_prog("../../shaders/vertexshader_3d_normal.txt", "../../shaders/fragmentshader_3d_normal.txt");
 
 	check_gl_error();
 	
@@ -171,7 +172,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
 
-	voroz= new VoroZ(prog_repere, prog_texture, prog_light);
+	voroz= new VoroZ(prog_repere, prog_texture, prog_light, prog_normal);
 
 }
 

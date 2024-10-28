@@ -15,6 +15,9 @@
 typedef enum {WATER, COAST, FOREST, MOUNTAIN} BiomeType;
 
 
+glm::vec3 tangent(glm::vec3 p1, glm::vec3 p2, glm::vec3 p3, glm::vec2 uv1, glm::vec2 uv2, glm::vec2 uv3);
+
+
 class Biome {
 public:
 	Biome();
@@ -26,6 +29,18 @@ public:
 	number _zmin;
 	number _zmax;
 	glm::vec4 _color;
+	std::string _texture_path;
+	unsigned int _idx_texture;
+};
+
+
+class NormalMapping {
+public:
+	NormalMapping();
+	NormalMapping(std::string texture_path);
+	~NormalMapping();
+
+
 	std::string _texture_path;
 	unsigned int _idx_texture;
 };
@@ -74,23 +89,27 @@ public:
 class VoroZ {
 public:
 	VoroZ();
-	VoroZ(GLuint prog_draw_simple, GLuint prog_draw_texture, GLuint prog_draw_light);
+	VoroZ(GLuint prog_draw_simple, GLuint prog_draw_texture, GLuint prog_draw_light, GLuint prog_draw_normal);
 	~VoroZ();
 
 	void init_biome();
-	void init_context(GLuint prog_draw_simple, GLuint prog_draw_texture, GLuint prog_draw_light);
-	void init_texture();
+	void init_normal();
+	void init_context(GLuint prog_draw_simple, GLuint prog_draw_texture, GLuint prog_draw_light, GLuint prog_draw_normal);
+	void init_texture_biome();
+	void init_texture_normal();
 	void init_light();
 	void init_dcel();
 
 	void draw_simple(const glm::mat4 & world2clip);
 	void draw_texture(const glm::mat4 & world2clip);
 	void draw_light(const glm::mat4 & world2clip, const glm::vec3 & camera_position);
+	void draw_normal(const glm::mat4 & world2clip, const glm::vec3 & camera_position);
 	void draw(const glm::mat4 & world2clip, const glm::vec3 & camera_position);
 
 	void update_simple();
 	void update_texture();
 	void update_light();
+	void update_normal();
 	void update();
 
 	void anim();
@@ -101,11 +120,10 @@ public:
 	unsigned int _n_pts;
 	DCEL * _dcel;
 	std::map<BiomeType, Biome *> _biomes;
+	std::vector<NormalMapping * > _normals;
+	std::map<std::string, DrawContext *> _contexts;
 	
-	DrawContext * _context_simple;
-	DrawContext * _context_texture;
-	DrawContext *  _context_light;
-	GLuint _texture_id;
+	GLuint _texture_id_biomes, _texture_id_normal;
 	Light * _light;
 };
 
