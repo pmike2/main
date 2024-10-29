@@ -33,7 +33,7 @@ bool done= false;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_repere, prog_select, prog_texture, prog_light, prog_normal;
+GLuint prog_repere, prog_select, prog_texture, prog_light, prog_normal, prog_parallax;
 GLuint g_vao;
 
 ViewSystem * view_system;
@@ -159,6 +159,7 @@ void init() {
 	prog_texture= create_prog("../../shaders/vertexshader_3d_tex.txt", "../../shaders/fragmentshader_3d_tex.txt");
 	prog_light= create_prog("../../shaders/vertexshader_3d_light.txt", "../../shaders/fragmentshader_3d_light.txt");
 	prog_normal= create_prog("../../shaders/vertexshader_3d_normal.txt", "../../shaders/fragmentshader_3d_normal.txt");
+	prog_parallax= create_prog("../../shaders/vertexshader_3d_parallax.txt", "../../shaders/fragmentshader_3d_parallax.txt");
 
 	check_gl_error();
 	
@@ -172,7 +173,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
 
-	voroz= new VoroZ(prog_repere, prog_texture, prog_light, prog_normal);
+	voroz= new VoroZ(prog_repere, prog_texture, prog_light, prog_normal, prog_parallax);
 
 }
 
@@ -275,6 +276,14 @@ void clean() {
 
 
 int main() {
+	/*glm::vec3 p1(0.0, 0.0, 0.0);
+	glm::vec3 p2(1.0, 0.0, 0.0);
+	glm::vec3 p3(0.0, 1.0, 0.0);
+	glm::vec3 angles= triangle2euler(p1, p2, p3);
+	glm::mat3 m= triangle2mat(p1, p2, p3);
+	std::cout << glm::to_string(angles) << "\n";
+	std::cout << glm::to_string(m) << "\n";*/
+
 
 	init();
 	main_loop();

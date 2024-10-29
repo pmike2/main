@@ -10,15 +10,17 @@ uniform vec3 view_position;
 layout(location=0) in vec3 position_in;
 layout(location=1) in vec4 color_in;
 layout(location=2) in vec2 tex_coord_in;
-layout(location=3) in float current_layer_in;
-layout(location=4) in vec3 normal_in;
-layout(location=5) in vec3 tangent_in;
+layout(location=3) in float current_layer_normal_in;
+layout(location=4) in float current_layer_parallax_in;
+layout(location=5) in vec3 normal_in;
+layout(location=6) in vec3 tangent_in;
 //layout(location=6) in vec3 bitangent_in;
 
 //out vec3 vertex_position;
 out vec4 vertex_color;
 out vec2 tex_coord;
-out float current_layer;
+out float current_layer_normal;
+out float current_layer_parallax;
 out vec3 tangent_light_position;
 out vec3 tangent_view_position;
 out vec3 tangent_vertex_position;
@@ -28,7 +30,8 @@ void main(void) {
 	//vertex_position= position_in;
 	vertex_color= color_in;
 	tex_coord= tex_coord_in;
-	current_layer= current_layer_in;
+	current_layer_normal= current_layer_normal_in;
+	current_layer_parallax= current_layer_parallax_in;
 
 	vec3 normal= normalize(normal_in);
 	vec3 tangent= normalize(tangent_in);
