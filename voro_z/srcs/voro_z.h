@@ -12,7 +12,10 @@
 #include "dcel.h"
 
 
-typedef enum {WATER, COAST, FOREST, MOUNTAIN} BiomeType;
+const int TEX_SIZE= 1024;
+
+typedef enum {WATER, COAST, FOREST, MOUNTAIN, DIRT} BiomeType;
+typedef enum {SIMPLE, TEXTURE, LIGHT, NORMAL, PARALLAX} DrawMode;
 
 
 glm::vec3 normal(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3);
@@ -24,7 +27,7 @@ glm::mat3 triangle2mat(const glm::vec3 & p1, const glm::vec3 & p2, const glm::ve
 class Biome {
 public:
 	Biome();
-	Biome(BiomeType type, number zmin, number zmax, glm::vec4 color, std::string diffuse_texture_path, std::string normal_texture_path, std::string parallax_texture_path);
+	Biome(BiomeType type, number zmin, number zmax, glm::vec4 color, float uv_factor, std::string diffuse_texture_path, std::string normal_texture_path, std::string parallax_texture_path);
 	~Biome();
 
 
@@ -32,6 +35,7 @@ public:
 	number _zmin;
 	number _zmax;
 	glm::vec4 _color;
+	float _uv_factor;
 	std::string _diffuse_texture_path, _normal_texture_path, _parallax_texture_path;
 	unsigned int _diffuse_texture_idx, _normal_texture_idx, _parallax_texture_idx;
 };
@@ -80,13 +84,20 @@ public:
 class TriangleData {
 public:
 	TriangleData();
-	TriangleData(const glm::vec3 & pt1, const glm::vec3 & pt2, const glm::vec3 & pt3, const glm::vec2 & uv1, const glm::vec2 & uv2, const glm::vec2 & uv3, const glm::vec4 & color, Biome * biome);
+	TriangleData(
+		const glm::vec3 & pt1, const glm::vec3 & pt2, const glm::vec3 & pt3, 
+		const glm::vec2 & uv1_diffuse, const glm::vec2 & uv2_diffuse, const glm::vec2 & uv3_diffuse,
+		const glm::vec2 & uv1_normal, const glm::vec2 & uv2_normal, const glm::vec2 & uv3_normal,
+		const glm::vec2 & uv1_parallax, const glm::vec2 & uv2_parallax, const glm::vec2 & uv3_parallax,
+		Biome * biome);
 	~TriangleData();
 
 
 	glm::vec3 _pts[3];
-	glm::vec2 _uvs[3];
-	glm::vec4 _color;
+	glm::vec2 _uvs_diffuse[3];
+	glm::vec2 _uvs_normal[3];
+	glm::vec2 _uvs_parallax[3];
+	//glm::vec4 _color;
 	Biome * _biome;
 	glm::vec3 _normal;
 	glm::vec3 _tangent;
@@ -132,10 +143,10 @@ public:
 	DCEL * _dcel;
 	std::map<BiomeType, Biome *> _biomes;
 	std::map<std::string, DrawContext *> _contexts;
-	
 	GLuint _texture_id_diffuse, _texture_id_normal, _texture_id_parallax;
 	Light * _light;
 	std::vector<TriangleData *> _triangle_data;
+	DrawMode _draw_mode;
 };
 
 
