@@ -48,7 +48,8 @@ glm::vec3 tangent(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & 
 }
 
 
-glm::vec3 triangle2euler(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3) {
+// tentative de transfo d'un triangle vers un triangle plat pour application texture parallaxe
+/*glm::vec3 triangle2euler(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3) {
 	const number EPS= 1e-7;
 	number a= sqrt(p3.x* p3.x+ p3.y* p3.y);
 	number precession, nutation, rotation;
@@ -77,7 +78,7 @@ glm::mat3 triangle2mat(const glm::vec3 & p1, const glm::vec3 & p2, const glm::ve
 		-cos_psi* sin_phi- sin_psi* cos_theta* cos_phi, -sin_psi* sin_phi+ cos_psi* cos_theta* cos_phi, -cos_psi* sin_theta,
 		sin_theta* sin_phi, sin_theta* cos_phi, cos_theta
 	);
-}
+}*/
 
 
 // --------------------------------------------------------
@@ -86,11 +87,30 @@ Biome::Biome() {
 }
 
 
-Biome::Biome(BiomeType type, number zmin, number zmax, glm::vec4 color, float uv_factor, std::string diffuse_texture_path, std::string normal_texture_path, std::string parallax_texture_path) :
+Biome::Biome(BiomeType type, number zmin, number zmax, glm::vec4 color, float uv_factor, std::string diffuse_texture_path, std::string normal_texture_path, std::string parallax_texture_path, float anim_speed) :
 	_type(type), _zmin(zmin), _zmax(zmax), _color(color), _uv_factor(uv_factor), _diffuse_texture_path(diffuse_texture_path), 
-	_normal_texture_path(normal_texture_path), _parallax_texture_path(parallax_texture_path)
+	_normal_texture_path(normal_texture_path), _parallax_texture_path(parallax_texture_path), _anim_speed(anim_speed)
 {
+	if (_diffuse_texture_path.find(".png")!= std::string::npos) {
+		_diffuse_pngs.push_back(_diffuse_texture_path);
+	}
+	else {
+		_diffuse_pngs= list_files(_diffuse_texture_path, "png");
+	}
 
+	if (_normal_texture_path.find(".png")!= std::string::npos) {
+		_normal_pngs.push_back(_normal_texture_path);
+	}
+	else {
+		_normal_pngs= list_files(_normal_texture_path, "png");
+	}
+
+	/*for (auto png : _diffuse_pngs) {
+		std::cout << "diffuse : " << png << "\n";
+	}
+	for (auto png : _normal_pngs) {
+		std::cout << "normal : " << png << "\n";
+	}*/
 }
 
 
@@ -249,11 +269,11 @@ VoroZ::~VoroZ() {
 
 
 void VoroZ::init_biome() {
-	_biomes[WATER]= new Biome(WATER, -10.0, 0.01, glm::vec4(0.1, 0.4, 0.8, 0.5), 0.007, "../data/water.png", "../data/water_normal.png", "../data/brick_parallax.png");
-	_biomes[COAST]= new Biome(COAST, 0.01, 10.0, glm::vec4(0.7, 0.7, 0.4, 0.8), 0.02, "../data/sand.png", "../data/sand_normal.png", "../data/brick_parallax.png");
-	_biomes[FOREST]= new Biome(FOREST, 10.0, 100.0, glm::vec4(0.3, 0.8, 0.5, 0.9), 0.02, "../data/grass.png", "../data/grass_normal.png", "../data/brick_parallax.png");
-	_biomes[MOUNTAIN]= new Biome(MOUNTAIN, 100.0, 200.0, glm::vec4(0.8, 0.8, 0.9, 1.0), 0.02, "../data/snow.png", "../data/snow_normal.png", "../data/brick_parallax.png");
-	_biomes[DIRT]= new Biome(DIRT, 0.0, 0.0, glm::vec4(0.5, 0.3, 0.2, 1.0), 0.04, "../data/dirt.png", "../data/dirt_normal.png", "../data/brick_parallax.png");
+	_biomes[WATER]= new Biome(WATER, -10.0, 0.01, glm::vec4(0.1, 0.4, 0.8, 0.5), 0.007, "../data/water/diffuse", "../data/water/normal", "../data/brick_parallax.png", 0.3);
+	_biomes[COAST]= new Biome(COAST, 0.01, 10.0, glm::vec4(0.7, 0.7, 0.4, 0.8), 0.02, "../data/sand.png", "../data/sand_normal.png", "../data/brick_parallax.png", 0.3);
+	_biomes[FOREST]= new Biome(FOREST, 10.0, 100.0, glm::vec4(0.3, 0.8, 0.5, 0.9), 0.02, "../data/grass/diffuse", "../data/grass/normal", "../data/brick_parallax.png", 0.1);
+	_biomes[MOUNTAIN]= new Biome(MOUNTAIN, 100.0, 200.0, glm::vec4(0.8, 0.8, 0.9, 1.0), 0.02, "../data/snow.png", "../data/snow_normal.png", "../data/brick_parallax.png", 0.3);
+	_biomes[DIRT]= new Biome(DIRT, 0.0, 0.0, glm::vec4(0.5, 0.3, 0.2, 1.0), 0.04, "../data/dirt.png", "../data/dirt_normal.png", "../data/brick_parallax.png", 0.3);
 }
 
 
@@ -289,30 +309,36 @@ void VoroZ::init_texture_diffuse() {
 	glActiveTexture(GL_TEXTURE0+ 0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id_diffuse);
 
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, _biomes.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	unsigned int n_textures= 0;
+	for (auto biome : _biomes) {
+		n_textures+= biome.second->_diffuse_pngs.size();
+	}
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, n_textures, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	unsigned int compt= 0;
 	for (auto biome : _biomes) {
-		biome.second->_diffuse_texture_idx= compt;
-		
-		SDL_Surface * surface= IMG_Load(biome.second->_diffuse_texture_path.c_str());
-		if (!surface) {
-			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
-			return;
+		biome.second->_diffuse_texture_idx_start= compt;
+		biome.second->_diffuse_texture_idx_current= float(compt);
+		for (auto png : biome.second->_diffuse_pngs) {
+			SDL_Surface * surface= IMG_Load(png.c_str());
+			if (!surface) {
+				std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
+				return;
+			}
+
+			// sais pas pourquoi mais format == GL_BGRA fonctionne mieux que GL_RGBA
+			glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+				0,                                // mipmap number
+				0, 0, compt,                      // xoffset, yoffset, zoffset
+				1024, 1024, 1,                    // width, height, depth
+				GL_BGRA,                          // format
+				GL_UNSIGNED_BYTE,                 // type
+				surface->pixels);                 // pointer to data
+
+			SDL_FreeSurface(surface);
+			compt++;
 		}
-
-		// sais pas pourquoi mais format == GL_BGRA fonctionne mieux que GL_RGBA
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-			0,                                // mipmap number
-			0, 0, biome.second->_diffuse_texture_idx, // xoffset, yoffset, zoffset
-			1024, 1024, 1,                    // width, height, depth
-			GL_BGRA,                          // format
-			GL_UNSIGNED_BYTE,                 // type
-			surface->pixels);                 // pointer to data
-
-		SDL_FreeSurface(surface);
-
-		compt++;
+		biome.second->_diffuse_texture_idx_end= compt- 1;
 	}
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -333,30 +359,37 @@ void VoroZ::init_texture_normal() {
 	glActiveTexture(GL_TEXTURE0+ 1);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id_normal);
 
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, _biomes.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	unsigned int n_textures= 0;
+	for (auto biome : _biomes) {
+		n_textures+= biome.second->_normal_pngs.size();
+	}
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, n_textures, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glGenerateMipmap(GL_TEXTURE_2D_ARRAY); // allocation mipmaps
 
 	unsigned int compt= 0;
 	for (auto biome : _biomes) {
-		biome.second->_normal_texture_idx= compt;
-		SDL_Surface * surface= IMG_Load(biome.second->_normal_texture_path.c_str());
-		if (!surface) {
-			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
-			return;
+		biome.second->_normal_texture_idx_start= compt;
+		biome.second->_normal_texture_idx_current= float(compt);
+		for (auto png : biome.second->_normal_pngs) {
+			SDL_Surface * surface= IMG_Load(png.c_str());
+			if (!surface) {
+				std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
+				return;
+			}
+
+			// sais pas pourquoi mais format == GL_BGRA fonctionne mieux que GL_RGBA
+			glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+				0,                                // mipmap number
+				0, 0, compt,                      // xoffset, yoffset, zoffset
+				1024, 1024, 1,                    // width, height, depth
+				GL_BGRA,                          // format
+				GL_UNSIGNED_BYTE,                 // type
+				surface->pixels);                 // pointer to data
+
+			SDL_FreeSurface(surface);
+			compt++;
 		}
-
-		// sais pas pourquoi mais format == GL_BGRA fonctionne mieux que GL_RGBA
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-			0,                                // mipmap number
-			0, 0, biome.second->_normal_texture_idx, // xoffset, yoffset, zoffset
-			1024, 1024, 1,                    // width, height, depth
-			GL_BGRA,                          // format
-			GL_UNSIGNED_BYTE,                 // type
-			surface->pixels);                 // pointer to data
-
-		SDL_FreeSurface(surface);
-
-		compt++;
+		biome.second->_normal_texture_idx_end= compt- 1;
 	}
 
 	glGenerateMipmap(GL_TEXTURE_2D_ARRAY); // generation mipmaps
@@ -955,7 +988,7 @@ void VoroZ::update_texture() {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 2]= _triangle_data[idx_triangle]->_pts[idx_pt].z;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 3]= _triangle_data[idx_triangle]->_uvs_diffuse[idx_pt].x;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 4]= _triangle_data[idx_triangle]->_uvs_diffuse[idx_pt].y;
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 5]= _triangle_data[idx_triangle]->_biome->_diffuse_texture_idx;
+			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 5]= _triangle_data[idx_triangle]->_biome->_diffuse_texture_idx_current;
 		}
 	}
 
@@ -1003,8 +1036,8 @@ void VoroZ::update_normal() {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 2]= _triangle_data[idx_triangle]->_pts[idx_pt].z;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 3]= _triangle_data[idx_triangle]->_uvs_normal[idx_pt].x;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 4]= _triangle_data[idx_triangle]->_uvs_normal[idx_pt].y;
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 5]= _triangle_data[idx_triangle]->_biome->_diffuse_texture_idx;
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 6]= _triangle_data[idx_triangle]->_biome->_normal_texture_idx;
+			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 5]= _triangle_data[idx_triangle]->_biome->_diffuse_texture_idx_current;
+			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 6]= _triangle_data[idx_triangle]->_biome->_normal_texture_idx_current;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 7]= _triangle_data[idx_triangle]->_normal.x;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 8]= _triangle_data[idx_triangle]->_normal.y;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 9]= _triangle_data[idx_triangle]->_normal.z;
@@ -1032,8 +1065,8 @@ void VoroZ::update_parallax() {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 2]= _triangle_data[idx_triangle]->_pts[idx_pt].z;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 3]= _triangle_data[idx_triangle]->_uvs_parallax[idx_pt].x;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 4]= _triangle_data[idx_triangle]->_uvs_parallax[idx_pt].y;
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 5]= _triangle_data[idx_triangle]->_biome->_diffuse_texture_idx;
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 6]= _triangle_data[idx_triangle]->_biome->_normal_texture_idx;
+			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 5]= _triangle_data[idx_triangle]->_biome->_diffuse_texture_idx_current;
+			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 6]= _triangle_data[idx_triangle]->_biome->_normal_texture_idx_current;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 7]= _triangle_data[idx_triangle]->_biome->_parallax_texture_idx;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 8]= _triangle_data[idx_triangle]->_normal.x;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 9]= _triangle_data[idx_triangle]->_normal.y;
@@ -1074,6 +1107,18 @@ void VoroZ::anim() {
 
 	update();*/
 	_light->anim();
+
+	for (auto biome : _biomes) {
+		biome.second->_diffuse_texture_idx_current+= biome.second->_anim_speed;
+		if (biome.second->_diffuse_texture_idx_current> float(biome.second->_diffuse_texture_idx_end)) {
+			biome.second->_diffuse_texture_idx_current= float(biome.second->_diffuse_texture_idx_start);
+		}
+		biome.second->_normal_texture_idx_current+= biome.second->_anim_speed;
+		if (biome.second->_normal_texture_idx_current> float(biome.second->_normal_texture_idx_end)) {
+			biome.second->_normal_texture_idx_current= float(biome.second->_normal_texture_idx_start);
+		}
+	}
+	update_normal();
 }
 
 

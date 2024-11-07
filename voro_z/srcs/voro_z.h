@@ -20,14 +20,15 @@ typedef enum {SIMPLE, TEXTURE, LIGHT, NORMAL, PARALLAX} DrawMode;
 
 glm::vec3 normal(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3);
 glm::vec3 tangent(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3, const glm::vec2 & uv1, const glm::vec2 & uv2, const glm::vec2 & uv3);
-glm::vec3 triangle2euler(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3);
-glm::mat3 triangle2mat(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3);
+//glm::vec3 triangle2euler(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3);
+//glm::mat3 triangle2mat(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3);
 
 
 class Biome {
 public:
 	Biome();
-	Biome(BiomeType type, number zmin, number zmax, glm::vec4 color, float uv_factor, std::string diffuse_texture_path, std::string normal_texture_path, std::string parallax_texture_path);
+	Biome(BiomeType type, number zmin, number zmax, glm::vec4 color, float uv_factor,
+		std::string diffuse_texture_path, std::string normal_texture_path, std::string parallax_texture_path, float anim_speed);
 	~Biome();
 
 
@@ -37,7 +38,14 @@ public:
 	glm::vec4 _color;
 	float _uv_factor;
 	std::string _diffuse_texture_path, _normal_texture_path, _parallax_texture_path;
-	unsigned int _diffuse_texture_idx, _normal_texture_idx, _parallax_texture_idx;
+	unsigned int _diffuse_texture_idx_start, _diffuse_texture_idx_end;
+	float _diffuse_texture_idx_current;
+	unsigned int _normal_texture_idx_start, _normal_texture_idx_end;
+	float _normal_texture_idx_current;
+	unsigned int  _parallax_texture_idx;
+	std::vector<std::string> _diffuse_pngs;
+	std::vector<std::string> _normal_pngs;
+	float _anim_speed;
 };
 
 
@@ -59,6 +67,7 @@ public:
 	DrawContext();
 	DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform);
 	~DrawContext();
+
 
 	GLuint _prog;
 	std::map<std::string, GLint> _locs;

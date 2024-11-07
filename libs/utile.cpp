@@ -187,6 +187,8 @@ vector<string> list_files(string ch_dir, string ext) {
 		closedir(d);
 	}
 	
+	std::sort(res.begin(), res.end());
+	
 	return res;
 }
 
