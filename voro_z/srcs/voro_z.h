@@ -10,6 +10,7 @@
 #include "typedefs.h"
 #include "input_state.h"
 #include "dcel.h"
+#include "gl_utils.h"
 
 
 const int TEX_SIZE= 1024;
@@ -59,19 +60,6 @@ public:
 
 	number _z;
 	Biome * _biome;
-};
-
-
-class DrawContext {
-public:
-	DrawContext();
-	DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform);
-	~DrawContext();
-
-
-	GLuint _prog;
-	std::map<std::string, GLint> _locs;
-	GLuint _buffer;
 };
 
 

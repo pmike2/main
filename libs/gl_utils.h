@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include <OpenGL/gl3.h>
 
@@ -20,6 +21,19 @@ public:
 
 	int _screen_width, _screen_height;
 	float _gl_width, _gl_height;
+};
+
+
+class DrawContext {
+public:
+	DrawContext();
+	DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform);
+	~DrawContext();
+
+
+	GLuint _prog;
+	std::map<std::string, GLint> _locs;
+	GLuint _buffer;
 };
 
 

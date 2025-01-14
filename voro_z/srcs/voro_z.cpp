@@ -142,29 +142,6 @@ void DCEL_FaceData::set_biome(Biome * biome) {
 
 
 // --------------------------------------------------------
-DrawContext::DrawContext() {
-
-}
-
-
-DrawContext::DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform) :
-	_prog(prog), _buffer(buffer) 
-{
-	for (auto loc : locs_attrib) {
-		_locs[loc]= glGetAttribLocation(_prog, loc.c_str());
-	}
-	for (auto loc : locs_uniform) {
-		_locs[loc]= glGetUniformLocation(_prog, loc.c_str());
-	}
-}
-
-
-DrawContext::~DrawContext() {
-
-}
-
-
-// --------------------------------------------------------
 Light::Light() : _position_ini(glm::vec3(0.0)), _position(glm::vec3(0.0)), _color(glm::vec3(1.0)), _animated(true) {
 
 }

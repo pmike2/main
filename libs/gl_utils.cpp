@@ -41,6 +41,29 @@ void ScreenGL::gl2screen(float x, float y, int & i, int & j) {
 }
 
 
+// --------------------------------------------------------
+DrawContext::DrawContext() {
+
+}
+
+
+DrawContext::DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform) :
+	_prog(prog), _buffer(buffer) 
+{
+	for (auto loc : locs_attrib) {
+		_locs[loc]= glGetAttribLocation(_prog, loc.c_str());
+	}
+	for (auto loc : locs_uniform) {
+		_locs[loc]= glGetUniformLocation(_prog, loc.c_str());
+	}
+}
+
+
+DrawContext::~DrawContext() {
+
+}
+
+
 // -------------------------------------------------------------------------------------------
 void _check_gl_error(const char * file, int line){
 	GLenum err(glGetError());
