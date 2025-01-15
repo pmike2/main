@@ -48,7 +48,7 @@ DrawContext::DrawContext() {
 
 
 DrawContext::DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform) :
-	_prog(prog), _buffer(buffer) 
+	_prog(prog), _buffer(buffer), _n_pts(0), _n_attrs_per_pts(0)
 {
 	for (auto loc : locs_attrib) {
 		_locs[loc]= glGetAttribLocation(_prog, loc.c_str());

@@ -194,7 +194,7 @@ void anim() {
 	int tikanim_delta= tikanim2- tikanim1;
 	if (tikanim_delta< DELTA_ANIM)
 		return;
-
+	
 	level->anim();
 	
 	tikanim1= SDL_GetTicks();
