@@ -165,7 +165,7 @@ void init() {
 	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_repere= false;
 	view_system->_repere->_is_box= false;
-	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), -0.5* M_PI, 0.0f, 40.0f);
+	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), -0.5* M_PI, 0.0f, 25.0f);
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();

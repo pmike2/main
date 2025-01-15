@@ -335,6 +335,10 @@ void Level::anim() {
 		return;
 	}
 
+	if (rand_int(0, 100)> 98) {
+		add_rand_ennemy();
+	}
+
 	float HERO_VELOCITY= 0.1;
 	if (_key_left) {
 		_ships[0]->_aabb._pos.x-= HERO_VELOCITY;
@@ -383,7 +387,7 @@ void Level::anim() {
 			continue;
 		}
 		if (rand_int(0, 100)> 99) {
-			_bullets.push_back(new Bullet(AABB_2D(_ships[idx_ship]->_aabb.center(), glm::vec2(0.1, 0.5)), false, glm::vec2(0.0, -0.2)));
+			_bullets.push_back(new Bullet(AABB_2D(_ships[idx_ship]->_aabb.center(), glm::vec2(0.1, 0.5)), false, glm::vec2(0.0, -0.1)));
 		}
 	}
 
@@ -434,10 +438,25 @@ void Level::anim() {
 		}
 	}
 
-	for (unsigned int idx_ship=1; idx_ship<_ships.size(); ++idx_ship) {
+	/*for (unsigned int idx_ship=1; idx_ship<_ships.size(); ++idx_ship) {
 		if (aabb_intersects_aabb(&_ships[0]->_aabb, &_ships[idx_ship]->_aabb)) {
 			_gameover= true;
 			break;
+		}
+	}*/
+
+	for (unsigned int idx_ship=0; idx_ship<_ships.size()- 1; ++idx_ship) {
+		if (_ships[idx_ship]->_dead) {
+			continue;
+		}
+		for (unsigned int idx_ship2=idx_ship+ 1; idx_ship2<_ships.size(); ++idx_ship2) {
+			if (_ships[idx_ship2]->_dead) {
+				continue;
+			}
+			if (aabb_intersects_aabb(&_ships[idx_ship]->_aabb, &_ships[idx_ship2]->_aabb)) {
+				_ships[idx_ship]->_dead= true;
+				_ships[idx_ship2]->_dead= true;
+			}
 		}
 	}
 
@@ -451,10 +470,6 @@ void Level::anim() {
 	_bullets.erase(std::remove_if(_bullets.begin(), _bullets.end(), [](Bullet * b){
 		return b->_dead;
 	}), _bullets.end());
-
-	if (rand_int(0, 100)> 95) {
-		add_rand_ennemy();
-	}
 
 	update_ship_aabb();
 	update_bullet_aabb();
@@ -519,8 +534,18 @@ bool Level::key_up(InputState * input_state, SDL_Keycode key) {
 void Level::add_rand_ennemy() {
 	//pt_type pos= pt_type(rand_float(_pt_min.x, _pt_max.x), rand_float(_pt_min.y, _pt_max.y));
 	pt_type pos= pt_type(rand_float(_pt_min.x, _pt_max.x), _pt_max.y);
-	pt_type size= pt_type(rand_float(0.5, 2.0), rand_float(0.5, 2.0));
-	_ships.push_back(new Ship(AABB_2D(pos, size), false, glm::vec2(0.0, -0.03)));
+	pt_type size= pt_type(rand_float(0.5, 4.0), rand_float(0.5, 4.0));
+	AABB_2D aabb(pos, size);
+	bool ok= true;
+	for (auto ship : _ships) {
+		if (aabb_intersects_aabb(&ship->_aabb, &aabb)) {
+			ok= false;
+			break;
+		}
+	}
+	if (ok) {
+		_ships.push_back(new Ship(aabb, false, glm::vec2(0.0, -1.0* rand_float(0.02, 0.07))));
+	}
 }
 
 
@@ -537,7 +562,7 @@ void Level::reinit() {
 	}
 	_bullets.clear();
 
-	_ships.push_back(new Ship(AABB_2D(glm::vec2(0.0, 0.0), glm::vec2(1.0, 1.0)), true, glm::vec2(0.0)));
+	_ships.push_back(new Ship(AABB_2D(glm::vec2(0.0, _pt_min.y+ 2.0), glm::vec2(1.0, 1.0)), true, glm::vec2(0.0)));
 	//unsigned int n_ennemies= rand_int(10, 20);
 	/*unsigned int n_ennemies= 5;
 	for (unsigned int i=0; i<n_ennemies; ++i) {
