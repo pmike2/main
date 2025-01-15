@@ -101,6 +101,27 @@ void key_up(SDL_Keycode key) {
 }
 
 
+void joystick_down(unsigned int button_idx) {
+	if (level->joystick_down(button_idx)) {
+		return;
+	}
+}
+
+
+void joystick_up(unsigned int button_idx) {
+	if (level->joystick_up(button_idx)) {
+		return;
+	}
+}
+
+
+void joystick_axis(unsigned int axis_idx, int value) {
+	if (level->joystick_axis(axis_idx, value)) {
+		return;
+	}
+}
+
+
 void init() {
 	srand(time(NULL));
 	
@@ -172,6 +193,24 @@ void init() {
 
 	// --------------------------------------------------------------------------
 	level= new Level(prog_repere, prog_repere);
+
+	SDL_Joystick *joy;
+// Check for joystick
+if(SDL_NumJoysticks()>0){
+  // Open joystick
+  joy=SDL_JoystickOpen(0);
+  
+  if(joy)
+  {
+    printf("Opened Joystick 0\n");
+    printf("Name: %s\n", SDL_JoystickName(0));
+    printf("Number of Axes: %d\n", SDL_JoystickNumAxes(joy));
+    printf("Number of Buttons: %d\n", SDL_JoystickNumButtons(joy));
+    printf("Number of Balls: %d\n", SDL_JoystickNumBalls(joy));
+  }
+  else
+    printf("Couldn't open Joystick 0\n");
+	}
 }
 
 
@@ -247,7 +286,24 @@ void main_loop() {
 				case SDL_KEYUP:
 					key_up(event.key.keysym.sym);
 					break;
-					
+
+				case SDL_JOYBUTTONDOWN:
+					joystick_down(event.jbutton.button);
+					break;
+
+				case SDL_JOYBUTTONUP:
+					joystick_up(event.jbutton.button);
+					break;
+
+				 case SDL_JOYAXISMOTION:
+				 	joystick_axis(event.jaxis.axis, event.jaxis.value);
+					break;
+
+				// utilisé ?
+				//case SDL_JOYHATMOTION:
+				//	printf("The hat with index %d was moved to position %d.\n", event.jhat.hat, event.jhat.value);
+				//	break;
+
 				case SDL_QUIT:
 					done= 1;
 					break;

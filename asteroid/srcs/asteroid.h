@@ -65,6 +65,9 @@ public:
 	void anim();
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
+	bool joystick_down(unsigned int button_idx);
+	bool joystick_up(unsigned int button_idx);
+	bool joystick_axis(unsigned int axis_idx, int value);
 	void add_rand_ennemy();
 	void reinit();
 
@@ -80,6 +83,7 @@ public:
 	std::chrono::system_clock::time_point _t_last_shooting;
 	GLuint * _buffers;
 	bool _gameover;
+	float _joystick[2];
 };
 
 

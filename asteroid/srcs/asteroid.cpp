@@ -352,6 +352,11 @@ void Level::anim() {
 	if (_key_up) {
 		_ships[0]->_aabb._pos.y+= HERO_VELOCITY;
 	}
+
+	// joystick vers le haut est négatif !
+	_ships[0]->_aabb._pos.x+= HERO_VELOCITY* _joystick[0];
+	_ships[0]->_aabb._pos.y-= HERO_VELOCITY* _joystick[1];
+
 	
 	if (_ships[0]->_aabb._pos.x> _pt_max.x- _ships[0]->_aabb._size.x) {
 		_ships[0]->_aabb._pos.x= _pt_max.x- _ships[0]->_aabb._size.x;
@@ -528,6 +533,33 @@ bool Level::key_up(InputState * input_state, SDL_Keycode key) {
 		reinit();
 	}
 	return false;
+}
+
+
+bool Level::joystick_down(unsigned int button_idx) {
+	//std::cout << button_idx << "\n";
+	if (button_idx== 0) {
+		_shooting= true;
+		return true;
+	}
+	return false;
+}
+
+
+bool Level::joystick_up(unsigned int button_idx) {
+	//std::cout << button_idx << "\n";
+	if (button_idx== 0) {
+		_shooting= false;
+		return true;
+	}
+	return false;
+}
+
+
+bool Level::joystick_axis(unsigned int axis_idx, int value) {
+	//std::cout << "axis_idx=" << axis_idx << " ; value=" << value << "\n";
+	float fvalue= float(value)/ 32768.0;
+	_joystick[axis_idx]= fvalue;
 }
 
 
