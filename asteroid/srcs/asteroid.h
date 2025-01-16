@@ -5,6 +5,8 @@
 #include <map>
 #include <chrono>
 
+#include "json.hpp"
+
 #include "bbox_2d.h"
 #include "gl_utils.h"
 #include "input_state.h"
@@ -16,12 +18,38 @@ const glm::dvec4 border_color(0.3, 0.3, 0.2, 1.0);
 const unsigned int DELTA_BULLET= 100;
 
 
-class Ship {
+class Action {
 public:
-	Ship();
-	Ship(const AABB_2D & aabb, bool friendly, glm::vec2 velocity);
-	~Ship();
-	//void anim();
+	Action();
+	Action(glm::vec2 direction, unsigned int t, bool shooting, unsigned int t_shooting);
+	~Action();
+
+
+	glm::vec2 _direction;
+	unsigned int _t;
+	bool _shooting;
+	unsigned int _t_shooting;
+};
+
+
+class ShipModel {
+public:
+	ShipModel();
+	ShipModel(std::string json_path);
+	~ShipModel();
+
+
+	glm::vec2 _size;
+	std::vector<Action *> _actions;
+};
+
+
+class Bullet {
+public:
+	Bullet();
+	Bullet(const AABB_2D & aabb, bool friendly, glm::vec2 velocity);
+	~Bullet();
+	void anim();
 
 
 	AABB_2D _aabb;
@@ -31,18 +59,23 @@ public:
 };
 
 
-class Bullet {
+class Ship {
 public:
-	Bullet();
-	Bullet(const AABB_2D & aabb, bool friendly, glm::vec2 velocity);
-	~Bullet();
-	//void anim();
+	Ship();
+	Ship(ShipModel * model, pt_type pos, bool friendly, glm::vec2 velocity);
+	~Ship();
+	Bullet * anim();
 
 
 	AABB_2D _aabb;
 	bool _friendly;
 	glm::vec2 _velocity;
 	bool _dead;
+	
+	unsigned int _idx_action;
+	std::chrono::system_clock::time_point _t_action_start;
+	std::chrono::system_clock::time_point _t_last_bullet;
+	ShipModel * _model;
 };
 
 
@@ -72,6 +105,7 @@ public:
 	void reinit();
 
 
+	std::map<std::string, ShipModel *> _models;
 	std::vector<Ship *> _ships;
 	std::vector<Bullet * > _bullets;
 	bool _draw_aabb;
@@ -84,6 +118,7 @@ public:
 	GLuint * _buffers;
 	bool _gameover;
 	float _joystick[2];
+	unsigned int _score;
 };
 
 

@@ -1,24 +1,113 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 
 #include "asteroid.h"
 #include "utile.h"
 
+using json = nlohmann::json;
 
-// ship -------------------------------------------------------------
-Ship::Ship() {
+
+// action -----------------------------------------------------------
+Action::Action() {
 
 }
 
 
-Ship::Ship(const AABB_2D & aabb, bool friendly, glm::vec2 velocity) :
-	_aabb(aabb), _friendly(friendly), _velocity(velocity), _dead(false) {
+Action::Action(glm::vec2 direction, unsigned int t, bool shooting, unsigned int t_shooting) :
+	_direction(direction), _t(t), _shooting(shooting), _t_shooting(t_shooting) {
+
+}
+
+
+Action::~Action() {
 	
 }
 
 
-Ship::~Ship() {
-	
+// model -----------------------------------------------------------
+ShipModel::ShipModel() {
+
+}
+
+
+ShipModel::ShipModel(std::string json_path) {
+	std::string tmp_json_path= "./tmp.json";
+	std::string cmd= "../srcs/flat_json.py "+ json_path+ " "+ tmp_json_path;
+	//std::cout << cmd << "\n";
+	system(cmd.c_str());
+
+	std::ifstream ifs(tmp_json_path);
+	json js= json::parse(ifs);
+	ifs.close();
+
+	std::string cmd2= "rm "+ tmp_json_path;
+	system(cmd.c_str());
+
+	//std::string name= js["name"];
+	_size= glm::vec2(js["size"][0], js["size"][1]);
+
+	for (auto & action : js["actions"]) {
+		glm::vec2 direction(action["direction"][0], action["direction"][1]);
+		unsigned int t= action["t"];
+		bool shooting= false;
+		unsigned int t_shooting= 0;
+		if (action["shooting"]!= nullptr) {
+			shooting= true;
+			t_shooting= action["shooting"];
+		}
+
+		_actions.push_back(new Action(direction, t, shooting, t_shooting));
+	}
+
+	/*while (true) {
+		bool modified= false;
+		unsigned int action_idx= 0;
+		for (json::iterator it = js["actions"].begin(); it != js["actions"].end(); ++it) {
+			//std::cout << it.key() << " : " << it.value() << "\n";
+			auto & action_name= it.key();
+			auto & l_actions= it.value();
+			if (modified) {
+				break;
+			}
+			for (auto & action :l_actions) {
+				if (action["name"]!= nullptr) {
+					//std::cout << action["name"] << "\n";
+					unsigned int n= 1;
+					if (action["n"]!= nullptr) {
+						n= action["n"];
+					}
+					json::iterator it_ok;
+					for (json::iterator it2 = js["actions"].begin(); it2 != js["actions"].end(); ++it2) {
+						auto & action_name2= it.key();
+						auto & l_actions2= it.value();
+						if (action_name2== action["name"]) {
+							it_ok= it2;
+							break;
+						}
+					}
+					modified= true;
+					js["actions"][action_idx]= [];
+					break;
+				}
+				action_idx++;
+			}
+		}
+		if (!modified) {
+			break;
+		}
+	}*/
+}
+
+
+ShipModel::~ShipModel() {
+	for (auto action : _actions) {
+		delete action;
+	}
+	_actions.clear();
 }
 
 
@@ -39,6 +128,57 @@ Bullet::~Bullet() {
 }
 
 
+void Bullet::anim() {
+	_aabb._pos+= _velocity;
+}
+
+
+// ship -------------------------------------------------------------
+Ship::Ship() {
+
+}
+
+
+Ship::Ship(ShipModel * model, pt_type pos, bool friendly, glm::vec2 velocity) :
+	_model(model), _friendly(friendly), _velocity(velocity), _dead(false), _idx_action(0),
+	_t_action_start(std::chrono::system_clock::now()), _t_last_bullet(std::chrono::system_clock::now())
+{
+	_aabb= AABB_2D(pos, model->_size);
+}
+
+
+Ship::~Ship() {
+	
+}
+
+
+Bullet * Ship::anim() {
+	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+	
+	auto d= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_action_start).count();
+	if (d> _model->_actions[_idx_action]->_t) {
+		_t_action_start= now;
+		_idx_action++;
+		if (_idx_action>= _model->_actions.size()) {
+			_idx_action= 0;
+		}
+	}
+	_velocity= _model->_actions[_idx_action]->_direction;
+
+	_aabb._pos+= _velocity;
+
+	Bullet * bullet= NULL;
+	if (_model->_actions[_idx_action]->_shooting) {
+		auto d2= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_last_bullet).count();
+		if (d2> _model->_actions[_idx_action]->_t_shooting) {
+			_t_last_bullet= now;
+			bullet= new Bullet(AABB_2D(_aabb.center(), glm::vec2(0.1, 0.2)), false, glm::vec2(0.0, -0.2));
+		}
+	}
+	return bullet;
+}
+
+
 // level -------------------------------------------------------------
 Level::Level() {
 
@@ -48,7 +188,16 @@ Level::Level() {
 Level::Level(GLuint prog_draw_simple, GLuint prog_draw_texture) 
 	: _pt_min(-10.0, -10.0), _pt_max(10.0, 10.0), _draw_aabb(true), _draw_texture(false),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false),
-	_shooting(false), _t_last_shooting(std::chrono::system_clock::now()), _gameover(false) {
+	_shooting(false), _t_last_shooting(std::chrono::system_clock::now()), _gameover(false), _score(0) {
+
+	std::vector<std::string> jsons= list_files("../data", "json");
+	for (auto json_path : jsons) {
+		_models[basename(json_path)]= new ShipModel(json_path);
+	}
+
+	/*_models["hero"]= new ShipModel("../data/hero.json");
+	_models["cruiser"]= new ShipModel("../data/cruiser.json");
+	_models["fatman"]= new ShipModel("../data/fatman.json");*/
 
 	reinit();
 
@@ -88,11 +237,17 @@ Level::~Level() {
 	}
 	_bullets.clear();
 
-	delete _buffers;
-
 	for (auto context : _contexts) {
 		delete context.second;
 	}
+	_contexts.clear();
+
+	for (auto model : _models) {
+		delete model.second;
+	}
+	_models.clear();
+
+	delete _buffers;
 }
 
 
@@ -372,7 +527,13 @@ void Level::anim() {
 	}
 
 	for (unsigned int idx_ship=1; idx_ship<_ships.size(); ++idx_ship) {
-		_ships[idx_ship]->_aabb._pos+= _ships[idx_ship]->_velocity;
+		Bullet * bullet= _ships[idx_ship]->anim();
+		if (bullet!= NULL) {
+			_bullets.push_back(bullet);
+		}
+	}
+
+	for (unsigned int idx_ship=1; idx_ship<_ships.size(); ++idx_ship) {
 		if (_ships[idx_ship]->_aabb._pos.x> _pt_max.x) {
 			_ships[idx_ship]->_dead= true;
 		}
@@ -385,15 +546,13 @@ void Level::anim() {
 		else if (_ships[idx_ship]->_aabb._pos.y< _pt_min.y- _ships[idx_ship]->_aabb._size.y) {
 			_ships[idx_ship]->_dead= true;
 		}
-	}
 
-	for (unsigned int idx_ship=1; idx_ship<_ships.size(); ++idx_ship) {
 		if (_ships[idx_ship]->_dead) {
 			continue;
 		}
-		if (rand_int(0, 100)> 99) {
-			_bullets.push_back(new Bullet(AABB_2D(_ships[idx_ship]->_aabb.center(), glm::vec2(0.1, 0.5)), false, glm::vec2(0.0, -0.1)));
-		}
+		/*if (rand_int(0, 100)> 99) {
+			_bullets.push_back(new Bullet(AABB_2D(_ships[idx_ship]->_aabb.center(), glm::vec2(0.1, 0.2)), false, glm::vec2(0.0, -0.1)));
+		}*/
 	}
 
 	if (_shooting) {
@@ -401,12 +560,13 @@ void Level::anim() {
 		auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t2- _t_last_shooting).count();
 		if (d> DELTA_BULLET) {
 			_t_last_shooting= t2;
-			_bullets.push_back(new Bullet(AABB_2D(_ships[0]->_aabb.center(), glm::vec2(0.1, 0.5)), true, glm::vec2(0.0, 0.2)));
+			_bullets.push_back(new Bullet(AABB_2D(_ships[0]->_aabb.center(), glm::vec2(0.1, 0.2)), true, glm::vec2(0.0, 0.2)));
 		}
 	}
 
 	for (auto bullet : _bullets) {
-		bullet->_aabb._pos+= bullet->_velocity;
+		bullet->anim();
+
 		if (bullet->_aabb._pos.x> _pt_max.x) {
 			bullet->_dead= true;
 		}
@@ -438,6 +598,9 @@ void Level::anim() {
 			if (aabb_intersects_aabb(&ship->_aabb, &bullet->_aabb)) {
 				ship->_dead= true;
 				bullet->_dead= true;
+				if (bullet->_friendly) {
+					_score++;
+				}
 				break;
 			}
 		}
@@ -560,29 +723,45 @@ bool Level::joystick_axis(unsigned int axis_idx, int value) {
 	//std::cout << "axis_idx=" << axis_idx << " ; value=" << value << "\n";
 	float fvalue= float(value)/ 32768.0;
 	_joystick[axis_idx]= fvalue;
+	return true;
 }
 
 
 void Level::add_rand_ennemy() {
 	//pt_type pos= pt_type(rand_float(_pt_min.x, _pt_max.x), rand_float(_pt_min.y, _pt_max.y));
 	pt_type pos= pt_type(rand_float(_pt_min.x, _pt_max.x), _pt_max.y);
-	pt_type size= pt_type(rand_float(0.5, 4.0), rand_float(0.5, 4.0));
-	AABB_2D aabb(pos, size);
+	//pt_type size= pt_type(rand_float(0.5, 4.0), rand_float(0.5, 4.0));
+	//AABB_2D aabb(pos, size);
+
+	std::string model_name= "";
+	int n= rand_int(0, 1);
+	if (n== 0) {
+		model_name= "cruiser";
+	}
+	else if (n== 1) {
+		model_name= "fatman";
+	}
+
+	Ship * ennemy= new Ship(_models[model_name], pos, false, glm::vec2(0.0, -1.0* rand_float(0.02, 0.07)));
 	bool ok= true;
 	for (auto ship : _ships) {
-		if (aabb_intersects_aabb(&ship->_aabb, &aabb)) {
+		if (aabb_intersects_aabb(&ship->_aabb, &ennemy->_aabb)) {
 			ok= false;
 			break;
 		}
 	}
 	if (ok) {
-		_ships.push_back(new Ship(aabb, false, glm::vec2(0.0, -1.0* rand_float(0.02, 0.07))));
+		_ships.push_back(ennemy);
+	}
+	else {
+		delete ennemy;
 	}
 }
 
 
 void Level::reinit() {
 	_gameover= false;
+	_score= 0;
 	
 	for (auto ship : _ships) {
 		delete ship;
@@ -594,7 +773,7 @@ void Level::reinit() {
 	}
 	_bullets.clear();
 
-	_ships.push_back(new Ship(AABB_2D(glm::vec2(0.0, _pt_min.y+ 2.0), glm::vec2(1.0, 1.0)), true, glm::vec2(0.0)));
+	_ships.push_back(new Ship(_models["hero"], glm::vec2(0.0, _pt_min.y+ 2.0), true, glm::vec2(0.0)));
 	//unsigned int n_ennemies= rand_int(10, 20);
 	/*unsigned int n_ennemies= 5;
 	for (unsigned int i=0; i<n_ennemies; ++i) {

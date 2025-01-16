@@ -1,6 +1,8 @@
 
 #include <iostream>
 #include <math.h>
+#include <iomanip>
+#include <sstream>
 
 #include <OpenGL/gl3.h>
 
@@ -11,6 +13,7 @@
 #include "utile.h"
 #include "gl_utils.h"
 #include "input_state.h"
+#include "font.h"
 #include "asteroid.h"
 
 
@@ -21,6 +24,10 @@ const unsigned int DELTA_ANIM= 1;
 const int MAIN_WIN_WIDTH= 1280;
 const int MAIN_WIN_HEIGHT= 1024;
 const float MAIN_BCK[]= {0.2f, 0.2f, 0.2f, 1.0f};
+const float GL_WIDTH= 20.0f;
+//const float GL_HEIGHT= 20.0f;
+const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDTH);
+
 
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
@@ -31,13 +38,15 @@ bool done= false;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_repere, prog_select;
+GLuint prog_repere, prog_select, prog_font;
 GLuint g_vao;
 
 ViewSystem * view_system;
 
 Level * level;
 
+Font * arial_font;
+ScreenGL * screengl;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
@@ -178,6 +187,7 @@ void init() {
 
 	prog_repere= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
 	prog_select= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
+	prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
 	
@@ -190,6 +200,8 @@ void init() {
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
+	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+	arial_font= new Font(prog_font, "../../fonts/Arial.ttf", 24, screengl);
 
 	// --------------------------------------------------------------------------
 	level= new Level(prog_repere, prog_repere);
@@ -223,6 +235,21 @@ void draw() {
 	
 	view_system->draw();
 	level->draw(view_system->_world2clip);
+
+	std::ostringstream font_str;
+	//font_str.precision(1);
+	//font_str << std::fixed;
+
+	float font_scale= 0.02f;
+	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 0.0f, 0.5f);
+	glm::vec2 position= glm::vec2(7.0f, 7.0f);
+
+	//font_str.str("hello");
+	//Text t(font_str.str(), position, font_scale, font_color);
+	std::string s= std::to_string(level->_score);
+	Text t(s, position, font_scale, font_color);
+	arial_font->set_text_group(0, t);
+	arial_font->draw();
 
 	SDL_GL_SwapWindow(window);
 }
