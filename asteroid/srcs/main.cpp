@@ -243,12 +243,21 @@ void draw() {
 	float font_scale= 0.02f;
 	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 0.0f, 0.5f);
 	glm::vec2 position= glm::vec2(7.0f, 7.0f);
+	glm::vec2 position2= glm::vec2(-7.0f, 7.0f);
 
 	//font_str.str("hello");
 	//Text t(font_str.str(), position, font_scale, font_color);
-	std::string s= std::to_string(level->_score);
+	std::string s= "score : "+ std::to_string(level->_score);
 	Text t(s, position, font_scale, font_color);
 	arial_font->set_text_group(0, t);
+
+	std::string s2= "vies : "+ std::to_string(level->_ships[0]->_lives);
+	Text t2(s2, position2, font_scale, font_color);
+	std::vector<Text> texts;
+	texts.push_back(t);
+	texts.push_back(t2);
+	arial_font->set_text_group(0, texts);
+
 	arial_font->draw();
 
 	SDL_GL_SwapWindow(window);

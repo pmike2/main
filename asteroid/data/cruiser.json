@@ -1,0 +1,45 @@
+{
+	"size" : [0.3, 0.7],
+	"score" : 10,
+	"lives" : 1,
+	"actions" : {
+		"zigzag" : [
+			{
+				"direction" : [0.05, -0.1],
+				"t" : 100
+			},
+			{
+				"direction" : [-0.05, -0.1],
+				"t" : 100
+			}
+		],
+		"right" : [
+			{
+				"direction" : [0.1, 0.0],
+				"t" : 600,
+				"shooting" : "crazy_bullet",
+				"t_shooting" : 50
+			}
+		],
+		"left" : [
+			{
+				"direction" : [-0.1, 0.0],
+				"t" : 400
+			}
+		],
+		"weird" : [
+			{
+				"name" : "zigzag",
+				"n" : 5
+			},
+			{
+				"name" : "right"
+			}
+		],
+		"main" : [
+			{
+				"name" : "weird"
+			}
+		]
+	}
+}

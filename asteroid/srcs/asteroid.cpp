@@ -17,8 +17,8 @@ Action::Action() {
 }
 
 
-Action::Action(glm::vec2 direction, unsigned int t, bool shooting, unsigned int t_shooting) :
-	_direction(direction), _t(t), _shooting(shooting), _t_shooting(t_shooting) {
+Action::Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting) :
+	_direction(direction), _t(t), _bullet_name(bullet_name), _bullet_model(NULL), _t_shooting(t_shooting) {
 
 }
 
@@ -34,10 +34,9 @@ ShipModel::ShipModel() {
 }
 
 
-ShipModel::ShipModel(std::string json_path) {
+ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 	std::string tmp_json_path= "./tmp.json";
 	std::string cmd= "../srcs/flat_json.py "+ json_path+ " "+ tmp_json_path;
-	//std::cout << cmd << "\n";
 	system(cmd.c_str());
 
 	std::ifstream ifs(tmp_json_path);
@@ -45,74 +44,65 @@ ShipModel::ShipModel(std::string json_path) {
 	ifs.close();
 
 	std::string cmd2= "rm "+ tmp_json_path;
-	system(cmd.c_str());
+	system(cmd2.c_str());
 
-	//std::string name= js["name"];
 	_size= glm::vec2(js["size"][0], js["size"][1]);
-
-	for (auto & action : js["actions"]) {
-		glm::vec2 direction(action["direction"][0], action["direction"][1]);
-		unsigned int t= action["t"];
-		bool shooting= false;
-		unsigned int t_shooting= 0;
-		if (action["shooting"]!= nullptr) {
-			shooting= true;
-			t_shooting= action["shooting"];
-		}
-
-		_actions.push_back(new Action(direction, t, shooting, t_shooting));
+	_lives= 1;
+	if (js["lives"]!= nullptr) {
+		_lives= js["lives"];
+	}
+	_score= 0;
+	if (js["score"]!= nullptr) {
+		_score= js["score"];
 	}
 
-	/*while (true) {
-		bool modified= false;
-		unsigned int action_idx= 0;
-		for (json::iterator it = js["actions"].begin(); it != js["actions"].end(); ++it) {
-			//std::cout << it.key() << " : " << it.value() << "\n";
-			auto & action_name= it.key();
-			auto & l_actions= it.value();
-			if (modified) {
-				break;
+	for (json::iterator it = js["actions"].begin(); it != js["actions"].end(); ++it) {
+		auto & action_name= it.key();
+		auto & l_actions= it.value();
+
+		_actions[action_name]= std::vector<Action *>();
+		for (auto & action : l_actions) {
+
+			glm::vec2 direction(0.0);
+			if (action["direction"]!= nullptr) {
+				direction= glm::vec2(action["direction"][0], action["direction"][1]);
 			}
-			for (auto & action :l_actions) {
-				if (action["name"]!= nullptr) {
-					//std::cout << action["name"] << "\n";
-					unsigned int n= 1;
-					if (action["n"]!= nullptr) {
-						n= action["n"];
-					}
-					json::iterator it_ok;
-					for (json::iterator it2 = js["actions"].begin(); it2 != js["actions"].end(); ++it2) {
-						auto & action_name2= it.key();
-						auto & l_actions2= it.value();
-						if (action_name2== action["name"]) {
-							it_ok= it2;
-							break;
-						}
-					}
-					modified= true;
-					js["actions"][action_idx]= [];
-					break;
-				}
-				action_idx++;
+			
+			int t= -1; // infini
+			if (action["t"]!= nullptr) {
+				t= action["t"];
 			}
+			
+			std::string bullet_name= "";
+			unsigned int t_shooting= 0;
+			if (action["shooting"]!= nullptr) {
+				bullet_name= action["shooting"];
+				t_shooting= action["t_shooting"];
+			}
+
+			_actions[action_name].push_back(new Action(direction, t, bullet_name, t_shooting));
 		}
-		if (!modified) {
-			break;
-		}
-	}*/
+	}
 }
 
 
 ShipModel::~ShipModel() {
-	for (auto action : _actions) {
-		delete action;
+
+}
+
+
+std::ostream & operator << (std::ostream & os, const ShipModel & model) {
+	os << "json = " << model._json_path << " ; actions = [";
+	for (auto action : model._actions) {
+		os << action.first << " , ";
 	}
-	_actions.clear();
+	os << "]";
+	return os;
 }
 
 
 // bullet -------------------------------------------------------------
-Bullet::Bullet() {
+/*Bullet::Bullet() {
 
 }
 
@@ -131,7 +121,7 @@ Bullet::~Bullet() {
 void Bullet::anim() {
 	_aabb._pos+= _velocity;
 }
-
+*/
 
 // ship -------------------------------------------------------------
 Ship::Ship() {
@@ -139,11 +129,13 @@ Ship::Ship() {
 }
 
 
-Ship::Ship(ShipModel * model, pt_type pos, bool friendly, glm::vec2 velocity) :
-	_model(model), _friendly(friendly), _velocity(velocity), _dead(false), _idx_action(0),
-	_t_action_start(std::chrono::system_clock::now()), _t_last_bullet(std::chrono::system_clock::now())
+Ship::Ship(ShipModel * model, pt_type pos, bool friendly) :
+	_model(model), _friendly(friendly), _dead(false), _shooting(false), _current_action_name("main"), _current_action_bullet_name("main"),
+	_idx_action(0), _idx_action_bullet(0),
+	_t_action_start(std::chrono::system_clock::now()), _t_last_bullet(std::chrono::system_clock::now()), _t_bullet_start(std::chrono::system_clock::now())
 {
 	_aabb= AABB_2D(pos, model->_size);
+	_lives= _model->_lives;
 }
 
 
@@ -152,30 +144,77 @@ Ship::~Ship() {
 }
 
 
-Bullet * Ship::anim() {
+void Ship::anim(bool is_hero) {
+	//std::cout << _current_action_name << "\n";
+
 	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
 	
+	// chgmt action ; _t < 0 correspond à une action infinie
 	auto d= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_action_start).count();
-	if (d> _model->_actions[_idx_action]->_t) {
+	if (_model->_actions[_current_action_name][_idx_action]->_t> 0 && d> _model->_actions[_current_action_name][_idx_action]->_t) {
 		_t_action_start= now;
 		_idx_action++;
-		if (_idx_action>= _model->_actions.size()) {
+		if (_idx_action>= _model->_actions[_current_action_name].size()) {
 			_idx_action= 0;
 		}
+		_idx_action_bullet= 0;
+		_t_bullet_start= now;
 	}
-	_velocity= _model->_actions[_idx_action]->_direction;
 
-	_aabb._pos+= _velocity;
+	ShipModel * bullet_model= get_current_bullet_model();
 
-	Bullet * bullet= NULL;
-	if (_model->_actions[_idx_action]->_shooting) {
-		auto d2= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_last_bullet).count();
-		if (d2> _model->_actions[_idx_action]->_t_shooting) {
-			_t_last_bullet= now;
-			bullet= new Bullet(AABB_2D(_aabb.center(), glm::vec2(0.1, 0.2)), false, glm::vec2(0.0, -0.2));
+	// chgmt action bullet
+	if (bullet_model!= NULL) {
+		auto d2= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_bullet_start).count();
+		
+		if (bullet_model->_actions[_current_action_bullet_name][_idx_action_bullet]->_t> 0 && d2> bullet_model->_actions[_current_action_bullet_name][_idx_action_bullet]->_t) {
+			_t_bullet_start= now;
+			_idx_action_bullet++;
+			if (_idx_action_bullet>= bullet_model->_actions[_current_action_bullet_name].size()) {
+				_idx_action_bullet= 0;
+			}
 		}
 	}
-	return bullet;
+
+	// faut-il tirer
+	_shooting= false;
+	if (bullet_model!= NULL) {
+		auto d3= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_last_bullet).count();
+		//std::cout << d3 << " ; " << bullet_model->_actions[_current_action_bullet_name][_idx_action_bullet]->_t_shooting << "\n";
+		//if (d3> bullet_model->_actions[_current_action_bullet_name][_idx_action_bullet]->_t_shooting) {
+		if (d3> _model->_actions[_current_action_name][_idx_action]->_t_shooting) {
+			_t_last_bullet= now;
+			_shooting= true;
+		}
+	}
+
+	// maj vitesse et position
+	if (!is_hero) {
+		_velocity= _model->_actions[_current_action_name][_idx_action]->_direction;
+	}
+	_aabb._pos+= _velocity;
+}
+
+
+ShipModel * Ship::get_current_bullet_model() {
+	return _model->_actions[_current_action_name][_idx_action]->_bullet_model;
+}
+
+
+void Ship::set_current_action(std::string action_name) {
+	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+
+	_current_action_name= action_name;
+	_current_action_bullet_name= "main";
+	_idx_action= 0;
+	_idx_action_bullet= 0;
+	_t_action_start= now;
+	_t_bullet_start= now;
+}
+
+std::ostream & operator << (std::ostream & os, const Ship & ship) {
+	os << "model = " << *ship._model << " ; aabb = [" << ship._aabb << "]";
+	return os;
 }
 
 
@@ -188,11 +227,30 @@ Level::Level() {
 Level::Level(GLuint prog_draw_simple, GLuint prog_draw_texture) 
 	: _pt_min(-10.0, -10.0), _pt_max(10.0, 10.0), _draw_aabb(true), _draw_texture(false),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false),
-	_shooting(false), _t_last_shooting(std::chrono::system_clock::now()), _gameover(false), _score(0) {
+	_gameover(false), _score(0) {
 
 	std::vector<std::string> jsons= list_files("../data", "json");
 	for (auto json_path : jsons) {
 		_models[basename(json_path)]= new ShipModel(json_path);
+	}
+	for (auto model : _models) {
+		for (auto l_action : model.second->_actions) {
+			for (auto action : l_action.second) {
+				if (action->_bullet_name!= "") {
+					bool found= false;
+					for (auto bullet_model : _models) {
+						if (bullet_model.first== action->_bullet_name) {
+							action->_bullet_model= bullet_model.second;
+							found= true;
+							break;
+						}
+					}
+					if (!found) {
+						std::cerr << "bullet model : " << action->_bullet_name << " non trouvé\n";
+					}
+				}
+			}
+		}
 	}
 
 	/*_models["hero"]= new ShipModel("../data/hero.json");
@@ -222,7 +280,7 @@ Level::Level(GLuint prog_draw_simple, GLuint prog_draw_texture)
 		std::vector<std::string>{"world2clip_matrix", "diffuse_texture_array"});*/
 	update_border_aabb();
 	update_ship_aabb();
-	update_bullet_aabb();
+	//update_bullet_aabb();
 }
 
 
@@ -232,10 +290,10 @@ Level::~Level() {
 	}
 	_ships.clear();
 
-	for (auto bullet : _bullets) {
+	/*for (auto bullet : _bullets) {
 		delete bullet;
 	}
-	_bullets.clear();
+	_bullets.clear();*/
 
 	for (auto context : _contexts) {
 		delete context.second;
@@ -299,7 +357,7 @@ void Level::draw_ship_aabb(const glm::mat4 & world2clip) {
 }
 
 
-void Level::draw_bullet_aabb(const glm::mat4 & world2clip) {
+/*void Level::draw_bullet_aabb(const glm::mat4 & world2clip) {
 	DrawContext * context= _contexts["bullet_aabb"];
 	
 	glUseProgram(context->_prog);
@@ -320,7 +378,7 @@ void Level::draw_bullet_aabb(const glm::mat4 & world2clip) {
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
-}
+}*/
 
 
 void Level::draw_texture(const glm::mat4 & world2clip) {
@@ -335,7 +393,7 @@ void Level::draw(const glm::mat4 & world2clip) {
 	if (_draw_aabb) {
 		draw_border_aabb(world2clip);
 		draw_ship_aabb(world2clip);
-		draw_bullet_aabb(world2clip);
+		//draw_bullet_aabb(world2clip);
 	}
 }
 
@@ -429,62 +487,6 @@ void Level::update_ship_aabb() {
 }
 
 
-void Level::update_bullet_aabb() {
-	DrawContext * context= _contexts["bullet_aabb"];
-	context->_n_pts= 0;
-	context->_n_attrs_per_pts= 7;
-
-	const unsigned int n_pts_per_bullet= 8;
-
-	for (auto bullet : _bullets) {
-		context->_n_pts+= n_pts_per_bullet;
-	}
-	//std::cout << "_n_pts_aabb = " << _n_pts_aabb << "\n";
-
-	float data[context->_n_pts* context->_n_attrs_per_pts];
-
-	for (unsigned int idx_bullet=0; idx_bullet<_bullets.size(); ++idx_bullet) {
-		glm::vec4 color;
-		if (_bullets[idx_bullet]->_friendly) {
-			color= friendly_color;
-		}
-		else {
-			color= unfriendly_color;
-		}
-		number positions[n_pts_per_bullet* 2]= {
-			_bullets[idx_bullet]->_aabb._pos.x, _bullets[idx_bullet]->_aabb._pos.y,
-			_bullets[idx_bullet]->_aabb._pos.x+ _bullets[idx_bullet]->_aabb._size.x, _bullets[idx_bullet]->_aabb._pos.y,
-
-			_bullets[idx_bullet]->_aabb._pos.x+ _bullets[idx_bullet]->_aabb._size.x, _bullets[idx_bullet]->_aabb._pos.y,
-			_bullets[idx_bullet]->_aabb._pos.x+ _bullets[idx_bullet]->_aabb._size.x, _bullets[idx_bullet]->_aabb._pos.y+ _bullets[idx_bullet]->_aabb._size.y,
-
-			_bullets[idx_bullet]->_aabb._pos.x+ _bullets[idx_bullet]->_aabb._size.x, _bullets[idx_bullet]->_aabb._pos.y+ _bullets[idx_bullet]->_aabb._size.y,
-			_bullets[idx_bullet]->_aabb._pos.x, _bullets[idx_bullet]->_aabb._pos.y+ _bullets[idx_bullet]->_aabb._size.y,
-
-			_bullets[idx_bullet]->_aabb._pos.x, _bullets[idx_bullet]->_aabb._pos.y+ _bullets[idx_bullet]->_aabb._size.y,
-			_bullets[idx_bullet]->_aabb._pos.x, _bullets[idx_bullet]->_aabb._pos.y
-		};
-
-		for (unsigned int idx_pt=0; idx_pt<n_pts_per_bullet; ++idx_pt) {
-			data[idx_bullet* n_pts_per_bullet* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 0]= float(positions[2* idx_pt]);
-			data[idx_bullet* n_pts_per_bullet* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 1]= float(positions[2* idx_pt+ 1]);
-			data[idx_bullet* n_pts_per_bullet* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 2]= 0.0; // z
-			for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
-				data[idx_bullet* n_pts_per_bullet* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 3+ idx_color]= color[idx_color];
-			}
-		}
-	}
-	/*for (int i=0; i<_n_pts_aabb* n_attrs_per_pts; ++i) {
-		std::cout << data[i] << " ; ";
-	}
-	std::cout << "\n";*/
-
-	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-
 void Level::anim() {
 	if (_gameover) {
 		return;
@@ -494,25 +496,23 @@ void Level::anim() {
 		add_rand_ennemy();
 	}
 
-	float HERO_VELOCITY= 0.1;
+	// joystick vers le haut est négatif !
+	_ships[0]->_velocity.x= HERO_VELOCITY* _joystick[0];
+	_ships[0]->_velocity.y= -1.0* HERO_VELOCITY* _joystick[1];
+
 	if (_key_left) {
-		_ships[0]->_aabb._pos.x-= HERO_VELOCITY;
+		_ships[0]->_velocity.x= -1.0* HERO_VELOCITY;
 	}
 	if (_key_right) {
-		_ships[0]->_aabb._pos.x+= HERO_VELOCITY;
+		_ships[0]->_velocity.x= HERO_VELOCITY;
 	}
 	if (_key_down) {
-		_ships[0]->_aabb._pos.y-= HERO_VELOCITY;
+		_ships[0]->_velocity.y= -1.0* HERO_VELOCITY;
 	}
 	if (_key_up) {
-		_ships[0]->_aabb._pos.y+= HERO_VELOCITY;
+		_ships[0]->_velocity.y= HERO_VELOCITY;
 	}
 
-	// joystick vers le haut est négatif !
-	_ships[0]->_aabb._pos.x+= HERO_VELOCITY* _joystick[0];
-	_ships[0]->_aabb._pos.y-= HERO_VELOCITY* _joystick[1];
-
-	
 	if (_ships[0]->_aabb._pos.x> _pt_max.x- _ships[0]->_aabb._size.x) {
 		_ships[0]->_aabb._pos.x= _pt_max.x- _ships[0]->_aabb._size.x;
 	}
@@ -526,10 +526,15 @@ void Level::anim() {
 		_ships[0]->_aabb._pos.y= _pt_min.y;
 	}
 
-	for (unsigned int idx_ship=1; idx_ship<_ships.size(); ++idx_ship) {
-		Bullet * bullet= _ships[idx_ship]->anim();
-		if (bullet!= NULL) {
-			_bullets.push_back(bullet);
+	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
+		bool is_hero= false;
+		if (idx_ship== 0) {
+			is_hero= true;
+		}
+		bool friendly= is_hero;
+		_ships[idx_ship]->anim(is_hero);
+		if (_ships[idx_ship]->_shooting) {
+			_ships.push_back(new Ship(_ships[idx_ship]->get_current_bullet_model(), _ships[idx_ship]->_aabb.center(), friendly));
 		}
 	}
 
@@ -546,72 +551,7 @@ void Level::anim() {
 		else if (_ships[idx_ship]->_aabb._pos.y< _pt_min.y- _ships[idx_ship]->_aabb._size.y) {
 			_ships[idx_ship]->_dead= true;
 		}
-
-		if (_ships[idx_ship]->_dead) {
-			continue;
-		}
-		/*if (rand_int(0, 100)> 99) {
-			_bullets.push_back(new Bullet(AABB_2D(_ships[idx_ship]->_aabb.center(), glm::vec2(0.1, 0.2)), false, glm::vec2(0.0, -0.1)));
-		}*/
 	}
-
-	if (_shooting) {
-		std::chrono::system_clock::time_point t2= std::chrono::system_clock::now();
-		auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t2- _t_last_shooting).count();
-		if (d> DELTA_BULLET) {
-			_t_last_shooting= t2;
-			_bullets.push_back(new Bullet(AABB_2D(_ships[0]->_aabb.center(), glm::vec2(0.1, 0.2)), true, glm::vec2(0.0, 0.2)));
-		}
-	}
-
-	for (auto bullet : _bullets) {
-		bullet->anim();
-
-		if (bullet->_aabb._pos.x> _pt_max.x) {
-			bullet->_dead= true;
-		}
-		else if (bullet->_aabb._pos.x< _pt_min.x- bullet->_aabb._size.x) {
-			bullet->_dead= true;
-		}
-		if (bullet->_aabb._pos.y> _pt_max.y) {
-			bullet->_dead= true;
-		}
-		else if (bullet->_aabb._pos.y< _pt_min.y- bullet->_aabb._size.y) {
-			bullet->_dead= true;
-		}
-	}
-
-	for (auto ship : _ships) {
-		if (ship->_dead) {
-			continue;
-		}
-		for (auto bullet : _bullets) {
-			if (bullet->_dead) {
-				continue;
-			}
-			if (ship->_friendly && bullet->_friendly) {
-				continue;
-			}
-			if (!ship->_friendly && !bullet->_friendly) {
-				continue;
-			}
-			if (aabb_intersects_aabb(&ship->_aabb, &bullet->_aabb)) {
-				ship->_dead= true;
-				bullet->_dead= true;
-				if (bullet->_friendly) {
-					_score++;
-				}
-				break;
-			}
-		}
-	}
-
-	/*for (unsigned int idx_ship=1; idx_ship<_ships.size(); ++idx_ship) {
-		if (aabb_intersects_aabb(&_ships[0]->_aabb, &_ships[idx_ship]->_aabb)) {
-			_gameover= true;
-			break;
-		}
-	}*/
 
 	for (unsigned int idx_ship=0; idx_ship<_ships.size()- 1; ++idx_ship) {
 		if (_ships[idx_ship]->_dead) {
@@ -621,28 +561,42 @@ void Level::anim() {
 			if (_ships[idx_ship2]->_dead) {
 				continue;
 			}
+			if (
+				(_ships[idx_ship]->_friendly && _ships[idx_ship2]->_friendly) ||
+				(!_ships[idx_ship]->_friendly && !_ships[idx_ship2]->_friendly)
+			) {
+				continue;
+			}
 			if (aabb_intersects_aabb(&_ships[idx_ship]->_aabb, &_ships[idx_ship2]->_aabb)) {
-				_ships[idx_ship]->_dead= true;
-				_ships[idx_ship2]->_dead= true;
+				_ships[idx_ship]->_lives--;
+				_ships[idx_ship2]->_lives--;
+				if (_ships[idx_ship]->_lives<= 0) {
+					_ships[idx_ship]->_dead= true;
+					if (!_ships[idx_ship]->_friendly) {
+						_score+= _ships[idx_ship]->_model->_score;
+					}
+				}
+				if (_ships[idx_ship2]->_lives<= 0) {
+					_ships[idx_ship2]->_dead= true;
+					if (!_ships[idx_ship2]->_friendly) {
+						_score+= _ships[idx_ship2]->_model->_score;
+					}
+				}
 			}
 		}
 	}
 
 	if (_ships[0]->_dead) {
 		_gameover= true;
+		std::cout << "gameover\n";
+		return;
 	}
 
 	_ships.erase(std::remove_if(_ships.begin(), _ships.end(), [](Ship * s){
 		return s->_dead;
 	}), _ships.end());
-	_bullets.erase(std::remove_if(_bullets.begin(), _bullets.end(), [](Bullet * b){
-		return b->_dead;
-	}), _bullets.end());
 
 	update_ship_aabb();
-	update_bullet_aabb();
-
-	//std::cout << "_ships.size = " << _ships.size() << " ; _bullets.size = " << _bullets.size() << "\n";
 }
 
 
@@ -664,7 +618,7 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 		return true;
 	}
 	else if (key== SDLK_a) {
-		_shooting= true;
+		_ships[0]->set_current_action("shoot");
 		return true;
 	}
 	return false;
@@ -689,7 +643,7 @@ bool Level::key_up(InputState * input_state, SDL_Keycode key) {
 		return true;
 	}
 	else if (key== SDLK_a) {
-		_shooting= false;
+		_ships[0]->set_current_action("no_shoot");
 		return true;
 	}
 	else if (key== SDLK_z) {
@@ -702,7 +656,7 @@ bool Level::key_up(InputState * input_state, SDL_Keycode key) {
 bool Level::joystick_down(unsigned int button_idx) {
 	//std::cout << button_idx << "\n";
 	if (button_idx== 0) {
-		_shooting= true;
+		_ships[0]->_shooting= true;
 		return true;
 	}
 	return false;
@@ -712,7 +666,7 @@ bool Level::joystick_down(unsigned int button_idx) {
 bool Level::joystick_up(unsigned int button_idx) {
 	//std::cout << button_idx << "\n";
 	if (button_idx== 0) {
-		_shooting= false;
+		_ships[0]->_shooting= false;
 		return true;
 	}
 	return false;
@@ -741,8 +695,9 @@ void Level::add_rand_ennemy() {
 	else if (n== 1) {
 		model_name= "fatman";
 	}
+	//model_name= "cruiser";
 
-	Ship * ennemy= new Ship(_models[model_name], pos, false, glm::vec2(0.0, -1.0* rand_float(0.02, 0.07)));
+	Ship * ennemy= new Ship(_models[model_name], pos, false);
 	bool ok= true;
 	for (auto ship : _ships) {
 		if (aabb_intersects_aabb(&ship->_aabb, &ennemy->_aabb)) {
@@ -768,15 +723,16 @@ void Level::reinit() {
 	}
 	_ships.clear();
 
-	for (auto bullet : _bullets) {
+	/*for (auto bullet : _bullets) {
 		delete bullet;
 	}
-	_bullets.clear();
+	_bullets.clear();*/
 
-	_ships.push_back(new Ship(_models["hero"], glm::vec2(0.0, _pt_min.y+ 2.0), true, glm::vec2(0.0)));
-	//unsigned int n_ennemies= rand_int(10, 20);
-	/*unsigned int n_ennemies= 5;
-	for (unsigned int i=0; i<n_ennemies; ++i) {
+	_ships.push_back(new Ship(_models["hero"], glm::vec2(0.0, _pt_min.y+ 2.0), true));
+
+	unsigned int n_ennemies= rand_int(10, 20);
+	//unsigned int n_ennemies= 1;
+	/*for (unsigned int i=0; i<n_ennemies; ++i) {
 		add_rand_ennemy();
 	}*/
 }
