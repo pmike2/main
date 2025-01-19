@@ -1,15 +1,16 @@
 {
+	"type" : "ennemy",
 	"size" : [2.0, 1.0],
 	"score" : 20,
 	"lives" : 5,
 	"actions" : {
 		"zigzag1" : [
 			{
-				"direction" : [-0.1, -0.01],
+				"direction" : [-0.1, -0.03],
 				"t" : 300
 			},
 			{
-				"direction" : [0.1, -0.01],
+				"direction" : [0.1, -0.03],
 				"t" : 300
 			}
 		],

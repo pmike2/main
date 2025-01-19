@@ -1,0 +1,18 @@
+{
+	"type" : "ennemy",
+	"size" : [1.0, 4.0],
+	"score" : 50,
+	"lives" : 10,
+	"actions" : {
+		"main" : [
+			{
+				"direction" : [0.0, -0.01],
+				"t" : 2000
+			},
+			{
+				"direction" : [0.0, -0.4],
+				"t" : 200
+			}
+		]
+	}
+}

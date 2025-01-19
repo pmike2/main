@@ -13,7 +13,6 @@
 #include "utile.h"
 #include "gl_utils.h"
 #include "input_state.h"
-#include "font.h"
 #include "asteroid.h"
 
 
@@ -38,23 +37,21 @@ bool done= false;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_repere, prog_select, prog_font;
+GLuint prog_aabb, prog_font;
 GLuint g_vao;
 
-ViewSystem * view_system;
+//ViewSystem * view_system;
+ScreenGL * screengl;
 
 Level * level;
 
-Font * arial_font;
-ScreenGL * screengl;
 
-
-void mouse_motion(int x, int y, int xrel, int yrel) {
+/*void mouse_motion(int x, int y, int xrel, int yrel) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (view_system->mouse_motion(input_state)) {
-		//return;
+		return;
 	}
 }
 
@@ -77,7 +74,7 @@ void mouse_button_down(int x, int y, unsigned short button) {
 		return;
 	}
 
-}
+}*/
 
 
 void key_down(SDL_Keycode key) {
@@ -87,9 +84,9 @@ void key_down(SDL_Keycode key) {
 		done= true;
 	}
 
-	if (view_system->key_down(input_state, key)) {
+	/*if (view_system->key_down(input_state, key)) {
 		return;
-	}
+	}*/
 
 	if (level->key_down(input_state, key)) {
 		return;
@@ -100,9 +97,9 @@ void key_down(SDL_Keycode key) {
 void key_up(SDL_Keycode key) {
 	input_state->key_up(key);
 
-	if (view_system->key_up(input_state, key)) {
+	/*if (view_system->key_up(input_state, key)) {
 		return;
-	}
+	}*/
 
 	if (level->key_up(input_state, key)) {
 		return;
@@ -137,6 +134,13 @@ void init() {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 	
+	if (SDL_NumJoysticks()> 0){
+		SDL_Joystick * joy= SDL_JoystickOpen(0);
+		if (joy) {
+			std::cout << "joystick OK; n axes=" << SDL_JoystickNumAxes(joy) << " ; n buttons=" << SDL_JoystickNumButtons(joy) << "\n";
+		}
+	}
+
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -185,44 +189,24 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_repere= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
-	prog_select= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
+	prog_aabb= create_prog("../shaders/vertexshader_aabb.txt"  , "../shaders/fragmentshader_aabb.txt");
 	prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
 	
 	// --------------------------------------------------------------------------
-	view_system= new ViewSystem(prog_repere, prog_select, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	/*view_system= new ViewSystem(prog_repere, prog_select, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_repere= false;
 	view_system->_repere->_is_box= false;
-	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), -0.5* M_PI, 0.0f, 25.0f);
+	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), -0.5* M_PI, 0.0f, 25.0f);*/
+	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
-	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-	arial_font= new Font(prog_font, "../../fonts/Arial.ttf", 24, screengl);
 
 	// --------------------------------------------------------------------------
-	level= new Level(prog_repere, prog_repere);
-
-	SDL_Joystick *joy;
-// Check for joystick
-if(SDL_NumJoysticks()>0){
-  // Open joystick
-  joy=SDL_JoystickOpen(0);
-  
-  if(joy)
-  {
-    printf("Opened Joystick 0\n");
-    printf("Name: %s\n", SDL_JoystickName(0));
-    printf("Number of Axes: %d\n", SDL_JoystickNumAxes(joy));
-    printf("Number of Buttons: %d\n", SDL_JoystickNumButtons(joy));
-    printf("Number of Balls: %d\n", SDL_JoystickNumBalls(joy));
-  }
-  else
-    printf("Couldn't open Joystick 0\n");
-	}
+	level= new Level(prog_aabb, prog_font, screengl);
 }
 
 
@@ -233,32 +217,8 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	
-	view_system->draw();
-	level->draw(view_system->_world2clip);
-
-	std::ostringstream font_str;
-	//font_str.precision(1);
-	//font_str << std::fixed;
-
-	float font_scale= 0.02f;
-	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 0.0f, 0.5f);
-	glm::vec2 position= glm::vec2(7.0f, 7.0f);
-	glm::vec2 position2= glm::vec2(-7.0f, 7.0f);
-
-	//font_str.str("hello");
-	//Text t(font_str.str(), position, font_scale, font_color);
-	std::string s= "score : "+ std::to_string(level->_score);
-	Text t(s, position, font_scale, font_color);
-	arial_font->set_text_group(0, t);
-
-	std::string s2= "vies : "+ std::to_string(level->_ships[0]->_lives);
-	Text t2(s2, position2, font_scale, font_color);
-	std::vector<Text> texts;
-	texts.push_back(t);
-	texts.push_back(t2);
-	arial_font->set_text_group(0, texts);
-
-	arial_font->draw();
+	//view_system->draw();
+	level->draw();
 
 	SDL_GL_SwapWindow(window);
 }
@@ -303,7 +263,7 @@ void main_loop() {
 	while (!done) {
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
-				case SDL_MOUSEMOTION:
+				/*case SDL_MOUSEMOTION:
 					mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
 					break;
 					
@@ -313,7 +273,7 @@ void main_loop() {
 					
 				case SDL_MOUSEBUTTONDOWN:
 					mouse_button_down(event.button.x, event.button.y, event.button.button);
-					break;
+					break;*/
 
 				case SDL_KEYDOWN:
 					key_down(event.key.keysym.sym);
@@ -355,8 +315,9 @@ void main_loop() {
 
 void clean() {
 	delete level;
-	delete view_system;
+	//delete view_system;
 	delete input_state;
+	delete screengl;
 
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);

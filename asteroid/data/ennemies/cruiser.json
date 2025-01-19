@@ -1,4 +1,5 @@
 {
+	"type" : "ennemy",
 	"size" : [0.3, 0.7],
 	"score" : 10,
 	"lives" : 1,
@@ -18,7 +19,7 @@
 				"direction" : [0.1, 0.0],
 				"t" : 600,
 				"shooting" : "crazy_bullet",
-				"t_shooting" : 50
+				"t_shooting" : 90
 			}
 		],
 		"left" : [

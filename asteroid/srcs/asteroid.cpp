@@ -46,6 +46,19 @@ ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 	std::string cmd2= "rm "+ tmp_json_path;
 	system(cmd2.c_str());
 
+	if (js["type"]== "hero") {
+		_type= HERO;
+	}
+	else if (js["type"]== "ennemy") {
+		_type= ENNEMY;
+	}
+	else if (js["type"]== "bullet") {
+		_type= BULLET;
+	}
+	else {
+		std::cerr << "type : " << js["type"] << " non reconnu\n";
+	}
+
 	_size= glm::vec2(js["size"][0], js["size"][1]);
 	_lives= 1;
 	if (js["lives"]!= nullptr) {
@@ -101,28 +114,6 @@ std::ostream & operator << (std::ostream & os, const ShipModel & model) {
 }
 
 
-// bullet -------------------------------------------------------------
-/*Bullet::Bullet() {
-
-}
-
-
-Bullet::Bullet(const AABB_2D & aabb, bool friendly, glm::vec2 velocity) :
-	_aabb(aabb), _friendly(friendly), _velocity(velocity), _dead(false) {
-	
-}
-
-
-Bullet::~Bullet() {
-	
-}
-
-
-void Bullet::anim() {
-	_aabb._pos+= _velocity;
-}
-*/
-
 // ship -------------------------------------------------------------
 Ship::Ship() {
 
@@ -144,9 +135,7 @@ Ship::~Ship() {
 }
 
 
-void Ship::anim(bool is_hero) {
-	//std::cout << _current_action_name << "\n";
-
+void Ship::anim() {
 	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
 	
 	// chgmt action ; _t < 0 correspond à une action infinie
@@ -189,7 +178,7 @@ void Ship::anim(bool is_hero) {
 	}
 
 	// maj vitesse et position
-	if (!is_hero) {
+	if (_model->_type== ENNEMY || _model->_type== BULLET) {
 		_velocity= _model->_actions[_current_action_name][_idx_action]->_direction;
 	}
 	_aabb._pos+= _velocity;
@@ -224,13 +213,24 @@ Level::Level() {
 }
 
 
-Level::Level(GLuint prog_draw_simple, GLuint prog_draw_texture) 
-	: _pt_min(-10.0, -10.0), _pt_max(10.0, 10.0), _draw_aabb(true), _draw_texture(false),
+Level::Level(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl) 
+	: _draw_aabb(true), _draw_texture(false),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false),
-	_gameover(false), _score(0) {
+	_mode(INACTIVE), _score(0) {
 
-	std::vector<std::string> jsons= list_files("../data", "json");
-	for (auto json_path : jsons) {
+	const float MARGIN= 1.0;
+	_pt_min= glm::vec2(-screengl->_gl_width* 0.5f+ MARGIN, -screengl->_gl_height* 0.5f+ MARGIN);
+	_pt_max= glm::vec2(screengl->_gl_width* 0.5f- MARGIN, screengl->_gl_height* 0.5f- MARGIN);
+	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
+	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
+
+	std::vector<std::string> jsons_total;
+	for (auto ship_type : std::vector<std::string>{"bullets", "ennemies", "heroes"}) {
+		std::vector<std::string> jsons= list_files("../data/"+ ship_type, "json");
+		jsons_total.insert(jsons_total.end(), jsons.begin(), jsons.end());
+	}
+	
+	for (auto json_path : jsons_total) {
 		_models[basename(json_path)]= new ShipModel(json_path);
 	}
 	for (auto model : _models) {
@@ -253,9 +253,7 @@ Level::Level(GLuint prog_draw_simple, GLuint prog_draw_texture)
 		}
 	}
 
-	/*_models["hero"]= new ShipModel("../data/hero.json");
-	_models["cruiser"]= new ShipModel("../data/cruiser.json");
-	_models["fatman"]= new ShipModel("../data/fatman.json");*/
+	read_highest_scores();
 
 	reinit();
 
@@ -263,24 +261,16 @@ Level::Level(GLuint prog_draw_simple, GLuint prog_draw_texture)
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
-	_contexts["border_aabb"]= new DrawContext(prog_draw_simple, _buffers[0],
+	_contexts["border_aabb"]= new DrawContext(prog_aabb, _buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
-		std::vector<std::string>{"world2clip_matrix"});
+		std::vector<std::string>{"camera2clip_matrix"});
 
-	_contexts["ship_aabb"]= new DrawContext(prog_draw_simple, _buffers[1],
+	_contexts["ship_aabb"]= new DrawContext(prog_aabb, _buffers[1],
 		std::vector<std::string>{"position_in", "color_in"},
-		std::vector<std::string>{"world2clip_matrix"});
-	
-	_contexts["bullet_aabb"]= new DrawContext(prog_draw_simple, _buffers[2],
-		std::vector<std::string>{"position_in", "color_in"},
-		std::vector<std::string>{"world2clip_matrix"});
+		std::vector<std::string>{"camera2clip_matrix"});
 
-	/*_contexts["texture"]= new DrawContext(prog_draw_texture, _buffers[],
-		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
-		std::vector<std::string>{"world2clip_matrix", "diffuse_texture_array"});*/
 	update_border_aabb();
 	update_ship_aabb();
-	//update_bullet_aabb();
 }
 
 
@@ -289,11 +279,6 @@ Level::~Level() {
 		delete ship;
 	}
 	_ships.clear();
-
-	/*for (auto bullet : _bullets) {
-		delete bullet;
-	}
-	_bullets.clear();*/
 
 	for (auto context : _contexts) {
 		delete context.second;
@@ -309,19 +294,19 @@ Level::~Level() {
 }
 
 
-void Level::draw_border_aabb(const glm::mat4 & world2clip) {
+void Level::draw_border_aabb() {
 	DrawContext * context= _contexts["border_aabb"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
-	glUniformMatrix4fv(context->_locs["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
+	glUniformMatrix4fv(context->_locs["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	
 	glEnableVertexAttribArray(context->_locs["position_in"]);
 	glEnableVertexAttribArray(context->_locs["color_in"]);
 
-	glVertexAttribPointer(context->_locs["position_in"], 3, GL_FLOAT, GL_FALSE, 7* sizeof(GL_FLOAT), (void*)0);
-	glVertexAttribPointer(context->_locs["color_in"], 4, GL_FLOAT, GL_FALSE, 7* sizeof(GL_FLOAT), (void*)(3* sizeof(GL_FLOAT)));
+	glVertexAttribPointer(context->_locs["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
+	glVertexAttribPointer(context->_locs["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
 
 	glDrawArrays(GL_LINES, 0, context->_n_pts);
 
@@ -333,19 +318,19 @@ void Level::draw_border_aabb(const glm::mat4 & world2clip) {
 }
 
 
-void Level::draw_ship_aabb(const glm::mat4 & world2clip) {
+void Level::draw_ship_aabb() {
 	DrawContext * context= _contexts["ship_aabb"];
 	
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
-	glUniformMatrix4fv(context->_locs["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
+	glUniformMatrix4fv(context->_locs["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	
 	glEnableVertexAttribArray(context->_locs["position_in"]);
 	glEnableVertexAttribArray(context->_locs["color_in"]);
 
-	glVertexAttribPointer(context->_locs["position_in"], 3, GL_FLOAT, GL_FALSE, 7* sizeof(GL_FLOAT), (void*)0);
-	glVertexAttribPointer(context->_locs["color_in"], 4, GL_FLOAT, GL_FALSE, 7* sizeof(GL_FLOAT), (void*)(3* sizeof(GL_FLOAT)));
+	glVertexAttribPointer(context->_locs["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
+	glVertexAttribPointer(context->_locs["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
 
 	glDrawArrays(GL_LINES, 0, context->_n_pts);
 
@@ -357,51 +342,118 @@ void Level::draw_ship_aabb(const glm::mat4 & world2clip) {
 }
 
 
-/*void Level::draw_bullet_aabb(const glm::mat4 & world2clip) {
-	DrawContext * context= _contexts["bullet_aabb"];
-	
-	glUseProgram(context->_prog);
-	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
-	
-	glUniformMatrix4fv(context->_locs["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
-	
-	glEnableVertexAttribArray(context->_locs["position_in"]);
-	glEnableVertexAttribArray(context->_locs["color_in"]);
-
-	glVertexAttribPointer(context->_locs["position_in"], 3, GL_FLOAT, GL_FALSE, 7* sizeof(GL_FLOAT), (void*)0);
-	glVertexAttribPointer(context->_locs["color_in"], 4, GL_FLOAT, GL_FALSE, 7* sizeof(GL_FLOAT), (void*)(3* sizeof(GL_FLOAT)));
-
-	glDrawArrays(GL_LINES, 0, context->_n_pts);
-
-	glDisableVertexAttribArray(context->_locs["position_in"]);
-	glDisableVertexAttribArray(context->_locs["color_in"]);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
-}*/
-
-
-void Level::draw_texture(const glm::mat4 & world2clip) {
+void Level::draw_texture() {
 
 }
 
 
-void Level::draw(const glm::mat4 & world2clip) {
-	if (_draw_texture) {
-		draw_texture(world2clip);
+void Level::draw() {
+	if (_mode== PLAYING) {
+		if (_draw_texture) {
+			draw_texture();
+		}
+		if (_draw_aabb) {
+			draw_border_aabb();
+			draw_ship_aabb();
+		}
+		show_playing_info();
 	}
-	if (_draw_aabb) {
-		draw_border_aabb(world2clip);
-		draw_ship_aabb(world2clip);
-		//draw_bullet_aabb(world2clip);
+	else if (_mode== INACTIVE) {
+		show_inactive_info();
 	}
+	else if (_mode== SET_SCORE_NAME) {
+		show_set_score_name_info();
+	}
+}
+
+
+void Level::show_playing_info() {
+	std::ostringstream font_str;
+
+	float font_scale= 0.01f;
+	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 0.0f, 0.5f);
+
+	std::string s1= "score : "+ std::to_string(_score);
+	glm::vec2 position1= glm::vec2(6.0f, 7.0f);
+	Text t1(s1, position1, font_scale, font_color);
+
+	std::string s2= "vies : "+ std::to_string(_ships[0]->_lives);
+	glm::vec2 position2= glm::vec2(-9.5f, 7.0f);
+	Text t2(s2, position2, font_scale, font_color);
+	
+	std::vector<Text> texts;
+	texts.push_back(t1);
+	texts.push_back(t2);
+	/*for (unsigned int i=0; i<_highest_scores.size(); ++i) {
+		std::string s3= std::to_string(i+ 1)+ " "+ _highest_scores[i].first+ " " + std::to_string(_highest_scores[i].second);
+		glm::vec2 position3= glm::vec2(7.0f, -5.0f- float(i)* 0.5);
+		Text t3(s3, position3, font_scale, font_color);
+		texts.push_back(t3);
+	}*/
+	_font->set_text_group(0, texts);
+	_font->draw();
+}
+
+
+void Level::show_inactive_info() {
+	float font_scale= 0.02f;
+	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 0.0f, 0.5f);
+
+	std::string s1= "score "+ std::to_string(_score);
+	glm::vec2 position1= glm::vec2(-5.0f, 2.0f);
+	Text t1(s1, position1, font_scale, font_color);
+
+	std::string s2= "records ";
+	glm::vec2 position2= glm::vec2(2.0f, 2.0f);
+	Text t2(s2, position2, font_scale, font_color);
+
+	std::vector<Text> texts;
+	texts.push_back(t1);
+	texts.push_back(t2);
+	for (unsigned int i=0; i<_highest_scores.size(); ++i) {
+		std::string s3= std::to_string(i+ 1)+ " "+ _highest_scores[i].first+ " " + std::to_string(_highest_scores[i].second);
+		glm::vec2 position3= glm::vec2(2.0f, 1.0f- float(i)* 1.0);
+		Text t3(s3, position3, font_scale, font_color);
+		texts.push_back(t3);
+	}
+	_font->set_text_group(0, texts);
+	_font->draw();
+}
+
+
+void Level::show_set_score_name_info() {
+	float font_scale= 0.02f;
+	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 0.0f, 0.5f);
+
+	std::string s1= "NOUVEAU RECORD";
+	glm::vec2 position1= glm::vec2(-5.0f, 2.0f);
+	Text t1(s1, position1, font_scale, font_color);
+
+	std::vector<Text> texts;
+	texts.push_back(t1);
+	//texts.push_back(t2);
+	for (unsigned int i=0; i<_highest_scores.size(); ++i) {
+		if (i== _new_highest_idx) {
+			font_color= glm::vec4(1.0f, 0.0f, 0.0f, 0.5f);
+		}
+		else {
+			font_color= glm::vec4(1.0f, 1.0f, 0.0f, 0.5f);
+		}
+		std::string s3= std::to_string(i+ 1)+ " "+ _highest_scores[i].first+ " " + std::to_string(_highest_scores[i].second);
+		glm::vec2 position3= glm::vec2(-5.0f, 1.0f- float(i)* 1.0);
+		Text t3(s3, position3, font_scale, font_color);
+		texts.push_back(t3);
+	}
+
+	_font->set_text_group(0, texts);
+	_font->draw();
 }
 
 
 void Level::update_border_aabb() {
 	DrawContext * context= _contexts["border_aabb"];
 	context->_n_pts= 8;
-	context->_n_attrs_per_pts= 7;
+	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 	float positions[8* 2]= {
@@ -420,9 +472,8 @@ void Level::update_border_aabb() {
 	for (unsigned int idx_pt=0; idx_pt<8; ++idx_pt) {
 		data[context->_n_attrs_per_pts* idx_pt+ 0]= positions[2* idx_pt];
 		data[context->_n_attrs_per_pts* idx_pt+ 1]= positions[2* idx_pt+ 1];
-		data[context->_n_attrs_per_pts* idx_pt+ 2]= 0.0;
 		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
-			data[context->_n_attrs_per_pts* idx_pt+ 3+ idx_color]= border_color[idx_color];
+			data[context->_n_attrs_per_pts* idx_pt+ 2+ idx_color]= border_color[idx_color];
 		}
 	}
 
@@ -435,7 +486,7 @@ void Level::update_border_aabb() {
 void Level::update_ship_aabb() {
 	DrawContext * context= _contexts["ship_aabb"];
 	context->_n_pts= 0;
-	context->_n_attrs_per_pts= 7;
+	context->_n_attrs_per_pts= 6;
 
 	const unsigned int n_pts_per_ship= 8;
 
@@ -470,16 +521,11 @@ void Level::update_ship_aabb() {
 		for (unsigned int idx_pt=0; idx_pt<n_pts_per_ship; ++idx_pt) {
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 0]= float(positions[2* idx_pt]);
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 1]= float(positions[2* idx_pt+ 1]);
-			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 2]= 0.0; // z
 			for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
-				data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 3+ idx_color]= color[idx_color];
+				data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= color[idx_color];
 			}
 		}
 	}
-	/*for (int i=0; i<_n_pts_aabb* n_attrs_per_pts; ++i) {
-		std::cout << data[i] << " ; ";
-	}
-	std::cout << "\n";*/
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_STATIC_DRAW);
@@ -487,11 +533,7 @@ void Level::update_ship_aabb() {
 }
 
 
-void Level::anim() {
-	if (_gameover) {
-		return;
-	}
-
+void Level::anim_playing() {
 	if (rand_int(0, 100)> 98) {
 		add_rand_ennemy();
 	}
@@ -513,43 +555,48 @@ void Level::anim() {
 		_ships[0]->_velocity.y= HERO_VELOCITY;
 	}
 
+	// ne pas utiliser auto ici car les push_back dans le for modifie l'itérateur
+	//for (auto ship : _ships) {
+	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
+		Ship * ship= _ships[idx_ship];
+		bool friendly= false;
+		if (ship->_model->_type== HERO) {
+			friendly= true;
+		}
+		ship->anim();
+		if (ship->_shooting) {
+			_ships.push_back(new Ship(ship->get_current_bullet_model(), ship->_aabb.center(), friendly));
+		}
+	}
+
 	if (_ships[0]->_aabb._pos.x> _pt_max.x- _ships[0]->_aabb._size.x) {
 		_ships[0]->_aabb._pos.x= _pt_max.x- _ships[0]->_aabb._size.x;
 	}
 	if (_ships[0]->_aabb._pos.x< _pt_min.x) {
 		_ships[0]->_aabb._pos.x= _pt_min.x;
 	}
-	if (_ships[0]->_aabb._pos.y> _pt_max.x- _ships[0]->_aabb._size.y) {
-		_ships[0]->_aabb._pos.y= _pt_max.x- _ships[0]->_aabb._size.y;
+	if (_ships[0]->_aabb._pos.y> _pt_max.y- _ships[0]->_aabb._size.y) {
+		_ships[0]->_aabb._pos.y= _pt_max.y- _ships[0]->_aabb._size.y;
 	}
 	if (_ships[0]->_aabb._pos.y< _pt_min.y) {
 		_ships[0]->_aabb._pos.y= _pt_min.y;
 	}
 
-	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
-		bool is_hero= false;
-		if (idx_ship== 0) {
-			is_hero= true;
+	for (auto ship : _ships) {
+		if (ship->_model->_type!= ENNEMY && ship->_model->_type!= BULLET) {
+			continue;
 		}
-		bool friendly= is_hero;
-		_ships[idx_ship]->anim(is_hero);
-		if (_ships[idx_ship]->_shooting) {
-			_ships.push_back(new Ship(_ships[idx_ship]->get_current_bullet_model(), _ships[idx_ship]->_aabb.center(), friendly));
+		if (ship->_aabb._pos.x> _pt_max.x) {
+			ship->_dead= true;
 		}
-	}
-
-	for (unsigned int idx_ship=1; idx_ship<_ships.size(); ++idx_ship) {
-		if (_ships[idx_ship]->_aabb._pos.x> _pt_max.x) {
-			_ships[idx_ship]->_dead= true;
+		else if (ship->_aabb._pos.x< _pt_min.x- ship->_aabb._size.x) {
+			ship->_dead= true;
 		}
-		else if (_ships[idx_ship]->_aabb._pos.x< _pt_min.x- _ships[idx_ship]->_aabb._size.x) {
-			_ships[idx_ship]->_dead= true;
+		if (ship->_aabb._pos.y> _pt_max.y) {
+			ship->_dead= true;
 		}
-		if (_ships[idx_ship]->_aabb._pos.y> _pt_max.y) {
-			_ships[idx_ship]->_dead= true;
-		}
-		else if (_ships[idx_ship]->_aabb._pos.y< _pt_min.y- _ships[idx_ship]->_aabb._size.y) {
-			_ships[idx_ship]->_dead= true;
+		else if (ship->_aabb._pos.y< _pt_min.y- ship->_aabb._size.y) {
+			ship->_dead= true;
 		}
 	}
 
@@ -587,9 +634,18 @@ void Level::anim() {
 	}
 
 	if (_ships[0]->_dead) {
-		_gameover= true;
-		std::cout << "gameover\n";
-		return;
+		_mode= INACTIVE;
+		_new_highest_idx= 0;
+		_new_highest_char_idx= 0;
+		for (int i=0; i<_highest_scores.size(); ++i) {
+			if (_score> _highest_scores[i].second) {
+				_new_highest_idx= i;
+				_mode= SET_SCORE_NAME;
+				_highest_scores.insert(_highest_scores.begin()+ _new_highest_idx, std::make_pair("AAA", _score));
+				_highest_scores.pop_back();
+				break;
+			}
+		}
 	}
 
 	_ships.erase(std::remove_if(_ships.begin(), _ships.end(), [](Ship * s){
@@ -600,104 +656,230 @@ void Level::anim() {
 }
 
 
+void Level::anim_inactive() {
+
+}
+
+
+void Level::anim_set_score_name() {
+
+}
+
+
+void Level::anim() {
+	if (_mode== PLAYING) {
+		anim_playing();
+	}
+	else if (_mode== INACTIVE) {
+		anim_inactive();
+	}
+	else if (_mode== SET_SCORE_NAME) {
+		anim_set_score_name();
+	}
+}
+
+
 bool Level::key_down(InputState * input_state, SDL_Keycode key) {
-	if (key== SDLK_LEFT) {
-		_key_left= true;
-		return true;
+	if (_mode== PLAYING) {
+		if (key== SDLK_LEFT) {
+			_key_left= true;
+			return true;
+		}
+		else if (key== SDLK_RIGHT) {
+			_key_right= true;
+			return true;
+		}
+		else if (key== SDLK_UP) {
+			_key_up= true;
+			return true;
+		}
+		else if (key== SDLK_DOWN) {
+			_key_down= true;
+			return true;
+		}
+		else if (key== SDLK_a) {
+			_ships[0]->set_current_action("shoot_a");
+			return true;
+		}
+		else if (key== SDLK_z) {
+			_ships[0]->set_current_action("shoot_b");
+			return true;
+		}
 	}
-	else if (key== SDLK_RIGHT) {
-		_key_right= true;
-		return true;
+	else if (_mode== INACTIVE) {
 	}
-	else if (key== SDLK_UP) {
-		_key_up= true;
-		return true;
-	}
-	else if (key== SDLK_DOWN) {
-		_key_down= true;
-		return true;
-	}
-	else if (key== SDLK_a) {
-		_ships[0]->set_current_action("shoot");
-		return true;
+	else if (_mode== SET_SCORE_NAME) {
+		if (key== SDLK_LEFT) {
+			_new_highest_char_idx--;
+			if (_new_highest_char_idx< 0) {
+				_new_highest_char_idx= 0;
+			}
+			return true;
+		}
+		else if (key== SDLK_RIGHT) {
+			_new_highest_char_idx++;
+			if (_new_highest_char_idx> 2) {
+				_new_highest_char_idx= 2;
+			}
+			return true;
+		}
+		else if (key== SDLK_UP) {
+			_highest_scores[_new_highest_idx].first[_new_highest_char_idx]++;
+			return true;
+		}
+		else if (key== SDLK_DOWN) {
+			_highest_scores[_new_highest_idx].first[_new_highest_char_idx]--;
+			return true;
+		}
+		else if (key== SDLK_RETURN) {
+			_mode= INACTIVE;
+			write_highest_scores();
+		}
 	}
 	return false;
 }
 
 
 bool Level::key_up(InputState * input_state, SDL_Keycode key) {
-	if (key== SDLK_LEFT) {
-		_key_left= false;
-		return true;
+	if (_mode== PLAYING) {
+		if (key== SDLK_LEFT) {
+			_key_left= false;
+			return true;
+		}
+		else if (key== SDLK_RIGHT) {
+			_key_right= false;
+			return true;
+		}
+		else if (key== SDLK_UP) {
+			_key_up= false;
+			return true;
+		}
+		else if (key== SDLK_DOWN) {
+			_key_down= false;
+			return true;
+		}
+		else if (key== SDLK_a) {
+			_ships[0]->set_current_action("no_shoot");
+			return true;
+		}
+		else if (key== SDLK_z) {
+			_ships[0]->set_current_action("no_shoot");
+			return true;
+		}
 	}
-	else if (key== SDLK_RIGHT) {
-		_key_right= false;
-		return true;
-	}
-	else if (key== SDLK_UP) {
-		_key_up= false;
-		return true;
-	}
-	else if (key== SDLK_DOWN) {
-		_key_down= false;
-		return true;
-	}
-	else if (key== SDLK_a) {
-		_ships[0]->set_current_action("no_shoot");
-		return true;
-	}
-	else if (key== SDLK_z) {
+	else if (_mode== INACTIVE) {
 		reinit();
+		_mode= PLAYING;
+	}
+	else if (_mode== SET_SCORE_NAME) {
 	}
 	return false;
 }
 
 
 bool Level::joystick_down(unsigned int button_idx) {
-	//std::cout << button_idx << "\n";
-	if (button_idx== 0) {
-		_ships[0]->_shooting= true;
-		return true;
+	if (_mode== PLAYING) {
+		if (button_idx== 0) {
+			_ships[0]->set_current_action("shoot_a");
+			return true;
+		}
+		else if (button_idx== 1) {
+			_ships[0]->set_current_action("shoot_b");
+			return true;
+		}
+	}
+	else if (_mode== INACTIVE) {
+
+	}
+	else if (_mode== SET_SCORE_NAME) {
+		_mode= INACTIVE;
+		write_highest_scores();
 	}
 	return false;
 }
 
 
 bool Level::joystick_up(unsigned int button_idx) {
-	//std::cout << button_idx << "\n";
-	if (button_idx== 0) {
-		_ships[0]->_shooting= false;
+	if (_mode== PLAYING) {
+		if (button_idx== 0) {
+			_ships[0]->set_current_action("no_shoot");
+			return true;
+		}
+		else if (button_idx== 1) {
+			_ships[0]->set_current_action("no_shoot");
+			return true;
+		}
+	}
+	else if (_mode== INACTIVE) {
+		reinit();
+		_mode= PLAYING;
 		return true;
+	}
+	else if (_mode== SET_SCORE_NAME) {
+
 	}
 	return false;
 }
 
 
 bool Level::joystick_axis(unsigned int axis_idx, int value) {
-	//std::cout << "axis_idx=" << axis_idx << " ; value=" << value << "\n";
+	// le joy droit a les axis_idx 2 et 3 qui ne sont pas gérés par Level pour l'instant
+	if (axis_idx> 1) {
+		return false;
+	}
+
+	// -1 < fvalue < 1
 	float fvalue= float(value)/ 32768.0;
-	_joystick[axis_idx]= fvalue;
-	return true;
+	const float SET_SCORE_NAME_JOY_THRESH= 0.98;
+
+	if (_mode== PLAYING) {
+		_joystick[axis_idx]= fvalue;
+		return true;
+	}
+	else if (_mode== INACTIVE) {
+	}
+	else if (_mode== SET_SCORE_NAME) {
+		if (abs(fvalue)> SET_SCORE_NAME_JOY_THRESH) {
+			if (axis_idx== 0 && fvalue> 0.0) {
+				_new_highest_char_idx++;
+				if (_new_highest_char_idx> 2) {
+					_new_highest_char_idx= 2;
+				}
+			}
+			else if (axis_idx== 0 && fvalue< 0.0) {
+				_new_highest_char_idx--;
+				if (_new_highest_char_idx< 0) {
+					_new_highest_char_idx= 0;
+				}
+			}
+			else if (axis_idx== 1 && fvalue< 0.0) {
+				_highest_scores[_new_highest_idx].first[_new_highest_char_idx]++;
+			}
+			else if (axis_idx== 1 && fvalue> 0.0) {
+				_highest_scores[_new_highest_idx].first[_new_highest_char_idx]--;
+			}
+		}
+	}
+	return false;
 }
 
 
 void Level::add_rand_ennemy() {
-	//pt_type pos= pt_type(rand_float(_pt_min.x, _pt_max.x), rand_float(_pt_min.y, _pt_max.y));
 	pt_type pos= pt_type(rand_float(_pt_min.x, _pt_max.x), _pt_max.y);
-	//pt_type size= pt_type(rand_float(0.5, 4.0), rand_float(0.5, 4.0));
-	//AABB_2D aabb(pos, size);
 
 	std::string model_name= "";
-	int n= rand_int(0, 1);
-	if (n== 0) {
-		model_name= "cruiser";
+	std::vector<std::string> ennemies;
+	for (auto model : _models) {
+		if (model.second->_type== ENNEMY) {
+			ennemies.push_back(model.first);
+		}
 	}
-	else if (n== 1) {
-		model_name= "fatman";
-	}
-	//model_name= "cruiser";
+	int n= rand_int(0, ennemies.size()- 1);
+	model_name= ennemies[n];
 
-	Ship * ennemy= new Ship(_models[model_name], pos, false);
+	_ships.push_back(new Ship(_models[model_name], pos, false));
+	
+	/*Ship * ennemy= new Ship(_models[model_name], pos, false);
 	bool ok= true;
 	for (auto ship : _ships) {
 		if (aabb_intersects_aabb(&ship->_aabb, &ennemy->_aabb)) {
@@ -710,12 +892,12 @@ void Level::add_rand_ennemy() {
 	}
 	else {
 		delete ennemy;
-	}
+	}*/
 }
 
 
 void Level::reinit() {
-	_gameover= false;
+	_mode= INACTIVE;
 	_score= 0;
 	
 	for (auto ship : _ships) {
@@ -723,16 +905,35 @@ void Level::reinit() {
 	}
 	_ships.clear();
 
-	/*for (auto bullet : _bullets) {
-		delete bullet;
-	}
-	_bullets.clear();*/
-
 	_ships.push_back(new Ship(_models["hero"], glm::vec2(0.0, _pt_min.y+ 2.0), true));
 
-	unsigned int n_ennemies= rand_int(10, 20);
+	//unsigned int n_ennemies= rand_int(10, 20);
 	//unsigned int n_ennemies= 1;
 	/*for (unsigned int i=0; i<n_ennemies; ++i) {
 		add_rand_ennemy();
 	}*/
+}
+
+
+void Level::read_highest_scores() {
+	std::ifstream ifs("../data/scores/highest_scores.json");
+	json js= json::parse(ifs);
+	ifs.close();
+	for (auto & score : js) {
+		_highest_scores.push_back(std::make_pair(score["name"], score["score"]));
+	}
+
+}
+
+
+void Level::write_highest_scores() {
+	json js;
+	for (auto score : _highest_scores) {
+		json entry;
+		entry["name"]= score.first;
+		entry["score"]= score.second;
+		js.push_back(entry);
+	}
+	std::ofstream ofs("../data/scores/highest_scores.json");
+	ofs << js << "\n";
 }

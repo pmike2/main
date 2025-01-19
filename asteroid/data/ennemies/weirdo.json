@@ -1,0 +1,20 @@
+{
+	"type" : "ennemy",
+	"size" : [2.0, 2.0],
+	"score" : 40,
+	"lives" : 5,
+	"actions" : {
+		"main" : [
+			{
+				"direction" : [0.0, -0.1],
+				"t" : 700
+			},
+			{
+				"direction" : [0.0, 0.1],
+				"t" : 200,
+				"shooting" : "zigzag_bullet",
+				"t_shooting" : 50
+			}
+		]
+	}
+}

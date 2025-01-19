@@ -1,0 +1,12 @@
+{
+	"type" : "bullet",
+	"size" : [0.1, 0.7],
+	"actions" : {
+		"main" : [
+			{
+				"direction" : [0.1, 0.2],
+				"t" : 400
+			}
+		]
+	}
+}

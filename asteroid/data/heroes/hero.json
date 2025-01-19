@@ -1,0 +1,33 @@
+{
+	"type" : "hero",
+	"size" : [0.5, 0.5],
+	"lives" : 3,
+	"actions" : {
+		"no_shoot" : [
+			{}
+		],
+		"shoot_a" : [
+			{
+				"shooting" : "small_bullet_hero",
+				"t_shooting" : 60
+			}
+		],
+		"shoot_b" : [
+			{
+				"shooting" : "left_bullet_hero",
+				"t_shooting" : 100,
+				"t" : 120
+			},
+			{
+				"shooting" : "right_bullet_hero",
+				"t_shooting" : 100,
+				"t" : 120
+			}
+		],
+		"main" : [
+			{
+				"name" : "no_shoot"
+			}
+		]
+	}
+}

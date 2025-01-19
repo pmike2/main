@@ -10,13 +10,20 @@
 #include "bbox_2d.h"
 #include "gl_utils.h"
 #include "input_state.h"
+#include "font.h"
+
 
 
 const glm::dvec4 friendly_color(0.0, 1.0, 0.0, 1.0);
 const glm::dvec4 unfriendly_color(1.0, 0.0, 0.0, 1.0);
 const glm::dvec4 border_color(0.3, 0.3, 0.2, 1.0);
 const float HERO_VELOCITY= 0.1;
-	
+const float Z_NEAR= -10.0f;
+const float Z_FAR= 10.0f;
+
+
+enum ShipType {HERO, ENNEMY, BULLET};
+enum LevelMode {PLAYING, INACTIVE, SET_SCORE_NAME};
 
 
 class ShipModel;
@@ -30,7 +37,6 @@ public:
 
 	glm::vec2 _direction;
 	int _t;
-	//bool _shooting;
 	unsigned int _t_shooting;
 	std::string _bullet_name;
 	ShipModel * _bullet_model;
@@ -46,6 +52,7 @@ public:
 
 
 	std::string _json_path;
+	ShipType _type;
 	glm::vec2 _size;
 	unsigned int _score;
 	unsigned int _lives;
@@ -53,27 +60,12 @@ public:
 };
 
 
-/*class Bullet {
-public:
-	Bullet();
-	Bullet(const AABB_2D & aabb, bool friendly, glm::vec2 velocity);
-	~Bullet();
-	void anim();
-
-
-	AABB_2D _aabb;
-	bool _friendly;
-	glm::vec2 _velocity;
-	bool _dead;
-};
-*/
-
 class Ship {
 public:
 	Ship();
 	Ship(ShipModel * model, pt_type pos, bool friendly);
 	~Ship();
-	void anim(bool is_hero);
+	void anim();
 	ShipModel * get_current_bullet_model();
 	void set_current_action(std::string action_name);
 	friend std::ostream & operator << (std::ostream & os, const Ship & ship);
@@ -99,20 +91,26 @@ public:
 class Level {
 public:
 	Level();
-	Level(GLuint prog_draw_simple, GLuint prog_draw_texture);
+	Level(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl);
 	~Level();
 	
-	void draw_border_aabb(const glm::mat4 & world2clip);
-	void draw_ship_aabb(const glm::mat4 & world2clip);
-	//void draw_bullet_aabb(const glm::mat4 & world2clip);
-	void draw_texture(const glm::mat4 & world2clip);
-	void draw(const glm::mat4 & world2clip);
-	
+	void draw_border_aabb();
+	void draw_ship_aabb();
+	void draw_texture();
+	void draw();
+
+	void show_playing_info();
+	void show_inactive_info();
+	void show_set_score_name_info();
+
 	void update_ship_aabb();
-	//void update_bullet_aabb();
 	void update_border_aabb();
 	
+	void anim_playing();
+	void anim_inactive();
+	void anim_set_score_name();
 	void anim();
+
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
 	bool joystick_down(unsigned int button_idx);
@@ -120,22 +118,27 @@ public:
 	bool joystick_axis(unsigned int axis_idx, int value);
 	void add_rand_ennemy();
 	void reinit();
+	void read_highest_scores();
+	void write_highest_scores();
 
 
 	std::map<std::string, ShipModel *> _models;
 	std::vector<Ship *> _ships;
-	//std::vector<Bullet * > _bullets;
 	bool _draw_aabb;
 	bool _draw_texture;
 	glm::vec2 _pt_min, _pt_max;
 	std::map<std::string, DrawContext *> _contexts;
 	bool _key_left, _key_right, _key_up, _key_down;
-	//bool _shooting;
-	//std::chrono::system_clock::time_point _t_last_shooting;
 	GLuint * _buffers;
-	bool _gameover;
+	//bool _gameover;
 	float _joystick[2];
 	unsigned int _score;
+	std::vector<std::pair<std::string, unsigned int> > _highest_scores;
+	Font * _font;
+	glm::mat4 _camera2clip;
+	LevelMode _mode;
+	int _new_highest_idx;
+	int _new_highest_char_idx;
 };
 
 
