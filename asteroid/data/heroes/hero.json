@@ -9,18 +9,18 @@
 		"shoot_a" : [
 			{
 				"shooting" : "small_bullet_hero",
-				"t_shooting" : 60
+				"t_shooting" : 80
 			}
 		],
 		"shoot_b" : [
 			{
 				"shooting" : "left_bullet_hero",
-				"t_shooting" : 100,
+				"t_shooting" : 110,
 				"t" : 120
 			},
 			{
 				"shooting" : "right_bullet_hero",
-				"t_shooting" : 100,
+				"t_shooting" : 110,
 				"t" : 120
 			}
 		],

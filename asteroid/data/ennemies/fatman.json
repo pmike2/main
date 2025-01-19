@@ -6,30 +6,30 @@
 	"actions" : {
 		"zigzag1" : [
 			{
-				"direction" : [-0.1, -0.03],
-				"t" : 300
+				"direction" : [-0.03, -0.03],
+				"t" : 700
 			},
 			{
-				"direction" : [0.1, -0.03],
-				"t" : 300
+				"direction" : [0.03, -0.03],
+				"t" : 700
 			}
 		],
 		"zigzag2" : [
 			{
-				"direction" : [-0.3, -0.01],
+				"direction" : [-0.3, -0.08],
 				"t" : 100,
 				"shooting" : "small_bullet",
 				"t_shooting" : 20
 			},
 			{
-				"direction" : [0.3, -0.01],
+				"direction" : [0.3, -0.08],
 				"t" : 100
 			}
 		],
 		"weird" : [
 			{
 				"name" : "zigzag1",
-				"n" : 5
+				"n" : 2
 			},
 			{
 				"name" : "zigzag2",

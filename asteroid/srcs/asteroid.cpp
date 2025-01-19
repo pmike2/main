@@ -725,10 +725,16 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 		}
 		else if (key== SDLK_UP) {
 			_highest_scores[_new_highest_idx].first[_new_highest_char_idx]++;
+			if (_highest_scores[_new_highest_idx].first[_new_highest_char_idx]> 'Z') {
+				_highest_scores[_new_highest_idx].first[_new_highest_char_idx]= 'Z';
+			}
 			return true;
 		}
 		else if (key== SDLK_DOWN) {
 			_highest_scores[_new_highest_idx].first[_new_highest_char_idx]--;
+			if (_highest_scores[_new_highest_idx].first[_new_highest_char_idx]< 'A') {
+				_highest_scores[_new_highest_idx].first[_new_highest_char_idx]= 'A';
+			}
 			return true;
 		}
 		else if (key== SDLK_RETURN) {
@@ -789,11 +795,8 @@ bool Level::joystick_down(unsigned int button_idx) {
 		}
 	}
 	else if (_mode== INACTIVE) {
-
 	}
 	else if (_mode== SET_SCORE_NAME) {
-		_mode= INACTIVE;
-		write_highest_scores();
 	}
 	return false;
 }
@@ -816,7 +819,9 @@ bool Level::joystick_up(unsigned int button_idx) {
 		return true;
 	}
 	else if (_mode== SET_SCORE_NAME) {
-
+		_mode= INACTIVE;
+		write_highest_scores();
+		return true;
 	}
 	return false;
 }
@@ -854,9 +859,15 @@ bool Level::joystick_axis(unsigned int axis_idx, int value) {
 			}
 			else if (axis_idx== 1 && fvalue< 0.0) {
 				_highest_scores[_new_highest_idx].first[_new_highest_char_idx]++;
+				if (_highest_scores[_new_highest_idx].first[_new_highest_char_idx]> 'Z') {
+					_highest_scores[_new_highest_idx].first[_new_highest_char_idx]= 'Z';
+				}
 			}
 			else if (axis_idx== 1 && fvalue> 0.0) {
 				_highest_scores[_new_highest_idx].first[_new_highest_char_idx]--;
+				if (_highest_scores[_new_highest_idx].first[_new_highest_char_idx]< 'A') {
+					_highest_scores[_new_highest_idx].first[_new_highest_char_idx]= 'A';
+				}
 			}
 		}
 	}

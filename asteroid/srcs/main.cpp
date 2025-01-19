@@ -24,13 +24,14 @@ const int MAIN_WIN_WIDTH= 1280;
 const int MAIN_WIN_HEIGHT= 1024;
 const float MAIN_BCK[]= {0.2f, 0.2f, 0.2f, 1.0f};
 const float GL_WIDTH= 20.0f;
-//const float GL_HEIGHT= 20.0f;
 const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDTH);
 
 
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
 InputState * input_state;
+ScreenGL * screengl;
+Level * level;
 
 bool done= false;
 
@@ -40,41 +41,6 @@ unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 GLuint prog_aabb, prog_font;
 GLuint g_vao;
 
-//ViewSystem * view_system;
-ScreenGL * screengl;
-
-Level * level;
-
-
-/*void mouse_motion(int x, int y, int xrel, int yrel) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
-	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
-
-	if (view_system->mouse_motion(input_state)) {
-		return;
-	}
-}
-
-
-void mouse_button_up(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
-	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
-
-	if (view_system->mouse_button_up(input_state)) {
-		return;
-	}
-}
-
-
-void mouse_button_down(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
-	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
-
-	if (view_system->mouse_button_down(input_state)) {
-		return;
-	}
-
-}*/
 
 
 void key_down(SDL_Keycode key) {
@@ -84,10 +50,6 @@ void key_down(SDL_Keycode key) {
 		done= true;
 	}
 
-	/*if (view_system->key_down(input_state, key)) {
-		return;
-	}*/
-
 	if (level->key_down(input_state, key)) {
 		return;
 	}
@@ -96,10 +58,6 @@ void key_down(SDL_Keycode key) {
 
 void key_up(SDL_Keycode key) {
 	input_state->key_up(key);
-
-	/*if (view_system->key_up(input_state, key)) {
-		return;
-	}*/
 
 	if (level->key_up(input_state, key)) {
 		return;
@@ -195,11 +153,6 @@ void init() {
 	check_gl_error();
 	
 	// --------------------------------------------------------------------------
-	/*view_system= new ViewSystem(prog_repere, prog_select, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	view_system->_repere->_is_ground= false;
-	view_system->_repere->_is_repere= false;
-	view_system->_repere->_is_box= false;
-	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), -0.5* M_PI, 0.0f, 25.0f);*/
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 
 	// --------------------------------------------------------------------------
@@ -217,7 +170,6 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	
-	//view_system->draw();
 	level->draw();
 
 	SDL_GL_SwapWindow(window);
@@ -315,7 +267,6 @@ void main_loop() {
 
 void clean() {
 	delete level;
-	//delete view_system;
 	delete input_state;
 	delete screengl;
 
