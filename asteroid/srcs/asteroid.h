@@ -22,8 +22,9 @@ const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
 
 
-enum ShipType {HERO, ENNEMY, BULLET};
+enum ShipType {HERO, ENEMY, BULLET};
 enum LevelMode {PLAYING, INACTIVE, SET_SCORE_NAME};
+enum EventType {NEW_ENEMY, LEVEL_END};
 
 
 class ShipModel;
@@ -88,11 +89,43 @@ public:
 };
 
 
+class Event {
+public:
+	Event();
+	Event(EventType type, unsigned int t, glm::vec2 position, std::string enemy);
+	~Event();
+	friend std::ostream & operator << (std::ostream & os, const Event & event);
+
+
+	EventType _type;
+	unsigned int _t;
+	glm::vec2 _position;
+	std::string _enemy;
+};
+
+
 class Level {
 public:
 	Level();
-	Level(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl);
+	Level(std::string json_path);
 	~Level();
+	void reinit();
+
+
+	std::chrono::system_clock::time_point _t_start;
+	std::vector<Event *> _events;
+	unsigned int _current_event_idx;
+};
+
+
+class Asteroid {
+public:
+	Asteroid();
+	Asteroid(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl);
+	~Asteroid();
+
+	void load_models();
+	void load_levels();
 	
 	void draw_border_aabb();
 	void draw_ship_aabb();
@@ -116,7 +149,9 @@ public:
 	bool joystick_down(unsigned int button_idx);
 	bool joystick_up(unsigned int button_idx);
 	bool joystick_axis(unsigned int axis_idx, int value);
-	void add_rand_ennemy();
+	
+	void add_level_events();
+	void add_rand_enemy();
 	void reinit();
 	void read_highest_scores();
 	void write_highest_scores();
@@ -130,7 +165,6 @@ public:
 	std::map<std::string, DrawContext *> _contexts;
 	bool _key_left, _key_right, _key_up, _key_down;
 	GLuint * _buffers;
-	//bool _gameover;
 	float _joystick[2];
 	unsigned int _score;
 	std::vector<std::pair<std::string, unsigned int> > _highest_scores;
@@ -139,6 +173,8 @@ public:
 	LevelMode _mode;
 	int _new_highest_idx;
 	int _new_highest_char_idx;
+	std::vector<Level *> _levels;
+	unsigned int _current_level_idx;
 };
 
 

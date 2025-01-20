@@ -36,7 +36,7 @@ ShipModel::ShipModel() {
 
 ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 	std::string tmp_json_path= "./tmp.json";
-	std::string cmd= "../srcs/flat_json.py "+ json_path+ " "+ tmp_json_path;
+	std::string cmd= "../srcs/flat_json_ship.py "+ json_path+ " "+ tmp_json_path;
 	system(cmd.c_str());
 
 	std::ifstream ifs(tmp_json_path);
@@ -49,8 +49,8 @@ ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 	if (js["type"]== "hero") {
 		_type= HERO;
 	}
-	else if (js["type"]== "ennemy") {
-		_type= ENNEMY;
+	else if (js["type"]== "enemy") {
+		_type= ENEMY;
 	}
 	else if (js["type"]== "bullet") {
 		_type= BULLET;
@@ -122,7 +122,7 @@ Ship::Ship() {
 
 Ship::Ship(ShipModel * model, pt_type pos, bool friendly) :
 	_model(model), _friendly(friendly), _dead(false), _shooting(false), _current_action_name("main"), _current_action_bullet_name("main"),
-	_idx_action(0), _idx_action_bullet(0),
+	_idx_action(0), _idx_action_bullet(0), _velocity(glm::vec2(0.0)),
 	_t_action_start(std::chrono::system_clock::now()), _t_last_bullet(std::chrono::system_clock::now()), _t_bullet_start(std::chrono::system_clock::now())
 {
 	_aabb= AABB_2D(pos, model->_size);
@@ -178,7 +178,7 @@ void Ship::anim() {
 	}
 
 	// maj vitesse et position
-	if (_model->_type== ENNEMY || _model->_type== BULLET) {
+	if (_model->_type== ENEMY || _model->_type== BULLET) {
 		_velocity= _model->_actions[_current_action_name][_idx_action]->_direction;
 	}
 	_aabb._pos+= _velocity;
@@ -207,16 +207,94 @@ std::ostream & operator << (std::ostream & os, const Ship & ship) {
 }
 
 
-// level -------------------------------------------------------------
+// event -------------------------------------------------------------
+Event::Event() {
+
+}
+
+
+Event::Event(EventType type, unsigned int t, glm::vec2 position, std::string enemy) :
+	_type(type), _t(t), _position(position), _enemy(enemy)
+{
+
+}
+
+
+Event::~Event() {
+
+}
+
+
+std::ostream & operator << (std::ostream & os, const Event & event) {
+	if (event._type== NEW_ENEMY) {
+		os << "NEW_ENEMY ; ";
+	}
+	else if (event._type== LEVEL_END) {
+		os << "LEVEL_END ; ";
+	}
+	os << "t = " << event._t << " ; position = " << glm::to_string(event._position) << " ; enemy = " << event._enemy;
+	return os;
+}
+
+
+// Level ----------------------------------------------------------------
 Level::Level() {
 
 }
 
 
-Level::Level(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl) 
+Level::Level(std::string json_path) : _t_start(std::chrono::system_clock::now()) {
+	std::string tmp_json_path= "./tmp.json";
+	std::string cmd= "../srcs/flat_json_level.py "+ json_path+ " "+ tmp_json_path;
+	system(cmd.c_str());
+
+	std::ifstream ifs(tmp_json_path);
+	json js= json::parse(ifs);
+	ifs.close();
+
+	std::string cmd2= "rm "+ tmp_json_path;
+	system(cmd2.c_str());
+
+	for (auto event : js) {
+		unsigned int t= event["t"];
+		if (event["type"]== "enemy") {
+			float x= event["position"][0];
+			float y= event["position"][1];
+			std::string enemy_name= event["enemy"];
+			_events.push_back(new Event(NEW_ENEMY, t, glm::vec2(x, y), enemy_name));
+		}
+		else if (event["type"]== "end") {
+			_events.push_back(new Event(LEVEL_END, t, glm::vec2(0.0), ""));
+		}
+	}
+
+	// les évenements sont classés du dernier au 1er, afin que l'on puisse faire un pop_back (pop_front n'existe pas pour les vector)
+	std::sort(_events.begin(), _events.end(), [](const Event * a, const Event * b) { return a->_t > b->_t; });
+	// on commence donc avec le dernier
+	_current_event_idx= _events.size()- 1;
+}
+
+
+Level::~Level() {
+}
+
+
+void Level::reinit() {
+	_current_event_idx= _events.size()- 1;
+	_t_start= std::chrono::system_clock::now();
+}
+
+
+// Asteroid -------------------------------------------------------------
+Asteroid::Asteroid() {
+
+}
+
+
+Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl) 
 	: _draw_aabb(true), _draw_texture(false),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false),
-	_mode(INACTIVE), _score(0) {
+	_mode(INACTIVE), _score(0), _current_level_idx(0) {
 
 	const float MARGIN= 1.0;
 	_pt_min= glm::vec2(-screengl->_gl_width* 0.5f+ MARGIN, -screengl->_gl_height* 0.5f+ MARGIN);
@@ -224,8 +302,53 @@ Level::Level(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl)
 	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
+	load_models();
+	load_levels();
+
+	read_highest_scores();
+
+	reinit();
+
+	unsigned int n_buffers= 3;
+	_buffers= new GLuint[n_buffers];
+	glGenBuffers(n_buffers, _buffers);
+
+	_contexts["border_aabb"]= new DrawContext(prog_aabb, _buffers[0],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"camera2clip_matrix"});
+
+	_contexts["ship_aabb"]= new DrawContext(prog_aabb, _buffers[1],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"camera2clip_matrix"});
+
+	update_border_aabb();
+	update_ship_aabb();
+}
+
+
+Asteroid::~Asteroid() {
+	for (auto ship : _ships) {
+		delete ship;
+	}
+	_ships.clear();
+
+	for (auto context : _contexts) {
+		delete context.second;
+	}
+	_contexts.clear();
+
+	for (auto model : _models) {
+		delete model.second;
+	}
+	_models.clear();
+
+	delete _buffers;
+}
+
+
+void Asteroid::load_models() {
 	std::vector<std::string> jsons_total;
-	for (auto ship_type : std::vector<std::string>{"bullets", "ennemies", "heroes"}) {
+	for (auto ship_type : std::vector<std::string>{"bullets", "enemies", "heroes"}) {
 		std::vector<std::string> jsons= list_files("../data/"+ ship_type, "json");
 		jsons_total.insert(jsons_total.end(), jsons.begin(), jsons.end());
 	}
@@ -252,49 +375,19 @@ Level::Level(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl)
 			}
 		}
 	}
-
-	read_highest_scores();
-
-	reinit();
-
-	unsigned int n_buffers= 3;
-	_buffers= new GLuint[n_buffers];
-	glGenBuffers(n_buffers, _buffers);
-
-	_contexts["border_aabb"]= new DrawContext(prog_aabb, _buffers[0],
-		std::vector<std::string>{"position_in", "color_in"},
-		std::vector<std::string>{"camera2clip_matrix"});
-
-	_contexts["ship_aabb"]= new DrawContext(prog_aabb, _buffers[1],
-		std::vector<std::string>{"position_in", "color_in"},
-		std::vector<std::string>{"camera2clip_matrix"});
-
-	update_border_aabb();
-	update_ship_aabb();
 }
 
 
-Level::~Level() {
-	for (auto ship : _ships) {
-		delete ship;
+void Asteroid::load_levels() {
+	std::vector<std::string> jsons= list_files("../data/levels", "json");
+	// les json_path sont triés par nom, donc level1, 2, ... devraient être dans l'ordre
+	for (auto json_path : jsons) {
+		_levels.push_back(new Level(json_path));
 	}
-	_ships.clear();
-
-	for (auto context : _contexts) {
-		delete context.second;
-	}
-	_contexts.clear();
-
-	for (auto model : _models) {
-		delete model.second;
-	}
-	_models.clear();
-
-	delete _buffers;
 }
 
 
-void Level::draw_border_aabb() {
+void Asteroid::draw_border_aabb() {
 	DrawContext * context= _contexts["border_aabb"];
 
 	glUseProgram(context->_prog);
@@ -318,7 +411,7 @@ void Level::draw_border_aabb() {
 }
 
 
-void Level::draw_ship_aabb() {
+void Asteroid::draw_ship_aabb() {
 	DrawContext * context= _contexts["ship_aabb"];
 	
 	glUseProgram(context->_prog);
@@ -342,12 +435,12 @@ void Level::draw_ship_aabb() {
 }
 
 
-void Level::draw_texture() {
+void Asteroid::draw_texture() {
 
 }
 
 
-void Level::draw() {
+void Asteroid::draw() {
 	if (_mode== PLAYING) {
 		if (_draw_texture) {
 			draw_texture();
@@ -367,44 +460,44 @@ void Level::draw() {
 }
 
 
-void Level::show_playing_info() {
+void Asteroid::show_playing_info() {
 	std::ostringstream font_str;
 
 	float font_scale= 0.01f;
 	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 0.0f, 0.5f);
 
 	std::string s1= "score : "+ std::to_string(_score);
-	glm::vec2 position1= glm::vec2(6.0f, 7.0f);
+	glm::vec2 position1= glm::vec2(-9.0f, 7.0f);
 	Text t1(s1, position1, font_scale, font_color);
 
-	std::string s2= "vies : "+ std::to_string(_ships[0]->_lives);
-	glm::vec2 position2= glm::vec2(-9.5f, 7.0f);
+	std::string s2= "level : "+ std::to_string(_current_level_idx+ 1);
+	glm::vec2 position2= glm::vec2(-1.0f, 7.0f);
 	Text t2(s2, position2, font_scale, font_color);
-	
+
+	std::string s3= "vies : "+ std::to_string(_ships[0]->_lives);
+	glm::vec2 position3= glm::vec2(7.1f, 7.0f);
+	Text t3(s3, position3, font_scale, font_color);
+
 	std::vector<Text> texts;
 	texts.push_back(t1);
 	texts.push_back(t2);
-	/*for (unsigned int i=0; i<_highest_scores.size(); ++i) {
-		std::string s3= std::to_string(i+ 1)+ " "+ _highest_scores[i].first+ " " + std::to_string(_highest_scores[i].second);
-		glm::vec2 position3= glm::vec2(7.0f, -5.0f- float(i)* 0.5);
-		Text t3(s3, position3, font_scale, font_color);
-		texts.push_back(t3);
-	}*/
+	texts.push_back(t3);
+
 	_font->set_text_group(0, texts);
 	_font->draw();
 }
 
 
-void Level::show_inactive_info() {
+void Asteroid::show_inactive_info() {
 	float font_scale= 0.02f;
 	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 0.0f, 0.5f);
 
 	std::string s1= "score "+ std::to_string(_score);
-	glm::vec2 position1= glm::vec2(-5.0f, 2.0f);
+	glm::vec2 position1= glm::vec2(-7.0f, 2.0f);
 	Text t1(s1, position1, font_scale, font_color);
 
 	std::string s2= "records ";
-	glm::vec2 position2= glm::vec2(2.0f, 2.0f);
+	glm::vec2 position2= glm::vec2(0.0f, 2.0f);
 	Text t2(s2, position2, font_scale, font_color);
 
 	std::vector<Text> texts;
@@ -412,7 +505,7 @@ void Level::show_inactive_info() {
 	texts.push_back(t2);
 	for (unsigned int i=0; i<_highest_scores.size(); ++i) {
 		std::string s3= std::to_string(i+ 1)+ " "+ _highest_scores[i].first+ " " + std::to_string(_highest_scores[i].second);
-		glm::vec2 position3= glm::vec2(2.0f, 1.0f- float(i)* 1.0);
+		glm::vec2 position3= glm::vec2(0.0f, 1.0f- float(i)* 1.0);
 		Text t3(s3, position3, font_scale, font_color);
 		texts.push_back(t3);
 	}
@@ -421,7 +514,7 @@ void Level::show_inactive_info() {
 }
 
 
-void Level::show_set_score_name_info() {
+void Asteroid::show_set_score_name_info() {
 	float font_scale= 0.02f;
 	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 0.0f, 0.5f);
 
@@ -450,7 +543,7 @@ void Level::show_set_score_name_info() {
 }
 
 
-void Level::update_border_aabb() {
+void Asteroid::update_border_aabb() {
 	DrawContext * context= _contexts["border_aabb"];
 	context->_n_pts= 8;
 	context->_n_attrs_per_pts= 6;
@@ -483,7 +576,7 @@ void Level::update_border_aabb() {
 }
 
 
-void Level::update_ship_aabb() {
+void Asteroid::update_ship_aabb() {
 	DrawContext * context= _contexts["ship_aabb"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
@@ -518,6 +611,21 @@ void Level::update_ship_aabb() {
 			_ships[idx_ship]->_aabb._pos.x, _ships[idx_ship]->_aabb._pos.y
 		};
 
+		for (unsigned int i=0; i<n_pts_per_ship; ++i) {
+			if (positions[2* i]> _pt_max.x) {
+				positions[2* i]= _pt_max.x;
+			}
+			if (positions[2* i]< _pt_min.x) {
+				positions[2* i]= _pt_min.x;
+			}
+			if (positions[2* i+ 1]> _pt_max.y) {
+				positions[2* i+ 1]= _pt_max.y;
+			}
+			if (positions[2* i+ 1]< _pt_min.y) {
+				positions[2* i+ 1]= _pt_min.y;
+			}
+		}
+
 		for (unsigned int idx_pt=0; idx_pt<n_pts_per_ship; ++idx_pt) {
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 0]= float(positions[2* idx_pt]);
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 1]= float(positions[2* idx_pt+ 1]);
@@ -533,10 +641,12 @@ void Level::update_ship_aabb() {
 }
 
 
-void Level::anim_playing() {
-	if (rand_int(0, 100)> 98) {
-		add_rand_ennemy();
-	}
+void Asteroid::anim_playing() {
+	/*if (rand_int(0, 100)> 98) {
+		add_rand_enemy();
+	}*/
+
+	add_level_events();
 
 	// joystick vers le haut est négatif !
 	_ships[0]->_velocity.x= HERO_VELOCITY* _joystick[0];
@@ -583,7 +693,7 @@ void Level::anim_playing() {
 	}
 
 	for (auto ship : _ships) {
-		if (ship->_model->_type!= ENNEMY && ship->_model->_type!= BULLET) {
+		if (ship->_model->_type!= ENEMY && ship->_model->_type!= BULLET) {
 			continue;
 		}
 		if (ship->_aabb._pos.x> _pt_max.x) {
@@ -592,7 +702,9 @@ void Level::anim_playing() {
 		else if (ship->_aabb._pos.x< _pt_min.x- ship->_aabb._size.x) {
 			ship->_dead= true;
 		}
-		if (ship->_aabb._pos.y> _pt_max.y) {
+		// on se donne une marge pour les ennemis qui sont trop en haut afin que l'on puisse les créer sans qu'ils
+		// apparaissent à l'écran au début
+		if (ship->_aabb._pos.y> _pt_max.y+ 10.0) {
 			ship->_dead= true;
 		}
 		else if (ship->_aabb._pos.y< _pt_min.y- ship->_aabb._size.y) {
@@ -656,17 +768,17 @@ void Level::anim_playing() {
 }
 
 
-void Level::anim_inactive() {
+void Asteroid::anim_inactive() {
 
 }
 
 
-void Level::anim_set_score_name() {
+void Asteroid::anim_set_score_name() {
 
 }
 
 
-void Level::anim() {
+void Asteroid::anim() {
 	if (_mode== PLAYING) {
 		anim_playing();
 	}
@@ -679,7 +791,7 @@ void Level::anim() {
 }
 
 
-bool Level::key_down(InputState * input_state, SDL_Keycode key) {
+bool Asteroid::key_down(InputState * input_state, SDL_Keycode key) {
 	if (_mode== PLAYING) {
 		if (key== SDLK_LEFT) {
 			_key_left= true;
@@ -707,6 +819,9 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 		}
 	}
 	else if (_mode== INACTIVE) {
+		reinit();
+		_mode= PLAYING;
+		return true;
 	}
 	else if (_mode== SET_SCORE_NAME) {
 		if (key== SDLK_LEFT) {
@@ -740,13 +855,14 @@ bool Level::key_down(InputState * input_state, SDL_Keycode key) {
 		else if (key== SDLK_RETURN) {
 			_mode= INACTIVE;
 			write_highest_scores();
+			return true;
 		}
 	}
 	return false;
 }
 
 
-bool Level::key_up(InputState * input_state, SDL_Keycode key) {
+bool Asteroid::key_up(InputState * input_state, SDL_Keycode key) {
 	if (_mode== PLAYING) {
 		if (key== SDLK_LEFT) {
 			_key_left= false;
@@ -774,8 +890,6 @@ bool Level::key_up(InputState * input_state, SDL_Keycode key) {
 		}
 	}
 	else if (_mode== INACTIVE) {
-		reinit();
-		_mode= PLAYING;
 	}
 	else if (_mode== SET_SCORE_NAME) {
 	}
@@ -783,7 +897,7 @@ bool Level::key_up(InputState * input_state, SDL_Keycode key) {
 }
 
 
-bool Level::joystick_down(unsigned int button_idx) {
+bool Asteroid::joystick_down(unsigned int button_idx) {
 	if (_mode== PLAYING) {
 		if (button_idx== 0) {
 			_ships[0]->set_current_action("shoot_a");
@@ -791,25 +905,6 @@ bool Level::joystick_down(unsigned int button_idx) {
 		}
 		else if (button_idx== 1) {
 			_ships[0]->set_current_action("shoot_b");
-			return true;
-		}
-	}
-	else if (_mode== INACTIVE) {
-	}
-	else if (_mode== SET_SCORE_NAME) {
-	}
-	return false;
-}
-
-
-bool Level::joystick_up(unsigned int button_idx) {
-	if (_mode== PLAYING) {
-		if (button_idx== 0) {
-			_ships[0]->set_current_action("no_shoot");
-			return true;
-		}
-		else if (button_idx== 1) {
-			_ships[0]->set_current_action("no_shoot");
 			return true;
 		}
 	}
@@ -827,8 +922,27 @@ bool Level::joystick_up(unsigned int button_idx) {
 }
 
 
-bool Level::joystick_axis(unsigned int axis_idx, int value) {
-	// le joy droit a les axis_idx 2 et 3 qui ne sont pas gérés par Level pour l'instant
+bool Asteroid::joystick_up(unsigned int button_idx) {
+	if (_mode== PLAYING) {
+		if (button_idx== 0) {
+			_ships[0]->set_current_action("no_shoot");
+			return true;
+		}
+		else if (button_idx== 1) {
+			_ships[0]->set_current_action("no_shoot");
+			return true;
+		}
+	}
+	else if (_mode== INACTIVE) {
+	}
+	else if (_mode== SET_SCORE_NAME) {
+	}
+	return false;
+}
+
+
+bool Asteroid::joystick_axis(unsigned int axis_idx, int value) {
+	// le joy droit a les axis_idx 2 et 3 qui ne sont pas gérés par Asteroid pour l'instant
 	if (axis_idx> 1) {
 		return false;
 	}
@@ -875,41 +989,62 @@ bool Level::joystick_axis(unsigned int axis_idx, int value) {
 }
 
 
-void Level::add_rand_ennemy() {
-	pt_type pos= pt_type(rand_float(_pt_min.x, _pt_max.x), _pt_max.y);
-
-	std::string model_name= "";
-	std::vector<std::string> ennemies;
-	for (auto model : _models) {
-		if (model.second->_type== ENNEMY) {
-			ennemies.push_back(model.first);
+void Asteroid::add_level_events() {
+	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+	auto d= std::chrono::duration_cast<std::chrono::milliseconds>(now- _levels[_current_level_idx]->_t_start).count();
+	//std::cout << "add_level_events : " << _current_level_idx << " ; " << _levels[_current_level_idx]->_current_event_idx << "\n";
+	for (int idx_event=_levels[_current_level_idx]->_current_event_idx; idx_event>=0; --idx_event) {
+		Event * event= _levels[_current_level_idx]->_events[idx_event];
+		//std::cout << d << " ; " << *event << "\n";
+		if (d> event->_t) {
+			if (event->_type== NEW_ENEMY) {
+				_ships.push_back(new Ship(_models[event->_enemy], event->_position, false));
+			}
+			if (event->_type== LEVEL_END) {
+				_current_level_idx++;
+				//std::cout << _current_level_idx << " ; " << _levels.size() << "\n";
+				if (_current_level_idx< _levels.size()) {
+					// on ajuste le start
+					_levels[_current_level_idx]->reinit();
+				}
+				else {
+					_mode= INACTIVE;
+				}
+				return;
+			}
+		}
+		else {
+			_levels[_current_level_idx]->_current_event_idx= idx_event;
+			return;
 		}
 	}
-	int n= rand_int(0, ennemies.size()- 1);
-	model_name= ennemies[n];
-
-	_ships.push_back(new Ship(_models[model_name], pos, false));
-	
-	/*Ship * ennemy= new Ship(_models[model_name], pos, false);
-	bool ok= true;
-	for (auto ship : _ships) {
-		if (aabb_intersects_aabb(&ship->_aabb, &ennemy->_aabb)) {
-			ok= false;
-			break;
-		}
-	}
-	if (ok) {
-		_ships.push_back(ennemy);
-	}
-	else {
-		delete ennemy;
-	}*/
 }
 
 
-void Level::reinit() {
+void Asteroid::add_rand_enemy() {
+	pt_type pos= pt_type(rand_float(_pt_min.x, _pt_max.x), _pt_max.y);
+
+	std::string model_name= "";
+	std::vector<std::string> enemies;
+	for (auto model : _models) {
+		if (model.second->_type== ENEMY) {
+			enemies.push_back(model.first);
+		}
+	}
+	int n= rand_int(0, enemies.size()- 1);
+	model_name= enemies[n];
+
+	_ships.push_back(new Ship(_models[model_name], pos, false));
+}
+
+
+void Asteroid::reinit() {
 	_mode= INACTIVE;
 	_score= 0;
+	_current_level_idx= 0;
+	for (auto level : _levels) {
+		level->reinit();
+	}
 	
 	for (auto ship : _ships) {
 		delete ship;
@@ -917,16 +1052,10 @@ void Level::reinit() {
 	_ships.clear();
 
 	_ships.push_back(new Ship(_models["hero"], glm::vec2(0.0, _pt_min.y+ 2.0), true));
-
-	//unsigned int n_ennemies= rand_int(10, 20);
-	//unsigned int n_ennemies= 1;
-	/*for (unsigned int i=0; i<n_ennemies; ++i) {
-		add_rand_ennemy();
-	}*/
 }
 
 
-void Level::read_highest_scores() {
+void Asteroid::read_highest_scores() {
 	std::ifstream ifs("../data/scores/highest_scores.json");
 	json js= json::parse(ifs);
 	ifs.close();
@@ -937,7 +1066,7 @@ void Level::read_highest_scores() {
 }
 
 
-void Level::write_highest_scores() {
+void Asteroid::write_highest_scores() {
 	json js;
 	for (auto score : _highest_scores) {
 		json entry;

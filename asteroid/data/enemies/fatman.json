@@ -1,5 +1,5 @@
 {
-	"type" : "ennemy",
+	"type" : "enemy",
 	"size" : [2.0, 1.0],
 	"score" : 20,
 	"lives" : 5,

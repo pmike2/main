@@ -31,7 +31,7 @@ SDL_Window * window= NULL;
 SDL_GLContext main_context;
 InputState * input_state;
 ScreenGL * screengl;
-Level * level;
+Asteroid * asteroid;
 
 bool done= false;
 
@@ -50,7 +50,7 @@ void key_down(SDL_Keycode key) {
 		done= true;
 	}
 
-	if (level->key_down(input_state, key)) {
+	if (asteroid->key_down(input_state, key)) {
 		return;
 	}
 }
@@ -59,28 +59,28 @@ void key_down(SDL_Keycode key) {
 void key_up(SDL_Keycode key) {
 	input_state->key_up(key);
 
-	if (level->key_up(input_state, key)) {
+	if (asteroid->key_up(input_state, key)) {
 		return;
 	}
 }
 
 
 void joystick_down(unsigned int button_idx) {
-	if (level->joystick_down(button_idx)) {
+	if (asteroid->joystick_down(button_idx)) {
 		return;
 	}
 }
 
 
 void joystick_up(unsigned int button_idx) {
-	if (level->joystick_up(button_idx)) {
+	if (asteroid->joystick_up(button_idx)) {
 		return;
 	}
 }
 
 
 void joystick_axis(unsigned int axis_idx, int value) {
-	if (level->joystick_axis(axis_idx, value)) {
+	if (asteroid->joystick_axis(axis_idx, value)) {
 		return;
 	}
 }
@@ -159,7 +159,7 @@ void init() {
 	input_state= new InputState();
 
 	// --------------------------------------------------------------------------
-	level= new Level(prog_aabb, prog_font, screengl);
+	asteroid= new Asteroid(prog_aabb, prog_font, screengl);
 }
 
 
@@ -170,7 +170,7 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	
-	level->draw();
+	asteroid->draw();
 
 	SDL_GL_SwapWindow(window);
 }
@@ -182,7 +182,7 @@ void anim() {
 	if (tikanim_delta< DELTA_ANIM)
 		return;
 	
-	level->anim();
+	asteroid->anim();
 	
 	tikanim1= SDL_GetTicks();
 }
@@ -266,7 +266,7 @@ void main_loop() {
 
 
 void clean() {
-	delete level;
+	delete asteroid;
 	delete input_state;
 	delete screengl;
 
