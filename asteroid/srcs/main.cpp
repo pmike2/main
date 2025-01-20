@@ -110,9 +110,12 @@ void init() {
 	main_context= SDL_GL_CreateContext(window);
 
 	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
-	/*int x= 0;
-	glGetIntegerv(GL_MAX_PATCH_VERTICES, &x); // 32
-	cout << x << endl;*/
+	int x, y, z;
+	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &x);
+	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &y);
+	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &z);
+	
+	std::cout << "GL_MAX_ARRAY_TEXTURE_LAYERS=" << x  << " ; GL_MAX_TEXTURE_IMAGE_UNITS=" << y << " ; GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS=" << z << "\n";
 
 	SDL_GL_SetSwapInterval(1);
 	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
