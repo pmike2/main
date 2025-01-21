@@ -78,11 +78,8 @@ public:
 	bool _dead;
 	bool _shooting;
 	std::string _current_action_name;
-	std::string _current_action_bullet_name;
 	unsigned int _idx_action;
-	unsigned int _idx_action_bullet;
 	std::chrono::system_clock::time_point _t_action_start;
-	std::chrono::system_clock::time_point _t_bullet_start;
 	std::chrono::system_clock::time_point _t_last_bullet;
 	ShipModel * _model;
 	unsigned int _lives;

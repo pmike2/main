@@ -121,9 +121,9 @@ Ship::Ship() {
 
 
 Ship::Ship(ShipModel * model, pt_type pos, bool friendly) :
-	_model(model), _friendly(friendly), _dead(false), _shooting(false), _current_action_name("main"), _current_action_bullet_name("main"),
-	_idx_action(0), _idx_action_bullet(0), _velocity(glm::vec2(0.0)),
-	_t_action_start(std::chrono::system_clock::now()), _t_last_bullet(std::chrono::system_clock::now()), _t_bullet_start(std::chrono::system_clock::now())
+	_model(model), _friendly(friendly), _dead(false), _shooting(false), _current_action_name("main"),
+	_idx_action(0), _velocity(glm::vec2(0.0)),
+	_t_action_start(std::chrono::system_clock::now()), _t_last_bullet(std::chrono::system_clock::now())
 {
 	_aabb= AABB_2D(pos, model->_size);
 	_lives= _model->_lives;
@@ -146,31 +146,14 @@ void Ship::anim() {
 		if (_idx_action>= _model->_actions[_current_action_name].size()) {
 			_idx_action= 0;
 		}
-		_idx_action_bullet= 0;
-		_t_bullet_start= now;
 	}
 
 	ShipModel * bullet_model= get_current_bullet_model();
-
-	// chgmt action bullet
-	if (bullet_model!= NULL) {
-		auto d2= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_bullet_start).count();
-		
-		if (bullet_model->_actions[_current_action_bullet_name][_idx_action_bullet]->_t> 0 && d2> bullet_model->_actions[_current_action_bullet_name][_idx_action_bullet]->_t) {
-			_t_bullet_start= now;
-			_idx_action_bullet++;
-			if (_idx_action_bullet>= bullet_model->_actions[_current_action_bullet_name].size()) {
-				_idx_action_bullet= 0;
-			}
-		}
-	}
 
 	// faut-il tirer
 	_shooting= false;
 	if (bullet_model!= NULL) {
 		auto d3= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_last_bullet).count();
-		//std::cout << d3 << " ; " << bullet_model->_actions[_current_action_bullet_name][_idx_action_bullet]->_t_shooting << "\n";
-		//if (d3> bullet_model->_actions[_current_action_bullet_name][_idx_action_bullet]->_t_shooting) {
 		if (d3> _model->_actions[_current_action_name][_idx_action]->_t_shooting) {
 			_t_last_bullet= now;
 			_shooting= true;
@@ -194,11 +177,8 @@ void Ship::set_current_action(std::string action_name) {
 	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
 
 	_current_action_name= action_name;
-	_current_action_bullet_name= "main";
 	_idx_action= 0;
-	_idx_action_bullet= 0;
 	_t_action_start= now;
-	_t_bullet_start= now;
 }
 
 std::ostream & operator << (std::ostream & os, const Ship & ship) {
