@@ -204,6 +204,13 @@ string dirname(string s) {
 }
 
 
+std::pair<std::string, std::string> splitext(std::string s) {
+	string without_ext= s.substr(0, s.find_last_of("."));
+	string ext= s.substr(s.find_last_of(".") + 1);
+	return std::make_pair(without_ext, ext);
+}
+
+
 // trim from start (in place)
 void ltrim(string &s) {
 	s.erase(s.begin(), find_if(s.begin(), s.end(), [](unsigned char ch) {

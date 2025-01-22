@@ -14,6 +14,43 @@ def flat_json(json_path_in, json_path_out):
 	#pp(data)
 	#print("---------------------")
 
+	# expand textures
+	# while True:
+	# 	modified= False
+	# 	for action_name, l_actions in data["actions"].items():
+	# 		if modified:
+	# 			break
+	# 		for idx_action, action in enumerate(l_actions):
+	# 			if "name" in action.keys() and "texture" in action.keys():
+	# 				l_actions_found= None
+					
+	# 				for action_name2, l_actions2 in data["actions"].items():
+	# 					if action_name2== action["name"]:
+	# 						l_actions_found= l_actions2
+	# 						break
+					
+	# 				if l_actions_found is None:
+	# 					raise RuntimeError("aaa")
+					
+	# 				print("---------")
+	# 				print(action_name)
+	# 				print(action["name"])
+	# 				for idx_action2, action2 in enumerate(l_actions_found):
+	# 					print(action2)
+	# 					if "texture" not in action2.keys():
+	# 						l_actions_found[idx_action2]["texture"]= action["texture"]
+	# 						modified= True
+	# 				break
+	# 	if not modified:
+	# 		break
+
+	# ajout texture par défaut
+	for action_name, l_actions in data["actions"].items():
+		for idx_action, action in enumerate(l_actions):
+			if "texture" not in action.keys():
+				l_actions[idx_action]["texture"]= "main_tex"
+
+	# expand paths
 	while True:
 		modified= False
 		for action_name, l_actions in data["actions"].items():

@@ -11,8 +11,19 @@
 			},
 			{
 				"direction" : [0.0, -0.2],
-				"t" : 200
+				"t" : 200,
+				"texture" : "speed_tex"
 			}
+		]
+	},
+	"textures" : {
+		"main_tex" : [
+			{"png" : "main1.png", "t" : 500},
+			{"png" : "main2.png", "t" : 300}
+		],
+		"speed_tex" : [
+			{"png" : "shoot1.png", "t" : 300},
+			{"png" : "shoot2.png", "t" : 200}
 		]
 	}
 }

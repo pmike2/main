@@ -12,5 +12,11 @@
 				"t" : 100
 			}
 		]
+	},
+	"textures" : {
+		"main_tex" : [
+			{"png" : "main1.png", "t" : 500},
+			{"png" : "main2.png", "t" : 300}
+		]
 	}
 }

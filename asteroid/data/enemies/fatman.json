@@ -5,41 +5,35 @@
 	"lives" : 5,
 	"actions" : {
 		"zigzag1" : [
-			{
-				"direction" : [-0.03, -0.03],
-				"t" : 700
-			},
-			{
-				"direction" : [0.03, -0.03],
-				"t" : 700
-			}
+			{"direction" : [-0.03, -0.03], "t" : 700},
+			{"direction" : [0.03, -0.03], "t" : 700}
 		],
 		"zigzag2" : [
 			{
 				"direction" : [-0.3, -0.08],
 				"t" : 100,
 				"shooting" : "small_bullet",
-				"t_shooting" : 20
+				"t_shooting" : 20,
+				"texture" : "shooting_tex"
 			},
-			{
-				"direction" : [0.3, -0.08],
-				"t" : 100
-			}
+			{"direction" : [0.3, -0.08], "t" : 100}
 		],
 		"weird" : [
-			{
-				"name" : "zigzag1",
-				"n" : 2
-			},
-			{
-				"name" : "zigzag2",
-				"n" : 2
-			}
+			{"name" : "zigzag1", "n" : 2},
+			{"name" : "zigzag2", "n" : 2}
 		],
 		"main" : [
-			{
-				"name" : "weird"
-			}
+			{"name" : "weird"}
+		]
+	},
+	"textures" : {
+		"main_tex" : [
+			{"png" : "main1.png", "t" : 50},
+			{"png" : "main2.png", "t" : 30}
+		],
+		"shooting_tex" : [
+			{"png" : "shoot1.png", "t" : 30},
+			{"png" : "shoot2.png", "t" : 20}
 		]
 	}
 }

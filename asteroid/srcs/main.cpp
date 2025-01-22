@@ -38,7 +38,7 @@ bool done= false;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-GLuint prog_aabb, prog_font;
+GLuint prog_aabb, prog_texture, prog_font;
 GLuint g_vao;
 
 
@@ -110,12 +110,13 @@ void init() {
 	main_context= SDL_GL_CreateContext(window);
 
 	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
-	int x, y, z;
+	
+	/*int x, y, z;
 	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &x);
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &y);
 	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &z);
-	
 	std::cout << "GL_MAX_ARRAY_TEXTURE_LAYERS=" << x  << " ; GL_MAX_TEXTURE_IMAGE_UNITS=" << y << " ; GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS=" << z << "\n";
+	*/
 
 	SDL_GL_SetSwapInterval(1);
 	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
@@ -136,7 +137,7 @@ void init() {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	glPointSize(2.0f);
+	//glPointSize(2.0f);
 	
 	SDL_GL_SwapWindow(window);
 	
@@ -151,6 +152,7 @@ void init() {
 	glBindVertexArray(g_vao);
 
 	prog_aabb= create_prog("../shaders/vertexshader_aabb.txt"  , "../shaders/fragmentshader_aabb.txt");
+	prog_texture= create_prog("../shaders/vertexshader_texture.txt", "../shaders/fragmentshader_texture.txt");
 	prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
@@ -162,7 +164,7 @@ void init() {
 	input_state= new InputState();
 
 	// --------------------------------------------------------------------------
-	asteroid= new Asteroid(prog_aabb, prog_font, screengl);
+	asteroid= new Asteroid(prog_aabb, prog_texture, prog_font, screengl);
 }
 
 

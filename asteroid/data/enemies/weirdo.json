@@ -13,8 +13,19 @@
 				"direction" : [0.0, 0.1],
 				"t" : 120,
 				"shooting" : "zigzag_bullet",
-				"t_shooting" : 50
+				"t_shooting" : 50,
+				"texture" : "shooting_tex"
 			}
+		]
+	},
+	"textures" : {
+		"main_tex" : [
+			{"png" : "main1.png", "t" : 500},
+			{"png" : "main2.png", "t" : 300}
+		],
+		"shooting_tex" : [
+			{"png" : "shoot1.png", "t" : 300},
+			{"png" : "shoot2.png", "t" : 200}
 		]
 	}
 }

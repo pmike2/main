@@ -9,25 +9,36 @@
 		"shoot_a" : [
 			{
 				"shooting" : "small_bullet_hero",
-				"t_shooting" : 80
+				"t_shooting" : 80,
+				"texture" : "shooting_tex"
 			}
 		],
 		"shoot_b" : [
 			{
 				"shooting" : "left_bullet_hero",
 				"t_shooting" : 110,
-				"t" : 120
+				"t" : 120,
+				"texture" : "shooting_tex"
 			},
 			{
 				"shooting" : "right_bullet_hero",
 				"t_shooting" : 110,
-				"t" : 120
+				"t" : 120,
+				"texture" : "shooting_tex"
 			}
 		],
 		"main" : [
-			{
-				"name" : "no_shoot"
-			}
+			{"name" : "no_shoot"}
+		]
+	},
+	"textures" : {
+		"main_tex" : [
+			{"png" : "main1.png", "t" : 500},
+			{"png" : "main2.png", "t" : 500}
+		],
+		"shooting_tex" : [
+			{"png" : "shoot1.png", "t" : 500},
+			{"png" : "shoot2.png", "t" : 500}
 		]
 	}
 }

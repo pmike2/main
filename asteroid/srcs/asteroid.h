@@ -29,10 +29,11 @@ enum EventType {NEW_ENEMY, LEVEL_END};
 
 class ShipModel;
 
+
 class Action {
 public:
 	Action();
-	Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting);
+	Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting, std::string texture_name);
 	~Action();
 
 
@@ -41,6 +42,22 @@ public:
 	unsigned int _t_shooting;
 	std::string _bullet_name;
 	ShipModel * _bullet_model;
+	//std::vector<ActionTexture *> _textures;
+	std::string _texture_name;
+};
+
+
+class ActionTexture {
+public:
+	ActionTexture();
+	ActionTexture(std::vector<std::string> & pngs, std::vector<unsigned int> & t_anims);
+	~ActionTexture();
+
+
+	std::vector<std::string> _pngs;
+	std::vector<unsigned int> _t_anims; // durées d'affichage des textures
+	unsigned int _first_idx; // indice de la 1ere image liée a cette action dans la liste d'actions stockées dans un GL_TEXTURE_2D_ARRAY
+	//unsigned int _n_idx; // nombre d'images liées a cette action
 };
 
 
@@ -58,6 +75,7 @@ public:
 	unsigned int _score;
 	unsigned int _lives;
 	std::map<std::string, std::vector<Action *> > _actions;
+	std::map<std::string, ActionTexture *> _textures;
 };
 
 
@@ -68,6 +86,7 @@ public:
 	~Ship();
 	void anim();
 	ShipModel * get_current_bullet_model();
+	ActionTexture * get_current_texture();
 	void set_current_action(std::string action_name);
 	friend std::ostream & operator << (std::ostream & os, const Ship & ship);
 
@@ -83,6 +102,8 @@ public:
 	std::chrono::system_clock::time_point _t_last_bullet;
 	ShipModel * _model;
 	unsigned int _lives;
+	unsigned int _idx_anim;
+	std::chrono::system_clock::time_point _t_anim_start;
 };
 
 
@@ -118,7 +139,7 @@ public:
 class Asteroid {
 public:
 	Asteroid();
-	Asteroid(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl);
+	Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl);
 	~Asteroid();
 
 	void load_models();
@@ -126,15 +147,16 @@ public:
 	
 	void draw_border_aabb();
 	void draw_ship_aabb();
-	void draw_texture();
+	void draw_ship_texture();
 	void draw();
 
 	void show_playing_info();
 	void show_inactive_info();
 	void show_set_score_name_info();
 
-	void update_ship_aabb();
 	void update_border_aabb();
+	void update_ship_aabb();
+	void update_ship_texture();
 	
 	void anim_playing();
 	void anim_inactive();
@@ -172,6 +194,7 @@ public:
 	int _new_highest_char_idx;
 	std::vector<Level *> _levels;
 	unsigned int _current_level_idx;
+	GLuint _texture_id;
 };
 
 

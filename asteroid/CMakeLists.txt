@@ -1,13 +1,15 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(sandbox)
+project(asteroid)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_SOURCE_DIR}/cmake/")
 
 find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(Freetype REQUIRED)
 
@@ -37,6 +39,7 @@ target_link_libraries(main PUBLIC lib_font)
 target_link_libraries(main PUBLIC lib_asteroid)
 
 target_link_libraries(main PUBLIC ${SDL2_LIBRARIES})
+target_link_libraries(main PUBLIC ${SDL2_IMAGE_LIBRARIES})
 target_link_libraries(main PUBLIC ${OPENGL_LIBRARIES})
 target_link_libraries(main PUBLIC ${FREETYPE_LIBRARIES})
 
