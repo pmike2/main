@@ -8,6 +8,7 @@
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL2/SDL_mixer.h>
 
 #include "repere.h"
 #include "utile.h"
@@ -41,9 +42,13 @@ unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 GLuint prog_aabb, prog_texture, prog_font;
 GLuint g_vao;
 
+Mix_Chunk * test_son= NULL;
+
 
 
 void key_down(SDL_Keycode key) {
+	Mix_PlayChannel(-1, test_son, 0);
+
 	input_state->key_down(key);
 
 	if (key== SDLK_ESCAPE) {
@@ -97,6 +102,10 @@ void init() {
 		if (joy) {
 			std::cout << "joystick OK; n axes=" << SDL_JoystickNumAxes(joy) << " ; n buttons=" << SDL_JoystickNumButtons(joy) << "\n";
 		}
+	}
+
+	if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 4096)== -1) {
+		std::cerr << "Echec audio\n";
 	}
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
@@ -165,6 +174,8 @@ void init() {
 
 	// --------------------------------------------------------------------------
 	asteroid= new Asteroid(prog_aabb, prog_texture, prog_font, screengl);
+
+	test_son= Mix_LoadWAV("/Users/home/git_dir/main/data/audio/kick.wav");
 }
 
 
@@ -275,6 +286,7 @@ void clean() {
 	delete input_state;
 	delete screengl;
 
+	Mix_CloseAudio();
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
