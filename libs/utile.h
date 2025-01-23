@@ -40,17 +40,14 @@ float perlin(float x, float y, float* gradient, unsigned int gradient_w, unsigne
 // a terme remplacer ça par un appel à glm
 void calculate_normal(float * coord1, float * coord2, float * coord3, float * norm);
 
-
 unsigned int diff_time_ms(struct timeval * after, struct timeval * before);
 unsigned int diff_time_ms_from_now(struct timeval * begin);
 std::string current_date_time();
-
 
 std::vector<std::string> list_files(std::string ch_dir, std::string ext="");
 std::string basename(std::string s);
 std::string dirname(std::string s);
 std::pair<std::string, std::string> splitext(std::string s);
-
 
 void ltrim(std::string &s);
 void rtrim(std::string &s);
@@ -59,5 +56,7 @@ void trim(std::string &s);
 std::vector<std::string> split(const std::string& s, const std::string& delimiter);
 
 std::string glm_to_string(pt_type v);
+
+std::string get_cmd_output(std::string cmd);
 
 #endif

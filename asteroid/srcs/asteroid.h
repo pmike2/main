@@ -14,12 +14,15 @@
 
 
 
-const glm::dvec4 friendly_color(0.0, 1.0, 0.0, 1.0);
-const glm::dvec4 unfriendly_color(1.0, 0.0, 0.0, 1.0);
-const glm::dvec4 border_color(0.3, 0.3, 0.2, 1.0);
+const glm::dvec4 BORDER_COLOR(0.3, 0.3, 0.2, 1.0);
+const glm::dvec4 AABB_FRIENDLY_COLOR(0.0, 1.0, 0.0, 1.0);
+const glm::dvec4 AABB_UNFRIENDLY_COLOR(1.0, 0.0, 0.0, 1.0);
+const glm::dvec4 FOOTPRINT_FRIENDLY_COLOR(0.0, 1.0, 1.0, 1.0);
+const glm::dvec4 FOOTPRINT_UNFRIENDLY_COLOR(1.0, 0.0, 1.0, 1.0);
 const float HERO_VELOCITY= 0.1;
 const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
+const unsigned int TEXTURE_SIZE= 1024;
 
 
 enum ShipType {HERO, ENEMY, BULLET};
@@ -50,7 +53,7 @@ public:
 class ActionTexture {
 public:
 	ActionTexture();
-	ActionTexture(std::vector<std::string> & pngs, std::vector<unsigned int> & t_anims);
+	ActionTexture(std::vector<std::string> & pngs, std::vector<unsigned int> & t_anims, AABB_2D & footprint);
 	~ActionTexture();
 
 
@@ -58,6 +61,7 @@ public:
 	std::vector<unsigned int> _t_anims; // durées d'affichage des textures
 	unsigned int _first_idx; // indice de la 1ere image liée a cette action dans la liste d'actions stockées dans un GL_TEXTURE_2D_ARRAY
 	//unsigned int _n_idx; // nombre d'images liées a cette action
+	AABB_2D _footprint; // un footprint pour une action en prenant le + petit footprint des pngs de l'action
 };
 
 
@@ -92,6 +96,7 @@ public:
 
 
 	AABB_2D _aabb;
+	AABB_2D _footprint;
 	bool _friendly;
 	glm::vec2 _velocity;
 	bool _dead;
@@ -147,6 +152,7 @@ public:
 	
 	void draw_border_aabb();
 	void draw_ship_aabb();
+	void draw_ship_footprint();
 	void draw_ship_texture();
 	void draw();
 
@@ -156,6 +162,7 @@ public:
 
 	void update_border_aabb();
 	void update_ship_aabb();
+	void update_ship_footprint();
 	void update_ship_texture();
 	
 	void anim_playing();
@@ -178,8 +185,7 @@ public:
 
 	std::map<std::string, ShipModel *> _models;
 	std::vector<Ship *> _ships;
-	bool _draw_aabb;
-	bool _draw_texture;
+	bool _draw_aabb, _draw_footprint, _draw_texture;
 	glm::vec2 _pt_min, _pt_max;
 	std::map<std::string, DrawContext *> _contexts;
 	bool _key_left, _key_right, _key_up, _key_down;

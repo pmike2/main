@@ -19,7 +19,8 @@ ActionTexture::ActionTexture() {
 }
 
 
-ActionTexture::ActionTexture(std::vector<std::string> & pngs, std::vector<unsigned int> & t_anims) : _first_idx(0) {
+ActionTexture::ActionTexture(std::vector<std::string> & pngs, std::vector<unsigned int> & t_anims, AABB_2D & footprint) :
+	_first_idx(0), _footprint(footprint) {
 	for (auto png : pngs) {
 		_pngs.push_back(png);
 	}
@@ -99,13 +100,28 @@ ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 		auto & l_textures= it.value();
 		std::vector<std::string> pngs;
 		std::vector<unsigned int> t_anims;
+		AABB_2D footprint(pt_type(0.0, 0.0), pt_type(1.0, 1.0));
 		for (auto texture : l_textures) {
 			std::string png= texture["png"];
 			unsigned int t= texture["t"];
 			pngs.push_back(png);
 			t_anims.push_back(t);
+			pt_type pos(texture["footprint"]["pos"][0], texture["footprint"]["pos"][1]);
+			pt_type size(texture["footprint"]["size"][0], texture["footprint"]["size"][1]);
+			if (pos.x> footprint._pos.x) {
+				footprint._pos.x= pos.x;
+			}
+			if (pos.y> footprint._pos.y) {
+				footprint._pos.y= pos.y;
+			}
+			if (size.x< footprint._size.x) {
+				footprint._size.x= size.x;
+			}
+			if (size.y< footprint._size.y) {
+				footprint._size.y= size.y;
+			}
 		}
-		_textures[texture_name]= new ActionTexture(pngs, t_anims);
+		_textures[texture_name]= new ActionTexture(pngs, t_anims, footprint);
 	}
 
 	// parcours des actions
@@ -169,6 +185,11 @@ Ship::Ship(ShipModel * model, pt_type pos, bool friendly) :
 	_idx_anim(0), _t_anim_start(std::chrono::system_clock::now())
 {
 	_aabb= AABB_2D(pos, model->_size);
+	ActionTexture * current_texture= get_current_texture();
+	_footprint= AABB_2D(
+		pt_type(pos.x+ current_texture->_footprint._pos.x* _model->_size.x, pos.y+ current_texture->_footprint._pos.y* _model->_size.y),
+		pt_type(_model->_size.x* current_texture->_footprint._size.x, _model->_size.y* current_texture->_footprint._size.y)
+	);
 	_lives= _model->_lives;
 }
 
@@ -192,6 +213,7 @@ void Ship::anim() {
 	}
 
 	ShipModel * bullet_model= get_current_bullet_model();
+	ActionTexture * texture= get_current_texture();
 
 	// faut-il tirer
 	_shooting= false;
@@ -207,12 +229,16 @@ void Ship::anim() {
 	if (_model->_type== ENEMY || _model->_type== BULLET) {
 		_velocity= _model->_actions[_current_action_name][_idx_action]->_direction;
 	}
+	
 	_aabb._pos+= _velocity;
 
+	_footprint._pos.x= _aabb._pos.x+ texture->_footprint._pos.x* _aabb._size.x;
+	_footprint._pos.y= _aabb._pos.y+ texture->_footprint._pos.y* _aabb._size.y;
+	_footprint._size.x= texture->_footprint._size.x*_aabb._size.x;
+	_footprint._size.y= texture->_footprint._size.y*_aabb._size.y;
+
 	// anim texture
-	ActionTexture * texture= get_current_texture();
 	auto d_anim= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_anim_start).count();
-	//std::cout << tex_name << " ; " << _idx_anim << " ; " << _model->_textures[tex_name]->_t_anims.size() << "\n";
 	if (d_anim> texture->_t_anims[_idx_anim]) {
 		_t_anim_start= now;
 		_idx_anim++;
@@ -335,7 +361,7 @@ Asteroid::Asteroid() {
 
 
 Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl) 
-	: _draw_aabb(true), _draw_texture(true),
+	: _draw_aabb(true), _draw_footprint(true), _draw_texture(false),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false),
 	_mode(INACTIVE), _score(0), _current_level_idx(0) {
 
@@ -352,7 +378,7 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 
 	reinit();
 
-	unsigned int n_buffers= 3;
+	unsigned int n_buffers= 4;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
@@ -364,12 +390,17 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"camera2clip_matrix"});
 
-	_contexts["ship_texture"]= new DrawContext(prog_texture, _buffers[2],
+	_contexts["ship_footprint"]= new DrawContext(prog_aabb, _buffers[2],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"camera2clip_matrix"});
+
+	_contexts["ship_texture"]= new DrawContext(prog_texture, _buffers[3],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
 	update_border_aabb();
 	update_ship_aabb();
+	update_ship_footprint();
 	update_ship_texture();
 }
 
@@ -436,7 +467,7 @@ void Asteroid::load_models() {
 		}
 	}
 
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, 512, 512, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	unsigned int compt= 0;
 	for (auto model : _models) {
@@ -457,7 +488,7 @@ void Asteroid::load_models() {
 				glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
 								0,                             // mipmap number
 								0, 0, compt,   // xoffset, yoffset, zoffset
-								512, 512, 1, // width, height, depth
+								TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
 								GL_BGRA,                       // format
 								GL_UNSIGNED_BYTE,              // type
 								surface->pixels);              // pointer to data
@@ -536,6 +567,30 @@ void Asteroid::draw_ship_aabb() {
 }
 
 
+void Asteroid::draw_ship_footprint() {
+	DrawContext * context= _contexts["ship_footprint"];
+	
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	
+	glUniformMatrix4fv(context->_locs["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	
+	glEnableVertexAttribArray(context->_locs["position_in"]);
+	glEnableVertexAttribArray(context->_locs["color_in"]);
+
+	glVertexAttribPointer(context->_locs["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
+	glVertexAttribPointer(context->_locs["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
+
+	glDrawArrays(GL_LINES, 0, context->_n_pts);
+
+	glDisableVertexAttribArray(context->_locs["position_in"]);
+	glDisableVertexAttribArray(context->_locs["color_in"]);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
 void Asteroid::draw_ship_texture() {
 	DrawContext * context= _contexts["ship_texture"];
 	//std::cout << _texture_id << " ; " << context->_locs["texture_array"] << " ; " << context->_locs["camera2clip_matrix"] << " ; " << context->_locs["position_in"] << " ; " << context->_locs["tex_coord_in"] << " ; " << context->_locs["current_layer_in"] << "\n";
@@ -578,6 +633,9 @@ void Asteroid::draw() {
 		if (_draw_aabb) {
 			draw_border_aabb();
 			draw_ship_aabb();
+		}
+		if (_draw_footprint) {
+			draw_ship_footprint();
 		}
 		show_playing_info();
 	}
@@ -696,7 +754,7 @@ void Asteroid::update_border_aabb() {
 		data[context->_n_attrs_per_pts* idx_pt+ 0]= positions[2* idx_pt];
 		data[context->_n_attrs_per_pts* idx_pt+ 1]= positions[2* idx_pt+ 1];
 		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
-			data[context->_n_attrs_per_pts* idx_pt+ 2+ idx_color]= border_color[idx_color];
+			data[context->_n_attrs_per_pts* idx_pt+ 2+ idx_color]= BORDER_COLOR[idx_color];
 		}
 	}
 
@@ -724,10 +782,10 @@ void Asteroid::update_ship_aabb() {
 
 		glm::vec4 color;
 		if (ship->_friendly) {
-			color= friendly_color;
+			color= AABB_FRIENDLY_COLOR;
 		}
 		else {
-			color= unfriendly_color;
+			color= AABB_UNFRIENDLY_COLOR;
 		}
 		number positions[n_pts_per_ship* 2]= {
 			ship->_aabb._pos.x, ship->_aabb._pos.y,
@@ -741,6 +799,73 @@ void Asteroid::update_ship_aabb() {
 
 			ship->_aabb._pos.x, ship->_aabb._pos.y+ ship->_aabb._size.y,
 			ship->_aabb._pos.x, ship->_aabb._pos.y
+		};
+
+		for (unsigned int i=0; i<n_pts_per_ship; ++i) {
+			if (positions[2* i]> _pt_max.x) {
+				positions[2* i]= _pt_max.x;
+			}
+			if (positions[2* i]< _pt_min.x) {
+				positions[2* i]= _pt_min.x;
+			}
+			if (positions[2* i+ 1]> _pt_max.y) {
+				positions[2* i+ 1]= _pt_max.y;
+			}
+			if (positions[2* i+ 1]< _pt_min.y) {
+				positions[2* i+ 1]= _pt_min.y;
+			}
+		}
+
+		for (unsigned int idx_pt=0; idx_pt<n_pts_per_ship; ++idx_pt) {
+			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 0]= float(positions[2* idx_pt]);
+			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 1]= float(positions[2* idx_pt+ 1]);
+			for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+				data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= color[idx_color];
+			}
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void Asteroid::update_ship_footprint() {
+	DrawContext * context= _contexts["ship_footprint"];
+	context->_n_pts= 0;
+	context->_n_attrs_per_pts= 6;
+
+	const unsigned int n_pts_per_ship= 8;
+
+	for (auto ship : _ships) {
+		context->_n_pts+= n_pts_per_ship;
+	}
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
+		Ship * ship= _ships[idx_ship];
+
+		glm::vec4 color;
+		if (ship->_friendly) {
+			color= FOOTPRINT_FRIENDLY_COLOR;
+		}
+		else {
+			color= FOOTPRINT_UNFRIENDLY_COLOR;
+		}
+		number positions[n_pts_per_ship* 2]= {
+			ship->_footprint._pos.x, ship->_footprint._pos.y,
+			ship->_footprint._pos.x+ ship->_footprint._size.x, ship->_footprint._pos.y,
+
+			ship->_footprint._pos.x+ ship->_footprint._size.x, ship->_footprint._pos.y,
+			ship->_footprint._pos.x+ ship->_footprint._size.x, ship->_footprint._pos.y+ ship->_footprint._size.y,
+
+			ship->_footprint._pos.x+ ship->_footprint._size.x, ship->_footprint._pos.y+ ship->_footprint._size.y,
+			ship->_footprint._pos.x, ship->_footprint._pos.y+ ship->_footprint._size.y,
+
+			ship->_footprint._pos.x, ship->_footprint._pos.y+ ship->_footprint._size.y,
+			ship->_footprint._pos.x, ship->_footprint._pos.y
 		};
 
 		for (unsigned int i=0; i<n_pts_per_ship; ++i) {
@@ -837,6 +962,8 @@ void Asteroid::anim_playing() {
 
 	add_level_events();
 
+	//std::cout << "joy=(" << _joystick[0] << " ; " << _joystick[1] << ") ; key_left=" << _key_left  << " ; key_right=" << _key_right << " ; key_down=" << _key_down  << " ; key_up=" << _key_up << "\n";
+
 	// joystick vers le haut est négatif !
 	_ships[0]->_velocity.x= HERO_VELOCITY* _joystick[0];
 	_ships[0]->_velocity.y= -1.0* HERO_VELOCITY* _joystick[1];
@@ -915,7 +1042,9 @@ void Asteroid::anim_playing() {
 			) {
 				continue;
 			}
-			if (aabb_intersects_aabb(&_ships[idx_ship]->_aabb, &_ships[idx_ship2]->_aabb)) {
+
+			// les footprint sont utilisés pour la détection de collision
+			if (aabb_intersects_aabb(&_ships[idx_ship]->_footprint, &_ships[idx_ship2]->_footprint)) {
 				_ships[idx_ship]->_lives--;
 				_ships[idx_ship2]->_lives--;
 				if (_ships[idx_ship]->_lives<= 0) {
@@ -954,6 +1083,7 @@ void Asteroid::anim_playing() {
 	}), _ships.end());
 
 	update_ship_aabb();
+	update_ship_footprint();
 	update_ship_texture();
 }
 

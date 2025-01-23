@@ -1,18 +1,50 @@
 {
-	"type" : "bullet",
-	"size" : [0.1, 0.7],
-	"actions" : {
-		"main" : [
-			{
-				"direction" : [-0.1, 0.2],
-				"t" : 400
-			}
-		]
-	},
-	"textures" : {
-		"main_tex" : [
-			{"png" : "main1.png", "t" : 500},
-			{"png" : "main2.png", "t" : 300}
-		]
-	}
+    "type": "bullet",
+    "size": [
+        0.1,
+        0.7
+    ],
+    "actions": {
+        "main": [
+            {
+                "direction": [
+                    -0.1,
+                    0.2
+                ],
+                "t": 400
+            }
+        ]
+    },
+    "textures": {
+        "main_tex": [
+            {
+                "png": "main1.png",
+                "t": 500,
+                "footprint": {
+                    "pos": [
+                        0.017578125,
+                        0.001953125
+                    ],
+                    "size": [
+                        0.875,
+                        0.90625
+                    ]
+                }
+            },
+            {
+                "png": "main2.png",
+                "t": 300,
+                "footprint": {
+                    "pos": [
+                        0.0,
+                        0.001953125
+                    ],
+                    "size": [
+                        0.990234375,
+                        0.998046875
+                    ]
+                }
+            }
+        ]
+    }
 }

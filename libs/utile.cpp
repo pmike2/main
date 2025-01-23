@@ -6,6 +6,10 @@
 #include <algorithm> 
 #include <cctype>
 #include <locale>
+#include <cstdio>
+#include <memory>
+#include <stdexcept>
+#include <array>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -263,3 +267,16 @@ string glm_to_string(pt_type v) {
 	return "("+ str_x+ ", "+ str_y+ ")";
 }
 
+
+std::string get_cmd_output(std::string cmd) {
+	std::array<char, 128> buffer;
+	std::string result;
+	std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
+	if (!pipe) {
+		throw std::runtime_error("popen() failed!");
+	}
+	while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr) {
+		result += buffer.data();
+	}
+	return result;
+}
