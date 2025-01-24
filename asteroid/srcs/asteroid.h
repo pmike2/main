@@ -23,6 +23,7 @@ const float HERO_VELOCITY= 0.1;
 const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
 const unsigned int TEXTURE_SIZE= 1024;
+const unsigned int HIT_UNTOUCHABLE_MS= 100;
 
 
 enum ShipType {HERO, ENEMY, BULLET};
@@ -45,7 +46,6 @@ public:
 	unsigned int _t_shooting;
 	std::string _bullet_name;
 	ShipModel * _bullet_model;
-	//std::vector<ActionTexture *> _textures;
 	std::string _texture_name;
 };
 
@@ -60,7 +60,6 @@ public:
 	std::vector<std::string> _pngs;
 	std::vector<unsigned int> _t_anims; // durées d'affichage des textures
 	unsigned int _first_idx; // indice de la 1ere image liée a cette action dans la liste d'actions stockées dans un GL_TEXTURE_2D_ARRAY
-	//unsigned int _n_idx; // nombre d'images liées a cette action
 	AABB_2D _footprint; // un footprint pour une action en prenant le + petit footprint des pngs de l'action
 };
 
@@ -75,7 +74,7 @@ public:
 
 	std::string _json_path;
 	ShipType _type;
-	glm::vec2 _size;
+	pt_type _size;
 	unsigned int _score;
 	unsigned int _lives;
 	std::map<std::string, std::vector<Action *> > _actions;
@@ -109,6 +108,9 @@ public:
 	unsigned int _lives;
 	unsigned int _idx_anim;
 	std::chrono::system_clock::time_point _t_anim_start;
+	std::chrono::system_clock::time_point _t_last_hit;
+	bool _hit;
+	float _hit_value;
 };
 
 

@@ -33,7 +33,27 @@
 			"delta_position" : [2.0, 0.0]
 		}
 	],
+	"fatman" : [
+		{
+			"t" : 0,
+			"type" : "enemy",
+			"position" : [-6.0, 8.0],
+			"enemy" : "fatman"
+		}
+	],
+	"weirdo" : [
+		{
+			"t" : 0,
+			"type" : "enemy",
+			"position" : [-6.0, 8.0],
+			"enemy" : "weirdo"
+		}
+	],
 	"main" : [
+		{
+			"t" : 10,
+			"name" : "weirdo"
+		},
 		{
 			"t" : 1000,
 			"name" : "bongo_wave"

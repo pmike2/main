@@ -47,7 +47,7 @@ Mix_Chunk * test_son= NULL;
 
 
 void key_down(SDL_Keycode key) {
-	Mix_PlayChannel(-1, test_son, 0);
+	//Mix_PlayChannel(-1, test_son, 0);
 
 	input_state->key_down(key);
 
@@ -104,9 +104,12 @@ void init() {
 		}
 	}
 
-	if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 4096)== -1) {
+	// la taille du buffer influe sur la latence
+	if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 512)== -1) {
 		std::cerr << "Echec audio\n";
 	}
+	// permet d'allouer des channels pour faire du polyphonique; il faut alors bien gérer le 1er arg de Mix_PlayChannel
+	Mix_AllocateChannels(16);
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
@@ -175,7 +178,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	asteroid= new Asteroid(prog_aabb, prog_texture, prog_font, screengl);
 
-	test_son= Mix_LoadWAV("/Users/home/git_dir/main/data/audio/kick.wav");
+	//test_son= Mix_LoadWAV("/Volumes/Data/perso/dev/main/data/audio/hihat.wav");
 }
 
 

@@ -182,7 +182,8 @@ Ship::Ship(ShipModel * model, pt_type pos, bool friendly) :
 	_model(model), _friendly(friendly), _dead(false), _shooting(false), _current_action_name("main"),
 	_idx_action(0), _velocity(glm::vec2(0.0)),
 	_t_action_start(std::chrono::system_clock::now()), _t_last_bullet(std::chrono::system_clock::now()),
-	_idx_anim(0), _t_anim_start(std::chrono::system_clock::now())
+	_idx_anim(0), _t_anim_start(std::chrono::system_clock::now()), _t_last_hit(std::chrono::system_clock::now()),
+	_hit(false), _hit_value(0.0)
 {
 	_aabb= AABB_2D(pos, model->_size);
 	ActionTexture * current_texture= get_current_texture();
@@ -201,6 +202,20 @@ Ship::~Ship() {
 
 void Ship::anim() {
 	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+
+	if (_hit) {
+		auto d_hit= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_last_hit).count();
+		if (d_hit> HIT_UNTOUCHABLE_MS) {
+			_hit= false;
+			_hit_value= 0.0;
+		}
+		else {
+			_hit_value= float(HIT_UNTOUCHABLE_MS- d_hit)/ float(HIT_UNTOUCHABLE_MS);
+		}
+	}
+	else {
+		_hit_value= 0.0;
+	}
 	
 	// chgmt action ; _t < 0 correspond à une action infinie
 	auto d_action= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_action_start).count();
@@ -361,7 +376,7 @@ Asteroid::Asteroid() {
 
 
 Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl) 
-	: _draw_aabb(true), _draw_footprint(true), _draw_texture(false),
+	: _draw_aabb(false), _draw_footprint(false), _draw_texture(true),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false),
 	_mode(INACTIVE), _score(0), _current_level_idx(0) {
 
@@ -395,7 +410,7 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 		std::vector<std::string>{"camera2clip_matrix"});
 
 	_contexts["ship_texture"]= new DrawContext(prog_texture, _buffers[3],
-		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
+		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "hit_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
 	update_border_aabb();
@@ -608,16 +623,19 @@ void Asteroid::draw_ship_texture() {
 	glEnableVertexAttribArray(context->_locs["position_in"]);
 	glEnableVertexAttribArray(context->_locs["tex_coord_in"]);
 	glEnableVertexAttribArray(context->_locs["current_layer_in"]);
+	glEnableVertexAttribArray(context->_locs["hit_in"]);
 
 	glVertexAttribPointer(context->_locs["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
 	glVertexAttribPointer(context->_locs["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
 	glVertexAttribPointer(context->_locs["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
+	glVertexAttribPointer(context->_locs["hit_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 
 	glDisableVertexAttribArray(context->_locs["position_in"]);
 	glDisableVertexAttribArray(context->_locs["tex_coord_in"]);
 	glDisableVertexAttribArray(context->_locs["current_layer_in"]);
+	glDisableVertexAttribArray(context->_locs["hit_in"]);
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -901,7 +919,7 @@ void Asteroid::update_ship_footprint() {
 void Asteroid::update_ship_texture() {
 	DrawContext * context= _contexts["ship_texture"];
 	context->_n_pts= 0;
-	context->_n_attrs_per_pts= 5;
+	context->_n_attrs_per_pts= 6;
 
 	const unsigned int n_pts_per_ship= 6;
 
@@ -910,6 +928,8 @@ void Asteroid::update_ship_texture() {
 	}
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
 
 	// à cause du système de reference opengl j'ai du inverser les 0 et les 1 des y des textures
 	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
@@ -946,6 +966,7 @@ void Asteroid::update_ship_texture() {
 				data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[4* idx_pt+ i]);
 			}
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 4]= float(texture->_first_idx+ ship->_idx_anim); // current_layer_in
+			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= ship->_hit_value;
 		}
 	}
 
@@ -991,7 +1012,8 @@ void Asteroid::anim_playing() {
 		}
 		ship->anim();
 		if (ship->_shooting) {
-			_ships.push_back(new Ship(ship->get_current_bullet_model(), ship->_aabb.center(), friendly));
+			ShipModel * bullet_model= ship->get_current_bullet_model();
+			_ships.push_back(new Ship(bullet_model, ship->_footprint.center()- 0.5* bullet_model->_size, friendly));
 		}
 	}
 
@@ -1045,18 +1067,27 @@ void Asteroid::anim_playing() {
 
 			// les footprint sont utilisés pour la détection de collision
 			if (aabb_intersects_aabb(&_ships[idx_ship]->_footprint, &_ships[idx_ship2]->_footprint)) {
-				_ships[idx_ship]->_lives--;
-				_ships[idx_ship2]->_lives--;
-				if (_ships[idx_ship]->_lives<= 0) {
-					_ships[idx_ship]->_dead= true;
-					if (!_ships[idx_ship]->_friendly) {
-						_score+= _ships[idx_ship]->_model->_score;
+				if (!_ships[idx_ship]->_hit) {
+					_ships[idx_ship]->_hit= true;
+					_ships[idx_ship]->_t_last_hit= std::chrono::system_clock::now();
+					_ships[idx_ship]->_lives--;
+					if (_ships[idx_ship]->_lives<= 0) {
+						_ships[idx_ship]->_dead= true;
+						if (!_ships[idx_ship]->_friendly) {
+							_score+= _ships[idx_ship]->_model->_score;
+						}
 					}
 				}
-				if (_ships[idx_ship2]->_lives<= 0) {
-					_ships[idx_ship2]->_dead= true;
-					if (!_ships[idx_ship2]->_friendly) {
-						_score+= _ships[idx_ship2]->_model->_score;
+
+				if (!_ships[idx_ship2]->_hit) {
+					_ships[idx_ship2]->_hit= true;
+					_ships[idx_ship2]->_t_last_hit= std::chrono::system_clock::now();
+					_ships[idx_ship2]->_lives--;
+					if (_ships[idx_ship2]->_lives<= 0) {
+						_ships[idx_ship2]->_dead= true;
+						if (!_ships[idx_ship2]->_friendly) {
+							_score+= _ships[idx_ship2]->_model->_score;
+						}
 					}
 				}
 			}
@@ -1118,6 +1149,10 @@ bool Asteroid::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 	if (key== SDLK_y) {
 		_draw_aabb= !_draw_aabb;
+		return true;
+	}
+	if (key== SDLK_u) {
+		_draw_footprint= !_draw_footprint;
 		return true;
 	}
 

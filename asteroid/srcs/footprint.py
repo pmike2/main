@@ -10,9 +10,10 @@ def footprint(png_path):
 	if not os.path.isfile(png_path):
 		raise RuntimeError(f"{png_path} n'existe pas.")
 
-	im= Image.open(png_path)
-	pixels = list(im.getdata())
-	width, height = im.size
+	with Image.open(png_path) as im:
+		pixels = list(im.getdata())
+		width, height = im.size
+	
 	pixels_by_rows = [pixels[i * width:(i + 1) * width] for i in range(height)]
 	pixels_by_cols= list(zip(*pixels_by_rows))
 	# len(pixels_by_rows) == height len(pixels_by_rows[0]) == width
