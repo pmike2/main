@@ -23,6 +23,7 @@ public:
 	~AABB_2D();
 	pt_type center();
 	AABB_2D * buffered(number size);
+	void buffer(number size);
 	friend std::ostream & operator << (std::ostream & os, const AABB_2D & aabb);
 
 

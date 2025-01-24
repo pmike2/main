@@ -23,7 +23,8 @@ const float HERO_VELOCITY= 0.1;
 const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
 const unsigned int TEXTURE_SIZE= 1024;
-const unsigned int HIT_UNTOUCHABLE_MS= 100;
+const unsigned int HIT_UNTOUCHABLE_MS= 200;
+const unsigned int DEATH_MS= 200;
 
 
 enum ShipType {HERO, ENEMY, BULLET};
@@ -39,6 +40,7 @@ public:
 	Action();
 	Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting, std::string texture_name);
 	~Action();
+	friend std::ostream & operator << (std::ostream & os, const Action & action);
 
 
 	glm::vec2 _direction;
@@ -55,6 +57,7 @@ public:
 	ActionTexture();
 	ActionTexture(std::vector<std::string> & pngs, std::vector<unsigned int> & t_anims, AABB_2D & footprint);
 	~ActionTexture();
+	friend std::ostream & operator << (std::ostream & os, const ActionTexture & at);
 
 
 	std::vector<std::string> _pngs;
@@ -98,7 +101,6 @@ public:
 	AABB_2D _footprint;
 	bool _friendly;
 	glm::vec2 _velocity;
-	bool _dead;
 	bool _shooting;
 	std::string _current_action_name;
 	unsigned int _idx_action;
@@ -111,6 +113,10 @@ public:
 	std::chrono::system_clock::time_point _t_last_hit;
 	bool _hit;
 	float _hit_value;
+	bool _dead;
+	bool _delete;
+	float _alpha;
+	std::chrono::system_clock::time_point _t_die;
 };
 
 

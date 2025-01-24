@@ -6,6 +6,7 @@ uniform sampler2DArray texture_array;
 in vec2 tex_coord;
 in float current_layer;
 in float hit;
+in float alpha;
 
 out vec4 color;
 
@@ -17,6 +18,5 @@ void main() {
 	}
 	
 	// hit == 0 : pas touché ; hit == 1 : vient de se faire toucher
-	color= mix(current_color, vec4(1.0, 0.0, 0.0, 1.0), hit);
-	//color= vec4(current_color.rgb, 1.0);
+	color= mix(vec4(current_color.rgb, alpha), vec4(1.0, 0.0, 0.0, alpha), hit);
 }

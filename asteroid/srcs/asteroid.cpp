@@ -13,6 +13,30 @@
 using json = nlohmann::json;
 
 
+// action -----------------------------------------------------------
+Action::Action() {
+
+}
+
+
+Action::Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting, std::string texture_name) :
+	_direction(direction), _t(t), _bullet_name(bullet_name), _bullet_model(NULL), _t_shooting(t_shooting), _texture_name(texture_name) {
+
+}
+
+
+Action::~Action() {
+	
+}
+
+
+std::ostream & operator << (std::ostream & os, const Action & action) {
+	os << "direction=" << glm::to_string(action._direction) << " ; t=" << action._t << " ; " << "t_shooting=" << action._t_shooting;
+	os << " ; bullet_name=" << action._bullet_name << " ; texture_name=" << action._texture_name;
+	return os;
+}
+
+
 // action_texture ---------------------------------------------------
 ActionTexture::ActionTexture() {
 
@@ -35,20 +59,14 @@ ActionTexture::~ActionTexture() {
 }
 
 
-// action -----------------------------------------------------------
-Action::Action() {
-
-}
-
-
-Action::Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting, std::string texture_name) :
-	_direction(direction), _t(t), _bullet_name(bullet_name), _bullet_model(NULL), _t_shooting(t_shooting), _texture_name(texture_name) {
-
-}
-
-
-Action::~Action() {
-	
+std::ostream & operator << (std::ostream & os, const ActionTexture & at) {
+	os << "pngs=";
+	for (auto png : at._pngs) {
+		os << png << " ; ";
+	}
+	os << "first_idx=" << at._first_idx;
+	os << " ; footprint=" << at._footprint;
+	return os;
 }
 
 
@@ -163,9 +181,19 @@ ShipModel::~ShipModel() {
 
 
 std::ostream & operator << (std::ostream & os, const ShipModel & model) {
-	os << "json = " << model._json_path << " ; actions = [";
+	os << "json = " << model._json_path << " ; type=" << model._type << " ; size=" << glm::to_string(model._size);
+	os << " ; score=" << model._score << " ; lives=" << model._lives;
+	os << " ; actions = [";
 	for (auto action : model._actions) {
-		os << action.first << " , ";
+		os << action.first << " : (";
+		for (auto a : action.second) {
+			os << *a << " | ";
+		}
+	}
+	os << "]";
+	os << " ; textures = [";
+	for (auto texture : model._textures) {
+		os << texture.first << " : " << *texture.second << " | ";
 	}
 	os << "]";
 	return os;
@@ -183,7 +211,7 @@ Ship::Ship(ShipModel * model, pt_type pos, bool friendly) :
 	_idx_action(0), _velocity(glm::vec2(0.0)),
 	_t_action_start(std::chrono::system_clock::now()), _t_last_bullet(std::chrono::system_clock::now()),
 	_idx_anim(0), _t_anim_start(std::chrono::system_clock::now()), _t_last_hit(std::chrono::system_clock::now()),
-	_hit(false), _hit_value(0.0)
+	_hit(false), _hit_value(0.0), _t_die(std::chrono::system_clock::now()), _delete(false), _alpha(1.0)
 {
 	_aabb= AABB_2D(pos, model->_size);
 	ActionTexture * current_texture= get_current_texture();
@@ -202,6 +230,21 @@ Ship::~Ship() {
 
 void Ship::anim() {
 	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+	_shooting= false;
+
+	if (_dead) {
+		//_hit= false;
+		//_hit_value= 0.0;
+		auto d_death= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_die).count();
+		if (d_death> DEATH_MS) {
+			_delete= true;
+			_alpha= 0.0;
+			return;
+		}
+		else {
+			_alpha= float(DEATH_MS- d_death)/ float(DEATH_MS);
+		}
+	}
 
 	if (_hit) {
 		auto d_hit= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_last_hit).count();
@@ -231,7 +274,6 @@ void Ship::anim() {
 	ActionTexture * texture= get_current_texture();
 
 	// faut-il tirer
-	_shooting= false;
 	if (bullet_model!= NULL) {
 		auto d_shoot= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_last_bullet).count();
 		if (d_shoot> _model->_actions[_current_action_name][_idx_action]->_t_shooting) {
@@ -380,13 +422,17 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false),
 	_mode(INACTIVE), _score(0), _current_level_idx(0) {
 
-	const float MARGIN= 1.0;
-	_pt_min= glm::vec2(-screengl->_gl_width* 0.5f+ MARGIN, -screengl->_gl_height* 0.5f+ MARGIN);
-	_pt_max= glm::vec2(screengl->_gl_width* 0.5f- MARGIN, screengl->_gl_height* 0.5f- MARGIN);
+	_pt_min= glm::vec2(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
+	_pt_max= glm::vec2(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
 	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
 	load_models();
+
+	for (auto model : _models) {
+		std::cout << model.first << " : " << *model.second << "\n";
+	}
+
 	load_levels();
 
 	read_highest_scores();
@@ -410,7 +456,7 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 		std::vector<std::string>{"camera2clip_matrix"});
 
 	_contexts["ship_texture"]= new DrawContext(prog_texture, _buffers[3],
-		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "hit_in"},
+		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "hit_in", "alpha_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
 	update_border_aabb();
@@ -624,11 +670,13 @@ void Asteroid::draw_ship_texture() {
 	glEnableVertexAttribArray(context->_locs["tex_coord_in"]);
 	glEnableVertexAttribArray(context->_locs["current_layer_in"]);
 	glEnableVertexAttribArray(context->_locs["hit_in"]);
+	glEnableVertexAttribArray(context->_locs["alpha_in"]);
 
 	glVertexAttribPointer(context->_locs["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
 	glVertexAttribPointer(context->_locs["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
 	glVertexAttribPointer(context->_locs["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
 	glVertexAttribPointer(context->_locs["hit_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(context->_locs["alpha_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(6* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 
@@ -636,6 +684,7 @@ void Asteroid::draw_ship_texture() {
 	glDisableVertexAttribArray(context->_locs["tex_coord_in"]);
 	glDisableVertexAttribArray(context->_locs["current_layer_in"]);
 	glDisableVertexAttribArray(context->_locs["hit_in"]);
+	glDisableVertexAttribArray(context->_locs["alpha_in"]);
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -919,7 +968,7 @@ void Asteroid::update_ship_footprint() {
 void Asteroid::update_ship_texture() {
 	DrawContext * context= _contexts["ship_texture"];
 	context->_n_pts= 0;
-	context->_n_attrs_per_pts= 6;
+	context->_n_attrs_per_pts= 7;
 
 	const unsigned int n_pts_per_ship= 6;
 
@@ -967,6 +1016,7 @@ void Asteroid::update_ship_texture() {
 			}
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 4]= float(texture->_first_idx+ ship->_idx_anim); // current_layer_in
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= ship->_hit_value;
+			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= ship->_alpha;
 		}
 	}
 
@@ -1006,12 +1056,13 @@ void Asteroid::anim_playing() {
 	//for (auto ship : _ships) {
 	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
 		Ship * ship= _ships[idx_ship];
-		bool friendly= false;
-		if (ship->_model->_type== HERO) {
-			friendly= true;
-		}
 		ship->anim();
+
 		if (ship->_shooting) {
+			bool friendly= false;
+			if (ship->_model->_type== HERO) {
+				friendly= true;
+			}
 			ShipModel * bullet_model= ship->get_current_bullet_model();
 			_ships.push_back(new Ship(bullet_model, ship->_footprint.center()- 0.5* bullet_model->_size, friendly));
 		}
@@ -1035,18 +1086,18 @@ void Asteroid::anim_playing() {
 			continue;
 		}
 		if (ship->_aabb._pos.x> _pt_max.x) {
-			ship->_dead= true;
+			ship->_delete= true;
 		}
 		else if (ship->_aabb._pos.x< _pt_min.x- ship->_aabb._size.x) {
-			ship->_dead= true;
+			ship->_delete= true;
 		}
 		// on se donne une marge pour les ennemis qui sont trop en haut afin que l'on puisse les créer sans qu'ils
 		// apparaissent à l'écran au début
 		if (ship->_aabb._pos.y> _pt_max.y+ 10.0) {
-			ship->_dead= true;
+			ship->_delete= true;
 		}
 		else if (ship->_aabb._pos.y< _pt_min.y- ship->_aabb._size.y) {
-			ship->_dead= true;
+			ship->_delete= true;
 		}
 	}
 
@@ -1073,6 +1124,7 @@ void Asteroid::anim_playing() {
 					_ships[idx_ship]->_lives--;
 					if (_ships[idx_ship]->_lives<= 0) {
 						_ships[idx_ship]->_dead= true;
+						_ships[idx_ship]->_t_die= std::chrono::system_clock::now();
 						if (!_ships[idx_ship]->_friendly) {
 							_score+= _ships[idx_ship]->_model->_score;
 						}
@@ -1085,6 +1137,7 @@ void Asteroid::anim_playing() {
 					_ships[idx_ship2]->_lives--;
 					if (_ships[idx_ship2]->_lives<= 0) {
 						_ships[idx_ship2]->_dead= true;
+						_ships[idx_ship2]->_t_die= std::chrono::system_clock::now();
 						if (!_ships[idx_ship2]->_friendly) {
 							_score+= _ships[idx_ship2]->_model->_score;
 						}
@@ -1110,7 +1163,7 @@ void Asteroid::anim_playing() {
 	}
 
 	_ships.erase(std::remove_if(_ships.begin(), _ships.end(), [](Ship * s){
-		return s->_dead;
+		return s->_delete;
 	}), _ships.end());
 
 	update_ship_aabb();

@@ -42,6 +42,12 @@ AABB_2D * AABB_2D::buffered(number size) {
 }
 
 
+void AABB_2D::buffer(number size) {
+	_pos-= pt_type(size, size);
+	_size+= 2.0* pt_type(size, size);
+}
+
+
 ostream & operator << (ostream & os, const AABB_2D & aabb) {
 	os << "pos=" << glm::to_string(aabb._pos) << " ; size=" << glm::to_string(aabb._size);
 	return os;

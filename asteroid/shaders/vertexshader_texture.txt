@@ -7,10 +7,12 @@ in vec2 position_in;
 in vec2 tex_coord_in;
 in float current_layer_in;
 in float hit_in;
+in float alpha_in;
 
 out vec2 tex_coord;
 out float current_layer;
 out float hit;
+out float alpha;
 
 
 void main() {
@@ -18,4 +20,5 @@ void main() {
 	tex_coord= tex_coord_in;
 	current_layer= current_layer_in;
 	hit= hit_in;
+	alpha= alpha_in;
 }
