@@ -46,7 +46,7 @@ Mix_Chunk * test_son= NULL;
 
 
 
-void key_down(SDL_Keycode key) {
+void key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) {
 	//Mix_PlayChannel(-1, test_son, 0);
 
 	input_state->key_down(key);
@@ -55,37 +55,37 @@ void key_down(SDL_Keycode key) {
 		done= true;
 	}
 
-	if (asteroid->key_down(input_state, key)) {
+	if (asteroid->key_down(input_state, key, t)) {
 		return;
 	}
 }
 
 
-void key_up(SDL_Keycode key) {
+void key_up(SDL_Keycode key, std::chrono::system_clock::time_point t) {
 	input_state->key_up(key);
 
-	if (asteroid->key_up(input_state, key)) {
+	if (asteroid->key_up(input_state, key, t)) {
 		return;
 	}
 }
 
 
-void joystick_down(unsigned int button_idx) {
-	if (asteroid->joystick_down(button_idx)) {
+void joystick_down(unsigned int button_idx, std::chrono::system_clock::time_point t) {
+	if (asteroid->joystick_down(button_idx, t)) {
 		return;
 	}
 }
 
 
-void joystick_up(unsigned int button_idx) {
-	if (asteroid->joystick_up(button_idx)) {
+void joystick_up(unsigned int button_idx, std::chrono::system_clock::time_point t) {
+	if (asteroid->joystick_up(button_idx, t)) {
 		return;
 	}
 }
 
 
-void joystick_axis(unsigned int axis_idx, int value) {
-	if (asteroid->joystick_axis(axis_idx, value)) {
+void joystick_axis(unsigned int axis_idx, int value, std::chrono::system_clock::time_point t) {
+	if (asteroid->joystick_axis(axis_idx, value, t)) {
 		return;
 	}
 }
@@ -176,7 +176,8 @@ void init() {
 	input_state= new InputState();
 
 	// --------------------------------------------------------------------------
-	asteroid= new Asteroid(prog_aabb, prog_texture, prog_font, screengl);
+	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+	asteroid= new Asteroid(prog_aabb, prog_texture, prog_font, screengl, now);
 
 	//test_son= Mix_LoadWAV("/Volumes/Data/perso/dev/main/data/audio/hihat.wav");
 }
@@ -195,13 +196,13 @@ void draw() {
 }
 
 
-void anim() {
+void anim(std::chrono::system_clock::time_point t) {
 	tikanim2= SDL_GetTicks();
 	int tikanim_delta= tikanim2- tikanim1;
 	if (tikanim_delta< DELTA_ANIM)
 		return;
 	
-	asteroid->anim();
+	asteroid->anim(t);
 	
 	tikanim1= SDL_GetTicks();
 }
@@ -221,8 +222,8 @@ void compute_fps() {
 }
 
 
-void idle() {
-	anim();
+void idle(std::chrono::system_clock::time_point t) {
+	anim(t);
 	draw();
 	compute_fps();
 }
@@ -232,6 +233,8 @@ void main_loop() {
 	SDL_Event event;
 	
 	while (!done) {
+		std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+		
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				/*case SDL_MOUSEMOTION:
@@ -247,23 +250,23 @@ void main_loop() {
 					break;*/
 
 				case SDL_KEYDOWN:
-					key_down(event.key.keysym.sym);
+					key_down(event.key.keysym.sym, now);
 					break;
 					
 				case SDL_KEYUP:
-					key_up(event.key.keysym.sym);
+					key_up(event.key.keysym.sym, now);
 					break;
 
 				case SDL_JOYBUTTONDOWN:
-					joystick_down(event.jbutton.button);
+					joystick_down(event.jbutton.button, now);
 					break;
 
 				case SDL_JOYBUTTONUP:
-					joystick_up(event.jbutton.button);
+					joystick_up(event.jbutton.button, now);
 					break;
 
 				 case SDL_JOYAXISMOTION:
-				 	joystick_axis(event.jaxis.axis, event.jaxis.value);
+				 	joystick_axis(event.jaxis.axis, event.jaxis.value, now);
 					break;
 
 				// utilisé ?
@@ -279,7 +282,7 @@ void main_loop() {
 					break;
 			}
 		}
-		idle();
+		idle(now);
 	}
 }
 

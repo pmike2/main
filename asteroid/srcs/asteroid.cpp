@@ -206,12 +206,10 @@ Ship::Ship() {
 }
 
 
-Ship::Ship(ShipModel * model, pt_type pos, bool friendly) :
-	_model(model), _friendly(friendly), _dead(false), _shooting(false), _current_action_name("main"),
-	_idx_action(0), _velocity(glm::vec2(0.0)),
-	_t_action_start(std::chrono::system_clock::now()), _t_last_bullet(std::chrono::system_clock::now()),
-	_idx_anim(0), _t_anim_start(std::chrono::system_clock::now()), _t_last_hit(std::chrono::system_clock::now()),
-	_hit(false), _hit_value(0.0), _t_die(std::chrono::system_clock::now()), _delete(false), _alpha(1.0)
+Ship::Ship(ShipModel * model, pt_type pos, bool friendly, std::chrono::system_clock::time_point t) :
+	_model(model), _friendly(friendly), _dead(false), _shooting(false), _current_action_name(MAIN_ACTION_NAME),
+	_idx_action(0), _velocity(glm::vec2(0.0)), _idx_anim(0), 
+	_hit(false), _hit_value(0.0), _delete(false), _alpha(1.0), _lives(_model->_lives)
 {
 	_aabb= AABB_2D(pos, model->_size);
 	ActionTexture * current_texture= get_current_texture();
@@ -219,7 +217,7 @@ Ship::Ship(ShipModel * model, pt_type pos, bool friendly) :
 		pt_type(pos.x+ current_texture->_footprint._pos.x* _model->_size.x, pos.y+ current_texture->_footprint._pos.y* _model->_size.y),
 		pt_type(_model->_size.x* current_texture->_footprint._size.x, _model->_size.y* current_texture->_footprint._size.y)
 	);
-	_lives= _model->_lives;
+	_t_action_start= _t_last_hit= _t_die= _t_last_bullet= _t_anim_start= t;
 }
 
 
@@ -228,14 +226,13 @@ Ship::~Ship() {
 }
 
 
-void Ship::anim() {
-	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+void Ship::anim(std::chrono::system_clock::time_point t) {
 	_shooting= false;
 
 	if (_dead) {
 		//_hit= false;
 		//_hit_value= 0.0;
-		auto d_death= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_die).count();
+		auto d_death= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_die).count();
 		if (d_death> DEATH_MS) {
 			_delete= true;
 			_alpha= 0.0;
@@ -247,7 +244,7 @@ void Ship::anim() {
 	}
 
 	if (_hit) {
-		auto d_hit= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_last_hit).count();
+		auto d_hit= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_last_hit).count();
 		if (d_hit> HIT_UNTOUCHABLE_MS) {
 			_hit= false;
 			_hit_value= 0.0;
@@ -261,13 +258,14 @@ void Ship::anim() {
 	}
 	
 	// chgmt action ; _t < 0 correspond à une action infinie
-	auto d_action= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_action_start).count();
+	auto d_action= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_action_start).count();
 	if (_model->_actions[_current_action_name][_idx_action]->_t> 0 && d_action> _model->_actions[_current_action_name][_idx_action]->_t) {
-		_t_action_start= now;
+		_t_action_start= t;
 		_idx_action++;
 		if (_idx_action>= _model->_actions[_current_action_name].size()) {
 			_idx_action= 0;
 		}
+		_idx_anim= 0;
 	}
 
 	ShipModel * bullet_model= get_current_bullet_model();
@@ -275,9 +273,9 @@ void Ship::anim() {
 
 	// faut-il tirer
 	if (bullet_model!= NULL) {
-		auto d_shoot= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_last_bullet).count();
+		auto d_shoot= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_last_bullet).count();
 		if (d_shoot> _model->_actions[_current_action_name][_idx_action]->_t_shooting) {
-			_t_last_bullet= now;
+			_t_last_bullet= t;
 			_shooting= true;
 		}
 	}
@@ -295,9 +293,9 @@ void Ship::anim() {
 	_footprint._size.y= texture->_footprint._size.y*_aabb._size.y;
 
 	// anim texture
-	auto d_anim= std::chrono::duration_cast<std::chrono::milliseconds>(now- _t_anim_start).count();
+	auto d_anim= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_anim_start).count();
 	if (d_anim> texture->_t_anims[_idx_anim]) {
-		_t_anim_start= now;
+		_t_anim_start= t;
 		_idx_anim++;
 		if (_idx_anim>= texture->_t_anims.size()) {
 			_idx_anim= 0;
@@ -317,15 +315,29 @@ ActionTexture * Ship::get_current_texture() {
 }
 
 
-void Ship::set_current_action(std::string action_name) {
-	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
-
+void Ship::set_current_action(std::string action_name, std::chrono::system_clock::time_point t) {
 	_current_action_name= action_name;
 	_idx_action= 0;
-	_t_action_start= now;
+	_t_action_start= _t_anim_start= t;
 	_idx_anim= 0;
-	_t_anim_start= now;
 }
+
+
+bool Ship::hit(std::chrono::system_clock::time_point t) {
+	if (_hit) {
+		return false;
+	}
+
+	_hit= true;
+	_t_last_hit= t;
+	_lives--;
+	if (_lives<= 0) {
+		_dead= true;
+		_t_die= t;
+	}
+	return true;
+}
+
 
 std::ostream & operator << (std::ostream & os, const Ship & ship) {
 	os << "model = " << *ship._model << " ; aabb = [" << ship._aabb << "]";
@@ -369,7 +381,7 @@ Level::Level() {
 }
 
 
-Level::Level(std::string json_path) : _t_start(std::chrono::system_clock::now()) {
+Level::Level(std::string json_path, std::chrono::system_clock::time_point t) : _t_start(t), _json_path(json_path) {
 	std::string tmp_json_path= "./tmp.json";
 	std::string cmd= "../srcs/flat_json_level.py "+ json_path+ " "+ tmp_json_path;
 	system(cmd.c_str());
@@ -405,9 +417,19 @@ Level::~Level() {
 }
 
 
-void Level::reinit() {
+void Level::reinit(std::chrono::system_clock::time_point t) {
 	_current_event_idx= _events.size()- 1;
-	_t_start= std::chrono::system_clock::now();
+	_t_start= t;
+}
+
+
+std::ostream & operator << (std::ostream & os, const Level & level) {
+	os << "json_path=" << level._json_path << " ; _events=[";
+	for (auto event : level._events) {
+		os << *event << " ; ";
+	}
+	os << "_current_event_idx=" << level._current_event_idx;
+	return os;
 }
 
 
@@ -417,7 +439,7 @@ Asteroid::Asteroid() {
 }
 
 
-Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl) 
+Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, std::chrono::system_clock::time_point t) 
 	: _draw_aabb(false), _draw_footprint(false), _draw_texture(true),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false),
 	_mode(INACTIVE), _score(0), _current_level_idx(0) {
@@ -428,16 +450,18 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
 	load_models();
-
-	for (auto model : _models) {
+	/*for (auto model : _models) {
 		std::cout << model.first << " : " << *model.second << "\n";
-	}
+	}*/
 
-	load_levels();
+	load_levels(t);
+	/*for (auto level : _levels) {
+		std::cout << *level << "\n";
+	}*/
 
 	read_highest_scores();
 
-	reinit();
+	reinit(t);
 
 	unsigned int n_buffers= 4;
 	_buffers= new GLuint[n_buffers];
@@ -571,11 +595,11 @@ void Asteroid::load_models() {
 }
 
 
-void Asteroid::load_levels() {
+void Asteroid::load_levels(std::chrono::system_clock::time_point t) {
 	std::vector<std::string> jsons= list_files("../data/levels", "json");
 	// les json_path sont triés par nom, donc level1, 2, ... devraient être dans l'ordre
 	for (auto json_path : jsons) {
-		_levels.push_back(new Level(json_path));
+		_levels.push_back(new Level(json_path, t));
 	}
 }
 
@@ -978,8 +1002,6 @@ void Asteroid::update_ship_texture() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
-
 	// à cause du système de reference opengl j'ai du inverser les 0 et les 1 des y des textures
 	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
 		Ship * ship= _ships[idx_ship];
@@ -1010,6 +1032,7 @@ void Asteroid::update_ship_texture() {
 				positions[4* i+ 1]= _pt_min.y;
 			}
 		}*/
+
 		for (unsigned int idx_pt=0; idx_pt<n_pts_per_ship; ++idx_pt) {
 			for (unsigned int i=0; i<4; ++i) {
 				data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[4* idx_pt+ i]);
@@ -1026,15 +1049,15 @@ void Asteroid::update_ship_texture() {
 }
 
 
-void Asteroid::anim_playing() {
+void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 	/*if (rand_int(0, 100)> 98) {
 		add_rand_enemy();
 	}*/
 
-	add_level_events();
+	// ajout des événements du niveau courant
+	add_level_events(t);
 
-	//std::cout << "joy=(" << _joystick[0] << " ; " << _joystick[1] << ") ; key_left=" << _key_left  << " ; key_right=" << _key_right << " ; key_down=" << _key_down  << " ; key_up=" << _key_up << "\n";
-
+	// la vitesse se calque sur les entrées
 	// joystick vers le haut est négatif !
 	_ships[0]->_velocity.x= HERO_VELOCITY* _joystick[0];
 	_ships[0]->_velocity.y= -1.0* HERO_VELOCITY* _joystick[1];
@@ -1052,11 +1075,12 @@ void Asteroid::anim_playing() {
 		_ships[0]->_velocity.y= HERO_VELOCITY;
 	}
 
+	// animation de chaque ship
 	// ne pas utiliser auto ici car les push_back dans le for modifie l'itérateur
 	//for (auto ship : _ships) {
 	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
 		Ship * ship= _ships[idx_ship];
-		ship->anim();
+		ship->anim(t);
 
 		if (ship->_shooting) {
 			bool friendly= false;
@@ -1064,10 +1088,11 @@ void Asteroid::anim_playing() {
 				friendly= true;
 			}
 			ShipModel * bullet_model= ship->get_current_bullet_model();
-			_ships.push_back(new Ship(bullet_model, ship->_footprint.center()- 0.5* bullet_model->_size, friendly));
+			_ships.push_back(new Ship(bullet_model, ship->_footprint.center()- 0.5* bullet_model->_size, friendly, t));
 		}
 	}
 
+	// joueur contraint à l'écraon
 	if (_ships[0]->_aabb._pos.x> _pt_max.x- _ships[0]->_aabb._size.x) {
 		_ships[0]->_aabb._pos.x= _pt_max.x- _ships[0]->_aabb._size.x;
 	}
@@ -1081,6 +1106,7 @@ void Asteroid::anim_playing() {
 		_ships[0]->_aabb._pos.y= _pt_min.y;
 	}
 
+	// suppression des ships sortis de l'écran
 	for (auto ship : _ships) {
 		if (ship->_model->_type!= ENEMY && ship->_model->_type!= BULLET) {
 			continue;
@@ -1101,52 +1127,35 @@ void Asteroid::anim_playing() {
 		}
 	}
 
-	for (unsigned int idx_ship=0; idx_ship<_ships.size()- 1; ++idx_ship) {
-		if (_ships[idx_ship]->_dead) {
+	// détection collisions
+	for (unsigned int idx_ship1=0; idx_ship1<_ships.size()- 1; ++idx_ship1) {
+		Ship * ship1= _ships[idx_ship1];
+		if (ship1->_delete || ship1->_dead) {
 			continue;
 		}
-		for (unsigned int idx_ship2=idx_ship+ 1; idx_ship2<_ships.size(); ++idx_ship2) {
-			if (_ships[idx_ship2]->_dead) {
+		for (unsigned int idx_ship2=idx_ship1+ 1; idx_ship2<_ships.size(); ++idx_ship2) {
+			Ship * ship2= _ships[idx_ship2];
+			if (ship2->_delete || ship2->_dead) {
 				continue;
 			}
-			if (
-				(_ships[idx_ship]->_friendly && _ships[idx_ship2]->_friendly) ||
-				(!_ships[idx_ship]->_friendly && !_ships[idx_ship2]->_friendly)
-			) {
+			// les alliés ne peuvent pas s'attaquer
+			if ((ship1->_friendly && ship2->_friendly) || (!ship1->_friendly && !ship2->_friendly)) {
 				continue;
 			}
 
 			// les footprint sont utilisés pour la détection de collision
-			if (aabb_intersects_aabb(&_ships[idx_ship]->_footprint, &_ships[idx_ship2]->_footprint)) {
-				if (!_ships[idx_ship]->_hit) {
-					_ships[idx_ship]->_hit= true;
-					_ships[idx_ship]->_t_last_hit= std::chrono::system_clock::now();
-					_ships[idx_ship]->_lives--;
-					if (_ships[idx_ship]->_lives<= 0) {
-						_ships[idx_ship]->_dead= true;
-						_ships[idx_ship]->_t_die= std::chrono::system_clock::now();
-						if (!_ships[idx_ship]->_friendly) {
-							_score+= _ships[idx_ship]->_model->_score;
-						}
-					}
+			if (aabb_intersects_aabb(&ship1->_footprint, &ship2->_footprint)) {
+				if (ship1->hit(t) && !ship1->_friendly) {
+					_score+= ship1->_model->_score;
 				}
-
-				if (!_ships[idx_ship2]->_hit) {
-					_ships[idx_ship2]->_hit= true;
-					_ships[idx_ship2]->_t_last_hit= std::chrono::system_clock::now();
-					_ships[idx_ship2]->_lives--;
-					if (_ships[idx_ship2]->_lives<= 0) {
-						_ships[idx_ship2]->_dead= true;
-						_ships[idx_ship2]->_t_die= std::chrono::system_clock::now();
-						if (!_ships[idx_ship2]->_friendly) {
-							_score+= _ships[idx_ship2]->_model->_score;
-						}
-					}
+				if (ship2->hit(t) && !ship2->_friendly) {
+					_score+= ship2->_model->_score;
 				}
 			}
 		}
 	}
 
+	// gamover
 	if (_ships[0]->_dead) {
 		_mode= INACTIVE;
 		_new_highest_idx= 0;
@@ -1162,10 +1171,12 @@ void Asteroid::anim_playing() {
 		}
 	}
 
+	// suppression des ship _delete == true
 	_ships.erase(std::remove_if(_ships.begin(), _ships.end(), [](Ship * s){
 		return s->_delete;
 	}), _ships.end());
 
+	// maj des buffers
 	update_ship_aabb();
 	update_ship_footprint();
 	update_ship_texture();
@@ -1182,9 +1193,9 @@ void Asteroid::anim_set_score_name() {
 }
 
 
-void Asteroid::anim() {
+void Asteroid::anim(std::chrono::system_clock::time_point t) {
 	if (_mode== PLAYING) {
-		anim_playing();
+		anim_playing(t);
 	}
 	else if (_mode== INACTIVE) {
 		anim_inactive();
@@ -1195,7 +1206,10 @@ void Asteroid::anim() {
 }
 
 
-bool Asteroid::key_down(InputState * input_state, SDL_Keycode key) {
+bool Asteroid::key_down(InputState * input_state, SDL_Keycode key, std::chrono::system_clock::time_point t) {
+	if (key== SDLK_w) {
+		std::cout << "joy=(" << _joystick[0] << " ; " << _joystick[1] << ") ; key_left=" << _key_left  << " ; key_right=" << _key_right << " ; key_down=" << _key_down  << " ; key_up=" << _key_up << "\n";
+	}
 	if (key== SDLK_t) {
 		_draw_texture= !_draw_texture;
 		return true;
@@ -1227,16 +1241,16 @@ bool Asteroid::key_down(InputState * input_state, SDL_Keycode key) {
 			return true;
 		}
 		else if (key== SDLK_a) {
-			_ships[0]->set_current_action("shoot_a");
+			_ships[0]->set_current_action("shoot_a", t);
 			return true;
 		}
 		else if (key== SDLK_z) {
-			_ships[0]->set_current_action("shoot_b");
+			_ships[0]->set_current_action("shoot_b", t);
 			return true;
 		}
 	}
 	else if (_mode== INACTIVE) {
-		reinit();
+		reinit(t);
 		_mode= PLAYING;
 		return true;
 	}
@@ -1279,7 +1293,7 @@ bool Asteroid::key_down(InputState * input_state, SDL_Keycode key) {
 }
 
 
-bool Asteroid::key_up(InputState * input_state, SDL_Keycode key) {
+bool Asteroid::key_up(InputState * input_state, SDL_Keycode key, std::chrono::system_clock::time_point t) {
 	if (_mode== PLAYING) {
 		if (key== SDLK_LEFT) {
 			_key_left= false;
@@ -1298,11 +1312,11 @@ bool Asteroid::key_up(InputState * input_state, SDL_Keycode key) {
 			return true;
 		}
 		else if (key== SDLK_a) {
-			_ships[0]->set_current_action("no_shoot");
+			_ships[0]->set_current_action("no_shoot", t);
 			return true;
 		}
 		else if (key== SDLK_z) {
-			_ships[0]->set_current_action("no_shoot");
+			_ships[0]->set_current_action("no_shoot", t);
 			return true;
 		}
 	}
@@ -1314,19 +1328,19 @@ bool Asteroid::key_up(InputState * input_state, SDL_Keycode key) {
 }
 
 
-bool Asteroid::joystick_down(unsigned int button_idx) {
+bool Asteroid::joystick_down(unsigned int button_idx, std::chrono::system_clock::time_point t) {
 	if (_mode== PLAYING) {
 		if (button_idx== 0) {
-			_ships[0]->set_current_action("shoot_a");
+			_ships[0]->set_current_action("shoot_a", t);
 			return true;
 		}
 		else if (button_idx== 1) {
-			_ships[0]->set_current_action("shoot_b");
+			_ships[0]->set_current_action("shoot_b", t);
 			return true;
 		}
 	}
 	else if (_mode== INACTIVE) {
-		reinit();
+		reinit(t);
 		_mode= PLAYING;
 		return true;
 	}
@@ -1339,14 +1353,14 @@ bool Asteroid::joystick_down(unsigned int button_idx) {
 }
 
 
-bool Asteroid::joystick_up(unsigned int button_idx) {
+bool Asteroid::joystick_up(unsigned int button_idx, std::chrono::system_clock::time_point t) {
 	if (_mode== PLAYING) {
 		if (button_idx== 0) {
-			_ships[0]->set_current_action("no_shoot");
+			_ships[0]->set_current_action("no_shoot", t);
 			return true;
 		}
 		else if (button_idx== 1) {
-			_ships[0]->set_current_action("no_shoot");
+			_ships[0]->set_current_action("no_shoot", t);
 			return true;
 		}
 	}
@@ -1358,7 +1372,7 @@ bool Asteroid::joystick_up(unsigned int button_idx) {
 }
 
 
-bool Asteroid::joystick_axis(unsigned int axis_idx, int value) {
+bool Asteroid::joystick_axis(unsigned int axis_idx, int value, std::chrono::system_clock::time_point t) {
 	// le joy droit a les axis_idx 2 et 3 qui ne sont pas gérés par Asteroid pour l'instant
 	if (axis_idx> 1) {
 		return false;
@@ -1406,23 +1420,22 @@ bool Asteroid::joystick_axis(unsigned int axis_idx, int value) {
 }
 
 
-void Asteroid::add_level_events() {
-	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
-	auto d= std::chrono::duration_cast<std::chrono::milliseconds>(now- _levels[_current_level_idx]->_t_start).count();
+void Asteroid::add_level_events(std::chrono::system_clock::time_point t) {
+	auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _levels[_current_level_idx]->_t_start).count();
 	//std::cout << "add_level_events : " << _current_level_idx << " ; " << _levels[_current_level_idx]->_current_event_idx << "\n";
 	for (int idx_event=_levels[_current_level_idx]->_current_event_idx; idx_event>=0; --idx_event) {
 		Event * event= _levels[_current_level_idx]->_events[idx_event];
 		//std::cout << d << " ; " << *event << "\n";
 		if (d> event->_t) {
 			if (event->_type== NEW_ENEMY) {
-				_ships.push_back(new Ship(_models[event->_enemy], event->_position, false));
+				_ships.push_back(new Ship(_models[event->_enemy], event->_position, false, t));
 			}
 			if (event->_type== LEVEL_END) {
 				_current_level_idx++;
 				//std::cout << _current_level_idx << " ; " << _levels.size() << "\n";
 				if (_current_level_idx< _levels.size()) {
 					// on ajuste le start
-					_levels[_current_level_idx]->reinit();
+					_levels[_current_level_idx]->reinit(t);
 				}
 				else {
 					_mode= INACTIVE;
@@ -1438,7 +1451,7 @@ void Asteroid::add_level_events() {
 }
 
 
-void Asteroid::add_rand_enemy() {
+void Asteroid::add_rand_enemy(std::chrono::system_clock::time_point t) {
 	pt_type pos= pt_type(rand_float(_pt_min.x, _pt_max.x), _pt_max.y);
 
 	std::string model_name= "";
@@ -1451,16 +1464,16 @@ void Asteroid::add_rand_enemy() {
 	int n= rand_int(0, enemies.size()- 1);
 	model_name= enemies[n];
 
-	_ships.push_back(new Ship(_models[model_name], pos, false));
+	_ships.push_back(new Ship(_models[model_name], pos, false, t));
 }
 
 
-void Asteroid::reinit() {
+void Asteroid::reinit(std::chrono::system_clock::time_point t) {
 	_mode= INACTIVE;
 	_score= 0;
 	_current_level_idx= 0;
 	for (auto level : _levels) {
-		level->reinit();
+		level->reinit(t);
 	}
 	
 	for (auto ship : _ships) {
@@ -1468,7 +1481,7 @@ void Asteroid::reinit() {
 	}
 	_ships.clear();
 
-	_ships.push_back(new Ship(_models["hero"], glm::vec2(0.0, _pt_min.y+ 2.0), true));
+	_ships.push_back(new Ship(_models["hero"], glm::vec2(0.0, _pt_min.y+ 2.0), true, t));
 }
 
 

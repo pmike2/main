@@ -25,6 +25,7 @@ const float Z_FAR= 10.0f;
 const unsigned int TEXTURE_SIZE= 1024;
 const unsigned int HIT_UNTOUCHABLE_MS= 200;
 const unsigned int DEATH_MS= 200;
+const std::string MAIN_ACTION_NAME= "main";
 
 
 enum ShipType {HERO, ENEMY, BULLET};
@@ -88,12 +89,13 @@ public:
 class Ship {
 public:
 	Ship();
-	Ship(ShipModel * model, pt_type pos, bool friendly);
+	Ship(ShipModel * model, pt_type pos, bool friendly, std::chrono::system_clock::time_point t);
 	~Ship();
-	void anim();
+	void anim(std::chrono::system_clock::time_point t);
 	ShipModel * get_current_bullet_model();
 	ActionTexture * get_current_texture();
-	void set_current_action(std::string action_name);
+	void set_current_action(std::string action_name, std::chrono::system_clock::time_point t);
+	bool hit(std::chrono::system_clock::time_point t);
 	friend std::ostream & operator << (std::ostream & os, const Ship & ship);
 
 
@@ -138,11 +140,13 @@ public:
 class Level {
 public:
 	Level();
-	Level(std::string json_path);
+	Level(std::string json_path, std::chrono::system_clock::time_point t);
 	~Level();
-	void reinit();
+	void reinit(std::chrono::system_clock::time_point t);
+	friend std::ostream & operator << (std::ostream & os, const Level & level);
 
 
+	std::string _json_path;
 	std::chrono::system_clock::time_point _t_start;
 	std::vector<Event *> _events;
 	unsigned int _current_event_idx;
@@ -152,11 +156,11 @@ public:
 class Asteroid {
 public:
 	Asteroid();
-	Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl);
+	Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, std::chrono::system_clock::time_point t);
 	~Asteroid();
 
 	void load_models();
-	void load_levels();
+	void load_levels(std::chrono::system_clock::time_point t);
 	
 	void draw_border_aabb();
 	void draw_ship_aabb();
@@ -173,20 +177,20 @@ public:
 	void update_ship_footprint();
 	void update_ship_texture();
 	
-	void anim_playing();
+	void anim_playing(std::chrono::system_clock::time_point t);
 	void anim_inactive();
 	void anim_set_score_name();
-	void anim();
+	void anim(std::chrono::system_clock::time_point t);
 
-	bool key_down(InputState * input_state, SDL_Keycode key);
-	bool key_up(InputState * input_state, SDL_Keycode key);
-	bool joystick_down(unsigned int button_idx);
-	bool joystick_up(unsigned int button_idx);
-	bool joystick_axis(unsigned int axis_idx, int value);
+	bool key_down(InputState * input_state, SDL_Keycode key, std::chrono::system_clock::time_point t);
+	bool key_up(InputState * input_state, SDL_Keycode key, std::chrono::system_clock::time_point t);
+	bool joystick_down(unsigned int button_idx, std::chrono::system_clock::time_point t);
+	bool joystick_up(unsigned int button_idx, std::chrono::system_clock::time_point t);
+	bool joystick_axis(unsigned int axis_idx, int value, std::chrono::system_clock::time_point t);
 	
-	void add_level_events();
-	void add_rand_enemy();
-	void reinit();
+	void add_level_events(std::chrono::system_clock::time_point t);
+	void add_rand_enemy(std::chrono::system_clock::time_point t);
+	void reinit(std::chrono::system_clock::time_point t);
 	void read_highest_scores();
 	void write_highest_scores();
 
