@@ -1092,7 +1092,7 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 		}
 	}
 
-	// joueur contraint à l'écraon
+	// joueur contraint à l'écran
 	if (_ships[0]->_aabb._pos.x> _pt_max.x- _ships[0]->_aabb._size.x) {
 		_ships[0]->_aabb._pos.x= _pt_max.x- _ships[0]->_aabb._size.x;
 	}
