@@ -14,7 +14,8 @@
                     0.0,
                     -0.01
                 ],
-                "t": 2000
+                "t": 2000,
+                "texture": "main_tex"
             },
             {
                 "direction": [

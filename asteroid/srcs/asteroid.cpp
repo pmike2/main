@@ -77,17 +77,20 @@ ShipModel::ShipModel() {
 
 
 ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
-	//std::cout << json_path << "\n";
-	std::string tmp_json_path= "./tmp.json";
-	std::string cmd= "../srcs/flat_json_ship.py "+ json_path+ " "+ tmp_json_path;
-	system(cmd.c_str());
+	std::string tmp_json_path= "../data/tmp/"+ basename(_json_path)+ "_tmp.json";
+
+	// supprimer ce fichier si le json original a été modifié
+	if (!file_exists(tmp_json_path)) {
+		std::string cmd= "../srcs/flat_json_ship.py "+ json_path+ " "+ tmp_json_path;
+		system(cmd.c_str());
+	}
 
 	std::ifstream ifs(tmp_json_path);
 	json js= json::parse(ifs);
 	ifs.close();
 
-	std::string cmd2= "rm "+ tmp_json_path;
-	system(cmd2.c_str());
+	//std::string cmd2= "rm "+ tmp_json_path;
+	//system(cmd2.c_str());
 
 	if (js["type"]== "hero") {
 		_type= HERO;
@@ -107,9 +110,13 @@ ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 	if (js["lives"]!= nullptr) {
 		_lives= js["lives"];
 	}
-	_score= 0;
-	if (js["score"]!= nullptr) {
-		_score= js["score"];
+	_score_hit= 0;
+	if (js["score_hit"]!= nullptr) {
+		_score_hit= js["score_hit"];
+	}
+	_score_death= 0;
+	if (js["_score_death"]!= nullptr) {
+		_score_death= js["score_death"];
 	}
 
 	// parcours des textures
@@ -126,6 +133,7 @@ ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 			t_anims.push_back(t);
 			pt_type pos(texture["footprint"]["pos"][0], texture["footprint"]["pos"][1]);
 			pt_type size(texture["footprint"]["size"][0], texture["footprint"]["size"][1]);
+			// on prend l'intersection de tous les footprints
 			if (pos.x> footprint._pos.x) {
 				footprint._pos.x= pos.x;
 			}
@@ -172,17 +180,23 @@ ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 			_actions[action_name].push_back(new Action(direction, t, bullet_name, t_shooting, texture_name));
 		}
 	}
+
+	_hit_sound= Mix_LoadWAV("../data/sounds/hit.wav");
+	_death_sound= Mix_LoadWAV("../data/sounds/death.wav");
+	_shoot_sound= Mix_LoadWAV("../data/sounds/shoot.wav");
 }
 
 
 ShipModel::~ShipModel() {
-
+	Mix_FreeChunk(_hit_sound);
+	Mix_FreeChunk(_death_sound);
+	Mix_FreeChunk(_shoot_sound);
 }
 
 
 std::ostream & operator << (std::ostream & os, const ShipModel & model) {
 	os << "json = " << model._json_path << " ; type=" << model._type << " ; size=" << glm::to_string(model._size);
-	os << " ; score=" << model._score << " ; lives=" << model._lives;
+	os << " ; score_hit=" << model._score_hit << " ; score_death=" << model._score_death << " ; lives=" << model._lives;
 	os << " ; actions = [";
 	for (auto action : model._actions) {
 		os << action.first << " : (";
@@ -209,7 +223,8 @@ Ship::Ship() {
 Ship::Ship(ShipModel * model, pt_type pos, bool friendly, std::chrono::system_clock::time_point t) :
 	_model(model), _friendly(friendly), _dead(false), _shooting(false), _current_action_name(MAIN_ACTION_NAME),
 	_idx_action(0), _velocity(glm::vec2(0.0)), _idx_anim(0), 
-	_hit(false), _hit_value(0.0), _delete(false), _alpha(1.0), _lives(_model->_lives)
+	_hit(false), _hit_value(0.0), _delete(false), _alpha(1.0), _lives(_model->_lives),
+	_rotation(0.0), _scale(1.0)
 {
 	_aabb= AABB_2D(pos, model->_size);
 	ActionTexture * current_texture= get_current_texture();
@@ -236,10 +251,14 @@ void Ship::anim(std::chrono::system_clock::time_point t) {
 		if (d_death> DEATH_MS) {
 			_delete= true;
 			_alpha= 0.0;
+			_scale= 1.0;
 			return;
 		}
 		else {
 			_alpha= float(DEATH_MS- d_death)/ float(DEATH_MS);
+			if (_model->_type== ENEMY) {
+				_scale+= DEATH_SCALE_INC;
+			}
 		}
 	}
 
@@ -248,9 +267,17 @@ void Ship::anim(std::chrono::system_clock::time_point t) {
 		if (d_hit> HIT_UNTOUCHABLE_MS) {
 			_hit= false;
 			_hit_value= 0.0;
+			_rotation= 0.0;
 		}
 		else {
 			_hit_value= float(HIT_UNTOUCHABLE_MS- d_hit)/ float(HIT_UNTOUCHABLE_MS);
+			int i= d_hit/ HIT_ROTATION_MS;
+			if (i% 2== 0) {
+				_rotation+= HIT_ROTATION_INC;
+			}
+			else {
+				_rotation-= HIT_ROTATION_INC;
+			}
 		}
 	}
 	else {
@@ -277,6 +304,9 @@ void Ship::anim(std::chrono::system_clock::time_point t) {
 		if (d_shoot> _model->_actions[_current_action_name][_idx_action]->_t_shooting) {
 			_t_last_bullet= t;
 			_shooting= true;
+			if (_model->_type== HERO) {
+				Mix_PlayChannel(-1, _model->_shoot_sound, 0);
+			}
 		}
 	}
 
@@ -328,12 +358,20 @@ bool Ship::hit(std::chrono::system_clock::time_point t) {
 		return false;
 	}
 
-	_hit= true;
-	_t_last_hit= t;
 	_lives--;
 	if (_lives<= 0) {
 		_dead= true;
 		_t_die= t;
+		if (_model->_type== ENEMY) {
+			Mix_PlayChannel(-1, _model->_death_sound, 0);
+		}
+	}
+	else {
+		_hit= true;
+		_t_last_hit= t;
+		if (_model->_type== ENEMY) {
+			Mix_PlayChannel(-1, _model->_hit_sound, 0);
+		}
 	}
 	return true;
 }
@@ -382,18 +420,27 @@ Level::Level() {
 
 
 Level::Level(std::string json_path, std::chrono::system_clock::time_point t) : _t_start(t), _json_path(json_path) {
-	std::string tmp_json_path= "./tmp.json";
-	std::string cmd= "../srcs/flat_json_level.py "+ json_path+ " "+ tmp_json_path;
-	system(cmd.c_str());
+	std::string tmp_json_path= "../data/tmp/"+ basename(_json_path)+ "_tmp.json";
+
+	// supprimer ce fichier si le json original a été modifié
+	if (!file_exists(tmp_json_path)) {
+		std::string cmd= "../srcs/flat_json_level.py "+ json_path+ " "+ tmp_json_path;
+		system(cmd.c_str());
+	}
 
 	std::ifstream ifs(tmp_json_path);
 	json js= json::parse(ifs);
 	ifs.close();
 
-	std::string cmd2= "rm "+ tmp_json_path;
-	system(cmd2.c_str());
+	//std::string cmd2= "rm "+ tmp_json_path;
+	//system(cmd2.c_str());
 
-	for (auto event : js) {
+	_music_path= js["music"];
+
+	//for (json::iterator it = js["events"].begin(); it != js["events"].end(); ++it) {
+	//	auto & event_name= it.key();
+	//	auto & l_textures= it.value();
+	for (auto event : js["events"]) {
 		unsigned int t= event["t"];
 		if (event["type"]== "enemy") {
 			float x= event["position"][0];
@@ -442,7 +489,7 @@ Asteroid::Asteroid() {
 Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, std::chrono::system_clock::time_point t) 
 	: _draw_aabb(false), _draw_footprint(false), _draw_texture(true),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false),
-	_mode(INACTIVE), _score(0), _current_level_idx(0) {
+	_mode(INACTIVE), _score(0), _current_level_idx(0), _music(NULL) {
 
 	_pt_min= glm::vec2(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
 	_pt_max= glm::vec2(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
@@ -458,6 +505,7 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 	/*for (auto level : _levels) {
 		std::cout << *level << "\n";
 	}*/
+	fill_texture_array();
 
 	read_highest_scores();
 
@@ -480,13 +528,16 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 		std::vector<std::string>{"camera2clip_matrix"});
 
 	_contexts["ship_texture"]= new DrawContext(prog_texture, _buffers[3],
-		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "hit_in", "alpha_in"},
+		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "hit_in", "alpha_in",
+		"rotation_in", "scale_in", "center_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
 	update_border_aabb();
 	update_ship_aabb();
 	update_ship_footprint();
 	update_ship_texture();
+
+	set_music("../data/sounds/music_inactive.wav");
 }
 
 
@@ -507,6 +558,9 @@ Asteroid::~Asteroid() {
 	_models.clear();
 
 	delete _buffers;
+
+	Mix_HaltMusic();
+	Mix_FreeMusic(_music);
 }
 
 
@@ -540,7 +594,10 @@ void Asteroid::load_models() {
 			}
 		}
 	}
+}
 
+
+void Asteroid::fill_texture_array() {
 	glGenTextures(1, &_texture_id);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
@@ -610,18 +667,20 @@ void Asteroid::draw_border_aabb() {
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
-	glUniformMatrix4fv(context->_locs["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	
-	glEnableVertexAttribArray(context->_locs["position_in"]);
-	glEnableVertexAttribArray(context->_locs["color_in"]);
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
 
-	glVertexAttribPointer(context->_locs["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
-	glVertexAttribPointer(context->_locs["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
 
 	glDrawArrays(GL_LINES, 0, context->_n_pts);
 
-	glDisableVertexAttribArray(context->_locs["position_in"]);
-	glDisableVertexAttribArray(context->_locs["color_in"]);
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
@@ -634,18 +693,20 @@ void Asteroid::draw_ship_aabb() {
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
-	glUniformMatrix4fv(context->_locs["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	
-	glEnableVertexAttribArray(context->_locs["position_in"]);
-	glEnableVertexAttribArray(context->_locs["color_in"]);
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
 
-	glVertexAttribPointer(context->_locs["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
-	glVertexAttribPointer(context->_locs["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
 
 	glDrawArrays(GL_LINES, 0, context->_n_pts);
 
-	glDisableVertexAttribArray(context->_locs["position_in"]);
-	glDisableVertexAttribArray(context->_locs["color_in"]);
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
@@ -658,18 +719,20 @@ void Asteroid::draw_ship_footprint() {
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
-	glUniformMatrix4fv(context->_locs["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	
-	glEnableVertexAttribArray(context->_locs["position_in"]);
-	glEnableVertexAttribArray(context->_locs["color_in"]);
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
 
-	glVertexAttribPointer(context->_locs["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
-	glVertexAttribPointer(context->_locs["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
 
 	glDrawArrays(GL_LINES, 0, context->_n_pts);
 
-	glDisableVertexAttribArray(context->_locs["position_in"]);
-	glDisableVertexAttribArray(context->_locs["color_in"]);
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
@@ -687,28 +750,27 @@ void Asteroid::draw_ship_texture() {
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 
-	glUniform1i(context->_locs["texture_array"], 0); //Sampler refers to texture unit 0
-	glUniformMatrix4fv(context->_locs["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	
-	glEnableVertexAttribArray(context->_locs["position_in"]);
-	glEnableVertexAttribArray(context->_locs["tex_coord_in"]);
-	glEnableVertexAttribArray(context->_locs["current_layer_in"]);
-	glEnableVertexAttribArray(context->_locs["hit_in"]);
-	glEnableVertexAttribArray(context->_locs["alpha_in"]);
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
 
-	glVertexAttribPointer(context->_locs["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
-	glVertexAttribPointer(context->_locs["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
-	glVertexAttribPointer(context->_locs["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
-	glVertexAttribPointer(context->_locs["hit_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
-	glVertexAttribPointer(context->_locs["alpha_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(6* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["hit_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["alpha_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(6* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["rotation_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(7* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["scale_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(8* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["center_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(9* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 
-	glDisableVertexAttribArray(context->_locs["position_in"]);
-	glDisableVertexAttribArray(context->_locs["tex_coord_in"]);
-	glDisableVertexAttribArray(context->_locs["current_layer_in"]);
-	glDisableVertexAttribArray(context->_locs["hit_in"]);
-	glDisableVertexAttribArray(context->_locs["alpha_in"]);
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -992,7 +1054,7 @@ void Asteroid::update_ship_footprint() {
 void Asteroid::update_ship_texture() {
 	DrawContext * context= _contexts["ship_texture"];
 	context->_n_pts= 0;
-	context->_n_attrs_per_pts= 7;
+	context->_n_attrs_per_pts= 11;
 
 	const unsigned int n_pts_per_ship= 6;
 
@@ -1006,6 +1068,7 @@ void Asteroid::update_ship_texture() {
 	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
 		Ship * ship= _ships[idx_ship];
 		ActionTexture * texture= ship->get_current_texture();
+		glm::vec2 center= ship->_footprint.center();
 		
 		number positions[n_pts_per_ship* 4]= {
 			ship->_aabb._pos.x, ship->_aabb._pos.y, 0.0, 1.0,
@@ -1040,6 +1103,10 @@ void Asteroid::update_ship_texture() {
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 4]= float(texture->_first_idx+ ship->_idx_anim); // current_layer_in
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= ship->_hit_value;
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= ship->_alpha;
+			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 7]= ship->_rotation;
+			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 8]= ship->_scale;
+			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 9]= center.x;
+			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 10]= center.y;
 		}
 	}
 
@@ -1146,10 +1213,20 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 			// les footprint sont utilisés pour la détection de collision
 			if (aabb_intersects_aabb(&ship1->_footprint, &ship2->_footprint)) {
 				if (ship1->hit(t) && !ship1->_friendly) {
-					_score+= ship1->_model->_score;
+					if (ship1->_dead) {
+						_score+= ship1->_model->_score_death;
+					}
+					else {
+						_score+= ship1->_model->_score_hit;
+					}
 				}
 				if (ship2->hit(t) && !ship2->_friendly) {
-					_score+= ship2->_model->_score;
+					if (ship2->_dead) {
+						_score+= ship2->_model->_score_death;
+					}
+					else {
+						_score+= ship2->_model->_score_hit;
+					}
 				}
 			}
 		}
@@ -1157,16 +1234,25 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 
 	// gamover
 	if (_ships[0]->_dead) {
-		_mode= INACTIVE;
-		_new_highest_idx= 0;
-		_new_highest_char_idx= 0;
-		for (int i=0; i<_highest_scores.size(); ++i) {
-			if (_score> _highest_scores[i].second) {
-				_new_highest_idx= i;
-				_mode= SET_SCORE_NAME;
-				_highest_scores.insert(_highest_scores.begin()+ _new_highest_idx, std::make_pair("AAA", _score));
-				_highest_scores.pop_back();
-				break;
+		// pas de high score
+		if (_score< _highest_scores[2].second) {
+			_mode= INACTIVE;
+			set_music("../data/sounds/music_inactive.wav");
+			_new_highest_idx= 0;
+			_new_highest_char_idx= 0;
+		}
+
+		// high score
+		else {
+			for (int i=0; i<_highest_scores.size(); ++i) {
+				if (_score> _highest_scores[i].second) {
+					_new_highest_idx= i;
+					_mode= SET_SCORE_NAME;
+					set_music("../data/sounds/music_set_score_name.wav");
+					_highest_scores.insert(_highest_scores.begin()+ _new_highest_idx, std::make_pair("AAA", _score));
+					_highest_scores.pop_back();
+					break;
+				}
 			}
 		}
 	}
@@ -1222,6 +1308,16 @@ bool Asteroid::key_down(InputState * input_state, SDL_Keycode key, std::chrono::
 		_draw_footprint= !_draw_footprint;
 		return true;
 	}
+	if (key== SDLK_m) {
+		if (Mix_PlayingMusic()!= 0) {
+			if (Mix_PausedMusic()== 1) {
+				Mix_ResumeMusic();
+			}
+			else {
+				Mix_PauseMusic();
+			}
+		}
+	}
 
 	if (_mode== PLAYING) {
 		if (key== SDLK_LEFT) {
@@ -1249,11 +1345,16 @@ bool Asteroid::key_down(InputState * input_state, SDL_Keycode key, std::chrono::
 			return true;
 		}
 	}
+	
 	else if (_mode== INACTIVE) {
-		reinit(t);
-		_mode= PLAYING;
-		return true;
+		if (key== SDLK_RETURN) {
+			reinit(t);
+			_mode= PLAYING;
+			set_level(0, t);
+			return true;
+		}
 	}
+
 	else if (_mode== SET_SCORE_NAME) {
 		if (key== SDLK_LEFT) {
 			_new_highest_char_idx--;
@@ -1285,6 +1386,7 @@ bool Asteroid::key_down(InputState * input_state, SDL_Keycode key, std::chrono::
 		}
 		else if (key== SDLK_RETURN) {
 			_mode= INACTIVE;
+			set_music("../data/sounds/music_inactive.wav");
 			write_highest_scores();
 			return true;
 		}
@@ -1422,21 +1524,20 @@ bool Asteroid::joystick_axis(unsigned int axis_idx, int value, std::chrono::syst
 
 void Asteroid::add_level_events(std::chrono::system_clock::time_point t) {
 	auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _levels[_current_level_idx]->_t_start).count();
-	//std::cout << "add_level_events : " << _current_level_idx << " ; " << _levels[_current_level_idx]->_current_event_idx << "\n";
 	for (int idx_event=_levels[_current_level_idx]->_current_event_idx; idx_event>=0; --idx_event) {
 		Event * event= _levels[_current_level_idx]->_events[idx_event];
-		//std::cout << d << " ; " << *event << "\n";
 		if (d> event->_t) {
 			if (event->_type== NEW_ENEMY) {
 				_ships.push_back(new Ship(_models[event->_enemy], event->_position, false, t));
 			}
+
+			// fin du niveau courant
 			if (event->_type== LEVEL_END) {
-				_current_level_idx++;
-				//std::cout << _current_level_idx << " ; " << _levels.size() << "\n";
-				if (_current_level_idx< _levels.size()) {
-					// on ajuste le start
-					_levels[_current_level_idx]->reinit(t);
+				// passage niveau suivant
+				if (_current_level_idx< _levels.size()- 1) {
+					set_level(_current_level_idx+ 1, t);
 				}
+				// fin jeu
 				else {
 					_mode= INACTIVE;
 				}
@@ -1448,6 +1549,16 @@ void Asteroid::add_level_events(std::chrono::system_clock::time_point t) {
 			return;
 		}
 	}
+}
+
+
+void Asteroid::set_level(unsigned int level_idx, std::chrono::system_clock::time_point t) {
+	_current_level_idx= level_idx;
+	
+	// on ajuste le start
+	_levels[_current_level_idx]->reinit(t);
+	
+	set_music(_levels[_current_level_idx]->_music_path);
 }
 
 
@@ -1482,6 +1593,9 @@ void Asteroid::reinit(std::chrono::system_clock::time_point t) {
 	_ships.clear();
 
 	_ships.push_back(new Ship(_models["hero"], glm::vec2(0.0, _pt_min.y+ 2.0), true, t));
+
+	_key_left= _key_right= _key_down= _key_up= false;
+	_joystick[0]= _joystick[1]= 0.0;
 }
 
 
@@ -1492,7 +1606,6 @@ void Asteroid::read_highest_scores() {
 	for (auto & score : js) {
 		_highest_scores.push_back(std::make_pair(score["name"], score["score"]));
 	}
-
 }
 
 
@@ -1506,4 +1619,13 @@ void Asteroid::write_highest_scores() {
 	}
 	std::ofstream ofs("../data/scores/highest_scores.json");
 	ofs << js << "\n";
+}
+
+
+void Asteroid::set_music(std::string music_path) {
+	if (_music!= NULL) {
+		Mix_FreeMusic(_music);
+	}
+	_music= Mix_LoadMUS(music_path.c_str());
+	Mix_PlayMusic(_music, -1);
 }

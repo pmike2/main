@@ -45,6 +45,7 @@ unsigned int diff_time_ms_from_now(struct timeval * begin);
 std::string current_date_time();
 
 std::vector<std::string> list_files(std::string ch_dir, std::string ext="");
+bool file_exists(const std::string filepath);
 std::string basename(std::string s);
 std::string dirname(std::string s);
 std::pair<std::string, std::string> splitext(std::string s);

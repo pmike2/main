@@ -1,0 +1,252 @@
+{
+    "music": "../data/sounds/music_level1.wav",
+    "events": [
+        {
+            "t": 10,
+            "type": "enemy",
+            "position": [
+                -6.0,
+                8.0
+            ],
+            "enemy": "weirdo"
+        },
+        {
+            "t": 1000,
+            "type": "enemy",
+            "position": [
+                -7.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 2000,
+            "type": "enemy",
+            "position": [
+                -4.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 3000,
+            "type": "enemy",
+            "position": [
+                -1.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 4000,
+            "type": "enemy",
+            "position": [
+                2.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 5000,
+            "type": "enemy",
+            "position": [
+                5.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 7000,
+            "type": "enemy",
+            "position": [
+                -7.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 8500,
+            "type": "enemy",
+            "position": [
+                -5.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 10000,
+            "type": "enemy",
+            "position": [
+                -3.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 11500,
+            "type": "enemy",
+            "position": [
+                -1.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 13000,
+            "type": "enemy",
+            "position": [
+                1.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 14500,
+            "type": "enemy",
+            "position": [
+                3.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 16000,
+            "type": "enemy",
+            "position": [
+                5.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 17500,
+            "type": "enemy",
+            "position": [
+                7.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 12000,
+            "type": "enemy",
+            "position": [
+                -7.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 13000,
+            "type": "enemy",
+            "position": [
+                -4.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 14000,
+            "type": "enemy",
+            "position": [
+                -1.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 15000,
+            "type": "enemy",
+            "position": [
+                2.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 16000,
+            "type": "enemy",
+            "position": [
+                5.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 17000,
+            "type": "enemy",
+            "position": [
+                -7.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 18500,
+            "type": "enemy",
+            "position": [
+                -5.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 20000,
+            "type": "enemy",
+            "position": [
+                -3.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 21500,
+            "type": "enemy",
+            "position": [
+                -1.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 23000,
+            "type": "enemy",
+            "position": [
+                1.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 24500,
+            "type": "enemy",
+            "position": [
+                3.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 26000,
+            "type": "enemy",
+            "position": [
+                5.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 27500,
+            "type": "enemy",
+            "position": [
+                7.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 25000,
+            "type": "end"
+        }
+    ]
+}

@@ -32,7 +32,7 @@ public:
 
 
 	GLuint _prog;
-	std::map<std::string, GLint> _locs;
+	std::map<std::string, GLint> _locs_attrib, _locs_uniform;
 	GLuint _buffer;
 	unsigned int _n_pts;
 	unsigned int _n_attrs_per_pts;

@@ -10,6 +10,7 @@
 #include <memory>
 #include <stdexcept>
 #include <array>
+#include <sys/stat.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -194,6 +195,12 @@ vector<string> list_files(string ch_dir, string ext) {
 	std::sort(res.begin(), res.end());
 	
 	return res;
+}
+
+
+bool file_exists(const string filepath) {
+	struct stat buffer;
+	return (stat(filepath.c_str(), &buffer)== 0);
 }
 
 

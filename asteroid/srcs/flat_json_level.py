@@ -18,7 +18,7 @@ def flat_json(json_path_in, json_path_out):
 	while True:
 		#pp(data)
 		modified= False
-		for event_name, l_events in data.items():
+		for event_name, l_events in data["events"].items():
 			#if event_name== "main":
 			#	continue
 
@@ -34,7 +34,7 @@ def flat_json(json_path_in, json_path_out):
 					delta_position_y= event["delta_position"][1] if "delta_position" in event.keys() else 0.0
 
 					l_events_found= None
-					for event_name2, l_events2 in data.items():
+					for event_name2, l_events2 in data["events"].items():
 						if event_name2== event["name"]:
 							l_events_found= l_events2
 							break
@@ -51,7 +51,7 @@ def flat_json(json_path_in, json_path_out):
 							moved_event["position"][1]+= i* delta_position_y
 							l_events2insert.append(moved_event)
 					
-					data[event_name]= l_events[:idx_event]+ l_events2insert+ l_events[idx_event+ 1:]
+					data["events"][event_name]= l_events[:idx_event]+ l_events2insert+ l_events[idx_event+ 1:]
 					modified= True
 					break
 		if not modified:
@@ -59,10 +59,10 @@ def flat_json(json_path_in, json_path_out):
 
 	#pp(data)
 
-	if "main" not in data.keys():
+	if "main" not in data["events"].keys():
 		raise RuntimeError("bbb")
 
-	data= data["main"]
+	data["events"]= data["events"]["main"]
 	
 	with open(json_path_out, "w") as f:
 		json.dump(data, f, indent=4)

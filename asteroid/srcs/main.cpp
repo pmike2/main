@@ -7,7 +7,6 @@
 #include <OpenGL/gl3.h>
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include <SDL2/SDL_mixer.h>
 
 #include "repere.h"
@@ -42,13 +41,9 @@ unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 GLuint prog_aabb, prog_texture, prog_font;
 GLuint g_vao;
 
-Mix_Chunk * test_son= NULL;
-
 
 
 void key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) {
-	//Mix_PlayChannel(-1, test_son, 0);
-
 	input_state->key_down(key);
 
 	if (key== SDLK_ESCAPE) {
@@ -178,8 +173,6 @@ void init() {
 	// --------------------------------------------------------------------------
 	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
 	asteroid= new Asteroid(prog_aabb, prog_texture, prog_font, screengl, now);
-
-	//test_son= Mix_LoadWAV("/Volumes/Data/perso/dev/main/data/audio/hihat.wav");
 }
 
 

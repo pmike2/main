@@ -51,10 +51,10 @@ DrawContext::DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> lo
 	_prog(prog), _buffer(buffer), _n_pts(0), _n_attrs_per_pts(0)
 {
 	for (auto loc : locs_attrib) {
-		_locs[loc]= glGetAttribLocation(_prog, loc.c_str());
+		_locs_attrib[loc]= glGetAttribLocation(_prog, loc.c_str());
 	}
 	for (auto loc : locs_uniform) {
-		_locs[loc]= glGetUniformLocation(_prog, loc.c_str());
+		_locs_uniform[loc]= glGetUniformLocation(_prog, loc.c_str());
 	}
 }
 

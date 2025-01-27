@@ -1,58 +1,61 @@
 {
-	"fatman" : [
-		{
-			"t" : 0,
-			"type" : "enemy",
-			"position" : [-6.0, 8.0],
-			"enemy" : "fatman"
-		}
-	],
-	"fatman_wave" : [
-		{
-			"t" : 0,
-			"name" : "fatman",
-			"n" : 7,
-			"delta_t" : 800,
-			"delta_position" : [3.0, 0.0]
-		}
-	],
-	"cruiser" : [
-		{
-			"t" : 0,
-			"type" : "enemy",
-			"position" : [-7.0, 8.0],
-			"enemy" : "cruiser"
-		}
-	],
-	"cruiser_wave" : [
-		{
-			"t" : 0,
-			"name" : "cruiser",
-			"n" : 4,
-			"delta_t" : 0,
-			"delta_position" : [2.0, 0.0]
-		}
-	],
-	"main" : [
-		{
-			"t" : 1000,
-			"name" : "fatman_wave"
-		},
-		{
-			"t" : 7000,
-			"name" : "cruiser_wave"
-		},
-		{
-			"t" : 12000,
-			"name" : "fatman_wave"
-		},
-		{
-			"t" : 17000,
-			"name" : "cruiser_wave"
-		},
-		{
-			"t" : 25000,
-			"type" : "end"
-		}
-	]
+	"music" : "../data/sounds/music_level2.wav",
+	"events" : {
+		"fatman" : [
+			{
+				"t" : 0,
+				"type" : "enemy",
+				"position" : [-6.0, 8.0],
+				"enemy" : "fatman"
+			}
+		],
+		"fatman_wave" : [
+			{
+				"t" : 0,
+				"name" : "fatman",
+				"n" : 7,
+				"delta_t" : 800,
+				"delta_position" : [3.0, 0.0]
+			}
+		],
+		"cruiser" : [
+			{
+				"t" : 0,
+				"type" : "enemy",
+				"position" : [-7.0, 8.0],
+				"enemy" : "cruiser"
+			}
+		],
+		"cruiser_wave" : [
+			{
+				"t" : 0,
+				"name" : "cruiser",
+				"n" : 4,
+				"delta_t" : 0,
+				"delta_position" : [2.0, 0.0]
+			}
+		],
+		"main" : [
+			{
+				"t" : 1000,
+				"name" : "fatman_wave"
+			},
+			{
+				"t" : 7000,
+				"name" : "cruiser_wave"
+			},
+			{
+				"t" : 12000,
+				"name" : "fatman_wave"
+			},
+			{
+				"t" : 17000,
+				"name" : "cruiser_wave"
+			},
+			{
+				"t" : 25000,
+				"type" : "end"
+			}
+		]
+	}
 }

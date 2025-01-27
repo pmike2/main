@@ -1,0 +1,372 @@
+{
+    "type": "enemy",
+    "size": [
+        1.5,
+        1.5
+    ],
+    "score_hit": 10,
+    "score_death": 30,
+    "lives": 2,
+    "actions": {
+        "zigzag": [
+            {
+                "direction": [
+                    0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    -0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            }
+        ],
+        "right": [
+            {
+                "direction": [
+                    0.1,
+                    0.0
+                ],
+                "t": 600,
+                "shooting": "crazy_bullet",
+                "t_shooting": 90,
+                "texture": "shooting_tex"
+            }
+        ],
+        "weird": [
+            {
+                "direction": [
+                    0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    -0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    -0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    -0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    -0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    -0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    0.1,
+                    0.0
+                ],
+                "t": 600,
+                "shooting": "crazy_bullet",
+                "t_shooting": 90,
+                "texture": "shooting_tex"
+            }
+        ],
+        "main": [
+            {
+                "direction": [
+                    0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    -0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    -0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    -0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    -0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    -0.05,
+                    -0.1
+                ],
+                "t": 100,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    0.1,
+                    0.0
+                ],
+                "t": 600,
+                "shooting": "crazy_bullet",
+                "t_shooting": 90,
+                "texture": "shooting_tex"
+            }
+        ]
+    },
+    "textures": {
+        "main_tex": [
+            {
+                "png": "main1.png",
+                "t": 50,
+                "footprint": {
+                    "pos": [
+                        0.0166015625,
+                        0.048828125
+                    ],
+                    "size": [
+                        0.876953125,
+                        0.9140625
+                    ]
+                }
+            },
+            {
+                "png": "main2.png",
+                "t": 50,
+                "footprint": {
+                    "pos": [
+                        0.0634765625,
+                        0.0498046875
+                    ],
+                    "size": [
+                        0.8828125,
+                        0.94921875
+                    ]
+                }
+            },
+            {
+                "png": "main3.png",
+                "t": 50,
+                "footprint": {
+                    "pos": [
+                        0.09375,
+                        0.0634765625
+                    ],
+                    "size": [
+                        0.85546875,
+                        0.869140625
+                    ]
+                }
+            },
+            {
+                "png": "main4.png",
+                "t": 50,
+                "footprint": {
+                    "pos": [
+                        0.083984375,
+                        0.037109375
+                    ],
+                    "size": [
+                        0.8818359375,
+                        0.8876953125
+                    ]
+                }
+            },
+            {
+                "png": "main5.png",
+                "t": 50,
+                "footprint": {
+                    "pos": [
+                        0.025390625,
+                        0.029296875
+                    ],
+                    "size": [
+                        0.9140625,
+                        0.8994140625
+                    ]
+                }
+            },
+            {
+                "png": "main6.png",
+                "t": 50,
+                "footprint": {
+                    "pos": [
+                        0.0419921875,
+                        0.0029296875
+                    ],
+                    "size": [
+                        0.953125,
+                        0.9453125
+                    ]
+                }
+            },
+            {
+                "png": "main7.png",
+                "t": 50,
+                "footprint": {
+                    "pos": [
+                        0.0849609375,
+                        0.099609375
+                    ],
+                    "size": [
+                        0.8427734375,
+                        0.865234375
+                    ]
+                }
+            },
+            {
+                "png": "main8.png",
+                "t": 50,
+                "footprint": {
+                    "pos": [
+                        0.06640625,
+                        0.046875
+                    ],
+                    "size": [
+                        0.9091796875,
+                        0.8837890625
+                    ]
+                }
+            }
+        ],
+        "shooting_tex": [
+            {
+                "png": "main1.png",
+                "t": 100,
+                "footprint": {
+                    "pos": [
+                        0.0166015625,
+                        0.048828125
+                    ],
+                    "size": [
+                        0.876953125,
+                        0.9140625
+                    ]
+                }
+            },
+            {
+                "png": "main5.png",
+                "t": 100,
+                "footprint": {
+                    "pos": [
+                        0.025390625,
+                        0.029296875
+                    ],
+                    "size": [
+                        0.9140625,
+                        0.8994140625
+                    ]
+                }
+            }
+        ]
+    }
+}

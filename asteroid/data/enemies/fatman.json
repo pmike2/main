@@ -4,8 +4,9 @@
         3.0,
         3.0
     ],
-    "score": 20,
-    "lives": 5,
+    "score_hit": 10,
+    "score_death": 30,
+    "lives": 4,
     "actions": {
         "zigzag1": [
             {
