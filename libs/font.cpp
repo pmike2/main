@@ -56,8 +56,8 @@ Font::Font(GLuint prog_draw, string font_path, unsigned int font_size, ScreenGL 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // Disable byte-alignment restriction
 
 	// on crée une texture qui va contenir tous les chars dans une bande horizontale
-	_tex_width= 0.0f;
-	_tex_height= 0.0f;
+	_tex_width= 0;
+	_tex_height= 0;
 	for (GLubyte c=32; c<128; c++) {
 		if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
 			cout << "Failed to load Glyph" << endl;
@@ -98,7 +98,27 @@ Font::Font(GLuint prog_draw, string font_path, unsigned int font_size, ScreenGL 
 
 		x+= _characters[c]._size.x;
 	}
+
+	// debug font ---------------------------------------------
+	GLubyte * pixels= new GLubyte[_tex_width* _tex_height];
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
+	FILE *f;
+	f= fopen("font.pgm", "wb");
+	fprintf(f, "P5\n%d %d\n%d\n", _tex_width, _tex_height, 255);
+	for (int i=0; i<_tex_height; ++i) {
+		fwrite(pixels+ i* _tex_width, 1, _tex_width, f);
+	}
+	fclose(f);
+	delete[] pixels;
+
+	GLchar c= 'b';
+	std::cout << "size=(" << _characters[c]._size.x << " ; " << _characters[c]._size.y << ")";
+	std::cout << " ; bearing=(" <<  _characters[c]._bearing.x << " ; " << _characters[c]._bearing.y << ")";
+	std::cout << " ; advance=" << _characters[c]._advance;
+	std::cout << " ; xoffset=" <<_characters[c]._xoffset << "\n";
+	// ---------------------------------------------------------
 	
+	glBindTexture(GL_TEXTURE_2D, 0);
 	FT_Done_Face(face);
 	FT_Done_FreeType(ft_lib);
 	
@@ -146,8 +166,10 @@ void Font::set_text_group(unsigned int idx_text_group, vector<Text> & texts) {
 		for (string::const_iterator c=texts[idx_text]._text.begin(); c!=texts[idx_text]._text.end(); c++) {
 			Character ch= _characters[*c];
 
-			float xpos= x+ (float)(ch._bearing.x)* texts[idx_text]._scale;
-			float ypos= texts[idx_text]._pos.y- (float)(ch._size.y- ch._bearing.y)* texts[idx_text]._scale;
+			//float xpos= x+ (float)(ch._bearing.x)* texts[idx_text]._scale;
+			float xpos= x;
+			//float ypos= texts[idx_text]._pos.y- (float)(ch._size.y- ch._bearing.y)* texts[idx_text]._scale;
+			float ypos= texts[idx_text]._pos.y;
 
 			float w= (float)(ch._size.x)* texts[idx_text]._scale;
 			float h= (float)(ch._size.y)* texts[idx_text]._scale;

@@ -1,0 +1,108 @@
+{
+    "type": "enemy",
+    "size": [
+        1.3,
+        1.3
+    ],
+    "score_hit": 10,
+    "score_death": 30,
+    "lives": 3,
+    "actions": {
+        "main": [
+            {
+                "direction": [
+                    0.0,
+                    -0.05
+                ],
+                "t": 1500,
+                "texture": "main_tex"
+            },
+            {
+                "direction": [
+                    0.0,
+                    0.01
+                ],
+                "t": 500,
+                "shooting": "zigzag_bullet",
+                "t_shooting": 200,
+                "texture": "shooting_tex"
+            }
+        ]
+    },
+    "textures": {
+        "main_tex": [
+            {
+                "png": "main1.png",
+                "t": 200,
+                "footprint": {
+                    "pos": [
+                        0.0146484375,
+                        0.1220703125
+                    ],
+                    "size": [
+                        0.984375,
+                        0.7138671875
+                    ]
+                }
+            },
+            {
+                "png": "main2.png",
+                "t": 200,
+                "footprint": {
+                    "pos": [
+                        0.0146484375,
+                        0.1220703125
+                    ],
+                    "size": [
+                        0.984375,
+                        0.7138671875
+                    ]
+                }
+            },
+            {
+                "png": "main3.png",
+                "t": 200,
+                "footprint": {
+                    "pos": [
+                        0.0146484375,
+                        0.1220703125
+                    ],
+                    "size": [
+                        0.984375,
+                        0.7138671875
+                    ]
+                }
+            }
+        ],
+        "shooting_tex": [
+            {
+                "png": "shoot1.png",
+                "t": 100,
+                "footprint": {
+                    "pos": [
+                        0.0146484375,
+                        0.1220703125
+                    ],
+                    "size": [
+                        0.984375,
+                        0.7138671875
+                    ]
+                }
+            },
+            {
+                "png": "shoot2.png",
+                "t": 100,
+                "footprint": {
+                    "pos": [
+                        0.0146484375,
+                        0.111328125
+                    ],
+                    "size": [
+                        0.984375,
+                        0.724609375
+                    ]
+                }
+            }
+        ]
+    }
+}
