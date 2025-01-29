@@ -20,7 +20,7 @@
 
 
 struct Character {
-	char _char; // which character
+	unsigned char _char; // which character
 	glm::ivec2 _size;       // Size of glyph
 	glm::ivec2 _bearing;    // Offset from baseline to left/top of glyph
 	GLuint     _advance;    // Offset to advance to next glyph

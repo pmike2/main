@@ -80,7 +80,7 @@ Font::Font(GLuint prog_draw, string font_path, unsigned int font_size, ScreenGL 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	unsigned int x= 0;
-	for (char c=32; c<128; c++) {
+	for (unsigned char c=32; c<128; c++) {
 		if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
 			cout << "Failed to load Glyph" << endl;
 			continue;
@@ -165,17 +165,30 @@ void Font::set_text_group(unsigned int idx_text_group, vector<Text> & texts) {
 		for (string::const_iterator c=texts[idx_text]._text.begin(); c!=texts[idx_text]._text.end(); c++) {
 			Character ch= _characters[*c];
 
-			//float xpos= x+ (float)(ch._bearing.x)* texts[idx_text]._scale;
-			float xpos= x;
-			//float ypos= texts[idx_text]._pos.y- (float)(ch._size.y- ch._bearing.y)* texts[idx_text]._scale;
-			float ypos= texts[idx_text]._pos.y;
+			float xpos= x+ (float)(ch._bearing.x)* texts[idx_text]._scale;
+			float ypos= texts[idx_text]._pos.y- (float)(ch._size.y- ch._bearing.y)* texts[idx_text]._scale;
 
 			float w= (float)(ch._size.x)* texts[idx_text]._scale;
 			float h= (float)(ch._size.y)* texts[idx_text]._scale;
 
 			float tex_w= (float)(ch._size.x)/ (float)(_tex_width);
 
-			vertices[idx* 6* 8+ 0]= xpos;
+			float positions[6][4]= {
+				{xpos, ypos, ch._xoffset, 0.0},
+				{xpos+ w, ypos, ch._xoffset+ tex_w, 0.0},
+				{xpos+ w, ypos+ h, ch._xoffset+ tex_w, 1.0},
+
+				{xpos, ypos, ch._xoffset, 0.0},
+				{xpos+ w, ypos+ h, ch._xoffset+ tex_w, 1.0},
+				{xpos, ypos+ h, ch._xoffset, 1.0},
+			};
+			for (int i=0; i<6; ++i) {
+				for (int j=0; j<4; ++j) {
+					vertices[idx* 6* 8+ i* 8+ j]= positions[i][j];
+				}
+			}
+
+			/*vertices[idx* 6* 8+ 0]= xpos;
 			vertices[idx* 6* 8+ 1]= ypos+ h;
 			vertices[idx* 6* 8+ 2]= ch._xoffset;
 			vertices[idx* 6* 8+ 3]= 0.0f;
@@ -203,7 +216,7 @@ void Font::set_text_group(unsigned int idx_text_group, vector<Text> & texts) {
 			vertices[idx* 6* 8+ 40]= xpos+ w;
 			vertices[idx* 6* 8+ 41]= ypos+ h;
 			vertices[idx* 6* 8+ 42]= ch._xoffset+ tex_w;
-			vertices[idx* 6* 8+ 43]= 0.0f;
+			vertices[idx* 6* 8+ 43]= 0.0f;*/
 
 			for (unsigned int k=0; k<6; ++k) {
 				vertices[idx* 6* 8+ k* 8+ 4]= texts[idx_text]._color.r;
