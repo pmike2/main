@@ -130,10 +130,10 @@ void draw() {
 	std::ostringstream font_str;
 
 	float font_scale= 0.01f;
-	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 0.0f, 0.5f);
+	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 
-	std::string s1= "bonjour";
-	glm::vec2 position1= glm::vec2(-9.0f, 7.0f);
+	std::string s1= "bapa";
+	glm::vec2 position1= glm::vec2(0.0f, 0.0f);
 	Text t1(s1, position1, font_scale, font_color);
 
 	std::vector<Text> texts;

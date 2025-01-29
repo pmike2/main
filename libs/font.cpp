@@ -80,13 +80,14 @@ Font::Font(GLuint prog_draw, string font_path, unsigned int font_size, ScreenGL 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	unsigned int x= 0;
-	for (GLubyte c=32; c<128; c++) {
+	for (char c=32; c<128; c++) {
 		if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
 			cout << "Failed to load Glyph" << endl;
 			continue;
 		}
 
 		Character character = {
+			c,
 			glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
 			glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
 			static_cast<GLuint>(face->glyph->advance.x),
@@ -111,11 +112,9 @@ Font::Font(GLuint prog_draw, string font_path, unsigned int font_size, ScreenGL 
 	fclose(f);
 	delete[] pixels;
 
-	GLchar c= 'b';
-	std::cout << "size=(" << _characters[c]._size.x << " ; " << _characters[c]._size.y << ")";
-	std::cout << " ; bearing=(" <<  _characters[c]._bearing.x << " ; " << _characters[c]._bearing.y << ")";
-	std::cout << " ; advance=" << _characters[c]._advance;
-	std::cout << " ; xoffset=" <<_characters[c]._xoffset << "\n";
+	std::cout << _characters['a'] << "\n";
+	std::cout << _characters['b'] << "\n";
+	std::cout << _characters['p'] << "\n";
 	// ---------------------------------------------------------
 	
 	glBindTexture(GL_TEXTURE_2D, 0);

@@ -1,6 +1,7 @@
 #ifndef FONT_H
 #define FONT_H
 
+#include <iostream>
 #include <string>
 #include <map>
 #include <vector>
@@ -19,11 +20,20 @@
 
 
 struct Character {
-	//GLuint     _texture_id; // ID handle of the glyph texture
+	char _char; // which character
 	glm::ivec2 _size;       // Size of glyph
 	glm::ivec2 _bearing;    // Offset from baseline to left/top of glyph
 	GLuint     _advance;    // Offset to advance to next glyph
 	float _xoffset;
+
+	friend std::ostream & operator << (std::ostream & os, const Character & c) {
+		os << "char=" << c._char;
+		os << " ; size=(" << c._size.x << " ; " << c._size.y << ")";
+		os << " ; bearing=(" <<  c._bearing.x << " ; " << c._bearing.y << ")";
+		os << " ; advance=" << c._advance;
+		os << " ; xoffset=" << c._xoffset;
+		return os;
+	}
 };
 
 
@@ -50,7 +60,7 @@ public:
 	void draw();
 	
 	GLuint _font_texture;
-	std::map<GLchar, Character> _characters;
+	std::map<char, Character> _characters;
 	float _projection[16];
 	GLuint * _vbos;
 	GLuint _prog_draw;
