@@ -1,16 +1,20 @@
 #version 410 core
 
-uniform sampler2D text;
-//uniform vec3 text_color;
-//uniform float alpha;
+uniform sampler2DArray texture_array;
 
 in vec2 tex_coords;
-in vec4 color_fragment;
-out vec4 color;
+in vec4 color;
+in float current_layer;
+
+out vec4 color_out;
+
 
 void main() {
-	vec4 sampled= vec4(1.0, 1.0, 1.0, texture(text, tex_coords).r);
-	//color= color_fragment* sampled;
-	color= mix(vec4(1.0, 0.0, 0.0, 1.0), color_fragment* sampled, 0.5);
-	//color= color_fragment;
+	vec4 sampled= vec4(1.0, 1.0, 1.0, texture(texture_array, vec3(tex_coords.rg, current_layer)).r);
+	
+	color_out= color* sampled;
+
+	//color_out= mix(vec4(1.0, 0.0, 0.0, 1.0), color* sampled, 0.5);
+	//color_out= sampled;
+	//color_out= vec4(1.0, 0.0, 0.0, 1.0);
 }

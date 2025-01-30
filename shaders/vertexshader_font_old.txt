@@ -1,0 +1,15 @@
+#version 410 core
+
+uniform mat4 projection;
+
+in vec4 vertex; // <vec2 pos, vec2 tex>
+in vec4 color_vertex;
+
+out vec2 tex_coords;
+out vec4 color_fragment;
+
+void main() {
+	gl_Position= projection* vec4(vertex.xy, 0.0, 1.0);
+	tex_coords= vertex.zw;
+	color_fragment= color_vertex;
+}

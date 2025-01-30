@@ -24,12 +24,14 @@ struct Character {
 	glm::ivec2 _size;       // Size of glyph
 	glm::ivec2 _bearing;    // Offset from baseline to left/top of glyph
 	GLuint     _advance;    // Offset to advance to next glyph
+	float _xoffset;
 
 	friend std::ostream & operator << (std::ostream & os, const Character & c) {
 		os << "char=" << c._char;
 		os << " ; size=(" << c._size.x << " ; " << c._size.y << ")";
 		os << " ; bearing=(" <<  c._bearing.x << " ; " << c._bearing.y << ")";
 		os << " ; advance=" << c._advance;
+		os << " ; xoffset=" << c._xoffset;
 		return os;
 	}
 };
@@ -51,17 +53,24 @@ public:
 class Font {
 public:
 	Font();
-	Font(GLuint prog_font, std::string font_path, unsigned int font_size, ScreenGL * screengl);
-	void set_text(std::vector<Text> & texts);
-	void set_text(Text & text);
+	Font(GLuint prog_draw, std::string font_path, unsigned int font_size, ScreenGL * screengl, unsigned int n_text_groups = 1);
+	void set_text_group(unsigned int idx_text_group, std::vector<Text> & texts);
+	void set_text_group(unsigned int idx_text_group, Text & text);
 	void clear();
 	void draw();
 	
-	GLuint _texture_id;
-	unsigned int _tex_size;
-	DrawContext * _context;
+	GLuint _font_texture;
 	std::map<char, Character> _characters;
-	glm::mat4 _camera2clip;
+	float _projection[16];
+	GLuint * _vbos;
+	GLuint _prog_draw;
+	GLint _vertex_loc, _color_loc, _projection_loc;
+	
+	unsigned int _tex_width;
+	unsigned int _tex_height;
+	ScreenGL * _screengl;
+	unsigned int _n_text_groups;
+	unsigned int * _n_chars;
 };
 
 

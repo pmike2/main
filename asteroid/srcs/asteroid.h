@@ -235,7 +235,8 @@ public:
 	void write_highest_scores();
 
 	// music
-	void set_music(std::string music_path);
+	void set_music(std::string music_path, unsigned int music_fade_in_ms=0);
+	void set_music_with_fadeout(std::string music_path, unsigned int music_fade_in_ms, unsigned int music_fade_out_ms);
 
 
 	std::map<std::string, ShipModel *> _models; // modèles

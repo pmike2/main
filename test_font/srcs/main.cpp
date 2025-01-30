@@ -117,6 +117,22 @@ void init() {
 	// --------------------------------------------------------------------------
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
+	float font_scale= 0.01f;
+	glm::vec4 font_color= glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+	
+	std::vector<Text> texts;
+
+	std::string s1= "Bonjour bande de nases ! 456";
+	glm::vec2 position1= glm::vec2(0.0f, 0.0f);
+	Text t1(s1, position1, font_scale, font_color);
+	texts.push_back(t1);
+
+	std::string s2= "YESSai Je suis jouelpbxxx.";
+	glm::vec2 position2= glm::vec2(-5.0f, -5.0f);
+	Text t2(s2, position2, font_scale, font_color);
+	texts.push_back(t2);
+
+	font->set_text(texts);
 }
 
 
@@ -127,19 +143,6 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	
-	std::ostringstream font_str;
-
-	float font_scale= 0.01f;
-	glm::vec4 font_color= glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-	std::string s1= "bapa";
-	glm::vec2 position1= glm::vec2(0.0f, 0.0f);
-	Text t1(s1, position1, font_scale, font_color);
-
-	std::vector<Text> texts;
-	texts.push_back(t1);
-
-	font->set_text_group(0, texts);
 	font->draw();
 
 	SDL_GL_SwapWindow(window);

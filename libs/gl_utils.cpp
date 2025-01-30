@@ -4,11 +4,8 @@
 #include <SDL2/SDL_image.h>
 
 #include "utile.h"
-
 #include "gl_utils.h"
 
-
-using namespace std;
 
 
 // -------------------------------------------------------------------------------------------
@@ -69,7 +66,7 @@ void _check_gl_error(const char * file, int line){
 	GLenum err(glGetError());
 
 	while (err!= GL_NO_ERROR){
-		string error;
+		std::string error;
 		switch(err){
 			case GL_INVALID_OPERATION: error="INVALID_OPERATION"; break;
 			case GL_INVALID_ENUM: error="INVALID_ENUM"; break;
@@ -77,7 +74,7 @@ void _check_gl_error(const char * file, int line){
 			case GL_OUT_OF_MEMORY: error="OUT_OF_MEMORY"; break;
 			case GL_INVALID_FRAMEBUFFER_OPERATION: error="INVALID_FRAMEBUFFER_OPERATION"; break;
 		}
-		cout << error.c_str() << " ; " << file << " ; " << line << endl;
+		std::cout << error.c_str() << " ; " << file << " ; " << line << "\n";
 		
 		err= glGetError();
 	}
@@ -93,19 +90,19 @@ void check_gl_program(GLuint prog) {
 		int loglen;
 		char logbuffer[1000];
 		glGetProgramInfoLog(prog, sizeof(logbuffer), &loglen, logbuffer);
-		cout << "OpenGL Program Linker Error " << loglen << " ; " << logbuffer << endl;
+		std::cout << "OpenGL Program Linker Error " << loglen << " ; " << logbuffer << "\n";
 	}
 	else {
 		int loglen;
 		char logbuffer[1000];
 		glGetProgramInfoLog(prog, sizeof(logbuffer), &loglen, logbuffer);
 		if (loglen> 0) {
-			cout << "OpenGL Program Linker OK " << loglen << " ; " << logbuffer << endl;
+			std::cout << "OpenGL Program Linker OK " << loglen << " ; " << logbuffer << "\n";
 		}
 		glValidateProgram(prog);
 		glGetProgramInfoLog(prog, sizeof(logbuffer), &loglen, logbuffer);
 		if (loglen> 0) {
-			cout << "OpenGL Program Validation results " << loglen << " ; " << logbuffer << endl;
+			std::cout << "OpenGL Program Validation results " << loglen << " ; " << logbuffer << "\n";
 		}
 	}
 }
@@ -120,7 +117,7 @@ void gl_versions() {
 	glGetIntegerv(GL_MAJOR_VERSION, &maj_v);
 	glGetIntegerv(GL_MINOR_VERSION, &min_v);
 
-	cout << "renderer=" << renderer << " ; vendor=" << vendor << " ; version=" << version << " ; glslversion=" << glslversion << " ; maj_v=" << maj_v << " ; min_v=" << min_v << endl;
+	std::cout << "renderer=" << renderer << " ; vendor=" << vendor << " ; version=" << version << " ; glslversion=" << glslversion << " ; maj_v=" << maj_v << " ; min_v=" << min_v << "\n";
 }
 
 
@@ -135,7 +132,7 @@ void active_uniforms(GLuint prog) {
 	for( int i=0; i<nUniforms; ++i ) {
 		glGetActiveUniform(prog, i, maxLen, &written, &size, &type, name);
 		location= glGetUniformLocation(prog, name);
-		cout << location << " ; " << name << endl;
+		std::cout << location << " ; " << name << "\n";
 	}
 	free(name);
 }
@@ -151,7 +148,7 @@ void active_attribs(GLuint prog) {
 	for( int i = 0; i < nAttribs; i++ ) {
 		glGetActiveAttrib( prog, i, maxLength, &written, &size, &type, name );
 		location = glGetAttribLocation(prog, name);
-		cout << location << " ; " << name << endl;
+		std::cout << location << " ; " << name << "\n";
 	}
 	free(name);
 }
@@ -172,7 +169,7 @@ char * load_source(const char * filename) {
 
 	/* on verifie si l'ouverture a echoue */
 	if (fp== NULL) {
-		cout << "impossible d'ouvrir le fichier " << filename << endl;
+		std::cout << "impossible d'ouvrir le fichier " << filename << "\n";
 		return NULL;
 	}
 	
@@ -187,7 +184,7 @@ char * load_source(const char * filename) {
 	src= (char *)malloc(size+ 1); /* +1 pour le caractere de fin de chaine '\0' */
 	if (src== NULL) {
 		fclose(fp);
-		cout << "erreur d'allocation de memoire" << endl;
+		std::cout << "erreur d'allocation de memoire" << "\n";
 		return NULL;
 	}
 	
@@ -216,14 +213,14 @@ GLuint load_shader(GLenum type, const char * filename) {
 	/* creation d'un shader de sommet */
 	shader= glCreateShader(type);
 	if (shader== 0) {
-		cout << "impossible de creer le shader" << endl;
+		std::cout << "impossible de creer le shader" << "\n";
 		return 0;
 	}
 	
 	/* chargement du code source */
 	src= load_source(filename);
 	if (src== NULL) {
-		cout << "Le fichier de shader n'existe pas" << endl;
+		std::cout << "Le fichier de shader n'existe pas" << "\n";
 		glDeleteShader(shader);
 		return 0;
 	}
@@ -249,14 +246,14 @@ GLuint load_shader(GLenum type, const char * filename) {
 		/* on alloue un espace memoire dans lequel OpenGL ecrira le message */
 		log= (char *)malloc(logsize + 1);
 		if (log == NULL) {
-			cout <<	 "impossible d'allouer de la memoire" << endl;
+			std::cout <<	 "impossible d'allouer de la memoire" << "\n";
 			return 0;
 		}
 		/* initialisation du contenu */
 		memset(log, '\0', logsize + 1);
 		
 		glGetShaderInfoLog(shader, logsize, &logsize, log);
-		cout << "impossible de compiler le shader" << filename << " : " << log << endl;
+		std::cout << "impossible de compiler le shader" << filename << " : " << log << "\n";
 		
 		/* ne pas oublier de liberer la memoire et notre shader */
 		free(log);
@@ -268,34 +265,8 @@ GLuint load_shader(GLenum type, const char * filename) {
 	return shader;
 }
 
-/*
-unsigned int load_cube_map(vector<string> faces) {
-	unsigned int texture_id;
-	glGenTextures(1, &texture_id);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id);
-	
-	for (unsigned int i=0; i<faces.size(); ++i) {
-    	SDL_Surface *surface = IMG_Load(faces[i].c_str());
-		if (!surface) {
-			cout << "IMG_Load error :" << IMG_GetError() << endl;
-			continue;
-		}
-    	// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, surface->w, surface->h, 0, GL_BGRA, GL_UNSIGNED_BYTE, surface->pixels);
-		SDL_FreeSurface(surface);
-	}
-    
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	
-	return texture_id;
-}
-*/
 
-GLuint create_prog(string vs_path, string fs_path, bool check) {
+GLuint create_prog(std::string vs_path, std::string fs_path, bool check) {
 	GLuint vs= load_shader(GL_VERTEX_SHADER  , vs_path.c_str());
 	GLuint fs= load_shader(GL_FRAGMENT_SHADER, fs_path.c_str());
 	GLuint prog= glCreateProgram();
@@ -318,4 +289,35 @@ void set_subwindow(const float bkgnd_color[4], int x, int y, int w, int h) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glDisable(GL_SCISSOR_TEST);
 	glViewport(x, y, w, h);
+}
+
+// export dans fichier .pgm d'une texture en niveaux de gris
+void export_texture2pgm(std::string pgm_path, unsigned int width, unsigned int height) {
+	unsigned char * pixels= new unsigned char[width* height];
+	glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
+	FILE *f;
+	f= fopen(pgm_path.c_str(), "wb");
+	fprintf(f, "P5\n%d %d\n%d\n", width, height, 255);
+	for (int i=0; i<height; ++i) {
+		fwrite(pixels+ i* width, 1, width, f);
+	}
+	fclose(f);
+	delete[] pixels;
+}
+
+
+void export_texture_array2pgm(std::string pgm_dir_path, unsigned int width, unsigned int height, unsigned int depth) {
+	unsigned char * pixels= new unsigned char[width* height* depth];
+	glGetTexImage(GL_TEXTURE_2D_ARRAY, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
+	for (unsigned int d=0; d<depth; ++d) {
+		std::string pgm_path= pgm_dir_path+ "/tex_array_"+ std::to_string(d)+ ".pgm";
+		FILE *f;
+		f= fopen(pgm_path.c_str(), "wb");
+		fprintf(f, "P5\n%d %d\n%d\n", width, height, 255);
+		for (int i=0; i<height; ++i) {
+			fwrite(pixels+ d* width* height+ i* width, 1, width, f);
+		}
+		fclose(f);
+	}
+	delete[] pixels;
 }

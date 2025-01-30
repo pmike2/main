@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <functional>
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -598,10 +599,6 @@ void Asteroid::load_models() {
 
 
 void Asteroid::fill_texture_array() {
-	glGenTextures(1, &_texture_id);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
-
 	unsigned int n_tex= 0;
 	for (auto model : _models) {
 		for (auto texture : model.second->_textures) {
@@ -609,6 +606,11 @@ void Asteroid::fill_texture_array() {
 		}
 	}
 
+	glGenTextures(1, &_texture_id);
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
+	
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	unsigned int compt= 0;
@@ -646,8 +648,8 @@ void Asteroid::fill_texture_array() {
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	/*glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);*/
+
 	glActiveTexture(0);
-	
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
@@ -824,7 +826,7 @@ void Asteroid::show_playing_info() {
 	texts.push_back(t2);
 	texts.push_back(t3);
 
-	_font->set_text_group(0, texts);
+	_font->set_text(texts);
 	_font->draw();
 }
 
@@ -850,7 +852,7 @@ void Asteroid::show_inactive_info() {
 		Text t3(s3, position3, font_scale, font_color);
 		texts.push_back(t3);
 	}
-	_font->set_text_group(0, texts);
+	_font->set_text(texts);
 	_font->draw();
 }
 
@@ -879,7 +881,7 @@ void Asteroid::show_set_score_name_info() {
 		texts.push_back(t3);
 	}
 
-	_font->set_text_group(0, texts);
+	_font->set_text(texts);
 	_font->draw();
 }
 
@@ -1622,10 +1624,22 @@ void Asteroid::write_highest_scores() {
 }
 
 
-void Asteroid::set_music(std::string music_path) {
+void Asteroid::set_music(std::string music_path, unsigned int music_fade_in_ms) {
+	
 	if (_music!= NULL) {
 		Mix_FreeMusic(_music);
 	}
 	_music= Mix_LoadMUS(music_path.c_str());
-	Mix_PlayMusic(_music, -1);
+	//Mix_PlayMusic(_music, -1);
+	Mix_FadeInMusic(_music, -1, music_fade_in_ms);
+}
+
+
+// https://stackoverflow.com/questions/16659664/error-cannot-convert-void-capp-to-void-for-argument-1-to-vo
+void Asteroid::set_music_with_fadeout(std::string music_path, unsigned int music_fade_in_ms, unsigned int music_fade_out_ms) {
+	Mix_FadeOutMusic(music_fade_out_ms);
+	//Mix_HookMusicFinished(Asteroid::set_music);
+	/*Mix_HookMusicFinished(void (*) {
+		
+	}));*/
 }
