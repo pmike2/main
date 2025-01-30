@@ -14,6 +14,10 @@
 using json = nlohmann::json;
 
 
+Mix_Music * Asteroid::_music= NULL;
+std::string Asteroid::_next_music_path= "";
+
+
 // action -----------------------------------------------------------
 Action::Action() {
 
@@ -490,7 +494,7 @@ Asteroid::Asteroid() {
 Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, std::chrono::system_clock::time_point t) 
 	: _draw_aabb(false), _draw_footprint(false), _draw_texture(true),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false),
-	_mode(INACTIVE), _score(0), _current_level_idx(0), _music(NULL) {
+	_mode(INACTIVE), _score(0), _current_level_idx(0) {
 
 	_pt_min= glm::vec2(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
 	_pt_max= glm::vec2(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
@@ -561,7 +565,7 @@ Asteroid::~Asteroid() {
 	delete _buffers;
 
 	Mix_HaltMusic();
-	Mix_FreeMusic(_music);
+	Mix_FreeMusic(Asteroid::_music);
 }
 
 
@@ -1560,7 +1564,7 @@ void Asteroid::set_level(unsigned int level_idx, std::chrono::system_clock::time
 	// on ajuste le start
 	_levels[_current_level_idx]->reinit(t);
 	
-	set_music(_levels[_current_level_idx]->_music_path);
+	set_music_with_fadeout(_levels[_current_level_idx]->_music_path, 2000);
 }
 
 
@@ -1626,20 +1630,23 @@ void Asteroid::write_highest_scores() {
 
 void Asteroid::set_music(std::string music_path, unsigned int music_fade_in_ms) {
 	
-	if (_music!= NULL) {
-		Mix_FreeMusic(_music);
+	if (Asteroid::_music!= NULL) {
+		Mix_FreeMusic(Asteroid::_music);
 	}
-	_music= Mix_LoadMUS(music_path.c_str());
+	Asteroid::_music= Mix_LoadMUS(music_path.c_str());
 	//Mix_PlayMusic(_music, -1);
-	Mix_FadeInMusic(_music, -1, music_fade_in_ms);
+	Mix_FadeInMusic(Asteroid::_music, -1, music_fade_in_ms);
 }
 
 
-// https://stackoverflow.com/questions/16659664/error-cannot-convert-void-capp-to-void-for-argument-1-to-vo
-void Asteroid::set_music_with_fadeout(std::string music_path, unsigned int music_fade_in_ms, unsigned int music_fade_out_ms) {
+void Asteroid::music_finished_callback() {
+	std::cout << "music_finished_callback : _next_music_path=" << _next_music_path << "\n";
+	set_music(_next_music_path);
+}
+
+
+void Asteroid::set_music_with_fadeout(std::string music_path, unsigned int music_fade_out_ms, unsigned int music_fade_in_ms) {
 	Mix_FadeOutMusic(music_fade_out_ms);
-	//Mix_HookMusicFinished(Asteroid::set_music);
-	/*Mix_HookMusicFinished(void (*) {
-		
-	}));*/
+	_next_music_path= music_path;
+	Mix_HookMusicFinished(Asteroid::music_finished_callback);
 }

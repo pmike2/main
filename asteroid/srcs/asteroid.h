@@ -235,8 +235,9 @@ public:
 	void write_highest_scores();
 
 	// music
-	void set_music(std::string music_path, unsigned int music_fade_in_ms=0);
-	void set_music_with_fadeout(std::string music_path, unsigned int music_fade_in_ms, unsigned int music_fade_out_ms);
+	static void set_music(std::string music_path, unsigned int music_fade_in_ms=2000);
+	void set_music_with_fadeout(std::string music_path, unsigned int music_fade_out_ms, unsigned int music_fade_in_ms=2000);
+	static void music_finished_callback();
 
 
 	std::map<std::string, ShipModel *> _models; // modèles
@@ -261,7 +262,8 @@ public:
 	bool _key_left, _key_right, _key_up, _key_down; // les touches directionnelles sont enfoncées
 	float _joystick[2]; // valeurs joystick
 
-	Mix_Music * _music; // musique courante
+	static Mix_Music * _music; // musique courante
+	static std::string _next_music_path;
 };
 
 
