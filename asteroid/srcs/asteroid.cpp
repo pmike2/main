@@ -14,6 +14,7 @@
 using json = nlohmann::json;
 
 
+// les membres statiques d'une classe doivent être déclarés dans le .cpp
 Mix_Music * Asteroid::_music= NULL;
 std::string Asteroid::_next_music_path= "";
 
@@ -24,14 +25,18 @@ Action::Action() {
 }
 
 
-Action::Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting, std::string texture_name) :
-	_direction(direction), _t(t), _bullet_name(bullet_name), _bullet_model(NULL), _t_shooting(t_shooting), _texture_name(texture_name) {
+Action::Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting, std::string texture_name, Mix_Chunk * shoot_sound) :
+	_direction(direction), _t(t), _bullet_name(bullet_name), _bullet_model(NULL), _t_shooting(t_shooting), _texture_name(texture_name),
+	_shoot_sound(shoot_sound)
+{
 
 }
 
 
 Action::~Action() {
-	
+	if (_shoot_sound!= NULL) {
+		Mix_FreeChunk(_shoot_sound);
+	}
 }
 
 
@@ -120,8 +125,20 @@ ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 		_score_hit= js["score_hit"];
 	}
 	_score_death= 0;
-	if (js["_score_death"]!= nullptr) {
+	if (js["score_death"]!= nullptr) {
 		_score_death= js["score_death"];
+	}
+
+	_hit_sound= NULL;
+	if (js["hit_sound"]!= nullptr) {
+		std::string hit_sound_path= js["hit_sound"];
+		_hit_sound= Mix_LoadWAV(hit_sound_path.c_str());
+	}
+
+	_death_sound= NULL;
+	if (js["death_sound"]!= nullptr) {
+		std::string death_sound_path= js["death_sound"];
+		_death_sound= Mix_LoadWAV(death_sound_path.c_str());
 	}
 
 	// parcours des textures
@@ -182,20 +199,25 @@ ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 
 			std::string texture_name= action["texture"];
 
-			_actions[action_name].push_back(new Action(direction, t, bullet_name, t_shooting, texture_name));
+			Mix_Chunk * shoot_sound= NULL;
+			if (action["shoot_sound"]!= nullptr) {
+				std::string shoot_sound_path= action["shoot_sound"];
+				shoot_sound= Mix_LoadWAV(shoot_sound_path.c_str());
+			}
+
+			_actions[action_name].push_back(new Action(direction, t, bullet_name, t_shooting, texture_name, shoot_sound));
 		}
 	}
-
-	_hit_sound= Mix_LoadWAV("../data/sounds/hit.wav");
-	_death_sound= Mix_LoadWAV("../data/sounds/death.wav");
-	_shoot_sound= Mix_LoadWAV("../data/sounds/shoot.wav");
 }
 
 
 ShipModel::~ShipModel() {
-	Mix_FreeChunk(_hit_sound);
-	Mix_FreeChunk(_death_sound);
-	Mix_FreeChunk(_shoot_sound);
+	if (_hit_sound!= NULL) {
+		Mix_FreeChunk(_hit_sound);
+	}
+	if (_death_sound!= NULL) {
+		Mix_FreeChunk(_death_sound);
+	}
 }
 
 
@@ -248,7 +270,7 @@ Ship::~Ship() {
 
 void Ship::anim(std::chrono::system_clock::time_point t) {
 	_shooting= false;
-
+	
 	if (_dead) {
 		//_hit= false;
 		//_hit_value= 0.0;
@@ -288,36 +310,41 @@ void Ship::anim(std::chrono::system_clock::time_point t) {
 	else {
 		_hit_value= 0.0;
 	}
+
+	Action * current_action= get_current_action();
 	
 	// chgmt action ; _t < 0 correspond à une action infinie
 	auto d_action= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_action_start).count();
-	if (_model->_actions[_current_action_name][_idx_action]->_t> 0 && d_action> _model->_actions[_current_action_name][_idx_action]->_t) {
+	if (current_action->_t> 0 && d_action> current_action->_t) {
 		_t_action_start= t;
 		_idx_action++;
 		if (_idx_action>= _model->_actions[_current_action_name].size()) {
 			_idx_action= 0;
 		}
 		_idx_anim= 0;
+		//_t_last_bullet= t;
 	}
 
+	// après le chgmt d'action éventuel on met à jour current_action et on récupère le bullet et la texture courants
+	current_action= get_current_action();
 	ShipModel * bullet_model= get_current_bullet_model();
 	ActionTexture * texture= get_current_texture();
 
 	// faut-il tirer
 	if (bullet_model!= NULL) {
 		auto d_shoot= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_last_bullet).count();
-		if (d_shoot> _model->_actions[_current_action_name][_idx_action]->_t_shooting) {
+		if (d_shoot> current_action->_t_shooting) {
 			_t_last_bullet= t;
 			_shooting= true;
-			if (_model->_type== HERO) {
-				Mix_PlayChannel(-1, _model->_shoot_sound, 0);
+			if (current_action->_shoot_sound!= NULL) {
+				Mix_PlayChannel(-1, current_action->_shoot_sound, 0);
 			}
 		}
 	}
 
 	// maj vitesse et position
 	if (_model->_type== ENEMY || _model->_type== BULLET) {
-		_velocity= _model->_actions[_current_action_name][_idx_action]->_direction;
+		_velocity= current_action->_direction;
 	}
 	
 	_aabb._pos+= _velocity;
@@ -339,13 +366,18 @@ void Ship::anim(std::chrono::system_clock::time_point t) {
 }
 
 
+Action * Ship::get_current_action() {
+	return _model->_actions[_current_action_name][_idx_action];
+}
+
+
 ShipModel * Ship::get_current_bullet_model() {
-	return _model->_actions[_current_action_name][_idx_action]->_bullet_model;
+	return get_current_action()->_bullet_model;
 }
 
 
 ActionTexture * Ship::get_current_texture() {
-	std::string current_tex_name= _model->_actions[_current_action_name][_idx_action]->_texture_name;
+	std::string current_tex_name= get_current_action()->_texture_name;
 	return _model->_textures[current_tex_name];
 }
 
@@ -367,14 +399,14 @@ bool Ship::hit(std::chrono::system_clock::time_point t) {
 	if (_lives<= 0) {
 		_dead= true;
 		_t_die= t;
-		if (_model->_type== ENEMY) {
+		if (_model->_death_sound!= NULL) {
 			Mix_PlayChannel(-1, _model->_death_sound, 0);
 		}
 	}
 	else {
 		_hit= true;
 		_t_last_hit= t;
-		if (_model->_type== ENEMY) {
+		if (_model->_hit_sound!= NULL) {
 			Mix_PlayChannel(-1, _model->_hit_sound, 0);
 		}
 	}
@@ -543,6 +575,8 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 	update_ship_texture();
 
 	set_music("../data/sounds/music_inactive.wav");
+	// callback appelé lorsqu'une musique est finie.
+	Mix_HookMusicFinished(Asteroid::music_finished_callback);
 }
 
 
@@ -650,8 +684,8 @@ void Asteroid::fill_texture_array() {
 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	/*glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);*/
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
 
 	glActiveTexture(0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
@@ -1155,6 +1189,7 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 		Ship * ship= _ships[idx_ship];
 		ship->anim(t);
 
+		// création d'une bullet si _shooting == true
 		if (ship->_shooting) {
 			bool friendly= false;
 			if (ship->_model->_type== HERO) {
@@ -1243,7 +1278,7 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 		// pas de high score
 		if (_score< _highest_scores[2].second) {
 			_mode= INACTIVE;
-			set_music("../data/sounds/music_inactive.wav");
+			set_music_with_fadeout("../data/sounds/music_inactive.wav");
 			_new_highest_idx= 0;
 			_new_highest_char_idx= 0;
 		}
@@ -1254,7 +1289,7 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 				if (_score> _highest_scores[i].second) {
 					_new_highest_idx= i;
 					_mode= SET_SCORE_NAME;
-					set_music("../data/sounds/music_set_score_name.wav");
+					set_music_with_fadeout("../data/sounds/music_set_score_name.wav");
 					_highest_scores.insert(_highest_scores.begin()+ _new_highest_idx, std::make_pair("AAA", _score));
 					_highest_scores.pop_back();
 					break;
@@ -1299,21 +1334,22 @@ void Asteroid::anim(std::chrono::system_clock::time_point t) {
 
 
 bool Asteroid::key_down(InputState * input_state, SDL_Keycode key, std::chrono::system_clock::time_point t) {
-	if (key== SDLK_w) {
-		std::cout << "joy=(" << _joystick[0] << " ; " << _joystick[1] << ") ; key_left=" << _key_left  << " ; key_right=" << _key_right << " ; key_down=" << _key_down  << " ; key_up=" << _key_up << "\n";
-	}
+	// activer le dessin des textures
 	if (key== SDLK_t) {
 		_draw_texture= !_draw_texture;
 		return true;
 	}
+	// activer le dessin des AABB
 	if (key== SDLK_y) {
 		_draw_aabb= !_draw_aabb;
 		return true;
 	}
+	// activer le dessin des footprint
 	if (key== SDLK_u) {
 		_draw_footprint= !_draw_footprint;
 		return true;
 	}
+	// (un)muter musique
 	if (key== SDLK_m) {
 		if (Mix_PlayingMusic()!= 0) {
 			if (Mix_PausedMusic()== 1) {
@@ -1353,6 +1389,7 @@ bool Asteroid::key_down(InputState * input_state, SDL_Keycode key, std::chrono::
 	}
 	
 	else if (_mode== INACTIVE) {
+		// touche entrée pour jouer
 		if (key== SDLK_RETURN) {
 			reinit(t);
 			_mode= PLAYING;
@@ -1362,6 +1399,7 @@ bool Asteroid::key_down(InputState * input_state, SDL_Keycode key, std::chrono::
 	}
 
 	else if (_mode== SET_SCORE_NAME) {
+		// saisie du nom
 		if (key== SDLK_LEFT) {
 			_new_highest_char_idx--;
 			if (_new_highest_char_idx< 0) {
@@ -1390,9 +1428,10 @@ bool Asteroid::key_down(InputState * input_state, SDL_Keycode key, std::chrono::
 			}
 			return true;
 		}
+		// touche entrée : on a fini de saisir
 		else if (key== SDLK_RETURN) {
 			_mode= INACTIVE;
-			set_music("../data/sounds/music_inactive.wav");
+			set_music_with_fadeout("../data/sounds/music_inactive.wav");
 			write_highest_scores();
 			return true;
 		}
@@ -1522,6 +1561,7 @@ bool Asteroid::joystick_axis(unsigned int axis_idx, int value, std::chrono::syst
 					_highest_scores[_new_highest_idx].first[_new_highest_char_idx]= 'A';
 				}
 			}
+			return true;
 		}
 	}
 	return false;
@@ -1564,7 +1604,7 @@ void Asteroid::set_level(unsigned int level_idx, std::chrono::system_clock::time
 	// on ajuste le start
 	_levels[_current_level_idx]->reinit(t);
 	
-	set_music_with_fadeout(_levels[_current_level_idx]->_music_path, 2000);
+	set_music_with_fadeout(_levels[_current_level_idx]->_music_path);
 }
 
 
@@ -1628,8 +1668,8 @@ void Asteroid::write_highest_scores() {
 }
 
 
+// set_music arrête brutalement la musique en cours, puis fait un fade in de la musique à jouer
 void Asteroid::set_music(std::string music_path, unsigned int music_fade_in_ms) {
-	
 	if (Asteroid::_music!= NULL) {
 		Mix_FreeMusic(Asteroid::_music);
 	}
@@ -1639,14 +1679,14 @@ void Asteroid::set_music(std::string music_path, unsigned int music_fade_in_ms) 
 }
 
 
-void Asteroid::music_finished_callback() {
-	std::cout << "music_finished_callback : _next_music_path=" << _next_music_path << "\n";
-	set_music(_next_music_path);
-}
-
-
+// set_music_with_fadeout arrête progressivement la musique en cours puis lorsque le callback est déclenché on fait un set_music
 void Asteroid::set_music_with_fadeout(std::string music_path, unsigned int music_fade_out_ms, unsigned int music_fade_in_ms) {
 	Mix_FadeOutMusic(music_fade_out_ms);
 	_next_music_path= music_path;
-	Mix_HookMusicFinished(Asteroid::music_finished_callback);
 }
+
+
+void Asteroid::music_finished_callback() {
+	set_music(_next_music_path);
+}
+

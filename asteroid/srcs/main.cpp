@@ -243,7 +243,11 @@ void main_loop() {
 					break;*/
 
 				case SDL_KEYDOWN:
-					key_down(event.key.keysym.sym, now);
+					// event.key.repeat== 0 correspond au 1er appui de la touche; si on ne fait pas ca key_down est déclenché plein
+					// de fois, tant que la touche est enfoncée
+					if (event.key.repeat== 0) {
+						key_down(event.key.keysym.sym, now);
+					}
 					break;
 					
 				case SDL_KEYUP:

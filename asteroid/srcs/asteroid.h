@@ -41,6 +41,9 @@ const unsigned int DEATH_MS= 200;
 const float DEATH_SCALE_INC= 0.1;
 // nom de l'action principale de chaque ship (voir jsons)
 const std::string MAIN_ACTION_NAME= "main";
+// temps de fade in / out de la musique
+const unsigned int MUSIC_FADE_IN_MS= 1500;
+const unsigned int MUSIC_FADE_OUT_MS= 1500;
 
 
 // type de ship
@@ -58,7 +61,7 @@ class ShipModel;
 class Action {
 public:
 	Action();
-	Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting, std::string texture_name);
+	Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting, std::string texture_name, Mix_Chunk * shoot_sound);
 	~Action();
 	friend std::ostream & operator << (std::ostream & os, const Action & action);
 
@@ -69,6 +72,7 @@ public:
 	std::string _bullet_name; // nom du type de munition
 	ShipModel * _bullet_model; // modèle munition
 	std::string _texture_name; // nom de l'ActionTexture associée
+	Mix_Chunk * _shoot_sound; // son tir
 };
 
 
@@ -105,7 +109,7 @@ public:
 	unsigned int _lives; // nombre de vies
 	std::map<std::string, std::vector<Action *> > _actions; // une action correspond en fait à une liste de Action *
 	std::map<std::string, ActionTexture *> _textures; // dico des ActionTexture
-	Mix_Chunk * _hit_sound, * _death_sound, * _shoot_sound; // sons
+	Mix_Chunk * _hit_sound, * _death_sound; // sons
 };
 
 
@@ -116,6 +120,7 @@ public:
 	Ship(ShipModel * model, pt_type pos, bool friendly, std::chrono::system_clock::time_point t);
 	~Ship();
 	void anim(std::chrono::system_clock::time_point t);
+	Action * get_current_action();
 	ShipModel * get_current_bullet_model();
 	ActionTexture * get_current_texture();
 	void set_current_action(std::string action_name, std::chrono::system_clock::time_point t);
@@ -234,9 +239,9 @@ public:
 	void read_highest_scores();
 	void write_highest_scores();
 
-	// music
-	static void set_music(std::string music_path, unsigned int music_fade_in_ms=2000);
-	void set_music_with_fadeout(std::string music_path, unsigned int music_fade_out_ms, unsigned int music_fade_in_ms=2000);
+	// music; les static sont nécessaires à cause du callback géré par Mix_HookMusicFinished
+	static void set_music(std::string music_path, unsigned int music_fade_in_ms=MUSIC_FADE_IN_MS);
+	void set_music_with_fadeout(std::string music_path, unsigned int music_fade_out_ms=MUSIC_FADE_OUT_MS, unsigned int music_fade_in_ms=MUSIC_FADE_IN_MS);
 	static void music_finished_callback();
 
 
@@ -262,8 +267,9 @@ public:
 	bool _key_left, _key_right, _key_up, _key_down; // les touches directionnelles sont enfoncées
 	float _joystick[2]; // valeurs joystick
 
+	// les static sont nécessaires à cause du callback géré par Mix_HookMusicFinished
 	static Mix_Music * _music; // musique courante
-	static std::string _next_music_path;
+	static std::string _next_music_path; // prochain chemin musique à jouer
 };
 
 

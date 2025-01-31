@@ -6,7 +6,9 @@
     ],
     "score_hit": 10,
     "score_death": 30,
-    "lives": 1,
+    "lives": 2,
+    "hit_sound": "../data/sounds/hit.wav",
+    "death_sound": "../data/sounds/death.wav",
     "actions": {
         "zigzag": [
             {

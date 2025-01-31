@@ -5,6 +5,8 @@
         1.5
     ],
     "lives": 5,
+    "hit_sound" : "../data/sounds/hit_hero.wav",
+    "death_sound" : "../data/sounds/death_hero.wav",
     "actions": {
         "no_shoot": [
             {}
@@ -13,7 +15,8 @@
             {
                 "shooting": "small_bullet_hero",
                 "t_shooting": 120,
-                "texture": "shooting_middle_tex"
+                "texture": "shooting_middle_tex",
+                "shoot_sound" : "../data/sounds/shoot_a_hero.wav"
             }
         ],
         "shoot_b": [
@@ -21,13 +24,15 @@
                 "shooting": "left_bullet_hero",
                 "t_shooting": 150,
                 "t": 310,
-                "texture": "shooting_left_tex"
+                "texture": "shooting_left_tex",
+                "shoot_sound" : "../data/sounds/shoot_b_hero.wav"
             },
             {
                 "shooting": "right_bullet_hero",
                 "t_shooting": 150,
                 "t": 310,
-                "texture": "shooting_right_tex"
+                "texture": "shooting_right_tex",
+                "shoot_sound" : "../data/sounds/shoot_b_hero.wav"
             }
         ],
         "main": [
