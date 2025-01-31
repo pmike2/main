@@ -92,9 +92,11 @@ void init() {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 	
+	bool is_joystick= false;
 	if (SDL_NumJoysticks()> 0){
 		SDL_Joystick * joy= SDL_JoystickOpen(0);
 		if (joy) {
+			is_joystick= true;
 			std::cout << "joystick OK; n axes=" << SDL_JoystickNumAxes(joy) << " ; n buttons=" << SDL_JoystickNumButtons(joy) << "\n";
 		}
 	}
@@ -172,7 +174,7 @@ void init() {
 
 	// --------------------------------------------------------------------------
 	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
-	asteroid= new Asteroid(prog_aabb, prog_texture, prog_font, screengl, now);
+	asteroid= new Asteroid(prog_aabb, prog_texture, prog_font, screengl, is_joystick, now);
 }
 
 

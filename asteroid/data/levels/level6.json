@@ -5,7 +5,7 @@
 			{
 				"t" : 0,
 				"type" : "enemy",
-				"position" : [-6.0, 8.0],
+				"position" : [-7.0, 8.0],
 				"enemy" : "bongo"
 			}
 		],
@@ -13,8 +13,8 @@
 			{
 				"t" : 0,
 				"name" : "bongo",
-				"n" : 3,
-				"delta_t" : 1500,
+				"n" : 5,
+				"delta_t" : 1000,
 				"delta_position" : [3.0, 0.0]
 			}
 		],
@@ -30,8 +30,8 @@
 			{
 				"t" : 0,
 				"name" : "fatman",
-				"n" : 4,
-				"delta_t" : 1500,
+				"n" : 7,
+				"delta_t" : 800,
 				"delta_position" : [3.0, 0.0]
 			}
 		],
@@ -47,9 +47,9 @@
 			{
 				"t" : 0,
 				"name" : "cruiser",
-				"n" : 3,
+				"n" : 4,
 				"delta_t" : 0,
-				"delta_position" : [3.0, 0.0]
+				"delta_position" : [2.0, 0.0]
 			}
 		],
 		"weirdo" : [
@@ -64,7 +64,7 @@
 			{
 				"t" : 0,
 				"name" : "weirdo",
-				"n" : 4,
+				"n" : 7,
 				"delta_t" : 0,
 				"delta_position" : [2.0, 0.0]
 			}
@@ -79,19 +79,19 @@
 				"name" : "cruiser_wave"
 			},
 			{
-				"t" : 14000,
+				"t" : 12000,
 				"name" : "fatman_wave"
 			},
 			{
-				"t" : 21000,
+				"t" : 17000,
 				"name" : "bongo_wave"
 			},
 			{
-				"t" : 27000,
+				"t" : 20000,
 				"name" : "weirdo_wave"
 			},
 			{
-				"t" : 25000,
+				"t" : 30000,
 				"type" : "end"
 			}
 		]

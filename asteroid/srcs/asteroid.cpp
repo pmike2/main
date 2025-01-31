@@ -523,9 +523,10 @@ Asteroid::Asteroid() {
 }
 
 
-Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, std::chrono::system_clock::time_point t) 
+Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, bool is_joystick, std::chrono::system_clock::time_point t) 
 	: _draw_aabb(false), _draw_footprint(false), _draw_texture(true),
-	_key_left(false), _key_right(false), _key_up(false), _key_down(false),
+	_key_left(false), _key_right(false), _key_up(false), _key_down(false), _key_a(false), _key_z(false),
+	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false),
 	_mode(INACTIVE), _score(0), _current_level_idx(0) {
 
 	_pt_min= glm::vec2(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
@@ -1157,18 +1158,42 @@ void Asteroid::update_ship_texture() {
 
 
 void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
-	/*if (rand_int(0, 100)> 98) {
-		add_rand_enemy();
-	}*/
 
-	// ajout des événements du niveau courant
-	add_level_events(t);
+	// joystick
+	if (_is_joystick) {
+		if (!_joystick_a && !_joystick_b && _ships[0]->_current_action_name!= "no_shoot") {
+			_ships[0]->set_current_action("no_shoot", t);
+		}
+		else if (_joystick_a && !_joystick_b && _ships[0]->_current_action_name!= "shoot_a") {
+			_ships[0]->set_current_action("shoot_a", t);
+		}
+		else if (!_joystick_a && _joystick_b && _ships[0]->_current_action_name!= "shoot_b") {
+			_ships[0]->set_current_action("shoot_b", t);
+		}
+		else if (_joystick_a && _joystick_b && _ships[0]->_current_action_name== "no_shoot") {
+			_ships[0]->set_current_action("shoot_a", t);
+		}
 
-	// la vitesse se calque sur les entrées
-	// joystick vers le haut est négatif !
-	_ships[0]->_velocity.x= HERO_VELOCITY* _joystick[0];
-	_ships[0]->_velocity.y= -1.0* HERO_VELOCITY* _joystick[1];
+		// joystick vers le haut est négatif !
+		_ships[0]->_velocity.x= HERO_VELOCITY* _joystick.x;
+		_ships[0]->_velocity.y= -1.0* HERO_VELOCITY* _joystick.y;
+	}
 
+	// touches
+	if (!_key_a && !_key_z && _ships[0]->_current_action_name!= "no_shoot") {
+		_ships[0]->set_current_action("no_shoot", t);
+	}
+	else if (_key_a && !_key_z && _ships[0]->_current_action_name!= "shoot_a") {
+		_ships[0]->set_current_action("shoot_a", t);
+	}
+	else if (!_key_a && _key_z && _ships[0]->_current_action_name!= "shoot_b") {
+		_ships[0]->set_current_action("shoot_b", t);
+	}
+	else if (_key_a && _key_z && _ships[0]->_current_action_name== "no_shoot") {
+		_ships[0]->set_current_action("shoot_a", t);
+	}
+
+	_ships[0]->_velocity.x= _ships[0]->_velocity.y= 0.0;
 	if (_key_left) {
 		_ships[0]->_velocity.x= -1.0* HERO_VELOCITY;
 	}
@@ -1181,6 +1206,9 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 	if (_key_up) {
 		_ships[0]->_velocity.y= HERO_VELOCITY;
 	}
+
+	// ajout des événements du niveau courant
+	add_level_events(t);
 
 	// animation de chaque ship
 	// ne pas utiliser auto ici car les push_back dans le for modifie l'itérateur
@@ -1275,27 +1303,7 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 
 	// gamover
 	if (_ships[0]->_dead) {
-		// pas de high score
-		if (_score< _highest_scores[2].second) {
-			_mode= INACTIVE;
-			set_music_with_fadeout("../data/sounds/music_inactive.wav");
-			_new_highest_idx= 0;
-			_new_highest_char_idx= 0;
-		}
-
-		// high score
-		else {
-			for (int i=0; i<_highest_scores.size(); ++i) {
-				if (_score> _highest_scores[i].second) {
-					_new_highest_idx= i;
-					_mode= SET_SCORE_NAME;
-					set_music_with_fadeout("../data/sounds/music_set_score_name.wav");
-					_highest_scores.insert(_highest_scores.begin()+ _new_highest_idx, std::make_pair("AAA", _score));
-					_highest_scores.pop_back();
-					break;
-				}
-			}
-		}
+		gameover();
 	}
 
 	// suppression des ship _delete == true
@@ -1379,11 +1387,11 @@ bool Asteroid::key_down(InputState * input_state, SDL_Keycode key, std::chrono::
 			return true;
 		}
 		else if (key== SDLK_a) {
-			_ships[0]->set_current_action("shoot_a", t);
+			_key_a= true;
 			return true;
 		}
 		else if (key== SDLK_z) {
-			_ships[0]->set_current_action("shoot_b", t);
+			_key_z= true;
 			return true;
 		}
 	}
@@ -1459,11 +1467,11 @@ bool Asteroid::key_up(InputState * input_state, SDL_Keycode key, std::chrono::sy
 			return true;
 		}
 		else if (key== SDLK_a) {
-			_ships[0]->set_current_action("no_shoot", t);
+			_key_a= false;
 			return true;
 		}
 		else if (key== SDLK_z) {
-			_ships[0]->set_current_action("no_shoot", t);
+			_key_z= false;
 			return true;
 		}
 	}
@@ -1476,13 +1484,17 @@ bool Asteroid::key_up(InputState * input_state, SDL_Keycode key, std::chrono::sy
 
 
 bool Asteroid::joystick_down(unsigned int button_idx, std::chrono::system_clock::time_point t) {
+	if (!_is_joystick) {
+		return false;
+	}
+	
 	if (_mode== PLAYING) {
 		if (button_idx== 0) {
-			_ships[0]->set_current_action("shoot_a", t);
+			_joystick_a= true;
 			return true;
 		}
 		else if (button_idx== 1) {
-			_ships[0]->set_current_action("shoot_b", t);
+			_joystick_b= true;
 			return true;
 		}
 	}
@@ -1501,13 +1513,17 @@ bool Asteroid::joystick_down(unsigned int button_idx, std::chrono::system_clock:
 
 
 bool Asteroid::joystick_up(unsigned int button_idx, std::chrono::system_clock::time_point t) {
+	if (!_is_joystick) {
+		return false;
+	}
+
 	if (_mode== PLAYING) {
 		if (button_idx== 0) {
-			_ships[0]->set_current_action("no_shoot", t);
+			_joystick_a= false;
 			return true;
 		}
 		else if (button_idx== 1) {
-			_ships[0]->set_current_action("no_shoot", t);
+			_joystick_b= false;
 			return true;
 		}
 	}
@@ -1520,6 +1536,10 @@ bool Asteroid::joystick_up(unsigned int button_idx, std::chrono::system_clock::t
 
 
 bool Asteroid::joystick_axis(unsigned int axis_idx, int value, std::chrono::system_clock::time_point t) {
+	if (!_is_joystick) {
+		return false;
+	}
+
 	// le joy droit a les axis_idx 2 et 3 qui ne sont pas gérés par Asteroid pour l'instant
 	if (axis_idx> 1) {
 		return false;
@@ -1640,8 +1660,34 @@ void Asteroid::reinit(std::chrono::system_clock::time_point t) {
 
 	_ships.push_back(new Ship(_models["hero"], glm::vec2(0.0, _pt_min.y+ 2.0), true, t));
 
-	_key_left= _key_right= _key_down= _key_up= false;
-	_joystick[0]= _joystick[1]= 0.0;
+	_key_left= _key_right= _key_down= _key_up= _key_a= _key_z= false;
+	_joystick= glm::vec2(0.0);
+	_joystick_a= _joystick_b= false;
+}
+
+
+void Asteroid::gameover() {
+	// pas de high score
+	if (_score< _highest_scores[2].second) {
+		_mode= INACTIVE;
+		set_music_with_fadeout("../data/sounds/music_inactive.wav");
+		_new_highest_idx= 0;
+		_new_highest_char_idx= 0;
+	}
+
+	// high score
+	else {
+		for (int i=0; i<_highest_scores.size(); ++i) {
+			if (_score> _highest_scores[i].second) {
+				_new_highest_idx= i;
+				_mode= SET_SCORE_NAME;
+				set_music_with_fadeout("../data/sounds/music_set_score_name.wav");
+				_highest_scores.insert(_highest_scores.begin()+ _new_highest_idx, std::make_pair("AAA", _score));
+				_highest_scores.pop_back();
+				break;
+			}
+		}
+	}
 }
 
 

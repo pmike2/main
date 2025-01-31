@@ -190,7 +190,7 @@ public:
 class Asteroid {
 public:
 	Asteroid();
-	Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, std::chrono::system_clock::time_point t);
+	Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, bool is_joystick, std::chrono::system_clock::time_point t);
 	~Asteroid();
 
 	// chargements
@@ -234,6 +234,7 @@ public:
 	void set_level(unsigned int level_idx, std::chrono::system_clock::time_point t);
 	void add_rand_enemy(std::chrono::system_clock::time_point t);
 	void reinit(std::chrono::system_clock::time_point t);
+	void gameover();
 	
 	// scores
 	void read_highest_scores();
@@ -264,8 +265,10 @@ public:
 	glm::mat4 _camera2clip; // glm::ortho
 	Font * _font; // font pour écriture textes
 
-	bool _key_left, _key_right, _key_up, _key_down; // les touches directionnelles sont enfoncées
-	float _joystick[2]; // valeurs joystick
+	bool _key_left, _key_right, _key_up, _key_down, _key_a, _key_z; // les touches sont-elle enfoncées
+	bool _is_joystick;
+	glm::vec2 _joystick; // valeurs x, y stick joystick
+	bool _joystick_a, _joystick_b; // boutons 
 
 	// les static sont nécessaires à cause du callback géré par Mix_HookMusicFinished
 	static Mix_Music * _music; // musique courante
