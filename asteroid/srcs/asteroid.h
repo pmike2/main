@@ -119,12 +119,12 @@ public:
 	Ship();
 	Ship(ShipModel * model, pt_type pos, bool friendly, std::chrono::system_clock::time_point t);
 	~Ship();
-	void anim(std::chrono::system_clock::time_point t);
+	void anim(std::chrono::system_clock::time_point t, bool play_sounds);
 	Action * get_current_action();
 	ShipModel * get_current_bullet_model();
 	ActionTexture * get_current_texture();
 	void set_current_action(std::string action_name, std::chrono::system_clock::time_point t);
-	bool hit(std::chrono::system_clock::time_point t);
+	bool hit(std::chrono::system_clock::time_point t, bool play_sounds);
 	friend std::ostream & operator << (std::ostream & os, const Ship & ship);
 
 
@@ -273,6 +273,7 @@ public:
 	// les static sont nécessaires à cause du callback géré par Mix_HookMusicFinished
 	static Mix_Music * _music; // musique courante
 	static std::string _next_music_path; // prochain chemin musique à jouer
+	bool _play_music, _play_sounds;
 };
 
 

@@ -268,7 +268,7 @@ Ship::~Ship() {
 }
 
 
-void Ship::anim(std::chrono::system_clock::time_point t) {
+void Ship::anim(std::chrono::system_clock::time_point t, bool play_sounds) {
 	_shooting= false;
 	
 	if (_dead) {
@@ -336,7 +336,7 @@ void Ship::anim(std::chrono::system_clock::time_point t) {
 		if (d_shoot> current_action->_t_shooting) {
 			_t_last_bullet= t;
 			_shooting= true;
-			if (current_action->_shoot_sound!= NULL) {
+			if (play_sounds && current_action->_shoot_sound!= NULL) {
 				Mix_PlayChannel(-1, current_action->_shoot_sound, 0);
 			}
 		}
@@ -390,7 +390,7 @@ void Ship::set_current_action(std::string action_name, std::chrono::system_clock
 }
 
 
-bool Ship::hit(std::chrono::system_clock::time_point t) {
+bool Ship::hit(std::chrono::system_clock::time_point t, bool play_sounds) {
 	if (_hit) {
 		return false;
 	}
@@ -399,14 +399,14 @@ bool Ship::hit(std::chrono::system_clock::time_point t) {
 	if (_lives<= 0) {
 		_dead= true;
 		_t_die= t;
-		if (_model->_death_sound!= NULL) {
+		if (play_sounds && _model->_death_sound!= NULL) {
 			Mix_PlayChannel(-1, _model->_death_sound, 0);
 		}
 	}
 	else {
 		_hit= true;
 		_t_last_hit= t;
-		if (_model->_hit_sound!= NULL) {
+		if (play_sounds && _model->_hit_sound!= NULL) {
 			Mix_PlayChannel(-1, _model->_hit_sound, 0);
 		}
 	}
@@ -527,7 +527,7 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 	: _draw_aabb(false), _draw_footprint(false), _draw_texture(true),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false), _key_a(false), _key_z(false),
 	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false),
-	_mode(INACTIVE), _score(0), _current_level_idx(0) {
+	_mode(INACTIVE), _score(0), _current_level_idx(0), _play_music(false), _play_sounds(false) {
 
 	_pt_min= glm::vec2(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
 	_pt_max= glm::vec2(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
@@ -575,9 +575,10 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 	update_ship_footprint();
 	update_ship_texture();
 
-	set_music("../data/sounds/music_inactive.wav");
 	// callback appelé lorsqu'une musique est finie.
 	Mix_HookMusicFinished(Asteroid::music_finished_callback);
+
+	set_music("../data/sounds/music_inactive.wav");
 }
 
 
@@ -1178,33 +1179,34 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 		_ships[0]->_velocity.x= HERO_VELOCITY* _joystick.x;
 		_ships[0]->_velocity.y= -1.0* HERO_VELOCITY* _joystick.y;
 	}
-
 	// touches
-	if (!_key_a && !_key_z && _ships[0]->_current_action_name!= "no_shoot") {
-		_ships[0]->set_current_action("no_shoot", t);
-	}
-	else if (_key_a && !_key_z && _ships[0]->_current_action_name!= "shoot_a") {
-		_ships[0]->set_current_action("shoot_a", t);
-	}
-	else if (!_key_a && _key_z && _ships[0]->_current_action_name!= "shoot_b") {
-		_ships[0]->set_current_action("shoot_b", t);
-	}
-	else if (_key_a && _key_z && _ships[0]->_current_action_name== "no_shoot") {
-		_ships[0]->set_current_action("shoot_a", t);
-	}
+	else {
+		if (!_key_a && !_key_z && _ships[0]->_current_action_name!= "no_shoot") {
+			_ships[0]->set_current_action("no_shoot", t);
+		}
+		else if (_key_a && !_key_z && _ships[0]->_current_action_name!= "shoot_a") {
+			_ships[0]->set_current_action("shoot_a", t);
+		}
+		else if (!_key_a && _key_z && _ships[0]->_current_action_name!= "shoot_b") {
+			_ships[0]->set_current_action("shoot_b", t);
+		}
+		else if (_key_a && _key_z && _ships[0]->_current_action_name== "no_shoot") {
+			_ships[0]->set_current_action("shoot_a", t);
+		}
 
-	_ships[0]->_velocity.x= _ships[0]->_velocity.y= 0.0;
-	if (_key_left) {
-		_ships[0]->_velocity.x= -1.0* HERO_VELOCITY;
-	}
-	if (_key_right) {
-		_ships[0]->_velocity.x= HERO_VELOCITY;
-	}
-	if (_key_down) {
-		_ships[0]->_velocity.y= -1.0* HERO_VELOCITY;
-	}
-	if (_key_up) {
-		_ships[0]->_velocity.y= HERO_VELOCITY;
+		_ships[0]->_velocity.x= _ships[0]->_velocity.y= 0.0;
+		if (_key_left) {
+			_ships[0]->_velocity.x= -1.0* HERO_VELOCITY;
+		}
+		if (_key_right) {
+			_ships[0]->_velocity.x= HERO_VELOCITY;
+		}
+		if (_key_down) {
+			_ships[0]->_velocity.y= -1.0* HERO_VELOCITY;
+		}
+		if (_key_up) {
+			_ships[0]->_velocity.y= HERO_VELOCITY;
+		}
 	}
 
 	// ajout des événements du niveau courant
@@ -1215,7 +1217,7 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 	//for (auto ship : _ships) {
 	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
 		Ship * ship= _ships[idx_ship];
-		ship->anim(t);
+		ship->anim(t, _play_sounds);
 
 		// création d'une bullet si _shooting == true
 		if (ship->_shooting) {
@@ -1281,7 +1283,7 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 
 			// les footprint sont utilisés pour la détection de collision
 			if (aabb_intersects_aabb(&ship1->_footprint, &ship2->_footprint)) {
-				if (ship1->hit(t) && !ship1->_friendly) {
+				if (ship1->hit(t, _play_sounds) && !ship1->_friendly) {
 					if (ship1->_dead) {
 						_score+= ship1->_model->_score_death;
 					}
@@ -1289,7 +1291,7 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 						_score+= ship1->_model->_score_hit;
 					}
 				}
-				if (ship2->hit(t) && !ship2->_friendly) {
+				if (ship2->hit(t, _play_sounds) && !ship2->_friendly) {
 					if (ship2->_dead) {
 						_score+= ship2->_model->_score_death;
 					}
@@ -1329,6 +1331,15 @@ void Asteroid::anim_set_score_name() {
 
 
 void Asteroid::anim(std::chrono::system_clock::time_point t) {
+	if (Mix_PlayingMusic()) {
+		if (_play_music && Mix_PausedMusic()) {
+			Mix_ResumeMusic();
+		}
+		else if (!_play_music && !Mix_PausedMusic()) {
+			Mix_PauseMusic();
+		}
+	}
+
 	if (_mode== PLAYING) {
 		anim_playing(t);
 	}
@@ -1359,14 +1370,11 @@ bool Asteroid::key_down(InputState * input_state, SDL_Keycode key, std::chrono::
 	}
 	// (un)muter musique
 	if (key== SDLK_m) {
-		if (Mix_PlayingMusic()!= 0) {
-			if (Mix_PausedMusic()== 1) {
-				Mix_ResumeMusic();
-			}
-			else {
-				Mix_PauseMusic();
-			}
-		}
+		_play_music= !_play_music;
+	}
+	// (un)muter sons
+	if (key== SDLK_s) {
+		_play_sounds= !_play_sounds;
 	}
 
 	if (_mode== PLAYING) {
@@ -1501,6 +1509,7 @@ bool Asteroid::joystick_down(unsigned int button_idx, std::chrono::system_clock:
 	else if (_mode== INACTIVE) {
 		reinit(t);
 		_mode= PLAYING;
+		set_level(0, t);
 		return true;
 	}
 	else if (_mode== SET_SCORE_NAME) {

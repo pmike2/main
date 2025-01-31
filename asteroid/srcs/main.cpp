@@ -17,7 +17,7 @@
 
 
 // en ms; temps entre 2 anims
-const unsigned int DELTA_ANIM= 1;
+//const unsigned int DELTA_ANIM= 1;
 
 // dimensions écran
 const int MAIN_WIN_WIDTH= 1280;
@@ -27,19 +27,15 @@ const float GL_WIDTH= 20.0f;
 const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDTH);
 
 
-SDL_Window * window= NULL;
+SDL_Window * window;
 SDL_GLContext main_context;
 InputState * input_state;
 ScreenGL * screengl;
 Asteroid * asteroid;
 
 bool done= false;
-
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
-
-GLuint prog_aabb, prog_texture, prog_font;
-GLuint g_vao;
 
 
 
@@ -157,12 +153,13 @@ void init() {
 	ici je n'en utilise qu'un pour tout le prog ; à terme peut-être faire plusieurs VAOs
 	*/
 	
+	GLuint g_vao;
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_aabb= create_prog("../shaders/vertexshader_aabb.txt"  , "../shaders/fragmentshader_aabb.txt");
-	prog_texture= create_prog("../shaders/vertexshader_texture.txt", "../shaders/fragmentshader_texture.txt");
-	prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
+	GLuint prog_aabb= create_prog("../shaders/vertexshader_aabb.txt"  , "../shaders/fragmentshader_aabb.txt");
+	GLuint prog_texture= create_prog("../shaders/vertexshader_texture.txt", "../shaders/fragmentshader_texture.txt");
+	GLuint prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
 	
@@ -192,14 +189,15 @@ void draw() {
 
 
 void anim(std::chrono::system_clock::time_point t) {
-	tikanim2= SDL_GetTicks();
+	/*tikanim2= SDL_GetTicks();
 	int tikanim_delta= tikanim2- tikanim1;
-	if (tikanim_delta< DELTA_ANIM)
+	if (tikanim_delta< DELTA_ANIM) {
 		return;
+	}*/
 	
 	asteroid->anim(t);
 	
-	tikanim1= SDL_GetTicks();
+	//tikanim1= SDL_GetTicks();
 }
 
 
