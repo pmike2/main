@@ -12,10 +12,13 @@ in float rotation_in;
 in float scale_in;
 in vec2 center_in;
 
-out vec2 tex_coord;
-out float current_layer;
-out float hit;
-out float alpha;
+
+out VS_OUT {
+	vec2 tex_coord;
+	float current_layer;
+	float hit;
+	float alpha;
+} vs_out;
 
 
 void main() {
@@ -23,8 +26,8 @@ void main() {
 	float y= center_in.y+ scale_in* ((position_in.x- center_in.x)* sin(rotation_in)+ (position_in.y- center_in.y)* cos(rotation_in));
 	//gl_Position= camera2clip_matrix* vec4(position_in.rg, 0.0, 1.0);
 	gl_Position= camera2clip_matrix* vec4(x, y, 0.0, 1.0);
-	tex_coord= tex_coord_in;
-	current_layer= current_layer_in;
-	hit= hit_in;
-	alpha= alpha_in;
+	vs_out.tex_coord= tex_coord_in;
+	vs_out.current_layer= current_layer_in;
+	vs_out.hit= hit_in;
+	vs_out.alpha= alpha_in;
 }

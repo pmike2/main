@@ -273,7 +273,7 @@ public:
 	// les static sont nécessaires à cause du callback géré par Mix_HookMusicFinished
 	static Mix_Music * _music; // musique courante
 	static std::string _next_music_path; // prochain chemin musique à jouer
-	bool _play_music, _play_sounds;
+	bool _play_music, _play_sounds; // faut-il jouer la musique, les sons
 };
 
 

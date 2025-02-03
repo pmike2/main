@@ -266,16 +266,18 @@ GLuint load_shader(GLenum type, const char * filename) {
 }
 
 
-GLuint create_prog(std::string vs_path, std::string fs_path, bool check) {
+GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path) {
 	GLuint vs= load_shader(GL_VERTEX_SHADER  , vs_path.c_str());
 	GLuint fs= load_shader(GL_FRAGMENT_SHADER, fs_path.c_str());
 	GLuint prog= glCreateProgram();
 	glAttachShader(prog, fs);
 	glAttachShader(prog, vs);
-	glLinkProgram(prog);
-	if (check) {
-		check_gl_program(prog);
+	if (gs_path!= "") {
+		GLuint gs= load_shader(GL_GEOMETRY_SHADER, gs_path.c_str());
+		glAttachShader(prog, gs);
 	}
+	glLinkProgram(prog);
+	check_gl_program(prog);
 
 	return prog;
 }
@@ -290,6 +292,7 @@ void set_subwindow(const float bkgnd_color[4], int x, int y, int w, int h) {
 	glDisable(GL_SCISSOR_TEST);
 	glViewport(x, y, w, h);
 }
+
 
 // export dans fichier .pgm d'une texture en niveaux de gris
 void export_texture2pgm(std::string pgm_path, unsigned int width, unsigned int height) {
