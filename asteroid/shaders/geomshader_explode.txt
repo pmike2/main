@@ -1,8 +1,17 @@
 #version 410 core
 
+/*
+
+mon 1er geometry shader wouey
+split un triangle en 4 sous-triangles qui sont translatés chacun dans une direction différente
+en fonction de hit et alpha (qui est directement lié à death)
+
+*/
+
 layout (triangles) in;
 layout (triangle_strip, max_vertices = 12) out;
 
+// il faut passer par des structures pour commnuniquer entre vs et gs
 in VS_OUT {
 	vec2 tex_coord;
 	float current_layer;
@@ -10,20 +19,26 @@ in VS_OUT {
 	float alpha;
 } gs_in[];
 
+// je pourrais faire une structure aussi pour commnuniquer entre gs et fs, pas obligé
 out vec2 tex_coord_bis;
 out float current_layer_bis;
 out float hit_bis;
 out float alpha_bis;
 
 
+// centre de gravité
 vec4 barycenter(vec4 p1, vec4 p2, vec4 p3) {
 	return 0.3333333* (p1+ p2+ p3);
 }
 
 
 void main() {
-	const float decal_factor= 2.0;
+	// facteur de décalage lié à alpha (donc death)
+	const float alpha_decal_factor= 2.0;
+	// facteur de décalage lié au hit
+	const float hit_decal_factor= 0.5;
 
+	// sommets (+ coords texture correspondantes) des nouveaux triangles
 	vec4 middle_pos_01= 0.5* (gl_in[0].gl_Position+ gl_in[1].gl_Position);
 	vec2 middle_tex_01= 0.5* (gs_in[0].tex_coord+ gs_in[1].tex_coord);
 	vec4 middle_pos_02= 0.5* (gl_in[0].gl_Position+ gl_in[2].gl_Position);
@@ -31,13 +46,21 @@ void main() {
 	vec4 middle_pos_12= 0.5* (gl_in[1].gl_Position+ gl_in[2].gl_Position);
 	vec2 middle_tex_12= 0.5* (gs_in[1].tex_coord+ gs_in[2].tex_coord);
 
+	// centre du triangle (est-ce idéal ?)
 	vec4 center= barycenter(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_in[2].gl_Position);
 
-	vec4 decal_tri_1= decal_factor* (1.0- gs_in[0].alpha+ gs_in[0].hit* 0.1)* (barycenter(gl_in[0].gl_Position, middle_pos_01, middle_pos_02)- center);
-	vec4 decal_tri_2= decal_factor* (1.0- gs_in[0].alpha+ gs_in[0].hit* 0.1)* (barycenter(middle_pos_01, gl_in[1].gl_Position, middle_pos_02)- center);
-	vec4 decal_tri_3= decal_factor* (1.0- gs_in[0].alpha+ gs_in[0].hit* 0.1)* ( barycenter(middle_pos_02, gl_in[1].gl_Position, middle_pos_12)- center);
-	vec4 decal_tri_4= decal_factor* (1.0- gs_in[0].alpha+ gs_in[0].hit* 0.1)* (barycenter(middle_pos_02, middle_pos_12, gl_in[2].gl_Position)- center);
+	// vecteurs de décalage des 4 sous-triangles
+	// quand alpha == 1 et hit == 0 il ne doit pas y avoir de décalage
+	// la direction d'un décalage est le vecteur allant du barycentre du triangle principal au barycentre du sous-triangle (faudrait t'il le normaliser ?)
+	vec4 decal_tri_1= (alpha_decal_factor* (1.0- gs_in[0].alpha)+ hit_decal_factor* gs_in[0].hit)* (barycenter(gl_in[0].gl_Position, middle_pos_01, middle_pos_02)- center);
+	vec4 decal_tri_2= (alpha_decal_factor* (1.0- gs_in[0].alpha)+ hit_decal_factor* gs_in[0].hit)* (barycenter(middle_pos_01, gl_in[1].gl_Position, middle_pos_02)- center);
+	vec4 decal_tri_3= (alpha_decal_factor* (1.0- gs_in[0].alpha)+ hit_decal_factor* gs_in[0].hit)* ( barycenter(middle_pos_02, gl_in[1].gl_Position, middle_pos_12)- center);
+	vec4 decal_tri_4= (alpha_decal_factor* (1.0- gs_in[0].alpha)+ hit_decal_factor* gs_in[0].hit)* (barycenter(middle_pos_02, middle_pos_12, gl_in[2].gl_Position)- center);
 	
+	// Emission des sous-triangles
+	// pour current_layer, hit et alpha on prend tjrs l'indice 0 car ces valeurs sont constantes pour un triangle
+	// bien penser à faire EndPrimitive à chaque fin de sous-triangle, car le gs émet sinon du triangle_strip (voir entête de ce fichier)
+
 	// sous-triangle 1
 	gl_Position= gl_in[0].gl_Position+ decal_tri_1;
 	tex_coord_bis= gs_in[0].tex_coord;

@@ -159,6 +159,7 @@ void init() {
 
 	GLuint prog_aabb= create_prog("../shaders/vertexshader_aabb.txt"  , "../shaders/fragmentshader_aabb.txt");
 	GLuint prog_texture= create_prog("../shaders/vertexshader_texture.txt", "../shaders/fragmentshader_texture.txt", "../shaders/geomshader_explode.txt");
+	GLuint prog_star= create_prog("../shaders/vertexshader_star.txt"  , "../shaders/fragmentshader_star.txt");
 	GLuint prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
@@ -171,7 +172,7 @@ void init() {
 
 	// --------------------------------------------------------------------------
 	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
-	asteroid= new Asteroid(prog_aabb, prog_texture, prog_font, screengl, is_joystick, now);
+	asteroid= new Asteroid(prog_aabb, prog_texture, prog_star, prog_font, screengl, is_joystick, now);
 }
 
 

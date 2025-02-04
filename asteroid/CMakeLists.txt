@@ -24,8 +24,13 @@ add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
 add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h)
 add_library(lib_bbox STATIC ../libs/bbox.cpp ../libs/bbox.h)
 add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
-add_library(lib_asteroid STATIC ../srcs/asteroid.cpp ../srcs/asteroid.h)
 add_library(lib_font STATIC ../libs/font.cpp ../libs/font.h)
+
+add_library(lib_asteroid STATIC ../srcs/asteroid.cpp ../srcs/asteroid.h)
+add_library(lib_ship STATIC ../srcs/ship.cpp ../srcs/ship.h)
+add_library(lib_ship_model STATIC ../srcs/ship_model.cpp ../srcs/ship_model.h)
+add_library(lib_level STATIC ../srcs/level.cpp ../srcs/level.h)
+add_library(lib_star STATIC ../srcs/star.cpp ../srcs/star.h)
 
 add_executable(main ./srcs/main.cpp)
  
@@ -36,7 +41,12 @@ target_link_libraries(main PUBLIC lib_input_state)
 target_link_libraries(main PUBLIC lib_bbox)
 target_link_libraries(main PUBLIC lib_bbox_2d)
 target_link_libraries(main PUBLIC lib_font)
+
 target_link_libraries(main PUBLIC lib_asteroid)
+target_link_libraries(main PUBLIC lib_ship)
+target_link_libraries(main PUBLIC lib_ship_model)
+target_link_libraries(main PUBLIC lib_level)
+target_link_libraries(main PUBLIC lib_star)
 
 target_link_libraries(main PUBLIC ${SDL2_LIBRARIES})
 target_link_libraries(main PUBLIC ${SDL2_IMAGE_LIBRARIES})

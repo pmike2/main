@@ -6,10 +6,11 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 
-#include <SDL2/SDL_image.h>
+#include "json.hpp"
+
+#include "utile.h"
 
 #include "asteroid.h"
-#include "utile.h"
 
 using json = nlohmann::json;
 
@@ -19,512 +20,13 @@ Mix_Music * Asteroid::_music= NULL;
 std::string Asteroid::_next_music_path= "";
 
 
-// action -----------------------------------------------------------
-Action::Action() {
-
-}
-
-
-Action::Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting, std::string texture_name, Mix_Chunk * shoot_sound) :
-	_direction(direction), _t(t), _bullet_name(bullet_name), _bullet_model(NULL), _t_shooting(t_shooting), _texture_name(texture_name),
-	_shoot_sound(shoot_sound)
-{
-
-}
-
-
-Action::~Action() {
-	if (_shoot_sound!= NULL) {
-		Mix_FreeChunk(_shoot_sound);
-	}
-}
-
-
-std::ostream & operator << (std::ostream & os, const Action & action) {
-	os << "direction=" << glm::to_string(action._direction) << " ; t=" << action._t << " ; " << "t_shooting=" << action._t_shooting;
-	os << " ; bullet_name=" << action._bullet_name << " ; texture_name=" << action._texture_name;
-	return os;
-}
-
-
-// action_texture ---------------------------------------------------
-ActionTexture::ActionTexture() {
-
-}
-
-
-ActionTexture::ActionTexture(std::vector<std::string> & pngs, std::vector<unsigned int> & t_anims, AABB_2D & footprint) :
-	_first_idx(0), _footprint(footprint) {
-	for (auto png : pngs) {
-		_pngs.push_back(png);
-	}
-	for (auto t : t_anims) {
-		_t_anims.push_back(t);
-	}
-}
-
-
-ActionTexture::~ActionTexture() {
-
-}
-
-
-std::ostream & operator << (std::ostream & os, const ActionTexture & at) {
-	os << "pngs=";
-	for (auto png : at._pngs) {
-		os << png << " ; ";
-	}
-	os << "first_idx=" << at._first_idx;
-	os << " ; footprint=" << at._footprint;
-	return os;
-}
-
-
-// model -----------------------------------------------------------
-ShipModel::ShipModel() {
-
-}
-
-
-ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
-	std::string tmp_json_path= "../data/tmp/"+ basename(_json_path)+ "_tmp.json";
-
-	// supprimer ce fichier si le json original a été modifié
-	if (!file_exists(tmp_json_path)) {
-		std::string cmd= "../srcs/flat_json_ship.py "+ json_path+ " "+ tmp_json_path;
-		system(cmd.c_str());
-	}
-
-	std::ifstream ifs(tmp_json_path);
-	json js= json::parse(ifs);
-	ifs.close();
-
-	//std::string cmd2= "rm "+ tmp_json_path;
-	//system(cmd2.c_str());
-
-	if (js["type"]== "hero") {
-		_type= HERO;
-	}
-	else if (js["type"]== "enemy") {
-		_type= ENEMY;
-	}
-	else if (js["type"]== "bullet") {
-		_type= BULLET;
-	}
-	else {
-		std::cerr << "type : " << js["type"] << " non reconnu\n";
-	}
-
-	_size= glm::vec2(js["size"][0], js["size"][1]);
-	_lives= 1;
-	if (js["lives"]!= nullptr) {
-		_lives= js["lives"];
-	}
-	_score_hit= 0;
-	if (js["score_hit"]!= nullptr) {
-		_score_hit= js["score_hit"];
-	}
-	_score_death= 0;
-	if (js["score_death"]!= nullptr) {
-		_score_death= js["score_death"];
-	}
-
-	_hit_sound= NULL;
-	if (js["hit_sound"]!= nullptr) {
-		std::string hit_sound_path= js["hit_sound"];
-		_hit_sound= Mix_LoadWAV(hit_sound_path.c_str());
-	}
-
-	_death_sound= NULL;
-	if (js["death_sound"]!= nullptr) {
-		std::string death_sound_path= js["death_sound"];
-		_death_sound= Mix_LoadWAV(death_sound_path.c_str());
-	}
-
-	// parcours des textures
-	for (json::iterator it = js["textures"].begin(); it != js["textures"].end(); ++it) {
-		auto & texture_name= it.key();
-		auto & l_textures= it.value();
-		std::vector<std::string> pngs;
-		std::vector<unsigned int> t_anims;
-		AABB_2D footprint(pt_type(0.0, 0.0), pt_type(1.0, 1.0));
-		for (auto texture : l_textures) {
-			std::string png= texture["png"];
-			unsigned int t= texture["t"];
-			pngs.push_back(png);
-			t_anims.push_back(t);
-			pt_type pos(texture["footprint"]["pos"][0], texture["footprint"]["pos"][1]);
-			pt_type size(texture["footprint"]["size"][0], texture["footprint"]["size"][1]);
-			// on prend l'intersection de tous les footprints
-			if (pos.x> footprint._pos.x) {
-				footprint._pos.x= pos.x;
-			}
-			if (pos.y> footprint._pos.y) {
-				footprint._pos.y= pos.y;
-			}
-			if (size.x< footprint._size.x) {
-				footprint._size.x= size.x;
-			}
-			if (size.y< footprint._size.y) {
-				footprint._size.y= size.y;
-			}
-		}
-		_textures[texture_name]= new ActionTexture(pngs, t_anims, footprint);
-	}
-
-	// parcours des actions
-	for (json::iterator it = js["actions"].begin(); it != js["actions"].end(); ++it) {
-		auto & action_name= it.key();
-		auto & l_actions= it.value();
-
-		_actions[action_name]= std::vector<Action *>();
-		for (auto & action : l_actions) {
-
-			glm::vec2 direction(0.0);
-			if (action["direction"]!= nullptr) {
-				direction= glm::vec2(action["direction"][0], action["direction"][1]);
-			}
-			
-			int t= -1; // infini
-			if (action["t"]!= nullptr) {
-				t= action["t"];
-			}
-			
-			std::string bullet_name= "";
-			unsigned int t_shooting= 0;
-			if (action["shooting"]!= nullptr) {
-				bullet_name= action["shooting"];
-				t_shooting= action["t_shooting"];
-			}
-
-			std::string texture_name= action["texture"];
-
-			Mix_Chunk * shoot_sound= NULL;
-			if (action["shoot_sound"]!= nullptr) {
-				std::string shoot_sound_path= action["shoot_sound"];
-				shoot_sound= Mix_LoadWAV(shoot_sound_path.c_str());
-			}
-
-			_actions[action_name].push_back(new Action(direction, t, bullet_name, t_shooting, texture_name, shoot_sound));
-		}
-	}
-}
-
-
-ShipModel::~ShipModel() {
-	if (_hit_sound!= NULL) {
-		Mix_FreeChunk(_hit_sound);
-	}
-	if (_death_sound!= NULL) {
-		Mix_FreeChunk(_death_sound);
-	}
-}
-
-
-std::ostream & operator << (std::ostream & os, const ShipModel & model) {
-	os << "json = " << model._json_path << " ; type=" << model._type << " ; size=" << glm::to_string(model._size);
-	os << " ; score_hit=" << model._score_hit << " ; score_death=" << model._score_death << " ; lives=" << model._lives;
-	os << " ; actions = [";
-	for (auto action : model._actions) {
-		os << action.first << " : (";
-		for (auto a : action.second) {
-			os << *a << " | ";
-		}
-	}
-	os << "]";
-	os << " ; textures = [";
-	for (auto texture : model._textures) {
-		os << texture.first << " : " << *texture.second << " | ";
-	}
-	os << "]";
-	return os;
-}
-
-
-// ship -------------------------------------------------------------
-Ship::Ship() {
-
-}
-
-
-Ship::Ship(ShipModel * model, pt_type pos, bool friendly, std::chrono::system_clock::time_point t) :
-	_model(model), _friendly(friendly), _dead(false), _shooting(false), _current_action_name(MAIN_ACTION_NAME),
-	_idx_action(0), _velocity(glm::vec2(0.0)), _idx_anim(0), 
-	_hit(false), _hit_value(0.0), _delete(false), _alpha(1.0), _lives(_model->_lives),
-	_rotation(0.0), _scale(1.0)
-{
-	_aabb= AABB_2D(pos, model->_size);
-	ActionTexture * current_texture= get_current_texture();
-	_footprint= AABB_2D(
-		pt_type(pos.x+ current_texture->_footprint._pos.x* _model->_size.x, pos.y+ current_texture->_footprint._pos.y* _model->_size.y),
-		pt_type(_model->_size.x* current_texture->_footprint._size.x, _model->_size.y* current_texture->_footprint._size.y)
-	);
-	_t_action_start= _t_last_hit= _t_die= _t_last_bullet= _t_anim_start= t;
-}
-
-
-Ship::~Ship() {
-	
-}
-
-
-void Ship::anim(std::chrono::system_clock::time_point t, bool play_sounds) {
-	_shooting= false;
-	
-	if (_dead) {
-		//_hit= false;
-		//_hit_value= 0.0;
-		auto d_death= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_die).count();
-		if (d_death> DEATH_MS) {
-			_delete= true;
-			_alpha= 0.0;
-			_scale= 1.0;
-			return;
-		}
-		else {
-			_alpha= float(DEATH_MS- d_death)/ float(DEATH_MS);
-			if (_model->_type== ENEMY) {
-				_scale+= DEATH_SCALE_INC;
-			}
-		}
-	}
-
-	if (_hit) {
-		auto d_hit= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_last_hit).count();
-		if (d_hit> HIT_UNTOUCHABLE_MS) {
-			_hit= false;
-			_hit_value= 0.0;
-			_rotation= 0.0;
-		}
-		else {
-			_hit_value= float(HIT_UNTOUCHABLE_MS- d_hit)/ float(HIT_UNTOUCHABLE_MS);
-			int i= d_hit/ HIT_ROTATION_MS;
-			if (i% 2== 0) {
-				_rotation+= HIT_ROTATION_INC;
-			}
-			else {
-				_rotation-= HIT_ROTATION_INC;
-			}
-		}
-	}
-	else {
-		_hit_value= 0.0;
-	}
-
-	Action * current_action= get_current_action();
-	
-	// chgmt action ; _t < 0 correspond à une action infinie
-	auto d_action= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_action_start).count();
-	if (current_action->_t> 0 && d_action> current_action->_t) {
-		_t_action_start= t;
-		_idx_action++;
-		if (_idx_action>= _model->_actions[_current_action_name].size()) {
-			_idx_action= 0;
-		}
-		_idx_anim= 0;
-		//_t_last_bullet= t;
-	}
-
-	// après le chgmt d'action éventuel on met à jour current_action et on récupère le bullet et la texture courants
-	current_action= get_current_action();
-	ShipModel * bullet_model= get_current_bullet_model();
-	ActionTexture * texture= get_current_texture();
-
-	// faut-il tirer
-	if (bullet_model!= NULL) {
-		auto d_shoot= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_last_bullet).count();
-		if (d_shoot> current_action->_t_shooting) {
-			_t_last_bullet= t;
-			_shooting= true;
-			if (play_sounds && current_action->_shoot_sound!= NULL) {
-				Mix_PlayChannel(-1, current_action->_shoot_sound, 0);
-			}
-		}
-	}
-
-	// maj vitesse et position
-	if (_model->_type== ENEMY || _model->_type== BULLET) {
-		_velocity= current_action->_direction;
-	}
-	
-	_aabb._pos+= _velocity;
-
-	_footprint._pos.x= _aabb._pos.x+ texture->_footprint._pos.x* _aabb._size.x;
-	_footprint._pos.y= _aabb._pos.y+ texture->_footprint._pos.y* _aabb._size.y;
-	_footprint._size.x= texture->_footprint._size.x*_aabb._size.x;
-	_footprint._size.y= texture->_footprint._size.y*_aabb._size.y;
-
-	// anim texture
-	auto d_anim= std::chrono::duration_cast<std::chrono::milliseconds>(t- _t_anim_start).count();
-	if (d_anim> texture->_t_anims[_idx_anim]) {
-		_t_anim_start= t;
-		_idx_anim++;
-		if (_idx_anim>= texture->_t_anims.size()) {
-			_idx_anim= 0;
-		}
-	}
-}
-
-
-Action * Ship::get_current_action() {
-	return _model->_actions[_current_action_name][_idx_action];
-}
-
-
-ShipModel * Ship::get_current_bullet_model() {
-	return get_current_action()->_bullet_model;
-}
-
-
-ActionTexture * Ship::get_current_texture() {
-	std::string current_tex_name= get_current_action()->_texture_name;
-	return _model->_textures[current_tex_name];
-}
-
-
-void Ship::set_current_action(std::string action_name, std::chrono::system_clock::time_point t) {
-	_current_action_name= action_name;
-	_idx_action= 0;
-	_t_action_start= _t_anim_start= t;
-	_idx_anim= 0;
-}
-
-
-bool Ship::hit(std::chrono::system_clock::time_point t, bool play_sounds) {
-	if (_hit) {
-		return false;
-	}
-
-	_lives--;
-	if (_lives<= 0) {
-		_dead= true;
-		_t_die= t;
-		if (play_sounds && _model->_death_sound!= NULL) {
-			Mix_PlayChannel(-1, _model->_death_sound, 0);
-		}
-	}
-	else {
-		_hit= true;
-		_t_last_hit= t;
-		if (play_sounds && _model->_hit_sound!= NULL) {
-			Mix_PlayChannel(-1, _model->_hit_sound, 0);
-		}
-	}
-	return true;
-}
-
-
-std::ostream & operator << (std::ostream & os, const Ship & ship) {
-	os << "model = " << *ship._model << " ; aabb = [" << ship._aabb << "]";
-	return os;
-}
-
-
-// event -------------------------------------------------------------
-Event::Event() {
-
-}
-
-
-Event::Event(EventType type, unsigned int t, glm::vec2 position, std::string enemy) :
-	_type(type), _t(t), _position(position), _enemy(enemy)
-{
-
-}
-
-
-Event::~Event() {
-
-}
-
-
-std::ostream & operator << (std::ostream & os, const Event & event) {
-	if (event._type== NEW_ENEMY) {
-		os << "NEW_ENEMY ; ";
-	}
-	else if (event._type== LEVEL_END) {
-		os << "LEVEL_END ; ";
-	}
-	os << "t = " << event._t << " ; position = " << glm::to_string(event._position) << " ; enemy = " << event._enemy;
-	return os;
-}
-
-
-// Level ----------------------------------------------------------------
-Level::Level() {
-
-}
-
-
-Level::Level(std::string json_path, std::chrono::system_clock::time_point t) : _t_start(t), _json_path(json_path) {
-	std::string tmp_json_path= "../data/tmp/"+ basename(_json_path)+ "_tmp.json";
-
-	// supprimer ce fichier si le json original a été modifié
-	if (!file_exists(tmp_json_path)) {
-		std::string cmd= "../srcs/flat_json_level.py "+ json_path+ " "+ tmp_json_path;
-		system(cmd.c_str());
-	}
-
-	std::ifstream ifs(tmp_json_path);
-	json js= json::parse(ifs);
-	ifs.close();
-
-	//std::string cmd2= "rm "+ tmp_json_path;
-	//system(cmd2.c_str());
-
-	_music_path= js["music"];
-
-	//for (json::iterator it = js["events"].begin(); it != js["events"].end(); ++it) {
-	//	auto & event_name= it.key();
-	//	auto & l_textures= it.value();
-	for (auto event : js["events"]) {
-		unsigned int t= event["t"];
-		if (event["type"]== "enemy") {
-			float x= event["position"][0];
-			float y= event["position"][1];
-			std::string enemy_name= event["enemy"];
-			_events.push_back(new Event(NEW_ENEMY, t, glm::vec2(x, y), enemy_name));
-		}
-		else if (event["type"]== "end") {
-			_events.push_back(new Event(LEVEL_END, t, glm::vec2(0.0), ""));
-		}
-	}
-
-	// les évenements sont classés du dernier au 1er, afin que l'on puisse faire un pop_back (pop_front n'existe pas pour les vector)
-	std::sort(_events.begin(), _events.end(), [](const Event * a, const Event * b) { return a->_t > b->_t; });
-	// on commence donc avec le dernier
-	_current_event_idx= _events.size()- 1;
-}
-
-
-Level::~Level() {
-}
-
-
-void Level::reinit(std::chrono::system_clock::time_point t) {
-	_current_event_idx= _events.size()- 1;
-	_t_start= t;
-}
-
-
-std::ostream & operator << (std::ostream & os, const Level & level) {
-	os << "json_path=" << level._json_path << " ; _events=[";
-	for (auto event : level._events) {
-		os << *event << " ; ";
-	}
-	os << "_current_event_idx=" << level._current_event_idx;
-	return os;
-}
-
-
-// Asteroid -------------------------------------------------------------
 Asteroid::Asteroid() {
 
 }
 
 
-Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, bool is_joystick, std::chrono::system_clock::time_point t) 
-	: _draw_aabb(false), _draw_footprint(false), _draw_texture(true),
+Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_star, GLuint prog_font, ScreenGL * screengl, bool is_joystick, std::chrono::system_clock::time_point t) 
+	: _draw_aabb(false), _draw_footprint(false), _draw_texture(true), _draw_star(true),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false), _key_a(false), _key_z(false),
 	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false),
 	_mode(INACTIVE), _score(0), _current_level_idx(0), _play_music(false), _play_sounds(false) {
@@ -533,23 +35,15 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 	_pt_max= glm::vec2(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
 	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
+	_star_system= new StarSystem(_pt_min, _pt_max);
 
 	load_models();
-	/*for (auto model : _models) {
-		std::cout << model.first << " : " << *model.second << "\n";
-	}*/
-
 	load_levels(t);
-	/*for (auto level : _levels) {
-		std::cout << *level << "\n";
-	}*/
 	fill_texture_array();
-
 	read_highest_scores();
-
 	reinit(t);
 
-	unsigned int n_buffers= 4;
+	unsigned int n_buffers= 5;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
@@ -570,10 +64,15 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_font, Scre
 		"rotation_in", "scale_in", "center_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
+	_contexts["star"]= new DrawContext(prog_star, _buffers[4],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"camera2clip_matrix"});
+
 	update_border_aabb();
 	update_ship_aabb();
 	update_ship_footprint();
 	update_ship_texture();
+	update_star();
 
 	// callback appelé lorsqu'une musique est finie.
 	Mix_HookMusicFinished(Asteroid::music_finished_callback);
@@ -783,7 +282,6 @@ void Asteroid::draw_ship_footprint() {
 
 void Asteroid::draw_ship_texture() {
 	DrawContext * context= _contexts["ship_texture"];
-	//std::cout << _texture_id << " ; " << context->_locs["texture_array"] << " ; " << context->_locs["camera2clip_matrix"] << " ; " << context->_locs["position_in"] << " ; " << context->_locs["tex_coord_in"] << " ; " << context->_locs["current_layer_in"] << "\n";
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
@@ -820,8 +318,37 @@ void Asteroid::draw_ship_texture() {
 }
 
 
+void Asteroid::draw_star() {
+	DrawContext * context= _contexts["star"];
+	
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
 void Asteroid::draw() {
 	if (_mode== PLAYING) {
+		if (_draw_star) {
+			draw_star();
+		}
 		if (_draw_texture) {
 			draw_ship_texture();
 		}
@@ -1158,6 +685,46 @@ void Asteroid::update_ship_texture() {
 }
 
 
+void Asteroid::update_star() {
+	DrawContext * context= _contexts["star"];
+	context->_n_pts= 0;
+	context->_n_attrs_per_pts= 6;
+
+	const unsigned int n_pts_per_star= 6;
+
+	for (auto star : _star_system->_stars) {
+		context->_n_pts+= n_pts_per_star;
+	}
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	for (unsigned int idx_star=0; idx_star<_star_system->_stars.size(); ++idx_star) {
+		Star * star= _star_system->_stars[idx_star];
+		number positions[n_pts_per_star* 2]= {
+			star->_aabb._pos.x, star->_aabb._pos.y,
+			star->_aabb._pos.x+ star->_aabb._size.x, star->_aabb._pos.y,
+			star->_aabb._pos.x+ star->_aabb._size.x, star->_aabb._pos.y+ star->_aabb._size.y,
+
+			star->_aabb._pos.x, star->_aabb._pos.y,
+			star->_aabb._pos.x+ star->_aabb._size.x, star->_aabb._pos.y+ star->_aabb._size.y,
+			star->_aabb._pos.x, star->_aabb._pos.y+ star->_aabb._size.y,
+		};
+
+		for (unsigned int idx_pt=0; idx_pt<n_pts_per_star; ++idx_pt) {
+			data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 0]= float(positions[2* idx_pt]);
+			data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 1]= float(positions[2* idx_pt+ 1]);
+			for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+				data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= star->_color[idx_color];
+			}
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 
 	// joystick
@@ -1313,10 +880,14 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 		return s->_delete;
 	}), _ships.end());
 
+	// étoiles
+	_star_system->anim(t);
+
 	// maj des buffers
 	update_ship_aabb();
 	update_ship_footprint();
 	update_ship_texture();
+	update_star();
 }
 
 
