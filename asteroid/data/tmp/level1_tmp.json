@@ -1,0 +1,90 @@
+{
+    "music": "../data/sounds/music_level1.wav",
+    "events": [
+        {
+            "t": 10,
+            "type": "enemy",
+            "position": [
+                0.0,
+                8.0
+            ],
+            "enemy": "weirdo"
+        },
+        {
+            "t": 1000,
+            "type": "enemy",
+            "position": [
+                -3.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 1000,
+            "type": "enemy",
+            "position": [
+                3.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 7000,
+            "type": "enemy",
+            "position": [
+                -2.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 8000,
+            "type": "enemy",
+            "position": [
+                2.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 12000,
+            "type": "enemy",
+            "position": [
+                -3.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 12000,
+            "type": "enemy",
+            "position": [
+                3.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 17000,
+            "type": "enemy",
+            "position": [
+                -2.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 18000,
+            "type": "enemy",
+            "position": [
+                2.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 25000,
+            "type": "end"
+        }
+    ]
+}

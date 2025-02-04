@@ -1,0 +1,171 @@
+{
+    "music": "../data/sounds/music_level3.wav",
+    "events": [
+        {
+            "t": 1000,
+            "type": "enemy",
+            "position": [
+                -6.0,
+                8.0
+            ],
+            "enemy": "weirdo"
+        },
+        {
+            "t": 1000,
+            "type": "enemy",
+            "position": [
+                -4.0,
+                8.0
+            ],
+            "enemy": "weirdo"
+        },
+        {
+            "t": 1000,
+            "type": "enemy",
+            "position": [
+                -2.0,
+                8.0
+            ],
+            "enemy": "weirdo"
+        },
+        {
+            "t": 1000,
+            "type": "enemy",
+            "position": [
+                0.0,
+                8.0
+            ],
+            "enemy": "weirdo"
+        },
+        {
+            "t": 7000,
+            "type": "enemy",
+            "position": [
+                -7.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 7000,
+            "type": "enemy",
+            "position": [
+                -4.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 7000,
+            "type": "enemy",
+            "position": [
+                -1.0,
+                8.0
+            ],
+            "enemy": "cruiser"
+        },
+        {
+            "t": 14000,
+            "type": "enemy",
+            "position": [
+                -6.0,
+                8.0
+            ],
+            "enemy": "fatman"
+        },
+        {
+            "t": 15500,
+            "type": "enemy",
+            "position": [
+                -3.0,
+                8.0
+            ],
+            "enemy": "fatman"
+        },
+        {
+            "t": 17000,
+            "type": "enemy",
+            "position": [
+                0.0,
+                8.0
+            ],
+            "enemy": "fatman"
+        },
+        {
+            "t": 18500,
+            "type": "enemy",
+            "position": [
+                3.0,
+                8.0
+            ],
+            "enemy": "fatman"
+        },
+        {
+            "t": 21000,
+            "type": "enemy",
+            "position": [
+                -6.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 22500,
+            "type": "enemy",
+            "position": [
+                -3.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 24000,
+            "type": "enemy",
+            "position": [
+                0.0,
+                8.0
+            ],
+            "enemy": "bongo"
+        },
+        {
+            "t": 27000,
+            "type": "enemy",
+            "position": [
+                -6.0,
+                8.0
+            ],
+            "enemy": "weirdo"
+        },
+        {
+            "t": 27000,
+            "type": "enemy",
+            "position": [
+                -4.0,
+                8.0
+            ],
+            "enemy": "weirdo"
+        },
+        {
+            "t": 27000,
+            "type": "enemy",
+            "position": [
+                -2.0,
+                8.0
+            ],
+            "enemy": "weirdo"
+        },
+        {
+            "t": 27000,
+            "type": "enemy",
+            "position": [
+                0.0,
+                8.0
+            ],
+            "enemy": "weirdo"
+        },
+        {
+            "t": 25000,
+            "type": "end"
+        }
+    ]
+}
