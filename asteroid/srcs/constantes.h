@@ -36,10 +36,15 @@ const unsigned int MUSIC_FADE_IN_MS= 1500;
 const unsigned int MUSIC_FADE_OUT_MS= 1500;
 // nombre d'étoiles
 const unsigned int N_STARS= 1000;
+// taille d'étoile min
 const float MIN_STAR_SIZE= 0.05;
+// taille d'étoile max
 const float MAX_STAR_SIZE= 0.7;
+// exposant visant à faire tendre une + grande proba de création pour les + petites étoiles
 const float STAR_POW_EXP= 10.0;
+// ratio liant la taille à la vitesse ; les + grosses étoiles doivent aller + vite
 const float STAR_SIZE_VELOCITY_RATIO= 0.02;
+// opacité max d'une étoile
 const float STAR_MAX_ALPHA= 0.7;
 
 // type de ship
