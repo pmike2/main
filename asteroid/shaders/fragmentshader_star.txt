@@ -2,6 +2,7 @@
 
 
 uniform sampler2DArray texture_array;
+uniform float max_alpha;
 
 
 in vec2 tex_coord;
@@ -14,5 +15,6 @@ out vec4 frag_color;
 
 void main(void) {
 	float alpha= texture(texture_array, vec3(tex_coord.x, tex_coord.y, current_layer)).r;
-	frag_color= vec4(vertex_color.rgb, alpha);
+
+	frag_color= vec4(vertex_color.rgb, alpha* max_alpha);
 }

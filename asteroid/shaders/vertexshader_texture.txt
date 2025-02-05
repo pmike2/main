@@ -24,7 +24,7 @@ out VS_OUT {
 void main() {
 	float x= center_in.x+ scale_in* ((position_in.x- center_in.x)* cos(rotation_in)- (position_in.y- center_in.y)* sin(rotation_in));
 	float y= center_in.y+ scale_in* ((position_in.x- center_in.x)* sin(rotation_in)+ (position_in.y- center_in.y)* cos(rotation_in));
-	//gl_Position= camera2clip_matrix* vec4(position_in.rg, 0.0, 1.0);
+	// les ships sont à z == 0.0
 	gl_Position= camera2clip_matrix* vec4(x, y, 0.0, 1.0);
 	vs_out.tex_coord= tex_coord_in;
 	vs_out.current_layer= current_layer_in;

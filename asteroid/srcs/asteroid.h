@@ -32,7 +32,8 @@ public:
 	// chargements
 	void load_models();
 	void load_levels(std::chrono::system_clock::time_point t);
-	void fill_texture_array();
+	void fill_texture_array_ship();
+	void fill_texture_array_star();
 	
 	// dessins
 	void draw_border_aabb();
@@ -99,7 +100,7 @@ public:
 	bool _draw_aabb, _draw_footprint, _draw_texture, _draw_star; // faut-il afficher les AABB, footprints, textures, étoiles
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
-	GLuint _texture_id; // texture array pour tous les PNGs
+	GLuint * _textures; // texture arrays pour tous les PNGs
 	glm::mat4 _camera2clip; // glm::ortho
 	Font * _font; // font pour écriture textes
 

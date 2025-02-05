@@ -3,7 +3,7 @@
 
 uniform mat4 camera2clip_matrix;
 
-in vec2 position_in;
+in vec3 position_in;
 in vec2 tex_coord_in;
 in float current_layer_in;
 in vec4 color_in;
@@ -19,6 +19,5 @@ void main(void) {
 	current_layer= current_layer_in;
 	vertex_color= color_in;
 
-	// -0.1 : les étoiles doivent être derrière
-	gl_Position= camera2clip_matrix* vec4(position_in.rg, -0.1, 1.0);
+	gl_Position= camera2clip_matrix* vec4(position_in.xyz, 1.0);
 }

@@ -35,17 +35,24 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_star, GLui
 	_pt_max= glm::vec2(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
 	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
-	_star_system= new StarSystem(_pt_min, _pt_max);
+	_star_system= new StarSystem(_pt_min, _pt_max, "../data/star");
 
-	load_models();
-	load_levels(t);
-	fill_texture_array();
-	read_highest_scores();
-	reinit(t);
-
+	// buffer 0 = border (pour debug) ; 1 = AABB ; 2 = footprint ; 3 = textures ; 4 = stars
 	unsigned int n_buffers= 5;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
+
+	// _textures[0] == ships ; _textures[1] == stars
+	unsigned int n_textures= 2;
+	_textures= new GLuint(n_textures);
+	glGenTextures(n_textures, _textures);
+
+	load_models();
+	load_levels(t);
+	fill_texture_array_ship();
+	fill_texture_array_star();
+	read_highest_scores();
+	reinit(t);
 
 	_contexts["border_aabb"]= new DrawContext(prog_aabb, _buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
@@ -65,8 +72,8 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_star, GLui
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
 	_contexts["star"]= new DrawContext(prog_star, _buffers[4],
-		std::vector<std::string>{"position_in", "color_in"},
-		std::vector<std::string>{"camera2clip_matrix"});
+		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "color_in"},
+		std::vector<std::string>{"camera2clip_matrix", "texture_array", "max_alpha"});
 
 	update_border_aabb();
 	update_ship_aabb();
@@ -98,6 +105,7 @@ Asteroid::~Asteroid() {
 	_models.clear();
 
 	delete _buffers;
+	delete _textures;
 
 	Mix_HaltMusic();
 	Mix_FreeMusic(Asteroid::_music);
@@ -137,7 +145,7 @@ void Asteroid::load_models() {
 }
 
 
-void Asteroid::fill_texture_array() {
+void Asteroid::fill_texture_array_ship() {
 	unsigned int n_tex= 0;
 	for (auto model : _models) {
 		for (auto texture : model.second->_textures) {
@@ -145,10 +153,8 @@ void Asteroid::fill_texture_array() {
 		}
 	}
 
-	glGenTextures(1, &_texture_id);
-	
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
 	
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
@@ -193,6 +199,48 @@ void Asteroid::fill_texture_array() {
 }
 
 
+void Asteroid::fill_texture_array_star() {
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[1]);
+	
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, _star_system->_pngs.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+	unsigned int compt= 0;
+	for (auto png : _star_system->_pngs) {
+		// je ne sais pas pourquoi mais IMG_Load renvoie forcément 4 canaux même si le png a 1 seul canal
+		// je ne peux donc pas utiliser GL_RED comme format mais obligatoirement GL_RGBA
+		SDL_Surface * surface= IMG_Load(png.c_str());
+
+		if (!surface) {
+			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
+			return;
+		}
+
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+						0,                             // mipmap number
+						0, 0, compt,   // xoffset, yoffset, zoffset
+						TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
+						GL_BGRA,                       // format
+						GL_UNSIGNED_BYTE,              // type
+						surface->pixels);              // pointer to data
+
+		SDL_FreeSurface(surface);
+
+		compt++;
+	}
+
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+
+	//export_texture_array2pgm("/Volumes/Data/tmp/test", TEXTURE_SIZE, TEXTURE_SIZE, _star_system->_pngs.size()); // debug des textures
+
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+}
+
+
 void Asteroid::load_levels(std::chrono::system_clock::time_point t) {
 	std::vector<std::string> jsons= list_files("../data/levels", "json");
 	// les json_path sont triés par nom, donc level1, 2, ... devraient être dans l'ordre
@@ -214,8 +262,8 @@ void Asteroid::draw_border_aabb() {
 		glEnableVertexAttribArray(attr.second);
 	}
 
-	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
-	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
 
 	glDrawArrays(GL_LINES, 0, context->_n_pts);
 
@@ -240,8 +288,8 @@ void Asteroid::draw_ship_aabb() {
 		glEnableVertexAttribArray(attr.second);
 	}
 
-	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
-	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
 
 	glDrawArrays(GL_LINES, 0, context->_n_pts);
 
@@ -266,8 +314,8 @@ void Asteroid::draw_ship_footprint() {
 		glEnableVertexAttribArray(attr.second);
 	}
 
-	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
-	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
 
 	glDrawArrays(GL_LINES, 0, context->_n_pts);
 
@@ -284,7 +332,7 @@ void Asteroid::draw_ship_texture() {
 	DrawContext * context= _contexts["ship_texture"];
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
 	glActiveTexture(0);
 
 	glUseProgram(context->_prog);
@@ -320,18 +368,26 @@ void Asteroid::draw_ship_texture() {
 
 void Asteroid::draw_star() {
 	DrawContext * context= _contexts["star"];
-	
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[1]);
+	glActiveTexture(0);
+
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniform1f(context->_locs_uniform["max_alpha"], STAR_MAX_ALPHA);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
 	}
 
-	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)0);
-	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(GL_FLOAT), (void*)(2* sizeof(GL_FLOAT)));
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(6* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 
@@ -346,6 +402,7 @@ void Asteroid::draw_star() {
 
 void Asteroid::draw() {
 	if (_mode== PLAYING) {
+		show_playing_info();
 		if (_draw_star) {
 			draw_star();
 		}
@@ -359,7 +416,6 @@ void Asteroid::draw() {
 		if (_draw_footprint) {
 			draw_ship_footprint();
 		}
-		show_playing_info();
 	}
 	else if (_mode== INACTIVE) {
 		show_inactive_info();
@@ -633,12 +689,12 @@ void Asteroid::update_ship_texture() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	// à cause du système de reference opengl j'ai du inverser les 0 et les 1 des y des textures
 	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
 		Ship * ship= _ships[idx_ship];
 		ActionTexture * texture= ship->get_current_texture();
 		glm::vec2 center= ship->_footprint.center();
 		
+		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
 		number positions[n_pts_per_ship* 4]= {
 			ship->_aabb._pos.x, ship->_aabb._pos.y, 0.0, 1.0,
 			ship->_aabb._pos.x+ ship->_aabb._size.x, ship->_aabb._pos.y, 1.0, 1.0,
@@ -648,22 +704,6 @@ void Asteroid::update_ship_texture() {
 			ship->_aabb._pos.x+ ship->_aabb._size.x, ship->_aabb._pos.y+ ship->_aabb._size.y, 1.0, 0.0,
 			ship->_aabb._pos.x, ship->_aabb._pos.y+ ship->_aabb._size.y, 0.0, 0.0
 		};
-
-		/*for (unsigned int i=0; i<n_pts_per_ship; ++i) {
-			if (positions[4* i]> _pt_max.x) {
-				positions[4* i]= _pt_max.x;
-				positions[4* i+ 2]= 
-			}
-			if (positions[4* i]< _pt_min.x) {
-				positions[4* i]= _pt_min.x;
-			}
-			if (positions[4* i+ 1]> _pt_max.y) {
-				positions[4* i+ 1]= _pt_max.y;
-			}
-			if (positions[4* i+ 1]< _pt_min.y) {
-				positions[4* i+ 1]= _pt_min.y;
-			}
-		}*/
 
 		for (unsigned int idx_pt=0; idx_pt<n_pts_per_ship; ++idx_pt) {
 			for (unsigned int i=0; i<4; ++i) {
@@ -688,7 +728,7 @@ void Asteroid::update_ship_texture() {
 void Asteroid::update_star() {
 	DrawContext * context= _contexts["star"];
 	context->_n_pts= 0;
-	context->_n_attrs_per_pts= 6;
+	context->_n_attrs_per_pts= 10;
 
 	const unsigned int n_pts_per_star= 6;
 
@@ -700,21 +740,25 @@ void Asteroid::update_star() {
 
 	for (unsigned int idx_star=0; idx_star<_star_system->_stars.size(); ++idx_star) {
 		Star * star= _star_system->_stars[idx_star];
-		number positions[n_pts_per_star* 2]= {
-			star->_aabb._pos.x, star->_aabb._pos.y,
-			star->_aabb._pos.x+ star->_aabb._size.x, star->_aabb._pos.y,
-			star->_aabb._pos.x+ star->_aabb._size.x, star->_aabb._pos.y+ star->_aabb._size.y,
+		
+		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
+		number positions[n_pts_per_star* 5]= {
+			star->_aabb._pos.x, star->_aabb._pos.y, star->_z, 0.0, 1.0,
+			star->_aabb._pos.x+ star->_aabb._size.x, star->_aabb._pos.y, star->_z, 1.0, 1.0,
+			star->_aabb._pos.x+ star->_aabb._size.x, star->_aabb._pos.y+ star->_aabb._size.y, star->_z, 1.0, 0.0,
 
-			star->_aabb._pos.x, star->_aabb._pos.y,
-			star->_aabb._pos.x+ star->_aabb._size.x, star->_aabb._pos.y+ star->_aabb._size.y,
-			star->_aabb._pos.x, star->_aabb._pos.y+ star->_aabb._size.y,
+			star->_aabb._pos.x, star->_aabb._pos.y, star->_z, 0.0, 1.0,
+			star->_aabb._pos.x+ star->_aabb._size.x, star->_aabb._pos.y+ star->_aabb._size.y, star->_z, 1.0, 0.0,
+			star->_aabb._pos.x, star->_aabb._pos.y+ star->_aabb._size.y, star->_z, 0.0, 0.0
 		};
 
 		for (unsigned int idx_pt=0; idx_pt<n_pts_per_star; ++idx_pt) {
-			data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 0]= float(positions[2* idx_pt]);
-			data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 1]= float(positions[2* idx_pt+ 1]);
+			for (unsigned int i=0; i<5; ++i) {
+				data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
+			}
+			data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(star->_idx_texture); // current_layer_in
 			for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
-				data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= star->_color[idx_color];
+				data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6+ idx_color]= star->_color[idx_color];
 			}
 		}
 	}

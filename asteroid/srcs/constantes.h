@@ -15,8 +15,8 @@ const glm::dvec4 FOOTPRINT_UNFRIENDLY_COLOR(1.0, 0.0, 1.0, 1.0);
 // vitesse héro
 const float HERO_VELOCITY= 0.1;
 // plans z de contrainte d'affichage de glm::ortho
-const float Z_NEAR= -10.0f;
-const float Z_FAR= 10.0f;
+const float Z_NEAR= 0.0f;
+const float Z_FAR= 1000.0f;
 // taille textures
 const unsigned int TEXTURE_SIZE= 1024;
 // temps d'invulnérabilité après avoir été touché
@@ -34,7 +34,13 @@ const std::string MAIN_ACTION_NAME= "main";
 // temps de fade in / out de la musique
 const unsigned int MUSIC_FADE_IN_MS= 1500;
 const unsigned int MUSIC_FADE_OUT_MS= 1500;
-
+// nombre d'étoiles
+const unsigned int N_STARS= 1000;
+const float MIN_STAR_SIZE= 0.05;
+const float MAX_STAR_SIZE= 0.7;
+const float STAR_POW_EXP= 10.0;
+const float STAR_SIZE_VELOCITY_RATIO= 0.02;
+const float STAR_MAX_ALPHA= 0.7;
 
 // type de ship
 enum ShipType {HERO, ENEMY, BULLET};
