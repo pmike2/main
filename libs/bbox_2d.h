@@ -38,4 +38,15 @@ bool aabb_contains_aabb(const AABB_2D * big_aabb, const AABB_2D * small_aabb);
 bool ray_intersects_aabb(const pt_type & ray_origin, const pt_type & ray_dir, const AABB_2D * aabb, pt_type & contact_pt, pt_type & contact_normal, number & t_hit_near);
 
 
+class BBox_2D {
+public:
+	BBox_2D();
+	BBox_2D();
+	~BBox_2D();
+
+
+	glm::vec2 _com_pos;
+	glm::vec2 
+};
+
 #endif

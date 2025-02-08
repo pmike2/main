@@ -1,9 +1,5 @@
 
 #include <iostream>
-#include <math.h>
-#include <iomanip>
-#include <sstream>
-
 #include <OpenGL/gl3.h>
 
 #include <SDL2/SDL.h>
@@ -13,8 +9,7 @@
 #include "utile.h"
 #include "gl_utils.h"
 #include "input_state.h"
-#include "asteroid.h"
-
+#include "racing.h"
 
 // en ms; temps entre 2 anims
 //const unsigned int DELTA_ANIM= 1;
@@ -31,7 +26,7 @@ SDL_Window * window;
 SDL_GLContext main_context;
 InputState * input_state;
 ScreenGL * screengl;
-Asteroid * asteroid;
+Racing * racing;
 
 bool done= false;
 unsigned int val_fps, compt_fps;
@@ -39,44 +34,45 @@ unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
 
 
-void key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) {
+void key_down(SDL_Keycode key) {
 	input_state->key_down(key);
 
 	if (key== SDLK_ESCAPE) {
 		done= true;
 	}
 
-	if (asteroid->key_down(input_state, key, t)) {
+	if (racing->key_down(input_state, key)) {
 		return;
 	}
+
 }
 
 
-void key_up(SDL_Keycode key, std::chrono::system_clock::time_point t) {
+void key_up(SDL_Keycode key) {
 	input_state->key_up(key);
 
-	if (asteroid->key_up(input_state, key, t)) {
+	if (racing->key_up(input_state, key)) {
 		return;
 	}
 }
 
 
-void joystick_down(unsigned int button_idx, std::chrono::system_clock::time_point t) {
-	if (asteroid->joystick_down(button_idx, t)) {
+void joystick_down(unsigned int button_idx) {
+	if (racing->joystick_down(button_idx)) {
 		return;
 	}
 }
 
 
-void joystick_up(unsigned int button_idx, std::chrono::system_clock::time_point t) {
-	if (asteroid->joystick_up(button_idx, t)) {
+void joystick_up(unsigned int button_idx) {
+	if (racing->joystick_up(button_idx)) {
 		return;
 	}
 }
 
 
-void joystick_axis(unsigned int axis_idx, int value, std::chrono::system_clock::time_point t) {
-	if (asteroid->joystick_axis(axis_idx, value, t)) {
+void joystick_axis(unsigned int axis_idx, int value) {
+	if (racing->joystick_axis(axis_idx, value)) {
 		return;
 	}
 }
@@ -87,7 +83,7 @@ void init() {
 	
 	SDL_Init(SDL_INIT_EVERYTHING);
 	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
-	
+
 	bool is_joystick= false;
 	if (SDL_NumJoysticks()> 0){
 		SDL_Joystick * joy= SDL_JoystickOpen(0);
@@ -111,17 +107,13 @@ void init() {
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	
-	window= SDL_CreateWindow("asteroid", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	window= SDL_CreateWindow("racing", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
 
 	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
-	
-	/*int x, y, z;
-	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &x);
-	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &y);
-	glGetIntegerv(GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS, &z);
-	std::cout << "GL_MAX_ARRAY_TEXTURE_LAYERS=" << x  << " ; GL_MAX_TEXTURE_IMAGE_UNITS=" << y << " ; GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS=" << z << "\n";
-	*/
+	/*int x= 0;
+	glGetIntegerv(GL_MAX_PATCH_VERTICES, &x); // 32
+	cout << x << endl;*/
 
 	SDL_GL_SetSwapInterval(1);
 	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
@@ -157,22 +149,15 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	GLuint prog_aabb= create_prog("../shaders/vertexshader_aabb.txt"  , "../shaders/fragmentshader_aabb.txt");
-	GLuint prog_texture= create_prog("../shaders/vertexshader_texture.txt", "../shaders/fragmentshader_texture.txt", "../shaders/geomshader_explode.txt");
-	GLuint prog_star= create_prog("../shaders/vertexshader_star.txt"  , "../shaders/fragmentshader_star.txt");
+	GLuint prog_aabb= create_prog("../shaders/vertexshader_aabb.txt", "../shaders/fragmentshader_aabb.txt");
 	GLuint prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
-	
+
 	// --------------------------------------------------------------------------
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-
-	// --------------------------------------------------------------------------
 	input_state= new InputState();
-
-	// --------------------------------------------------------------------------
-	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
-	asteroid= new Asteroid(prog_aabb, prog_texture, prog_star, prog_font, screengl, is_joystick, now);
+	racing= new Racing(prog_aabb, prog_font, screengl, is_joystick);
 }
 
 
@@ -183,22 +168,21 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	
-	asteroid->draw();
+	racing->draw();
 
 	SDL_GL_SwapWindow(window);
 }
 
 
-void anim(std::chrono::system_clock::time_point t) {
+void anim() {
 	/*tikanim2= SDL_GetTicks();
 	int tikanim_delta= tikanim2- tikanim1;
-	if (tikanim_delta< DELTA_ANIM) {
+	if (tikanim_delta< DELTA_ANIM)
 		return;
-	}*/
 	
-	asteroid->anim(t);
-	
-	//tikanim1= SDL_GetTicks();
+	tikanim1= SDL_GetTicks();*/
+
+	racing->anim();
 }
 
 
@@ -216,8 +200,8 @@ void compute_fps() {
 }
 
 
-void idle(std::chrono::system_clock::time_point t) {
-	anim(t);
+void idle() {
+	anim();
 	draw();
 	compute_fps();
 }
@@ -227,8 +211,6 @@ void main_loop() {
 	SDL_Event event;
 	
 	while (!done) {
-		std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
-		
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				/*case SDL_MOUSEMOTION:
@@ -247,24 +229,24 @@ void main_loop() {
 					// event.key.repeat== 0 correspond au 1er appui de la touche; si on ne fait pas ca key_down est déclenché plein
 					// de fois, tant que la touche est enfoncée
 					if (event.key.repeat== 0) {
-						key_down(event.key.keysym.sym, now);
+						key_down(event.key.keysym.sym);
 					}
 					break;
 					
 				case SDL_KEYUP:
-					key_up(event.key.keysym.sym, now);
+					key_up(event.key.keysym.sym);
 					break;
 
 				case SDL_JOYBUTTONDOWN:
-					joystick_down(event.jbutton.button, now);
+					joystick_down(event.jbutton.button);
 					break;
 
 				case SDL_JOYBUTTONUP:
-					joystick_up(event.jbutton.button, now);
+					joystick_up(event.jbutton.button);
 					break;
 
 				 case SDL_JOYAXISMOTION:
-				 	joystick_axis(event.jaxis.axis, event.jaxis.value, now);
+				 	joystick_axis(event.jaxis.axis, event.jaxis.value);
 					break;
 
 				// utilisé ?
@@ -280,13 +262,13 @@ void main_loop() {
 					break;
 			}
 		}
-		idle(now);
+		idle();
 	}
 }
 
 
 void clean() {
-	delete asteroid;
+	delete racing;
 	delete input_state;
 	delete screengl;
 
