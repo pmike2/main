@@ -21,13 +21,52 @@ Car::Car() {
 }
 
 
-Car::Car(glm::vec2 position) : _aabb(AABB_2D(position, glm::vec2(1.0, 1.7))), _velocity(glm::vec2(0.0)), _acceleration(glm::vec2(0.0)) {
+Car::Car(glm::vec2 position) :
+	_velocity(glm::vec2(0.0)), _acceleration(glm::vec2(0.0)), _force(glm::vec2(0.0)),
+	_alpha(0.0), _angular_velocity(0.0), _angular_acceleration(0.0), _mass(1.0)
+{
 
+	_com= position;
+	_com2force= glm::vec2(0.0, 0.5);
+	_com2bbox_center= glm::vec2(0.0, 0.0);
+	_bbox= BBox_2D(_com+ _com2bbox_center, glm::vec2(1.0, 1.7));
+	_right= glm::vec2(1.0, 0.0);
+	_forward= glm::vec2(0.0, 1.0);
 }
 
 
 Car::~Car() {
 
+}
+
+
+void Car::anim() {
+	const float dt= 0.1;
+
+	_force-= 1.0f* _velocity;
+
+	_acceleration= _force/ _mass;
+	_velocity+= _acceleration* dt;
+	_com+= _velocity* dt;
+
+	_angular_acceleration= _com2force.x* _force.y- _com2force.y* _force.x;
+	_angular_velocity+= _angular_acceleration* dt;
+	_alpha+= _angular_velocity* dt;
+
+	_right= glm::vec2(cos(_alpha), sin(_alpha));
+	_forward= glm::vec2(-sin(_alpha), cos(_alpha));
+	_com2force= glm::vec2(-0.5* sin(_alpha), 0.5* cos(_alpha));
+	_com2bbox_center= glm::vec2(0.0, 0.0);
+
+	_bbox._alpha= _alpha;
+	_bbox._center= _com+ _com2bbox_center;
+	_bbox.update();
+}
+
+
+std::ostream & operator << (std::ostream & os, const Car & car) {
+	os << "bbox=[" << car._bbox << "] ; ";
+	return os;
 }
 
 
@@ -37,8 +76,8 @@ Racing::Racing() {
 }
 
 
-Racing::Racing(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl, bool is_joystick) :
-	_draw_aabb(true),
+Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_joystick) :
+	_draw_bbox(true),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false), _key_a(false), _key_z(false),
 	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false) 
 	{
@@ -51,7 +90,7 @@ Racing::Racing(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl, bool is_
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
-	_contexts["aabb"]= new DrawContext(prog_aabb, _buffers[0],
+	_contexts["bbox"]= new DrawContext(prog_bbox, _buffers[0],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix"});
 
@@ -60,7 +99,7 @@ Racing::Racing(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl, bool is_
 		_cars.push_back(new Car(glm::vec2(rand_float(_pt_min.x, _pt_max.x), rand_float(_pt_min.y, _pt_max.y))));
 	}*/
 
-	update_aabb();
+	update_bbox();
 }
 
 
@@ -74,8 +113,8 @@ Racing::~Racing() {
 }
 
 
-void Racing::draw_aabb() {
-	DrawContext * context= _contexts["aabb"];
+void Racing::draw_bbox() {
+	DrawContext * context= _contexts["bbox"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -101,14 +140,14 @@ void Racing::draw_aabb() {
 
 
 void Racing::draw() {
-	if (_draw_aabb) {
-		draw_aabb();
+	if (_draw_bbox) {
+		draw_bbox();
 	}
 }
 
 
-void Racing::update_aabb() {
-	DrawContext * context= _contexts["aabb"];
+void Racing::update_bbox() {
+	DrawContext * context= _contexts["bbox"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
@@ -131,17 +170,17 @@ void Racing::update_aabb() {
 			color= glm::vec4(1.0, 0.0, 0.0, 1.0);
 		}
 		number positions[n_pts_per_car* 2]= {
-			car->_aabb._pos.x, car->_aabb._pos.y,
-			car->_aabb._pos.x+ car->_aabb._size.x, car->_aabb._pos.y,
+			car->_bbox._pts[0].x, car->_bbox._pts[0].y,
+			car->_bbox._pts[1].x, car->_bbox._pts[1].y,
 
-			car->_aabb._pos.x+ car->_aabb._size.x, car->_aabb._pos.y,
-			car->_aabb._pos.x+ car->_aabb._size.x, car->_aabb._pos.y+ car->_aabb._size.y,
+			car->_bbox._pts[1].x, car->_bbox._pts[1].y,
+			car->_bbox._pts[2].x, car->_bbox._pts[2].y,
 
-			car->_aabb._pos.x+ car->_aabb._size.x, car->_aabb._pos.y+ car->_aabb._size.y,
-			car->_aabb._pos.x, car->_aabb._pos.y+ car->_aabb._size.y,
+			car->_bbox._pts[2].x, car->_bbox._pts[2].y,
+			car->_bbox._pts[3].x, car->_bbox._pts[3].y,
 
-			car->_aabb._pos.x, car->_aabb._pos.y+ car->_aabb._size.y,
-			car->_aabb._pos.x, car->_aabb._pos.y
+			car->_bbox._pts[3].x, car->_bbox._pts[3].y,
+			car->_bbox._pts[0].x, car->_bbox._pts[0].y
 		};
 
 		for (unsigned int i=0; i<n_pts_per_car; ++i) {
@@ -175,33 +214,33 @@ void Racing::update_aabb() {
 
 
 void Racing::anim() {
-	glm::vec2 force(0.0);
+	_cars[0]->_force= glm::vec2(0.0);
 
 	// joystick
-	if (_is_joystick) {
+	/*if (_is_joystick) {
 		if (_joystick_a) {
 		}
 		else if (_joystick_b) {
 		}
 	}
 	// touches
-	else {
+	else {*/
 		if (_key_left) {
-			force.x-= 0.1;
+			_cars[0]->_force-= 1.0f* _cars[0]->_right;
 		}
 		if (_key_right) {
-			force.x+= 0.1;
+			_cars[0]->_force+= 1.0f* _cars[0]->_right;
 		}
 		if (_key_down) {
-			force.y-= 0.1;
+			_cars[0]->_force-= 1.0f* _cars[0]->_forward;
 		}
 		if (_key_up) {
-			force.y+= 0.1;
+			_cars[0]->_force+= 1.0f* _cars[0]->_forward;
 		}
-	}
+	//}
 
 	// joueur contraint à l'écran
-	if (_cars[0]->_aabb._pos.x> _pt_max.x- _cars[0]->_aabb._size.x) {
+	/*if (_cars[0]->_aabb._pos.x> _pt_max.x- _cars[0]->_aabb._size.x) {
 		_cars[0]->_aabb._pos.x= _pt_max.x- _cars[0]->_aabb._size.x;
 	}
 	if (_cars[0]->_aabb._pos.x< _pt_min.x) {
@@ -212,9 +251,14 @@ void Racing::anim() {
 	}
 	if (_cars[0]->_aabb._pos.y< _pt_min.y) {
 		_cars[0]->_aabb._pos.y= _pt_min.y;
+	}*/
+
+	for (auto car : _cars) {
+		car->anim();
+		//std::cout << *car << "\n";
 	}
 
-	update_aabb();
+	update_bbox();
 }
 
 

@@ -27,26 +27,43 @@ public:
 	Car();
 	Car(glm::vec2 position);
 	~Car();
+	void anim();
+	friend std::ostream & operator << (std::ostream & os, const Car & car);
 
 
-	AABB_2D _aabb;
+	BBox_2D _bbox;
+	glm::vec2 _com2force; // vecteur com -> point ou on applique les forces
+	glm::vec2 _com2bbox_center; // vecteur com -> centre bbox
+
+	glm::vec2 _com; // center of mass
 	glm::vec2 _velocity;
 	glm::vec2 _acceleration;
+	glm::vec2 _force;
+
+	float _alpha; // angle de rotation
+	float _angular_velocity;
+	float _angular_acceleration;
+	//glm::vec2 _torque;
+
+	float _mass;
+
+	glm::vec2 _forward;
+	glm::vec2 _right;
 };
 
 
 class Racing {
 public:
 	Racing();
-	Racing(GLuint prog_aabb, GLuint prog_font, ScreenGL * screengl, bool is_joystick);
+	Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_joystick);
 	~Racing();
 
 	// dessins
-	void draw_aabb();
+	void draw_bbox();
 	void draw();
 
 	// maj des buffers
-	void update_aabb();
+	void update_bbox();
 
 	// animation
 	void anim();
@@ -63,7 +80,7 @@ public:
 
 	glm::vec2 _pt_min, _pt_max;
 
-	bool _draw_aabb; // faut-il afficher les AABB
+	bool _draw_bbox; // faut-il afficher les BBox
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs

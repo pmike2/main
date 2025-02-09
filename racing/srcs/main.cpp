@@ -149,7 +149,7 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	GLuint prog_aabb= create_prog("../shaders/vertexshader_aabb.txt", "../shaders/fragmentshader_aabb.txt");
+	GLuint prog_bbox= create_prog("../shaders/vertexshader_aabb.txt", "../shaders/fragmentshader_aabb.txt");
 	GLuint prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
@@ -157,7 +157,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	input_state= new InputState();
-	racing= new Racing(prog_aabb, prog_font, screengl, is_joystick);
+	racing= new Racing(prog_bbox, prog_font, screengl, is_joystick);
 }
 
 

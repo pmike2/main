@@ -138,3 +138,44 @@ bool ray_intersects_aabb(const pt_type & ray_origin, const pt_type & ray_dir, co
 
 	return true;
 }
+
+
+// BBox_2D ---------------------------------------------------------------------------------------------
+BBox_2D::BBox_2D() {
+
+}
+
+
+BBox_2D::BBox_2D(pt_type center, pt_type size, float alpha) : _center(center), _size(size), _alpha(alpha) {
+	update();
+}
+
+
+BBox_2D::~BBox_2D() {
+
+}
+
+
+void BBox_2D::update() {
+	float cos_alpha= cos(_alpha);
+	float sin_alpha= sin(_alpha);
+
+	_pts[0].x= _center.x- _size.x* cos_alpha+ _size.y* sin_alpha;
+	_pts[0].y= _center.y- _size.x* sin_alpha- _size.y* cos_alpha;
+
+	_pts[1].x= _center.x+ _size.x* cos_alpha+ _size.y* sin_alpha;
+	_pts[1].y= _center.y+ _size.x* sin_alpha- _size.y* cos_alpha;
+
+	_pts[2].x= _center.x+ _size.x* cos_alpha- _size.y* sin_alpha;
+	_pts[2].y= _center.y+ _size.x* sin_alpha+ _size.y* cos_alpha;
+
+	_pts[3].x= _center.x- _size.x* cos_alpha- _size.y* sin_alpha;
+	_pts[3].y= _center.y- _size.x* sin_alpha+ _size.y* cos_alpha;
+}
+
+
+std::ostream & operator << (std::ostream & os, const BBox_2D & bbox) {
+	os << "center=" << glm::to_string(bbox._center) << " ; size=" << glm::to_string(bbox._size) << " ; alpha=" << bbox._alpha;
+	return os;
+}
+
