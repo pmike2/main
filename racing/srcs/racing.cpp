@@ -49,14 +49,16 @@ Car::~Car() {
 void Car::reinit(glm::vec2 position, float alpha) {
 	_size= glm::vec2(1.0, 0.5);
 	_mass= 1.0;
-	_com2force_ini= glm::vec2(1.0, 0.0);
-	_com2bbox_center_ini= glm::vec2(0.3, 0.0);
+	_com2force_fwd_ini= glm::vec2(0.7, 0.0);
+	_com2force_bwd_ini= glm::vec2(-0.7, 0.0);
+	_com2bbox_center_ini= glm::vec2(0.0, 0.0);
 	_right_ini= glm::vec2(0.0, -1.0);
 	_forward_ini= glm::vec2(1.0, 0.0);
 
 	_velocity= glm::vec2(0.0);
 	_acceleration= glm::vec2(0.0);
-	_force= glm::vec2(0.0);
+	_force_fwd= glm::vec2(0.0);
+	_force_bwd= glm::vec2(0.0);
 	_alpha= 0.0;
 	_angular_velocity= 0.0;
 	_angular_acceleration= 0.0;
@@ -66,12 +68,20 @@ void Car::reinit(glm::vec2 position, float alpha) {
 	_thrust= 0.0;
 
 	_com= position;
-	_com2force= rot(_com2force_ini, alpha);
+	_com2force_fwd= rot(_com2force_fwd_ini, alpha);
+	_com2force_bwd= rot(_com2force_bwd_ini, alpha);
 	_com2bbox_center= rot(_com2bbox_center_ini, alpha);
 	_right= rot(_right_ini, alpha);
 	_forward= rot(_forward_ini, alpha);
 
 	_bbox= BBox_2D(_com+ _com2bbox_center, _size);
+}
+
+
+void Car::update_bbox() {
+	_bbox._alpha= _alpha;
+	_bbox._center= _com+ _com2bbox_center;
+	_bbox.update();
 }
 
 
@@ -113,7 +123,15 @@ void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up
 		}
 	}
 	if (!key_down && !key_up) {
-		_thrust= 0.0;
+		if (_thrust< -1.0* THRUST_DECREMENT) {
+			_thrust+= THRUST_DECREMENT;
+		}
+		else if (_thrust> THRUST_DECREMENT) {
+			_thrust-= THRUST_DECREMENT;
+		}
+		else {
+			_thrust= 0.0;
+		}
 	}
 }
 
@@ -121,20 +139,25 @@ void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up
 void Car::anim() {
 	const float dt= 0.05;
 
-	_force= glm::vec2(0.0);
-	_force+= _thrust* rot(_forward, _wheel);
-	//_force-= 0.5f* _velocity;
-	_force-= 0.3f* scal(_forward, _velocity)* _forward;
-	_force-= 0.2f* scal(_right, _velocity)* _right;
+	_force_fwd= glm::vec2(0.0);
+	_force_fwd+= _thrust* rot(_forward, _wheel);
+	_force_fwd-= 0.5f* scal(_forward, _velocity)* _forward;
+	//_force_fwd-= 0.5f* _velocity;
 
-	_acceleration= _force/ _mass;
+	_force_bwd= glm::vec2(0.0);
+	_force_bwd-= 10.0f* scal(_right, _velocity)* _right;
+	//_force_bwd-= 0.5f* _velocity;
+
+	_acceleration= (_force_fwd+ _force_bwd)/ _mass;
 	_velocity+= _acceleration* dt;
 	_com+= _velocity* dt;
 
-	_torque= _com2force.x* _force.y- _com2force.y* _force.x;
-	_torque-= 1.0* _angular_velocity;
+	_torque= 0.0;
+	_torque+= _com2force_fwd.x* _force_fwd.y- _com2force_fwd.y* _force_fwd.x;
+	_torque+= _com2force_bwd.x* _force_bwd.y- _com2force_bwd.y* _force_bwd.x;
+	_torque-= 2.0* _angular_velocity;
 	
-	_angular_acceleration= 5.0* _torque;
+	_angular_acceleration= 2.0* _torque;
 	_angular_velocity+= _angular_acceleration* dt;
 	_alpha+= _angular_velocity* dt;
 	while (_alpha> M_PI* 2.0) {
@@ -144,14 +167,13 @@ void Car::anim() {
 		_alpha+= M_PI* 2.0;
 	}
 
-	_com2force= rot(_com2force_ini, _alpha);
+	_com2force_fwd= rot(_com2force_fwd_ini, _alpha);
+	_com2force_bwd= rot(_com2force_bwd_ini, _alpha);
 	_com2bbox_center= rot(_com2bbox_center_ini, _alpha);
 	_right= rot(_right_ini, _alpha);
 	_forward= rot(_forward_ini, _alpha);
 
-	_bbox._alpha= _alpha;
-	_bbox._center= _com+ _com2bbox_center;
-	_bbox.update();
+	update_bbox();
 }
 
 
@@ -281,25 +303,28 @@ void Racing::show_info() {
 	std::vector<Text> texts;
 
 	texts.push_back(Text("COM PT", glm::vec2(-9.0f, 7.0f), font_scale, COM_CROSS_COLOR));
-	texts.push_back(Text("FORCE PT", glm::vec2(-9.0f, 6.0f), font_scale, FORCE_CROSS_COLOR));
-	texts.push_back(Text("BBOX PT", glm::vec2(-9.0f, 5.0f), font_scale, BBOX_CROSS_COLOR));
-	texts.push_back(Text("FORCE VEC", glm::vec2(-9.0f, 4.0f), font_scale, FORCE_ARROW_COLOR));
-	texts.push_back(Text("ACCELERATION VEC", glm::vec2(-9.0f, 3.0f), font_scale, ACCELERATION_ARROW_COLOR));
-	texts.push_back(Text("VELOCITY VEC", glm::vec2(-9.0f, 2.0f), font_scale, VELOCITY_ARROW_COLOR));
-	texts.push_back(Text("FORWARD VEC", glm::vec2(-9.0f, 1.0f), font_scale, FORWARD_ARROW_COLOR));
-	texts.push_back(Text("RIGHT VEC", glm::vec2(-9.0f, 0.0f), font_scale, RIGHT_ARROW_COLOR));
+	texts.push_back(Text("FORCE_FWD PT", glm::vec2(-9.0f, 6.0f), font_scale, FORCE_FWD_CROSS_COLOR));
+	texts.push_back(Text("FORCE_BWD PT", glm::vec2(-9.0f, 5.0f), font_scale, FORCE_BWD_CROSS_COLOR));
+	texts.push_back(Text("BBOX PT", glm::vec2(-9.0f, 4.0f), font_scale, BBOX_CROSS_COLOR));
+	texts.push_back(Text("FORCE_FWD VEC", glm::vec2(-9.0f, 3.0f), font_scale, FORCE_FWD_ARROW_COLOR));
+	texts.push_back(Text("FORCE_BWD VEC", glm::vec2(-9.0f, 2.0f), font_scale, FORCE_BWD_ARROW_COLOR));
+	texts.push_back(Text("ACCELERATION VEC", glm::vec2(-9.0f, 1.0f), font_scale, ACCELERATION_ARROW_COLOR));
+	texts.push_back(Text("VELOCITY VEC", glm::vec2(-9.0f, 0.0f), font_scale, VELOCITY_ARROW_COLOR));
+	texts.push_back(Text("FORWARD VEC", glm::vec2(-9.0f, -1.0f), font_scale, FORWARD_ARROW_COLOR));
+	texts.push_back(Text("RIGHT VEC", glm::vec2(-9.0f, -2.0f), font_scale, RIGHT_ARROW_COLOR));
 
 	texts.push_back(Text("thrust="+ std::to_string(_cars[0]->_thrust), glm::vec2(6.0, 7.0), font_scale, text_color));
 	texts.push_back(Text("wheel="+ std::to_string(_cars[0]->_wheel), glm::vec2(6.0, 6.0), font_scale, text_color));
 	
-	texts.push_back(Text("force="+ std::to_string(norm(_cars[0]->_force)), glm::vec2(6.0, 4.0), font_scale, text_color));
-	texts.push_back(Text("acc="+ std::to_string(norm(_cars[0]->_acceleration)), glm::vec2(6.0, 3.0), font_scale, text_color));
-	texts.push_back(Text("vel="+ std::to_string(norm(_cars[0]->_velocity)), glm::vec2(6.0, 2.0), font_scale, text_color));
+	texts.push_back(Text("force_fwd="+ std::to_string(norm(_cars[0]->_force_fwd)), glm::vec2(6.0, 4.0), font_scale, text_color));
+	texts.push_back(Text("force_bwd="+ std::to_string(norm(_cars[0]->_force_bwd)), glm::vec2(6.0, 3.0), font_scale, text_color));
+	texts.push_back(Text("acc="+ std::to_string(norm(_cars[0]->_acceleration)), glm::vec2(6.0, 2.0), font_scale, text_color));
+	texts.push_back(Text("vel="+ std::to_string(norm(_cars[0]->_velocity)), glm::vec2(6.0, 1.0), font_scale, text_color));
 
-	texts.push_back(Text("torque="+ std::to_string(_cars[0]->_torque), glm::vec2(6.0, 0.0), font_scale, text_color));
-	texts.push_back(Text("ang acc="+ std::to_string(_cars[0]->_angular_acceleration), glm::vec2(6.0, -1.0), font_scale, text_color));
-	texts.push_back(Text("ang vel="+ std::to_string(_cars[0]->_angular_velocity), glm::vec2(6.0, -2.0), font_scale, text_color));
-	texts.push_back(Text("alpha="+ std::to_string(_cars[0]->_alpha), glm::vec2(6.0, -3.0), font_scale, text_color));
+	texts.push_back(Text("torque="+ std::to_string(_cars[0]->_torque), glm::vec2(6.0, -1.0), font_scale, text_color));
+	texts.push_back(Text("ang acc="+ std::to_string(_cars[0]->_angular_acceleration), glm::vec2(6.0, -2.0), font_scale, text_color));
+	texts.push_back(Text("ang vel="+ std::to_string(_cars[0]->_angular_velocity), glm::vec2(6.0, -3.0), font_scale, text_color));
+	texts.push_back(Text("alpha="+ std::to_string(_cars[0]->_alpha), glm::vec2(6.0, -4.0), font_scale, text_color));
 
 	_font->set_text(texts);
 	_font->draw();
@@ -374,7 +399,7 @@ void Racing::update_bbox() {
 
 
 void Racing::update_force() {
-	const unsigned int n_pts_per_car= 3* 4+ 5* 6; // 3 croix ; 5 fleches
+	const unsigned int n_pts_per_car= 4* 4+ 6* 6; // 4 croix ; 6 fleches
 
 	DrawContext * context= _contexts["force"];
 	context->_n_pts= 0;
@@ -391,11 +416,13 @@ void Racing::update_force() {
 		Car * car= _cars[idx_car];
 
 		ptr= draw_cross(ptr, car->_com, CROSS_SIZE, COM_CROSS_COLOR);
-		ptr= draw_cross(ptr, car->_com+ car->_com2force, CROSS_SIZE, FORCE_CROSS_COLOR);
+		ptr= draw_cross(ptr, car->_com+ car->_com2force_fwd, CROSS_SIZE, FORCE_FWD_CROSS_COLOR);
+		ptr= draw_cross(ptr, car->_com+ car->_com2force_bwd, CROSS_SIZE, FORCE_BWD_CROSS_COLOR);
 		ptr= draw_cross(ptr, car->_com+ car->_com2bbox_center, CROSS_SIZE, BBOX_CROSS_COLOR);
-		ptr= draw_arrow(ptr, car->_com+ car->_com2force, car->_com+ car->_com2force+ car->_force, ARROW_TIP_SIZE, ARROW_ANGLE, FORCE_ARROW_COLOR);
-		ptr= draw_arrow(ptr, car->_com+ car->_com2force, car->_com+ car->_com2force+ car->_acceleration, ARROW_TIP_SIZE, ARROW_ANGLE, ACCELERATION_ARROW_COLOR);
-		ptr= draw_arrow(ptr, car->_com+ car->_com2force, car->_com+ car->_com2force+ car->_velocity, ARROW_TIP_SIZE, ARROW_ANGLE, VELOCITY_ARROW_COLOR);
+		ptr= draw_arrow(ptr, car->_com+ car->_com2force_fwd, car->_com+ car->_com2force_fwd+ car->_force_fwd, ARROW_TIP_SIZE, ARROW_ANGLE, FORCE_FWD_ARROW_COLOR);
+		ptr= draw_arrow(ptr, car->_com+ car->_com2force_bwd, car->_com+ car->_com2force_bwd+ car->_force_bwd, ARROW_TIP_SIZE, ARROW_ANGLE, FORCE_BWD_ARROW_COLOR);
+		ptr= draw_arrow(ptr, car->_com, car->_com+ car->_acceleration, ARROW_TIP_SIZE, ARROW_ANGLE, ACCELERATION_ARROW_COLOR);
+		ptr= draw_arrow(ptr, car->_com, car->_com+ car->_velocity, ARROW_TIP_SIZE, ARROW_ANGLE, VELOCITY_ARROW_COLOR);
 		ptr= draw_arrow(ptr, car->_com+ car->_com2bbox_center, car->_com+ car->_com2bbox_center+ car->_forward, ARROW_TIP_SIZE, ARROW_ANGLE, FORWARD_ARROW_COLOR);
 		ptr= draw_arrow(ptr, car->_com+ car->_com2bbox_center, car->_com+ car->_com2bbox_center+ car->_right, ARROW_TIP_SIZE, ARROW_ANGLE, RIGHT_ARROW_COLOR);
 	}
@@ -425,19 +452,19 @@ void Racing::anim() {
 	else {*/
 	//}
 
-	// joueur contraint à l'écran
-	/*if (_cars[0]->_aabb._pos.x> _pt_max.x- _cars[0]->_aabb._size.x) {
-		_cars[0]->_aabb._pos.x= _pt_max.x- _cars[0]->_aabb._size.x;
+	// pour tests
+	if (_cars[0]->_com.x> _pt_max.x) {
+		_cars[0]->_com.x= _pt_min.x;
 	}
-	if (_cars[0]->_aabb._pos.x< _pt_min.x) {
-		_cars[0]->_aabb._pos.x= _pt_min.x;
+	if (_cars[0]->_com.x< _pt_min.x) {
+		_cars[0]->_com.x= _pt_max.x;
 	}
-	if (_cars[0]->_aabb._pos.y> _pt_max.y- _cars[0]->_aabb._size.y) {
-		_cars[0]->_aabb._pos.y= _pt_max.y- _cars[0]->_aabb._size.y;
+	if (_cars[0]->_com.y> _pt_max.y) {
+		_cars[0]->_com.y= _pt_min.y;
 	}
-	if (_cars[0]->_aabb._pos.y< _pt_min.y) {
-		_cars[0]->_aabb._pos.y= _pt_min.y;
-	}*/
+	if (_cars[0]->_com.y< _pt_min.y) {
+		_cars[0]->_com.y= _pt_max.y;
+	}
 
 	for (auto car : _cars) {
 		car->anim();

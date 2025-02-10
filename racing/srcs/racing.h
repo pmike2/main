@@ -21,22 +21,25 @@
 const float Z_NEAR= 0.0f;
 const float Z_FAR= 1000.0f;
 
-const float MAX_WHEEL= M_PI* 0.5;
+const float MAX_WHEEL= M_PI* 0.4;
 const float WHEEL_INCREMENT= 0.05;
 const float WHEEL_DECREMENT= 0.05;
-const float MAX_BRAKE= 0.2;
-const float MAX_THRUST= 1.0;
-const float THRUST_INCREMENT= 0.02;
-const float BRAKE_INCREMENT= 0.005;
+const float MAX_BRAKE= 1.0;
+const float MAX_THRUST= 3.0;
+const float THRUST_INCREMENT= 0.03;
+const float BRAKE_INCREMENT= 0.06;
+const float THRUST_DECREMENT= 0.02;
 
 const float CROSS_SIZE= 0.1;
 const float ARROW_ANGLE= M_PI* 0.1;
 const float ARROW_TIP_SIZE= 0.2;
 const float INFO_ALPHA= 0.8;
 const glm::vec4 COM_CROSS_COLOR(1.0, 0.0, 0.0, INFO_ALPHA);
-const glm::vec4 FORCE_CROSS_COLOR(0.0, 1.0, 0.0, INFO_ALPHA);
+const glm::vec4 FORCE_FWD_CROSS_COLOR(1.0, 1.0, 0.0, INFO_ALPHA);
+const glm::vec4 FORCE_BWD_CROSS_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
 const glm::vec4 BBOX_CROSS_COLOR(0.0, 0.5, 1.0, INFO_ALPHA);
-const glm::vec4 FORCE_ARROW_COLOR(1.0, 1.0, 0.0, INFO_ALPHA);
+const glm::vec4 FORCE_FWD_ARROW_COLOR(1.0, 1.0, 0.0, INFO_ALPHA);
+const glm::vec4 FORCE_BWD_ARROW_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
 const glm::vec4 ACCELERATION_ARROW_COLOR(1.0, 0.0, 1.0, INFO_ALPHA);
 const glm::vec4 VELOCITY_ARROW_COLOR(0.0, 1.0, 1.0, INFO_ALPHA);
 const glm::vec4 FORWARD_ARROW_COLOR(1.0, 0.5, 1.0, INFO_ALPHA);
@@ -54,21 +57,25 @@ public:
 	Car(glm::vec2 position, float alpha);
 	~Car();
 	void reinit(glm::vec2 position, float alpha);
+	void update_bbox();
 	void preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up);
 	void anim();
 	friend std::ostream & operator << (std::ostream & os, const Car & car);
 
 
 	BBox_2D _bbox;
-	glm::vec2 _com2force; // vecteur com -> point ou on applique les forces
-	glm::vec2 _com2force_ini;
+	glm::vec2 _com2force_fwd; // vecteur com -> point ou on applique les forces
+	glm::vec2 _com2force_fwd_ini;
+	glm::vec2 _com2force_bwd; // vecteur com -> point ou on applique les forces
+	glm::vec2 _com2force_bwd_ini;
 	glm::vec2 _com2bbox_center; // vecteur com -> centre bbox
 	glm::vec2 _com2bbox_center_ini;
 
 	glm::vec2 _com; // center of mass
 	glm::vec2 _velocity;
 	glm::vec2 _acceleration;
-	glm::vec2 _force;
+	glm::vec2 _force_fwd;
+	glm::vec2 _force_bwd;
 
 	float _alpha; // angle de rotation
 	float _angular_velocity;
