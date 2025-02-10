@@ -7,6 +7,7 @@
 #include <map>
 
 #include <OpenGL/gl3.h>
+#include <glm/glm.hpp>
 
 #include "utile.h"
 
@@ -53,5 +54,8 @@ GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path
 void set_subwindow(const float bkgnd_color[4], int x, int y, int w, int h);
 void export_texture2pgm(std::string pgm_path, unsigned int width, unsigned int height);
 void export_texture_array2pgm(std::string pgm_dir_path, unsigned int width, unsigned int height, unsigned int depth);
+
+float * draw_cross(float * data, glm::vec2 center, float size, glm::vec4 color);
+float * draw_arrow(float * data, glm::vec2 start, glm::vec2 end, float tip_size, float angle, glm::vec4 color);
 
 #endif

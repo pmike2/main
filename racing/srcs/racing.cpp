@@ -15,23 +15,29 @@
 using json = nlohmann::json;
 
 
+glm::vec2 rot(glm::vec2 v, float alpha) {
+	return glm::vec2(v.x* cos(alpha)- v.y* sin(alpha), v.x* sin(alpha)+ v.y* cos(alpha));
+}
+
+
+float norm(glm::vec2 v) {
+	return sqrt(v.x* v.x+ v.y* v.y);
+}
+
+
+float scal(glm::vec2 u, glm::vec2 v) {
+	return u.x* v.x+ u.y* v.y;
+}
+
+
 // Car ------------------------------------------------------------
 Car::Car() {
 
 }
 
 
-Car::Car(glm::vec2 position) :
-	_velocity(glm::vec2(0.0)), _acceleration(glm::vec2(0.0)), _force(glm::vec2(0.0)),
-	_alpha(0.0), _angular_velocity(0.0), _angular_acceleration(0.0), _mass(1.0)
-{
-
-	_com= position;
-	_com2force= glm::vec2(0.0, 0.5);
-	_com2bbox_center= glm::vec2(0.0, 0.0);
-	_bbox= BBox_2D(_com+ _com2bbox_center, glm::vec2(1.0, 1.7));
-	_right= glm::vec2(1.0, 0.0);
-	_forward= glm::vec2(0.0, 1.0);
+Car::Car(glm::vec2 position, float alpha) {
+	reinit(position, alpha);
 }
 
 
@@ -40,23 +46,108 @@ Car::~Car() {
 }
 
 
-void Car::anim() {
-	const float dt= 0.1;
+void Car::reinit(glm::vec2 position, float alpha) {
+	_size= glm::vec2(1.0, 0.5);
+	_mass= 1.0;
+	_com2force_ini= glm::vec2(1.0, 0.0);
+	_com2bbox_center_ini= glm::vec2(0.3, 0.0);
+	_right_ini= glm::vec2(0.0, -1.0);
+	_forward_ini= glm::vec2(1.0, 0.0);
 
-	_force-= 1.0f* _velocity;
+	_velocity= glm::vec2(0.0);
+	_acceleration= glm::vec2(0.0);
+	_force= glm::vec2(0.0);
+	_alpha= 0.0;
+	_angular_velocity= 0.0;
+	_angular_acceleration= 0.0;
+	_torque= 0.0;
+	
+	_wheel= 0.0;
+	_thrust= 0.0;
+
+	_com= position;
+	_com2force= rot(_com2force_ini, alpha);
+	_com2bbox_center= rot(_com2bbox_center_ini, alpha);
+	_right= rot(_right_ini, alpha);
+	_forward= rot(_forward_ini, alpha);
+
+	_bbox= BBox_2D(_com+ _com2bbox_center, _size);
+}
+
+
+void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up) {
+	if (key_left) {
+		_wheel+= WHEEL_INCREMENT;
+		if (_wheel> MAX_WHEEL) {
+			_wheel= MAX_WHEEL;
+		}
+	}
+	if (key_right) {
+		_wheel-= WHEEL_INCREMENT;
+		if (_wheel< -1.0* MAX_WHEEL) {
+			_wheel= -1.0* MAX_WHEEL;
+		}
+	}
+	if (!key_left && !key_right) {
+		if (_wheel< -1.0* WHEEL_DECREMENT) {
+			_wheel+= WHEEL_DECREMENT;
+		}
+		else if (_wheel> WHEEL_DECREMENT) {
+			_wheel-= WHEEL_DECREMENT;
+		}
+		else {
+			_wheel= 0.0;
+		}
+	}
+
+	if (key_down) {
+		_thrust-= BRAKE_INCREMENT;
+		if (_thrust< -1.0* MAX_BRAKE) {
+			_thrust= -1.0* MAX_BRAKE;
+		}
+	}
+	if (key_up) {
+		_thrust+= THRUST_INCREMENT;
+		if (_thrust> MAX_THRUST) {
+			_thrust= MAX_THRUST;
+		}
+	}
+	if (!key_down && !key_up) {
+		_thrust= 0.0;
+	}
+}
+
+
+void Car::anim() {
+	const float dt= 0.05;
+
+	_force= glm::vec2(0.0);
+	_force+= _thrust* rot(_forward, _wheel);
+	//_force-= 0.5f* _velocity;
+	_force-= 0.3f* scal(_forward, _velocity)* _forward;
+	_force-= 0.2f* scal(_right, _velocity)* _right;
 
 	_acceleration= _force/ _mass;
 	_velocity+= _acceleration* dt;
 	_com+= _velocity* dt;
 
-	_angular_acceleration= _com2force.x* _force.y- _com2force.y* _force.x;
+	_torque= _com2force.x* _force.y- _com2force.y* _force.x;
+	_torque-= 1.0* _angular_velocity;
+	
+	_angular_acceleration= 5.0* _torque;
 	_angular_velocity+= _angular_acceleration* dt;
 	_alpha+= _angular_velocity* dt;
+	while (_alpha> M_PI* 2.0) {
+		_alpha-= M_PI* 2.0;
+	}
+	while (_alpha< 0.0) {
+		_alpha+= M_PI* 2.0;
+	}
 
-	_right= glm::vec2(cos(_alpha), sin(_alpha));
-	_forward= glm::vec2(-sin(_alpha), cos(_alpha));
-	_com2force= glm::vec2(-0.5* sin(_alpha), 0.5* cos(_alpha));
-	_com2bbox_center= glm::vec2(0.0, 0.0);
+	_com2force= rot(_com2force_ini, _alpha);
+	_com2bbox_center= rot(_com2bbox_center_ini, _alpha);
+	_right= rot(_right_ini, _alpha);
+	_forward= rot(_forward_ini, _alpha);
 
 	_bbox._alpha= _alpha;
 	_bbox._center= _com+ _com2bbox_center;
@@ -77,7 +168,7 @@ Racing::Racing() {
 
 
 Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_joystick) :
-	_draw_bbox(true),
+	_draw_bbox(true), _draw_force(true), _show_info(true),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false), _key_a(false), _key_z(false),
 	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false) 
 	{
@@ -86,7 +177,7 @@ Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_
 	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
-	unsigned int n_buffers= 1;
+	unsigned int n_buffers= 2;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
@@ -94,12 +185,17 @@ Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix"});
 
-	_cars.push_back(new Car(glm::vec2(0.0, 0.0)));
+	_contexts["force"]= new DrawContext(prog_bbox, _buffers[1],
+	std::vector<std::string>{"position_in", "color_in"},
+	std::vector<std::string>{"camera2clip_matrix"});
+
+	_cars.push_back(new Car(glm::vec2(0.0, 0.0), 0.0));
 	/*for (unsigned int i=0; i<100; ++i) {
 		_cars.push_back(new Car(glm::vec2(rand_float(_pt_min.x, _pt_max.x), rand_float(_pt_min.y, _pt_max.y))));
 	}*/
 
 	update_bbox();
+	update_force();
 }
 
 
@@ -139,10 +235,74 @@ void Racing::draw_bbox() {
 }
 
 
+void Racing::draw_force() {
+	DrawContext * context= _contexts["force"];
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
+
+	glDrawArrays(GL_LINES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
 void Racing::draw() {
 	if (_draw_bbox) {
 		draw_bbox();
 	}
+	if (_draw_force) {
+		draw_force();
+	}
+	if (_show_info) {
+		show_info();
+	}
+}
+
+
+void Racing::show_info() {
+	const float font_scale= 0.007f;
+	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
+
+	std::vector<Text> texts;
+
+	texts.push_back(Text("COM PT", glm::vec2(-9.0f, 7.0f), font_scale, COM_CROSS_COLOR));
+	texts.push_back(Text("FORCE PT", glm::vec2(-9.0f, 6.0f), font_scale, FORCE_CROSS_COLOR));
+	texts.push_back(Text("BBOX PT", glm::vec2(-9.0f, 5.0f), font_scale, BBOX_CROSS_COLOR));
+	texts.push_back(Text("FORCE VEC", glm::vec2(-9.0f, 4.0f), font_scale, FORCE_ARROW_COLOR));
+	texts.push_back(Text("ACCELERATION VEC", glm::vec2(-9.0f, 3.0f), font_scale, ACCELERATION_ARROW_COLOR));
+	texts.push_back(Text("VELOCITY VEC", glm::vec2(-9.0f, 2.0f), font_scale, VELOCITY_ARROW_COLOR));
+	texts.push_back(Text("FORWARD VEC", glm::vec2(-9.0f, 1.0f), font_scale, FORWARD_ARROW_COLOR));
+	texts.push_back(Text("RIGHT VEC", glm::vec2(-9.0f, 0.0f), font_scale, RIGHT_ARROW_COLOR));
+
+	texts.push_back(Text("thrust="+ std::to_string(_cars[0]->_thrust), glm::vec2(6.0, 7.0), font_scale, text_color));
+	texts.push_back(Text("wheel="+ std::to_string(_cars[0]->_wheel), glm::vec2(6.0, 6.0), font_scale, text_color));
+	
+	texts.push_back(Text("force="+ std::to_string(norm(_cars[0]->_force)), glm::vec2(6.0, 4.0), font_scale, text_color));
+	texts.push_back(Text("acc="+ std::to_string(norm(_cars[0]->_acceleration)), glm::vec2(6.0, 3.0), font_scale, text_color));
+	texts.push_back(Text("vel="+ std::to_string(norm(_cars[0]->_velocity)), glm::vec2(6.0, 2.0), font_scale, text_color));
+
+	texts.push_back(Text("torque="+ std::to_string(_cars[0]->_torque), glm::vec2(6.0, 0.0), font_scale, text_color));
+	texts.push_back(Text("ang acc="+ std::to_string(_cars[0]->_angular_acceleration), glm::vec2(6.0, -1.0), font_scale, text_color));
+	texts.push_back(Text("ang vel="+ std::to_string(_cars[0]->_angular_velocity), glm::vec2(6.0, -2.0), font_scale, text_color));
+	texts.push_back(Text("alpha="+ std::to_string(_cars[0]->_alpha), glm::vec2(6.0, -3.0), font_scale, text_color));
+
+	_font->set_text(texts);
+	_font->draw();
 }
 
 
@@ -213,8 +373,46 @@ void Racing::update_bbox() {
 }
 
 
+void Racing::update_force() {
+	const unsigned int n_pts_per_car= 3* 4+ 5* 6; // 3 croix ; 5 fleches
+
+	DrawContext * context= _contexts["force"];
+	context->_n_pts= 0;
+	context->_n_attrs_per_pts= 6;
+
+	for (auto car : _cars) {
+		context->_n_pts+= n_pts_per_car;
+	}
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+	float * ptr= data;
+
+	for (unsigned int idx_car=0; idx_car<_cars.size(); ++idx_car) {
+		Car * car= _cars[idx_car];
+
+		ptr= draw_cross(ptr, car->_com, CROSS_SIZE, COM_CROSS_COLOR);
+		ptr= draw_cross(ptr, car->_com+ car->_com2force, CROSS_SIZE, FORCE_CROSS_COLOR);
+		ptr= draw_cross(ptr, car->_com+ car->_com2bbox_center, CROSS_SIZE, BBOX_CROSS_COLOR);
+		ptr= draw_arrow(ptr, car->_com+ car->_com2force, car->_com+ car->_com2force+ car->_force, ARROW_TIP_SIZE, ARROW_ANGLE, FORCE_ARROW_COLOR);
+		ptr= draw_arrow(ptr, car->_com+ car->_com2force, car->_com+ car->_com2force+ car->_acceleration, ARROW_TIP_SIZE, ARROW_ANGLE, ACCELERATION_ARROW_COLOR);
+		ptr= draw_arrow(ptr, car->_com+ car->_com2force, car->_com+ car->_com2force+ car->_velocity, ARROW_TIP_SIZE, ARROW_ANGLE, VELOCITY_ARROW_COLOR);
+		ptr= draw_arrow(ptr, car->_com+ car->_com2bbox_center, car->_com+ car->_com2bbox_center+ car->_forward, ARROW_TIP_SIZE, ARROW_ANGLE, FORWARD_ARROW_COLOR);
+		ptr= draw_arrow(ptr, car->_com+ car->_com2bbox_center, car->_com+ car->_com2bbox_center+ car->_right, ARROW_TIP_SIZE, ARROW_ANGLE, RIGHT_ARROW_COLOR);
+	}
+
+	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+		std::cout << data[i] << " ; ";
+	}
+	std::cout << "\n";*/
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 void Racing::anim() {
-	_cars[0]->_force= glm::vec2(0.0);
+	_cars[0]->preanim_keys(_key_left, _key_right, _key_down, _key_up);
 
 	// joystick
 	/*if (_is_joystick) {
@@ -225,18 +423,6 @@ void Racing::anim() {
 	}
 	// touches
 	else {*/
-		if (_key_left) {
-			_cars[0]->_force-= 1.0f* _cars[0]->_right;
-		}
-		if (_key_right) {
-			_cars[0]->_force+= 1.0f* _cars[0]->_right;
-		}
-		if (_key_down) {
-			_cars[0]->_force-= 1.0f* _cars[0]->_forward;
-		}
-		if (_key_up) {
-			_cars[0]->_force+= 1.0f* _cars[0]->_forward;
-		}
 	//}
 
 	// joueur contraint à l'écran
@@ -259,6 +445,7 @@ void Racing::anim() {
 	}
 
 	update_bbox();
+	update_force();
 }
 
 
@@ -277,6 +464,11 @@ bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 	else if (key== SDLK_DOWN) {
 		_key_down= true;
+		return true;
+	}
+
+	if (key== SDLK_SPACE) {
+		_cars[0]->reinit(glm::vec2(0.0, 0.0), 0.0);
 		return true;
 	}
 	return false;
