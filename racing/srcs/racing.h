@@ -2,6 +2,7 @@
 #define RACING_H
 
 #include <string>
+#include <map>
 #include <vector>
 
 #include <OpenGL/gl3.h>
@@ -21,14 +22,16 @@
 const float Z_NEAR= 0.0f;
 const float Z_FAR= 1000.0f;
 
-const float MAX_WHEEL= M_PI* 0.4;
+const float ANIM_DT= 0.05;
+
+/*const float MAX_WHEEL= M_PI* 0.3;
 const float WHEEL_INCREMENT= 0.05;
 const float WHEEL_DECREMENT= 0.05;
 const float MAX_BRAKE= 1.0;
 const float MAX_THRUST= 3.0;
-const float THRUST_INCREMENT= 0.03;
+const float THRUST_INCREMENT= 0.01;
 const float BRAKE_INCREMENT= 0.06;
-const float THRUST_DECREMENT= 0.02;
+const float THRUST_DECREMENT= 0.02;*/
 
 const float CROSS_SIZE= 0.1;
 const float ARROW_ANGLE= M_PI* 0.1;
@@ -51,25 +54,60 @@ float norm(glm::vec2 v);
 float scal(glm::vec2 u, glm::vec2 v);
 
 
+class CarModel {
+public:
+	CarModel();
+	CarModel(std::string json_path);
+	~CarModel();
+
+
+	std::string _json_path;
+
+	glm::vec2 _forward;
+	glm::vec2 _right;
+	glm::vec2 _com2force_fwd;
+	glm::vec2 _com2force_bwd;
+	glm::vec2 _com2bbox_center;
+	glm::vec2 _size;
+	float _mass;
+	float _max_wheel;
+	float _wheel_increment;
+	float _wheel_decrement;
+	float _max_thrust;
+	float _thrust_increment;
+	float _thrust_decrement;
+	float _max_brake;
+	float _brake_increment;
+	float _forward_static_friction;
+	float _backward_static_friction;
+	float _backward_dynamic_friction;
+	float _friction_threshold;
+	float _angular_friction;
+};
+
+
 class Car {
 public:
 	Car();
-	Car(glm::vec2 position, float alpha);
+	Car(CarModel * model, glm::vec2 position, float alpha);
 	~Car();
 	void reinit(glm::vec2 position, float alpha);
+	void update_direction();
 	void update_bbox();
 	void preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up);
+	void random_ia();
 	void anim();
 	friend std::ostream & operator << (std::ostream & os, const Car & car);
 
 
+	CarModel * _model;
 	BBox_2D _bbox;
+
 	glm::vec2 _com2force_fwd; // vecteur com -> point ou on applique les forces
-	glm::vec2 _com2force_fwd_ini;
 	glm::vec2 _com2force_bwd; // vecteur com -> point ou on applique les forces
-	glm::vec2 _com2force_bwd_ini;
 	glm::vec2 _com2bbox_center; // vecteur com -> centre bbox
-	glm::vec2 _com2bbox_center_ini;
+	glm::vec2 _forward;
+	glm::vec2 _right;
 
 	glm::vec2 _com; // center of mass
 	glm::vec2 _velocity;
@@ -84,14 +122,7 @@ public:
 
 	float _wheel;
 	float _thrust;
-
-	float _mass;
-	glm::vec2 _size;
-
-	glm::vec2 _forward;
-	glm::vec2 _forward_ini;
-	glm::vec2 _right;
-	glm::vec2 _right_ini;
+	bool _drift;
 };
 
 
@@ -100,6 +131,8 @@ public:
 	Racing();
 	Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_joystick);
 	~Racing();
+
+	void load_models();
 
 	// dessins
 	void draw_bbox();
@@ -123,6 +156,7 @@ public:
 	bool joystick_axis(unsigned int axis_idx, int value);
 
 
+	std::map<std::string, CarModel *> _models;
 	std::vector<Car *> _cars;
 
 	glm::vec2 _pt_min, _pt_max;

@@ -317,7 +317,7 @@ void init() {
 // ---------------------------------------------------------------------------------------
 // affichage strings opengl
 void show_infos() {
-	ostringstream font_str;
+	/*ostringstream font_str;
 	font_str.precision(1);
 	font_str << fixed;
 
@@ -329,7 +329,7 @@ void show_infos() {
 	font_str << "hello";
 	Text t(font_str.str(), position, font_scale, font_color);
 	arial_font->set_text_group(0, t);
-	arial_font->draw();
+	arial_font->draw();*/
 }
 
 

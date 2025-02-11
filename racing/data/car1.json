@@ -1,0 +1,20 @@
+{
+	"mass" : 1.0,
+	"size" : [0.6, 0.3],
+	"com2force_fwd" : [0.5, 0.0],
+	"com2force_bwd" : [-0.5, 0.0],
+	"com2bbox_center" : [0.1, 0.0],
+	"max_wheel" : 0.9,
+	"wheel_increment" : 0.05,
+	"wheel_decrement" : 0.05,
+	"max_thrust" : 3.0,
+	"thrust_increment" : 0.01,
+	"thrust_decrement" : 0.02,
+	"max_brake" : 1.0,
+	"brake_increment" : 0.06,
+	"forward_static_friction" : 0.5,
+	"backward_static_friction" : 7.0,
+	"backward_dynamic_friction" : 1.0,
+	"friction_threshold" : 0.25,
+	"angular_friction" : 0.4
+}

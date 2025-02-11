@@ -30,13 +30,53 @@ float scal(glm::vec2 u, glm::vec2 v) {
 }
 
 
+// CarModel ------------------------------------------------------
+CarModel::CarModel() {
+
+}
+
+
+CarModel::CarModel(std::string json_path) : _json_path(json_path) {
+	std::ifstream ifs(json_path);
+	json js= json::parse(ifs);
+	ifs.close();
+
+	// on suppose qu'initialement le véhicule est dirigé vers x positif
+	_forward= glm::vec2(1.0, 0.0);
+	_right= glm::vec2(0.0, -1.0);
+	_com2force_fwd= glm::vec2(js["com2force_fwd"][0], js["com2force_fwd"][1]);
+	_com2force_bwd= glm::vec2(js["com2force_bwd"][0], js["com2force_bwd"][1]);
+	_com2bbox_center= glm::vec2(js["com2bbox_center"][0], js["com2bbox_center"][1]);
+	_size= glm::vec2(js["size"][0], js["size"][1]);
+	_mass= js["mass"];
+	_max_wheel= js["max_wheel"];
+	_wheel_increment= js["wheel_increment"];
+	_wheel_decrement= js["wheel_decrement"];
+	_max_brake= js["max_brake"];
+	_max_thrust= js["max_thrust"];
+	_thrust_increment= js["thrust_increment"];
+	_brake_increment= js["brake_increment"];
+	_thrust_decrement= js["thrust_decrement"];
+	_forward_static_friction= js["forward_static_friction"];
+	_backward_static_friction= js["backward_static_friction"];
+	_backward_dynamic_friction= js["backward_dynamic_friction"];
+	_friction_threshold= js["friction_threshold"];
+	_angular_friction= js["angular_friction"];
+}
+
+
+CarModel::~CarModel() {
+	
+}
+
+
 // Car ------------------------------------------------------------
 Car::Car() {
 
 }
 
 
-Car::Car(glm::vec2 position, float alpha) {
+Car::Car(CarModel * model, glm::vec2 position, float alpha) : _model(model), _bbox(BBox_2D(position, model->_size)) {
 	reinit(position, alpha);
 }
 
@@ -47,34 +87,32 @@ Car::~Car() {
 
 
 void Car::reinit(glm::vec2 position, float alpha) {
-	_size= glm::vec2(1.0, 0.5);
-	_mass= 1.0;
-	_com2force_fwd_ini= glm::vec2(0.7, 0.0);
-	_com2force_bwd_ini= glm::vec2(-0.7, 0.0);
-	_com2bbox_center_ini= glm::vec2(0.0, 0.0);
-	_right_ini= glm::vec2(0.0, -1.0);
-	_forward_ini= glm::vec2(1.0, 0.0);
+	_com= position;
+	_alpha= alpha;
 
 	_velocity= glm::vec2(0.0);
 	_acceleration= glm::vec2(0.0);
 	_force_fwd= glm::vec2(0.0);
 	_force_bwd= glm::vec2(0.0);
-	_alpha= 0.0;
 	_angular_velocity= 0.0;
 	_angular_acceleration= 0.0;
 	_torque= 0.0;
 	
 	_wheel= 0.0;
 	_thrust= 0.0;
+	_drift= false;
 
-	_com= position;
-	_com2force_fwd= rot(_com2force_fwd_ini, alpha);
-	_com2force_bwd= rot(_com2force_bwd_ini, alpha);
-	_com2bbox_center= rot(_com2bbox_center_ini, alpha);
-	_right= rot(_right_ini, alpha);
-	_forward= rot(_forward_ini, alpha);
+	update_direction();
+	update_bbox();
+}
 
-	_bbox= BBox_2D(_com+ _com2bbox_center, _size);
+
+void Car::update_direction() {
+	_com2force_fwd= rot(_model->_com2force_fwd, _alpha);
+	_com2force_bwd= rot(_model->_com2force_bwd, _alpha);
+	_com2bbox_center= rot(_model->_com2bbox_center, _alpha);
+	_right= rot(_model->_right, _alpha);
+	_forward= rot(_model->_forward, _alpha);
 }
 
 
@@ -87,23 +125,23 @@ void Car::update_bbox() {
 
 void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up) {
 	if (key_left) {
-		_wheel+= WHEEL_INCREMENT;
-		if (_wheel> MAX_WHEEL) {
-			_wheel= MAX_WHEEL;
+		_wheel+= _model->_wheel_increment;
+		if (_wheel> _model->_max_wheel) {
+			_wheel= _model->_max_wheel;
 		}
 	}
 	if (key_right) {
-		_wheel-= WHEEL_INCREMENT;
-		if (_wheel< -1.0* MAX_WHEEL) {
-			_wheel= -1.0* MAX_WHEEL;
+		_wheel-= _model->_wheel_increment;
+		if (_wheel< -1.0* _model->_max_wheel) {
+			_wheel= -1.0* _model->_max_wheel;
 		}
 	}
 	if (!key_left && !key_right) {
-		if (_wheel< -1.0* WHEEL_DECREMENT) {
-			_wheel+= WHEEL_DECREMENT;
+		if (_wheel< -1.0* _model->_wheel_decrement) {
+			_wheel+= _model->_wheel_decrement;
 		}
-		else if (_wheel> WHEEL_DECREMENT) {
-			_wheel-= WHEEL_DECREMENT;
+		else if (_wheel> _model->_wheel_decrement) {
+			_wheel-= _model->_wheel_decrement;
 		}
 		else {
 			_wheel= 0.0;
@@ -111,23 +149,23 @@ void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up
 	}
 
 	if (key_down) {
-		_thrust-= BRAKE_INCREMENT;
-		if (_thrust< -1.0* MAX_BRAKE) {
-			_thrust= -1.0* MAX_BRAKE;
+		_thrust-= _model->_brake_increment;
+		if (_thrust< -1.0* _model->_max_brake) {
+			_thrust= -1.0* _model->_max_brake;
 		}
 	}
 	if (key_up) {
-		_thrust+= THRUST_INCREMENT;
-		if (_thrust> MAX_THRUST) {
-			_thrust= MAX_THRUST;
+		_thrust+= _model->_thrust_increment;
+		if (_thrust> _model->_max_thrust) {
+			_thrust= _model->_max_thrust;
 		}
 	}
 	if (!key_down && !key_up) {
-		if (_thrust< -1.0* THRUST_DECREMENT) {
-			_thrust+= THRUST_DECREMENT;
+		if (_thrust< -1.0* _model->_thrust_decrement) {
+			_thrust+= _model->_thrust_decrement;
 		}
-		else if (_thrust> THRUST_DECREMENT) {
-			_thrust-= THRUST_DECREMENT;
+		else if (_thrust> _model->_thrust_decrement) {
+			_thrust-= _model->_thrust_decrement;
 		}
 		else {
 			_thrust= 0.0;
@@ -136,30 +174,91 @@ void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up
 }
 
 
-void Car::anim() {
-	const float dt= 0.05;
+void Car::random_ia() {
+	if (rand_int(0, 100)> 20) {
+		_thrust+= _model->_thrust_increment;
+		if (_thrust> _model->_max_thrust) {
+			_thrust= _model->_max_thrust;
+		}
+	}
+	else if (rand_int(0, 100)> 50) {
+		_thrust-= _model->_brake_increment;
+		if (_thrust< -1.0* _model->_max_brake) {
+			_thrust= -1.0* _model->_max_brake;
+		}
+	}
+	else {
+		if (_thrust< -1.0* _model->_thrust_decrement) {
+			_thrust+= _model->_thrust_decrement;
+		}
+		else if (_thrust> _model->_thrust_decrement) {
+			_thrust-= _model->_thrust_decrement;
+		}
+		else {
+			_thrust= 0.0;
+		}
+	}
+	
+	if (rand_int(0, 100)> 50) {
+		_wheel+= _model->_wheel_increment;
+		if (_wheel> _model->_max_wheel) {
+			_wheel= _model->_max_wheel;
+		}
+	}
+	else if (rand_int(0, 100)> 20) {
+		_wheel-= _model->_wheel_increment;
+		if (_wheel< -1.0* _model->_max_wheel) {
+			_wheel= -1.0* _model->_max_wheel;
+		}
+	}
+	else {
+		if (_wheel< -1.0* _model->_wheel_decrement) {
+			_wheel+= _model->_wheel_decrement;
+		}
+		else if (_wheel> _model->_wheel_decrement) {
+			_wheel-= _model->_wheel_decrement;
+		}
+		else {
+			_wheel= 0.0;
+		}
+	}
+}
 
+
+void Car::anim() {
 	_force_fwd= glm::vec2(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel);
-	_force_fwd-= 0.5f* scal(_forward, _velocity)* _forward;
-	//_force_fwd-= 0.5f* _velocity;
+	_force_fwd-= _model->_forward_static_friction* scal(_forward, _velocity)* _forward;
+	//_force_fwd-= _model->_forward_static_friction* _velocity;
 
 	_force_bwd= glm::vec2(0.0);
-	_force_bwd-= 10.0f* scal(_right, _velocity)* _right;
-	//_force_bwd-= 0.5f* _velocity;
+	float right_turn= scal(_right, _velocity);
+	if (abs(right_turn)> _model->_friction_threshold) {
+		_drift= true;
+		_force_bwd-= _model->_backward_dynamic_friction* right_turn* _right;
+	}
+	else {
+		_drift= false;
+		_force_bwd-= _model->_backward_static_friction* right_turn* _right;
+	}
 
-	_acceleration= (_force_fwd+ _force_bwd)/ _mass;
-	_velocity+= _acceleration* dt;
-	_com+= _velocity* dt;
+	// force == mass * acceleration
+	// on suppose mass == 1
+	_acceleration= _force_fwd+ _force_bwd;
+	_velocity+= _acceleration* ANIM_DT;
+	_com+= _velocity* ANIM_DT;
 
 	_torque= 0.0;
 	_torque+= _com2force_fwd.x* _force_fwd.y- _com2force_fwd.y* _force_fwd.x;
 	_torque+= _com2force_bwd.x* _force_bwd.y- _com2force_bwd.y* _force_bwd.x;
-	_torque-= 2.0* _angular_velocity;
+	_torque-= _model->_angular_friction* _angular_velocity;
 	
-	_angular_acceleration= 2.0* _torque;
-	_angular_velocity+= _angular_acceleration* dt;
-	_alpha+= _angular_velocity* dt;
+	// torque == angular_acceleration * moment_inertia
+	// avec moment_inertia proportionnel à mass * (width**2 + height** 2)
+	// ici on fait moment_inertia == 1
+	_angular_acceleration= _torque;
+	_angular_velocity+= _angular_acceleration* ANIM_DT;
+	_alpha+= _angular_velocity* ANIM_DT;
 	while (_alpha> M_PI* 2.0) {
 		_alpha-= M_PI* 2.0;
 	}
@@ -167,12 +266,7 @@ void Car::anim() {
 		_alpha+= M_PI* 2.0;
 	}
 
-	_com2force_fwd= rot(_com2force_fwd_ini, _alpha);
-	_com2force_bwd= rot(_com2force_bwd_ini, _alpha);
-	_com2bbox_center= rot(_com2bbox_center_ini, _alpha);
-	_right= rot(_right_ini, _alpha);
-	_forward= rot(_forward_ini, _alpha);
-
+	update_direction();
 	update_bbox();
 }
 
@@ -211,10 +305,12 @@ Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix"});
 
-	_cars.push_back(new Car(glm::vec2(0.0, 0.0), 0.0));
-	/*for (unsigned int i=0; i<100; ++i) {
-		_cars.push_back(new Car(glm::vec2(rand_float(_pt_min.x, _pt_max.x), rand_float(_pt_min.y, _pt_max.y))));
-	}*/
+	load_models();
+
+	_cars.push_back(new Car(_models["car1"], glm::vec2(0.0, 0.0), 0.0));
+	for (unsigned int i=0; i<10; ++i) {
+		_cars.push_back(new Car(_models["car1"], glm::vec2(rand_float(_pt_min.x, _pt_max.x), rand_float(_pt_min.y, _pt_max.y)), rand_float(0.0, M_PI* 2.0)));
+	}
 
 	update_bbox();
 	update_force();
@@ -228,6 +324,14 @@ Racing::~Racing() {
 	_cars.clear();
 
 	delete _buffers;
+}
+
+
+void Racing::load_models() {
+	std::vector<std::string> jsons= list_files("../data", "json");
+	for (auto json_path : jsons) {
+		_models[basename(json_path)]= new CarModel(json_path);
+	}
 }
 
 
@@ -325,6 +429,8 @@ void Racing::show_info() {
 	texts.push_back(Text("ang acc="+ std::to_string(_cars[0]->_angular_acceleration), glm::vec2(6.0, -2.0), font_scale, text_color));
 	texts.push_back(Text("ang vel="+ std::to_string(_cars[0]->_angular_velocity), glm::vec2(6.0, -3.0), font_scale, text_color));
 	texts.push_back(Text("alpha="+ std::to_string(_cars[0]->_alpha), glm::vec2(6.0, -4.0), font_scale, text_color));
+
+	texts.push_back(Text("drift="+ std::to_string(_cars[0]->_drift), glm::vec2(6.0, -6.0), font_scale, text_color));
 
 	_font->set_text(texts);
 	_font->draw();
@@ -440,6 +546,9 @@ void Racing::update_force() {
 
 void Racing::anim() {
 	_cars[0]->preanim_keys(_key_left, _key_right, _key_down, _key_up);
+	for (unsigned int idx_car=1; idx_car<_cars.size(); ++idx_car) {
+		_cars[idx_car]->random_ia();
+	}
 
 	// joystick
 	/*if (_is_joystick) {
@@ -452,23 +561,23 @@ void Racing::anim() {
 	else {*/
 	//}
 
-	// pour tests
-	if (_cars[0]->_com.x> _pt_max.x) {
-		_cars[0]->_com.x= _pt_min.x;
-	}
-	if (_cars[0]->_com.x< _pt_min.x) {
-		_cars[0]->_com.x= _pt_max.x;
-	}
-	if (_cars[0]->_com.y> _pt_max.y) {
-		_cars[0]->_com.y= _pt_min.y;
-	}
-	if (_cars[0]->_com.y< _pt_min.y) {
-		_cars[0]->_com.y= _pt_max.y;
-	}
-
 	for (auto car : _cars) {
 		car->anim();
 		//std::cout << *car << "\n";
+
+		// pour tests
+		if (car->_com.x> _pt_max.x) {
+			car->_com.x= _pt_min.x;
+		}
+		if (car->_com.x< _pt_min.x) {
+			car->_com.x= _pt_max.x;
+		}
+		if (car->_com.y> _pt_max.y) {
+			car->_com.y= _pt_min.y;
+		}
+		if (car->_com.y< _pt_min.y) {
+			car->_com.y= _pt_max.y;
+		}
 	}
 
 	update_bbox();
