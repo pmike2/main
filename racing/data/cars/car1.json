@@ -1,5 +1,6 @@
 {
 	"mass" : 1.0,
+	"inertia" : 2.0,
 	"size" : [0.6, 0.3],
 	"com2force_fwd" : [0.5, 0.0],
 	"com2force_bwd" : [-0.5, 0.0],

@@ -137,6 +137,9 @@ public:
 	~Racing();
 
 	void load_models();
+	void load_json(std::string json_path);
+	void save_json(std::string json_path);
+	void randomize();
 
 	// dessins
 	void draw_bbox();
@@ -177,6 +180,7 @@ public:
 	glm::vec2 _joystick; // valeurs x, y stick joystick
 	bool _joystick_a, _joystick_b; // boutons 
 
+	bool _ia;
 };
 
 

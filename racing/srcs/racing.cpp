@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <sstream>
 #include <functional>
@@ -59,6 +60,7 @@ CarModel::CarModel(std::string json_path) : _json_path(json_path) {
 	_com2bbox_center= pt_type(js["com2bbox_center"][0], js["com2bbox_center"][1]);
 	_size= pt_type(js["size"][0], js["size"][1]);
 	_mass= js["mass"];
+	_inertia= js["inertia"];
 	_max_wheel= js["max_wheel"];
 	_wheel_increment= js["wheel_increment"];
 	_wheel_decrement= js["wheel_decrement"];
@@ -74,7 +76,7 @@ CarModel::CarModel(std::string json_path) : _json_path(json_path) {
 	_angular_friction= js["angular_friction"];
 
 	//_inertia= _mass* (_size.x* _size.x+ _size.y* _size.y)/ 12.0;
-	_inertia= 1.0;
+	//_inertia= 1.0;
 }
 
 
@@ -299,7 +301,8 @@ Racing::Racing() {
 Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_joystick) :
 	_draw_bbox(true), _draw_force(true), _show_info(true),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false), _key_a(false), _key_z(false),
-	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false) 
+	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false),
+	_ia(false)
 	{
 	_pt_min= pt_type(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
 	_pt_max= pt_type(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
@@ -320,16 +323,15 @@ Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_
 
 	load_models();
 
-	_cars.push_back(new Car(_models["car1"], pt_type(0.0, 6.0), 0.0));
-	
-	/*_cars.push_back(new Car(_models["car1"], pt_type(-4.0, 0.0), 0.0));
+	/*_cars.push_back(new Car(_models["car1"], pt_type(0.0, 6.0), 0.0));
+	_cars.push_back(new Car(_models["car1"], pt_type(-4.0, 0.5), 0.0));
 	_cars[1]->_thrust= 2.0;
 	_cars.push_back(new Car(_models["car1"], pt_type(5.0, 0.0), M_PI* 0.5));
 	_cars[2]->_thrust= 0.0;*/
-	
-	for (unsigned int i=0; i<10; ++i) {
-		_cars.push_back(new Car(_models["car1"], pt_type(rand_number(_pt_min.x, _pt_max.x), rand_number(_pt_min.y, _pt_max.y)), rand_number(0.0, M_PI* 2.0)));
-	}
+
+	load_json("../data/test/init.json");
+	//save_json("../data/test/init.json");
+	//randomize();
 
 	update_bbox();
 	update_force();
@@ -342,14 +344,84 @@ Racing::~Racing() {
 	}
 	_cars.clear();
 
+	for (auto model : _models) {
+		delete model.second;
+	}
+	_models.clear();
+
 	delete _buffers;
 }
 
 
 void Racing::load_models() {
-	std::vector<std::string> jsons= list_files("../data", "json");
+	for (auto model : _models) {
+		delete model.second;
+	}
+	_models.clear();
+
+	std::vector<std::string> jsons= list_files("../data/cars", "json");
 	for (auto json_path : jsons) {
 		_models[basename(json_path)]= new CarModel(json_path);
+	}
+}
+
+
+void Racing::load_json(std::string json_path) {
+	std::ifstream ifs(json_path);
+	json js= json::parse(ifs);
+	ifs.close();
+
+	for (auto car : _cars) {
+		delete car;
+	}
+	_cars.clear();
+
+	for (auto & js_car : js) {
+		Car * car= new Car(_models[js_car["model"]], pt_type(js_car["com"][0], js_car["com"][1]), js_car["alpha"]);
+		car->_velocity= pt_type(js_car["velocity"][0], js_car["velocity"][1]);
+		car->_acceleration= pt_type(js_car["acceleration"][0], js_car["acceleration"][1]);
+		car->_angular_velocity= js_car["angular_velocity"];
+		car->_angular_acceleration= js_car["angular_acceleration"];
+		car->_wheel= js_car["wheel"];
+		car->_thrust= js_car["thrust"];
+		_cars.push_back(car);
+	}
+}
+
+
+void Racing::save_json(std::string json_path) {
+	std::ofstream ofs(json_path);
+	json js;
+
+	for (auto car : _cars) {
+		json js_car;
+		js_car["model"]= basename(car->_model->_json_path);
+		js_car["com"]= json::array();
+		js_car["com"].push_back(car->_com.x);
+		js_car["com"].push_back(car->_com.y);
+		js_car["velocity"]= json::array();
+		js_car["velocity"].push_back(car->_velocity.x);
+		js_car["velocity"].push_back(car->_velocity.y);
+		js_car["acceleration"]= json::array();
+		js_car["acceleration"].push_back(car->_acceleration.x);
+		js_car["acceleration"].push_back(car->_acceleration.y);
+		js_car["alpha"]= car->_alpha;
+		js_car["angular_velocity"]= car->_angular_velocity;
+		js_car["angular_acceleration"]= car->_angular_acceleration;
+		js_car["wheel"]= car->_wheel;
+		js_car["thrust"]= car->_thrust;
+
+		js.push_back(js_car);
+	}
+
+	ofs << std::setw(4) << js << "\n";
+}
+
+
+void Racing::randomize() {
+	_ia= true;
+	for (unsigned int i=0; i<10; ++i) {
+		_cars.push_back(new Car(_models["car1"], pt_type(rand_number(_pt_min.x, _pt_max.x), rand_number(_pt_min.y, _pt_max.y)), rand_number(0.0, M_PI* 2.0)));
 	}
 }
 
@@ -566,8 +638,10 @@ void Racing::update_force() {
 void Racing::anim() {
 	_cars[0]->preanim_keys(_key_left, _key_right, _key_down, _key_up);
 	
-	for (unsigned int idx_car=1; idx_car<_cars.size(); ++idx_car) {
-		_cars[idx_car]->random_ia();
+	if (_ia) {
+		for (unsigned int idx_car=1; idx_car<_cars.size(); ++idx_car) {
+			_cars[idx_car]->random_ia();
+		}
 	}
 
 	// joystick
@@ -652,8 +726,11 @@ void Racing::anim() {
 
 				number impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ car1->_model->_mass+ 1.0/ car2->_model->_mass+ dot(v, axis));
 
-				//std::cout << "impulse=" << impulse;
-				//std::cout << " ; dot(vr, axis)=" << dot(vr, axis) << " ; dot(v, axis)=" << dot(v, axis) << "\n";
+				if (abs(impulse)> 4.0) {
+					std::cout << "impulse=" << impulse << "\n";
+					std::cout << "dot(vr, axis)=" << dot(vr, axis) << " ; dot(v, axis)=" << dot(v, axis) << "\n";
+					save_json("../data/test/big_impulse.json");
+				}
 
 				car1->_velocity-= (impulse/ car1->_model->_mass)* axis;
 				car2->_velocity+= (impulse/ car2->_model->_mass)* axis;
@@ -695,6 +772,25 @@ bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
 	if (key== SDLK_SPACE) {
 		_cars[0]->reinit(pt_type(0.0, 0.0), 0.0);
 		return true;
+	}
+	else if (key== SDLK_b) {
+		_draw_bbox= !_draw_bbox;
+	}
+	else if (key== SDLK_f) {
+		_draw_force= !_draw_force;
+	}
+	else if (key== SDLK_l) {
+		_ia= false;
+		load_models();
+		load_json("../data/test/init.json");
+	}
+	else if (key== SDLK_m) {
+		_ia= false;
+		load_models();
+		load_json("../data/test/big_impulse.json");
+	}
+	else if (key== SDLK_r) {
+		randomize();
 	}
 	return false;
 }
