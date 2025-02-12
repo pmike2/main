@@ -15,18 +15,28 @@
 using json = nlohmann::json;
 
 
-glm::vec2 rot(glm::vec2 v, float alpha) {
-	return glm::vec2(v.x* cos(alpha)- v.y* sin(alpha), v.x* sin(alpha)+ v.y* cos(alpha));
+pt_type rot(pt_type v, number alpha) {
+	return pt_type(v.x* cos(alpha)- v.y* sin(alpha), v.x* sin(alpha)+ v.y* cos(alpha));
 }
 
 
-float norm(glm::vec2 v) {
+number norm(pt_type v) {
 	return sqrt(v.x* v.x+ v.y* v.y);
 }
 
 
-float scal(glm::vec2 u, glm::vec2 v) {
+pt_type normalized(pt_type v) {
+	return v/ norm(v);
+}
+
+
+number scal(pt_type u, pt_type v) {
 	return u.x* v.x+ u.y* v.y;
+}
+
+
+number cross(pt_type u, pt_type v) {
+	return u.x* v.y- u.y* v.x;
 }
 
 
@@ -42,12 +52,12 @@ CarModel::CarModel(std::string json_path) : _json_path(json_path) {
 	ifs.close();
 
 	// on suppose qu'initialement le véhicule est dirigé vers x positif
-	_forward= glm::vec2(1.0, 0.0);
-	_right= glm::vec2(0.0, -1.0);
-	_com2force_fwd= glm::vec2(js["com2force_fwd"][0], js["com2force_fwd"][1]);
-	_com2force_bwd= glm::vec2(js["com2force_bwd"][0], js["com2force_bwd"][1]);
-	_com2bbox_center= glm::vec2(js["com2bbox_center"][0], js["com2bbox_center"][1]);
-	_size= glm::vec2(js["size"][0], js["size"][1]);
+	_forward= pt_type(1.0, 0.0);
+	_right= pt_type(0.0, -1.0);
+	_com2force_fwd= pt_type(js["com2force_fwd"][0], js["com2force_fwd"][1]);
+	_com2force_bwd= pt_type(js["com2force_bwd"][0], js["com2force_bwd"][1]);
+	_com2bbox_center= pt_type(js["com2bbox_center"][0], js["com2bbox_center"][1]);
+	_size= pt_type(js["size"][0], js["size"][1]);
 	_mass= js["mass"];
 	_max_wheel= js["max_wheel"];
 	_wheel_increment= js["wheel_increment"];
@@ -62,6 +72,9 @@ CarModel::CarModel(std::string json_path) : _json_path(json_path) {
 	_backward_dynamic_friction= js["backward_dynamic_friction"];
 	_friction_threshold= js["friction_threshold"];
 	_angular_friction= js["angular_friction"];
+
+	//_inertia= _mass* (_size.x* _size.x+ _size.y* _size.y)/ 12.0;
+	_inertia= 1.0;
 }
 
 
@@ -76,7 +89,7 @@ Car::Car() {
 }
 
 
-Car::Car(CarModel * model, glm::vec2 position, float alpha) : _model(model), _bbox(BBox_2D(position, model->_size)) {
+Car::Car(CarModel * model, pt_type position, number alpha) : _model(model), _bbox(BBox_2D(position, model->_size)) {
 	reinit(position, alpha);
 }
 
@@ -86,14 +99,14 @@ Car::~Car() {
 }
 
 
-void Car::reinit(glm::vec2 position, float alpha) {
+void Car::reinit(pt_type position, number alpha) {
 	_com= position;
 	_alpha= alpha;
 
-	_velocity= glm::vec2(0.0);
-	_acceleration= glm::vec2(0.0);
-	_force_fwd= glm::vec2(0.0);
-	_force_bwd= glm::vec2(0.0);
+	_velocity= pt_type(0.0);
+	_acceleration= pt_type(0.0);
+	_force_fwd= pt_type(0.0);
+	_force_bwd= pt_type(0.0);
 	_angular_velocity= 0.0;
 	_angular_acceleration= 0.0;
 	_torque= 0.0;
@@ -226,13 +239,13 @@ void Car::random_ia() {
 
 
 void Car::anim() {
-	_force_fwd= glm::vec2(0.0);
+	_force_fwd= pt_type(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel);
 	_force_fwd-= _model->_forward_static_friction* scal(_forward, _velocity)* _forward;
 	//_force_fwd-= _model->_forward_static_friction* _velocity;
 
-	_force_bwd= glm::vec2(0.0);
-	float right_turn= scal(_right, _velocity);
+	_force_bwd= pt_type(0.0);
+	number right_turn= scal(_right, _velocity);
 	if (abs(right_turn)> _model->_friction_threshold) {
 		_drift= true;
 		_force_bwd-= _model->_backward_dynamic_friction* right_turn* _right;
@@ -288,8 +301,8 @@ Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false), _key_a(false), _key_z(false),
 	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false) 
 	{
-	_pt_min= glm::vec2(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
-	_pt_max= glm::vec2(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
+	_pt_min= pt_type(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
+	_pt_max= pt_type(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
 	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
@@ -307,9 +320,15 @@ Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_
 
 	load_models();
 
-	_cars.push_back(new Car(_models["car1"], glm::vec2(0.0, 0.0), 0.0));
+	_cars.push_back(new Car(_models["car1"], pt_type(0.0, 6.0), 0.0));
+	
+	/*_cars.push_back(new Car(_models["car1"], pt_type(-4.0, 0.0), 0.0));
+	_cars[1]->_thrust= 2.0;
+	_cars.push_back(new Car(_models["car1"], pt_type(5.0, 0.0), M_PI* 0.5));
+	_cars[2]->_thrust= 0.0;*/
+	
 	for (unsigned int i=0; i<10; ++i) {
-		_cars.push_back(new Car(_models["car1"], glm::vec2(rand_float(_pt_min.x, _pt_max.x), rand_float(_pt_min.y, _pt_max.y)), rand_float(0.0, M_PI* 2.0)));
+		_cars.push_back(new Car(_models["car1"], pt_type(rand_number(_pt_min.x, _pt_max.x), rand_number(_pt_min.y, _pt_max.y)), rand_number(0.0, M_PI* 2.0)));
 	}
 
 	update_bbox();
@@ -546,6 +565,7 @@ void Racing::update_force() {
 
 void Racing::anim() {
 	_cars[0]->preanim_keys(_key_left, _key_right, _key_down, _key_up);
+	
 	for (unsigned int idx_car=1; idx_car<_cars.size(); ++idx_car) {
 		_cars[idx_car]->random_ia();
 	}
@@ -580,6 +600,75 @@ void Racing::anim() {
 		}
 	}
 
+	for (unsigned int idx_car_1=0; idx_car_1<_cars.size()- 1; ++idx_car_1) {
+		for (unsigned int idx_car_2=idx_car_1+ 1; idx_car_2<_cars.size(); ++idx_car_2) {
+			Car * car1= _cars[idx_car_1];
+			Car * car2= _cars[idx_car_2];
+
+			Polygon2D * poly1= new Polygon2D();
+			poly1->set_bbox(car1->_bbox);
+			Polygon2D * poly2= new Polygon2D();
+			poly2->set_bbox(car2->_bbox);
+
+			pt_type axis(0.0, 0.0);
+			number overlap= 0.0;
+			unsigned int idx_pt= 0;
+			bool is_pt_in_poly1= false;
+			bool is_inter= poly_intersects_poly(poly1, poly2, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
+
+			if (is_pt_in_poly1) {
+				Car * car_tmp= car1;
+				car1= car2;
+				car2= car_tmp;
+			}
+
+			delete poly1;
+			delete poly2;
+
+			if (is_inter) {
+				//std::cout << "is_inter=" << is_inter << " ; axis=(" << axis.x << " , " << axis.y << ") ; overlap=" << overlap;
+				//std::cout << " ; idx_pt=" << idx_pt << " ; is_pt_in_poly1=" << is_pt_in_poly1 << "\n";
+
+				car1->_com-= overlap* 0.6* axis;
+				car2->_com+= overlap* 0.6* axis;
+
+				pt_type r1, r2;
+				r1= car2->_bbox._pts[idx_pt]- car1->_com;
+				r2= car2->_bbox._pts[idx_pt]- car2->_com;
+				
+				pt_type r1_norm= normalized(r1);
+				pt_type r1_norm_perp(-1.0* r1_norm.y, r1_norm.x);
+				pt_type contact_pt_velocity1= car1->_velocity+ car1->_angular_velocity* r1_norm_perp;
+
+				pt_type r2_norm= normalized(r2);
+				pt_type r2_norm_perp(-1.0* r2_norm.y, r2_norm.x);
+				pt_type contact_pt_velocity2= car2->_velocity+ car2->_angular_velocity* r2_norm_perp;
+
+				pt_type vr= contact_pt_velocity2- contact_pt_velocity1;
+
+				number restitution= 0.8;
+
+				pt_type v= (cross(r1, axis)/ car1->_model->_inertia)* r1+ (cross(r2, axis)/ car2->_model->_inertia)* r2;
+
+				number impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ car1->_model->_mass+ 1.0/ car2->_model->_mass+ dot(v, axis));
+
+				//std::cout << "impulse=" << impulse;
+				//std::cout << " ; dot(vr, axis)=" << dot(vr, axis) << " ; dot(v, axis)=" << dot(v, axis) << "\n";
+
+				car1->_velocity-= (impulse/ car1->_model->_mass)* axis;
+				car2->_velocity+= (impulse/ car2->_model->_mass)* axis;
+				
+				car1->_angular_velocity-= (impulse/ car1->_model->_inertia)* cross(r1, axis);
+				car2->_angular_velocity+= (impulse/ car2->_model->_inertia)* cross(r2, axis);
+
+				car1->_acceleration= pt_type(0.0);
+				car1->_angular_acceleration= 0.0;
+				car2->_acceleration= pt_type(0.0);
+				car2->_angular_acceleration= 0.0;
+			}
+		}
+	}
+
 	update_bbox();
 	update_force();
 }
@@ -604,7 +693,7 @@ bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 
 	if (key== SDLK_SPACE) {
-		_cars[0]->reinit(glm::vec2(0.0, 0.0), 0.0);
+		_cars[0]->reinit(pt_type(0.0, 0.0), 0.0);
 		return true;
 	}
 	return false;

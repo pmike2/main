@@ -13,6 +13,7 @@
 #include <glm/glm.hpp>
 
 #include "bbox_2d.h"
+#include "geom_2d.h"
 #include "gl_utils.h"
 #include "input_state.h"
 #include "font.h"
@@ -22,7 +23,7 @@
 const float Z_NEAR= 0.0f;
 const float Z_FAR= 1000.0f;
 
-const float ANIM_DT= 0.05;
+const number ANIM_DT= 0.05;
 
 /*const float MAX_WHEEL= M_PI* 0.3;
 const float WHEEL_INCREMENT= 0.05;
@@ -49,9 +50,11 @@ const glm::vec4 FORWARD_ARROW_COLOR(1.0, 0.5, 1.0, INFO_ALPHA);
 const glm::vec4 RIGHT_ARROW_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
 
 
-glm::vec2 rot(glm::vec2 v, float alpha);
-float norm(glm::vec2 v);
-float scal(glm::vec2 u, glm::vec2 v);
+pt_type rot(pt_type v, number alpha);
+number norm(pt_type v);
+pt_type normalized(pt_type v);
+number scal(pt_type u, pt_type v);
+number cross(pt_type u, pt_type v);
 
 
 class CarModel {
@@ -63,35 +66,36 @@ public:
 
 	std::string _json_path;
 
-	glm::vec2 _forward;
-	glm::vec2 _right;
-	glm::vec2 _com2force_fwd;
-	glm::vec2 _com2force_bwd;
-	glm::vec2 _com2bbox_center;
-	glm::vec2 _size;
-	float _mass;
-	float _max_wheel;
-	float _wheel_increment;
-	float _wheel_decrement;
-	float _max_thrust;
-	float _thrust_increment;
-	float _thrust_decrement;
-	float _max_brake;
-	float _brake_increment;
-	float _forward_static_friction;
-	float _backward_static_friction;
-	float _backward_dynamic_friction;
-	float _friction_threshold;
-	float _angular_friction;
+	pt_type _forward;
+	pt_type _right;
+	pt_type _com2force_fwd;
+	pt_type _com2force_bwd;
+	pt_type _com2bbox_center;
+	pt_type _size;
+	number _mass;
+	number _inertia;
+	number _max_wheel;
+	number _wheel_increment;
+	number _wheel_decrement;
+	number _max_thrust;
+	number _thrust_increment;
+	number _thrust_decrement;
+	number _max_brake;
+	number _brake_increment;
+	number _forward_static_friction;
+	number _backward_static_friction;
+	number _backward_dynamic_friction;
+	number _friction_threshold;
+	number _angular_friction;
 };
 
 
 class Car {
 public:
 	Car();
-	Car(CarModel * model, glm::vec2 position, float alpha);
+	Car(CarModel * model, pt_type position, number alpha);
 	~Car();
-	void reinit(glm::vec2 position, float alpha);
+	void reinit(pt_type position, number alpha);
 	void update_direction();
 	void update_bbox();
 	void preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up);
@@ -103,25 +107,25 @@ public:
 	CarModel * _model;
 	BBox_2D _bbox;
 
-	glm::vec2 _com2force_fwd; // vecteur com -> point ou on applique les forces
-	glm::vec2 _com2force_bwd; // vecteur com -> point ou on applique les forces
-	glm::vec2 _com2bbox_center; // vecteur com -> centre bbox
-	glm::vec2 _forward;
-	glm::vec2 _right;
+	pt_type _com2force_fwd; // vecteur com -> point ou on applique les forces
+	pt_type _com2force_bwd; // vecteur com -> point ou on applique les forces
+	pt_type _com2bbox_center; // vecteur com -> centre bbox
+	pt_type _forward;
+	pt_type _right;
 
-	glm::vec2 _com; // center of mass
-	glm::vec2 _velocity;
-	glm::vec2 _acceleration;
-	glm::vec2 _force_fwd;
-	glm::vec2 _force_bwd;
+	pt_type _com; // center of mass
+	pt_type _velocity;
+	pt_type _acceleration;
+	pt_type _force_fwd;
+	pt_type _force_bwd;
 
-	float _alpha; // angle de rotation
-	float _angular_velocity;
-	float _angular_acceleration;
-	float _torque;
+	number _alpha; // angle de rotation
+	number _angular_velocity;
+	number _angular_acceleration;
+	number _torque;
 
-	float _wheel;
-	float _thrust;
+	number _wheel;
+	number _thrust;
 	bool _drift;
 };
 
@@ -159,7 +163,7 @@ public:
 	std::map<std::string, CarModel *> _models;
 	std::vector<Car *> _cars;
 
-	glm::vec2 _pt_min, _pt_max;
+	pt_type _pt_min, _pt_max;
 
 	bool _draw_bbox, _draw_force, _show_info; // faut-il afficher les BBox
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin

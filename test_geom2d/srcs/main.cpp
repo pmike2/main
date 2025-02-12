@@ -46,11 +46,27 @@ void test3() {
 }
 
 
+void test4() {
+	Polygon2D * poly1= new Polygon2D();
+	poly1->set_points(std::vector<pt_type>{pt_type(0.0, 0.0), pt_type(1.0, 0.0), pt_type(1.0, 1.0), pt_type(0.0, 1.0)});
+	//std::cout << poly1->_normals[0].x << " ; " << poly1->_normals[0].y << "\n";
+	Polygon2D * poly2= new Polygon2D();
+	poly2->set_points(std::vector<pt_type>{pt_type(0.1, 0.1), pt_type(0.2, 10.0), pt_type(0.0, 10.0)});
+	pt_type axis(0.0, 0.0);
+	number overlap= 0.0;
+	unsigned int idx_pt= 0;
+	bool is_pt_in_poly1= false;
+	bool is_inter= poly_intersects_poly(poly1, poly2, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
+	std::cout << "is_inter=" << is_inter << " ; axis=(" << axis.x << " , " << axis.y << ") ; overlap=" << overlap;
+	std::cout << " ; idx_pt=" << idx_pt << " ; is_pt_in_poly1=" << is_pt_in_poly1 << "\n";
+}
+
 
 int main() {
 	//test1();
 	//test2();
-	test3();
+	//test3();
+	test4();
 	
 	return 0;
 }

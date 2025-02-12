@@ -1,6 +1,5 @@
 #include <iostream>
 #include <iomanip>
-#include <cfloat> // FLT_MAX
 
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/norm.hpp>
@@ -10,7 +9,14 @@
 #include "utile.h"
 
 
-using namespace std;
+// angle -> matrice de rotation
+void rotation_float2mat(float rot, mat & mat) {
+    // glm est en column-major order par défaut -> mat[col][row]
+    mat[0][0]= cos(rot);
+    mat[0][1]= sin(rot);
+    mat[1][0]= -sin(rot);
+    mat[1][1]= cos(rot);
+}
 
 
 // renvoie la norme de la composante z du prod vectoriel
@@ -70,6 +76,114 @@ bool is_poly_inside_poly(const Polygon2D * small_poly, const Polygon2D * big_pol
 	for (auto pt : small_poly->_pts) {
 		if (!is_pt_inside_poly(pt, big_poly)) {
 			return false;
+		}
+	}
+	return true;
+}
+
+
+// Separating Axis Theorem (SAT); ne fonctionne que pour poly convexe; il faudrait sinon décomposer les polys en polys convexes
+// https://dyn4j.org/2010/01/sat/
+bool poly_intersects_poly(const Polygon2D * poly1, const Polygon2D * poly2, pt_type * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1) {
+
+	std::vector<pt_type> axis2check;
+	axis2check.insert(axis2check.end(), poly1->_normals.begin(), poly1->_normals.end());
+	axis2check.insert(axis2check.end(), poly2->_normals.begin(), poly2->_normals.end());
+
+	*overlap= 1e10;
+	unsigned int idx_pt_min_1= 0;
+	unsigned int idx_pt_max_1= 0;
+	unsigned int idx_pt_min_2= 0;
+	unsigned int idx_pt_max_2= 0;
+
+	bool current_pt_in_poly1= false;
+
+	for (unsigned int idx_ax=0; idx_ax<axis2check.size(); ++idx_ax) {
+		pt_type ax= axis2check[idx_ax];
+		if (idx_ax>= poly1->_normals.size()) {
+			current_pt_in_poly1= true;
+		}
+		
+		number proj_min_1= 1e10;
+		number proj_max_1= -1e10;
+		for (unsigned int idx_pt=0; idx_pt<poly1->_pts.size(); ++idx_pt) {
+			number proj= glm::dot(ax, poly1->_pts[idx_pt]);
+			if (proj < proj_min_1) {
+				proj_min_1= proj;
+				idx_pt_min_1= idx_pt;
+			}
+			if (proj > proj_max_1) {
+				proj_max_1= proj;
+				idx_pt_max_1= idx_pt;
+			}
+		}
+
+		number proj_min_2= 1e10;
+		number proj_max_2= -1e10;
+		for (unsigned int idx_pt=0; idx_pt<poly2->_pts.size(); ++idx_pt) {
+			number proj= glm::dot(ax, poly2->_pts[idx_pt]);
+			if (proj < proj_min_2) {
+				proj_min_2= proj;
+				idx_pt_min_2= idx_pt;
+			}
+			if (proj > proj_max_2) {
+				proj_max_2= proj;
+				idx_pt_max_2= idx_pt;
+			}
+		}
+
+		if (proj_min_1> proj_max_2 || proj_min_2> proj_max_1) {
+			return false;
+		}
+
+		number current_overlap= std::min(proj_max_1, proj_max_2)- std::max(proj_min_1, proj_min_2);
+		bool invert_axis= false;
+		if ((proj_min_1< proj_min_2 && proj_max_1> proj_max_2) || (proj_min_1> proj_min_2 && proj_max_1< proj_max_2)) {
+			number diff_min= abs(proj_min_1- proj_min_2);
+			number diff_max= abs(proj_max_1- proj_max_2);
+			if (diff_min< diff_max) {
+				current_overlap+= diff_min;
+				invert_axis= true;
+			}
+			else {
+				current_overlap+= diff_max;
+			}
+		}
+
+		if (current_overlap< *overlap) {
+			*overlap= current_overlap;
+			*is_pt_in_poly1= current_pt_in_poly1;
+			if (invert_axis) {
+				axis->x= -1.0* ax.x;
+				axis->y= -1.0* ax.y;
+			}
+			else {
+				axis->x= ax.x;
+				axis->y= ax.y;
+			}
+
+			if (is_pt_in_poly1) {
+				if (proj_max_1> proj_max_2) {
+					*idx_pt= idx_pt_min_1;
+				}
+				else {
+					*idx_pt= idx_pt_max_1;
+				}
+			}
+			else {
+				if (proj_max_1> proj_max_2) {
+					*idx_pt= idx_pt_max_2;
+				}
+				else {
+					*idx_pt= idx_pt_min_2;
+				}
+			}
+
+			/*std::cout << "overlap=" << *overlap << " ; idx_ax=" << idx_ax << " ; ax=(" << ax.x << " , " << ax.y << ")";
+			std::cout << " ; is_pt_in_poly1=" << *is_pt_in_poly1 << " ; idx_pt=" << *idx_pt;
+			std::cout << " ; proj_min_1=" << proj_min_1 << " ; proj_max_1=" << proj_max_1;
+			std::cout << " ; proj_min_2=" << proj_min_2 << " ; proj_max_2=" << proj_max_2;
+			std::cout << "\n";*/
 		}
 	}
 	return true;
@@ -179,7 +293,7 @@ bool segment_intersects_poly(const pt_type & pt_begin, const pt_type & pt_end, c
 		return false;
 	}
 
-	number min_dist= FLT_MAX;
+	number min_dist= 1e10;
 	bool is_inter= false;
 	pt_type inter(0.0);
 	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
@@ -203,7 +317,7 @@ bool segment_intersects_poly(const pt_type & pt_begin, const pt_type & pt_end, c
 
 
 // version multi où on récupère toutes les intersections
-bool segment_intersects_poly_multi(const pt_type & pt_begin, const pt_type & pt_end, const Polygon2D * poly, vector<pt_type> * result) {
+bool segment_intersects_poly_multi(const pt_type & pt_begin, const pt_type & pt_end, const Polygon2D * poly, std::vector<pt_type> * result) {
 	if ((pt_begin.x< poly->_aabb->_pos.x) && (pt_end.x< poly->_aabb->_pos.x)) {
 		return false;
 	}
@@ -217,7 +331,7 @@ bool segment_intersects_poly_multi(const pt_type & pt_begin, const pt_type & pt_
 		return false;
 	}
 
-	number min_dist= FLT_MAX;
+	number min_dist= 1e10;
 	bool is_inter= false;
 	pt_type inter(0.0);
 	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
@@ -249,7 +363,7 @@ bool distance_segment_pt(const pt_type & seg1, const pt_type & seg2, const pt_ty
 	
 	number t= glm::dot(pt- seg1, seg2- seg1)/ seg_norm2;
 	if ((t< 0.0) || (t> 1.0)) {
-		t= max((number)(0.0), min((number)(1.0), t));
+		t= std::max((number)(0.0), std::min((number)(1.0), t));
 		proj_in_segment= false;
 	}
 	
@@ -261,7 +375,7 @@ bool distance_segment_pt(const pt_type & seg1, const pt_type & seg2, const pt_ty
 
 
 number distance_poly_pt(const Polygon2D * poly, const pt_type & pt, pt_type * proj) {
-	number dist_min= FLT_MAX;
+	number dist_min= 1e10;
 	number dist;
 	pt_type proj2;
 
@@ -291,7 +405,7 @@ number distance_poly_pt(const Polygon2D * poly, const pt_type & pt, pt_type * pr
 
 
 number distance_poly_segment(const Polygon2D * poly, const pt_type & seg1, const pt_type & seg2, pt_type * proj) {
-	number dist_min= FLT_MAX;
+	number dist_min= 1e10;
 	number dist;
 	pt_type proj2;
 
@@ -350,7 +464,7 @@ number distance_poly_segment(const Polygon2D * poly, const pt_type & seg1, const
 void convex_hull_2d(std::vector<pt_type> & pts) {
 	sort(pts.begin(), pts.end(), cmp_points);
 
-	vector<pt_type> pts_upper;
+	std::vector<pt_type> pts_upper;
 	pts_upper.push_back(pts[0]);
 	pts_upper.push_back(pts[1]);
 	for (unsigned int i=2; i<pts.size(); ++i) {
@@ -360,7 +474,7 @@ void convex_hull_2d(std::vector<pt_type> & pts) {
 		}
 	}
 
-	vector<pt_type> pts_lower;
+	std::vector<pt_type> pts_lower;
 	pts_lower.push_back(pts[pts.size()- 1]);
 	pts_lower.push_back(pts[pts.size()- 2]);
 	for (int i=pts.size()- 3; i>=0; --i) {
@@ -385,7 +499,7 @@ bool is_ccw(const pt_type & pt1, const pt_type & pt2, const pt_type & pt3) {
 
 
 // cf https://en.wikipedia.org/wiki/Curve_orientation
-bool is_ccw(const vector<pt_type> & pts) {
+bool is_ccw(const std::vector<pt_type> & pts) {
 	number xmin= 1e6;
 	number ymin= 1e6;
 	int idx_min= 0;
@@ -571,6 +685,15 @@ void Polygon2D::set_rectangle(const pt_type origin, const pt_type size) {
 }
 
 
+void Polygon2D::set_bbox(const BBox_2D & bbox) {
+	_pts.clear();
+	for (unsigned int i=0; i<4; ++i) {
+		_pts.push_back(bbox._pts[i]);
+	}
+	update_attributes();
+}
+
+
 void Polygon2D::update_attributes() {
 	// calcul aire
 	_area= 0.0;
@@ -641,7 +764,7 @@ void Polygon2D::update_attributes() {
 
 // pt du polygon le + éloigné le long d'une direction
 pt_type Polygon2D::farthest_pt_along_dir(const pt_type direction) {
-	number dist_max= -FLT_MAX;
+	number dist_max= -1e10;
 	pt_type farthest_pt;
 	for (unsigned int idx_pt=0; idx_pt<_pts.size(); ++idx_pt) {
 		number dist= glm::dot(direction, _pts[idx_pt]);
@@ -656,7 +779,7 @@ pt_type Polygon2D::farthest_pt_along_dir(const pt_type direction) {
 
 
 void Polygon2D::print() {
-	cout << "area= " << _area << " ; centroid= " << glm::to_string(_centroid);
-	cout << " ; aabb_pos=" << glm::to_string(_aabb->_pos) << " ; aabb_size=" << glm::to_string(_aabb->_size);
-	cout << "\n";
+	std::cout << "area= " << _area << " ; centroid= " << glm::to_string(_centroid);
+	std::cout << " ; aabb_pos=" << glm::to_string(_aabb->_pos) << " ; aabb_size=" << glm::to_string(_aabb->_size);
+	std::cout << "\n";
 }

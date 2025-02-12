@@ -50,7 +50,7 @@ public:
 	pt_type _center;
 	pt_type _size;
 	float _alpha; // rotation
-	glm::vec2 _pts[4];
+	pt_type _pts[4];
 	AABB_2D * _aabb;
 };
 

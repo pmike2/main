@@ -99,7 +99,7 @@ void key_down(SDL_Keycode key) {
 	}
 	else if (key== SDLK_c) {
 		Polygon2D * poly= new Polygon2D();
-		poly->randomize(50, rand_float(0.1f, 2.5f));
+		poly->randomize(50, rand_float(0.1f, 2.5f), pt_type(0.0), true);
 		//physics_2d->_polygons.erase(physics_2d->_polygons.begin()+ 1);
 		physics_2d->add_polygon(poly);
 		//physics_2d->add_body(1, rand_int(1, physics_2d->_materials.size()- 1), glm::vec2(0.0f, 8.0f), 0.0f);
@@ -264,10 +264,10 @@ void init() {
 
 	
 	Polygon2D * poly_poutre= new Polygon2D();
-	poly_poutre->set_rectangle(16.0f, 1.0f);
+	poly_poutre->set_rectangle(pt_type(0.0, 1.0), pt_type(5.0, 1.0));
 	
 	Polygon2D * poly_bloc= new Polygon2D();
-	poly_bloc->set_rectangle(2.0f, 2.0f);
+	poly_bloc->set_rectangle(pt_type(0.0, 1.0), pt_type(2.0, 2.0));
 	
 	physics_2d->add_polygon(poly_poutre);
 	physics_2d->add_polygon(poly_bloc);
@@ -376,6 +376,7 @@ void physics() {
 	}
 	// on interpole le visuel pour adoucir l'anim
 	debug_physics_2d->update(float(accumulator)/ float(DT_PHYSICS_MS));
+	
 }
 
 

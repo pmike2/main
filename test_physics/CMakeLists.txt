@@ -35,6 +35,8 @@ include_directories(../libs)
 # include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS})
 
 add_library(lib_physics_2d STATIC ../libs/physics_2d.cpp ../libs/physics_2d.h)
+add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
+add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
 add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)
 add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
 add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h)
@@ -43,5 +45,5 @@ add_library(lib_font STATIC ../libs/font.cpp ../libs/font.h)
 add_executable(main ./srcs/main.cpp ./srcs/constantes.h)
 
 target_link_libraries(main PUBLIC ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${FREETYPE_LIBRARIES} ${OPENGL_LIBRARIES})
-target_link_libraries(main PUBLIC lib_physics_2d lib_gl_utils lib_utile lib_input_state lib_font)
+target_link_libraries(main PUBLIC lib_physics_2d lib_geom_2d lib_bbox_2d lib_gl_utils lib_utile lib_input_state lib_font)
 

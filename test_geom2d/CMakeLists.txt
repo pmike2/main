@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(test_dcel)
+project(test_geom2d)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 
 include_directories(/usr/local/include)
 include_directories(../libs)
