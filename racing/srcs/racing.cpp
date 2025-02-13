@@ -56,7 +56,6 @@ CarModel::CarModel(std::string json_path) : _json_path(json_path) {
 	_mass= js["mass"];
 	_halfsize= pt_type(js["halfsize"][0], js["halfsize"][1]);
 	// https://en.wikipedia.org/wiki/List_of_moments_of_inertia
-	// size est en fait la 1/2 taille de la bbox
 	// normalement c'est / 12.0 mais tout explose
 	_inertia= _mass* (4.0* _halfsize.x* _halfsize.x+ 4.0* _halfsize.y* _halfsize.y)/ 3.0;
 
@@ -302,7 +301,7 @@ Racing::Racing() {
 
 
 Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_joystick) :
-	_draw_bbox(true), _draw_force(true), _show_info(true),
+	_draw_bbox(true), _draw_force(false), _show_info(false),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false), _key_a(false), _key_z(false),
 	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false),
 	_ia(false)
@@ -327,7 +326,6 @@ Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_
 	load_models();
 
 	//_cars.push_back(new Car(_models["car1"], pt_type(0.0, 6.0), 0.0));
-	//_cars.push_back(new Car(_models["car2"], pt_type(0.0, -6.0), 0.0));
 	/*_cars.push_back(new Car(_models["car1"], pt_type(-4.0, 0.5), 0.0));
 	_cars[1]->_thrust= 2.0;
 	_cars.push_back(new Car(_models["car1"], pt_type(5.0, 0.0), M_PI* 0.5));
@@ -424,12 +422,35 @@ void Racing::save_json(std::string json_path) {
 
 void Racing::randomize() {
 	_ia= true;
-	for (unsigned int i=0; i<20; ++i) {
+
+	for (auto car : _cars) {
+		delete car;
+	}
+	_cars.clear();
+
+	// héros
+	_cars.push_back(new Car(_models["car1"], pt_type(0.0, 0.0), 0.0));
+
+	// bords
+	add_boundary();
+
+	// ennemis
+	for (unsigned int i=0; i<100; ++i) {
 		_cars.push_back(new Car(_models["car1"], pt_type(rand_number(_pt_min.x, _pt_max.x), rand_number(_pt_min.y, _pt_max.y)), rand_number(0.0, M_PI* 2.0)));
 	}
+
+	// obstacles
 	for (unsigned int i=0; i<3; ++i) {
-		_cars.push_back(new Car(_models["car2"], pt_type(rand_number(_pt_min.x, _pt_max.x), rand_number(_pt_min.y, _pt_max.y)), rand_number(0.0, M_PI* 2.0)));
+		_cars.push_back(new Car(_models["obstacle"], pt_type(rand_number(_pt_min.x, _pt_max.x), rand_number(_pt_min.y, _pt_max.y)), rand_number(0.0, M_PI* 2.0)));
 	}
+}
+
+
+void Racing::add_boundary() {
+	_cars.push_back(new Car(_models["wall"], pt_type(0.0, _pt_min.y), 0.0));
+	_cars.push_back(new Car(_models["wall"], pt_type(0.0, _pt_max.y), 0.0));
+	_cars.push_back(new Car(_models["wall"], pt_type(_pt_min.x, 0.0), M_PI* 0.5));
+	_cars.push_back(new Car(_models["wall"], pt_type(_pt_max.x, 0.0), M_PI* 0.5));
 }
 
 
@@ -667,7 +688,7 @@ void Racing::anim() {
 		//std::cout << *car << "\n";
 
 		// pour tests
-		if (car->_com.x> _pt_max.x) {
+		/*if (car->_com.x> _pt_max.x) {
 			car->_com.x= _pt_min.x;
 		}
 		if (car->_com.x< _pt_min.x) {
@@ -678,7 +699,7 @@ void Racing::anim() {
 		}
 		if (car->_com.y< _pt_min.y) {
 			car->_com.y= _pt_max.y;
-		}
+		}*/
 	}
 
 	collision();
@@ -818,6 +839,9 @@ bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 	else if (key== SDLK_f) {
 		_draw_force= !_draw_force;
+	}
+	else if (key== SDLK_i) {
+		_show_info= !_show_info;
 	}
 	else if (key== SDLK_l) {
 		_ia= false;

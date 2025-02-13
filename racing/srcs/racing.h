@@ -141,6 +141,7 @@ public:
 	void load_json(std::string json_path);
 	void save_json(std::string json_path);
 	void randomize();
+	void add_boundary();
 
 	// dessins
 	void draw_bbox();
