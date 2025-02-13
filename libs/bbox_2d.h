@@ -41,17 +41,18 @@ bool ray_intersects_aabb(const pt_type & ray_origin, const pt_type & ray_dir, co
 class BBox_2D {
 public:
 	BBox_2D();
-	BBox_2D(pt_type center, pt_type size, float alpha=0.0);
+	BBox_2D(pt_type center, pt_type half_size, number alpha=0.0);
 	~BBox_2D();
 	void update();
 	friend std::ostream & operator << (std::ostream & os, const BBox_2D & bbox);
 
 
 	pt_type _center;
-	pt_type _size;
-	float _alpha; // rotation
+	pt_type _half_size;
+	number _alpha; // rotation
 	pt_type _pts[4];
 	AABB_2D * _aabb;
 };
+
 
 #endif

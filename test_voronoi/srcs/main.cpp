@@ -78,7 +78,7 @@ void test1() {
 
 
 void test2() {
-	int n_pts= 20;
+	int n_pts= 2000;
 	number xmin= 0.0;
 	number xmax= 100.0;
 	number ymin= 0.0;
@@ -105,20 +105,21 @@ void test2() {
 	}*/
 
 	std::sort(pts.begin(), pts.end(), [](const pt_type &a, const pt_type &b) { return a.y > b.y; });
-	ofstream f;
+	
+	/*ofstream f;
 	f.open("../data/test4/pts.txt");
 	for (auto pt : pts) {
 		f << pt.x << " " << pt.y << "\n";
 	}
-	f.close();
+	f.close();*/
 
 	Voronoi * v= new Voronoi(pts, false, false, false, true, "../data/test2");
-	for (auto face : v->_diagram->_faces) {
+	/*for (auto face : v->_diagram->_faces) {
 		if (face->_outer_edge== NULL) {
 			continue;
 		}
 		std::cout << face->get_adjacent_faces().size() << "\n";
-	}
+	}*/
 	
 	pt_type bbox_min, bbox_max;
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);

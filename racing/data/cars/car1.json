@@ -1,7 +1,8 @@
 {
+	"commentaire" : "si mass trop grand et/ou inertia trop petit, ca explose",
+	"fixed" : false,
 	"mass" : 1.0,
-	"inertia" : 2.0,
-	"size" : [0.6, 0.3],
+	"halfsize" : [0.6, 0.3],
 	"com2force_fwd" : [0.5, 0.0],
 	"com2force_bwd" : [-0.5, 0.0],
 	"com2bbox_center" : [0.1, 0.0],

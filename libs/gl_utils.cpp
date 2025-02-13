@@ -326,15 +326,15 @@ void export_texture_array2pgm(std::string pgm_dir_path, unsigned int width, unsi
 }
 
 
-float * draw_cross(float * data, glm::vec2 center, float size, glm::vec4 color) {
-	data[0]= center.x- size;
-	data[1]= center.y- size;
-	data[6]= center.x+ size;
-	data[7]= center.y+ size;
-	data[12]= center.x+ size;
-	data[13]= center.y- size;
-	data[18]= center.x- size;
-	data[19]= center.y+ size;
+float * draw_cross(float * data, pt_type center, float size, glm::vec4 color) {
+	data[0]= float(center.x)- size;
+	data[1]= float(center.y)- size;
+	data[6]= float(center.x)+ size;
+	data[7]= float(center.y)+ size;
+	data[12]= float(center.x)+ size;
+	data[13]= float(center.y)- size;
+	data[18]= float(center.x)- size;
+	data[19]= float(center.y)+ size;
 	
 	for (unsigned int i=0; i<4; ++i) {
 		for (unsigned int j=0; j<4; ++j) {
@@ -345,7 +345,7 @@ float * draw_cross(float * data, glm::vec2 center, float size, glm::vec4 color) 
 }
 
 
-float * draw_arrow(float * data, glm::vec2 start, glm::vec2 end, float tip_size, float angle, glm::vec4 color) {
+float * draw_arrow(float * data, pt_type start, pt_type end, float tip_size, float angle, glm::vec4 color) {
 	bool start_is_end= false;
 	if ((abs(start.x- end.x)< 1e-5) && (abs(start.y- end.y)< 1e-5)) {
 		start_is_end= true;
@@ -353,26 +353,26 @@ float * draw_arrow(float * data, glm::vec2 start, glm::vec2 end, float tip_size,
 	
 	if (start_is_end) {
 		for (unsigned int i=0; i<6; ++i) {
-			data[i* 6+ 0]= start.x;
-			data[i* 6+ 1]= start.y;
+			data[i* 6+ 0]= float(start.x);
+			data[i* 6+ 1]= float(start.y);
 		}
 	}
 	else {
-		glm::vec2 norm= glm::normalize(start- end);
-		data[0]= start.x;
-		data[1]= start.y;
-		data[6]= end.x;
-		data[7]= end.y;
+		pt_type norm= glm::normalize(start- end);
+		data[0]= float(start.x);
+		data[1]= float(start.y);
+		data[6]= float(end.x);
+		data[7]= float(end.y);
 		
-		data[12]= end.x;
-		data[13]= end.y;
-		data[18]= end.x+ tip_size* (cos(angle)* norm.x- sin(angle)* norm.y);
-		data[19]= end.y+ tip_size* (sin(angle)* norm.x+ cos(angle)* norm.y);
+		data[12]= float(end.x);
+		data[13]= float(end.y);
+		data[18]= float(end.x)+ tip_size* (cos(angle)* float(norm.x)- sin(angle)* float(norm.y));
+		data[19]= float(end.y)+ tip_size* (sin(angle)* float(norm.x)+ cos(angle)* float(norm.y));
 
-		data[24]= end.x;
-		data[25]= end.y;
-		data[30]= end.x+ tip_size* (cos(angle)* norm.x+ sin(angle)* norm.y);
-		data[31]= end.y+ tip_size* (-sin(angle)* norm.x+ cos(angle)* norm.y);
+		data[24]= float(end.x);
+		data[25]= float(end.y);
+		data[30]= float(end.x)+ tip_size* (cos(angle)* float(norm.x)+ sin(angle)* float(norm.y));
+		data[31]= float(end.y)+ tip_size* (-sin(angle)* float(norm.x)+ cos(angle)* float(norm.y));
 	}
 
 	for (unsigned int i=0; i<6; ++i) {
@@ -382,3 +382,29 @@ float * draw_arrow(float * data, glm::vec2 start, glm::vec2 end, float tip_size,
 	}
 	return data+ 36;
 }
+
+
+float * draw_polygon(float * data, std::vector<pt_type> pts, glm::vec4 color) {
+	for (unsigned int idx_pt=0; idx_pt<pts.size(); ++idx_pt) {
+		data[idx_pt* 6* 2+ 0]= float(pts[idx_pt].x);
+		data[idx_pt* 6* 2+ 1]= float(pts[idx_pt].y);
+
+		if (idx_pt< pts.size()- 1) {
+			data[idx_pt* 6* 2+ 6]= float(pts[idx_pt+ 1].x);
+			data[idx_pt* 6* 2+ 7]= float(pts[idx_pt+ 1].y);
+		}
+		else {
+			data[idx_pt* 6* 2+ 6]= float(pts[0].x);
+			data[idx_pt* 6* 2+ 7]= float(pts[0].y);
+		}
+	}
+
+	for (unsigned int i=0; i<pts.size()* 2; ++i) {
+		for (unsigned int j=0; j<4; ++j) {
+			data[i* 6+ 2+ j]= color[j];
+		}
+	}
+
+	return data+ 6* 2* pts.size();
+}
+

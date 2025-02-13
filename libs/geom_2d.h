@@ -28,6 +28,7 @@ bool is_left(const pt_type & pt_ref, const pt_type & dir_ref, const pt_type & pt
 bool is_pt_inside_poly(const pt_type & pt, const Polygon2D * poly);
 bool is_poly_inside_poly(const Polygon2D * small_poly, const Polygon2D * big_poly);
 bool poly_intersects_poly(const Polygon2D * poly1, const Polygon2D * poly2, pt_type * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1);
+bool bbox_intersects_bbox(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_type * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1);
 bool segment_intersects_segment(const pt_type & pt1_begin, const pt_type & pt1_end, const pt_type & pt2_begin, const pt_type & pt2_end, pt_type * result, bool exclude_seg1_extremities=false, bool exclude_seg2_extremities=false);
 bool ray_intersects_segment(const pt_type & origin, const pt_type & direction, const pt_type & pt_begin, const pt_type & pt_end, pt_type * result);
 bool ray_intersects_ray(const pt_type & origin1, const pt_type & direction1, const pt_type & origin2, const pt_type & direction2, pt_type * result);
@@ -57,7 +58,7 @@ public:
 	void set_rectangle(const pt_type origin, const pt_type size);
 	void set_bbox(const BBox_2D & bbox);
 	void update_attributes();
-	pt_type farthest_pt_along_dir(const pt_type direction);
+	void min_max_pt_along_dir(const pt_type direction, unsigned int * idx_pt_min, number * dist_min, unsigned int * idx_pt_max, number * dist_max) const;
 	void print();
 
 

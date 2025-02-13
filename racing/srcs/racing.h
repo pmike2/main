@@ -10,13 +10,12 @@
 #include <SDL2/SDL_mixer.h>
 #include <glm/glm.hpp>
 
-#include <glm/glm.hpp>
-
 #include "bbox_2d.h"
 #include "geom_2d.h"
 #include "gl_utils.h"
 #include "input_state.h"
 #include "font.h"
+#include "typedefs.h"
 
 
 // plans z de contrainte d'affichage de glm::ortho
@@ -71,7 +70,7 @@ public:
 	pt_type _com2force_fwd;
 	pt_type _com2force_bwd;
 	pt_type _com2bbox_center;
-	pt_type _size;
+	pt_type _halfsize;
 	number _mass;
 	number _inertia;
 	number _max_wheel;
@@ -87,6 +86,8 @@ public:
 	number _backward_dynamic_friction;
 	number _friction_threshold;
 	number _angular_friction;
+
+	bool _fixed;
 };
 
 
@@ -105,7 +106,7 @@ public:
 
 
 	CarModel * _model;
-	BBox_2D _bbox;
+	BBox_2D * _bbox;
 
 	pt_type _com2force_fwd; // vecteur com -> point ou on applique les forces
 	pt_type _com2force_bwd; // vecteur com -> point ou on applique les forces
@@ -154,6 +155,7 @@ public:
 
 	// animation
 	void anim();
+	void collision();
 
 	// input
 	bool key_down(InputState * input_state, SDL_Keycode key);

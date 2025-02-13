@@ -5,10 +5,12 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 
+#include "repere.h"
 #include "utile.h"
 #include "gl_utils.h"
 #include "input_state.h"
-#include "racing.h"
+#include "geom_2d.h"
+#include "test_geom_2d.h"
 
 // en ms; temps entre 2 anims
 //const unsigned int DELTA_ANIM= 1;
@@ -25,7 +27,7 @@ SDL_Window * window;
 SDL_GLContext main_context;
 InputState * input_state;
 ScreenGL * screengl;
-Racing * racing;
+TestGeom2D * test_geom_2d;
 
 bool done= false;
 unsigned int val_fps, compt_fps;
@@ -38,42 +40,17 @@ void key_down(SDL_Keycode key) {
 
 	if (key== SDLK_ESCAPE) {
 		done= true;
-	}
-
-	if (racing->key_down(input_state, key)) {
 		return;
 	}
 
+	if (key== SDLK_r) {
+		test_geom_2d->randomize();
+	}
 }
 
 
 void key_up(SDL_Keycode key) {
 	input_state->key_up(key);
-
-	if (racing->key_up(input_state, key)) {
-		return;
-	}
-}
-
-
-void joystick_down(unsigned int button_idx) {
-	if (racing->joystick_down(button_idx)) {
-		return;
-	}
-}
-
-
-void joystick_up(unsigned int button_idx) {
-	if (racing->joystick_up(button_idx)) {
-		return;
-	}
-}
-
-
-void joystick_axis(unsigned int axis_idx, int value) {
-	if (racing->joystick_axis(axis_idx, value)) {
-		return;
-	}
 }
 
 
@@ -83,22 +60,6 @@ void init() {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 
-	bool is_joystick= false;
-	if (SDL_NumJoysticks()> 0){
-		SDL_Joystick * joy= SDL_JoystickOpen(0);
-		if (joy) {
-			is_joystick= true;
-			std::cout << "joystick OK; n axes=" << SDL_JoystickNumAxes(joy) << " ; n buttons=" << SDL_JoystickNumButtons(joy) << "\n";
-		}
-	}
-
-	// la taille du buffer influe sur la latence
-	if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 512)== -1) {
-		std::cerr << "Echec audio\n";
-	}
-	// permet d'allouer des channels pour faire du polyphonique; il faut alors bien gérer le 1er arg de Mix_PlayChannel
-	Mix_AllocateChannels(16);
-
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -106,7 +67,7 @@ void init() {
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	
-	window= SDL_CreateWindow("racing", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	window= SDL_CreateWindow("test_geom2d", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
 
 	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
@@ -156,7 +117,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	input_state= new InputState();
-	racing= new Racing(prog_bbox, prog_font, screengl, is_joystick);
+	test_geom_2d= new TestGeom2D(prog_bbox, prog_font, screengl);
 }
 
 
@@ -166,8 +127,8 @@ void draw() {
 	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	
-	racing->draw();
+
+	test_geom_2d->draw();
 
 	SDL_GL_SwapWindow(window);
 }
@@ -180,8 +141,6 @@ void anim() {
 		return;
 	
 	tikanim1= SDL_GetTicks();*/
-
-	racing->anim();
 }
 
 
@@ -236,18 +195,6 @@ void main_loop() {
 					key_up(event.key.keysym.sym);
 					break;
 
-				case SDL_JOYBUTTONDOWN:
-					joystick_down(event.jbutton.button);
-					break;
-
-				case SDL_JOYBUTTONUP:
-					joystick_up(event.jbutton.button);
-					break;
-
-				 case SDL_JOYAXISMOTION:
-				 	joystick_axis(event.jaxis.axis, event.jaxis.value);
-					break;
-
 				// utilisé ?
 				//case SDL_JOYHATMOTION:
 				//	printf("The hat with index %d was moved to position %d.\n", event.jhat.hat, event.jhat.value);
@@ -267,11 +214,9 @@ void main_loop() {
 
 
 void clean() {
-	delete racing;
 	delete input_state;
 	delete screengl;
 
-	Mix_CloseAudio();
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
 	SDL_Quit();

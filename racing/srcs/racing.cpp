@@ -52,15 +52,20 @@ CarModel::CarModel(std::string json_path) : _json_path(json_path) {
 	json js= json::parse(ifs);
 	ifs.close();
 
+	_fixed= js["fixed"];
+	_mass= js["mass"];
+	_halfsize= pt_type(js["halfsize"][0], js["halfsize"][1]);
+	// https://en.wikipedia.org/wiki/List_of_moments_of_inertia
+	// size est en fait la 1/2 taille de la bbox
+	// normalement c'est / 12.0 mais tout explose
+	_inertia= _mass* (4.0* _halfsize.x* _halfsize.x+ 4.0* _halfsize.y* _halfsize.y)/ 3.0;
+
 	// on suppose qu'initialement le véhicule est dirigé vers x positif
 	_forward= pt_type(1.0, 0.0);
 	_right= pt_type(0.0, -1.0);
 	_com2force_fwd= pt_type(js["com2force_fwd"][0], js["com2force_fwd"][1]);
 	_com2force_bwd= pt_type(js["com2force_bwd"][0], js["com2force_bwd"][1]);
 	_com2bbox_center= pt_type(js["com2bbox_center"][0], js["com2bbox_center"][1]);
-	_size= pt_type(js["size"][0], js["size"][1]);
-	_mass= js["mass"];
-	_inertia= js["inertia"];
 	_max_wheel= js["max_wheel"];
 	_wheel_increment= js["wheel_increment"];
 	_wheel_decrement= js["wheel_decrement"];
@@ -74,9 +79,6 @@ CarModel::CarModel(std::string json_path) : _json_path(json_path) {
 	_backward_dynamic_friction= js["backward_dynamic_friction"];
 	_friction_threshold= js["friction_threshold"];
 	_angular_friction= js["angular_friction"];
-
-	//_inertia= _mass* (_size.x* _size.x+ _size.y* _size.y)/ 12.0;
-	//_inertia= 1.0;
 }
 
 
@@ -91,13 +93,14 @@ Car::Car() {
 }
 
 
-Car::Car(CarModel * model, pt_type position, number alpha) : _model(model), _bbox(BBox_2D(position, model->_size)) {
+Car::Car(CarModel * model, pt_type position, number alpha) : _model(model) {
+	_bbox= new BBox_2D(position, model->_halfsize);
 	reinit(position, alpha);
 }
 
 
 Car::~Car() {
-
+	delete _bbox;
 }
 
 
@@ -132,9 +135,9 @@ void Car::update_direction() {
 
 
 void Car::update_bbox() {
-	_bbox._alpha= _alpha;
-	_bbox._center= _com+ _com2bbox_center;
-	_bbox.update();
+	_bbox->_alpha= _alpha;
+	_bbox->_center= _com+ _com2bbox_center;
+	_bbox->update();
 }
 
 
@@ -241,6 +244,10 @@ void Car::random_ia() {
 
 
 void Car::anim() {
+	if (_model->_fixed) {
+		return;
+	}
+
 	_force_fwd= pt_type(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel);
 	_force_fwd-= _model->_forward_static_friction* scal(_forward, _velocity)* _forward;
@@ -257,9 +264,7 @@ void Car::anim() {
 		_force_bwd-= _model->_backward_static_friction* right_turn* _right;
 	}
 
-	// force == mass * acceleration
-	// on suppose mass == 1
-	_acceleration= _force_fwd+ _force_bwd;
+	_acceleration= (_force_fwd+ _force_bwd)/ _model->_mass;
 	_velocity+= _acceleration* ANIM_DT;
 	_com+= _velocity* ANIM_DT;
 
@@ -268,10 +273,7 @@ void Car::anim() {
 	_torque+= _com2force_bwd.x* _force_bwd.y- _com2force_bwd.y* _force_bwd.x;
 	_torque-= _model->_angular_friction* _angular_velocity;
 	
-	// torque == angular_acceleration * moment_inertia
-	// avec moment_inertia proportionnel à mass * (width**2 + height** 2)
-	// ici on fait moment_inertia == 1
-	_angular_acceleration= _torque;
+	_angular_acceleration= _torque/ _model->_inertia;
 	_angular_velocity+= _angular_acceleration* ANIM_DT;
 	_alpha+= _angular_velocity* ANIM_DT;
 	while (_alpha> M_PI* 2.0) {
@@ -287,7 +289,8 @@ void Car::anim() {
 
 
 std::ostream & operator << (std::ostream & os, const Car & car) {
-	os << "bbox=[" << car._bbox << "] ; ";
+	os << "model = " << car._model->_json_path;
+	os << " ; bbox=[" << *car._bbox << "] ; ";
 	return os;
 }
 
@@ -323,15 +326,16 @@ Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_
 
 	load_models();
 
-	/*_cars.push_back(new Car(_models["car1"], pt_type(0.0, 6.0), 0.0));
-	_cars.push_back(new Car(_models["car1"], pt_type(-4.0, 0.5), 0.0));
+	//_cars.push_back(new Car(_models["car1"], pt_type(0.0, 6.0), 0.0));
+	//_cars.push_back(new Car(_models["car2"], pt_type(0.0, -6.0), 0.0));
+	/*_cars.push_back(new Car(_models["car1"], pt_type(-4.0, 0.5), 0.0));
 	_cars[1]->_thrust= 2.0;
 	_cars.push_back(new Car(_models["car1"], pt_type(5.0, 0.0), M_PI* 0.5));
 	_cars[2]->_thrust= 0.0;*/
 
-	load_json("../data/test/init.json");
+	//load_json("../data/test/init.json");
 	//save_json("../data/test/init.json");
-	//randomize();
+	randomize();
 
 	update_bbox();
 	update_force();
@@ -420,8 +424,11 @@ void Racing::save_json(std::string json_path) {
 
 void Racing::randomize() {
 	_ia= true;
-	for (unsigned int i=0; i<10; ++i) {
+	for (unsigned int i=0; i<20; ++i) {
 		_cars.push_back(new Car(_models["car1"], pt_type(rand_number(_pt_min.x, _pt_max.x), rand_number(_pt_min.y, _pt_max.y)), rand_number(0.0, M_PI* 2.0)));
+	}
+	for (unsigned int i=0; i<3; ++i) {
+		_cars.push_back(new Car(_models["car2"], pt_type(rand_number(_pt_min.x, _pt_max.x), rand_number(_pt_min.y, _pt_max.y)), rand_number(0.0, M_PI* 2.0)));
 	}
 }
 
@@ -552,17 +559,17 @@ void Racing::update_bbox() {
 			color= glm::vec4(1.0, 0.0, 0.0, 1.0);
 		}
 		number positions[n_pts_per_car* 2]= {
-			car->_bbox._pts[0].x, car->_bbox._pts[0].y,
-			car->_bbox._pts[1].x, car->_bbox._pts[1].y,
+			car->_bbox->_pts[0].x, car->_bbox->_pts[0].y,
+			car->_bbox->_pts[1].x, car->_bbox->_pts[1].y,
 
-			car->_bbox._pts[1].x, car->_bbox._pts[1].y,
-			car->_bbox._pts[2].x, car->_bbox._pts[2].y,
+			car->_bbox->_pts[1].x, car->_bbox->_pts[1].y,
+			car->_bbox->_pts[2].x, car->_bbox->_pts[2].y,
 
-			car->_bbox._pts[2].x, car->_bbox._pts[2].y,
-			car->_bbox._pts[3].x, car->_bbox._pts[3].y,
+			car->_bbox->_pts[2].x, car->_bbox->_pts[2].y,
+			car->_bbox->_pts[3].x, car->_bbox->_pts[3].y,
 
-			car->_bbox._pts[3].x, car->_bbox._pts[3].y,
-			car->_bbox._pts[0].x, car->_bbox._pts[0].y
+			car->_bbox->_pts[3].x, car->_bbox->_pts[3].y,
+			car->_bbox->_pts[0].x, car->_bbox->_pts[0].y
 		};
 
 		for (unsigned int i=0; i<n_pts_per_car; ++i) {
@@ -674,41 +681,58 @@ void Racing::anim() {
 		}
 	}
 
+	collision();
+
+	update_bbox();
+	update_force();
+}
+
+
+void Racing::collision() {
 	for (unsigned int idx_car_1=0; idx_car_1<_cars.size()- 1; ++idx_car_1) {
 		for (unsigned int idx_car_2=idx_car_1+ 1; idx_car_2<_cars.size(); ++idx_car_2) {
 			Car * car1= _cars[idx_car_1];
 			Car * car2= _cars[idx_car_2];
 
-			Polygon2D * poly1= new Polygon2D();
-			poly1->set_bbox(car1->_bbox);
-			Polygon2D * poly2= new Polygon2D();
-			poly2->set_bbox(car2->_bbox);
+			if (car1->_model->_fixed && car2->_model->_fixed) {
+				continue;
+			}
+
+			if (!aabb_intersects_aabb(car1->_bbox->_aabb, car2->_bbox->_aabb)) {
+				continue;
+			}
 
 			pt_type axis(0.0, 0.0);
 			number overlap= 0.0;
 			unsigned int idx_pt= 0;
 			bool is_pt_in_poly1= false;
-			bool is_inter= poly_intersects_poly(poly1, poly2, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
+			bool is_inter= bbox_intersects_bbox(car1->_bbox, car2->_bbox, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
 
+			// on se place comme dans le cas https://en.wikipedia.org/wiki/Collision_response
+			// où la normale est celle de body1 et le point dans body2
 			if (is_pt_in_poly1) {
 				Car * car_tmp= car1;
 				car1= car2;
 				car2= car_tmp;
 			}
 
-			delete poly1;
-			delete poly2;
-
 			if (is_inter) {
-				//std::cout << "is_inter=" << is_inter << " ; axis=(" << axis.x << " , " << axis.y << ") ; overlap=" << overlap;
-				//std::cout << " ; idx_pt=" << idx_pt << " ; is_pt_in_poly1=" << is_pt_in_poly1 << "\n";
-
-				car1->_com-= overlap* 0.6* axis;
-				car2->_com+= overlap* 0.6* axis;
+				// on écarte un peu plus que de 0.5 de chaque coté ou de 1.0 dans le cas fixed
+				// est-ce utile ?
+				if (car1->_model->_fixed) {
+					car2->_com+= overlap* 1.05* axis;
+				}
+				else if (car2->_model->_fixed) {
+					car1->_com-= overlap* 1.05* axis;
+				}
+				else {
+					car1->_com-= overlap* 0.55* axis;
+					car2->_com+= overlap* 0.55* axis;
+				}
 
 				pt_type r1, r2;
-				r1= car2->_bbox._pts[idx_pt]- car1->_com;
-				r2= car2->_bbox._pts[idx_pt]- car2->_com;
+				r1= car2->_bbox->_pts[idx_pt]- car1->_com;
+				r2= car2->_bbox->_pts[idx_pt]- car2->_com;
 				
 				pt_type r1_norm= normalized(r1);
 				pt_type r1_norm_perp(-1.0* r1_norm.y, r1_norm.x);
@@ -720,24 +744,43 @@ void Racing::anim() {
 
 				pt_type vr= contact_pt_velocity2- contact_pt_velocity1;
 
-				number restitution= 0.8;
+				// https://en.wikipedia.org/wiki/Coefficient_of_restitution
+				// restitution doit etre entre 0 et 1 ; proche de 0 -> pas de rebond ; proche de 1 -> beaucoup de rebond
+				// TODO : faire des matériaux avec des valeurs de restitution différentes
+				number restitution= 0.2;
 
-				pt_type v= (cross(r1, axis)/ car1->_model->_inertia)* r1+ (cross(r2, axis)/ car2->_model->_inertia)* r2;
 
-				number impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ car1->_model->_mass+ 1.0/ car2->_model->_mass+ dot(v, axis));
+				number impulse;
+				if (car1->_model->_fixed) {
+					pt_type v= (cross(r2, axis)/ car2->_model->_inertia)* r2;
+					impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ car2->_model->_mass+ dot(v, axis));
+				}
+				else if (car2->_model->_fixed) {
+					pt_type v= (cross(r1, axis)/ car1->_model->_inertia)* r1;
+					impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ car1->_model->_mass+ dot(v, axis));
+				}
+				else {
+					pt_type v= (cross(r1, axis)/ car1->_model->_inertia)* r1+ (cross(r2, axis)/ car2->_model->_inertia)* r2;
+					impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ car1->_model->_mass+ 1.0/ car2->_model->_mass+ dot(v, axis));
+				}
 
-				if (abs(impulse)> 4.0) {
+				if (abs(impulse)> 10.0) {
 					std::cout << "impulse=" << impulse << "\n";
-					std::cout << "dot(vr, axis)=" << dot(vr, axis) << " ; dot(v, axis)=" << dot(v, axis) << "\n";
+					//std::cout << "dot(vr, axis)=" << dot(vr, axis) << " ; dot(v, axis)=" << dot(v, axis) << "\n";
 					save_json("../data/test/big_impulse.json");
 				}
 
-				car1->_velocity-= (impulse/ car1->_model->_mass)* axis;
-				car2->_velocity+= (impulse/ car2->_model->_mass)* axis;
-				
-				car1->_angular_velocity-= (impulse/ car1->_model->_inertia)* cross(r1, axis);
-				car2->_angular_velocity+= (impulse/ car2->_model->_inertia)* cross(r2, axis);
+				if (!car1->_model->_fixed) {
+					car1->_velocity-= (impulse/ car1->_model->_mass)* axis;
+					car1->_angular_velocity-= (impulse/ car1->_model->_inertia)* cross(r1, axis);
+				}
 
+				if (!car2->_model->_fixed) {
+					car2->_velocity+= (impulse/ car2->_model->_mass)* axis;
+					car2->_angular_velocity+= (impulse/ car2->_model->_inertia)* cross(r2, axis);
+				}
+
+				// peut-être pas nécessaire
 				car1->_acceleration= pt_type(0.0);
 				car1->_angular_acceleration= 0.0;
 				car2->_acceleration= pt_type(0.0);
@@ -745,9 +788,6 @@ void Racing::anim() {
 			}
 		}
 	}
-
-	update_bbox();
-	update_force();
 }
 
 

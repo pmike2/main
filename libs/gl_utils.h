@@ -55,7 +55,8 @@ void set_subwindow(const float bkgnd_color[4], int x, int y, int w, int h);
 void export_texture2pgm(std::string pgm_path, unsigned int width, unsigned int height);
 void export_texture_array2pgm(std::string pgm_dir_path, unsigned int width, unsigned int height, unsigned int depth);
 
-float * draw_cross(float * data, glm::vec2 center, float size, glm::vec4 color);
-float * draw_arrow(float * data, glm::vec2 start, glm::vec2 end, float tip_size, float angle, glm::vec4 color);
+float * draw_cross(float * data, pt_type center, float size, glm::vec4 color);
+float * draw_arrow(float * data, pt_type start, pt_type end, float tip_size, float angle, glm::vec4 color);
+float * draw_polygon(float * data, std::vector<pt_type> pts, glm::vec4 color);
 
 #endif

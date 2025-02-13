@@ -81,7 +81,6 @@ bool is_poly_inside_poly(const Polygon2D * small_poly, const Polygon2D * big_pol
 	return true;
 }
 
-
 // Separating Axis Theorem (SAT); ne fonctionne que pour poly convexe; il faudrait sinon décomposer les polys en polys convexes
 // https://dyn4j.org/2010/01/sat/
 bool poly_intersects_poly(const Polygon2D * poly1, const Polygon2D * poly2, pt_type * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1) {
@@ -91,102 +90,97 @@ bool poly_intersects_poly(const Polygon2D * poly1, const Polygon2D * poly2, pt_t
 	axis2check.insert(axis2check.end(), poly2->_normals.begin(), poly2->_normals.end());
 
 	*overlap= 1e10;
-	unsigned int idx_pt_min_1= 0;
-	unsigned int idx_pt_max_1= 0;
-	unsigned int idx_pt_min_2= 0;
-	unsigned int idx_pt_max_2= 0;
-
-	bool current_pt_in_poly1= false;
+	*idx_pt= 0;
+	*is_pt_in_poly1= false;
+	
+	unsigned int idx_pt_normal_min= 0;
+	unsigned int idx_pt_normal_max= 0;
+	unsigned int idx_pt_other_min= 0;
+	unsigned int idx_pt_other_max= 0;
+	number proj_normal_min, proj_normal_max;
+	number proj_other_min, proj_other_max;
+	number current_overlap;
+	unsigned int current_idx_pt;
+	bool current_pt_in_poly1;
 
 	for (unsigned int idx_ax=0; idx_ax<axis2check.size(); ++idx_ax) {
 		pt_type ax= axis2check[idx_ax];
-		if (idx_ax>= poly1->_normals.size()) {
+		
+		// poly1 a la normale sur laquelle on projette
+		if (idx_ax< poly1->_normals.size()) {
+			current_pt_in_poly1= false;
+			poly1->min_max_pt_along_dir(ax, &idx_pt_normal_min, &proj_normal_min, &idx_pt_normal_max, &proj_normal_max);
+			poly2->min_max_pt_along_dir(ax, &idx_pt_other_min, &proj_other_min, &idx_pt_other_max, &proj_other_max);
+		}
+		// poly2 a la normale sur laquelle on projette
+		else {
 			current_pt_in_poly1= true;
+			poly2->min_max_pt_along_dir(ax, &idx_pt_normal_min, &proj_normal_min, &idx_pt_normal_max, &proj_normal_max);
+			poly1->min_max_pt_along_dir(ax, &idx_pt_other_min, &proj_other_min, &idx_pt_other_max, &proj_other_max);
 		}
 		
-		number proj_min_1= 1e10;
-		number proj_max_1= -1e10;
-		for (unsigned int idx_pt=0; idx_pt<poly1->_pts.size(); ++idx_pt) {
-			number proj= glm::dot(ax, poly1->_pts[idx_pt]);
-			if (proj < proj_min_1) {
-				proj_min_1= proj;
-				idx_pt_min_1= idx_pt;
-			}
-			if (proj > proj_max_1) {
-				proj_max_1= proj;
-				idx_pt_max_1= idx_pt;
-			}
+		// nmin < nmax < omin < omax -> pas d'intersection
+		if (proj_other_min> proj_normal_max) {
+			return false;
 		}
-
-		number proj_min_2= 1e10;
-		number proj_max_2= -1e10;
-		for (unsigned int idx_pt=0; idx_pt<poly2->_pts.size(); ++idx_pt) {
-			number proj= glm::dot(ax, poly2->_pts[idx_pt]);
-			if (proj < proj_min_2) {
-				proj_min_2= proj;
-				idx_pt_min_2= idx_pt;
-			}
-			if (proj > proj_max_2) {
-				proj_max_2= proj;
-				idx_pt_max_2= idx_pt;
-			}
-		}
-
-		if (proj_min_1> proj_max_2 || proj_min_2> proj_max_1) {
+		// omin < omax < nmin < nmax -> pas d'intersection
+		else if (proj_normal_min> proj_other_max) {
 			return false;
 		}
 
-		number current_overlap= std::min(proj_max_1, proj_max_2)- std::max(proj_min_1, proj_min_2);
-		bool invert_axis= false;
-		if ((proj_min_1< proj_min_2 && proj_max_1> proj_max_2) || (proj_min_1> proj_min_2 && proj_max_1< proj_max_2)) {
-			number diff_min= abs(proj_min_1- proj_min_2);
-			number diff_max= abs(proj_max_1- proj_max_2);
-			if (diff_min< diff_max) {
-				current_overlap+= diff_min;
-				invert_axis= true;
+		// tous ces cas mènent au même code (à vérifier ?) mais je laisse une trace du raisonnement
+		else if (proj_other_min> proj_normal_min) {
+			// nmin < omin < nmax < omax
+			if (proj_other_max> proj_normal_max) {
+				current_overlap= proj_normal_max- proj_other_min;
+				current_idx_pt= idx_pt_other_min;
 			}
+			// nmin < omin < omax < nmax
 			else {
-				current_overlap+= diff_max;
+				current_overlap= proj_normal_max- proj_other_min;
+				current_idx_pt= idx_pt_other_min;
+			}
+		}
+		else {
+			// omin < nmin < nmax < omax
+			if (proj_other_max> proj_normal_max) {
+				current_overlap= proj_normal_max- proj_other_min;
+				current_idx_pt= idx_pt_other_min;
+			}
+			// omin < nmin < omax < nmax
+			else {
+				current_overlap= proj_normal_max- proj_other_min;
+				current_idx_pt= idx_pt_other_min;
 			}
 		}
 
 		if (current_overlap< *overlap) {
 			*overlap= current_overlap;
 			*is_pt_in_poly1= current_pt_in_poly1;
-			if (invert_axis) {
-				axis->x= -1.0* ax.x;
-				axis->y= -1.0* ax.y;
-			}
-			else {
-				axis->x= ax.x;
-				axis->y= ax.y;
-			}
-
-			if (is_pt_in_poly1) {
-				if (proj_max_1> proj_max_2) {
-					*idx_pt= idx_pt_min_1;
-				}
-				else {
-					*idx_pt= idx_pt_max_1;
-				}
-			}
-			else {
-				if (proj_max_1> proj_max_2) {
-					*idx_pt= idx_pt_max_2;
-				}
-				else {
-					*idx_pt= idx_pt_min_2;
-				}
-			}
+			*idx_pt= current_idx_pt;
+			axis->x= ax.x;
+			axis->y= ax.y;
 
 			/*std::cout << "overlap=" << *overlap << " ; idx_ax=" << idx_ax << " ; ax=(" << ax.x << " , " << ax.y << ")";
 			std::cout << " ; is_pt_in_poly1=" << *is_pt_in_poly1 << " ; idx_pt=" << *idx_pt;
-			std::cout << " ; proj_min_1=" << proj_min_1 << " ; proj_max_1=" << proj_max_1;
-			std::cout << " ; proj_min_2=" << proj_min_2 << " ; proj_max_2=" << proj_max_2;
+			std::cout << " ; proj_normal_min=" << proj_normal_min << " ; proj_normal_max=" << proj_normal_max;
+			std::cout << " ; proj_other_min=" << proj_other_min << " ; proj_other_max=" << proj_other_max;
 			std::cout << "\n";*/
 		}
 	}
 	return true;
+}
+
+
+bool bbox_intersects_bbox(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_type * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1) {
+	Polygon2D * poly1= new Polygon2D();
+	poly1->set_bbox(*bbox1);
+	Polygon2D * poly2= new Polygon2D();
+	poly2->set_bbox(*bbox2);
+	bool result= poly_intersects_poly(poly1, poly2, axis, overlap, idx_pt, is_pt_in_poly1);
+	delete poly1;
+	delete poly2;
+	return result;
 }
 
 
@@ -762,19 +756,23 @@ void Polygon2D::update_attributes() {
 }
 
 
-// pt du polygon le + éloigné le long d'une direction
-pt_type Polygon2D::farthest_pt_along_dir(const pt_type direction) {
-	number dist_max= -1e10;
-	pt_type farthest_pt;
-	for (unsigned int idx_pt=0; idx_pt<_pts.size(); ++idx_pt) {
-		number dist= glm::dot(direction, _pts[idx_pt]);
-		if (dist> dist_max) {
-			dist_max= dist;
-			farthest_pt= _pts[idx_pt];
+// pt du polygon le + à droite le long d'une direction
+void Polygon2D::min_max_pt_along_dir(const pt_type direction, unsigned int * idx_pt_min, number * dist_min, unsigned int * idx_pt_max, number * dist_max) const {
+	*dist_min= 1e10;
+	*dist_max= -1e10;
+	*idx_pt_min= 0;
+	*idx_pt_max= 0;
+	for (unsigned int i=0; i<_pts.size(); ++i) {
+		number dist= glm::dot(direction, _pts[i]);
+		if (dist> *dist_max) {
+			*dist_max= dist;
+			*idx_pt_max= i;
+		}
+		if (dist< *dist_min) {
+			*dist_min= dist;
+			*idx_pt_min= i;
 		}
 	}
-
-	return farthest_pt;
 }
 
 

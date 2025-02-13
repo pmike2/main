@@ -83,6 +83,11 @@ number distance_body_pt(RigidBody2D * body, pt_type pt, pt_type * proj) {
 
 
 // cf Separating Axis Theorem (SAT)
+
+
+// a revoir en utilisant poly_intersects_poly de geom_2d.h
+
+
 void axis_least_penetration(RigidBody2D * body_a, RigidBody2D * body_b, unsigned short * idx_pt_max, number * penetration_max) {
     *penetration_max= -1e10;
     *idx_pt_max= 0;

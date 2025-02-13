@@ -146,36 +146,57 @@ BBox_2D::BBox_2D() {
 }
 
 
-BBox_2D::BBox_2D(pt_type center, pt_type size, float alpha) : _center(center), _size(size), _alpha(alpha) {
+BBox_2D::BBox_2D(pt_type center, pt_type half_size, number alpha) : _center(center), _half_size(half_size), _alpha(alpha) {
+	_aabb= new AABB_2D();
 	update();
 }
 
 
 BBox_2D::~BBox_2D() {
-
+	delete _aabb;
 }
 
 
 void BBox_2D::update() {
-	float cos_alpha= cos(_alpha);
-	float sin_alpha= sin(_alpha);
+	number cos_alpha= cos(_alpha);
+	number sin_alpha= sin(_alpha);
 
-	_pts[0].x= _center.x- _size.x* cos_alpha+ _size.y* sin_alpha;
-	_pts[0].y= _center.y- _size.x* sin_alpha- _size.y* cos_alpha;
+	_pts[0].x= _center.x- _half_size.x* cos_alpha+ _half_size.y* sin_alpha;
+	_pts[0].y= _center.y- _half_size.x* sin_alpha- _half_size.y* cos_alpha;
 
-	_pts[1].x= _center.x+ _size.x* cos_alpha+ _size.y* sin_alpha;
-	_pts[1].y= _center.y+ _size.x* sin_alpha- _size.y* cos_alpha;
+	_pts[1].x= _center.x+ _half_size.x* cos_alpha+ _half_size.y* sin_alpha;
+	_pts[1].y= _center.y+ _half_size.x* sin_alpha- _half_size.y* cos_alpha;
 
-	_pts[2].x= _center.x+ _size.x* cos_alpha- _size.y* sin_alpha;
-	_pts[2].y= _center.y+ _size.x* sin_alpha+ _size.y* cos_alpha;
+	_pts[2].x= _center.x+ _half_size.x* cos_alpha- _half_size.y* sin_alpha;
+	_pts[2].y= _center.y+ _half_size.x* sin_alpha+ _half_size.y* cos_alpha;
 
-	_pts[3].x= _center.x- _size.x* cos_alpha- _size.y* sin_alpha;
-	_pts[3].y= _center.y- _size.x* sin_alpha+ _size.y* cos_alpha;
+	_pts[3].x= _center.x- _half_size.x* cos_alpha- _half_size.y* sin_alpha;
+	_pts[3].y= _center.y- _half_size.x* sin_alpha+ _half_size.y* cos_alpha;
+
+	number xmin, ymin, xmax, ymax;
+	xmin= ymin= 1e10;
+	xmax= ymax= -1e10;
+	for (unsigned int i=0; i<4; ++i) {
+		if (_pts[i].x< xmin) {
+			xmin= _pts[i].x;
+		}
+		if (_pts[i].y< ymin) {
+			ymin= _pts[i].y;
+		}
+		if (_pts[i].x> xmax) {
+			xmax= _pts[i].x;
+		}
+		if (_pts[i].y> ymax) {
+			ymax= _pts[i].y;
+		}
+	}
+	_aabb->_pos= pt_type(xmin, ymin);
+	_aabb->_size= pt_type(xmax- xmin, ymax- ymin);
 }
 
 
 std::ostream & operator << (std::ostream & os, const BBox_2D & bbox) {
-	os << "center=" << glm::to_string(bbox._center) << " ; size=" << glm::to_string(bbox._size) << " ; alpha=" << bbox._alpha;
+	os << "center=" << glm::to_string(bbox._center) << " ; half-size=" << glm::to_string(bbox._half_size) << " ; alpha=" << bbox._alpha;
 	return os;
 }
 
