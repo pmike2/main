@@ -309,6 +309,7 @@ Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_
 	_pt_min= pt_type(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
 	_pt_max= pt_type(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
 	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
+	_world2camera= glm::mat4(1.0);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
 	unsigned int n_buffers= 2;
@@ -317,11 +318,11 @@ Racing::Racing(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl, bool is_
 
 	_contexts["bbox"]= new DrawContext(prog_bbox, _buffers[0],
 	std::vector<std::string>{"position_in", "color_in"},
-	std::vector<std::string>{"camera2clip_matrix"});
+	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix"});
 
 	_contexts["force"]= new DrawContext(prog_bbox, _buffers[1],
 	std::vector<std::string>{"position_in", "color_in"},
-	std::vector<std::string>{"camera2clip_matrix"});
+	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix"});
 
 	load_models();
 
@@ -435,7 +436,7 @@ void Racing::randomize() {
 	add_boundary();
 
 	// ennemis
-	for (unsigned int i=0; i<100; ++i) {
+	for (unsigned int i=0; i<5; ++i) {
 		_cars.push_back(new Car(_models["car1"], pt_type(rand_number(_pt_min.x, _pt_max.x), rand_number(_pt_min.y, _pt_max.y)), rand_number(0.0, M_PI* 2.0)));
 	}
 
@@ -461,6 +462,7 @@ void Racing::draw_bbox() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -487,6 +489,7 @@ void Racing::draw_force() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -706,6 +709,19 @@ void Racing::anim() {
 
 	update_bbox();
 	update_force();
+
+	const number CAM_INC= 0.1;
+	const number CAM_INC_ALPHA= 0.1;
+	if (abs(_com_camera.x- _cars[0]->_com.x)> CAM_INC || abs(_com_camera.y- _cars[0]->_com.y)> CAM_INC) {
+		_com_camera.x+= CAM_INC* (_cars[0]->_com.x- _com_camera.x);
+		_com_camera.y+= CAM_INC* (_cars[0]->_com.y- _com_camera.y);
+	}
+	if (abs(_alpha_camera- _cars[0]->_alpha)> CAM_INC_ALPHA) {
+		_alpha_camera+= CAM_INC_ALPHA* (_cars[0]->_alpha- _alpha_camera);
+	}
+
+	//_world2camera= glm::translate(glm::rotate(glm::mat4(1.0f), -1.0f* float(_cars[0]->_alpha), glm::vec3(0.0, 0.0, 1.0f)), glm::vec3(-1.0f* float(_cars[0]->_com.x), -1.0f* float(_cars[0]->_com.y), 1.0f));
+	_world2camera= glm::translate(glm::rotate(glm::mat4(1.0f), -1.0f* float(_alpha_camera), glm::vec3(0.0, 0.0, 1.0f)), glm::vec3(-1.0f* float(_com_camera.x), -1.0f* float(_com_camera.y), 1.0f));
 }
 
 

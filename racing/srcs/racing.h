@@ -170,12 +170,15 @@ public:
 	std::vector<Car *> _cars;
 
 	pt_type _pt_min, _pt_max;
+	pt_type _com_camera;
+	number _alpha_camera;
 
 	bool _draw_bbox, _draw_force, _show_info; // faut-il afficher les BBox
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs
 	glm::mat4 _camera2clip; // glm::ortho
+	glm::mat4 _world2camera;
 	Font * _font; // font pour écriture textes
 
 	bool _key_left, _key_right, _key_up, _key_down, _key_a, _key_z; // les touches sont-elle enfoncées
