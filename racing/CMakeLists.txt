@@ -28,23 +28,23 @@ add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
 add_library(lib_font STATIC ../libs/font.cpp ../libs/font.h)
 
 add_library(lib_racing STATIC ../srcs/racing.cpp ../srcs/racing.h)
+add_library(lib_car STATIC ../srcs/car.cpp ../srcs/car.h)
+add_library(lib_track STATIC ../srcs/track.cpp ../srcs/track.h)
+add_library(lib_track_editor STATIC ../srcs/track_editor.cpp ../srcs/track_editor.h)
 
 add_executable(main ./srcs/main.cpp)
+add_executable(editor ./srcs/editor.cpp)
+
+set(EXT_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_MIXER_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
+set(LOCAL_LIBS lib_repere lib_gl_utils lib_utile lib_input_state lib_bbox lib_bbox_2d lib_geom_2d lib_font)
  
-target_link_libraries(main PUBLIC lib_repere)
-target_link_libraries(main PUBLIC lib_gl_utils)
-target_link_libraries(main PUBLIC lib_utile)
-target_link_libraries(main PUBLIC lib_input_state)
-target_link_libraries(main PUBLIC lib_bbox)
-target_link_libraries(main PUBLIC lib_bbox_2d)
-target_link_libraries(main PUBLIC lib_geom_2d)
-target_link_libraries(main PUBLIC lib_font)
-
+target_link_libraries(main PUBLIC ${EXT_LIBS})
+target_link_libraries(main PUBLIC ${LOCAL_LIBS})
 target_link_libraries(main PUBLIC lib_racing)
+target_link_libraries(main PUBLIC lib_car)
+target_link_libraries(main PUBLIC lib_track)
 
-target_link_libraries(main PUBLIC ${SDL2_LIBRARIES})
-target_link_libraries(main PUBLIC ${SDL2_IMAGE_LIBRARIES})
-target_link_libraries(main PUBLIC ${SDL2_MIXER_LIBRARIES})
-target_link_libraries(main PUBLIC ${OPENGL_LIBRARIES})
-target_link_libraries(main PUBLIC ${FREETYPE_LIBRARIES})
-
+target_link_libraries(editor PUBLIC ${EXT_LIBS})
+target_link_libraries(editor PUBLIC ${LOCAL_LIBS})
+target_link_libraries(editor PUBLIC lib_track)
+target_link_libraries(editor PUBLIC lib_track_editor)

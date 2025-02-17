@@ -9,6 +9,26 @@
 #include "utile.h"
 
 
+pt_type rot(pt_type v, number alpha) {
+	return pt_type(v.x* cos(alpha)- v.y* sin(alpha), v.x* sin(alpha)+ v.y* cos(alpha));
+}
+
+
+number norm(pt_type v) {
+	return sqrt(v.x* v.x+ v.y* v.y);
+}
+
+
+pt_type normalized(pt_type v) {
+	return v/ norm(v);
+}
+
+
+number scal(pt_type u, pt_type v) {
+	return u.x* v.x+ u.y* v.y;
+}
+
+
 // angle -> matrice de rotation
 void rotation_float2mat(float rot, mat & mat) {
     // glm est en column-major order par défaut -> mat[col][row]
@@ -688,6 +708,14 @@ void Polygon2D::set_bbox(const BBox_2D & bbox) {
 }
 
 
+void Polygon2D::translate(pt_type v) {
+	for (unsigned int i=0; i<_pts.size(); ++i) {
+		_pts[i]+= v;
+	}
+	update_attributes();
+}
+
+
 void Polygon2D::update_attributes() {
 	// calcul aire
 	_area= 0.0;
@@ -776,8 +804,8 @@ void Polygon2D::min_max_pt_along_dir(const pt_type direction, unsigned int * idx
 }
 
 
-void Polygon2D::print() {
-	std::cout << "area= " << _area << " ; centroid= " << glm::to_string(_centroid);
-	std::cout << " ; aabb_pos=" << glm::to_string(_aabb->_pos) << " ; aabb_size=" << glm::to_string(_aabb->_size);
-	std::cout << "\n";
+std::ostream & operator << (std::ostream & os, const Polygon2D & polygon) {
+	os << "area= " << polygon._area << " ; centroid= " << glm::to_string(polygon._centroid);
+	os << " ; aabb_pos=" << glm::to_string(polygon._aabb->_pos) << " ; aabb_size=" << glm::to_string(polygon._aabb->_size);
+	return os;
 }

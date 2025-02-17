@@ -21,6 +21,12 @@ const number EPSILON= 1e-6;
 class Polygon2D;
 
 
+pt_type rot(pt_type v, number alpha);
+number norm(pt_type v);
+pt_type normalized(pt_type v);
+number scal(pt_type u, pt_type v);
+number cross(pt_type u, pt_type v);
+
 void rotation_float2mat(float rot, mat & mat);
 number cross2d(const pt_type & v1, const pt_type & v2);
 bool cmp_points(const pt_type & pt1, const pt_type & pt2);
@@ -57,9 +63,10 @@ public:
 	void randomize(unsigned int n_points, number radius=1.0, pt_type center=pt_type(0.0), bool convexhull=false);
 	void set_rectangle(const pt_type origin, const pt_type size);
 	void set_bbox(const BBox_2D & bbox);
+	void translate(pt_type v);
 	void update_attributes();
 	void min_max_pt_along_dir(const pt_type direction, unsigned int * idx_pt_min, number * dist_min, unsigned int * idx_pt_max, number * dist_max) const;
-	void print();
+	friend std::ostream & operator << (std::ostream & os, const Polygon2D & polygon);
 
 
 	std::vector<pt_type> _pts;
