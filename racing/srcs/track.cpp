@@ -29,6 +29,7 @@ TrackTile::TrackTile(std::string json_path) : _json_path(json_path) {
 		}
 		Polygon2D * obstacle= new Polygon2D();
 		obstacle->set_points(pts);
+		obstacle->triangulate();
 		_obstacles.push_back(obstacle);
 	}
 }

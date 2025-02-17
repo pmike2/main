@@ -4,12 +4,14 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <tuple>
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 
 #include "typedefs.h"
 #include "bbox_2d.h"
+#include "triangulation.h"
 
 
 // 1.0 / 3.0
@@ -66,6 +68,7 @@ public:
 	void translate(pt_type v);
 	void update_attributes();
 	void min_max_pt_along_dir(const pt_type direction, unsigned int * idx_pt_min, number * dist_min, unsigned int * idx_pt_max, number * dist_max) const;
+	void triangulate();
 	friend std::ostream & operator << (std::ostream & os, const Polygon2D & polygon);
 
 
@@ -75,6 +78,7 @@ public:
 	pt_type _centroid;
 	number _radius; // rayon cercle englobant
 	AABB_2D * _aabb;
+	std::vector<std::vector<int> > _triangles_idx;
 };
 
 

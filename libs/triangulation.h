@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 
 #include "bbox_2d.h"
+#include "typedefs.h"
 
 /*
 
@@ -31,12 +32,12 @@ struct Triangle {
 
 struct PointBin {
 	PointBin();
-	PointBin(glm::vec2 pt_init, glm::vec2 pt, int idx_init, int idx_bin);
+	PointBin(pt_type pt_init, pt_type pt, int idx_init, int idx_bin);
 	~PointBin();
 
 
-	glm::vec2 _pt_init;
-	glm::vec2 _pt;
+	pt_type _pt_init;
+	pt_type _pt;
 	int _idx_init;
 	int _idx_bin;
 	std::vector<Triangle *> _triangles;
@@ -75,7 +76,7 @@ struct ConstrainedEdge {
 struct Triangulation {
 	Triangulation();
 	Triangulation(
-		const std::vector<glm::vec2> & pts,
+		const std::vector<pt_type> & pts,
 		const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges=std::vector<std::pair<unsigned int, unsigned int> >(),
 		bool clean_in_constrained_polygon=false,
 		bool sort_by_bin=true,
@@ -84,7 +85,7 @@ struct Triangulation {
 	~Triangulation();
 	
 	// méthodes utiles
-	void init(const std::vector<glm::vec2> & pts, const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges);
+	void init(const std::vector<pt_type> & pts, const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges);
 	void add_large_triangle();
 	Triangle * get_containing_triangle(unsigned int idx_pt);
 	void delete_triangle(Triangle * triangle, bool update_point_bin=false);
@@ -102,7 +103,7 @@ struct Triangulation {
 	int idx_triangle(Triangle * triangle);
 	void print_triangle(Triangle * triangle, bool verbose=false, bool is_pt_init=true);
 	void draw(std::string svg_path, bool verbose=false);
-	glm::vec2 svg_coords(glm::vec2 & v);
+	pt_type svg_coords(pt_type & v);
 
 
 	std::vector<PointBin *> _pts;
@@ -110,7 +111,7 @@ struct Triangulation {
 	std::vector<ConstrainedEdge *> _constrained_edges;
 	AABB_2D * _aabb;
 	std::vector<AABB_2D *> _bins;
-	float _svg_margin= 0.1f;
+	number _svg_margin= 0.1;
 	bool _sort_by_bin, _verbose;
 };
 

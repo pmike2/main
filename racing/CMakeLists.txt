@@ -25,6 +25,7 @@ add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h
 add_library(lib_bbox STATIC ../libs/bbox.cpp ../libs/bbox.h)
 add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
 add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
+add_library(lib_triangulation STATIC ../libs/triangulation.cpp ../libs/triangulation.h)
 add_library(lib_font STATIC ../libs/font.cpp ../libs/font.h)
 
 add_library(lib_racing STATIC ../srcs/racing.cpp ../srcs/racing.h)
@@ -36,7 +37,7 @@ add_executable(main ./srcs/main.cpp)
 add_executable(editor ./srcs/editor.cpp)
 
 set(EXT_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_MIXER_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
-set(LOCAL_LIBS lib_repere lib_gl_utils lib_utile lib_input_state lib_bbox lib_bbox_2d lib_geom_2d lib_font)
+set(LOCAL_LIBS lib_repere lib_gl_utils lib_utile lib_input_state lib_bbox lib_bbox_2d lib_geom_2d lib_triangulation lib_font)
  
 target_link_libraries(main PUBLIC ${EXT_LIBS})
 target_link_libraries(main PUBLIC ${LOCAL_LIBS})

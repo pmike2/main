@@ -66,11 +66,22 @@ poly2=(-0.596 , -2.9872) , (-1.755 , -1.4152) , (-3.853 , -0.7144) */
 }
 
 
+void test5() {
+	Polygon2D * poly= new Polygon2D();
+	poly->set_points(std::vector<pt_type>{pt_type(0.0 , 0.0), pt_type(1.0 , 0.0), pt_type(1.0 , 1.0), pt_type(0.0 , 1.0)});
+	poly->triangulate();
+	for (auto tri : poly->_triangles_idx) {
+		std::cout << tri[0] << " ; " << tri[1] << " ; " << tri[2] << "\n";
+	}
+}
+
+
 int main() {
 	//test1();
 	//test2();
 	//test3();
-	test4();
+	//test4();
+	test5();
 	
 	return 0;
 }

@@ -1,5 +1,6 @@
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -20,8 +21,8 @@ TilesPool::TilesPool() {
 		_tiles[key]= new TrackTile(json_path);
 		_tile_names.push_back(key);
 	}
-	_width= 1;
-	_height= _tiles.size();
+	_width= 4;
+	_height= _tiles.size()/ 4;
 	_cell_size= 1.0;
 }
 
@@ -126,9 +127,9 @@ void TrackEditor::save_json(std::string json_path) {
 	js["width"]= _track->_width;
 	js["height"]= _track->_height;
 	js["cell_size"]= _track->_cell_size;
-	js["tile"]= json::array();
+	js["tiles"]= json::array();
 	for (auto tile : _track->_tiles) {
-		js["tile"].push_back(basename(tile->_json_path));
+		js["tiles"].push_back(basename(tile->_json_path));
 	}
 
 	ofs << std::setw(4) << js << "\n";
@@ -261,11 +262,13 @@ void TrackEditor::draw() {
 void TrackEditor::update_grid() {
 	DrawContext * context= _contexts["grid"];
 	context->_n_pts= 2* (_track->_width+ 1)+ 2* (_track->_height+ 1);
+	context->_n_pts+= 2* (_pool->_width+ 1)+ 2* (_pool->_height+ 1);
 	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
 	unsigned int compt= 0;
+
 	for (int i=0; i<_track->_width+ 1; ++i) {
 		data[compt++]= float(i)* _track->_cell_size+ float(GRID_OFFSET.x);
 		data[compt++]= float(GRID_OFFSET.y);
@@ -280,6 +283,23 @@ void TrackEditor::update_grid() {
 		compt+= 4;
 		data[compt++]= _track->_width+ float(GRID_OFFSET.x);
 		data[compt++]= float(i)* _track->_cell_size+ float(GRID_OFFSET.y);
+		compt+= 4;
+	}
+
+	for (int i=0; i<_pool->_width+ 1; ++i) {
+		data[compt++]= float(i)* _pool->_cell_size+ float(POOL_OFFSET.x);
+		data[compt++]= float(POOL_OFFSET.y);
+		compt+= 4;
+		data[compt++]= float(i)* _pool->_cell_size+ float(POOL_OFFSET.x);
+		data[compt++]= _pool->_height+ float(POOL_OFFSET.y);
+		compt+= 4;
+	}
+	for (int i=0; i<_pool->_height+ 1; ++i) {
+		data[compt++]= float(POOL_OFFSET.x);
+		data[compt++]= float(i)* _pool->_cell_size+ float(POOL_OFFSET.y);
+		compt+= 4;
+		data[compt++]= _pool->_width+ float(POOL_OFFSET.x);
+		data[compt++]= float(i)* _pool->_cell_size+ float(POOL_OFFSET.y);
 		compt+= 4;
 	}
 
@@ -347,7 +367,7 @@ void TrackEditor::update_obstacle() {
 
 	for (auto tile : _track->_tiles) {
 		for (auto polygon : tile->_obstacles) {
-			context->_n_pts+= polygon->_pts.size();
+			context->_n_pts+= 3* polygon->_triangles_idx.size();
 		}
 	}
 
@@ -356,10 +376,13 @@ void TrackEditor::update_obstacle() {
 	unsigned int compt= 0;
 	for (auto tile : _track->_tiles) {
 		for (auto polygon : tile->_obstacles) {
-			for (auto pt : polygon->_pts) {
-				data[compt++]= float(pt.x)+ float(GRID_OFFSET.x);
-				data[compt++]= float(pt.y)+ float(GRID_OFFSET.y);
-				compt+= 4;
+			for (auto tri : polygon->_triangles_idx) {
+				for (int i=0; i<3; ++i) {
+					pt_type pt= polygon->_pts[tri[i]];
+					data[compt++]= float(pt.x)+ float(GRID_OFFSET.x);
+					data[compt++]= float(pt.y)+ float(GRID_OFFSET.y);
+					compt+= 4;
+				}
 			}
 		}
 	}
@@ -382,7 +405,7 @@ void TrackEditor::update_pool() {
 
 	for (auto tile : _pool->_tiles) {
 		for (auto polygon : tile.second->_obstacles) {
-			context->_n_pts+= polygon->_pts.size();
+			context->_n_pts+= 3* polygon->_triangles_idx.size();
 		}
 	}
 
@@ -391,11 +414,15 @@ void TrackEditor::update_pool() {
 	unsigned int compt= 0;
 	unsigned int idx_tile= 0;
 	for (auto tile : _pool->_tiles) {
+		std::pair<unsigned int, unsigned int> coord= _pool->idx2coord(idx_tile);
 		for (auto polygon : tile.second->_obstacles) {
-			for (auto pt : polygon->_pts) {
-				data[compt++]= float(pt.x)+ float(POOL_OFFSET.x);
-				data[compt++]= float(pt.y)+ float(POOL_OFFSET.y)+ float(idx_tile)* float(_track->_cell_size);
-				compt+= 4;
+			for (auto tri : polygon->_triangles_idx) {
+				for (int i=0; i<3; ++i) {
+					pt_type pt= polygon->_pts[tri[i]];
+					data[compt++]= float(pt.x)+ float(POOL_OFFSET.x)+ float(coord.first)* float(_pool->_cell_size);
+					data[compt++]= float(pt.y)+ float(POOL_OFFSET.y)+ float(coord.second)* float(_pool->_cell_size);
+					compt+= 4;
+				}
 			}
 		}
 		idx_tile++;
@@ -431,6 +458,7 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 		update_obstacle();
 		update_grid();
 		update_selection();
+		//std::cout << *_track << "\n";
 		return true;
 	}
 	else if (key== SDLK_s) {
@@ -520,7 +548,6 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 	else if (key== SDLK_w) {
 		_track->set_tile(_pool->get_tile_by_idx(_col_idx_pool, _row_idx_pool), _col_idx_select, _row_idx_select);
 		update_obstacle();
-		//std::cout << *_track << "\n";
 		return true;
 	}
 	return false;

@@ -641,6 +641,11 @@ Polygon2D::Polygon2D() : _area(0.0), _centroid(pt_type(0.0)), _radius(0.0) {
 Polygon2D::Polygon2D(const Polygon2D & polygon) {
 	_aabb= new AABB_2D(*polygon._aabb);
 	set_points(polygon._pts);
+
+	_triangles_idx.clear();
+	for (auto tri : polygon._triangles_idx) {
+		_triangles_idx.push_back(tri);
+	}
 }
 
 
@@ -801,6 +806,16 @@ void Polygon2D::min_max_pt_along_dir(const pt_type direction, unsigned int * idx
 			*idx_pt_min= i;
 		}
 	}
+}
+
+
+void Polygon2D::triangulate() {
+	Triangulation * tgl= new Triangulation(_pts);
+	for (auto tri : tgl->_triangles) {
+		std::vector<int> v{tri->_vertices[0], tri->_vertices[1], tri->_vertices[2]};
+		_triangles_idx.push_back(v);
+	}
+	delete tgl;
 }
 
 
