@@ -18,7 +18,9 @@
 #include "font.h"
 #include "typedefs.h"
 
+#include "static_object.h"
 #include "car.h"
+#include "track.h"
 
 
 enum cam_mode {FIXED, TRANSLATE, TRANSLATE_AND_ROTATE};
@@ -56,10 +58,14 @@ public:
 	~Racing();
 
 	void load_models();
-	void load_json(std::string json_path);
+	void load_track(std::string json_path);
+
+	Car * get_hero();
+	
+	/*void load_json(std::string json_path);
 	void save_json(std::string json_path);
 	void randomize();
-	void add_boundary();
+	void add_boundary();*/
 
 	// dessins
 	void draw_bbox();
@@ -85,8 +91,9 @@ public:
 	bool joystick_axis(unsigned int axis_idx, int value);
 
 
-	std::map<std::string, CarModel *> _models;
-	std::vector<Car *> _cars;
+	std::map<std::string, StaticObjectModel *> _models;
+	std::vector<StaticObject *> _objects;
+	Track * _track;
 
 	pt_type _pt_min, _pt_max;
 	pt_type _com_camera;

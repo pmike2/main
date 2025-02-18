@@ -38,6 +38,10 @@ void mouse_button_up(int x, int y, unsigned short button) {
 void mouse_button_down(int x, int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
+
+	if (track_editor->mouse_button_down(input_state)) {
+		return;
+	}
 }
 
 

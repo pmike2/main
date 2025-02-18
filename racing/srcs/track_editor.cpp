@@ -15,20 +15,28 @@ using json = nlohmann::json;
 
 // TilesPool -------------------------------------------
 TilesPool::TilesPool() {
-	std::vector<std::string> jsons= list_files("../data/tiles", "json");
+	/*std::vector<std::string> jsons= list_files("../data/tiles", "json");
 	for (auto json_path : jsons) {
 		std::string key= basename(json_path);
 		_tiles[key]= new TrackTile(json_path);
 		_tile_names.push_back(key);
-	}
+	}*/
 	_width= 4;
-	_height= _tiles.size()/ 4;
 	_cell_size= 1.0;
 }
 
 
 TilesPool::~TilesPool() {
 
+}
+
+
+void TilesPool::set_tiles(std::map<std::string, TrackTile * > tiles) {
+	for (auto model_tile : tiles) {
+		_tiles[model_tile.first]= model_tile.second;
+		_tile_names.push_back(model_tile.first);
+	}
+	_height= _tiles.size()/ 4;
 }
 
 
@@ -59,10 +67,12 @@ TrackEditor::TrackEditor() {
 
 
 TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl) :
-	_row_idx_select(0), _col_idx_select(0), _row_idx_pool(0), _col_idx_pool(0)
+	_row_idx_select(0), _col_idx_select(0), _row_idx_pool(0), _col_idx_pool(0),
+	_screengl(screengl)
 {
 	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
-	_world2camera= glm::translate(glm::mat4(1.0f), glm::vec3(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, 0.0f));
+	//_world2camera= glm::translate(glm::mat4(1.0f), glm::vec3(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, 0.0f));
+	//_world2camera= glm::mat4(1.0f);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
 	unsigned int n_buffers= 4;
@@ -85,8 +95,12 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_font, ScreenGL * screen
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_pool= new TilesPool();
 	_track= new Track();
+	_pool= new TilesPool();
+
+	// bizarre ??
+	_pool->set_tiles(_track->_model_tiles);
+
 	reinit();
 	update_obstacle();
 	update_grid();
@@ -107,16 +121,7 @@ void TrackEditor::reinit() {
 
 
 void TrackEditor::load_json(std::string json_path) {
-	std::ifstream ifs(json_path);
-	json js= json::parse(ifs);
-	ifs.close();
-
-	_track->set_size(js["width"], js["height"], js["cell_size"]);
-	unsigned int compt= 0;
-	for (auto tilename : js["tiles"]) {
-		_track->set_tile(_pool->_tiles[tilename], compt);
-		compt++;
-	}
+	_track->load_json(json_path);
 }
 
 
@@ -143,7 +148,7 @@ void TrackEditor::draw_grid() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
-	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	//glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
 	glUniform1f(context->_locs_uniform["z"], -10.0f);
 	
 	for (auto attr : context->_locs_attrib) {
@@ -171,7 +176,7 @@ void TrackEditor::draw_selection() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
-	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	//glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
 	glUniform1f(context->_locs_uniform["z"], -20.0f);
 	
 	for (auto attr : context->_locs_attrib) {
@@ -202,7 +207,7 @@ void TrackEditor::draw_obstacle() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
-	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	//glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
 	glUniform1f(context->_locs_uniform["z"], -30.0f);
 	
 	for (auto attr : context->_locs_attrib) {
@@ -230,7 +235,7 @@ void TrackEditor::draw_pool() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
-	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	//glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
 	glUniform1f(context->_locs_uniform["z"], -30.0f);
 	
 	for (auto attr : context->_locs_attrib) {
@@ -557,3 +562,28 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 bool TrackEditor::key_up(InputState * input_state, SDL_Keycode key) {
 	return false;
 }
+
+
+bool TrackEditor::mouse_button_down(InputState * input_state) {
+	float x, y;
+	int i, j;
+	_screengl->screen2gl(input_state->_x, input_state->_y, 	x, y);
+	
+	i= int((x- float(GRID_OFFSET.x))/ float(_track->_cell_size));
+	j= int((y- float(GRID_OFFSET.y))/ float(_track->_cell_size));
+	if (i>=0 && i< _track->_width && j>=0 && j< _track->_height) {
+		_col_idx_select= i;
+		_row_idx_select= j;
+		update_selection();
+	}
+
+	i= int((x- float(POOL_OFFSET.x))/ float(_pool->_cell_size));
+	j= int((y- float(POOL_OFFSET.y))/ float(_pool->_cell_size));
+	if (i>=0 && i< _pool->_width && j>=0 && j< _pool->_height) {
+		_col_idx_pool= i;
+		_row_idx_pool= j;
+		update_selection();
+	}
+	return false;
+}
+

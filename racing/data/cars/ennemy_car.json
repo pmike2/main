@@ -1,8 +1,10 @@
 {
-	"commentaire" : "si mass trop grand et/ou inertia trop petit, ca explose",
-	"fixed" : false,
+	"type" : "ennemy_car",
 	"mass" : 1.0,
 	"halfsize" : [0.3, 0.6],
+	"footprint" : [
+		[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]
+	],
 	"com2force_fwd" : [0.0, 0.5],
 	"com2force_bwd" : [0.0, -0.5],
 	"com2bbox_center" : [0.0, 0.1],

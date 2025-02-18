@@ -6,25 +6,21 @@
 
 #include "bbox_2d.h"
 #include "typedefs.h"
+#include "static_object.h"
 
 
-class CarModel {
+
+class CarModel : public StaticObjectModel {
 public:
 	CarModel();
 	CarModel(std::string json_path);
 	~CarModel();
 
 
-	std::string _json_path;
-
 	pt_type _forward;
 	pt_type _right;
 	pt_type _com2force_fwd;
 	pt_type _com2force_bwd;
-	pt_type _com2bbox_center;
-	pt_type _halfsize;
-	number _mass;
-	number _inertia;
 	number _max_wheel;
 	number _wheel_increment;
 	number _wheel_decrement;
@@ -37,17 +33,15 @@ public:
 	number _backward_static_friction;
 	number _backward_dynamic_friction;
 	number _friction_threshold;
-	number _angular_friction;
-
-	bool _fixed;
 };
 
 
-class Car {
+class Car : public StaticObject {
 public:
 	Car();
 	Car(CarModel * model, pt_type position, number alpha);
 	~Car();
+	CarModel * get_model();
 	void reinit(pt_type position, number alpha);
 	void update_direction();
 	void update_bbox();
@@ -57,25 +51,15 @@ public:
 	friend std::ostream & operator << (std::ostream & os, const Car & car);
 
 
-	CarModel * _model;
-	BBox_2D * _bbox;
+	//CarModel * _model;
 
 	pt_type _com2force_fwd; // vecteur com -> point ou on applique les forces
 	pt_type _com2force_bwd; // vecteur com -> point ou on applique les forces
-	pt_type _com2bbox_center; // vecteur com -> centre bbox
 	pt_type _forward;
 	pt_type _right;
 
-	pt_type _com; // center of mass
-	pt_type _velocity;
-	pt_type _acceleration;
 	pt_type _force_fwd;
 	pt_type _force_bwd;
-
-	number _alpha; // angle de rotation
-	number _angular_velocity;
-	number _angular_acceleration;
-	number _torque;
 
 	number _wheel;
 	number _thrust;

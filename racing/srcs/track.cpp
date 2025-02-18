@@ -56,7 +56,7 @@ std::ostream & operator << (std::ostream & os, const TrackTile & tile) {
 
 // Track ---------------------------------------------
 Track::Track() {
-	
+	load_models();
 }
 
 
@@ -65,11 +65,34 @@ Track::~Track() {
 }
 
 
+void Track::load_models() {
+	std::vector<std::string> jsons= list_files("../data/tiles", "json");
+	for (auto json_path : jsons) {
+		std::string key= basename(json_path);
+		_model_tiles[key]= new TrackTile(json_path);
+	}
+}
+
+
 void Track::clear() {
 	for (auto tile : _tiles) {
 		delete tile;
 	}
 	_tiles.clear();
+}
+
+
+void Track::load_json(std::string json_path) {
+	std::ifstream ifs(json_path);
+	json js= json::parse(ifs);
+	ifs.close();
+
+	set_size(js["width"], js["height"], js["cell_size"]);
+	unsigned int compt= 0;
+	for (auto tilename : js["tiles"]) {
+		set_tile(_model_tiles[tilename], compt);
+		compt++;
+	}
 }
 
 

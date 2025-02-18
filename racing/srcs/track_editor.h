@@ -24,15 +24,15 @@ const float Z_FAR= 1000.0f;
 const glm::vec4 GRID_COLOR(0.0, 1.0, 0.0, 0.7);
 const glm::vec4 OBSTACLE_COLOR(1.0, 0.0, 0.0, 0.5);
 const glm::vec4 SELECTION_COLOR(1.0, 1.0, 0.0, 0.3);
-const pt_type GRID_OFFSET(0.5, 0.5);
-const pt_type POOL_OFFSET(13.0, 0.5);
-//const number POOL_CELL_MARGIN= 0.5;
+const pt_type GRID_OFFSET(-9.0, -7.5);
+const pt_type POOL_OFFSET(3.5, -7.5);
 
 
 class TilesPool {
 public:
 	TilesPool();
 	~TilesPool();
+	void set_tiles(std::map<std::string, TrackTile * > tiles);
 	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
 	std::pair<unsigned int, unsigned int> idx2coord(unsigned int idx);
 	TrackTile * get_tile_by_idx(unsigned int col_idx, unsigned int row_idx);
@@ -66,6 +66,7 @@ public:
 	void randomize();
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
+	bool mouse_button_down(InputState * input_state);
 
 
 	Track * _track;
@@ -76,8 +77,9 @@ public:
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs
-	glm::mat4 _camera2clip, _world2camera; // glm::ortho
+	glm::mat4 _camera2clip;//, _world2camera; // glm::ortho
 	Font * _font; // font pour écriture textes
+	ScreenGL * _screengl;
 };
 
 #endif

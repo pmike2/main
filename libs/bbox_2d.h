@@ -43,6 +43,7 @@ public:
 	BBox_2D();
 	BBox_2D(pt_type center, pt_type half_size, number alpha=0.0);
 	~BBox_2D();
+	void set_aabb(AABB_2D & aabb);
 	void update();
 	friend std::ostream & operator << (std::ostream & os, const BBox_2D & bbox);
 

@@ -408,3 +408,14 @@ float * draw_polygon(float * data, std::vector<pt_type> pts, glm::vec4 color) {
 	return data+ 6* 2* pts.size();
 }
 
+
+float * draw_nothing(float * data, unsigned int n_attrs_per_pts, unsigned int n_pts) {
+	unsigned int compt= 0;
+	for (unsigned int idx_pt=0; idx_pt<n_pts; ++idx_pt) {
+		for (unsigned int idx_attr=0; idx_attr<n_attrs_per_pts; ++idx_attr) {
+			data[compt++]= 0.0;
+		}
+	}
+	return data+ n_attrs_per_pts* n_pts;
+}
+

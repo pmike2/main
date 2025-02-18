@@ -1,0 +1,24 @@
+{
+	"type" : "hero_car",
+	"mass" : 1.0,
+	"halfsize" : [0.3, 0.6],
+	"footprint" : [
+		[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]
+	],
+	"com2force_fwd" : [0.0, 0.5],
+	"com2force_bwd" : [0.0, -0.5],
+	"com2bbox_center" : [0.0, 0.1],
+	"max_wheel" : 0.9,
+	"wheel_increment" : 0.05,
+	"wheel_decrement" : 0.05,
+	"max_thrust" : 3.0,
+	"thrust_increment" : 0.01,
+	"thrust_decrement" : 0.02,
+	"max_brake" : 1.0,
+	"brake_increment" : 0.06,
+	"forward_static_friction" : 0.5,
+	"backward_static_friction" : 7.0,
+	"backward_dynamic_friction" : 1.0,
+	"friction_threshold" : 0.25,
+	"angular_friction" : 0.4
+}

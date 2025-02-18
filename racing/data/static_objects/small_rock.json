@@ -1,0 +1,12 @@
+{
+	"type" : "obstacle",
+	"fixed" : false,
+	"mass" : 1.0,
+	"halfsize" : [0.3, 0.6],
+	"footprint" : [
+		[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]
+	],
+	"com2bbox_center" : [0.0, 0.1],
+	"linear_friction" : 0.4,
+	"angular_friction" : 0.4
+}

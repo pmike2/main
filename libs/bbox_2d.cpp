@@ -157,6 +157,15 @@ BBox_2D::~BBox_2D() {
 }
 
 
+void BBox_2D::set_aabb(AABB_2D & aabb) {
+	_center= aabb.center();
+	_half_size= 0.5* aabb._size;
+	_alpha= 0.0;
+	
+	update();
+}
+
+
 void BBox_2D::update() {
 	number cos_alpha= cos(_alpha);
 	number sin_alpha= sin(_alpha);
