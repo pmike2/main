@@ -8,6 +8,8 @@
 
 #include "geom_2d.h"
 #include "static_object.h"
+#include "car.h"
+#include "typedefs.h"
 
 
 class TrackTile {
@@ -31,6 +33,11 @@ public:
 	void load_models();
 	void clear();
 	void load_json(std::string json_path);
+
+	Car * get_hero();
+	void collision();
+	void anim(number dt);
+
 	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
 	std::pair<unsigned int, unsigned int> idx2coord(unsigned int idx);
 	TrackTile * get_tile(unsigned int col_idx, unsigned int row_idx);
@@ -43,6 +50,10 @@ public:
 
 	std::map<std::string, TrackTile * > _model_tiles;
 	std::vector<TrackTile * > _tiles;
+
+	std::map<std::string, StaticObjectModel *> _models;
+	std::vector<StaticObject *> _objects;
+
 	unsigned int _width;
 	unsigned int _height;
 	number _cell_size;

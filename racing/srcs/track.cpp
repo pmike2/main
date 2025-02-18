@@ -66,19 +66,55 @@ Track::~Track() {
 
 
 void Track::load_models() {
-	std::vector<std::string> jsons= list_files("../data/tiles", "json");
-	for (auto json_path : jsons) {
-		std::string key= basename(json_path);
-		_model_tiles[key]= new TrackTile(json_path);
+	for (auto model : _models) {
+		delete model.second;
+	}
+	_models.clear();
+
+	std::vector<std::string> jsons_static= list_files("../data/static_objects", "json");
+	for (auto json_path : jsons_static) {
+		_models[basename(json_path)]= new StaticObjectModel(json_path);
+	}
+
+	std::vector<std::string> jsons_cars= list_files("../data/cars", "json");
+	for (auto json_path : jsons_cars) {
+		_models[basename(json_path)]= new CarModel(json_path);
+	}
+
+	std::vector<std::string> jsons_tiles= list_files("../data/tiles", "json");
+	for (auto json_path : jsons_tiles) {
+		_model_tiles[basename(json_path)]= new TrackTile(json_path);
+	}
+
+	for (auto model : _models) {
+		std::cout << model.first << "\n";
+	}
+	for (auto model_tile : _model_tiles) {
+		std::cout << model_tile.first << "\n";
 	}
 }
 
 
 void Track::clear() {
+	for (auto obj : _objects) {
+		delete obj;
+	}
+	_objects.clear();
+
+	for (auto model : _models) {
+		delete model.second;
+	}
+	_models.clear();
+
 	for (auto tile : _tiles) {
 		delete tile;
 	}
 	_tiles.clear();
+
+	for (auto model : _model_tiles) {
+		delete model.second;
+	}
+	_model_tiles.clear();
 }
 
 
@@ -93,6 +129,138 @@ void Track::load_json(std::string json_path) {
 		set_tile(_model_tiles[tilename], compt);
 		compt++;
 	}
+
+	for (auto tile : _tiles) {
+		for (auto obstacle : tile->_obstacles) {
+			StaticObject * obj= new StaticObject(_models["fixed_object"]);
+			obj->_footprint= obstacle;
+			obj->_bbox->set_aabb(*obstacle->_aabb);
+			_objects.push_back(obj);
+		}
+	}
+}
+
+
+Car * Track::get_hero() {
+	for (auto obj : _objects) {
+		if (obj->_model->_type== HERO_CAR) {
+			return (Car *)(obj);
+		}
+	}
+	return NULL;
+}
+
+
+void Track::collision() {
+	for (unsigned int idx_obj_1=0; idx_obj_1<_objects.size()- 1; ++idx_obj_1) {
+		for (unsigned int idx_obj_2=idx_obj_1+ 1; idx_obj_2<_objects.size(); ++idx_obj_2) {
+			StaticObject * obj1= _objects[idx_obj_1];
+			StaticObject * obj2= _objects[idx_obj_2];
+
+			if (obj1->_model->_fixed && obj2->_model->_fixed) {
+				continue;
+			}
+
+			if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
+				continue;
+			}
+
+			pt_type axis(0.0, 0.0);
+			number overlap= 0.0;
+			unsigned int idx_pt= 0;
+			bool is_pt_in_poly1= false;
+			//bool is_inter= bbox_intersects_bbox(car1->_bbox, car2->_bbox, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
+			bool is_inter= poly_intersects_poly(obj1->_footprint, obj2->_footprint, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
+
+			// on se place comme dans le cas https://en.wikipedia.org/wiki/Collision_response
+			// où la normale est celle de body1 et le point dans body2
+			if (is_pt_in_poly1) {
+				StaticObject * obj_tmp= obj1;
+				obj1= obj2;
+				obj2= obj_tmp;
+			}
+
+			if (is_inter) {
+				// on écarte un peu plus que de 0.5 de chaque coté ou de 1.0 dans le cas fixed
+				// est-ce utile ?
+				if (obj1->_model->_fixed) {
+					obj2->_com+= overlap* 1.05* axis;
+				}
+				else if (obj2->_model->_fixed) {
+					obj1->_com-= overlap* 1.05* axis;
+				}
+				else {
+					obj1->_com-= overlap* 0.55* axis;
+					obj2->_com+= overlap* 0.55* axis;
+				}
+
+				pt_type r1, r2;
+				r1= obj2->_footprint->_pts[idx_pt]- obj1->_com;
+				r2= obj2->_footprint->_pts[idx_pt]- obj2->_com;
+				
+				pt_type r1_norm= normalized(r1);
+				pt_type r1_norm_perp(-1.0* r1_norm.y, r1_norm.x);
+				pt_type contact_pt_velocity1= obj1->_velocity+ obj1->_angular_velocity* r1_norm_perp;
+
+				pt_type r2_norm= normalized(r2);
+				pt_type r2_norm_perp(-1.0* r2_norm.y, r2_norm.x);
+				pt_type contact_pt_velocity2= obj2->_velocity+ obj2->_angular_velocity* r2_norm_perp;
+
+				pt_type vr= contact_pt_velocity2- contact_pt_velocity1;
+
+				// https://en.wikipedia.org/wiki/Coefficient_of_restitution
+				// restitution doit etre entre 0 et 1 ; proche de 0 -> pas de rebond ; proche de 1 -> beaucoup de rebond
+				// TODO : faire des matériaux avec des valeurs de restitution différentes
+				number restitution= 0.2;
+
+
+				number impulse;
+				if (obj1->_model->_fixed) {
+					pt_type v= (cross2d(r2, axis)/ obj2->_model->_inertia)* r2;
+					impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj2->_model->_mass+ dot(v, axis));
+				}
+				else if (obj2->_model->_fixed) {
+					pt_type v= (cross2d(r1, axis)/ obj1->_model->_inertia)* r1;
+					impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_model->_mass+ dot(v, axis));
+				}
+				else {
+					pt_type v= (cross2d(r1, axis)/ obj1->_model->_inertia)* r1+ (cross2d(r2, axis)/ obj2->_model->_inertia)* r2;
+					impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_model->_mass+ 1.0/ obj2->_model->_mass+ dot(v, axis));
+				}
+
+				if (abs(impulse)> 10.0) {
+					std::cout << "impulse=" << impulse << "\n";
+					//std::cout << "dot(vr, axis)=" << dot(vr, axis) << " ; dot(v, axis)=" << dot(v, axis) << "\n";
+					//save_json("../data/test/big_impulse.json");
+				}
+
+				if (!obj1->_model->_fixed) {
+					obj1->_velocity-= (impulse/ obj1->_model->_mass)* axis;
+					obj1->_angular_velocity-= (impulse/ obj1->_model->_inertia)* cross2d(r1, axis);
+				}
+
+				if (!obj2->_model->_fixed) {
+					obj2->_velocity+= (impulse/ obj2->_model->_mass)* axis;
+					obj2->_angular_velocity+= (impulse/ obj2->_model->_inertia)* cross2d(r2, axis);
+				}
+
+				// peut-être pas nécessaire
+				obj1->_acceleration= pt_type(0.0);
+				obj1->_angular_acceleration= 0.0;
+				obj2->_acceleration= pt_type(0.0);
+				obj2->_angular_acceleration= 0.0;
+			}
+		}
+	}
+}
+
+
+void Track::anim(number dt) {
+	for (auto obj : _objects) {
+		obj->anim(dt);
+	}
+
+	collision();
 }
 
 

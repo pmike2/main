@@ -48,19 +48,8 @@ Racing::Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool i
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix"});
 
-	load_models();
 	_track= new Track();
 	load_track("../data/tracks/track1.json");
-
-	//_cars.push_back(new Car(_models["car1"], pt_type(0.0, 6.0), 0.0));
-	/*_cars.push_back(new Car(_models["car1"], pt_type(-4.0, 0.5), 0.0));
-	_cars[1]->_thrust= 2.0;
-	_cars.push_back(new Car(_models["car1"], pt_type(5.0, 0.0), M_PI* 0.5));
-	_cars[2]->_thrust= 0.0;*/
-
-	//load_json("../data/test/init.json");
-	//save_json("../data/test/init.json");
-	//randomize();
 
 	update_bbox();
 	update_force();
@@ -68,57 +57,12 @@ Racing::Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool i
 
 
 Racing::~Racing() {
-	for (auto obj : _objects) {
-		delete obj;
-	}
-	_objects.clear();
-
-	for (auto model : _models) {
-		delete model.second;
-	}
-	_models.clear();
-
 	delete _buffers;
-}
-
-
-void Racing::load_models() {
-	for (auto model : _models) {
-		delete model.second;
-	}
-	_models.clear();
-
-	std::vector<std::string> jsons_static= list_files("../data/static_objects", "json");
-	for (auto json_path : jsons_static) {
-		_models[basename(json_path)]= new StaticObjectModel(json_path);
-	}
-	std::vector<std::string> jsons_cars= list_files("../data/cars", "json");
-	for (auto json_path : jsons_cars) {
-		_models[basename(json_path)]= new CarModel(json_path);
-	}
 }
 
 
 void Racing::load_track(std::string json_path) {
 	_track->load_json(json_path);
-	for (auto tile : _track->_tiles) {
-		for (auto obstacle : tile->_obstacles) {
-			StaticObject * obj= new StaticObject(_models["fixed_object"]);
-			obj->_footprint= obstacle;
-			obj->_bbox->set_aabb(*obstacle->_aabb);
-			_objects.push_back(obj);
-		}
-	}
-}
-
-
-Car * Racing::get_hero() {
-	for (auto obj : _objects) {
-		if (obj->_model->_type== HERO_CAR) {
-			return (Car *)(obj);
-		}
-	}
-	return NULL;
 }
 
 
@@ -279,7 +223,7 @@ void Racing::show_info() {
 	const float font_scale= 0.007f;
 	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
 
-	Car * hero= get_hero();
+	Car * hero= _track->get_hero();
 
 	std::vector<Text> texts;
 
@@ -321,14 +265,14 @@ void Racing::update_bbox() {
 
 	const unsigned int n_pts_per_obj= 8;
 
-	for (auto obj : _objects) {
+	for (auto obj : _track->_objects) {
 		context->_n_pts+= n_pts_per_obj;
 	}
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	for (unsigned int idx_obj=0; idx_obj<_objects.size(); ++idx_obj) {
-		StaticObject * obj= _objects[idx_obj];
+	for (unsigned int idx_obj=0; idx_obj<_track->_objects.size(); ++idx_obj) {
+		StaticObject * obj= _track->_objects[idx_obj];
 
 		glm::vec4 color;
 		color= glm::vec4(1.0, 0.0, 0.0, 1.0);
@@ -390,15 +334,15 @@ void Racing::update_force() {
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
-	for (auto obj : _objects) {
+	for (auto obj : _track->_objects) {
 		context->_n_pts+= n_pts_per_car;
 	}
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr= data;
 
-	for (unsigned int idx_obj=0; idx_obj<_objects.size(); ++idx_obj) {
-		StaticObject * obj= _objects[idx_obj];
+	for (unsigned int idx_obj=0; idx_obj<_track->_objects.size(); ++idx_obj) {
+		StaticObject * obj= _track->_objects[idx_obj];
 		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
 			Car * car= (Car *)(obj);
 			ptr= draw_cross(ptr, car->_com, CROSS_SIZE, COM_CROSS_COLOR);
@@ -438,16 +382,18 @@ void Racing::update_force() {
 
 
 void Racing::anim() {
-	get_hero()->preanim_keys(_key_left, _key_right, _key_down, _key_up);
+	_track->get_hero()->preanim_keys(_key_left, _key_right, _key_down, _key_up);
 	
 	if (_ia) {
-		for (auto obj : _objects) {
+		for (auto obj : _track->_objects) {
 			if (obj->_model->_type== ENNEMY_CAR) {
 				Car * car= (Car *)(obj);
 				car->random_ia();
 			}
 		}
 	}
+
+	_track->anim(ANIM_DT);
 
 	// joystick
 	/*if (_is_joystick) {
@@ -460,12 +406,6 @@ void Racing::anim() {
 	else {*/
 	//}
 
-	for (auto obj : _objects) {
-		obj->anim(ANIM_DT);
-	}
-
-	collision();
-
 	update_bbox();
 	update_force();
 	
@@ -473,112 +413,8 @@ void Racing::anim() {
 }
 
 
-void Racing::collision() {
-	for (unsigned int idx_obj_1=0; idx_obj_1<_objects.size()- 1; ++idx_obj_1) {
-		for (unsigned int idx_obj_2=idx_obj_1+ 1; idx_obj_2<_objects.size(); ++idx_obj_2) {
-			StaticObject * obj1= _objects[idx_obj_1];
-			StaticObject * obj2= _objects[idx_obj_2];
-
-			if (obj1->_model->_fixed && obj2->_model->_fixed) {
-				continue;
-			}
-
-			if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
-				continue;
-			}
-
-			pt_type axis(0.0, 0.0);
-			number overlap= 0.0;
-			unsigned int idx_pt= 0;
-			bool is_pt_in_poly1= false;
-			//bool is_inter= bbox_intersects_bbox(car1->_bbox, car2->_bbox, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
-			bool is_inter= poly_intersects_poly(obj1->_footprint, obj2->_footprint, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
-
-			// on se place comme dans le cas https://en.wikipedia.org/wiki/Collision_response
-			// où la normale est celle de body1 et le point dans body2
-			if (is_pt_in_poly1) {
-				StaticObject * obj_tmp= obj1;
-				obj1= obj2;
-				obj2= obj_tmp;
-			}
-
-			if (is_inter) {
-				// on écarte un peu plus que de 0.5 de chaque coté ou de 1.0 dans le cas fixed
-				// est-ce utile ?
-				if (obj1->_model->_fixed) {
-					obj2->_com+= overlap* 1.05* axis;
-				}
-				else if (obj2->_model->_fixed) {
-					obj1->_com-= overlap* 1.05* axis;
-				}
-				else {
-					obj1->_com-= overlap* 0.55* axis;
-					obj2->_com+= overlap* 0.55* axis;
-				}
-
-				pt_type r1, r2;
-				r1= obj2->_footprint->_pts[idx_pt]- obj1->_com;
-				r2= obj2->_footprint->_pts[idx_pt]- obj2->_com;
-				
-				pt_type r1_norm= normalized(r1);
-				pt_type r1_norm_perp(-1.0* r1_norm.y, r1_norm.x);
-				pt_type contact_pt_velocity1= obj1->_velocity+ obj1->_angular_velocity* r1_norm_perp;
-
-				pt_type r2_norm= normalized(r2);
-				pt_type r2_norm_perp(-1.0* r2_norm.y, r2_norm.x);
-				pt_type contact_pt_velocity2= obj2->_velocity+ obj2->_angular_velocity* r2_norm_perp;
-
-				pt_type vr= contact_pt_velocity2- contact_pt_velocity1;
-
-				// https://en.wikipedia.org/wiki/Coefficient_of_restitution
-				// restitution doit etre entre 0 et 1 ; proche de 0 -> pas de rebond ; proche de 1 -> beaucoup de rebond
-				// TODO : faire des matériaux avec des valeurs de restitution différentes
-				number restitution= 0.2;
-
-
-				number impulse;
-				if (obj1->_model->_fixed) {
-					pt_type v= (cross2d(r2, axis)/ obj2->_model->_inertia)* r2;
-					impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj2->_model->_mass+ dot(v, axis));
-				}
-				else if (obj2->_model->_fixed) {
-					pt_type v= (cross2d(r1, axis)/ obj1->_model->_inertia)* r1;
-					impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_model->_mass+ dot(v, axis));
-				}
-				else {
-					pt_type v= (cross2d(r1, axis)/ obj1->_model->_inertia)* r1+ (cross2d(r2, axis)/ obj2->_model->_inertia)* r2;
-					impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_model->_mass+ 1.0/ obj2->_model->_mass+ dot(v, axis));
-				}
-
-				if (abs(impulse)> 10.0) {
-					std::cout << "impulse=" << impulse << "\n";
-					//std::cout << "dot(vr, axis)=" << dot(vr, axis) << " ; dot(v, axis)=" << dot(v, axis) << "\n";
-					//save_json("../data/test/big_impulse.json");
-				}
-
-				if (!obj1->_model->_fixed) {
-					obj1->_velocity-= (impulse/ obj1->_model->_mass)* axis;
-					obj1->_angular_velocity-= (impulse/ obj1->_model->_inertia)* cross2d(r1, axis);
-				}
-
-				if (!obj2->_model->_fixed) {
-					obj2->_velocity+= (impulse/ obj2->_model->_mass)* axis;
-					obj2->_angular_velocity+= (impulse/ obj2->_model->_inertia)* cross2d(r2, axis);
-				}
-
-				// peut-être pas nécessaire
-				obj1->_acceleration= pt_type(0.0);
-				obj1->_angular_acceleration= 0.0;
-				obj2->_acceleration= pt_type(0.0);
-				obj2->_angular_acceleration= 0.0;
-			}
-		}
-	}
-}
-
-
 void Racing::camera() {
-	Car * hero= get_hero();
+	Car * hero= _track->get_hero();
 
 	_com_camera.x+= CAM_INC* (hero->_com.x- _com_camera.x);
 	_com_camera.y+= CAM_INC* (hero->_com.y- _com_camera.y);

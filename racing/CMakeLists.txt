@@ -38,9 +38,9 @@ add_executable(main ./srcs/main.cpp)
 add_executable(editor ./srcs/editor.cpp)
 
 set(EXT_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_MIXER_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
-set(LOCAL_COMMON_LIBS lib_repere lib_gl_utils lib_utile lib_input_state lib_bbox lib_bbox_2d lib_geom_2d lib_triangulation lib_font)
-set(LOCAL_MAIN_LIBS lib_racing lib_car lib_static_object lib_track)
-set(LOCAL_EDITOR_LIBS lib_track lib_track_editor lib_static_object)
+set(LOCAL_COMMON_LIBS lib_repere lib_gl_utils lib_utile lib_input_state lib_bbox lib_bbox_2d lib_geom_2d lib_triangulation lib_font lib_track lib_static_object lib_car)
+set(LOCAL_MAIN_LIBS lib_racing)
+set(LOCAL_EDITOR_LIBS lib_track_editor)
  
 target_link_libraries(main PUBLIC ${EXT_LIBS})
 target_link_libraries(main PUBLIC ${LOCAL_COMMON_LIBS})

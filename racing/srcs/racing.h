@@ -57,16 +57,8 @@ public:
 	Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool is_joystick);
 	~Racing();
 
-	void load_models();
 	void load_track(std::string json_path);
-
-	Car * get_hero();
 	
-	/*void load_json(std::string json_path);
-	void save_json(std::string json_path);
-	void randomize();
-	void add_boundary();*/
-
 	// dessins
 	void draw_bbox();
 	void draw_force();
@@ -80,7 +72,6 @@ public:
 
 	// animation
 	void anim();
-	void collision();
 	void camera();
 
 	// input
@@ -91,8 +82,6 @@ public:
 	bool joystick_axis(unsigned int axis_idx, int value);
 
 
-	std::map<std::string, StaticObjectModel *> _models;
-	std::vector<StaticObject *> _objects;
 	Track * _track;
 
 	pt_type _pt_min, _pt_max;
