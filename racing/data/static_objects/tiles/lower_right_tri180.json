@@ -1,6 +1,5 @@
 {
-    "type": "obstacle",
-    "fixed": true,
+    "type": "obstacle_setting",
     "footprint": [
         [
             1.0,

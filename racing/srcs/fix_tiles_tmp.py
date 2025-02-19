@@ -9,13 +9,7 @@ def fix(json_path):
 	with open(json_path) as f:
 		data= json.load(f)
 
-		if "polygons" not in data.keys():
-			return
-
-		data["type"] = "obstacle"
-		data["fixed"] = True
-		data["footprint"] = data["polygons"]
-		del data["polygons"]
+		del data["fixed"]
 	
 		with open(json_path, "w") as f:
 			json.dump(data, f, indent=4)

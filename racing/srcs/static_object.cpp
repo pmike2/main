@@ -119,8 +119,11 @@ StaticObjectModel::StaticObjectModel(std::string json_path) : _json_path(json_pa
 	json js= json::parse(ifs);
 	ifs.close();
 
-	if (js["type"]== "obstacle") {
-		_type= OBSTACLE;
+	if (js["type"]== "obstacle_setting") {
+		_type= OBSTACLE_SETTING;
+	}
+	else if (js["type"]== "obstacle_floating") {
+		_type= OBSTACLE_FLOATING;
 	}
 	else if (js["type"]== "hero_car") {
 		_type= HERO_CAR;
@@ -133,8 +136,21 @@ StaticObjectModel::StaticObjectModel(std::string json_path) : _json_path(json_pa
 	}
 
 	_footprint= new Polygon2D();
+	std::vector<pt_type> pts;
+	for (auto coord : js["footprint"]) {
+		pt_type pt(coord[0], coord[1]);
+		pts.push_back(pt);
+	}
+	_footprint->set_points(pts);
 	
-	if (js["type"]== "obstacle") {
+	if (_type== OBSTACLE_SETTING) {
+		_fixed= true;
+		_com2bbox_center= pt_type(0.0);
+		_halfsize= pt_type(0.0);
+		_mass= _linear_friction= _angular_friction= 0.0;
+	}
+	
+	else if (_type== OBSTACLE_FLOATING) {
 		_fixed= js["fixed"];
 		if (_fixed) {
 			_com2bbox_center= pt_type(0.0);
@@ -147,28 +163,15 @@ StaticObjectModel::StaticObjectModel(std::string json_path) : _json_path(json_pa
 			_mass= js["mass"];
 			_linear_friction= js["linear_friction"];
 			_angular_friction= js["angular_friction"];
-			_footprint= new Polygon2D();
-			std::vector<pt_type> pts;
-			for (auto coord : js["footprint"]) {
-				pt_type pt(coord[0], coord[1]);
-				pts.push_back(pt);
-			}
-			_footprint->set_points(pts);
 		}
 	}
-	else {
+	
+	else if (_type== HERO_CAR || _type== ENNEMY_CAR) {
 		_fixed= false;
 		_com2bbox_center= pt_type(js["com2bbox_center"][0], js["com2bbox_center"][1]);
 		_halfsize= pt_type(js["halfsize"][0], js["halfsize"][1]);
 		_mass= js["mass"];
 		_angular_friction= js["angular_friction"];
-		_footprint= new Polygon2D();
-		std::vector<pt_type> pts;
-		for (auto coord : js["footprint"]) {
-			pt_type pt(coord[0], coord[1]);
-			pts.push_back(pt);
-		}
-		_footprint->set_points(pts);
 	}
 	
 	// https://en.wikipedia.org/wiki/List_of_moments_of_inertia

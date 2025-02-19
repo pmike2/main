@@ -26,7 +26,7 @@ const glm::vec4 OBSTACLE_COLOR(1.0, 0.0, 0.0, 0.5);
 const glm::vec4 SELECTION_COLOR(1.0, 1.0, 0.0, 0.3);
 const pt_type TRACK_ORIGIN(-9.0, -7.5);
 const pt_type TILES_ORIGIN(3.5, -7.5);
-const pt_type FLOATING_OBJECTS_ORIGIN(-7.0, 7.0);
+const pt_type FLOATING_OBJECTS_ORIGIN(-7.0, 3.0);
 
 
 class GridEditor {

@@ -11,42 +11,36 @@
 #include "car.h"
 #include "typedefs.h"
 
-/*
-class TrackTile {
-public:
-	TrackTile();
-	TrackTile(std::string json_path);
-	~TrackTile();
-	void clear();
-	friend std::ostream & operator << (std::ostream & os, const TrackTile & tile);
-
-
-	std::string _json_path;
-	std::vector<Polygon2D *> _obstacles;
-};
-*/
 
 const number CELL_SIZE= 1.0;
+
+
+enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
 
 
 class StaticObjectGrid {
 public:
 	StaticObjectGrid();
-	StaticObjectGrid(pt_type origin);
+	//StaticObjectGrid(pt_type origin);
 	~StaticObjectGrid();
 	void clear();
 	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
 	std::pair<unsigned int, unsigned int> idx2coord(unsigned int idx);
 	std::pair<int, int> number2coord(number x, number y);
+	pt_type coord2number(unsigned int col_idx, unsigned int row_idx);
+	pt_type idx2number(unsigned int idx);
 	StaticObject * get_tile(unsigned int col_idx, unsigned int row_idx);
+	void push_tile(StaticObjectModel * model);
 	void set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx);
 	void set_tile(StaticObjectModel * model, unsigned int idx);
+	void set_all(StaticObjectModel * model, unsigned int width, unsigned int height);
 
 
 	std::vector<StaticObject *> _objects;
 	unsigned int _width;
 	unsigned int _height;
 	pt_type _origin;
+	GridType _type;
 };
 
 
@@ -66,9 +60,6 @@ public:
 
 	friend std::ostream & operator << (std::ostream & os, const Track & track);
 
-
-	/*std::map<std::string, TrackTile * > _model_tiles;
-	std::vector<TrackTile * > _tiles;*/
 
 	std::map<std::string, StaticObjectModel *> _models;
 	StaticObjectGrid * _grid;

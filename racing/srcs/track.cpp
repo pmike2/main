@@ -10,58 +10,16 @@
 using json = nlohmann::json;
 
 
-// TrackTile ---------------------------------------------
-/*TrackTile::TrackTile() : _json_path("UNKNOWN") {
-
-}
-
-
-TrackTile::TrackTile(std::string json_path) : _json_path(json_path) {
-	std::ifstream ifs(json_path);
-	json js= json::parse(ifs);
-	ifs.close();
-
-	for (auto polygon : js["polygons"]) {
-		std::vector<pt_type> pts;
-		for (auto coord : polygon) {
-			pt_type pt(coord[0], coord[1]);
-			pts.push_back(pt);
-		}
-		Polygon2D * obstacle= new Polygon2D();
-		obstacle->set_points(pts);
-		obstacle->triangulate();
-		_obstacles.push_back(obstacle);
-	}
-}
-
-
-TrackTile::~TrackTile() {
-	clear();
-}
-
-
-void TrackTile::clear() {
-	for (auto obstacle : _obstacles) {
-		delete obstacle;
-	}
-	_obstacles.clear();
-}
-
-
-std::ostream & operator << (std::ostream & os, const TrackTile & tile) {
-	os << "json_path=" << tile._json_path;
-	return os;
-}*/
 
 // StaticObjectGrid ------------------------------------------------------------
-StaticObjectGrid::StaticObjectGrid() {
+StaticObjectGrid::StaticObjectGrid() : _width(0), _height(0), _origin(pt_type(0.0)), _type(VERTICAL_GRID) {
 
 }
 
 
-StaticObjectGrid::StaticObjectGrid(pt_type origin) : _width(0), _height(0), _origin(origin) {
+/*StaticObjectGrid::StaticObjectGrid(pt_type origin) : _width(0), _height(0), _origin(origin) {
 
-}
+}*/
 
 
 StaticObjectGrid::~StaticObjectGrid() {
@@ -80,12 +38,22 @@ void StaticObjectGrid::clear() {
 
 
 unsigned int StaticObjectGrid::coord2idx(unsigned int col_idx, unsigned int row_idx) {
-	return col_idx+ row_idx* _width;
+	if (_type== VERTICAL_GRID) {
+		return col_idx+ row_idx* _width;
+	}
+	else {
+		return row_idx+ col_idx* _height;
+	}
 }
 
 
 std::pair<unsigned int, unsigned int> StaticObjectGrid::idx2coord(unsigned int idx) {
-	return std::make_pair(idx % _width, idx / _width);
+	if (_type== VERTICAL_GRID) {
+		return std::make_pair(idx % _width, idx / _width);
+	}
+	else {
+		return std::make_pair(idx / _height, idx % _height);
+	}
 }
 
 
@@ -96,6 +64,17 @@ std::pair<int, int> StaticObjectGrid::number2coord(number x, number y) {
 		return std::make_pair(col_idx, row_idx);
 	}
 	return std::make_pair(-1, -1);
+}
+
+
+pt_type StaticObjectGrid::coord2number(unsigned int col_idx, unsigned int row_idx) {
+	return pt_type(_origin.x+ number(col_idx)* CELL_SIZE, _origin.y+ number(row_idx)* CELL_SIZE);
+}
+
+
+pt_type StaticObjectGrid::idx2number(unsigned int idx) {
+	std::pair<int, int> coord= idx2coord(idx);
+	return coord2number(coord.first, coord.second);
 }
 
 
@@ -112,10 +91,28 @@ StaticObject * StaticObjectGrid::get_tile(unsigned int col_idx, unsigned int row
 }
 
 
+void StaticObjectGrid::push_tile(StaticObjectModel * model) {
+	unsigned int new_size= _objects.size()+ 1;
+	if (_type== VERTICAL_GRID) {
+		_height= new_size/ _width;
+		if (new_size % _width!= 0) {
+			_height++;
+		}
+	}
+	else if (_type== HORIZONTAL_GRID) {
+		_width= new_size/ _height;
+		if (new_size % _height!= 0) {
+			_width++;
+		}
+	}
+	_objects.push_back(new StaticObject(model, idx2number(_objects.size()), 0.0));
+}
+
+
 void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx) {
 	StaticObject * object= get_tile(col_idx, row_idx);
 	object->_model= model;
-	object->reinit(_origin+ pt_type(number(col_idx)* CELL_SIZE, number(row_idx)* CELL_SIZE), 0.0);
+	object->reinit(coord2number(col_idx, row_idx), 0.0);
 }
 
 
@@ -125,10 +122,22 @@ void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int idx) {
 }
 
 
+void StaticObjectGrid::set_all(StaticObjectModel * model, unsigned int width, unsigned int height) {
+	clear();
+	_width= width;
+	_height= height;
+	for (unsigned int row_idx=0; row_idx<height; ++row_idx) {
+		for (unsigned int col_idx=0; col_idx<width; ++col_idx) {
+			_objects.push_back(new StaticObject(model, coord2number(col_idx, row_idx), 0.0));
+		}
+	}
+}
+
+
 // Track -------------------------------------------------------------------------------------
 Track::Track() {
 	load_models();
-	_grid= new StaticObjectGrid(pt_type(0.0, 0.0));
+	_grid= new StaticObjectGrid();
 	set_all("empty", 10, 10);
 }
 
@@ -142,22 +151,21 @@ void Track::load_models() {
 
 	std::vector<std::string> jsons_floating= list_files("../data/static_objects/floating_objects", "json");
 	for (auto json_path : jsons_floating) {
+		//std::cout << "chgmt floating : " << json_path << "\n";
 		_models[basename(json_path)]= new StaticObjectModel(json_path);
 	}
 
 	std::vector<std::string> jsons_tiles= list_files("../data/static_objects/tiles", "json");
 	for (auto json_path : jsons_tiles) {
+		//std::cout << "chgmt tile : " << json_path << "\n";
 		_models[basename(json_path)]= new StaticObjectModel(json_path);
 	}
 
 	std::vector<std::string> jsons_cars= list_files("../data/cars", "json");
 	for (auto json_path : jsons_cars) {
+		//std::cout << "chgmt car : " << json_path << "\n";
 		_models[basename(json_path)]= new CarModel(json_path);
 	}
-
-	/*for (auto model : _models) {
-		std::cout << model.first << "\n";
-	}*/
 }
 
 
@@ -227,14 +235,7 @@ void Track::set_tile(std::string model_name, unsigned int idx) {
 
 
 void Track::set_all(std::string model_name, unsigned int width, unsigned int height) {
-	_grid->clear();
-	_grid->_width= width;
-	_grid->_height= height;
-	for (unsigned int row_idx=0; row_idx<height; ++row_idx) {
-		for (unsigned int col_idx=0; col_idx<width; ++col_idx) {
-			_grid->_objects.push_back(new StaticObject(_models[model_name], _grid->_origin+ pt_type(number(col_idx)* CELL_SIZE, number(row_idx)* CELL_SIZE), 0.0));
-		}
-	}
+	_grid->set_all(_models[model_name], width, height);
 }
 
 

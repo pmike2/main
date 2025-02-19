@@ -39,9 +39,7 @@ GridEditor::GridEditor(GLuint prog_simple, ScreenGL * screengl) : _screengl(scre
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
 	_grid= new StaticObjectGrid();
-	update_grid();
-	update_selection();
-	update_tiles();
+	update();
 }
 
 
@@ -352,10 +350,7 @@ TrackEditor::TrackEditor(GLuint prog_simple, ScreenGL * screengl) :
 
 	_track= new Track();
 
-	update_grid();
-	update_selection();
-	update_tiles();
-	update_floating_objects();
+	update();
 }
 
 
@@ -734,10 +729,25 @@ Editor::Editor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl) {
 	_tile_grid_editor->_grid->_origin= TILES_ORIGIN;
 	_floating_grid_editor->_grid->_origin= FLOATING_OBJECTS_ORIGIN;
 
+	_tile_grid_editor->_grid->_width= 3;
+	_tile_grid_editor->_grid->_type= VERTICAL_GRID;
+	_floating_grid_editor->_grid->_height= 4;
+	_floating_grid_editor->_grid->_type= HORIZONTAL_GRID;
+
 	for (auto model : _track_editor->_track->_models) {
-		if (model->_type== ) // il faut pouvoir faire la distinction entre type==obstacle floating et type==obstacle élément de décor
-		_tile_grid_editor->_grid->set_tile();
+		if (model.second->_type== OBSTACLE_SETTING) {
+			std::cout << "loading OBSTACLE_SETTING : " << model.first << "\n";
+			_tile_grid_editor->_grid->push_tile(model.second);
+		}
+		else if (model.second->_type== OBSTACLE_FLOATING) {
+			std::cout << "loading OBSTACLE_FLOATING : " << model.first << "\n";
+			_floating_grid_editor->_grid->push_tile(model.second);
+		}
 	}
+
+	std::cout << "track_editor" << _track_editor->_track->_grid->_width << " ; " << _track_editor->_track->_grid->_height << "\n";
+	std::cout << "tile_grid_editor=" << _tile_grid_editor->_grid->_width << " ; " << _tile_grid_editor->_grid->_height << "\n";
+	std::cout << "floating_grid_editor=" << _floating_grid_editor->_grid->_width << " ; " << _floating_grid_editor->_grid->_height << "\n";
 
 	_track_editor->update();
 	_tile_grid_editor->update();

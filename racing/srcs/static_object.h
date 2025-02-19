@@ -9,7 +9,8 @@
 #include "typedefs.h"
 
 
-enum ObjectType {OBSTACLE, HERO_CAR, ENNEMY_CAR};
+// setting en anglais == décor
+enum ObjectType {OBSTACLE_SETTING, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR};
 
 
 class StaticObject;
