@@ -32,7 +32,7 @@ Racing::Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool i
 	{
 	_pt_min= pt_type(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
 	_pt_max= pt_type(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
-	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
+	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::mat4(1.0);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
@@ -259,24 +259,20 @@ void Racing::show_info() {
 
 
 void Racing::update_bbox() {
-	DrawContext * context= _contexts["bbox"];
-	context->_n_pts= 0;
-	context->_n_attrs_per_pts= 6;
-
 	const unsigned int n_pts_per_obj= 8;
 
-	for (auto obj : _track->_objects) {
-		context->_n_pts+= n_pts_per_obj;
-	}
+	DrawContext * context= _contexts["bbox"];
+	context->_n_pts= n_pts_per_obj* (_track->_grid->_objects.size()+ _track->_floating_objects.size());
+	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	for (unsigned int idx_obj=0; idx_obj<_track->_objects.size(); ++idx_obj) {
-		StaticObject * obj= _track->_objects[idx_obj];
-
-		glm::vec4 color;
-		color= glm::vec4(1.0, 0.0, 0.0, 1.0);
-		number positions[n_pts_per_obj* 2]= {
+	float * ptr= data;
+	for (auto obj : _track->_grid->_objects) {
+		glm::vec4 color(1.0, 0.0, 0.0, 1.0);
+		std::vector<pt_type> pts(obj->_bbox->_pts, obj->_bbox->_pts+ 4);
+		ptr= draw_polygon(ptr, pts, color);
+		/*number positions[n_pts_per_obj* 2]= {
 			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y,
 			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y,
 
@@ -290,28 +286,18 @@ void Racing::update_bbox() {
 			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y
 		};
 
-		/*for (unsigned int i=0; i<n_pts_per_obj; ++i) {
-			if (positions[2* i]> _pt_max.x) {
-				positions[2* i]= _pt_max.x;
-			}
-			if (positions[2* i]< _pt_min.x) {
-				positions[2* i]= _pt_min.x;
-			}
-			if (positions[2* i+ 1]> _pt_max.y) {
-				positions[2* i+ 1]= _pt_max.y;
-			}
-			if (positions[2* i+ 1]< _pt_min.y) {
-				positions[2* i+ 1]= _pt_min.y;
-			}
-		}*/
-
 		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 0]= float(positions[2* idx_pt]);
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 1]= float(positions[2* idx_pt+ 1]);
 			for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= color[idx_color];
 			}
-		}
+		}*/
+	}
+	for (auto obj : _track->_floating_objects) {
+		glm::vec4 color(1.0, 0.0, 0.0, 1.0);
+		std::vector<pt_type> pts(obj->_bbox->_pts, obj->_bbox->_pts+ 4);
+		ptr= draw_polygon(ptr, pts, color);
 	}
 
 	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
@@ -328,21 +314,16 @@ void Racing::update_bbox() {
 void Racing::update_force() {
 	const unsigned int n_pts_per_cross= 4;
 	const unsigned int n_pts_per_arrow= 6;
-	const unsigned int n_pts_per_car= 4* n_pts_per_cross+ 6* n_pts_per_arrow; // 4 croix ; 6 fleches
+	const unsigned int n_pts_per_obj= 4* n_pts_per_cross+ 6* n_pts_per_arrow; // 4 croix ; 6 fleches
 
 	DrawContext * context= _contexts["force"];
-	context->_n_pts= 0;
+	context->_n_pts= n_pts_per_obj* _track->_floating_objects.size();
 	context->_n_attrs_per_pts= 6;
-
-	for (auto obj : _track->_objects) {
-		context->_n_pts+= n_pts_per_car;
-	}
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr= data;
 
-	for (unsigned int idx_obj=0; idx_obj<_track->_objects.size(); ++idx_obj) {
-		StaticObject * obj= _track->_objects[idx_obj];
+	for (auto obj : _track->_floating_objects) {
 		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
 			Car * car= (Car *)(obj);
 			ptr= draw_cross(ptr, car->_com, CROSS_SIZE, COM_CROSS_COLOR);
@@ -385,7 +366,7 @@ void Racing::anim() {
 	_track->get_hero()->preanim_keys(_key_left, _key_right, _key_down, _key_up);
 	
 	if (_ia) {
-		for (auto obj : _track->_objects) {
+		for (auto obj : _track->_floating_objects) {
 			if (obj->_model->_type== ENNEMY_CAR) {
 				Car * car= (Car *)(obj);
 				car->random_ia();

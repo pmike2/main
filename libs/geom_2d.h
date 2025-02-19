@@ -66,6 +66,7 @@ public:
 	void set_rectangle(const pt_type origin, const pt_type size);
 	void set_bbox(const BBox_2D & bbox);
 	void translate(pt_type v);
+	void rotate(pt_type center, number alpha);
 	void update_attributes();
 	void min_max_pt_along_dir(const pt_type direction, unsigned int * idx_pt_min, number * dist_min, unsigned int * idx_pt_max, number * dist_max) const;
 	void triangulate();

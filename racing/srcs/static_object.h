@@ -12,6 +12,10 @@
 enum ObjectType {OBSTACLE, HERO_CAR, ENNEMY_CAR};
 
 
+class StaticObject;
+void collision(StaticObject * obj1, StaticObject * obj2);
+
+
 
 class StaticObjectModel {
 public:
@@ -47,12 +51,11 @@ public:
 class StaticObject {
 public:
 	StaticObject();
-	StaticObject(StaticObjectModel * model);
+	//StaticObject(StaticObjectModel * model);
 	StaticObject(StaticObjectModel * model, pt_type position, number alpha);
 	~StaticObject();
 	void reinit(pt_type position, number alpha);
-	void update_direction();
-	void update_bbox();
+	void update();
 	void anim(number anim_dt);
 	friend std::ostream & operator << (std::ostream & os, const StaticObject & obj);
 

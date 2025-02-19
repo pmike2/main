@@ -13,51 +13,310 @@
 using json = nlohmann::json;
 
 
-// TilesPool -------------------------------------------
-TilesPool::TilesPool() {
-	/*std::vector<std::string> jsons= list_files("../data/tiles", "json");
-	for (auto json_path : jsons) {
-		std::string key= basename(json_path);
-		_tiles[key]= new TrackTile(json_path);
-		_tile_names.push_back(key);
-	}*/
-	_width= 4;
-	_cell_size= 1.0;
-}
-
-
-TilesPool::~TilesPool() {
+// GridEditor ------------------------------------------
+GridEditor::GridEditor() {
 
 }
 
 
-void TilesPool::set_tiles(std::map<std::string, TrackTile * > tiles) {
-	for (auto model_tile : tiles) {
-		_tiles[model_tile.first]= model_tile.second;
-		_tile_names.push_back(model_tile.first);
+GridEditor::GridEditor(GLuint prog_simple, ScreenGL * screengl) : _screengl(screengl), _row_idx_select(0), _col_idx_select(0) {
+	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
+
+	unsigned int n_buffers= 3;
+	_buffers= new GLuint[n_buffers];
+	glGenBuffers(n_buffers, _buffers);
+
+	_contexts["grid"]= new DrawContext(prog_simple, _buffers[0],
+	std::vector<std::string>{"position_in", "color_in"},
+	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
+
+	_contexts["selection"]= new DrawContext(prog_simple, _buffers[1],
+	std::vector<std::string>{"position_in", "color_in"},
+	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
+
+	_contexts["tiles"]= new DrawContext(prog_simple, _buffers[2],
+	std::vector<std::string>{"position_in", "color_in"},
+	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
+
+	_grid= new StaticObjectGrid();
+	update_grid();
+	update_selection();
+	update_tiles();
+}
+
+
+GridEditor::~GridEditor() {
+
+}
+
+
+void GridEditor::draw_grid() {
+	DrawContext * context= _contexts["grid"];
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	//glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	glUniform1f(context->_locs_uniform["z"], -10.0f);
+	
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
 	}
-	_height= _tiles.size()/ 4;
-}
 
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
 
-unsigned int TilesPool::coord2idx(unsigned int col_idx, unsigned int row_idx) {
-	return col_idx+ row_idx* _width;
-}
+	glDrawArrays(GL_LINES, 0, context->_n_pts);
 
-
-std::pair<unsigned int, unsigned int> TilesPool::idx2coord(unsigned int idx) {
-	return std::make_pair(idx % _width, idx / _width);
-}
-
-
-TrackTile * TilesPool::get_tile_by_idx(unsigned int col_idx, unsigned int row_idx) {
-	unsigned int idx_tile= coord2idx(col_idx, row_idx);
-	if (idx_tile> _tile_names.size()- 1) {
-		std::cerr << "TilesPool::get_tile_by_idx : " << idx_tile << " >= " << _tile_names.size()- 1 << "\n";
-		return NULL;
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
 	}
-	return _tiles[_tile_names[idx_tile]];
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
 }
+
+
+void GridEditor::draw_selection() {
+	DrawContext * context= _contexts["selection"];
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	//glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	glUniform1f(context->_locs_uniform["z"], -20.0f);
+	
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
+void GridEditor::draw_tiles() {
+	DrawContext * context= _contexts["tiles"];
+	if (context->_n_pts== 0) {
+		return;
+	}
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	//glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	glUniform1f(context->_locs_uniform["z"], -30.0f);
+	
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
+void GridEditor::draw() {
+	draw_tiles();
+	draw_selection();
+	draw_grid();
+}
+
+
+void GridEditor::update_grid() {
+	DrawContext * context= _contexts["grid"];
+	context->_n_pts= 2* (_grid->_width+ 1)+ 2* (_grid->_height+ 1);
+	context->_n_attrs_per_pts= 6;
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	unsigned int compt= 0;
+
+	for (int i=0; i<_grid->_width+ 1; ++i) {
+		data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.x);
+		data[compt++]= float(_grid->_origin.y);
+		compt+= 4;
+		data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.x);
+		data[compt++]= _grid->_height+ float(_grid->_origin.y);
+		compt+= 4;
+	}
+	for (int i=0; i<_grid->_height+ 1; ++i) {
+		data[compt++]= float(_grid->_origin.x);
+		data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.y);
+		compt+= 4;
+		data[compt++]= _grid->_width+ float(_grid->_origin.x);
+		data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.y);
+		compt+= 4;
+	}
+
+	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= GRID_COLOR[idx_color];
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void GridEditor::update_selection() {
+
+	DrawContext * context= _contexts["selection"];
+	context->_n_pts= 6;
+	context->_n_attrs_per_pts= 6;
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	number positions[24]= {
+		CELL_SIZE* number(_col_idx_select)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _grid->_origin.y,
+		CELL_SIZE* number(_col_idx_select+ 1)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _grid->_origin.y,
+		CELL_SIZE* number(_col_idx_select+ 1)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _grid->_origin.y,
+
+		CELL_SIZE* number(_col_idx_select)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _grid->_origin.y,
+		CELL_SIZE* number(_col_idx_select+ 1)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _grid->_origin.y,
+		CELL_SIZE* number(_col_idx_select)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _grid->_origin.y,
+	};
+
+	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+		data[idx_pt* context->_n_attrs_per_pts+ 0]= positions[2* idx_pt+ 0];
+		data[idx_pt* context->_n_attrs_per_pts+ 1]= positions[2* idx_pt+ 1];
+		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= SELECTION_COLOR[idx_color];
+		}
+	}
+	
+	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+		std::cout << data[i] << " ; ";
+	}std::cout << "\n";*/
+
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void GridEditor::update_tiles() {
+	DrawContext * context= _contexts["tiles"];
+	context->_n_pts= 0;
+	context->_n_attrs_per_pts= 6;
+
+	for (auto obj : _grid->_objects) {
+		context->_n_pts+= 3* obj->_footprint->_triangles_idx.size();
+	}
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	unsigned int compt= 0;
+	for (auto obj : _grid->_objects) {
+		for (auto tri : obj->_footprint->_triangles_idx) {
+			for (int i=0; i<3; ++i) {
+				pt_type pt= obj->_footprint->_pts[tri[i]];
+				data[compt++]= float(pt.x)+ float(_grid->_origin.x);
+				data[compt++]= float(pt.y)+ float(_grid->_origin.y);
+				compt+= 4;
+			}
+		}
+	}
+
+	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= OBSTACLE_COLOR[idx_color];
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void GridEditor::update() {
+	update_grid();
+	update_selection();
+	update_tiles();
+}
+
+
+bool GridEditor::key_down(InputState * input_state, SDL_Keycode key) {
+	if (key== SDLK_DOWN) {
+		_row_idx_select--;
+		if (_row_idx_select< 0) {
+			_row_idx_select= 0;
+		}
+		update_selection();
+		return true;
+	}
+	else if (key== SDLK_UP) {
+		_row_idx_select++;
+		if (_row_idx_select> _grid->_height- 1) {
+			_row_idx_select= _grid->_height- 1;
+		}
+		update_selection();
+		return true;
+	}
+	else if (key== SDLK_LEFT) {
+		_col_idx_select--;
+		if (_col_idx_select< 0) {
+			_col_idx_select= 0;
+		}
+		update_selection();
+		return true;
+	}
+	else if (key== SDLK_RIGHT) {
+		_col_idx_select++;
+		if (_col_idx_select> _grid->_width- 1) {
+			_col_idx_select= _grid->_width- 1;
+		}
+		update_selection();
+		return true;
+	}
+	return false;
+}
+
+
+bool GridEditor::key_up(InputState * input_state, SDL_Keycode key) {
+	return false;
+}
+
+
+bool GridEditor::mouse_button_down(InputState * input_state) {
+	number x, y;
+	_screengl->screen2gl(input_state->_x, input_state->_y, x, y);
+	std::pair<int, int> coord= _grid->number2coord(x, y);
+	if (coord.first>= 0) {
+		_col_idx_select= coord.first;
+		_row_idx_select= coord.second;
+		update_selection();
+		return true;
+	}
+	
+	return false;
+}
+
 
 
 // TrackEditor -----------------------------------------
@@ -66,14 +325,10 @@ TrackEditor::TrackEditor() {
 }
 
 
-TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl) :
-	_row_idx_select(0), _col_idx_select(0), _row_idx_pool(0), _col_idx_pool(0),
-	_screengl(screengl)
+TrackEditor::TrackEditor(GLuint prog_simple, ScreenGL * screengl) :
+	_row_idx_select(0), _col_idx_select(0), _screengl(screengl)
 {
-	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
-	//_world2camera= glm::translate(glm::mat4(1.0f), glm::vec3(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, 0.0f));
-	//_world2camera= glm::mat4(1.0f);
-	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
+	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 
 	unsigned int n_buffers= 4;
 	_buffers= new GLuint[n_buffers];
@@ -87,25 +342,20 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_font, ScreenGL * screen
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["obstacle"]= new DrawContext(prog_simple, _buffers[2],
+	_contexts["tiles"]= new DrawContext(prog_simple, _buffers[2],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["pool"]= new DrawContext(prog_simple, _buffers[3],
+	_contexts["floating_objects"]= new DrawContext(prog_simple, _buffers[3],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
 	_track= new Track();
-	_pool= new TilesPool();
 
-	// bizarre ??
-	_pool->set_tiles(_track->_model_tiles);
-
-	reinit();
-	update_obstacle();
 	update_grid();
 	update_selection();
-	update_pool();
+	update_tiles();
+	update_floating_objects();
 }
 
 
@@ -115,8 +365,7 @@ TrackEditor::~TrackEditor() {
 
 
 void TrackEditor::reinit() {
-	_track->set_size(12, 10, 1.0);
-	_track->set_all(_pool->_tiles["empty"]);
+	_track->set_all("empty", 12, 10);
 }
 
 
@@ -129,12 +378,11 @@ void TrackEditor::save_json(std::string json_path) {
 	std::ofstream ofs(json_path);
 	json js;
 
-	js["width"]= _track->_width;
-	js["height"]= _track->_height;
-	js["cell_size"]= _track->_cell_size;
+	js["width"]= _track->_grid->_width;
+	js["height"]= _track->_grid->_height;
 	js["tiles"]= json::array();
-	for (auto tile : _track->_tiles) {
-		js["tiles"].push_back(basename(tile->_json_path));
+	for (auto tile : _track->_grid->_objects) {
+		js["tiles"].push_back(basename(tile->_model->_json_path));
 	}
 
 	ofs << std::setw(4) << js << "\n";
@@ -197,8 +445,8 @@ void TrackEditor::draw_selection() {
 }
 
 
-void TrackEditor::draw_obstacle() {
-	DrawContext * context= _contexts["obstacle"];
+void TrackEditor::draw_tiles() {
+	DrawContext * context= _contexts["tiles"];
 	if (context->_n_pts== 0) {
 		return;
 	}
@@ -228,8 +476,8 @@ void TrackEditor::draw_obstacle() {
 }
 
 
-void TrackEditor::draw_pool() {
-	DrawContext * context= _contexts["pool"];
+void TrackEditor::draw_floating_objects() {
+	DrawContext * context= _contexts["floating_objects"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -257,8 +505,8 @@ void TrackEditor::draw_pool() {
 
 
 void TrackEditor::draw() {
-	draw_obstacle();
-	draw_pool();
+	draw_floating_objects();
+	draw_tiles();
 	draw_selection();
 	draw_grid();
 }
@@ -266,45 +514,27 @@ void TrackEditor::draw() {
 
 void TrackEditor::update_grid() {
 	DrawContext * context= _contexts["grid"];
-	context->_n_pts= 2* (_track->_width+ 1)+ 2* (_track->_height+ 1);
-	context->_n_pts+= 2* (_pool->_width+ 1)+ 2* (_pool->_height+ 1);
+	context->_n_pts= 2* (_track->_grid->_width+ 1)+ 2* (_track->_grid->_height+ 1);
 	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
 	unsigned int compt= 0;
 
-	for (int i=0; i<_track->_width+ 1; ++i) {
-		data[compt++]= float(i)* _track->_cell_size+ float(GRID_OFFSET.x);
-		data[compt++]= float(GRID_OFFSET.y);
+	for (int i=0; i<_track->_grid->_width+ 1; ++i) {
+		data[compt++]= float(i)* CELL_SIZE+ float(_track->_grid->_origin.x);
+		data[compt++]= float(_track->_grid->_origin.y);
 		compt+= 4;
-		data[compt++]= float(i)* _track->_cell_size+ float(GRID_OFFSET.x);
-		data[compt++]= _track->_height+ float(GRID_OFFSET.y);
-		compt+= 4;
-	}
-	for (int i=0; i<_track->_height+ 1; ++i) {
-		data[compt++]= float(GRID_OFFSET.x);
-		data[compt++]= float(i)* _track->_cell_size+ float(GRID_OFFSET.y);
-		compt+= 4;
-		data[compt++]= _track->_width+ float(GRID_OFFSET.x);
-		data[compt++]= float(i)* _track->_cell_size+ float(GRID_OFFSET.y);
+		data[compt++]= float(i)* CELL_SIZE+ float(_track->_grid->_origin.x);
+		data[compt++]= _track->_grid->_height+ float(_track->_grid->_origin.y);
 		compt+= 4;
 	}
-
-	for (int i=0; i<_pool->_width+ 1; ++i) {
-		data[compt++]= float(i)* _pool->_cell_size+ float(POOL_OFFSET.x);
-		data[compt++]= float(POOL_OFFSET.y);
+	for (int i=0; i<_track->_grid->_height+ 1; ++i) {
+		data[compt++]= float(_track->_grid->_origin.x);
+		data[compt++]= float(i)* CELL_SIZE+ float(_track->_grid->_origin.y);
 		compt+= 4;
-		data[compt++]= float(i)* _pool->_cell_size+ float(POOL_OFFSET.x);
-		data[compt++]= _pool->_height+ float(POOL_OFFSET.y);
-		compt+= 4;
-	}
-	for (int i=0; i<_pool->_height+ 1; ++i) {
-		data[compt++]= float(POOL_OFFSET.x);
-		data[compt++]= float(i)* _pool->_cell_size+ float(POOL_OFFSET.y);
-		compt+= 4;
-		data[compt++]= _pool->_width+ float(POOL_OFFSET.x);
-		data[compt++]= float(i)* _pool->_cell_size+ float(POOL_OFFSET.y);
+		data[compt++]= _track->_grid->_width+ float(_track->_grid->_origin.x);
+		data[compt++]= float(i)* CELL_SIZE+ float(_track->_grid->_origin.y);
 		compt+= 4;
 	}
 
@@ -323,27 +553,19 @@ void TrackEditor::update_grid() {
 void TrackEditor::update_selection() {
 
 	DrawContext * context= _contexts["selection"];
-	context->_n_pts= 12;
+	context->_n_pts= 6;
 	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
 	number positions[24]= {
-		_track->_cell_size* number(_col_idx_select)+ GRID_OFFSET.x, _track->_cell_size* number(_row_idx_select)+ GRID_OFFSET.y,
-		_track->_cell_size* number(_col_idx_select+ 1)+ GRID_OFFSET.x, _track->_cell_size* number(_row_idx_select)+ GRID_OFFSET.y,
-		_track->_cell_size* number(_col_idx_select+ 1)+ GRID_OFFSET.x, _track->_cell_size* number(_row_idx_select+ 1)+ GRID_OFFSET.y,
+		CELL_SIZE* number(_col_idx_select)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _track->_grid->_origin.y,
+		CELL_SIZE* number(_col_idx_select+ 1)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _track->_grid->_origin.y,
+		CELL_SIZE* number(_col_idx_select+ 1)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _track->_grid->_origin.y,
 
-		_track->_cell_size* number(_col_idx_select)+ GRID_OFFSET.x, _track->_cell_size* number(_row_idx_select)+ GRID_OFFSET.y,
-		_track->_cell_size* number(_col_idx_select+ 1)+ GRID_OFFSET.x, _track->_cell_size* number(_row_idx_select+ 1)+ GRID_OFFSET.y,
-		_track->_cell_size* number(_col_idx_select)+ GRID_OFFSET.x, _track->_cell_size* number(_row_idx_select+ 1)+ GRID_OFFSET.y,
-
-		_pool->_cell_size* number(_col_idx_pool)+ POOL_OFFSET.x, _pool->_cell_size* number(_row_idx_pool)+ POOL_OFFSET.y,
-		_pool->_cell_size* number(_col_idx_pool+ 1)+ POOL_OFFSET.x, _pool->_cell_size* number(_row_idx_pool)+ POOL_OFFSET.y,
-		_pool->_cell_size* number(_col_idx_pool+ 1)+ POOL_OFFSET.x, _pool->_cell_size* number(_row_idx_pool+ 1)+ POOL_OFFSET.y,
-
-		_pool->_cell_size* number(_col_idx_pool)+ POOL_OFFSET.x, _pool->_cell_size* number(_row_idx_pool)+ POOL_OFFSET.y,
-		_pool->_cell_size* number(_col_idx_pool+ 1)+ POOL_OFFSET.x, _pool->_cell_size* number(_row_idx_pool+ 1)+ POOL_OFFSET.y,
-		_pool->_cell_size* number(_col_idx_pool)+ POOL_OFFSET.x, _pool->_cell_size* number(_row_idx_pool+ 1)+ POOL_OFFSET.y,
+		CELL_SIZE* number(_col_idx_select)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _track->_grid->_origin.y,
+		CELL_SIZE* number(_col_idx_select+ 1)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _track->_grid->_origin.y,
+		CELL_SIZE* number(_col_idx_select)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _track->_grid->_origin.y,
 	};
 
 	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
@@ -365,29 +587,25 @@ void TrackEditor::update_selection() {
 }
 
 
-void TrackEditor::update_obstacle() {
-	DrawContext * context= _contexts["obstacle"];
+void TrackEditor::update_tiles() {
+	DrawContext * context= _contexts["tiles"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
-	for (auto tile : _track->_tiles) {
-		for (auto polygon : tile->_obstacles) {
-			context->_n_pts+= 3* polygon->_triangles_idx.size();
-		}
+	for (auto obj : _track->_grid->_objects) {
+		context->_n_pts+= 3* obj->_footprint->_triangles_idx.size();
 	}
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
 	unsigned int compt= 0;
-	for (auto tile : _track->_tiles) {
-		for (auto polygon : tile->_obstacles) {
-			for (auto tri : polygon->_triangles_idx) {
-				for (int i=0; i<3; ++i) {
-					pt_type pt= polygon->_pts[tri[i]];
-					data[compt++]= float(pt.x)+ float(GRID_OFFSET.x);
-					data[compt++]= float(pt.y)+ float(GRID_OFFSET.y);
-					compt+= 4;
-				}
+	for (auto obj : _track->_grid->_objects) {
+		for (auto tri : obj->_footprint->_triangles_idx) {
+			for (int i=0; i<3; ++i) {
+				pt_type pt= obj->_footprint->_pts[tri[i]];
+				data[compt++]= float(pt.x)+ float(_track->_grid->_origin.x);
+				data[compt++]= float(pt.y)+ float(_track->_grid->_origin.y);
+				compt+= 4;
 			}
 		}
 	}
@@ -403,34 +621,27 @@ void TrackEditor::update_obstacle() {
 }
 
 
-void TrackEditor::update_pool() {
-	DrawContext * context= _contexts["pool"];
+void TrackEditor::update_floating_objects() {
+	DrawContext * context= _contexts["floating_objects"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
-	for (auto tile : _pool->_tiles) {
-		for (auto polygon : tile.second->_obstacles) {
-			context->_n_pts+= 3* polygon->_triangles_idx.size();
-		}
+	for (auto obj : _track->_floating_objects) {
+		context->_n_pts+= 3* obj->_footprint->_triangles_idx.size();
 	}
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
 	unsigned int compt= 0;
-	unsigned int idx_tile= 0;
-	for (auto tile : _pool->_tiles) {
-		std::pair<unsigned int, unsigned int> coord= _pool->idx2coord(idx_tile);
-		for (auto polygon : tile.second->_obstacles) {
-			for (auto tri : polygon->_triangles_idx) {
-				for (int i=0; i<3; ++i) {
-					pt_type pt= polygon->_pts[tri[i]];
-					data[compt++]= float(pt.x)+ float(POOL_OFFSET.x)+ float(coord.first)* float(_pool->_cell_size);
-					data[compt++]= float(pt.y)+ float(POOL_OFFSET.y)+ float(coord.second)* float(_pool->_cell_size);
-					compt+= 4;
-				}
+	for (auto obj : _track->_floating_objects) {
+		for (auto tri : obj->_footprint->_triangles_idx) {
+			for (int i=0; i<3; ++i) {
+				pt_type pt= obj->_footprint->_pts[tri[i]];
+				data[compt++]= float(pt.x)+ float(_track->_grid->_origin.x);
+				data[compt++]= float(pt.y)+ float(_track->_grid->_origin.y);
+				compt+= 4;
 			}
 		}
-		idx_tile++;
 	}
 	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
 		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
@@ -444,115 +655,45 @@ void TrackEditor::update_pool() {
 }
 
 
-void TrackEditor::randomize() {
-
+void TrackEditor::update() {
+	update_grid();
+	update_selection();
+	update_tiles();
+	update_floating_objects();
 }
 
 
 bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
-	if (key== SDLK_i) {
-		reinit();
-		update_obstacle();
-		update_grid();
-		update_selection();
-		return true;
-	}
-	else if (key== SDLK_l) {
-		load_json("../data/tracks/track1.json");
-		_row_idx_select= _col_idx_select= 0;
-		update_obstacle();
-		update_grid();
-		update_selection();
-		//std::cout << *_track << "\n";
-		return true;
-	}
-	else if (key== SDLK_s) {
-		save_json("../data/tracks/track_editor.json");
-		return true;
-	}
-	else if (key== SDLK_DOWN) {
-		if (input_state->get_key(SDLK_LSHIFT)) {
-			_row_idx_pool--;
-			if (_row_idx_pool< 0) {
-				_row_idx_pool= 0;
-			}
-		}
-		else {
-			_row_idx_select--;
-			if (_row_idx_select< 0) {
-				_row_idx_select= 0;
-			}
-			if (input_state->get_key(SDLK_w)) {
-				_track->set_tile(_pool->get_tile_by_idx(_col_idx_pool, _row_idx_pool), _col_idx_select, _row_idx_select);
-				update_obstacle();
-			}
+	if (key== SDLK_DOWN) {
+		_row_idx_select--;
+		if (_row_idx_select< 0) {
+			_row_idx_select= 0;
 		}
 		update_selection();
 		return true;
 	}
 	else if (key== SDLK_UP) {
-		if (input_state->get_key(SDLK_LSHIFT)) {
-			_row_idx_pool++;
-			if (_row_idx_pool> _pool->_height- 1) {
-				_row_idx_pool= _pool->_height- 1;
-			}
-		}
-		else {
-			_row_idx_select++;
-			if (_row_idx_select> _track->_height- 1) {
-				_row_idx_select= _track->_height- 1;
-			}
-			if (input_state->get_key(SDLK_w)) {
-				_track->set_tile(_pool->get_tile_by_idx(_col_idx_pool, _row_idx_pool), _col_idx_select, _row_idx_select);
-				update_obstacle();
-			}
+		_row_idx_select++;
+		if (_row_idx_select> _track->_grid->_height- 1) {
+			_row_idx_select= _track->_grid->_height- 1;
 		}
 		update_selection();
 		return true;
 	}
 	else if (key== SDLK_LEFT) {
-		if (input_state->get_key(SDLK_LSHIFT)) {
-			_col_idx_pool--;
-			if (_col_idx_pool< 0) {
-				_col_idx_pool= 0;
-			}
-		}
-		else {
-			_col_idx_select--;
-			if (_col_idx_select< 0) {
-				_col_idx_select= 0;
-			}
-			if (input_state->get_key(SDLK_w)) {
-				_track->set_tile(_pool->get_tile_by_idx(_col_idx_pool, _row_idx_pool), _col_idx_select, _row_idx_select);
-				update_obstacle();
-			}
+		_col_idx_select--;
+		if (_col_idx_select< 0) {
+			_col_idx_select= 0;
 		}
 		update_selection();
 		return true;
 	}
 	else if (key== SDLK_RIGHT) {
-		if (input_state->get_key(SDLK_LSHIFT)) {
-			_col_idx_pool++;
-			if (_col_idx_pool> _pool->_width- 1) {
-				_col_idx_pool= _pool->_width- 1;
-			}
-		}
-		else {
-			_col_idx_select++;
-			if (_col_idx_select> _track->_width- 1) {
-				_col_idx_select= _track->_width- 1;
-			}
-			if (input_state->get_key(SDLK_w)) {
-				_track->set_tile(_pool->get_tile_by_idx(_col_idx_pool, _row_idx_pool), _col_idx_select, _row_idx_select);
-				update_obstacle();
-			}
+		_col_idx_select++;
+		if (_col_idx_select> _track->_grid->_width- 1) {
+			_col_idx_select= _track->_grid->_width- 1;
 		}
 		update_selection();
-		return true;
-	}
-	else if (key== SDLK_w) {
-		_track->set_tile(_pool->get_tile_by_idx(_col_idx_pool, _row_idx_pool), _col_idx_select, _row_idx_select);
-		update_obstacle();
 		return true;
 	}
 	return false;
@@ -565,24 +706,114 @@ bool TrackEditor::key_up(InputState * input_state, SDL_Keycode key) {
 
 
 bool TrackEditor::mouse_button_down(InputState * input_state) {
-	float x, y;
-	int i, j;
-	_screengl->screen2gl(input_state->_x, input_state->_y, 	x, y);
-	
-	i= int((x- float(GRID_OFFSET.x))/ float(_track->_cell_size));
-	j= int((y- float(GRID_OFFSET.y))/ float(_track->_cell_size));
-	if (i>=0 && i< _track->_width && j>=0 && j< _track->_height) {
-		_col_idx_select= i;
-		_row_idx_select= j;
+	number x, y;
+	_screengl->screen2gl(input_state->_x, input_state->_y, x, y);
+	std::pair<int, int> coord= _track->_grid->number2coord(x, y);
+	if (coord.first>= 0) {
+		_col_idx_select= coord.first;
+		_row_idx_select= coord.second;
 		update_selection();
+		return true;
+	}
+	return false;
+}
+
+
+// Editor -----------------------------------------------------
+Editor::Editor() {
+
+}
+
+
+Editor::Editor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl) {
+	_track_editor= new TrackEditor(prog_simple, screengl);
+	_tile_grid_editor= new GridEditor(prog_simple, screengl);
+	_floating_grid_editor= new GridEditor(prog_simple, screengl);
+
+	_track_editor->_track->_grid->_origin= TRACK_ORIGIN;
+	_tile_grid_editor->_grid->_origin= TILES_ORIGIN;
+	_floating_grid_editor->_grid->_origin= FLOATING_OBJECTS_ORIGIN;
+
+	for (auto model : _track_editor->_track->_models) {
+		if (model->_type== ) // il faut pouvoir faire la distinction entre type==obstacle floating et type==obstacle élément de décor
+		_tile_grid_editor->_grid->set_tile();
 	}
 
-	i= int((x- float(POOL_OFFSET.x))/ float(_pool->_cell_size));
-	j= int((y- float(POOL_OFFSET.y))/ float(_pool->_cell_size));
-	if (i>=0 && i< _pool->_width && j>=0 && j< _pool->_height) {
-		_col_idx_pool= i;
-		_row_idx_pool= j;
-		update_selection();
+	_track_editor->update();
+	_tile_grid_editor->update();
+	_floating_grid_editor->update();
+}
+
+
+Editor::~Editor() {
+	
+}
+
+
+void Editor::draw() {
+	_track_editor->draw();
+	_tile_grid_editor->draw();
+	_floating_grid_editor->draw();
+}
+
+
+void Editor::sync_track_with_tile() {
+	StaticObject * current_tile= _tile_grid_editor->_grid->get_tile(_tile_grid_editor->_col_idx_select, _tile_grid_editor->_row_idx_select);
+	StaticObjectModel * model= current_tile->_model;
+	_track_editor->_track->_grid->set_tile(model, _track_editor->_col_idx_select, _track_editor->_row_idx_select);
+	_track_editor->update();
+}
+
+
+bool Editor::key_down(InputState * input_state, SDL_Keycode key) {
+	if (key== SDLK_i) {
+		_track_editor->reinit();
+		_track_editor->update();
+		return true;
+	}
+	else if (key== SDLK_l) {
+		_track_editor->load_json("../data/tracks/track1.json");
+		_track_editor->update();
+		return true;
+	}
+	else if (key== SDLK_s) {
+		_track_editor->save_json("../data/tracks/track_editor.json");
+		return true;
+	}
+	else if (key== SDLK_DOWN || key== SDLK_UP || key== SDLK_LEFT || key== SDLK_RIGHT) {
+		if (input_state->get_key(SDLK_LSHIFT)) {
+			_tile_grid_editor->key_down(input_state, key);
+		}
+		else {
+			_track_editor->key_down(input_state, key);
+			if (input_state->get_key(SDLK_w)) {
+				sync_track_with_tile();
+			}
+		}
+		return true;
+	}
+	else if (key== SDLK_w) {
+		sync_track_with_tile();
+		return true;
+	}
+	return false;
+}
+
+
+bool Editor::key_up(InputState * input_state, SDL_Keycode key) {
+	return false;
+}
+
+
+bool Editor::mouse_button_down(InputState * input_state) {
+	if (_track_editor->mouse_button_down(input_state)) {
+		return true;
+	}
+	else if (_tile_grid_editor->mouse_button_down(input_state)) {
+		return true;
+	}
+	else if (_floating_grid_editor->mouse_button_down(input_state)) {
+		return true;
 	}
 	return false;
 }

@@ -43,8 +43,7 @@ public:
 	~Car();
 	CarModel * get_model();
 	void reinit(pt_type position, number alpha);
-	void update_direction();
-	void update_bbox();
+	void update();
 	void preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up);
 	void random_ia();
 	void anim(number anim_dt);

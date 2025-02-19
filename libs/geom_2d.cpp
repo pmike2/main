@@ -721,6 +721,14 @@ void Polygon2D::translate(pt_type v) {
 }
 
 
+void Polygon2D::rotate(pt_type center, number alpha) {
+	for (unsigned int i=0; i<_pts.size(); ++i) {
+		_pts[i]= center+ rot(_pts[i]- center, alpha);
+	}
+	update_attributes();
+}
+
+
 void Polygon2D::update_attributes() {
 	// calcul aire
 	_area= 0.0;

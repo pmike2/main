@@ -1,6 +1,12 @@
 {
-    "cell_size": 1.0,
     "height": 10,
+    "floating_objects" : [
+        {
+            "name" : "small_rock",
+            "position" : [5.1, 5.1],
+            "alpha" : 0.0
+        }
+    ],
     "tiles": [
         "lower_right_corner_inv90",
         "half_right270",

@@ -18,9 +18,8 @@ def rotate_tile(json_path):
 		data= json.load(f)
 	
 	for i in range(3):
-		for idx_poly in range(len(data["polygons"])):
-			for idx_pt in range(len(data["polygons"][idx_poly])):
-				data["polygons"][idx_poly][idx_pt]= rotate_pt(data["polygons"][idx_poly][idx_pt])
+		for idx_pt in range(len(data["footprint"])):
+			data["footprint"][idx_pt]= rotate_pt(data["footprint"][idx_pt])
 		
 		json_path_out= os.path.splitext(json_path)[0]+ IDX2NAME[i]+ ".json"
 		with open(json_path_out, "w") as f:

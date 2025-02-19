@@ -77,26 +77,18 @@ void Car::reinit(pt_type position, number alpha) {
 	_thrust= 0.0;
 	_drift= false;
 
-	update_direction();
-	update_bbox();
+	update();
 }
 
 
-void Car::update_direction() {
-	StaticObject::update_direction();
+void Car::update() {
+	StaticObject::update();
 
 	CarModel * model= get_model();
 	_com2force_fwd= rot(model->_com2force_fwd, _alpha);
 	_com2force_bwd= rot(model->_com2force_bwd, _alpha);
 	_right= rot(model->_right, _alpha);
 	_forward= rot(model->_forward, _alpha);
-}
-
-
-void Car::update_bbox() {
-	_bbox->_alpha= _alpha;
-	_bbox->_center= _com+ _com2bbox_center;
-	_bbox->update();
 }
 
 
@@ -248,8 +240,7 @@ void Car::anim(number anim_dt) {
 		_alpha+= M_PI* 2.0;
 	}
 
-	update_direction();
-	update_bbox();
+	update();
 }
 
 

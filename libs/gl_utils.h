@@ -10,19 +10,20 @@
 #include <glm/glm.hpp>
 
 #include "utile.h"
+#include "typedefs.h"
 
 
 class ScreenGL {
 public:
 	ScreenGL();
-	ScreenGL(int screen_width, int screen_height, float gl_width, float gl_height);
+	ScreenGL(int screen_width, int screen_height, number gl_width, number gl_height);
 	~ScreenGL();
-	void screen2gl(int i, int j, float & x, float & y);
-	void gl2screen(float x, float y, int & i, int & j);
+	void screen2gl(int i, int j, number & x, number & y);
+	void gl2screen(number x, number y, int & i, int & j);
 
 
 	int _screen_width, _screen_height;
-	float _gl_width, _gl_height;
+	number _gl_width, _gl_height;
 };
 
 

@@ -11,7 +11,7 @@
 #include "car.h"
 #include "typedefs.h"
 
-
+/*
 class TrackTile {
 public:
 	TrackTile();
@@ -24,6 +24,30 @@ public:
 	std::string _json_path;
 	std::vector<Polygon2D *> _obstacles;
 };
+*/
+
+const number CELL_SIZE= 1.0;
+
+
+class StaticObjectGrid {
+public:
+	StaticObjectGrid();
+	StaticObjectGrid(pt_type origin);
+	~StaticObjectGrid();
+	void clear();
+	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
+	std::pair<unsigned int, unsigned int> idx2coord(unsigned int idx);
+	std::pair<int, int> number2coord(number x, number y);
+	StaticObject * get_tile(unsigned int col_idx, unsigned int row_idx);
+	void set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx);
+	void set_tile(StaticObjectModel * model, unsigned int idx);
+
+
+	std::vector<StaticObject *> _objects;
+	unsigned int _width;
+	unsigned int _height;
+	pt_type _origin;
+};
 
 
 class Track {
@@ -31,32 +55,24 @@ public:
 	Track();
 	~Track();
 	void load_models();
-	void clear();
 	void load_json(std::string json_path);
 
 	Car * get_hero();
-	void collision();
+	void all_collision();
 	void anim(number dt);
+	void set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx);
+	void set_tile(std::string model_name, unsigned int idx);
+	void set_all(std::string model_name, unsigned int width, unsigned int height);
 
-	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
-	std::pair<unsigned int, unsigned int> idx2coord(unsigned int idx);
-	TrackTile * get_tile(unsigned int col_idx, unsigned int row_idx);
-	void set_tile(TrackTile * model_tile, unsigned int col_idx, unsigned int row_idx);
-	void set_tile(TrackTile * model_tile, unsigned int idx);
-	void set_all(TrackTile * model_tile);
-	void set_size(unsigned int width, unsigned int height, number cell_size);
 	friend std::ostream & operator << (std::ostream & os, const Track & track);
 
 
-	std::map<std::string, TrackTile * > _model_tiles;
-	std::vector<TrackTile * > _tiles;
+	/*std::map<std::string, TrackTile * > _model_tiles;
+	std::vector<TrackTile * > _tiles;*/
 
 	std::map<std::string, StaticObjectModel *> _models;
-	std::vector<StaticObject *> _objects;
-
-	unsigned int _width;
-	unsigned int _height;
-	number _cell_size;
+	StaticObjectGrid * _grid;
+	std::vector<StaticObject *> _floating_objects;
 };
 
 

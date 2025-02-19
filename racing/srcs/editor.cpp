@@ -22,7 +22,7 @@ SDL_Window * window;
 SDL_GLContext main_context;
 InputState * input_state;
 ScreenGL * screengl;
-TrackEditor * track_editor;
+Editor * editor;
 
 bool done= false;
 unsigned int val_fps, compt_fps;
@@ -39,7 +39,7 @@ void mouse_button_down(int x, int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (track_editor->mouse_button_down(input_state)) {
+	if (editor->mouse_button_down(input_state)) {
 		return;
 	}
 }
@@ -52,7 +52,7 @@ void key_down(SDL_Keycode key) {
 		done= true;
 	}
 
-	if (track_editor->key_down(input_state, key)) {
+	if (editor->key_down(input_state, key)) {
 		return;
 	}
 }
@@ -61,7 +61,7 @@ void key_down(SDL_Keycode key) {
 void key_up(SDL_Keycode key) {
 	input_state->key_up(key);
 
-	if (track_editor->key_up(input_state, key)) {
+	if (editor->key_up(input_state, key)) {
 		return;
 	}
 }
@@ -125,7 +125,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	input_state= new InputState();
-	track_editor= new TrackEditor(prog_simple, prog_font, screengl);
+	editor= new Editor(prog_simple, prog_font, screengl);
 }
 
 
@@ -136,7 +136,7 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	
-	track_editor->draw();
+	editor->draw();
 
 	SDL_GL_SwapWindow(window);
 }
@@ -207,7 +207,7 @@ void main_loop() {
 
 
 void clean() {
-	delete track_editor;
+	delete editor;
 	delete input_state;
 	delete screengl;
 
