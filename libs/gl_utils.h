@@ -19,6 +19,7 @@ public:
 	ScreenGL(int screen_width, int screen_height, number gl_width, number gl_height);
 	~ScreenGL();
 	void screen2gl(int i, int j, number & x, number & y);
+	pt_type screen2gl(int i, int j);
 	void gl2screen(number x, number y, int & i, int & j);
 
 

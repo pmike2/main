@@ -12,14 +12,9 @@ using json = nlohmann::json;
 
 
 // StaticObjectGrid ------------------------------------------------------------
-StaticObjectGrid::StaticObjectGrid() : _width(0), _height(0), _origin(pt_type(0.0)), _type(VERTICAL_GRID) {
+StaticObjectGrid::StaticObjectGrid() : _width(0), _height(0)/*, _origin(pt_type(0.0))*/, _type(VERTICAL_GRID) {
 
 }
-
-
-/*StaticObjectGrid::StaticObjectGrid(pt_type origin) : _width(0), _height(0), _origin(origin) {
-
-}*/
 
 
 StaticObjectGrid::~StaticObjectGrid() {
@@ -57,9 +52,11 @@ std::pair<unsigned int, unsigned int> StaticObjectGrid::idx2coord(unsigned int i
 }
 
 
-std::pair<int, int> StaticObjectGrid::number2coord(number x, number y) {
-	int col_idx= int((x- _origin.x)/ CELL_SIZE);
-	int row_idx= int((y- _origin.y)/ CELL_SIZE);
+std::pair<int, int> StaticObjectGrid::number2coord(pt_type pos) {
+	//int col_idx= int((pos.x- _origin.x)/ CELL_SIZE);
+	//int row_idx= int((pos.y- _origin.y)/ CELL_SIZE);
+	int col_idx= int(floor(pos.x/ CELL_SIZE));
+	int row_idx= int(floor(pos.y/ CELL_SIZE));
 	if (col_idx>=0 && col_idx<_width && row_idx>=0 && row_idx< _height) {
 		return std::make_pair(col_idx, row_idx);
 	}
@@ -68,7 +65,8 @@ std::pair<int, int> StaticObjectGrid::number2coord(number x, number y) {
 
 
 pt_type StaticObjectGrid::coord2number(unsigned int col_idx, unsigned int row_idx) {
-	return pt_type(_origin.x+ number(col_idx)* CELL_SIZE, _origin.y+ number(row_idx)* CELL_SIZE);
+	//return pt_type(_origin.x+ number(col_idx)* CELL_SIZE, _origin.y+ number(row_idx)* CELL_SIZE);
+	return pt_type(number(col_idx)* CELL_SIZE, number(row_idx)* CELL_SIZE);
 }
 
 
@@ -144,6 +142,10 @@ Track::Track() {
 
 Track::~Track() {
 	delete _grid;
+	for (auto obj : _floating_objects) {
+		delete obj;
+	}
+	_floating_objects.clear();
 }
 
 
@@ -180,6 +182,11 @@ void Track::load_json(std::string json_path) {
 		set_tile(tilename, compt);
 		compt++;
 	}
+
+	for (auto obj : _floating_objects) {
+		delete obj;
+	}
+	_floating_objects.clear();
 
 	for (auto object : js["floating_objects"]) {
 		std::string model_name= object["name"];
@@ -236,6 +243,22 @@ void Track::set_tile(std::string model_name, unsigned int idx) {
 
 void Track::set_all(std::string model_name, unsigned int width, unsigned int height) {
 	_grid->set_all(_models[model_name], width, height);
+}
+
+
+StaticObject * Track::get_floating_object(pt_type pos) {
+	for (auto obj : _floating_objects) {
+		if (is_pt_inside_poly(pos, obj->_footprint)) {
+			return obj;
+		}
+	}
+	return NULL;
+}
+
+
+void Track::delete_floating_object(StaticObject * obj) {
+	_floating_objects.erase(find(_floating_objects.begin(), _floating_objects.end(), obj));
+	delete obj;
 }
 
 

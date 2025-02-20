@@ -32,6 +32,13 @@ void ScreenGL::screen2gl(int i, int j, number & x, number & y) {
 }
 
 
+pt_type ScreenGL::screen2gl(int i, int j) {
+	number x, y;
+	screen2gl(i, j, x, y);
+	return pt_type(x, y);
+}
+
+
 void ScreenGL::gl2screen(number x, number y, int & i, int & j) {
 	i= (int)((number)(_screen_width)* (x/ _gl_width+ 0.5f));
 	j= (int)((number)(_screen_width)* (0.5f- y/ _gl_height));

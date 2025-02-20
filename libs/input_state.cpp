@@ -38,6 +38,12 @@ void InputState::update_mouse(int x, int y, bool left_mouse, bool middle_mouse, 
 }
 
 
+void InputState::update_wheel(int x_wheel, int y_wheel) {
+	_x_wheel= x_wheel;
+	_y_wheel= y_wheel;
+}
+
+
 void InputState::key_down(SDL_Keycode key) {
 	_keys[key]= true;
 }

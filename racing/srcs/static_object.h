@@ -23,6 +23,7 @@ public:
 	StaticObjectModel();
 	StaticObjectModel(std::string json_path);
 	~StaticObjectModel();
+	friend std::ostream & operator << (std::ostream & os, const StaticObjectModel & model);
 
 
 	std::string _json_path;
@@ -38,21 +39,9 @@ public:
 };
 
 
-/*class FixedObject {
-public:
-	FixedObject();
-	FixedObject();
-	~FixedObject();
-
-
-	Polygon2D * _footprint;
-};*/
-
-
 class StaticObject {
 public:
 	StaticObject();
-	//StaticObject(StaticObjectModel * model);
 	StaticObject(StaticObjectModel * model, pt_type position, number alpha);
 	~StaticObject();
 	void reinit(pt_type position, number alpha);

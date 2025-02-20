@@ -29,9 +29,32 @@ unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
 
+void mouse_wheel(int x, int y) {
+	input_state->update_wheel(x, y);
+
+	if (editor->mouse_wheel(input_state)) {
+		return;
+	}
+}
+
+
+void mouse_motion(int x, int y, int xrel, int yrel) {
+	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
+
+	if (editor->mouse_motion(input_state)) {
+		return;
+	}
+}
+
+
 void mouse_button_up(int x, int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
+
+	if (editor->mouse_button_up(input_state)) {
+		return;
+	}
 }
 
 
@@ -173,6 +196,14 @@ void main_loop() {
 	while (!done) {
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
+				case SDL_MOUSEWHEEL:
+					mouse_wheel(event.wheel.x, event.wheel.y);
+					break;
+				
+				case SDL_MOUSEMOTION:
+					mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
+					break;
+
 				case SDL_MOUSEBUTTONUP:
 					mouse_button_up(event.button.x, event.button.y, event.button.button);
 					break;

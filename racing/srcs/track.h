@@ -21,12 +21,11 @@ enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
 class StaticObjectGrid {
 public:
 	StaticObjectGrid();
-	//StaticObjectGrid(pt_type origin);
 	~StaticObjectGrid();
 	void clear();
 	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
 	std::pair<unsigned int, unsigned int> idx2coord(unsigned int idx);
-	std::pair<int, int> number2coord(number x, number y);
+	std::pair<int, int> number2coord(pt_type pos);
 	pt_type coord2number(unsigned int col_idx, unsigned int row_idx);
 	pt_type idx2number(unsigned int idx);
 	StaticObject * get_tile(unsigned int col_idx, unsigned int row_idx);
@@ -39,7 +38,7 @@ public:
 	std::vector<StaticObject *> _objects;
 	unsigned int _width;
 	unsigned int _height;
-	pt_type _origin;
+	//pt_type _origin;
 	GridType _type;
 };
 
@@ -57,6 +56,8 @@ public:
 	void set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx);
 	void set_tile(std::string model_name, unsigned int idx);
 	void set_all(std::string model_name, unsigned int width, unsigned int height);
+	StaticObject * get_floating_object(pt_type pos);
+	void delete_floating_object(StaticObject * obj);
 
 	friend std::ostream & operator << (std::ostream & os, const Track & track);
 

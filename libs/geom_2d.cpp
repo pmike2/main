@@ -818,6 +818,7 @@ void Polygon2D::min_max_pt_along_dir(const pt_type direction, unsigned int * idx
 
 
 void Polygon2D::triangulate() {
+	_triangles_idx.clear();
 	Triangulation * tgl= new Triangulation(_pts);
 	for (auto tri : tgl->_triangles) {
 		std::vector<int> v{tri->_vertices[0], tri->_vertices[1], tri->_vertices[2]};

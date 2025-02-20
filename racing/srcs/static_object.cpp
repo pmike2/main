@@ -185,18 +185,16 @@ StaticObjectModel::~StaticObjectModel() {
 }
 
 
+std::ostream & operator << (std::ostream & os, const StaticObjectModel & model) {
+	os << "json_path=" << model._json_path;
+	return os;
+}
+
+
 // StaticObject --------------------------------------------------------------------
 StaticObject::StaticObject() {
 
 }
-
-
-/*StaticObject::StaticObject(StaticObjectModel * model) : 
-	_model(model), _com(pt_type(0.0)), _alpha(0.0), _velocity(pt_type(0.0)), _acceleration(pt_type(0.0)), _force(pt_type(0.0)),
-	_angular_velocity(0.0), _angular_acceleration(0.0), _torque(0.0)
-{
-	_bbox= new BBox_2D(pt_type(0.0), pt_type(0.0));
-}*/
 
 
 StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha) : _model(model) {
@@ -228,7 +226,10 @@ void StaticObject::reinit(pt_type position, number alpha) {
 
 void StaticObject::update() {
 	_com2bbox_center= rot(_model->_com2bbox_center, _alpha);
+
+	// a revoir...
 	_footprint->set_points(_model->_footprint->_pts);
+	_footprint->triangulate();
 	_footprint->translate(_com);
 	_footprint->rotate(_com, _alpha);
 
