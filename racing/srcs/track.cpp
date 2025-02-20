@@ -103,14 +103,14 @@ void StaticObjectGrid::push_tile(StaticObjectModel * model) {
 			_width++;
 		}
 	}
-	_objects.push_back(new StaticObject(model, idx2number(_objects.size()), 0.0));
+	_objects.push_back(new StaticObject(model, idx2number(_objects.size())+ pt_type(0.5* CELL_SIZE), 0.0, pt_type(CELL_SIZE)));
 }
 
 
 void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx) {
 	StaticObject * object= get_tile(col_idx, row_idx);
 	object->_model= model;
-	object->reinit(coord2number(col_idx, row_idx), 0.0);
+	object->reinit(coord2number(col_idx, row_idx)+ pt_type(0.5* CELL_SIZE), 0.0, pt_type(CELL_SIZE));
 }
 
 
@@ -126,7 +126,7 @@ void StaticObjectGrid::set_all(StaticObjectModel * model, unsigned int width, un
 	_height= height;
 	for (unsigned int row_idx=0; row_idx<height; ++row_idx) {
 		for (unsigned int col_idx=0; col_idx<width; ++col_idx) {
-			_objects.push_back(new StaticObject(model, coord2number(col_idx, row_idx), 0.0));
+			_objects.push_back(new StaticObject(model, coord2number(col_idx, row_idx), 0.0, pt_type(CELL_SIZE)));
 		}
 	}
 }
@@ -192,7 +192,8 @@ void Track::load_json(std::string json_path) {
 		std::string model_name= object["name"];
 		pt_type position= pt_type(object["position"][0], object["position"][1]);
 		number alpha= object["alpha"];
-		StaticObject * floating_object= new StaticObject(_models[model_name], position, alpha);
+		pt_type scale= pt_type(object["scale"][0], object["scale"][1]);
+		StaticObject * floating_object= new StaticObject(_models[model_name], position, alpha, scale);
 		_floating_objects.push_back(floating_object);
 	}
 }

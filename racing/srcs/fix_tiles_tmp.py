@@ -9,7 +9,8 @@ def fix(json_path):
 	with open(json_path) as f:
 		data= json.load(f)
 
-		del data["fixed"]
+		for i in range(len(data["footprint"])):
+			data["footprint"][i]= [data["footprint"][i][0]- 0.5, data["footprint"][i][1]- 0.5]
 	
 		with open(json_path, "w") as f:
 			json.dump(data, f, indent=4)

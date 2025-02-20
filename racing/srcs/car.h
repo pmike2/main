@@ -39,10 +39,10 @@ public:
 class Car : public StaticObject {
 public:
 	Car();
-	Car(CarModel * model, pt_type position, number alpha);
+	Car(CarModel * model, pt_type position, number alpha, pt_type scale);
 	~Car();
 	CarModel * get_model();
-	void reinit(pt_type position, number alpha);
+	void reinit(pt_type position, number alpha, pt_type scale);
 	void update();
 	void preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up);
 	void random_ia();

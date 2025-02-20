@@ -29,7 +29,7 @@ public:
 	std::string _json_path;
 	ObjectType _type;
 	pt_type _com2bbox_center;
-	pt_type _halfsize;
+	//pt_type _halfsize;
 	number _mass;
 	number _inertia;
 	number _linear_friction; // non utilisé pour CarModel
@@ -42,9 +42,9 @@ public:
 class StaticObject {
 public:
 	StaticObject();
-	StaticObject(StaticObjectModel * model, pt_type position, number alpha);
+	StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale);
 	~StaticObject();
-	void reinit(pt_type position, number alpha);
+	void reinit(pt_type position, number alpha, pt_type scale);
 	void update();
 	void anim(number anim_dt);
 	friend std::ostream & operator << (std::ostream & os, const StaticObject & obj);
@@ -62,6 +62,7 @@ public:
 	number _angular_velocity;
 	number _angular_acceleration;
 	number _torque;
+	pt_type _scale; // grossissement
 };
 
 

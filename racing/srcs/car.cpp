@@ -53,8 +53,8 @@ Car::Car() {
 }
 
 
-Car::Car(CarModel * model, pt_type position, number alpha) : StaticObject(model, position, alpha) {
-	reinit(position, alpha);
+Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) : StaticObject(model, position, alpha, scale) {
+	reinit(position, alpha, scale);
 }
 
 
@@ -68,8 +68,8 @@ CarModel * Car::get_model() {
 }
 
 
-void Car::reinit(pt_type position, number alpha) {
-	StaticObject::reinit(position, alpha);
+void Car::reinit(pt_type position, number alpha, pt_type scale) {
+	StaticObject::reinit(position, alpha, scale);
 
 	_force_fwd= pt_type(0.0);
 	_force_bwd= pt_type(0.0);

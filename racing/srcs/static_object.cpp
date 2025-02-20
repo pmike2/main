@@ -146,7 +146,7 @@ StaticObjectModel::StaticObjectModel(std::string json_path) : _json_path(json_pa
 	if (_type== OBSTACLE_SETTING) {
 		_fixed= true;
 		_com2bbox_center= pt_type(0.0);
-		_halfsize= pt_type(0.0);
+		//_halfsize= pt_type(0.0);
 		_mass= _linear_friction= _angular_friction= 0.0;
 	}
 	
@@ -154,12 +154,12 @@ StaticObjectModel::StaticObjectModel(std::string json_path) : _json_path(json_pa
 		_fixed= js["fixed"];
 		if (_fixed) {
 			_com2bbox_center= pt_type(0.0);
-			_halfsize= pt_type(0.0);
+			//_halfsize= pt_type(0.0);
 			_mass= _linear_friction= _angular_friction= 0.0;
 		}
 		else {
 			_com2bbox_center= pt_type(js["com2bbox_center"][0], js["com2bbox_center"][1]);
-			_halfsize= pt_type(js["halfsize"][0], js["halfsize"][1]);
+			//_halfsize= pt_type(js["halfsize"][0], js["halfsize"][1]);
 			_mass= js["mass"];
 			_linear_friction= js["linear_friction"];
 			_angular_friction= js["angular_friction"];
@@ -169,14 +169,15 @@ StaticObjectModel::StaticObjectModel(std::string json_path) : _json_path(json_pa
 	else if (_type== HERO_CAR || _type== ENNEMY_CAR) {
 		_fixed= false;
 		_com2bbox_center= pt_type(js["com2bbox_center"][0], js["com2bbox_center"][1]);
-		_halfsize= pt_type(js["halfsize"][0], js["halfsize"][1]);
+		//_halfsize= pt_type(js["halfsize"][0], js["halfsize"][1]);
 		_mass= js["mass"];
 		_angular_friction= js["angular_friction"];
 	}
 	
 	// https://en.wikipedia.org/wiki/List_of_moments_of_inertia
 	// normalement c'est / 12.0 mais tout explose...
-	_inertia= _mass* (4.0* _halfsize.x* _halfsize.x+ 4.0* _halfsize.y* _halfsize.y)/ 3.0;
+	number size= 1.0; // taille par défaut de tout objet
+	_inertia= _mass* (2.0* size+ 2.0* size)/ 3.0;
 }
 
 
@@ -197,10 +198,10 @@ StaticObject::StaticObject() {
 }
 
 
-StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha) : _model(model) {
-	_bbox= new BBox_2D(position, model->_halfsize);
+StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) : _model(model) {
+	_bbox= new BBox_2D(position, pt_type(0.5, 0.5));
 	_footprint= new Polygon2D();
-	reinit(position, alpha);
+	reinit(position, alpha, scale);
 }
 
 
@@ -209,9 +210,10 @@ StaticObject::~StaticObject() {
 }
 
 
-void StaticObject::reinit(pt_type position, number alpha) {
+void StaticObject::reinit(pt_type position, number alpha, pt_type scale) {
 	_com= position;
 	_alpha= alpha;
+	_scale= scale;
 
 	_velocity= pt_type(0.0);
 	_acceleration= pt_type(0.0);
@@ -230,11 +232,13 @@ void StaticObject::update() {
 	// a revoir...
 	_footprint->set_points(_model->_footprint->_pts);
 	_footprint->triangulate();
+	_footprint->scale(_scale);
+	_footprint->rotate(pt_type(0.0), _alpha);
 	_footprint->translate(_com);
-	_footprint->rotate(_com, _alpha);
 
 	_bbox->_alpha= _alpha;
 	_bbox->_center= _com+ _com2bbox_center;
+	_bbox->_half_size= 0.5* _scale;
 	_bbox->update();
 }
 

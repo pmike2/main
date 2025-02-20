@@ -419,6 +419,9 @@ void TrackEditor::save_json(std::string json_path) {
 		js_obj["position"].push_back(obj->_com.x);
 		js_obj["position"].push_back(obj->_com.y);
 		js_obj["alpha"]= obj->_alpha;
+		js_obj["scale"]= json::array();
+		js_obj["scale"].push_back(obj->_scale.x);
+		js_obj["scale"].push_back(obj->_scale.y);
 		js["floating_objects"].push_back(js_obj);
 	}
 
@@ -828,16 +831,7 @@ bool TrackEditor::mouse_button_down(InputState * input_state) {
 			return true;
 		}
 	}
-	else if (input_state->get_key(SDLK_m)) {
-		pt_type pos= screen2pt(input_state->_x, input_state->_y);
-		//pos-= _track->_grid->_origin;
-		StaticObject * obj= _track->get_floating_object(pos);
-		if (obj!= NULL) {
-			_selected_floating_object= obj;
-			return true;
-		}
-	}
-	else if (input_state->get_key(SDLK_r)) {
+	else if (input_state->get_key(SDLK_m) || input_state->get_key(SDLK_r) || input_state->get_key(SDLK_s)) {
 		pt_type pos= screen2pt(input_state->_x, input_state->_y);
 		//pos-= _track->_grid->_origin;
 		StaticObject * obj= _track->get_floating_object(pos);
@@ -870,13 +864,19 @@ bool TrackEditor::mouse_motion(InputState * input_state) {
 	if (input_state->get_key(SDLK_m) && _selected_floating_object!= NULL) {
 		pt_type pos= screen2pt(input_state->_x, input_state->_y);
 		//pos-= _track->_grid->_origin;
-		_selected_floating_object->reinit(pos, _selected_floating_object->_alpha);
+		_selected_floating_object->reinit(pos, _selected_floating_object->_alpha, _selected_floating_object->_scale);
 		update();
 		return true;
 	}
 	else if (input_state->get_key(SDLK_r) && _selected_floating_object!= NULL) {
 		number alpha= _selected_floating_object->_alpha- 0.1* number(input_state->_yrel);
-		_selected_floating_object->reinit(_selected_floating_object->_com, alpha);
+		_selected_floating_object->reinit(_selected_floating_object->_com, alpha, _selected_floating_object->_scale);
+		update();
+		return true;
+	}
+	else if (input_state->get_key(SDLK_s) && _selected_floating_object!= NULL) {
+		pt_type scale= _selected_floating_object->_scale+ pt_type(0.05* number(input_state->_xrel), -0.05* number(input_state->_yrel));
+		_selected_floating_object->reinit(_selected_floating_object->_com, _selected_floating_object->_alpha, scale);
 		update();
 		return true;
 	}
@@ -914,7 +914,7 @@ Editor::Editor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl) : _scr
 	_tile_grid_editor->_translation= TILES_ORIGIN;
 	_floating_grid_editor->_translation= FLOATING_OBJECTS_ORIGIN;
 
-	_tile_grid_editor->_grid->_width= 3;
+	_tile_grid_editor->_grid->_width= 4;
 	_tile_grid_editor->_grid->_type= VERTICAL_GRID;
 	_floating_grid_editor->_grid->_height= 4;
 	_floating_grid_editor->_grid->_type= HORIZONTAL_GRID;
@@ -924,7 +924,7 @@ Editor::Editor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl) : _scr
 			//std::cout << "loading OBSTACLE_SETTING : " << model.first << "\n";
 			_tile_grid_editor->_grid->push_tile(model.second);
 		}
-		else if (model.second->_type== OBSTACLE_FLOATING) {
+		else if (model.second->_type== OBSTACLE_FLOATING || model.second->_type== HERO_CAR || model.second->_type== ENNEMY_CAR) {
 			//std::cout << "loading OBSTACLE_FLOATING : " << model.first << "\n";
 			_floating_grid_editor->_grid->push_tile(model.second);
 		}
@@ -964,7 +964,7 @@ void Editor::add_floating_object(pt_type pos) {
 	StaticObject * current_floating_object= _floating_grid_editor->_grid->get_tile(_floating_grid_editor->_col_idx_select, _floating_grid_editor->_row_idx_select);
 	StaticObjectModel * model= current_floating_object->_model;
 	//std::cout << pos.x << " ; " << pos.y << "\n";
-	_track_editor->_track->_floating_objects.push_back(new StaticObject(model, pt_type(pos.x, pos.y), 0.0));
+	_track_editor->_track->_floating_objects.push_back(new StaticObject(model, pt_type(pos.x, pos.y), 0.0, pt_type(1.0)));
 	_track_editor->update();
 }
 
