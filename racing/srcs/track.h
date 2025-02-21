@@ -12,15 +12,13 @@
 #include "typedefs.h"
 
 
-const number CELL_SIZE= 1.0;
-
-
 enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
 
 
 class StaticObjectGrid {
 public:
 	StaticObjectGrid();
+	StaticObjectGrid(number cell_size, GridType type);
 	~StaticObjectGrid();
 	void clear();
 	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
@@ -33,12 +31,16 @@ public:
 	void set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx);
 	void set_tile(StaticObjectModel * model, unsigned int idx);
 	void set_all(StaticObjectModel * model, unsigned int width, unsigned int height);
+	void add_row(StaticObjectModel * model);
+	void add_col(StaticObjectModel * model);
+	void drop_row();
+	void drop_col();
 
 
 	std::vector<StaticObject *> _objects;
 	unsigned int _width;
 	unsigned int _height;
-	//pt_type _origin;
+	number _cell_size;
 	GridType _type;
 };
 
@@ -46,16 +48,24 @@ public:
 class Track {
 public:
 	Track();
+	Track(number cell_size, unsigned int width, unsigned int height);
 	~Track();
 	void load_models();
 	void load_json(std::string json_path);
 
 	Car * get_hero();
+	CheckPoint * get_start();
+	unsigned int get_checkpoint_index(CheckPoint * checkpoint);
 	void all_collision();
+	void checkpoints();
 	void anim(number dt);
 	void set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx);
 	void set_tile(std::string model_name, unsigned int idx);
 	void set_all(std::string model_name, unsigned int width, unsigned int height);
+	void add_row(std::string model_name);
+	void add_col(std::string model_name);
+	void drop_row();
+	void drop_col();
 	StaticObject * get_floating_object(pt_type pos);
 	void delete_floating_object(StaticObject * obj);
 
@@ -65,6 +75,8 @@ public:
 	std::map<std::string, StaticObjectModel *> _models;
 	StaticObjectGrid * _grid;
 	std::vector<StaticObject *> _floating_objects;
+	unsigned int _n_laps;
+	CheckPoint * _start;
 };
 
 

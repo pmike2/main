@@ -50,8 +50,6 @@ public:
 	friend std::ostream & operator << (std::ostream & os, const Car & car);
 
 
-	//CarModel * _model;
-
 	pt_type _com2force_fwd; // vecteur com -> point ou on applique les forces
 	pt_type _com2force_bwd; // vecteur com -> point ou on applique les forces
 	pt_type _forward;
@@ -63,6 +61,9 @@ public:
 	number _wheel;
 	number _thrust;
 	bool _drift;
+
+	CheckPoint * _next_checkpoint;
+	unsigned int _n_laps;
 };
 
 #endif

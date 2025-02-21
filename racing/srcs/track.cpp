@@ -12,7 +12,12 @@ using json = nlohmann::json;
 
 
 // StaticObjectGrid ------------------------------------------------------------
-StaticObjectGrid::StaticObjectGrid() : _width(0), _height(0)/*, _origin(pt_type(0.0))*/, _type(VERTICAL_GRID) {
+StaticObjectGrid::StaticObjectGrid() : _width(0), _height(0), _type(VERTICAL_GRID) {
+
+}
+
+
+StaticObjectGrid::StaticObjectGrid(number cell_size, GridType type) : _width(0), _height(0), _cell_size(cell_size), _type(type) {
 
 }
 
@@ -53,10 +58,8 @@ std::pair<unsigned int, unsigned int> StaticObjectGrid::idx2coord(unsigned int i
 
 
 std::pair<int, int> StaticObjectGrid::number2coord(pt_type pos) {
-	//int col_idx= int((pos.x- _origin.x)/ CELL_SIZE);
-	//int row_idx= int((pos.y- _origin.y)/ CELL_SIZE);
-	int col_idx= int(floor(pos.x/ CELL_SIZE));
-	int row_idx= int(floor(pos.y/ CELL_SIZE));
+	int col_idx= int(floor(pos.x/ _cell_size));
+	int row_idx= int(floor(pos.y/ _cell_size));
 	if (col_idx>=0 && col_idx<_width && row_idx>=0 && row_idx< _height) {
 		return std::make_pair(col_idx, row_idx);
 	}
@@ -64,9 +67,9 @@ std::pair<int, int> StaticObjectGrid::number2coord(pt_type pos) {
 }
 
 
+// renvoie le centre de la cellule
 pt_type StaticObjectGrid::coord2number(unsigned int col_idx, unsigned int row_idx) {
-	//return pt_type(_origin.x+ number(col_idx)* CELL_SIZE, _origin.y+ number(row_idx)* CELL_SIZE);
-	return pt_type(number(col_idx)* CELL_SIZE, number(row_idx)* CELL_SIZE);
+	return pt_type((number(col_idx)+ 0.5)* _cell_size, (number(row_idx)+ 0.5)* _cell_size);
 }
 
 
@@ -103,14 +106,14 @@ void StaticObjectGrid::push_tile(StaticObjectModel * model) {
 			_width++;
 		}
 	}
-	_objects.push_back(new StaticObject(model, idx2number(_objects.size())+ pt_type(0.5* CELL_SIZE), 0.0, pt_type(CELL_SIZE)));
+	_objects.push_back(new StaticObject(model, idx2number(_objects.size()), 0.0, pt_type(_cell_size)));
 }
 
 
 void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx) {
 	StaticObject * object= get_tile(col_idx, row_idx);
 	object->_model= model;
-	object->reinit(coord2number(col_idx, row_idx)+ pt_type(0.5* CELL_SIZE), 0.0, pt_type(CELL_SIZE));
+	object->reinit(coord2number(col_idx, row_idx), 0.0, pt_type(_cell_size));
 }
 
 
@@ -126,17 +129,60 @@ void StaticObjectGrid::set_all(StaticObjectModel * model, unsigned int width, un
 	_height= height;
 	for (unsigned int row_idx=0; row_idx<height; ++row_idx) {
 		for (unsigned int col_idx=0; col_idx<width; ++col_idx) {
-			_objects.push_back(new StaticObject(model, coord2number(col_idx, row_idx), 0.0, pt_type(CELL_SIZE)));
+			_objects.push_back(new StaticObject(model, coord2number(col_idx, row_idx), 0.0, pt_type(_cell_size)));
 		}
 	}
 }
 
 
+void StaticObjectGrid::add_row(StaticObjectModel * model) {
+	for (unsigned int col_idx=0; col_idx<_width; ++col_idx) {
+		StaticObject * obj= new StaticObject(model, coord2number(col_idx, _height), 0.0, pt_type(_cell_size));
+		_objects.push_back(obj);
+	}
+	_height++;
+}
+
+
+void StaticObjectGrid::add_col(StaticObjectModel * model) {
+	for (unsigned int row_idx=0; row_idx<_height; ++row_idx) {
+		StaticObject * obj= new StaticObject(model, coord2number(_width, row_idx), 0.0, pt_type(_cell_size));
+		_objects.insert(_objects.begin()+ row_idx* _width, obj);
+	}
+	_width++;
+}
+
+
+void StaticObjectGrid::drop_row() {
+	if (_height== 0) {
+		return;
+	}
+	_objects.erase(_objects.begin()+ _width* (_height- 1), _objects.end());
+	_height--;
+}
+
+
+void StaticObjectGrid::drop_col() {
+	if (_width== 0) {
+		return;
+	}
+	for (unsigned int row_idx=_height; row_idx>0; --row_idx) {
+		_objects.erase(_objects.begin()+ row_idx* _width- 1);
+	}
+	_width--;
+}
+
+
 // Track -------------------------------------------------------------------------------------
 Track::Track() {
+
+}
+
+
+Track::Track(number cell_size, unsigned int width, unsigned int height) {
 	load_models();
-	_grid= new StaticObjectGrid();
-	set_all("empty", 10, 10);
+	_grid= new StaticObjectGrid(cell_size, VERTICAL_GRID);
+	set_all("empty", width, height);
 }
 
 
@@ -182,19 +228,53 @@ void Track::load_json(std::string json_path) {
 		set_tile(tilename, compt);
 		compt++;
 	}
+	_n_laps= js["n_laps"];
 
 	for (auto obj : _floating_objects) {
 		delete obj;
 	}
 	_floating_objects.clear();
 
+	std::vector<std::pair<CheckPoint *, unsigned int> > checkpoints;
+
 	for (auto object : js["floating_objects"]) {
 		std::string model_name= object["name"];
 		pt_type position= pt_type(object["position"][0], object["position"][1]);
 		number alpha= object["alpha"];
 		pt_type scale= pt_type(object["scale"][0], object["scale"][1]);
-		StaticObject * floating_object= new StaticObject(_models[model_name], position, alpha, scale);
-		_floating_objects.push_back(floating_object);
+		if (_models[model_name]->_type== HERO_CAR || _models[model_name]->_type== ENNEMY_CAR) {
+			Car * car= new Car((CarModel *)(_models[model_name]), position, alpha, scale);
+			_floating_objects.push_back(car);
+		}
+		else if (_models[model_name]->_type== CHECKPOINT || _models[model_name]->_type== START) {
+			CheckPoint * checkpoint= new CheckPoint(_models[model_name], position, alpha, scale);
+			checkpoints.push_back(std::make_pair(checkpoint, object["idx_checkpoint"]));
+			_floating_objects.push_back(checkpoint);
+		}
+		else {
+			StaticObject * floating_object= new StaticObject(_models[model_name], position, alpha, scale);
+			_floating_objects.push_back(floating_object);
+		}
+	}
+
+	std::sort(checkpoints.begin(), checkpoints.end(), [](std::pair<CheckPoint *, unsigned int> a, std::pair<CheckPoint *, unsigned int> b) {
+		return a.second< b.second; 
+	});
+	for (unsigned int i=0; i<checkpoints.size(); ++i) {
+		if (i< checkpoints.size()- 1) {
+			checkpoints[i].first->_next= checkpoints[i+ 1].first;
+		}
+		else {
+			checkpoints[i].first->_next= checkpoints[0].first;
+		}
+	}
+
+	CheckPoint * start= get_start();
+	for (auto obj : _floating_objects) {
+		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
+			Car * car= (Car *)(obj);
+			car->_next_checkpoint= start;
+		}
 	}
 }
 
@@ -206,6 +286,27 @@ Car * Track::get_hero() {
 		}
 	}
 	return NULL;
+}
+
+
+CheckPoint * Track::get_start() {
+	for (auto obj : _floating_objects) {
+		if (obj->_model->_type== START) {
+			return (CheckPoint *)(obj);
+		}
+	}
+	return NULL;
+}
+
+
+unsigned int Track::get_checkpoint_index(CheckPoint * checkpoint) {
+	unsigned int idx= 0;
+	CheckPoint * start= get_start();
+	while (checkpoint!= start) {
+		idx++;
+		start= start->_next;
+	}
+	return idx;
 }
 
 
@@ -223,12 +324,50 @@ void Track::all_collision() {
 }
 
 
+void Track::checkpoints() {
+	for (auto obj : _floating_objects) {
+		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
+			Car * car= (Car *)(obj);
+			if (!aabb_intersects_aabb(car->_bbox->_aabb, car->_next_checkpoint->_bbox->_aabb)) {
+				continue;
+			}
+			pt_type axis(0.0, 0.0);
+			number overlap= 0.0;
+			unsigned int idx_pt= 0;
+			bool is_pt_in_poly1= false;
+			bool is_inter= poly_intersects_poly(car->_footprint, car->_next_checkpoint->_footprint, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
+			if (is_inter) {
+				car->_next_checkpoint= car->_next_checkpoint->_next;
+				if (car->_next_checkpoint== _start) {
+					car->_n_laps++;
+					if (car->_n_laps== _n_laps) {
+						if (car->_model->_type== HERO_CAR) {
+							std::cout << "you win\n";
+						}
+						else {
+							std::cout << "you lose\n";
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
 void Track::anim(number dt) {
 	for (auto obj : _floating_objects) {
-		obj->anim(dt);
+		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
+			Car * car= (Car *)(obj);
+			car->anim(dt);
+		}
+		else {
+			obj->anim(dt);
+		}
 	}
 
 	all_collision();
+	checkpoints();
 }
 
 
@@ -244,6 +383,26 @@ void Track::set_tile(std::string model_name, unsigned int idx) {
 
 void Track::set_all(std::string model_name, unsigned int width, unsigned int height) {
 	_grid->set_all(_models[model_name], width, height);
+}
+
+
+void Track::add_row(std::string model_name) {
+	_grid->add_row(_models[model_name]);
+}
+
+
+void Track::add_col(std::string model_name) {
+	_grid->add_col(_models[model_name]);
+}
+
+
+void Track::drop_row() {
+	_grid->drop_row();
+}
+
+
+void Track::drop_col() {
+	_grid->drop_col();
 }
 
 

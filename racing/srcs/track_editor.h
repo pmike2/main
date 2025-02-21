@@ -35,7 +35,7 @@ const pt_type FLOATING_OBJECTS_ORIGIN(-7.0, 3.0);
 class GridEditor {
 public:
 	GridEditor();
-	GridEditor(GLuint prog_simple, ScreenGL * screengl, glm::vec4 tile_color);
+	GridEditor(GLuint prog_simple, ScreenGL * screengl, glm::vec4 tile_color, number cell_size, GridType type);
 	~GridEditor();
 	void draw_grid();
 	void draw_selection();
@@ -68,7 +68,7 @@ public:
 class TrackEditor {
 public:
 	TrackEditor();
-	TrackEditor(GLuint prog_simple, ScreenGL * screengl);
+	TrackEditor(GLuint prog_simple, ScreenGL * screengl, number cell_size);
 	~TrackEditor();
 	void reinit();
 	void load_json(std::string json_path);
@@ -99,6 +99,7 @@ public:
 	StaticObject * _selected_floating_object;
 	pt_type _translation;
 	number _scale;
+	CheckPoint * _last_checkpoint;
 
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
@@ -114,6 +115,7 @@ public:
 	Editor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl);
 	~Editor();
 	void draw();
+	void show_info();
 	void sync_track_with_tile();
 	void add_floating_object(pt_type pos);
 	bool key_down(InputState * input_state, SDL_Keycode key);
@@ -127,7 +129,7 @@ public:
 	TrackEditor * _track_editor;
 	GridEditor * _tile_grid_editor;
 	GridEditor * _floating_grid_editor;
-	//Font * _font; // font pour écriture textes
+	Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
 };
 

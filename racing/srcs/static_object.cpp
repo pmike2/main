@@ -16,6 +16,10 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		return;
 	}
 
+	if (!obj1->_model->_solid || !obj2->_model->_solid) {
+		return;
+	}
+
 	if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
 		return;
 	}
@@ -131,6 +135,12 @@ StaticObjectModel::StaticObjectModel(std::string json_path) : _json_path(json_pa
 	else if (js["type"]== "ennemy_car") {
 		_type= ENNEMY_CAR;
 	}
+	else if (js["type"]== "checkpoint") {
+		_type= CHECKPOINT;
+	}
+	else if (js["type"]== "start") {
+		_type= START;
+	}
 	else {
 		std::cerr << "Type " << js["type"] << " non supporté\n";
 	}
@@ -145,21 +155,20 @@ StaticObjectModel::StaticObjectModel(std::string json_path) : _json_path(json_pa
 	
 	if (_type== OBSTACLE_SETTING) {
 		_fixed= true;
+		_solid= true;
 		_com2bbox_center= pt_type(0.0);
-		//_halfsize= pt_type(0.0);
 		_mass= _linear_friction= _angular_friction= 0.0;
 	}
 	
 	else if (_type== OBSTACLE_FLOATING) {
 		_fixed= js["fixed"];
+		_solid= true;
 		if (_fixed) {
 			_com2bbox_center= pt_type(0.0);
-			//_halfsize= pt_type(0.0);
 			_mass= _linear_friction= _angular_friction= 0.0;
 		}
 		else {
 			_com2bbox_center= pt_type(js["com2bbox_center"][0], js["com2bbox_center"][1]);
-			//_halfsize= pt_type(js["halfsize"][0], js["halfsize"][1]);
 			_mass= js["mass"];
 			_linear_friction= js["linear_friction"];
 			_angular_friction= js["angular_friction"];
@@ -168,15 +177,22 @@ StaticObjectModel::StaticObjectModel(std::string json_path) : _json_path(json_pa
 	
 	else if (_type== HERO_CAR || _type== ENNEMY_CAR) {
 		_fixed= false;
+		_solid= true;
 		_com2bbox_center= pt_type(js["com2bbox_center"][0], js["com2bbox_center"][1]);
-		//_halfsize= pt_type(js["halfsize"][0], js["halfsize"][1]);
 		_mass= js["mass"];
 		_angular_friction= js["angular_friction"];
+	}
+
+	else if (_type== CHECKPOINT || _type== START) {
+		_fixed= true;
+		_solid= false;
+		_com2bbox_center= pt_type(0.0);
+		_mass= _linear_friction= _angular_friction= 0.0;
 	}
 	
 	// https://en.wikipedia.org/wiki/List_of_moments_of_inertia
 	// normalement c'est / 12.0 mais tout explose...
-	number size= 1.0; // taille par défaut de tout objet
+	number size= 1.0; // taille par défaut de tout objet avant scale
 	_inertia= _mass* (2.0* size+ 2.0* size)/ 3.0;
 }
 
@@ -278,5 +294,23 @@ std::ostream & operator << (std::ostream & os, const StaticObject & obj) {
 	os << "model = " << obj._model->_json_path;
 	os << " ; bbox=[" << *obj._bbox << "] ; ";
 	return os;
+}
+
+
+// CheckPoint -----------------------------------------------
+CheckPoint::CheckPoint() {
+
+}
+
+
+CheckPoint::CheckPoint(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) :
+	StaticObject(model, position, alpha, scale), _next(NULL) 
+{
+
+}
+
+
+CheckPoint::~CheckPoint() {
+
 }
 

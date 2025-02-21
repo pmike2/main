@@ -4,8 +4,72 @@
             "alpha": 0.0,
             "name": "big_rock",
             "position": [
-                6.59375,
-                7.375
+                13.203125,
+                31.484375
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "small_rock",
+            "position": [
+                21.40625,
+                27.734375
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "idx_checkpoint": 0,
+            "name": "start",
+            "position": [
+                28.359375,
+                37.96875
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "idx_checkpoint": 1,
+            "name": "checkpoint",
+            "position": [
+                36.484375,
+                21.875
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "idx_checkpoint": 2,
+            "name": "checkpoint",
+            "position": [
+                26.484375,
+                15.0
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "idx_checkpoint": 3,
+            "name": "checkpoint",
+            "position": [
+                13.4375,
+                13.984375
             ],
             "scale": [
                 1.0,
@@ -16,8 +80,8 @@
             "alpha": 0.0,
             "name": "ennemy_car",
             "position": [
-                7.359375,
-                2.890625
+                37.34375,
+                41.484375
             ],
             "scale": [
                 1.0,
@@ -28,8 +92,8 @@
             "alpha": 0.0,
             "name": "hero_car",
             "position": [
-                2.640625,
-                8.078125
+                35.859375,
+                8.90625
             ],
             "scale": [
                 1.0,
@@ -38,18 +102,8 @@
         }
     ],
     "height": 10,
+    "n_laps": 3,
     "tiles": [
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
         "empty",
         "empty",
         "empty",
@@ -58,8 +112,6 @@
         "empty",
         "empty",
         "empty",
-        "full",
-        "full",
         "empty",
         "empty",
         "empty",
@@ -68,8 +120,6 @@
         "empty",
         "empty",
         "empty",
-        "full",
-        "full",
         "empty",
         "empty",
         "empty",
@@ -78,28 +128,6 @@
         "empty",
         "empty",
         "empty",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "full",
-        "full",
-        "empty",
-        "empty",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "full",
-        "full",
-        "empty",
-        "empty",
-        "empty",
-        "full",
-        "full",
         "empty",
         "empty",
         "empty",
@@ -108,8 +136,6 @@
         "empty",
         "empty",
         "empty",
-        "full",
-        "full",
         "empty",
         "empty",
         "empty",
@@ -118,8 +144,6 @@
         "empty",
         "empty",
         "empty",
-        "full",
-        "full",
         "empty",
         "empty",
         "empty",
@@ -128,17 +152,58 @@
         "empty",
         "empty",
         "empty",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full"
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty"
     ],
     "width": 10
 }

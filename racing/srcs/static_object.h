@@ -10,7 +10,7 @@
 
 
 // setting en anglais == décor
-enum ObjectType {OBSTACLE_SETTING, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR};
+enum ObjectType {OBSTACLE_SETTING, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, CHECKPOINT, START};
 
 
 class StaticObject;
@@ -36,6 +36,7 @@ public:
 	number _angular_friction;
 	Polygon2D * _footprint;
 	bool _fixed;
+	bool _solid;
 };
 
 
@@ -65,5 +66,15 @@ public:
 	pt_type _scale; // grossissement
 };
 
+
+class CheckPoint : public StaticObject {
+public:
+	CheckPoint();
+	CheckPoint(StaticObjectModel * model, pt_type position, number alpha, pt_type scale);
+	~CheckPoint();
+
+
+	CheckPoint * _next;
+};
 
 #endif

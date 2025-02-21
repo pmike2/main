@@ -39,6 +39,7 @@ const float CROSS_SIZE= 0.1;
 const float ARROW_ANGLE= M_PI* 0.1;
 const float ARROW_TIP_SIZE= 0.2;
 const float INFO_ALPHA= 0.8;
+
 const glm::vec4 COM_CROSS_COLOR(1.0, 0.0, 0.0, INFO_ALPHA);
 const glm::vec4 FORCE_FWD_CROSS_COLOR(1.0, 1.0, 0.0, INFO_ALPHA);
 const glm::vec4 FORCE_BWD_CROSS_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
@@ -49,6 +50,9 @@ const glm::vec4 ACCELERATION_ARROW_COLOR(1.0, 0.0, 1.0, INFO_ALPHA);
 const glm::vec4 VELOCITY_ARROW_COLOR(0.0, 1.0, 1.0, INFO_ALPHA);
 const glm::vec4 FORWARD_ARROW_COLOR(1.0, 0.5, 1.0, INFO_ALPHA);
 const glm::vec4 RIGHT_ARROW_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
+
+const glm::vec4 BBOX_COLOR(1.0, 0.0, 0.0, 0.5);
+const glm::vec4 FOOTPRINT_COLOR(0.0, 1.0, 0.0, 0.5);
 
 
 class Racing {
@@ -61,6 +65,7 @@ public:
 	
 	// dessins
 	void draw_bbox();
+	void draw_footprint();
 	void draw_force();
 	void draw();
 
@@ -68,6 +73,7 @@ public:
 
 	// maj des buffers
 	void update_bbox();
+	void update_footprint();
 	void update_force();
 
 	// animation
@@ -84,7 +90,7 @@ public:
 
 	Track * _track;
 
-	pt_type _pt_min, _pt_max;
+	//pt_type _pt_min, _pt_max;
 	pt_type _com_camera;
 	number _alpha_camera;
 	cam_mode _cam_mode;
@@ -96,6 +102,7 @@ public:
 	glm::mat4 _camera2clip; // glm::ortho
 	glm::mat4 _world2camera;
 	Font * _font; // font pour écriture textes
+	ScreenGL * _screengl;
 
 	bool _key_left, _key_right, _key_up, _key_down, _key_a, _key_z; // les touches sont-elle enfoncées
 	bool _is_joystick;

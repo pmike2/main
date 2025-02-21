@@ -25,18 +25,18 @@ Racing::Racing() {
 
 
 Racing::Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool is_joystick) :
-	_draw_bbox(true), _draw_force(false), _show_info(false), _cam_mode(FIXED),
+	_draw_bbox(true), _draw_force(true), _show_info(false), _cam_mode(TRANSLATE), _screengl(screengl),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false), _key_a(false), _key_z(false),
 	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false),
 	_ia(false)
 	{
-	_pt_min= pt_type(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
-	_pt_max= pt_type(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
+	//_pt_min= pt_type(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
+	//_pt_max= pt_type(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::mat4(1.0);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
-	unsigned int n_buffers= 2;
+	unsigned int n_buffers= 3;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
@@ -44,11 +44,15 @@ Racing::Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool i
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix"});
 
-	_contexts["force"]= new DrawContext(prog_simple, _buffers[1],
+	_contexts["footprint"]= new DrawContext(prog_simple, _buffers[1],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix"});
 
-	_track= new Track();
+	_contexts["force"]= new DrawContext(prog_simple, _buffers[2],
+	std::vector<std::string>{"position_in", "color_in"},
+	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix"});
+
+	_track= new Track(5.0, 0, 0);
 	load_track("../data/tracks/track1.json");
 
 	update_bbox();
@@ -160,6 +164,7 @@ void Racing::draw_bbox() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	glUniform1f(context->_locs_uniform["z"], -30.0f);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -179,6 +184,34 @@ void Racing::draw_bbox() {
 }
 
 
+void Racing::draw_footprint() {
+	DrawContext * context= _contexts["footprint"];
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	glUniform1f(context->_locs_uniform["z"], -20.0f);
+	
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
 void Racing::draw_force() {
 	DrawContext * context= _contexts["force"];
 
@@ -187,6 +220,7 @@ void Racing::draw_force() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	glUniform1f(context->_locs_uniform["z"], -10.0f);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -207,14 +241,15 @@ void Racing::draw_force() {
 
 
 void Racing::draw() {
-	if (_draw_bbox) {
-		draw_bbox();
+	if (_show_info) {
+		show_info();
 	}
 	if (_draw_force) {
 		draw_force();
 	}
-	if (_show_info) {
-		show_info();
+	if (_draw_bbox) {
+		draw_bbox();
+		draw_footprint();
 	}
 }
 
@@ -269,41 +304,67 @@ void Racing::update_bbox() {
 
 	float * ptr= data;
 	for (auto obj : _track->_grid->_objects) {
-		glm::vec4 color(1.0, 0.0, 0.0, 1.0);
 		std::vector<pt_type> pts(obj->_bbox->_pts, obj->_bbox->_pts+ 4);
-		ptr= draw_polygon(ptr, pts, color);
-		/*number positions[n_pts_per_obj* 2]= {
-			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y,
-			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y,
-
-			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y,
-			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y,
-
-			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y,
-			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y,
-
-			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y,
-			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y
-		};
-
-		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 0]= float(positions[2* idx_pt]);
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 1]= float(positions[2* idx_pt+ 1]);
-			for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
-				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= color[idx_color];
-			}
-		}*/
+		ptr= draw_polygon(ptr, pts, BBOX_COLOR);
 	}
 	for (auto obj : _track->_floating_objects) {
-		glm::vec4 color(1.0, 0.0, 0.0, 1.0);
 		std::vector<pt_type> pts(obj->_bbox->_pts, obj->_bbox->_pts+ 4);
-		ptr= draw_polygon(ptr, pts, color);
+		ptr= draw_polygon(ptr, pts, BBOX_COLOR);
 	}
-
 	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
 		std::cout << data[i] << " ; ";
 	}
 	std::cout << "\n";*/
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void Racing::update_footprint() {
+	DrawContext * context= _contexts["footprint"];
+	context->_n_pts= 0;
+	context->_n_attrs_per_pts= 6;
+
+	for (auto obj : _track->_floating_objects) {
+		context->_n_pts+= 3* obj->_footprint->_triangles_idx.size();
+	}
+	for (auto obj : _track->_grid->_objects) {
+		context->_n_pts+= 3* obj->_footprint->_triangles_idx.size();
+	}
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	unsigned int compt= 0;
+	
+	for (auto obj : _track->_floating_objects) {
+		for (auto tri : obj->_footprint->_triangles_idx) {
+			for (int i=0; i<3; ++i) {
+				pt_type pt= obj->_footprint->_pts[tri[i]];
+				data[compt++]= float(pt.x);
+				data[compt++]= float(pt.y);
+				compt+= 4;
+			}
+		}
+	}
+
+	for (auto obj : _track->_grid->_objects) {
+		for (auto tri : obj->_footprint->_triangles_idx) {
+			for (int i=0; i<3; ++i) {
+				pt_type pt= obj->_footprint->_pts[tri[i]];
+				data[compt++]= float(pt.x);
+				data[compt++]= float(pt.y);
+				compt+= 4;
+			}
+		}
+	}
+
+	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= FOOTPRINT_COLOR[idx_color];
+		}
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
@@ -364,7 +425,7 @@ void Racing::update_force() {
 
 void Racing::anim() {
 	_track->get_hero()->preanim_keys(_key_left, _key_right, _key_down, _key_up);
-	
+
 	if (_ia) {
 		for (auto obj : _track->_floating_objects) {
 			if (obj->_model->_type== ENNEMY_CAR) {
@@ -388,6 +449,7 @@ void Racing::anim() {
 	//}
 
 	update_bbox();
+	update_footprint();
 	update_force();
 	
 	camera();
@@ -411,7 +473,7 @@ void Racing::camera() {
 	_alpha_camera+= CAM_INC_ALPHA* diff_alpha;
 
 	if (_cam_mode== FIXED) {
-		_world2camera= glm::mat4(1.0f);
+		_world2camera= glm::translate(glm::mat4(1.0f), glm::vec3(-0.5* _screengl->_gl_width+ 1.0, -0.5* _screengl->_gl_height+ 1.0, 0.0));
 	}
 	else if (_cam_mode== TRANSLATE) {
 		_world2camera= glm::translate(glm::mat4(1.0f), glm::vec3(-1.0f* float(_com_camera.x), -1.0f* float(_com_camera.y), 1.0f));

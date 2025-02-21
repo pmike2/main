@@ -19,7 +19,7 @@ GridEditor::GridEditor() {
 }
 
 
-GridEditor::GridEditor(GLuint prog_simple, ScreenGL * screengl, glm::vec4 tile_color) :
+GridEditor::GridEditor(GLuint prog_simple, ScreenGL * screengl, glm::vec4 tile_color, number cell_size, GridType type) :
 	_screengl(screengl), _row_idx_select(0), _col_idx_select(0), _tile_color(tile_color), _translation(pt_type(0.0)), _scale(1.0)
 {
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
@@ -41,7 +41,7 @@ GridEditor::GridEditor(GLuint prog_simple, ScreenGL * screengl, glm::vec4 tile_c
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_grid= new StaticObjectGrid();
+	_grid= new StaticObjectGrid(cell_size, type);
 	update();
 }
 
@@ -155,27 +155,19 @@ void GridEditor::update_grid() {
 	unsigned int compt= 0;
 
 	for (int i=0; i<_grid->_width+ 1; ++i) {
-		//data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.x);
-		//data[compt++]= float(_grid->_origin.y);
-		data[compt++]= float(i)* float(CELL_SIZE);
+		data[compt++]= float(i)* float(_grid->_cell_size);
 		data[compt++]= 0.0f;
 		compt+= 4;
-		//data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.x);
-		//data[compt++]= _grid->_height+ float(_grid->_origin.y);
-		data[compt++]= float(i)* float(CELL_SIZE);
-		data[compt++]= float(_grid->_height)* float(CELL_SIZE);
+		data[compt++]= float(i)* float(_grid->_cell_size);
+		data[compt++]= float(_grid->_height)* float(_grid->_cell_size);
 		compt+= 4;
 	}
 	for (int i=0; i<_grid->_height+ 1; ++i) {
-		//data[compt++]= float(_grid->_origin.x);
-		//data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.y);
 		data[compt++]= 0.0;
-		data[compt++]= float(i)* float(CELL_SIZE);
+		data[compt++]= float(i)* float(_grid->_cell_size);
 		compt+= 4;
-		//data[compt++]= _grid->_width+ float(_grid->_origin.x);
-		//data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.y);
-		data[compt++]= float(_grid->_width)* float(CELL_SIZE);
-		data[compt++]= float(i)* float(CELL_SIZE);
+		data[compt++]= float(_grid->_width)* float(_grid->_cell_size);
+		data[compt++]= float(i)* float(_grid->_cell_size);
 		compt+= 4;
 	}
 
@@ -200,21 +192,13 @@ void GridEditor::update_selection() {
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
 	number positions[24]= {
-		/*CELL_SIZE* number(_col_idx_select)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _grid->_origin.y,
-		CELL_SIZE* number(_col_idx_select+ 1)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _grid->_origin.y,
-		CELL_SIZE* number(_col_idx_select+ 1)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _grid->_origin.y,
+		_grid->_cell_size* number(_col_idx_select), _grid->_cell_size* number(_row_idx_select),
+		_grid->_cell_size* number(_col_idx_select+ 1), _grid->_cell_size* number(_row_idx_select),
+		_grid->_cell_size* number(_col_idx_select+ 1), _grid->_cell_size* number(_row_idx_select+ 1),
 
-		CELL_SIZE* number(_col_idx_select)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _grid->_origin.y,
-		CELL_SIZE* number(_col_idx_select+ 1)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _grid->_origin.y,
-		CELL_SIZE* number(_col_idx_select)+ _grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _grid->_origin.y,*/
-
-		CELL_SIZE* number(_col_idx_select), CELL_SIZE* number(_row_idx_select),
-		CELL_SIZE* number(_col_idx_select+ 1), CELL_SIZE* number(_row_idx_select),
-		CELL_SIZE* number(_col_idx_select+ 1), CELL_SIZE* number(_row_idx_select+ 1),
-
-		CELL_SIZE* number(_col_idx_select), CELL_SIZE* number(_row_idx_select),
-		CELL_SIZE* number(_col_idx_select+ 1), CELL_SIZE* number(_row_idx_select+ 1),
-		CELL_SIZE* number(_col_idx_select), CELL_SIZE* number(_row_idx_select+ 1)
+		_grid->_cell_size* number(_col_idx_select), _grid->_cell_size* number(_row_idx_select),
+		_grid->_cell_size* number(_col_idx_select+ 1), _grid->_cell_size* number(_row_idx_select+ 1),
+		_grid->_cell_size* number(_col_idx_select), _grid->_cell_size* number(_row_idx_select+ 1)
 	};
 
 	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
@@ -350,8 +334,8 @@ TrackEditor::TrackEditor() {
 }
 
 
-TrackEditor::TrackEditor(GLuint prog_simple, ScreenGL * screengl) :
-	_row_idx_select(0), _col_idx_select(0), _screengl(screengl), _translation(pt_type(0.0)), _scale(1.0)
+TrackEditor::TrackEditor(GLuint prog_simple, ScreenGL * screengl, number cell_size) :
+	_row_idx_select(0), _col_idx_select(0), _screengl(screengl), _translation(pt_type(0.0)), _scale(1.0), _last_checkpoint(NULL)
 {
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::mat4(1.0f);
@@ -380,7 +364,7 @@ TrackEditor::TrackEditor(GLuint prog_simple, ScreenGL * screengl) :
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_track= new Track();
+	_track= new Track(cell_size, 10, 10);
 
 	update();
 }
@@ -407,10 +391,14 @@ void TrackEditor::save_json(std::string json_path) {
 
 	js["width"]= _track->_grid->_width;
 	js["height"]= _track->_grid->_height;
+
+	js["n_laps"]= 3;
+
 	js["tiles"]= json::array();
 	for (auto tile : _track->_grid->_objects) {
 		js["tiles"].push_back(basename(tile->_model->_json_path));
 	}
+	
 	js["floating_objects"]= json::array();
 	for (auto obj : _track->_floating_objects) {
 		json js_obj;
@@ -422,6 +410,12 @@ void TrackEditor::save_json(std::string json_path) {
 		js_obj["scale"]= json::array();
 		js_obj["scale"].push_back(obj->_scale.x);
 		js_obj["scale"].push_back(obj->_scale.y);
+
+		if (obj->_model->_type== CHECKPOINT || obj->_model->_type== START) {
+			CheckPoint * checkpoint= (CheckPoint *)(obj);
+			js_obj["idx_checkpoint"]= _track->get_checkpoint_index(checkpoint);
+		}
+		
 		js["floating_objects"].push_back(js_obj);
 	}
 
@@ -591,27 +585,19 @@ void TrackEditor::update_grid() {
 	unsigned int compt= 0;
 
 	for (int i=0; i<_track->_grid->_width+ 1; ++i) {
-		//data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.x);
-		//data[compt++]= float(_grid->_origin.y);
-		data[compt++]= float(i)* float(CELL_SIZE);
+		data[compt++]= float(i)* float(_track->_grid->_cell_size);
 		data[compt++]= 0.0f;
 		compt+= 4;
-		//data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.x);
-		//data[compt++]= _grid->_height+ float(_grid->_origin.y);
-		data[compt++]= float(i)* float(CELL_SIZE);
-		data[compt++]= float(_track->_grid->_height)* float(CELL_SIZE);
+		data[compt++]= float(i)* float(_track->_grid->_cell_size);
+		data[compt++]= float(_track->_grid->_height)* float(_track->_grid->_cell_size);
 		compt+= 4;
 	}
 	for (int i=0; i<_track->_grid->_height+ 1; ++i) {
-		//data[compt++]= float(_grid->_origin.x);
-		//data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.y);
 		data[compt++]= 0.0;
-		data[compt++]= float(i)* float(CELL_SIZE);
+		data[compt++]= float(i)* float(_track->_grid->_cell_size);
 		compt+= 4;
-		//data[compt++]= _grid->_width+ float(_grid->_origin.x);
-		//data[compt++]= float(i)* CELL_SIZE+ float(_grid->_origin.y);
-		data[compt++]= float(_track->_grid->_width)* float(CELL_SIZE);
-		data[compt++]= float(i)* float(CELL_SIZE);
+		data[compt++]= float(_track->_grid->_width)* float(_track->_grid->_cell_size);
+		data[compt++]= float(i)* float(_track->_grid->_cell_size);
 		compt+= 4;
 	}
 
@@ -636,21 +622,13 @@ void TrackEditor::update_selection() {
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
 	number positions[24]= {
-		/*CELL_SIZE* number(_col_idx_select)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _track->_grid->_origin.y,
-		CELL_SIZE* number(_col_idx_select+ 1)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _track->_grid->_origin.y,
-		CELL_SIZE* number(_col_idx_select+ 1)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _track->_grid->_origin.y,
+		_track->_grid->_cell_size* number(_col_idx_select), _track->_grid->_cell_size* number(_row_idx_select),
+		_track->_grid->_cell_size* number(_col_idx_select+ 1), _track->_grid->_cell_size* number(_row_idx_select),
+		_track->_grid->_cell_size* number(_col_idx_select+ 1), _track->_grid->_cell_size* number(_row_idx_select+ 1),
 
-		CELL_SIZE* number(_col_idx_select)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select)+ _track->_grid->_origin.y,
-		CELL_SIZE* number(_col_idx_select+ 1)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _track->_grid->_origin.y,
-		CELL_SIZE* number(_col_idx_select)+ _track->_grid->_origin.x, CELL_SIZE* number(_row_idx_select+ 1)+ _track->_grid->_origin.y,*/
-
-		CELL_SIZE* number(_col_idx_select), CELL_SIZE* number(_row_idx_select),
-		CELL_SIZE* number(_col_idx_select+ 1), CELL_SIZE* number(_row_idx_select),
-		CELL_SIZE* number(_col_idx_select+ 1), CELL_SIZE* number(_row_idx_select+ 1),
-
-		CELL_SIZE* number(_col_idx_select), CELL_SIZE* number(_row_idx_select),
-		CELL_SIZE* number(_col_idx_select+ 1), CELL_SIZE* number(_row_idx_select+ 1),
-		CELL_SIZE* number(_col_idx_select), CELL_SIZE* number(_row_idx_select+ 1),
+		_track->_grid->_cell_size* number(_col_idx_select), _track->_grid->_cell_size* number(_row_idx_select),
+		_track->_grid->_cell_size* number(_col_idx_select+ 1), _track->_grid->_cell_size* number(_row_idx_select+ 1),
+		_track->_grid->_cell_size* number(_col_idx_select), _track->_grid->_cell_size* number(_row_idx_select+ 1),
 	};
 
 	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
@@ -771,36 +749,75 @@ void TrackEditor::update() {
 
 
 bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
-	if (key== SDLK_DOWN) {
-		_row_idx_select--;
-		if (_row_idx_select< 0) {
-			_row_idx_select= 0;
+	if (input_state->get_key(SDLK_RSHIFT)) {
+		if (key== SDLK_DOWN) {
+			_track->drop_row();
+			update();
+			return true;
 		}
-		update_selection();
+		else if (key== SDLK_UP) {
+			_track->add_row("empty");
+			update();
+			return true;
+		}
+		else if (key== SDLK_LEFT) {
+			_track->drop_col();
+			update();
+			return true;
+		}
+		else if (key== SDLK_RIGHT) {
+			_track->add_col("empty");
+			update();
+			return true;
+		}
+	}
+	else {
+		if (key== SDLK_DOWN) {
+			_row_idx_select--;
+			if (_row_idx_select< 0) {
+				_row_idx_select= 0;
+			}
+			update_selection();
+			return true;
+		}
+		else if (key== SDLK_UP) {
+			_row_idx_select++;
+			if (_row_idx_select> _track->_grid->_height- 1) {
+				_row_idx_select= _track->_grid->_height- 1;
+			}
+			update_selection();
+			return true;
+		}
+		else if (key== SDLK_LEFT) {
+			_col_idx_select--;
+			if (_col_idx_select< 0) {
+				_col_idx_select= 0;
+			}
+			update_selection();
+			return true;
+		}
+		else if (key== SDLK_RIGHT) {
+			_col_idx_select++;
+			if (_col_idx_select> _track->_grid->_width- 1) {
+				_col_idx_select= _track->_grid->_width- 1;
+			}
+			update_selection();
+			return true;
+		}
+	}
+	
+	if (key== SDLK_i) {
+		reinit();
+		update();
 		return true;
 	}
-	else if (key== SDLK_UP) {
-		_row_idx_select++;
-		if (_row_idx_select> _track->_grid->_height- 1) {
-			_row_idx_select= _track->_grid->_height- 1;
-		}
-		update_selection();
+	else if (key== SDLK_l) {
+		load_json("../data/tracks/track1.json");
+		update();
 		return true;
 	}
-	else if (key== SDLK_LEFT) {
-		_col_idx_select--;
-		if (_col_idx_select< 0) {
-			_col_idx_select= 0;
-		}
-		update_selection();
-		return true;
-	}
-	else if (key== SDLK_RIGHT) {
-		_col_idx_select++;
-		if (_col_idx_select> _track->_grid->_width- 1) {
-			_col_idx_select= _track->_grid->_width- 1;
-		}
-		update_selection();
+	else if (key== SDLK_s) {
+		save_json("../data/tracks/track1.json");
 		return true;
 	}
 	return false;
@@ -903,28 +920,27 @@ Editor::Editor() {
 
 
 Editor::Editor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl) : _screengl(screengl) {
-	_track_editor= new TrackEditor(prog_simple, screengl);
-	_tile_grid_editor= new GridEditor(prog_simple, screengl, OBSTACLE_SETTING_COLOR);
-	_floating_grid_editor= new GridEditor(prog_simple, screengl, OBSTACLE_FLOATING_FOOTPRINT_COLOR);
+	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
-	/*_track_editor->_track->_grid->_origin= TRACK_ORIGIN;
-	_tile_grid_editor->_grid->_origin= TILES_ORIGIN;
-	_floating_grid_editor->_grid->_origin= FLOATING_OBJECTS_ORIGIN;*/
+	_track_editor= new TrackEditor(prog_simple, screengl, 5.0);
+	_tile_grid_editor= new GridEditor(prog_simple, screengl, OBSTACLE_SETTING_COLOR, 1.0, VERTICAL_GRID);
+	_floating_grid_editor= new GridEditor(prog_simple, screengl, OBSTACLE_FLOATING_FOOTPRINT_COLOR, 1.0, HORIZONTAL_GRID);
+
 	_track_editor->_translation= TRACK_ORIGIN;
 	_tile_grid_editor->_translation= TILES_ORIGIN;
 	_floating_grid_editor->_translation= FLOATING_OBJECTS_ORIGIN;
 
+	_track_editor->_scale= 0.2;
+
 	_tile_grid_editor->_grid->_width= 4;
-	_tile_grid_editor->_grid->_type= VERTICAL_GRID;
 	_floating_grid_editor->_grid->_height= 4;
-	_floating_grid_editor->_grid->_type= HORIZONTAL_GRID;
 
 	for (auto model : _track_editor->_track->_models) {
 		if (model.second->_type== OBSTACLE_SETTING) {
 			//std::cout << "loading OBSTACLE_SETTING : " << model.first << "\n";
 			_tile_grid_editor->_grid->push_tile(model.second);
 		}
-		else if (model.second->_type== OBSTACLE_FLOATING || model.second->_type== HERO_CAR || model.second->_type== ENNEMY_CAR) {
+		else {
 			//std::cout << "loading OBSTACLE_FLOATING : " << model.first << "\n";
 			_floating_grid_editor->_grid->push_tile(model.second);
 		}
@@ -946,9 +962,28 @@ Editor::~Editor() {
 
 
 void Editor::draw() {
+	glScissor(0, 0, 800, 700);
+	glEnable(GL_SCISSOR_TEST);
 	_track_editor->draw();
+	glDisable(GL_SCISSOR_TEST);
 	_tile_grid_editor->draw();
 	_floating_grid_editor->draw();
+	show_info();
+}
+
+
+void Editor::show_info() {
+	const float font_scale= 0.007f;
+	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
+
+	std::vector<Text> texts;
+
+	for (auto obj : _track_editor->_track->_floating_objects) {
+		texts.push_back(Text(basename(obj->_model->_json_path), obj->_com, font_scale, glm::vec4(1.0, 1.0, 1.0, 1.0)));
+	}
+
+	_font->set_text(texts);
+	_font->draw();
 }
 
 
@@ -963,30 +998,39 @@ void Editor::sync_track_with_tile() {
 void Editor::add_floating_object(pt_type pos) {
 	StaticObject * current_floating_object= _floating_grid_editor->_grid->get_tile(_floating_grid_editor->_col_idx_select, _floating_grid_editor->_row_idx_select);
 	StaticObjectModel * model= current_floating_object->_model;
-	//std::cout << pos.x << " ; " << pos.y << "\n";
-	_track_editor->_track->_floating_objects.push_back(new StaticObject(model, pt_type(pos.x, pos.y), 0.0, pt_type(1.0)));
+
+	if (model->_type== CHECKPOINT) {
+		CheckPoint * start= _track_editor->_track->get_start();
+		if (start== NULL) {
+			std::cerr << "pas de checkpoint sans start\n";
+			return;
+		}
+		CheckPoint * checkpoint= new CheckPoint(model, pt_type(pos.x, pos.y), 0.0, pt_type(1.0));
+		checkpoint->_next= start;
+		if (_track_editor->_last_checkpoint== NULL) {
+			start->_next= checkpoint;
+		}
+		else {
+			_track_editor->_last_checkpoint->_next= checkpoint;
+		}
+		_track_editor->_last_checkpoint= checkpoint;
+		_track_editor->_track->_floating_objects.push_back(checkpoint);
+	}
+	else {
+		_track_editor->_track->_floating_objects.push_back(new StaticObject(model, pt_type(pos.x, pos.y), 0.0, pt_type(1.0)));
+	}
+	
 	_track_editor->update();
 }
 
 
 bool Editor::key_down(InputState * input_state, SDL_Keycode key) {
-	if (key== SDLK_i) {
-		_track_editor->reinit();
-		_track_editor->update();
-		return true;
-	}
-	else if (key== SDLK_l) {
-		_track_editor->load_json("../data/tracks/track1.json");
-		_track_editor->update();
-		return true;
-	}
-	else if (key== SDLK_s) {
-		_track_editor->save_json("../data/tracks/track_editor.json");
-		return true;
-	}
-	else if (key== SDLK_DOWN || key== SDLK_UP || key== SDLK_LEFT || key== SDLK_RIGHT) {
+	if (key== SDLK_DOWN || key== SDLK_UP || key== SDLK_LEFT || key== SDLK_RIGHT) {
 		if (input_state->get_key(SDLK_LSHIFT)) {
 			_tile_grid_editor->key_down(input_state, key);
+		}
+		else if (input_state->get_key(SDLK_RSHIFT)) {
+			_track_editor->key_down(input_state, key);
 		}
 		else {
 			_track_editor->key_down(input_state, key);
@@ -998,6 +1042,9 @@ bool Editor::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 	else if (key== SDLK_w) {
 		sync_track_with_tile();
+		return true;
+	}
+	else if (_track_editor->key_down(input_state, key)) {
 		return true;
 	}
 	return false;
@@ -1013,7 +1060,7 @@ bool Editor::mouse_button_down(InputState * input_state) {
 	if (input_state->get_key(SDLK_f)) {
 		pt_type pos= _track_editor->screen2pt(input_state->_x, input_state->_y);
 		//pos-= _track_editor->_track->_grid->_origin;
-		if (pos.x>=0 && pos.x<number(_track_editor->_track->_grid->_width)* CELL_SIZE && pos.y>=0 && pos.y<number(_track_editor->_track->_grid->_height)* CELL_SIZE) {
+		if (pos.x>=0 && pos.x<number(_track_editor->_track->_grid->_width)* _track_editor->_track->_grid->_cell_size && pos.y>=0 && pos.y<number(_track_editor->_track->_grid->_height)* _track_editor->_track->_grid->_cell_size) {
 			add_floating_object(pos);
 			return true;
 		}
