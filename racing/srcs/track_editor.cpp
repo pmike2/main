@@ -19,11 +19,12 @@ GridEditor::GridEditor() {
 }
 
 
-GridEditor::GridEditor(GLuint prog_simple, ScreenGL * screengl, glm::vec4 tile_color, number cell_size, GridType type) :
+GridEditor::GridEditor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, glm::vec4 tile_color, number cell_size, GridType type) :
 	_screengl(screengl), _row_idx_select(0), _col_idx_select(0), _tile_color(tile_color), _translation(pt_type(0.0)), _scale(1.0)
 {
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::mat4(1.0f);
+	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
 	unsigned int n_buffers= 3;
 	_buffers= new GLuint[n_buffers];
@@ -142,6 +143,22 @@ void GridEditor::draw() {
 	draw_tiles();
 	draw_selection();
 	draw_grid();
+}
+
+
+void GridEditor::show_info() {
+	const float font_scale= 0.002f;
+	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
+
+	std::vector<Text> texts;
+
+	for (auto obj : _grid->_objects) {
+		glm::vec4 v= _world2camera* glm::vec4(obj->_com.x, obj->_com.y, 0.0, 1.0);
+		texts.push_back(Text(basename(obj->_model->_json_path), pt_type(v.x, v.y), font_scale, glm::vec4(1.0, 1.0, 1.0, 1.0)));
+	}
+
+	_font->set_text(texts);
+	_font->draw();
 }
 
 
@@ -334,11 +351,12 @@ TrackEditor::TrackEditor() {
 }
 
 
-TrackEditor::TrackEditor(GLuint prog_simple, ScreenGL * screengl, number cell_size) :
+TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, number cell_size) :
 	_row_idx_select(0), _col_idx_select(0), _screengl(screengl), _translation(pt_type(0.0)), _scale(1.0), _last_checkpoint(NULL)
 {
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::mat4(1.0f);
+	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
 	unsigned int n_buffers= 5;
 	_buffers= new GLuint[n_buffers];
@@ -572,6 +590,27 @@ void TrackEditor::draw() {
 	draw_tiles();
 	draw_selection();
 	draw_grid();
+}
+
+
+void TrackEditor::show_info() {
+	const float font_scale= 0.004f;
+	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
+
+	std::vector<Text> texts;
+
+	for (auto obj : _track->_floating_objects) {
+		glm::vec4 v= _world2camera* glm::vec4(obj->_com.x, obj->_com.y, 0.0, 1.0);
+		std::string s= basename(obj->_model->_json_path);
+		if (obj->_model->_type== CHECKPOINT) {
+			CheckPoint * checkpoint= (CheckPoint *)(obj);
+			s+= std::to_string(_track->get_checkpoint_index(checkpoint));
+		}
+		texts.push_back(Text(s, pt_type(v.x, v.y), font_scale, glm::vec4(1.0, 1.0, 1.0, 1.0)));
+	}
+
+	_font->set_text(texts);
+	_font->draw();
 }
 
 
@@ -920,11 +959,11 @@ Editor::Editor() {
 
 
 Editor::Editor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl) : _screengl(screengl) {
-	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
+	//_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
-	_track_editor= new TrackEditor(prog_simple, screengl, 5.0);
-	_tile_grid_editor= new GridEditor(prog_simple, screengl, OBSTACLE_SETTING_COLOR, 1.0, VERTICAL_GRID);
-	_floating_grid_editor= new GridEditor(prog_simple, screengl, OBSTACLE_FLOATING_FOOTPRINT_COLOR, 1.0, HORIZONTAL_GRID);
+	_track_editor= new TrackEditor(prog_simple, prog_font, screengl, 5.0);
+	_tile_grid_editor= new GridEditor(prog_simple, prog_font, screengl, OBSTACLE_SETTING_COLOR, 1.0, VERTICAL_GRID);
+	_floating_grid_editor= new GridEditor(prog_simple, prog_font, screengl, OBSTACLE_FLOATING_FOOTPRINT_COLOR, 1.0, HORIZONTAL_GRID);
 
 	_track_editor->_translation= TRACK_ORIGIN;
 	_tile_grid_editor->_translation= TILES_ORIGIN;
@@ -962,28 +1001,21 @@ Editor::~Editor() {
 
 
 void Editor::draw() {
+	show_info();
+
 	glScissor(0, 0, 800, 700);
 	glEnable(GL_SCISSOR_TEST);
 	_track_editor->draw();
 	glDisable(GL_SCISSOR_TEST);
 	_tile_grid_editor->draw();
 	_floating_grid_editor->draw();
-	show_info();
 }
 
 
 void Editor::show_info() {
-	const float font_scale= 0.007f;
-	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
-
-	std::vector<Text> texts;
-
-	for (auto obj : _track_editor->_track->_floating_objects) {
-		texts.push_back(Text(basename(obj->_model->_json_path), obj->_com, font_scale, glm::vec4(1.0, 1.0, 1.0, 1.0)));
-	}
-
-	_font->set_text(texts);
-	_font->draw();
+	_track_editor->show_info();
+	//_tile_grid_editor->show_info();
+	_floating_grid_editor->show_info();
 }
 
 

@@ -355,8 +355,25 @@ void Track::checkpoints() {
 }
 
 
-void Track::anim(number dt) {
+void Track::checkpoint_ia(Car * car) {
+	CheckPoint * checkpoint= car->_next_checkpoint;
+	pt_type direction(checkpoint->_com- car->_com);
+	number dist= glm::length(direction);
+	car->_thrust= dist;
+	car->_wheel= scal()
+}
+
+
+void Track::anim(number dt, bool key_left, bool key_right, bool key_up, bool key_down) {
+	get_hero()->preanim_keys(key_left, key_right, key_down, key_up);
+
 	for (auto obj : _floating_objects) {
+		if (obj->_model->_type== ENNEMY_CAR) {
+			Car * car= (Car *)(obj);
+			//car->random_ia();
+			checkpoint_ia(car);
+		}
+
 		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
 			Car * car= (Car *)(obj);
 			car->anim(dt);

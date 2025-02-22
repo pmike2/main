@@ -104,12 +104,10 @@ public:
 	Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
 
-	bool _key_left, _key_right, _key_up, _key_down, _key_a, _key_z; // les touches sont-elle enfoncées
+	bool _key_left, _key_right, _key_up, _key_down; // les touches sont-elle enfoncées
 	bool _is_joystick;
 	glm::vec2 _joystick; // valeurs x, y stick joystick
 	bool _joystick_a, _joystick_b; // boutons 
-
-	bool _ia;
 };
 
 

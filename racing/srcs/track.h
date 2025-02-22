@@ -58,7 +58,8 @@ public:
 	unsigned int get_checkpoint_index(CheckPoint * checkpoint);
 	void all_collision();
 	void checkpoints();
-	void anim(number dt);
+	void checkpoint_ia(Car * car);
+	void anim(number dt, bool key_left, bool key_right, bool key_up, bool key_down);
 	void set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx);
 	void set_tile(std::string model_name, unsigned int idx);
 	void set_all(std::string model_name, unsigned int width, unsigned int height);

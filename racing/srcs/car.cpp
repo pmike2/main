@@ -149,7 +149,6 @@ void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up
 
 void Car::random_ia() {
 	CarModel * model= get_model();
-	std::cout << "random\n";
 
 	if (rand_int(0, 100)> 20) {
 		_thrust+= model->_thrust_increment;

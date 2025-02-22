@@ -35,12 +35,13 @@ const pt_type FLOATING_OBJECTS_ORIGIN(-7.0, 3.0);
 class GridEditor {
 public:
 	GridEditor();
-	GridEditor(GLuint prog_simple, ScreenGL * screengl, glm::vec4 tile_color, number cell_size, GridType type);
+	GridEditor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, glm::vec4 tile_color, number cell_size, GridType type);
 	~GridEditor();
 	void draw_grid();
 	void draw_selection();
 	void draw_tiles();
 	void draw();
+	void show_info();
 	void update_grid();
 	void update_selection();
 	void update_tiles();
@@ -62,13 +63,14 @@ public:
 	GLuint * _textures; // texture arrays pour tous les PNGs
 	glm::mat4 _camera2clip, _world2camera; // glm::ortho
 	ScreenGL * _screengl;
+	Font * _font;
 };
 
 
 class TrackEditor {
 public:
 	TrackEditor();
-	TrackEditor(GLuint prog_simple, ScreenGL * screengl, number cell_size);
+	TrackEditor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, number cell_size);
 	~TrackEditor();
 	void reinit();
 	void load_json(std::string json_path);
@@ -79,6 +81,7 @@ public:
 	void draw_floating_objects_footprint();
 	void draw_floating_objects_bbox();
 	void draw();
+	void show_info();
 	void update_grid();
 	void update_selection();
 	void update_tiles();
@@ -106,6 +109,7 @@ public:
 	GLuint * _textures; // texture arrays pour tous les PNGs
 	glm::mat4 _camera2clip, _world2camera; // glm::ortho
 	ScreenGL * _screengl;
+	Font * _font;
 };
 
 
@@ -129,7 +133,7 @@ public:
 	TrackEditor * _track_editor;
 	GridEditor * _tile_grid_editor;
 	GridEditor * _floating_grid_editor;
-	Font * _font; // font pour écriture textes
+	//Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
 };
 

@@ -26,9 +26,8 @@ Racing::Racing() {
 
 Racing::Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool is_joystick) :
 	_draw_bbox(true), _draw_force(true), _show_info(false), _cam_mode(TRANSLATE), _screengl(screengl),
-	_key_left(false), _key_right(false), _key_up(false), _key_down(false), _key_a(false), _key_z(false),
-	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false),
-	_ia(false)
+	_key_left(false), _key_right(false), _key_up(false), _key_down(false), 
+	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false)
 	{
 	//_pt_min= pt_type(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
 	//_pt_max= pt_type(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
@@ -424,18 +423,7 @@ void Racing::update_force() {
 
 
 void Racing::anim() {
-	_track->get_hero()->preanim_keys(_key_left, _key_right, _key_down, _key_up);
-
-	if (_ia) {
-		for (auto obj : _track->_floating_objects) {
-			if (obj->_model->_type== ENNEMY_CAR) {
-				Car * car= (Car *)(obj);
-				car->random_ia();
-			}
-		}
-	}
-
-	_track->anim(ANIM_DT);
+	_track->anim(ANIM_DT, _key_left, _key_right, _key_up, _key_down);
 
 	// joystick
 	/*if (_is_joystick) {
@@ -512,7 +500,6 @@ bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
 		_show_info= !_show_info;
 	}
 	else if (key== SDLK_l) {
-		//_ia= false;
 		//load_json("../data/test/init.json");
 	}
 	else if (key== SDLK_c) {
