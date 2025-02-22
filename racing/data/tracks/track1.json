@@ -1,192 +1,20 @@
 {
     "floating_objects": [
         {
-            "alpha": 0.0,
-            "name": "hero_car",
-            "position": [
-                27.265625,
-                12.1875
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                17.734375,
-                8.046875
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                17.734375,
-                11.640625
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                17.65625,
-                16.484375
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                37.03125,
-                17.109375
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                36.71875,
-                14.296875
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                36.484375,
-                9.84375
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
+            "alpha": 1.6000000000000003,
             "idx_checkpoint": 0,
             "name": "start",
             "position": [
-                11.875,
-                12.890625
+                61.24250030517578,
+                7.530000686645508
             ],
             "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "idx_checkpoint": 1,
-            "name": "checkpoint",
-            "position": [
-                6.71875,
-                20.3125
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "idx_checkpoint": 2,
-            "name": "checkpoint",
-            "position": [
-                7.8125,
-                38.75
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "idx_checkpoint": 3,
-            "name": "checkpoint",
-            "position": [
-                41.5625,
-                38.984375
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "idx_checkpoint": 4,
-            "name": "checkpoint",
-            "position": [
-                41.09375,
-                16.171875
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "big_rock",
-            "position": [
-                23.28125,
-                42.1875
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "big_rock",
-            "position": [
-                23.359375,
-                40.078125
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "big_rock",
-            "position": [
-                23.28125,
-                37.96875
-            ],
-            "scale": [
-                1.0,
-                1.0
+                5.099999999999999,
+                9.650000000000022
             ]
         }
     ],
-    "height": 10,
+    "height": 13,
     "n_laps": 3,
     "tiles": [
         "full",
@@ -200,15 +28,10 @@
         "full",
         "full",
         "full",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "full",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
         "full",
         "empty",
         "empty",
@@ -218,7 +41,27 @@
         "empty",
         "empty",
         "empty",
+        "empty",
+        "empty270",
+        "empty",
+        "empty180",
+        "empty",
+        "full180",
         "full",
+        "empty",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full",
+        "full180",
+        "full180",
+        "empty",
+        "full180",
         "full",
         "empty",
         "empty",
@@ -228,37 +71,27 @@
         "empty",
         "empty",
         "empty",
-        "full",
-        "full",
         "empty",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
         "empty",
-        "full",
-        "full",
         "empty",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
+        "full180",
         "empty",
+        "full180",
         "full",
         "full",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
         "empty",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
+        "full180",
         "empty",
-        "full",
+        "full180",
         "full",
         "empty",
         "empty",
@@ -268,7 +101,27 @@
         "empty",
         "empty",
         "empty",
+        "empty",
+        "empty180",
+        "empty",
+        "full180",
+        "empty",
+        "full180",
         "full",
+        "empty",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full180",
+        "full180",
+        "empty",
+        "full180",
         "full",
         "empty",
         "empty",
@@ -278,17 +131,87 @@
         "empty",
         "empty",
         "empty",
+        "empty",
+        "empty180",
+        "empty",
+        "full180",
+        "empty",
+        "full180",
         "full",
+        "full180",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
+        "full270",
         "full",
+        "empty",
+        "full180",
+        "empty",
+        "full180",
         "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full"
+        "empty180",
+        "empty180",
+        "empty180",
+        "empty180",
+        "empty180",
+        "empty180",
+        "empty180",
+        "empty180",
+        "empty180",
+        "empty180",
+        "empty180",
+        "full180",
+        "empty",
+        "full180",
+        "full180",
+        "empty180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "empty",
+        "full180",
+        "full180",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180",
+        "full180"
     ],
-    "width": 10
+    "width": 15
 }

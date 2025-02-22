@@ -352,7 +352,8 @@ TrackEditor::TrackEditor() {
 
 
 TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, number cell_size) :
-	_row_idx_select(0), _col_idx_select(0), _screengl(screengl), _translation(pt_type(0.0)), _scale(1.0), _last_checkpoint(NULL)
+	_row_idx_select(0), _col_idx_select(0), _screengl(screengl), _translation(pt_type(0.0)), _scale(1.0), _last_checkpoint(NULL),
+	_selected_floating_object(NULL)
 {
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::mat4(1.0f);
@@ -887,7 +888,7 @@ bool TrackEditor::mouse_button_down(InputState * input_state) {
 			return true;
 		}
 	}
-	else if (input_state->get_key(SDLK_m) || input_state->get_key(SDLK_r) || input_state->get_key(SDLK_s)) {
+	else if (input_state->get_key(SDLK_m) || input_state->get_key(SDLK_r) || input_state->get_key(SDLK_g)) {
 		pt_type pos= screen2pt(input_state->_x, input_state->_y);
 		//pos-= _track->_grid->_origin;
 		StaticObject * obj= _track->get_floating_object(pos);
@@ -930,7 +931,7 @@ bool TrackEditor::mouse_motion(InputState * input_state) {
 		update();
 		return true;
 	}
-	else if (input_state->get_key(SDLK_s) && _selected_floating_object!= NULL) {
+	else if (input_state->get_key(SDLK_g) && _selected_floating_object!= NULL) {
 		pt_type scale= _selected_floating_object->_scale+ pt_type(0.05* number(input_state->_xrel), -0.05* number(input_state->_yrel));
 		_selected_floating_object->reinit(_selected_floating_object->_com, _selected_floating_object->_alpha, scale);
 		update();
@@ -1098,13 +1099,13 @@ bool Editor::mouse_button_down(InputState * input_state) {
 		}
 	}
 
-	if (_track_editor->mouse_button_down(input_state)) {
-		return true;
-	}
-	else if (_tile_grid_editor->mouse_button_down(input_state)) {
+	if (_tile_grid_editor->mouse_button_down(input_state)) {
 		return true;
 	}
 	else if (_floating_grid_editor->mouse_button_down(input_state)) {
+		return true;
+	}
+	else if (_track_editor->mouse_button_down(input_state)) {
 		return true;
 	}
 	return false;

@@ -54,6 +54,9 @@ Racing::Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool i
 	_track= new Track(5.0, 0, 0);
 	load_track("../data/tracks/track1.json");
 
+	Car * hero= _track->get_hero();
+	_com_camera= hero->_com;
+
 	update_bbox();
 	update_force();
 }

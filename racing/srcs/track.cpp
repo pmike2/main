@@ -145,7 +145,7 @@ void StaticObjectGrid::add_row(StaticObjectModel * model) {
 
 
 void StaticObjectGrid::add_col(StaticObjectModel * model) {
-	for (unsigned int row_idx=0; row_idx<_height; ++row_idx) {
+	for (unsigned int row_idx=_height; row_idx>0; --row_idx) {
 		StaticObject * obj= new StaticObject(model, coord2number(_width, row_idx), 0.0, pt_type(_cell_size));
 		_objects.insert(_objects.begin()+ row_idx* _width, obj);
 	}
@@ -359,8 +359,47 @@ void Track::checkpoint_ia(Car * car) {
 	CheckPoint * checkpoint= car->_next_checkpoint;
 	pt_type direction(checkpoint->_com- car->_com);
 	number dist= glm::length(direction);
-	car->_thrust= dist;
-	car->_wheel= scal()
+	number scalprod= scal(car->_forward, direction/ dist);
+	number sign= 1.0;
+	CarModel * model= car->get_model();
+
+	car->_thrust= 1.0+ 0.1* dist;
+	if (car->_thrust< -1.0* model->_max_brake) {
+		car->_thrust= -1.0* model->_max_brake;
+	}
+	if (car->_thrust> model->_max_thrust) {
+		car-> _thrust= model->_max_thrust;
+	}
+
+	if (scalprod< -0.8 && abs(car->_wheel)> 0.5) {
+
+	}
+	else {
+		// wheel est >0 à gauche, <0 à droite
+		if (is_left(car->_com, car->_forward, checkpoint->_com)) {
+			sign= 1.0;
+		}
+		else {
+			sign= -1.0;
+		}
+		car->_wheel= 1.0* sign* (1.0- scalprod);
+		if (car->_wheel> model->_max_wheel) {
+			car->_wheel= model->_max_wheel;
+		}
+		if (car->_wheel< -1.0* model->_max_wheel) {
+			car->_wheel= -1.0* model->_max_wheel;
+		}
+	}
+
+	/*std::cout << "car=" << car->_com.x << " ; " << car->_com.y;
+	std::cout << " ; checkpoint=" << checkpoint->_com.x << " ; " << checkpoint->_com.y;
+	std::cout << " ; direction=" << direction.x << " ; " << direction.y;
+	std::cout << " ; sign=" << sign;
+	std::cout << " ; dist=" << dist;
+	std::cout << " ; scalprod=" << scalprod;
+	std::cout << " ; thrust=" << car->_thrust;
+	std::cout << " ; wheel=" << car->_wheel;
+	std::cout << "\n";*/
 }
 
 
