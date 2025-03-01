@@ -1,0 +1,19 @@
+
+#div_car {
+	display:inline-block;
+	width: 30px;
+	height: 30px;
+}
+
+
+#button_send {
+	display:inline-block;
+	width: 30px;
+	height: 30px;
+	cursor: pointer;
+	background-color: gray;
+}
+
+body {
+	height: 100px;
+}

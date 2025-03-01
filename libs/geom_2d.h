@@ -81,6 +81,7 @@ public:
 	number _radius; // rayon cercle englobant
 	AABB_2D * _aabb;
 	std::vector<std::vector<int> > _triangles_idx;
+	number _inertia; // https://physics.stackexchange.com/questions/493736/moment-of-inertia-for-an-arbitrary-polygon
 };
 
 

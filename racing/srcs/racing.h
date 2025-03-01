@@ -32,8 +32,8 @@ const float Z_FAR= 1000.0f;
 
 const number ANIM_DT= 0.05;
 
-const number CAM_INC= 0.05;
-const number CAM_INC_ALPHA= 0.05;
+const number CAM_INC= 0.1;
+const number CAM_INC_ALPHA= 0.01;
 
 const float CROSS_SIZE= 0.1;
 const float ARROW_ANGLE= M_PI* 0.1;
@@ -53,6 +53,7 @@ const glm::vec4 RIGHT_ARROW_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
 
 const glm::vec4 BBOX_COLOR(1.0, 0.0, 0.0, 0.5);
 const glm::vec4 FOOTPRINT_COLOR(0.0, 1.0, 0.0, 0.5);
+const glm::vec4 NLAPS_COLOR(0.0, 1.0, 0.0, 0.5);
 
 
 class Racing {
@@ -70,6 +71,7 @@ public:
 	void draw();
 
 	void show_info();
+	void show_debug_info();
 
 	// maj des buffers
 	void update_bbox();
@@ -95,7 +97,7 @@ public:
 	number _alpha_camera;
 	cam_mode _cam_mode;
 
-	bool _draw_bbox, _draw_force, _show_info; // faut-il afficher les BBox
+	bool _draw_bbox, _draw_force, _show_debug_info, _show_info; // faut-il afficher les BBox
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs

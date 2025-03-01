@@ -802,6 +802,26 @@ void Polygon2D::update_attributes() {
 	_aabb->_pos.y= ymin;
 	_aabb->_size.x= xmax- xmin;
 	_aabb->_size.y= ymax- ymin;
+
+	// moment inertie
+	// https://physics.stackexchange.com/questions/493736/moment-of-inertia-for-an-arbitrary-polygon
+	_inertia= 0.0;
+	if (_pts.size()> 2) {
+		for (int idx_pt=0; idx_pt<_pts.size()- 1; ++idx_pt) {
+			pt_type pt1= _pts[idx_pt]- _centroid;
+			pt_type pt2= _pts[idx_pt+ 1]- _centroid;
+			_inertia+= (pt1.x* pt2.y- pt2.x* pt1.y)* (
+				pt1.x* pt1.x+ pt1.x* pt2.x+ pt2.x* pt2.x+
+				pt1.y* pt1.y+ pt1.y* pt2.y+ pt2.y* pt2.y
+			);
+
+			/*_inertia+= (_pts[idx_pt].x* _pts[idx_pt+ 1].y- _pts[idx_pt+ 1].x* _pts[idx_pt].y)* (
+				_pts[idx_pt].x* _pts[idx_pt].x+ _pts[idx_pt].x* _pts[idx_pt+ 1].x+ _pts[idx_pt+ 1].x* _pts[idx_pt+ 1].x+
+				_pts[idx_pt].y* _pts[idx_pt].y+ _pts[idx_pt].y* _pts[idx_pt+ 1].y+ _pts[idx_pt+ 1].y* _pts[idx_pt+ 1].y
+			);*/
+		}
+		_inertia/= 12.0;
+	}
 }
 
 

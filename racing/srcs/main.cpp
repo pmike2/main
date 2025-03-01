@@ -1,14 +1,24 @@
-
+#include <fstream>
+#include <sstream>
+#include <iomanip>
 #include <iostream>
-#include <OpenGL/gl3.h>
+#include <mutex>
 
+#include <OpenGL/gl3.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
+#include "sio_client.h"
+#include "json.hpp"
 
 #include "utile.h"
 #include "gl_utils.h"
 #include "input_state.h"
+
 #include "racing.h"
+
+
+using json = nlohmann::json;
+
 
 // en ms; temps entre 2 anims
 //const unsigned int DELTA_ANIM= 1;
@@ -30,6 +40,11 @@ Racing * racing;
 bool done= false;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+
+sio::client io;
+bool data_send= false;
+std::string data_string= "";
+std::mutex mut;
 
 
 
@@ -157,6 +172,17 @@ void init() {
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	input_state= new InputState();
 	racing= new Racing(prog_simple, prog_font, screengl, is_joystick);
+
+	io.set_open_listener([&]() {
+		io.socket()->on("data", [&](sio::event& ev) {
+			mut.lock();
+			data_string= ev.get_message()->get_string();
+			data_send= true;
+			mut.unlock();
+		});
+	});
+	io.connect("http://127.0.0.1:3001");
+
 }
 
 
@@ -199,10 +225,26 @@ void compute_fps() {
 }
 
 
+void check_data_send() {
+	mut.lock();
+	if (data_send) {
+		data_send= false;
+		std::cout << data_string << "\n";
+		json js= json::parse(data_string);
+		std::string json_path= "../data/cars/hero_car_web.json";
+		std::ofstream ofs(json_path);
+		ofs << std::setw(4) << js << "\n";
+		//racing->_track->get_hero()->_model->load(json_path);
+	}
+	mut.unlock();
+}
+
+
 void idle() {
 	anim();
 	draw();
 	compute_fps();
+	check_data_send();
 }
 
 

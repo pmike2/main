@@ -119,7 +119,6 @@ public:
 	Editor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl);
 	~Editor();
 	void draw();
-	void show_info();
 	void sync_track_with_tile();
 	void add_floating_object(pt_type pos);
 	bool key_down(InputState * input_state, SDL_Keycode key);

@@ -54,12 +54,12 @@ public:
 	void load_json(std::string json_path);
 
 	Car * get_hero();
-	CheckPoint * get_start();
+	//CheckPoint * get_start();
 	unsigned int get_checkpoint_index(CheckPoint * checkpoint);
 	void all_collision();
 	void checkpoints();
 	void checkpoint_ia(Car * car);
-	void anim(number dt, bool key_left, bool key_right, bool key_up, bool key_down);
+	void anim(number dt, bool key_left, bool key_right, bool key_up, bool key_down, bool is_joystick, bool joystick_a, bool joystick_b, glm::vec2 joystick);
 	void set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx);
 	void set_tile(std::string model_name, unsigned int idx);
 	void set_all(std::string model_name, unsigned int width, unsigned int height);

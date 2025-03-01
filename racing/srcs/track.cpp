@@ -179,7 +179,7 @@ Track::Track() {
 }
 
 
-Track::Track(number cell_size, unsigned int width, unsigned int height) {
+Track::Track(number cell_size, unsigned int width, unsigned int height) : _start(NULL), _n_laps(0) {
 	load_models();
 	_grid= new StaticObjectGrid(cell_size, VERTICAL_GRID);
 	set_all("empty", width, height);
@@ -248,6 +248,9 @@ void Track::load_json(std::string json_path) {
 		}
 		else if (_models[model_name]->_type== CHECKPOINT || _models[model_name]->_type== START) {
 			CheckPoint * checkpoint= new CheckPoint(_models[model_name], position, alpha, scale);
+			if (_models[model_name]->_type== START) {
+				_start= checkpoint;
+			}
 			checkpoints.push_back(std::make_pair(checkpoint, object["idx_checkpoint"]));
 			_floating_objects.push_back(checkpoint);
 		}
@@ -269,11 +272,10 @@ void Track::load_json(std::string json_path) {
 		}
 	}
 
-	CheckPoint * start= get_start();
 	for (auto obj : _floating_objects) {
 		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
 			Car * car= (Car *)(obj);
-			car->_next_checkpoint= start;
+			car->_next_checkpoint= _start;
 		}
 	}
 }
@@ -289,19 +291,19 @@ Car * Track::get_hero() {
 }
 
 
-CheckPoint * Track::get_start() {
+/*CheckPoint * Track::get_start() {
 	for (auto obj : _floating_objects) {
 		if (obj->_model->_type== START) {
 			return (CheckPoint *)(obj);
 		}
 	}
 	return NULL;
-}
+}*/
 
 
 unsigned int Track::get_checkpoint_index(CheckPoint * checkpoint) {
 	unsigned int idx= 0;
-	CheckPoint * start= get_start();
+	CheckPoint * start= _start;
 	while (checkpoint!= start) {
 		idx++;
 		start= start->_next;
@@ -337,7 +339,6 @@ void Track::checkpoints() {
 			bool is_pt_in_poly1= false;
 			bool is_inter= poly_intersects_poly(car->_footprint, car->_next_checkpoint->_footprint, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
 			if (is_inter) {
-				car->_next_checkpoint= car->_next_checkpoint->_next;
 				if (car->_next_checkpoint== _start) {
 					car->_n_laps++;
 					if (car->_n_laps== _n_laps) {
@@ -349,6 +350,7 @@ void Track::checkpoints() {
 						}
 					}
 				}
+				car->_next_checkpoint= car->_next_checkpoint->_next;
 			}
 		}
 	}
@@ -368,7 +370,7 @@ void Track::checkpoint_ia(Car * car) {
 		car->_thrust= -1.0* model->_max_brake;
 	}
 	if (car->_thrust> model->_max_thrust) {
-		car-> _thrust= model->_max_thrust;
+		car->_thrust= model->_max_thrust;
 	}
 
 	if (scalprod< -0.8 && abs(car->_wheel)> 0.5) {
@@ -403,8 +405,13 @@ void Track::checkpoint_ia(Car * car) {
 }
 
 
-void Track::anim(number dt, bool key_left, bool key_right, bool key_up, bool key_down) {
-	get_hero()->preanim_keys(key_left, key_right, key_down, key_up);
+void Track::anim(number dt, bool key_left, bool key_right, bool key_up, bool key_down, bool is_joystick, bool joystick_a, bool joystick_b, glm::vec2 joystick) {
+	if (is_joystick) {
+		get_hero()->preanim_joystick(joystick_a, joystick_b, joystick);
+	}
+	else {
+		get_hero()->preanim_keys(key_left, key_right, key_down, key_up);
+	}
 
 	for (auto obj : _floating_objects) {
 		if (obj->_model->_type== ENNEMY_CAR) {

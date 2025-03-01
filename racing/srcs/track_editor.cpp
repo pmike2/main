@@ -1002,21 +1002,14 @@ Editor::~Editor() {
 
 
 void Editor::draw() {
-	show_info();
-
 	glScissor(0, 0, 800, 700);
 	glEnable(GL_SCISSOR_TEST);
+	_track_editor->show_info();
 	_track_editor->draw();
 	glDisable(GL_SCISSOR_TEST);
+	_floating_grid_editor->show_info();
 	_tile_grid_editor->draw();
 	_floating_grid_editor->draw();
-}
-
-
-void Editor::show_info() {
-	_track_editor->show_info();
-	//_tile_grid_editor->show_info();
-	_floating_grid_editor->show_info();
 }
 
 
@@ -1032,20 +1025,20 @@ void Editor::add_floating_object(pt_type pos) {
 	StaticObject * current_floating_object= _floating_grid_editor->_grid->get_tile(_floating_grid_editor->_col_idx_select, _floating_grid_editor->_row_idx_select);
 	StaticObjectModel * model= current_floating_object->_model;
 
-	if (model->_type== CHECKPOINT) {
-		CheckPoint * start= _track_editor->_track->get_start();
-		if (start== NULL) {
+	if (model->_type== START) {
+		CheckPoint * checkpoint= new CheckPoint(model, pt_type(pos.x, pos.y), 0.0, pt_type(1.0));
+		_track_editor->_track->_start= checkpoint;
+		_track_editor->_last_checkpoint= checkpoint;
+		_track_editor->_track->_floating_objects.push_back(checkpoint);
+	}
+	else if (model->_type== CHECKPOINT) {
+		if (_track_editor->_track->_start== NULL) {
 			std::cerr << "pas de checkpoint sans start\n";
 			return;
 		}
 		CheckPoint * checkpoint= new CheckPoint(model, pt_type(pos.x, pos.y), 0.0, pt_type(1.0));
-		checkpoint->_next= start;
-		if (_track_editor->_last_checkpoint== NULL) {
-			start->_next= checkpoint;
-		}
-		else {
-			_track_editor->_last_checkpoint->_next= checkpoint;
-		}
+		checkpoint->_next= _track_editor->_track->_start;
+		_track_editor->_last_checkpoint->_next= checkpoint;
 		_track_editor->_last_checkpoint= checkpoint;
 		_track_editor->_track->_floating_objects.push_back(checkpoint);
 	}

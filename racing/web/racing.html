@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>test</title>
+		
+		<link rel="stylesheet" href="racing.css">
+		
+		<script src="/socket.io/socket.io.js"></script>
+		
+		<script type="module">
+
+			var div_car;
+			var socket= io();
+			var data= {
+				"type" : "hero_car",
+				"mass" : 1.0,
+				"footprint" : [
+					[-0.4, -0.5], [0.4, -0.5], [0.4, 0.5], [-0.4, 0.5]
+				],
+				"com2force_fwd" : [0.0, 0.5],
+				"com2force_bwd" : [0.0, -0.5],
+				"com2bbox_center" : [0.0, 0.1],
+				"max_wheel" : 0.3,
+				"wheel_increment" : 0.05,
+				"wheel_decrement" : 0.05,
+				"max_thrust" : 9.0,
+				"thrust_increment" : 0.1,
+				"thrust_decrement" : 0.02,
+				"max_brake" : 9.0,
+				"brake_increment" : 0.06,
+				"forward_static_friction" : 3.0,
+				"backward_static_friction" : 7.0,
+				"backward_dynamic_friction" : 1.0,
+				"friction_threshold" : 0.25,
+				"angular_friction" : 2.0
+			};
+
+
+			function emit() {
+				//socket.emit("data", JSON.stringify(data));
+				socket.emit("data", JSON.stringify(data));
+			}
+
+
+			function decorate_inputs(div) {
+				let inputs= div.getElementsByTagName('input');
+				for (let i=0; i<inputs.length; ++i) {
+					if (inputs[i].getAttribute("type")!= "range") {
+						continue;
+					}
+					
+					let name= inputs[i].id;
+					let label= document.createElement("label");
+					let input= document.createElement("input");
+					let br= document.createElement("br");
+					
+					label.setAttribute("for", name);
+					label.innerHTML= name;
+					input.setAttribute("type", "number");
+					input.setAttribute("step", "0.001");
+					input.value= parseFloat(inputs[i].value).toFixed(3);
+
+					inputs[i].parentNode.insertBefore(label, inputs[i]);
+					inputs[i].after(input);
+					input.after(br);
+
+					inputs[i].addEventListener("change", function() {
+						input.value= parseFloat(this.value).toFixed(3);
+						data[name]= parseFloat(inputs[i].value);
+					});
+					input.addEventListener("change", function() {
+						inputs[i].value= input.value;
+						data[name]= parseFloat(inputs[i].value);
+					});
+				}
+			}
+
+
+			window.onload= function () {
+				let button_send;
+
+				button_send= document.createElement("send");
+				button_send.id= "button_send";
+				button_send.innerHTML= "send";
+				document.body.appendChild(button_send);
+				
+				div_car= document.createElement("div");
+				for (let key in data) {
+					if (key== "type" || key== "footprint" || key== "com2force_fwd" || key== "com2force_bwd" || key== "com2bbox_center") {
+						continue;
+					}
+					var input= document.createElement("input");
+					input.id= key;
+					input.setAttribute("type", "range");
+					input.setAttribute("step", "0.001");
+					input.setAttribute("min", "-10.0");
+					input.setAttribute("max", "10.0");
+					input.value= data[key];
+					/*input.addEventListener("change", function() {
+						data[this.id]= parseFloat(this.value);
+					});*/
+					div_car.appendChild(input);
+				}
+				
+				document.body.appendChild(div_car);
+
+				decorate_inputs(div_car);
+
+				button_send.addEventListener("click", () => {
+					emit();
+				});
+			}
+
+		</script>
+	</head>
+	<body></body>
+</html>

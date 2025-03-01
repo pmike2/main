@@ -23,6 +23,7 @@ public:
 	StaticObjectModel();
 	StaticObjectModel(std::string json_path);
 	~StaticObjectModel();
+	void load(std::string json_path);
 	friend std::ostream & operator << (std::ostream & os, const StaticObjectModel & model);
 
 
@@ -31,7 +32,7 @@ public:
 	pt_type _com2bbox_center;
 	//pt_type _halfsize;
 	number _mass;
-	number _inertia;
+	//number _inertia;
 	number _linear_friction; // non utilisé pour CarModel
 	number _angular_friction;
 	Polygon2D * _footprint;
@@ -64,6 +65,8 @@ public:
 	number _angular_acceleration;
 	number _torque;
 	pt_type _scale; // grossissement
+	number _mass; // == model->_mass* _scale.x* _scale.y
+	number _inertia;
 };
 
 

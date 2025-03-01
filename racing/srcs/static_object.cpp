@@ -75,16 +75,16 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 
 		number impulse;
 		if (obj1->_model->_fixed) {
-			pt_type v= (cross2d(r2, axis)/ obj2->_model->_inertia)* r2;
-			impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj2->_model->_mass+ dot(v, axis));
+			pt_type v= (cross2d(r2, axis)/ obj2->_inertia)* r2;
+			impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj2->_mass+ dot(v, axis));
 		}
 		else if (obj2->_model->_fixed) {
-			pt_type v= (cross2d(r1, axis)/ obj1->_model->_inertia)* r1;
-			impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_model->_mass+ dot(v, axis));
+			pt_type v= (cross2d(r1, axis)/ obj1->_inertia)* r1;
+			impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ dot(v, axis));
 		}
 		else {
-			pt_type v= (cross2d(r1, axis)/ obj1->_model->_inertia)* r1+ (cross2d(r2, axis)/ obj2->_model->_inertia)* r2;
-			impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_model->_mass+ 1.0/ obj2->_model->_mass+ dot(v, axis));
+			pt_type v= (cross2d(r1, axis)/ obj1->_inertia)* r1+ (cross2d(r2, axis)/ obj2->_inertia)* r2;
+			impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ 1.0/ obj2->_mass+ dot(v, axis));
 		}
 
 		if (abs(impulse)> 10.0) {
@@ -94,13 +94,13 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		}
 
 		if (!obj1->_model->_fixed) {
-			obj1->_velocity-= (impulse/ obj1->_model->_mass)* axis;
-			obj1->_angular_velocity-= (impulse/ obj1->_model->_inertia)* cross2d(r1, axis);
+			obj1->_velocity-= (impulse/ obj1->_mass)* axis;
+			obj1->_angular_velocity-= (impulse/ obj1->_inertia)* cross2d(r1, axis);
 		}
 
 		if (!obj2->_model->_fixed) {
-			obj2->_velocity+= (impulse/ obj2->_model->_mass)* axis;
-			obj2->_angular_velocity+= (impulse/ obj2->_model->_inertia)* cross2d(r2, axis);
+			obj2->_velocity+= (impulse/ obj2->_mass)* axis;
+			obj2->_angular_velocity+= (impulse/ obj2->_inertia)* cross2d(r2, axis);
 		}
 
 		// peut-être pas nécessaire
@@ -118,8 +118,20 @@ StaticObjectModel::StaticObjectModel() {
 }
 
 
-StaticObjectModel::StaticObjectModel(std::string json_path) : _json_path(json_path) {
-	std::ifstream ifs(json_path);
+StaticObjectModel::StaticObjectModel(std::string json_path) {
+	load(json_path);
+}
+
+
+StaticObjectModel::~StaticObjectModel() {
+
+}
+
+
+void StaticObjectModel::load(std::string json_path) {
+	_json_path= json_path;
+
+	std::ifstream ifs(_json_path);
 	json js= json::parse(ifs);
 	ifs.close();
 
@@ -190,15 +202,7 @@ StaticObjectModel::StaticObjectModel(std::string json_path) : _json_path(json_pa
 		_mass= _linear_friction= _angular_friction= 0.0;
 	}
 	
-	// https://en.wikipedia.org/wiki/List_of_moments_of_inertia
-	// normalement c'est / 12.0 mais tout explose...
-	number size= 1.0; // taille par défaut de tout objet avant scale
-	_inertia= _mass* (2.0* size+ 2.0* size)/ 3.0;
-}
-
-
-StaticObjectModel::~StaticObjectModel() {
-
+	//_inertia= _mass* _footprint->_inertia;
 }
 
 
@@ -243,7 +247,7 @@ void StaticObject::reinit(pt_type position, number alpha, pt_type scale) {
 
 
 void StaticObject::update() {
-	_com2bbox_center= rot(_model->_com2bbox_center, _alpha);
+	_com2bbox_center= rot(_scale* _model->_com2bbox_center, _alpha);
 
 	// a revoir...
 	_footprint->set_points(_model->_footprint->_pts);
@@ -256,6 +260,13 @@ void StaticObject::update() {
 	_bbox->_center= _com+ _com2bbox_center;
 	_bbox->_half_size= 0.5* _scale;
 	_bbox->update();
+
+	_mass= _model->_mass* _scale.x* _scale.y;
+	// !!!
+	// obligé de rajouter * 10 sinon tout pète
+	// !!!
+	_inertia= _mass* _footprint->_inertia* 10.0;
+	//std::cout << "mass=" << _mass << " ; inertia=" << _inertia << "\n";
 }
 
 
@@ -267,7 +278,7 @@ void StaticObject::anim(number anim_dt) {
 	_force= pt_type(0.0);
 	_force-= _model->_linear_friction* _velocity;
 
-	_acceleration= _force/ _model->_mass;
+	_acceleration= _force/ _mass;
 	_velocity+= _acceleration* anim_dt;
 	_com+= _velocity* anim_dt;
 
@@ -276,7 +287,7 @@ void StaticObject::anim(number anim_dt) {
 	//_torque+= _com2force_bwd.x* _force_bwd.y- _com2force_bwd.y* _force_bwd.x;
 	_torque-= _model->_angular_friction* _angular_velocity;
 	
-	_angular_acceleration= _torque/ _model->_inertia;
+	_angular_acceleration= _torque/ _inertia;
 	_angular_velocity+= _angular_acceleration* anim_dt;
 	_alpha+= _angular_velocity* anim_dt;
 	while (_alpha> M_PI* 2.0) {

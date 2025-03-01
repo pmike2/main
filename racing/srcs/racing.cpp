@@ -25,7 +25,7 @@ Racing::Racing() {
 
 
 Racing::Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool is_joystick) :
-	_draw_bbox(true), _draw_force(true), _show_info(false), _cam_mode(TRANSLATE), _screengl(screengl),
+	_draw_bbox(true), _draw_force(true), _show_debug_info(false), _show_info(true), _cam_mode(TRANSLATE), _screengl(screengl),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false), 
 	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false)
 	{
@@ -243,6 +243,9 @@ void Racing::draw_force() {
 
 
 void Racing::draw() {
+	if (_show_debug_info) {
+		show_debug_info();
+	}
 	if (_show_info) {
 		show_info();
 	}
@@ -257,6 +260,21 @@ void Racing::draw() {
 
 
 void Racing::show_info() {
+	const float font_scale= 0.007f;
+	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
+
+	Car * hero= _track->get_hero();
+
+	std::vector<Text> texts;
+
+	texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(8.0f, 7.0f), font_scale, NLAPS_COLOR));
+
+	_font->set_text(texts);
+	_font->draw();
+}
+
+
+void Racing::show_debug_info() {
 	const float font_scale= 0.007f;
 	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
 
@@ -426,18 +444,7 @@ void Racing::update_force() {
 
 
 void Racing::anim() {
-	_track->anim(ANIM_DT, _key_left, _key_right, _key_up, _key_down);
-
-	// joystick
-	/*if (_is_joystick) {
-		if (_joystick_a) {
-		}
-		else if (_joystick_b) {
-		}
-	}
-	// touches
-	else {*/
-	//}
+	_track->anim(ANIM_DT, _key_left, _key_right, _key_up, _key_down, _is_joystick, _joystick_a, _joystick_b, _joystick);
 
 	update_bbox();
 	update_footprint();
@@ -500,10 +507,12 @@ bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
 		_draw_force= !_draw_force;
 	}
 	else if (key== SDLK_i) {
-		_show_info= !_show_info;
+		_show_debug_info= !_show_debug_info;
 	}
 	else if (key== SDLK_l) {
 		//load_json("../data/test/init.json");
+		CarModel * model= (CarModel *)(_track->get_hero()->_model);
+		model->load("../data/cars/hero_car_web.json");
 	}
 	else if (key== SDLK_c) {
 		if (_cam_mode== FIXED) {

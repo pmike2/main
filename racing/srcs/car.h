@@ -15,6 +15,7 @@ public:
 	CarModel();
 	CarModel(std::string json_path);
 	~CarModel();
+	void load(std::string json_path);
 
 
 	pt_type _forward;
@@ -45,6 +46,7 @@ public:
 	void reinit(pt_type position, number alpha, pt_type scale);
 	void update();
 	void preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up);
+	void preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick);
 	void random_ia();
 	void anim(number anim_dt);
 	friend std::ostream & operator << (std::ostream & os, const Car & car);
@@ -64,6 +66,7 @@ public:
 
 	CheckPoint * _next_checkpoint;
 	unsigned int _n_laps;
+	std::string _name;
 };
 
 #endif
