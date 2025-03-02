@@ -5,7 +5,6 @@
 	"footprint" : [
 		[0.0, 0.0], [0.3, 0.0], [0.3, 0.4], [0.0, 0.4]
 	],
-	"com2bbox_center" : [0.0, 0.1],
 	"linear_friction" : 0.4,
 	"angular_friction" : 0.4
 }

@@ -664,7 +664,6 @@ void Polygon2D::set_points(const number * points, unsigned int n_points, bool co
 	if (convexhull) {
 		convex_hull_2d(_pts);
 	}
-	update_attributes();
 }
 
 
@@ -676,7 +675,15 @@ void Polygon2D::set_points(const std::vector<pt_type> pts, bool convexhull) {
 	if (convexhull) {
 		convex_hull_2d(_pts);
 	}
-	update_attributes();
+}
+
+
+void Polygon2D::centroid2zero() {
+	// on met le centre du polygon sur le centre de gravité
+	for (unsigned int i=0; i<_pts.size(); ++i) {
+		_pts[i]-= _centroid;
+	}
+	_centroid= pt_type(0.0);
 }
 
 
@@ -690,7 +697,6 @@ void Polygon2D::randomize(unsigned int n_points, number radius, pt_type center, 
 	if (convexhull) {
 		convex_hull_2d(_pts);
 	}
-	update_attributes();
 }
 
 
@@ -700,7 +706,6 @@ void Polygon2D::set_rectangle(const pt_type origin, const pt_type size) {
 	_pts.push_back(origin+ pt_type(size.x, 0.0));
 	_pts.push_back(origin+ size);
 	_pts.push_back(origin+ pt_type(0.0, size.y));
-	update_attributes();
 }
 
 
@@ -709,7 +714,6 @@ void Polygon2D::set_bbox(const BBox_2D & bbox) {
 	for (unsigned int i=0; i<4; ++i) {
 		_pts.push_back(bbox._pts[i]);
 	}
-	update_attributes();
 }
 
 
@@ -717,7 +721,6 @@ void Polygon2D::translate(pt_type v) {
 	for (unsigned int i=0; i<_pts.size(); ++i) {
 		_pts[i]+= v;
 	}
-	update_attributes();
 }
 
 
@@ -725,7 +728,6 @@ void Polygon2D::rotate(pt_type center, number alpha) {
 	for (unsigned int i=0; i<_pts.size(); ++i) {
 		_pts[i]= center+ rot(_pts[i]- center, alpha);
 	}
-	update_attributes();
 }
 
 
@@ -733,11 +735,10 @@ void Polygon2D::scale(pt_type scale) {
 	for (unsigned int i=0; i<_pts.size(); ++i) {
 		_pts[i]*= scale;
 	}
-	update_attributes();
 }
 
 
-void Polygon2D::update_attributes() {
+void Polygon2D::update_area() {
 	// calcul aire
 	_area= 0.0;
 	for (unsigned int i=0; i<_pts.size(); ++i) {
@@ -746,6 +747,15 @@ void Polygon2D::update_attributes() {
 		_area+= 0.5f* (pt1.x* pt2.y- pt1.y* pt2.x);
 	}
 
+	// si clockwise -> anticlockwise
+	if (_area< 0.0) {
+		_area*= -1.0;
+		reverse(_pts.begin(), _pts.end());
+	}
+}
+
+
+void Polygon2D::update_centroid() {
 	// calcul centre de gravité
 	_centroid= pt_type(0.0);
 	for (unsigned int i=0; i<_pts.size(); ++i) {
@@ -753,20 +763,10 @@ void Polygon2D::update_attributes() {
 		pt_type pt2= _pts[(i+ 1)% _pts.size()];
 		_centroid+= (0.5f* THIRD/ _area)* (pt1.x* pt2.y- pt1.y* pt2.x)* (pt1+ pt2);
 	}
+}
 
-	// a mettre en option ?
-	// on met le centre du polygon sur le centre de gravité
-	/*for (unsigned int i=0; i<_pts.size(); ++i) {
-		_pts[i]-= _centroid;
-	}
-	_centroid= pt_type(0.0);*/
 
-	// si clockwise -> anticlockwise
-	if (_area< 0.0) {
-		_area*= -1.0;
-		reverse(_pts.begin(), _pts.end());
-	}
-
+void Polygon2D::update_normals() {
 	// calcul normales (norme == 1)
 	// on doit etre en anticlockwise a ce moment ; on fait une rotation de -90 ie (x,y)->(y,-x)
 	// pour que la normale pointe vers l'extérieur du polygone
@@ -776,7 +776,10 @@ void Polygon2D::update_attributes() {
 		pt_type pt2= _pts[(i+ 1)% _pts.size()];
 		_normals.push_back(glm::normalize(pt_type(pt2.y- pt1.y, pt1.x- pt2.x)));
 	}
+}
 
+
+void Polygon2D::update_radius() {
 	// calcul rayon cercle englobant ; n'est pertinent que si le poly est convexe...
 	_radius= 0.0;
 	for (auto it_pt : _pts) {
@@ -786,7 +789,10 @@ void Polygon2D::update_attributes() {
 		}
 	}
 	_radius= sqrt(_radius);
+}
 
+
+void Polygon2D::update_aabb() {
 	// calcul AABB
 	number xmin= 1e8;
 	number ymin= 1e8;
@@ -802,7 +808,10 @@ void Polygon2D::update_attributes() {
 	_aabb->_pos.y= ymin;
 	_aabb->_size.x= xmax- xmin;
 	_aabb->_size.y= ymax- ymin;
+}
 
+
+void Polygon2D::update_inertia() {
 	// moment inertie
 	// https://physics.stackexchange.com/questions/493736/moment-of-inertia-for-an-arbitrary-polygon
 	_inertia= 0.0;
@@ -822,6 +831,16 @@ void Polygon2D::update_attributes() {
 		}
 		_inertia/= 12.0;
 	}
+}
+
+
+void Polygon2D::update_all() {
+	void update_area();
+	void update_centroid();
+	void update_normals();
+	void update_radius();
+	void update_aabb();
+	void update_inertia();
 }
 
 

@@ -62,15 +62,24 @@ public:
 	~Polygon2D();
 	void set_points(const number * points, unsigned int n_points, bool convexhull=false);
 	void set_points(const std::vector<pt_type> pts, bool convexhull=false);
+	void centroid2zero();
 	void randomize(unsigned int n_points, number radius=1.0, pt_type center=pt_type(0.0), bool convexhull=false);
 	void set_rectangle(const pt_type origin, const pt_type size);
 	void set_bbox(const BBox_2D & bbox);
 	void translate(pt_type v);
 	void rotate(pt_type center, number alpha);
 	void scale(pt_type scale);
-	void update_attributes();
 	void min_max_pt_along_dir(const pt_type direction, unsigned int * idx_pt_min, number * dist_min, unsigned int * idx_pt_max, number * dist_max) const;
 	void triangulate();
+
+	void update_area();
+	void update_centroid();
+	void update_normals();
+	void update_radius();
+	void update_aabb();
+	void update_inertia();
+	void update_all();
+
 	friend std::ostream & operator << (std::ostream & os, const Polygon2D & polygon);
 
 

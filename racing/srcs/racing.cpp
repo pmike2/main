@@ -264,10 +264,19 @@ void Racing::show_info() {
 	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
 
 	Car * hero= _track->get_hero();
+	std::vector<Car *> cars= _track->get_sorted_cars();
 
 	std::vector<Text> texts;
 
 	texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(8.0f, 7.0f), font_scale, NLAPS_COLOR));
+
+	for (unsigned int idx_car=0; idx_car<cars.size(); ++idx_car) {
+		glm::vec4 color(ENNEMY_COLOR);
+		if (cars[idx_car]== hero) {
+			color= HERO_COLOR;
+		}
+		texts.push_back(Text(std::to_string(idx_car+ 1)+  " - "+ cars[idx_car]->_name, glm::vec2(-9.0f, 7.0f- float(idx_car)* 0.5f), font_scale, color));
+	}
 
 	_font->set_text(texts);
 	_font->draw();
@@ -285,7 +294,6 @@ void Racing::show_debug_info() {
 	texts.push_back(Text("COM PT", glm::vec2(-9.0f, 7.0f), font_scale, COM_CROSS_COLOR));
 	texts.push_back(Text("FORCE_FWD PT", glm::vec2(-9.0f, 6.0f), font_scale, FORCE_FWD_CROSS_COLOR));
 	texts.push_back(Text("FORCE_BWD PT", glm::vec2(-9.0f, 5.0f), font_scale, FORCE_BWD_CROSS_COLOR));
-	texts.push_back(Text("BBOX PT", glm::vec2(-9.0f, 4.0f), font_scale, BBOX_CROSS_COLOR));
 	texts.push_back(Text("FORCE_FWD VEC", glm::vec2(-9.0f, 3.0f), font_scale, FORCE_FWD_ARROW_COLOR));
 	texts.push_back(Text("FORCE_BWD VEC", glm::vec2(-9.0f, 2.0f), font_scale, FORCE_BWD_ARROW_COLOR));
 	texts.push_back(Text("ACCELERATION VEC", glm::vec2(-9.0f, 1.0f), font_scale, ACCELERATION_ARROW_COLOR));
@@ -395,10 +403,10 @@ void Racing::update_footprint() {
 void Racing::update_force() {
 	const unsigned int n_pts_per_cross= 4;
 	const unsigned int n_pts_per_arrow= 6;
-	const unsigned int n_pts_per_obj= 4* n_pts_per_cross+ 6* n_pts_per_arrow; // 4 croix ; 6 fleches
+	const unsigned int n_pts_per_obj= 3* n_pts_per_cross+ 6* n_pts_per_arrow; // 3 croix ; 6 fleches
 
 	DrawContext * context= _contexts["force"];
-	context->_n_pts= n_pts_per_obj* _track->_floating_objects.size();
+	context->_n_pts= n_pts_per_obj* (_track->_floating_objects.size()+ _track->_grid->_objects.size());
 	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
@@ -410,26 +418,36 @@ void Racing::update_force() {
 			ptr= draw_cross(ptr, car->_com, CROSS_SIZE, COM_CROSS_COLOR);
 			ptr= draw_cross(ptr, car->_com+ car->_com2force_fwd, CROSS_SIZE, FORCE_FWD_CROSS_COLOR);
 			ptr= draw_cross(ptr, car->_com+ car->_com2force_bwd, CROSS_SIZE, FORCE_BWD_CROSS_COLOR);
-			ptr= draw_cross(ptr, car->_com+ car->_com2bbox_center, CROSS_SIZE, BBOX_CROSS_COLOR);
 			ptr= draw_arrow(ptr, car->_com+ car->_com2force_fwd, car->_com+ car->_com2force_fwd+ car->_force_fwd, ARROW_TIP_SIZE, ARROW_ANGLE, FORCE_FWD_ARROW_COLOR);
 			ptr= draw_arrow(ptr, car->_com+ car->_com2force_bwd, car->_com+ car->_com2force_bwd+ car->_force_bwd, ARROW_TIP_SIZE, ARROW_ANGLE, FORCE_BWD_ARROW_COLOR);
 			ptr= draw_arrow(ptr, car->_com, car->_com+ car->_acceleration, ARROW_TIP_SIZE, ARROW_ANGLE, ACCELERATION_ARROW_COLOR);
 			ptr= draw_arrow(ptr, car->_com, car->_com+ car->_velocity, ARROW_TIP_SIZE, ARROW_ANGLE, VELOCITY_ARROW_COLOR);
-			ptr= draw_arrow(ptr, car->_com+ car->_com2bbox_center, car->_com+ car->_com2bbox_center+ car->_forward, ARROW_TIP_SIZE, ARROW_ANGLE, FORWARD_ARROW_COLOR);
-			ptr= draw_arrow(ptr, car->_com+ car->_com2bbox_center, car->_com+ car->_com2bbox_center+ car->_right, ARROW_TIP_SIZE, ARROW_ANGLE, RIGHT_ARROW_COLOR);
+			ptr= draw_arrow(ptr, car->_com, car->_com+ car->_forward, ARROW_TIP_SIZE, ARROW_ANGLE, FORWARD_ARROW_COLOR);
+			ptr= draw_arrow(ptr, car->_com, car->_com+ car->_right, ARROW_TIP_SIZE, ARROW_ANGLE, RIGHT_ARROW_COLOR);
 		}
 		else {
 			ptr= draw_cross(ptr, obj->_com, CROSS_SIZE, COM_CROSS_COLOR);
-			ptr= draw_cross(ptr, obj->_com+ obj->_com2bbox_center, CROSS_SIZE, BBOX_CROSS_COLOR);
 			ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_cross);
 			ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_cross);
-			ptr= draw_arrow(ptr, obj->_com+ obj->_com2bbox_center, obj->_com+ obj->_com2bbox_center+ obj->_force, ARROW_TIP_SIZE, ARROW_ANGLE, FORCE_FWD_ARROW_COLOR);
+			ptr= draw_arrow(ptr, obj->_com, obj->_com+ obj->_force, ARROW_TIP_SIZE, ARROW_ANGLE, FORCE_FWD_ARROW_COLOR);
 			ptr= draw_arrow(ptr, obj->_com, obj->_com+ obj->_acceleration, ARROW_TIP_SIZE, ARROW_ANGLE, ACCELERATION_ARROW_COLOR);
 			ptr= draw_arrow(ptr, obj->_com, obj->_com+ obj->_velocity, ARROW_TIP_SIZE, ARROW_ANGLE, VELOCITY_ARROW_COLOR);
 			ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_arrow);
 			ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_arrow);
 			ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_arrow);
 		}
+	}
+
+	for (auto obj : _track->_grid->_objects) {
+		ptr= draw_cross(ptr, obj->_com, CROSS_SIZE, COM_CROSS_COLOR);
+		ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_cross);
+		ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_cross);
+		ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_arrow);
+		ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_arrow);
+		ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_arrow);
+		ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_arrow);
+		ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_arrow);
+		ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_arrow);
 	}
 
 	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
@@ -508,6 +526,7 @@ bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 	else if (key== SDLK_i) {
 		_show_debug_info= !_show_debug_info;
+		_show_info= !_show_info;
 	}
 	else if (key== SDLK_l) {
 		//load_json("../data/test/init.json");

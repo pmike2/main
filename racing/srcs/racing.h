@@ -43,7 +43,6 @@ const float INFO_ALPHA= 0.8;
 const glm::vec4 COM_CROSS_COLOR(1.0, 0.0, 0.0, INFO_ALPHA);
 const glm::vec4 FORCE_FWD_CROSS_COLOR(1.0, 1.0, 0.0, INFO_ALPHA);
 const glm::vec4 FORCE_BWD_CROSS_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
-const glm::vec4 BBOX_CROSS_COLOR(0.0, 0.5, 1.0, INFO_ALPHA);
 const glm::vec4 FORCE_FWD_ARROW_COLOR(1.0, 1.0, 0.0, INFO_ALPHA);
 const glm::vec4 FORCE_BWD_ARROW_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
 const glm::vec4 ACCELERATION_ARROW_COLOR(1.0, 0.0, 1.0, INFO_ALPHA);
@@ -54,6 +53,8 @@ const glm::vec4 RIGHT_ARROW_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
 const glm::vec4 BBOX_COLOR(1.0, 0.0, 0.0, 0.5);
 const glm::vec4 FOOTPRINT_COLOR(0.0, 1.0, 0.0, 0.5);
 const glm::vec4 NLAPS_COLOR(0.0, 1.0, 0.0, 0.5);
+const glm::vec4 HERO_COLOR(1.0, 1.0, 0.0, 1.0);
+const glm::vec4 ENNEMY_COLOR(0.0, 1.0, 1.0, 1.0);
 
 
 class Racing {

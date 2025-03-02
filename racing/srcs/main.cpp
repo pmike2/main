@@ -99,13 +99,13 @@ void init() {
 	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 
 	bool is_joystick= false;
-	if (SDL_NumJoysticks()> 0){
+	/*if (SDL_NumJoysticks()> 0){
 		SDL_Joystick * joy= SDL_JoystickOpen(0);
 		if (joy) {
 			is_joystick= true;
 			std::cout << "joystick OK; n axes=" << SDL_JoystickNumAxes(joy) << " ; n buttons=" << SDL_JoystickNumButtons(joy) << "\n";
 		}
-	}
+	}*/
 
 	// la taille du buffer influe sur la latence
 	if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 512)== -1) {

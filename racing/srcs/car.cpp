@@ -66,6 +66,8 @@ Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) :
 	StaticObject(model, position, alpha, scale), _next_checkpoint(NULL), _n_laps(0)
 {
 	reinit(position, alpha, scale);
+
+	_name= "Car "+ std::to_string(rand_int(1, 100));
 }
 
 
@@ -272,6 +274,7 @@ void Car::anim(number anim_dt) {
 		return;
 	}
 
+
 	_force_fwd= pt_type(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel);
 	_force_fwd-= model->_forward_static_friction* scal(_forward, _velocity)* _forward;
@@ -296,10 +299,11 @@ void Car::anim(number anim_dt) {
 	_torque+= _com2force_fwd.x* _force_fwd.y- _com2force_fwd.y* _force_fwd.x;
 	_torque+= _com2force_bwd.x* _force_bwd.y- _com2force_bwd.y* _force_bwd.x;
 	_torque-= _model->_angular_friction* _angular_velocity;
-	
+
 	_angular_acceleration= _torque/ _inertia;
 	_angular_velocity+= _angular_acceleration* anim_dt;
 	_alpha+= _angular_velocity* anim_dt;
+	
 	while (_alpha> M_PI* 2.0) {
 		_alpha-= M_PI* 2.0;
 	}
@@ -308,6 +312,7 @@ void Car::anim(number anim_dt) {
 	}
 
 	update();
+
 }
 
 

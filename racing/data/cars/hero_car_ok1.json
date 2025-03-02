@@ -3,10 +3,6 @@
     "backward_dynamic_friction": 2.3,
     "backward_static_friction": 9,
     "brake_increment": 0.2,
-    "com2bbox_center": [
-        0,
-        0.1
-    ],
     "com2force_bwd": [
         0,
         -0.5

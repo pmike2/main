@@ -29,7 +29,7 @@ public:
 
 	std::string _json_path;
 	ObjectType _type;
-	pt_type _com2bbox_center;
+	//pt_type _com2bbox_center;
 	//pt_type _halfsize;
 	number _mass;
 	//number _inertia;
@@ -55,7 +55,7 @@ public:
 	StaticObjectModel * _model;
 	Polygon2D * _footprint;
 	BBox_2D * _bbox;
-	pt_type _com2bbox_center; // vecteur com -> centre bbox
+	//pt_type _com2bbox_center; // vecteur com -> centre bbox
 	pt_type _com; // center of mass
 	pt_type _velocity;
 	pt_type _acceleration;
@@ -78,6 +78,7 @@ public:
 
 
 	CheckPoint * _next;
+	CheckPoint * _previous;
 };
 
 #endif

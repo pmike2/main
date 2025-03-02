@@ -6,7 +6,6 @@
 	],
 	"com2force_fwd" : [0.0, 0.5],
 	"com2force_bwd" : [0.0, -0.5],
-	"com2bbox_center" : [0.0, 0.1],
 	"max_wheel" : 0.3,
 	"wheel_increment" : 0.05,
 	"wheel_decrement" : 0.05,

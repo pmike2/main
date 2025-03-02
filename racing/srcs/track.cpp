@@ -266,9 +266,11 @@ void Track::load_json(std::string json_path) {
 	for (unsigned int i=0; i<checkpoints.size(); ++i) {
 		if (i< checkpoints.size()- 1) {
 			checkpoints[i].first->_next= checkpoints[i+ 1].first;
+			checkpoints[i+ 1].first->_previous= checkpoints[i].first;
 		}
 		else {
 			checkpoints[i].first->_next= checkpoints[0].first;
+			checkpoints[0].first->_previous= checkpoints[i].first;
 		}
 	}
 
@@ -291,14 +293,45 @@ Car * Track::get_hero() {
 }
 
 
-/*CheckPoint * Track::get_start() {
+std::vector<Car *> Track::get_sorted_cars() {
+	std::vector<Car *> sorted_cars;
 	for (auto obj : _floating_objects) {
-		if (obj->_model->_type== START) {
-			return (CheckPoint *)(obj);
+		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
+			sorted_cars.push_back((Car *)(obj));
 		}
 	}
-	return NULL;
-}*/
+	
+	std::sort(sorted_cars.begin(), sorted_cars.end(), [this](Car * a, Car * b) {
+		if (a->_n_laps< b->_n_laps) {
+			return 0;
+		}
+		else if (a->_n_laps> b->_n_laps) {
+			return 1;
+		}
+		else {
+			unsigned int idx_a= get_checkpoint_index(a->_next_checkpoint->_previous);
+			unsigned int idx_b= get_checkpoint_index(b->_next_checkpoint->_previous);
+			if (idx_a< idx_b) {
+				return 0;
+			}
+			else if (idx_a> idx_b) {
+				return 1;
+			}
+			else {
+				number dist_a= (a->_com.x- a->_next_checkpoint->_com.x)* (a->_com.x- a->_next_checkpoint->_com.x)+ (a->_com.y- a->_next_checkpoint->_com.y)* (a->_com.y- a->_next_checkpoint->_com.y);
+				number dist_b= (b->_com.x- b->_next_checkpoint->_com.x)* (b->_com.x- b->_next_checkpoint->_com.x)+ (b->_com.y- b->_next_checkpoint->_com.y)* (b->_com.y- b->_next_checkpoint->_com.y);
+				if (dist_a> dist_b) {
+					return 0;
+				}
+				else {
+					return 1;
+				}
+			}
+		}
+	});
+	
+	return sorted_cars;
+}
 
 
 unsigned int Track::get_checkpoint_index(CheckPoint * checkpoint) {
@@ -428,7 +461,6 @@ void Track::anim(number dt, bool key_left, bool key_right, bool key_up, bool key
 			obj->anim(dt);
 		}
 	}
-
 	all_collision();
 	checkpoints();
 }

@@ -54,7 +54,7 @@ public:
 	void load_json(std::string json_path);
 
 	Car * get_hero();
-	//CheckPoint * get_start();
+	std::vector<Car *> get_sorted_cars();
 	unsigned int get_checkpoint_index(CheckPoint * checkpoint);
 	void all_collision();
 	void checkpoints();

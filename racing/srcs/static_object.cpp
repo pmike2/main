@@ -168,19 +168,21 @@ void StaticObjectModel::load(std::string json_path) {
 	if (_type== OBSTACLE_SETTING) {
 		_fixed= true;
 		_solid= true;
-		_com2bbox_center= pt_type(0.0);
+		//_com2bbox_center= pt_type(0.0);
 		_mass= _linear_friction= _angular_friction= 0.0;
 	}
 	
 	else if (_type== OBSTACLE_FLOATING) {
+		// on met le com à 0,0
+		_footprint->centroid2zero();
 		_fixed= js["fixed"];
 		_solid= true;
 		if (_fixed) {
-			_com2bbox_center= pt_type(0.0);
+			//_com2bbox_center= pt_type(0.0);
 			_mass= _linear_friction= _angular_friction= 0.0;
 		}
 		else {
-			_com2bbox_center= pt_type(js["com2bbox_center"][0], js["com2bbox_center"][1]);
+			//_com2bbox_center= pt_type(0.0)- _footprint->_centroid;
 			_mass= js["mass"];
 			_linear_friction= js["linear_friction"];
 			_angular_friction= js["angular_friction"];
@@ -188,9 +190,11 @@ void StaticObjectModel::load(std::string json_path) {
 	}
 	
 	else if (_type== HERO_CAR || _type== ENNEMY_CAR) {
+		// on met le com à 0,0
+		_footprint->centroid2zero();
 		_fixed= false;
 		_solid= true;
-		_com2bbox_center= pt_type(js["com2bbox_center"][0], js["com2bbox_center"][1]);
+		//_com2bbox_center= pt_type(0.0)- _footprint->_centroid;
 		_mass= js["mass"];
 		_angular_friction= js["angular_friction"];
 	}
@@ -198,7 +202,7 @@ void StaticObjectModel::load(std::string json_path) {
 	else if (_type== CHECKPOINT || _type== START) {
 		_fixed= true;
 		_solid= false;
-		_com2bbox_center= pt_type(0.0);
+		//_com2bbox_center= pt_type(0.0);
 		_mass= _linear_friction= _angular_friction= 0.0;
 	}
 	
@@ -220,13 +224,18 @@ StaticObject::StaticObject() {
 
 StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) : _model(model) {
 	_bbox= new BBox_2D(position, pt_type(0.5, 0.5));
+
 	_footprint= new Polygon2D();
+	_footprint->set_points(_model->_footprint->_pts);
+	_footprint->triangulate();
+	_footprint->update_all();
+
 	reinit(position, alpha, scale);
 }
 
 
 StaticObject::~StaticObject() {
-
+	delete _footprint;
 }
 
 
@@ -247,18 +256,23 @@ void StaticObject::reinit(pt_type position, number alpha, pt_type scale) {
 
 
 void StaticObject::update() {
-	_com2bbox_center= rot(_scale* _model->_com2bbox_center, _alpha);
+	//_com2bbox_center= rot(_scale* _model->_com2bbox_center, _alpha);
 
-	// a revoir...
 	_footprint->set_points(_model->_footprint->_pts);
-	_footprint->triangulate();
 	_footprint->scale(_scale);
 	_footprint->rotate(pt_type(0.0), _alpha);
 	_footprint->translate(_com);
+	_footprint->update_all();
 
 	_bbox->_alpha= _alpha;
-	_bbox->_center= _com+ _com2bbox_center;
-	_bbox->_half_size= 0.5* _scale;
+	//_bbox->_center= _com+ _com2bbox_center;
+	_bbox->_center= _com;
+	if (_model->_type== OBSTACLE_SETTING) {
+		_bbox->_half_size= 0.5* _scale;
+	}
+	else {
+		_bbox->_half_size= 0.5* pt_type(_model->_footprint->_aabb->_size.x* _scale.x, _model->_footprint->_aabb->_size.y* _scale.y);
+	}
 	_bbox->update();
 
 	_mass= _model->_mass* _scale.x* _scale.y;
@@ -266,7 +280,7 @@ void StaticObject::update() {
 	// obligé de rajouter * 10 sinon tout pète
 	// !!!
 	_inertia= _mass* _footprint->_inertia* 10.0;
-	//std::cout << "mass=" << _mass << " ; inertia=" << _inertia << "\n";
+	std::cout << "mass=" << _mass << " ; inertia=" << _inertia << "\n";
 }
 
 
@@ -315,7 +329,7 @@ CheckPoint::CheckPoint() {
 
 
 CheckPoint::CheckPoint(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) :
-	StaticObject(model, position, alpha, scale), _next(NULL) 
+	StaticObject(model, position, alpha, scale), _next(NULL), _previous(NULL)
 {
 
 }
