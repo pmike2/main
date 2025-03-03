@@ -378,11 +378,13 @@ void Racing::update_footprint() {
 	}
 
 	for (auto obj : _track->_grid->_objects) {
+		//std::cout << *obj << " ; " << obj->_footprint->_triangles_idx.size() << "\n";
 		for (auto tri : obj->_footprint->_triangles_idx) {
 			for (int i=0; i<3; ++i) {
 				pt_type pt= obj->_footprint->_pts[tri[i]];
 				data[compt++]= float(pt.x);
 				data[compt++]= float(pt.y);
+
 				compt+= 4;
 			}
 		}

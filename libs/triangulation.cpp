@@ -166,8 +166,8 @@ Triangulation::Triangulation(const vector<pt_type> & pts, const vector<pair<unsi
 {
 	// on redirige cout vers un fichier qui est affiché dans le log du html
 	streambuf * coutbuf;
-	ofstream out_stream("../data/out.txt");
 	if (_verbose) {
+		ofstream out_stream("../data/out.txt");
 		coutbuf= cout.rdbuf();
 		cout.rdbuf(out_stream.rdbuf());
 	}

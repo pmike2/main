@@ -1,4 +1,5 @@
 {
     "type": "obstacle_setting",
-    "footprint": []
+    "footprint": [],
+    "restitution": 0.2
 }

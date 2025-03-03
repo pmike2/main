@@ -108,11 +108,11 @@ void init() {
 	}*/
 
 	// la taille du buffer influe sur la latence
-	if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 512)== -1) {
+	/*if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 512)== -1) {
 		std::cerr << "Echec audio\n";
 	}
 	// permet d'allouer des channels pour faire du polyphonique; il faut alors bien gérer le 1er arg de Mix_PlayChannel
-	Mix_AllocateChannels(16);
+	Mix_AllocateChannels(16);*/
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
@@ -173,7 +173,7 @@ void init() {
 	input_state= new InputState();
 	racing= new Racing(prog_simple, prog_font, screengl, is_joystick);
 
-	io.set_open_listener([&]() {
+	/*io.set_open_listener([&]() {
 		io.socket()->on("data", [&](sio::event& ev) {
 			mut.lock();
 			data_string= ev.get_message()->get_string();
@@ -181,7 +181,7 @@ void init() {
 			mut.unlock();
 		});
 	});
-	io.connect("http://127.0.0.1:3001");
+	io.connect("http://127.0.0.1:3001");*/
 
 }
 
@@ -244,7 +244,7 @@ void idle() {
 	anim();
 	draw();
 	compute_fps();
-	check_data_send();
+	//check_data_send();
 }
 
 

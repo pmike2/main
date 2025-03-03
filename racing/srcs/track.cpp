@@ -112,7 +112,8 @@ void StaticObjectGrid::push_tile(StaticObjectModel * model) {
 
 void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx) {
 	StaticObject * object= get_tile(col_idx, row_idx);
-	object->_model= model;
+	object->set_model(model);
+	//std::cout << "in grid : " << *model << "\n";
 	object->reinit(coord2number(col_idx, row_idx), 0.0, pt_type(_cell_size));
 }
 

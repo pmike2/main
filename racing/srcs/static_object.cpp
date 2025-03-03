@@ -67,13 +67,14 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 
 		pt_type vr= contact_pt_velocity2- contact_pt_velocity1;
 
+		number impulse;
+
 		// https://en.wikipedia.org/wiki/Coefficient_of_restitution
 		// restitution doit etre entre 0 et 1 ; proche de 0 -> pas de rebond ; proche de 1 -> beaucoup de rebond
-		// TODO : faire des matériaux avec des valeurs de restitution différentes
-		number restitution= 0.2;
-
-
-		number impulse;
+		// en pratique j'ai mis des restitution > 1 pour plus de fun
+		// on prend la moyenne
+		number restitution= 0.5* (obj1->_model->_restitution+ obj2->_model->_restitution);
+		
 		if (obj1->_model->_fixed) {
 			pt_type v= (cross2d(r2, axis)/ obj2->_inertia)* r2;
 			impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj2->_mass+ dot(v, axis));
@@ -89,8 +90,6 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 
 		if (abs(impulse)> 10.0) {
 			std::cout << "impulse=" << impulse << "\n";
-			//std::cout << "dot(vr, axis)=" << dot(vr, axis) << " ; dot(v, axis)=" << dot(v, axis) << "\n";
-			//save_json("../data/test/big_impulse.json");
 		}
 
 		if (!obj1->_model->_fixed) {
@@ -164,11 +163,12 @@ void StaticObjectModel::load(std::string json_path) {
 		pts.push_back(pt);
 	}
 	_footprint->set_points(pts);
+	_footprint->update_all();
 	
 	if (_type== OBSTACLE_SETTING) {
 		_fixed= true;
 		_solid= true;
-		//_com2bbox_center= pt_type(0.0);
+		_restitution= js["restitution"];
 		_mass= _linear_friction= _angular_friction= 0.0;
 	}
 	
@@ -177,12 +177,11 @@ void StaticObjectModel::load(std::string json_path) {
 		_footprint->centroid2zero();
 		_fixed= js["fixed"];
 		_solid= true;
+		_restitution= js["restitution"];
 		if (_fixed) {
-			//_com2bbox_center= pt_type(0.0);
 			_mass= _linear_friction= _angular_friction= 0.0;
 		}
 		else {
-			//_com2bbox_center= pt_type(0.0)- _footprint->_centroid;
 			_mass= js["mass"];
 			_linear_friction= js["linear_friction"];
 			_angular_friction= js["angular_friction"];
@@ -194,24 +193,44 @@ void StaticObjectModel::load(std::string json_path) {
 		_footprint->centroid2zero();
 		_fixed= false;
 		_solid= true;
-		//_com2bbox_center= pt_type(0.0)- _footprint->_centroid;
 		_mass= js["mass"];
 		_angular_friction= js["angular_friction"];
+		_restitution= js["restitution"];
 	}
 
 	else if (_type== CHECKPOINT || _type== START) {
 		_fixed= true;
 		_solid= false;
-		//_com2bbox_center= pt_type(0.0);
-		_mass= _linear_friction= _angular_friction= 0.0;
+		_mass= _linear_friction= _angular_friction= _restitution= 0.0;
 	}
 	
-	//_inertia= _mass* _footprint->_inertia;
+	_footprint->update_all();
 }
 
 
 std::ostream & operator << (std::ostream & os, const StaticObjectModel & model) {
 	os << "json_path=" << model._json_path;
+	os << " ; type=";
+	if (model._type== OBSTACLE_SETTING){
+		os << "OBSTACLE_SETTING";
+	}
+	else if (model._type== OBSTACLE_FLOATING){
+		os << "OBSTACLE_FLOATING";
+	}
+	else if (model._type== HERO_CAR){
+		os << "HERO_CAR";
+	}
+	else if (model._type== ENNEMY_CAR){
+		os << "ENNEMY_CAR";
+	}
+	else if (model._type== CHECKPOINT){
+		os << "CHECKPOINT";
+	}
+	else if (model._type== START){
+		os << "START";
+	}
+	os << " ; footprint=" << *model._footprint;
+	os << " ; mass=" << model._mass << " ; fixed=" << model._fixed << " ; solid=" << model._solid;
 	return os;
 }
 
@@ -222,20 +241,24 @@ StaticObject::StaticObject() {
 }
 
 
-StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) : _model(model) {
-	_bbox= new BBox_2D(position, pt_type(0.5, 0.5));
-
+StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) {
+	_bbox= new BBox_2D(pt_type(0.0), pt_type(0.0));
 	_footprint= new Polygon2D();
-	_footprint->set_points(_model->_footprint->_pts);
-	_footprint->triangulate();
-	_footprint->update_all();
-
+	set_model(model);
 	reinit(position, alpha, scale);
 }
 
 
 StaticObject::~StaticObject() {
 	delete _footprint;
+}
+
+
+void StaticObject::set_model(StaticObjectModel * model) {
+	_model= model;
+	_footprint->set_points(_model->_footprint->_pts);
+	_footprint->triangulate();
+	_footprint->update_all();
 }
 
 
@@ -256,31 +279,33 @@ void StaticObject::reinit(pt_type position, number alpha, pt_type scale) {
 
 
 void StaticObject::update() {
-	//_com2bbox_center= rot(_scale* _model->_com2bbox_center, _alpha);
-
 	_footprint->set_points(_model->_footprint->_pts);
 	_footprint->scale(_scale);
 	_footprint->rotate(pt_type(0.0), _alpha);
 	_footprint->translate(_com);
-	_footprint->update_all();
+	_footprint->update_all(); // peut-être pas besoin de tout updater
 
 	_bbox->_alpha= _alpha;
-	//_bbox->_center= _com+ _com2bbox_center;
-	_bbox->_center= _com;
 	if (_model->_type== OBSTACLE_SETTING) {
+		_bbox->_center= _com;
 		_bbox->_half_size= 0.5* _scale;
 	}
 	else {
+		pt_type aabb_center= _model->_footprint->_aabb->center();
+		_bbox->_center= _com+ rot(pt_type(aabb_center.x* _scale.x, aabb_center.y* _scale.y), _alpha);
 		_bbox->_half_size= 0.5* pt_type(_model->_footprint->_aabb->_size.x* _scale.x, _model->_footprint->_aabb->_size.y* _scale.y);
 	}
 	_bbox->update();
+
+	/*if (_model->_type== HERO_CAR) {
+		std::cout << _com.x << " ; " << _com.y << " ; " << _footprint->_centroid.x << " ; " << _footprint->_centroid.y << " ; " << _bbox->_center.x  << " ; " << _bbox->_center.y << "\n";
+	}*/
 
 	_mass= _model->_mass* _scale.x* _scale.y;
 	// !!!
 	// obligé de rajouter * 10 sinon tout pète
 	// !!!
 	_inertia= _mass* _footprint->_inertia* 10.0;
-	std::cout << "mass=" << _mass << " ; inertia=" << _inertia << "\n";
 }
 
 
@@ -318,6 +343,8 @@ void StaticObject::anim(number anim_dt) {
 std::ostream & operator << (std::ostream & os, const StaticObject & obj) {
 	os << "model = " << obj._model->_json_path;
 	os << " ; bbox=[" << *obj._bbox << "] ; ";
+	os << " ; footprint=[" << *obj._footprint << "] ; ";
+	os << " ; mass=" << obj._mass << " ; inertia=" << obj._inertia;
 	return os;
 }
 
@@ -339,3 +366,16 @@ CheckPoint::~CheckPoint() {
 
 }
 
+
+// RotatingObstacle --------------------------------------------
+/*RotatingObstacle::RotatingObstacle() {
+
+}
+
+
+RotatingObstacle::RotatingObstacle(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) :
+	StaticObject(model, position, alpha, scale)
+{
+
+}
+*/

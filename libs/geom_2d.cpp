@@ -633,7 +633,7 @@ bool is_quad_convex(const pt_type * pts) {
 
 
 // ---------------------------------------------------------------------------------------------------
-Polygon2D::Polygon2D() : _area(0.0), _centroid(pt_type(0.0)), _radius(0.0) {
+Polygon2D::Polygon2D() : _area(0.0), _centroid(pt_type(0.0)), _radius(0.0), _inertia(0.0) {
 	_aabb= new AABB_2D();
 }
 
@@ -835,12 +835,12 @@ void Polygon2D::update_inertia() {
 
 
 void Polygon2D::update_all() {
-	void update_area();
-	void update_centroid();
-	void update_normals();
-	void update_radius();
-	void update_aabb();
-	void update_inertia();
+	update_area();
+	update_centroid();
+	update_normals();
+	update_radius();
+	update_aabb();
+	update_inertia();
 }
 
 

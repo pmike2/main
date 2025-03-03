@@ -10,7 +10,7 @@
 
 
 // setting en anglais == décor
-enum ObjectType {OBSTACLE_SETTING, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, CHECKPOINT, START};
+enum ObjectType {OBSTACLE_SETTING, OBSTACLE_FLOATING, OBSTACLE_ROTATING, HERO_CAR, ENNEMY_CAR, CHECKPOINT, START};
 
 
 class StaticObject;
@@ -29,15 +29,13 @@ public:
 
 	std::string _json_path;
 	ObjectType _type;
-	//pt_type _com2bbox_center;
-	//pt_type _halfsize;
 	number _mass;
-	//number _inertia;
 	number _linear_friction; // non utilisé pour CarModel
 	number _angular_friction;
 	Polygon2D * _footprint;
 	bool _fixed;
 	bool _solid;
+	number _restitution;
 };
 
 
@@ -46,6 +44,7 @@ public:
 	StaticObject();
 	StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale);
 	~StaticObject();
+	void set_model(StaticObjectModel * model);
 	void reinit(pt_type position, number alpha, pt_type scale);
 	void update();
 	void anim(number anim_dt);
@@ -80,5 +79,17 @@ public:
 	CheckPoint * _next;
 	CheckPoint * _previous;
 };
+
+/*
+class RotatingObstacle : public StaticObject {
+public:
+	RotatingObstacle();
+	RotatingObstacle(StaticObjectModel * model, pt_type position, number alpha, pt_type scale);
+	~RotatingObstacle();
+
+
+	pt_type _rot_center;
+};
+*/
 
 #endif
