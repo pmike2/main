@@ -164,6 +164,7 @@ void StaticObjectModel::load(std::string json_path) {
 	}
 	_footprint->set_points(pts);
 	_footprint->update_all();
+	_com2bbox_center= -1.0* _footprint->_centroid;
 	
 	if (_type== OBSTACLE_SETTING) {
 		_fixed= true;
@@ -291,15 +292,10 @@ void StaticObject::update() {
 		_bbox->_half_size= 0.5* _scale;
 	}
 	else {
-		pt_type aabb_center= _model->_footprint->_aabb->center();
-		_bbox->_center= _com+ rot(pt_type(aabb_center.x* _scale.x, aabb_center.y* _scale.y), _alpha);
-		_bbox->_half_size= 0.5* pt_type(_model->_footprint->_aabb->_size.x* _scale.x, _model->_footprint->_aabb->_size.y* _scale.y);
+		_bbox->_center= _com+ rot(pt_type(_model->_com2bbox_center.x* _scale.x, _model->_com2bbox_center.y* _scale.y), _alpha);
+		_bbox->_half_size= 0.5* _scale;
 	}
 	_bbox->update();
-
-	/*if (_model->_type== HERO_CAR) {
-		std::cout << _com.x << " ; " << _com.y << " ; " << _footprint->_centroid.x << " ; " << _footprint->_centroid.y << " ; " << _bbox->_center.x  << " ; " << _bbox->_center.y << "\n";
-	}*/
 
 	_mass= _model->_mass* _scale.x* _scale.y;
 	// !!!

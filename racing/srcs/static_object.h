@@ -36,6 +36,7 @@ public:
 	bool _fixed;
 	bool _solid;
 	number _restitution;
+	pt_type _com2bbox_center;
 };
 
 
