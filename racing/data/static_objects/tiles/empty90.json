@@ -1,5 +1,3 @@
 {
-    "type": "obstacle_setting",
-    "footprint": [],
-    "restitution": 0.2
+    "polygons": []
 }
