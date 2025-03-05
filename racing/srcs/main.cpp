@@ -41,11 +41,11 @@ bool done= false;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-sio::client io;
+/*sio::client io;
 bool data_send= false;
 std::string data_string= "";
 std::mutex mut;
-
+*/
 
 
 void key_down(SDL_Keycode key) {
@@ -164,6 +164,7 @@ void init() {
 	glBindVertexArray(g_vao);
 
 	GLuint prog_simple= create_prog("../shaders/vertexshader_simple.txt", "../shaders/fragmentshader_simple.txt");
+	GLuint prog_texture= create_prog("../shaders/vertexshader_texture.txt", "../shaders/fragmentshader_texture.txt");
 	GLuint prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
@@ -171,7 +172,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	input_state= new InputState();
-	racing= new Racing(prog_simple, prog_font, screengl, is_joystick);
+	racing= new Racing(prog_simple, prog_texture, prog_font, screengl, is_joystick);
 
 	/*io.set_open_listener([&]() {
 		io.socket()->on("data", [&](sio::event& ev) {
@@ -225,7 +226,7 @@ void compute_fps() {
 }
 
 
-void check_data_send() {
+/*void check_data_send() {
 	mut.lock();
 	if (data_send) {
 		data_send= false;
@@ -237,7 +238,7 @@ void check_data_send() {
 		//racing->_track->get_hero()->_model->load(json_path);
 	}
 	mut.unlock();
-}
+}*/
 
 
 void idle() {

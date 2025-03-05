@@ -60,15 +60,17 @@ const glm::vec4 ENNEMY_COLOR(0.0, 1.0, 1.0, 1.0);
 class Racing {
 public:
 	Racing();
-	Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool is_joystick);
+	Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, bool is_joystick);
 	~Racing();
 
 	void load_track(std::string json_path);
+	void fill_texture_array();
 	
 	// dessins
 	void draw_bbox();
 	void draw_footprint();
 	void draw_force();
+	void draw_texture();
 	void draw();
 
 	void show_info();
@@ -78,6 +80,7 @@ public:
 	void update_bbox();
 	void update_footprint();
 	void update_force();
+	void update_texture();
 
 	// animation
 	void anim();
@@ -98,7 +101,7 @@ public:
 	number _alpha_camera;
 	cam_mode _cam_mode;
 
-	bool _draw_bbox, _draw_force, _show_debug_info, _show_info; // faut-il afficher les BBox
+	bool _draw_bbox, _draw_force, _draw_texture, _show_debug_info, _show_info; // faut-il afficher les BBox
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs
@@ -111,6 +114,8 @@ public:
 	bool _is_joystick;
 	glm::vec2 _joystick; // valeurs x, y stick joystick
 	bool _joystick_a, _joystick_b; // boutons 
+
+	std::map<std::string, unsigned int> _model_tex_idxs;
 };
 
 

@@ -115,7 +115,7 @@
         },
         {
             "alpha": 0.0,
-            "name": "big_rock",
+            "name": "rock",
             "position": [
                 9.765625,
                 33.828125
@@ -163,7 +163,7 @@
         },
         {
             "alpha": 0.0,
-            "name": "big_rock",
+            "name": "rock",
             "position": [
                 39.59375,
                 21.324996948242188

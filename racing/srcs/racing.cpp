@@ -24,8 +24,8 @@ Racing::Racing() {
 }
 
 
-Racing::Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool is_joystick) :
-	_draw_bbox(true), _draw_force(true), _show_debug_info(false), _show_info(true), _cam_mode(TRANSLATE), _screengl(screengl),
+Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, bool is_joystick) :
+	_draw_bbox(true), _draw_force(true), _draw_texture(true), _show_debug_info(false), _show_info(true), _cam_mode(TRANSLATE), _screengl(screengl),
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false), 
 	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false)
 	{
@@ -35,30 +35,42 @@ Racing::Racing(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, bool i
 	_world2camera= glm::mat4(1.0);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
-	unsigned int n_buffers= 3;
+	unsigned int n_buffers= 4;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
+	unsigned int n_textures= 2;
+	_textures= new GLuint(n_textures);
+	glGenTextures(n_textures, _textures);
+
 	_contexts["bbox"]= new DrawContext(prog_simple, _buffers[0],
 	std::vector<std::string>{"position_in", "color_in"},
-	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix"});
+	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
 	_contexts["footprint"]= new DrawContext(prog_simple, _buffers[1],
 	std::vector<std::string>{"position_in", "color_in"},
-	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix"});
+	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
 	_contexts["force"]= new DrawContext(prog_simple, _buffers[2],
 	std::vector<std::string>{"position_in", "color_in"},
-	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix"});
+	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
+
+	_contexts["texture"]= new DrawContext(prog_texture, _buffers[3],
+		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
+		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z", "texture_array"});
 
 	_track= new Track(5.0, 0, 0);
 	load_track("../data/tracks/track1.json");
+
+	fill_texture_array();
 
 	Car * hero= _track->get_hero();
 	_com_camera= hero->_com;
 
 	update_bbox();
+	update_footprint();
 	update_force();
+	update_texture();
 }
 
 
@@ -72,90 +84,54 @@ void Racing::load_track(std::string json_path) {
 }
 
 
-/*void Racing::load_json(std::string json_path) {
-	std::ifstream ifs(json_path);
-	json js= json::parse(ifs);
-	ifs.close();
-
-	for (auto car : _cars) {
-		delete car;
+void Racing::fill_texture_array() {
+	const unsigned int TEXTURE_SIZE= 1024;
+	unsigned int n_tex= 0;
+	for (auto model : _track->_models) {
+		n_tex++;
 	}
-	_cars.clear();
 
-	for (auto & js_car : js) {
-		Car * car= new Car(_models[js_car["model"]], pt_type(js_car["com"][0], js_car["com"][1]), js_car["alpha"]);
-		car->_velocity= pt_type(js_car["velocity"][0], js_car["velocity"][1]);
-		car->_acceleration= pt_type(js_car["acceleration"][0], js_car["acceleration"][1]);
-		car->_angular_velocity= js_car["angular_velocity"];
-		car->_angular_acceleration= js_car["angular_acceleration"];
-		car->_wheel= js_car["wheel"];
-		car->_thrust= js_car["thrust"];
-		_cars.push_back(car);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
+	
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+	unsigned int compt= 0;
+	for (auto model : _track->_models) {
+		_model_tex_idxs[model.first]= compt;
+		std::string png_abs= dirname(model.second->_json_path)+ "/textures/"+ model.first+ ".png";
+		//std::cout << "png=" << png_abs << " ; compt=" << compt << "\n";
+		if (!file_exists(png_abs)) {
+			continue;
+		}
+		SDL_Surface * surface= IMG_Load(png_abs.c_str());
+		if (!surface) {
+			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
+			return;
+		}
+
+		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+						0,                             // mipmap number
+						0, 0, compt,   // xoffset, yoffset, zoffset
+						TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
+						GL_BGRA,                       // format
+						GL_UNSIGNED_BYTE,              // type
+						surface->pixels);              // pointer to data
+
+		SDL_FreeSurface(surface);
+
+		compt++;
 	}
+
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
-
-
-void Racing::save_json(std::string json_path) {
-	std::ofstream ofs(json_path);
-	json js;
-
-	for (auto car : _cars) {
-		json js_car;
-		js_car["model"]= basename(car->_model->_json_path);
-		js_car["com"]= json::array();
-		js_car["com"].push_back(car->_com.x);
-		js_car["com"].push_back(car->_com.y);
-		js_car["velocity"]= json::array();
-		js_car["velocity"].push_back(car->_velocity.x);
-		js_car["velocity"].push_back(car->_velocity.y);
-		js_car["acceleration"]= json::array();
-		js_car["acceleration"].push_back(car->_acceleration.x);
-		js_car["acceleration"].push_back(car->_acceleration.y);
-		js_car["alpha"]= car->_alpha;
-		js_car["angular_velocity"]= car->_angular_velocity;
-		js_car["angular_acceleration"]= car->_angular_acceleration;
-		js_car["wheel"]= car->_wheel;
-		js_car["thrust"]= car->_thrust;
-
-		js.push_back(js_car);
-	}
-
-	ofs << std::setw(4) << js << "\n";
-}
-
-
-void Racing::randomize() {
-	_ia= true;
-
-	for (auto car : _cars) {
-		delete car;
-	}
-	_cars.clear();
-
-	// héros
-	_cars.push_back(new Car(_models["car1"], pt_type(0.0, 0.0), 0.0));
-
-	// bords
-	add_boundary();
-
-	// ennemis
-	for (unsigned int i=0; i<5; ++i) {
-		_cars.push_back(new Car(_models["car1"], pt_type(rand_number(_pt_min.x, _pt_max.x), rand_number(_pt_min.y, _pt_max.y)), rand_number(0.0, M_PI* 2.0)));
-	}
-
-	// obstacles
-	for (unsigned int i=0; i<3; ++i) {
-		_cars.push_back(new Car(_models["obstacle"], pt_type(rand_number(_pt_min.x, _pt_max.x), rand_number(_pt_min.y, _pt_max.y)), rand_number(0.0, M_PI* 2.0)));
-	}
-}
-
-
-void Racing::add_boundary() {
-	_cars.push_back(new Car(_models["wall"], pt_type(0.0, _pt_min.y), 0.0));
-	_cars.push_back(new Car(_models["wall"], pt_type(0.0, _pt_max.y), 0.0));
-	_cars.push_back(new Car(_models["wall"], pt_type(_pt_min.x, 0.0), M_PI* 0.5));
-	_cars.push_back(new Car(_models["wall"], pt_type(_pt_max.x, 0.0), M_PI* 0.5));
-}*/
 
 
 void Racing::draw_bbox() {
@@ -242,6 +218,42 @@ void Racing::draw_force() {
 }
 
 
+void Racing::draw_texture() {
+	DrawContext * context= _contexts["texture"];
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
+	glActiveTexture(0);
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	glUniform1f(context->_locs_uniform["z"], -10.0f);
+	
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+
+}
+
+
 void Racing::draw() {
 	if (_show_debug_info) {
 		show_debug_info();
@@ -255,6 +267,9 @@ void Racing::draw() {
 	if (_draw_bbox) {
 		draw_bbox();
 		draw_footprint();
+	}
+	if (_draw_texture) {
+		draw_texture();
 	}
 }
 
@@ -463,12 +478,55 @@ void Racing::update_force() {
 }
 
 
+void Racing::update_texture() {
+	const unsigned int n_pts_per_obj= 6;
+
+	DrawContext * context= _contexts["texture"];
+	context->_n_pts= n_pts_per_obj* (_track->_floating_objects.size()+ _track->_grid->_objects.size());
+	context->_n_attrs_per_pts= 5;
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	for (unsigned int idx_obj=0; idx_obj<_track->_floating_objects.size()+ _track->_grid->_objects.size(); ++idx_obj) {
+		StaticObject * obj;
+		if (idx_obj< _track->_floating_objects.size()) {
+			obj= _track->_floating_objects[idx_obj];
+		}
+		else {
+			obj= _track->_grid->_objects[idx_obj- _track->_floating_objects.size()];
+		}
+		
+		number positions[n_pts_per_obj* 4]= {
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, 0.0, 0.0,
+			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, 1.0, 0.0,
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, 1.0, 1.0,
+
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, 0.0, 0.0,
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, 1.0, 1.0,
+			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, 0.0, 1.0
+		};
+		
+		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
+			for (unsigned int i=0; i<4; ++i) {
+				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[4* idx_pt+ i]);
+			}
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 4]= float(_model_tex_idxs[basename(obj->_model->_json_path)]);
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 void Racing::anim() {
 	_track->anim(ANIM_DT, _key_left, _key_right, _key_up, _key_down, _is_joystick, _joystick_a, _joystick_b, _joystick);
 
 	update_bbox();
 	update_footprint();
 	update_force();
+	update_texture();
 	
 	camera();
 }
