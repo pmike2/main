@@ -46,6 +46,7 @@ def fill_texture_json(tex_in_fill, tex_in_empty, json_path):
 
 
 def fill_dir(tex_in_fill, tex_in_empty, dir_path):
+	os.system(f"rm {dir_path}/textures/*.png")
 	jsons= [os.path.join(dir_path, x) for x in os.listdir(dir_path) if os.path.splitext(x)[1]== ".json"]
 	for json_path in jsons:
 		print(json_path)
@@ -62,5 +63,5 @@ if __name__== "__main__":
 	#json_path= "/Users/home/git_dir/main/racing/data/static_objects/tiles/lower_right_tri.json"
 	#fill_texture_json(tex_in_fill, tex_in_empty, json_path)
 
-	dir_path= "/Users/home/git_dir/main/racing/data/static_objects/tiles"
+	dir_path= "../data/static_objects/tiles"
 	fill_dir(tex_in_fill, tex_in_empty, dir_path)
