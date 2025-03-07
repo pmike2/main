@@ -70,16 +70,18 @@ public:
 class TrackEditor {
 public:
 	TrackEditor();
-	TrackEditor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, number cell_size);
+	TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, number cell_size);
 	~TrackEditor();
 	void reinit();
 	void load_json(std::string json_path);
 	void save_json(std::string json_path);
+	void fill_texture_array();
 	void draw_grid();
 	void draw_selection();
 	void draw_tiles();
 	void draw_floating_objects_footprint();
 	void draw_floating_objects_bbox();
+	void draw_texture();
 	void draw();
 	void show_info();
 	void update_grid();
@@ -87,6 +89,7 @@ public:
 	void update_tiles();
 	void update_floating_objects_footprint();
 	void update_floating_objects_bbox();
+	void update_texture();
 	void update();
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
@@ -110,13 +113,15 @@ public:
 	glm::mat4 _camera2clip, _world2camera; // glm::ortho
 	ScreenGL * _screengl;
 	Font * _font;
+
+	std::map<std::string, unsigned int> _model_tex_idxs;
 };
 
 
 class Editor {
 public:
 	Editor();
-	Editor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl);
+	Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl);
 	~Editor();
 	void draw();
 	void sync_track_with_tile();

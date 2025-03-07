@@ -1,296 +1,179 @@
 {
     "floating_objects": [
         {
-            "alpha": 1.6,
+            "alpha": 0.0,
             "idx_checkpoint": 0,
             "name": "start",
             "position": [
-                17.78125,
-                7.5
+                11.636458396911621,
+                13.087499618530273
             ],
             "scale": [
-                7.349999999999996,
-                4.9999999999999964
+                16.650000000000013,
+                10.300000000000004
             ]
         },
         {
-            "alpha": 1.7000000000000004,
-            "name": "hero_car",
-            "position": [
-                22.265625,
-                7.8125
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 1.7000000000000008,
-            "name": "ennemy_car",
-            "position": [
-                25.5859375,
-                9.1796875
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 1.5000000000000002,
-            "name": "ennemy_car",
-            "position": [
-                25.46875,
-                7.5390625
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 1.6000000000000005,
-            "name": "ennemy_car",
-            "position": [
-                25.46875,
-                5.8203125
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 1.6,
-            "name": "ennemy_car",
-            "position": [
-                28.112499237060547,
-                9.232810974121094
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 1.6000000000000003,
-            "name": "ennemy_car",
-            "position": [
-                27.956249237060547,
-                7.748435974121094
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 1.7000000000000006,
-            "name": "ennemy_car",
-            "position": [
-                27.995311737060547,
-                5.873435974121094
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 1.8000000000000005,
-            "name": "ennemy_car",
-            "position": [
-                30.417186737060547,
-                9.389060974121094
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 1.7000000000000002,
-            "name": "ennemy_car",
-            "position": [
-                30.260936737060547,
-                7.826560974121094
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 1.5000000000000002,
-            "name": "ennemy_car",
-            "position": [
-                30.417186737060547,
-                5.717185974121094
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
+            "alpha": -0.6999999999999995,
             "idx_checkpoint": 1,
             "name": "checkpoint",
             "position": [
-                12.393749237060547,
-                13.856250762939453
+                10.635417938232422,
+                39.602081298828125
             ],
             "scale": [
-                6.549999999999989,
-                4.99999999999999
+                10.750000000000002,
+                6.249999999999989
             ]
         },
         {
-            "alpha": 2.1,
+            "alpha": -2.8,
             "idx_checkpoint": 2,
             "name": "checkpoint",
             "position": [
-                13.357812881469727,
-                92.29374694824219
+                39.818748474121094,
+                37.928123474121094
             ],
             "scale": [
-                8.850000000000001,
-                7.399999999999991
+                9.90000000000001,
+                5.699999999999992
             ]
         },
         {
-            "alpha": 0.0,
+            "alpha": 2.2000000000000006,
             "idx_checkpoint": 3,
             "name": "checkpoint",
             "position": [
-                27.247913360595703,
-                83.93749237060547
+                38.021873474121094,
+                8.943748474121094
             ],
             "scale": [
-                7.699999999999996,
-                5.149999999999995
-            ]
-        },
-        {
-            "alpha": 1.1999999999999993,
-            "idx_checkpoint": 4,
-            "name": "checkpoint",
-            "position": [
-                32.11250305175781,
-                8.450000762939453
-            ],
-            "scale": [
-                10.050000000000006,
-                8.9
+                11.500000000000007,
+                5.8999999999999915
             ]
         },
         {
             "alpha": 0.0,
-            "idx_checkpoint": 5,
-            "name": "checkpoint",
+            "name": "hero_car",
             "position": [
-                42.61250305175781,
-                14.118749618530273
+                11.901561737060547,
+                6.542186737060547
             ],
             "scale": [
-                8.3,
-                6.899999999999997
+                1.0,
+                1.0
             ]
         },
         {
             "alpha": 0.0,
-            "idx_checkpoint": 6,
-            "name": "checkpoint",
+            "name": "ennemy_car",
             "position": [
-                41.56458282470703,
-                87.47291564941406
+                13.854686737060547,
+                7.049999237060547
             ],
             "scale": [
-                11.150000000000007,
-                8.199999999999987
-            ]
-        },
-        {
-            "alpha": 1.5999999999999996,
-            "idx_checkpoint": 7,
-            "name": "checkpoint",
-            "position": [
-                54.06458282470703,
-                92.05624389648438
-            ],
-            "scale": [
-                9.3,
-                6.849999999999999
+                1.0,
+                1.0
             ]
         },
         {
             "alpha": 0.0,
-            "idx_checkpoint": 8,
-            "name": "checkpoint",
+            "name": "ennemy_car",
             "position": [
-                59.975006103515625,
-                11.160417556762695
+                15.026561737060547,
+                7.128124237060547
             ],
             "scale": [
-                13.750000000000007,
-                8.249999999999998
-            ]
-        },
-        {
-            "alpha": -2.1000000000000005,
-            "idx_checkpoint": 9,
-            "name": "checkpoint",
-            "position": [
-                73.46459197998047,
-                9.077083587646484
-            ],
-            "scale": [
-                12.600000000000001,
-                10.049999999999997
-            ]
-        },
-        {
-            "alpha": 1.0999999999999999,
-            "idx_checkpoint": 10,
-            "name": "checkpoint",
-            "position": [
-                73.88333892822266,
-                91.70833587646484
-            ],
-            "scale": [
-                10.649999999999997,
-                17.050000000000043
+                1.0,
+                1.0
             ]
         },
         {
             "alpha": 0.0,
-            "idx_checkpoint": 11,
-            "name": "checkpoint",
+            "name": "ennemy_car",
             "position": [
-                94.15625,
-                85.17082977294922
+                16.003124237060547,
+                7.128124237060547
             ],
             "scale": [
-                14.65000000000001,
-                14.050000000000006
+                1.0,
+                1.0
             ]
         },
         {
-            "alpha": 5.299999999999998,
-            "idx_checkpoint": 12,
-            "name": "checkpoint",
+            "alpha": 0.0,
+            "name": "ennemy_car",
             "position": [
-                85.69374084472656,
-                7.222916603088379
+                17.214061737060547,
+                7.167186737060547
             ],
             "scale": [
-                10.25,
-                8.500000000000004
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                10.534374237060547,
+                7.167186737060547
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                9.440624237060547,
+                7.167186737060547
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                8.268749237060547,
+                7.128124237060547
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                7.057811737060547,
+                7.128124237060547
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "rock",
+            "position": [
+                24.089061737060547,
+                25.292186737060547
+            ],
+            "scale": [
+                4.299999999999997,
+                4.799999999999997
             ]
         }
     ],
-    "height": 20,
+    "height": 10,
     "n_laps": 3,
     "tiles": [
         "full",
@@ -304,404 +187,84 @@
         "full",
         "full",
         "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty180",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "full",
-        "full",
-        "lower_right_corner_inv",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "lower_right_tri90",
-        "lower_right_tri180",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "empty180",
-        "full",
-        "lower_right_corner180",
-        "full",
-        "full",
-        "lower_right_tri180",
-        "empty",
-        "empty",
-        "full",
-        "full",
-        "lower_right_corner_inv90",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "lower_right_corner180",
-        "lower_right_corner90",
-        "full",
-        "empty",
-        "empty180",
-        "full",
-        "lower_right_corner270",
-        "full",
-        "full",
-        "lower_right_tri270",
-        "empty",
-        "lower_right_tri90",
-        "full",
-        "full",
-        "empty",
-        "lower_right_tri90",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "lower_right_corner270",
-        "lower_right_corner",
-        "full",
-        "empty",
-        "empty180",
-        "full",
-        "empty270",
-        "full",
-        "full",
-        "lower_right_tri180",
-        "empty",
-        "lower_right_tri",
-        "full",
-        "full",
-        "empty",
-        "lower_right_tri",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "empty180",
-        "full",
-        "lower_right_corner180",
-        "full",
-        "full",
-        "lower_right_tri270",
-        "empty",
-        "lower_right_tri90",
-        "full",
-        "full",
-        "lower_right_corner_inv",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "lower_right_corner180",
-        "lower_right_corner90",
-        "full",
-        "empty",
-        "empty180",
-        "full",
-        "lower_right_corner270",
-        "full",
-        "full",
-        "lower_right_tri180",
-        "empty",
-        "lower_right_tri",
-        "full",
-        "full",
-        "lower_right_corner_inv90",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "lower_right_corner270",
-        "lower_right_corner",
-        "full",
-        "empty",
-        "empty180",
-        "full",
-        "lower_right_corner180",
-        "full",
-        "full",
-        "lower_right_tri270",
-        "empty",
-        "lower_right_tri90",
-        "full",
-        "full",
-        "empty",
-        "lower_right_tri90",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "empty180",
-        "full",
-        "lower_right_corner270",
-        "full",
-        "full",
-        "lower_right_tri180",
-        "empty",
-        "lower_right_tri",
-        "full",
-        "full",
-        "empty",
-        "lower_right_tri",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "lower_right_corner180",
-        "lower_right_corner90",
-        "full",
-        "empty",
-        "empty180",
-        "full",
-        "lower_right_corner180",
-        "full",
-        "full",
-        "lower_right_tri270",
-        "empty",
-        "lower_right_tri90",
-        "full",
-        "full",
-        "lower_right_corner_inv",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "lower_right_corner270",
-        "lower_right_corner",
-        "full",
-        "empty",
-        "empty180",
-        "full",
-        "lower_right_corner270",
-        "full",
-        "full",
-        "lower_right_tri180",
-        "empty",
-        "lower_right_tri",
-        "full",
-        "full",
-        "lower_right_corner_inv90",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "empty",
-        "empty180",
-        "full",
-        "lower_right_corner180",
-        "full",
-        "full",
-        "lower_right_tri270",
-        "empty",
-        "lower_right_tri90",
-        "full",
-        "full",
-        "empty",
-        "lower_right_tri90",
-        "full",
-        "full",
-        "empty",
-        "full",
-        "full",
-        "lower_right_corner180",
-        "lower_right_corner90",
-        "full",
-        "empty",
-        "empty180",
-        "full",
-        "lower_right_corner270",
-        "full",
-        "full",
-        "lower_right_tri180",
-        "empty",
-        "lower_right_tri",
-        "full",
-        "full",
-        "empty",
-        "lower_right_tri",
-        "full",
-        "full",
+        "11",
         "empty",
-        "full",
-        "full",
-        "lower_right_corner270",
-        "lower_right_corner",
-        "full",
         "empty",
-        "empty180",
-        "full",
-        "lower_right_corner180",
-        "full",
-        "full",
-        "lower_right_tri270",
+        "13",
+        "2",
         "empty",
-        "lower_right_tri90",
-        "full",
-        "full",
-        "lower_right_corner_inv",
         "empty",
+        "8",
         "full",
         "full",
         "empty",
-        "full",
-        "full",
         "empty",
+        "5",
         "full",
         "full",
+        "6",
         "empty",
-        "empty180",
-        "full",
-        "lower_right_corner270",
-        "full",
-        "full",
-        "lower_right_tri180",
         "empty",
-        "lower_right_tri",
         "full",
         "full",
-        "lower_right_corner_inv90",
         "empty",
+        "1",
         "full",
-        "full",
-        "empty",
         "full",
         "full",
-        "lower_right_corner180",
-        "lower_right_corner90",
         "full",
+        "14",
         "empty",
-        "empty180",
         "full",
-        "lower_right_corner180",
         "full",
+        "14",
+        "8",
         "full",
-        "lower_right_tri270",
-        "empty",
-        "lower_right_tri90",
+        "11",
+        "8",
         "full",
+        "11",
+        "1",
         "full",
-        "empty",
-        "lower_right_tri90",
         "full",
+        "3",
+        "9",
         "full",
-        "empty",
+        "10",
+        "9",
         "full",
+        "10",
+        "12",
         "full",
-        "lower_right_corner270",
-        "lower_right_corner",
         "full",
         "empty",
-        "empty180",
-        "full",
-        "lower_right_corner270",
+        "12",
         "full",
         "full",
-        "lower_right_tri180",
-        "empty",
-        "lower_right_tri",
         "full",
         "full",
+        "3",
         "empty",
-        "lower_right_tri",
         "full",
         "full",
         "empty",
-        "lower_right_tri",
-        "lower_right_tri270",
-        "empty",
-        "full",
-        "full",
         "empty",
-        "empty180",
-        "full",
-        "lower_right_corner180",
+        "4",
         "full",
         "full",
-        "lower_right_tri270",
+        "7",
         "empty",
         "empty",
         "full",
         "full",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
+        "10",
         "empty",
         "empty",
+        "13",
+        "2",
         "empty",
         "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
-        "full",
+        "9",
         "full",
         "full",
         "full",
@@ -714,5 +277,5 @@
         "full",
         "full"
     ],
-    "width": 21
+    "width": 10
 }

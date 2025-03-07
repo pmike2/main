@@ -141,6 +141,7 @@ void init() {
 	glBindVertexArray(g_vao);
 
 	GLuint prog_simple= create_prog("../shaders/vertexshader_simple_editor.txt", "../shaders/fragmentshader_simple.txt");
+	GLuint prog_texture= create_prog("../shaders/vertexshader_texture.txt", "../shaders/fragmentshader_texture.txt");
 	GLuint prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
@@ -148,7 +149,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	input_state= new InputState();
-	editor= new Editor(prog_simple, prog_font, screengl);
+	editor= new Editor(prog_simple, prog_texture, prog_font, screengl);
 }
 
 

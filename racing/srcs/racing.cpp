@@ -39,7 +39,7 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
-	unsigned int n_textures= 2;
+	unsigned int n_textures= 1;
 	_textures= new GLuint(n_textures);
 	glGenTextures(n_textures, _textures);
 
@@ -102,6 +102,7 @@ void Racing::fill_texture_array() {
 		std::string png_abs= dirname(model.second->_json_path)+ "/textures/"+ model.first+ ".png";
 		//std::cout << "png=" << png_abs << " ; compt=" << compt << "\n";
 		if (!file_exists(png_abs)) {
+			std::cout << "png=" << png_abs << " n'existe pas\n";
 			continue;
 		}
 		SDL_Surface * surface= IMG_Load(png_abs.c_str());
@@ -250,7 +251,6 @@ void Racing::draw_texture() {
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
-
 }
 
 
@@ -496,14 +496,15 @@ void Racing::update_texture() {
 			obj= _track->_grid->_objects[idx_obj- _track->_floating_objects.size()];
 		}
 		
+		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
 		number positions[n_pts_per_obj* 4]= {
-			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, 0.0, 0.0,
-			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, 1.0, 0.0,
-			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, 1.0, 1.0,
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, 0.0, 1.0,
+			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, 1.0, 1.0,
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, 1.0, 0.0,
 
-			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, 0.0, 0.0,
-			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, 1.0, 1.0,
-			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, 0.0, 1.0
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, 0.0, 1.0,
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, 1.0, 0.0,
+			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, 0.0, 0.0
 		};
 		
 		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {

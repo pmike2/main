@@ -2,6 +2,9 @@
 
 import os
 import json
+from pprint import pprint as pp
+
+EPS= 1e-12
 
 
 def cross(p1, p2):
@@ -24,31 +27,30 @@ def xmirror(footprint):
 	return [[-1.0* x[0], x[1]] for x in footprint]
 
 
-def polygonize(footprint, n):
-	eps= 1e-5
-	d01= (footprint[0][0]- footprint[1][0])* (footprint[0][0]- footprint[1][0])+ (footprint[0][1]- footprint[1][1])* (footprint[0][1]- footprint[1][1])
-	d02= (footprint[0][0]- footprint[2][0])* (footprint[0][0]- footprint[2][0])+ (footprint[0][1]- footprint[2][1])* (footprint[0][1]- footprint[2][1])
-	d12= (footprint[1][0]- footprint[2][0])* (footprint[1][0]- footprint[2][0])+ (footprint[1][1]- footprint[2][1])* (footprint[1][1]- footprint[2][1])
-	if d01> d02+ eps and d01> d12+ eps:
-		pt0= footprint[0]
-		pt1= footprint[1]
-		pt_out= footprint[2]
-	elif d02> d01+ eps and d02> d12+ eps:
-		pt0= footprint[0]
-		pt1= footprint[2]
-		pt_out= footprint[1]
-	else:
-		pt0= footprint[1]
-		pt1= footprint[2]
-		pt_out= footprint[0]
-
-	if is_left(pt0, pt1- pt0, pt_out):
-		tmp= pt0
-		pt0= pt1
-		pt1= tmp
-
+def polygonize(footprint, dist):
+	new_footprint= []
+	for i in range(len(footprint)):
+		p0= footprint[i]
+		p1= footprint[(i+ 1)% len(footprint)]
+		new_pt= []
+		new_pt.append(0.5* (p0[0]+ p1[0])+ dist* (p1[1]- p0[1]))
+		new_pt.append(0.5* (p0[1]+ p1[1])- dist* (p1[0]- p0[0]))
+		new_footprint.append(p0)
+		new_footprint.append(new_pt)
+		#new_footprint.append(p1)
 	
+	return new_footprint
 
+
+def crop(footprint):
+	new_footprint= []
+	for i in range(len(footprint)):
+		pt= footprint[i]
+		if pt[0]< -0.5- EPS or pt[0]> 0.5+ EPS or pt[1]< -0.5- EPS or pt[1]> 0.5+ EPS:
+			continue
+		new_footprint.append(pt)
+
+	return new_footprint
 
 
 def gen_json(json_path, pts):
@@ -63,7 +65,11 @@ def gen_json(json_path, pts):
 
 
 def gen_all_jsons(root, n_subdiv):
-	os.system(f"rm {root}/*.json")
+	#os.system(f"rm {root}/*.json")
+	jsons= [os.path.join(root, x) for x in os.listdir(root) if os.path.splitext(x)[1]== ".json"]
+	for json_path in jsons:
+		if os.path.basename(json_path) not in ("empty.json", "full.json"):
+			os.remove(json_path)
 
 	compt= 0
 
@@ -74,14 +80,12 @@ def gen_all_jsons(root, n_subdiv):
 			pt3= (0.5, float(j+ 1)/ float(n_subdiv)- 0.5)
 			
 			footprint= [pt1, pt2, pt3]
-			print(footprint)
 			json_path= os.path.join(root, f"{compt}.json")
 			gen_json(json_path, footprint)
 			compt+= 1
 
 			for idx_angle in range(3):
 				footprint= rot(footprint)
-				print(footprint)
 				json_path= os.path.join(root, f"{compt}.json")
 				gen_json(json_path, footprint)
 				compt+= 1
@@ -97,7 +101,27 @@ def gen_all_jsons(root, n_subdiv):
 			#	compt+= 1
 
 
+def polygonize_all(root):
+	jsons= [os.path.join(root, x) for x in os.listdir(root) if os.path.splitext(x)[1]== ".json"]
+	for json_path in jsons:
+		with open(json_path) as f:
+			data= json.load(f)
+
+		for i in range(3):
+			data["footprint"]= polygonize(data["footprint"], 0.1/ (1.0+ float(i)))
+			data["footprint"]= crop(data["footprint"])
+		
+		with open(json_path, "w") as f:
+			json.dump(data, f, indent=4)
+
+
 if __name__== "__main__":
-	root= "/Users/home/git_dir/main/racing/data/static_objects/tiles"
+	#footprint= [(0.0, 0.0), (1.0, 0.0), (0.0, 1.0)]
+	#dist= 0.1
+	#pp(polygonize(footprint, dist))
+
+	root= "../data/static_objects/tiles"
 	n_subdiv= 2
 	gen_all_jsons(root, n_subdiv)
+	
+	polygonize_all(root)
