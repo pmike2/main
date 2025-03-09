@@ -1103,7 +1103,7 @@ Editor::Editor() {
 Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl) : _screengl(screengl) {
 	//_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
-	_track_editor= new TrackEditor(prog_simple, prog_texture, prog_font, screengl, 5.0);
+	_track_editor= new TrackEditor(prog_simple, prog_texture, prog_font, screengl, 2.0);
 	_tile_grid_editor= new GridEditor(prog_simple, prog_font, screengl, OBSTACLE_SETTING_COLOR, 1.0, VERTICAL_GRID);
 	_floating_grid_editor= new GridEditor(prog_simple, prog_font, screengl, OBSTACLE_FLOATING_FOOTPRINT_COLOR, 1.0, HORIZONTAL_GRID);
 

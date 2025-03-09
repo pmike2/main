@@ -12,6 +12,11 @@ def coord2pixel(x, y):
 	return [int((x+ 0.5)* float(SIZE- 1)), SIZE- 1- int((y+ 0.5)* float(SIZE- 1))]
 
 
+# utile pour passer des coords dans le png (sous gimp) vers le footprint
+def pixel2coord(i, j):
+	return [float(i)/ (float(SIZE- 1))- 0.5, float(SIZE- 1- j)/ float(SIZE- 1)- 0.5]
+
+
 def pt_on_border(pt):
 	if pt[0] in (0, SIZE- 1) or pt[1] in (0, SIZE- 1):
 		return True

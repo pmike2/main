@@ -88,8 +88,23 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 			impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ 1.0/ obj2->_mass+ dot(v, axis));
 		}
 
-		if (abs(impulse)> 10.0) {
+		//impulse*= 0.2;
+
+		if (abs(impulse)> 6.0) {
 			std::cout << "impulse=" << impulse << "\n";
+			std::cout << "axis=" << axis.x << " ; " << axis.y << "\n";
+			std::cout << "vr=" << vr.x << " ; " << vr.y << "\n";
+			if (obj1->_model->_fixed) {
+				pt_type v= (cross2d(r2, axis)/ obj2->_inertia)* r2;
+				std::cout << "num=" << (-(1.0+ restitution)* dot(vr, axis)) << " ; denom=" << (1.0/ obj2->_mass+ dot(v, axis)) << "\n";
+			}
+			else {
+				pt_type v= (cross2d(r1, axis)/ obj1->_inertia)* r1;
+				std::cout << "num=" << (-(1.0+ restitution)* dot(vr, axis)) << " ; denom=" << (1.0/ obj1->_mass+ dot(v, axis)) << "\n";
+			}
+
+
+			impulse= 5.0;
 		}
 
 		if (!obj1->_model->_fixed) {

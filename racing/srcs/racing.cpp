@@ -59,7 +59,7 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z", "texture_array"});
 
-	_track= new Track(5.0, 0, 0);
+	_track= new Track(2.0, 0, 0);
 	load_track("../data/tracks/track1.json");
 
 	fill_texture_array();

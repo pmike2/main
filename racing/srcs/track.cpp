@@ -399,7 +399,7 @@ void Track::checkpoint_ia(Car * car) {
 	number sign= 1.0;
 	CarModel * model= car->get_model();
 
-	car->_thrust= 1.0+ 0.1* dist;
+	car->_thrust= 1.0+ 0.9* dist;
 	if (car->_thrust< -1.0* model->_max_brake) {
 		car->_thrust= -1.0* model->_max_brake;
 	}
