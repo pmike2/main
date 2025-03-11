@@ -113,6 +113,7 @@
             ]
         }
     ],
+    "cell_size" : 2.0,
     "height": 9,
     "n_laps": 3,
     "tiles": [

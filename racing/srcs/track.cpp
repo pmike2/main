@@ -175,16 +175,17 @@ void StaticObjectGrid::drop_col() {
 
 
 // Track -------------------------------------------------------------------------------------
-Track::Track() {
-
+Track::Track() : _start(NULL), _n_laps(0) {
+	load_models();
+	_grid= new StaticObjectGrid(DEFAULT_CELL_SIZE, VERTICAL_GRID);
 }
 
 
-Track::Track(number cell_size, unsigned int width, unsigned int height) : _start(NULL), _n_laps(0) {
+/*Track::Track(number cell_size, unsigned int width, unsigned int height) : _start(NULL), _n_laps(0) {
 	load_models();
 	_grid= new StaticObjectGrid(cell_size, VERTICAL_GRID);
 	set_all("empty", width, height);
-}
+}*/
 
 
 Track::~Track() {
@@ -223,6 +224,7 @@ void Track::load_json(std::string json_path) {
 	json js= json::parse(ifs);
 	ifs.close();
 
+	_grid->_cell_size= js["cell_size"];
 	set_all("empty", js["width"], js["height"]);
 	unsigned int compt= 0;
 	for (auto tilename : js["tiles"]) {

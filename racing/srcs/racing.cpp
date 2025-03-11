@@ -29,20 +29,24 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	_key_left(false), _key_right(false), _key_up(false), _key_down(false), 
 	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false)
 	{
-	//_pt_min= pt_type(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
-	//_pt_max= pt_type(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
+	// caméras
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::mat4(1.0);
+	
+	// font
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
+	// buffers
 	unsigned int n_buffers= 4;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
+	// textures
 	unsigned int n_textures= 1;
 	_textures= new GLuint(n_textures);
 	glGenTextures(n_textures, _textures);
 
+	// contextes de dessin
 	_contexts["bbox"]= new DrawContext(prog_simple, _buffers[0],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
@@ -59,14 +63,16 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z", "texture_array"});
 
-	_track= new Track(2.0, 0, 0);
-	load_track("../data/tracks/track1.json");
+	// piste
+	_track= new Track();
+	_track->load_json("../data/tracks/track1.json");
 
+	// remplissage textures
 	fill_texture_array();
 
+	// init données
 	Car * hero= _track->get_hero();
 	_com_camera= hero->_com;
-
 	update_bbox();
 	update_footprint();
 	update_force();
@@ -76,11 +82,6 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 
 Racing::~Racing() {
 	delete _buffers;
-}
-
-
-void Racing::load_track(std::string json_path) {
-	_track->load_json(json_path);
 }
 
 
@@ -354,10 +355,6 @@ void Racing::update_bbox() {
 		std::vector<pt_type> pts(obj->_bbox->_pts, obj->_bbox->_pts+ 4);
 		ptr= draw_polygon(ptr, pts, BBOX_COLOR);
 	}
-	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
-		std::cout << data[i] << " ; ";
-	}
-	std::cout << "\n";*/
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
@@ -370,6 +367,7 @@ void Racing::update_footprint() {
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
+	// pour dessiner les polygones footprint on utilise la triangulation de ces polygones
 	for (auto obj : _track->_floating_objects) {
 		context->_n_pts+= 3* obj->_footprint->_triangles_idx.size();
 	}
@@ -393,7 +391,6 @@ void Racing::update_footprint() {
 	}
 
 	for (auto obj : _track->_grid->_objects) {
-		//std::cout << *obj << " ; " << obj->_footprint->_triangles_idx.size() << "\n";
 		for (auto tri : obj->_footprint->_triangles_idx) {
 			for (int i=0; i<3; ++i) {
 				pt_type pt= obj->_footprint->_pts[tri[i]];
@@ -429,6 +426,7 @@ void Racing::update_force() {
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr= data;
 
+	// dessins des forces; voir gl_utils
 	for (auto obj : _track->_floating_objects) {
 		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
 			Car * car= (Car *)(obj);
@@ -466,11 +464,6 @@ void Racing::update_force() {
 		ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_arrow);
 		ptr= draw_nothing(ptr, context->_n_attrs_per_pts, n_pts_per_arrow);
 	}
-
-	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
-		std::cout << data[i] << " ; ";
-	}
-	std::cout << "\n";*/
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
@@ -562,6 +555,7 @@ void Racing::camera() {
 
 
 bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
+	// touches directionnelles : diriger véhicule
 	if (key== SDLK_LEFT) {
 		_key_left= true;
 		return true;
@@ -579,21 +573,23 @@ bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
 		return true;
 	}
 
+	// b : dessiner bbox
 	if (key== SDLK_b) {
 		_draw_bbox= !_draw_bbox;
 	}
+
+	// f : dessiner forces
 	else if (key== SDLK_f) {
 		_draw_force= !_draw_force;
 	}
+
+	// i : switcher infos normales / infos debug
 	else if (key== SDLK_i) {
 		_show_debug_info= !_show_debug_info;
 		_show_info= !_show_info;
 	}
-	else if (key== SDLK_l) {
-		//load_json("../data/test/init.json");
-		CarModel * model= (CarModel *)(_track->get_hero()->_model);
-		model->load("../data/cars/hero_car_web.json");
-	}
+
+	// c : chgmt mode caméra
 	else if (key== SDLK_c) {
 		if (_cam_mode== FIXED) {
 			_cam_mode= TRANSLATE;
@@ -604,9 +600,6 @@ bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
 		else if (_cam_mode== TRANSLATE_AND_ROTATE) {
 			_cam_mode= FIXED;
 		}
-	}
-	else if (key== SDLK_r) {
-		//randomize();
 	}
 	return false;
 }
@@ -673,7 +666,7 @@ bool Racing::joystick_axis(unsigned int axis_idx, int value) {
 		return false;
 	}
 
-	// le joy droit a les axis_idx 2 et 3 qui ne sont pas gérés par Asteroid pour l'instant
+	// le joy droit a les axis_idx 2 et 3 qui ne sont pas gérés pour l'instant
 	if (axis_idx> 1) {
 		return false;
 	}

@@ -12,20 +12,28 @@
 #include "typedefs.h"
 
 
+// type de grille : verticale, horizontale
 enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
 
+// taille par défaut d'une cellule
+const number DEFAULT_CELL_SIZE= 2.0;
 
+// grille d'objets
 class StaticObjectGrid {
 public:
 	StaticObjectGrid();
 	StaticObjectGrid(number cell_size, GridType type);
 	~StaticObjectGrid();
 	void clear();
+	
+	// méthodes de chgmt de système de coord
 	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
 	std::pair<unsigned int, unsigned int> idx2coord(unsigned int idx);
 	std::pair<int, int> number2coord(pt_type pos);
 	pt_type coord2number(unsigned int col_idx, unsigned int row_idx);
 	pt_type idx2number(unsigned int idx);
+	
+	// get / set / add / del
 	StaticObject * get_tile(unsigned int col_idx, unsigned int row_idx);
 	void push_tile(StaticObjectModel * model);
 	void set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx);
@@ -38,27 +46,30 @@ public:
 
 
 	std::vector<StaticObject *> _objects;
-	unsigned int _width;
+	unsigned int _width; // dimensions
 	unsigned int _height;
-	number _cell_size;
-	GridType _type;
+	number _cell_size; // taille cellule
+	GridType _type; // type
 };
 
 
+/*
+	Piste de course : associée à une grille d'objets fixes, les tuiles qui composent le décor
+	et à une liste d'objets 'flottants', les voitures et autres éléments interactifs
+*/
 class Track {
 public:
 	Track();
-	Track(number cell_size, unsigned int width, unsigned int height);
 	~Track();
-	void load_models();
-	void load_json(std::string json_path);
+	void load_models(); // chgmt des modèles de tuiles, voitures et autres
+	void load_json(std::string json_path); // chgmt json
 
-	Car * get_hero();
-	std::vector<Car *> get_sorted_cars();
-	unsigned int get_checkpoint_index(CheckPoint * checkpoint);
-	void all_collision();
-	void checkpoints();
-	void checkpoint_ia(Car * car);
+	Car * get_hero(); // renvoie le héros
+	std::vector<Car *> get_sorted_cars(); // renvoie la liste classée du 1er au dernier des voitures
+	unsigned int get_checkpoint_index(CheckPoint * checkpoint); // position du chkpt par rapport au start
+	void all_collision(); // gestion des collisions
+	void checkpoints(); // gestion chkpts pour toutes les voitures
+	void checkpoint_ia(Car * car); // ia basée sur les chkpts
 	void anim(number dt, bool key_left, bool key_right, bool key_up, bool key_down, bool is_joystick, bool joystick_a, bool joystick_b, glm::vec2 joystick);
 	void set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx);
 	void set_tile(std::string model_name, unsigned int idx);

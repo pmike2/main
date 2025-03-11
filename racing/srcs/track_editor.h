@@ -31,6 +31,8 @@ const pt_type TRACK_ORIGIN(-9.0, -7.5);
 const pt_type TILES_ORIGIN(3.5, -7.5);
 const pt_type FLOATING_OBJECTS_ORIGIN(-7.0, 3.0);
 
+const unsigned int TRACK_DEFAULT_SIZE= 10;
+
 
 class GridEditor {
 public:

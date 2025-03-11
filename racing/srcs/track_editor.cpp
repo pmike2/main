@@ -391,7 +391,9 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z", "texture_array"});
 
-	_track= new Track(cell_size, 10, 10);
+	//_track= new Track(cell_size, 10, 10);
+	_track= new Track();
+	_track->set_all("empty", TRACK_DEFAULT_SIZE, TRACK_DEFAULT_SIZE);
 
 	fill_texture_array();
 
