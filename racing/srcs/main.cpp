@@ -153,13 +153,13 @@ void init() {
 	input_state= new InputState();
 	racing= new Racing(prog_simple, prog_texture, prog_font, screengl, input_state);
 
-	/*if (SDL_NumJoysticks()> 0){
+	if (SDL_NumJoysticks()> 0){
 		SDL_Joystick * joy= SDL_JoystickOpen(0);
 		if (joy) {
 			input_state->_is_joystick= true;
 			std::cout << "joystick OK; n axes=" << SDL_JoystickNumAxes(joy) << " ; n buttons=" << SDL_JoystickNumButtons(joy) << "\n";
 		}
-	}*/
+	}
 
 	// la taille du buffer influe sur la latence
 	/*if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 512)== -1) {

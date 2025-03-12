@@ -125,9 +125,6 @@ def fill_dir(tex_in_fill, tex_in_empty, tex_in_brick, border_width, dir_path):
 
 
 if __name__== "__main__":
-	#print(coord2pixel(-0.5, -0.5))
-	#print(coord2pixel(0.5, 0.5))
-
 	tex_in_fill= "../data/tests/textures/full.png"
 	tex_in_empty= "../data/tests/textures/empty.png"
 	tex_in_brick= "../data/tests/textures/brick.png"
