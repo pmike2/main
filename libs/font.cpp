@@ -33,7 +33,7 @@ Font::Font() {
 }
 
 
-Font::Font(GLuint prog_font, std::string font_path, unsigned int font_size, ScreenGL * screengl) {
+Font::Font(GLuint prog_font, std::string font_path, unsigned int font_size, ScreenGL * screengl) : _z(0.0) {
 	FT_Library ft_lib;
 	FT_Face face;
 
@@ -123,7 +123,7 @@ Font::Font(GLuint prog_font, std::string font_path, unsigned int font_size, Scre
 
 	_context= new DrawContext(prog_font, buffer,
 		std::vector<std::string>{"vertex_in", "color_in", "current_layer_in"},
-		std::vector<std::string>{"camera2clip_matrix"});
+		std::vector<std::string>{"camera2clip_matrix", "z", "texture_array"});
 	_context->_n_pts= 0;
 	_context->_n_attrs_per_pts= 9;
 	
@@ -215,6 +215,7 @@ void Font::draw() {
 	glBindBuffer(GL_ARRAY_BUFFER, _context->_buffer);
 
 	glUniform1i(_context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniform1f(_context->_locs_uniform["z"], _z);
 	glUniformMatrix4fv(_context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	
 	for (auto attr : _context->_locs_attrib) {

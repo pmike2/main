@@ -225,10 +225,6 @@ void GridEditor::update_selection() {
 			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= SELECTION_COLOR[idx_color];
 		}
 	}
-	
-	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
-		std::cout << data[i] << " ; ";
-	}std::cout << "\n";*/
 
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -282,6 +278,7 @@ void GridEditor::update() {
 
 
 bool GridEditor::key_down(InputState * input_state, SDL_Keycode key) {
+	// touches directionnelles == chgmt tuile sélectionnée
 	if (key== SDLK_DOWN) {
 		_row_idx_select--;
 		if (_row_idx_select< 0) {
@@ -394,6 +391,7 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 	//_track= new Track(cell_size, 10, 10);
 	_track= new Track();
 	_track->set_all("empty", TRACK_DEFAULT_SIZE, TRACK_DEFAULT_SIZE);
+	_track->_n_laps= DEFAULT_N_LAPS;
 
 	fill_texture_array();
 
@@ -422,8 +420,9 @@ void TrackEditor::save_json(std::string json_path) {
 
 	js["width"]= _track->_grid->_width;
 	js["height"]= _track->_grid->_height;
+	js["cell_size"]= _track->_grid->_cell_size;
 
-	js["n_laps"]= 3;
+	js["n_laps"]= _track->_n_laps;
 
 	js["tiles"]= json::array();
 	for (auto tile : _track->_grid->_objects) {
@@ -777,11 +776,6 @@ void TrackEditor::update_selection() {
 			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= SELECTION_COLOR[idx_color];
 		}
 	}
-	
-	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
-		std::cout << data[i] << " ; ";
-	}std::cout << "\n";*/
-
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
@@ -932,6 +926,7 @@ void TrackEditor::update() {
 
 
 bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
+	// RSHIFT + touches directionnelles = redimensionnement track
 	if (input_state->get_key(SDLK_RSHIFT)) {
 		if (key== SDLK_DOWN) {
 			_track->drop_row();
@@ -954,6 +949,8 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 			return true;
 		}
 	}
+
+	// touches directionnelles = sélection tuile
 	else {
 		if (key== SDLK_DOWN) {
 			_row_idx_select--;
@@ -989,16 +986,19 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 		}
 	}
 	
+	// i = remise à 0
 	if (key== SDLK_i) {
 		reinit();
 		update();
 		return true;
 	}
+	// l = chgmt json
 	else if (key== SDLK_l) {
 		load_json("../data/tracks/track1.json");
 		update();
 		return true;
 	}
+	// s = sauvegarde json
 	else if (key== SDLK_s) {
 		save_json("../data/tracks/track1.json");
 		return true;
@@ -1020,10 +1020,9 @@ pt_type TrackEditor::screen2pt(int x, int y) {
 
 
 bool TrackEditor::mouse_button_down(InputState * input_state) {
-
+	// click + d = delete objet flottant
 	if (input_state->get_key(SDLK_d)) {
 		pt_type pos= screen2pt(input_state->_x, input_state->_y);
-		//pos-= _track->_grid->_origin;
 		StaticObject * obj= _track->get_floating_object(pos);
 		if (obj!= NULL) {
 			_track->delete_floating_object(obj);
@@ -1031,15 +1030,16 @@ bool TrackEditor::mouse_button_down(InputState * input_state) {
 			return true;
 		}
 	}
+	// m,r,g -> sélection (voir mouse_motion())
 	else if (input_state->get_key(SDLK_m) || input_state->get_key(SDLK_r) || input_state->get_key(SDLK_g)) {
 		pt_type pos= screen2pt(input_state->_x, input_state->_y);
-		//pos-= _track->_grid->_origin;
 		StaticObject * obj= _track->get_floating_object(pos);
 		if (obj!= NULL) {
 			_selected_floating_object= obj;
 			return true;
 		}
 	}
+	// sinon sélection tuile
 	else {
 		pt_type pos= screen2pt(input_state->_x, input_state->_y);
 		std::pair<int, int> coord= _track->_grid->number2coord(pos);
@@ -1061,25 +1061,28 @@ bool TrackEditor::mouse_button_up(InputState * input_state) {
 
 
 bool TrackEditor::mouse_motion(InputState * input_state) {
+	// m = move objet
 	if (input_state->get_key(SDLK_m) && _selected_floating_object!= NULL) {
 		pt_type pos= screen2pt(input_state->_x, input_state->_y);
-		//pos-= _track->_grid->_origin;
 		_selected_floating_object->reinit(pos, _selected_floating_object->_alpha, _selected_floating_object->_scale);
 		update();
 		return true;
 	}
+	// r = rotate objet
 	else if (input_state->get_key(SDLK_r) && _selected_floating_object!= NULL) {
 		number alpha= _selected_floating_object->_alpha- 0.1* number(input_state->_yrel);
 		_selected_floating_object->reinit(_selected_floating_object->_com, alpha, _selected_floating_object->_scale);
 		update();
 		return true;
 	}
+	// g = grossissement objet
 	else if (input_state->get_key(SDLK_g) && _selected_floating_object!= NULL) {
 		pt_type scale= _selected_floating_object->_scale+ pt_type(0.05* number(input_state->_xrel), -0.05* number(input_state->_yrel));
 		_selected_floating_object->reinit(_selected_floating_object->_com, _selected_floating_object->_alpha, scale);
 		update();
 		return true;
 	}
+	// mouvement + ESPACE = déplacement visu grille track
 	else if (input_state->get_key(SDLK_SPACE)) {
 		_translation.x+= 0.02* number(input_state->_xrel);
 		_translation.y-= 0.02* number(input_state->_yrel);
@@ -1089,6 +1092,7 @@ bool TrackEditor::mouse_motion(InputState * input_state) {
 }
 
 
+// wheel = zoom / dezoom
 bool TrackEditor::mouse_wheel(InputState * input_state) {
 	_scale+= 0.1* number(input_state->_y_wheel);
 	update();
@@ -1113,25 +1117,23 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	_tile_grid_editor->_translation= TILES_ORIGIN;
 	_floating_grid_editor->_translation= FLOATING_OBJECTS_ORIGIN;
 
-	_track_editor->_scale= 0.2;
+	_track_editor->_scale= DEFAULT_TRACK_EDITOR_SCALE;
 
-	_tile_grid_editor->_grid->_width= 4;
-	_floating_grid_editor->_grid->_height= 4;
+	_tile_grid_editor->_grid->_width= TILE_GRID_WIDTH;
+	_floating_grid_editor->_grid->_height= FLOATING_GRID_HEIGHT;
 
 	for (auto model : _track_editor->_track->_models) {
 		if (model.second->_type== OBSTACLE_SETTING) {
 			//std::cout << "loading OBSTACLE_SETTING : " << model.first << "\n";
 			_tile_grid_editor->_grid->push_tile(model.second);
+			//std::cout << "loaded\n";
 		}
 		else {
 			//std::cout << "loading OBSTACLE_FLOATING : " << model.first << "\n";
 			_floating_grid_editor->_grid->push_tile(model.second);
+			//std::cout << "loaded\n";
 		}
 	}
-
-	/*std::cout << "track_editor" << _track_editor->_track->_grid->_width << " ; " << _track_editor->_track->_grid->_height << "\n";
-	std::cout << "tile_grid_editor=" << _tile_grid_editor->_grid->_width << " ; " << _tile_grid_editor->_grid->_height << "\n";
-	std::cout << "floating_grid_editor=" << _floating_grid_editor->_grid->_width << " ; " << _floating_grid_editor->_grid->_height << "\n";*/
 
 	_track_editor->update();
 	_tile_grid_editor->update();
@@ -1145,6 +1147,7 @@ Editor::~Editor() {
 
 
 void Editor::draw() {
+	// scissor permet de ne dessiner que sur un rectangle sans dépasser
 	glScissor(0, 0, 800, 700);
 	glEnable(GL_SCISSOR_TEST);
 	_track_editor->show_info();
@@ -1156,6 +1159,7 @@ void Editor::draw() {
 }
 
 
+// update de la tuile courante de la track avec la tuile courante sélectionnée
 void Editor::sync_track_with_tile() {
 	StaticObject * current_tile= _tile_grid_editor->_grid->get_tile(_tile_grid_editor->_col_idx_select, _tile_grid_editor->_row_idx_select);
 	StaticObjectModel * model= current_tile->_model;
@@ -1164,10 +1168,12 @@ void Editor::sync_track_with_tile() {
 }
 
 
+// ajout d'un objet flottant
 void Editor::add_floating_object(pt_type pos) {
 	StaticObject * current_floating_object= _floating_grid_editor->_grid->get_tile(_floating_grid_editor->_col_idx_select, _floating_grid_editor->_row_idx_select);
 	StaticObjectModel * model= current_floating_object->_model;
 
+	// gestion des checkpoints
 	if (model->_type== START) {
 		CheckPoint * checkpoint= new CheckPoint(model, pt_type(pos.x, pos.y), 0.0, pt_type(1.0));
 		_track_editor->_track->_start= checkpoint;
@@ -1194,6 +1200,7 @@ void Editor::add_floating_object(pt_type pos) {
 
 
 bool Editor::key_down(InputState * input_state, SDL_Keycode key) {
+	// touches directionnelles : si LSHIFT on se déplace dans les tuiles dispos sinon dans la track
 	if (key== SDLK_DOWN || key== SDLK_UP || key== SDLK_LEFT || key== SDLK_RIGHT) {
 		if (input_state->get_key(SDLK_LSHIFT)) {
 			_tile_grid_editor->key_down(input_state, key);
@@ -1202,6 +1209,7 @@ bool Editor::key_down(InputState * input_state, SDL_Keycode key) {
 			_track_editor->key_down(input_state, key);
 		}
 		else {
+			// si de plus w : write tuile track avec tuile sélectionnée
 			_track_editor->key_down(input_state, key);
 			if (input_state->get_key(SDLK_w)) {
 				sync_track_with_tile();
@@ -1209,6 +1217,7 @@ bool Editor::key_down(InputState * input_state, SDL_Keycode key) {
 		}
 		return true;
 	}
+	// w : write tuile track avec tuile sélectionnée
 	else if (key== SDLK_w) {
 		sync_track_with_tile();
 		return true;
@@ -1226,9 +1235,9 @@ bool Editor::key_up(InputState * input_state, SDL_Keycode key) {
 
 
 bool Editor::mouse_button_down(InputState * input_state) {
+	// f = ajout d'un objet flottant
 	if (input_state->get_key(SDLK_f)) {
 		pt_type pos= _track_editor->screen2pt(input_state->_x, input_state->_y);
-		//pos-= _track_editor->_track->_grid->_origin;
 		if (pos.x>=0 && pos.x<number(_track_editor->_track->_grid->_width)* _track_editor->_track->_grid->_cell_size && pos.y>=0 && pos.y<number(_track_editor->_track->_grid->_height)* _track_editor->_track->_grid->_cell_size) {
 			add_floating_object(pos);
 			return true;

@@ -28,8 +28,6 @@ CarModel::~CarModel() {
 
 
 void CarModel::load(std::string json_path) {
-	//std::cout << "loading model " << json_path << "\n";
-	
 	StaticObjectModel::load(json_path);
 
 	std::ifstream ifs(json_path);
@@ -67,6 +65,7 @@ Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) :
 {
 	reinit(position, alpha, scale);
 
+	// TODO : mettre des noms plus sympas
 	_name= "Car "+ std::to_string(rand_int(1, 100));
 }
 
@@ -108,6 +107,7 @@ void Car::update() {
 void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up) {
 	CarModel * model= get_model();
 
+	// volant ------------------------------------------------
 	// a gauche == positif (rotation sens trigo)
 	if (key_left) {
 		_wheel+= model->_wheel_increment;
@@ -133,6 +133,7 @@ void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up
 		}
 	}
 
+	// accélération --------------------------------------------
 	if (key_down) {
 		_thrust-= model->_brake_increment;
 		if (_thrust< -1.0* model->_max_brake) {
@@ -265,24 +266,18 @@ void Car::random_ia() {
 
 void Car::anim(number anim_dt) {
 	CarModel * model= get_model();
-	
-	/*if (model->_type== HERO_CAR) {
-		std::cout << _thrust << "\n";
-	}*/
 
-	if (model->_fixed) {
-		return;
-	}
-
-
+	// calcul force appliquée à l'avant
 	_force_fwd= pt_type(0.0);
-	_force_fwd+= _thrust* rot(_forward, _wheel);
-	_force_fwd-= model->_forward_static_friction* scal(_forward, _velocity)* _forward;
-	//_force_fwd-= _model->_forward_static_friction* _velocity;
+	_force_fwd+= _thrust* rot(_forward, _wheel); // accélération dans la direction du volant
+	_force_fwd-= model->_forward_static_friction* scal(_forward, _velocity)* _forward; // friction statique avant
 
+	// calcul force appliquée à l'arrière
 	_force_bwd= pt_type(0.0);
+	// + la vitesse est grande et + on tourne abruptement, + on a de chance d'être en dérapage
 	number right_turn= scal(_right, _velocity);
 	if (abs(right_turn)> model->_friction_threshold) {
+		// dérapage
 		_drift= true;
 		_force_bwd-= model->_backward_dynamic_friction* right_turn* _right;
 	}
@@ -291,19 +286,23 @@ void Car::anim(number anim_dt) {
 		_force_bwd-= model->_backward_static_friction* right_turn* _right;
 	}
 
+	// force -> acceleration -> vitesse -> position
 	_acceleration= (_force_fwd+ _force_bwd)/ _mass;
 	_velocity+= _acceleration* anim_dt;
 	_com+= _velocity* anim_dt;
 
+	// calcul torque == équivalent force pour les rotations
 	_torque= 0.0;
-	_torque+= _com2force_fwd.x* _force_fwd.y- _com2force_fwd.y* _force_fwd.x;
-	_torque+= _com2force_bwd.x* _force_bwd.y- _com2force_bwd.y* _force_bwd.x;
-	_torque-= _model->_angular_friction* _angular_velocity;
+	_torque+= _com2force_fwd.x* _force_fwd.y- _com2force_fwd.y* _force_fwd.x; // torque avant
+	_torque+= _com2force_bwd.x* _force_bwd.y- _com2force_bwd.y* _force_bwd.x; // torque arrière
+	_torque-= _model->_angular_friction* _angular_velocity; // friction angulaire
 
+	// torque -> acc angulaire -> vitesse angulaire -> angle
 	_angular_acceleration= _torque/ _inertia;
 	_angular_velocity+= _angular_acceleration* anim_dt;
 	_alpha+= _angular_velocity* anim_dt;
 	
+	// on veut un angle toujours compris entre 0 et 2pi
 	while (_alpha> M_PI* 2.0) {
 		_alpha-= M_PI* 2.0;
 	}

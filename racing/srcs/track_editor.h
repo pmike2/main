@@ -21,19 +21,29 @@
 const float Z_NEAR= 0.0f;
 const float Z_FAR= 1000.0f;
 
+// couleurs
 const glm::vec4 GRID_COLOR(0.0, 1.0, 0.0, 0.7);
 const glm::vec4 OBSTACLE_SETTING_COLOR(1.0, 0.0, 0.0, 0.5);
 const glm::vec4 OBSTACLE_FLOATING_FOOTPRINT_COLOR(1.0, 0.0, 1.0, 0.5);
 const glm::vec4 OBSTACLE_FLOATING_BBOX_COLOR(0.5, 0.2, 1.0, 0.5);
 const glm::vec4 SELECTION_COLOR(1.0, 1.0, 0.0, 0.3);
 
+// positions des grilles
 const pt_type TRACK_ORIGIN(-9.0, -7.5);
 const pt_type TILES_ORIGIN(3.5, -7.5);
 const pt_type FLOATING_OBJECTS_ORIGIN(-7.0, 3.0);
+// scale par défaut de la grille track
+const number DEFAULT_TRACK_EDITOR_SCALE= 0.3;
+// dimensions par défaut des grilles de tile et d'objets flottants
+const unsigned int TILE_GRID_WIDTH= 6;
+const unsigned int FLOATING_GRID_HEIGHT= 4;
+// dimensions défaut en tuiles d'une piste
+const unsigned int TRACK_DEFAULT_SIZE= 16;
+// nombre de tours par défaut
+const unsigned int DEFAULT_N_LAPS= 3;
 
-const unsigned int TRACK_DEFAULT_SIZE= 10;
 
-
+// Editeur de grille d'objets
 class GridEditor {
 public:
 	GridEditor();
@@ -54,10 +64,10 @@ public:
 	bool mouse_button_down(InputState * input_state);
 
 
-	StaticObjectGrid * _grid;
-	int _row_idx_select, _col_idx_select;
+	StaticObjectGrid * _grid; // grille à éditer
+	int _row_idx_select, _col_idx_select; // tuile courante sélectionnée
 	glm::vec4 _tile_color;
-	pt_type _translation;
+	pt_type _translation; // position et agrandissement
 	number _scale;
 
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
@@ -69,6 +79,7 @@ public:
 };
 
 
+// Editeur de piste
 class TrackEditor {
 public:
 	TrackEditor();
@@ -102,12 +113,12 @@ public:
 	bool mouse_wheel(InputState * input_state);
 
 
-	Track * _track;
-	int _row_idx_select, _col_idx_select;
-	StaticObject * _selected_floating_object;
-	pt_type _translation;
+	Track * _track; // piste à éditer
+	int _row_idx_select, _col_idx_select; // tuile courante sélectionnée
+	StaticObject * _selected_floating_object; // objet flottant courant sélectionné
+	pt_type _translation; // position et agrandissement
 	number _scale;
-	CheckPoint * _last_checkpoint;
+	CheckPoint * _last_checkpoint; // dernier chkpt mis
 
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
@@ -120,6 +131,7 @@ public:
 };
 
 
+// Editeur, classe principale
 class Editor {
 public:
 	Editor();
@@ -136,9 +148,9 @@ public:
 	bool mouse_wheel(InputState * input_state);
 
 
-	TrackEditor * _track_editor;
-	GridEditor * _tile_grid_editor;
-	GridEditor * _floating_grid_editor;
+	TrackEditor * _track_editor; // éditeur de track
+	GridEditor * _tile_grid_editor; // éditeur des tuiles disponibles
+	GridEditor * _floating_grid_editor; // éditeur des objets flottants disponibles
 	//Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
 };

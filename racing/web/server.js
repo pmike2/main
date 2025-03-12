@@ -22,8 +22,6 @@ app.get('/', (req, res) => {
 
 
 io.on('connection', (socket) => {
-	//console.log('a user is connected');
-
 	socket.on('data', (data) => {
 		console.log(data);
 		io.sockets.emit("data", data);

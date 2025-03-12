@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Utilitaire pour appliquer un traitement à tous les jsons d'un dossier
+"""
+
 import os
 import sys
 import json

@@ -1,7 +1,11 @@
+<!--
+HTML pour tester différentes configs de voiture sans avoir à relancer main à chaque fois	
+-->
+
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>test</title>
+		<title>racing</title>
 		
 		<link rel="stylesheet" href="racing.css">
 		
@@ -12,32 +16,53 @@
 			var div_car;
 			var socket= io();
 			var data= {
-				"type" : "hero_car",
-				"mass" : 1.0,
-				"footprint" : [
-					[-0.4, -0.5], [0.4, -0.5], [0.4, 0.5], [-0.4, 0.5]
+				"angular_friction": 0.7,
+				"backward_dynamic_friction": 0.5,
+				"backward_static_friction": 10,
+				"brake_increment": 0.1,
+				"com2force_bwd": [
+					0,
+					-0.5
 				],
-				"com2force_fwd" : [0.0, 0.5],
-				"com2force_bwd" : [0.0, -0.5],
-				"com2bbox_center" : [0.0, 0.1],
-				"max_wheel" : 0.3,
-				"wheel_increment" : 0.05,
-				"wheel_decrement" : 0.05,
-				"max_thrust" : 9.0,
-				"thrust_increment" : 0.1,
-				"thrust_decrement" : 0.02,
-				"max_brake" : 9.0,
-				"brake_increment" : 0.06,
-				"forward_static_friction" : 3.0,
-				"backward_static_friction" : 7.0,
-				"backward_dynamic_friction" : 1.0,
-				"friction_threshold" : 0.25,
-				"angular_friction" : 2.0
+				"com2force_fwd": [
+					0,
+					0.5
+				],
+				"footprint": [
+					[
+						-0.17,
+						-0.35
+					],
+					[
+						0.16,
+						-0.35
+					],
+					[
+						0.16,
+						0.37
+					],
+					[
+						-0.17,
+						0.37
+					]
+				],
+				"forward_static_friction": 1,
+				"friction_threshold": 0.25,
+				"mass": 1,
+				"max_brake": 1,
+				"max_thrust": 4,
+				"max_wheel": 0.8,
+				"thrust_decrement": 0.05,
+				"thrust_increment": 0.05,
+				"type": "hero_car",
+				"wheel_decrement": 0.5,
+				"wheel_increment": 0.03,
+				"restitution": 0.2
 			};
 
 
 			function emit() {
-				//socket.emit("data", JSON.stringify(data));
+				console.log("emitting");
 				socket.emit("data", JSON.stringify(data));
 			}
 
@@ -67,23 +92,18 @@
 					inputs[i].addEventListener("change", function() {
 						input.value= parseFloat(this.value).toFixed(3);
 						data[name]= parseFloat(inputs[i].value);
+						emit();
 					});
 					input.addEventListener("change", function() {
 						inputs[i].value= input.value;
 						data[name]= parseFloat(inputs[i].value);
+						emit();
 					});
 				}
 			}
 
 
 			window.onload= function () {
-				let button_send;
-
-				button_send= document.createElement("send");
-				button_send.id= "button_send";
-				button_send.innerHTML= "send";
-				document.body.appendChild(button_send);
-				
 				div_car= document.createElement("div");
 				for (let key in data) {
 					if (key== "type" || key== "footprint" || key== "com2force_fwd" || key== "com2force_bwd" || key== "com2bbox_center") {
@@ -96,19 +116,12 @@
 					input.setAttribute("min", "-10.0");
 					input.setAttribute("max", "10.0");
 					input.value= data[key];
-					/*input.addEventListener("change", function() {
-						data[this.id]= parseFloat(this.value);
-					});*/
 					div_car.appendChild(input);
 				}
 				
 				document.body.appendChild(div_car);
 
 				decorate_inputs(div_car);
-
-				button_send.addEventListener("click", () => {
-					emit();
-				});
 			}
 
 		</script>

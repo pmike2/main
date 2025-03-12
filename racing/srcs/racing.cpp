@@ -24,10 +24,9 @@ Racing::Racing() {
 }
 
 
-Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, bool is_joystick) :
-	_draw_bbox(true), _draw_force(true), _draw_texture(true), _show_debug_info(false), _show_info(true), _cam_mode(TRANSLATE), _screengl(screengl),
-	_key_left(false), _key_right(false), _key_up(false), _key_down(false), 
-	_is_joystick(is_joystick), _joystick(glm::vec2(0.0)), _joystick_a(false), _joystick_b(false)
+Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, InputState * input_state) :
+	_draw_bbox(false), _draw_force(false), _draw_texture(true), _show_debug_info(false), _show_info(true),
+	_cam_mode(TRANSLATE), _screengl(screengl), _input_state(input_state)
 	{
 	// caméras
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
@@ -35,6 +34,7 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	
 	// font
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
+	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
 
 	// buffers
 	unsigned int n_buffers= 4;
@@ -233,7 +233,7 @@ void Racing::draw_texture() {
 	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -10.0f);
+	glUniform1f(context->_locs_uniform["z"], -15.0f);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -256,12 +256,6 @@ void Racing::draw_texture() {
 
 
 void Racing::draw() {
-	if (_show_debug_info) {
-		show_debug_info();
-	}
-	if (_show_info) {
-		show_info();
-	}
 	if (_draw_force) {
 		draw_force();
 	}
@@ -272,12 +266,17 @@ void Racing::draw() {
 	if (_draw_texture) {
 		draw_texture();
 	}
+	if (_show_debug_info) {
+		show_debug_info();
+	}
+	if (_show_info) {
+		show_info();
+	}
 }
 
 
 void Racing::show_info() {
 	const float font_scale= 0.007f;
-	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
 
 	Car * hero= _track->get_hero();
 	std::vector<Car *> cars= _track->get_sorted_cars();
@@ -294,6 +293,10 @@ void Racing::show_info() {
 		texts.push_back(Text(std::to_string(idx_car+ 1)+  " - "+ cars[idx_car]->_name, glm::vec2(-9.0f, 7.0f- float(idx_car)* 0.5f), font_scale, color));
 	}
 
+	if (hero->_drift) {
+		texts.push_back(Text("DRIFT !", glm::vec2(0.0f, 0.0f), 0.02, glm::vec4(1.0, 1.0, 0.0, 0.1)));
+	}
+
 	_font->set_text(texts);
 	_font->draw();
 }
@@ -301,7 +304,7 @@ void Racing::show_info() {
 
 void Racing::show_debug_info() {
 	const float font_scale= 0.007f;
-	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
+	const glm::vec4 text_color(1.0, 1.0, 1.0, 1.0);
 
 	Car * hero= _track->get_hero();
 
@@ -515,7 +518,7 @@ void Racing::update_texture() {
 
 
 void Racing::anim() {
-	_track->anim(ANIM_DT, _key_left, _key_right, _key_up, _key_down, _is_joystick, _joystick_a, _joystick_b, _joystick);
+	_track->anim(ANIM_DT, _input_state);
 
 	update_bbox();
 	update_footprint();
@@ -554,39 +557,29 @@ void Racing::camera() {
 }
 
 
-bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
-	// touches directionnelles : diriger véhicule
-	if (key== SDLK_LEFT) {
-		_key_left= true;
-		return true;
-	}
-	else if (key== SDLK_RIGHT) {
-		_key_right= true;
-		return true;
-	}
-	else if (key== SDLK_UP) {
-		_key_up= true;
-		return true;
-	}
-	else if (key== SDLK_DOWN) {
-		_key_down= true;
-		return true;
-	}
-
+bool Racing::key_down(SDL_Keycode key) {
 	// b : dessiner bbox
 	if (key== SDLK_b) {
 		_draw_bbox= !_draw_bbox;
+		return true;
 	}
 
 	// f : dessiner forces
 	else if (key== SDLK_f) {
 		_draw_force= !_draw_force;
+		return true;
 	}
 
 	// i : switcher infos normales / infos debug
 	else if (key== SDLK_i) {
 		_show_debug_info= !_show_debug_info;
 		_show_info= !_show_info;
+		return true;
+	}
+
+	else if (key== SDLK_t) {
+		_draw_texture= !_draw_texture;
+		return true;
 	}
 
 	// c : chgmt mode caméra
@@ -600,80 +593,8 @@ bool Racing::key_down(InputState * input_state, SDL_Keycode key) {
 		else if (_cam_mode== TRANSLATE_AND_ROTATE) {
 			_cam_mode= FIXED;
 		}
-	}
-	return false;
-}
-
-
-bool Racing::key_up(InputState * input_state, SDL_Keycode key) {
-	if (key== SDLK_LEFT) {
-		_key_left= false;
-		return true;
-	}
-	else if (key== SDLK_RIGHT) {
-		_key_right= false;
-		return true;
-	}
-	else if (key== SDLK_UP) {
-		_key_up= false;
-		return true;
-	}
-	else if (key== SDLK_DOWN) {
-		_key_down= false;
-		return true;
-	}
-	return false;
-}
-
-
-bool Racing::joystick_down(unsigned int button_idx) {
-	if (!_is_joystick) {
-		return false;
-	}
-	
-	if (button_idx== 0) {
-		_joystick_a= true;
-		return true;
-	}
-	else if (button_idx== 1) {
-		_joystick_b= true;
 		return true;
 	}
 
 	return false;
 }
-
-
-bool Racing::joystick_up(unsigned int button_idx) {
-	if (!_is_joystick) {
-		return false;
-	}
-
-	if (button_idx== 0) {
-		_joystick_a= false;
-		return true;
-	}
-	else if (button_idx== 1) {
-		_joystick_b= false;
-		return true;
-	}
-	return false;
-}
-
-
-bool Racing::joystick_axis(unsigned int axis_idx, int value) {
-	if (!_is_joystick) {
-		return false;
-	}
-
-	// le joy droit a les axis_idx 2 et 3 qui ne sont pas gérés pour l'instant
-	if (axis_idx> 1) {
-		return false;
-	}
-
-	// -1 < fvalue < 1
-	float fvalue= float(value)/ 32768.0;
-	_joystick[axis_idx]= fvalue;
-	return true;
-}
-

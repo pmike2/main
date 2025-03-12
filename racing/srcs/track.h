@@ -10,6 +10,7 @@
 #include "static_object.h"
 #include "car.h"
 #include "typedefs.h"
+#include "input_state.h"
 
 
 // type de grille : verticale, horizontale
@@ -70,7 +71,9 @@ public:
 	void all_collision(); // gestion des collisions
 	void checkpoints(); // gestion chkpts pour toutes les voitures
 	void checkpoint_ia(Car * car); // ia basée sur les chkpts
-	void anim(number dt, bool key_left, bool key_right, bool key_up, bool key_down, bool is_joystick, bool joystick_a, bool joystick_b, glm::vec2 joystick);
+	void anim(number dt, InputState * input_state); // animation
+
+	// get / set / add / del
 	void set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx);
 	void set_tile(std::string model_name, unsigned int idx);
 	void set_all(std::string model_name, unsigned int width, unsigned int height);
@@ -78,17 +81,18 @@ public:
 	void add_col(std::string model_name);
 	void drop_row();
 	void drop_col();
-	StaticObject * get_floating_object(pt_type pos);
-	void delete_floating_object(StaticObject * obj);
+	
+	StaticObject * get_floating_object(pt_type pos); // renvoie le floating object à une coord
+	void delete_floating_object(StaticObject * obj); // suppression floating object
 
 	friend std::ostream & operator << (std::ostream & os, const Track & track);
 
 
-	std::map<std::string, StaticObjectModel *> _models;
-	StaticObjectGrid * _grid;
-	std::vector<StaticObject *> _floating_objects;
-	unsigned int _n_laps;
-	CheckPoint * _start;
+	std::map<std::string, StaticObjectModel *> _models; // modèles
+	StaticObjectGrid * _grid; // grille de tuiles
+	std::vector<StaticObject *> _floating_objects; // objets flottants
+	unsigned int _n_laps; // nombre de tours
+	CheckPoint * _start; // point de départ
 };
 
 

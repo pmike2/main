@@ -66,7 +66,7 @@ const glm::vec4 ENNEMY_COLOR(0.0, 1.0, 1.0, 1.0);
 class Racing {
 public:
 	Racing();
-	Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, bool is_joystick);
+	Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, InputState * input_state);
 	~Racing();
 
 	// chargement des textures
@@ -93,11 +93,7 @@ public:
 	void camera();
 
 	// input
-	bool key_down(InputState * input_state, SDL_Keycode key);
-	bool key_up(InputState * input_state, SDL_Keycode key);
-	bool joystick_down(unsigned int button_idx);
-	bool joystick_up(unsigned int button_idx);
-	bool joystick_axis(unsigned int axis_idx, int value);
+	bool key_down(SDL_Keycode key);
 
 
 	Track * _track;
@@ -115,11 +111,7 @@ public:
 	glm::mat4 _world2camera; // caméra
 	Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
-
-	bool _key_left, _key_right, _key_up, _key_down; // les touches sont-elle enfoncées
-	bool _is_joystick; // joystick est-t'il activé
-	glm::vec2 _joystick; // valeurs x, y stick joystick
-	bool _joystick_a, _joystick_b; // boutons 
+	InputState * _input_state;
 
 	// A REVOIR ; association modèle <-> texture
 	std::map<std::string, unsigned int> _model_tex_idxs;

@@ -1,0 +1,44 @@
+{
+    "angular_friction": 0.7,
+    "backward_dynamic_friction": 0.5,
+    "backward_static_friction": 10,
+    "brake_increment": 0.1,
+    "com2force_bwd": [
+        0,
+        -0.5
+    ],
+    "com2force_fwd": [
+        0,
+        0.5
+    ],
+    "footprint": [
+        [
+            -0.17,
+            -0.35
+        ],
+        [
+            0.16,
+            -0.35
+        ],
+        [
+            0.16,
+            0.37
+        ],
+        [
+            -0.17,
+            0.37
+        ]
+    ],
+    "forward_static_friction": 1,
+    "friction_threshold": 0.25,
+    "mass": 1,
+    "max_brake": 1,
+    "max_thrust": 4,
+    "max_wheel": 0.8,
+    "thrust_decrement": 0.05,
+    "thrust_increment": 0.05,
+    "type": "hero_car",
+    "wheel_decrement": 0.5,
+    "wheel_increment": 0.03,
+    "restitution": 0.2
+}

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Passage footprint des tuiles obstacle -> textures
+"""
+
 import os
 import json
 from PIL import Image, ImageDraw
@@ -9,21 +13,42 @@ SIZE= 1024
 
 
 def coord2pixel(x, y):
+	"""coords -0.5 0.5 -> pixels texture"""
 	return [int((x+ 0.5)* float(SIZE- 1)), SIZE- 1- int((y+ 0.5)* float(SIZE- 1))]
 
 
 # utile pour passer des coords dans le png (sous gimp) vers le footprint
 def pixel2coord(i, j):
+	"""pixels texture -> coords -0.5 0.5"""
 	return [float(i)/ (float(SIZE- 1))- 0.5, float(SIZE- 1- j)/ float(SIZE- 1)- 0.5]
 
 
 def pt_on_border(pt):
+	"""le pixel est-t'il au bord"""
 	if pt[0] in (0, SIZE- 1) or pt[1] in (0, SIZE- 1):
 		return True
 	return False
 
 
-def fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, footprint, result):
+def pts_on_same_bord(pt1, pt2):
+	if not pt_on_border(pt1) or not pt_on_border(pt2):
+		return False
+	if pt1[0] in (0, SIZE- 1) and pt1[0]== pt2[0]:
+		return True
+	if pt1[1] in (0, SIZE- 1) and pt1[1]== pt2[1]:
+		return True
+	return False
+
+
+def fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, border_width, footprint, result):
+	"""Création texture.
+	
+	tex_in_fill = chemin texture de plein
+	tex_in_empty = chemin texture de vide
+	tex_in_brick = chemin texture de délimitation plein / vide
+	footprint = emprise polygonale du plein
+	result = png résultat
+	"""
 	fgr_img= Image.new('RGBA', (SIZE, SIZE), color=(0, 0, 0, 0))
 	
 	mask_img_empty = Image.new('L', (SIZE, SIZE), color=255)
@@ -43,9 +68,14 @@ def fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, footprint, result):
 				p1= [footprint[0], footprint[1]]
 			else:
 				p1= [footprint[2* (i+ 1)], footprint[2* (i+ 1)+ 1]]
-			if not pt_on_border(p0) or not pt_on_border(p1):
+			#print("----")
+			#print(p0)
+			#print(p1)
+			#print(pts_on_same_bord(p0, p1))
+			if not pts_on_same_bord(p0, p1):
 				border_footprint.append(p0)
 				last_pt= p1
+
 		if last_pt is not None:
 			border_footprint.append(last_pt)
 		border_footprint= [x for y in border_footprint for x in y]
@@ -53,7 +83,8 @@ def fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, footprint, result):
 		if len(border_footprint)> 0:
 			mask_img_brick = Image.new('L', (SIZE, SIZE), color=255)
 			mask_img_brick_draw = ImageDraw.Draw(mask_img_brick)
-			mask_img_brick_draw.line(border_footprint, fill=0, width=20, joint="curve")
+			# joint="curve" permet d'avoir de l'arrondi
+			mask_img_brick_draw.line(border_footprint, fill=0, width=border_width, joint="curve")
 
 	with Image.open(tex_in_fill) as tex_img_fill:
 		with Image.open(tex_in_empty) as tex_img_empty:
@@ -66,20 +97,21 @@ def fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, footprint, result):
 				result_img.save(result)
 
 
-def fill_texture_json(tex_in_fill, tex_in_empty, tex_in_brick, json_path):
+def fill_texture_json(tex_in_fill, tex_in_empty, tex_in_brick, border_width, json_path):
+	"""Création texture à partir d'un json d'une tuile obstacle"""
 	with open(json_path) as f:
 		data= json.load(f)
-	#print(data)
+
 	footprint= data["footprint"]
 	footprint= [coord2pixel(x[0], x[1]) for x in footprint]
 	footprint= [x for y in footprint for x in y]
-	#print(footprint)
 	result= os.path.join(os.path.dirname(json_path), "textures", os.path.basename(os.path.splitext(json_path)[0])+ ".png")
-	#print(result)
-	fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, footprint, result)
+
+	fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, border_width, footprint, result)
 
 
-def fill_dir(tex_in_fill, tex_in_empty, tex_in_brick, dir_path):
+def fill_dir(tex_in_fill, tex_in_empty, tex_in_brick, border_width, dir_path):
+	"""Lancement sur un dossier de jsons"""
 	#os.system(f"rm {dir_path}/textures/*.png")
 	pngs= [os.path.join(dir_path, x) for x in os.listdir(dir_path) if os.path.splitext(x)[1]== ".png"]
 	for png in pngs:
@@ -89,7 +121,7 @@ def fill_dir(tex_in_fill, tex_in_empty, tex_in_brick, dir_path):
 	jsons= [os.path.join(dir_path, x) for x in os.listdir(dir_path) if os.path.splitext(x)[1]== ".json"]
 	for json_path in jsons:
 		print(json_path)
-		fill_texture_json(tex_in_fill, tex_in_empty, tex_in_brick, json_path)
+		fill_texture_json(tex_in_fill, tex_in_empty, tex_in_brick, border_width, json_path)
 
 
 if __name__== "__main__":
@@ -99,12 +131,10 @@ if __name__== "__main__":
 	tex_in_fill= "../data/tests/textures/full.png"
 	tex_in_empty= "../data/tests/textures/empty.png"
 	tex_in_brick= "../data/tests/textures/brick.png"
-	#footprint= [0, 0, 100, 0, 100, 100, 0, 0]
-	#result= "../data/static_objects/test.png"
-	#fill_texture(tex_in_fill, tex_in_empty, footprint, result)
+	border_width= 50
 
-	#json_path= "/Users/home/git_dir/main/racing/data/static_objects/tiles/lower_right_tri.json"
-	#fill_texture_json(tex_in_fill, tex_in_empty, json_path)
+	#json_path= "../data/static_objects/tiles/0.json"
+	#fill_texture_json(tex_in_fill, tex_in_empty, tex_in_brick, border_width, json_path)
 
 	dir_path= "../data/static_objects/tiles"
-	fill_dir(tex_in_fill, tex_in_empty, tex_in_brick, dir_path)
+	fill_dir(tex_in_fill, tex_in_empty, tex_in_brick, border_width, dir_path)

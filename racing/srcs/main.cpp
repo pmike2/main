@@ -1,3 +1,7 @@
+/*
+Programme principal de lancement de racing
+*/
+
 #include <fstream>
 #include <sstream>
 #include <iomanip>
@@ -41,11 +45,13 @@ bool done= false;
 unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 
-/*sio::client io;
+
+// à activer / désactiver le temps d'affinage des params voiture héros
+sio::client io;
 bool data_send= false;
 std::string data_string= "";
 std::mutex mut;
-*/
+
 
 
 void key_down(SDL_Keycode key) {
@@ -55,40 +61,29 @@ void key_down(SDL_Keycode key) {
 		done= true;
 	}
 
-	if (racing->key_down(input_state, key)) {
+	if (racing->key_down(key)) {
 		return;
 	}
-
 }
 
 
 void key_up(SDL_Keycode key) {
 	input_state->key_up(key);
-
-	if (racing->key_up(input_state, key)) {
-		return;
-	}
 }
 
 
 void joystick_down(unsigned int button_idx) {
-	if (racing->joystick_down(button_idx)) {
-		return;
-	}
+	input_state->joystick_down(button_idx);
 }
 
 
 void joystick_up(unsigned int button_idx) {
-	if (racing->joystick_up(button_idx)) {
-		return;
-	}
+	input_state->joystick_up(button_idx);
 }
 
 
 void joystick_axis(unsigned int axis_idx, int value) {
-	if (racing->joystick_axis(axis_idx, value)) {
-		return;
-	}
+	input_state->joystick_axis(axis_idx, value);
 }
 
 
@@ -97,22 +92,6 @@ void init() {
 	
 	SDL_Init(SDL_INIT_EVERYTHING);
 	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
-
-	bool is_joystick= false;
-	/*if (SDL_NumJoysticks()> 0){
-		SDL_Joystick * joy= SDL_JoystickOpen(0);
-		if (joy) {
-			is_joystick= true;
-			std::cout << "joystick OK; n axes=" << SDL_JoystickNumAxes(joy) << " ; n buttons=" << SDL_JoystickNumButtons(joy) << "\n";
-		}
-	}*/
-
-	// la taille du buffer influe sur la latence
-	/*if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 512)== -1) {
-		std::cerr << "Echec audio\n";
-	}
-	// permet d'allouer des channels pour faire du polyphonique; il faut alors bien gérer le 1er arg de Mix_PlayChannel
-	Mix_AllocateChannels(16);*/
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
@@ -172,8 +151,25 @@ void init() {
 	// --------------------------------------------------------------------------
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	input_state= new InputState();
-	racing= new Racing(prog_simple, prog_texture, prog_font, screengl, is_joystick);
+	racing= new Racing(prog_simple, prog_texture, prog_font, screengl, input_state);
 
+	/*if (SDL_NumJoysticks()> 0){
+		SDL_Joystick * joy= SDL_JoystickOpen(0);
+		if (joy) {
+			input_state->_is_joystick= true;
+			std::cout << "joystick OK; n axes=" << SDL_JoystickNumAxes(joy) << " ; n buttons=" << SDL_JoystickNumButtons(joy) << "\n";
+		}
+	}*/
+
+	// la taille du buffer influe sur la latence
+	/*if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 2, 512)== -1) {
+		std::cerr << "Echec audio\n";
+	}
+	// permet d'allouer des channels pour faire du polyphonique; il faut alors bien gérer le 1er arg de Mix_PlayChannel
+	Mix_AllocateChannels(16);*/
+
+	
+	// à activer / désactiver le temps d'affinage des params voiture héros
 	/*io.set_open_listener([&]() {
 		io.socket()->on("data", [&](sio::event& ev) {
 			mut.lock();
@@ -183,7 +179,6 @@ void init() {
 		});
 	});
 	io.connect("http://127.0.0.1:3001");*/
-
 }
 
 
@@ -226,19 +221,22 @@ void compute_fps() {
 }
 
 
-/*void check_data_send() {
+// à activer / désactiver le temps d'affinage des params voiture héros
+void check_data_send() {
 	mut.lock();
 	if (data_send) {
 		data_send= false;
 		std::cout << data_string << "\n";
 		json js= json::parse(data_string);
-		std::string json_path= "../data/cars/hero_car_web.json";
+		std::string json_path= "../data/cars/hero_car.json";
 		std::ofstream ofs(json_path);
 		ofs << std::setw(4) << js << "\n";
-		//racing->_track->get_hero()->_model->load(json_path);
+		ofs.close();
+		CarModel * model= (CarModel *)(racing->_track->get_hero()->_model);
+		model->load(json_path);
 	}
 	mut.unlock();
-}*/
+}
 
 
 void idle() {

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 
+#
+# INUTILISE, gardé pour mémoire
+#
+
+
 import os
 import sys
 import json
@@ -8,7 +13,6 @@ import json
 IDX2NAME= ("90", "180", "270")
 
 
-# rotation pi/2 autour de (1/2, 1/2)
 def rotate_pt(pt):
 	return (1- pt[1], pt[0])
 
@@ -43,5 +47,6 @@ def rotate_all(root_jsons):
 
 
 if __name__== "__main__":
-	root_jsons= sys.argv[1]
-	rotate_all(root_jsons)
+	#root_jsons= sys.argv[1]
+	#rotate_all(root_jsons)
+	pass

@@ -62,6 +62,7 @@ public:
 	DrawContext * _context;
 	std::map<char, Character> _characters;
 	glm::mat4 _camera2clip;
+	float _z;
 };
 
 

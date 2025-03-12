@@ -146,9 +146,9 @@ void StaticObjectGrid::add_row(StaticObjectModel * model) {
 
 
 void StaticObjectGrid::add_col(StaticObjectModel * model) {
-	for (unsigned int row_idx=_height; row_idx>0; --row_idx) {
+	for (int row_idx=_height- 1; row_idx>=0; --row_idx) {
 		StaticObject * obj= new StaticObject(model, coord2number(_width, row_idx), 0.0, pt_type(_cell_size));
-		_objects.insert(_objects.begin()+ row_idx* _width, obj);
+		_objects.insert(_objects.begin()+ row_idx* _width+ _width, obj);
 	}
 	_width++;
 }
@@ -179,13 +179,6 @@ Track::Track() : _start(NULL), _n_laps(0) {
 	load_models();
 	_grid= new StaticObjectGrid(DEFAULT_CELL_SIZE, VERTICAL_GRID);
 }
-
-
-/*Track::Track(number cell_size, unsigned int width, unsigned int height) : _start(NULL), _n_laps(0) {
-	load_models();
-	_grid= new StaticObjectGrid(cell_size, VERTICAL_GRID);
-	set_all("empty", width, height);
-}*/
 
 
 Track::~Track() {
@@ -441,12 +434,12 @@ void Track::checkpoint_ia(Car * car) {
 }
 
 
-void Track::anim(number dt, bool key_left, bool key_right, bool key_up, bool key_down, bool is_joystick, bool joystick_a, bool joystick_b, glm::vec2 joystick) {
-	if (is_joystick) {
-		get_hero()->preanim_joystick(joystick_a, joystick_b, joystick);
+void Track::anim(number dt, InputState * input_state) {
+	if (input_state->_is_joystick) {
+		get_hero()->preanim_joystick(input_state->_joystick_a, input_state->_joystick_b, input_state->_joystick);
 	}
 	else {
-		get_hero()->preanim_keys(key_left, key_right, key_down, key_up);
+		get_hero()->preanim_keys(input_state->_keys[SDLK_LEFT], input_state->_keys[SDLK_RIGHT], input_state->_keys[SDLK_DOWN], input_state->_keys[SDLK_UP]);
 	}
 
 	for (auto obj : _floating_objects) {
