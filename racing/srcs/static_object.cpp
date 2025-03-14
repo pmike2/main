@@ -106,7 +106,7 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ 1.0/ obj2->_mass+ dot(v, axis));
 	}
 
-	if (abs(impulse)> 6.0) {
+	if (abs(impulse)> 10.0) {
 		std::cout << "impulse=" << impulse << "\n";
 	}
 
@@ -171,6 +171,12 @@ void StaticObjectModel::load(std::string json_path) {
 	else if (js["type"]== "start") {
 		_type= START;
 	}
+	else if (js["type"]== "material") {
+		_type= MATERIAL;
+	}
+	else if (js["type"]== "tire_tracks") {
+		_type= TIRE_TRACKS;
+	}
 	else {
 		std::cerr << "Type " << js["type"] << " non supporté\n";
 	}
@@ -224,10 +230,19 @@ void StaticObjectModel::load(std::string json_path) {
 		_restitution= js["restitution"];
 	}
 
-	else if (_type== CHECKPOINT || _type== START) {
+	else if (_type== CHECKPOINT || _type== START || _type== TIRE_TRACKS) {
 		_fixed= true;
 		_solid= false;
 		_mass= _linear_friction= _angular_friction= _restitution= 0.0;
+	}
+
+	else if (_type== MATERIAL) {
+		_fixed= true;
+		_solid= false;
+		_mass= _restitution= 0.0;
+		// dans ce contexte ce sont des facteurs multiplicatifs qui vont affecter les cars
+		_linear_friction= js["linear_friction"];
+		_angular_friction= js["angular_friction"];
 	}
 }
 
@@ -265,11 +280,27 @@ StaticObject::StaticObject() {
 }
 
 
-StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) {
+StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) : _delete(false) {
 	_bbox= new BBox_2D(pt_type(0.0), pt_type(0.0));
 	_footprint= new Polygon2D();
 	set_model(model);
 	reinit(position, alpha, scale);
+
+	if (model->_type== OBSTACLE_SETTING) {
+		_z= -100.0f;
+	}
+	else if (model->_type== OBSTACLE_FLOATING || model->_type== START || model->_type== CHECKPOINT || model->_type== MATERIAL) {
+		_z= -90.0f;
+	}
+	else if (model->_type== TIRE_TRACKS) {
+		_z= -80.0f;
+	}
+	else if (model->_type== HERO_CAR || model->_type== ENNEMY_CAR) {
+		_z= -70.0f;
+	}
+	else {
+		std::cerr << "Type " << model->_type << " non supporté\n";
+	}
 }
 
 

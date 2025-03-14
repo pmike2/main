@@ -1,5 +1,5 @@
 {
-	"type" : "checkpoint",
+	"type" : "tire_tracks",
 	"footprint" : [
 		[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]
 	]

@@ -175,7 +175,7 @@ void StaticObjectGrid::drop_col() {
 
 
 // Track -------------------------------------------------------------------------------------
-Track::Track() : _start(NULL), _n_laps(0) {
+Track::Track() : _start(NULL), _n_laps(0), _mode(TRACK_LIVE) {
 	load_models();
 	_grid= new StaticObjectGrid(DEFAULT_CELL_SIZE, VERTICAL_GRID);
 }
@@ -209,6 +209,11 @@ void Track::load_models() {
 		//std::cout << "chgmt car : " << json_path << "\n";
 		_models[basename(json_path)]= new CarModel(json_path);
 	}
+
+	/*for (auto model : _models) {
+		std::cout << model.first << " ; ";
+	}
+	std::cout << "\n";*/
 }
 
 
@@ -355,32 +360,113 @@ void Track::all_collision() {
 }
 
 
-void Track::checkpoints() {
-	for (auto obj : _floating_objects) {
-		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
-			Car * car= (Car *)(obj);
-			if (!aabb_intersects_aabb(car->_bbox->_aabb, car->_next_checkpoint->_bbox->_aabb)) {
+void Track::materials(std::chrono::system_clock::time_point t) {
+	for (auto obj1 : _floating_objects) {
+		if (obj1->_model->_type!= HERO_CAR && obj1->_model->_type!= ENNEMY_CAR) {
+			continue;
+		}
+		Car * car= (Car*)(obj1);
+		
+		car->_friction_material= 1.0;
+		bool car_in_abnormal_material= false;
+		for (auto obj2 : _floating_objects) {
+			if (obj2->_model->_type!= MATERIAL) {
 				continue;
 			}
-			pt_type axis(0.0, 0.0);
-			number overlap= 0.0;
-			unsigned int idx_pt= 0;
-			bool is_pt_in_poly1= false;
-			bool is_inter= poly_intersects_poly(car->_footprint, car->_next_checkpoint->_footprint, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
-			if (is_inter) {
-				if (car->_next_checkpoint== _start) {
-					car->_n_laps++;
-					if (car->_n_laps== _n_laps) {
-						if (car->_model->_type== HERO_CAR) {
-							std::cout << "you win\n";
-						}
-						else {
-							std::cout << "you lose\n";
-						}
+			if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
+				continue;
+			}
+			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
+				car->_friction_material= obj2->_model->_linear_friction;
+				if (basename(obj2->_model->_json_path)== "puddle") {
+					car->_current_tracks= "tracks_water";
+					car->_last_track_t= t;
+					car_in_abnormal_material= true;
+				}
+				break;
+			}
+		}
+
+		if (!car_in_abnormal_material && car->_current_tracks!= "tracks") {
+			auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_track_t).count();
+			if (dt> ABNORMAL_TRACKS_DT) {
+				car->_current_tracks= "tracks";
+			}
+		}
+	}
+}
+
+
+void Track::tire_tracks(std::chrono::system_clock::time_point t) {
+	std::vector<Car * > drifting_cars;
+	for (auto obj : _floating_objects) {
+		if (obj->_model->_type!= HERO_CAR && obj->_model->_type!= ENNEMY_CAR) {
+			continue;
+		}
+		
+		Car * car= (Car *)(obj);
+
+		if (car->_drift || car->_current_tracks!= "tracks") {
+			drifting_cars.push_back(car);
+		}
+	}
+	
+	for (auto car : drifting_cars) {
+		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_drift_t).count();
+		if (dt> TIRE_TRACKS_DELTA_T) {
+			StaticObject * tracks= new StaticObject(_models[car->_current_tracks], car->_com, car->_alpha, car->_scale);
+			_floating_objects.push_back(tracks);
+			car->_last_drift_t= t;
+		}
+	}
+
+	unsigned int compt= 0;
+	for (int idx_obj= _floating_objects.size()- 1; idx_obj>=0; idx_obj--) {
+		StaticObject * obj= _floating_objects[idx_obj];
+		if (obj->_model->_type== TIRE_TRACKS) {
+			compt++;
+			if (compt> N_MAX_TIRE_TRACKS) {
+				obj->_delete= true;
+			}
+		}
+	}
+	_floating_objects.erase(std::remove_if(_floating_objects.begin(), _floating_objects.end(), [](StaticObject * obj){
+		return obj->_delete;
+	}), _floating_objects.end());
+}
+
+
+void Track::checkpoints() {
+	for (auto obj : _floating_objects) {
+		if (obj->_model->_type!= HERO_CAR && obj->_model->_type!= ENNEMY_CAR) {
+			continue;
+		}
+		
+		Car * car= (Car *)(obj);
+		if (!aabb_intersects_aabb(car->_bbox->_aabb, car->_next_checkpoint->_bbox->_aabb)) {
+			continue;
+		}
+
+		pt_type axis(0.0, 0.0);
+		number overlap= 0.0;
+		unsigned int idx_pt= 0;
+		bool is_pt_in_poly1= false;
+		bool is_inter= poly_intersects_poly(car->_footprint, car->_next_checkpoint->_footprint, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
+		if (is_inter) {
+			if (car->_next_checkpoint== _start) {
+				car->_n_laps++;
+				if (car->_n_laps== _n_laps+ 1) {
+					if (car->_model->_type== HERO_CAR) {
+						//std::cout << "you win\n";
+						_mode= TRACK_WON;
+					}
+					else {
+						//std::cout << "you lose\n";
+						_mode= TRACK_LOST;
 					}
 				}
-				car->_next_checkpoint= car->_next_checkpoint->_next;
 			}
+			car->_next_checkpoint= car->_next_checkpoint->_next;
 		}
 	}
 }
@@ -434,13 +520,22 @@ void Track::checkpoint_ia(Car * car) {
 }
 
 
-void Track::anim(number dt, InputState * input_state) {
+void Track::anim(std::chrono::system_clock::time_point t, InputState * input_state) {
+	if (_mode!= TRACK_LIVE) {
+		return;
+	}
+	
 	if (input_state->_is_joystick) {
 		get_hero()->preanim_joystick(input_state->_joystick_a, input_state->_joystick_b, input_state->_joystick);
 	}
 	else {
 		get_hero()->preanim_keys(input_state->_keys[SDLK_LEFT], input_state->_keys[SDLK_RIGHT], input_state->_keys[SDLK_DOWN], input_state->_keys[SDLK_UP]);
 	}
+
+	/*auto dt_n_ms= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
+	number dt= number(dt_n_ms)/ 1000.0;*/
+
+	number dt= 0.05;
 
 	for (auto obj : _floating_objects) {
 		if (obj->_model->_type== ENNEMY_CAR) {
@@ -459,6 +554,10 @@ void Track::anim(number dt, InputState * input_state) {
 	}
 	all_collision();
 	checkpoints();
+	materials(t);
+	tire_tracks(t);
+
+	//_last_anim_t= t;
 }
 
 

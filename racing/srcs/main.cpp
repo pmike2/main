@@ -195,7 +195,7 @@ void draw() {
 }
 
 
-void anim() {
+void anim(std::chrono::system_clock::time_point t) {
 	/*tikanim2= SDL_GetTicks();
 	int tikanim_delta= tikanim2- tikanim1;
 	if (tikanim_delta< DELTA_ANIM)
@@ -203,7 +203,7 @@ void anim() {
 	
 	tikanim1= SDL_GetTicks();*/
 
-	racing->anim();
+	racing->anim(t);
 }
 
 
@@ -239,8 +239,8 @@ void check_data_send() {
 }
 
 
-void idle() {
-	anim();
+void idle(std::chrono::system_clock::time_point t) {
+	anim(t);
 	draw();
 	compute_fps();
 	//check_data_send();
@@ -251,6 +251,8 @@ void main_loop() {
 	SDL_Event event;
 	
 	while (!done) {
+		std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				/*case SDL_MOUSEMOTION:
@@ -302,7 +304,7 @@ void main_loop() {
 					break;
 			}
 		}
-		idle();
+		idle(now);
 	}
 }
 

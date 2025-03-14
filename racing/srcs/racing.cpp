@@ -61,7 +61,7 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 
 	_contexts["texture"]= new DrawContext(prog_texture, _buffers[3],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
-		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z", "texture_array"});
+		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
 	// piste
 	_track= new Track();
@@ -233,15 +233,15 @@ void Racing::draw_texture() {
 	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -15.0f);
+	//glUniform1f(context->_locs_uniform["z"], -15.0f);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
 	}
 
-	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
-	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
-	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 
@@ -256,46 +256,62 @@ void Racing::draw_texture() {
 
 
 void Racing::draw() {
-	if (_draw_force) {
-		draw_force();
+	if (_track->_mode== TRACK_LIVE) {
+		if (_draw_force) {
+			draw_force();
+		}
+		if (_draw_bbox) {
+			draw_bbox();
+			draw_footprint();
+		}
+		if (_draw_texture) {
+			draw_texture();
+		}
+		if (_show_debug_info) {
+			show_debug_info();
+		}
+		if (_show_info) {
+			show_info();
+		}
 	}
-	if (_draw_bbox) {
-		draw_bbox();
-		draw_footprint();
+	else if (_track->_mode== TRACK_WON) {
+		std::vector<Text> texts;
+		texts.push_back(Text("YOU WON !", glm::vec2(-4.0f, 0.0f), 0.03f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)));
+		_font->set_text(texts);
+		_font->draw();
 	}
-	if (_draw_texture) {
-		draw_texture();
-	}
-	if (_show_debug_info) {
-		show_debug_info();
-	}
-	if (_show_info) {
-		show_info();
+	else if (_track->_mode== TRACK_LOST) {
+		std::vector<Text> texts;
+		texts.push_back(Text("YOU LOST !", glm::vec2(-4.0f, 0.0f), 0.03f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)));
+		_font->set_text(texts);
+		_font->draw();
 	}
 }
 
 
 void Racing::show_info() {
-	const float font_scale= 0.007f;
-
 	Car * hero= _track->get_hero();
 	std::vector<Car *> cars= _track->get_sorted_cars();
 
 	std::vector<Text> texts;
 
-	texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(8.0f, 7.0f), font_scale, NLAPS_COLOR));
+	glm::vec4 color(NLAPS_COLOR);
+	if (hero->_n_laps== _track->_n_laps) {
+		color= NLAPS_LAST_COLOR;
+	}
+	texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(6.0f, 7.0f), 0.015f, NLAPS_COLOR));
 
 	for (unsigned int idx_car=0; idx_car<cars.size(); ++idx_car) {
 		glm::vec4 color(ENNEMY_COLOR);
 		if (cars[idx_car]== hero) {
 			color= HERO_COLOR;
 		}
-		texts.push_back(Text(std::to_string(idx_car+ 1)+  " - "+ cars[idx_car]->_name, glm::vec2(-9.0f, 7.0f- float(idx_car)* 0.5f), font_scale, color));
+		texts.push_back(Text(std::to_string(idx_car+ 1)+  " - "+ cars[idx_car]->_name, glm::vec2(-9.0f, 7.0f- float(idx_car)* 0.5f), 0.007f, color));
 	}
 
-	if (hero->_drift) {
+	/*if (hero->_drift) {
 		texts.push_back(Text("DRIFT !", glm::vec2(0.0f, 0.0f), 0.02, glm::vec4(1.0, 1.0, 0.0, 0.1)));
-	}
+	}*/
 
 	_font->set_text(texts);
 	_font->draw();
@@ -479,7 +495,7 @@ void Racing::update_texture() {
 
 	DrawContext * context= _contexts["texture"];
 	context->_n_pts= n_pts_per_obj* (_track->_floating_objects.size()+ _track->_grid->_objects.size());
-	context->_n_attrs_per_pts= 5;
+	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
@@ -493,21 +509,21 @@ void Racing::update_texture() {
 		}
 		
 		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
-		number positions[n_pts_per_obj* 4]= {
-			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, 0.0, 1.0,
-			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, 1.0, 1.0,
-			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, 1.0, 0.0,
+		number positions[n_pts_per_obj* 5]= {
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, 0.0, 1.0,
+			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, obj->_z, 1.0, 1.0,
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0,
 
-			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, 0.0, 1.0,
-			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, 1.0, 0.0,
-			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, 0.0, 0.0
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, 0.0, 1.0,
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0,
+			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, 0.0, 0.0
 		};
 		
 		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
-			for (unsigned int i=0; i<4; ++i) {
-				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[4* idx_pt+ i]);
+			for (unsigned int i=0; i<5; ++i) {
+				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 4]= float(_model_tex_idxs[basename(obj->_model->_json_path)]);
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(_model_tex_idxs[basename(obj->_model->_json_path)]);
 		}
 	}
 
@@ -517,8 +533,8 @@ void Racing::update_texture() {
 }
 
 
-void Racing::anim() {
-	_track->anim(ANIM_DT, _input_state);
+void Racing::anim(std::chrono::system_clock::time_point t) {
+	_track->anim(t, _input_state);
 
 	update_bbox();
 	update_footprint();

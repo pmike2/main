@@ -13,7 +13,9 @@
 // OBSTACLE_SETTING == tuile décor ; OBSTACLE_FLOATING == obstacle flottant
 // HERO_CAR == voiture héros ; ENNEMY_CAR == toutes les autres voitures
 // START == ligne de départ (et d'arrivée) ; CHECKPOINT == chekpt
-enum ObjectType {OBSTACLE_SETTING, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, START, CHECKPOINT};
+// MATERIAL == matériau sol
+// TIRE_TRACKS == traces de pneu
+enum ObjectType {OBSTACLE_SETTING, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, START, CHECKPOINT, MATERIAL, TIRE_TRACKS};
 
 // !!!
 // obligé de * inertie par un facteur sinon tout pète lors des collisions
@@ -76,6 +78,9 @@ public:
 	pt_type _scale; // grossissement
 	number _mass; // == model->_mass* _scale.x* _scale.y
 	number _inertia; // inertie
+
+	bool _delete; // doit-il être supprimé
+	number _z;
 };
 
 

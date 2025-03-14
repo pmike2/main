@@ -1,11 +1,11 @@
 {
 	"type" : "obstacle_floating",
 	"fixed" : false,
-	"mass" : 10.0,
+	"mass" : 100.0,
 	"footprint" : [
 		[-0.39, -0.44], [0.38, -0.44], [-0.04, 0.44], [-0.25, 0.3]
 	],
-	"linear_friction" : 0.4,
-	"angular_friction" : 0.4,
-	"restitution" : 0.5
+	"linear_friction" : 2.0,
+	"angular_friction" : 1.0,
+	"restitution" : 0.8
 }

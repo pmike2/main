@@ -61,12 +61,14 @@ Car::Car() {
 
 
 Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) : 
-	StaticObject(model, position, alpha, scale), _next_checkpoint(NULL), _n_laps(0)
+	StaticObject(model, position, alpha, scale), _next_checkpoint(NULL), _n_laps(0), _friction_material(1.0)
 {
 	reinit(position, alpha, scale);
 
 	// TODO : mettre des noms plus sympas
 	_name= "Car "+ std::to_string(rand_int(1, 100));
+
+	_current_tracks= "tracks";
 }
 
 
@@ -270,7 +272,7 @@ void Car::anim(number anim_dt) {
 	// calcul force appliquée à l'avant
 	_force_fwd= pt_type(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel); // accélération dans la direction du volant
-	_force_fwd-= model->_forward_static_friction* scal(_forward, _velocity)* _forward; // friction statique avant
+	_force_fwd-= model->_forward_static_friction* _friction_material* scal(_forward, _velocity)* _forward; // friction statique avant
 
 	// calcul force appliquée à l'arrière
 	_force_bwd= pt_type(0.0);

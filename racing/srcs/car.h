@@ -68,6 +68,12 @@ public:
 	CheckPoint * _next_checkpoint; // prochain chkpt objectif
 	unsigned int _n_laps; // combien de tours déjà faits
 	std::string _name; // nom du véhicule pour affichage classement
+
+	number _friction_material; // facteur multiplicatif de friction lié au sol; varie si on est sur une flaque par ex
+
+	std::chrono::system_clock::time_point _last_drift_t;
+	std::string _current_tracks;
+	std::chrono::system_clock::time_point _last_track_t;
 };
 
 #endif

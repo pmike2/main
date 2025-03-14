@@ -31,9 +31,6 @@ enum cam_mode {FIXED, TRANSLATE, TRANSLATE_AND_ROTATE};
 const float Z_NEAR= 0.0f;
 const float Z_FAR= 1000.0f;
 
-// dt animation
-const number ANIM_DT= 0.05;
-
 // à quelle vitesse la caméra s'ajuste-t'elle au mouvement du héros
 const number CAM_INC= 0.1;
 const number CAM_INC_ALPHA= 0.01;
@@ -56,9 +53,10 @@ const glm::vec4 FORWARD_ARROW_COLOR(1.0, 0.5, 1.0, INFO_ALPHA);
 const glm::vec4 RIGHT_ARROW_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
 const glm::vec4 BBOX_COLOR(1.0, 0.0, 0.0, 0.5);
 const glm::vec4 FOOTPRINT_COLOR(0.0, 1.0, 0.0, 0.5);
-const glm::vec4 NLAPS_COLOR(0.0, 1.0, 0.0, 0.5);
+const glm::vec4 NLAPS_COLOR(0.0, 1.0, 0.0, 1.0);
+const glm::vec4 NLAPS_LAST_COLOR(1.0, 0.0, 0.0, 1.0);
 const glm::vec4 HERO_COLOR(1.0, 1.0, 0.0, 1.0);
-const glm::vec4 ENNEMY_COLOR(0.0, 1.0, 1.0, 1.0);
+const glm::vec4 ENNEMY_COLOR(0.5, 0.5, 0.6, 1.0);
 
 /*
 	Classe principale de course de voiture 2D
@@ -89,7 +87,7 @@ public:
 	void update_texture();
 
 	// animation
-	void anim();
+	void anim(std::chrono::system_clock::time_point t);
 	void camera();
 
 	// input
