@@ -140,7 +140,7 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	GLuint prog_simple= create_prog("../shaders/vertexshader_simple_editor.txt", "../shaders/fragmentshader_simple.txt");
+	GLuint prog_simple= create_prog("../shaders/vertexshader_simple.txt", "../shaders/fragmentshader_simple.txt");
 	GLuint prog_texture= create_prog("../shaders/vertexshader_texture.txt", "../shaders/fragmentshader_texture.txt");
 	GLuint prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 

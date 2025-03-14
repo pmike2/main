@@ -28,10 +28,10 @@ using json = nlohmann::json;
 //const unsigned int DELTA_ANIM= 1;
 
 // dimensions écran
-const int MAIN_WIN_WIDTH= 1280;
+const int MAIN_WIN_WIDTH= 1400;
 const int MAIN_WIN_HEIGHT= 1024;
 const float MAIN_BCK[]= {0.1f, 0.1f, 0.1f, 1.0f};
-const float GL_WIDTH= 20.0f;
+const float GL_WIDTH= 15.0f;
 const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDTH);
 
 
@@ -54,14 +54,14 @@ std::mutex mut;
 
 
 
-void key_down(SDL_Keycode key) {
+void key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) {
 	input_state->key_down(key);
 
 	if (key== SDLK_ESCAPE) {
 		done= true;
 	}
 
-	if (racing->key_down(key)) {
+	if (racing->key_down(key, t)) {
 		return;
 	}
 }
@@ -151,7 +151,8 @@ void init() {
 	// --------------------------------------------------------------------------
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	input_state= new InputState();
-	racing= new Racing(prog_simple, prog_texture, prog_font, screengl, input_state);
+	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+	racing= new Racing(prog_simple, prog_texture, prog_font, screengl, input_state, now);
 
 	if (SDL_NumJoysticks()> 0){
 		SDL_Joystick * joy= SDL_JoystickOpen(0);
@@ -271,7 +272,7 @@ void main_loop() {
 					// event.key.repeat== 0 correspond au 1er appui de la touche; si on ne fait pas ca key_down est déclenché plein
 					// de fois, tant que la touche est enfoncée
 					if (event.key.repeat== 0) {
-						key_down(event.key.keysym.sym);
+						key_down(event.key.keysym.sym, now);
 					}
 					break;
 					

@@ -24,7 +24,7 @@ Racing::Racing() {
 }
 
 
-Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, InputState * input_state) :
+Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t) :
 	_draw_bbox(false), _draw_force(false), _draw_texture(true), _show_debug_info(false), _show_info(true),
 	_cam_mode(TRANSLATE), _screengl(screengl), _input_state(input_state)
 	{
@@ -256,23 +256,28 @@ void Racing::draw_texture() {
 
 
 void Racing::draw() {
-	if (_track->_mode== TRACK_LIVE) {
-		if (_draw_force) {
-			draw_force();
-		}
-		if (_draw_bbox) {
-			draw_bbox();
-			draw_footprint();
-		}
-		if (_draw_texture) {
-			draw_texture();
-		}
-		if (_show_debug_info) {
-			show_debug_info();
-		}
-		if (_show_info) {
-			show_info();
-		}
+	if (_draw_force) {
+		draw_force();
+	}
+	if (_draw_bbox) {
+		draw_bbox();
+		draw_footprint();
+	}
+	if (_draw_texture) {
+		draw_texture();
+	}
+	if (_show_debug_info) {
+		show_debug_info();
+	}
+	if (_show_info) {
+		show_info();
+	}
+
+	if (_track->_mode== TRACK_PRECOUNT) {
+		std::vector<Text> texts;
+		texts.push_back(Text(std::to_string(_track->_precount), glm::vec2(-1.0f, 0.0f), 0.06f, glm::vec4(1.0f, 1.0f, 0.5f, 1.0f)));
+		_font->set_text(texts);
+		_font->draw();
 	}
 	else if (_track->_mode== TRACK_WON) {
 		std::vector<Text> texts;
@@ -573,7 +578,7 @@ void Racing::camera() {
 }
 
 
-bool Racing::key_down(SDL_Keycode key) {
+bool Racing::key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) {
 	// b : dessiner bbox
 	if (key== SDLK_b) {
 		_draw_bbox= !_draw_bbox;
@@ -593,6 +598,7 @@ bool Racing::key_down(SDL_Keycode key) {
 		return true;
 	}
 
+	// t : dessiner textures
 	else if (key== SDLK_t) {
 		_draw_texture= !_draw_texture;
 		return true;
@@ -609,6 +615,15 @@ bool Racing::key_down(SDL_Keycode key) {
 		else if (_cam_mode== TRANSLATE_AND_ROTATE) {
 			_cam_mode= FIXED;
 		}
+		return true;
+	}
+
+	// espace : reinit
+	else if (key== SDLK_SPACE) {
+		_track->load_json("../data/tracks/track1.json");
+		_track->start(t);
+		Car * hero= _track->get_hero();
+		_com_camera= hero->_com;
 		return true;
 	}
 

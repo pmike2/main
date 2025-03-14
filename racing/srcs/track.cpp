@@ -175,7 +175,7 @@ void StaticObjectGrid::drop_col() {
 
 
 // Track -------------------------------------------------------------------------------------
-Track::Track() : _start(NULL), _n_laps(0), _mode(TRACK_LIVE) {
+Track::Track() : _start(NULL), _n_laps(0), _mode(TRACK_WAITING), _precount(0) {
 	load_models();
 	_grid= new StaticObjectGrid(DEFAULT_CELL_SIZE, VERTICAL_GRID);
 }
@@ -191,7 +191,6 @@ Track::~Track() {
 
 
 void Track::load_models() {
-
 	std::vector<std::string> jsons_floating= list_files("../data/static_objects/floating_objects", "json");
 	for (auto json_path : jsons_floating) {
 		//std::cout << "chgmt floating : " << json_path << "\n";
@@ -281,6 +280,13 @@ void Track::load_json(std::string json_path) {
 			car->_next_checkpoint= _start;
 		}
 	}
+}
+
+
+void Track::start(std::chrono::system_clock::time_point t) {
+	_last_precount_t= t;
+	_mode= TRACK_PRECOUNT;
+	_precount= 3;
 }
 
 
@@ -521,6 +527,17 @@ void Track::checkpoint_ia(Car * car) {
 
 
 void Track::anim(std::chrono::system_clock::time_point t, InputState * input_state) {
+	if (_mode== TRACK_PRECOUNT) {
+		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_precount_t).count();
+		if (dt> 1000) {
+			_precount--;
+			_last_precount_t= t;
+			if (_precount== 0) {
+				_mode= TRACK_LIVE;
+			}
+		}
+	}
+
 	if (_mode!= TRACK_LIVE) {
 		return;
 	}

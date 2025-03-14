@@ -113,6 +113,7 @@ public:
 	bool mouse_wheel(InputState * input_state);
 
 
+	bool _draw_bbox, _draw_texture;
 	Track * _track; // piste à éditer
 	int _row_idx_select, _col_idx_select; // tuile courante sélectionnée
 	StaticObject * _selected_floating_object; // objet flottant courant sélectionné
@@ -125,7 +126,7 @@ public:
 	GLuint * _textures; // texture arrays pour tous les PNGs
 	glm::mat4 _camera2clip, _world2camera; // glm::ortho
 	ScreenGL * _screengl;
-	Font * _font;
+	Font * _font;	
 
 	std::map<std::string, unsigned int> _model_tex_idxs;
 };

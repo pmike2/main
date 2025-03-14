@@ -56,7 +56,7 @@ const glm::vec4 FOOTPRINT_COLOR(0.0, 1.0, 0.0, 0.5);
 const glm::vec4 NLAPS_COLOR(0.0, 1.0, 0.0, 1.0);
 const glm::vec4 NLAPS_LAST_COLOR(1.0, 0.0, 0.0, 1.0);
 const glm::vec4 HERO_COLOR(1.0, 1.0, 0.0, 1.0);
-const glm::vec4 ENNEMY_COLOR(0.5, 0.5, 0.6, 1.0);
+const glm::vec4 ENNEMY_COLOR(0.7, 0.7, 0.8, 1.0);
 
 /*
 	Classe principale de course de voiture 2D
@@ -64,7 +64,7 @@ const glm::vec4 ENNEMY_COLOR(0.5, 0.5, 0.6, 1.0);
 class Racing {
 public:
 	Racing();
-	Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, InputState * input_state);
+	Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t);
 	~Racing();
 
 	// chargement des textures
@@ -91,7 +91,7 @@ public:
 	void camera();
 
 	// input
-	bool key_down(SDL_Keycode key);
+	bool key_down(SDL_Keycode key, std::chrono::system_clock::time_point t);
 
 
 	Track * _track;

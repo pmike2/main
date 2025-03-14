@@ -16,13 +16,13 @@
 // type de grille : verticale, horizontale
 enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
 
-enum TrackMode {TRACK_LIVE, TRACK_WON, TRACK_LOST};
+enum TrackMode {TRACK_WAITING, TRACK_PRECOUNT, TRACK_LIVE, TRACK_WON, TRACK_LOST};
 
 // taille par défaut d'une cellule
 const number DEFAULT_CELL_SIZE= 2.0;
 
 // nombre max de traces de pneus
-const unsigned int N_MAX_TIRE_TRACKS= 300;
+const unsigned int N_MAX_TIRE_TRACKS= 100;
 
 // écart en ms entre 2 créations de trace de pneu
 const unsigned int TIRE_TRACKS_DELTA_T= 20;
@@ -76,6 +76,7 @@ public:
 	~Track();
 	void load_models(); // chgmt des modèles de tuiles, voitures et autres
 	void load_json(std::string json_path); // chgmt json
+	void start(std::chrono::system_clock::time_point t);
 
 	Car * get_hero(); // renvoie le héros
 	std::vector<Car *> get_sorted_cars(); // renvoie la liste classée du 1er au dernier des voitures
@@ -110,6 +111,8 @@ public:
 	TrackMode _mode;
 
 	//std::chrono::system_clock::time_point _last_anim_t;
+	std::chrono::system_clock::time_point _last_precount_t;
+	unsigned int _precount;
 };
 
 

@@ -349,6 +349,7 @@ TrackEditor::TrackEditor() {
 
 
 TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, number cell_size) :
+	_draw_bbox(false), _draw_texture(true),
 	_row_idx_select(0), _col_idx_select(0), _screengl(screengl), _translation(pt_type(0.0)), _scale(1.0), _last_checkpoint(NULL),
 	_selected_floating_object(NULL)
 {
@@ -386,7 +387,7 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 
 	_contexts["texture"]= new DrawContext(prog_texture, _buffers[5],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
-		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z", "texture_array"});
+		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
 	_track= new Track();
 	_track->set_all("full", TRACK_DEFAULT_SIZE, TRACK_DEFAULT_SIZE);
@@ -659,15 +660,15 @@ void TrackEditor::draw_texture() {
 	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -25.0f);
+	//glUniform1f(context->_locs_uniform["z"], -25.0f);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
 	}
 
-	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
-	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
-	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 
@@ -682,12 +683,16 @@ void TrackEditor::draw_texture() {
 
 
 void TrackEditor::draw() {
-	draw_floating_objects_footprint();
-	draw_floating_objects_bbox();
-	draw_tiles();
+	if (_draw_bbox) {
+		draw_floating_objects_footprint();
+		draw_floating_objects_bbox();
+		draw_tiles();
+	}
 	draw_selection();
 	draw_grid();
-	draw_texture();
+	if (_draw_texture) {
+		draw_texture();
+	}
 }
 
 
@@ -874,7 +879,7 @@ void TrackEditor::update_texture() {
 
 	DrawContext * context= _contexts["texture"];
 	context->_n_pts= n_pts_per_obj* (_track->_floating_objects.size()+ _track->_grid->_objects.size());
-	context->_n_attrs_per_pts= 5;
+	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
@@ -888,21 +893,21 @@ void TrackEditor::update_texture() {
 		}
 		
 		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
-		number positions[n_pts_per_obj* 4]= {
-			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, 0.0, 1.0,
-			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, 1.0, 1.0,
-			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, 1.0, 0.0,
+		number positions[n_pts_per_obj* 5]= {
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, 0.0, 1.0,
+			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, obj->_z, 1.0, 1.0,
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0,
 
-			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, 0.0, 1.0,
-			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, 1.0, 0.0,
-			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, 0.0, 0.0
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, 0.0, 1.0,
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0,
+			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, 0.0, 0.0
 		};
 		
 		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
-			for (unsigned int i=0; i<4; ++i) {
-				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[4* idx_pt+ i]);
+			for (unsigned int i=0; i<5; ++i) {
+				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 4]= float(_model_tex_idxs[basename(obj->_model->_json_path)]);
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(_model_tex_idxs[basename(obj->_model->_json_path)]);
 		}
 	}
 
@@ -1001,6 +1006,12 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 	else if (key== SDLK_s) {
 		save_json("../data/tracks/track1.json");
 		return true;
+	}
+	else if (key== SDLK_b) {
+		_draw_bbox= !_draw_bbox;
+	}
+	else if (key== SDLK_t) {
+		_draw_texture= !_draw_texture;
 	}
 	return false;
 }
