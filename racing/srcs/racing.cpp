@@ -269,49 +269,56 @@ void Racing::draw() {
 	if (_show_debug_info) {
 		show_debug_info();
 	}
-	if (_show_info) {
-		show_info();
+	
+	if (_track->_mode== TRACK_LIVE) {
+		if (_show_info) {
+			show_live_info();
+		}
 	}
-
-	if (_track->_mode== TRACK_PRECOUNT) {
-		std::vector<Text> texts;
-		texts.push_back(Text(std::to_string(_track->_precount), glm::vec2(-1.0f, 0.0f), 0.06f, glm::vec4(1.0f, 1.0f, 0.5f, 1.0f)));
-		_font->set_text(texts);
-		_font->draw();
+	else if (_track->_mode== TRACK_PRECOUNT) {
+		show_precount_info();
 	}
-	else if (_track->_mode== TRACK_WON) {
-		std::vector<Text> texts;
-		texts.push_back(Text("YOU WON !", glm::vec2(-4.0f, 0.0f), 0.03f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)));
-		_font->set_text(texts);
-		_font->draw();
-	}
-	else if (_track->_mode== TRACK_LOST) {
-		std::vector<Text> texts;
-		texts.push_back(Text("YOU LOST !", glm::vec2(-4.0f, 0.0f), 0.03f, glm::vec4(1.0f, 0.0f, 0.0f, 1.0f)));
-		_font->set_text(texts);
-		_font->draw();
+	else if (_track->_mode== TRACK_FINISHED) {
+		show_finished_info();
 	}
 }
 
 
-void Racing::show_info() {
+void Racing::show_precount_info() {
+	std::vector<Text> texts;
+	texts.push_back(Text(std::to_string(_track->_precount), glm::vec2(-1.0f, 0.0f), 0.06f, glm::vec4(1.0f, 1.0f, 0.5f, 1.0f)));
+	_font->set_text(texts);
+	_font->draw();
+}
+
+
+void Racing::show_finished_info() {
 	Car * hero= _track->get_hero();
-	std::vector<Car *> cars= _track->get_sorted_cars();
+	std::vector<Text> texts;
+	texts.push_back(Text(std::to_string(hero->_rank) + " / "+ std::to_string(_track->_sorted_cars.size()), glm::vec2(-4.0f, 0.0f), 0.03f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)));
+	_font->set_text(texts);
+	_font->draw();
+}
+
+
+void Racing::show_live_info() {
+	Car * hero= _track->get_hero();
 
 	std::vector<Text> texts;
 
-	glm::vec4 color(NLAPS_COLOR);
+	glm::vec4 nlaps_color(NLAPS_COLOR);
 	if (hero->_n_laps== _track->_n_laps) {
-		color= NLAPS_LAST_COLOR;
+		nlaps_color= NLAPS_LAST_COLOR;
 	}
-	texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(6.0f, 7.0f), 0.015f, NLAPS_COLOR));
+	texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(4.0f, 4.0f), 0.015f, nlaps_color));
 
-	for (unsigned int idx_car=0; idx_car<cars.size(); ++idx_car) {
+	for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
+		Car * car= _track->_sorted_cars[idx_car];
 		glm::vec4 color(ENNEMY_COLOR);
-		if (cars[idx_car]== hero) {
+		if (car== hero) {
 			color= HERO_COLOR;
 		}
-		texts.push_back(Text(std::to_string(idx_car+ 1)+  " - "+ cars[idx_car]->_name, glm::vec2(-9.0f, 7.0f- float(idx_car)* 0.5f), 0.007f, color));
+		texts.push_back(Text(std::to_string(idx_car+ 1)+  " - "+ car->_name, glm::vec2(-7.0f, 5.0f- float(idx_car)* 0.5f), 0.007f, color));
 	}
 
 	/*if (hero->_drift) {
@@ -506,11 +513,18 @@ void Racing::update_texture() {
 
 	for (unsigned int idx_obj=0; idx_obj<_track->_floating_objects.size()+ _track->_grid->_objects.size(); ++idx_obj) {
 		StaticObject * obj;
-		if (idx_obj< _track->_floating_objects.size()) {
+		
+		/*if (idx_obj< _track->_floating_objects.size()) {
 			obj= _track->_floating_objects[idx_obj];
 		}
 		else {
 			obj= _track->_grid->_objects[idx_obj- _track->_floating_objects.size()];
+		}*/
+		if (idx_obj< _track->_grid->_objects.size()) {
+			obj= _track->_grid->_objects[idx_obj];
+		}
+		else {
+			obj= _track->_floating_objects[idx_obj- _track->_grid->_objects.size()];
 		}
 		
 		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures

@@ -16,7 +16,7 @@
 // type de grille : verticale, horizontale
 enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
 
-enum TrackMode {TRACK_WAITING, TRACK_PRECOUNT, TRACK_LIVE, TRACK_WON, TRACK_LOST};
+enum TrackMode {TRACK_WAITING, TRACK_PRECOUNT, TRACK_LIVE, TRACK_FINISHED};
 
 // taille par défaut d'une cellule
 const number DEFAULT_CELL_SIZE= 2.0;
@@ -79,7 +79,7 @@ public:
 	void start(std::chrono::system_clock::time_point t);
 
 	Car * get_hero(); // renvoie le héros
-	std::vector<Car *> get_sorted_cars(); // renvoie la liste classée du 1er au dernier des voitures
+	void sort_cars(); // tri des voitures par position
 	unsigned int get_checkpoint_index(CheckPoint * checkpoint); // position du chkpt par rapport au start
 	void all_collision(); // gestion des collisions
 	void materials(std::chrono::system_clock::time_point t);
@@ -113,6 +113,8 @@ public:
 	//std::chrono::system_clock::time_point _last_anim_t;
 	std::chrono::system_clock::time_point _last_precount_t;
 	unsigned int _precount;
+
+	std::vector<Car *> _sorted_cars;
 };
 
 

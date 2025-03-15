@@ -41,6 +41,12 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		return;
 	}
 
+	// on veut éviter le cas où c'est un angle du décor qui pénètre la voiture car sinon réactions bizarres
+	// on attend du coup la situation inverse où un angle de la voiture pénètre le décor, ce qui fera plus naturel
+	if (is_pt_in_poly1 && obj1->_model->_type== OBSTACLE_SETTING) {
+		return;
+	}
+
 	// on se place comme dans le cas https://en.wikipedia.org/wiki/Collision_response
 	// où la normale est celle de body1 et le point dans body2
 	if (is_pt_in_poly1) {
@@ -114,11 +120,15 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 	if (!obj1->_model->_fixed) {
 		obj1->_velocity-= (impulse/ obj1->_mass)* axis;
 		obj1->_angular_velocity-= (impulse/ obj1->_inertia)* cross2d(r1, axis);
+
+		//obj1->_velocity*= 0.9;
 	}
 
 	if (!obj2->_model->_fixed) {
 		obj2->_velocity+= (impulse/ obj2->_mass)* axis;
 		obj2->_angular_velocity+= (impulse/ obj2->_inertia)* cross2d(r2, axis);
+
+		//obj2->_velocity*= 0.9;
 	}
 
 	// peut-être pas nécessaire
@@ -289,13 +299,13 @@ StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number a
 	if (model->_type== OBSTACLE_SETTING) {
 		_z= -100.0f;
 	}
-	else if (model->_type== OBSTACLE_FLOATING || model->_type== START || model->_type== CHECKPOINT || model->_type== MATERIAL) {
+	else if (model->_type== START || model->_type== CHECKPOINT || model->_type== MATERIAL) {
 		_z= -90.0f;
 	}
 	else if (model->_type== TIRE_TRACKS) {
 		_z= -80.0f;
 	}
-	else if (model->_type== HERO_CAR || model->_type== ENNEMY_CAR) {
+	else if (model->_type== OBSTACLE_FLOATING || model->_type== HERO_CAR || model->_type== ENNEMY_CAR) {
 		_z= -70.0f;
 	}
 	else {

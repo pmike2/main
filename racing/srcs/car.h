@@ -74,6 +74,9 @@ public:
 	std::chrono::system_clock::time_point _last_drift_t;
 	std::string _current_tracks;
 	std::chrono::system_clock::time_point _last_track_t;
+
+	unsigned int _rank;
+	bool _finished;
 };
 
 #endif

@@ -280,6 +280,10 @@ void Track::load_json(std::string json_path) {
 			car->_next_checkpoint= _start;
 		}
 	}
+
+	std::sort(_floating_objects.begin(), _floating_objects.end(), [](StaticObject * obj1, StaticObject * obj2) {
+		return obj1->_z< obj2->_z;
+	});
 }
 
 
@@ -300,44 +304,64 @@ Car * Track::get_hero() {
 }
 
 
-std::vector<Car *> Track::get_sorted_cars() {
-	std::vector<Car *> sorted_cars;
+void Track::sort_cars() {
+	_sorted_cars.clear();
+
 	for (auto obj : _floating_objects) {
 		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
-			sorted_cars.push_back((Car *)(obj));
+			_sorted_cars.push_back((Car *)(obj));
 		}
 	}
 	
-	std::sort(sorted_cars.begin(), sorted_cars.end(), [this](Car * a, Car * b) {
+	std::sort(_sorted_cars.begin(), _sorted_cars.end(), [this](Car * a, Car * b) {
 		if (a->_n_laps< b->_n_laps) {
 			return 0;
 		}
 		else if (a->_n_laps> b->_n_laps) {
 			return 1;
 		}
-		else {
-			unsigned int idx_a= get_checkpoint_index(a->_next_checkpoint->_previous);
-			unsigned int idx_b= get_checkpoint_index(b->_next_checkpoint->_previous);
-			if (idx_a< idx_b) {
-				return 0;
-			}
-			else if (idx_a> idx_b) {
+
+		if (a->_finished && !b->_finished) {
+			return 0;
+		}
+		else if (!a->_finished && b->_finished) {
+			return 1;
+		}
+		else if (a->_finished && b->_finished) {
+			if (a->_rank< b->_rank) {
 				return 1;
 			}
 			else {
-				number dist_a= (a->_com.x- a->_next_checkpoint->_com.x)* (a->_com.x- a->_next_checkpoint->_com.x)+ (a->_com.y- a->_next_checkpoint->_com.y)* (a->_com.y- a->_next_checkpoint->_com.y);
-				number dist_b= (b->_com.x- b->_next_checkpoint->_com.x)* (b->_com.x- b->_next_checkpoint->_com.x)+ (b->_com.y- b->_next_checkpoint->_com.y)* (b->_com.y- b->_next_checkpoint->_com.y);
-				if (dist_a> dist_b) {
-					return 0;
-				}
-				else {
-					return 1;
-				}
+				return 0;
+			}
+		}
+
+		unsigned int idx_a= get_checkpoint_index(a->_next_checkpoint->_previous);
+		unsigned int idx_b= get_checkpoint_index(b->_next_checkpoint->_previous);
+		if (idx_a< idx_b) {
+			return 0;
+		}
+		else if (idx_a> idx_b) {
+			return 1;
+		}
+		else {
+			number dist_a= (a->_com.x- a->_next_checkpoint->_com.x)* (a->_com.x- a->_next_checkpoint->_com.x)+ (a->_com.y- a->_next_checkpoint->_com.y)* (a->_com.y- a->_next_checkpoint->_com.y);
+			number dist_b= (b->_com.x- b->_next_checkpoint->_com.x)* (b->_com.x- b->_next_checkpoint->_com.x)+ (b->_com.y- b->_next_checkpoint->_com.y)* (b->_com.y- b->_next_checkpoint->_com.y);
+			if (dist_a> dist_b) {
+				return 0;
+			}
+			else {
+				return 1;
 			}
 		}
 	});
-	
-	return sorted_cars;
+
+	for (unsigned int idx_car=0; idx_car<_sorted_cars.size(); ++idx_car) {
+		Car * car= _sorted_cars[idx_car];
+		if (!car->_finished) {
+			car->_rank= idx_car+ 1;
+		}
+	}
 }
 
 
@@ -462,13 +486,9 @@ void Track::checkpoints() {
 			if (car->_next_checkpoint== _start) {
 				car->_n_laps++;
 				if (car->_n_laps== _n_laps+ 1) {
+					car->_finished= true;
 					if (car->_model->_type== HERO_CAR) {
-						//std::cout << "you win\n";
-						_mode= TRACK_WON;
-					}
-					else {
-						//std::cout << "you lose\n";
-						_mode= TRACK_LOST;
+						_mode= TRACK_FINISHED;
 					}
 				}
 			}
@@ -486,7 +506,7 @@ void Track::checkpoint_ia(Car * car) {
 	number sign= 1.0;
 	CarModel * model= car->get_model();
 
-	car->_thrust= 1.0+ 0.9* dist;
+	car->_thrust= 0.5+ 0.5* dist;
 	if (car->_thrust< -1.0* model->_max_brake) {
 		car->_thrust= -1.0* model->_max_brake;
 	}
@@ -538,43 +558,48 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 		}
 	}
 
-	if (_mode!= TRACK_LIVE) {
-		return;
-	}
-	
-	if (input_state->_is_joystick) {
-		get_hero()->preanim_joystick(input_state->_joystick_a, input_state->_joystick_b, input_state->_joystick);
-	}
-	else {
-		get_hero()->preanim_keys(input_state->_keys[SDLK_LEFT], input_state->_keys[SDLK_RIGHT], input_state->_keys[SDLK_DOWN], input_state->_keys[SDLK_UP]);
-	}
+	Car * hero= get_hero();
 
-	/*auto dt_n_ms= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
-	number dt= number(dt_n_ms)/ 1000.0;*/
-
-	number dt= 0.05;
-
-	for (auto obj : _floating_objects) {
-		if (obj->_model->_type== ENNEMY_CAR) {
-			Car * car= (Car *)(obj);
-			//car->random_ia();
-			checkpoint_ia(car);
-		}
-
-		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
-			Car * car= (Car *)(obj);
-			car->anim(dt);
+	if (_mode== TRACK_LIVE) {
+		if (input_state->_is_joystick) {
+			hero->preanim_joystick(input_state->_joystick_a, input_state->_joystick_b, input_state->_joystick);
 		}
 		else {
-			obj->anim(dt);
+			hero->preanim_keys(input_state->_keys[SDLK_LEFT], input_state->_keys[SDLK_RIGHT], input_state->_keys[SDLK_DOWN], input_state->_keys[SDLK_UP]);
 		}
 	}
-	all_collision();
-	checkpoints();
-	materials(t);
-	tire_tracks(t);
+	else if (_mode== TRACK_FINISHED) {
+		hero->_thrust= hero->_wheel= 0.0;
+	}
 
-	//_last_anim_t= t;
+	// finalement un dt fixe fait plus propre
+	/*auto dt_n_ms= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
+	number dt= number(dt_n_ms)/ 1000.0;
+	_last_anim_t= t;*/
+	number dt= 0.05;
+
+	if (_mode== TRACK_LIVE || _mode== TRACK_FINISHED) {
+		for (auto obj : _floating_objects) {
+			if (obj->_model->_type== ENNEMY_CAR) {
+				Car * car= (Car *)(obj);
+				//car->random_ia();
+				checkpoint_ia(car);
+			}
+
+			if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
+				Car * car= (Car *)(obj);
+				car->anim(dt);
+			}
+			else {
+				obj->anim(dt);
+			}
+		}
+		all_collision();
+		checkpoints();
+		materials(t);
+		tire_tracks(t);
+		sort_cars();
+	}
 }
 
 

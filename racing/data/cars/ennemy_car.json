@@ -40,5 +40,5 @@
     "type": "ennemy_car",
     "wheel_decrement": 0.5,
     "wheel_increment": 0.03,
-    "restitution": 0.2
+    "restitution": 0.1
 }

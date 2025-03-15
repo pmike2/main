@@ -10,6 +10,7 @@ from pprint import pprint as pp
 
 
 EPS= 1e-12
+TILE_RESTITUTION= 0.02
 
 
 def rotate_pt(pt):
@@ -60,7 +61,7 @@ def gen_json(json_path, pts):
 	data= {
 		"type": "obstacle_setting",
 		"footprint": pts,
-		"restitution": 0.2
+		"restitution": TILE_RESTITUTION
 	}
 	with open(json_path, "w") as f:
 		json.dump(data, f, indent=4)

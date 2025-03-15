@@ -77,7 +77,9 @@ public:
 	void draw_texture();
 	void draw();
 
-	void show_info();
+	void show_precount_info();
+	void show_finished_info();
+	void show_live_info();
 	void show_debug_info();
 
 	// maj des buffers
