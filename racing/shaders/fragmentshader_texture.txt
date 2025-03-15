@@ -2,6 +2,7 @@
 
 
 uniform sampler2DArray texture_array;
+uniform float gray_blend;
 
 in vec2 tex_coord;
 in float current_layer;
@@ -15,5 +16,5 @@ void main() {
 		discard;
 	}
 	
-	color= current_color;
+	color= mix(current_color, vec4(0.2, 0.2, 0.2, 1.0), gray_blend);
 }

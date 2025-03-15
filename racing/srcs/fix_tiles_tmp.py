@@ -13,7 +13,7 @@ def fix(json_path):
 	with open(json_path) as f:
 		data= json.load(f)
 
-		data["restitution"]= 0.02
+		data["restitution"]= 0.2
 
 		with open(json_path, "w") as f:
 			json.dump(data, f, indent=4)

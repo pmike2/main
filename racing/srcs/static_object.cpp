@@ -11,141 +11,13 @@
 using json = nlohmann::json;
 
 
-void collision(StaticObject * obj1, StaticObject * obj2) {
-	if (obj1->_model->_fixed && obj2->_model->_fixed) {
-		return;
-	}
-
-	if (!obj1->_model->_solid || !obj2->_model->_solid) {
-		return;
-	}
-
-	// 1er test - cher sur les AABB
-	if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
-		return;
-	}
-
-	// axis est le vecteur le long duquel les 2 objets s'intersectent le plus
-	// overlap est la taille de l'intersection le long de cet axe
-	// idx_pt est l'indice du pt de l'objet qui pénètre l'autre
-	// is_pt_in_poly1 indique si c'est poly1 qui est pénétrant ou pénétré
-	// is_inter vaudra true s'il y a intersection
-	pt_type axis(0.0, 0.0);
-	number overlap= 0.0;
-	unsigned int idx_pt= 0;
-	bool is_pt_in_poly1= false;
-	bool is_inter= poly_intersects_poly(obj1->_footprint, obj2->_footprint, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
-
-	// pas d'intersection : on sort
-	if (!is_inter) {
-		return;
-	}
-
-	// on veut éviter le cas où c'est un angle du décor qui pénètre la voiture car sinon réactions bizarres
-	// on attend du coup la situation inverse où un angle de la voiture pénètre le décor, ce qui fera plus naturel
-	if (is_pt_in_poly1 && obj1->_model->_type== OBSTACLE_SETTING) {
-		return;
-	}
-
-	// on se place comme dans le cas https://en.wikipedia.org/wiki/Collision_response
-	// où la normale est celle de body1 et le point dans body2
-	if (is_pt_in_poly1) {
-		StaticObject * obj_tmp= obj1;
-		obj1= obj2;
-		obj2= obj_tmp;
-	}
-
-	// on écarte un peu plus que de 0.5 de chaque coté ou de 1.0 dans le cas fixed
-	// est-ce utile ?
-	if (obj1->_model->_fixed) {
-		obj2->_com+= overlap* 1.05* axis;
-	}
-	else if (obj2->_model->_fixed) {
-		obj1->_com-= overlap* 1.05* axis;
-	}
-	else {
-		obj1->_com-= overlap* 0.55* axis;
-		obj2->_com+= overlap* 0.55* axis;
-	}
-
-	// voir doc/collision.png récupéré de https://en.wikipedia.org/wiki/Collision_response
-	pt_type r1, r2;
-	r1= obj2->_footprint->_pts[idx_pt]- obj1->_com;
-	r2= obj2->_footprint->_pts[idx_pt]- obj2->_com;
-	
-	pt_type r1_norm= normalized(r1);
-	pt_type r1_norm_perp(-1.0* r1_norm.y, r1_norm.x);
-	pt_type contact_pt_velocity1= obj1->_velocity+ obj1->_angular_velocity* r1_norm_perp;
-
-	pt_type r2_norm= normalized(r2);
-	pt_type r2_norm_perp(-1.0* r2_norm.y, r2_norm.x);
-	pt_type contact_pt_velocity2= obj2->_velocity+ obj2->_angular_velocity* r2_norm_perp;
-
-	pt_type vr= contact_pt_velocity2- contact_pt_velocity1;
-
-	// sera la norme de la nouvelle vitesse des objets
-	number impulse;
-
-	// https://en.wikipedia.org/wiki/Coefficient_of_restitution
-	// restitution doit etre entre 0 et 1 ; proche de 0 -> pas de rebond ; proche de 1 -> beaucoup de rebond
-	// en pratique j'ai mis des restitution > 1 pour plus de fun
-	// on prend la moyenne
-	number restitution= 0.5* (obj1->_model->_restitution+ obj2->_model->_restitution);
-	
-	/*number restitution= 0.1;
-	obj1->_mass= 1.0;
-	obj2->_mass= 1.0;
-	obj1->_inertia= 1.0;
-	obj2->_inertia= 1.0;*/
-	
-	// dans le cas où 1 des 2 objets est fixe on considère que sa masse et son inertie sont infinies
-	if (obj1->_model->_fixed) {
-		pt_type v= (cross2d(r2, axis)/ obj2->_inertia)* r2;
-		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj2->_mass+ dot(v, axis));
-	}
-	else if (obj2->_model->_fixed) {
-		pt_type v= (cross2d(r1, axis)/ obj1->_inertia)* r1;
-		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ dot(v, axis));
-	}
-	else {
-		pt_type v= (cross2d(r1, axis)/ obj1->_inertia)* r1+ (cross2d(r2, axis)/ obj2->_inertia)* r2;
-		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ 1.0/ obj2->_mass+ dot(v, axis));
-	}
-
-	if (abs(impulse)> 10.0) {
-		std::cout << "impulse=" << impulse << "\n";
-	}
-
-	// on modifie directement la vitesse et la vitesse angulaire
-	if (!obj1->_model->_fixed) {
-		obj1->_velocity-= (impulse/ obj1->_mass)* axis;
-		obj1->_angular_velocity-= (impulse/ obj1->_inertia)* cross2d(r1, axis);
-
-		//obj1->_velocity*= 0.9;
-	}
-
-	if (!obj2->_model->_fixed) {
-		obj2->_velocity+= (impulse/ obj2->_mass)* axis;
-		obj2->_angular_velocity+= (impulse/ obj2->_inertia)* cross2d(r2, axis);
-
-		//obj2->_velocity*= 0.9;
-	}
-
-	// peut-être pas nécessaire
-	obj1->_acceleration= pt_type(0.0);
-	obj1->_angular_acceleration= 0.0;
-	obj2->_acceleration= pt_type(0.0);
-	obj2->_angular_acceleration= 0.0;
-}
-
-
 // StaticObjectModel --------------------------------------------------------------
 StaticObjectModel::StaticObjectModel() {
 
 }
 
 
-StaticObjectModel::StaticObjectModel(std::string json_path) {
+StaticObjectModel::StaticObjectModel(std::string json_path) : _texture_idx(0) {
 	load(json_path);
 }
 
@@ -157,6 +29,7 @@ StaticObjectModel::~StaticObjectModel() {
 
 void StaticObjectModel::load(std::string json_path) {
 	_json_path= json_path;
+	_name= basename(_json_path);
 
 	std::ifstream ifs(_json_path);
 	json js= json::parse(ifs);
@@ -290,7 +163,7 @@ StaticObject::StaticObject() {
 }
 
 
-StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) : _delete(false) {
+StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) {
 	_bbox= new BBox_2D(pt_type(0.0), pt_type(0.0));
 	_footprint= new Polygon2D();
 	set_model(model);
@@ -431,5 +304,168 @@ CheckPoint::CheckPoint(StaticObjectModel * model, pt_type position, number alpha
 
 CheckPoint::~CheckPoint() {
 
+}
+
+
+// StaticObjectGrid ------------------------------------------------------------
+StaticObjectGrid::StaticObjectGrid() : _width(0), _height(0), _type(VERTICAL_GRID) {
+
+}
+
+
+StaticObjectGrid::StaticObjectGrid(number cell_size, GridType type) : _width(0), _height(0), _cell_size(cell_size), _type(type) {
+
+}
+
+
+StaticObjectGrid::~StaticObjectGrid() {
+	clear();
+}
+
+
+void StaticObjectGrid::clear() {
+	for (auto obj : _objects) {
+		delete obj;
+	}
+	_objects.clear();
+
+	_width= _height= 0;
+}
+
+
+unsigned int StaticObjectGrid::coord2idx(unsigned int col_idx, unsigned int row_idx) {
+	if (_type== VERTICAL_GRID) {
+		return col_idx+ row_idx* _width;
+	}
+	else {
+		return row_idx+ col_idx* _height;
+	}
+}
+
+
+std::pair<unsigned int, unsigned int> StaticObjectGrid::idx2coord(unsigned int idx) {
+	if (_type== VERTICAL_GRID) {
+		return std::make_pair(idx % _width, idx / _width);
+	}
+	else {
+		return std::make_pair(idx / _height, idx % _height);
+	}
+}
+
+
+std::pair<int, int> StaticObjectGrid::number2coord(pt_type pos) {
+	int col_idx= int(floor(pos.x/ _cell_size));
+	int row_idx= int(floor(pos.y/ _cell_size));
+	if (col_idx>=0 && col_idx<_width && row_idx>=0 && row_idx< _height) {
+		return std::make_pair(col_idx, row_idx);
+	}
+	return std::make_pair(-1, -1);
+}
+
+
+// renvoie le centre de la cellule
+pt_type StaticObjectGrid::coord2number(unsigned int col_idx, unsigned int row_idx) {
+	return pt_type((number(col_idx)+ 0.5)* _cell_size, (number(row_idx)+ 0.5)* _cell_size);
+}
+
+
+pt_type StaticObjectGrid::idx2number(unsigned int idx) {
+	std::pair<int, int> coord= idx2coord(idx);
+	return coord2number(coord.first, coord.second);
+}
+
+
+StaticObject * StaticObjectGrid::get_tile(unsigned int col_idx, unsigned int row_idx) {
+	if (row_idx> _height- 1) {
+		std::cerr << "Track::get_tile : row_idx=" << row_idx << " >= _height=" << _height << "\n";
+		return NULL;
+	}
+	if (col_idx> _width- 1) {
+		std::cerr << "Track::get_tile : col_idx=" << col_idx << " >= _width=" << _width << "\n";
+		return NULL;
+	}
+	return _objects[coord2idx(col_idx, row_idx)];
+}
+
+
+void StaticObjectGrid::push_tile(StaticObjectModel * model) {
+	unsigned int new_size= _objects.size()+ 1;
+	if (_type== VERTICAL_GRID) {
+		_height= new_size/ _width;
+		if (new_size % _width!= 0) {
+			_height++;
+		}
+	}
+	else if (_type== HORIZONTAL_GRID) {
+		_width= new_size/ _height;
+		if (new_size % _height!= 0) {
+			_width++;
+		}
+	}
+	_objects.push_back(new StaticObject(model, idx2number(_objects.size()), 0.0, pt_type(_cell_size)));
+}
+
+
+void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx) {
+	StaticObject * object= get_tile(col_idx, row_idx);
+	object->set_model(model);
+	//std::cout << "in grid : " << *model << "\n";
+	object->reinit(coord2number(col_idx, row_idx), 0.0, pt_type(_cell_size));
+}
+
+
+void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int idx) {
+	std::pair<unsigned int, unsigned int> coord= idx2coord(idx);
+	set_tile(model, coord.first, coord.second);
+}
+
+
+void StaticObjectGrid::set_all(StaticObjectModel * model, unsigned int width, unsigned int height) {
+	clear();
+	_width= width;
+	_height= height;
+	for (unsigned int row_idx=0; row_idx<height; ++row_idx) {
+		for (unsigned int col_idx=0; col_idx<width; ++col_idx) {
+			_objects.push_back(new StaticObject(model, coord2number(col_idx, row_idx), 0.0, pt_type(_cell_size)));
+		}
+	}
+}
+
+
+void StaticObjectGrid::add_row(StaticObjectModel * model) {
+	for (unsigned int col_idx=0; col_idx<_width; ++col_idx) {
+		StaticObject * obj= new StaticObject(model, coord2number(col_idx, _height), 0.0, pt_type(_cell_size));
+		_objects.push_back(obj);
+	}
+	_height++;
+}
+
+
+void StaticObjectGrid::add_col(StaticObjectModel * model) {
+	for (int row_idx=_height- 1; row_idx>=0; --row_idx) {
+		StaticObject * obj= new StaticObject(model, coord2number(_width, row_idx), 0.0, pt_type(_cell_size));
+		_objects.insert(_objects.begin()+ row_idx* _width+ _width, obj);
+	}
+	_width++;
+}
+
+
+void StaticObjectGrid::drop_row() {
+	if (_height== 0) {
+		return;
+	}
+	_objects.erase(_objects.begin()+ _width* (_height- 1), _objects.end());
+	_height--;
+}
+
+
+void StaticObjectGrid::drop_col() {
+	if (_width== 0) {
+		return;
+	}
+	for (unsigned int row_idx=_height; row_idx>0; --row_idx) {
+		_objects.erase(_objects.begin()+ row_idx* _width- 1);
+	}
+	_width--;
 }
 

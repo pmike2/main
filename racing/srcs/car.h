@@ -77,6 +77,8 @@ public:
 
 	unsigned int _rank;
 	bool _finished;
+	std::vector<number> _lap_times;
+	std::chrono::system_clock::time_point _last_start_t;
 };
 
 #endif

@@ -10,174 +10,155 @@
 using json = nlohmann::json;
 
 
-
-// StaticObjectGrid ------------------------------------------------------------
-StaticObjectGrid::StaticObjectGrid() : _width(0), _height(0), _type(VERTICAL_GRID) {
-
-}
-
-
-StaticObjectGrid::StaticObjectGrid(number cell_size, GridType type) : _width(0), _height(0), _cell_size(cell_size), _type(type) {
-
-}
-
-
-StaticObjectGrid::~StaticObjectGrid() {
-	clear();
-}
-
-
-void StaticObjectGrid::clear() {
-	for (auto obj : _objects) {
-		delete obj;
-	}
-	_objects.clear();
-
-	_width= _height= 0;
-}
-
-
-unsigned int StaticObjectGrid::coord2idx(unsigned int col_idx, unsigned int row_idx) {
-	if (_type== VERTICAL_GRID) {
-		return col_idx+ row_idx* _width;
-	}
-	else {
-		return row_idx+ col_idx* _height;
-	}
-}
-
-
-std::pair<unsigned int, unsigned int> StaticObjectGrid::idx2coord(unsigned int idx) {
-	if (_type== VERTICAL_GRID) {
-		return std::make_pair(idx % _width, idx / _width);
-	}
-	else {
-		return std::make_pair(idx / _height, idx % _height);
-	}
-}
-
-
-std::pair<int, int> StaticObjectGrid::number2coord(pt_type pos) {
-	int col_idx= int(floor(pos.x/ _cell_size));
-	int row_idx= int(floor(pos.y/ _cell_size));
-	if (col_idx>=0 && col_idx<_width && row_idx>=0 && row_idx< _height) {
-		return std::make_pair(col_idx, row_idx);
-	}
-	return std::make_pair(-1, -1);
-}
-
-
-// renvoie le centre de la cellule
-pt_type StaticObjectGrid::coord2number(unsigned int col_idx, unsigned int row_idx) {
-	return pt_type((number(col_idx)+ 0.5)* _cell_size, (number(row_idx)+ 0.5)* _cell_size);
-}
-
-
-pt_type StaticObjectGrid::idx2number(unsigned int idx) {
-	std::pair<int, int> coord= idx2coord(idx);
-	return coord2number(coord.first, coord.second);
-}
-
-
-StaticObject * StaticObjectGrid::get_tile(unsigned int col_idx, unsigned int row_idx) {
-	if (row_idx> _height- 1) {
-		std::cerr << "Track::get_tile : row_idx=" << row_idx << " >= _height=" << _height << "\n";
-		return NULL;
-	}
-	if (col_idx> _width- 1) {
-		std::cerr << "Track::get_tile : col_idx=" << col_idx << " >= _width=" << _width << "\n";
-		return NULL;
-	}
-	return _objects[coord2idx(col_idx, row_idx)];
-}
-
-
-void StaticObjectGrid::push_tile(StaticObjectModel * model) {
-	unsigned int new_size= _objects.size()+ 1;
-	if (_type== VERTICAL_GRID) {
-		_height= new_size/ _width;
-		if (new_size % _width!= 0) {
-			_height++;
-		}
-	}
-	else if (_type== HORIZONTAL_GRID) {
-		_width= new_size/ _height;
-		if (new_size % _height!= 0) {
-			_width++;
-		}
-	}
-	_objects.push_back(new StaticObject(model, idx2number(_objects.size()), 0.0, pt_type(_cell_size)));
-}
-
-
-void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx) {
-	StaticObject * object= get_tile(col_idx, row_idx);
-	object->set_model(model);
-	//std::cout << "in grid : " << *model << "\n";
-	object->reinit(coord2number(col_idx, row_idx), 0.0, pt_type(_cell_size));
-}
-
-
-void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int idx) {
-	std::pair<unsigned int, unsigned int> coord= idx2coord(idx);
-	set_tile(model, coord.first, coord.second);
-}
-
-
-void StaticObjectGrid::set_all(StaticObjectModel * model, unsigned int width, unsigned int height) {
-	clear();
-	_width= width;
-	_height= height;
-	for (unsigned int row_idx=0; row_idx<height; ++row_idx) {
-		for (unsigned int col_idx=0; col_idx<width; ++col_idx) {
-			_objects.push_back(new StaticObject(model, coord2number(col_idx, row_idx), 0.0, pt_type(_cell_size)));
-		}
-	}
-}
-
-
-void StaticObjectGrid::add_row(StaticObjectModel * model) {
-	for (unsigned int col_idx=0; col_idx<_width; ++col_idx) {
-		StaticObject * obj= new StaticObject(model, coord2number(col_idx, _height), 0.0, pt_type(_cell_size));
-		_objects.push_back(obj);
-	}
-	_height++;
-}
-
-
-void StaticObjectGrid::add_col(StaticObjectModel * model) {
-	for (int row_idx=_height- 1; row_idx>=0; --row_idx) {
-		StaticObject * obj= new StaticObject(model, coord2number(_width, row_idx), 0.0, pt_type(_cell_size));
-		_objects.insert(_objects.begin()+ row_idx* _width+ _width, obj);
-	}
-	_width++;
-}
-
-
-void StaticObjectGrid::drop_row() {
-	if (_height== 0) {
+void collision(StaticObject * obj1, StaticObject * obj2) {
+	if (obj1->_model->_fixed && obj2->_model->_fixed) {
 		return;
 	}
-	_objects.erase(_objects.begin()+ _width* (_height- 1), _objects.end());
-	_height--;
-}
 
-
-void StaticObjectGrid::drop_col() {
-	if (_width== 0) {
+	if (!obj1->_model->_solid || !obj2->_model->_solid) {
 		return;
 	}
-	for (unsigned int row_idx=_height; row_idx>0; --row_idx) {
-		_objects.erase(_objects.begin()+ row_idx* _width- 1);
+
+	// 1er test - cher sur les AABB
+	if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
+		return;
 	}
-	_width--;
+
+	// axis est le vecteur le long duquel les 2 objets s'intersectent le plus
+	// overlap est la taille de l'intersection le long de cet axe
+	// idx_pt est l'indice du pt de l'objet qui pénètre l'autre
+	// is_pt_in_poly1 indique si c'est poly1 qui est pénétrant ou pénétré
+	// is_inter vaudra true s'il y a intersection
+	pt_type axis(0.0, 0.0);
+	number overlap= 0.0;
+	unsigned int idx_pt= 0;
+	bool is_pt_in_poly1= false;
+	bool is_inter= poly_intersects_poly(obj1->_footprint, obj2->_footprint, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
+
+	// pas d'intersection : on sort
+	if (!is_inter) {
+		return;
+	}
+
+	// on veut éviter le cas où c'est un angle du décor qui pénètre la voiture car sinon réactions bizarres
+	// on attend du coup la situation inverse où un angle de la voiture pénètre le décor, ce qui fera plus naturel
+	if (is_pt_in_poly1 && obj1->_model->_type== OBSTACLE_SETTING) {
+		return;
+	}
+
+	// on se place comme dans le cas https://en.wikipedia.org/wiki/Collision_response
+	// où la normale est celle de body1 et le point dans body2
+	if (is_pt_in_poly1) {
+		StaticObject * obj_tmp= obj1;
+		obj1= obj2;
+		obj2= obj_tmp;
+	}
+
+	// on écarte un peu plus que de 0.5 de chaque coté ou de 1.0 dans le cas fixed
+	// est-ce utile ?
+	if (obj1->_model->_fixed) {
+		obj2->_com+= overlap* 1.05* axis;
+	}
+	else if (obj2->_model->_fixed) {
+		obj1->_com-= overlap* 1.05* axis;
+	}
+	else {
+		obj1->_com-= overlap* 0.55* axis;
+		obj2->_com+= overlap* 0.55* axis;
+	}
+
+	// voir doc/collision.png récupéré de https://en.wikipedia.org/wiki/Collision_response
+	pt_type r1, r2;
+	r1= obj2->_footprint->_pts[idx_pt]- obj1->_com;
+	r2= obj2->_footprint->_pts[idx_pt]- obj2->_com;
+	
+	pt_type r1_norm= normalized(r1);
+	pt_type r1_norm_perp(-1.0* r1_norm.y, r1_norm.x);
+	pt_type contact_pt_velocity1= obj1->_velocity+ obj1->_angular_velocity* r1_norm_perp;
+
+	pt_type r2_norm= normalized(r2);
+	pt_type r2_norm_perp(-1.0* r2_norm.y, r2_norm.x);
+	pt_type contact_pt_velocity2= obj2->_velocity+ obj2->_angular_velocity* r2_norm_perp;
+
+	pt_type vr= contact_pt_velocity2- contact_pt_velocity1;
+
+	// sera la norme de la nouvelle vitesse des objets
+	number impulse;
+
+	// https://en.wikipedia.org/wiki/Coefficient_of_restitution
+	// restitution doit etre entre 0 et 1 ; proche de 0 -> pas de rebond ; proche de 1 -> beaucoup de rebond
+	// en pratique j'ai mis des restitution > 1 pour plus de fun
+	// on prend la moyenne
+	number restitution= 0.5* (obj1->_model->_restitution+ obj2->_model->_restitution);
+	
+	/*number restitution= 0.1;
+	obj1->_mass= 1.0;
+	obj2->_mass= 1.0;
+	obj1->_inertia= 1.0;
+	obj2->_inertia= 1.0;*/
+	
+	// dans le cas où 1 des 2 objets est fixe on considère que sa masse et son inertie sont infinies
+	if (obj1->_model->_fixed) {
+		pt_type v= (cross2d(r2, axis)/ obj2->_inertia)* r2;
+		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj2->_mass+ dot(v, axis));
+	}
+	else if (obj2->_model->_fixed) {
+		pt_type v= (cross2d(r1, axis)/ obj1->_inertia)* r1;
+		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ dot(v, axis));
+	}
+	else {
+		pt_type v= (cross2d(r1, axis)/ obj1->_inertia)* r1+ (cross2d(r2, axis)/ obj2->_inertia)* r2;
+		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ 1.0/ obj2->_mass+ dot(v, axis));
+	}
+
+	if (abs(impulse)> 10.0) {
+		std::cout << "impulse=" << impulse << "\n";
+	}
+
+	// on modifie directement la vitesse et la vitesse angulaire
+	if (!obj1->_model->_fixed) {
+		obj1->_velocity-= (impulse/ obj1->_mass)* axis;
+		obj1->_angular_velocity-= (impulse/ obj1->_inertia)* cross2d(r1, axis);
+	}
+
+	if (!obj2->_model->_fixed) {
+		obj2->_velocity+= (impulse/ obj2->_mass)* axis;
+		obj2->_angular_velocity+= (impulse/ obj2->_inertia)* cross2d(r2, axis);
+	}
+
+	// peut-être pas nécessaire
+	obj1->_acceleration= pt_type(0.0);
+	obj1->_angular_acceleration= 0.0;
+	obj2->_acceleration= pt_type(0.0);
+	obj2->_angular_acceleration= 0.0;
+
+	for (auto obj_pair : std::vector<std::pair<StaticObject *, StaticObject *> >{{obj1, obj2}, {obj2, obj1}}) {
+		if (obj_pair.first->_model->_type== HERO_CAR || obj_pair.first->_model->_type== ENNEMY_CAR) {
+			Car * car= (Car *)(obj_pair.first);
+			if (obj_pair.second->_model->_type== HERO_CAR || obj_pair.second->_model->_type== ENNEMY_CAR) {
+				if (car->_thrust> CAR_CAR_COLLISION_THRUST) {
+					car->_thrust= CAR_CAR_COLLISION_THRUST;
+				}
+			}
+			else {
+				if (car->_thrust> CAR_OBSTACLE_COLLISION_THRUST) {
+					car->_thrust= CAR_OBSTACLE_COLLISION_THRUST;
+				}
+			}
+		}
+	}
 }
 
 
 // Track -------------------------------------------------------------------------------------
-Track::Track() : _start(NULL), _n_laps(0), _mode(TRACK_WAITING), _precount(0) {
+Track::Track() : _start(NULL), _n_laps(0), _mode(TRACK_WAITING), _precount(0), _tire_track_idx(0) {
 	load_models();
 	_grid= new StaticObjectGrid(DEFAULT_CELL_SIZE, VERTICAL_GRID);
+
+	_tire_tracks= new StaticObject *[N_MAX_TIRE_TRACKS];
+	for (int i=0; i<N_MAX_TIRE_TRACKS; ++i) {
+		_tire_tracks[i]= new StaticObject(_models["tracks"], pt_type(-1000.0, -1000.0), 0.0, pt_type(1.0, 1.0));
+	}
 }
 
 
@@ -187,6 +168,7 @@ Track::~Track() {
 		delete obj;
 	}
 	_floating_objects.clear();
+	delete[] _tire_tracks;
 }
 
 
@@ -284,6 +266,38 @@ void Track::load_json(std::string json_path) {
 	std::sort(_floating_objects.begin(), _floating_objects.end(), [](StaticObject * obj1, StaticObject * obj2) {
 		return obj1->_z< obj2->_z;
 	});
+
+	sort_cars();
+	set_car_names();
+}
+
+
+void Track::set_car_names() {
+	std::ifstream ifs("../data/names.txt");
+	std::string name;
+	std::vector<std::string> names;
+	while (ifs >> name) {
+		names.push_back(name);
+	}
+
+	for (unsigned int idx_car=0; idx_car<_sorted_cars.size(); ++idx_car) {
+		Car * car= _sorted_cars[idx_car];
+		while (true) {
+			int idx_name= rand_int(0, names.size()- 1);
+			bool already_taken= false;
+			for (unsigned int idx_car_2=0; idx_car_2<idx_car; ++idx_car_2) {
+				Car * car_2= _sorted_cars[idx_car_2];
+				if (car_2->_name== names[idx_name]) {
+					already_taken= true;
+					break;
+				}
+			}
+			if (!already_taken) {
+				car->_name= names[idx_name];
+				break;
+			}
+		}
+	}
 }
 
 
@@ -408,7 +422,7 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
 				car->_friction_material= obj2->_model->_linear_friction;
-				if (basename(obj2->_model->_json_path)== "puddle") {
+				if (obj2->_model->_name== "puddle") {
 					car->_current_tracks= "tracks_water";
 					car->_last_track_t= t;
 					car_in_abnormal_material= true;
@@ -444,35 +458,31 @@ void Track::tire_tracks(std::chrono::system_clock::time_point t) {
 	for (auto car : drifting_cars) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_drift_t).count();
 		if (dt> TIRE_TRACKS_DELTA_T) {
-			StaticObject * tracks= new StaticObject(_models[car->_current_tracks], car->_com, car->_alpha, car->_scale);
-			_floating_objects.push_back(tracks);
+			_tire_tracks[_tire_track_idx]->set_model(_models[car->_current_tracks]);
+			_tire_tracks[_tire_track_idx]->reinit(car->_com, car->_alpha, car->_scale);
+			_tire_track_idx++;
+			if (_tire_track_idx>= N_MAX_TIRE_TRACKS) {
+				_tire_track_idx= 0;
+			}
+
 			car->_last_drift_t= t;
 		}
 	}
-
-	unsigned int compt= 0;
-	for (int idx_obj= _floating_objects.size()- 1; idx_obj>=0; idx_obj--) {
-		StaticObject * obj= _floating_objects[idx_obj];
-		if (obj->_model->_type== TIRE_TRACKS) {
-			compt++;
-			if (compt> N_MAX_TIRE_TRACKS) {
-				obj->_delete= true;
-			}
-		}
-	}
-	_floating_objects.erase(std::remove_if(_floating_objects.begin(), _floating_objects.end(), [](StaticObject * obj){
-		return obj->_delete;
-	}), _floating_objects.end());
 }
 
 
-void Track::checkpoints() {
+void Track::checkpoints(std::chrono::system_clock::time_point t) {
 	for (auto obj : _floating_objects) {
 		if (obj->_model->_type!= HERO_CAR && obj->_model->_type!= ENNEMY_CAR) {
 			continue;
 		}
 		
 		Car * car= (Car *)(obj);
+
+		if (car->_finished) {
+			continue;
+		}
+
 		if (!aabb_intersects_aabb(car->_bbox->_aabb, car->_next_checkpoint->_bbox->_aabb)) {
 			continue;
 		}
@@ -485,10 +495,17 @@ void Track::checkpoints() {
 		if (is_inter) {
 			if (car->_next_checkpoint== _start) {
 				car->_n_laps++;
+				
 				if (car->_n_laps== _n_laps+ 1) {
 					car->_finished= true;
 					if (car->_model->_type== HERO_CAR) {
 						_mode= TRACK_FINISHED;
+					}
+				}
+				else {
+					car->_last_start_t= t;
+					if (car->_n_laps> 1) {
+						car->_lap_times.push_back(0.0);
 					}
 				}
 			}
@@ -506,12 +523,28 @@ void Track::checkpoint_ia(Car * car) {
 	number sign= 1.0;
 	CarModel * model= car->get_model();
 
-	car->_thrust= 0.5+ 0.5* dist;
-	if (car->_thrust< -1.0* model->_max_brake) {
-		car->_thrust= -1.0* model->_max_brake;
+	if (dist> 1.0) {
+		car->_thrust+= model->_thrust_increment;
+		if (car->_thrust> model->_max_thrust) {
+			car->_thrust= model->_max_thrust;
+		}
 	}
-	if (car->_thrust> model->_max_thrust) {
-		car->_thrust= model->_max_thrust;
+	/*else if (dist< 0.5) {
+		car->_thrust-= model->_brake_increment;
+		if (car->_thrust< -1.0* model->_max_brake) {
+			car->_thrust= -1.0* model->_max_brake;
+		}
+	}*/
+	else {
+		if (car->_thrust< -1.0* model->_thrust_decrement) {
+			car->_thrust+= model->_thrust_decrement;
+		}
+		else if (car->_thrust> model->_thrust_decrement) {
+			car->_thrust-= model->_thrust_decrement;
+		}
+		else {
+			car->_thrust= 0.0;
+		}
 	}
 
 	if (scalprod< -0.8 && abs(car->_wheel)> 0.5) {
@@ -543,6 +576,26 @@ void Track::checkpoint_ia(Car * car) {
 	std::cout << " ; thrust=" << car->_thrust;
 	std::cout << " ; wheel=" << car->_wheel;
 	std::cout << "\n";*/
+}
+
+
+void Track::lap_time(std::chrono::system_clock::time_point t) {
+	for (auto car  : _sorted_cars) {
+		if (car->_n_laps== 0) {
+			// car n'a pas encore passé le 1er start
+			if (car->_lap_times.size()== 0) {
+				car->_lap_times.push_back(0.0);
+			}
+			continue;
+		}
+		
+		if (car->_finished) {
+			continue;
+		}
+
+		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_start_t).count();
+		car->_lap_times[car->_lap_times.size()- 1]= number(dt)/ 1000.0;
+	}
 }
 
 
@@ -594,11 +647,13 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 				obj->anim(dt);
 			}
 		}
+
 		all_collision();
-		checkpoints();
+		checkpoints(t);
 		materials(t);
 		tire_tracks(t);
 		sort_cars();
+		lap_time(t);
 	}
 }
 

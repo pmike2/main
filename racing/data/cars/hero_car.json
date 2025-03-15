@@ -36,9 +36,9 @@
     "max_thrust": 3.5,
     "max_wheel": 0.8,
     "thrust_decrement": 0.05,
-    "thrust_increment": 0.05,
+    "thrust_increment": 0.04,
     "type": "hero_car",
     "wheel_decrement": 0.5,
     "wheel_increment": 0.03,
-    "restitution": 0.1
+    "restitution": 0.5
 }

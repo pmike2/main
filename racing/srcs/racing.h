@@ -55,8 +55,13 @@ const glm::vec4 BBOX_COLOR(1.0, 0.0, 0.0, 0.5);
 const glm::vec4 FOOTPRINT_COLOR(0.0, 1.0, 0.0, 0.5);
 const glm::vec4 NLAPS_COLOR(0.0, 1.0, 0.0, 1.0);
 const glm::vec4 NLAPS_LAST_COLOR(1.0, 0.0, 0.0, 1.0);
-const glm::vec4 HERO_COLOR(1.0, 1.0, 0.0, 1.0);
-const glm::vec4 ENNEMY_COLOR(0.7, 0.7, 0.8, 1.0);
+const glm::vec4 RANKING_HERO_COLOR(1.0, 1.0, 0.0, 1.0);
+const glm::vec4 RANKING_ENNEMY_COLOR(0.7, 0.7, 0.8, 1.0);
+const glm::vec4 LOW_SPEED_COLOR(0.3, 1.0, 0.0, 1.0);
+const glm::vec4 HIGH_SPEED_COLOR(1.0, 0.3, 0.0, 1.0);
+const glm::vec4 PAST_LAP_TIME_COLOR(0.6, 0.6, 0.6, 1.0);
+const glm::vec4 CURRENT_LAP_TIME_COLOR(0.8, 0.8, 0.6, 1.0);
+const glm::vec4 TOTAL_LAP_TIME_COLOR(0.8, 0.8, 0.6, 1.0);
 
 /*
 	Classe principale de course de voiture 2D
@@ -77,9 +82,7 @@ public:
 	void draw_texture();
 	void draw();
 
-	void show_precount_info();
-	void show_finished_info();
-	void show_live_info();
+	void show_info();
 	void show_debug_info();
 
 	// maj des buffers
@@ -114,7 +117,7 @@ public:
 	InputState * _input_state;
 
 	// A REVOIR ; association modèle <-> texture
-	std::map<std::string, unsigned int> _model_tex_idxs;
+	//std::map<std::string, unsigned int> _model_tex_idxs;
 };
 
 

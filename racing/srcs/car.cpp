@@ -61,7 +61,8 @@ Car::Car() {
 
 
 Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) : 
-	StaticObject(model, position, alpha, scale), _next_checkpoint(NULL), _n_laps(0), _friction_material(1.0), _rank(0), _finished(false)
+	StaticObject(model, position, alpha, scale), _next_checkpoint(NULL), _n_laps(0), _friction_material(1.0), _rank(0),
+	_finished(false)
 {
 	reinit(position, alpha, scale);
 

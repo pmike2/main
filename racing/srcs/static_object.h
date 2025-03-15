@@ -22,10 +22,8 @@ enum ObjectType {OBSTACLE_SETTING, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, STAR
 // !!!
 const number INERTIA_FACTOR= 50.0;
 
-
-class StaticObject;
-// collision entre 2 objets
-void collision(StaticObject * obj1, StaticObject * obj2);
+// type de grille : verticale, horizontale
+enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
 
 
 // Modèle d'objet
@@ -39,6 +37,7 @@ public:
 
 
 	std::string _json_path;
+	std::string _name;
 	ObjectType _type;
 	number _mass;
 	number _linear_friction; // utilisé pour les objets non figés mais qui ne sont pas des voitures
@@ -48,6 +47,8 @@ public:
 	bool _solid; // est-ce un objet tangible
 	number _restitution; // paramètre de dureté au rebond (voir collision())
 	pt_type _com2bbox_center; // vecteur centre de masse -> centre bbox ; utile pour mettre à jour StaticObject._bbox
+
+	float _texture_idx; // pour accélerer update()
 };
 
 
@@ -79,7 +80,6 @@ public:
 	number _mass; // == model->_mass* _scale.x* _scale.y
 	number _inertia; // inertie
 
-	bool _delete; // doit-il être supprimé
 	number _z;
 };
 
@@ -94,6 +94,41 @@ public:
 
 	CheckPoint * _next; // le suivant
 	CheckPoint * _previous; // le précédent
+};
+
+
+// grille d'objets
+class StaticObjectGrid {
+public:
+	StaticObjectGrid();
+	StaticObjectGrid(number cell_size, GridType type);
+	~StaticObjectGrid();
+	void clear();
+	
+	// méthodes de chgmt de système de coord
+	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
+	std::pair<unsigned int, unsigned int> idx2coord(unsigned int idx);
+	std::pair<int, int> number2coord(pt_type pos);
+	pt_type coord2number(unsigned int col_idx, unsigned int row_idx);
+	pt_type idx2number(unsigned int idx);
+	
+	// get / set / add / del
+	StaticObject * get_tile(unsigned int col_idx, unsigned int row_idx);
+	void push_tile(StaticObjectModel * model);
+	void set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx);
+	void set_tile(StaticObjectModel * model, unsigned int idx);
+	void set_all(StaticObjectModel * model, unsigned int width, unsigned int height);
+	void add_row(StaticObjectModel * model);
+	void add_col(StaticObjectModel * model);
+	void drop_row();
+	void drop_col();
+
+
+	std::vector<StaticObject *> _objects;
+	unsigned int _width; // dimensions
+	unsigned int _height;
+	number _cell_size; // taille cellule
+	GridType _type; // type
 };
 
 
