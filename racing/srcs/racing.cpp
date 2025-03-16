@@ -574,14 +574,6 @@ void Racing::update_texture() {
 			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(_model_tex_idxs[obj->_model->_name]);
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
 		}
-		/*data[compt++]= float(obj->_bbox->_pts[0].x); data[compt++]= float(obj->_bbox->_pts[0].y); data[compt++]= float(obj->_z); data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= float(_model_tex_idxs[obj->_model->_name]);
-		data[compt++]= float(obj->_bbox->_pts[1].x); data[compt++]= float(obj->_bbox->_pts[1].y); data[compt++]= float(obj->_z); data[compt++]= 1.0f; data[compt++]= 1.0f; data[compt++]= float(_model_tex_idxs[obj->_model->_name]);
-		data[compt++]= float(obj->_bbox->_pts[2].x); data[compt++]= float(obj->_bbox->_pts[2].y); data[compt++]= float(obj->_z); data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= float(_model_tex_idxs[obj->_model->_name]);
-		
-		data[compt++]= float(obj->_bbox->_pts[0].x); data[compt++]= float(obj->_bbox->_pts[0].y); data[compt++]= float(obj->_z); data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= float(_model_tex_idxs[obj->_model->_name]);
-		data[compt++]= float(obj->_bbox->_pts[2].x); data[compt++]= float(obj->_bbox->_pts[2].y); data[compt++]= float(obj->_z); data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= float(_model_tex_idxs[obj->_model->_name]);
-		data[compt++]= float(obj->_bbox->_pts[3].x); data[compt++]= float(obj->_bbox->_pts[3].y); data[compt++]= float(obj->_z); data[compt++]= 0.0f; data[compt++]= 0.0f; data[compt++]= float(_model_tex_idxs[obj->_model->_name]);
-		*/
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);

@@ -74,10 +74,10 @@ def gen_json(json_path, type_, footprint, restitution=None, linear_friction=None
 
 def gen_jsons(root, json_name, footprint):
 	json_path= os.path.join(root, json_name+ "_obst.json")
-	gen_json(json_path, "obstacle_setting", footprint, restitution=TILE_RESTITUTION)
+	gen_json(json_path, "obstacle_tile", footprint, restitution=TILE_RESTITUTION)
 
 	json_path= os.path.join(root, json_name+ "_sand.json")
-	gen_json(json_path, "material", footprint, linear_friction=SAND_LINEAR_FRICTION, angular_friction=SAND_ANGULAR_FRICTION)
+	gen_json(json_path, "material_tile", footprint, linear_friction=SAND_LINEAR_FRICTION, angular_friction=SAND_ANGULAR_FRICTION)
 
 
 def gen_all_jsons(root, n_subdiv):
@@ -87,7 +87,7 @@ def gen_all_jsons(root, n_subdiv):
 	#for json_path in jsons:
 	#	os.remove(json_path)
 
-	gen_json(os.path.join(root, "empty.json"), "obstacle_setting", [], restitution=TILE_RESTITUTION)
+	gen_json(os.path.join(root, "empty.json"), "obstacle_tile", [], restitution=TILE_RESTITUTION)
 	gen_jsons(root, "full", FULL_FOOTPRINT)
 
 	# bandes verticales gauche

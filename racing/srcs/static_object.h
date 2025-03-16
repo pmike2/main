@@ -9,13 +9,12 @@
 #include "typedefs.h"
 
 
-// setting en anglais == décor
-// OBSTACLE_SETTING == tuile décor ; OBSTACLE_FLOATING == obstacle flottant
+// OBSTACLE_TILE == tuile obstacle ; OBSTACLE_FLOATING == obstacle flottant
 // HERO_CAR == voiture héros ; ENNEMY_CAR == toutes les autres voitures
 // START == ligne de départ (et d'arrivée) ; CHECKPOINT == chekpt
 // MATERIAL == matériau sol
 // TIRE_TRACKS == traces de pneu
-enum ObjectType {OBSTACLE_SETTING, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, START, CHECKPOINT, MATERIAL, TIRE_TRACKS};
+enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, START, CHECKPOINT, MATERIAL_TILE, MATERIAL_FLOATING, TIRE_TRACKS};
 
 // !!!
 // obligé de * inertie par un facteur sinon tout pète lors des collisions

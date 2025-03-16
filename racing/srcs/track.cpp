@@ -42,7 +42,7 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 
 	// on veut éviter le cas où c'est un angle du décor qui pénètre la voiture car sinon réactions bizarres
 	// on attend du coup la situation inverse où un angle de la voiture pénètre le décor, ce qui fera plus naturel
-	if (is_pt_in_poly1 && obj1->_model->_type== OBSTACLE_SETTING) {
+	if (is_pt_in_poly1 && obj1->_model->_type== OBSTACLE_TILE) {
 		return;
 	}
 
@@ -414,7 +414,7 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 		car->_friction_material= 1.0;
 		bool car_in_abnormal_material= false;
 		for (auto obj2 : _floating_objects) {
-			if (obj2->_model->_type!= MATERIAL) {
+			if (obj2->_model->_type!= MATERIAL_TILE && obj2->_model->_type!= MATERIAL_FLOATING) {
 				continue;
 			}
 			if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {

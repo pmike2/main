@@ -30,12 +30,12 @@ const glm::vec4 SELECTION_COLOR(1.0, 1.0, 0.0, 0.3);
 
 // positions des grilles
 const pt_type TRACK_ORIGIN(-9.0, -7.5);
-const pt_type TILES_ORIGIN(3.5, -7.5);
+const pt_type TILES_ORIGIN(1.5, -7.5);
 const pt_type FLOATING_OBJECTS_ORIGIN(-7.0, 3.0);
 // scale par défaut de la grille track
 const number DEFAULT_TRACK_EDITOR_SCALE= 0.3;
 // dimensions par défaut des grilles de tile et d'objets flottants
-const unsigned int TILE_GRID_WIDTH= 6;
+const unsigned int TILE_GRID_WIDTH= 8;
 const unsigned int FLOATING_GRID_HEIGHT= 4;
 // dimensions défaut en tuiles d'une piste
 const unsigned int TRACK_DEFAULT_SIZE= 16;
@@ -81,7 +81,7 @@ public:
 	ScreenGL * _screengl;
 	Font * _font;
 
-	std::map<std::string, unsigned int> _model_tex_idxs;
+	//std::map<std::string, unsigned int> _model_tex_idxs;
 };
 
 
@@ -134,7 +134,7 @@ public:
 	ScreenGL * _screengl;
 	Font * _font;	
 
-	std::map<std::string, unsigned int> _model_tex_idxs;
+	//std::map<std::string, unsigned int> _model_tex_idxs;
 };
 
 

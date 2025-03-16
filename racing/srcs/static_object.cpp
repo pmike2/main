@@ -36,8 +36,8 @@ void StaticObjectModel::load(std::string json_path) {
 	ifs.close();
 
 	// type d'objet
-	if (js["type"]== "obstacle_setting") {
-		_type= OBSTACLE_SETTING;
+	if (js["type"]== "obstacle_tile") {
+		_type= OBSTACLE_TILE;
 	}
 	else if (js["type"]== "obstacle_floating") {
 		_type= OBSTACLE_FLOATING;
@@ -54,8 +54,11 @@ void StaticObjectModel::load(std::string json_path) {
 	else if (js["type"]== "start") {
 		_type= START;
 	}
-	else if (js["type"]== "material") {
-		_type= MATERIAL;
+	else if (js["type"]== "material_tile") {
+		_type= MATERIAL_TILE;
+	}
+	else if (js["type"]== "material_floating") {
+		_type= MATERIAL_FLOATING;
 	}
 	else if (js["type"]== "tire_tracks") {
 		_type= TIRE_TRACKS;
@@ -77,8 +80,7 @@ void StaticObjectModel::load(std::string json_path) {
 	// vecteur centre de masse -> centre bbox
 	_com2bbox_center= -1.0* _footprint->_centroid;
 	
-	// les autres valeurs dépendent du type d'objet
-	if (_type== OBSTACLE_SETTING) {
+	if (_type== OBSTACLE_TILE) {
 		_fixed= true;
 		_solid= true;
 		_restitution= js["restitution"];
@@ -119,7 +121,7 @@ void StaticObjectModel::load(std::string json_path) {
 		_mass= _linear_friction= _angular_friction= _restitution= 0.0;
 	}
 
-	else if (_type== MATERIAL) {
+	else if (_type== MATERIAL_FLOATING || _type== MATERIAL_TILE) {
 		_fixed= true;
 		_solid= false;
 		_mass= _restitution= 0.0;
@@ -133,8 +135,8 @@ void StaticObjectModel::load(std::string json_path) {
 std::ostream & operator << (std::ostream & os, const StaticObjectModel & model) {
 	os << "json_path=" << model._json_path;
 	os << " ; type=";
-	if (model._type== OBSTACLE_SETTING){
-		os << "OBSTACLE_SETTING";
+	if (model._type== OBSTACLE_TILE){
+		os << "OBSTACLE_TILE";
 	}
 	else if (model._type== OBSTACLE_FLOATING){
 		os << "OBSTACLE_FLOATING";
@@ -150,6 +152,15 @@ std::ostream & operator << (std::ostream & os, const StaticObjectModel & model) 
 	}
 	else if (model._type== START){
 		os << "START";
+	}
+	else if (model._type== MATERIAL_FLOATING){
+		os << "MATERIAL_FLOATING";
+	}
+	else if (model._type== MATERIAL_TILE){
+		os << "MATERIAL_TILE";
+	}
+	else if (model._type== TIRE_TRACKS){
+		os << "TIRE_TRACKS";
 	}
 	os << " ; footprint=" << *model._footprint;
 	os << " ; mass=" << model._mass << " ; fixed=" << model._fixed << " ; solid=" << model._solid;
@@ -169,10 +180,10 @@ StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number a
 	set_model(model);
 	reinit(position, alpha, scale);
 
-	if (model->_type== OBSTACLE_SETTING) {
+	if (model->_type== OBSTACLE_TILE || model->_type== MATERIAL_TILE) {
 		_z= -100.0f;
 	}
-	else if (model->_type== START || model->_type== CHECKPOINT || model->_type== MATERIAL) {
+	else if (model->_type== START || model->_type== CHECKPOINT || model->_type== MATERIAL_FLOATING) {
 		_z= -90.0f;
 	}
 	else if (model->_type== TIRE_TRACKS) {
@@ -226,7 +237,7 @@ void StaticObject::update() {
 
 	// maj de la bbox
 	_bbox->_alpha= _alpha;
-	if (_model->_type== OBSTACLE_SETTING) {
+	if (_model->_type== OBSTACLE_TILE || _model->_type== MATERIAL_TILE) {
 		_bbox->_center= _com;
 		_bbox->_half_size= 0.5* _scale;
 	}

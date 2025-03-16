@@ -116,7 +116,6 @@ public:
 	ScreenGL * _screengl;
 	InputState * _input_state;
 
-	// A REVOIR ; association modèle <-> texture
 	//std::map<std::string, unsigned int> _model_tex_idxs;
 };
 

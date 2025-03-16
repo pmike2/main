@@ -1,5 +1,5 @@
 {
-    "type": "obstacle_setting",
+    "type": "obstacle_tile",
     "footprint": [
         [
             -0.0,

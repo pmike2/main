@@ -74,7 +74,8 @@ void GridEditor::fill_texture_array() {
 
 	unsigned int compt= 0;
 	for (auto obj : _grid->_objects) {
-		_model_tex_idxs[obj->_model->_name]= compt;
+		//_model_tex_idxs[obj->_model->_name]= compt;
+		obj->_model->_texture_idx= float(compt);
 		std::string png_abs= dirname(obj->_model->_json_path)+ "/textures/"+ obj->_model->_name+ ".png";
 		//std::cout << "png=" << png_abs << " ; compt=" << compt << "\n";
 		if (!file_exists(png_abs)) {
@@ -395,7 +396,8 @@ void GridEditor::update_texture() {
 			for (unsigned int i=0; i<5; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(_model_tex_idxs[basename(obj->_model->_json_path)]);
+			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(_model_tex_idxs[basename(obj->_model->_json_path)]);
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
 		}
 	}
 
@@ -613,7 +615,8 @@ void TrackEditor::fill_texture_array() {
 
 	unsigned int compt= 0;
 	for (auto model : _track->_models) {
-		_model_tex_idxs[model.first]= compt;
+		//_model_tex_idxs[model.first]= compt;
+		model.second->_texture_idx= float(compt);
 		std::string png_abs= dirname(model.second->_json_path)+ "/textures/"+ model.first+ ".png";
 		//std::cout << "png=" << png_abs << " ; compt=" << compt << "\n";
 		if (!file_exists(png_abs)) {
@@ -1053,7 +1056,8 @@ void TrackEditor::update_texture() {
 			for (unsigned int i=0; i<5; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(_model_tex_idxs[basename(obj->_model->_json_path)]);
+			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(_model_tex_idxs[basename(obj->_model->_json_path)]);
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
 		}
 	}
 
@@ -1279,7 +1283,7 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	_floating_grid_editor->_grid->_height= FLOATING_GRID_HEIGHT;
 
 	for (auto model : _track_editor->_track->_models) {
-		if (model.second->_type== OBSTACLE_SETTING) {
+		if (model.second->_type== OBSTACLE_TILE || model.second->_type== MATERIAL_TILE) {
 			//std::cout << "loading OBSTACLE_SETTING : " << model.first << "\n";
 			_tile_grid_editor->_grid->push_tile(model.second);
 			//std::cout << "loaded\n";

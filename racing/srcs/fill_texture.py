@@ -81,7 +81,7 @@ def fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, border_width, footprin
 			mask_img_brick = Image.new('L', (SIZE, SIZE), color=255)
 			mask_img_brick_draw = ImageDraw.Draw(mask_img_brick)
 			# joint="curve" permet d'avoir de l'arrondi
-			#mask_img_brick_draw.line(border_footprint, fill=0, width=border_width, joint="curve")
+			mask_img_brick_draw.line(border_footprint, fill=0, width=border_width)
 
 	with Image.open(tex_in_fill) as tex_img_fill:
 		with Image.open(tex_in_empty) as tex_img_empty:
@@ -101,13 +101,13 @@ def fill_texture_json(tex_in_fill, tex_in_empty, tex_in_brick, tex_in_sand, bord
 	
 	result= os.path.join(os.path.dirname(json_path), "textures", os.path.basename(os.path.splitext(json_path)[0])+ ".png")
 
-	if data["type"]== "obstacle_setting":
+	if data["type"]== "obstacle_tile":
 		footprint= data["footprint"]
 		footprint= [coord2pixel(x[0], x[1]) for x in footprint]
 		footprint= [x for y in footprint for x in y]
 		fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, border_width, footprint, result)
 	
-	elif data["type"]== "material":
+	elif data["type"]== "material_tile":
 		footprint= data["footprint"]
 		footprint= [coord2pixel(x[0], x[1]) for x in footprint]
 		footprint= [x for y in footprint for x in y]
@@ -134,6 +134,9 @@ if __name__== "__main__":
 	tex_in_brick= "../data/tests/textures/brick.png"
 	tex_in_sand= "../data/tests/textures/sand.png"
 	border_width= 50
+
+	#json_path= "../data/static_objects/tiles/empty.json"
+	#fill_texture_json(tex_in_fill, tex_in_empty, tex_in_brick, tex_in_sand, border_width, json_path)
 
 	dir_path= "../data/static_objects/tiles"
 	fill_dir(tex_in_fill, tex_in_empty, tex_in_brick, tex_in_sand, border_width, dir_path)
