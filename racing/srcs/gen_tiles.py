@@ -11,6 +11,9 @@ from pprint import pprint as pp
 
 EPS= 1e-12
 TILE_RESTITUTION= 0.02
+SAND_LINEAR_FRICTION= 5.0
+SAND_ANGULAR_FRICTION= 1.0
+FULL_FOOTPRINT= [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]
 
 
 def rotate_pt(pt):
@@ -56,16 +59,25 @@ def crop(footprint):
 	return new_footprint
 
 
-def gen_json(json_path, pts):
-	"""création d'un json à partir d'un polygone"""
-	data= {
-		"type": "obstacle_setting",
-		"footprint": pts,
-		"restitution": TILE_RESTITUTION
-	}
+def gen_json(json_path, type_, footprint, restitution=None, linear_friction=None, angular_friction=None):	
+	data= {"type" : type_, "footprint" : footprint}
+	if restitution is not None:
+		data["restitution"]= restitution
+	if linear_friction is not None:
+		data["linear_friction"]= linear_friction
+	if angular_friction is not None:
+		data["angular_friction"]= angular_friction
+	
 	with open(json_path, "w") as f:
 		json.dump(data, f, indent=4)
 
+
+def gen_jsons(root, json_name, footprint):
+	json_path= os.path.join(root, json_name+ "_obst.json")
+	gen_json(json_path, "obstacle_setting", footprint, restitution=TILE_RESTITUTION)
+
+	json_path= os.path.join(root, json_name+ "_sand.json")
+	gen_json(json_path, "material", footprint, linear_friction=SAND_LINEAR_FRICTION, angular_friction=SAND_ANGULAR_FRICTION)
 
 
 def gen_all_jsons(root, n_subdiv):
@@ -75,10 +87,8 @@ def gen_all_jsons(root, n_subdiv):
 	#for json_path in jsons:
 	#	os.remove(json_path)
 
-	gen_json(os.path.join(root, "empty.json"), [])
-	gen_json(os.path.join(root, "full.json"), [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]])
-
-	compt= 0
+	gen_json(os.path.join(root, "empty.json"), "obstacle_setting", [], restitution=TILE_RESTITUTION)
+	gen_jsons(root, "full", FULL_FOOTPRINT)
 
 	# bandes verticales gauche
 	for i in range(1, n_subdiv):
@@ -87,9 +97,7 @@ def gen_all_jsons(root, n_subdiv):
 		pt2= (-0.5+ float(i)/ float(n_subdiv), 0.5)
 		pt3= (-0.5, 0.5)
 		footprint= [pt0, pt1, pt2, pt3]
-		json_path= os.path.join(root, f"{compt:03d}.json")
-		gen_json(json_path, footprint)
-		compt+= 1
+		gen_jsons(root, f"band_vg_{i}", footprint)
 
 	# bandes verticales droite
 	for i in range(1, n_subdiv):
@@ -98,9 +106,7 @@ def gen_all_jsons(root, n_subdiv):
 		pt2= (0.5, 0.5)
 		pt3= (-0.5+ float(i)/ float(n_subdiv), 0.5)
 		footprint= [pt0, pt1, pt2, pt3]
-		json_path= os.path.join(root, f"{compt:03d}.json")
-		gen_json(json_path, footprint)
-		compt+= 1
+		gen_jsons(root, f"band_vd_{i}", footprint)
 
 	# bandes horizontales basse
 	for i in range(1, n_subdiv):
@@ -109,9 +115,7 @@ def gen_all_jsons(root, n_subdiv):
 		pt2= (0.5, -0.5+ float(i)/ float(n_subdiv))
 		pt3= (-0.5, -0.5+ float(i)/ float(n_subdiv))
 		footprint= [pt0, pt1, pt2, pt3]
-		json_path= os.path.join(root, f"{compt:03d}.json")
-		gen_json(json_path, footprint)
-		compt+= 1
+		gen_jsons(root, f"band_hb_{i}", footprint)
 
 	# bandes horizontales haute
 	for i in range(1, n_subdiv):
@@ -120,9 +124,7 @@ def gen_all_jsons(root, n_subdiv):
 		pt2= (0.5, 0.5)
 		pt3= (-0.5, 0.5)
 		footprint= [pt0, pt1, pt2, pt3]
-		json_path= os.path.join(root, f"{compt:03d}.json")
-		gen_json(json_path, footprint)
-		compt+= 1
+		gen_jsons(root, f"band_hh_{i}", footprint)
 
 	# triangles
 	pt2= (0.5, -0.5)
@@ -132,25 +134,11 @@ def gen_all_jsons(root, n_subdiv):
 			pt3= (0.5, float(j+ 1)/ float(n_subdiv)- 0.5)
 			
 			footprint= [pt1, pt2, pt3]
-			json_path= os.path.join(root, f"{compt:03d}.json")
-			gen_json(json_path, footprint)
-			compt+= 1
+			gen_jsons(root, f"tri_{i}_{j}", footprint)
 
 			for idx_angle in range(3):
 				footprint= rot(footprint)
-				json_path= os.path.join(root, f"{compt:03d}.json")
-				gen_json(json_path, footprint)
-				compt+= 1
-			
-			#footprint= rot(footprint)
-			#footprint= xmirror(footprint)
-
-			#for idx_angle in range(3):
-			#	footprint= rot(footprint)
-			#	print(footprint)
-			#	json_path= os.path.join(root, f"{compt}.json")
-			#	gen_json(json_path, footprint)
-			#	compt+= 1
+				gen_jsons(root, f"tri_{i}_{j}_{idx_angle}", footprint)
 
 	# complémentaires triangles
 	for i in range(n_subdiv):
@@ -177,23 +165,23 @@ def gen_all_jsons(root, n_subdiv):
 					pt5= (-0.5, -0.5)
 					footprint= [pt1, pt2, pt3, pt4, pt5]
 
-			json_path= os.path.join(root, f"{compt:03d}.json")
-			gen_json(json_path, footprint)
-			compt+= 1
+			gen_jsons(root, f"tri_comp_{i}_{j}", footprint)
 
 			for idx_angle in range(3):
 				footprint= rot(footprint)
-				json_path= os.path.join(root, f"{compt:03d}.json")
-				gen_json(json_path, footprint)
-				compt+= 1
+				gen_jsons(root, f"tri_comp_{i}_{j}_{idx_angle}", footprint)
 
 
 def polygonize_all(root):
 	"""Ajout de jsons à partir des jsons d'un dossier en subdivisant tous les cotés"""
 	jsons= [os.path.join(root, x) for x in os.listdir(root) if os.path.splitext(x)[1]== ".json"]
 	for json_path in jsons:
-		if os.path.basename(json_path) in ("empty.json", "full.json"):
+		if os.path.basename(json_path) in ("empty.json", "full_obst.json", "full_sand.json"):
 			continue
+		
+		if "sand" in os.path.basename(json_path):
+			continue
+		
 		with open(json_path) as f:
 			data= json.load(f)
 

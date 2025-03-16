@@ -47,16 +47,19 @@ const unsigned int DEFAULT_N_LAPS= 3;
 class GridEditor {
 public:
 	GridEditor();
-	GridEditor(GLuint prog_simple, GLuint prog_font, ScreenGL * screengl, glm::vec4 tile_color, number cell_size, GridType type);
+	GridEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, glm::vec4 tile_color, number cell_size, GridType type);
 	~GridEditor();
+	void fill_texture_array();
 	void draw_grid();
 	void draw_selection();
 	void draw_tiles();
+	void draw_texture();
 	void draw();
 	void show_info();
 	void update_grid();
 	void update_selection();
 	void update_tiles();
+	void update_texture();
 	void update();
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
@@ -64,6 +67,7 @@ public:
 	bool mouse_button_down(InputState * input_state);
 
 
+	bool _draw_bbox, _draw_texture;
 	StaticObjectGrid * _grid; // grille à éditer
 	int _row_idx_select, _col_idx_select; // tuile courante sélectionnée
 	glm::vec4 _tile_color;
@@ -76,6 +80,8 @@ public:
 	glm::mat4 _camera2clip, _world2camera; // glm::ortho
 	ScreenGL * _screengl;
 	Font * _font;
+
+	std::map<std::string, unsigned int> _model_tex_idxs;
 };
 
 
