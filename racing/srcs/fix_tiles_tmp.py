@@ -12,11 +12,15 @@ import json
 def fix(json_path):
 	with open(json_path) as f:
 		data= json.load(f)
+	
+	if data["type"]!= "material_tile":
+		return
 
-		data["restitution"]= 0.2
+	data["linear_friction"]= 2.0
+	data["angular_friction"]= 3.0
 
-		with open(json_path, "w") as f:
-			json.dump(data, f, indent=4)
+	with open(json_path, "w") as f:
+		json.dump(data, f, indent=4)
 
 
 def fix_all(root_jsons):

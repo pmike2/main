@@ -61,8 +61,8 @@ Car::Car() {
 
 
 Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) : 
-	StaticObject(model, position, alpha, scale), _next_checkpoint(NULL), _n_laps(0), _friction_material(1.0), _rank(0),
-	_finished(false)
+	StaticObject(model, position, alpha, scale), _next_checkpoint(NULL), _n_laps(0), 
+	_linear_friction_material(1.0), _angular_friction_material(1.0), _rank(0), _finished(false)
 {
 	reinit(position, alpha, scale);
 
@@ -273,7 +273,7 @@ void Car::anim(number anim_dt) {
 	// calcul force appliquée à l'avant
 	_force_fwd= pt_type(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel); // accélération dans la direction du volant
-	_force_fwd-= model->_forward_static_friction* _friction_material* scal(_forward, _velocity)* _forward; // friction statique avant
+	_force_fwd-= model->_forward_static_friction* _linear_friction_material* scal(_forward, _velocity)* _forward; // friction statique avant
 
 	// calcul force appliquée à l'arrière
 	_force_bwd= pt_type(0.0);
@@ -282,11 +282,11 @@ void Car::anim(number anim_dt) {
 	if (abs(right_turn)> model->_friction_threshold) {
 		// dérapage
 		_drift= true;
-		_force_bwd-= model->_backward_dynamic_friction* right_turn* _right;
+		_force_bwd-= model->_backward_dynamic_friction* _linear_friction_material* right_turn* _right;
 	}
 	else {
 		_drift= false;
-		_force_bwd-= model->_backward_static_friction* right_turn* _right;
+		_force_bwd-= model->_backward_static_friction* _linear_friction_material* right_turn* _right;
 	}
 
 	// force -> acceleration -> vitesse -> position
@@ -298,7 +298,7 @@ void Car::anim(number anim_dt) {
 	_torque= 0.0;
 	_torque+= _com2force_fwd.x* _force_fwd.y- _com2force_fwd.y* _force_fwd.x; // torque avant
 	_torque+= _com2force_bwd.x* _force_bwd.y- _com2force_bwd.y* _force_bwd.x; // torque arrière
-	_torque-= _model->_angular_friction* _angular_velocity; // friction angulaire
+	_torque-= _model->_angular_friction* _angular_friction_material* _angular_velocity; // friction angulaire
 
 	// torque -> acc angulaire -> vitesse angulaire -> angle
 	_angular_acceleration= _torque/ _inertia;

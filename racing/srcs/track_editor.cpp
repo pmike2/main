@@ -31,10 +31,6 @@ GridEditor::GridEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
-	unsigned int n_textures= 1;
-	_textures= new GLuint(n_textures);
-	glGenTextures(n_textures, _textures);
-
 	_contexts["grid"]= new DrawContext(prog_simple, _buffers[0],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
@@ -52,63 +48,11 @@ GridEditor::GridEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
 	_grid= new StaticObjectGrid(cell_size, type);
-
-	//fill_texture_array();
-	//update();
 }
 
 
 GridEditor::~GridEditor() {
 
-}
-
-
-void GridEditor::fill_texture_array() {
-	const unsigned int TEXTURE_SIZE= 1024;
-	unsigned int n_tex= _grid->_objects.size();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
-	
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-	unsigned int compt= 0;
-	for (auto obj : _grid->_objects) {
-		//_model_tex_idxs[obj->_model->_name]= compt;
-		obj->_model->_texture_idx= float(compt);
-		std::string png_abs= dirname(obj->_model->_json_path)+ "/textures/"+ obj->_model->_name+ ".png";
-		//std::cout << "png=" << png_abs << " ; compt=" << compt << "\n";
-		if (!file_exists(png_abs)) {
-			std::cout << "png=" << png_abs << " n'existe pas\n";
-			continue;
-		}
-		SDL_Surface * surface= IMG_Load(png_abs.c_str());
-		if (!surface) {
-			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
-			return;
-		}
-
-		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-						0,                             // mipmap number
-						0, 0, compt,   // xoffset, yoffset, zoffset
-						TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
-						GL_BGRA,                       // format
-						GL_UNSIGNED_BYTE,              // type
-						surface->pixels);              // pointer to data
-
-		SDL_FreeSurface(surface);
-
-		compt++;
-	}
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-
-	glActiveTexture(0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
 
@@ -199,11 +143,11 @@ void GridEditor::draw_tiles() {
 }
 
 
-void GridEditor::draw_texture() {
+void GridEditor::draw_texture(GLuint texture) {
 	DrawContext * context= _contexts["texture"];
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
 	glActiveTexture(0);
 
 	glUseProgram(context->_prog);
@@ -212,7 +156,6 @@ void GridEditor::draw_texture() {
 	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	//glUniform1f(context->_locs_uniform["z"], -25.0f);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -234,14 +177,14 @@ void GridEditor::draw_texture() {
 }
 
 
-void GridEditor::draw() {
+void GridEditor::draw(GLuint texture) {
 	if (_draw_bbox) {
 		draw_tiles();
 	}
 	draw_selection();
 	draw_grid();
 	if (_draw_texture) {
-		draw_texture();
+		draw_texture(texture);
 	}
 }
 
@@ -252,10 +195,10 @@ void GridEditor::show_info() {
 
 	std::vector<Text> texts;
 
-	for (auto obj : _grid->_objects) {
+	/*for (auto obj : _grid->_objects) {
 		glm::vec4 v= _world2camera* glm::vec4(obj->_com.x, obj->_com.y, 0.0, 1.0);
 		texts.push_back(Text(basename(obj->_model->_json_path), pt_type(v.x, v.y), font_scale, glm::vec4(1.0, 1.0, 1.0, 1.0)));
-	}
+	}*/
 
 	_font->set_text(texts);
 	_font->draw();
@@ -396,7 +339,6 @@ void GridEditor::update_texture() {
 			for (unsigned int i=0; i<5; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
-			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(_model_tex_idxs[basename(obj->_model->_json_path)]);
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
 		}
 	}
@@ -509,10 +451,6 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
-	unsigned int n_textures= 1;
-	_textures= new GLuint(n_textures);
-	glGenTextures(n_textures, _textures);
-
 	_contexts["grid"]= new DrawContext(prog_simple, _buffers[0],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
@@ -540,8 +478,6 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 	_track= new Track();
 	_track->set_all("full_obst", TRACK_DEFAULT_SIZE, TRACK_DEFAULT_SIZE);
 	_track->_n_laps= DEFAULT_N_LAPS;
-
-	fill_texture_array();
 
 	update();
 }
@@ -598,58 +534,6 @@ void TrackEditor::save_json(std::string json_path) {
 	}
 
 	ofs << std::setw(4) << js << "\n";
-}
-
-
-void TrackEditor::fill_texture_array() {
-	const unsigned int TEXTURE_SIZE= 1024;
-	unsigned int n_tex= 0;
-	for (auto model : _track->_models) {
-		n_tex++;
-	}
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
-	
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-	unsigned int compt= 0;
-	for (auto model : _track->_models) {
-		//_model_tex_idxs[model.first]= compt;
-		model.second->_texture_idx= float(compt);
-		std::string png_abs= dirname(model.second->_json_path)+ "/textures/"+ model.first+ ".png";
-		//std::cout << "png=" << png_abs << " ; compt=" << compt << "\n";
-		if (!file_exists(png_abs)) {
-			std::cout << "png=" << png_abs << " n'existe pas\n";
-			continue;
-		}
-		SDL_Surface * surface= IMG_Load(png_abs.c_str());
-		if (!surface) {
-			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
-			return;
-		}
-
-		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-						0,                             // mipmap number
-						0, 0, compt,   // xoffset, yoffset, zoffset
-						TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
-						GL_BGRA,                       // format
-						GL_UNSIGNED_BYTE,              // type
-						surface->pixels);              // pointer to data
-
-		SDL_FreeSurface(surface);
-
-		compt++;
-	}
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-
-	glActiveTexture(0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
 
@@ -796,11 +680,11 @@ void TrackEditor::draw_floating_objects_bbox() {
 }
 
 
-void TrackEditor::draw_texture() {
+void TrackEditor::draw_texture(GLuint texture) {
 	DrawContext * context= _contexts["texture"];
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
 	glActiveTexture(0);
 
 	glUseProgram(context->_prog);
@@ -809,7 +693,6 @@ void TrackEditor::draw_texture() {
 	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	//glUniform1f(context->_locs_uniform["z"], -25.0f);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -831,7 +714,7 @@ void TrackEditor::draw_texture() {
 }
 
 
-void TrackEditor::draw() {
+void TrackEditor::draw(GLuint texture) {
 	if (_draw_bbox) {
 		draw_floating_objects_footprint();
 		draw_floating_objects_bbox();
@@ -840,7 +723,7 @@ void TrackEditor::draw() {
 	draw_selection();
 	draw_grid();
 	if (_draw_texture) {
-		draw_texture();
+		draw_texture(texture);
 	}
 }
 
@@ -851,7 +734,7 @@ void TrackEditor::show_info() {
 
 	std::vector<Text> texts;
 
-	for (auto obj : _track->_floating_objects) {
+	/*for (auto obj : _track->_floating_objects) {
 		glm::vec4 v= _world2camera* glm::vec4(obj->_com.x, obj->_com.y, 0.0, 1.0);
 		std::string s= basename(obj->_model->_json_path);
 		if (obj->_model->_type== CHECKPOINT) {
@@ -859,7 +742,9 @@ void TrackEditor::show_info() {
 			s+= std::to_string(_track->get_checkpoint_index(checkpoint));
 		}
 		texts.push_back(Text(s, pt_type(v.x, v.y), font_scale, glm::vec4(1.0, 1.0, 1.0, 1.0)));
-	}
+	}*/
+
+	texts.push_back(Text("NLAPS = "+ std::to_string(_track->_n_laps), pt_type(6.0, 6.0), 0.01, glm::vec4(1.0, 1.0, 1.0, 1.0)));
 
 	_font->set_text(texts);
 	_font->draw();
@@ -1056,7 +941,6 @@ void TrackEditor::update_texture() {
 			for (unsigned int i=0; i<5; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
-			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(_model_tex_idxs[basename(obj->_model->_json_path)]);
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
 		}
 	}
@@ -1149,6 +1033,19 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 	// l = chgmt json
 	else if (key== SDLK_l) {
 		load_json("../data/tracks/track1.json");
+
+		int max_idx= -1;
+		_last_checkpoint= NULL;
+		for (auto obj : _track->_floating_objects) {
+			if (obj->_model->_type== START || obj->_model->_type== CHECKPOINT) {
+				int idx= _track->get_checkpoint_index((CheckPoint *)(obj));
+				if (idx> max_idx) {
+					max_idx= idx;
+					_last_checkpoint= (CheckPoint *)(obj);
+				}
+			}
+		}
+
 		update();
 		return true;
 	}
@@ -1163,6 +1060,17 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 	else if (key== SDLK_t) {
 		_draw_texture= !_draw_texture;
 	}
+	else if (key== SDLK_n) {
+		if (input_state->get_key(SDLK_LSHIFT)) {
+			if (_track->_n_laps> 1) {
+				_track->_n_laps--;
+			}
+		}
+		else {
+			_track->_n_laps++;
+		}
+	}
+
 	return false;
 }
 
@@ -1269,6 +1177,10 @@ Editor::Editor() {
 Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl) : _screengl(screengl) {
 	//_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
+	unsigned int n_textures= 1;
+	_textures= new GLuint(n_textures);
+	glGenTextures(n_textures, _textures);
+
 	_track_editor= new TrackEditor(prog_simple, prog_texture, prog_font, screengl, 2.0);
 	_tile_grid_editor= new GridEditor(prog_simple, prog_texture, prog_font, screengl, OBSTACLE_SETTING_COLOR, 1.0, VERTICAL_GRID);
 	_floating_grid_editor= new GridEditor(prog_simple, prog_texture, prog_font, screengl, OBSTACLE_FLOATING_FOOTPRINT_COLOR, 1.0, HORIZONTAL_GRID);
@@ -1295,8 +1207,7 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 		}
 	}
 
-	_tile_grid_editor->fill_texture_array();
-	_floating_grid_editor->fill_texture_array();
+	fill_texture_array();
 
 	_track_editor->update();
 	_tile_grid_editor->update();
@@ -1309,16 +1220,64 @@ Editor::~Editor() {
 }
 
 
+void Editor::fill_texture_array() {
+	const unsigned int TEXTURE_SIZE= 1024;
+	unsigned int n_tex= _track_editor->_track->_models.size();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
+	
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+	unsigned int compt= 0;
+	for (auto model : _track_editor->_track->_models) {
+		model.second->_texture_idx= float(compt);
+		std::string png_abs= dirname(model.second->_json_path)+ "/textures/"+ model.first+ ".png";
+		//std::cout << "png=" << png_abs << " ; compt=" << compt << "\n";
+		if (!file_exists(png_abs)) {
+			std::cout << "png=" << png_abs << " n'existe pas\n";
+			continue;
+		}
+		SDL_Surface * surface= IMG_Load(png_abs.c_str());
+		if (!surface) {
+			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
+			return;
+		}
+
+		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+						0,                             // mipmap number
+						0, 0, compt,   // xoffset, yoffset, zoffset
+						TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
+						GL_BGRA,                       // format
+						GL_UNSIGNED_BYTE,              // type
+						surface->pixels);              // pointer to data
+
+		SDL_FreeSurface(surface);
+
+		compt++;
+	}
+
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+}
+
+
 void Editor::draw() {
 	// scissor permet de ne dessiner que sur un rectangle sans dépasser
-	glScissor(0, 0, 800, 700);
+	glScissor(0, 0, 700, 700);
 	glEnable(GL_SCISSOR_TEST);
-	_track_editor->show_info();
-	_track_editor->draw();
+	_track_editor->draw(_textures[0]);
 	glDisable(GL_SCISSOR_TEST);
+	_track_editor->show_info();
 	_floating_grid_editor->show_info();
-	_tile_grid_editor->draw();
-	_floating_grid_editor->draw();
+	_tile_grid_editor->draw(_textures[0]);
+	_floating_grid_editor->draw(_textures[0]);
 }
 
 

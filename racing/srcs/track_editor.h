@@ -49,12 +49,11 @@ public:
 	GridEditor();
 	GridEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, glm::vec4 tile_color, number cell_size, GridType type);
 	~GridEditor();
-	void fill_texture_array();
 	void draw_grid();
 	void draw_selection();
 	void draw_tiles();
-	void draw_texture();
-	void draw();
+	void draw_texture(GLuint texture);
+	void draw(GLuint texture);
 	void show_info();
 	void update_grid();
 	void update_selection();
@@ -76,7 +75,6 @@ public:
 
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
-	GLuint * _textures; // texture arrays pour tous les PNGs
 	glm::mat4 _camera2clip, _world2camera; // glm::ortho
 	ScreenGL * _screengl;
 	Font * _font;
@@ -94,14 +92,13 @@ public:
 	void reinit();
 	void load_json(std::string json_path);
 	void save_json(std::string json_path);
-	void fill_texture_array();
 	void draw_grid();
 	void draw_selection();
 	void draw_tiles();
 	void draw_floating_objects_footprint();
 	void draw_floating_objects_bbox();
-	void draw_texture();
-	void draw();
+	void draw_texture(GLuint texture);
+	void draw(GLuint texture);
 	void show_info();
 	void update_grid();
 	void update_selection();
@@ -129,7 +126,6 @@ public:
 
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
-	GLuint * _textures; // texture arrays pour tous les PNGs
 	glm::mat4 _camera2clip, _world2camera; // glm::ortho
 	ScreenGL * _screengl;
 	Font * _font;	
@@ -144,6 +140,7 @@ public:
 	Editor();
 	Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl);
 	~Editor();
+	void fill_texture_array();
 	void draw();
 	void sync_track_with_tile();
 	void add_floating_object(pt_type pos);
@@ -160,6 +157,7 @@ public:
 	GridEditor * _floating_grid_editor; // éditeur des objets flottants disponibles
 	//Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
+	GLuint * _textures; // texture arrays pour tous les PNGs
 };
 
 #endif

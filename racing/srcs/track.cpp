@@ -411,19 +411,41 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 		}
 		Car * car= (Car*)(obj1);
 		
-		car->_friction_material= 1.0;
+		car->_linear_friction_material= 1.0;
+		car->_angular_friction_material= 1.0;
 		bool car_in_abnormal_material= false;
+		
 		for (auto obj2 : _floating_objects) {
-			if (obj2->_model->_type!= MATERIAL_TILE && obj2->_model->_type!= MATERIAL_FLOATING) {
+			if (obj2->_model->_type!= MATERIAL_FLOATING) {
 				continue;
 			}
 			if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
 				continue;
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
-				car->_friction_material= obj2->_model->_linear_friction;
+				car->_linear_friction_material= obj2->_model->_linear_friction;
+				car->_angular_friction_material= obj2->_model->_angular_friction;
 				if (obj2->_model->_name== "puddle") {
 					car->_current_tracks= "tracks_water";
+					car->_last_track_t= t;
+					car_in_abnormal_material= true;
+				}
+				break;
+			}
+		}
+
+		for (auto obj2 : _grid->_objects) {
+			if (obj2->_model->_type!= MATERIAL_TILE) {
+				continue;
+			}
+			if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
+				continue;
+			}
+			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
+				car->_linear_friction_material= obj2->_model->_linear_friction;
+				car->_angular_friction_material= obj2->_model->_angular_friction;
+				if (obj2->_model->_name.find("sand")!= std::string::npos) {
+					car->_current_tracks= "tracks_sand";
 					car->_last_track_t= t;
 					car_in_abnormal_material= true;
 				}
