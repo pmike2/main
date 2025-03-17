@@ -33,7 +33,7 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_star, GLui
 
 	_pt_min= glm::vec2(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
 	_pt_max= glm::vec2(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
-	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
+	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 	_star_system= new StarSystem(_pt_min, _pt_max, "../data/star");
 

@@ -28,8 +28,8 @@ const unsigned int TIRE_TRACKS_DELTA_T= 20;
 const unsigned int ABNORMAL_TRACKS_DT= 1000;
 
 // thrust forcé lors d'une collision
-const number CAR_CAR_COLLISION_THRUST= 2.0;
-const number CAR_OBSTACLE_COLLISION_THRUST= 1.0;
+const number CAR_CAR_COLLISION_THRUST= 1.0;
+const number CAR_OBSTACLE_COLLISION_THRUST= 0.1;
 
 // collision entre 2 objets
 void collision(StaticObject * obj1, StaticObject * obj2);

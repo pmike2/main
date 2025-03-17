@@ -118,12 +118,13 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 	// on modifie directement la vitesse et la vitesse angulaire
 	if (!obj1->_model->_fixed) {
 		obj1->_velocity-= (impulse/ obj1->_mass)* axis;
-		obj1->_angular_velocity-= (impulse/ obj1->_inertia)* cross2d(r1, axis);
+		// facteur multiplicatif pour _angular_velocity pour que ce soit plus dynamique...
+		obj1->_angular_velocity-= 2.0* (impulse/ obj1->_inertia)* cross2d(r1, axis);
 	}
 
 	if (!obj2->_model->_fixed) {
 		obj2->_velocity+= (impulse/ obj2->_mass)* axis;
-		obj2->_angular_velocity+= (impulse/ obj2->_inertia)* cross2d(r2, axis);
+		obj2->_angular_velocity+= 2.0* (impulse/ obj2->_inertia)* cross2d(r2, axis);
 	}
 
 	// peut-être pas nécessaire

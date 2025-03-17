@@ -283,10 +283,12 @@ void Car::anim(number anim_dt) {
 		// dérapage
 		_drift= true;
 		_force_bwd-= model->_backward_dynamic_friction* _linear_friction_material* right_turn* _right;
+		//_force_bwd-= model->_backward_dynamic_friction* right_turn* _right;
 	}
 	else {
 		_drift= false;
 		_force_bwd-= model->_backward_static_friction* _linear_friction_material* right_turn* _right;
+		//_force_bwd-= model->_backward_static_friction* right_turn* _right;
 	}
 
 	// force -> acceleration -> vitesse -> position

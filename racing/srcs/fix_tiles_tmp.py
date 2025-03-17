@@ -16,7 +16,7 @@ def fix(json_path):
 	if data["type"]!= "material_tile":
 		return
 
-	data["linear_friction"]= 2.0
+	data["linear_friction"]= 4.0
 	data["angular_friction"]= 3.0
 
 	with open(json_path, "w") as f:

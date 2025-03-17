@@ -304,7 +304,7 @@ void Racing::show_info() {
 		if (hero->_n_laps== _track->_n_laps) {
 			nlaps_color= NLAPS_LAST_COLOR;
 		}
-		texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(4.0f, 4.0f), 0.015f, nlaps_color));
+		texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(5.0f, -5.0f), 0.01f, nlaps_color));
 	}
 
 	// vitesse joueur
@@ -314,7 +314,7 @@ void Racing::show_info() {
 		if (hero_speed> 200) {
 			speed_color= HIGH_SPEED_COLOR;
 		}
-		texts.push_back(Text(std::to_string(hero_speed)+ " km/h", glm::vec2(3.0f, 3.0f), 0.015f, speed_color));
+		texts.push_back(Text(std::to_string(hero_speed)+ " km/h", glm::vec2(5.0f, 5.0f), 0.01f, speed_color));
 	}
 
 	// classement toutes voitures
@@ -338,7 +338,7 @@ void Racing::show_info() {
 			}
 			std::ostringstream oss;
 			oss << std::fixed << std::setprecision(2) << hero->_lap_times[idx_time];
-			texts.push_back(Text("LAP "+ std::to_string(idx_time+ 1)+  " - "+ oss.str(), glm::vec2(-7.0f, -3.0f- float(idx_time)* 0.5f), 0.007f, lap_time_color));
+			texts.push_back(Text("LAP "+ std::to_string(idx_time+ 1)+  " - "+ oss.str(), glm::vec2(-7.0f, -2.0f- float(idx_time)* 0.5f), 0.005f, lap_time_color));
 		}
 	}
 
@@ -350,7 +350,7 @@ void Racing::show_info() {
 		}
 		std::ostringstream oss;
 		oss << std::fixed << std::setprecision(2) << total_time;
-		texts.push_back(Text("TOTAL - "+ oss.str(), glm::vec2(-7.0f, -5.0f), 0.007f, TOTAL_LAP_TIME_COLOR));
+		texts.push_back(Text("TOTAL - "+ oss.str(), glm::vec2(-7.0f, -5.0f), 0.005f, TOTAL_LAP_TIME_COLOR));
 	}
 	
 	_font->set_text(texts);
