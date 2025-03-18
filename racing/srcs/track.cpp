@@ -149,9 +149,57 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		}
 	}
 
-	std::pair<BBOX_SIDE, BBOX_CORNER>p= get_side(obj1->_bbox, obj2->_footprint->_pts[idx_pt]);
-	if (p.first== LEFT_SIDE) {
-		obj1->_bumps[]
+	const number BUMP_INCREMENT= 0.05;
+	const number BUMP_MAX= 0.3;
+	for (auto obj : std::vector<StaticObject *>{obj1, obj2}) {
+		if (obj->_model->_fixed || !obj->_model->_solid) {
+			continue;
+		}
+
+		std::pair<BBOX_SIDE, BBOX_CORNER>p= get_side(obj->_bbox, obj2->_footprint->_pts[idx_pt]);
+		
+		int obj_bump_idx= -1;
+		if (p.first== BOTTOM_SIDE) {
+			if (p.second== BOTTOMLEFT_CORNER) {
+				obj_bump_idx= 0;
+			}
+			else if (p.second== BOTTOMRIGHT_CORNER) {
+				obj_bump_idx= 1;
+			}
+		}
+		else if (p.first== RIGHT_SIDE) {
+			if (p.second== BOTTOMRIGHT_CORNER) {
+				obj_bump_idx= 2;
+			}
+			else if (p.second== TOPRIGHT_CORNER) {
+				obj_bump_idx= 3;
+			}
+		}
+		else if (p.first== TOP_SIDE) {
+			if (p.second== TOPRIGHT_CORNER) {
+				obj_bump_idx= 4;
+			}
+			else if (p.second== TOPLEFT_CORNER) {
+				obj_bump_idx= 5;
+			}
+		}
+		else if (p.first== LEFT_SIDE) {
+			if (p.second== TOPLEFT_CORNER) {
+				obj_bump_idx= 6;
+			}
+			else if (p.second== BOTTOMLEFT_CORNER) {
+				obj_bump_idx= 7;
+			}
+		}
+		if (obj_bump_idx< 0) {
+			std::cerr << p.first << " ; " << p.second << "\n";
+		}
+		else {
+			obj->_bumps[obj_bump_idx]+= BUMP_INCREMENT* impulse;
+			if (obj->_bumps[obj_bump_idx]> BUMP_MAX) {
+				obj->_bumps[obj_bump_idx]= BUMP_MAX;
+			}
+		}
 	}
 }
 

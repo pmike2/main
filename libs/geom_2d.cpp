@@ -633,10 +633,16 @@ bool is_quad_convex(const pt_type * pts) {
 
 
 std::pair<BBOX_SIDE, BBOX_CORNER> get_side(const BBox_2D * bbox, const pt_type & pt) {
-	number bottom= cross2d(bbox->_pts[1]- bbox->_pts[0], pt- bbox->_pts[0]);
+	/*number bottom= cross2d(bbox->_pts[1]- bbox->_pts[0], pt- bbox->_pts[0]);
 	number right= cross2d(bbox->_pts[2]- bbox->_pts[1], pt- bbox->_pts[1]);
 	number top= cross2d(bbox->_pts[3]- bbox->_pts[2], pt- bbox->_pts[2]);
-	number left= cross2d(bbox->_pts[0]- bbox->_pts[3], pt- bbox->_pts[3]);
+	number left= cross2d(bbox->_pts[0]- bbox->_pts[3], pt- bbox->_pts[3]);*/
+	number bottom, right, top, left;
+	pt_type proj;
+	distance_segment_pt(bbox->_pts[0], bbox->_pts[1], pt, &bottom, &proj);
+	distance_segment_pt(bbox->_pts[1], bbox->_pts[2], pt, &right, &proj);
+	distance_segment_pt(bbox->_pts[2], bbox->_pts[3], pt, &top, &proj);
+	distance_segment_pt(bbox->_pts[3], bbox->_pts[0], pt, &left, &proj);
 
 	number bottomleft= (bbox->_pts[0].x- pt.x)* (bbox->_pts[0].x- pt.x)+ (bbox->_pts[0].y- pt.y)* (bbox->_pts[0].y- pt.y);
 	number bottomright= (bbox->_pts[1].x- pt.x)* (bbox->_pts[1].x- pt.x)+ (bbox->_pts[1].y- pt.y)* (bbox->_pts[1].y- pt.y);
@@ -644,37 +650,39 @@ std::pair<BBOX_SIDE, BBOX_CORNER> get_side(const BBox_2D * bbox, const pt_type &
 	number topleft= (bbox->_pts[3].x- pt.x)* (bbox->_pts[3].x- pt.x)+ (bbox->_pts[3].y- pt.y)* (bbox->_pts[3].y- pt.y);
 
 	BBOX_SIDE side;
-	if (bottom< right && bottom< top && bottom< left) {
+	if (bottom<= right && bottom<= top && bottom<= left) {
 		side= BOTTOM_SIDE;
 	}
-	else if (right< bottom && right< top && right< left) {
+	else if (right<= bottom && right<= top && right<= left) {
 		side= RIGHT_SIDE;
 	}
-	else if (top< bottom && top< right && top< left) {
+	else if (top<= bottom && top<= right && top<= left) {
 		side= TOP_SIDE;
 	}
-	else if (left< bottom && left< top && left< right) {
+	else if (left<= bottom && left<= top && left<= right) {
 		side= LEFT_SIDE;
 	}
 	else {
 		side= NO_SIDE;
+		std::cerr << "bottom=" << bottom << " ; right=" << right << " ; top=" << top << " ; left=" << left << "\n";
 	}
 
 	BBOX_CORNER corner;
-	if (bottomleft< bottomright && bottomleft< topright && bottomleft< topleft) {
+	if (bottomleft<= bottomright && bottomleft<= topright && bottomleft<= topleft) {
 		corner= BOTTOMLEFT_CORNER;
 	}
-	else if (bottomright< bottomleft && bottomright< topright && bottomright< topleft) {
+	else if (bottomright<= bottomleft && bottomright<= topright && bottomright<= topleft) {
 		corner= BOTTOMRIGHT_CORNER;
 	}
-	else if (topright< bottomleft && topright< bottomright && topright< topleft) {
+	else if (topright<= bottomleft && topright<= bottomright && topright<= topleft) {
 		corner= TOPRIGHT_CORNER;
 	}
-	else if (topleft< bottomleft && topleft< topright && topleft< bottomright) {
-		corner= BOTTOMLEFT_CORNER;
+	else if (topleft<= bottomleft && topleft<= topright && topleft<= bottomright) {
+		corner= TOPLEFT_CORNER;
 	}
 	else {
 		corner= NO_CORNER;
+		std::cerr << "bottomleft=" << bottomleft << " ; bottomright=" << bottomright << " ; topright=" << topright << " ; topleft=" << topleft << "\n";
 	}
 
 	return std::make_pair(side, corner);
