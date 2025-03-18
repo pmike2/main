@@ -148,6 +148,11 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 			}
 		}
 	}
+
+	std::pair<BBOX_SIDE, BBOX_CORNER>p= get_side(obj1->_bbox, obj2->_footprint->_pts[idx_pt]);
+	if (p.first== LEFT_SIDE) {
+		obj1->_bumps[]
+	}
 }
 
 
@@ -412,8 +417,6 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 		}
 		Car * car= (Car*)(obj1);
 		
-		car->_linear_friction_material= 1.0;
-		car->_angular_friction_material= 1.0;
 		bool car_in_abnormal_material= false;
 		
 		for (auto obj2 : _floating_objects) {
@@ -458,6 +461,24 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 			auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_track_t).count();
 			if (dt> ABNORMAL_TRACKS_DT) {
 				car->_current_tracks= "tracks";
+				car->_linear_friction_material= 1.0;
+				car->_angular_friction_material= 1.0;
+			}
+			else {
+				const number LINEAR_FRICTION_MATERIAL_INCREMENT= 0.1;
+				const number ANGULAR_FRICTION_MATERIAL_INCREMENT= 0.1;
+				if (car->_linear_friction_material> 1.0+ LINEAR_FRICTION_MATERIAL_INCREMENT) {
+					car->_linear_friction_material-= LINEAR_FRICTION_MATERIAL_INCREMENT;
+				}
+				else if (car->_linear_friction_material< 1.0- LINEAR_FRICTION_MATERIAL_INCREMENT) {
+					car->_linear_friction_material+= LINEAR_FRICTION_MATERIAL_INCREMENT;
+				}
+				if (car->_angular_friction_material> 1.0+ ANGULAR_FRICTION_MATERIAL_INCREMENT) {
+					car->_angular_friction_material-= ANGULAR_FRICTION_MATERIAL_INCREMENT;
+				}
+				else if (car->_angular_friction_material< 1.0- ANGULAR_FRICTION_MATERIAL_INCREMENT) {
+					car->_angular_friction_material+= ANGULAR_FRICTION_MATERIAL_INCREMENT;
+				}
 			}
 		}
 	}

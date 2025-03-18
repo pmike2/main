@@ -66,9 +66,6 @@ Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) :
 {
 	reinit(position, alpha, scale);
 
-	// TODO : mettre des noms plus sympas
-	_name= "Car "+ std::to_string(rand_int(1, 100));
-
 	_current_tracks= "tracks";
 }
 

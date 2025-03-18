@@ -24,7 +24,7 @@ Racing::Racing() {
 }
 
 
-Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t) :
+Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t) :
 	_draw_bbox(false), _draw_force(false), _draw_texture(true), _show_debug_info(false), _show_info(true),
 	_cam_mode(TRANSLATE), _screengl(screengl), _input_state(input_state)
 	{
@@ -37,12 +37,12 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
 
 	// buffers
-	unsigned int n_buffers= 4;
+	unsigned int n_buffers= 5;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
 	// textures
-	unsigned int n_textures= 1;
+	unsigned int n_textures= 2;
 	_textures= new GLuint(n_textures);
 	glGenTextures(n_textures, _textures);
 
@@ -63,12 +63,21 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array", "gray_blend"});
 
+	_contexts["smoke"]= new DrawContext(prog_smoke, _buffers[4],
+		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
+		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
+
 	// piste
 	_track= new Track();
 	_track->load_json("../data/tracks/track1.json");
 
 	// remplissage textures
 	fill_texture_array();
+	unsigned int n_smoke_pngs= fill_texture_array_smoke();
+
+	for (auto car : _track->_sorted_cars) {
+		_smoke_systems.push_back(new SmokeSystem(car, n_smoke_pngs, t));
+	}
 
 	// init données
 	Car * hero= _track->get_hero();
@@ -87,10 +96,7 @@ Racing::~Racing() {
 
 void Racing::fill_texture_array() {
 	const unsigned int TEXTURE_SIZE= 1024;
-	unsigned int n_tex= 0;
-	for (auto model : _track->_models) {
-		n_tex++;
-	}
+	unsigned int n_tex= _track->_models.size();
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
@@ -134,6 +140,55 @@ void Racing::fill_texture_array() {
 
 	glActiveTexture(0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+}
+
+
+unsigned int Racing::fill_texture_array_smoke() {
+	const unsigned int TEXTURE_SIZE= 1024;
+
+	std::vector<std::string> pngs_smoke= list_files("../data/smoke", "png");
+	unsigned int n_tex= pngs_smoke.size();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[1]);
+	
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+	unsigned int compt= 0;
+	for (auto png : pngs_smoke) {
+		if (!file_exists(png)) {
+			std::cout << "png=" << png << " n'existe pas\n";
+			continue;
+		}
+		SDL_Surface * surface= IMG_Load(png.c_str());
+		if (!surface) {
+			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
+			return 0;
+		}
+
+		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+						0,                             // mipmap number
+						0, 0, compt,   // xoffset, yoffset, zoffset
+						TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
+						GL_BGRA,                       // format
+						GL_UNSIGNED_BYTE,              // type
+						surface->pixels);              // pointer to data
+
+		SDL_FreeSurface(surface);
+
+		compt++;
+	}
+
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+
+	return n_tex;
 }
 
 
@@ -263,6 +318,41 @@ void Racing::draw_texture() {
 }
 
 
+void Racing::draw_smoke() {
+	DrawContext * context= _contexts["smoke"];
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[1]);
+	glActiveTexture(0);
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["alpha_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(6* sizeof(float)));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
 void Racing::draw() {
 	if (_draw_force) {
 		draw_force();
@@ -273,6 +363,7 @@ void Racing::draw() {
 	}
 	if (_draw_texture) {
 		draw_texture();
+		draw_smoke();
 	}
 	
 	if (_show_debug_info) {
@@ -531,7 +622,7 @@ void Racing::update_force() {
 
 
 void Racing::update_texture() {
-	const unsigned int n_pts_per_obj= 6;
+	const unsigned int n_pts_per_obj= 12;
 
 	unsigned int n_grid_objects= _track->_grid->_objects.size();
 	unsigned int n_floating_objects= _track->_floating_objects.size();
@@ -542,7 +633,6 @@ void Racing::update_texture() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
 	for (unsigned int idx_obj=0; idx_obj<n_grid_objects+ n_floating_objects+ N_MAX_TIRE_TRACKS; ++idx_obj) {
 		StaticObject * obj;
 		
@@ -557,7 +647,7 @@ void Racing::update_texture() {
 		}
 		
 		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
-		number positions[n_pts_per_obj* 5]= {
+		/*number positions[n_pts_per_obj* 5]= {
 			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, 0.0, 1.0,
 			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, obj->_z, 1.0, 1.0,
 			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0,
@@ -565,13 +655,45 @@ void Racing::update_texture() {
 			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, 0.0, 1.0,
 			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0,
 			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, 0.0, 0.0
+		};*/
+		number positions[n_pts_per_obj* 5]= {
+			obj->_bbox->_pts[0].x+ obj->_bumps[0]* (obj->_bbox->_center.x- obj->_bbox->_pts[0].x),
+			obj->_bbox->_pts[0].y+ obj->_bumps[0]* (obj->_bbox->_center.y- obj->_bbox->_pts[0].y),
+			obj->_z, 0.0, 1.0,
+			obj->_bbox->_pts[1].x+ obj->_bumps[1]* (obj->_bbox->_center.x- obj->_bbox->_pts[0].x),
+			obj->_bbox->_pts[1].y+ obj->_bumps[1]* (obj->_bbox->_center.y- obj->_bbox->_pts[0].y),
+			obj->_z, 1.0, 1.0,
+			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5,
+
+			obj->_bbox->_pts[1].x+ obj->_bumps[2]* (obj->_bbox->_center.x- obj->_bbox->_pts[0].x),
+			obj->_bbox->_pts[1].y+ obj->_bumps[2]* (obj->_bbox->_center.y- obj->_bbox->_pts[0].y),
+			obj->_z, 1.0, 1.0,
+			obj->_bbox->_pts[2].x+ obj->_bumps[3]* (obj->_bbox->_center.x- obj->_bbox->_pts[0].x),
+			obj->_bbox->_pts[2].y+ obj->_bumps[3]* (obj->_bbox->_center.y- obj->_bbox->_pts[0].y),
+			obj->_z, 1.0, 0.0,
+			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5,
+
+			obj->_bbox->_pts[2].x+ obj->_bumps[4]* (obj->_bbox->_center.x- obj->_bbox->_pts[0].x),
+			obj->_bbox->_pts[2].y+ obj->_bumps[4]* (obj->_bbox->_center.y- obj->_bbox->_pts[0].y),
+			obj->_z, 1.0, 0.0,
+			obj->_bbox->_pts[3].x+ obj->_bumps[5]* (obj->_bbox->_center.x- obj->_bbox->_pts[0].x),
+			obj->_bbox->_pts[3].y+ obj->_bumps[5]* (obj->_bbox->_center.y- obj->_bbox->_pts[0].y),
+			obj->_z, 0.0, 0.0,
+			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5,
+
+			obj->_bbox->_pts[3].x+ obj->_bumps[6]* (obj->_bbox->_center.x- obj->_bbox->_pts[0].x),
+			obj->_bbox->_pts[3].y+ obj->_bumps[6]* (obj->_bbox->_center.y- obj->_bbox->_pts[0].y),
+			obj->_z, 0.0, 0.0,
+			obj->_bbox->_pts[0].x+ obj->_bumps[7]* (obj->_bbox->_center.x- obj->_bbox->_pts[0].x),
+			obj->_bbox->_pts[0].y+ obj->_bumps[7]* (obj->_bbox->_center.y- obj->_bbox->_pts[0].y),
+			obj->_z, 0.0, 1.0,
+			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5
 		};
 		
 		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
 			for (unsigned int i=0; i<5; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
-			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(_model_tex_idxs[obj->_model->_name]);
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
 		}
 	}
@@ -582,8 +704,53 @@ void Racing::update_texture() {
 }
 
 
+void Racing::update_smoke() {
+	const unsigned int n_pts_per_obj= 6;
+
+	DrawContext * context= _contexts["smoke"];
+	context->_n_pts= n_pts_per_obj* _smoke_systems.size()* N_SMOKES_PER_CAR;
+	context->_n_attrs_per_pts= 7;
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	unsigned int compt= 0;
+	for (unsigned int idx_smoke_system=0; idx_smoke_system<_smoke_systems.size(); ++idx_smoke_system) {
+		for (unsigned int idx_smoke=0; idx_smoke<N_SMOKES_PER_CAR; ++idx_smoke) {
+			Smoke * smoke= _smoke_systems[idx_smoke_system]->_smokes[idx_smoke];
+		
+			// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
+			data[compt++]= smoke->_bbox->_pts[0].x; data[compt++]= smoke->_bbox->_pts[0].y; 
+			data[compt++]= smoke->_z; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= smoke->_opacity; data[compt++]= smoke->_idx_texture;
+			data[compt++]= smoke->_bbox->_pts[1].x; data[compt++]= smoke->_bbox->_pts[1].y; 
+			data[compt++]= smoke->_z; data[compt++]= 1.0; data[compt++]= 1.0; data[compt++]= smoke->_opacity; data[compt++]= smoke->_idx_texture;
+			data[compt++]= smoke->_bbox->_pts[2].x; data[compt++]= smoke->_bbox->_pts[2].y; 
+			data[compt++]= smoke->_z; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= smoke->_opacity; data[compt++]= smoke->_idx_texture;
+
+			data[compt++]= smoke->_bbox->_pts[0].x; data[compt++]= smoke->_bbox->_pts[0].y;
+			data[compt++]= smoke->_z; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= smoke->_opacity; data[compt++]= smoke->_idx_texture;
+			data[compt++]= smoke->_bbox->_pts[2].x; data[compt++]= smoke->_bbox->_pts[2].y;
+			data[compt++]= smoke->_z; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= smoke->_opacity; data[compt++]= smoke->_idx_texture;
+			data[compt++]= smoke->_bbox->_pts[3].x; data[compt++]= smoke->_bbox->_pts[3].y;
+			data[compt++]= smoke->_z; data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= smoke->_opacity; data[compt++]= smoke->_idx_texture;
+		}
+	}
+
+	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+		std::cout << data[i] << " ; ";
+	}std::cout << "\n";*/
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 void Racing::anim(std::chrono::system_clock::time_point t) {
 	_track->anim(t, _input_state);
+
+	for (auto smoke_system : _smoke_systems) {
+		smoke_system->anim(t);
+	}
 
 	if (_draw_bbox) {
 		update_bbox();
@@ -594,6 +761,7 @@ void Racing::anim(std::chrono::system_clock::time_point t) {
 	}
 	if (_draw_texture) {
 		update_texture();
+		update_smoke();
 	}
 
 	camera();
@@ -674,6 +842,9 @@ bool Racing::key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) 
 		_track->start(t);
 		Car * hero= _track->get_hero();
 		_com_camera= hero->_com;
+		for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
+			_smoke_systems[idx_car]->_car= _track->_sorted_cars[idx_car];
+		}
 		return true;
 	}
 

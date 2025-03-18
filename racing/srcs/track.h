@@ -5,6 +5,7 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include <chrono>
 
 #include "geom_2d.h"
 #include "static_object.h"
@@ -29,7 +30,7 @@ const unsigned int ABNORMAL_TRACKS_DT= 1000;
 
 // thrust forcé lors d'une collision
 const number CAR_CAR_COLLISION_THRUST= 1.0;
-const number CAR_OBSTACLE_COLLISION_THRUST= 0.1;
+const number CAR_OBSTACLE_COLLISION_THRUST= 0.5;
 
 // collision entre 2 objets
 void collision(StaticObject * obj1, StaticObject * obj2);

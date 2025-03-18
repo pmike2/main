@@ -17,7 +17,7 @@ def fix(json_path):
 		return
 
 	data["linear_friction"]= 4.0
-	data["angular_friction"]= 3.0
+	data["angular_friction"]= 1.0
 
 	with open(json_path, "w") as f:
 		json.dump(data, f, indent=4)

@@ -15,6 +15,10 @@ https://github.com/OneLoneCoder/olcPixelGameEngine/blob/master/Videos/OneLoneCod
 #include "typedefs.h"
 
 
+enum BBOX_SIDE {LEFT_SIDE, RIGHT_SIDE, TOP_SIDE, BOTTOM_SIDE, NO_SIDE};
+enum BBOX_CORNER {BOTTOMLEFT_CORNER, BOTTOMRIGHT_CORNER, TOPLEFT_CORNER, TOPRIGHT_CORNER, NO_CORNER};
+
+
 class AABB_2D {
 public:
 	AABB_2D();

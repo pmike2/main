@@ -141,8 +141,9 @@ bool ray_intersects_aabb(const pt_type & ray_origin, const pt_type & ray_dir, co
 
 
 // BBox_2D ---------------------------------------------------------------------------------------------
-BBox_2D::BBox_2D() {
-
+BBox_2D::BBox_2D() : _center(pt_type(0.0, 0.0)), _half_size(pt_type(0.0, 0.0)), _alpha(0.0) {
+	_aabb= new AABB_2D();
+	update();
 }
 
 

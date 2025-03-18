@@ -5,6 +5,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <chrono>
 
 #include <OpenGL/gl3.h>
 #include <SDL2/SDL_image.h>
@@ -21,6 +22,7 @@
 #include "static_object.h"
 #include "car.h"
 #include "track.h"
+#include "smoke.h"
 
 
 // type de caméra : fixe, suit le héros, suit et s'oriente comme le héros
@@ -69,17 +71,19 @@ const glm::vec4 TOTAL_LAP_TIME_COLOR(0.8, 0.8, 0.6, 1.0);
 class Racing {
 public:
 	Racing();
-	Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t);
+	Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t);
 	~Racing();
 
 	// chargement des textures
 	void fill_texture_array();
+	unsigned int fill_texture_array_smoke();
 	
 	// dessins
 	void draw_bbox();
 	void draw_footprint();
 	void draw_force();
 	void draw_texture();
+	void draw_smoke();
 	void draw();
 
 	void show_info();
@@ -90,6 +94,7 @@ public:
 	void update_footprint();
 	void update_force();
 	void update_texture();
+	void update_smoke();
 
 	// animation
 	void anim(std::chrono::system_clock::time_point t);
@@ -115,8 +120,7 @@ public:
 	Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
 	InputState * _input_state;
-
-	//std::map<std::string, unsigned int> _model_tex_idxs;
+	std::vector<SmokeSystem *> _smoke_systems;
 };
 
 

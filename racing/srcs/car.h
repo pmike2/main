@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <chrono>
 
 #include "bbox_2d.h"
 #include "typedefs.h"

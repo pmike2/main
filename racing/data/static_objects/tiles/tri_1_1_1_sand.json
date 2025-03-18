@@ -15,5 +15,5 @@
         ]
     ],
     "linear_friction": 4.0,
-    "angular_friction": 3.0
+    "angular_friction": 1.0
 }

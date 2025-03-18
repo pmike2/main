@@ -223,6 +223,10 @@ void StaticObject::reinit(pt_type position, number alpha, pt_type scale) {
 	_angular_acceleration= 0.0;
 	_torque= 0.0;
 
+	for (int i=0; i<8; ++i) {
+		_bumps[i]= 0.0;
+	}
+
 	update();
 }
 

@@ -80,6 +80,7 @@ public:
 	number _inertia; // inertie
 
 	number _z;
+	number _bumps[8];
 };
 
 

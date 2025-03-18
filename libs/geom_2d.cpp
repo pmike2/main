@@ -632,6 +632,55 @@ bool is_quad_convex(const pt_type * pts) {
 }
 
 
+std::pair<BBOX_SIDE, BBOX_CORNER> get_side(const BBox_2D * bbox, const pt_type & pt) {
+	number bottom= cross2d(bbox->_pts[1]- bbox->_pts[0], pt- bbox->_pts[0]);
+	number right= cross2d(bbox->_pts[2]- bbox->_pts[1], pt- bbox->_pts[1]);
+	number top= cross2d(bbox->_pts[3]- bbox->_pts[2], pt- bbox->_pts[2]);
+	number left= cross2d(bbox->_pts[0]- bbox->_pts[3], pt- bbox->_pts[3]);
+
+	number bottomleft= (bbox->_pts[0].x- pt.x)* (bbox->_pts[0].x- pt.x)+ (bbox->_pts[0].y- pt.y)* (bbox->_pts[0].y- pt.y);
+	number bottomright= (bbox->_pts[1].x- pt.x)* (bbox->_pts[1].x- pt.x)+ (bbox->_pts[1].y- pt.y)* (bbox->_pts[1].y- pt.y);
+	number topright= (bbox->_pts[2].x- pt.x)* (bbox->_pts[2].x- pt.x)+ (bbox->_pts[2].y- pt.y)* (bbox->_pts[2].y- pt.y);
+	number topleft= (bbox->_pts[3].x- pt.x)* (bbox->_pts[3].x- pt.x)+ (bbox->_pts[3].y- pt.y)* (bbox->_pts[3].y- pt.y);
+
+	BBOX_SIDE side;
+	if (bottom< right && bottom< top && bottom< left) {
+		side= BOTTOM_SIDE;
+	}
+	else if (right< bottom && right< top && right< left) {
+		side= RIGHT_SIDE;
+	}
+	else if (top< bottom && top< right && top< left) {
+		side= TOP_SIDE;
+	}
+	else if (left< bottom && left< top && left< right) {
+		side= LEFT_SIDE;
+	}
+	else {
+		side= NO_SIDE;
+	}
+
+	BBOX_CORNER corner;
+	if (bottomleft< bottomright && bottomleft< topright && bottomleft< topleft) {
+		corner= BOTTOMLEFT_CORNER;
+	}
+	else if (bottomright< bottomleft && bottomright< topright && bottomright< topleft) {
+		corner= BOTTOMRIGHT_CORNER;
+	}
+	else if (topright< bottomleft && topright< bottomright && topright< topleft) {
+		corner= TOPRIGHT_CORNER;
+	}
+	else if (topleft< bottomleft && topleft< topright && topleft< bottomright) {
+		corner= BOTTOMLEFT_CORNER;
+	}
+	else {
+		corner= NO_CORNER;
+	}
+
+	return std::make_pair(side, corner);
+}
+
+
 // ---------------------------------------------------------------------------------------------------
 Polygon2D::Polygon2D() : _area(0.0), _centroid(pt_type(0.0)), _radius(0.0), _inertia(0.0) {
 	_aabb= new AABB_2D();

@@ -7,6 +7,7 @@ Programme principal de lancement de racing
 #include <iomanip>
 #include <iostream>
 #include <mutex>
+#include <chrono>
 
 #include <OpenGL/gl3.h>
 #include <SDL2/SDL.h>
@@ -144,6 +145,7 @@ void init() {
 
 	GLuint prog_simple= create_prog("../shaders/vertexshader_simple.txt", "../shaders/fragmentshader_simple.txt");
 	GLuint prog_texture= create_prog("../shaders/vertexshader_texture.txt", "../shaders/fragmentshader_texture.txt");
+	GLuint prog_smoke= create_prog("../shaders/vertexshader_smoke.txt", "../shaders/fragmentshader_smoke.txt");
 	GLuint prog_font= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
@@ -152,7 +154,7 @@ void init() {
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	input_state= new InputState();
 	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
-	racing= new Racing(prog_simple, prog_texture, prog_font, screengl, input_state, now);
+	racing= new Racing(prog_simple, prog_texture, prog_smoke, prog_font, screengl, input_state, now);
 
 	if (SDL_NumJoysticks()> 0){
 		SDL_Joystick * joy= SDL_JoystickOpen(0);
