@@ -14,15 +14,20 @@
 // START == ligne de départ (et d'arrivée) ; CHECKPOINT == chekpt
 // MATERIAL == matériau sol
 // TIRE_TRACKS == traces de pneu
-enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, START, CHECKPOINT, MATERIAL_TILE, MATERIAL_FLOATING, TIRE_TRACKS};
+enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, START, CHECKPOINT, MATERIAL_TILE, MATERIAL_FLOATING, TIRE_TRACKS, REPAIR};
+
+// type de grille : verticale, horizontale
+enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
 
 // !!!
 // obligé de * inertie par un facteur sinon tout pète lors des collisions
 // !!!
 const number INERTIA_FACTOR= 50.0;
-
-// type de grille : verticale, horizontale
-enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
+const number BUMP_INCREMENT= 0.15;
+const number BUMP_MAX= 4.0;
+const number REPAIR_INCREMENT= 0.01;
+const number BUMP_THRUST_FACTOR= 0.02;
+const number BUMP_WHEEL_FACTOR= 0.12;
 
 
 // Modèle d'objet
@@ -80,7 +85,7 @@ public:
 	number _inertia; // inertie
 
 	number _z;
-	number _bumps[8];
+	number _bumps[9];
 };
 
 

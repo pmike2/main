@@ -16,7 +16,7 @@ const number SMOKE_SIZE_INIT_FACTOR= 0.12;
 const number SMOKE_Z_INCREMENT= 0.1;
 const number SMOKE_Z_INIT= 100.0;
 const number SMOKE_DIST_FROM_COM= 0.7;
-const number SMOKE_OPACITY_INIT= 0.5;
+const number SMOKE_OPACITY_INIT= 0.8;
 
 
 class Smoke {

@@ -632,11 +632,9 @@ bool is_quad_convex(const pt_type * pts) {
 }
 
 
-std::pair<BBOX_SIDE, BBOX_CORNER> get_side(const BBox_2D * bbox, const pt_type & pt) {
-	/*number bottom= cross2d(bbox->_pts[1]- bbox->_pts[0], pt- bbox->_pts[0]);
-	number right= cross2d(bbox->_pts[2]- bbox->_pts[1], pt- bbox->_pts[1]);
-	number top= cross2d(bbox->_pts[3]- bbox->_pts[2], pt- bbox->_pts[2]);
-	number left= cross2d(bbox->_pts[0]- bbox->_pts[3], pt- bbox->_pts[3]);*/
+std::pair<BBOX_SIDE, BBOX_CORNER> bbox_side_corner(const BBox_2D * bbox, const pt_type & pt) {
+	const number THRESHOLD= 0.01;
+
 	number bottom, right, top, left;
 	pt_type proj;
 	distance_segment_pt(bbox->_pts[0], bbox->_pts[1], pt, &bottom, &proj);
@@ -670,15 +668,19 @@ std::pair<BBOX_SIDE, BBOX_CORNER> get_side(const BBox_2D * bbox, const pt_type &
 	BBOX_CORNER corner;
 	if (bottomleft<= bottomright && bottomleft<= topright && bottomleft<= topleft) {
 		corner= BOTTOMLEFT_CORNER;
+		//if (bottomleft< THRESHOLD) {side= NO_SIDE;}
 	}
 	else if (bottomright<= bottomleft && bottomright<= topright && bottomright<= topleft) {
 		corner= BOTTOMRIGHT_CORNER;
+		//if (bottomright< THRESHOLD) {side= NO_SIDE;}
 	}
 	else if (topright<= bottomleft && topright<= bottomright && topright<= topleft) {
 		corner= TOPRIGHT_CORNER;
+		//if (topright< THRESHOLD) {side= NO_SIDE;}
 	}
 	else if (topleft<= bottomleft && topleft<= topright && topleft<= bottomright) {
 		corner= TOPLEFT_CORNER;
+		//if (topleft< THRESHOLD) {side= NO_SIDE;}
 	}
 	else {
 		corner= NO_CORNER;

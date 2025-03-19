@@ -54,6 +54,7 @@ public:
 	unsigned int get_checkpoint_index(CheckPoint * checkpoint); // position du chkpt par rapport au start
 	void all_collision(); // gestion des collisions
 	void materials(std::chrono::system_clock::time_point t);
+	void repair(std::chrono::system_clock::time_point t);
 	void tire_tracks(std::chrono::system_clock::time_point t);
 	void checkpoints(std::chrono::system_clock::time_point t); // gestion chkpts pour toutes les voitures
 	void checkpoint_ia(Car * car); // ia basée sur les chkpts
@@ -71,6 +72,7 @@ public:
 	
 	StaticObject * get_floating_object(pt_type pos); // renvoie le floating object à une coord
 	void delete_floating_object(StaticObject * obj); // suppression floating object
+	void clear_floating_objects();
 
 	friend std::ostream & operator << (std::ostream & os, const Track & track);
 

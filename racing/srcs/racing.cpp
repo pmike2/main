@@ -42,9 +42,12 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuin
 	glGenBuffers(n_buffers, _buffers);
 
 	// textures
-	unsigned int n_textures= 2;
+	unsigned int n_textures= 3;
 	_textures= new GLuint(n_textures);
 	glGenTextures(n_textures, _textures);
+	_texture_idx= 0;
+	_texture_idx_bump= 1;
+	_texture_idx_smoke= 2;
 
 	// contextes de dessin
 	_contexts["bbox"]= new DrawContext(prog_simple, _buffers[0],
@@ -60,8 +63,8 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuin
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
 	_contexts["texture"]= new DrawContext(prog_texture, _buffers[3],
-		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
-		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array", "gray_blend"});
+		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "bump_in"},
+		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array", "texture_array_bump", "gray_blend"});
 
 	_contexts["smoke"]= new DrawContext(prog_smoke, _buffers[4],
 		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
@@ -73,6 +76,7 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuin
 
 	// remplissage textures
 	fill_texture_array();
+	fill_texture_array_bump();
 	unsigned int n_smoke_pngs= fill_texture_array_smoke();
 
 	for (auto car : _track->_sorted_cars) {
@@ -99,16 +103,71 @@ void Racing::fill_texture_array() {
 	unsigned int n_tex= _track->_models.size();
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx]);
 	
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	unsigned int compt= 0;
 	for (auto model : _track->_models) {
-		//_model_tex_idxs[model.first]= compt;
 		model.second->_texture_idx= float(compt);
 		std::string png_abs= dirname(model.second->_json_path)+ "/textures/"+ model.first+ ".png";
 		//std::cout << "png=" << png_abs << " ; compt=" << compt << "\n";
+		if (!file_exists(png_abs)) {
+			std::cout << "png=" << png_abs << " n'existe pas\n";
+			continue;
+		}
+		SDL_Surface * surface= IMG_Load(png_abs.c_str());
+		if (!surface) {
+			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
+			return;
+		}
+
+		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+						0,                             // mipmap number
+						0, 0, compt,   // xoffset, yoffset, zoffset
+						TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
+						GL_BGRA,                       // format
+						GL_UNSIGNED_BYTE,              // type
+						surface->pixels);              // pointer to data
+
+		SDL_FreeSurface(surface);
+
+		compt++;
+	}
+
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+}
+
+
+void Racing::fill_texture_array_bump() {
+	const unsigned int TEXTURE_SIZE= 1024;
+	unsigned int n_tex= _track->_models.size();
+
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_bump]);
+	
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+	unsigned int compt= 0;
+	for (auto model : _track->_models) {
+		model.second->_texture_idx= float(compt);
+		std::string png_abs_normal= dirname(model.second->_json_path)+ "/textures/"+ model.first+ ".png";
+		std::string png_abs_bump= dirname(model.second->_json_path)+ "/textures/"+ model.first+ "_bump.png";
+		std::string png_abs;
+		
+		if (file_exists(png_abs_bump)) {
+			png_abs= png_abs_bump;
+		}
+		else {
+			png_abs= png_abs_normal;
+		}
 		if (!file_exists(png_abs)) {
 			std::cout << "png=" << png_abs << " n'existe pas\n";
 			continue;
@@ -150,7 +209,7 @@ unsigned int Racing::fill_texture_array_smoke() {
 	unsigned int n_tex= pngs_smoke.size();
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[1]);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_smoke]);
 	
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
@@ -280,16 +339,20 @@ void Racing::draw_texture() {
 	DrawContext * context= _contexts["texture"];
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx]);
+	glActiveTexture(0);
+	
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_bump]);
 	glActiveTexture(0);
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 
-	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniform1i(context->_locs_uniform["texture_array"], 0);
+	glUniform1i(context->_locs_uniform["texture_array_bump"], 1);
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	//glUniform1f(context->_locs_uniform["z"], -15.0f);
 
 	if (_track->_mode== TRACK_LIVE) {
 		glUniform1f(context->_locs_uniform["gray_blend"], 0.0f);
@@ -304,7 +367,8 @@ void Racing::draw_texture() {
 
 	glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
 	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
-	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["bump_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(6* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 
@@ -322,7 +386,7 @@ void Racing::draw_smoke() {
 	DrawContext * context= _contexts["smoke"];
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[1]);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_smoke]);
 	glActiveTexture(0);
 
 	glUseProgram(context->_prog);
@@ -629,7 +693,7 @@ void Racing::update_texture() {
 
 	DrawContext * context= _contexts["texture"];
 	context->_n_pts= n_pts_per_obj* (n_grid_objects+ n_floating_objects+ N_MAX_TIRE_TRACKS);
-	context->_n_attrs_per_pts= 6;
+	context->_n_attrs_per_pts= 7;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
@@ -656,45 +720,37 @@ void Racing::update_texture() {
 			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0,
 			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, 0.0, 0.0
 		};*/
-		number positions[n_pts_per_obj* 5]= {
-			obj->_bbox->_pts[0].x+ obj->_bumps[0]* (obj->_bbox->_center.x- obj->_bbox->_pts[0].x),
-			obj->_bbox->_pts[0].y+ obj->_bumps[0]* (obj->_bbox->_center.y- obj->_bbox->_pts[0].y),
-			obj->_z, 0.0, 1.0,
-			obj->_bbox->_pts[1].x+ obj->_bumps[1]* (obj->_bbox->_center.x- obj->_bbox->_pts[1].x),
-			obj->_bbox->_pts[1].y+ obj->_bumps[1]* (obj->_bbox->_center.y- obj->_bbox->_pts[1].y),
-			obj->_z, 1.0, 1.0,
-			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5,
-
-			obj->_bbox->_pts[1].x+ obj->_bumps[2]* (obj->_bbox->_center.x- obj->_bbox->_pts[1].x),
-			obj->_bbox->_pts[1].y+ obj->_bumps[2]* (obj->_bbox->_center.y- obj->_bbox->_pts[1].y),
-			obj->_z, 1.0, 1.0,
-			obj->_bbox->_pts[2].x+ obj->_bumps[3]* (obj->_bbox->_center.x- obj->_bbox->_pts[2].x),
-			obj->_bbox->_pts[2].y+ obj->_bumps[3]* (obj->_bbox->_center.y- obj->_bbox->_pts[2].y),
-			obj->_z, 1.0, 0.0,
-			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5,
-
-			obj->_bbox->_pts[2].x+ obj->_bumps[4]* (obj->_bbox->_center.x- obj->_bbox->_pts[2].x),
-			obj->_bbox->_pts[2].y+ obj->_bumps[4]* (obj->_bbox->_center.y- obj->_bbox->_pts[2].y),
-			obj->_z, 1.0, 0.0,
-			obj->_bbox->_pts[3].x+ obj->_bumps[5]* (obj->_bbox->_center.x- obj->_bbox->_pts[3].x),
-			obj->_bbox->_pts[3].y+ obj->_bumps[5]* (obj->_bbox->_center.y- obj->_bbox->_pts[3].y),
-			obj->_z, 0.0, 0.0,
-			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5,
-
-			obj->_bbox->_pts[3].x+ obj->_bumps[6]* (obj->_bbox->_center.x- obj->_bbox->_pts[3].x),
-			obj->_bbox->_pts[3].y+ obj->_bumps[6]* (obj->_bbox->_center.y- obj->_bbox->_pts[3].y),
-			obj->_z, 0.0, 0.0,
-			obj->_bbox->_pts[0].x+ obj->_bumps[7]* (obj->_bbox->_center.x- obj->_bbox->_pts[0].x),
-			obj->_bbox->_pts[0].y+ obj->_bumps[7]* (obj->_bbox->_center.y- obj->_bbox->_pts[0].y),
-			obj->_z, 0.0, 1.0,
-			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5
-		};
 		
-		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
-			for (unsigned int i=0; i<5; ++i) {
-				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
+		number positions[n_pts_per_obj* 6]= {
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, 0.0, 1.0, obj->_bumps[0],
+			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, obj->_z, 1.0, 1.0, obj->_bumps[1],
+			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5, obj->_bumps[8],
+
+			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, obj->_z, 1.0, 1.0, obj->_bumps[2],
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0, obj->_bumps[3],
+			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5, obj->_bumps[8],
+
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0, obj->_bumps[4],
+			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, 0.0, 0.0, obj->_bumps[5],
+			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5, obj->_bumps[8],
+
+			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, 0.0, 0.0, obj->_bumps[6],
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, 0.0, 1.0, obj->_bumps[7],
+			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5, obj->_bumps[8]
+		};
+
+		/*if (obj->_model->_type== HERO_CAR) {
+			for (int i=0; i<9; ++i) {
+				std::cout << obj->_bumps[i] << " ; ";
 			}
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
+			std::cout << "\n";
+		}*/
+
+		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
+			for (unsigned int i=0; i<6; ++i) {
+				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[6* idx_pt+ i]);
+			}
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= obj->_model->_texture_idx;
 		}
 	}
 

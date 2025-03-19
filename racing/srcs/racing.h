@@ -76,6 +76,7 @@ public:
 
 	// chargement des textures
 	void fill_texture_array();
+	void fill_texture_array_bump();
 	unsigned int fill_texture_array_smoke();
 	
 	// dessins
@@ -115,6 +116,7 @@ public:
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs
+	unsigned int _texture_idx, _texture_idx_bump, _texture_idx_smoke;
 	glm::mat4 _camera2clip; // glm::ortho
 	glm::mat4 _world2camera; // caméra
 	Font * _font; // font pour écriture textes

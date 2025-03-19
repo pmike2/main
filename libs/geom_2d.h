@@ -27,7 +27,6 @@ pt_type rot(pt_type v, number alpha);
 number norm(pt_type v);
 pt_type normalized(pt_type v);
 number scal(pt_type u, pt_type v);
-number cross(pt_type u, pt_type v);
 
 void rotation_float2mat(float rot, mat & mat);
 number cross2d(const pt_type & v1, const pt_type & v2);
@@ -53,7 +52,7 @@ bool point_in_circumcircle(const pt_type & circle_pt1, const pt_type & circle_pt
 bool point_in_circle(const pt_type & center, number radius, const pt_type & pt);
 void get_circle_center(const pt_type & circle_pt1, const pt_type & circle_pt2, const pt_type & circle_pt3, pt_type & center, number * radius);
 bool is_quad_convex(const pt_type * pts);
-std::pair<BBOX_SIDE, BBOX_CORNER> get_side(const BBox_2D * bbox, const pt_type & pt);
+std::pair<BBOX_SIDE, BBOX_CORNER> bbox_side_corner(const BBox_2D * bbox, const pt_type & pt);
 
 
 class Polygon2D {

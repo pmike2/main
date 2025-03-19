@@ -78,8 +78,6 @@ public:
 	glm::mat4 _camera2clip, _world2camera; // glm::ortho
 	ScreenGL * _screengl;
 	Font * _font;
-
-	//std::map<std::string, unsigned int> _model_tex_idxs;
 };
 
 
@@ -89,9 +87,10 @@ public:
 	TrackEditor();
 	TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, number cell_size);
 	~TrackEditor();
-	void reinit();
+	void reinit(unsigned int width, unsigned int height);
 	void load_json(std::string json_path);
 	void save_json(std::string json_path);
+	void load_current_track();
 	void draw_grid();
 	void draw_selection();
 	void draw_tiles();
@@ -130,7 +129,7 @@ public:
 	ScreenGL * _screengl;
 	Font * _font;	
 
-	//std::map<std::string, unsigned int> _model_tex_idxs;
+	unsigned int _current_track_idx;
 };
 
 

@@ -63,6 +63,9 @@ void StaticObjectModel::load(std::string json_path) {
 	else if (js["type"]== "tire_tracks") {
 		_type= TIRE_TRACKS;
 	}
+	else if (js["type"]== "repair") {
+		_type= REPAIR;
+	}
 	else {
 		std::cerr << "Type " << js["type"] << " non supporté\n";
 	}
@@ -70,9 +73,18 @@ void StaticObjectModel::load(std::string json_path) {
 	// empreinte au sol
 	_footprint= new Polygon2D();
 	std::vector<pt_type> pts;
-	for (auto coord : js["footprint"]) {
-		pt_type pt(coord[0], coord[1]);
-		pts.push_back(pt);
+	if (js["footprint"]!= nullptr) {
+		for (auto coord : js["footprint"]) {
+			pt_type pt(coord[0], coord[1]);
+			pts.push_back(pt);
+		}
+	}
+	else {
+		// emprise totale
+		pts.push_back(pt_type(-0.5, -0.5));
+		pts.push_back(pt_type(0.5, -0.5));
+		pts.push_back(pt_type(0.5, 0.5));
+		pts.push_back(pt_type(-0.5, 0.5));
 	}
 	_footprint->set_points(pts);
 	_footprint->update_all();
@@ -115,7 +127,7 @@ void StaticObjectModel::load(std::string json_path) {
 		_restitution= js["restitution"];
 	}
 
-	else if (_type== CHECKPOINT || _type== START || _type== TIRE_TRACKS) {
+	else if (_type== CHECKPOINT || _type== START || _type== TIRE_TRACKS || _type== REPAIR) {
 		_fixed= true;
 		_solid= false;
 		_mass= _linear_friction= _angular_friction= _restitution= 0.0;
@@ -183,7 +195,7 @@ StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number a
 	if (model->_type== OBSTACLE_TILE || model->_type== MATERIAL_TILE) {
 		_z= -100.0f;
 	}
-	else if (model->_type== START || model->_type== CHECKPOINT || model->_type== MATERIAL_FLOATING) {
+	else if (model->_type== START || model->_type== CHECKPOINT || model->_type== MATERIAL_FLOATING || model->_type== REPAIR) {
 		_z= -90.0f;
 	}
 	else if (model->_type== TIRE_TRACKS) {
@@ -223,7 +235,7 @@ void StaticObject::reinit(pt_type position, number alpha, pt_type scale) {
 	_angular_acceleration= 0.0;
 	_torque= 0.0;
 
-	for (int i=0; i<8; ++i) {
+	for (int i=0; i<9; ++i) {
 		_bumps[i]= 0.0;
 	}
 

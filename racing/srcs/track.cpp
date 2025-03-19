@@ -149,55 +149,68 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		}
 	}
 
-	const number BUMP_INCREMENT= 0.05;
-	const number BUMP_MAX= 0.3;
-	for (auto obj : std::vector<StaticObject *>{obj1, obj2}) {
-		if (obj->_model->_fixed || !obj->_model->_solid) {
-			continue;
-		}
-
-		std::pair<BBOX_SIDE, BBOX_CORNER>p= get_side(obj->_bbox, obj2->_footprint->_pts[idx_pt]);
-		
-		int obj_bump_idx= -1;
+	if (!obj1->_model->_fixed && obj1->_model->_solid) {
+		int obj_bump_idx_1= -1;
+		int obj_bump_idx_2= -1;
+		std::pair<BBOX_SIDE, BBOX_CORNER>p= bbox_side_corner(obj1->_bbox, obj2->_footprint->_pts[idx_pt]);
 		if (p.first== BOTTOM_SIDE) {
-			if (p.second== BOTTOMLEFT_CORNER) {
-				obj_bump_idx= 0;
-			}
-			else if (p.second== BOTTOMRIGHT_CORNER) {
-				obj_bump_idx= 1;
-			}
+			obj_bump_idx_1= 0;
+			obj_bump_idx_2= 1;
 		}
 		else if (p.first== RIGHT_SIDE) {
-			if (p.second== BOTTOMRIGHT_CORNER) {
-				obj_bump_idx= 2;
-			}
-			else if (p.second== TOPRIGHT_CORNER) {
-				obj_bump_idx= 3;
-			}
+			obj_bump_idx_1= 2;
+			obj_bump_idx_2= 3;
 		}
 		else if (p.first== TOP_SIDE) {
-			if (p.second== TOPRIGHT_CORNER) {
-				obj_bump_idx= 4;
-			}
-			else if (p.second== TOPLEFT_CORNER) {
-				obj_bump_idx= 5;
-			}
+			obj_bump_idx_1= 4;
+			obj_bump_idx_2= 5;
 		}
 		else if (p.first== LEFT_SIDE) {
-			if (p.second== TOPLEFT_CORNER) {
-				obj_bump_idx= 6;
+			obj_bump_idx_1= 6;
+			obj_bump_idx_2= 7;
+		}
+		for (int i=0; i<8; ++i) {
+			if (i== obj_bump_idx_1 || i== obj_bump_idx_2) {
+				obj1->_bumps[i]+= BUMP_INCREMENT* impulse;
 			}
-			else if (p.second== BOTTOMLEFT_CORNER) {
-				obj_bump_idx= 7;
+			else {
+				obj1->_bumps[i]+= BUMP_INCREMENT* impulse* rand_number(0.2, 0.5);
+			}
+			if (obj1->_bumps[i]> BUMP_MAX) {
+				obj1->_bumps[i]= BUMP_MAX;
 			}
 		}
-		if (obj_bump_idx< 0) {
-			std::cerr << p.first << " ; " << p.second << "\n";
+	}
+
+	if (!obj2->_model->_fixed && obj2->_model->_solid) {
+		int obj_bump_idx_1= -1;
+		int obj_bump_idx_2= -1;
+		std::pair<BBOX_SIDE, BBOX_CORNER>p= bbox_side_corner(obj2->_bbox, obj2->_footprint->_pts[idx_pt]);
+		if (p.second== BOTTOMLEFT_CORNER) {
+			obj_bump_idx_1= 0;
+			obj_bump_idx_2= 7;
 		}
-		else {
-			obj->_bumps[obj_bump_idx]+= BUMP_INCREMENT* impulse;
-			if (obj->_bumps[obj_bump_idx]> BUMP_MAX) {
-				obj->_bumps[obj_bump_idx]= BUMP_MAX;
+		else if (p.second== BOTTOMRIGHT_CORNER) {
+			obj_bump_idx_1= 1;
+			obj_bump_idx_2= 2;
+		}
+		else if (p.second== TOPRIGHT_CORNER) {
+			obj_bump_idx_1= 3;
+			obj_bump_idx_2= 4;
+		}
+		else if (p.second== TOPLEFT_CORNER) {
+			obj_bump_idx_1= 5;
+			obj_bump_idx_2= 6;
+		}
+		for (int i=0; i<8; ++i) {
+			if (i== obj_bump_idx_1 || i== obj_bump_idx_2) {
+				obj2->_bumps[i]+= BUMP_INCREMENT* impulse;
+			}
+			else {
+				obj2->_bumps[i]+= BUMP_INCREMENT* impulse* rand_number(0.2, 0.5);
+			}
+			if (obj2->_bumps[i]> BUMP_MAX) {
+				obj2->_bumps[i]= BUMP_MAX;
 			}
 		}
 	}
@@ -533,6 +546,34 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 }
 
 
+void Track::repair(std::chrono::system_clock::time_point t) {
+	for (auto obj1 : _floating_objects) {
+		if (obj1->_model->_type!= HERO_CAR && obj1->_model->_type!= ENNEMY_CAR) {
+			continue;
+		}
+		Car * car= (Car*)(obj1);
+		
+		for (auto obj2 : _floating_objects) {
+			if (obj2->_model->_type!= REPAIR) {
+				continue;
+			}
+			if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
+				continue;
+			}
+			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
+				for (int i=0; i<9; ++i) {
+					car->_bumps[i]-= REPAIR_INCREMENT;
+					if (car->_bumps[i]< 0.0) {
+						car->_bumps[i]= 0.0;
+					}
+				}
+				break;
+			}
+		}
+	}
+}
+
+
 void Track::tire_tracks(std::chrono::system_clock::time_point t) {
 	std::vector<Car * > drifting_cars;
 	for (auto obj : _floating_objects) {
@@ -743,6 +784,7 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 		all_collision();
 		checkpoints(t);
 		materials(t);
+		repair(t);
 		tire_tracks(t);
 		sort_cars();
 		lap_time(t);
@@ -798,6 +840,14 @@ StaticObject * Track::get_floating_object(pt_type pos) {
 void Track::delete_floating_object(StaticObject * obj) {
 	_floating_objects.erase(find(_floating_objects.begin(), _floating_objects.end(), obj));
 	delete obj;
+}
+
+
+void Track::clear_floating_objects() {
+	for (auto obj : _floating_objects) {
+		delete obj;
+	}
+	_floating_objects.clear();
 }
 
 

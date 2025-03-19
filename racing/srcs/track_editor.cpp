@@ -441,7 +441,7 @@ TrackEditor::TrackEditor() {
 TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, number cell_size) :
 	_draw_bbox(false), _draw_texture(true),
 	_row_idx_select(0), _col_idx_select(0), _screengl(screengl), _translation(pt_type(0.0)), _scale(1.0), _last_checkpoint(NULL),
-	_selected_floating_object(NULL)
+	_selected_floating_object(NULL), _current_track_idx(1)
 {
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::mat4(1.0f);
@@ -476,10 +476,10 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
 	_track= new Track();
-	_track->set_all("full_obst", TRACK_DEFAULT_SIZE, TRACK_DEFAULT_SIZE);
-	_track->_n_laps= DEFAULT_N_LAPS;
-
-	update();
+	//_track->set_all("full_obst", TRACK_DEFAULT_SIZE, TRACK_DEFAULT_SIZE);
+	//_track->_n_laps= DEFAULT_N_LAPS;
+	//update();
+	load_current_track();
 }
 
 
@@ -488,8 +488,10 @@ TrackEditor::~TrackEditor() {
 }
 
 
-void TrackEditor::reinit() {
-	_track->set_all("full_obst", TRACK_DEFAULT_SIZE, TRACK_DEFAULT_SIZE);
+void TrackEditor::reinit(unsigned int width, unsigned int height) {
+	_track->set_all("full_obst", width, height);
+	_track->clear_floating_objects();
+	_track->_n_laps= DEFAULT_N_LAPS;
 }
 
 
@@ -534,6 +536,32 @@ void TrackEditor::save_json(std::string json_path) {
 	}
 
 	ofs << std::setw(4) << js << "\n";
+}
+
+
+void TrackEditor::load_current_track() {
+	std::string current_track_path= "../data/tracks/track"+ std::to_string(_current_track_idx)+ ".json";
+	if (!file_exists(current_track_path)) {
+		//std::cout << current_track_path << " n'existe pas.\n";
+		reinit(TRACK_DEFAULT_SIZE, TRACK_DEFAULT_SIZE);
+	}
+	else {
+		load_json(current_track_path);
+
+		int max_idx= -1;
+		_last_checkpoint= NULL;
+		for (auto obj : _track->_floating_objects) {
+			if (obj->_model->_type== START || obj->_model->_type== CHECKPOINT) {
+				int idx= _track->get_checkpoint_index((CheckPoint *)(obj));
+				if (idx> max_idx) {
+					max_idx= idx;
+					_last_checkpoint= (CheckPoint *)(obj);
+				}
+			}
+		}
+	}
+
+	update();
 }
 
 
@@ -744,7 +772,8 @@ void TrackEditor::show_info() {
 		texts.push_back(Text(s, pt_type(v.x, v.y), font_scale, glm::vec4(1.0, 1.0, 1.0, 1.0)));
 	}*/
 
-	texts.push_back(Text("NLAPS = "+ std::to_string(_track->_n_laps), pt_type(6.0, 6.0), 0.01, glm::vec4(1.0, 1.0, 1.0, 1.0)));
+	texts.push_back(Text("TRACK "+ std::to_string(_current_track_idx), pt_type(7.0, 7.0), 0.01, glm::vec4(1.0, 1.0, 1.0, 1.0)));
+	texts.push_back(Text("NLAPS = "+ std::to_string(_track->_n_laps), pt_type(7.0, 6.0), 0.01, glm::vec4(1.0, 1.0, 1.0, 1.0)));
 
 	_font->set_text(texts);
 	_font->draw();
@@ -1026,32 +1055,14 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 	
 	// i = remise à 0
 	if (key== SDLK_i) {
-		reinit();
-		update();
-		return true;
-	}
-	// l = chgmt json
-	else if (key== SDLK_l) {
-		load_json("../data/tracks/track1.json");
-
-		int max_idx= -1;
-		_last_checkpoint= NULL;
-		for (auto obj : _track->_floating_objects) {
-			if (obj->_model->_type== START || obj->_model->_type== CHECKPOINT) {
-				int idx= _track->get_checkpoint_index((CheckPoint *)(obj));
-				if (idx> max_idx) {
-					max_idx= idx;
-					_last_checkpoint= (CheckPoint *)(obj);
-				}
-			}
-		}
-
+		reinit(_track->_grid->_width, _track->_grid->_height);
 		update();
 		return true;
 	}
 	// s = sauvegarde json
 	else if (key== SDLK_s) {
-		save_json("../data/tracks/track1.json");
+		std::string current_track_path= "../data/tracks/track"+ std::to_string(_current_track_idx)+ ".json";
+		save_json(current_track_path);
 		return true;
 	}
 	else if (key== SDLK_b) {
@@ -1070,6 +1081,15 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 			_track->_n_laps++;
 		}
 	}
+	else if (key== SDLK_KP_1) {_current_track_idx= 1; load_current_track();}
+	else if (key== SDLK_KP_2) {_current_track_idx= 2; load_current_track();}
+	else if (key== SDLK_KP_3) {_current_track_idx= 3; load_current_track();}
+	else if (key== SDLK_KP_4) {_current_track_idx= 4; load_current_track();}
+	else if (key== SDLK_KP_5) {_current_track_idx= 5; load_current_track();}
+	else if (key== SDLK_KP_6) {_current_track_idx= 6; load_current_track();}
+	else if (key== SDLK_KP_7) {_current_track_idx= 7; load_current_track();}
+	else if (key== SDLK_KP_8) {_current_track_idx= 8; load_current_track();}
+	else if (key== SDLK_KP_9) {_current_track_idx= 9; load_current_track();}
 
 	return false;
 }

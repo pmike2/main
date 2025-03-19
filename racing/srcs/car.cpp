@@ -267,6 +267,11 @@ void Car::random_ia() {
 void Car::anim(number anim_dt) {
 	CarModel * model= get_model();
 
+	// plus Car a des bumps plus il est difficile d'accélerer et de tourner
+	// les bumps 4 et 5 sont à l'avant ; 3 et 6 sont à l'avant sur les côtés
+	_thrust*= 1.0- BUMP_THRUST_FACTOR* _bumps[4]/ BUMP_MAX- BUMP_THRUST_FACTOR* _bumps[5]/ BUMP_MAX;
+	_wheel*= 1.0- BUMP_WHEEL_FACTOR* _bumps[3]/ BUMP_MAX- BUMP_WHEEL_FACTOR* _bumps[6]/ BUMP_MAX;
+
 	// calcul force appliquée à l'avant
 	_force_fwd= pt_type(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel); // accélération dans la direction du volant
