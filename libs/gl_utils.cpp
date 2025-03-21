@@ -40,8 +40,9 @@ pt_type ScreenGL::screen2gl(int i, int j) {
 
 
 void ScreenGL::gl2screen(number x, number y, int & i, int & j) {
-	i= (int)((number)(_screen_width)* (x/ _gl_width+ 0.5f));
-	j= (int)((number)(_screen_width)* (0.5f- y/ _gl_height));
+	i= (int)((number)(_screen_width)* (x/ _gl_width+ 0.5));
+	//j= (int)((number)(_screen_width)* (0.5- y/ _gl_height));
+	j= (int)((number)(_screen_width)* (y/ _gl_height+ 0.5));
 }
 
 
@@ -333,6 +334,26 @@ void export_texture_array2pgm(std::string pgm_dir_path, unsigned int width, unsi
 }
 
 
+void export_screen_to_ppm(std::string ppm_path, unsigned int x, unsigned int y, unsigned int width, unsigned int height) {
+	unsigned char * pixels= new unsigned char[width* height* 3];
+	// il faut spécifier 1 pour l'alignement sinon plantages divers lorsque width ou height ne sont
+	// pas des multiples de 4
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); 
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	glReadPixels(x, y, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+	FILE *f;
+	f= fopen(ppm_path.c_str(), "wb");
+	fprintf(f, "P3\n%d %d\n%d\n", width, height, 255);
+	for (int i=height- 1; i>=0; --i) {
+		for (int j=0; j<width; ++j) {
+			fprintf(f, "%d %d %d\n", pixels[3* (width* i+ j)+ 0], pixels[3* (width* i+ j)+ 1], pixels[3* (width* i+ j)+ 2]);
+		}
+	}
+	fclose(f);
+	delete[] pixels;
+}
+
+
 float * draw_cross(float * data, pt_type center, float size, glm::vec4 color) {
 	data[0]= float(center.x)- size;
 	data[1]= float(center.y)- size;
@@ -424,5 +445,44 @@ float * draw_nothing(float * data, unsigned int n_attrs_per_pts, unsigned int n_
 		}
 	}
 	return data+ n_attrs_per_pts* n_pts;
+}
+
+
+void fill_texture_array(unsigned int texture_offset, unsigned int texture_idx, unsigned int texture_size, std::vector<std::string> pngs) {
+	glActiveTexture(GL_TEXTURE0+ texture_offset);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, texture_idx);
+	
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, texture_size, texture_size, pngs.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+
+	for (unsigned int idx_png=0; idx_png<pngs.size(); ++idx_png) {
+		if (!file_exists(pngs[idx_png])) {
+			std::cout << "png=" << pngs[idx_png] << " n'existe pas\n";
+			return;
+		}
+		SDL_Surface * surface= IMG_Load(pngs[idx_png].c_str());
+		if (!surface) {
+			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
+			return;
+		}
+
+		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+						0,                             // mipmap number
+						0, 0, idx_png,   // xoffset, yoffset, zoffset
+						texture_size, texture_size, 1, // width, height, depth
+						GL_BGRA,                       // format
+						GL_UNSIGNED_BYTE,              // type
+						surface->pixels);              // pointer to data
+
+		SDL_FreeSurface(surface);
+	}
+
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 

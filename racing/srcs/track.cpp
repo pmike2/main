@@ -371,7 +371,7 @@ void Track::set_car_names() {
 void Track::start(std::chrono::system_clock::time_point t) {
 	_last_precount_t= t;
 	_mode= TRACK_PRECOUNT;
-	_precount= 3;
+	_precount= 4;
 }
 
 

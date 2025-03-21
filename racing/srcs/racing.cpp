@@ -24,9 +24,10 @@ Racing::Racing() {
 }
 
 
-Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t) :
-	_draw_bbox(false), _draw_force(false), _draw_texture(true), _show_debug_info(false), _show_info(true),
-	_cam_mode(TRANSLATE), _screengl(screengl), _input_state(input_state)
+Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuint prog_choose_track, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t) :
+	_draw_bbox(false), _draw_force(false), _draw_texture(true), _show_debug_info(false),
+	_cam_mode(TRANSLATE), _screengl(screengl), _input_state(input_state),
+	_mode(CHOOSE_TRACK)
 	{
 	// caméras
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
@@ -37,17 +38,18 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuin
 	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
 
 	// buffers
-	unsigned int n_buffers= 5;
+	unsigned int n_buffers= 6;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
 	// textures
-	unsigned int n_textures= 3;
+	unsigned int n_textures= 4;
 	_textures= new GLuint(n_textures);
 	glGenTextures(n_textures, _textures);
-	_texture_idx= 0;
+	_texture_idx_model= 0;
 	_texture_idx_bump= 1;
 	_texture_idx_smoke= 2;
+	_texture_idx_choose_track= 3;
 
 	// contextes de dessin
 	_contexts["bbox"]= new DrawContext(prog_simple, _buffers[0],
@@ -70,15 +72,31 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuin
 		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
+	_contexts["choose_track"]= new DrawContext(prog_choose_track, _buffers[5],
+		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "selection_in"},
+		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
+
 	// piste
 	_track= new Track();
-	_track->load_json("../data/tracks/track1.json");
+
+	_idx_chosen_track= 1;
+	fill_texture_choose_track();
+	update_choose_track();
+}
+
+
+Racing::~Racing() {
+	delete _buffers;
+}
+
+
+void Racing::choose_track(unsigned int idx_track, std::chrono::system_clock::time_point t) {
+	_track->load_json("../data/tracks/track"+ std::to_string(idx_track)+ ".json");
 
 	// remplissage textures
-	fill_texture_array();
+	fill_texture_array_models();
 	fill_texture_array_bump();
 	unsigned int n_smoke_pngs= fill_texture_array_smoke();
-
 	for (auto car : _track->_sorted_cars) {
 		_smoke_systems.push_back(new SmokeSystem(car, n_smoke_pngs, t));
 	}
@@ -90,164 +108,55 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuin
 	update_footprint();
 	update_force();
 	update_texture();
+	update_smoke();
+
+	_mode= RACING;
+	_track->start(t);
 }
 
 
-Racing::~Racing() {
-	delete _buffers;
+void Racing::fill_texture_choose_track() {
+	std::vector<std::string> pngs= list_files("../data/tracks/quicklooks", "png");
+	fill_texture_array(0, _textures[_texture_idx_choose_track], 1024, pngs);
+	_n_available_tracks= pngs.size();
 }
 
 
-void Racing::fill_texture_array() {
-	const unsigned int TEXTURE_SIZE= 1024;
-	unsigned int n_tex= _track->_models.size();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx]);
-	
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-	unsigned int compt= 0;
-	for (auto model : _track->_models) {
-		model.second->_texture_idx= float(compt);
-		std::string png_abs= dirname(model.second->_json_path)+ "/textures/"+ model.first+ ".png";
-		//std::cout << "png=" << png_abs << " ; compt=" << compt << "\n";
-		if (!file_exists(png_abs)) {
-			std::cout << "png=" << png_abs << " n'existe pas\n";
-			continue;
-		}
-		SDL_Surface * surface= IMG_Load(png_abs.c_str());
-		if (!surface) {
-			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
-			return;
-		}
-
-		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-						0,                             // mipmap number
-						0, 0, compt,   // xoffset, yoffset, zoffset
-						TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
-						GL_BGRA,                       // format
-						GL_UNSIGNED_BYTE,              // type
-						surface->pixels);              // pointer to data
-
-		SDL_FreeSurface(surface);
-
-		compt++;
+void Racing::fill_texture_array_models() {
+	std::vector<std::string> pngs;
+	unsigned int idx_model= 0;
+	for (auto m : _track->_models) {
+		StaticObjectModel * model= m.second;
+		model->_texture_idx= float(idx_model++);
+		std::string png= dirname(model->_json_path)+ "/textures/"+ model->_name+ ".png";
+		pngs.push_back(png);
 	}
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-
-	glActiveTexture(0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	fill_texture_array(0, _textures[_texture_idx_model], 1024, pngs);
 }
 
 
 void Racing::fill_texture_array_bump() {
-	const unsigned int TEXTURE_SIZE= 1024;
-	unsigned int n_tex= _track->_models.size();
-
-	glActiveTexture(GL_TEXTURE1);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_bump]);
-	
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-	unsigned int compt= 0;
-	for (auto model : _track->_models) {
-		model.second->_texture_idx= float(compt);
-		std::string png_abs_normal= dirname(model.second->_json_path)+ "/textures/"+ model.first+ ".png";
-		std::string png_abs_bump= dirname(model.second->_json_path)+ "/textures/"+ model.first+ "_bump.png";
-		std::string png_abs;
+	std::vector<std::string> pngs;
+	for (auto m : _track->_models) {
+		StaticObjectModel * model= m.second;
+		std::string png_normal= dirname(model->_json_path)+ "/textures/"+ model->_name+ ".png";
+		std::string png_bump= dirname(model->_json_path)+ "/textures/"+ model->_name+ "_bump.png";
 		
-		if (file_exists(png_abs_bump)) {
-			png_abs= png_abs_bump;
+		if (file_exists(png_bump)) {
+			pngs.push_back(png_bump);
 		}
 		else {
-			png_abs= png_abs_normal;
+			pngs.push_back(png_normal);
 		}
-		if (!file_exists(png_abs)) {
-			std::cout << "png=" << png_abs << " n'existe pas\n";
-			continue;
-		}
-		SDL_Surface * surface= IMG_Load(png_abs.c_str());
-		if (!surface) {
-			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
-			return;
-		}
-
-		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-						0,                             // mipmap number
-						0, 0, compt,   // xoffset, yoffset, zoffset
-						TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
-						GL_BGRA,                       // format
-						GL_UNSIGNED_BYTE,              // type
-						surface->pixels);              // pointer to data
-
-		SDL_FreeSurface(surface);
-
-		compt++;
 	}
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-
-	glActiveTexture(0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	fill_texture_array(1, _textures[_texture_idx_bump], 1024, pngs);
 }
 
 
 unsigned int Racing::fill_texture_array_smoke() {
-	const unsigned int TEXTURE_SIZE= 1024;
-
-	std::vector<std::string> pngs_smoke= list_files("../data/smoke", "png");
-	unsigned int n_tex= pngs_smoke.size();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_smoke]);
-	
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-	unsigned int compt= 0;
-	for (auto png : pngs_smoke) {
-		if (!file_exists(png)) {
-			std::cout << "png=" << png << " n'existe pas\n";
-			continue;
-		}
-		SDL_Surface * surface= IMG_Load(png.c_str());
-		if (!surface) {
-			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
-			return 0;
-		}
-
-		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-						0,                             // mipmap number
-						0, 0, compt,   // xoffset, yoffset, zoffset
-						TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
-						GL_BGRA,                       // format
-						GL_UNSIGNED_BYTE,              // type
-						surface->pixels);              // pointer to data
-
-		SDL_FreeSurface(surface);
-
-		compt++;
-	}
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-
-	glActiveTexture(0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-
-	return n_tex;
+	std::vector<std::string> pngs= list_files("../data/smoke", "png");
+	fill_texture_array(0, _textures[_texture_idx_smoke], 1024, pngs);
+	return pngs.size();
 }
 
 
@@ -339,7 +248,7 @@ void Racing::draw_texture() {
 	DrawContext * context= _contexts["texture"];
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx]);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_model]);
 	glActiveTexture(0);
 	
 	glActiveTexture(GL_TEXTURE1);
@@ -417,137 +326,171 @@ void Racing::draw_smoke() {
 }
 
 
-void Racing::draw() {
-	if (_draw_force) {
-		draw_force();
+void Racing::draw_choose_track() {
+	DrawContext * context= _contexts["choose_track"];
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_choose_track]);
+	glActiveTexture(0);
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
 	}
-	if (_draw_bbox) {
-		draw_bbox();
-		draw_footprint();
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["selection_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
 	}
-	if (_draw_texture) {
-		draw_texture();
-		draw_smoke();
-	}
-	
-	if (_show_debug_info) {
-		show_debug_info();
-	}
-	else if (_show_info) {
-		show_info();
-	}
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
 }
 
 
 void Racing::show_info() {
 	std::vector<Text> texts;
-	Car * hero= _track->get_hero();
 
-	// 3, 2, 1
-	if (_track->_mode== TRACK_PRECOUNT) {
-		texts.push_back(Text(std::to_string(_track->_precount), glm::vec2(-1.0f, 0.0f), 0.06f, glm::vec4(1.0f, 1.0f, 0.5f, 1.0f)));
-	}
-	
-	// classement joueur arrivée
-	if (_track->_mode== TRACK_FINISHED) {
-		texts.push_back(Text(std::to_string(hero->_rank) + " / "+ std::to_string(_track->_sorted_cars.size()), glm::vec2(-2.0f, 0.0f), 0.03f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)));
+	if (_mode== CHOOSE_TRACK) {
+		texts.push_back(Text("Track "+ std::to_string(_idx_chosen_track), glm::vec2(-1.5f, 4.0f), 0.02, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 
-	// nombre de tours
-	if (_track->_mode== TRACK_LIVE) {
-		glm::vec4 nlaps_color(NLAPS_COLOR);
-		if (hero->_n_laps== _track->_n_laps) {
-			nlaps_color= NLAPS_LAST_COLOR;
+	else if (_mode== RACING) {
+		Car * hero= _track->get_hero();
+
+		if (_show_debug_info) {
+			const float font_scale= 0.007f;
+			const glm::vec4 text_color(1.0, 1.0, 1.0, 1.0);
+
+			texts.push_back(Text("COM PT", glm::vec2(-9.0f, 7.0f), font_scale, COM_CROSS_COLOR));
+			texts.push_back(Text("FORCE_FWD PT", glm::vec2(-9.0f, 6.0f), font_scale, FORCE_FWD_CROSS_COLOR));
+			texts.push_back(Text("FORCE_BWD PT", glm::vec2(-9.0f, 5.0f), font_scale, FORCE_BWD_CROSS_COLOR));
+			texts.push_back(Text("FORCE_FWD VEC", glm::vec2(-9.0f, 3.0f), font_scale, FORCE_FWD_ARROW_COLOR));
+			texts.push_back(Text("FORCE_BWD VEC", glm::vec2(-9.0f, 2.0f), font_scale, FORCE_BWD_ARROW_COLOR));
+			texts.push_back(Text("ACCELERATION VEC", glm::vec2(-9.0f, 1.0f), font_scale, ACCELERATION_ARROW_COLOR));
+			texts.push_back(Text("VELOCITY VEC", glm::vec2(-9.0f, 0.0f), font_scale, VELOCITY_ARROW_COLOR));
+			texts.push_back(Text("FORWARD VEC", glm::vec2(-9.0f, -1.0f), font_scale, FORWARD_ARROW_COLOR));
+			texts.push_back(Text("RIGHT VEC", glm::vec2(-9.0f, -2.0f), font_scale, RIGHT_ARROW_COLOR));
+
+			texts.push_back(Text("thrust="+ std::to_string(hero->_thrust), glm::vec2(6.0, 7.0), font_scale, text_color));
+			texts.push_back(Text("wheel="+ std::to_string(hero->_wheel), glm::vec2(6.0, 6.0), font_scale, text_color));
+			
+			texts.push_back(Text("force_fwd="+ std::to_string(norm(hero->_force_fwd)), glm::vec2(6.0, 4.0), font_scale, text_color));
+			texts.push_back(Text("force_bwd="+ std::to_string(norm(hero->_force_bwd)), glm::vec2(6.0, 3.0), font_scale, text_color));
+			texts.push_back(Text("acc="+ std::to_string(norm(hero->_acceleration)), glm::vec2(6.0, 2.0), font_scale, text_color));
+			texts.push_back(Text("vel="+ std::to_string(norm(hero->_velocity)), glm::vec2(6.0, 1.0), font_scale, text_color));
+
+			texts.push_back(Text("torque="+ std::to_string(hero->_torque), glm::vec2(6.0, -1.0), font_scale, text_color));
+			texts.push_back(Text("ang acc="+ std::to_string(hero->_angular_acceleration), glm::vec2(6.0, -2.0), font_scale, text_color));
+			texts.push_back(Text("ang vel="+ std::to_string(hero->_angular_velocity), glm::vec2(6.0, -3.0), font_scale, text_color));
+			texts.push_back(Text("alpha="+ std::to_string(hero->_alpha), glm::vec2(6.0, -4.0), font_scale, text_color));
+
+			texts.push_back(Text("drift="+ std::to_string(hero->_drift), glm::vec2(6.0, -6.0), font_scale, text_color));
 		}
-		texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(5.0f, -5.0f), 0.01f, nlaps_color));
-	}
 
-	// vitesse joueur
-	if (_track->_mode== TRACK_LIVE) {
-		int hero_speed= (int)(sqrt(hero->_velocity.x* hero->_velocity.x+ hero->_velocity.y* hero->_velocity.y)* 60.0);
-		glm::vec4 speed_color(LOW_SPEED_COLOR);
-		if (hero_speed> 200) {
-			speed_color= HIGH_SPEED_COLOR;
-		}
-		texts.push_back(Text(std::to_string(hero_speed)+ " km/h", glm::vec2(5.0f, 5.0f), 0.01f, speed_color));
-	}
-
-	// classement toutes voitures
-	if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_FINISHED) {
-		for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
-			Car * car= _track->_sorted_cars[idx_car];
-			glm::vec4 ranking_color(RANKING_ENNEMY_COLOR);
-			if (car== hero) {
-				ranking_color= RANKING_HERO_COLOR;
+		else {
+			// 3, 2, 1
+			if (_track->_mode== TRACK_PRECOUNT) {
+				texts.push_back(Text(std::to_string(_track->_precount), glm::vec2(-1.0f, 0.0f), 0.06f, glm::vec4(1.0f, 1.0f, 0.5f, 1.0f)));
 			}
-			texts.push_back(Text(std::to_string(idx_car+ 1)+  " - "+ car->_name, glm::vec2(-7.0f, 5.0f- float(idx_car)* 0.5f), 0.007f, ranking_color));
-		}
-	}
-
-	// temps tours joueur
-	if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_FINISHED) {
-		for (unsigned int idx_time=0; idx_time<hero->_lap_times.size(); ++idx_time) {
-			glm::vec4 lap_time_color(PAST_LAP_TIME_COLOR);
-			if (idx_time== hero->_lap_times.size()- 1) {
-				lap_time_color= CURRENT_LAP_TIME_COLOR;
+			
+			// classement joueur arrivée
+			if (_track->_mode== TRACK_FINISHED) {
+				texts.push_back(Text(std::to_string(hero->_rank) + " / "+ std::to_string(_track->_sorted_cars.size()), glm::vec2(-2.0f, 0.0f), 0.03f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)));
 			}
-			std::ostringstream oss;
-			oss << std::fixed << std::setprecision(2) << hero->_lap_times[idx_time];
-			texts.push_back(Text("LAP "+ std::to_string(idx_time+ 1)+  " - "+ oss.str(), glm::vec2(-7.0f, -2.0f- float(idx_time)* 0.5f), 0.005f, lap_time_color));
+
+			// nombre de tours
+			if (_track->_mode== TRACK_LIVE) {
+				glm::vec4 nlaps_color(NLAPS_COLOR);
+				if (hero->_n_laps== _track->_n_laps) {
+					nlaps_color= NLAPS_LAST_COLOR;
+				}
+				texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(5.0f, -5.0f), 0.01f, nlaps_color));
+			}
+
+			// vitesse joueur
+			if (_track->_mode== TRACK_LIVE) {
+				int hero_speed= (int)(sqrt(hero->_velocity.x* hero->_velocity.x+ hero->_velocity.y* hero->_velocity.y)* 60.0);
+				glm::vec4 speed_color(LOW_SPEED_COLOR);
+				if (hero_speed> 200) {
+					speed_color= HIGH_SPEED_COLOR;
+				}
+				texts.push_back(Text(std::to_string(hero_speed)+ " km/h", glm::vec2(5.0f, 5.0f), 0.01f, speed_color));
+			}
+
+			// classement toutes voitures
+			if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_FINISHED) {
+				for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
+					Car * car= _track->_sorted_cars[idx_car];
+					glm::vec4 ranking_color(RANKING_ENNEMY_COLOR);
+					if (car== hero) {
+						ranking_color= RANKING_HERO_COLOR;
+					}
+					texts.push_back(Text(std::to_string(idx_car+ 1)+  " - "+ car->_name, glm::vec2(-7.0f, 5.0f- float(idx_car)* 0.5f), 0.007f, ranking_color));
+				}
+			}
+
+			// temps tours joueur
+			if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_FINISHED) {
+				for (unsigned int idx_time=0; idx_time<hero->_lap_times.size(); ++idx_time) {
+					glm::vec4 lap_time_color(PAST_LAP_TIME_COLOR);
+					if (idx_time== hero->_lap_times.size()- 1) {
+						lap_time_color= CURRENT_LAP_TIME_COLOR;
+					}
+					std::ostringstream oss;
+					oss << std::fixed << std::setprecision(2) << hero->_lap_times[idx_time];
+					texts.push_back(Text("LAP "+ std::to_string(idx_time+ 1)+  " - "+ oss.str(), glm::vec2(-7.0f, -2.0f- float(idx_time)* 0.5f), 0.005f, lap_time_color));
+				}
+			}
+
+			// temps total joueur arrivée
+			if (_track->_mode== TRACK_FINISHED) {
+				number total_time= 0.0;
+				for (auto lap_time : hero->_lap_times) {
+					total_time+= lap_time;
+				}
+				std::ostringstream oss;
+				oss << std::fixed << std::setprecision(2) << total_time;
+				texts.push_back(Text("TOTAL - "+ oss.str(), glm::vec2(-7.0f, -5.0f), 0.005f, TOTAL_LAP_TIME_COLOR));
+			}
 		}
 	}
 
-	// temps total joueur arrivée
-	if (_track->_mode== TRACK_FINISHED) {
-		number total_time= 0.0;
-		for (auto lap_time : hero->_lap_times) {
-			total_time+= lap_time;
-		}
-		std::ostringstream oss;
-		oss << std::fixed << std::setprecision(2) << total_time;
-		texts.push_back(Text("TOTAL - "+ oss.str(), glm::vec2(-7.0f, -5.0f), 0.005f, TOTAL_LAP_TIME_COLOR));
-	}
-	
 	_font->set_text(texts);
 	_font->draw();
 }
 
 
-void Racing::show_debug_info() {
-	const float font_scale= 0.007f;
-	const glm::vec4 text_color(1.0, 1.0, 1.0, 1.0);
+void Racing::draw() {
+	if (_mode== CHOOSE_TRACK) {
+		draw_choose_track();
+	}
+	else if (_mode== RACING) {
+		if (_draw_force) {
+			draw_force();
+		}
+		if (_draw_bbox) {
+			draw_bbox();
+			draw_footprint();
+		}
+		if (_draw_texture) {
+			draw_texture();
+			draw_smoke();
+		}
+	}		
 
-	Car * hero= _track->get_hero();
-
-	std::vector<Text> texts;
-
-	texts.push_back(Text("COM PT", glm::vec2(-9.0f, 7.0f), font_scale, COM_CROSS_COLOR));
-	texts.push_back(Text("FORCE_FWD PT", glm::vec2(-9.0f, 6.0f), font_scale, FORCE_FWD_CROSS_COLOR));
-	texts.push_back(Text("FORCE_BWD PT", glm::vec2(-9.0f, 5.0f), font_scale, FORCE_BWD_CROSS_COLOR));
-	texts.push_back(Text("FORCE_FWD VEC", glm::vec2(-9.0f, 3.0f), font_scale, FORCE_FWD_ARROW_COLOR));
-	texts.push_back(Text("FORCE_BWD VEC", glm::vec2(-9.0f, 2.0f), font_scale, FORCE_BWD_ARROW_COLOR));
-	texts.push_back(Text("ACCELERATION VEC", glm::vec2(-9.0f, 1.0f), font_scale, ACCELERATION_ARROW_COLOR));
-	texts.push_back(Text("VELOCITY VEC", glm::vec2(-9.0f, 0.0f), font_scale, VELOCITY_ARROW_COLOR));
-	texts.push_back(Text("FORWARD VEC", glm::vec2(-9.0f, -1.0f), font_scale, FORWARD_ARROW_COLOR));
-	texts.push_back(Text("RIGHT VEC", glm::vec2(-9.0f, -2.0f), font_scale, RIGHT_ARROW_COLOR));
-
-	texts.push_back(Text("thrust="+ std::to_string(hero->_thrust), glm::vec2(6.0, 7.0), font_scale, text_color));
-	texts.push_back(Text("wheel="+ std::to_string(hero->_wheel), glm::vec2(6.0, 6.0), font_scale, text_color));
-	
-	texts.push_back(Text("force_fwd="+ std::to_string(norm(hero->_force_fwd)), glm::vec2(6.0, 4.0), font_scale, text_color));
-	texts.push_back(Text("force_bwd="+ std::to_string(norm(hero->_force_bwd)), glm::vec2(6.0, 3.0), font_scale, text_color));
-	texts.push_back(Text("acc="+ std::to_string(norm(hero->_acceleration)), glm::vec2(6.0, 2.0), font_scale, text_color));
-	texts.push_back(Text("vel="+ std::to_string(norm(hero->_velocity)), glm::vec2(6.0, 1.0), font_scale, text_color));
-
-	texts.push_back(Text("torque="+ std::to_string(hero->_torque), glm::vec2(6.0, -1.0), font_scale, text_color));
-	texts.push_back(Text("ang acc="+ std::to_string(hero->_angular_acceleration), glm::vec2(6.0, -2.0), font_scale, text_color));
-	texts.push_back(Text("ang vel="+ std::to_string(hero->_angular_velocity), glm::vec2(6.0, -3.0), font_scale, text_color));
-	texts.push_back(Text("alpha="+ std::to_string(hero->_alpha), glm::vec2(6.0, -4.0), font_scale, text_color));
-
-	texts.push_back(Text("drift="+ std::to_string(hero->_drift), glm::vec2(6.0, -6.0), font_scale, text_color));
-
-	_font->set_text(texts);
-	_font->draw();
+	show_info();
 }
 
 
@@ -739,13 +682,6 @@ void Racing::update_texture() {
 			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5, obj->_bumps[8]
 		};
 
-		/*if (obj->_model->_type== HERO_CAR) {
-			for (int i=0; i<9; ++i) {
-				std::cout << obj->_bumps[i] << " ; ";
-			}
-			std::cout << "\n";
-		}*/
-
 		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
 			for (unsigned int i=0; i<6; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[6* idx_pt+ i]);
@@ -790,10 +726,54 @@ void Racing::update_smoke() {
 			data[compt++]= smoke->_z; data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= smoke->_opacity; data[compt++]= smoke->_idx_texture;
 		}
 	}
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void Racing::update_choose_track() {
+	const unsigned int n_pts_per_obj= 6;
+	const float MARGIN= 1.0;
+
+	DrawContext * context= _contexts["choose_track"];
+	context->_n_pts= _n_available_tracks* n_pts_per_obj;
+	context->_n_attrs_per_pts= 6;
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	float size= (_screengl->_gl_width- float(_n_available_tracks+ 1)* MARGIN)/ float(_n_available_tracks);
+	unsigned int compt= 0;
+	float selection;
+	for (unsigned int i=0; i<_n_available_tracks; ++i) {
+		if (i== _idx_chosen_track- 1) {
+			selection= 0.2f;
+		}
+		else {
+			selection= 0.0f;
+		}
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= -0.5f* size;
+		data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= -0.5f* size;
+		data[compt++]= 1.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= 0.5f* size;
+		data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
+		
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= -0.5f* size;
+		data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= 0.5f* size;
+		data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= 0.5f* size;
+		data[compt++]= 0.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
+	}
 
 	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+		if (i%5==0) {
+			std::cout << "\n";
+		}
 		std::cout << data[i] << " ; ";
-	}std::cout << "\n";*/
+	}
+	std::cout << "\n";*/
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
@@ -802,25 +782,30 @@ void Racing::update_smoke() {
 
 
 void Racing::anim(std::chrono::system_clock::time_point t) {
-	_track->anim(t, _input_state);
+	if (_mode== CHOOSE_TRACK) {
 
-	for (auto smoke_system : _smoke_systems) {
-		smoke_system->anim(t);
 	}
+	else if (_mode== RACING) {
+		_track->anim(t, _input_state);
 
-	if (_draw_bbox) {
-		update_bbox();
-		update_footprint();
-	}
-	if (_draw_force) {
-		update_force();
-	}
-	if (_draw_texture) {
-		update_texture();
-		update_smoke();
-	}
+		for (auto smoke_system : _smoke_systems) {
+			smoke_system->anim(t);
+		}
 
-	camera();
+		if (_draw_bbox) {
+			update_bbox();
+			update_footprint();
+		}
+		if (_draw_force) {
+			update_force();
+		}
+		if (_draw_texture) {
+			update_texture();
+			update_smoke();
+		}
+
+		camera();
+	}
 }
 
 
@@ -853,55 +838,69 @@ void Racing::camera() {
 
 
 bool Racing::key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) {
-	// b : dessiner bbox
-	if (key== SDLK_b) {
-		_draw_bbox= !_draw_bbox;
-		return true;
-	}
-
-	// f : dessiner forces
-	else if (key== SDLK_f) {
-		_draw_force= !_draw_force;
-		return true;
-	}
-
-	// i : switcher infos normales / infos debug
-	else if (key== SDLK_i) {
-		_show_debug_info= !_show_debug_info;
-		_show_info= !_show_info;
-		return true;
-	}
-
-	// t : dessiner textures
-	else if (key== SDLK_t) {
-		_draw_texture= !_draw_texture;
-		return true;
-	}
-
-	// c : chgmt mode caméra
-	else if (key== SDLK_c) {
-		if (_cam_mode== FIXED) {
-			_cam_mode= TRANSLATE;
+	if (_mode== CHOOSE_TRACK) {
+		if (key== SDLK_LEFT) {
+			_idx_chosen_track--;
+			if (_idx_chosen_track< 1) {
+				_idx_chosen_track= 1;
+			}
+			update_choose_track();
 		}
-		else if (_cam_mode== TRANSLATE) {
-			_cam_mode= TRANSLATE_AND_ROTATE;
+		else if (key== SDLK_RIGHT) {
+			_idx_chosen_track++;
+			if (_idx_chosen_track> _n_available_tracks) {
+				_idx_chosen_track= _n_available_tracks; // on commence à 1
+			}
+			update_choose_track();
 		}
-		else if (_cam_mode== TRANSLATE_AND_ROTATE) {
-			_cam_mode= FIXED;
+		else if (key== SDLK_RETURN) {
+			choose_track(_idx_chosen_track, t);
 		}
-		return true;
 	}
-
-	// espace : reinit
-	else if (key== SDLK_SPACE) {
-		_track->load_json("../data/tracks/track1.json");
-		_track->start(t);
-		Car * hero= _track->get_hero();
-		_com_camera= hero->_com;
-		for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
-			_smoke_systems[idx_car]->_car= _track->_sorted_cars[idx_car];
+	else if (_mode== RACING) {
+		// b : dessiner bbox
+		if (key== SDLK_b) {
+			_draw_bbox= !_draw_bbox;
+			return true;
 		}
-		return true;
+
+		// f : dessiner forces
+		else if (key== SDLK_f) {
+			_draw_force= !_draw_force;
+			return true;
+		}
+
+		// i : switcher infos normales / infos debug
+		else if (key== SDLK_i) {
+			_show_debug_info= !_show_debug_info;
+			return true;
+		}
+
+		// t : dessiner textures
+		else if (key== SDLK_t) {
+			_draw_texture= !_draw_texture;
+			return true;
+		}
+
+		// c : chgmt mode caméra
+		else if (key== SDLK_c) {
+			if (_cam_mode== FIXED) {
+				_cam_mode= TRANSLATE;
+			}
+			else if (_cam_mode== TRANSLATE) {
+				_cam_mode= TRANSLATE_AND_ROTATE;
+			}
+			else if (_cam_mode== TRANSLATE_AND_ROTATE) {
+				_cam_mode= FIXED;
+			}
+			return true;
+		}
+
+		// retour au choix des circuits
+		else if (key== SDLK_RETURN) {
+			_mode= CHOOSE_TRACK;
+			return true;
+		}
 	}
 
 	return false;

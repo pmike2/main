@@ -1,0 +1,463 @@
+{
+    "cell_size": 2.0,
+    "floating_objects": [
+        {
+            "alpha": 0.0,
+            "idx_checkpoint": 0,
+            "name": "start",
+            "position": [
+                26.979167938232422,
+                17.1875
+            ],
+            "scale": [
+                5.94999999999999,
+                2.6999999999999984
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "hero_car",
+            "position": [
+                26.9375,
+                14.738750457763672
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                25.15625,
+                14.801250457763672
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                28.65625,
+                14.801250457763672
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                25.15625,
+                12.988750457763672
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                26.96875,
+                13.051250457763672
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                28.65625,
+                13.113750457763672
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                25.125,
+                11.051250457763672
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                27.0,
+                11.051250457763672
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "ennemy_car",
+            "position": [
+                28.75,
+                11.082500457763672
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.7999999999999999,
+            "idx_checkpoint": 1,
+            "name": "checkpoint",
+            "position": [
+                24.08625030517578,
+                25.66374969482422
+            ],
+            "scale": [
+                9.549999999999994,
+                6.399999999999987
+            ]
+        },
+        {
+            "alpha": 2.3000000000000007,
+            "idx_checkpoint": 2,
+            "name": "checkpoint",
+            "position": [
+                7.5,
+                26.059999465942383
+            ],
+            "scale": [
+                10.35000000000001,
+                5.799999999999991
+            ]
+        },
+        {
+            "alpha": -2.200000000000001,
+            "idx_checkpoint": 3,
+            "name": "checkpoint",
+            "position": [
+                7.326250076293945,
+                7.163749694824219
+            ],
+            "scale": [
+                10.150000000000011,
+                6.049999999999993
+            ]
+        },
+        {
+            "alpha": -0.6,
+            "idx_checkpoint": 4,
+            "name": "checkpoint",
+            "position": [
+                24.297500610351563,
+                6.571249961853027
+            ],
+            "scale": [
+                9.550000000000004,
+                5.699999999999992
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "wrench",
+            "position": [
+                15.507499694824219,
+                3.979999542236328
+            ],
+            "scale": [
+                5.699999999999994,
+                3.9499999999999966
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "puddle",
+            "position": [
+                4.982500076293945,
+                17.270000457763672
+            ],
+            "scale": [
+                3.5999999999999988,
+                4.149999999999999
+            ]
+        }
+    ],
+    "height": 16,
+    "n_laps": 8,
+    "tiles": [
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "tri_0_1_2_obst_curve",
+        "full_sand",
+        "full_sand",
+        "tri_0_1_2_sand",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "tri_0_1_sand",
+        "full_sand",
+        "full_sand",
+        "tri_0_1_obst_curve",
+        "full_obst",
+        "full_obst",
+        "full_sand",
+        "full_sand",
+        "tri_0_1_2_sand",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "tri_0_1_sand",
+        "full_sand",
+        "full_sand",
+        "full_obst",
+        "full_obst",
+        "full_sand",
+        "tri_0_1_2_sand",
+        "empty",
+        "tri_1_0_0_sand",
+        "tri_comp_1_0_2_sand",
+        "full_sand",
+        "full_sand",
+        "full_sand",
+        "full_sand",
+        "tri_comp_0_0_sand",
+        "tri_1_0_1_sand",
+        "empty",
+        "tri_0_1_sand",
+        "full_sand",
+        "full_obst",
+        "full_obst",
+        "tri_0_1_2_sand",
+        "empty",
+        "empty",
+        "tri_comp_0_0_2_sand",
+        "full_sand",
+        "tri_comp_1_0_2_obst_curve",
+        "full_obst",
+        "full_obst",
+        "tri_comp_1_0_obst_curve",
+        "full_sand",
+        "tri_comp_1_0_sand",
+        "empty",
+        "empty",
+        "tri_0_1_sand",
+        "full_obst",
+        "full_obst",
+        "empty",
+        "empty",
+        "empty",
+        "full_sand",
+        "tri_comp_1_0_2_obst_curve",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "tri_comp_1_0_obst_curve",
+        "full_sand",
+        "empty",
+        "empty",
+        "empty",
+        "full_obst",
+        "full_obst",
+        "empty",
+        "empty",
+        "empty",
+        "full_sand",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_sand",
+        "empty",
+        "empty",
+        "empty",
+        "full_obst",
+        "full_obst",
+        "empty",
+        "empty",
+        "empty",
+        "full_sand",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_sand",
+        "empty",
+        "empty",
+        "empty",
+        "full_obst",
+        "full_obst",
+        "empty",
+        "empty",
+        "empty",
+        "full_sand",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_sand",
+        "empty",
+        "empty",
+        "empty",
+        "full_obst",
+        "full_obst",
+        "empty",
+        "empty",
+        "empty",
+        "full_sand",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_sand",
+        "empty",
+        "empty",
+        "empty",
+        "full_obst",
+        "full_obst",
+        "empty",
+        "empty",
+        "empty",
+        "full_sand",
+        "tri_comp_1_0_1_obst_curve",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "tri_comp_1_0_0_obst_curve",
+        "full_sand",
+        "empty",
+        "empty",
+        "empty",
+        "full_obst",
+        "full_obst",
+        "empty",
+        "empty",
+        "empty",
+        "tri_comp_1_0_1_sand",
+        "full_sand",
+        "tri_comp_1_0_1_obst_curve",
+        "full_obst",
+        "full_obst",
+        "tri_comp_1_0_0_obst_curve",
+        "full_sand",
+        "tri_comp_0_0_0_sand",
+        "empty",
+        "empty",
+        "empty",
+        "full_obst",
+        "full_obst",
+        "tri_0_1_1_sand",
+        "empty",
+        "empty",
+        "tri_1_0_sand",
+        "tri_comp_0_0_1_sand",
+        "full_sand",
+        "full_sand",
+        "full_sand",
+        "full_sand",
+        "tri_comp_1_0_0_sand",
+        "tri_1_0_2_sand",
+        "empty",
+        "empty",
+        "tri_0_1_0_sand",
+        "full_obst",
+        "full_obst",
+        "full_sand",
+        "tri_0_1_1_sand",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "tri_0_1_0_sand",
+        "full_sand",
+        "full_obst",
+        "full_obst",
+        "tri_0_1_1_obst_curve",
+        "full_sand",
+        "tri_0_1_1_sand",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "tri_0_1_0_sand",
+        "full_sand",
+        "tri_0_1_0_obst_curve",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst"
+    ],
+    "width": 16
+}

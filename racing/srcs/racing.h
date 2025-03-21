@@ -28,6 +28,8 @@
 // type de caméra : fixe, suit le héros, suit et s'oriente comme le héros
 enum cam_mode {FIXED, TRANSLATE, TRANSLATE_AND_ROTATE};
 
+enum racing_mode {CHOOSE_TRACK, RACING};
+
 
 // plans z de contrainte d'affichage de glm::ortho
 const float Z_NEAR= 0.0f;
@@ -37,13 +39,13 @@ const float Z_FAR= 1000.0f;
 const number CAM_INC= 0.1;
 const number CAM_INC_ALPHA= 0.01;
 
-// params de debug ds forces
+// params de debug des forces
 const float CROSS_SIZE= 0.1;
 const float ARROW_ANGLE= M_PI* 0.1;
 const float ARROW_TIP_SIZE= 0.2;
 const float INFO_ALPHA= 0.8;
 
-// couleurs de debug
+// couleurs
 const glm::vec4 COM_CROSS_COLOR(1.0, 0.0, 0.0, INFO_ALPHA);
 const glm::vec4 FORCE_FWD_CROSS_COLOR(1.0, 1.0, 0.0, INFO_ALPHA);
 const glm::vec4 FORCE_BWD_CROSS_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
@@ -71,11 +73,15 @@ const glm::vec4 TOTAL_LAP_TIME_COLOR(0.8, 0.8, 0.6, 1.0);
 class Racing {
 public:
 	Racing();
-	Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t);
+	Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuint prog_choose_track, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t);
 	~Racing();
 
+	// choix d'une piste
+	void choose_track(unsigned int idx_track, std::chrono::system_clock::time_point t);
+
 	// chargement des textures
-	void fill_texture_array();
+	void fill_texture_choose_track();
+	void fill_texture_array_models();
 	void fill_texture_array_bump();
 	unsigned int fill_texture_array_smoke();
 	
@@ -85,10 +91,9 @@ public:
 	void draw_force();
 	void draw_texture();
 	void draw_smoke();
-	void draw();
-
+	void draw_choose_track();
 	void show_info();
-	void show_debug_info();
+	void draw();
 
 	// maj des buffers
 	void update_bbox();
@@ -96,6 +101,7 @@ public:
 	void update_force();
 	void update_texture();
 	void update_smoke();
+	void update_choose_track();
 
 	// animation
 	void anim(std::chrono::system_clock::time_point t);
@@ -105,6 +111,7 @@ public:
 	bool key_down(SDL_Keycode key, std::chrono::system_clock::time_point t);
 
 
+	// piste courante
 	Track * _track;
 
 	// params caméra
@@ -112,11 +119,15 @@ public:
 	number _alpha_camera;
 	cam_mode _cam_mode;
 
-	bool _draw_bbox, _draw_force, _draw_texture, _show_debug_info, _show_info; // faut-il afficher les BBox
+	racing_mode _mode;
+	unsigned int _idx_chosen_track;
+	unsigned int _n_available_tracks;
+
+	bool _draw_bbox, _draw_force, _draw_texture, _show_debug_info; // booléens d'affichage
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs
-	unsigned int _texture_idx, _texture_idx_bump, _texture_idx_smoke;
+	unsigned int _texture_idx_model, _texture_idx_bump, _texture_idx_smoke, _texture_idx_choose_track;
 	glm::mat4 _camera2clip; // glm::ortho
 	glm::mat4 _world2camera; // caméra
 	Font * _font; // font pour écriture textes

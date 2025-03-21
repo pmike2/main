@@ -181,11 +181,11 @@ void GridEditor::draw(GLuint texture) {
 	if (_draw_bbox) {
 		draw_tiles();
 	}
-	draw_selection();
-	draw_grid();
 	if (_draw_texture) {
 		draw_texture(texture);
 	}
+	draw_selection();
+	draw_grid();
 }
 
 
@@ -439,13 +439,17 @@ TrackEditor::TrackEditor() {
 
 
 TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, number cell_size) :
-	_draw_bbox(false), _draw_texture(true),
+	_draw_bbox(false), _draw_texture(true), _draw_grid(false),
 	_row_idx_select(0), _col_idx_select(0), _screengl(screengl), _translation(pt_type(0.0)), _scale(1.0), _last_checkpoint(NULL),
 	_selected_floating_object(NULL), _current_track_idx(1)
 {
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::mat4(1.0f);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
+
+	int center_x, center_y;
+	_screengl->gl2screen(TRACK_ORIGIN.x, TRACK_ORIGIN.y, _screen_coords[0], _screen_coords[1]);
+	_screengl->gl2screen(TRACK_ORIGIN.x+ TRACK_SIZE.x, TRACK_ORIGIN.y+ TRACK_SIZE.y, _screen_coords[2], _screen_coords[3]);
 
 	unsigned int n_buffers= 6;
 	_buffers= new GLuint[n_buffers];
@@ -601,7 +605,7 @@ void TrackEditor::draw_selection() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -20.0f);
+	glUniform1f(context->_locs_uniform["z"], -40.0f);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -748,10 +752,12 @@ void TrackEditor::draw(GLuint texture) {
 		draw_floating_objects_bbox();
 		draw_tiles();
 	}
-	draw_selection();
-	draw_grid();
 	if (_draw_texture) {
 		draw_texture(texture);
+	}
+	if (_draw_grid) {
+		draw_selection();
+		draw_grid();
 	}
 }
 
@@ -992,6 +998,21 @@ void TrackEditor::update() {
 }
 
 
+void TrackEditor::quicklook() {
+	// création de quicklooks pour afficher dans main
+	// nécessite d'avoir imagemagick convert installé
+	std::string ppm_path= "../data/tracks/quicklooks/track"+ std::to_string(_current_track_idx)+ ".ppm";
+	std::string png_path= splitext(ppm_path).first+ ".png";
+	std::string cmd_convert= "convert "+ ppm_path+ " -resize 1024x1024! "+ png_path;
+	std::string cmd_clean= "rm "+ ppm_path;
+
+	export_screen_to_ppm(ppm_path, _screen_coords[0], _screen_coords[1],
+		_screen_coords[2]- _screen_coords[0], _screen_coords[3]- _screen_coords[1]);
+	system(cmd_convert.c_str());
+	system(cmd_clean.c_str());
+}
+
+
 bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 	// RSHIFT + touches directionnelles = redimensionnement track
 	if (input_state->get_key(SDLK_RSHIFT)) {
@@ -1065,12 +1086,22 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 		save_json(current_track_path);
 		return true;
 	}
+	// affichage des bbox
 	else if (key== SDLK_b) {
 		_draw_bbox= !_draw_bbox;
+		return true;
 	}
+	// affichage des textures
 	else if (key== SDLK_t) {
 		_draw_texture= !_draw_texture;
+		return true;
 	}
+	// affichage grille (SDLK_g était déjà pris...)
+	else if (key== SDLK_h) {
+		_draw_grid= !_draw_grid;
+		return true;
+	}
+	// modifs nombre de tours
 	else if (key== SDLK_n) {
 		if (input_state->get_key(SDLK_LSHIFT)) {
 			if (_track->_n_laps> 1) {
@@ -1080,16 +1111,23 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 		else {
 			_track->_n_laps++;
 		}
+		return true;
 	}
-	else if (key== SDLK_KP_1) {_current_track_idx= 1; load_current_track();}
-	else if (key== SDLK_KP_2) {_current_track_idx= 2; load_current_track();}
-	else if (key== SDLK_KP_3) {_current_track_idx= 3; load_current_track();}
-	else if (key== SDLK_KP_4) {_current_track_idx= 4; load_current_track();}
-	else if (key== SDLK_KP_5) {_current_track_idx= 5; load_current_track();}
-	else if (key== SDLK_KP_6) {_current_track_idx= 6; load_current_track();}
-	else if (key== SDLK_KP_7) {_current_track_idx= 7; load_current_track();}
-	else if (key== SDLK_KP_8) {_current_track_idx= 8; load_current_track();}
-	else if (key== SDLK_KP_9) {_current_track_idx= 9; load_current_track();}
+	// quicklook
+	else if (key== SDLK_q) {
+		quicklook();
+		return true;
+	}
+	// chgmt current track
+	else if (key== SDLK_KP_1) {_current_track_idx= 1; load_current_track(); return true;}
+	else if (key== SDLK_KP_2) {_current_track_idx= 2; load_current_track(); return true;}
+	else if (key== SDLK_KP_3) {_current_track_idx= 3; load_current_track(); return true;}
+	else if (key== SDLK_KP_4) {_current_track_idx= 4; load_current_track(); return true;}
+	else if (key== SDLK_KP_5) {_current_track_idx= 5; load_current_track(); return true;}
+	else if (key== SDLK_KP_6) {_current_track_idx= 6; load_current_track(); return true;}
+	else if (key== SDLK_KP_7) {_current_track_idx= 7; load_current_track(); return true;}
+	else if (key== SDLK_KP_8) {_current_track_idx= 8; load_current_track(); return true;}
+	else if (key== SDLK_KP_9) {_current_track_idx= 9; load_current_track(); return true;}
 
 	return false;
 }
@@ -1227,7 +1265,7 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 		}
 	}
 
-	fill_texture_array();
+	fill_texture_array_models();
 
 	_track_editor->update();
 	_tile_grid_editor->update();
@@ -1240,57 +1278,26 @@ Editor::~Editor() {
 }
 
 
-void Editor::fill_texture_array() {
-	const unsigned int TEXTURE_SIZE= 1024;
-	unsigned int n_tex= _track_editor->_track->_models.size();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
-	
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-
-	unsigned int compt= 0;
-	for (auto model : _track_editor->_track->_models) {
-		model.second->_texture_idx= float(compt);
-		std::string png_abs= dirname(model.second->_json_path)+ "/textures/"+ model.first+ ".png";
-		//std::cout << "png=" << png_abs << " ; compt=" << compt << "\n";
-		if (!file_exists(png_abs)) {
-			std::cout << "png=" << png_abs << " n'existe pas\n";
-			continue;
-		}
-		SDL_Surface * surface= IMG_Load(png_abs.c_str());
-		if (!surface) {
-			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
-			return;
-		}
-
-		// sais pas pourquoi mais GL_BGRA fonctionne mieux que GL_RGBA
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-						0,                             // mipmap number
-						0, 0, compt,   // xoffset, yoffset, zoffset
-						TEXTURE_SIZE, TEXTURE_SIZE, 1, // width, height, depth
-						GL_BGRA,                       // format
-						GL_UNSIGNED_BYTE,              // type
-						surface->pixels);              // pointer to data
-
-		SDL_FreeSurface(surface);
-
-		compt++;
+void Editor::fill_texture_array_models() {
+	std::vector<std::string> pngs;
+	unsigned int idx_model= 0;
+	for (auto m : _track_editor->_track->_models) {
+		StaticObjectModel * model= m.second;
+		model->_texture_idx= float(idx_model++);
+		std::string png= dirname(model->_json_path)+ "/textures/"+ model->_name+ ".png";
+		pngs.push_back(png);
 	}
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-
-	glActiveTexture(0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	fill_texture_array(0, _textures[0], 1024, pngs);
 }
 
 
 void Editor::draw() {
 	// scissor permet de ne dessiner que sur un rectangle sans dépasser
-	glScissor(0, 0, 700, 700);
+	glScissor(
+		_track_editor->_screen_coords[0], _track_editor->_screen_coords[1],
+		_track_editor->_screen_coords[2]- _track_editor->_screen_coords[0],
+		_track_editor->_screen_coords[3]- _track_editor->_screen_coords[1]
+	);
 	glEnable(GL_SCISSOR_TEST);
 	_track_editor->draw(_textures[0]);
 	glDisable(GL_SCISSOR_TEST);

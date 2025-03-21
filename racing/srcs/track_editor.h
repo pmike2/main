@@ -28,8 +28,9 @@ const glm::vec4 OBSTACLE_FLOATING_FOOTPRINT_COLOR(1.0, 0.0, 1.0, 0.5);
 const glm::vec4 OBSTACLE_FLOATING_BBOX_COLOR(0.5, 0.2, 1.0, 0.5);
 const glm::vec4 SELECTION_COLOR(1.0, 1.0, 0.0, 0.3);
 
-// positions des grilles
+// positions et tailles des grilles
 const pt_type TRACK_ORIGIN(-9.0, -7.5);
+const pt_type TRACK_SIZE(10.0, 8.0);
 const pt_type TILES_ORIGIN(1.5, -7.5);
 const pt_type FLOATING_OBJECTS_ORIGIN(-7.0, 3.0);
 // scale par défaut de la grille track
@@ -106,6 +107,7 @@ public:
 	void update_floating_objects_bbox();
 	void update_texture();
 	void update();
+	void quicklook();
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
 	pt_type screen2pt(int x, int y);
@@ -115,7 +117,7 @@ public:
 	bool mouse_wheel(InputState * input_state);
 
 
-	bool _draw_bbox, _draw_texture;
+	bool _draw_bbox, _draw_texture, _draw_grid;
 	Track * _track; // piste à éditer
 	int _row_idx_select, _col_idx_select; // tuile courante sélectionnée
 	StaticObject * _selected_floating_object; // objet flottant courant sélectionné
@@ -130,6 +132,7 @@ public:
 	Font * _font;	
 
 	unsigned int _current_track_idx;
+	glm::ivec4 _screen_coords;
 };
 
 
@@ -139,7 +142,7 @@ public:
 	Editor();
 	Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl);
 	~Editor();
-	void fill_texture_array();
+	void fill_texture_array_models();
 	void draw();
 	void sync_track_with_tile();
 	void add_floating_object(pt_type pos);
