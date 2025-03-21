@@ -83,7 +83,7 @@ public:
 	void fill_texture_choose_track();
 	void fill_texture_array_models();
 	void fill_texture_array_bump();
-	unsigned int fill_texture_array_smoke();
+	void fill_texture_array_smoke();
 	
 	// dessins
 	void draw_bbox();

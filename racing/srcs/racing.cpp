@@ -79,6 +79,10 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuin
 	// piste
 	_track= new Track();
 
+	fill_texture_array_models();
+	fill_texture_array_bump();
+	fill_texture_array_smoke();
+
 	_idx_chosen_track= 1;
 	fill_texture_choose_track();
 	update_choose_track();
@@ -93,12 +97,10 @@ Racing::~Racing() {
 void Racing::choose_track(unsigned int idx_track, std::chrono::system_clock::time_point t) {
 	_track->load_json("../data/tracks/track"+ std::to_string(idx_track)+ ".json");
 
-	// remplissage textures
-	fill_texture_array_models();
-	fill_texture_array_bump();
-	unsigned int n_smoke_pngs= fill_texture_array_smoke();
+	_smoke_systems.clear();
+	std::vector<std::string> pngs= list_files("../data/smoke", "png");
 	for (auto car : _track->_sorted_cars) {
-		_smoke_systems.push_back(new SmokeSystem(car, n_smoke_pngs, t));
+		_smoke_systems.push_back(new SmokeSystem(car, pngs.size(), t));
 	}
 
 	// init données
@@ -153,10 +155,9 @@ void Racing::fill_texture_array_bump() {
 }
 
 
-unsigned int Racing::fill_texture_array_smoke() {
+void Racing::fill_texture_array_smoke() {
 	std::vector<std::string> pngs= list_files("../data/smoke", "png");
 	fill_texture_array(0, _textures[_texture_idx_smoke], 1024, pngs);
-	return pngs.size();
 }
 
 

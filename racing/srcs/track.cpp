@@ -336,6 +336,10 @@ void Track::load_json(std::string json_path) {
 
 	sort_cars();
 	set_car_names();
+
+	for (int i=0; i<N_MAX_TIRE_TRACKS; ++i) {
+		_tire_tracks[i]->reinit(pt_type(-1000.0, -1000.0), 0.0, pt_type(1.0, 1.0));
+	}
 }
 
 

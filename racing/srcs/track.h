@@ -20,7 +20,7 @@ enum TrackMode {TRACK_WAITING, TRACK_PRECOUNT, TRACK_LIVE, TRACK_FINISHED};
 const number DEFAULT_CELL_SIZE= 2.0;
 
 // nombre max de traces de pneus
-const unsigned int N_MAX_TIRE_TRACKS= 2000;
+const unsigned int N_MAX_TIRE_TRACKS= 1000;
 
 // écart en ms entre 2 créations de trace de pneu
 const unsigned int TIRE_TRACKS_DELTA_T= 20;
