@@ -23,6 +23,7 @@
 #include "car.h"
 #include "track.h"
 #include "smoke.h"
+#include "tire_track.h"
 
 
 // type de caméra : fixe, suit le héros, suit et s'oriente comme le héros

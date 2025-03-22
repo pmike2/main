@@ -9,7 +9,6 @@
 #include "typedefs.h"
 #include "static_object.h"
 #include "material.h"
-#include "tire_track.h"
 
 
 // Modèle de voiture

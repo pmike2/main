@@ -1253,7 +1253,7 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	_floating_grid_editor->_grid->_height= FLOATING_GRID_HEIGHT;
 
 	for (auto model : _track_editor->_track->_models) {
-		if (model.second->_type== OBSTACLE_TILE || model.second->_type== MATERIAL_TILE) {
+		if (model.second->_type== OBSTACLE_TILE || model.second->_type== SURFACE_TILE) {
 			//std::cout << "loading OBSTACLE_SETTING : " << model.first << "\n";
 			_tile_grid_editor->_grid->push_tile(model.second);
 			//std::cout << "loaded\n";

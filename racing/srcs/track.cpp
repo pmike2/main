@@ -484,7 +484,7 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 		Car * car= (Car*)(obj1);
 		
 		for (auto obj2 : _floating_objects) {
-			if (obj2->_model->_type!= MATERIAL_FLOATING) {
+			if (obj2->_model->_type!= SURFACE_FLOATING) {
 				continue;
 			}
 			if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
@@ -497,7 +497,7 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 		}
 
 		for (auto obj2 : _grid->_objects) {
-			if (obj2->_model->_type!= MATERIAL_TILE) {
+			if (obj2->_model->_type!= SURFACE_TILE) {
 				continue;
 			}
 			if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {

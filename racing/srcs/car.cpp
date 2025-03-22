@@ -329,7 +329,7 @@ void Car::anim(number anim_dt, std::chrono::system_clock::time_point t) {
 	_torque= 0.0;
 	_torque+= _com2force_fwd.x* _force_fwd.y- _com2force_fwd.y* _force_fwd.x; // torque avant
 	_torque+= _com2force_bwd.x* _force_bwd.y- _com2force_bwd.y* _force_bwd.x; // torque arrière
-	_torque-= _model->_angular_friction* _angular_friction_material* _angular_velocity; // friction angulaire
+	_torque-= model->_angular_friction* _angular_friction_material* _angular_velocity; // friction angulaire
 
 	// torque -> acc angulaire -> vitesse angulaire -> angle
 	_angular_acceleration= _torque/ _inertia;

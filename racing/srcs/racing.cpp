@@ -34,7 +34,7 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	_world2camera= glm::mat4(1.0);
 	
 	// font
-	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
+	_font= new Font(progs["font"], "../../fonts/Silom.ttf", 48, screengl);
 	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
 
 	// buffers
@@ -738,12 +738,12 @@ void Racing::update_texture() {
 	unsigned int n_floating_objects= _track->_floating_objects.size();
 
 	DrawContext * context= _contexts["texture"];
-	context->_n_pts= n_pts_per_obj* (n_grid_objects+ n_floating_objects+ N_MAX_TIRE_TRACKS);
+	context->_n_pts= n_pts_per_obj* (n_grid_objects+ n_floating_objects);
 	context->_n_attrs_per_pts= 7;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	for (unsigned int idx_obj=0; idx_obj<n_grid_objects+ n_floating_objects+ N_MAX_TIRE_TRACKS; ++idx_obj) {
+	for (unsigned int idx_obj=0; idx_obj<n_grid_objects+ n_floating_objects; ++idx_obj) {
 		StaticObject * obj;
 		
 		if (idx_obj< n_grid_objects) {
@@ -751,9 +751,6 @@ void Racing::update_texture() {
 		}
 		else if (idx_obj< n_grid_objects+ n_floating_objects) {
 			obj= _track->_floating_objects[idx_obj- n_grid_objects];
-		}
-		else {
-			obj= _track->_tire_tracks[idx_obj- n_grid_objects- n_floating_objects];
 		}
 		
 		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
@@ -846,7 +843,7 @@ void Racing::update_tire_track() {
 
 	unsigned int compt= 0;
 	for (unsigned int idx_tire_track=0; idx_tire_track<N_MAX_TIRE_TRACKS; ++idx_tire_track) {
-		TireTrack * tt= _tire_track_system[idx_tire_track];
+		TireTrack * tt= _tire_track_system->_tracks[idx_tire_track];
 		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
 		data[compt++]= tt->_bbox->_pts[0].x; data[compt++]= tt->_bbox->_pts[0].y; 
 		data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= tt->_opacity; data[compt++]= tt->_idx_texture;

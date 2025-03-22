@@ -115,7 +115,7 @@ void StaticObjectModel::load(std::string json_path) {
 		_fixed= true;
 	}
 
-	else if (_type== MATERIAL_FLOATING || _type== MATERIAL_TILE) {
+	else if (_type== SURFACE_FLOATING || _type== SURFACE_TILE) {
 		_fixed= true;
 	}
 }
@@ -142,11 +142,11 @@ std::ostream & operator << (std::ostream & os, const StaticObjectModel & model) 
 	else if (model._type== START){
 		os << "START";
 	}
-	else if (model._type== MATERIAL_FLOATING){
-		os << "MATERIAL_FLOATING";
+	else if (model._type== SURFACE_FLOATING){
+		os << "SURFACE_FLOATING";
 	}
-	else if (model._type== MATERIAL_TILE){
-		os << "MATERIAL_TILE";
+	else if (model._type== SURFACE_TILE){
+		os << "SURFACE_TILE";
 	}
 	os << " ; footprint=" << *model._footprint;
 	os << " ; fixed=" << model._fixed;
@@ -166,10 +166,11 @@ StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number a
 	set_model(model);
 	reinit(position, alpha, scale);
 
-	if (model->_type== OBSTACLE_TILE || model->_type== MATERIAL_TILE) {
+	// TODO : mettre ces valeurs dans un map constant
+	if (model->_type== OBSTACLE_TILE || model->_type== SURFACE_TILE) {
 		_z= -100.0f;
 	}
-	else if (model->_type== START || model->_type== CHECKPOINT || model->_type== MATERIAL_FLOATING || model->_type== REPAIR) {
+	else if (model->_type== START || model->_type== CHECKPOINT || model->_type== SURFACE_FLOATING || model->_type== REPAIR) {
 		_z= -90.0f;
 	}
 	else if (model->_type== OBSTACLE_FLOATING || model->_type== HERO_CAR || model->_type== ENNEMY_CAR) {
@@ -224,7 +225,7 @@ void StaticObject::update() {
 
 	// maj de la bbox
 	_bbox->_alpha= _alpha;
-	if (_model->_type== OBSTACLE_TILE || _model->_type== MATERIAL_TILE) {
+	if (_model->_type== OBSTACLE_TILE || _model->_type== SURFACE_TILE) {
 		_bbox->_center= _com;
 		_bbox->_half_size= 0.5* _scale;
 	}
