@@ -15,7 +15,7 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		return;
 	}
 
-	if (!obj1->_model->_solid || !obj2->_model->_solid) {
+	if (!obj1->_model->_material->_solid || !obj2->_model->_material->_solid) {
 		return;
 	}
 
@@ -89,7 +89,7 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 	// restitution doit etre entre 0 et 1 ; proche de 0 -> pas de rebond ; proche de 1 -> beaucoup de rebond
 	// en pratique j'ai mis des restitution > 1 pour plus de fun
 	// on prend la moyenne
-	number restitution= 0.5* (obj1->_model->_restitution+ obj2->_model->_restitution);
+	number restitution= 0.5* (obj1->_model->_material->_restitution+ obj2->_model->_material->_restitution);
 	
 	/*number restitution= 0.1;
 	obj1->_mass= 1.0;
@@ -149,7 +149,7 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		}
 	}
 
-	if (!obj1->_model->_fixed && obj1->_model->_solid) {
+	if (!obj1->_model->_fixed && obj1->_model->_material->_solid) {
 		int obj_bump_idx_1= -1;
 		int obj_bump_idx_2= -1;
 		std::pair<BBOX_SIDE, BBOX_CORNER>p= bbox_side_corner(obj1->_bbox, obj2->_footprint->_pts[idx_pt]);
@@ -182,7 +182,7 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		}
 	}
 
-	if (!obj2->_model->_fixed && obj2->_model->_solid) {
+	if (!obj2->_model->_fixed && obj2->_model->_material->_solid) {
 		int obj_bump_idx_1= -1;
 		int obj_bump_idx_2= -1;
 		std::pair<BBOX_SIDE, BBOX_CORNER>p= bbox_side_corner(obj2->_bbox, obj2->_footprint->_pts[idx_pt]);
@@ -218,14 +218,9 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 
 
 // Track -------------------------------------------------------------------------------------
-Track::Track() : _start(NULL), _n_laps(0), _mode(TRACK_WAITING), _precount(0), _tire_track_idx(0) {
+Track::Track() : _start(NULL), _n_laps(0), _mode(TRACK_WAITING), _precount(0) {
 	load_models();
 	_grid= new StaticObjectGrid(DEFAULT_CELL_SIZE, VERTICAL_GRID);
-
-	_tire_tracks= new StaticObject *[N_MAX_TIRE_TRACKS];
-	for (int i=0; i<N_MAX_TIRE_TRACKS; ++i) {
-		_tire_tracks[i]= new StaticObject(_models["tracks"], pt_type(-1000.0, -1000.0), 0.0, pt_type(1.0, 1.0));
-	}
 }
 
 
@@ -235,11 +230,15 @@ Track::~Track() {
 		delete obj;
 	}
 	_floating_objects.clear();
-	delete[] _tire_tracks;
 }
 
 
 void Track::load_models() {
+	std::vector<std::string> jsons_material= list_files("../data/materials", "json");
+	for (auto json_path : jsons_material) {
+		_materials[basename(json_path)]= new Material(json_path);
+	}
+
 	std::vector<std::string> jsons_floating= list_files("../data/static_objects/floating_objects", "json");
 	for (auto json_path : jsons_floating) {
 		//std::cout << "chgmt floating : " << json_path << "\n";
@@ -258,10 +257,12 @@ void Track::load_models() {
 		_models[basename(json_path)]= new CarModel(json_path);
 	}
 
-	/*for (auto model : _models) {
-		std::cout << model.first << " ; ";
+	for (auto model : _models) {
+		std::string matname= model.second->_material_name;
+		if (matname!= "" && _materials.find(matname)!= _materials.end()) {
+			model.second->_material= _materials[matname];
+		}
 	}
-	std::cout << "\n";*/
 }
 
 
@@ -309,6 +310,10 @@ void Track::load_json(std::string json_path) {
 		}
 	}
 
+	for (auto obj : _floating_objects) {
+		obj->_current_surface= _materials["road"];
+	}
+
 	std::sort(checkpoints.begin(), checkpoints.end(), [](std::pair<CheckPoint *, unsigned int> a, std::pair<CheckPoint *, unsigned int> b) {
 		return a.second< b.second; 
 	});
@@ -336,10 +341,6 @@ void Track::load_json(std::string json_path) {
 
 	sort_cars();
 	set_car_names();
-
-	for (int i=0; i<N_MAX_TIRE_TRACKS; ++i) {
-		_tire_tracks[i]->reinit(pt_type(-1000.0, -1000.0), 0.0, pt_type(1.0, 1.0));
-	}
 }
 
 
@@ -482,8 +483,6 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 		}
 		Car * car= (Car*)(obj1);
 		
-		bool car_in_abnormal_material= false;
-		
 		for (auto obj2 : _floating_objects) {
 			if (obj2->_model->_type!= MATERIAL_FLOATING) {
 				continue;
@@ -492,13 +491,7 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 				continue;
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
-				car->_linear_friction_material= obj2->_model->_linear_friction;
-				car->_angular_friction_material= obj2->_model->_angular_friction;
-				if (obj2->_model->_name== "puddle") {
-					car->_current_tracks= "tracks_water";
-					car->_last_track_t= t;
-					car_in_abnormal_material= true;
-				}
+				car->set_current_surface(obj2->_model->_material, t);
 				break;
 			}
 		}
@@ -511,39 +504,8 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 				continue;
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
-				car->_linear_friction_material= obj2->_model->_linear_friction;
-				car->_angular_friction_material= obj2->_model->_angular_friction;
-				if (obj2->_model->_name.find("sand")!= std::string::npos) {
-					car->_current_tracks= "tracks_sand";
-					car->_last_track_t= t;
-					car_in_abnormal_material= true;
-				}
+				car->set_current_surface(obj2->_model->_material, t);
 				break;
-			}
-		}
-
-		if (!car_in_abnormal_material && car->_current_tracks!= "tracks") {
-			auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_track_t).count();
-			if (dt> ABNORMAL_TRACKS_DT) {
-				car->_current_tracks= "tracks";
-				car->_linear_friction_material= 1.0;
-				car->_angular_friction_material= 1.0;
-			}
-			else {
-				const number LINEAR_FRICTION_MATERIAL_INCREMENT= 0.1;
-				const number ANGULAR_FRICTION_MATERIAL_INCREMENT= 0.1;
-				if (car->_linear_friction_material> 1.0+ LINEAR_FRICTION_MATERIAL_INCREMENT) {
-					car->_linear_friction_material-= LINEAR_FRICTION_MATERIAL_INCREMENT;
-				}
-				else if (car->_linear_friction_material< 1.0- LINEAR_FRICTION_MATERIAL_INCREMENT) {
-					car->_linear_friction_material+= LINEAR_FRICTION_MATERIAL_INCREMENT;
-				}
-				if (car->_angular_friction_material> 1.0+ ANGULAR_FRICTION_MATERIAL_INCREMENT) {
-					car->_angular_friction_material-= ANGULAR_FRICTION_MATERIAL_INCREMENT;
-				}
-				else if (car->_angular_friction_material< 1.0- ANGULAR_FRICTION_MATERIAL_INCREMENT) {
-					car->_angular_friction_material+= ANGULAR_FRICTION_MATERIAL_INCREMENT;
-				}
 			}
 		}
 	}
@@ -573,36 +535,6 @@ void Track::repair(std::chrono::system_clock::time_point t) {
 				}
 				break;
 			}
-		}
-	}
-}
-
-
-void Track::tire_tracks(std::chrono::system_clock::time_point t) {
-	std::vector<Car * > drifting_cars;
-	for (auto obj : _floating_objects) {
-		if (obj->_model->_type!= HERO_CAR && obj->_model->_type!= ENNEMY_CAR) {
-			continue;
-		}
-		
-		Car * car= (Car *)(obj);
-
-		if (car->_drift || car->_current_tracks!= "tracks") {
-			drifting_cars.push_back(car);
-		}
-	}
-	
-	for (auto car : drifting_cars) {
-		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_drift_t).count();
-		if (dt> TIRE_TRACKS_DELTA_T) {
-			_tire_tracks[_tire_track_idx]->set_model(_models[car->_current_tracks]);
-			_tire_tracks[_tire_track_idx]->reinit(car->_com, car->_alpha, car->_scale);
-			_tire_track_idx++;
-			if (_tire_track_idx>= N_MAX_TIRE_TRACKS) {
-				_tire_track_idx= 0;
-			}
-
-			car->_last_drift_t= t;
 		}
 	}
 }
@@ -778,7 +710,7 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 
 			if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
 				Car * car= (Car *)(obj);
-				car->anim(dt);
+				car->anim(dt, t);
 			}
 			else {
 				obj->anim(dt);
@@ -789,7 +721,6 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 		checkpoints(t);
 		materials(t);
 		repair(t);
-		tire_tracks(t);
 		sort_cars();
 		lap_time(t);
 	}

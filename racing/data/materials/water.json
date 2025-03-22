@@ -1,0 +1,6 @@
+{
+	"linear_friction" : 2.0,
+	"angular_friction" : 0.1,
+	"solid" : false,
+	"tire_track" : "tire_track_water"
+}

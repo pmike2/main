@@ -1,5 +1,5 @@
 {
     "type": "obstacle_tile",
     "footprint": [],
-    "restitution": 0.02
+    "material": "wall"
 }

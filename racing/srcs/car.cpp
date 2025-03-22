@@ -51,6 +51,7 @@ void CarModel::load(std::string json_path) {
 	_backward_static_friction= js["backward_static_friction"];
 	_backward_dynamic_friction= js["backward_dynamic_friction"];
 	_friction_threshold= js["friction_threshold"];
+	_angular_friction= js["angular_friction"];
 }
 
 
@@ -65,8 +66,6 @@ Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) :
 	_linear_friction_material(1.0), _angular_friction_material(1.0), _rank(0), _finished(false)
 {
 	reinit(position, alpha, scale);
-
-	_current_tracks= "tracks";
 }
 
 
@@ -264,8 +263,35 @@ void Car::random_ia() {
 }
 
 
-void Car::anim(number anim_dt) {
+void Car::set_current_surface(Material * material, std::chrono::system_clock::time_point t) {
+	StaticObject::set_current_surface(material);
+	_last_change_surface_t= t;
+}
+
+
+void Car::anim(number anim_dt, std::chrono::system_clock::time_point t) {
 	CarModel * model= get_model();
+
+	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_change_surface_t).count();
+	if (dt> SURFACE_CHANGE_DT) {
+		_linear_friction_material= _current_surface->_linear_friction;
+		_angular_friction_material= _current_surface->_angular_friction;
+		_tire_track_texture_idx= _current_surface->_tire_track_texture_idx;
+	}
+	else {
+		if (_linear_friction_material> _current_surface->_linear_friction+ LINEAR_FRICTION_MATERIAL_INCREMENT) {
+			_linear_friction_material-= LINEAR_FRICTION_MATERIAL_INCREMENT;
+		}
+		else if (_linear_friction_material< _current_surface->_linear_friction- LINEAR_FRICTION_MATERIAL_INCREMENT) {
+			_linear_friction_material+= LINEAR_FRICTION_MATERIAL_INCREMENT;
+		}
+		if (_angular_friction_material> _current_surface->_angular_friction+ ANGULAR_FRICTION_MATERIAL_INCREMENT) {
+			_angular_friction_material-= ANGULAR_FRICTION_MATERIAL_INCREMENT;
+		}
+		else if (_angular_friction_material< _current_surface->_angular_friction- ANGULAR_FRICTION_MATERIAL_INCREMENT) {
+			_angular_friction_material+= ANGULAR_FRICTION_MATERIAL_INCREMENT;
+		}
+	}
 
 	// plus Car a des bumps plus il est difficile d'accélerer et de tourner
 	// les bumps 4 et 5 sont à l'avant ; 3 et 6 sont à l'avant sur les côtés
@@ -280,8 +306,9 @@ void Car::anim(number anim_dt) {
 	// calcul force appliquée à l'arrière
 	_force_bwd= pt_type(0.0);
 	// + la vitesse est grande et + on tourne abruptement, + on a de chance d'être en dérapage
+	// les bumps 2 et 7 (roues arrières) influent sur _drift
 	number right_turn= scal(_right, _velocity);
-	if (abs(right_turn)> model->_friction_threshold) {
+	if (abs(right_turn)> model->_friction_threshold || _bumps[2]> BUMP_DRIFT_THRESHOLD || _bumps[7]> BUMP_DRIFT_THRESHOLD) {
 		// dérapage
 		_drift= true;
 		_force_bwd-= model->_backward_dynamic_friction* _linear_friction_material* right_turn* _right;

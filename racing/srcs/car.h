@@ -8,6 +8,8 @@
 #include "bbox_2d.h"
 #include "typedefs.h"
 #include "static_object.h"
+#include "material.h"
+#include "tire_track.h"
 
 
 // Modèle de voiture
@@ -35,6 +37,7 @@ public:
 	number _backward_static_friction;
 	number _backward_dynamic_friction;
 	number _friction_threshold;
+	number _angular_friction;
 };
 
 
@@ -50,7 +53,8 @@ public:
 	void preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up); // gestion touches
 	void preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick); // gestion joystick
 	void random_ia(); //IA aléatoire, conservée pour mémoire et tests
-	void anim(number anim_dt); // animation
+	void set_current_surface(Material * material, std::chrono::system_clock::time_point t);
+	void anim(number anim_dt, std::chrono::system_clock::time_point t); // animation
 	friend std::ostream & operator << (std::ostream & os, const Car & car);
 
 
@@ -74,13 +78,14 @@ public:
 	number _angular_friction_material;
 
 	std::chrono::system_clock::time_point _last_drift_t;
-	std::string _current_tracks;
-	std::chrono::system_clock::time_point _last_track_t;
+	std::chrono::system_clock::time_point _last_change_surface_t;
 
 	unsigned int _rank;
 	bool _finished;
 	std::vector<number> _lap_times;
 	std::chrono::system_clock::time_point _last_start_t;
+
+	float _tire_track_texture_idx;
 };
 
 #endif

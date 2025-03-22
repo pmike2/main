@@ -13,11 +13,14 @@ def fix(json_path):
 	with open(json_path) as f:
 		data= json.load(f)
 	
+	#if data["type"]!= "obstacle_tile":
 	if data["type"]!= "material_tile":
 		return
 
-	data["linear_friction"]= 4.0
-	data["angular_friction"]= 1.0
+	data["material"]= "wall"
+	data["type"]= "surface_tile"
+	del data["linear_friction"]
+	del data["angular_friction"]
 
 	with open(json_path, "w") as f:
 		json.dump(data, f, indent=4)

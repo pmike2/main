@@ -24,7 +24,7 @@ Racing::Racing() {
 }
 
 
-Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuint prog_choose_track, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t) :
+Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t) :
 	_draw_bbox(false), _draw_force(false), _draw_texture(true), _show_debug_info(false),
 	_cam_mode(TRANSLATE), _screengl(screengl), _input_state(input_state),
 	_mode(CHOOSE_TRACK)
@@ -38,50 +38,57 @@ Racing::Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuin
 	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
 
 	// buffers
-	unsigned int n_buffers= 6;
+	unsigned int n_buffers= 7;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
 	// textures
-	unsigned int n_textures= 4;
+	unsigned int n_textures= 5;
 	_textures= new GLuint(n_textures);
 	glGenTextures(n_textures, _textures);
 	_texture_idx_model= 0;
 	_texture_idx_bump= 1;
 	_texture_idx_smoke= 2;
 	_texture_idx_choose_track= 3;
+	_texture_idx_tire_track= 4;
 
 	// contextes de dessin
-	_contexts["bbox"]= new DrawContext(prog_simple, _buffers[0],
+	_contexts["bbox"]= new DrawContext(progs["simple"], _buffers[0],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["footprint"]= new DrawContext(prog_simple, _buffers[1],
+	_contexts["footprint"]= new DrawContext(progs["simple"], _buffers[1],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["force"]= new DrawContext(prog_simple, _buffers[2],
+	_contexts["force"]= new DrawContext(progs["simple"], _buffers[2],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["texture"]= new DrawContext(prog_texture, _buffers[3],
+	_contexts["texture"]= new DrawContext(progs["texture"], _buffers[3],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "bump_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array", "texture_array_bump", "gray_blend"});
 
-	_contexts["smoke"]= new DrawContext(prog_smoke, _buffers[4],
+	_contexts["smoke"]= new DrawContext(progs["smoke"], _buffers[4],
 		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
-	_contexts["choose_track"]= new DrawContext(prog_choose_track, _buffers[5],
+	_contexts["choose_track"]= new DrawContext(progs["choose_track"], _buffers[5],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "selection_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
+	_contexts["tire_track"]= new DrawContext(progs["tire_track"], _buffers[6],
+		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
+		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array", "z"});
+
 	// piste
 	_track= new Track();
+	_tire_track_system= new TireTrackSystem();
 
 	fill_texture_array_models();
 	fill_texture_array_bump();
 	fill_texture_array_smoke();
+	fill_texture_array_tire_track();
 
 	_idx_chosen_track= 1;
 	fill_texture_choose_track();
@@ -158,6 +165,48 @@ void Racing::fill_texture_array_bump() {
 void Racing::fill_texture_array_smoke() {
 	std::vector<std::string> pngs= list_files("../data/smoke", "png");
 	fill_texture_array(0, _textures[_texture_idx_smoke], 1024, pngs);
+}
+
+
+void Racing::fill_texture_array_tire_track() {
+	std::vector<std::string> pngs= list_files("../data/tire_track", "png");
+	fill_texture_array(0, _textures[_texture_idx_tire_track], 1024, pngs);
+	for (unsigned int i=0; i<pngs.size(); ++i) {
+		_track->_materials[basename(pngs[i])]->_tire_track_texture_idx= float(i);
+	}
+}
+
+
+void Racing::draw_choose_track() {
+	DrawContext * context= _contexts["choose_track"];
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_choose_track]);
+	glActiveTexture(0);
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["selection_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
 }
 
 
@@ -327,11 +376,11 @@ void Racing::draw_smoke() {
 }
 
 
-void Racing::draw_choose_track() {
-	DrawContext * context= _contexts["choose_track"];
+void Racing::draw_tire_track() {
+	DrawContext * context= _contexts["tire_track"];
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_choose_track]);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_tire_track]);
 	glActiveTexture(0);
 
 	glUseProgram(context->_prog);
@@ -339,6 +388,8 @@ void Racing::draw_choose_track() {
 
 	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	glUniform1f(context->_locs_uniform["z"], -20.0f);
 
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -346,8 +397,9 @@ void Racing::draw_choose_track() {
 
 	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
 	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
-	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
-	glVertexAttribPointer(context->_locs_attrib["selection_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["alpha_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 
 	for (auto attr : context->_locs_attrib) {
@@ -488,10 +540,60 @@ void Racing::draw() {
 		if (_draw_texture) {
 			draw_texture();
 			draw_smoke();
+			draw_tire_track();
 		}
-	}		
+	}
 
 	show_info();
+}
+
+
+void Racing::update_choose_track() {
+	const unsigned int n_pts_per_obj= 6;
+	const float MARGIN= 1.0;
+
+	DrawContext * context= _contexts["choose_track"];
+	context->_n_pts= _n_available_tracks* n_pts_per_obj;
+	context->_n_attrs_per_pts= 6;
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	float size= (_screengl->_gl_width- float(_n_available_tracks+ 1)* MARGIN)/ float(_n_available_tracks);
+	unsigned int compt= 0;
+	float selection;
+	for (unsigned int i=0; i<_n_available_tracks; ++i) {
+		if (i== _idx_chosen_track- 1) {
+			selection= 0.2f;
+		}
+		else {
+			selection= 0.0f;
+		}
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= -0.5f* size;
+		data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= -0.5f* size;
+		data[compt++]= 1.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= 0.5f* size;
+		data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
+		
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= -0.5f* size;
+		data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= 0.5f* size;
+		data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= 0.5f* size;
+		data[compt++]= 0.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
+	}
+
+	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+		if (i%5==0) {
+			std::cout << "\n";
+		}
+		std::cout << data[i] << " ; ";
+	}
+	std::cout << "\n";*/
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
@@ -733,49 +835,33 @@ void Racing::update_smoke() {
 }
 
 
-void Racing::update_choose_track() {
+void Racing::update_tire_track() {
 	const unsigned int n_pts_per_obj= 6;
-	const float MARGIN= 1.0;
 
-	DrawContext * context= _contexts["choose_track"];
-	context->_n_pts= _n_available_tracks* n_pts_per_obj;
-	context->_n_attrs_per_pts= 6;
+	DrawContext * context= _contexts["tire_track"];
+	context->_n_pts= n_pts_per_obj* N_MAX_TIRE_TRACKS;
+	context->_n_attrs_per_pts= 7;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	float size= (_screengl->_gl_width- float(_n_available_tracks+ 1)* MARGIN)/ float(_n_available_tracks);
 	unsigned int compt= 0;
-	float selection;
-	for (unsigned int i=0; i<_n_available_tracks; ++i) {
-		if (i== _idx_chosen_track- 1) {
-			selection= 0.2f;
-		}
-		else {
-			selection= 0.0f;
-		}
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= -0.5f* size;
-		data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= -0.5f* size;
-		data[compt++]= 1.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= 0.5f* size;
-		data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
-		
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= -0.5f* size;
-		data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= 0.5f* size;
-		data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= 0.5f* size;
-		data[compt++]= 0.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
-	}
+	for (unsigned int idx_tire_track=0; idx_tire_track<N_MAX_TIRE_TRACKS; ++idx_tire_track) {
+		TireTrack * tt= _tire_track_system[idx_tire_track];
+		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
+		data[compt++]= tt->_bbox->_pts[0].x; data[compt++]= tt->_bbox->_pts[0].y; 
+		data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= tt->_opacity; data[compt++]= tt->_idx_texture;
+		data[compt++]= tt->_bbox->_pts[1].x; data[compt++]= tt->_bbox->_pts[1].y; 
+		data[compt++]= 1.0; data[compt++]= 1.0; data[compt++]= tt->_opacity; data[compt++]= tt->_idx_texture;
+		data[compt++]= tt->_bbox->_pts[2].x; data[compt++]= tt->_bbox->_pts[2].y; 
+		data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= tt->_opacity; data[compt++]= tt->_idx_texture;
 
-	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
-		if (i%5==0) {
-			std::cout << "\n";
-		}
-		std::cout << data[i] << " ; ";
+		data[compt++]= tt->_bbox->_pts[0].x; data[compt++]= tt->_bbox->_pts[0].y;
+		data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= tt->_opacity; data[compt++]= tt->_idx_texture;
+		data[compt++]= tt->_bbox->_pts[2].x; data[compt++]= tt->_bbox->_pts[2].y;
+		data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= tt->_opacity; data[compt++]= tt->_idx_texture;
+		data[compt++]= tt->_bbox->_pts[3].x; data[compt++]= tt->_bbox->_pts[3].y;
+		data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= tt->_opacity; data[compt++]= tt->_idx_texture;
 	}
-	std::cout << "\n";*/
-
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -793,6 +879,8 @@ void Racing::anim(std::chrono::system_clock::time_point t) {
 			smoke_system->anim(t);
 		}
 
+		_tire_track_system->anim(t, _track->_sorted_cars);
+
 		if (_draw_bbox) {
 			update_bbox();
 			update_footprint();
@@ -803,6 +891,7 @@ void Racing::anim(std::chrono::system_clock::time_point t) {
 		if (_draw_texture) {
 			update_texture();
 			update_smoke();
+			update_tire_track();
 		}
 
 		camera();

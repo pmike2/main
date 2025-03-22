@@ -5,14 +5,15 @@
 
 #include "geom_2d.h"
 #include "car.h"
+#include "typedefs.h"
 
 
 const unsigned int N_SMOKES_PER_CAR= 200;
-const number SMOKE_SIZE_INCREMENT= 0.03;
+const number SMOKE_SIZE_INCREMENT= 0.04;
 const number SMOKE_OPACITY_DECREMENT= 0.04;
-const number SMOKE_OPACITY_THRESHOLD= 0.1;
+const number SMOKE_OPACITY_THRESHOLD= 0.02;
 const unsigned int NEW_SMOKE_DELTA_MS= 20;
-const number SMOKE_SIZE_INIT_FACTOR= 0.12;
+const number SMOKE_SIZE_INIT_FACTOR= 0.15;
 const number SMOKE_Z_INCREMENT= 0.1;
 const number SMOKE_Z_INIT= 100.0;
 const number SMOKE_DIST_FROM_COM= 0.7;

@@ -7,6 +7,7 @@
 #include "geom_2d.h"
 #include "bbox_2d.h"
 #include "typedefs.h"
+#include "material.h"
 
 
 // OBSTACLE_TILE == tuile obstacle ; OBSTACLE_FLOATING == obstacle flottant
@@ -14,7 +15,7 @@
 // START == ligne de départ (et d'arrivée) ; CHECKPOINT == chekpt
 // MATERIAL == matériau sol
 // TIRE_TRACKS == traces de pneu
-enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, START, CHECKPOINT, MATERIAL_TILE, MATERIAL_FLOATING, TIRE_TRACKS, REPAIR};
+enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, START, CHECKPOINT, SURFACE_TILE, SURFACE_FLOATING, REPAIR};
 
 // type de grille : verticale, horizontale
 enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
@@ -28,6 +29,8 @@ const number BUMP_MAX= 4.0;
 const number REPAIR_INCREMENT= 0.01;
 const number BUMP_THRUST_FACTOR= 0.02;
 const number BUMP_WHEEL_FACTOR= 0.12;
+const number BUMP_DRIFT_THRESHOLD= 0.5;
+
 
 
 // Modèle d'objet
@@ -43,16 +46,13 @@ public:
 	std::string _json_path;
 	std::string _name;
 	ObjectType _type;
-	number _mass;
-	number _linear_friction; // utilisé pour les objets non figés mais qui ne sont pas des voitures
-	number _angular_friction;
-	Polygon2D * _footprint; // empreinte au sol, utilisée pour les collisions ; doit être convexe
-	bool _fixed; // est-ce un objet figé
-	bool _solid; // est-ce un objet tangible
-	number _restitution; // paramètre de dureté au rebond (voir collision())
 	pt_type _com2bbox_center; // vecteur centre de masse -> centre bbox ; utile pour mettre à jour StaticObject._bbox
-
+	Polygon2D * _footprint; // empreinte au sol, utilisée pour les collisions ; doit être convexe
 	float _texture_idx; // pour accélerer update()
+	bool _fixed; // est-ce un objet figé
+
+	Material * _material;
+	std::string _material_name;
 };
 
 
@@ -65,13 +65,19 @@ public:
 	void set_model(StaticObjectModel * model);
 	void reinit(pt_type position, number alpha, pt_type scale); // met à une position / orientation / taille
 	void update(); // met à jour les données calculées à partir des autres
+	void set_current_surface(Material * material);
 	void anim(number anim_dt); // animation
 	friend std::ostream & operator << (std::ostream & os, const StaticObject & obj);
 
 
 	StaticObjectModel * _model;
+
 	Polygon2D * _footprint; // empreinte au sol, utilisée pour les collisions ; doit être convexe
 	BBox_2D * _bbox; // bounding box utilisée pour l'affichage des textures
+	pt_type _scale; // grossissement
+	number _mass; // == model->_mass* _scale.x* _scale.y
+	number _inertia; // inertie
+
 	pt_type _com; // center of mass
 	pt_type _velocity; // vitesse
 	pt_type _acceleration; // acceleration
@@ -80,12 +86,11 @@ public:
 	number _angular_velocity; // vitesse angulaire
 	number _angular_acceleration; // accélaration angulaire
 	number _torque; // torque == équivalent force pour angle
-	pt_type _scale; // grossissement
-	number _mass; // == model->_mass* _scale.x* _scale.y
-	number _inertia; // inertie
 
 	number _z;
 	number _bumps[9];
+
+	Material * _current_surface;
 };
 
 

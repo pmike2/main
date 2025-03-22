@@ -73,7 +73,7 @@ const glm::vec4 TOTAL_LAP_TIME_COLOR(0.8, 0.8, 0.6, 1.0);
 class Racing {
 public:
 	Racing();
-	Racing(GLuint prog_simple, GLuint prog_texture, GLuint prog_smoke, GLuint prog_choose_track, GLuint prog_font, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t);
+	Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t);
 	~Racing();
 
 	// choix d'une piste
@@ -84,25 +84,28 @@ public:
 	void fill_texture_array_models();
 	void fill_texture_array_bump();
 	void fill_texture_array_smoke();
+	void fill_texture_array_tire_track();
 	
 	// dessins
+	void draw_choose_track();
 	void draw_bbox();
 	void draw_footprint();
 	void draw_force();
 	void draw_texture();
 	void draw_smoke();
-	void draw_choose_track();
+	void draw_tire_track();
 	void show_info();
 	void draw();
 
 	// maj des buffers
+	void update_choose_track();
 	void update_bbox();
 	void update_footprint();
 	void update_force();
 	void update_texture();
 	void update_smoke();
-	void update_choose_track();
-
+	void update_tire_track();
+	
 	// animation
 	void anim(std::chrono::system_clock::time_point t);
 	void camera();
@@ -113,6 +116,8 @@ public:
 
 	// piste courante
 	Track * _track;
+	std::vector<SmokeSystem *> _smoke_systems; // 1 par Car
+	TireTrackSystem * _tire_track_system;
 
 	// params caméra
 	pt_type _com_camera;
@@ -127,13 +132,12 @@ public:
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs
-	unsigned int _texture_idx_model, _texture_idx_bump, _texture_idx_smoke, _texture_idx_choose_track;
+	unsigned int _texture_idx_model, _texture_idx_bump, _texture_idx_smoke, _texture_idx_choose_track, _texture_idx_tire_track;
 	glm::mat4 _camera2clip; // glm::ortho
 	glm::mat4 _world2camera; // caméra
 	Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
 	InputState * _input_state;
-	std::vector<SmokeSystem *> _smoke_systems;
 };
 
 

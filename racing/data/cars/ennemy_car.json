@@ -31,14 +31,13 @@
     ],
     "forward_static_friction": 1,
     "friction_threshold": 0.2,
-    "mass": 1,
     "max_brake": 1,
     "max_thrust": 3.5,
     "max_wheel": 0.8,
     "thrust_decrement": 0.05,
-    "thrust_increment": 0.04,
+    "thrust_increment": 0.02,
     "type": "ennemy_car",
     "wheel_decrement": 0.5,
     "wheel_increment": 0.03,
-    "restitution": 0.5
+    "material" : "car"
 }

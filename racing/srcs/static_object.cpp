@@ -17,7 +17,7 @@ StaticObjectModel::StaticObjectModel() {
 }
 
 
-StaticObjectModel::StaticObjectModel(std::string json_path) : _texture_idx(0) {
+StaticObjectModel::StaticObjectModel(std::string json_path) : _texture_idx(0), _material_name(""), _material(NULL) {
 	load(json_path);
 }
 
@@ -54,14 +54,11 @@ void StaticObjectModel::load(std::string json_path) {
 	else if (js["type"]== "start") {
 		_type= START;
 	}
-	else if (js["type"]== "material_tile") {
-		_type= MATERIAL_TILE;
+	else if (js["type"]== "surface_tile") {
+		_type= SURFACE_TILE;
 	}
-	else if (js["type"]== "material_floating") {
-		_type= MATERIAL_FLOATING;
-	}
-	else if (js["type"]== "tire_tracks") {
-		_type= TIRE_TRACKS;
+	else if (js["type"]== "surface_floating") {
+		_type= SURFACE_FLOATING;
 	}
 	else if (js["type"]== "repair") {
 		_type= REPAIR;
@@ -91,12 +88,13 @@ void StaticObjectModel::load(std::string json_path) {
 
 	// vecteur centre de masse -> centre bbox
 	_com2bbox_center= -1.0* _footprint->_centroid;
+
+	if (js["material"]!= nullptr) {
+		_material_name= js["material"];
+	}
 	
 	if (_type== OBSTACLE_TILE) {
 		_fixed= true;
-		_solid= true;
-		_restitution= js["restitution"];
-		_mass= _linear_friction= _angular_friction= 0.0;
 	}
 	
 	else if (_type== OBSTACLE_FLOATING) {
@@ -104,16 +102,6 @@ void StaticObjectModel::load(std::string json_path) {
 		_footprint->centroid2zero();
 		_footprint->update_all();
 		_fixed= js["fixed"];
-		_solid= true;
-		_restitution= js["restitution"];
-		if (_fixed) {
-			_mass= _linear_friction= _angular_friction= 0.0;
-		}
-		else {
-			_mass= js["mass"];
-			_linear_friction= js["linear_friction"];
-			_angular_friction= js["angular_friction"];
-		}
 	}
 	
 	else if (_type== HERO_CAR || _type== ENNEMY_CAR) {
@@ -121,25 +109,14 @@ void StaticObjectModel::load(std::string json_path) {
 		_footprint->centroid2zero();
 		_footprint->update_all();
 		_fixed= false;
-		_solid= true;
-		_mass= js["mass"];
-		_angular_friction= js["angular_friction"];
-		_restitution= js["restitution"];
 	}
 
-	else if (_type== CHECKPOINT || _type== START || _type== TIRE_TRACKS || _type== REPAIR) {
+	else if (_type== CHECKPOINT || _type== START || _type== REPAIR) {
 		_fixed= true;
-		_solid= false;
-		_mass= _linear_friction= _angular_friction= _restitution= 0.0;
 	}
 
 	else if (_type== MATERIAL_FLOATING || _type== MATERIAL_TILE) {
 		_fixed= true;
-		_solid= false;
-		_mass= _restitution= 0.0;
-		// dans ce contexte ce sont des facteurs multiplicatifs qui vont affecter les cars
-		_linear_friction= js["linear_friction"];
-		_angular_friction= js["angular_friction"];
 	}
 }
 
@@ -171,11 +148,8 @@ std::ostream & operator << (std::ostream & os, const StaticObjectModel & model) 
 	else if (model._type== MATERIAL_TILE){
 		os << "MATERIAL_TILE";
 	}
-	else if (model._type== TIRE_TRACKS){
-		os << "TIRE_TRACKS";
-	}
 	os << " ; footprint=" << *model._footprint;
-	os << " ; mass=" << model._mass << " ; fixed=" << model._fixed << " ; solid=" << model._solid;
+	os << " ; fixed=" << model._fixed;
 	return os;
 }
 
@@ -197,9 +171,6 @@ StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number a
 	}
 	else if (model->_type== START || model->_type== CHECKPOINT || model->_type== MATERIAL_FLOATING || model->_type== REPAIR) {
 		_z= -90.0f;
-	}
-	else if (model->_type== TIRE_TRACKS) {
-		_z= -80.0f;
 	}
 	else if (model->_type== OBSTACLE_FLOATING || model->_type== HERO_CAR || model->_type== ENNEMY_CAR) {
 		_z= -70.0f;
@@ -264,11 +235,16 @@ void StaticObject::update() {
 	_bbox->update();
 
 	// maj masse et inertie
-	_mass= _model->_mass* _scale.x* _scale.y;
+	_mass= _model->_material->_density* _scale.x* _scale.y;
 	// !!!
 	// obligé de rajouter * facteur sinon tout pète lors des collisions
 	// !!!
 	_inertia= _mass* _footprint->_inertia* INERTIA_FACTOR;
+}
+
+
+void StaticObject::set_current_surface(Material * material) {
+	_current_surface= material;
 }
 
 
@@ -279,7 +255,7 @@ void StaticObject::anim(number anim_dt) {
 
 	// calcul force
 	_force= pt_type(0.0);
-	_force-= _model->_linear_friction* _velocity; // friction
+	_force-= _model->_material->_linear_friction* _velocity; // friction
 	
 	// force -> acceleration -> vitesse -> position
 	_acceleration= _force/ _mass;
@@ -288,7 +264,7 @@ void StaticObject::anim(number anim_dt) {
 
 	// calcul torque == équivalent force pour les rotations
 	_torque= 0.0;
-	_torque-= _model->_angular_friction* _angular_velocity; // friction
+	_torque-= _model->_material->_angular_friction* _angular_velocity; // friction
 	
 	// torque -> acc angulaire -> vitesse angulaire -> angle
 	_angular_acceleration= _torque/ _inertia;

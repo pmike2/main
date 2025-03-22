@@ -42,5 +42,5 @@
             0.03716666666666667
         ]
     ],
-    "restitution": 0.02
+    "material": "wall"
 }
