@@ -52,6 +52,8 @@ Material::Material(std::string json_path) {
 	else {
 		_angular_friction= 0.0;
 	}
+
+	_tire_track_texture_idx= 0.0; // sera éventuellement renseigné dans racing.cpp
 }
 
 

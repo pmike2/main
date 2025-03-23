@@ -14,13 +14,10 @@ def fix(json_path):
 		data= json.load(f)
 	
 	#if data["type"]!= "obstacle_tile":
-	if data["type"]!= "material_tile":
+	if data["type"]!= "surface_tile":
 		return
 
-	data["material"]= "wall"
-	data["type"]= "surface_tile"
-	del data["linear_friction"]
-	del data["angular_friction"]
+	data["material"]= "sand"
 
 	with open(json_path, "w") as f:
 		json.dump(data, f, indent=4)

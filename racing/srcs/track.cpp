@@ -261,6 +261,7 @@ void Track::load_models() {
 		std::string matname= model.second->_material_name;
 		if (matname!= "" && _materials.find(matname)!= _materials.end()) {
 			model.second->_material= _materials[matname];
+			std::cout << "matname=" << matname << "\n";
 		}
 	}
 }
@@ -273,6 +274,7 @@ void Track::load_json(std::string json_path) {
 
 	_grid->_cell_size= js["cell_size"];
 	set_all("empty", js["width"], js["height"]);
+
 	unsigned int compt= 0;
 	for (auto tilename : js["tiles"]) {
 		set_tile(tilename, compt);

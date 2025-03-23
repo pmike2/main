@@ -236,11 +236,16 @@ void StaticObject::update() {
 	_bbox->update();
 
 	// maj masse et inertie
-	_mass= _model->_material->_density* _scale.x* _scale.y;
-	// !!!
-	// obligé de rajouter * facteur sinon tout pète lors des collisions
-	// !!!
-	_inertia= _mass* _footprint->_inertia* INERTIA_FACTOR;
+	if (_model->_material!= NULL) {
+		_mass= _model->_material->_density* _scale.x* _scale.y;
+		// !!!
+		// obligé de rajouter * facteur sinon tout pète lors des collisions
+		// !!!
+		_inertia= _mass* _footprint->_inertia* INERTIA_FACTOR;
+	}
+	else {
+		_mass= _inertia= 0.0;
+	}
 }
 
 
@@ -256,6 +261,7 @@ void StaticObject::anim(number anim_dt) {
 
 	// calcul force
 	_force= pt_type(0.0);
+	std::cout << _model->_material << "\n";
 	_force-= _model->_material->_linear_friction* _velocity; // friction
 	
 	// force -> acceleration -> vitesse -> position
