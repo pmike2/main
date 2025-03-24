@@ -45,7 +45,7 @@ public:
 	void sort_cars(); // tri des voitures par position
 	unsigned int get_checkpoint_index(CheckPoint * checkpoint); // position du chkpt par rapport au start
 	void all_collision(); // gestion des collisions
-	void materials(std::chrono::system_clock::time_point t);
+	void surfaces(std::chrono::system_clock::time_point t);
 	void repair(std::chrono::system_clock::time_point t);
 	void checkpoints(std::chrono::system_clock::time_point t); // gestion chkpts pour toutes les voitures
 	void checkpoint_ia(Car * car); // ia basée sur les chkpts
@@ -63,24 +63,23 @@ public:
 	
 	StaticObject * get_floating_object(pt_type pos); // renvoie le floating object à une coord
 	void delete_floating_object(StaticObject * obj); // suppression floating object
-	void clear_floating_objects();
+	void clear_floating_objects(); // suppression de tous les floating object
 
 	friend std::ostream & operator << (std::ostream & os, const Track & track);
 
 
-	std::map<std::string, Material *> _materials;
+	std::map<std::string, Material *> _materials; // les matériaux
 	std::map<std::string, StaticObjectModel *> _models; // modèles
 	StaticObjectGrid * _grid; // grille de tuiles
 	std::vector<StaticObject *> _floating_objects; // objets flottants
 	unsigned int _n_laps; // nombre de tours
 	CheckPoint * _start; // point de départ
-	TrackMode _mode;
+	TrackMode _mode; // mode
 
-	//std::chrono::system_clock::time_point _last_anim_t;
-	std::chrono::system_clock::time_point _last_precount_t;
-	unsigned int _precount;
+	std::chrono::system_clock::time_point _last_precount_t; // pour décompte avant début course
+	unsigned int _precount; // décompte avant début course
 
-	std::vector<Car *> _sorted_cars;
+	std::vector<Car *> _sorted_cars; // les voitures triées par position
 };
 
 

@@ -44,7 +44,7 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 
 	// textures
 	unsigned int n_textures= 5;
-	_textures= new GLuint(n_textures);
+	_textures= new GLuint[n_textures];
 	glGenTextures(n_textures, _textures);
 	_texture_idx_model= 0;
 	_texture_idx_bump= 1;
@@ -54,16 +54,16 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 
 	// contextes de dessin
 	_contexts["bbox"]= new DrawContext(progs["simple"], _buffers[0],
-	std::vector<std::string>{"position_in", "color_in"},
-	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
 	_contexts["footprint"]= new DrawContext(progs["simple"], _buffers[1],
-	std::vector<std::string>{"position_in", "color_in"},
-	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
 	_contexts["force"]= new DrawContext(progs["simple"], _buffers[2],
-	std::vector<std::string>{"position_in", "color_in"},
-	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
 	_contexts["texture"]= new DrawContext(progs["texture"], _buffers[3],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "bump_in"},
@@ -97,27 +97,49 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 
 
 Racing::~Racing() {
+	delete _track;
+	for (auto ss : _smoke_systems) {
+		delete ss;
+	}
+	_smoke_systems.clear();
+	delete _tire_track_system;
+	for (auto context : _contexts) {
+		delete context.second;
+	}
+	_contexts.clear();
 	delete _buffers;
+	delete _textures;
+	delete _font;
 }
 
 
 void Racing::choose_track(unsigned int idx_track, std::chrono::system_clock::time_point t) {
+	// chargement json
 	_track->load_json("../data/tracks/track"+ std::to_string(idx_track)+ ".json");
 
+	// reinit fumée par voiture
+	for (auto ss : _smoke_systems) {
+		delete ss;
+	}
 	_smoke_systems.clear();
 	std::vector<std::string> pngs= list_files("../data/smoke", "png");
 	for (auto car : _track->_sorted_cars) {
 		_smoke_systems.push_back(new SmokeSystem(car, pngs.size(), t));
 	}
 
+	// reinit traces de pneu
+	_tire_track_system->reinit();
+
 	// init données
 	Car * hero= _track->get_hero();
 	_com_camera= hero->_com;
+	
 	update_bbox();
 	update_footprint();
 	update_force();
 	update_texture();
 	update_smoke();
+	update_tire_track();
 
 	_mode= RACING;
 	_track->start(t);
@@ -218,7 +240,7 @@ void Racing::draw_bbox() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -30.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_BBOX);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -246,7 +268,7 @@ void Racing::draw_footprint() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -20.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_FOOTPRINT);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -274,7 +296,7 @@ void Racing::draw_force() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -10.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_FORCE);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -317,7 +339,7 @@ void Racing::draw_texture() {
 		glUniform1f(context->_locs_uniform["gray_blend"], 0.0f);
 	}
 	else {
-		glUniform1f(context->_locs_uniform["gray_blend"], 0.5f);
+		glUniform1f(context->_locs_uniform["gray_blend"], GRAY_BLEND);
 	}
 	
 	for (auto attr : context->_locs_attrib) {
@@ -389,7 +411,7 @@ void Racing::draw_tire_track() {
 	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -20.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_TIRE_TRACK);
 
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -469,7 +491,7 @@ void Racing::show_info() {
 				if (hero->_n_laps== _track->_n_laps) {
 					nlaps_color= NLAPS_LAST_COLOR;
 				}
-				texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(5.0f, -5.0f), 0.01f, nlaps_color));
+				texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(5.0f, 5.0f), 0.01f, nlaps_color));
 			}
 
 			// vitesse joueur
@@ -479,7 +501,7 @@ void Racing::show_info() {
 				if (hero_speed> 200) {
 					speed_color= HIGH_SPEED_COLOR;
 				}
-				texts.push_back(Text(std::to_string(hero_speed)+ " km/h", glm::vec2(5.0f, 5.0f), 0.01f, speed_color));
+				texts.push_back(Text(std::to_string(hero_speed)+ " km/h", glm::vec2(-7.2f, 5.0f), 0.01f, speed_color));
 			}
 
 			// classement toutes voitures
@@ -490,7 +512,7 @@ void Racing::show_info() {
 					if (car== hero) {
 						ranking_color= RANKING_HERO_COLOR;
 					}
-					texts.push_back(Text(std::to_string(idx_car+ 1)+  " - "+ car->_name, glm::vec2(-7.0f, 5.0f- float(idx_car)* 0.5f), 0.007f, ranking_color));
+					texts.push_back(Text(std::to_string(idx_car+ 1)+  " - "+ car->_name, glm::vec2(-7.2f, 4.0f- float(idx_car)* 0.5f), 0.005f, ranking_color));
 				}
 			}
 
@@ -503,7 +525,7 @@ void Racing::show_info() {
 					}
 					std::ostringstream oss;
 					oss << std::fixed << std::setprecision(2) << hero->_lap_times[idx_time];
-					texts.push_back(Text("LAP "+ std::to_string(idx_time+ 1)+  " - "+ oss.str(), glm::vec2(-7.0f, -2.0f- float(idx_time)* 0.5f), 0.005f, lap_time_color));
+					texts.push_back(Text("LAP "+ std::to_string(idx_time+ 1)+  " - "+ oss.str(), glm::vec2(5.0f, 4.0f- float(idx_time)* 0.5f), 0.005f, lap_time_color));
 				}
 			}
 
@@ -515,7 +537,7 @@ void Racing::show_info() {
 				}
 				std::ostringstream oss;
 				oss << std::fixed << std::setprecision(2) << total_time;
-				texts.push_back(Text("TOTAL - "+ oss.str(), glm::vec2(-7.0f, -5.0f), 0.005f, TOTAL_LAP_TIME_COLOR));
+				texts.push_back(Text("TOTAL - "+ oss.str(), glm::vec2(5.0f, 3.0f- 0.5f* float(_track->_n_laps+ 1)), 0.005f, TOTAL_LAP_TIME_COLOR));
 			}
 		}
 	}
@@ -526,6 +548,8 @@ void Racing::show_info() {
 
 
 void Racing::draw() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	if (_mode== CHOOSE_TRACK) {
 		draw_choose_track();
 	}
@@ -539,8 +563,8 @@ void Racing::draw() {
 		}
 		if (_draw_texture) {
 			draw_texture();
-			draw_smoke();
 			draw_tire_track();
+			draw_smoke();
 		}
 	}
 
@@ -582,14 +606,6 @@ void Racing::update_choose_track() {
 		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= 0.5f* size;
 		data[compt++]= 0.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
 	}
-
-	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
-		if (i%5==0) {
-			std::cout << "\n";
-		}
-		std::cout << data[i] << " ; ";
-	}
-	std::cout << "\n";*/
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
@@ -837,13 +853,22 @@ void Racing::update_tire_track() {
 
 	DrawContext * context= _contexts["tire_track"];
 	context->_n_pts= n_pts_per_obj* N_MAX_TIRE_TRACKS;
-	context->_n_attrs_per_pts= 7;
+	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
 	unsigned int compt= 0;
 	for (unsigned int idx_tire_track=0; idx_tire_track<N_MAX_TIRE_TRACKS; ++idx_tire_track) {
 		TireTrack * tt= _tire_track_system->_tracks[idx_tire_track];
+		
+		if (!tt->_is_alive) {
+			for (int i=0; i<n_pts_per_obj* context->_n_attrs_per_pts; ++i) {
+				data[compt+ i]= 0.0;
+			}
+			compt+= n_pts_per_obj* context->_n_attrs_per_pts;
+			continue;
+		}
+
 		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
 		data[compt++]= tt->_bbox->_pts[0].x; data[compt++]= tt->_bbox->_pts[0].y; 
 		data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= tt->_opacity; data[compt++]= tt->_idx_texture;
@@ -859,6 +884,10 @@ void Racing::update_tire_track() {
 		data[compt++]= tt->_bbox->_pts[3].x; data[compt++]= tt->_bbox->_pts[3].y;
 		data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= tt->_opacity; data[compt++]= tt->_idx_texture;
 	}
+	/*for (int i=0;i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+		std::cout << data[i] << " ; ";
+	}
+	std::cout << "\n";*/
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

@@ -20,23 +20,23 @@ public:
 	void load(std::string json_path);
 
 
-	pt_type _forward;
-	pt_type _right;
-	pt_type _com2force_fwd;
-	pt_type _com2force_bwd;
-	number _max_wheel;
-	number _wheel_increment;
-	number _wheel_decrement;
-	number _max_thrust;
-	number _thrust_increment;
-	number _thrust_decrement;
-	number _max_brake;
-	number _brake_increment;
-	number _forward_static_friction;
-	number _backward_static_friction;
-	number _backward_dynamic_friction;
-	number _friction_threshold;
-	number _angular_friction;
+	pt_type _forward; // direction avant
+	pt_type _right; // direction à droite
+	pt_type _com2force_fwd; // vecteur COM (center of mass) -> point d'application des forces avant
+	pt_type _com2force_bwd; // vecteur COM (center of mass) -> point d'application des forces arrière
+	number _max_wheel; // rotation max du volant
+	number _wheel_increment; // incrément de rotation du volant lors d'un appui touche gauche-droite
+	number _wheel_decrement; // décrement de rotation du volant si pas d'appui touche gauche-droite
+	number _max_thrust; // max pédale accélération
+	number _thrust_increment; // incrément pédale accélération lors d'un appui touche avant
+	number _thrust_decrement; // décrément pédale accélération si pas d'appui touche avant
+	number _max_brake; // max pédale frein
+	number _brake_increment; // incrément pédale frein si appui touche arrière
+	number _forward_static_friction; // friction statique avant
+	number _backward_static_friction; // friction statique arrière
+	number _backward_dynamic_friction; // friction dynamique arrière
+	number _friction_threshold; // seuil de passage friction statique -> friction dynamique (arrière)
+	number _angular_friction; // friction angulaire
 };
 
 
@@ -69,20 +69,19 @@ public:
 	number _thrust; // quantité de pédale d'accélération
 	bool _drift; // est-ce que le véhicule est en dérapage
 
+	number _linear_friction_surface; // facteur multiplicatif de friction lié au sol; varie si on est sur une flaque par ex
+	number _angular_friction_surface;
+
+	std::string _name; // nom du véhicule pour affichage classement
 	CheckPoint * _next_checkpoint; // prochain chkpt objectif
 	unsigned int _n_laps; // combien de tours déjà faits
-	std::string _name; // nom du véhicule pour affichage classement
+	unsigned int _rank; // classement
+	bool _finished; // a t'il fini la course
+	std::vector<number> _lap_times; // les temps pour chaque tour
 
-	number _linear_friction_material; // facteur multiplicatif de friction lié au sol; varie si on est sur une flaque par ex
-	number _angular_friction_material;
-
-	std::chrono::system_clock::time_point _last_drift_t;
-	std::chrono::system_clock::time_point _last_change_surface_t;
-
-	unsigned int _rank;
-	bool _finished;
-	std::vector<number> _lap_times;
-	std::chrono::system_clock::time_point _last_start_t;
+	std::chrono::system_clock::time_point _last_drift_t; // dernier temps de création d'un TireTrack
+	std::chrono::system_clock::time_point _last_change_surface_t; // dernier temps de changement de surface
+	std::chrono::system_clock::time_point _last_start_t; // dernier temps de passage sur le start de la course
 
 	float _tire_track_texture_idx;
 };

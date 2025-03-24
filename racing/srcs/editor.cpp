@@ -73,6 +73,16 @@ void key_down(SDL_Keycode key) {
 
 	if (key== SDLK_ESCAPE) {
 		done= true;
+		return;
+	}
+	// quicklook
+	else if (key== SDLK_q) {
+		editor->quicklook(); // on prépare le visuel du circuit en plein écran
+		SDL_GL_SwapWindow(window);
+		SDL_GL_SwapWindow(window); // je ne sais pas pquoi il faut en faire 2
+		export_screen_to_ppm(editor->_ppm_path, 0, 0, MAIN_WIN_WIDTH- 1, MAIN_WIN_HEIGHT- 1);
+		system(editor->_qlk_cmd.c_str());
+		return;
 	}
 
 	if (editor->key_down(input_state, key)) {
@@ -116,6 +126,7 @@ void init() {
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LESS);
 	glDepthRange(0.0f, 1.0f);
+	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	
 	// frontfaces en counterclockwise
 	glFrontFace(GL_CCW);
@@ -156,10 +167,6 @@ void init() {
 void draw() {
 	compt_fps++;
 
-	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	
 	editor->draw();
 
 	SDL_GL_SwapWindow(window);

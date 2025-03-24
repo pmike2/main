@@ -10,15 +10,17 @@
 
 
 // nombre max de traces de pneus
-const unsigned int N_MAX_TIRE_TRACKS= 1000;
-
+const unsigned int N_MAX_TIRE_TRACKS= 2000;
 // écart en ms entre 2 créations de trace de pneu
 const unsigned int TIRE_TRACKS_DELTA_T= 20;
-
-
-const number TIRE_TRACK_OPACITY_INIT= 1.0;
-const number TIRE_TRACK_OPACITY_DECREMENT= 0.05;
-const number TIRE_TRACK_OPACITY_THRESHOLD= 0.02;
+// opacité initiale d'une trace
+const number TIRE_TRACK_OPACITY_INIT= 0.9;
+// décrément d'opacité
+const number TIRE_TRACK_OPACITY_DECREMENT= 0.005;
+// seuil de suppression
+const number TIRE_TRACK_OPACITY_THRESHOLD= 0.05;
+// facteur multiplicatif par rapport au scale de Car
+const number TIRE_TRACK_SCALE_FACTOR= 0.3;
 
 
 class TireTrack {
@@ -29,10 +31,10 @@ public:
 	void anim();
 
 
-	BBox_2D * _bbox;
-	number _opacity;
-	unsigned int _idx_texture;
-	bool _is_alive;
+	BBox_2D * _bbox; // BBox englobante
+	number _opacity; // opacité
+	unsigned int _idx_texture; // à quel idx de png se réfère t'elle
+	bool _is_alive; // active ?
 };
 
 
@@ -40,10 +42,11 @@ class TireTrackSystem {
 public:
 	TireTrackSystem();
 	~TireTrackSystem();
+	void reinit();
 	void anim(std::chrono::system_clock::time_point t, std::vector<Car *> cars);
 
 
-	TireTrack ** _tracks;
+	TireTrack ** _tracks; // les traces
 };
 
 #endif

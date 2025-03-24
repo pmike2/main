@@ -20,6 +20,13 @@
 // plans z de contrainte d'affichage de glm::ortho
 const float Z_NEAR= 0.0f;
 const float Z_FAR= 1000.0f;
+// z des types de dessin
+const float Z_GRID= -10.0f;
+const float Z_SELECTION= -40.0f;
+const float Z_TILES= -30.0f;
+const float Z_FOOTPRINT= -20.0f;
+const float Z_BBOX= -15.0f;
+// voir également static_object.h / Z_OBJECTS
 
 // couleurs
 const glm::vec4 GRID_COLOR(0.0, 1.0, 0.0, 0.7);
@@ -107,7 +114,6 @@ public:
 	void update_floating_objects_bbox();
 	void update_texture();
 	void update();
-	void quicklook();
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
 	pt_type screen2pt(int x, int y);
@@ -122,7 +128,7 @@ public:
 	int _row_idx_select, _col_idx_select; // tuile courante sélectionnée
 	StaticObject * _selected_floating_object; // objet flottant courant sélectionné
 	pt_type _translation; // position et agrandissement
-	number _scale;
+	pt_type _scale;
 	CheckPoint * _last_checkpoint; // dernier chkpt mis
 
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
@@ -146,6 +152,7 @@ public:
 	void draw();
 	void sync_track_with_tile();
 	void add_floating_object(pt_type pos);
+	void quicklook();
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
 	bool mouse_button_down(InputState * input_state);
@@ -160,6 +167,9 @@ public:
 	//Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
 	GLuint * _textures; // texture arrays pour tous les PNGs
+
+	std::string _ppm_path; // utiles à la génération de quicklook
+	std::string _qlk_cmd;
 };
 
 #endif

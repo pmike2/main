@@ -17,13 +17,16 @@ StaticObjectModel::StaticObjectModel() {
 }
 
 
-StaticObjectModel::StaticObjectModel(std::string json_path) : _texture_idx(0), _material_name(""), _material(NULL) {
+StaticObjectModel::StaticObjectModel(std::string json_path) :
+	_texture_idx(0), _material_name(""), _material(NULL) 
+{
+	_footprint= new Polygon2D();
 	load(json_path);
 }
 
 
 StaticObjectModel::~StaticObjectModel() {
-
+	delete _footprint;
 }
 
 
@@ -68,7 +71,6 @@ void StaticObjectModel::load(std::string json_path) {
 	}
 
 	// empreinte au sol
-	_footprint= new Polygon2D();
 	std::vector<pt_type> pts;
 	if (js["footprint"]!= nullptr) {
 		for (auto coord : js["footprint"]) {
@@ -91,6 +93,9 @@ void StaticObjectModel::load(std::string json_path) {
 
 	if (js["material"]!= nullptr) {
 		_material_name= js["material"];
+	}
+	else {
+		_material_name= "no_material";
 	}
 	
 	if (_type== OBSTACLE_TILE) {
@@ -160,30 +165,23 @@ StaticObject::StaticObject() {
 }
 
 
-StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) {
+StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) :
+	_model(NULL), _scale(pt_type(0.0)), _mass(0.0), _inertia(0.0), _com(pt_type(0.0)), _velocity(pt_type(0.0)),
+	_acceleration(pt_type(0.0)), _force(pt_type(0.0)), _alpha(0.0), _angular_velocity(0.0), _angular_acceleration(0.0),
+	_torque(0.0), _current_surface(NULL), _previous_surface(NULL)
+{
 	_bbox= new BBox_2D(pt_type(0.0), pt_type(0.0));
 	_footprint= new Polygon2D();
 	set_model(model);
 	reinit(position, alpha, scale);
-
-	// TODO : mettre ces valeurs dans un map constant
-	if (model->_type== OBSTACLE_TILE || model->_type== SURFACE_TILE) {
-		_z= -100.0f;
-	}
-	else if (model->_type== START || model->_type== CHECKPOINT || model->_type== SURFACE_FLOATING || model->_type== REPAIR) {
-		_z= -90.0f;
-	}
-	else if (model->_type== OBSTACLE_FLOATING || model->_type== HERO_CAR || model->_type== ENNEMY_CAR) {
-		_z= -70.0f;
-	}
-	else {
-		std::cerr << "Type " << model->_type << " non supporté\n";
-	}
+	//_z= Z_OBJECTS[_model->_type]; // non ; cf https://stackoverflow.com/questions/39085520/cant-i-use-map-operator-with-const-function-keyword
+	_z= Z_OBJECTS.at(_model->_type);
 }
 
 
 StaticObject::~StaticObject() {
 	delete _footprint;
+	delete _bbox;
 }
 
 
@@ -207,7 +205,7 @@ void StaticObject::reinit(pt_type position, number alpha, pt_type scale) {
 	_angular_acceleration= 0.0;
 	_torque= 0.0;
 
-	for (int i=0; i<9; ++i) {
+	for (unsigned int i=0; i<N_BUMPS; ++i) {
 		_bumps[i]= 0.0;
 	}
 
@@ -261,7 +259,6 @@ void StaticObject::anim(number anim_dt) {
 
 	// calcul force
 	_force= pt_type(0.0);
-	std::cout << _model->_material << "\n";
 	_force-= _model->_material->_linear_friction* _velocity; // friction
 	
 	// force -> acceleration -> vitesse -> position

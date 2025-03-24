@@ -36,7 +36,7 @@ Material::Material(std::string json_path) {
 		_restitution= js["restitution"];
 	}
 	else {
-		_density= 0.0;
+		_restitution= 0.0;
 	}
 
 	if (js["linear_friction"]!= nullptr) {
@@ -51,6 +51,13 @@ Material::Material(std::string json_path) {
 	}
 	else {
 		_angular_friction= 0.0;
+	}
+
+	if (js["surface_change_ms"]!= nullptr) {
+		_surface_change_ms= js["surface_change_ms"];
+	}
+	else {
+		_surface_change_ms= 0;
 	}
 
 	_tire_track_texture_idx= 0.0; // sera éventuellement renseigné dans racing.cpp

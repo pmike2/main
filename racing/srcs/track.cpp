@@ -169,7 +169,7 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 			obj_bump_idx_1= 6;
 			obj_bump_idx_2= 7;
 		}
-		for (int i=0; i<8; ++i) {
+		for (int i=0; i<N_BUMPS; ++i) {
 			if (i== obj_bump_idx_1 || i== obj_bump_idx_2) {
 				obj1->_bumps[i]+= BUMP_INCREMENT* impulse;
 			}
@@ -202,7 +202,7 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 			obj_bump_idx_1= 5;
 			obj_bump_idx_2= 6;
 		}
-		for (int i=0; i<8; ++i) {
+		for (int i=0; i<N_BUMPS; ++i) {
 			if (i== obj_bump_idx_1 || i== obj_bump_idx_2) {
 				obj2->_bumps[i]+= BUMP_INCREMENT* impulse;
 			}
@@ -230,39 +230,53 @@ Track::~Track() {
 		delete obj;
 	}
 	_floating_objects.clear();
+	for (auto model : _models) {
+		delete model.second;
+	}
+	_models.clear();
+	for (auto material : _materials) {
+		delete material.second;
+	}
+	_materials.clear();
 }
 
 
 void Track::load_models() {
+	bool verbose= false;
+
 	std::vector<std::string> jsons_material= list_files("../data/materials", "json");
 	for (auto json_path : jsons_material) {
+		if (verbose) {std::cout << "chgmt material : " << json_path << "\n";}
 		_materials[basename(json_path)]= new Material(json_path);
 	}
 
 	std::vector<std::string> jsons_floating= list_files("../data/static_objects/floating_objects", "json");
 	for (auto json_path : jsons_floating) {
-		//std::cout << "chgmt floating : " << json_path << "\n";
+		if (verbose) {std::cout << "chgmt floating : " << json_path << "\n";}
 		_models[basename(json_path)]= new StaticObjectModel(json_path);
 	}
 
 	std::vector<std::string> jsons_tiles= list_files("../data/static_objects/tiles", "json");
 	for (auto json_path : jsons_tiles) {
-		//std::cout << "chgmt tile : " << json_path << "\n";
+		if (verbose) {std::cout << "chgmt tile : " << json_path << "\n";}
 		_models[basename(json_path)]= new StaticObjectModel(json_path);
 	}
 
 	std::vector<std::string> jsons_cars= list_files("../data/cars", "json");
 	for (auto json_path : jsons_cars) {
-		//std::cout << "chgmt car : " << json_path << "\n";
+		if (verbose) {std::cout << "chgmt car : " << json_path << "\n";}
 		_models[basename(json_path)]= new CarModel(json_path);
 	}
 
+	// assignation des matériaux aux modèles
 	for (auto model : _models) {
 		std::string matname= model.second->_material_name;
-		if (matname!= "" && _materials.find(matname)!= _materials.end()) {
-			model.second->_material= _materials[matname];
-			std::cout << "matname=" << matname << "\n";
+		if (_materials.find(matname)== _materials.end()) {
+			std::cerr << "matériau " << matname << " inexistant\n";
+			continue;
 		}
+		if (verbose) {std::cout << "modele " << model.second->_name << " -> material " << matname << "\n";}
+		model.second->_material= _materials[matname];
 	}
 }
 
@@ -272,23 +286,26 @@ void Track::load_json(std::string json_path) {
 	json js= json::parse(ifs);
 	ifs.close();
 
+	// nombre de tours
+	_n_laps= js["n_laps"];
+
+	// création grille et remplissage des tiles
 	_grid->_cell_size= js["cell_size"];
 	set_all("empty", js["width"], js["height"]);
-
 	unsigned int compt= 0;
 	for (auto tilename : js["tiles"]) {
 		set_tile(tilename, compt);
 		compt++;
 	}
-	_n_laps= js["n_laps"];
 
+	// nettoyage des objets flottants
 	for (auto obj : _floating_objects) {
 		delete obj;
 	}
 	_floating_objects.clear();
 
+	// ajout des objets flottants
 	std::vector<std::pair<CheckPoint *, unsigned int> > checkpoints;
-
 	for (auto object : js["floating_objects"]) {
 		std::string model_name= object["name"];
 		pt_type position= pt_type(object["position"][0], object["position"][1]);
@@ -312,13 +329,12 @@ void Track::load_json(std::string json_path) {
 		}
 	}
 
-	for (auto obj : _floating_objects) {
-		obj->_current_surface= _materials["road"];
-	}
-
+	// tri des checkpoints en fonction de leurs indices
 	std::sort(checkpoints.begin(), checkpoints.end(), [](std::pair<CheckPoint *, unsigned int> a, std::pair<CheckPoint *, unsigned int> b) {
 		return a.second< b.second; 
 	});
+	
+	// liens entre checkpoints
 	for (unsigned int i=0; i<checkpoints.size(); ++i) {
 		if (i< checkpoints.size()- 1) {
 			checkpoints[i].first->_next= checkpoints[i+ 1].first;
@@ -329,7 +345,8 @@ void Track::load_json(std::string json_path) {
 			checkpoints[0].first->_previous= checkpoints[i].first;
 		}
 	}
-
+	
+	// assignation start à toutes les voitures
 	for (auto obj : _floating_objects) {
 		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
 			Car * car= (Car *)(obj);
@@ -337,6 +354,7 @@ void Track::load_json(std::string json_path) {
 		}
 	}
 
+	// tri des objets par leurs z pour affichage
 	std::sort(_floating_objects.begin(), _floating_objects.end(), [](StaticObject * obj1, StaticObject * obj2) {
 		return obj1->_z< obj2->_z;
 	});
@@ -378,7 +396,19 @@ void Track::set_car_names() {
 void Track::start(std::chrono::system_clock::time_point t) {
 	_last_precount_t= t;
 	_mode= TRACK_PRECOUNT;
-	_precount= 4;
+	_precount= 3;
+
+	// au début tous les objets sont sur la surface par défaut road
+	for (auto obj : _floating_objects) {
+		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
+			Car * car= (Car *)(obj);
+			car->set_current_surface(_materials["road"], t);
+		}
+		else {
+			obj->set_current_surface(_materials["road"]);
+		}
+		obj->_previous_surface= _materials["road"];
+	}
 }
 
 
@@ -395,13 +425,16 @@ Car * Track::get_hero() {
 void Track::sort_cars() {
 	_sorted_cars.clear();
 
+	// ajout des objets de type voiture
 	for (auto obj : _floating_objects) {
 		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
 			_sorted_cars.push_back((Car *)(obj));
 		}
 	}
 	
+	// tri des voitures
 	std::sort(_sorted_cars.begin(), _sorted_cars.end(), [this](Car * a, Car * b) {
+		// sur le nombre de tours
 		if (a->_n_laps< b->_n_laps) {
 			return 0;
 		}
@@ -409,6 +442,7 @@ void Track::sort_cars() {
 			return 1;
 		}
 
+		// sur le fait qu'une voiture ait fini ou non, et sur son rank
 		if (a->_finished && !b->_finished) {
 			return 0;
 		}
@@ -424,6 +458,7 @@ void Track::sort_cars() {
 			}
 		}
 
+		// sur le checkpoint courant
 		unsigned int idx_a= get_checkpoint_index(a->_next_checkpoint->_previous);
 		unsigned int idx_b= get_checkpoint_index(b->_next_checkpoint->_previous);
 		if (idx_a< idx_b) {
@@ -433,6 +468,7 @@ void Track::sort_cars() {
 			return 1;
 		}
 		else {
+			// sur la distance au prochain checkpoint
 			number dist_a= (a->_com.x- a->_next_checkpoint->_com.x)* (a->_com.x- a->_next_checkpoint->_com.x)+ (a->_com.y- a->_next_checkpoint->_com.y)* (a->_com.y- a->_next_checkpoint->_com.y);
 			number dist_b= (b->_com.x- b->_next_checkpoint->_com.x)* (b->_com.x- b->_next_checkpoint->_com.x)+ (b->_com.y- b->_next_checkpoint->_com.y)* (b->_com.y- b->_next_checkpoint->_com.y);
 			if (dist_a> dist_b) {
@@ -444,6 +480,7 @@ void Track::sort_cars() {
 		}
 	});
 
+	// on assigne le rank pour toutes les voitures encore en course
 	for (unsigned int idx_car=0; idx_car<_sorted_cars.size(); ++idx_car) {
 		Car * car= _sorted_cars[idx_car];
 		if (!car->_finished) {
@@ -478,12 +515,13 @@ void Track::all_collision() {
 }
 
 
-void Track::materials(std::chrono::system_clock::time_point t) {
+void Track::surfaces(std::chrono::system_clock::time_point t) {
 	for (auto obj1 : _floating_objects) {
 		if (obj1->_model->_type!= HERO_CAR && obj1->_model->_type!= ENNEMY_CAR) {
 			continue;
 		}
 		Car * car= (Car*)(obj1);
+		bool abnormal_surface= false;
 		
 		for (auto obj2 : _floating_objects) {
 			if (obj2->_model->_type!= SURFACE_FLOATING) {
@@ -493,7 +531,10 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 				continue;
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
-				car->set_current_surface(obj2->_model->_material, t);
+				if (car->_current_surface!= obj2->_model->_material) {
+					car->set_current_surface(obj2->_model->_material, t);
+				}
+				abnormal_surface= true;
 				break;
 			}
 		}
@@ -506,11 +547,21 @@ void Track::materials(std::chrono::system_clock::time_point t) {
 				continue;
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
-				car->set_current_surface(obj2->_model->_material, t);
+				if (car->_current_surface!= obj2->_model->_material) {
+					car->set_current_surface(obj2->_model->_material, t);
+				}
+				abnormal_surface= true;
 				break;
 			}
 		}
+
+		if (!abnormal_surface && car->_current_surface->_name!= "road") {
+			car->set_current_surface(_materials["road"], t);
+		}
 	}
+
+	//Car * hero= get_hero();
+	//std::cout << hero->_tire_track_texture_idx << " ; " << hero->_current_surface->_tire_track_texture_idx <<  " ; " << hero->_current_surface->_name << "\n";
 }
 
 
@@ -529,7 +580,7 @@ void Track::repair(std::chrono::system_clock::time_point t) {
 				continue;
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
-				for (int i=0; i<9; ++i) {
+				for (int i=0; i<N_BUMPS; ++i) {
 					car->_bumps[i]-= REPAIR_INCREMENT;
 					if (car->_bumps[i]< 0.0) {
 						car->_bumps[i]= 0.0;
@@ -587,6 +638,11 @@ void Track::checkpoints(std::chrono::system_clock::time_point t) {
 
 
 void Track::checkpoint_ia(Car * car) {
+	if (car->_finished) {
+		car->_thrust= car->_wheel= 0.0;
+		return;
+	}
+
 	CheckPoint * checkpoint= car->_next_checkpoint;
 	pt_type direction(checkpoint->_com- car->_com);
 	number dist= glm::length(direction);
@@ -637,16 +693,6 @@ void Track::checkpoint_ia(Car * car) {
 			car->_wheel= -1.0* model->_max_wheel;
 		}
 	}
-
-	/*std::cout << "car=" << car->_com.x << " ; " << car->_com.y;
-	std::cout << " ; checkpoint=" << checkpoint->_com.x << " ; " << checkpoint->_com.y;
-	std::cout << " ; direction=" << direction.x << " ; " << direction.y;
-	std::cout << " ; sign=" << sign;
-	std::cout << " ; dist=" << dist;
-	std::cout << " ; scalprod=" << scalprod;
-	std::cout << " ; thrust=" << car->_thrust;
-	std::cout << " ; wheel=" << car->_wheel;
-	std::cout << "\n";*/
 }
 
 
@@ -721,7 +767,7 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 
 		all_collision();
 		checkpoints(t);
-		materials(t);
+		surfaces(t);
 		repair(t);
 		sort_cars();
 		lap_time(t);

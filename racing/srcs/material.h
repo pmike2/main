@@ -6,13 +6,6 @@
 #include "typedefs.h"
 
 
-// temps en ms pendant lequel des traces différentes vont être faites à partir du moment de sortie du matériau
-const unsigned int SURFACE_CHANGE_DT= 1000;
-const number LINEAR_FRICTION_MATERIAL_INCREMENT= 0.1;
-const number ANGULAR_FRICTION_MATERIAL_INCREMENT= 0.1;
-
-
-
 class Material {
 public:
 	Material();
@@ -20,13 +13,14 @@ public:
 	~Material();
 
 
-	std::string _json_path;
-	std::string _name;
-	number _density;
-	number _linear_friction;
-	number _angular_friction;
+	std::string _json_path; // chemin json de config
+	std::string _name; // nom
+	number _density; // densité du matériau
+	number _linear_friction; // friction linéaire (non utilisé pour Car)
+	number _angular_friction; // friction angulaire (non utilisé pour Car)
 	bool _solid; // est-ce un objet tangible
 	number _restitution; // paramètre de dureté au rebond (voir collisions)
+	unsigned int _surface_change_ms; // temps en ms pendant lequel des traces différentes vont être faites à partir du moment de sortie du matériau
 
 	float _tire_track_texture_idx;
 };

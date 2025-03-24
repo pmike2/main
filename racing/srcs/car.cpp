@@ -17,7 +17,7 @@ CarModel::CarModel() {
 }
 
 
-CarModel::CarModel(std::string json_path) {
+CarModel::CarModel(std::string json_path) : StaticObjectModel(json_path) {
 	load(json_path);
 }
 
@@ -28,8 +28,6 @@ CarModel::~CarModel() {
 
 
 void CarModel::load(std::string json_path) {
-	StaticObjectModel::load(json_path);
-
 	std::ifstream ifs(json_path);
 	json js= json::parse(ifs);
 	ifs.close();
@@ -62,15 +60,18 @@ Car::Car() {
 
 
 Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) : 
-	StaticObject(model, position, alpha, scale), _next_checkpoint(NULL), _n_laps(0), 
-	_linear_friction_material(1.0), _angular_friction_material(1.0), _rank(0), _finished(false)
+	StaticObject(model, position, alpha, scale),
+	_com2force_fwd(pt_type(0.0)), _com2force_bwd(pt_type(0.0)), _forward(pt_type(0.0)), _right(pt_type(0.0)),
+	_force_fwd(pt_type(0.0)), _force_bwd(pt_type(0.0)), _wheel(0.0), _thrust(0.0), _drift(false),
+	_linear_friction_surface(1.0), _angular_friction_surface(1.0),
+	_name(""), _next_checkpoint(NULL), _n_laps(0), _rank(0), _finished(false), _tire_track_texture_idx(0)
 {
 	reinit(position, alpha, scale);
 }
 
 
 Car::~Car() {
-	delete _bbox;
+	
 }
 
 
@@ -272,27 +273,22 @@ void Car::set_current_surface(Material * material, std::chrono::system_clock::ti
 void Car::anim(number anim_dt, std::chrono::system_clock::time_point t) {
 	CarModel * model= get_model();
 
-	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_change_surface_t).count();
-	if (dt> SURFACE_CHANGE_DT) {
-		_linear_friction_material= _current_surface->_linear_friction;
-		_angular_friction_material= _current_surface->_angular_friction;
-		_tire_track_texture_idx= _current_surface->_tire_track_texture_idx;
-	}
-	else {
-		if (_linear_friction_material> _current_surface->_linear_friction+ LINEAR_FRICTION_MATERIAL_INCREMENT) {
-			_linear_friction_material-= LINEAR_FRICTION_MATERIAL_INCREMENT;
+	// ajustement _linear_friction_material / _angular_friction_material
+	if (_previous_surface!= _current_surface) {
+		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_change_surface_t).count();
+		if (dt> _previous_surface->_surface_change_ms) {
+			_linear_friction_surface= _current_surface->_linear_friction;
+			_angular_friction_surface= _current_surface->_angular_friction;
+			_tire_track_texture_idx= _current_surface->_tire_track_texture_idx;
+			_previous_surface= _current_surface;
 		}
-		else if (_linear_friction_material< _current_surface->_linear_friction- LINEAR_FRICTION_MATERIAL_INCREMENT) {
-			_linear_friction_material+= LINEAR_FRICTION_MATERIAL_INCREMENT;
-		}
-		if (_angular_friction_material> _current_surface->_angular_friction+ ANGULAR_FRICTION_MATERIAL_INCREMENT) {
-			_angular_friction_material-= ANGULAR_FRICTION_MATERIAL_INCREMENT;
-		}
-		else if (_angular_friction_material< _current_surface->_angular_friction- ANGULAR_FRICTION_MATERIAL_INCREMENT) {
-			_angular_friction_material+= ANGULAR_FRICTION_MATERIAL_INCREMENT;
+		else {
+			// interpolation linéaire des frictions
+			_linear_friction_surface= _previous_surface->_linear_friction+ (number(dt)/ number(_previous_surface->_surface_change_ms))* (_current_surface->_linear_friction- _previous_surface->_linear_friction);
+			_angular_friction_surface= _previous_surface->_angular_friction+ (number(dt)/ number(_previous_surface->_surface_change_ms))* (_current_surface->_angular_friction- _previous_surface->_angular_friction);
 		}
 	}
-
+	
 	// plus Car a des bumps plus il est difficile d'accélerer et de tourner
 	// les bumps 4 et 5 sont à l'avant ; 3 et 6 sont à l'avant sur les côtés
 	_thrust*= 1.0- BUMP_THRUST_FACTOR* _bumps[4]/ BUMP_MAX- BUMP_THRUST_FACTOR* _bumps[5]/ BUMP_MAX;
@@ -301,7 +297,7 @@ void Car::anim(number anim_dt, std::chrono::system_clock::time_point t) {
 	// calcul force appliquée à l'avant
 	_force_fwd= pt_type(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel); // accélération dans la direction du volant
-	_force_fwd-= model->_forward_static_friction* _linear_friction_material* scal(_forward, _velocity)* _forward; // friction statique avant
+	_force_fwd-= model->_forward_static_friction* _linear_friction_surface* scal(_forward, _velocity)* _forward; // friction statique avant
 
 	// calcul force appliquée à l'arrière
 	_force_bwd= pt_type(0.0);
@@ -311,12 +307,12 @@ void Car::anim(number anim_dt, std::chrono::system_clock::time_point t) {
 	if (abs(right_turn)> model->_friction_threshold || _bumps[2]> BUMP_DRIFT_THRESHOLD || _bumps[7]> BUMP_DRIFT_THRESHOLD) {
 		// dérapage
 		_drift= true;
-		_force_bwd-= model->_backward_dynamic_friction* _linear_friction_material* right_turn* _right;
+		_force_bwd-= model->_backward_dynamic_friction* _linear_friction_surface* right_turn* _right;
 		//_force_bwd-= model->_backward_dynamic_friction* right_turn* _right;
 	}
 	else {
 		_drift= false;
-		_force_bwd-= model->_backward_static_friction* _linear_friction_material* right_turn* _right;
+		_force_bwd-= model->_backward_static_friction* _linear_friction_surface* right_turn* _right;
 		//_force_bwd-= model->_backward_static_friction* right_turn* _right;
 	}
 
@@ -329,7 +325,7 @@ void Car::anim(number anim_dt, std::chrono::system_clock::time_point t) {
 	_torque= 0.0;
 	_torque+= _com2force_fwd.x* _force_fwd.y- _com2force_fwd.y* _force_fwd.x; // torque avant
 	_torque+= _com2force_bwd.x* _force_bwd.y- _com2force_bwd.y* _force_bwd.x; // torque arrière
-	_torque-= model->_angular_friction* _angular_friction_material* _angular_velocity; // friction angulaire
+	_torque-= model->_angular_friction* _angular_friction_surface* _angular_velocity; // friction angulaire
 
 	// torque -> acc angulaire -> vitesse angulaire -> angle
 	_angular_acceleration= _torque/ _inertia;

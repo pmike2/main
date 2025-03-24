@@ -28,13 +28,19 @@
 
 // type de caméra : fixe, suit le héros, suit et s'oriente comme le héros
 enum cam_mode {FIXED, TRANSLATE, TRANSLATE_AND_ROTATE};
-
+// mode : choix d'une piste, course en cours
 enum racing_mode {CHOOSE_TRACK, RACING};
 
 
 // plans z de contrainte d'affichage de glm::ortho
 const float Z_NEAR= 0.0f;
 const float Z_FAR= 1000.0f;
+// z des types de dessin
+const float Z_BBOX= -30.0f;
+const float Z_FOOTPRINT= -20.0f;
+const float Z_FORCE= -10.0f;
+const float Z_TIRE_TRACK= -50.0f;
+// voir également static_object.h / Z_OBJECTS
 
 // à quelle vitesse la caméra s'ajuste-t'elle au mouvement du héros
 const number CAM_INC= 0.1;
@@ -46,7 +52,10 @@ const float ARROW_ANGLE= M_PI* 0.1;
 const float ARROW_TIP_SIZE= 0.2;
 const float INFO_ALPHA= 0.8;
 
-// couleurs
+// mélange de gris lors des phases inactives
+const float GRAY_BLEND= 0.6f;
+
+// couleurs de debug
 const glm::vec4 COM_CROSS_COLOR(1.0, 0.0, 0.0, INFO_ALPHA);
 const glm::vec4 FORCE_FWD_CROSS_COLOR(1.0, 1.0, 0.0, INFO_ALPHA);
 const glm::vec4 FORCE_BWD_CROSS_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
@@ -58,6 +67,8 @@ const glm::vec4 FORWARD_ARROW_COLOR(1.0, 0.5, 1.0, INFO_ALPHA);
 const glm::vec4 RIGHT_ARROW_COLOR(1.0, 1.0, 0.5, INFO_ALPHA);
 const glm::vec4 BBOX_COLOR(1.0, 0.0, 0.0, 0.5);
 const glm::vec4 FOOTPRINT_COLOR(0.0, 1.0, 0.0, 0.5);
+
+// couleurs d'info
 const glm::vec4 NLAPS_COLOR(0.0, 1.0, 0.5, 1.0);
 const glm::vec4 NLAPS_LAST_COLOR(1.0, 0.0, 0.5, 1.0);
 const glm::vec4 RANKING_HERO_COLOR(1.0, 1.0, 0.0, 1.0);
@@ -115,24 +126,24 @@ public:
 	bool key_down(SDL_Keycode key, std::chrono::system_clock::time_point t);
 
 
-	// piste courante
-	Track * _track;
-	std::vector<SmokeSystem *> _smoke_systems; // 1 par Car
-	TireTrackSystem * _tire_track_system;
+	Track * _track; // piste courante
+	std::vector<SmokeSystem *> _smoke_systems; // système de fumée : 1 par Car
+	TireTrackSystem * _tire_track_system; // traces de pneu
 
 	// params caméra
 	pt_type _com_camera;
 	number _alpha_camera;
 	cam_mode _cam_mode;
 
-	racing_mode _mode;
-	unsigned int _idx_chosen_track;
-	unsigned int _n_available_tracks;
+	racing_mode _mode; // mode
+	unsigned int _idx_chosen_track; // indice piste choisie
+	unsigned int _n_available_tracks; // nombre total de pistes
 
 	bool _draw_bbox, _draw_force, _draw_texture, _show_debug_info; // booléens d'affichage
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs
+	// indices des textures
 	unsigned int _texture_idx_model, _texture_idx_bump, _texture_idx_smoke, _texture_idx_choose_track, _texture_idx_tire_track;
 	glm::mat4 _camera2clip; // glm::ortho
 	glm::mat4 _world2camera; // caméra

@@ -44,7 +44,7 @@ Racing * racing;
 
 bool done= false;
 unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+unsigned int tikfps1, tikfps2;
 
 
 // à activer / désactiver le temps d'affinage des params voiture héros
@@ -60,6 +60,7 @@ void key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) {
 
 	if (key== SDLK_ESCAPE) {
 		done= true;
+		return;
 	}
 
 	if (racing->key_down(key, t)) {
@@ -117,6 +118,7 @@ void init() {
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LESS);
 	glDepthRange(0.0f, 1.0f);
+	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	
 	// frontfaces en counterclockwise
 	glFrontFace(GL_CCW);
@@ -191,10 +193,6 @@ void init() {
 void draw() {
 	compt_fps++;
 
-	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	
 	racing->draw();
 
 	SDL_GL_SwapWindow(window);
@@ -202,13 +200,6 @@ void draw() {
 
 
 void anim(std::chrono::system_clock::time_point t) {
-	/*tikanim2= SDL_GetTicks();
-	int tikanim_delta= tikanim2- tikanim1;
-	if (tikanim_delta< DELTA_ANIM)
-		return;
-	
-	tikanim1= SDL_GetTicks();*/
-
 	racing->anim(t);
 }
 

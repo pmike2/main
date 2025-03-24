@@ -4,6 +4,7 @@
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include "json.hpp"
 
@@ -447,7 +448,6 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 	_world2camera= glm::mat4(1.0f);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
-	int center_x, center_y;
 	_screengl->gl2screen(TRACK_ORIGIN.x, TRACK_ORIGIN.y, _screen_coords[0], _screen_coords[1]);
 	_screengl->gl2screen(TRACK_ORIGIN.x+ TRACK_SIZE.x, TRACK_ORIGIN.y+ TRACK_SIZE.y, _screen_coords[2], _screen_coords[3]);
 
@@ -577,7 +577,7 @@ void TrackEditor::draw_grid() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -10.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_GRID);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -605,7 +605,7 @@ void TrackEditor::draw_selection() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -40.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_SELECTION);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -636,7 +636,7 @@ void TrackEditor::draw_tiles() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -30.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_TILES);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -664,7 +664,7 @@ void TrackEditor::draw_floating_objects_footprint() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -30.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_FOOTPRINT);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -692,7 +692,7 @@ void TrackEditor::draw_floating_objects_bbox() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -20.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_BBOX);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -752,12 +752,12 @@ void TrackEditor::draw(GLuint texture) {
 		draw_floating_objects_bbox();
 		draw_tiles();
 	}
-	if (_draw_texture) {
-		draw_texture(texture);
-	}
 	if (_draw_grid) {
 		draw_selection();
 		draw_grid();
+	}
+	if (_draw_texture) {
+		draw_texture(texture);
 	}
 }
 
@@ -994,22 +994,7 @@ void TrackEditor::update() {
 	update_floating_objects_bbox();
 	update_texture();
 
-	_world2camera= glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(float(_translation.x), float(_translation.y), 0.0f)), glm::vec3(_scale, _scale, _scale));
-}
-
-
-void TrackEditor::quicklook() {
-	// création de quicklooks pour afficher dans main
-	// nécessite d'avoir imagemagick convert installé
-	std::string ppm_path= "../data/tracks/quicklooks/track"+ std::to_string(_current_track_idx)+ ".ppm";
-	std::string png_path= splitext(ppm_path).first+ ".png";
-	std::string cmd_convert= "convert "+ ppm_path+ " -resize 1024x1024! "+ png_path;
-	std::string cmd_clean= "rm "+ ppm_path;
-
-	export_screen_to_ppm(ppm_path, _screen_coords[0], _screen_coords[1],
-		_screen_coords[2]- _screen_coords[0], _screen_coords[3]- _screen_coords[1]);
-	system(cmd_convert.c_str());
-	system(cmd_clean.c_str());
+	_world2camera= glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(float(_translation.x), float(_translation.y), 0.0f)), glm::vec3(float(_scale.x), float(_scale.y), 1.0f));
 }
 
 
@@ -1022,7 +1007,7 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 			return true;
 		}
 		else if (key== SDLK_UP) {
-			_track->add_row("empty");
+			_track->add_row("full_obst");
 			update();
 			return true;
 		}
@@ -1032,7 +1017,7 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 			return true;
 		}
 		else if (key== SDLK_RIGHT) {
-			_track->add_col("empty");
+			_track->add_col("full_obst");
 			update();
 			return true;
 		}
@@ -1111,11 +1096,6 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 		else {
 			_track->_n_laps++;
 		}
-		return true;
-	}
-	// quicklook
-	else if (key== SDLK_q) {
-		quicklook();
 		return true;
 	}
 	// chgmt current track
@@ -1220,7 +1200,8 @@ bool TrackEditor::mouse_motion(InputState * input_state) {
 
 // wheel = zoom / dezoom
 bool TrackEditor::mouse_wheel(InputState * input_state) {
-	_scale+= 0.1* number(input_state->_y_wheel);
+	_scale.x+= 0.1* number(input_state->_y_wheel);
+	_scale.y+= 0.1* number(input_state->_y_wheel);
 	update();
 	return true;
 }
@@ -1247,7 +1228,7 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	_tile_grid_editor->_translation= TILES_ORIGIN;
 	_floating_grid_editor->_translation= FLOATING_OBJECTS_ORIGIN;
 
-	_track_editor->_scale= DEFAULT_TRACK_EDITOR_SCALE;
+	_track_editor->_scale= pt_type(DEFAULT_TRACK_EDITOR_SCALE, DEFAULT_TRACK_EDITOR_SCALE);
 
 	_tile_grid_editor->_grid->_width= TILE_GRID_WIDTH;
 	_floating_grid_editor->_grid->_height= FLOATING_GRID_HEIGHT;
@@ -1292,6 +1273,8 @@ void Editor::fill_texture_array_models() {
 
 
 void Editor::draw() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	// scissor permet de ne dessiner que sur un rectangle sans dépasser
 	glScissor(
 		_track_editor->_screen_coords[0], _track_editor->_screen_coords[1],
@@ -1348,6 +1331,27 @@ void Editor::add_floating_object(pt_type pos) {
 }
 
 
+void Editor::quicklook() {
+	// création de quicklooks pour afficher dans main
+	// nécessite d'avoir imagemagick convert installé
+	_ppm_path= "../data/tracks/quicklooks/track"+ std::to_string(_track_editor->_current_track_idx)+ ".ppm";
+	std::string png_path= splitext(_ppm_path).first+ ".png";
+	std::string cmd_convert= "convert "+ _ppm_path+ " -resize 1024x1024! "+ png_path;
+	std::string cmd_clean= "rm "+ _ppm_path;
+	_qlk_cmd= cmd_convert+ " ; "+ cmd_clean;
+
+	// on affiche la piste en plein écran ; la suite se passe dans editor.cpp
+	_track_editor->_scale.x= _screengl->_gl_width/ (_track_editor->_track->_grid->_cell_size* number(_track_editor->_track->_grid->_width));
+	_track_editor->_scale.y= _screengl->_gl_height/ (_track_editor->_track->_grid->_cell_size* number(_track_editor->_track->_grid->_height));
+	_track_editor->_translation.x= -0.5* _screengl->_gl_width;
+	_track_editor->_translation.y= -0.5* _screengl->_gl_height;
+	_track_editor->update();
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	_track_editor->draw(_textures[0]);
+}
+
+
 bool Editor::key_down(InputState * input_state, SDL_Keycode key) {
 	// touches directionnelles : si LSHIFT on se déplace dans les tuiles dispos sinon dans la track
 	if (key== SDLK_DOWN || key== SDLK_UP || key== SDLK_LEFT || key== SDLK_RIGHT) {
@@ -1387,7 +1391,8 @@ bool Editor::mouse_button_down(InputState * input_state) {
 	// f = ajout d'un objet flottant
 	if (input_state->get_key(SDLK_f)) {
 		pt_type pos= _track_editor->screen2pt(input_state->_x, input_state->_y);
-		if (pos.x>=0 && pos.x<number(_track_editor->_track->_grid->_width)* _track_editor->_track->_grid->_cell_size && pos.y>=0 && pos.y<number(_track_editor->_track->_grid->_height)* _track_editor->_track->_grid->_cell_size) {
+		if (pos.x>= 0 && pos.x< number(_track_editor->_track->_grid->_width)* _track_editor->_track->_grid->_cell_size
+		&& pos.y>= 0 && pos.y< number(_track_editor->_track->_grid->_height)* _track_editor->_track->_grid->_cell_size) {
 			add_floating_object(pos);
 			return true;
 		}
