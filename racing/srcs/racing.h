@@ -94,7 +94,6 @@ public:
 	// chargement des textures
 	void fill_texture_choose_track();
 	void fill_texture_array_models();
-	void fill_texture_array_bump();
 	void fill_texture_array_smoke();
 	void fill_texture_array_tire_track();
 	

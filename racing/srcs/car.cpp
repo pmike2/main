@@ -63,7 +63,6 @@ Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) :
 	StaticObject(model, position, alpha, scale),
 	_com2force_fwd(pt_type(0.0)), _com2force_bwd(pt_type(0.0)), _forward(pt_type(0.0)), _right(pt_type(0.0)),
 	_force_fwd(pt_type(0.0)), _force_bwd(pt_type(0.0)), _wheel(0.0), _thrust(0.0), _drift(false),
-	_linear_friction_surface(1.0), _angular_friction_surface(1.0),
 	_name(""), _next_checkpoint(NULL), _n_laps(0), _rank(0), _finished(false), _tire_track_texture_idx(0)
 {
 	reinit(position, alpha, scale);
@@ -264,31 +263,14 @@ void Car::random_ia() {
 }
 
 
-void Car::set_current_surface(Material * material, std::chrono::system_clock::time_point t) {
-	StaticObject::set_current_surface(material);
-	_last_change_surface_t= t;
-}
-
-
 void Car::anim(number anim_dt, std::chrono::system_clock::time_point t) {
 	CarModel * model= get_model();
 
-	// ajustement _linear_friction_material / _angular_friction_material
-	if (_previous_surface!= _current_surface) {
-		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_change_surface_t).count();
-		if (dt> _previous_surface->_surface_change_ms) {
-			_linear_friction_surface= _current_surface->_linear_friction;
-			_angular_friction_surface= _current_surface->_angular_friction;
-			_tire_track_texture_idx= _current_surface->_tire_track_texture_idx;
-			_previous_surface= _current_surface;
-		}
-		else {
-			// interpolation linéaire des frictions
-			_linear_friction_surface= _previous_surface->_linear_friction+ (number(dt)/ number(_previous_surface->_surface_change_ms))* (_current_surface->_linear_friction- _previous_surface->_linear_friction);
-			_angular_friction_surface= _previous_surface->_angular_friction+ (number(dt)/ number(_previous_surface->_surface_change_ms))* (_current_surface->_angular_friction- _previous_surface->_angular_friction);
-		}
+	if (StaticObject::anim_surface(t)) {
+		_tire_track_texture_idx= _current_surface->_tire_track_texture_idx;	
 	}
-	
+	StaticObject::anim_texture(t);
+
 	// plus Car a des bumps plus il est difficile d'accélerer et de tourner
 	// les bumps 4 et 5 sont à l'avant ; 3 et 6 sont à l'avant sur les côtés
 	_thrust*= 1.0- BUMP_THRUST_FACTOR* _bumps[4]/ BUMP_MAX- BUMP_THRUST_FACTOR* _bumps[5]/ BUMP_MAX;

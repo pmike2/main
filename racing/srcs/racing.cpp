@@ -86,7 +86,6 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	_tire_track_system= new TireTrackSystem();
 
 	fill_texture_array_models();
-	fill_texture_array_bump();
 	fill_texture_array_smoke();
 	fill_texture_array_tire_track();
 
@@ -155,32 +154,23 @@ void Racing::fill_texture_choose_track() {
 
 void Racing::fill_texture_array_models() {
 	std::vector<std::string> pngs;
-	unsigned int idx_model= 0;
+	std::vector<std::string> pngs_bump;
+	unsigned int compt= 0;
 	for (auto m : _track->_models) {
 		StaticObjectModel * model= m.second;
-		model->_texture_idx= float(idx_model++);
-		std::string png= dirname(model->_json_path)+ "/textures/"+ model->_name+ ".png";
-		pngs.push_back(png);
+		//model->_texture_idx= float(idx_model++);
+		//std::string png= dirname(model->_json_path)+ "/textures/"+ model->_name+ ".png";
+		for (auto action : model->_actions) {
+			for (auto action_texture : action.second->_textures) {
+				pngs.push_back(action_texture->_texture_path);
+				pngs_bump.push_back(action_texture->_texture_path_bump);
+				//std::cout << action_texture->_texture_path << "\n";
+				action_texture->_texture_idx= float(compt++);
+			}
+		}
 	}
 	fill_texture_array(0, _textures[_texture_idx_model], 1024, pngs);
-}
-
-
-void Racing::fill_texture_array_bump() {
-	std::vector<std::string> pngs;
-	for (auto m : _track->_models) {
-		StaticObjectModel * model= m.second;
-		std::string png_normal= dirname(model->_json_path)+ "/textures/"+ model->_name+ ".png";
-		std::string png_bump= dirname(model->_json_path)+ "/textures/"+ model->_name+ "_bump.png";
-		
-		if (file_exists(png_bump)) {
-			pngs.push_back(png_bump);
-		}
-		else {
-			pngs.push_back(png_normal);
-		}
-	}
-	fill_texture_array(1, _textures[_texture_idx_bump], 1024, pngs);
+	fill_texture_array(1, _textures[_texture_idx_bump], 1024, pngs_bump);
 }
 
 
@@ -802,7 +792,8 @@ void Racing::update_texture() {
 			for (unsigned int i=0; i<6; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[6* idx_pt+ i]);
 			}
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= obj->_model->_texture_idx;
+			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= obj->_model->_texture_idx;
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= obj->_model->_actions[obj->_current_action_name]->_textures[obj->_current_action_texture_idx]->_texture_idx;
 		}
 	}
 

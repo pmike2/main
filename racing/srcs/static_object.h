@@ -17,10 +17,25 @@
 // START == ligne de départ (et d'arrivée) ; CHECKPOINT == chekpt
 // SURFACE_TILE, SURFACE_FLOATING == matériau sol
 // REPAIR : zone de réparation
-enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, START, CHECKPOINT, SURFACE_TILE, SURFACE_FLOATING, REPAIR};
+// BOOST : accélérateur
+enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, START, CHECKPOINT, 
+	SURFACE_TILE, SURFACE_FLOATING, REPAIR, BOOST};
 
 // type de grille : verticale, horizontale
 enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
+
+const std::map<std::string, ObjectType> STR2OBJTYPE {
+	{"obstacle_tile", OBSTACLE_TILE},
+	{"obstacle_floating", OBSTACLE_FLOATING},
+	{"hero_car", HERO_CAR},
+	{"ennemy_car", ENNEMY_CAR},
+	{"checkpoint", CHECKPOINT},
+	{"start", START},
+	{"surface_tile", SURFACE_TILE},
+	{"surface_floating", SURFACE_FLOATING},
+	{"repair", REPAIR},
+	{"boost", BOOST}
+};
 
 // !!!
 // obligé de * inertie par un facteur sinon tout pète lors des collisions
@@ -50,9 +65,36 @@ const std::map<ObjectType, number> Z_OBJECTS {
 	{CHECKPOINT, -70.0},
 	{SURFACE_FLOATING, -70.0},
 	{REPAIR, -70.0},
+	{BOOST, -70.0},
 	{OBSTACLE_FLOATING, -60.0},
 	{HERO_CAR, -40.0},
 	{ENNEMY_CAR, -40.0}
+};
+
+const std::string MAIN_ACTION_NAME= "main";
+
+
+class ActionTexture {
+public:
+	ActionTexture();
+	ActionTexture(std::string texture_path, unsigned int n_ms);
+	~ActionTexture();
+
+
+	std::string _texture_path;
+	std::string _texture_path_bump;
+	float _texture_idx;
+	unsigned int _n_ms;
+};
+
+
+class Action {
+public:
+	Action();
+	~Action();
+
+
+	std::vector<ActionTexture *> _textures;
 };
 
 
@@ -71,11 +113,12 @@ public:
 	ObjectType _type; // type d'objet
 	pt_type _com2bbox_center; // vecteur centre de masse -> centre bbox ; utile pour mettre à jour StaticObject._bbox
 	Polygon2D * _footprint; // empreinte au sol, utilisée pour les collisions ; doit être convexe
-	float _texture_idx; // pour accélerer update()
 	bool _fixed; // est-ce un objet figé
-
 	Material * _material; // matériau éventuel de l'objet
 	std::string _material_name; // nom du matériau
+
+	//float _texture_idx;
+	std::map<std::string, Action *> _actions;
 };
 
 
@@ -88,8 +131,11 @@ public:
 	void set_model(StaticObjectModel * model);
 	void reinit(pt_type position, number alpha, pt_type scale); // met à une position / orientation / taille
 	void update(); // met à jour les données calculées à partir des autres
-	void set_current_surface(Material * material);
-	void anim(number anim_dt); // animation
+	void set_current_surface(Material * material, std::chrono::system_clock::time_point t);
+	void set_current_action(std::string action_name, std::chrono::system_clock::time_point t);
+	bool anim_surface(std::chrono::system_clock::time_point t);
+	void anim_texture(std::chrono::system_clock::time_point t);
+	void anim(number anim_dt, std::chrono::system_clock::time_point t); // animation
 	friend std::ostream & operator << (std::ostream & os, const StaticObject & obj);
 
 
@@ -110,12 +156,22 @@ public:
 	number _angular_acceleration; // accélaration angulaire
 	number _torque; // torque == équivalent force pour angle
 
+	number _linear_friction_surface; // facteur multiplicatif de friction lié au sol; varie si on est sur une flaque par ex
+	number _angular_friction_surface;
+
 	number _z; // z pour affichage
 	number _bumps[N_BUMPS]; // bosses dues aux chocs
 	// bosses 0, 1 : arrière ; 2, 3 : côté droit ; 4, 5 : avant ; 6, 7 : côté gauche ; 8 : centre
 
 	Material * _current_surface; // surface sur laquelle repose l'objet
 	Material * _previous_surface; // surface sur laquelle reposait l'objet avant d'être sur _current_surface
+
+	std::chrono::system_clock::time_point _last_change_surface_t; // dernier temps de changement de surface
+	std::chrono::system_clock::time_point _last_boost_t; // dernier temps où un boost a eu lieu
+
+	std::string _current_action_name;
+	unsigned int _current_action_texture_idx;
+	std::chrono::system_clock::time_point _last_anim_action_t;
 };
 
 

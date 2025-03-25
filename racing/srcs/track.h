@@ -24,6 +24,11 @@ const number DEFAULT_CELL_SIZE= 2.0;
 const number CAR_CAR_COLLISION_THRUST= 2.0;
 const number CAR_OBSTACLE_COLLISION_THRUST= 0.5;
 
+// temps entre 2 boosts en ms
+const unsigned int BOOST_DELTA_T_MS= 2000;
+// amplitude d'un boost
+const number BOOST_AMPLITUDE= 4.0;
+
 // collision entre 2 objets
 void collision(StaticObject * obj1, StaticObject * obj2);
 
@@ -47,6 +52,7 @@ public:
 	void all_collision(); // gestion des collisions
 	void surfaces(std::chrono::system_clock::time_point t);
 	void repair(std::chrono::system_clock::time_point t);
+	void boost(std::chrono::system_clock::time_point t);
 	void checkpoints(std::chrono::system_clock::time_point t); // gestion chkpts pour toutes les voitures
 	void checkpoint_ia(Car * car); // ia basée sur les chkpts
 	void lap_time(std::chrono::system_clock::time_point t);

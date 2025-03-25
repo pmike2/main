@@ -398,17 +398,15 @@ void Track::start(std::chrono::system_clock::time_point t) {
 	_mode= TRACK_PRECOUNT;
 	_precount= 3;
 
-	// au début tous les objets sont sur la surface par défaut road
 	for (auto obj : _floating_objects) {
-		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
-			Car * car= (Car *)(obj);
-			car->set_current_surface(_materials["road"], t);
-		}
-		else {
-			obj->set_current_surface(_materials["road"]);
-		}
+		// au début tous les objets sont sur la surface par défaut road
+		obj->set_current_surface(_materials["road"], t);
 		obj->_previous_surface= _materials["road"];
+		// au début tous les objets sont dans leur action par défaut
+		obj->set_current_action(MAIN_ACTION_NAME, t);
 	}
+
+	_start->set_current_action("active", t);
 }
 
 
@@ -559,13 +557,17 @@ void Track::surfaces(std::chrono::system_clock::time_point t) {
 			car->set_current_surface(_materials["road"], t);
 		}
 	}
-
-	//Car * hero= get_hero();
-	//std::cout << hero->_tire_track_texture_idx << " ; " << hero->_current_surface->_tire_track_texture_idx <<  " ; " << hero->_current_surface->_name << "\n";
 }
 
 
 void Track::repair(std::chrono::system_clock::time_point t) {
+	std::map<StaticObject *, bool> repairs;
+	for (auto obj : _floating_objects) {
+		if (obj->_model->_type== REPAIR) {
+			repairs[obj]= false;
+		}
+	}
+
 	for (auto obj1 : _floating_objects) {
 		if (obj1->_model->_type!= HERO_CAR && obj1->_model->_type!= ENNEMY_CAR) {
 			continue;
@@ -580,6 +582,7 @@ void Track::repair(std::chrono::system_clock::time_point t) {
 				continue;
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
+				repairs[obj2]= true;
 				for (int i=0; i<N_BUMPS; ++i) {
 					car->_bumps[i]-= REPAIR_INCREMENT;
 					if (car->_bumps[i]< 0.0) {
@@ -588,6 +591,59 @@ void Track::repair(std::chrono::system_clock::time_point t) {
 				}
 				break;
 			}
+		}
+	}
+
+	for (auto x: repairs) {
+		if (x.second && x.first->_current_action_name!= "active") {
+			x.first->set_current_action("active", t);
+		}
+		else if (!x.second && x.first->_current_action_name!= MAIN_ACTION_NAME) {
+			x.first->set_current_action(MAIN_ACTION_NAME, t);
+		}
+	}
+}
+
+
+void Track::boost(std::chrono::system_clock::time_point t) {
+	std::map<StaticObject *, bool> boosts;
+	for (auto obj : _floating_objects) {
+		if (obj->_model->_type== BOOST) {
+			boosts[obj]= false;
+		}
+	}
+
+	for (auto obj1 : _floating_objects) {
+		if (obj1->_model->_type!= HERO_CAR && obj1->_model->_type!= ENNEMY_CAR) {
+			continue;
+		}
+		Car * car= (Car*)(obj1);
+		
+		for (auto obj2 : _floating_objects) {
+			if (obj2->_model->_type!= BOOST) {
+				continue;
+			}
+			if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
+				continue;
+			}
+			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
+				boosts[obj2]= true;
+				auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_boost_t).count();
+				if (dt> BOOST_DELTA_T_MS) {
+					car->_last_boost_t= t;
+					car->_velocity+= rot(pt_type(0.0, BOOST_AMPLITUDE), obj2->_alpha);
+				}
+				break;
+			}
+		}
+	}
+
+	for (auto x : boosts) {
+		if (x.second && x.first->_current_action_name!= "active") {
+			x.first->set_current_action("active", t);
+		}
+		else if (!x.second && x.first->_current_action_name!= MAIN_ACTION_NAME) {
+			x.first->set_current_action(MAIN_ACTION_NAME, t);
 		}
 	}
 }
@@ -631,6 +687,14 @@ void Track::checkpoints(std::chrono::system_clock::time_point t) {
 					}
 				}
 			}
+
+			if (car->_model->_type== HERO_CAR) {
+				if (car->_next_checkpoint!= _start) {
+					car->_next_checkpoint->set_current_action(MAIN_ACTION_NAME, t);
+				}
+				car->_next_checkpoint->_next->set_current_action("active", t);
+			}
+			
 			car->_next_checkpoint= car->_next_checkpoint->_next;
 		}
 	}
@@ -761,7 +825,7 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 				car->anim(dt, t);
 			}
 			else {
-				obj->anim(dt);
+				obj->anim(dt, t);
 			}
 		}
 
@@ -769,6 +833,7 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 		checkpoints(t);
 		surfaces(t);
 		repair(t);
+		boost(t);
 		sort_cars();
 		lap_time(t);
 	}

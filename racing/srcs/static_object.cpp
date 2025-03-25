@@ -11,6 +11,39 @@
 using json = nlohmann::json;
 
 
+// ActionTexture -----------------------------------------------------------------
+ActionTexture::ActionTexture() {
+
+}
+
+
+ActionTexture::ActionTexture(std::string texture_path, unsigned int n_ms) : _texture_path(texture_path), _n_ms(n_ms) {
+	std::string bump= splitext(_texture_path).first+ "_bump.png";
+	if (file_exists(bump)) {
+		_texture_path_bump= bump;
+	}
+	else {
+		_texture_path_bump= _texture_path;
+	}
+}
+
+
+ActionTexture::~ActionTexture() {
+
+}
+
+
+// Action -------------------------------------------------------------------------
+Action::Action() {
+
+}
+
+
+Action::~Action() {
+
+}
+
+
 // StaticObjectModel --------------------------------------------------------------
 StaticObjectModel::StaticObjectModel() {
 
@@ -18,7 +51,7 @@ StaticObjectModel::StaticObjectModel() {
 
 
 StaticObjectModel::StaticObjectModel(std::string json_path) :
-	_texture_idx(0), _material_name(""), _material(NULL) 
+	_material_name(""), _material(NULL) 
 {
 	_footprint= new Polygon2D();
 	load(json_path);
@@ -39,32 +72,8 @@ void StaticObjectModel::load(std::string json_path) {
 	ifs.close();
 
 	// type d'objet
-	if (js["type"]== "obstacle_tile") {
-		_type= OBSTACLE_TILE;
-	}
-	else if (js["type"]== "obstacle_floating") {
-		_type= OBSTACLE_FLOATING;
-	}
-	else if (js["type"]== "hero_car") {
-		_type= HERO_CAR;
-	}
-	else if (js["type"]== "ennemy_car") {
-		_type= ENNEMY_CAR;
-	}
-	else if (js["type"]== "checkpoint") {
-		_type= CHECKPOINT;
-	}
-	else if (js["type"]== "start") {
-		_type= START;
-	}
-	else if (js["type"]== "surface_tile") {
-		_type= SURFACE_TILE;
-	}
-	else if (js["type"]== "surface_floating") {
-		_type= SURFACE_FLOATING;
-	}
-	else if (js["type"]== "repair") {
-		_type= REPAIR;
+	if (STR2OBJTYPE.count(js["type"])> 0) {
+		_type= STR2OBJTYPE.at(js["type"]); // [] ne fonctionne pas ici
 	}
 	else {
 		std::cerr << "Type " << js["type"] << " non supporté\n";
@@ -98,17 +107,16 @@ void StaticObjectModel::load(std::string json_path) {
 		_material_name= "no_material";
 	}
 	
-	if (_type== OBSTACLE_TILE) {
+	if (_type== OBSTACLE_TILE || _type== CHECKPOINT || _type== START || _type== REPAIR ||
+		_type== SURFACE_FLOATING || _type== SURFACE_TILE || _type== BOOST) {
 		_fixed= true;
 	}
-	
 	else if (_type== OBSTACLE_FLOATING) {
 		// on met le com (center of mass) à 0,0 afin de faciliter les rotations autour du com
 		_footprint->centroid2zero();
 		_footprint->update_all();
 		_fixed= js["fixed"];
 	}
-	
 	else if (_type== HERO_CAR || _type== ENNEMY_CAR) {
 		// on met le com (center of mass) à 0,0 afin de faciliter les rotations autour du com
 		_footprint->centroid2zero();
@@ -116,43 +124,37 @@ void StaticObjectModel::load(std::string json_path) {
 		_fixed= false;
 	}
 
-	else if (_type== CHECKPOINT || _type== START || _type== REPAIR) {
-		_fixed= true;
+	if (js["actions"]!= nullptr) {
+		for (json::iterator it = js["actions"].begin(); it != js["actions"].end(); ++it) {
+			auto & action_name= it.key();
+			auto & l_tex= it.value();
+			_actions[action_name]= new Action();
+			for (auto tex : l_tex) {
+				std::string texture_rel_path= tex["texture"];
+				std::string texture_path= dirname(_json_path)+ "/textures/"+ texture_rel_path;
+				unsigned int n_ms= 0;
+				if (tex["n_ms"]!= nullptr) {
+					n_ms= tex["n_ms"];
+				}
+				_actions[action_name]->_textures.push_back(new ActionTexture(texture_path, n_ms));
+			}
+		}
 	}
-
-	else if (_type== SURFACE_FLOATING || _type== SURFACE_TILE) {
-		_fixed= true;
+	else {
+		_actions[MAIN_ACTION_NAME]= new Action();
+		std::string texture_path= dirname(_json_path)+ "/textures/"+ _name+ ".png";
+		_actions[MAIN_ACTION_NAME]->_textures.push_back(new ActionTexture(texture_path, 0));
 	}
 }
 
 
 std::ostream & operator << (std::ostream & os, const StaticObjectModel & model) {
+	std::map<ObjectType, std::string> obj2str;
+	for (auto x : STR2OBJTYPE) {
+		obj2str[x.second]= x.first;
+	}
 	os << "json_path=" << model._json_path;
-	os << " ; type=";
-	if (model._type== OBSTACLE_TILE){
-		os << "OBSTACLE_TILE";
-	}
-	else if (model._type== OBSTACLE_FLOATING){
-		os << "OBSTACLE_FLOATING";
-	}
-	else if (model._type== HERO_CAR){
-		os << "HERO_CAR";
-	}
-	else if (model._type== ENNEMY_CAR){
-		os << "ENNEMY_CAR";
-	}
-	else if (model._type== CHECKPOINT){
-		os << "CHECKPOINT";
-	}
-	else if (model._type== START){
-		os << "START";
-	}
-	else if (model._type== SURFACE_FLOATING){
-		os << "SURFACE_FLOATING";
-	}
-	else if (model._type== SURFACE_TILE){
-		os << "SURFACE_TILE";
-	}
+	os << " ; type=" << obj2str[model._type];
 	os << " ; footprint=" << *model._footprint;
 	os << " ; fixed=" << model._fixed;
 	return os;
@@ -168,7 +170,9 @@ StaticObject::StaticObject() {
 StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) :
 	_model(NULL), _scale(pt_type(0.0)), _mass(0.0), _inertia(0.0), _com(pt_type(0.0)), _velocity(pt_type(0.0)),
 	_acceleration(pt_type(0.0)), _force(pt_type(0.0)), _alpha(0.0), _angular_velocity(0.0), _angular_acceleration(0.0),
-	_torque(0.0), _current_surface(NULL), _previous_surface(NULL)
+	_torque(0.0), _current_surface(NULL), _previous_surface(NULL),
+	_linear_friction_surface(1.0), _angular_friction_surface(1.0),
+	_current_action_name(MAIN_ACTION_NAME), _current_action_texture_idx(0)
 {
 	_bbox= new BBox_2D(pt_type(0.0), pt_type(0.0));
 	_footprint= new Polygon2D();
@@ -247,19 +251,63 @@ void StaticObject::update() {
 }
 
 
-void StaticObject::set_current_surface(Material * material) {
+void StaticObject::set_current_surface(Material * material, std::chrono::system_clock::time_point t) {
 	_current_surface= material;
+	_last_change_surface_t= t;
 }
 
 
-void StaticObject::anim(number anim_dt) {
+void StaticObject::set_current_action(std::string action_name, std::chrono::system_clock::time_point t) {
+	_current_action_name= action_name;
+	_current_action_texture_idx= 0;
+	_last_anim_action_t= t;
+}
+
+
+bool StaticObject::anim_surface(std::chrono::system_clock::time_point t) {
+	// ajustement _linear_friction_material / _angular_friction_material
+	if (_previous_surface!= _current_surface) {
+		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_change_surface_t).count();
+		if (dt> _previous_surface->_surface_change_ms) {
+			_linear_friction_surface= _current_surface->_linear_friction;
+			_angular_friction_surface= _current_surface->_angular_friction;
+			_previous_surface= _current_surface;
+			return true;
+		}
+		else {
+			// interpolation linéaire des frictions
+			_linear_friction_surface= _previous_surface->_linear_friction+ (number(dt)/ number(_previous_surface->_surface_change_ms))* (_current_surface->_linear_friction- _previous_surface->_linear_friction);
+			_angular_friction_surface= _previous_surface->_angular_friction+ (number(dt)/ number(_previous_surface->_surface_change_ms))* (_current_surface->_angular_friction- _previous_surface->_angular_friction);
+		}
+	}
+	return false;
+}
+
+
+void StaticObject::anim_texture(std::chrono::system_clock::time_point t) {
+	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_action_t).count();
+	if (dt> _model->_actions[_current_action_name]->_textures[_current_action_texture_idx]->_n_ms) {
+		_last_anim_action_t= t;
+		_current_action_texture_idx++;
+		if (_current_action_texture_idx>= _model->_actions[_current_action_name]->_textures.size()) {
+			_current_action_texture_idx= 0;
+		}
+	}
+}
+
+
+void StaticObject::anim(number anim_dt, std::chrono::system_clock::time_point t) {
+	anim_texture(t);
+
 	if (_model->_fixed) {
 		return;
 	}
 
+	anim_surface(t);
+
 	// calcul force
 	_force= pt_type(0.0);
-	_force-= _model->_material->_linear_friction* _velocity; // friction
+	_force-= _model->_material->_linear_friction* _linear_friction_surface* _velocity; // friction
 	
 	// force -> acceleration -> vitesse -> position
 	_acceleration= _force/ _mass;
@@ -268,7 +316,7 @@ void StaticObject::anim(number anim_dt) {
 
 	// calcul torque == équivalent force pour les rotations
 	_torque= 0.0;
-	_torque-= _model->_material->_angular_friction* _angular_velocity; // friction
+	_torque-= _model->_material->_angular_friction* _angular_friction_surface* _angular_velocity; // friction
 	
 	// torque -> acc angulaire -> vitesse angulaire -> angle
 	_angular_acceleration= _torque/ _inertia;
@@ -416,7 +464,6 @@ void StaticObjectGrid::push_tile(StaticObjectModel * model) {
 void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx) {
 	StaticObject * object= get_tile(col_idx, row_idx);
 	object->set_model(model);
-	//std::cout << "in grid : " << *model << "\n";
 	object->reinit(coord2number(col_idx, row_idx), 0.0, pt_type(_cell_size));
 }
 

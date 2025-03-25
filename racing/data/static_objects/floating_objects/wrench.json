@@ -1,3 +1,24 @@
 {
-	"type" : "repair"
+	"type" : "repair",
+	"actions" : {
+		"main" : [
+			{
+				"texture" : "wrench_inactive.png"
+			}
+		],
+		"active" : [
+			{
+				"texture" : "wrench_active_1.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "wrench_active_2.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "wrench_active_3.png",
+				"n_ms" : 100
+			}
+		]
+	}
 }

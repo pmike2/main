@@ -340,7 +340,8 @@ void GridEditor::update_texture() {
 			for (unsigned int i=0; i<5; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
+			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_actions[obj->_current_action_name]->_textures[obj->_current_action_texture_idx]->_texture_idx;
 		}
 	}
 
@@ -480,10 +481,7 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
 	_track= new Track();
-	//_track->set_all("full_obst", TRACK_DEFAULT_SIZE, TRACK_DEFAULT_SIZE);
-	//_track->_n_laps= DEFAULT_N_LAPS;
-	//update();
-	load_current_track();
+	load_track(1);
 }
 
 
@@ -543,7 +541,8 @@ void TrackEditor::save_json(std::string json_path) {
 }
 
 
-void TrackEditor::load_current_track() {
+void TrackEditor::load_track(unsigned int track_idx) {
+	_current_track_idx= track_idx;
 	std::string current_track_path= "../data/tracks/track"+ std::to_string(_current_track_idx)+ ".json";
 	if (!file_exists(current_track_path)) {
 		//std::cout << current_track_path << " n'existe pas.\n";
@@ -976,7 +975,8 @@ void TrackEditor::update_texture() {
 			for (unsigned int i=0; i<5; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
+			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_actions[obj->_current_action_name]->_textures[obj->_current_action_texture_idx]->_texture_idx;
 		}
 	}
 
@@ -1098,16 +1098,16 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 		}
 		return true;
 	}
-	// chgmt current track
-	else if (key== SDLK_KP_1) {_current_track_idx= 1; load_current_track(); return true;}
-	else if (key== SDLK_KP_2) {_current_track_idx= 2; load_current_track(); return true;}
-	else if (key== SDLK_KP_3) {_current_track_idx= 3; load_current_track(); return true;}
-	else if (key== SDLK_KP_4) {_current_track_idx= 4; load_current_track(); return true;}
-	else if (key== SDLK_KP_5) {_current_track_idx= 5; load_current_track(); return true;}
-	else if (key== SDLK_KP_6) {_current_track_idx= 6; load_current_track(); return true;}
-	else if (key== SDLK_KP_7) {_current_track_idx= 7; load_current_track(); return true;}
-	else if (key== SDLK_KP_8) {_current_track_idx= 8; load_current_track(); return true;}
-	else if (key== SDLK_KP_9) {_current_track_idx= 9; load_current_track(); return true;}
+	// chgmt track
+	else if (key== SDLK_1 || key== SDLK_KP_1) {load_track(1); return true;}
+	else if (key== SDLK_2 || key== SDLK_KP_2) {load_track(2); return true;}
+	else if (key== SDLK_3 || key== SDLK_KP_3) {load_track(3); return true;}
+	else if (key== SDLK_4 || key== SDLK_KP_4) {load_track(4); return true;}
+	else if (key== SDLK_5 || key== SDLK_KP_5) {load_track(5); return true;}
+	else if (key== SDLK_6 || key== SDLK_KP_6) {load_track(6); return true;}
+	else if (key== SDLK_7 || key== SDLK_KP_7) {load_track(7); return true;}
+	else if (key== SDLK_8 || key== SDLK_KP_8) {load_track(8); return true;}
+	else if (key== SDLK_9 || key== SDLK_KP_9) {load_track(9); return true;}
 
 	return false;
 }
@@ -1261,12 +1261,17 @@ Editor::~Editor() {
 
 void Editor::fill_texture_array_models() {
 	std::vector<std::string> pngs;
-	unsigned int idx_model= 0;
+	unsigned int compt= 0;
 	for (auto m : _track_editor->_track->_models) {
 		StaticObjectModel * model= m.second;
-		model->_texture_idx= float(idx_model++);
-		std::string png= dirname(model->_json_path)+ "/textures/"+ model->_name+ ".png";
-		pngs.push_back(png);
+		//model->_texture_idx= float(idx_model++);
+		//std::string png= dirname(model->_json_path)+ "/textures/"+ model->_name+ ".png";
+		for (auto action : model->_actions) {
+			for (auto action_texture : action.second->_textures) {
+				pngs.push_back(action_texture->_texture_path);
+				action_texture->_texture_idx= float(compt++);
+			}
+		}
 	}
 	fill_texture_array(0, _textures[0], 1024, pngs);
 }

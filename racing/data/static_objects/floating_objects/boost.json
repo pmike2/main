@@ -1,0 +1,24 @@
+{
+	"type" : "boost",
+	"actions" : {
+		"main" : [
+			{
+				"texture" : "boost_inactive.png"
+			}
+		],
+		"active" : [
+			{
+				"texture" : "boost_active_1.png",
+				"n_ms" : 40
+			},
+			{
+				"texture" : "boost_active_2.png",
+				"n_ms" : 40
+			},
+			{
+				"texture" : "boost_active_3.png",
+				"n_ms" : 40
+			}
+		]
+	}
+}

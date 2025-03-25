@@ -1,3 +1,24 @@
 {
-	"type" : "start"
+	"type" : "start",
+	"actions" : {
+		"main" : [
+			{
+				"texture" : "start_inactive.png"
+			}
+		],
+		"active" : [
+			{
+				"texture" : "start_active_1.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_2.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_3.png",
+				"n_ms" : 100
+			}
+		]
+	}
 }
