@@ -4,8 +4,8 @@
 #include "json.hpp"
 
 #include "static_object.h"
-#include "geom_2d.h"
 #include "utile.h"
+#include "gl_utils.h"
 
 
 using json = nlohmann::json;
@@ -23,7 +23,8 @@ ActionTexture::ActionTexture(std::string texture_path, unsigned int n_ms) : _tex
 		_texture_path_bump= bump;
 	}
 	else {
-		_texture_path_bump= _texture_path;
+		// si la version bump n'existe pas on sautera dans fill_texture_array l'indice correspondant
+		_texture_path_bump= NO_PNG;
 	}
 }
 
@@ -264,6 +265,7 @@ void StaticObject::set_current_action(std::string action_name, std::chrono::syst
 }
 
 
+// on renvoie true lorsqu'il y a changement de surface; ce bool est récupéré dans car.cpp pour mettre à jour le tire_track
 bool StaticObject::anim_surface(std::chrono::system_clock::time_point t) {
 	// ajustement _linear_friction_material / _angular_friction_material
 	if (_previous_surface!= _current_surface) {

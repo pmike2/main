@@ -18,11 +18,12 @@ public:
 	number _density; // densité du matériau
 	number _linear_friction; // friction linéaire (non utilisé pour Car)
 	number _angular_friction; // friction angulaire (non utilisé pour Car)
+	number _slippery; // est-t'il glissant
 	bool _solid; // est-ce un objet tangible
+	bool _bumpable; // est-ce abimable
 	number _restitution; // paramètre de dureté au rebond (voir collisions)
 	unsigned int _surface_change_ms; // temps en ms pendant lequel des traces différentes vont être faites à partir du moment de sortie du matériau
-
-	float _tire_track_texture_idx;
+	float _tire_track_texture_idx; // indice texture trace de pneus liée au matériau
 };
 
 

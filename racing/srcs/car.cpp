@@ -276,6 +276,8 @@ void Car::anim(number anim_dt, std::chrono::system_clock::time_point t) {
 	_thrust*= 1.0- BUMP_THRUST_FACTOR* _bumps[4]/ BUMP_MAX- BUMP_THRUST_FACTOR* _bumps[5]/ BUMP_MAX;
 	_wheel*= 1.0- BUMP_WHEEL_FACTOR* _bumps[3]/ BUMP_MAX- BUMP_WHEEL_FACTOR* _bumps[6]/ BUMP_MAX;
 
+	_thrust*= _current_surface->_slippery;
+
 	// calcul force appliquée à l'avant
 	_force_fwd= pt_type(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel); // accélération dans la direction du volant

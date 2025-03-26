@@ -455,6 +455,11 @@ void fill_texture_array(unsigned int texture_offset, unsigned int texture_idx, u
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, texture_size, texture_size, pngs.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	for (unsigned int idx_png=0; idx_png<pngs.size(); ++idx_png) {
+		// parfois on veut sauter des indices, auquel cas on spécifie NO_PNG
+		if (pngs[idx_png]== NO_PNG) {
+			continue;
+		}
+
 		if (!file_exists(pngs[idx_png])) {
 			std::cout << "png=" << pngs[idx_png] << " n'existe pas\n";
 			return;

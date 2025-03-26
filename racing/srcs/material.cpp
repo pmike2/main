@@ -24,6 +24,13 @@ Material::Material(std::string json_path) {
 	ifs.close();
 
 	_solid= js["solid"];
+
+	if (js["bumpable"]!= nullptr) {
+		_bumpable= js["bumpable"];
+	}
+	else {
+		_bumpable= false;
+	}
 	
 	if (js["density"]!= nullptr) {
 		_density= js["density"];
@@ -43,14 +50,21 @@ Material::Material(std::string json_path) {
 		_linear_friction= js["linear_friction"];
 	}
 	else {
-		_linear_friction= 0.0;
+		_linear_friction= 1.0;
 	}
 
 	if (js["angular_friction"]!= nullptr) {
 		_angular_friction= js["angular_friction"];
 	}
 	else {
-		_angular_friction= 0.0;
+		_angular_friction= 1.0;
+	}
+
+	if (js["slippery"]!= nullptr) {
+		_slippery= js["slippery"];
+	}
+	else {
+		_slippery= 1.0;
 	}
 
 	if (js["surface_change_ms"]!= nullptr) {

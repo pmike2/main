@@ -158,13 +158,10 @@ void Racing::fill_texture_array_models() {
 	unsigned int compt= 0;
 	for (auto m : _track->_models) {
 		StaticObjectModel * model= m.second;
-		//model->_texture_idx= float(idx_model++);
-		//std::string png= dirname(model->_json_path)+ "/textures/"+ model->_name+ ".png";
 		for (auto action : model->_actions) {
 			for (auto action_texture : action.second->_textures) {
 				pngs.push_back(action_texture->_texture_path);
 				pngs_bump.push_back(action_texture->_texture_path_bump);
-				//std::cout << action_texture->_texture_path << "\n";
 				action_texture->_texture_idx= float(compt++);
 			}
 		}

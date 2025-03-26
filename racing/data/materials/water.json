@@ -1,7 +1,7 @@
 {
-	"linear_friction" : 2.0,
+	"linear_friction" : 1.2,
 	"angular_friction" : 0.1,
+	"slippery" : 0.95,
 	"solid" : false,
-	"tire_track" : "tire_track_water",
 	"surface_change_ms" : 1000
 }

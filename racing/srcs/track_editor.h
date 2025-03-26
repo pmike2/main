@@ -22,10 +22,10 @@ const float Z_NEAR= 0.0f;
 const float Z_FAR= 1000.0f;
 // z des types de dessin
 const float Z_GRID= -10.0f;
-const float Z_SELECTION= -40.0f;
+const float Z_SELECTION= -20.0f;
 const float Z_TILES= -30.0f;
-const float Z_FOOTPRINT= -20.0f;
 const float Z_BBOX= -15.0f;
+const float Z_FOOTPRINT= -12.0f;
 // voir également static_object.h / Z_OBJECTS
 
 // couleurs

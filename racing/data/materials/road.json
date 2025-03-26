@@ -2,6 +2,5 @@
 	"linear_friction" : 1.0,
 	"angular_friction" : 1.0,
 	"solid" : false,
-	"tire_track" : "tire_track_road",
 	"surface_change_ms" : 0
 }

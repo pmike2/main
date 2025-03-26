@@ -149,7 +149,7 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		}
 	}
 
-	if (!obj1->_model->_fixed && obj1->_model->_material->_solid) {
+	if (!obj1->_model->_fixed && obj1->_model->_material->_solid && obj1->_model->_material->_bumpable) {
 		int obj_bump_idx_1= -1;
 		int obj_bump_idx_2= -1;
 		std::pair<BBOX_SIDE, BBOX_CORNER>p= bbox_side_corner(obj1->_bbox, obj2->_footprint->_pts[idx_pt]);
@@ -182,7 +182,7 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		}
 	}
 
-	if (!obj2->_model->_fixed && obj2->_model->_material->_solid) {
+	if (!obj2->_model->_fixed && obj2->_model->_material->_solid && obj2->_model->_material->_bumpable) {
 		int obj_bump_idx_1= -1;
 		int obj_bump_idx_2= -1;
 		std::pair<BBOX_SIDE, BBOX_CORNER>p= bbox_side_corner(obj2->_bbox, obj2->_footprint->_pts[idx_pt]);
@@ -404,6 +404,10 @@ void Track::start(std::chrono::system_clock::time_point t) {
 		obj->_previous_surface= _materials["road"];
 		// au début tous les objets sont dans leur action par défaut
 		obj->set_current_action(MAIN_ACTION_NAME, t);
+	}
+	// set des tire_tracks à road
+	for (auto car : _sorted_cars) {
+		car->_tire_track_texture_idx= _materials["road"]->_tire_track_texture_idx;
 	}
 
 	_start->set_current_action("active", t);

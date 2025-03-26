@@ -18,6 +18,14 @@
 			{
 				"texture" : "checkpoint_active_3.png",
 				"n_ms" : 50
+			},
+			{
+				"texture" : "checkpoint_active_4.png",
+				"n_ms" : 50
+			},
+			{
+				"texture" : "checkpoint_active_5.png",
+				"n_ms" : 200
 			}
 		]
 	}

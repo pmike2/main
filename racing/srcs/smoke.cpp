@@ -3,7 +3,7 @@
 
 
 // Smoke ------------------------------------------------------------------------------------
-Smoke::Smoke() : _is_alive(false), _opacity(0.0), _idx_texture(0), _z(0.0) {
+Smoke::Smoke() : _is_alive(false), _opacity(0.0), _idx_texture(0), _z(0.0), _config(EXHAUST) {
 	_bbox= new BBox_2D();
 }
 
@@ -13,15 +13,16 @@ Smoke::~Smoke() {
 }
 
 
-void Smoke::reinit(pt_type position, number alpha, pt_type scale, unsigned int idx_texture) {
+void Smoke::reinit(const SmokeConfig & config, pt_type position, number alpha, pt_type scale, unsigned int idx_texture) {
+	_config= config;
 	_bbox->_center= position;
 	_bbox->_alpha= alpha;
 	_bbox->_half_size= scale;
 	_bbox->update();
 
-	_opacity= SMOKE_OPACITY_INIT;
+	_opacity= _config._opacity_init;
 	_idx_texture= idx_texture;
-	_z= SMOKE_Z_INIT;
+	_z= _config._z_init;
 	_is_alive= true;
 }
 
@@ -31,12 +32,12 @@ void Smoke::anim() {
 		return;
 	}
 
-	_bbox->_half_size+= SMOKE_SIZE_INCREMENT;
+	_bbox->_half_size+= _config._size_increment;
 	_bbox->update();
-	_z+= SMOKE_Z_INCREMENT;
+	_z+= _config._z_increment;
 	
-	_opacity-= SMOKE_OPACITY_DECREMENT;
-	if (_opacity< SMOKE_OPACITY_THRESHOLD) {
+	_opacity-= _config._opacity_decrement;
+	if (_opacity< _config._opacity_threshold) {
 		_opacity= 0.0;
 		_is_alive= false;
 	}
@@ -50,7 +51,7 @@ SmokeSystem::SmokeSystem() {
 
 
 SmokeSystem::SmokeSystem(Car * car, unsigned int n_pngs, std::chrono::system_clock::time_point t) :
-	 _car(car), _n_pngs(n_pngs), _last_creation_t(t)
+	 _car(car), _n_pngs(n_pngs), _last_exhaust_t(t), _last_bump_t(t)
 {
 	_smokes= new Smoke *[N_SMOKES_PER_CAR];
 	for (unsigned int i=0; i<N_SMOKES_PER_CAR; ++i) {
@@ -67,23 +68,48 @@ SmokeSystem::~SmokeSystem() {
 }
 
 
+Smoke * SmokeSystem::get_free_smoke() {
+	Smoke * smoke= NULL;
+	for (unsigned int i=0; i<N_SMOKES_PER_CAR; ++i) {
+		if (!_smokes[i]->_is_alive) {
+			smoke= _smokes[i];
+			break;
+		}
+	}
+	return smoke;
+}
+
+
 void SmokeSystem::anim(std::chrono::system_clock::time_point t) {
 	for (unsigned int i=0; i<N_SMOKES_PER_CAR; ++i) {
 		_smokes[i]->anim();
 	}
-	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_creation_t).count();
+
+	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_exhaust_t).count();
 	if (dt> NEW_SMOKE_DELTA_MS) {
-		Smoke * smoke= NULL;
-		for (unsigned int i=0; i<N_SMOKES_PER_CAR; ++i) {
-			if (!_smokes[i]->_is_alive) {
-				smoke= _smokes[i];
-				break;
-			}
-		}
+		Smoke * smoke= get_free_smoke();
 		if (smoke!= NULL) {
-			_last_creation_t= t;
-			number smoke_size= SMOKE_SIZE_INIT_FACTOR* sqrt(_car->_velocity.x* _car->_velocity.x+ _car->_velocity.y* _car->_velocity.y);
-			smoke->reinit(_car->_com- SMOKE_DIST_FROM_COM* _car->_forward, _car->_alpha, pt_type(smoke_size, smoke_size), rand_int(0, _n_pngs- 1));
+			_last_exhaust_t= t;
+			number smoke_size= EXHAUST._size_init_factor* sqrt(_car->_velocity.x* _car->_velocity.x+ _car->_velocity.y* _car->_velocity.y);
+			smoke->reinit(EXHAUST, _car->_com+ EXHAUST._dist_from_com* _car->_forward, _car->_alpha, pt_type(smoke_size, smoke_size), rand_int(0, _n_pngs- 1));
+		}
+		else {
+			std::cout << "SmokeSystem saturé\n";
+		}
+	}
+
+	if (_car->_bumps[4]+ _car->_bumps[5]> BUMP_SMOKE_THRESHOLD) {
+		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_bump_t).count();
+		if (dt> NEW_SMOKE_DELTA_MS) {
+			Smoke * smoke= get_free_smoke();
+			if (smoke!= NULL) {
+				_last_bump_t= t;
+				number smoke_size= ENGINE_BUMPED._size_init_factor* (_car->_bumps[4]+ _car->_bumps[5]);
+				smoke->reinit(ENGINE_BUMPED, _car->_com+ ENGINE_BUMPED._dist_from_com* _car->_forward, _car->_alpha, pt_type(smoke_size, smoke_size), rand_int(0, _n_pngs- 1));
+			}
+			else {
+				std::cout << "SmokeSystem saturé\n";
+			}
 		}
 	}
 }

@@ -13,6 +13,10 @@
 #include "typedefs.h"
 
 
+// utilisé dans fill_texture_array lorsque l'on veut sauter des indices
+const std::string NO_PNG= "NO_PNG";
+
+
 class ScreenGL {
 public:
 	ScreenGL();

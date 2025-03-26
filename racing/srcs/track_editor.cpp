@@ -65,7 +65,7 @@ void GridEditor::draw_grid() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -10.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_GRID);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -93,7 +93,7 @@ void GridEditor::draw_selection() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -20.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_SELECTION);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -124,7 +124,7 @@ void GridEditor::draw_tiles() {
 	
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
-	glUniform1f(context->_locs_uniform["z"], -30.0f);
+	glUniform1f(context->_locs_uniform["z"], Z_TILES);
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -751,12 +751,12 @@ void TrackEditor::draw(GLuint texture) {
 		draw_floating_objects_bbox();
 		draw_tiles();
 	}
+	if (_draw_texture) {
+		draw_texture(texture);
+	}
 	if (_draw_grid) {
 		draw_selection();
 		draw_grid();
-	}
-	if (_draw_texture) {
-		draw_texture(texture);
 	}
 }
 
@@ -1264,8 +1264,6 @@ void Editor::fill_texture_array_models() {
 	unsigned int compt= 0;
 	for (auto m : _track_editor->_track->_models) {
 		StaticObjectModel * model= m.second;
-		//model->_texture_idx= float(idx_model++);
-		//std::string png= dirname(model->_json_path)+ "/textures/"+ model->_name+ ".png";
 		for (auto action : model->_actions) {
 			for (auto action_texture : action.second->_textures) {
 				pngs.push_back(action_texture->_texture_path);

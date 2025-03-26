@@ -23,8 +23,8 @@
                 19.883037567138672
             ],
             "scale": [
-                4.6,
-                1.9000000000000008
+                7.199999999999991,
+                3.3999999999999964
             ]
         },
         {
@@ -36,8 +36,8 @@
                 27.056943893432617
             ],
             "scale": [
-                4.449999999999992,
-                1.6000000000000005
+                3.7999999999999927,
+                3.9499999999999957
             ]
         },
         {
@@ -49,8 +49,8 @@
                 26.61944580078125
             ],
             "scale": [
-                4.199999999999993,
-                2.000000000000001
+                4.049999999999994,
+                3.099999999999997
             ]
         },
         {
@@ -62,8 +62,8 @@
                 16.78958511352539
             ],
             "scale": [
-                6.6999999999999895,
-                1.7000000000000006
+                6.149999999999993,
+                3.5999999999999956
             ]
         },
         {
@@ -71,8 +71,8 @@
             "idx_checkpoint": 5,
             "name": "checkpoint",
             "position": [
-                18.072917938232422,
-                11.666666030883789
+                17.23958396911621,
+                12.1875
             ],
             "scale": [
                 5.749999999999994,
@@ -88,8 +88,8 @@
                 7.8125
             ],
             "scale": [
-                5.399999999999991,
-                1.650000000000001
+                4.899999999999988,
+                3.499999999999998
             ]
         },
         {
@@ -101,32 +101,20 @@
                 4.409375190734863
             ],
             "scale": [
-                7.849999999999991,
-                3.9499999999999957
+                4.999999999999993,
+                5.199999999999995
             ]
         },
         {
             "alpha": 0.0,
             "name": "puddle",
             "position": [
-                4.631250381469727,
-                17.1825008392334
+                25.885417938232422,
+                10.46875
             ],
             "scale": [
-                2.549999999999999,
-                2.5999999999999988
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "puddle",
-            "position": [
-                20.67708396911621,
-                17.1875
-            ],
-            "scale": [
-                3.799999999999995,
-                4.599999999999993
+                3.749999999999997,
+                3.9999999999999956
             ]
         },
         {
@@ -143,10 +131,22 @@
         },
         {
             "alpha": 0.0,
+            "name": "ice",
+            "position": [
+                28.85416603088379,
+                19.42708396911621
+            ],
+            "scale": [
+                3.799999999999995,
+                3.549999999999996
+            ]
+        },
+        {
+            "alpha": 0.0,
             "name": "rock",
             "position": [
-                12.969999313354492,
-                5.135000228881836
+                11.614583969116211,
+                3.541667938232422
             ],
             "scale": [
                 1.0,
@@ -157,8 +157,8 @@
             "alpha": 0.0,
             "name": "rock",
             "position": [
-                18.037500381469727,
-                3.680208921432495
+                26.04166603088379,
+                5.104167938232422
             ],
             "scale": [
                 1.0,
@@ -318,7 +318,7 @@
         "empty",
         "tri_0_0_0_sand",
         "full_sand",
-        "full_obst",
+        "tri_comp_1_0_2_obst_curve",
         "full_obst",
         "full_obst",
         "full_obst",
@@ -336,9 +336,9 @@
         "full_sand",
         "full_obst",
         "full_obst",
-        "full_sand",
-        "full_sand",
-        "tri_0_1_2_sand",
+        "tri_comp_1_1_0_obst_curve",
+        "tri_1_1_2_obst_curve",
+        "empty",
         "tri_1_0_obst_curve",
         "band_hb_1_obst",
         "band_hb_1_obst",
@@ -352,14 +352,14 @@
         "full_sand",
         "full_obst",
         "full_obst",
-        "tri_comp_1_0_0_sand",
-        "tri_1_1_2_sand",
+        "tri_1_0_1_sand",
         "empty",
         "empty",
         "empty",
         "empty",
         "empty",
         "empty",
+        "tri_0_1_0_obst_curve",
         "full_obst",
         "full_obst",
         "band_vg_1_sand",
@@ -370,7 +370,7 @@
         "full_obst",
         "band_vg_1_sand",
         "empty",
-        "tri_comp_0_0_2_sand",
+        "tri_0_0_0_sand",
         "full_sand",
         "full_obst",
         "full_obst",
@@ -386,13 +386,13 @@
         "full_obst",
         "band_vg_1_sand",
         "empty",
-        "band_hb_1_sand",
+        "tri_1_0_sand",
         "band_hb_1_sand",
         "band_hb_1_sand",
         "band_hb_1_sand",
         "band_hb_1_sand",
         "tri_1_1_2_sand",
-        "band_vd_1_obst",
+        "tri_comp_1_1_1_obst",
         "full_obst",
         "band_vg_1_sand",
         "empty",
@@ -414,7 +414,7 @@
         "empty",
         "tri_1_1_sand",
         "full_sand",
-        "full_obst",
+        "tri_comp_1_0_1_obst_curve",
         "full_obst",
         "tri_comp_1_0_sand",
         "band_hh_1_sand",
@@ -445,8 +445,8 @@
         "tri_comp_1_1_obst_curve",
         "tri_comp_0_0_sand",
         "band_hh_1_sand",
-        "band_hh_1_sand",
         "tri_0_0_1_sand",
+        "empty",
         "empty",
         "band_vd_1_obst",
         "full_obst",
@@ -462,7 +462,7 @@
         "tri_comp_1_1_obst_curve",
         "full_sand",
         "full_sand",
-        "full_sand",
+        "tri_1_1_1_sand",
         "empty",
         "band_vd_1_obst_curve",
         "full_obst",
@@ -470,7 +470,7 @@
         "full_obst",
         "full_obst",
         "full_obst",
-        "band_vg_1_sand",
+        "tri_0_0_2_sand",
         "empty",
         "band_vd_1_obst",
         "full_obst",
@@ -495,7 +495,7 @@
         "full_obst",
         "full_obst",
         "full_obst",
-        "full_obst",
+        "tri_0_1_1_obst_curve",
         "band_hh_1_sand",
         "band_hh_1_sand",
         "band_hh_1_sand",
