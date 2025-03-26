@@ -50,6 +50,7 @@ void CarModel::load(std::string json_path) {
 	_backward_dynamic_friction= js["backward_dynamic_friction"];
 	_friction_threshold= js["friction_threshold"];
 	_angular_friction= js["angular_friction"];
+	_speed_wheel_factor= js["speed_wheel_factor"];
 }
 
 
@@ -100,6 +101,8 @@ void Car::update() {
 	_com2force_bwd= rot(model->_com2force_bwd, _alpha);
 	_right= rot(model->_right, _alpha);
 	_forward= rot(model->_forward, _alpha);
+
+	_speed= sqrt(_velocity.x* _velocity.x+ _velocity.y* _velocity.y);
 }
 
 
@@ -109,13 +112,13 @@ void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up
 	// volant ------------------------------------------------
 	// a gauche == positif (rotation sens trigo)
 	if (key_left) {
-		_wheel+= model->_wheel_increment;
+		_wheel+= model->_wheel_increment* (1.0- _speed/ model->_speed_wheel_factor);
 		if (_wheel> model->_max_wheel) {
 			_wheel= model->_max_wheel;
 		}
 	}
 	if (key_right) {
-		_wheel-= model->_wheel_increment;
+		_wheel-= model->_wheel_increment* (1.0- _speed/ model->_speed_wheel_factor);
 		if (_wheel< -1.0* model->_max_wheel) {
 			_wheel= -1.0* model->_max_wheel;
 		}
@@ -164,7 +167,7 @@ void Car::preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick)
 
 	if (abs(joystick.x)> 0.3) {
 		// a gauche == positif (rotation sens trigo)
-		_wheel-= model->_wheel_increment* joystick.x;
+		_wheel-= model->_wheel_increment* joystick.x* (1.0- _speed/ model->_speed_wheel_factor);
 		if (_wheel> model->_max_wheel) {
 			_wheel= model->_max_wheel;
 		}

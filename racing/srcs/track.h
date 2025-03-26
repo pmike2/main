@@ -20,10 +20,6 @@ enum TrackMode {TRACK_WAITING, TRACK_PRECOUNT, TRACK_LIVE, TRACK_FINISHED};
 // taille par défaut d'une cellule
 const number DEFAULT_CELL_SIZE= 2.0;
 
-// thrust forcé lors d'une collision
-const number CAR_CAR_COLLISION_THRUST= 2.7;
-const number CAR_OBSTACLE_COLLISION_THRUST= 0.8;
-
 // temps entre 2 boosts en ms
 const unsigned int BOOST_DELTA_T_MS= 2000;
 // amplitude d'un boost

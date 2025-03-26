@@ -1,4 +1,5 @@
 {
 	"solid" : true,
-	"restitution" : 0.2
+	"restitution" : 0.2,
+	"collision_thrust" : 0.8
 }

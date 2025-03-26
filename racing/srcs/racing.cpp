@@ -483,7 +483,7 @@ void Racing::show_info() {
 
 			// vitesse joueur
 			if (_track->_mode== TRACK_LIVE) {
-				int hero_speed= (int)(sqrt(hero->_velocity.x* hero->_velocity.x+ hero->_velocity.y* hero->_velocity.y)* 60.0);
+				int hero_speed= (int)(hero->_speed* 60.0);
 				glm::vec4 speed_color(LOW_SPEED_COLOR);
 				if (hero_speed> 200) {
 					speed_color= HIGH_SPEED_COLOR;

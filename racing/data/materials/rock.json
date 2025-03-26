@@ -3,5 +3,6 @@
 	"linear_friction" : 20.0,
 	"angular_friction" : 10.0,
 	"solid" : true,
-	"restitution" : 0.4
+	"restitution" : 0.4,
+	"collision_thrust" : 0.8
 }

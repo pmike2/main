@@ -46,6 +46,13 @@ Material::Material(std::string json_path) {
 		_restitution= 0.0;
 	}
 
+	if (js["collision_thrust"]!= nullptr) {
+		_collision_thrust= js["collision_thrust"];
+	}
+	else {
+		_collision_thrust= 100.0; // car->_thrust non bridé
+	}
+
 	if (js["linear_friction"]!= nullptr) {
 		_linear_friction= js["linear_friction"];
 	}

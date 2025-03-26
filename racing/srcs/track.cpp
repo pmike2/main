@@ -91,12 +91,6 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 	// on prend la moyenne
 	number restitution= 0.5* (obj1->_model->_material->_restitution+ obj2->_model->_material->_restitution);
 	
-	/*number restitution= 0.1;
-	obj1->_mass= 1.0;
-	obj2->_mass= 1.0;
-	obj1->_inertia= 1.0;
-	obj2->_inertia= 1.0;*/
-	
 	// dans le cas où 1 des 2 objets est fixe on considère que sa masse et son inertie sont infinies
 	if (obj1->_model->_fixed) {
 		pt_type v= (cross2d(r2, axis)/ obj2->_inertia)* r2;
@@ -133,22 +127,17 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 	obj2->_acceleration= pt_type(0.0);
 	obj2->_angular_acceleration= 0.0;
 
+	// thrust max brimé par matériau en collision
 	for (auto obj_pair : std::vector<std::pair<StaticObject *, StaticObject *> >{{obj1, obj2}, {obj2, obj1}}) {
 		if (obj_pair.first->_model->_type== HERO_CAR || obj_pair.first->_model->_type== ENNEMY_CAR) {
 			Car * car= (Car *)(obj_pair.first);
-			if (obj_pair.second->_model->_type== HERO_CAR || obj_pair.second->_model->_type== ENNEMY_CAR) {
-				if (car->_thrust> CAR_CAR_COLLISION_THRUST) {
-					car->_thrust= CAR_CAR_COLLISION_THRUST;
-				}
-			}
-			else {
-				if (car->_thrust> CAR_OBSTACLE_COLLISION_THRUST) {
-					car->_thrust= CAR_OBSTACLE_COLLISION_THRUST;
-				}
+			if (car->_thrust> obj_pair.second->_model->_material->_collision_thrust) {
+				car->_thrust= obj_pair.second->_model->_material->_collision_thrust;
 			}
 		}
 	}
 
+	// bumps
 	if (!obj1->_model->_fixed && obj1->_model->_material->_solid && obj1->_model->_material->_bumpable) {
 		int obj_bump_idx_1= -1;
 		int obj_bump_idx_2= -1;

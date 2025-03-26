@@ -37,6 +37,7 @@ public:
 	number _backward_dynamic_friction; // friction dynamique arrière
 	number _friction_threshold; // seuil de passage friction statique -> friction dynamique (arrière)
 	number _angular_friction; // friction angulaire
+	number _speed_wheel_factor; // impact de la vitesse sur _wheel (+ Car va vite, - les touches / joystick font tourner)
 };
 
 
@@ -67,6 +68,7 @@ public:
 	number _wheel; // quantité de volant tourné
 	number _thrust; // quantité de pédale d'accélération
 	bool _drift; // est-ce que le véhicule est en dérapage
+	number _speed; // norme de _velocity
 
 	std::string _name; // nom du véhicule pour affichage classement
 	CheckPoint * _next_checkpoint; // prochain chkpt objectif
