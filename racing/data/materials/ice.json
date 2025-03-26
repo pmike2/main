@@ -1,0 +1,7 @@
+{
+	"linear_friction" : 0.0,
+	"angular_friction" : 0.0,
+	"slippery" : 0.2,
+	"solid" : false,
+	"surface_change_ms" : 100
+}

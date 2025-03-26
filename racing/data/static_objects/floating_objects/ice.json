@@ -1,0 +1,51 @@
+{
+	"type" : "surface_floating",
+	"footprint" : [
+		[-0.39, -0.27], [-0.07, -0.35], [0.4, -0.04], [0.39, 0.27], [-0.06, 0.36], [-0.38, 0.11]
+	],
+	"material" : "ice",
+	"actions" : {
+		"main" : [
+			{
+				"texture" : "ice_1.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "ice_2.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "ice_3.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "ice_4.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "ice_5.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "ice_6.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "ice_7.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "ice_8.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "ice_9.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "ice_10.png",
+				"n_ms" : 300
+			}
+		]
+	}
+}
