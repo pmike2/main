@@ -23,6 +23,7 @@ public:
 	bool _bumpable; // est-ce abimable
 	number _restitution; // paramètre de dureté au rebond (voir collisions)
 	number _collision_thrust; // fixe la valeur max de car->_thrust (voir collisions)
+	number _damage; // a quel point ce matériau abime lors d'une collision
 	unsigned int _surface_change_ms; // temps en ms pendant lequel des traces différentes vont être faites à partir du moment de sortie du matériau
 	float _tire_track_texture_idx; // indice texture trace de pneus liée au matériau
 };

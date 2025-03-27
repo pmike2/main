@@ -44,8 +44,6 @@ const number INERTIA_FACTOR= 50.0;
 
 // nombre de bosses par objet
 const unsigned int N_BUMPS= 9;
-// incrément par choc
-const number BUMP_INCREMENT= 0.15;
 // bosse max
 const number BUMP_MAX= 4.0;
 // facteur multiplicatif d'application d'une bosse à la pédale d'accélération

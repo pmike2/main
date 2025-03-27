@@ -38,6 +38,7 @@ void CarModel::load(std::string json_path) {
 	_com2force_fwd= pt_type(js["com2force_fwd"][0], js["com2force_fwd"][1]);
 	_com2force_bwd= pt_type(js["com2force_bwd"][0], js["com2force_bwd"][1]);
 	_max_wheel= js["max_wheel"];
+	_max_wheel_reverse= js["max_wheel_reverse"];
 	_wheel_increment= js["wheel_increment"];
 	_wheel_decrement= js["wheel_decrement"];
 	_max_brake= js["max_brake"];
@@ -49,6 +50,7 @@ void CarModel::load(std::string json_path) {
 	_backward_static_friction= js["backward_static_friction"];
 	_backward_dynamic_friction= js["backward_dynamic_friction"];
 	_friction_threshold= js["friction_threshold"];
+	_friction_threshold_braking= js["friction_threshold_braking"];
 	_angular_friction= js["angular_friction"];
 	_speed_wheel_factor= js["speed_wheel_factor"];
 }
@@ -109,20 +111,34 @@ void Car::update() {
 void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up) {
 	CarModel * model= get_model();
 
+	// + on va vite moins on peut tourner; évite de faire des gros virages à haute vitesse
+	number wheel_modifier= (1.0- _speed/ model->_speed_wheel_factor);
+	if (wheel_modifier< 0.0) {
+		wheel_modifier= 0.0;
+	}
+
+	// en marche arrière on peut moins tourner le volant
+	number max_wheel= model->_max_wheel;
+	if (_thrust< 0.0) {
+		max_wheel= model->_max_wheel_reverse;
+	}
+
 	// volant ------------------------------------------------
 	// a gauche == positif (rotation sens trigo)
 	if (key_left) {
-		_wheel+= model->_wheel_increment* (1.0- _speed/ model->_speed_wheel_factor);
-		if (_wheel> model->_max_wheel) {
-			_wheel= model->_max_wheel;
+		_wheel+= model->_wheel_increment* wheel_modifier;
+		if (_wheel> max_wheel) {
+			_wheel= max_wheel;
 		}
 	}
+
 	if (key_right) {
-		_wheel-= model->_wheel_increment* (1.0- _speed/ model->_speed_wheel_factor);
-		if (_wheel< -1.0* model->_max_wheel) {
-			_wheel= -1.0* model->_max_wheel;
+		_wheel-= model->_wheel_increment* wheel_modifier;
+		if (_wheel< -1.0* max_wheel) {
+			_wheel= -1.0* max_wheel;
 		}
 	}
+
 	if (!key_left && !key_right) {
 		if (_wheel< -1.0* model->_wheel_decrement) {
 			_wheel+= model->_wheel_decrement;
@@ -135,19 +151,25 @@ void Car::preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up
 		}
 	}
 
-	// accélération --------------------------------------------
+	// accélération / freinage --------------------------------------------
 	if (key_down) {
 		_thrust-= model->_brake_increment;
 		if (_thrust< -1.0* model->_max_brake) {
 			_thrust= -1.0* model->_max_brake;
 		}
+		_braking= true;
 	}
+	else {
+		_braking= false;
+	}
+
 	if (key_up) {
 		_thrust+= model->_thrust_increment;
 		if (_thrust> model->_max_thrust) {
 			_thrust= model->_max_thrust;
 		}
 	}
+	
 	if (!key_down && !key_up) {
 		if (_thrust< -1.0* model->_thrust_decrement) {
 			_thrust+= model->_thrust_decrement;
@@ -166,8 +188,12 @@ void Car::preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick)
 	CarModel * model= get_model();
 
 	if (abs(joystick.x)> 0.3) {
+		number wheel_modifier= (1.0- _speed/ model->_speed_wheel_factor);
+		if (wheel_modifier< 0.0) {
+			wheel_modifier= 0.0;
+		}
 		// a gauche == positif (rotation sens trigo)
-		_wheel-= model->_wheel_increment* joystick.x* (1.0- _speed/ model->_speed_wheel_factor);
+		_wheel-= model->_wheel_increment* joystick.x* wheel_modifier;
 		if (_wheel> model->_max_wheel) {
 			_wheel= model->_max_wheel;
 		}
@@ -213,7 +239,7 @@ void Car::preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick)
 }
 
 
-void Car::random_ia() {
+/*void Car::random_ia() {
 	CarModel * model= get_model();
 
 	if (rand_int(0, 100)> 20) {
@@ -263,7 +289,7 @@ void Car::random_ia() {
 			_wheel= 0.0;
 		}
 	}
-}
+}*/
 
 
 void Car::anim(number anim_dt, std::chrono::system_clock::time_point t) {
@@ -279,28 +305,42 @@ void Car::anim(number anim_dt, std::chrono::system_clock::time_point t) {
 	_thrust*= 1.0- BUMP_THRUST_FACTOR* _bumps[4]/ BUMP_MAX- BUMP_THRUST_FACTOR* _bumps[5]/ BUMP_MAX;
 	_wheel*= 1.0- BUMP_WHEEL_FACTOR* _bumps[3]/ BUMP_MAX- BUMP_WHEEL_FACTOR* _bumps[6]/ BUMP_MAX;
 
+	// sur une surface glissante les roues dérapent et thrust baisse
 	_thrust*= _current_surface->_slippery;
 
 	// calcul force appliquée à l'avant
 	_force_fwd= pt_type(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel); // accélération dans la direction du volant
-	_force_fwd-= model->_forward_static_friction* _linear_friction_surface* scal(_forward, _velocity)* _forward; // friction statique avant
+	// friction statique avant
+	//_force_fwd-= model->_forward_static_friction* _linear_friction_surface* scal(_forward, _velocity)* _forward;
+	if (_thrust> 0.0) {
+		_force_fwd-= model->_forward_static_friction* _linear_friction_surface* _velocity;
+	}
+	else {
+		_force_fwd-= 1.0* model->_forward_static_friction* _linear_friction_surface* _velocity;
+		//_force_fwd-= 0.1* model->_forward_static_friction* _linear_friction_surface* scal(_forward, _velocity)* _forward;
+	}
 
 	// calcul force appliquée à l'arrière
 	_force_bwd= pt_type(0.0);
 	// + la vitesse est grande et + on tourne abruptement, + on a de chance d'être en dérapage
 	// les bumps 2 et 7 (roues arrières) influent sur _drift
 	number right_turn= scal(_right, _velocity);
-	if (abs(right_turn)> model->_friction_threshold || _bumps[2]> BUMP_DRIFT_THRESHOLD || _bumps[7]> BUMP_DRIFT_THRESHOLD) {
+	if (_thrust> 0.0 && (  (!_braking && abs(right_turn)> model->_friction_threshold)
+		|| (_braking && abs(right_turn)> model->_friction_threshold_braking)
+		|| _bumps[2]> BUMP_DRIFT_THRESHOLD || _bumps[7]> BUMP_DRIFT_THRESHOLD)) {
 		// dérapage
 		_drift= true;
 		_force_bwd-= model->_backward_dynamic_friction* _linear_friction_surface* right_turn* _right;
-		//_force_bwd-= model->_backward_dynamic_friction* right_turn* _right;
 	}
 	else {
 		_drift= false;
-		_force_bwd-= model->_backward_static_friction* _linear_friction_surface* right_turn* _right;
-		//_force_bwd-= model->_backward_static_friction* right_turn* _right;
+		if (_thrust> 0.0) {
+			_force_bwd-= model->_backward_static_friction* _linear_friction_surface* right_turn* _right;
+		}
+		else {
+			_force_bwd-= 1.0* model->_backward_static_friction* _linear_friction_surface* right_turn* _right;
+		}
 	}
 
 	// force -> acceleration -> vitesse -> position

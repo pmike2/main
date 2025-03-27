@@ -25,6 +25,7 @@ public:
 	pt_type _com2force_fwd; // vecteur COM (center of mass) -> point d'application des forces avant
 	pt_type _com2force_bwd; // vecteur COM (center of mass) -> point d'application des forces arrière
 	number _max_wheel; // rotation max du volant
+	number _max_wheel_reverse; // rotation max du volant quand Car est en marche arrière
 	number _wheel_increment; // incrément de rotation du volant lors d'un appui touche gauche-droite
 	number _wheel_decrement; // décrement de rotation du volant si pas d'appui touche gauche-droite
 	number _max_thrust; // max pédale accélération
@@ -36,6 +37,7 @@ public:
 	number _backward_static_friction; // friction statique arrière
 	number _backward_dynamic_friction; // friction dynamique arrière
 	number _friction_threshold; // seuil de passage friction statique -> friction dynamique (arrière)
+	number _friction_threshold_braking; // pareil mais si on freine
 	number _angular_friction; // friction angulaire
 	number _speed_wheel_factor; // impact de la vitesse sur _wheel (+ Car va vite, - les touches / joystick font tourner)
 };
@@ -52,7 +54,7 @@ public:
 	void update(); // met à jour les données calculées à partir des autres
 	void preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up); // gestion touches
 	void preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick); // gestion joystick
-	void random_ia(); //IA aléatoire, conservée pour mémoire et tests
+	//void random_ia(); //IA aléatoire, conservée pour mémoire et tests
 	void anim(number anim_dt, std::chrono::system_clock::time_point t); // animation
 	friend std::ostream & operator << (std::ostream & os, const Car & car);
 
@@ -69,6 +71,7 @@ public:
 	number _thrust; // quantité de pédale d'accélération
 	bool _drift; // est-ce que le véhicule est en dérapage
 	number _speed; // norme de _velocity
+	bool _braking; // en train de freiner ?
 
 	std::string _name; // nom du véhicule pour affichage classement
 	CheckPoint * _next_checkpoint; // prochain chkpt objectif

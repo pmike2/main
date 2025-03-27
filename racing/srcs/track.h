@@ -20,6 +20,8 @@ enum TrackMode {TRACK_WAITING, TRACK_PRECOUNT, TRACK_LIVE, TRACK_FINISHED};
 // taille par défaut d'une cellule
 const number DEFAULT_CELL_SIZE= 2.0;
 
+const number MAX_IMPULSE= 3.0;
+
 // temps entre 2 boosts en ms
 const unsigned int BOOST_DELTA_T_MS= 2000;
 // amplitude d'un boost

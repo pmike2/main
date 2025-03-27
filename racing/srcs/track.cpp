@@ -105,8 +105,9 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ 1.0/ obj2->_mass+ dot(v, axis));
 	}
 
-	if (abs(impulse)> 10.0) {
+	if (abs(impulse)> MAX_IMPULSE) {
 		std::cout << "impulse=" << impulse << "\n";
+		impulse= MAX_IMPULSE;
 	}
 
 	// on modifie directement la vitesse et la vitesse angulaire
@@ -160,10 +161,10 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		}
 		for (int i=0; i<N_BUMPS; ++i) {
 			if (i== obj_bump_idx_1 || i== obj_bump_idx_2) {
-				obj1->_bumps[i]+= BUMP_INCREMENT* impulse;
+				obj1->_bumps[i]+= obj2->_model->_material->_damage* impulse;
 			}
 			else {
-				obj1->_bumps[i]+= BUMP_INCREMENT* impulse* rand_number(0.2, 0.5);
+				obj1->_bumps[i]+= obj2->_model->_material->_damage* impulse* rand_number(0.2, 0.5);
 			}
 			if (obj1->_bumps[i]> BUMP_MAX) {
 				obj1->_bumps[i]= BUMP_MAX;
@@ -193,10 +194,10 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		}
 		for (int i=0; i<N_BUMPS; ++i) {
 			if (i== obj_bump_idx_1 || i== obj_bump_idx_2) {
-				obj2->_bumps[i]+= BUMP_INCREMENT* impulse;
+				obj2->_bumps[i]+= obj1->_model->_material->_damage* impulse;
 			}
 			else {
-				obj2->_bumps[i]+= BUMP_INCREMENT* impulse* rand_number(0.2, 0.5);
+				obj2->_bumps[i]+= obj1->_model->_material->_damage* impulse* rand_number(0.2, 0.5);
 			}
 			if (obj2->_bumps[i]> BUMP_MAX) {
 				obj2->_bumps[i]= BUMP_MAX;

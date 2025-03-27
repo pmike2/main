@@ -81,6 +81,13 @@ Material::Material(std::string json_path) {
 		_surface_change_ms= 0;
 	}
 
+	if (js["damage"]!= nullptr) {
+		_damage= js["damage"];
+	}
+	else {
+		_damage= 0.0;
+	}
+
 	_tire_track_texture_idx= 0.0; // sera éventuellement renseigné dans racing.cpp
 }
 

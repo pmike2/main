@@ -432,33 +432,30 @@ void Racing::show_info() {
 		Car * hero= _track->get_hero();
 
 		if (_show_debug_info) {
-			const float font_scale= 0.007f;
+			const float font_scale= 0.005f;
 			const glm::vec4 text_color(1.0, 1.0, 1.0, 1.0);
 
-			texts.push_back(Text("COM PT", glm::vec2(-9.0f, 7.0f), font_scale, COM_CROSS_COLOR));
-			texts.push_back(Text("FORCE_FWD PT", glm::vec2(-9.0f, 6.0f), font_scale, FORCE_FWD_CROSS_COLOR));
-			texts.push_back(Text("FORCE_BWD PT", glm::vec2(-9.0f, 5.0f), font_scale, FORCE_BWD_CROSS_COLOR));
-			texts.push_back(Text("FORCE_FWD VEC", glm::vec2(-9.0f, 3.0f), font_scale, FORCE_FWD_ARROW_COLOR));
-			texts.push_back(Text("FORCE_BWD VEC", glm::vec2(-9.0f, 2.0f), font_scale, FORCE_BWD_ARROW_COLOR));
-			texts.push_back(Text("ACCELERATION VEC", glm::vec2(-9.0f, 1.0f), font_scale, ACCELERATION_ARROW_COLOR));
-			texts.push_back(Text("VELOCITY VEC", glm::vec2(-9.0f, 0.0f), font_scale, VELOCITY_ARROW_COLOR));
-			texts.push_back(Text("FORWARD VEC", glm::vec2(-9.0f, -1.0f), font_scale, FORWARD_ARROW_COLOR));
-			texts.push_back(Text("RIGHT VEC", glm::vec2(-9.0f, -2.0f), font_scale, RIGHT_ARROW_COLOR));
+			texts.push_back(Text("COM PT", glm::vec2(-7.0f, 5.0f), font_scale, COM_CROSS_COLOR));
+			texts.push_back(Text("FORCE_FWD PT", glm::vec2(-7.0f, 4.0f), font_scale, FORCE_FWD_CROSS_COLOR));
+			texts.push_back(Text("FORCE_BWD PT", glm::vec2(-7.0f, 3.0f), font_scale, FORCE_BWD_CROSS_COLOR));
+			texts.push_back(Text("FORCE_FWD VEC", glm::vec2(-7.0f, 2.0f), font_scale, FORCE_FWD_ARROW_COLOR));
+			texts.push_back(Text("FORCE_BWD VEC", glm::vec2(-7.0f, 1.0f), font_scale, FORCE_BWD_ARROW_COLOR));
+			texts.push_back(Text("ACCELERATION VEC", glm::vec2(-7.0f, 0.0f), font_scale, ACCELERATION_ARROW_COLOR));
+			texts.push_back(Text("VELOCITY VEC", glm::vec2(-7.0f, -1.0f), font_scale, VELOCITY_ARROW_COLOR));
+			texts.push_back(Text("FORWARD VEC", glm::vec2(-7.0f, -2.0f), font_scale, FORWARD_ARROW_COLOR));
+			texts.push_back(Text("RIGHT VEC", glm::vec2(-7.0f, -3.0f), font_scale, RIGHT_ARROW_COLOR));
 
-			texts.push_back(Text("thrust="+ std::to_string(hero->_thrust), glm::vec2(6.0, 7.0), font_scale, text_color));
-			texts.push_back(Text("wheel="+ std::to_string(hero->_wheel), glm::vec2(6.0, 6.0), font_scale, text_color));
-			
-			texts.push_back(Text("force_fwd="+ std::to_string(norm(hero->_force_fwd)), glm::vec2(6.0, 4.0), font_scale, text_color));
-			texts.push_back(Text("force_bwd="+ std::to_string(norm(hero->_force_bwd)), glm::vec2(6.0, 3.0), font_scale, text_color));
-			texts.push_back(Text("acc="+ std::to_string(norm(hero->_acceleration)), glm::vec2(6.0, 2.0), font_scale, text_color));
-			texts.push_back(Text("vel="+ std::to_string(norm(hero->_velocity)), glm::vec2(6.0, 1.0), font_scale, text_color));
-
-			texts.push_back(Text("torque="+ std::to_string(hero->_torque), glm::vec2(6.0, -1.0), font_scale, text_color));
-			texts.push_back(Text("ang acc="+ std::to_string(hero->_angular_acceleration), glm::vec2(6.0, -2.0), font_scale, text_color));
-			texts.push_back(Text("ang vel="+ std::to_string(hero->_angular_velocity), glm::vec2(6.0, -3.0), font_scale, text_color));
-			texts.push_back(Text("alpha="+ std::to_string(hero->_alpha), glm::vec2(6.0, -4.0), font_scale, text_color));
-
-			texts.push_back(Text("drift="+ std::to_string(hero->_drift), glm::vec2(6.0, -6.0), font_scale, text_color));
+			texts.push_back(Text("thrust="+ std::to_string(hero->_thrust), glm::vec2(4.0f, 5.0f), font_scale, text_color));
+			texts.push_back(Text("wheel="+ std::to_string(hero->_wheel), glm::vec2(4.0f, 4.0f), font_scale, text_color));
+			texts.push_back(Text("force_fwd="+ std::to_string(norm(hero->_force_fwd)), glm::vec2(4.0f, 3.0f), font_scale, text_color));
+			texts.push_back(Text("force_bwd="+ std::to_string(norm(hero->_force_bwd)), glm::vec2(4.0f, 2.0f), font_scale, text_color));
+			texts.push_back(Text("acc="+ std::to_string(norm(hero->_acceleration)), glm::vec2(4.0f, 1.0f), font_scale, text_color));
+			texts.push_back(Text("vel="+ std::to_string(norm(hero->_velocity)), glm::vec2(4.0f, 0.0f), font_scale, text_color));
+			texts.push_back(Text("torque="+ std::to_string(hero->_torque), glm::vec2(4.0f, -1.0f), font_scale, text_color));
+			texts.push_back(Text("ang acc="+ std::to_string(hero->_angular_acceleration), glm::vec2(4.0f, -2.0f), font_scale, text_color));
+			texts.push_back(Text("ang vel="+ std::to_string(hero->_angular_velocity), glm::vec2(4.0f, -3.0f), font_scale, text_color));
+			texts.push_back(Text("alpha="+ std::to_string(hero->_alpha), glm::vec2(4.0f, -4.0f), font_scale, text_color));
+			texts.push_back(Text("drift="+ std::to_string(hero->_drift), glm::vec2(4.0f, -5.0f), font_scale, text_color));
 		}
 
 		else {

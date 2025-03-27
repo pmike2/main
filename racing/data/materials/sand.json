@@ -1,6 +1,6 @@
 {
 	"linear_friction" : 3.0,
-	"angular_friction" : 1.0,
+	"angular_friction" : 1.5,
 	"solid" : false,
 	"surface_change_ms" : 1000
 }
