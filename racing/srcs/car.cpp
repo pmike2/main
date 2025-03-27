@@ -192,13 +192,19 @@ void Car::preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick)
 		if (wheel_modifier< 0.0) {
 			wheel_modifier= 0.0;
 		}
+		// en marche arrière on peut moins tourner le volant
+		number max_wheel= model->_max_wheel;
+		if (_thrust< 0.0) {
+			max_wheel= model->_max_wheel_reverse;
+		}
+
 		// a gauche == positif (rotation sens trigo)
 		_wheel-= model->_wheel_increment* joystick.x* wheel_modifier;
-		if (_wheel> model->_max_wheel) {
-			_wheel= model->_max_wheel;
+		if (_wheel> max_wheel) {
+			_wheel= max_wheel;
 		}
-		if (_wheel< -1.0* model->_max_wheel) {
-			_wheel= -1.0* model->_max_wheel;
+		if (_wheel< -1.0* max_wheel) {
+			_wheel= -1.0* max_wheel;
 		}
 	}
 	else {
@@ -214,17 +220,23 @@ void Car::preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick)
 	}
 
 	if (joystick_a) {
+		_braking= true;
 		_thrust-= model->_brake_increment;
 		if (_thrust< -1.0* model->_max_brake) {
 			_thrust= -1.0* model->_max_brake;
 		}
 	}
+	else {
+		_braking= false;
+	}
+
 	if (joystick_b) {
 		_thrust+= model->_thrust_increment;
 		if (_thrust> model->_max_thrust) {
 			_thrust= model->_max_thrust;
 		}
 	}
+
 	if (!joystick_a && !joystick_b) {
 		if (_thrust< -1.0* model->_thrust_decrement) {
 			_thrust+= model->_thrust_decrement;
