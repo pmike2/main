@@ -58,8 +58,8 @@
             "idx_checkpoint": 4,
             "name": "checkpoint",
             "position": [
-                24.297500610351563,
-                6.571249961853027
+                23.215539932250977,
+                5.522177696228027
             ],
             "scale": [
                 9.550000000000004,
@@ -88,6 +88,18 @@
             "scale": [
                 3.5999999999999988,
                 4.149999999999999
+            ]
+        },
+        {
+            "alpha": 1.6000000000000003,
+            "name": "boost",
+            "position": [
+                17.746313095092773,
+                27.699140548706055
+            ],
+            "scale": [
+                4.049999999999994,
+                5.3999999999999915
             ]
         },
         {
@@ -199,15 +211,147 @@
             ]
         },
         {
-            "alpha": 1.6000000000000003,
-            "name": "boost",
+            "alpha": 0.0,
+            "name": "cone",
             "position": [
-                17.746313095092773,
-                27.699140548706055
+                10.294624328613281,
+                23.62937355041504
             ],
             "scale": [
-                4.049999999999994,
-                5.3999999999999915
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                10.225874900817871,
+                22.46921730041504
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                11.188374519348145,
+                23.75827980041504
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                20.229000091552734,
+                23.80124855041504
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                21.225873947143555,
+                23.71531105041504
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                21.32900047302246,
+                22.59812355041504
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                20.43524932861328,
+                8.375467300415039
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                21.32900047302246,
+                8.461404800415039
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                21.50339126586914,
+                9.579984664916992
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                10.328999519348145,
+                9.664529800415039
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                11.016499519348145,
+                8.762186050415039
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                10.191499710083008,
+                8.332498550415039
+            ],
+            "scale": [
+                1.0,
+                1.0
             ]
         }
     ],
@@ -283,12 +427,12 @@
         "empty",
         "empty",
         "tri_comp_0_0_2_sand",
-        "full_sand",
+        "tri_1_0_0_obst",
         "tri_comp_1_0_2_obst_curve",
         "full_obst",
         "full_obst",
         "tri_comp_1_0_obst_curve",
-        "full_sand",
+        "tri_1_0_1_obst",
         "tri_comp_1_0_sand",
         "empty",
         "empty",
@@ -333,8 +477,8 @@
         "full_sand",
         "full_obst",
         "full_obst",
-        "full_obst",
-        "full_obst",
+        "full_sand",
+        "full_sand",
         "full_obst",
         "full_obst",
         "full_sand",
@@ -349,8 +493,8 @@
         "full_sand",
         "full_obst",
         "full_obst",
-        "full_obst",
-        "full_obst",
+        "full_sand",
+        "full_sand",
         "full_obst",
         "full_obst",
         "full_sand",
@@ -395,12 +539,12 @@
         "empty",
         "empty",
         "tri_comp_1_0_1_sand",
-        "full_sand",
+        "tri_1_0_obst",
         "tri_comp_1_0_1_obst_curve",
         "full_obst",
         "full_obst",
         "tri_comp_1_0_0_obst_curve",
-        "full_sand",
+        "tri_1_0_2_obst",
         "tri_comp_0_0_0_sand",
         "empty",
         "empty",

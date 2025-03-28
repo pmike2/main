@@ -41,6 +41,6 @@
     "type": "hero_car",
     "wheel_decrement": 0.5,
     "wheel_increment": 0.05,
-    "speed_wheel_factor" : 4.2,
+    "speed_wheel_factor" : 5.5,
     "material" : "car"
 }
