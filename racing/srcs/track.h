@@ -20,15 +20,10 @@ enum TrackMode {TRACK_WAITING, TRACK_PRECOUNT, TRACK_LIVE, TRACK_FINISHED};
 // taille par défaut d'une cellule
 const number DEFAULT_CELL_SIZE= 2.0;
 
-const number MAX_IMPULSE= 3.0;
-
 // temps entre 2 boosts en ms
 const unsigned int BOOST_DELTA_T_MS= 2000;
 // amplitude d'un boost
 const number BOOST_AMPLITUDE= 4.0;
-
-// collision entre 2 objets
-void collision(StaticObject * obj1, StaticObject * obj2);
 
 
 /*
@@ -40,11 +35,13 @@ public:
 	Track();
 	~Track();
 	void load_models(); // chgmt des modèles de tuiles, voitures et autres
-	void load_json(std::string json_path); // chgmt json
+	void load_json(std::string json_path);
+	void save_json(std::string json_path);
 	void set_car_names();
 	void start(std::chrono::system_clock::time_point t);
+	void end();
+	void write_records();
 
-	Car * get_hero(); // renvoie le héros
 	void sort_cars(); // tri des voitures par position
 	unsigned int get_checkpoint_index(CheckPoint * checkpoint); // position du chkpt par rapport au start
 	void all_collision(); // gestion des collisions
@@ -79,11 +76,16 @@ public:
 	unsigned int _n_laps; // nombre de tours
 	CheckPoint * _start; // point de départ
 	TrackMode _mode; // mode
+	std::string _current_json_path;
+	std::vector<std::pair<std::string, number> > _best_lap; // les 3 meilleurs temps au tour
+	std::vector<std::pair<std::string, number> > _best_overall; // les 3 meilleurs en tout
+	bool _new_best_lap, _new_best_overall;
 
 	std::chrono::system_clock::time_point _last_precount_t; // pour décompte avant début course
 	unsigned int _precount; // décompte avant début course
 
 	std::vector<Car *> _sorted_cars; // les voitures triées par position
+	Car * _hero;
 };
 
 

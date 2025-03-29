@@ -130,8 +130,7 @@ void Racing::choose_track(unsigned int idx_track, std::chrono::system_clock::tim
 	_tire_track_system->reinit();
 
 	// init données
-	Car * hero= _track->get_hero();
-	_com_camera= hero->_com;
+	_com_camera= _track->_hero->_com;
 	
 	update_bbox();
 	update_footprint();
@@ -429,8 +428,6 @@ void Racing::show_info() {
 	}
 
 	else if (_mode== RACING) {
-		Car * hero= _track->get_hero();
-
 		if (_show_debug_info) {
 			const float font_scale= 0.005f;
 			const glm::vec4 text_color(1.0, 1.0, 1.0, 1.0);
@@ -445,17 +442,17 @@ void Racing::show_info() {
 			texts.push_back(Text("FORWARD VEC", glm::vec2(-7.0f, -2.0f), font_scale, FORWARD_ARROW_COLOR));
 			texts.push_back(Text("RIGHT VEC", glm::vec2(-7.0f, -3.0f), font_scale, RIGHT_ARROW_COLOR));
 
-			texts.push_back(Text("thrust="+ std::to_string(hero->_thrust), glm::vec2(4.0f, 5.0f), font_scale, text_color));
-			texts.push_back(Text("wheel="+ std::to_string(hero->_wheel), glm::vec2(4.0f, 4.0f), font_scale, text_color));
-			texts.push_back(Text("force_fwd="+ std::to_string(norm(hero->_force_fwd)), glm::vec2(4.0f, 3.0f), font_scale, text_color));
-			texts.push_back(Text("force_bwd="+ std::to_string(norm(hero->_force_bwd)), glm::vec2(4.0f, 2.0f), font_scale, text_color));
-			texts.push_back(Text("acc="+ std::to_string(norm(hero->_acceleration)), glm::vec2(4.0f, 1.0f), font_scale, text_color));
-			texts.push_back(Text("vel="+ std::to_string(norm(hero->_velocity)), glm::vec2(4.0f, 0.0f), font_scale, text_color));
-			texts.push_back(Text("torque="+ std::to_string(hero->_torque), glm::vec2(4.0f, -1.0f), font_scale, text_color));
-			texts.push_back(Text("ang acc="+ std::to_string(hero->_angular_acceleration), glm::vec2(4.0f, -2.0f), font_scale, text_color));
-			texts.push_back(Text("ang vel="+ std::to_string(hero->_angular_velocity), glm::vec2(4.0f, -3.0f), font_scale, text_color));
-			texts.push_back(Text("alpha="+ std::to_string(hero->_alpha), glm::vec2(4.0f, -4.0f), font_scale, text_color));
-			texts.push_back(Text("drift="+ std::to_string(hero->_drift), glm::vec2(4.0f, -5.0f), font_scale, text_color));
+			texts.push_back(Text("thrust="+ std::to_string(_track->_hero->_thrust), glm::vec2(4.0f, 5.0f), font_scale, text_color));
+			texts.push_back(Text("wheel="+ std::to_string(_track->_hero->_wheel), glm::vec2(4.0f, 4.0f), font_scale, text_color));
+			texts.push_back(Text("force_fwd="+ std::to_string(norm(_track->_hero->_force_fwd)), glm::vec2(4.0f, 3.0f), font_scale, text_color));
+			texts.push_back(Text("force_bwd="+ std::to_string(norm(_track->_hero->_force_bwd)), glm::vec2(4.0f, 2.0f), font_scale, text_color));
+			texts.push_back(Text("acc="+ std::to_string(norm(_track->_hero->_acceleration)), glm::vec2(4.0f, 1.0f), font_scale, text_color));
+			texts.push_back(Text("vel="+ std::to_string(norm(_track->_hero->_velocity)), glm::vec2(4.0f, 0.0f), font_scale, text_color));
+			texts.push_back(Text("torque="+ std::to_string(_track->_hero->_torque), glm::vec2(4.0f, -1.0f), font_scale, text_color));
+			texts.push_back(Text("ang acc="+ std::to_string(_track->_hero->_angular_acceleration), glm::vec2(4.0f, -2.0f), font_scale, text_color));
+			texts.push_back(Text("ang vel="+ std::to_string(_track->_hero->_angular_velocity), glm::vec2(4.0f, -3.0f), font_scale, text_color));
+			texts.push_back(Text("alpha="+ std::to_string(_track->_hero->_alpha), glm::vec2(4.0f, -4.0f), font_scale, text_color));
+			texts.push_back(Text("drift="+ std::to_string(_track->_hero->_drift), glm::vec2(4.0f, -5.0f), font_scale, text_color));
 		}
 
 		else {
@@ -464,23 +461,19 @@ void Racing::show_info() {
 				texts.push_back(Text(std::to_string(_track->_precount), glm::vec2(-1.0f, 0.0f), 0.06f, glm::vec4(1.0f, 1.0f, 0.5f, 1.0f)));
 			}
 			
-			// classement joueur arrivée
-			if (_track->_mode== TRACK_FINISHED) {
-				texts.push_back(Text(std::to_string(hero->_rank) + " / "+ std::to_string(_track->_sorted_cars.size()), glm::vec2(-2.0f, 0.0f), 0.03f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)));
-			}
-
 			// nombre de tours
 			if (_track->_mode== TRACK_LIVE) {
 				glm::vec4 nlaps_color(NLAPS_COLOR);
-				if (hero->_n_laps== _track->_n_laps) {
+				if (_track->_hero->_n_laps== _track->_n_laps) {
 					nlaps_color= NLAPS_LAST_COLOR;
 				}
-				texts.push_back(Text("LAP "+ std::to_string(hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(5.0f, 5.0f), 0.01f, nlaps_color));
+				texts.push_back(Text("LAP "+ std::to_string(_track->_hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(5.0f, 5.0f), 0.01f, nlaps_color));
 			}
 
 			// vitesse joueur
 			if (_track->_mode== TRACK_LIVE) {
-				int hero_speed= (int)(hero->_speed* 60.0);
+				// on multiplie par un facteur qui rende le truc cohérent
+				int hero_speed= (int)(_track->_hero->_speed* 60.0);
 				glm::vec4 speed_color(LOW_SPEED_COLOR);
 				if (hero_speed> 200) {
 					speed_color= HIGH_SPEED_COLOR;
@@ -493,7 +486,7 @@ void Racing::show_info() {
 				for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
 					Car * car= _track->_sorted_cars[idx_car];
 					glm::vec4 ranking_color(RANKING_ENNEMY_COLOR);
-					if (car== hero) {
+					if (car== _track->_hero) {
 						ranking_color= RANKING_HERO_COLOR;
 					}
 					texts.push_back(Text(std::to_string(idx_car+ 1)+  " - "+ car->_name, glm::vec2(-7.2f, 4.0f- float(idx_car)* 0.5f), 0.005f, ranking_color));
@@ -502,26 +495,52 @@ void Racing::show_info() {
 
 			// temps tours joueur
 			if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_FINISHED) {
-				for (unsigned int idx_time=0; idx_time<hero->_lap_times.size(); ++idx_time) {
+				for (unsigned int idx_time=0; idx_time<_track->_hero->_lap_times.size(); ++idx_time) {
 					glm::vec4 lap_time_color(PAST_LAP_TIME_COLOR);
-					if (idx_time== hero->_lap_times.size()- 1) {
+					if (idx_time== _track->_hero->_lap_times.size()- 1) {
 						lap_time_color= CURRENT_LAP_TIME_COLOR;
 					}
 					std::ostringstream oss;
-					oss << std::fixed << std::setprecision(2) << hero->_lap_times[idx_time];
-					texts.push_back(Text("LAP "+ std::to_string(idx_time+ 1)+  " - "+ oss.str(), glm::vec2(5.0f, 4.0f- float(idx_time)* 0.5f), 0.005f, lap_time_color));
+					oss << std::fixed << std::setprecision(2) << _track->_hero->_lap_times[idx_time];
+					texts.push_back(Text("LAP "+ std::to_string(idx_time+ 1)+  " - "+ oss.str(), glm::vec2(4.7f, 4.0f- float(idx_time)* 0.5f), 0.005f, lap_time_color));
+
+					if (idx_time< _track->_hero->_lap_times.size()- 1) {
+						number diff_best_lap= _track->_hero->_lap_times[idx_time]- _track->_best_lap[0].second;
+						glm::vec4 diff_lap_time_color(NOT_BEST_LAP_TIME_COLOR);
+						if (diff_best_lap< 0.0) {
+							diff_lap_time_color= BEST_LAP_TIME_COLOR;
+						}
+						std::ostringstream oss2;
+						oss2 << std::fixed << std::setprecision(2) << diff_best_lap;
+						std::string sign= "";
+						if (diff_best_lap> 0.0) {
+							sign= "+";
+						}
+						texts.push_back(Text(sign+ oss2.str(), glm::vec2(6.5f, 4.0f- float(idx_time)* 0.5f), 0.005f, diff_lap_time_color));
+					}
 				}
 			}
 
 			// temps total joueur arrivée
 			if (_track->_mode== TRACK_FINISHED) {
-				number total_time= 0.0;
-				for (auto lap_time : hero->_lap_times) {
-					total_time+= lap_time;
-				}
 				std::ostringstream oss;
-				oss << std::fixed << std::setprecision(2) << total_time;
+				oss << std::fixed << std::setprecision(2) << _track->_hero->_total_time;
 				texts.push_back(Text("TOTAL - "+ oss.str(), glm::vec2(5.0f, 3.0f- 0.5f* float(_track->_n_laps+ 1)), 0.005f, TOTAL_LAP_TIME_COLOR));
+			}
+
+			// classement joueur arrivée
+			if (_track->_mode== TRACK_FINISHED) {
+				texts.push_back(Text(std::to_string(_track->_hero->_rank) + " / "+ std::to_string(_track->_sorted_cars.size()), glm::vec2(-2.0f, 0.0f), 0.03f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)));
+			}
+
+			// y a t'il un record ?
+			if (_track->_mode== TRACK_FINISHED) {
+				if (_track->_new_best_lap) {
+					texts.push_back(Text("RECORD DU TOUR !", glm::vec2(-4.0f, 3.0f), 0.02f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)));
+				}
+				if (_track->_new_best_overall) {
+					texts.push_back(Text("RECORD PISTE !", glm::vec2(-4.0f, 2.0f), 0.02f, glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)));
+				}
 			}
 		}
 	}
@@ -911,11 +930,9 @@ void Racing::anim(std::chrono::system_clock::time_point t) {
 
 
 void Racing::camera() {
-	Car * hero= _track->get_hero();
-
-	_com_camera.x+= CAM_INC* (hero->_com.x- _com_camera.x);
-	_com_camera.y+= CAM_INC* (hero->_com.y- _com_camera.y);
-	number diff_alpha= hero->_alpha- _alpha_camera;
+	_com_camera.x+= CAM_INC* (_track->_hero->_com.x- _com_camera.x);
+	_com_camera.y+= CAM_INC* (_track->_hero->_com.y- _com_camera.y);
+	number diff_alpha= _track->_hero->_alpha- _alpha_camera;
 	if (diff_alpha> M_PI) {
 		_alpha_camera+= 2.0* M_PI;
 		diff_alpha-= 2.0* M_PI;

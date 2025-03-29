@@ -66,7 +66,8 @@ Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) :
 	StaticObject(model, position, alpha, scale),
 	_com2force_fwd(pt_type(0.0)), _com2force_bwd(pt_type(0.0)), _forward(pt_type(0.0)), _right(pt_type(0.0)),
 	_force_fwd(pt_type(0.0)), _force_bwd(pt_type(0.0)), _wheel(0.0), _thrust(0.0), _drift(false),
-	_name(""), _next_checkpoint(NULL), _n_laps(0), _rank(0), _finished(false), _tire_track_texture_idx(0)
+	_name(""), _next_checkpoint(NULL), _n_laps(0), _rank(0), _finished(false), _tire_track_texture_idx(0),
+	_total_time(999.0)
 {
 	reinit(position, alpha, scale);
 }
@@ -199,7 +200,7 @@ void Car::preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick)
 		}
 
 		// a gauche == positif (rotation sens trigo)
-		_wheel-= model->_wheel_increment* joystick.x* wheel_modifier;
+		_wheel-= model->_wheel_increment* joystick.x* JOYSTICK_FACTOR* wheel_modifier;
 		if (_wheel> max_wheel) {
 			_wheel= max_wheel;
 		}

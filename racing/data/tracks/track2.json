@@ -1,511 +1,294 @@
 {
+    "best_lap": [
+        {
+            "name": "Roscoe",
+            "time": 0.917
+        },
+        {
+            "name": "Eugene",
+            "time": 1.5
+        },
+        {
+            "name": "Asa",
+            "time": 3.967
+        }
+    ],
+    "best_overall": [
+        {
+            "name": "Victor",
+            "time": 91.626
+        },
+        {
+            "name": "Elbert",
+            "time": 96.029
+        },
+        {
+            "name": "XXX",
+            "time": 200.0
+        }
+    ],
     "cell_size": 2.0,
     "floating_objects": [
+        {
+            "alpha": -1.6000000000000003,
+            "name": "boost",
+            "position": [
+                17.84999656677246,
+                4.956250190734863
+            ],
+            "scale": [
+                4.749999999999995,
+                5.149999999999993
+            ]
+        },
+        {
+            "alpha": 1.6000000000000003,
+            "name": "boost",
+            "position": [
+                43.86249542236328,
+                18.55624771118164
+            ],
+            "scale": [
+                4.249999999999996,
+                4.849999999999993
+            ]
+        },
         {
             "alpha": 0.0,
             "idx_checkpoint": 0,
             "name": "start",
             "position": [
-                6.968751907348633,
-                20.147918701171875
+                29.971874237060547,
+                19.001562118530273
             ],
             "scale": [
-                5.999999999999994,
-                3.7999999999999967
+                3.2999999999999976,
+                5.799999999999991
+            ]
+        },
+        {
+            "alpha": 2.2000000000000006,
+            "idx_checkpoint": 1,
+            "name": "checkpoint",
+            "position": [
+                7.925000190734863,
+                18.006248474121094
+            ],
+            "scale": [
+                6.599999999999991,
+                3.349999999999996
+            ]
+        },
+        {
+            "alpha": -2.3000000000000007,
+            "idx_checkpoint": 2,
+            "name": "checkpoint",
+            "position": [
+                6.909375190734863,
+                5.975000381469727
+            ],
+            "scale": [
+                6.749999999999993,
+                4.199999999999997
+            ]
+        },
+        {
+            "alpha": -0.7,
+            "idx_checkpoint": 3,
+            "name": "checkpoint",
+            "position": [
+                50.7578125,
+                5.837499618530273
+            ],
+            "scale": [
+                6.59999999999999,
+                4.649999999999994
+            ]
+        },
+        {
+            "alpha": 0.8999999999999999,
+            "idx_checkpoint": 4,
+            "name": "checkpoint",
+            "position": [
+                51.3046875,
+                17.82187271118164
+            ],
+            "scale": [
+                7.349999999999987,
+                4.449999999999992
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                7.174999237060547,
+                13.68906021118164
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                7.018749237060547,
+                10.759373664855957
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                50.787498474121094,
+                10.273436546325684
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 0.0,
+            "name": "cone",
+            "position": [
+                50.865623474121094,
+                13.281248092651367
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 1.6000000000000003,
+            "name": "hero_car",
+            "position": [
+                37.14999771118164,
+                18.71249771118164
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 1.5000000000000002,
+            "name": "ennemy_car",
+            "position": [
+                37.73593521118164,
+                20.66562271118164
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 1.6000000000000005,
+            "name": "ennemy_car",
+            "position": [
+                37.73593521118164,
+                17.03281021118164
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 1.5000000000000002,
+            "name": "ennemy_car",
+            "position": [
+                34.84531021118164,
+                18.79062271118164
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 1.6000000000000003,
+            "name": "ennemy_car",
+            "position": [
+                35.00156021118164,
+                20.70468521118164
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 1.6000000000000003,
+            "name": "ennemy_car",
+            "position": [
+                34.92343521118164,
+                17.11093521118164
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 1.6000000000000003,
+            "name": "ennemy_car",
+            "position": [
+                40.11874771118164,
+                18.71249771118164
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 1.5000000000000002,
+            "name": "ennemy_car",
+            "position": [
+                40.00156021118164,
+                20.62656021118164
+            ],
+            "scale": [
+                1.0,
+                1.0
+            ]
+        },
+        {
+            "alpha": 1.6000000000000003,
+            "name": "ennemy_car",
+            "position": [
+                39.92343521118164,
+                17.03281021118164
+            ],
+            "scale": [
+                1.0,
+                1.0
             ]
         },
         {
             "alpha": 0.0,
             "name": "wrench",
             "position": [
-                35.56904983520508,
-                4.653124809265137
+                16.51249885559082,
+                20.42708396911621
             ],
             "scale": [
-                7.149999999999988,
-                5.149999999999991
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "puddle",
-            "position": [
-                5.557143211364746,
-                7.965624809265137
-            ],
-            "scale": [
-                5.84999999999999,
-                6.5999999999999845
-            ]
-        },
-        {
-            "alpha": -0.30000000000000004,
-            "idx_checkpoint": 9,
-            "name": "checkpoint",
-            "position": [
-                5.196249961853027,
-                4.492500305175781
-            ],
-            "scale": [
-                5.69999999999999,
-                3.2999999999999967
-            ]
-        },
-        {
-            "alpha": 1.4000000000000001,
-            "idx_checkpoint": 8,
-            "name": "checkpoint",
-            "position": [
-                31.22381019592285,
-                2.8953123092651367
-            ],
-            "scale": [
-                3.4499999999999993,
-                2.3
-            ]
-        },
-        {
-            "alpha": -2.0000000000000004,
-            "idx_checkpoint": 7,
-            "name": "checkpoint",
-            "position": [
-                30.201248168945313,
-                8.243749618530273
-            ],
-            "scale": [
-                3.1999999999999975,
-                2.549999999999999
-            ]
-        },
-        {
-            "alpha": 3.100000000000001,
-            "idx_checkpoint": 6,
-            "name": "checkpoint",
-            "position": [
-                13.988750457763672,
-                17.528749465942383
-            ],
-            "scale": [
-                4.349999999999994,
-                2.25
-            ]
-        },
-        {
-            "alpha": 0.7,
-            "idx_checkpoint": 5,
-            "name": "checkpoint",
-            "position": [
-                26.40250015258789,
-                17.96875
-            ],
-            "scale": [
-                4.849999999999997,
-                2.7999999999999985
-            ]
-        },
-        {
-            "alpha": 2.9000000000000012,
-            "idx_checkpoint": 4,
-            "name": "checkpoint",
-            "position": [
-                40.187503814697266,
-                30.93124771118164
-            ],
-            "scale": [
-                4.549999999999995,
-                3.049999999999997
-            ]
-        },
-        {
-            "alpha": -1.0999999999999999,
-            "idx_checkpoint": 3,
-            "name": "checkpoint",
-            "position": [
-                34.914066314697266,
-                36.24374771118164
-            ],
-            "scale": [
-                7.249999999999984,
-                3.049999999999997
-            ]
-        },
-        {
-            "alpha": -1.6000000000000003,
-            "idx_checkpoint": 2,
-            "name": "checkpoint",
-            "position": [
-                12.704999923706055,
-                40.48875045776367
-            ],
-            "scale": [
-                3.6999999999999953,
-                2.0500000000000007
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "idx_checkpoint": 1,
-            "name": "checkpoint",
-            "position": [
-                6.892499923706055,
-                33.36375045776367
-            ],
-            "scale": [
-                7.349999999999993,
-                2.8499999999999983
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ice",
-            "position": [
-                14.153848648071289,
-                14.146873474121094
-            ],
-            "scale": [
-                3.9999999999999964,
-                4.999999999999992
-            ]
-        },
-        {
-            "alpha": -1.6999999999999966,
-            "name": "boost",
-            "position": [
-                18.71465301513672,
-                10.274999618530273
-            ],
-            "scale": [
-                3.3500000000000023,
-                5.050000000000002
-            ]
-        },
-        {
-            "alpha": 1.6000000000000008,
-            "name": "boost",
-            "position": [
-                23.31547737121582,
-                2.998438835144043
-            ],
-            "scale": [
-                2.649999999999998,
-                4.349999999999997
-            ]
-        },
-        {
-            "alpha": -2.4000000000000012,
-            "name": "boost",
-            "position": [
-                19.10416603088379,
-                36.344791412353516
-            ],
-            "scale": [
-                2.8999999999999972,
-                5.549999999999989
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "boost",
-            "position": [
-                6.981249809265137,
-                27.957809448242188
-            ],
-            "scale": [
-                3.0499999999999976,
-                4.099999999999995
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "rock",
-            "position": [
-                34.94999694824219,
-                15.71875
-            ],
-            "scale": [
-                2.349999999999996,
-                2.000000000000001
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                7.668901443481445,
-                14.155555725097656
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                6.281706809997559,
-                14.120834350585938
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                4.9859747886657715,
-                14.016667366027832
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                8.78125,
-                16.952499389648438
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                6.891462802886963,
-                17.002777099609375
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                5.123169898986816,
-                16.985416412353516
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "ennemy_car",
-            "position": [
-                8.88841438293457,
-                14.138195037841797
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "hero_car",
-            "position": [
-                6.891462802886963,
-                15.839583396911621
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "cone",
-            "position": [
-                4.088235855102539,
-                35.64374542236328
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "cone",
-            "position": [
-                4.639705657958984,
-                36.9979133605957
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "cone",
-            "position": [
-                5.264705657958984,
-                38.4041633605957
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "cone",
-            "position": [
-                6.036764144897461,
-                39.758331298828125
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "cone",
-            "position": [
-                6.992646217346191,
-                41.008331298828125
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.5,
-            "name": "hay",
-            "position": [
-                15.320585250854492,
-                24.560413360595703
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": -0.7000000000000001,
-            "name": "hay",
-            "position": [
-                14.879408836364746,
-                23.518747329711914
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.4,
-            "name": "hay",
-            "position": [
-                16.09264373779297,
-                23.258329391479492
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.7,
-            "name": "hay",
-            "position": [
-                15.210290908813477,
-                22.060413360595703
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.2,
-            "name": "hay",
-            "position": [
-                13.997056007385254,
-                22.424997329711914
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.1,
-            "name": "hay",
-            "position": [
-                14.474997520446777,
-                21.018747329711914
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": -0.5,
-            "name": "hay",
-            "position": [
-                16.423526763916016,
-                24.61249542236328
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": 0.0,
-            "name": "hay",
-            "position": [
-                17.232349395751953,
-                23.362497329711914
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": -0.30000000000000004,
-            "name": "hay",
-            "position": [
-                16.166173934936523,
-                21.070831298828125
-            ],
-            "scale": [
-                1.0,
-                1.0
-            ]
-        },
-        {
-            "alpha": -0.5,
-            "name": "hay",
-            "position": [
-                16.497055053710938,
-                22.164581298828125
-            ],
-            "scale": [
-                1.0,
-                1.0
+                12.850000000000016,
+                3.049999999999998
             ]
         }
     ],
-    "height": 22,
-    "n_laps": 3,
+    "height": 12,
+    "n_laps": 6,
     "tiles": [
         "full_obst",
         "full_obst",
@@ -530,7 +313,16 @@
         "full_obst",
         "full_obst",
         "full_obst",
-        "tri_0_1_2_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_sand",
+        "full_sand",
+        "tri_0_1_2_sand",
         "empty",
         "empty",
         "empty",
@@ -549,7 +341,70 @@
         "empty",
         "empty",
         "empty",
-        "tri_1_1_obst_curve",
+        "empty",
+        "empty",
+        "empty",
+        "tri_0_1_sand",
+        "full_sand",
+        "full_sand",
+        "full_obst",
+        "full_obst",
+        "full_sand",
+        "tri_0_1_2_sand",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "tri_0_1_sand",
+        "full_sand",
+        "full_obst",
+        "full_obst",
+        "tri_0_1_2_sand",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "tri_0_1_sand",
         "full_obst",
         "full_obst",
         "empty",
@@ -567,8 +422,73 @@
         "full_obst",
         "full_obst",
         "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "tri_0_1_1_obst_curve",
         "empty",
         "empty",
+        "empty",
+        "full_obst",
+        "full_obst",
+        "empty",
+        "empty",
+        "empty",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "empty",
+        "empty",
+        "empty",
+        "full_obst",
+        "full_obst",
+        "empty",
+        "empty",
+        "empty",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
+        "full_obst",
         "empty",
         "empty",
         "empty",
@@ -580,75 +500,6 @@
         "tri_0_1_obst_curve",
         "full_obst",
         "full_obst",
-        "tri_comp_1_1_0_sand",
-        "band_hb_1_sand",
-        "band_hb_1_sand",
-        "band_hb_1_sand",
-        "band_hb_1_sand",
-        "band_hb_1_sand",
-        "band_hb_1_sand",
-        "band_hb_1_sand",
-        "tri_1_1_2_sand",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "tri_0_1_0_obst",
-        "full_obst",
-        "full_obst",
-        "tri_0_1_1_obst",
-        "empty",
-        "empty",
-        "empty",
-        "full_obst",
-        "tri_comp_0_0_0_obst",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "tri_1_0_0_sand",
-        "tri_1_0_1_sand",
-        "empty",
-        "empty",
-        "empty",
-        "tri_0_1_0_obst_curve",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "empty",
-        "empty",
-        "empty",
-        "full_obst",
-        "tri_1_0_2_obst",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "tri_comp_0_0_2_sand",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "empty",
-        "empty",
-        "empty",
-        "full_obst",
-        "empty",
-        "empty",
-        "empty",
-        "tri_0_1_0_obst",
         "full_obst",
         "full_obst",
         "full_obst",
@@ -662,35 +513,6 @@
         "full_obst",
         "full_obst",
         "full_obst",
-        "full_obst",
-        "empty",
-        "empty",
-        "empty",
-        "full_obst",
-        "empty",
-        "empty",
-        "tri_0_1_0_obst_curve",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "tri_comp_1_1_0_obst",
-        "band_hb_1_obst",
-        "band_hb_1_obst",
-        "band_hb_1_obst",
-        "band_hb_1_obst",
-        "tri_comp_1_0_1_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "empty",
-        "empty",
-        "empty",
-        "full_obst",
-        "empty",
-        "empty",
         "full_obst",
         "full_obst",
         "full_obst",
@@ -699,275 +521,100 @@
         "empty",
         "empty",
         "empty",
-        "empty",
-        "empty",
-        "band_vd_1_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "empty",
-        "empty",
-        "empty",
-        "full_obst",
-        "empty",
-        "empty",
-        "tri_0_0_sand",
-        "band_hb_1_sand",
-        "band_hb_1_sand",
-        "tri_1_1_2_sand",
-        "empty",
-        "empty",
-        "tri_comp_0_0_2_sand",
-        "tri_comp_1_0_sand",
-        "tri_1_0_1_sand",
-        "empty",
-        "tri_1_1_obst_curve",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "empty",
-        "empty",
-        "empty",
         "full_obst",
-        "tri_1_1_1_obst",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "tri_comp_0_0_2_obst_curve",
-        "full_obst",
-        "full_obst",
-        "tri_comp_1_1_obst_curve",
-        "empty",
-        "empty",
-        "tri_0_1_obst",
-        "full_obst",
-        "full_obst",
         "full_obst",
-        "full_obst",
-        "empty",
-        "empty",
-        "empty",
-        "full_obst",
-        "band_vg_1_obst_curve",
-        "empty",
+        "tri_0_1_1_sand",
         "empty",
         "empty",
-        "empty",
-        "tri_0_1_0_obst_curve",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "tri_0_1_1_obst_curve",
         "empty",
         "empty",
-        "tri_0_1_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
         "empty",
         "empty",
         "empty",
-        "full_obst",
-        "tri_comp_1_0_obst_curve",
-        "tri_1_0_1_obst_curve",
         "empty",
         "empty",
-        "tri_0_1_0_obst",
-        "full_obst",
-        "tri_0_1_2_obst",
         "empty",
         "empty",
-        "tri_0_1_obst_curve",
-        "full_obst",
-        "full_obst",
-        "tri_0_1_1_obst_curve",
         "empty",
         "empty",
-        "full_obst",
-        "full_obst",
-        "full_obst",
         "empty",
         "empty",
         "empty",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "tri_0_1_2_obst",
         "empty",
         "empty",
         "empty",
         "empty",
-        "full_obst",
-        "full_obst",
-        "full_obst",
         "empty",
         "empty",
-        "full_obst",
-        "full_obst",
-        "full_obst",
         "empty",
         "empty",
         "empty",
-        "full_obst",
-        "full_obst",
+        "tri_0_1_0_sand",
         "full_obst",
         "full_obst",
-        "full_obst",
-        "full_obst",
-        "tri_1_1_1_sand",
+        "full_sand",
+        "tri_0_1_1_sand",
         "empty",
         "empty",
         "empty",
         "empty",
-        "full_obst",
-        "full_obst",
-        "full_obst",
         "empty",
         "empty",
-        "full_obst",
-        "full_obst",
-        "full_obst",
         "empty",
         "empty",
         "empty",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "tri_comp_1_0_0_sand",
-        "tri_1_0_2_sand",
         "empty",
-        "tri_0_1_0_obst_curve",
-        "tri_0_1_1_obst_curve",
         "empty",
-        "tri_0_1_obst_curve",
-        "full_obst",
-        "full_obst",
         "empty",
         "empty",
-        "full_obst",
-        "full_obst",
-        "full_obst",
         "empty",
         "empty",
         "empty",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "full_obst",
-        "tri_comp_1_0_0_sand",
-        "tri_1_0_2_sand",
         "empty",
-        "tri_1_1_0_sand",
-        "tri_0_1_obst_curve",
-        "tri_0_1_2_obst_curve",
         "empty",
         "empty",
-        "tri_1_1_obst",
-        "tri_comp_1_0_0_obst_curve",
-        "tri_1_1_1_sand",
         "empty",
-        "full_obst",
-        "full_obst",
-        "tri_0_1_2_obst",
         "empty",
         "empty",
         "empty",
-        "full_obst",
+        "tri_0_1_0_sand",
+        "full_sand",
         "full_obst",
         "full_obst",
-        "tri_comp_1_0_0_sand",
-        "tri_1_0_2_sand",
-        "tri_1_0_0_sand",
-        "tri_comp_1_1_2_sand",
         "full_sand",
         "full_sand",
-        "full_sand",
-        "tri_1_1_1_sand",
-        "empty",
-        "empty",
-        "tri_comp_1_0_1_sand",
-        "tri_0_0_2_sand",
-        "empty",
-        "full_obst",
-        "full_obst",
-        "empty",
-        "empty",
-        "empty",
-        "full_sand",
-        "tri_comp_1_0_1_obst_curve",
-        "tri_comp_1_0_0_obst_curve",
-        "tri_comp_1_0_0_sand",
-        "tri_1_0_2_sand",
-        "empty",
-        "band_vd_1_sand",
-        "full_sand",
-        "full_sand",
-        "full_sand",
-        "full_sand",
-        "tri_0_0_2_sand",
+        "tri_0_1_1_sand",
         "empty",
         "empty",
         "empty",
         "empty",
         "empty",
-        "full_obst",
-        "full_obst",
         "empty",
         "empty",
         "empty",
-        "tri_0_0_sand",
-        "band_hb_1_sand",
-        "band_hb_1_sand",
-        "tri_1_0_2_sand",
         "empty",
         "empty",
-        "band_vd_1_sand",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "empty",
+        "tri_0_1_0_sand",
         "full_sand",
         "full_sand",
-        "full_sand",
-        "full_sand",
-        "tri_comp_1_0_2_obst_curve",
-        "tri_0_1_1_obst_curve",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "full_obst",
-        "full_obst",
-        "tri_0_1_1_obst",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "empty",
-        "tri_1_0_0_obst",
-        "tri_comp_1_0_2_obst_curve",
         "full_obst",
         "full_obst",
         "full_obst",
         "full_obst",
         "full_obst",
         "full_obst",
-        "tri_0_1_1_obst_curve",
-        "empty",
-        "empty",
-        "tri_0_1_0_obst_curve",
+        "full_obst",
         "full_obst",
         "full_obst",
         "full_obst",
@@ -992,5 +639,5 @@
         "full_obst",
         "full_obst"
     ],
-    "width": 22
+    "width": 29
 }

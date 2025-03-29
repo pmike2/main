@@ -96,8 +96,6 @@ public:
 	TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, number cell_size);
 	~TrackEditor();
 	void reinit(unsigned int width, unsigned int height);
-	void load_json(std::string json_path);
-	void save_json(std::string json_path);
 	void load_track(unsigned int track_idx);
 	void draw_grid();
 	void draw_selection();

@@ -494,50 +494,10 @@ void TrackEditor::reinit(unsigned int width, unsigned int height) {
 	_track->set_all("full_obst", width, height);
 	_track->clear_floating_objects();
 	_track->_n_laps= DEFAULT_N_LAPS;
-}
-
-
-void TrackEditor::load_json(std::string json_path) {
-	_track->load_json(json_path);
-}
-
-
-void TrackEditor::save_json(std::string json_path) {
-	std::ofstream ofs(json_path);
-	json js;
-
-	js["width"]= _track->_grid->_width;
-	js["height"]= _track->_grid->_height;
-	js["cell_size"]= _track->_grid->_cell_size;
-
-	js["n_laps"]= _track->_n_laps;
-
-	js["tiles"]= json::array();
-	for (auto tile : _track->_grid->_objects) {
-		js["tiles"].push_back(basename(tile->_model->_json_path));
+	for (unsigned int i=0; i<3; ++i) {
+		_track->_best_lap.push_back(std::make_pair("XXX", 200.0+ number(i)* 100.0));
+		_track->_best_overall.push_back(std::make_pair("XXX", 200.0+ number(i)* 100.0));
 	}
-	
-	js["floating_objects"]= json::array();
-	for (auto obj : _track->_floating_objects) {
-		json js_obj;
-		js_obj["name"]= basename(obj->_model->_json_path);
-		js_obj["position"]= json::array();
-		js_obj["position"].push_back(obj->_com.x);
-		js_obj["position"].push_back(obj->_com.y);
-		js_obj["alpha"]= obj->_alpha;
-		js_obj["scale"]= json::array();
-		js_obj["scale"].push_back(obj->_scale.x);
-		js_obj["scale"].push_back(obj->_scale.y);
-
-		if (obj->_model->_type== CHECKPOINT || obj->_model->_type== START) {
-			CheckPoint * checkpoint= (CheckPoint *)(obj);
-			js_obj["idx_checkpoint"]= _track->get_checkpoint_index(checkpoint);
-		}
-		
-		js["floating_objects"].push_back(js_obj);
-	}
-
-	ofs << std::setw(4) << js << "\n";
 }
 
 
@@ -545,11 +505,10 @@ void TrackEditor::load_track(unsigned int track_idx) {
 	_current_track_idx= track_idx;
 	std::string current_track_path= "../data/tracks/track"+ std::to_string(_current_track_idx)+ ".json";
 	if (!file_exists(current_track_path)) {
-		//std::cout << current_track_path << " n'existe pas.\n";
 		reinit(TRACK_DEFAULT_SIZE, TRACK_DEFAULT_SIZE);
 	}
 	else {
-		load_json(current_track_path);
+		_track->load_json(current_track_path);
 
 		int max_idx= -1;
 		_last_checkpoint= NULL;
@@ -1068,7 +1027,7 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 	// s = sauvegarde json
 	else if (key== SDLK_s) {
 		std::string current_track_path= "../data/tracks/track"+ std::to_string(_current_track_idx)+ ".json";
-		save_json(current_track_path);
+		_track->save_json(current_track_path);
 		return true;
 	}
 	// affichage des bbox

@@ -229,7 +229,7 @@ void check_data_send() {
 		std::ofstream ofs(json_path);
 		ofs << std::setw(4) << js << "\n";
 		ofs.close();
-		CarModel * model= (CarModel *)(racing->_track->get_hero()->_model);
+		CarModel * model= (CarModel *)(racing->_track->_hero->_model);
 		model->load(json_path);
 	}
 	mut.unlock();

@@ -1,4 +1,32 @@
 {
+    "best_lap": [
+        {
+            "name": "Elbert",
+            "time": 16.855
+        },
+        {
+            "name": "Elbert",
+            "time": 16.906
+        },
+        {
+            "name": "Elbert",
+            "time": 19.939
+        }
+    ],
+    "best_overall": [
+        {
+            "name": "Elbert",
+            "time": 96.029
+        },
+        {
+            "name": "XXX",
+            "time": 200.0
+        },
+        {
+            "name": "XXX",
+            "time": 300.0
+        }
+    ],
     "cell_size": 2.0,
     "floating_objects": [
         {

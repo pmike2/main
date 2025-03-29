@@ -78,6 +78,8 @@ const glm::vec4 HIGH_SPEED_COLOR(1.0, 0.3, 0.5, 1.0);
 const glm::vec4 PAST_LAP_TIME_COLOR(0.6, 0.6, 0.6, 1.0);
 const glm::vec4 CURRENT_LAP_TIME_COLOR(0.8, 0.8, 0.6, 1.0);
 const glm::vec4 TOTAL_LAP_TIME_COLOR(0.8, 0.8, 0.6, 1.0);
+const glm::vec4 NOT_BEST_LAP_TIME_COLOR(0.8, 0.4, 0.4, 1.0);
+const glm::vec4 BEST_LAP_TIME_COLOR(0.4, 0.8, 0.4, 1.0);
 
 /*
 	Classe principale de course de voiture 2D

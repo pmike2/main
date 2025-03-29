@@ -11,6 +11,10 @@
 #include "material.h"
 
 
+// facteur d'ajustement afin d'avoir le même feeling clavier / joystick
+const number JOYSTICK_FACTOR= 0.7;
+
+
 // Modèle de voiture
 class CarModel : public StaticObjectModel {
 public:
@@ -79,6 +83,7 @@ public:
 	unsigned int _rank; // classement
 	bool _finished; // a t'il fini la course
 	std::vector<number> _lap_times; // les temps pour chaque tour
+	number _total_time;
 
 	std::chrono::system_clock::time_point _last_drift_t; // dernier temps de création d'un TireTrack
 	std::chrono::system_clock::time_point _last_start_t; // dernier temps de passage sur le start de la course
