@@ -13,12 +13,12 @@
 
 
 // OBSTACLE_TILE == tuile obstacle ; OBSTACLE_FLOATING == obstacle flottant
-// HERO_CAR == voiture héros ; ENNEMY_CAR == toutes les autres voitures
+// CAR == voiture
 // START == ligne de départ (et d'arrivée) ; CHECKPOINT == chekpt
 // SURFACE_TILE, SURFACE_FLOATING == matériau sol
 // REPAIR : zone de réparation
 // BOOST : accélérateur
-enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, HERO_CAR, ENNEMY_CAR, START, CHECKPOINT, 
+enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, CAR, START, CHECKPOINT, 
 	SURFACE_TILE, SURFACE_FLOATING, REPAIR, BOOST};
 
 // type de grille : verticale, horizontale
@@ -27,8 +27,7 @@ enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
 const std::map<std::string, ObjectType> STR2OBJTYPE {
 	{"obstacle_tile", OBSTACLE_TILE},
 	{"obstacle_floating", OBSTACLE_FLOATING},
-	{"hero_car", HERO_CAR},
-	{"ennemy_car", ENNEMY_CAR},
+	{"car", CAR},
 	{"checkpoint", CHECKPOINT},
 	{"start", START},
 	{"surface_tile", SURFACE_TILE},
@@ -65,8 +64,7 @@ const std::map<ObjectType, number> Z_OBJECTS {
 	{REPAIR, -70.0},
 	{BOOST, -70.0},
 	{OBSTACLE_FLOATING, -60.0},
-	{HERO_CAR, -40.0},
-	{ENNEMY_CAR, -40.0}
+	{CAR, -40.0}
 };
 
 const std::string MAIN_ACTION_NAME= "main";

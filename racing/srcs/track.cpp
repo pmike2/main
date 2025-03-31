@@ -131,12 +131,12 @@ void Track::load_json(std::string json_path) {
 		pt_type position= pt_type(object["position"][0], object["position"][1]);
 		number alpha= object["alpha"];
 		pt_type scale= pt_type(object["scale"][0], object["scale"][1]);
-		if (_models[model_name]->_type== HERO_CAR || _models[model_name]->_type== ENNEMY_CAR) {
+		if (_models[model_name]->_type== CAR) {
 			Car * car= new Car((CarModel *)(_models[model_name]), position, alpha, scale);
 			_floating_objects.push_back(car);
-			if (_models[model_name]->_type== HERO_CAR) {
+			/*if (_models[model_name]->_type== HERO_CAR) {
 				_hero= car;
-			}
+			}*/
 			_sorted_cars.push_back(car);
 		}
 		else if (_models[model_name]->_type== CHECKPOINT || _models[model_name]->_type== START) {
@@ -172,7 +172,7 @@ void Track::load_json(std::string json_path) {
 	
 	// assignation start à toutes les voitures
 	for (auto obj : _floating_objects) {
-		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
+		if (obj->_model->_type== CAR) {
 			Car * car= (Car *)(obj);
 			car->_next_checkpoint= _start;
 		}
@@ -184,7 +184,7 @@ void Track::load_json(std::string json_path) {
 	});
 
 	sort_cars();
-	set_car_names();
+	//set_car_names();
 }
 
 
@@ -231,7 +231,7 @@ void Track::save_json(std::string json_path) {
 }
 
 
-void Track::set_car_names() {
+/*void Track::set_car_names() {
 	std::ifstream ifs("../data/names.txt");
 	std::string name;
 	std::vector<std::string> names;
@@ -256,6 +256,20 @@ void Track::set_car_names() {
 				break;
 			}
 		}
+	}
+}*/
+
+
+void Track::set_hero(std::string name) {
+	_hero= NULL;
+	for (auto car : _sorted_cars) {
+		if (car->_name== name) {
+			_hero= car;
+			break;
+		}
+	}
+	if (_hero== NULL) {
+		std::cerr << "Track::set_hero : " << name << " n'a pas été trouvé\n";
 	}
 }
 
@@ -475,7 +489,7 @@ void Track::collisions() {
 
 void Track::surfaces(std::chrono::system_clock::time_point t) {
 	for (auto obj1 : _floating_objects) {
-		if (obj1->_model->_type!= HERO_CAR && obj1->_model->_type!= ENNEMY_CAR) {
+		if (obj1->_model->_type!= CAR) {
 			continue;
 		}
 		Car * car= (Car*)(obj1);
@@ -531,7 +545,7 @@ void Track::repair(std::chrono::system_clock::time_point t) {
 	}
 
 	for (auto obj1 : _floating_objects) {
-		if (obj1->_model->_type!= HERO_CAR && obj1->_model->_type!= ENNEMY_CAR) {
+		if (obj1->_model->_type!= CAR) {
 			continue;
 		}
 		Car * car= (Car*)(obj1);
@@ -578,7 +592,7 @@ void Track::boost(std::chrono::system_clock::time_point t) {
 	}
 
 	for (auto obj1 : _floating_objects) {
-		if (obj1->_model->_type!= HERO_CAR && obj1->_model->_type!= ENNEMY_CAR) {
+		if (obj1->_model->_type!= CAR) {
 			continue;
 		}
 		Car * car= (Car*)(obj1);
@@ -617,7 +631,7 @@ void Track::boost(std::chrono::system_clock::time_point t) {
 
 void Track::checkpoints(std::chrono::system_clock::time_point t) {
 	for (auto obj : _floating_objects) {
-		if (obj->_model->_type!= HERO_CAR && obj->_model->_type!= ENNEMY_CAR) {
+		if (obj->_model->_type!= CAR) {
 			continue;
 		}
 		
@@ -660,7 +674,7 @@ void Track::checkpoints(std::chrono::system_clock::time_point t) {
 			}
 
 			// animation de la zone de checkpoint active pour le joueur
-			if (car->_model->_type== HERO_CAR) {
+			if (car== _hero) {
 				if (car->_next_checkpoint!= _start) {
 					car->_next_checkpoint->set_current_action(MAIN_ACTION_NAME, t);
 				}
@@ -811,16 +825,17 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 
 	if (_mode== TRACK_LIVE || _mode== TRACK_FINISHED) {
 		for (auto obj : _floating_objects) {
-			// IA
-			if (obj->_model->_type== ENNEMY_CAR) {
+			
+			if (obj->_model->_type== CAR) {
 				Car * car= (Car *)(obj);
-				//car->random_ia();
-				checkpoint_ia(car);
-			}
 
-			// animation des objets
-			if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
-				Car * car= (Car *)(obj);
+				// IA
+				if (car!= _hero) {
+					//car->random_ia();
+					checkpoint_ia(car);
+				}
+
+				// animation des objets
 				car->anim(dt, t);
 			}
 			else {

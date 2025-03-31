@@ -118,7 +118,7 @@ void StaticObjectModel::load(std::string json_path) {
 		_footprint->update_all();
 		_fixed= js["fixed"];
 	}
-	else if (_type== HERO_CAR || _type== ENNEMY_CAR) {
+	else if (_type== CAR) {
 		// on met le com (center of mass) à 0,0 afin de faciliter les rotations autour du com
 		_footprint->centroid2zero();
 		_footprint->update_all();

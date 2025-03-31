@@ -46,7 +46,8 @@ public:
 	void load_models(); // chgmt des modèles de tuiles, voitures et autres
 	void load_json(std::string json_path);
 	void save_json(std::string json_path);
-	void set_car_names();
+	//void set_car_names();
+	void set_hero(std::string name);
 	void start(std::chrono::system_clock::time_point t);
 	void end();
 	void write_records();

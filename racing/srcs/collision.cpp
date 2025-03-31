@@ -130,7 +130,7 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 
 	// thrust max brimé par matériau en collision
 	for (auto obj_pair : std::vector<std::pair<StaticObject *, StaticObject *> >{{obj1, obj2}, {obj2, obj1}}) {
-		if (obj_pair.first->_model->_type== HERO_CAR || obj_pair.first->_model->_type== ENNEMY_CAR) {
+		if (obj_pair.first->_model->_type== CAR) {
 			Car * car= (Car *)(obj_pair.first);
 			if (car->_thrust> obj_pair.second->_model->_material->_collision_thrust) {
 				car->_thrust= obj_pair.second->_model->_material->_collision_thrust;

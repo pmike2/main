@@ -135,6 +135,9 @@ void Racing::choose_player(unsigned int idx_player) {
 void Racing::choose_track(unsigned int idx_track, std::chrono::system_clock::time_point t) {
 	// chargement json
 	_track->load_json("../data/tracks/track"+ std::to_string(idx_track)+ ".json");
+	
+	// set hero
+	_track->set_hero(_player_names[_idx_chosen_player]);
 
 	// reinit fumée par voiture
 	for (auto ss : _smoke_systems) {
@@ -887,7 +890,7 @@ void Racing::update_force() {
 
 	// dessins des forces; voir gl_utils
 	for (auto obj : _track->_floating_objects) {
-		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
+		if (obj->_model->_type== CAR) {
 			Car * car= (Car *)(obj);
 			ptr= draw_cross(ptr, car->_com, CROSS_SIZE, COM_CROSS_COLOR);
 			ptr= draw_cross(ptr, car->_com+ car->_com2force_fwd, CROSS_SIZE, FORCE_FWD_CROSS_COLOR);
