@@ -112,14 +112,17 @@ void Track::load_json(std::string json_path) {
 		compt++;
 	}
 
+	// reinit du héros
+	_hero= NULL;
+
+	// reinit des voitures
+	_sorted_cars.clear();
+
 	// nettoyage des objets flottants
 	for (auto obj : _floating_objects) {
 		delete obj;
 	}
 	_floating_objects.clear();
-
-	// reinit du héros
-	_hero= NULL;
 
 	// ajout des objets flottants
 	std::vector<std::pair<CheckPoint *, unsigned int> > checkpoints;
@@ -134,6 +137,7 @@ void Track::load_json(std::string json_path) {
 			if (_models[model_name]->_type== HERO_CAR) {
 				_hero= car;
 			}
+			_sorted_cars.push_back(car);
 		}
 		else if (_models[model_name]->_type== CHECKPOINT || _models[model_name]->_type== START) {
 			CheckPoint * checkpoint= new CheckPoint(_models[model_name], position, alpha, scale);
@@ -282,8 +286,11 @@ void Track::end() {
 
 	// record au tour
 	for (auto car : _sorted_cars) {
-		for (auto t : car->_lap_times) {
-			_best_lap.push_back(std::make_pair(car->_name, t));
+		//for (auto t : car->_lap_times) {
+		for (unsigned int i=0; i<car->_lap_times.size(); ++i) {
+			if (i< car->_lap_times.size()- 1 || car->_finished) {
+				_best_lap.push_back(std::make_pair(car->_name, car->_lap_times[i]));
+			}
 		}
 	}
 	std::sort(_best_lap.begin(), _best_lap.end(), [](std::pair<std::string, number> a, std::pair<std::string, number> b) {
@@ -301,7 +308,9 @@ void Track::end() {
 
 	// record au total
 	for (auto car : _sorted_cars) {
-		_best_overall.push_back(std::make_pair(car->_name, car->_total_time));
+		if (car->_finished) {
+			_best_overall.push_back(std::make_pair(car->_name, car->_total_time));
+		}
 	}
 	std::sort(_best_overall.begin(), _best_overall.end(), [](std::pair<std::string, number> a, std::pair<std::string, number> b) {
 		return a.second< b.second; 
@@ -312,6 +321,18 @@ void Track::end() {
 	if (_hero->_total_time<= _best_overall[0].second) {
 		_new_best_overall= true;
 	}
+
+	/*
+	std::cout << "end : lap----\n";
+	for (auto x : _best_lap) {
+		std::cout << x.first << " ; " << x.second << "\n";
+	}
+	std::cout << "end : overall----\n";
+	for (auto x : _best_overall) {
+		std::cout << x.first << " ; " << x.second << "\n";
+	}
+	std::cout << "_new_best_lap=" << _new_best_lap << " ; _new_best_overall=" << _new_best_overall << "\n";
+	*/
 
 	// écriture json
 	write_records();
@@ -324,9 +345,7 @@ void Track::write_records() {
 	ifs.close();
 
 	js["best_lap"]= json::array();
-	std::cout << "ok\n";
 	for (auto best : _best_lap) {
-		std::cout << best.first << " ; " << best.second << "\n";
 		json j;
 		j["name"]= best.first;
 		j["time"]= best.second;
@@ -348,60 +367,67 @@ void Track::write_records() {
 
 
 void Track::sort_cars() {
-	_sorted_cars.clear();
+	const int A_WINS_OVER_B= 1;
+	const int B_WINS_OVER_A= 0;
 
-	// ajout des objets de type voiture
-	for (auto obj : _floating_objects) {
-		if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
-			_sorted_cars.push_back((Car *)(obj));
-		}
-	}
-	
 	// tri des voitures
 	std::sort(_sorted_cars.begin(), _sorted_cars.end(), [this](Car * a, Car * b) {
-		// sur le nombre de tours
-		if (a->_n_laps< b->_n_laps) {
-			return 0;
-		}
-		else if (a->_n_laps> b->_n_laps) {
-			return 1;
-		}
 
-		// sur le fait qu'une voiture ait fini ou non, et sur son rank
+		// si 1 des 2 a fini et pas l'autre c'est clair
 		if (a->_finished && !b->_finished) {
-			return 0;
+			return A_WINS_OVER_B;
 		}
 		else if (!a->_finished && b->_finished) {
-			return 1;
+			return B_WINS_OVER_A;
 		}
+		// si les 2 ont fini c'est sur leur classement
 		else if (a->_finished && b->_finished) {
 			if (a->_rank< b->_rank) {
-				return 1;
+				return A_WINS_OVER_B;
 			}
 			else {
-				return 0;
+				return B_WINS_OVER_A;
 			}
 		}
 
+		// si les 2 viennent de finir c'est sur celui qui a un overlap + grand avec la ligne d'arrivée
+		if (a->_just_finished && b->_just_finished) {
+			if (a->_overlap_finish> b->_overlap_finish) {
+				return A_WINS_OVER_B;
+			}
+			else {
+				return B_WINS_OVER_A;
+			}
+		}
+		
+		// à partir de là les 2 cars n'ont pas fini
+		// sur le nombre de tours
+		if (a->_n_laps> b->_n_laps) {
+			return A_WINS_OVER_B;
+		}
+		else if (a->_n_laps< b->_n_laps) {
+			return B_WINS_OVER_A;
+		}
+
+		// à partir de là les 2 cars en sont au même tour
 		// sur le checkpoint courant
 		unsigned int idx_a= get_checkpoint_index(a->_next_checkpoint->_previous);
 		unsigned int idx_b= get_checkpoint_index(b->_next_checkpoint->_previous);
-		if (idx_a< idx_b) {
-			return 0;
+		if (idx_a> idx_b) {
+			return A_WINS_OVER_B;
 		}
-		else if (idx_a> idx_b) {
-			return 1;
+		else if (idx_a< idx_b) {
+			return B_WINS_OVER_A;
+		}
+
+		// s'ils en sont au même chkpt, on regarde la distance au prochain checkpoint
+		number dist_a= (a->_com.x- a->_next_checkpoint->_com.x)* (a->_com.x- a->_next_checkpoint->_com.x)+ (a->_com.y- a->_next_checkpoint->_com.y)* (a->_com.y- a->_next_checkpoint->_com.y);
+		number dist_b= (b->_com.x- b->_next_checkpoint->_com.x)* (b->_com.x- b->_next_checkpoint->_com.x)+ (b->_com.y- b->_next_checkpoint->_com.y)* (b->_com.y- b->_next_checkpoint->_com.y);
+		if (dist_a< dist_b) {
+			return A_WINS_OVER_B;
 		}
 		else {
-			// sur la distance au prochain checkpoint
-			number dist_a= (a->_com.x- a->_next_checkpoint->_com.x)* (a->_com.x- a->_next_checkpoint->_com.x)+ (a->_com.y- a->_next_checkpoint->_com.y)* (a->_com.y- a->_next_checkpoint->_com.y);
-			number dist_b= (b->_com.x- b->_next_checkpoint->_com.x)* (b->_com.x- b->_next_checkpoint->_com.x)+ (b->_com.y- b->_next_checkpoint->_com.y)* (b->_com.y- b->_next_checkpoint->_com.y);
-			if (dist_a> dist_b) {
-				return 0;
-			}
-			else {
-				return 1;
-			}
+			return B_WINS_OVER_A;
 		}
 	});
 
@@ -426,15 +452,22 @@ unsigned int Track::get_checkpoint_index(CheckPoint * checkpoint) {
 }
 
 
-void Track::all_collision() {
+void Track::collisions() {
+	_collisions.clear();
+	pt_type position(0.0);
+
 	for (unsigned int idx_obj_1=0; idx_obj_1<_floating_objects.size()- 1; ++idx_obj_1) {
 		for (unsigned int idx_obj_2=idx_obj_1+ 1; idx_obj_2<_floating_objects.size(); ++idx_obj_2) {
-			collision(_floating_objects[idx_obj_1], _floating_objects[idx_obj_2]);
+			if (collision(_floating_objects[idx_obj_1], _floating_objects[idx_obj_2], position)) {
+				_collisions.push_back(position);
+			}
 		}
 	}
 	for (auto object : _floating_objects) {
 		for (auto tile : _grid->_objects) {
-			collision(object, tile);
+			if (collision(object, tile, position)) {
+				_collisions.push_back(position);
+			}
 		}
 	}
 }
@@ -448,6 +481,7 @@ void Track::surfaces(std::chrono::system_clock::time_point t) {
 		Car * car= (Car*)(obj1);
 		bool abnormal_surface= false;
 		
+		// est-ce que Car est sur une surface flottante genre flaque
 		for (auto obj2 : _floating_objects) {
 			if (obj2->_model->_type!= SURFACE_FLOATING) {
 				continue;
@@ -464,6 +498,7 @@ void Track::surfaces(std::chrono::system_clock::time_point t) {
 			}
 		}
 
+		// est-ce que Car est sur un tile différent de road
 		for (auto obj2 : _grid->_objects) {
 			if (obj2->_model->_type!= SURFACE_TILE) {
 				continue;
@@ -509,6 +544,7 @@ void Track::repair(std::chrono::system_clock::time_point t) {
 				continue;
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
+				// réparation active
 				repairs[obj2]= true;
 				for (int i=0; i<N_BUMPS; ++i) {
 					car->_bumps[i]-= REPAIR_INCREMENT;
@@ -521,7 +557,8 @@ void Track::repair(std::chrono::system_clock::time_point t) {
 		}
 	}
 
-	for (auto x: repairs) {
+	// animation de la zone de réparation
+	for (auto x : repairs) {
 		if (x.second && x.first->_current_action_name!= "active") {
 			x.first->set_current_action("active", t);
 		}
@@ -554,6 +591,7 @@ void Track::boost(std::chrono::system_clock::time_point t) {
 				continue;
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
+				// boost actif
 				boosts[obj2]= true;
 				auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_boost_t).count();
 				if (dt> BOOST_DELTA_T_MS) {
@@ -565,6 +603,7 @@ void Track::boost(std::chrono::system_clock::time_point t) {
 		}
 	}
 
+	// animation de la zone boost
 	for (auto x : boosts) {
 		if (x.second && x.first->_current_action_name!= "active") {
 			x.first->set_current_action("active", t);
@@ -597,28 +636,30 @@ void Track::checkpoints(std::chrono::system_clock::time_point t) {
 		unsigned int idx_pt= 0;
 		bool is_pt_in_poly1= false;
 		bool is_inter= poly_intersects_poly(car->_footprint, car->_next_checkpoint->_footprint, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
+		
+		// intersection de car avec son checkpoint
 		if (is_inter) {
+			// fin d'un tour ou passage du start du début de piste
 			if (car->_next_checkpoint== _start) {
 				car->_n_laps++;
-				
+				// fin de la piste
 				if (car->_n_laps== _n_laps+ 1) {
-					car->_finished= true;
-					car->_total_time= 0.0;
-					for (auto lap_time : car->_lap_times) {
-						car->_total_time+= lap_time;
-					}
-					if (car->_model->_type== HERO_CAR) {
-						end();
-					}
+					// _just_finished et _overlap_finish permettent de départager 2 voitures qui ont passé la ligne d'arrivée
+					// lors de la même boucle d'animation
+					car->_just_finished= true;
+					car->_overlap_finish= overlap;
 				}
+				// on fige le temps du tour
 				else {
 					car->_last_start_t= t;
+					// si car a déjà fait au - un tour on ajoute un nouveau temps
 					if (car->_n_laps> 1) {
 						car->_lap_times.push_back(0.0);
 					}
 				}
 			}
 
+			// animation de la zone de checkpoint active pour le joueur
 			if (car->_model->_type== HERO_CAR) {
 				if (car->_next_checkpoint!= _start) {
 					car->_next_checkpoint->set_current_action(MAIN_ACTION_NAME, t);
@@ -626,6 +667,7 @@ void Track::checkpoints(std::chrono::system_clock::time_point t) {
 				car->_next_checkpoint->_next->set_current_action("active", t);
 			}
 			
+			// maj du prochain checkpoint
 			car->_next_checkpoint= car->_next_checkpoint->_next;
 		}
 	}
@@ -640,12 +682,13 @@ void Track::checkpoint_ia(Car * car) {
 
 	CheckPoint * checkpoint= car->_next_checkpoint;
 	pt_type direction(checkpoint->_com- car->_com);
-	number dist= glm::length(direction);
+	number dist= number(glm::length(direction));
 	number scalprod= scal(car->_forward, direction/ dist);
 	number sign= 1.0;
 	CarModel * model= car->get_model();
 
-	if (dist> 1.0) {
+	// si distance suffisament grande on accélère
+	if (dist> IA_THRUST_DIST_THRESHOLD) {
 		car->_thrust+= model->_thrust_increment;
 		if (car->_thrust> model->_max_thrust) {
 			car->_thrust= model->_max_thrust;
@@ -657,6 +700,8 @@ void Track::checkpoint_ia(Car * car) {
 			car->_thrust= -1.0* model->_max_brake;
 		}
 	}*/
+
+	// sinon on lache la pédale d'accélération
 	else {
 		if (car->_thrust< -1.0* model->_thrust_decrement) {
 			car->_thrust+= model->_thrust_decrement;
@@ -669,9 +714,12 @@ void Track::checkpoint_ia(Car * car) {
 		}
 	}
 
-	if (scalprod< -0.8 && abs(car->_wheel)> 0.5) {
+	// si on est globalement dans la bonne direction ou qu'on tourne déjà beaucoup
+	if (scalprod< IA_SCALPROD_THRESHOLD && abs(car->_wheel)> IA_WHEEL_THRESHOLD) {
 
 	}
+
+	// sinon on tourne
 	else {
 		// wheel est >0 à gauche, <0 à droite
 		if (is_left(car->_com, car->_forward, checkpoint->_com)) {
@@ -680,7 +728,7 @@ void Track::checkpoint_ia(Car * car) {
 		else {
 			sign= -1.0;
 		}
-		car->_wheel= 1.0* sign* (1.0- scalprod);
+		car->_wheel= IA_WHEEL_AMPLITUDE* sign* (1.0- scalprod);
 		if (car->_wheel> model->_max_wheel) {
 			car->_wheel= model->_max_wheel;
 		}
@@ -693,25 +741,42 @@ void Track::checkpoint_ia(Car * car) {
 
 void Track::lap_time(std::chrono::system_clock::time_point t) {
 	for (auto car  : _sorted_cars) {
+		if (car->_finished) {
+			continue;
+		}
+
+		// n'a pas encore passé le 1er start
 		if (car->_n_laps== 0) {
-			// car n'a pas encore passé le 1er start
+			// init à 0.0 du 1er lap
 			if (car->_lap_times.size()== 0) {
 				car->_lap_times.push_back(0.0);
 			}
 			continue;
 		}
 		
-		if (car->_finished) {
-			continue;
-		}
-
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_start_t).count();
 		car->_lap_times[car->_lap_times.size()- 1]= number(dt)/ 1000.0;
 	}
 }
 
 
+void Track::total_time() {
+	// passage de just_finished (créé lors de collisions() et utilisé lors de sort_cars()) à finished
+	for (auto car : _sorted_cars) {
+		if (car->_just_finished) {
+			car->_finished= true;
+			// maj du temps total
+			car->_total_time= 0.0;
+			for (auto lap_time : car->_lap_times) {
+				car->_total_time+= lap_time;
+			}
+		}
+	}
+}
+
+
 void Track::anim(std::chrono::system_clock::time_point t, InputState * input_state) {
+	// décompte avant course
 	if (_mode== TRACK_PRECOUNT) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_precount_t).count();
 		if (dt> 1000) {
@@ -723,6 +788,7 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 		}
 	}
 
+	// captage input
 	if (_mode== TRACK_LIVE) {
 		if (input_state->_is_joystick) {
 			_hero->preanim_joystick(input_state->_joystick_a, input_state->_joystick_b, input_state->_joystick);
@@ -731,6 +797,8 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 			_hero->preanim_keys(input_state->_keys[SDLK_LEFT], input_state->_keys[SDLK_RIGHT], input_state->_keys[SDLK_DOWN], input_state->_keys[SDLK_UP]);
 		}
 	}
+
+	// on force input à 0
 	else if (_mode== TRACK_FINISHED) {
 		_hero->_thrust= _hero->_wheel= 0.0;
 	}
@@ -743,12 +811,14 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 
 	if (_mode== TRACK_LIVE || _mode== TRACK_FINISHED) {
 		for (auto obj : _floating_objects) {
+			// IA
 			if (obj->_model->_type== ENNEMY_CAR) {
 				Car * car= (Car *)(obj);
 				//car->random_ia();
 				checkpoint_ia(car);
 			}
 
+			// animation des objets
 			if (obj->_model->_type== HERO_CAR || obj->_model->_type== ENNEMY_CAR) {
 				Car * car= (Car *)(obj);
 				car->anim(dt, t);
@@ -758,13 +828,34 @@ void Track::anim(std::chrono::system_clock::time_point t, InputState * input_sta
 			}
 		}
 
-		all_collision();
-		checkpoints(t);
+		// résolution des collisions
+		collisions();
+
+		// sur quelles surfaces roulent les voitures
 		surfaces(t);
+
+		// se font-elles réparer
 		repair(t);
+
+		// sont-elles sur une zone de boost
 		boost(t);
-		sort_cars();
+
+		// maj pour chaque Car des checkpoints et des temps réalisés si passage start
+		checkpoints(t);
+
+		// maj du temps du tour en cours
 		lap_time(t);
+
+		// tri des voitures selon leur positions
+		sort_cars();
+
+		// maj du temps total
+		total_time();
+	}
+
+	// fin de la piste
+	if (_mode== TRACK_LIVE && _hero->_finished) {
+		end();
 	}
 }
 

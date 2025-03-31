@@ -7,18 +7,18 @@
 #include "collision.h"
 
 
-void collision(StaticObject * obj1, StaticObject * obj2) {
+bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 	if (obj1->_model->_fixed && obj2->_model->_fixed) {
-		return;
+		return false;
 	}
 
 	if (!obj1->_model->_material->_solid || !obj2->_model->_material->_solid) {
-		return;
+		return false;
 	}
 
 	// 1er test - cher sur les AABB
 	if (!aabb_intersects_aabb(obj1->_bbox->_aabb, obj2->_bbox->_aabb)) {
-		return;
+		return false;
 	}
 
 	// axis est le vecteur le long duquel les 2 objets s'intersectent le plus
@@ -34,13 +34,13 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 
 	// pas d'intersection : on sort
 	if (!is_inter) {
-		return;
+		return false;
 	}
 
 	// on veut éviter le cas où c'est un angle du décor qui pénètre la voiture car sinon réactions bizarres
 	// on attend du coup la situation inverse où un angle de la voiture pénètre le décor, ce qui fera plus naturel
 	if (is_pt_in_poly1 && obj1->_model->_type== OBSTACLE_TILE) {
-		return;
+		return false;
 	}
 
 	// on se place comme dans le cas https://en.wikipedia.org/wiki/Collision_response
@@ -50,6 +50,9 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 		obj1= obj2;
 		obj2= obj_tmp;
 	}
+
+	// position de la collision, récupérée par Track ensuite
+	position= obj2->_footprint->_pts[idx_pt];
 
 	// on écarte un peu plus que de 0.5 de chaque coté ou de 1.0 dans le cas fixed
 	// est-ce utile ?
@@ -201,4 +204,6 @@ void collision(StaticObject * obj1, StaticObject * obj2) {
 			}
 		}
 	}
+
+	return true;
 }

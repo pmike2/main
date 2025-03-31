@@ -1,7 +1,6 @@
 #ifndef TIRE_TRACK_H
 #define TIRE_TRACK_H
 
-#include <vector>
 #include <chrono>
 
 #include "car.h"

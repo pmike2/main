@@ -82,6 +82,8 @@ public:
 	unsigned int _n_laps; // combien de tours déjà faits
 	unsigned int _rank; // classement
 	bool _finished; // a t'il fini la course
+	bool _just_finished;
+	number _overlap_finish;
 	std::vector<number> _lap_times; // les temps pour chaque tour
 	number _total_time;
 

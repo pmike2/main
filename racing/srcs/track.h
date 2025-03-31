@@ -25,6 +25,15 @@ const unsigned int BOOST_DELTA_T_MS= 2000;
 // amplitude d'un boost
 const number BOOST_AMPLITUDE= 4.0;
 
+// seuil de distance du checkpoint pour accélération
+const number IA_THRUST_DIST_THRESHOLD= 1.0;
+// si wheel est > IA_WHEEL_THRESHOLD et
+// si le prod scalaire de forward et de la direction à prendre est < IA_SCALPROD_THRESHOLD
+// on ne tourne pas plus; évite de tourner en rond
+const number IA_WHEEL_THRESHOLD= 0.5;
+const number IA_SCALPROD_THRESHOLD= -0.8;
+// valeur max wheel lorsque IA tourne
+const number IA_WHEEL_AMPLITUDE= 1.0;
 
 /*
 	Piste de course : associée à une grille d'objets fixes, les tuiles qui composent le décor
@@ -44,13 +53,14 @@ public:
 
 	void sort_cars(); // tri des voitures par position
 	unsigned int get_checkpoint_index(CheckPoint * checkpoint); // position du chkpt par rapport au start
-	void all_collision(); // gestion des collisions
+	void collisions(); // gestion des collisions
 	void surfaces(std::chrono::system_clock::time_point t);
 	void repair(std::chrono::system_clock::time_point t);
 	void boost(std::chrono::system_clock::time_point t);
 	void checkpoints(std::chrono::system_clock::time_point t); // gestion chkpts pour toutes les voitures
 	void checkpoint_ia(Car * car); // ia basée sur les chkpts
 	void lap_time(std::chrono::system_clock::time_point t);
+	void total_time();
 	void anim(std::chrono::system_clock::time_point t, InputState * input_state); // animation
 
 	// get / set / add / del
@@ -86,6 +96,7 @@ public:
 
 	std::vector<Car *> _sorted_cars; // les voitures triées par position
 	Car * _hero;
+	std::vector<pt_type> _collisions; // les positions des collisions en cours. Utile à SparkSystem
 };
 
 

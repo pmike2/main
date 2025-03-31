@@ -37,6 +37,7 @@ add_library(lib_smoke STATIC ../srcs/smoke.cpp ../srcs/smoke.h)
 add_library(lib_tire_track STATIC ../srcs/tire_track.cpp ../srcs/tire_track.h)
 add_library(lib_material STATIC ../srcs/material.cpp ../srcs/material.h)
 add_library(lib_collision STATIC ../srcs/collision.cpp ../srcs/collision.h)
+add_library(lib_spark STATIC ../srcs/spark.cpp ../srcs/spark.h)
 
 add_executable(main ./srcs/main.cpp)
 add_executable(editor ./srcs/editor.cpp)
@@ -44,7 +45,7 @@ add_executable(editor ./srcs/editor.cpp)
 set(EXT_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_MIXER_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} sioclient)
 set(LOCAL_COMMON_LIBS lib_repere lib_gl_utils lib_utile lib_input_state lib_bbox lib_bbox_2d lib_geom_2d lib_triangulation 
 	lib_font lib_track lib_static_object lib_car lib_material lib_collision)
-set(LOCAL_MAIN_LIBS lib_racing lib_smoke lib_tire_track)
+set(LOCAL_MAIN_LIBS lib_racing lib_smoke lib_tire_track lib_spark)
 set(LOCAL_EDITOR_LIBS lib_track_editor)
  
 target_link_libraries(main PUBLIC ${EXT_LIBS})

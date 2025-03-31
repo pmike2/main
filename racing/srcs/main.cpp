@@ -151,6 +151,7 @@ void init() {
 	progs["texture"]= create_prog("../shaders/vertexshader_texture.txt", "../shaders/fragmentshader_texture.txt");
 	progs["smoke"]= create_prog("../shaders/vertexshader_smoke.txt", "../shaders/fragmentshader_smoke.txt");
 	progs["tire_track"]= create_prog("../shaders/vertexshader_tire_track.txt", "../shaders/fragmentshader_tire_track.txt");
+	progs["spark"]= create_prog("../shaders/vertexshader_spark.txt", "../shaders/fragmentshader_spark.txt");
 	progs["choose_track"]= create_prog("../shaders/vertexshader_choose_track.txt", "../shaders/fragmentshader_choose_track.txt");
 
 	check_gl_error();
@@ -322,6 +323,17 @@ int main() {
 	init();
 	main_loop();
 	clean();
+
+	/*std::vector<int> v{1, 45, 3, 8, 2};
+	std::sort(v.begin(), v.end(), [](int a, int b) {
+		if (a> b) {
+			return 0;
+		}
+		return 1;
+	});
+	for (auto x : v) {
+		std::cout << x << "\n";
+	}*/
 
 	return 0;
 }

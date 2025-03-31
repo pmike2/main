@@ -27,7 +27,7 @@ struct SmokeConfig {
 // fumée pot d'échappement
 const SmokeConfig EXHAUST       {0.1, 0.03, 0.8, 0.04, 0.02, -45.0, 0.01, -0.7};
 // fumée moteur endommagé
-const SmokeConfig ENGINE_BUMPED {0.05, 0.005, 0.8, 0.12, 0.02, -20.0, 0.01, 0.3};
+const SmokeConfig ENGINE_BUMPED {0.05, 0.005, 0.8, 0.04, 0.02, -20.0, 0.01, 0.3};
 
 
 class Smoke {
