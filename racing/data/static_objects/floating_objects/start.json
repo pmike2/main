@@ -18,6 +18,34 @@
 			{
 				"texture" : "start_active_3.png",
 				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_4.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_5.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_6.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_7.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_8.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_9.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_10.png",
+				"n_ms" : 100
 			}
 		]
 	}

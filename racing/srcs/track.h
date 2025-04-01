@@ -35,6 +35,17 @@ const number IA_SCALPROD_THRESHOLD= -0.8;
 // valeur max wheel lorsque IA tourne
 const number IA_WHEEL_AMPLITUDE= 1.0;
 
+
+struct CarsPlacement {
+	number _first_row_dist_start;
+	number _row_dist;
+	number _neighbour_dist;
+	unsigned int _n_cars_per_row;
+	unsigned int _n_max_rows;
+};
+
+const CarsPlacement CAR_PLACEMENT {4.0, 3.0, 2.0, 2, 6};
+
 /*
 	Piste de course : associée à une grille d'objets fixes, les tuiles qui composent le décor
 	et à une liste d'objets 'flottants', les voitures et autres éléments interactifs
@@ -48,6 +59,7 @@ public:
 	void save_json(std::string json_path);
 	//void set_car_names();
 	void set_hero(std::string name);
+	void place_cars(std::vector<std::string> player_names);
 	void start(std::chrono::system_clock::time_point t);
 	void end();
 	void write_records();

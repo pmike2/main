@@ -57,7 +57,7 @@ void Track::load_models() {
 		_models[basename(json_path)]= new StaticObjectModel(json_path);
 	}
 
-	std::vector<std::string> jsons_cars= list_files("../data/cars", "json");
+	std::vector<std::string> jsons_cars= list_files("../data/players", "json");
 	for (auto json_path : jsons_cars) {
 		if (verbose) {std::cout << "chgmt car : " << json_path << "\n";}
 		_models[basename(json_path)]= new CarModel(json_path);
@@ -131,15 +131,12 @@ void Track::load_json(std::string json_path) {
 		pt_type position= pt_type(object["position"][0], object["position"][1]);
 		number alpha= object["alpha"];
 		pt_type scale= pt_type(object["scale"][0], object["scale"][1]);
-		if (_models[model_name]->_type== CAR) {
+		/*if (_models[model_name]->_type== CAR) {
 			Car * car= new Car((CarModel *)(_models[model_name]), position, alpha, scale);
 			_floating_objects.push_back(car);
-			/*if (_models[model_name]->_type== HERO_CAR) {
-				_hero= car;
-			}*/
 			_sorted_cars.push_back(car);
 		}
-		else if (_models[model_name]->_type== CHECKPOINT || _models[model_name]->_type== START) {
+		else */if (_models[model_name]->_type== CHECKPOINT || _models[model_name]->_type== START) {
 			CheckPoint * checkpoint= new CheckPoint(_models[model_name], position, alpha, scale);
 			if (_models[model_name]->_type== START) {
 				_start= checkpoint;
@@ -183,7 +180,7 @@ void Track::load_json(std::string json_path) {
 		return obj1->_z< obj2->_z;
 	});
 
-	sort_cars();
+	//sort_cars();
 	//set_car_names();
 }
 
@@ -271,6 +268,26 @@ void Track::set_hero(std::string name) {
 	if (_hero== NULL) {
 		std::cerr << "Track::set_hero : " << name << " n'a pas été trouvé\n";
 	}
+}
+
+
+void Track::place_cars(std::vector<std::string> player_names) {
+	pt_type start_dir= rot(pt_type(0.0, 1.0), _start->_alpha);
+	pt_type start_right= rot(start_dir, -0.5* M_PI);
+	pt_type first_row_center= _start->_com- CAR_PLACEMENT._first_row_dist_start* start_dir;
+	std::vector<pt_type> positions;
+	if (CAR_PLACEMENT._n_cars_per_row % 2== 0) {
+		for (unsigned int idx_row=0; idx_row< CAR_PLACEMENT._n_max_rows; ++idx_row) {
+			for (unsigned int i=0; i<CAR_PLACEMENT._n_cars_per_row; ++i) {
+				pt_type pos= first_row_center- number(idx_row)* CAR_PLACEMENT._row_dist* start_dir+ number(-CAR_PLACEMENT._n_cars_per_row/ 2- 1+ i)* 0.5* CAR_PLACEMENT._neighbour_dist* start_right;
+				positions.push_back(pos);
+			}
+		}
+	}
+
+	
+	
+	sort_cars();
 }
 
 
