@@ -9,6 +9,7 @@
 #include "typedefs.h"
 #include "static_object.h"
 #include "material.h"
+#include "driver.h"
 
 
 // facteur d'ajustement afin d'avoir le même feeling clavier / joystick
@@ -77,7 +78,6 @@ public:
 	number _speed; // norme de _velocity
 	bool _braking; // en train de freiner ?
 
-	std::string _name; // nom du véhicule pour affichage classement
 	CheckPoint * _next_checkpoint; // prochain chkpt objectif
 	unsigned int _n_laps; // combien de tours déjà faits
 	unsigned int _rank; // classement
@@ -91,6 +91,8 @@ public:
 	std::chrono::system_clock::time_point _last_start_t; // dernier temps de passage sur le start de la course
 
 	float _tire_track_texture_idx;
+
+	Driver * _driver;
 };
 
 #endif

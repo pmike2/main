@@ -25,12 +25,13 @@
 #include "smoke.h"
 #include "tire_track.h"
 #include "spark.h"
+#include "driver.h"
 
 
 // type de caméra : fixe, suit le héros, suit et s'oriente comme le héros
 enum cam_mode {FIXED, TRANSLATE, TRANSLATE_AND_ROTATE};
 // mode : choix du joueur, choix d'une piste, course en cours
-enum racing_mode {CHOOSE_PLAYER, CHOOSE_TRACK, RACING};
+enum racing_mode {CHOOSE_DRIVER, CHOOSE_TRACK, RACING};
 
 
 // plans z de contrainte d'affichage de glm::ortho
@@ -42,6 +43,7 @@ const float Z_FOOTPRINT= -20.0f;
 const float Z_FORCE= -10.0f;
 const float Z_TIRE_TRACK= -50.0f;
 const float Z_SPARK= -35.0f;
+const float Z_DRIVER_FACE= -5.0f;
 // voir également static_object.h / Z_OBJECTS
 
 // à quelle vitesse la caméra s'ajuste-t'elle au mouvement du héros
@@ -92,19 +94,19 @@ public:
 	Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t);
 	~Racing();
 
-	void choose_player(unsigned int idx_player);
+	//void choose_driver(unsigned int idx_driver);
 	// choix d'une piste
 	void choose_track(unsigned int idx_track, std::chrono::system_clock::time_point t);
 
 	// chargement des textures
-	void fill_texture_choose_player();
+	void fill_texture_choose_driver();
 	void fill_texture_choose_track();
 	void fill_texture_array_models();
 	void fill_texture_array_smoke();
 	void fill_texture_array_tire_track();
 	
 	// dessins
-	void draw_choose_player();
+	void draw_choose_driver();
 	void draw_choose_track();
 	void draw_bbox();
 	void draw_footprint();
@@ -113,11 +115,12 @@ public:
 	void draw_smoke();
 	void draw_tire_track();
 	void draw_spark();
+	void draw_driver_face();
 	void show_info();
 	void draw();
 
 	// maj des buffers
-	void update_choose_player();
+	void update_choose_driver();
 	void update_choose_track();
 	void update_bbox();
 	void update_footprint();
@@ -126,6 +129,7 @@ public:
 	void update_smoke();
 	void update_tire_track();
 	void update_spark();
+	void update_driver_face();
 	
 	// animation
 	void anim(std::chrono::system_clock::time_point t);
@@ -146,9 +150,7 @@ public:
 	cam_mode _cam_mode;
 
 	racing_mode _mode; // mode
-	int _idx_chosen_player;
-	unsigned int _n_available_players;
-	std::vector<std::string> _player_names;
+	int _idx_chosen_driver;
 	int _idx_chosen_track; // indice piste choisie
 	unsigned int _n_available_tracks; // nombre total de pistes
 	number _track_lap_record, _track_overall_record;
@@ -159,7 +161,7 @@ public:
 	GLuint * _textures; // texture arrays pour tous les PNGs
 	// indices des textures
 	unsigned int _texture_idx_model, _texture_idx_bump, _texture_idx_smoke, _texture_idx_choose_track,
-		_texture_idx_tire_track, _texture_idx_choose_player;
+		_texture_idx_tire_track, _texture_idx_driver_face;
 	glm::mat4 _camera2clip; // glm::ortho
 	glm::mat4 _world2camera; // caméra
 	Font * _font; // font pour écriture textes

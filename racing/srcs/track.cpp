@@ -57,7 +57,7 @@ void Track::load_models() {
 		_models[basename(json_path)]= new StaticObjectModel(json_path);
 	}
 
-	std::vector<std::string> jsons_cars= list_files("../data/players", "json");
+	std::vector<std::string> jsons_cars= list_files("../data/drivers", "json");
 	for (auto json_path : jsons_cars) {
 		if (verbose) {std::cout << "chgmt car : " << json_path << "\n";}
 		_models[basename(json_path)]= new CarModel(json_path);
@@ -166,22 +166,6 @@ void Track::load_json(std::string json_path) {
 			checkpoints[0].first->_previous= checkpoints[i].first;
 		}
 	}
-	
-	// assignation start à toutes les voitures
-	for (auto obj : _floating_objects) {
-		if (obj->_model->_type== CAR) {
-			Car * car= (Car *)(obj);
-			car->_next_checkpoint= _start;
-		}
-	}
-
-	// tri des objets par leurs z pour affichage
-	std::sort(_floating_objects.begin(), _floating_objects.end(), [](StaticObject * obj1, StaticObject * obj2) {
-		return obj1->_z< obj2->_z;
-	});
-
-	//sort_cars();
-	//set_car_names();
 }
 
 
@@ -257,36 +241,60 @@ void Track::save_json(std::string json_path) {
 }*/
 
 
-void Track::set_hero(std::string name) {
+void Track::set_hero(unsigned int idx_driver) {
+	if (idx_driver>= _drivers.size()) {
+		std::cerr << "Track::set_hero : " << idx_driver << ">=" << _drivers.size() << "\n";
+		return;
+	}
 	_hero= NULL;
 	for (auto car : _sorted_cars) {
-		if (car->_name== name) {
+		if (car->_model->_name== _drivers[idx_driver]->_name) {
 			_hero= car;
 			break;
 		}
 	}
 	if (_hero== NULL) {
-		std::cerr << "Track::set_hero : " << name << " n'a pas été trouvé\n";
+		std::cerr << "set_hero : " << _drivers[idx_driver]->_name << " non trouvé\n";
 	}
 }
 
 
-void Track::place_cars(std::vector<std::string> player_names) {
+void Track::place_cars() {
 	pt_type start_dir= rot(pt_type(0.0, 1.0), _start->_alpha);
 	pt_type start_right= rot(start_dir, -0.5* M_PI);
 	pt_type first_row_center= _start->_com- CAR_PLACEMENT._first_row_dist_start* start_dir;
 	std::vector<pt_type> positions;
-	if (CAR_PLACEMENT._n_cars_per_row % 2== 0) {
-		for (unsigned int idx_row=0; idx_row< CAR_PLACEMENT._n_max_rows; ++idx_row) {
-			for (unsigned int i=0; i<CAR_PLACEMENT._n_cars_per_row; ++i) {
-				pt_type pos= first_row_center- number(idx_row)* CAR_PLACEMENT._row_dist* start_dir+ number(-CAR_PLACEMENT._n_cars_per_row/ 2- 1+ i)* 0.5* CAR_PLACEMENT._neighbour_dist* start_right;
-				positions.push_back(pos);
+	
+	for (int idx_row=0; idx_row< CAR_PLACEMENT._n_max_rows; ++idx_row) {
+		for (int i=0; i<CAR_PLACEMENT._n_cars_per_row; ++i) {
+			pt_type pos;
+			if (CAR_PLACEMENT._n_cars_per_row % 2== 0) {
+				pos= first_row_center- number(idx_row)* CAR_PLACEMENT._row_dist* start_dir
+					+ number(-CAR_PLACEMENT._n_cars_per_row/ 2- 1+ i)* 0.5* CAR_PLACEMENT._neighbour_dist* start_right;
 			}
+			else {
+				pos= first_row_center- number(idx_row)* CAR_PLACEMENT._row_dist* start_dir
+					+ number(-(CAR_PLACEMENT._n_cars_per_row- 1)/ 2+ i)* CAR_PLACEMENT._neighbour_dist* start_right;
+			}
+			positions.push_back(pos);
 		}
 	}
+	
+	for (unsigned int idx_driver=0; idx_driver<_drivers.size(); ++idx_driver) {
+		CarModel * model= (CarModel *)(_models[_drivers[idx_driver]->_name]);
+		Car * car= new Car(model, positions[idx_driver], _start->_alpha, pt_type(1.0));
+		//_drivers[idx_driver]->_car= car;
+		car->_driver= _drivers[idx_driver];
+		_floating_objects.push_back(car);
+		_sorted_cars.push_back(car);
+	}
+	
+	// assignation start à toutes les voitures
+	for (auto car : _sorted_cars) {
+		car->_next_checkpoint= _start;
+	}
 
-	
-	
+	// tri avant début
 	sort_cars();
 }
 
@@ -295,6 +303,11 @@ void Track::start(std::chrono::system_clock::time_point t) {
 	_last_precount_t= t;
 	_mode= TRACK_PRECOUNT;
 	_precount= 3;
+
+	// tri des objets par leurs z pour affichage
+	std::sort(_floating_objects.begin(), _floating_objects.end(), [](StaticObject * obj1, StaticObject * obj2) {
+		return obj1->_z< obj2->_z;
+	});
 
 	for (auto obj : _floating_objects) {
 		// au début tous les objets sont sur la surface par défaut road
@@ -320,7 +333,7 @@ void Track::end() {
 		//for (auto t : car->_lap_times) {
 		for (unsigned int i=0; i<car->_lap_times.size(); ++i) {
 			if (i< car->_lap_times.size()- 1 || car->_finished) {
-				_best_lap.push_back(std::make_pair(car->_name, car->_lap_times[i]));
+				_best_lap.push_back(std::make_pair(car->_driver->_name, car->_lap_times[i]));
 			}
 		}
 	}
@@ -340,7 +353,7 @@ void Track::end() {
 	// record au total
 	for (auto car : _sorted_cars) {
 		if (car->_finished) {
-			_best_overall.push_back(std::make_pair(car->_name, car->_total_time));
+			_best_overall.push_back(std::make_pair(car->_driver->_name, car->_total_time));
 		}
 	}
 	std::sort(_best_overall.begin(), _best_overall.end(), [](std::pair<std::string, number> a, std::pair<std::string, number> b) {

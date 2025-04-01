@@ -16,6 +16,8 @@
 
 #include "track.h"
 
+// PI en number
+const number PI= number(M_PI);
 
 // plans z de contrainte d'affichage de glm::ortho
 const float Z_NEAR= 0.0f;
@@ -40,8 +42,6 @@ const pt_type TRACK_ORIGIN(-9.0, -7.5);
 const pt_type TRACK_SIZE(10.0, 8.0);
 const pt_type TILES_ORIGIN(1.5, -7.5);
 const pt_type FLOATING_OBJECTS_ORIGIN(-7.0, 3.0);
-// scale par défaut de la grille track
-const number DEFAULT_TRACK_EDITOR_SCALE= 0.3;
 // dimensions par défaut des grilles de tile et d'objets flottants
 const unsigned int TILE_GRID_WIDTH= 8;
 const unsigned int FLOATING_GRID_HEIGHT= 4;
@@ -49,6 +49,14 @@ const unsigned int FLOATING_GRID_HEIGHT= 4;
 const unsigned int TRACK_DEFAULT_SIZE= 16;
 // nombre de tours par défaut
 const unsigned int DEFAULT_N_LAPS= 3;
+
+// scale par défaut de la grille track
+const number DEFAULT_TRACK_EDITOR_SCALE= 0.3;
+// scales min / max
+const number MIN_TRACK_EDITOR_SCALE= 0.05;
+const number MAX_TRACK_EDITOR_SCALE= 1.5;
+// facteur de zoom
+const number WHEEL_SCALE_FACTOR= 0.05;
 
 
 // Editeur de grille d'objets

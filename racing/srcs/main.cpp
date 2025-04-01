@@ -153,6 +153,7 @@ void init() {
 	progs["tire_track"]= create_prog("../shaders/vertexshader_tire_track.txt", "../shaders/fragmentshader_tire_track.txt");
 	progs["spark"]= create_prog("../shaders/vertexshader_spark.txt", "../shaders/fragmentshader_spark.txt");
 	progs["choose_track"]= create_prog("../shaders/vertexshader_choose_track.txt", "../shaders/fragmentshader_choose_track.txt");
+	progs["driver_face"]= create_prog("../shaders/vertexshader_driver_face.txt", "../shaders/fragmentshader_driver_face.txt");
 
 	check_gl_error();
 

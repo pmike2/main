@@ -3,7 +3,7 @@
 	"actions" : {
 		"main" : [
 			{
-				"texture" : "start_inactive.png"
+				"texture" : "start.png"
 			}
 		],
 		"active" : [

@@ -481,6 +481,7 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
 	_track= new Track();
+
 	load_track(1);
 }
 
@@ -1057,6 +1058,30 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 		}
 		return true;
 	}
+	// rotations de 90
+	else if (key== SDLK_o) {
+		if (_selected_floating_object!= NULL) {
+			number alpha= _selected_floating_object->_alpha;
+			if (alpha< PI* 0.25) {
+				alpha= 0.5* PI;
+			}
+			else if (alpha< PI* 0.75) {
+				alpha= PI;
+			}
+			else if (alpha< PI* 1.25) {
+				alpha= 1.5* PI;
+			}
+			else if (alpha< PI* 1.75) {
+				alpha= 0.0;
+			}
+			else {
+				alpha= 0.5* PI;
+			}
+			_selected_floating_object->reinit(_selected_floating_object->_com, alpha, _selected_floating_object->_scale);
+			update();
+		}
+		return true;
+	}
 	// chgmt track
 	else if (key== SDLK_1 || key== SDLK_KP_1) {load_track(1); return true;}
 	else if (key== SDLK_2 || key== SDLK_KP_2) {load_track(2); return true;}
@@ -1136,6 +1161,13 @@ bool TrackEditor::mouse_motion(InputState * input_state) {
 	// r = rotate objet
 	else if (input_state->get_key(SDLK_r) && _selected_floating_object!= NULL) {
 		number alpha= _selected_floating_object->_alpha- 0.1* number(input_state->_yrel);
+		while (alpha> PI* 2.0) {
+			alpha-= PI* 2.0;
+		}
+		while (alpha< 0.0) {
+			alpha+= PI* 2.0;
+		}
+
 		_selected_floating_object->reinit(_selected_floating_object->_com, alpha, _selected_floating_object->_scale);
 		update();
 		return true;
@@ -1159,8 +1191,11 @@ bool TrackEditor::mouse_motion(InputState * input_state) {
 
 // wheel = zoom / dezoom
 bool TrackEditor::mouse_wheel(InputState * input_state) {
-	_scale.x+= 0.1* number(input_state->_y_wheel);
-	_scale.y+= 0.1* number(input_state->_y_wheel);
+	number wheel= WHEEL_SCALE_FACTOR* number(input_state->_y_wheel);
+	if (_scale.x+ wheel> MIN_TRACK_EDITOR_SCALE && _scale.x+ wheel< MAX_TRACK_EDITOR_SCALE) {
+		_scale.x+= wheel;
+		_scale.y+= wheel;
+	}
 	update();
 	return true;
 }
@@ -1198,7 +1233,7 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 			_tile_grid_editor->_grid->push_tile(model.second);
 			//std::cout << "loaded\n";
 		}
-		else {
+		else if (model.second->_type!= CAR) {
 			//std::cout << "loading OBSTACLE_FLOATING : " << model.first << "\n";
 			_floating_grid_editor->_grid->push_tile(model.second);
 			//std::cout << "loaded\n";
