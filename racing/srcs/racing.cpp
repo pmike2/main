@@ -166,15 +166,6 @@ void Racing::choose_track(unsigned int idx_track, std::chrono::system_clock::tim
 	// init caméra
 	_com_camera= _track->_hero->_com;
 
-	// maj des buffers avant 1er affichage
-	/*update_bbox();
-	update_footprint();
-	update_force();
-	update_texture();
-	update_smoke();
-	update_tire_track();
-	update_driver_face();*/
-
 	// et c'est parti
 	_mode= RACING;
 	_track->start(t);
@@ -627,35 +618,61 @@ void Racing::show_info() {
 			}
 
 			// adversaires
-			/*if (_track->_mode== TRACK_LIVE) {
-				for (auto car : _track->_sorted_cars) {
-					if (car== _track->_hero) {
+			if (_track->_mode== TRACK_LIVE) {
+				for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
+					Car * car= _track->_sorted_cars[idx_car];
+					/*if (car== _track->_hero) {
 						continue;
-					}
+					}*/
 					glm::vec4 position= _world2camera* glm::vec4(float(car->_com.x), float(car->_com.y), float(car->_z), 1.0f);
 					glm::vec4 color(0.9f, 0.9f, 0.9f, 0.5f);
 					if (car->_rank< _track->_hero->_rank) {
 						color= glm::vec4(1.0f, 1.0f, 0.5f, 1.0f);
 					}
-					float scale= 0.003f;
-					if (car->_rank< 4) {
-						scale+= (4.0- float(car->_rank))* 0.001f;
+					float scale;
+					if (idx_car< IN_RACE_TEXT_SCALE.size()) {
+						scale= IN_RACE_TEXT_SCALE[idx_car];
 					}
-					texts.push_back(Text(std::to_string(car->_rank)+  " - "+ car->_driver->_name, glm::vec2(position.x+ 0.3, position.y+ 0.3), scale, color));
+					else {
+						scale= IN_RACE_TEXT_SCALE.back();
+					}
+					texts.push_back(Text(std::to_string(car->_rank)+  " - "+ car->_driver->_name, glm::vec2(position.x, position.y)+ IN_RACE_TEXT_OFFSET, scale, color));
 				}
-			}*/
+			}
 
 			// classement toutes voitures
-			/*if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_FINISHED) {
+			if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_FINISHED) {
+				float x0= RANKING_ORIGIN.x;
+				float y0= RANKING_ORIGIN.y;
+
 				for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
+					float face_size, x_inc, scale;
+					if (idx_car< RANKING_FACE_SIZE.size()) {
+						face_size= RANKING_FACE_SIZE[idx_car];
+						if (idx_car< RANKING_FACE_SIZE.size()- 1) {
+							x_inc= 0.5f* (RANKING_FACE_SIZE[idx_car]- RANKING_FACE_SIZE[idx_car+ 1]);
+						}
+						else {
+							x_inc= 0.0f;
+						}
+						scale= RANKING_TEXT_SCALE[idx_car];
+					}
+					else {
+						face_size= RANKING_FACE_SIZE.back();
+						x_inc= 0.0f;
+						scale= RANKING_TEXT_SCALE.back();
+					}
 					Car * car= _track->_sorted_cars[idx_car];
 					glm::vec4 ranking_color(RANKING_ENNEMY_COLOR);
 					if (car== _track->_hero) {
 						ranking_color= RANKING_HERO_COLOR;
 					}
-					texts.push_back(Text(std::to_string(car->_rank)+  " - "+ car->_driver->_name, glm::vec2(-7.2f, 4.0f- float(idx_car)* 0.5f), 0.005f, ranking_color));
+					texts.push_back(Text(std::to_string(car->_rank)+  " - "+ car->_driver->_name, glm::vec2(x0, y0), scale, ranking_color));
+					
+					x0+= x_inc;
+					y0-= face_size;
 				}
-			}*/
+			}
 
 			// temps tours joueur
 			if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_FINISHED) {
@@ -1165,13 +1182,6 @@ void Racing::update_spark() {
 void Racing::update_driver_face() {
 	const unsigned int n_pts_per_obj= 6;
 
-	const glm::vec2 RANKING_ORIGIN(-7.5f, 3.5f);
-	const std::vector<float> RANKING_FACE_SIZE {1.3f, 1.1f, 0.9f, 0.7f};
-	const std::vector<float> RANKING_FACE_ALPHA {1.0f, 0.9f, 0.8f, 0.7f};
-	const glm::vec2 IN_RACE_FACE_OFFSET(0.1f, 0.1f);
-	const std::vector<float> IN_RACE_FACE_SIZE {0.8f, 0.6f, 0.5f, 0.4f};
-	const std::vector<float> IN_RACE_FACE_ALPHA {1.0f, 0.9f, 0.8f, 0.7f};
-
 	DrawContext * context= _contexts["driver_face"];
 	context->_n_pts= _track->_drivers.size()* 2* n_pts_per_obj;
 	context->_n_attrs_per_pts= 6;
@@ -1190,6 +1200,9 @@ void Racing::update_driver_face() {
 			alpha= RANKING_FACE_ALPHA[idx_car];
 			if (idx_car< RANKING_FACE_SIZE.size()- 1) {
 				x_inc= 0.5f* (RANKING_FACE_SIZE[idx_car]- RANKING_FACE_SIZE[idx_car+ 1]);
+			}
+			else {
+				x_inc= 0.0f;
 			}
 		}
 		else {

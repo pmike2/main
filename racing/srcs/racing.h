@@ -59,6 +59,17 @@ const float INFO_ALPHA= 0.8;
 // mélange de gris lors des phases inactives
 const float GRAY_BLEND= 0.6f;
 
+// faces
+const glm::vec2 RANKING_ORIGIN(-7.5f, 3.5f);
+const std::vector<float> RANKING_FACE_SIZE {1.3f, 1.1f, 0.9f, 0.7f};
+const std::vector<float> RANKING_FACE_ALPHA {1.0f, 0.9f, 0.8f, 0.7f};
+const std::vector<float> RANKING_TEXT_SCALE {0.01f, 0.008f, 0.006f, 0.005f};
+const glm::vec2 IN_RACE_FACE_OFFSET(0.1f, 0.1f);
+const glm::vec2 IN_RACE_TEXT_OFFSET(0.1f, 0.1f);
+const std::vector<float> IN_RACE_FACE_SIZE {0.8f, 0.6f, 0.5f, 0.4f};
+const std::vector<float> IN_RACE_FACE_ALPHA {1.0f, 0.9f, 0.8f, 0.7f};
+const std::vector<float> IN_RACE_TEXT_SCALE {0.006f, 0.004f, 0.003f, 0.002f};
+
 // couleurs de debug
 const glm::vec4 COM_CROSS_COLOR(1.0, 0.0, 0.0, INFO_ALPHA);
 const glm::vec4 FORCE_FWD_CROSS_COLOR(1.0, 1.0, 0.0, INFO_ALPHA);
