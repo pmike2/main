@@ -24,7 +24,7 @@ Racing::Racing() {
 }
 
 
-Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t) :
+Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, time_point t) :
 	_draw_bbox(false), _draw_force(false), _draw_texture(true), _show_debug_info(false),
 	_cam_mode(TRANSLATE), _screengl(screengl), _input_state(input_state),
 	_mode(CHOOSE_DRIVER)
@@ -94,7 +94,7 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array", "z"});
 
-	// piste
+	_track_info= new TrackInfo();
 	_track= new Track();
 	_tire_track_system= new TireTrackSystem();
 	_spark_system= new SparkSystem();
@@ -102,16 +102,19 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	_idx_chosen_driver= 0;
 	_idx_chosen_track= 1;
 
+	_track_info->parse_json("../data/tracks/track"+ std::to_string(_idx_chosen_track)+ ".json");
+
 	fill_texture_array_models();
 	fill_texture_array_smoke();
 	fill_texture_array_tire_track();
-	fill_texture_choose_driver();
+	fill_texture_driver();
 	fill_texture_choose_track();
 }
 
 
 Racing::~Racing() {
 	delete _track;
+	delete _track_info;
 	for (auto ss : _smoke_systems) {
 		delete ss;
 	}
@@ -133,13 +136,10 @@ Racing::~Racing() {
 }*/
 
 
-void Racing::choose_track(unsigned int idx_track, std::chrono::system_clock::time_point t) {
+void Racing::choose_track(unsigned int idx_track, time_point t) {
 	// chargement json
 	_track->load_json("../data/tracks/track"+ std::to_string(idx_track)+ ".json");
 
-	// placement des voitures
-	_track->place_cars();
-	
 	// set hero
 	_track->set_hero(_idx_chosen_driver);
 
@@ -160,8 +160,8 @@ void Racing::choose_track(unsigned int idx_track, std::chrono::system_clock::tim
 	_spark_system->reinit();
 
 	// on récupère les records de la piste
-	_track_lap_record= _track->_best_lap[0].second;
-	_track_overall_record= _track->_best_overall[0].second;
+	_track_lap_record= _track->_info->_best_lap[0].second;
+	_track_overall_record= _track->_info->_best_overall[0].second;
 
 	// init caméra
 	_com_camera= _track->_hero->_com;
@@ -172,12 +172,18 @@ void Racing::choose_track(unsigned int idx_track, std::chrono::system_clock::tim
 }
 
 
-void Racing::fill_texture_choose_driver() {
-	std::vector<std::string> pngs= list_files("../data/drivers/faces", "png");
-	fill_texture_array(0, _textures[_texture_idx_driver_face], 1024, pngs);
-	for (unsigned int idx_png=0; idx_png<pngs.size(); ++idx_png) {
-		_track->_drivers.push_back(new Driver(basename(pngs[idx_png]), float(idx_png)));
+void Racing::fill_texture_driver() {
+	std::vector<std::string> pngs;
+	unsigned int compt= 0;
+	for (auto driver : _track->_drivers) {
+		for (auto expression : driver->_expressions) {
+			for (auto expression_texture : expression.second->_textures) {
+				pngs.push_back(expression_texture->_texture_path);
+				expression_texture->_texture_idx= float(compt++);
+			}
+		}
 	}
+	fill_texture_array(0, _textures[_texture_idx_driver_face], 1024, pngs);
 }
 
 
@@ -561,6 +567,22 @@ void Racing::show_info() {
 	}
 	else if (_mode== CHOOSE_TRACK) {
 		texts.push_back(Text("Track "+ std::to_string(_idx_chosen_track), glm::vec2(-1.5f, 4.0f), 0.02, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		
+		texts.push_back(Text("NLAPS = "+ std::to_string(_track_info->_n_laps), glm::vec2(4.0f, 4.0f), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		
+		texts.push_back(Text("BEST LAP", glm::vec2(-7.0f, 4.5f), 0.005, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		for (unsigned int idx_best_lap=0; idx_best_lap<_track_info->_best_lap.size(); ++idx_best_lap) {
+			std::ostringstream oss;
+			oss << std::fixed << std::setprecision(2) << _track_info->_best_lap[idx_best_lap].second;
+			texts.push_back(Text(_track_info->_best_lap[idx_best_lap].first+ " : "+ oss.str(), glm::vec2(-7.0f, 4.0f- float(idx_best_lap)* 0.5f), 0.005, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		}
+		
+		texts.push_back(Text("BEST OVERALL", glm::vec2(-4.0f, 4.5f), 0.005, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		for (unsigned int idx_best_overall=0; idx_best_overall<_track_info->_best_overall.size(); ++idx_best_overall) {
+			std::ostringstream oss;
+			oss << std::fixed << std::setprecision(2) << _track_info->_best_overall[idx_best_overall].second;
+			texts.push_back(Text(_track_info->_best_overall[idx_best_overall].first+ " : "+ oss.str(), glm::vec2(-4.0f, 4.0f- float(idx_best_overall)* 0.5f), 0.005, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		}
 	}
 
 	else if (_mode== RACING) {
@@ -600,10 +622,10 @@ void Racing::show_info() {
 			// nombre de tours
 			if (_track->_mode== TRACK_LIVE) {
 				glm::vec4 nlaps_color(NLAPS_COLOR);
-				if (_track->_hero->_n_laps== _track->_n_laps) {
+				if (_track->_hero->_n_laps== _track->_info->_n_laps) {
 					nlaps_color= NLAPS_LAST_COLOR;
 				}
-				texts.push_back(Text("LAP "+ std::to_string(_track->_hero->_n_laps)+ " / "+ std::to_string(_track->_n_laps), glm::vec2(5.0f, 5.0f), 0.01f, nlaps_color));
+				texts.push_back(Text("LAP "+ std::to_string(_track->_hero->_n_laps)+ " / "+ std::to_string(_track->_info->_n_laps), glm::vec2(4.5f, 4.5f), 0.01f, nlaps_color));
 			}
 
 			// vitesse joueur
@@ -614,7 +636,9 @@ void Racing::show_info() {
 				if (hero_speed> 200) {
 					speed_color= HIGH_SPEED_COLOR;
 				}
-				texts.push_back(Text(std::to_string(hero_speed)+ " km/h", glm::vec2(-7.2f, 5.0f), 0.01f, speed_color));
+				std::string speed_str= std::to_string(hero_speed);
+				texts.push_back(Text(std::to_string(hero_speed), glm::vec2(4.5f, -5.0f), 0.01f, speed_color));
+				texts.push_back(Text(" km/h", glm::vec2(5.5f, -5.0f), 0.01f, speed_color));
 			}
 
 			// adversaires
@@ -643,7 +667,7 @@ void Racing::show_info() {
 			// classement toutes voitures
 			if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_FINISHED) {
 				float x0= RANKING_ORIGIN.x;
-				float y0= RANKING_ORIGIN.y;
+				float y0= RANKING_ORIGIN.y- RANKING_FACE_TEXT_MARGIN;
 
 				for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
 					float face_size, x_inc, scale;
@@ -670,7 +694,7 @@ void Racing::show_info() {
 					texts.push_back(Text(std::to_string(car->_rank)+  " - "+ car->_driver->_name, glm::vec2(x0, y0), scale, ranking_color));
 					
 					x0+= x_inc;
-					y0-= face_size;
+					y0-= face_size* RANKING_FACE_MARGIN_FACTOR;
 				}
 			}
 
@@ -707,7 +731,7 @@ void Racing::show_info() {
 			if (_track->_mode== TRACK_FINISHED) {
 				std::ostringstream oss;
 				oss << std::fixed << std::setprecision(2) << _track->_hero->_total_time;
-				texts.push_back(Text("TOTAL - "+ oss.str(), glm::vec2(4.5f, 3.0f- 0.5f* float(_track->_n_laps+ 1)), 0.005f, TOTAL_LAP_TIME_COLOR));
+				texts.push_back(Text("TOTAL - "+ oss.str(), glm::vec2(4.5f, 3.0f- 0.5f* float(_track->_info->_n_laps+ 1)), 0.005f, TOTAL_LAP_TIME_COLOR));
 
 				// affichage diff avec record
 				number diff_best_overall= _track->_hero->_total_time- _track_overall_record;
@@ -721,7 +745,7 @@ void Racing::show_info() {
 				if (diff_best_overall> 0.0) {
 					sign= "+";
 				}
-				texts.push_back(Text(sign+ oss2.str(), glm::vec2(6.5f, 3.0f- 0.5f* float(_track->_n_laps+ 1)), 0.005f, diff_lap_time_color));
+				texts.push_back(Text(sign+ oss2.str(), glm::vec2(6.5f, 3.0f- 0.5f* float(_track->_info->_n_laps+ 1)), 0.005f, diff_lap_time_color));
 			}
 
 			// classement joueur arrivée
@@ -788,27 +812,29 @@ void Racing::update_choose_driver() {
 
 	float size= (_screengl->_gl_width- float(_track->_drivers.size()+ 1)* MARGIN)/ float(_track->_drivers.size());
 	unsigned int compt= 0;
-	float selection;
-	for (unsigned int i=0; i<_track->_drivers.size(); ++i) {
-		if (i== _idx_chosen_driver) {
+	float selection, texture_idx;
+	for (unsigned int idx_driver=0; idx_driver<_track->_drivers.size(); ++idx_driver) {
+		if (idx_driver== _idx_chosen_driver) {
 			selection= 0.2f;
 		}
 		else {
 			selection= 0.0f;
 		}
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= -0.5f* size;
-		data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= -0.5f* size;
-		data[compt++]= 1.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= 0.5f* size;
-		data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
+		texture_idx= _track->_drivers[idx_driver]->_expressions["normal"]->_textures[0]->_texture_idx;
+
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(idx_driver)* (size+ MARGIN); data[compt++]= -0.5f* size;
+		data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= texture_idx; data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(idx_driver)* (size+ MARGIN)+ size; data[compt++]= -0.5f* size;
+		data[compt++]= 1.0f; data[compt++]= 1.0f; data[compt++]= texture_idx; data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(idx_driver)* (size+ MARGIN)+ size; data[compt++]= 0.5f* size;
+		data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= texture_idx; data[compt++]= selection;
 		
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= -0.5f* size;
-		data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= float(i); data[compt++]= selection;
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN)+ size; data[compt++]= 0.5f* size;
-		data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
-		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(i)* (size+ MARGIN); data[compt++]= 0.5f* size;
-		data[compt++]= 0.0f; data[compt++]= 0.0f; data[compt++]= float(i); data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(idx_driver)* (size+ MARGIN); data[compt++]= -0.5f* size;
+		data[compt++]= 0.0f; data[compt++]= 1.0f; data[compt++]= texture_idx; data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(idx_driver)* (size+ MARGIN)+ size; data[compt++]= 0.5f* size;
+		data[compt++]= 1.0f; data[compt++]= 0.0f; data[compt++]= texture_idx; data[compt++]= selection;
+		data[compt++]= -0.5f* _screengl->_gl_width+ MARGIN+ float(idx_driver)* (size+ MARGIN); data[compt++]= 0.5f* size;
+		data[compt++]= 0.0f; data[compt++]= 0.0f; data[compt++]= texture_idx; data[compt++]= selection;
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -1047,7 +1073,6 @@ void Racing::update_texture() {
 			for (unsigned int i=0; i<6; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[6* idx_pt+ i]);
 			}
-			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= obj->_model->_texture_idx;
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= obj->_model->_actions[obj->_current_action_name]->_textures[obj->_current_action_texture_idx]->_texture_idx;
 		}
 	}
@@ -1183,7 +1208,7 @@ void Racing::update_driver_face() {
 	const unsigned int n_pts_per_obj= 6;
 
 	DrawContext * context= _contexts["driver_face"];
-	context->_n_pts= _track->_drivers.size()* 2* n_pts_per_obj;
+	context->_n_pts= _track->_drivers.size()* 2* n_pts_per_obj; // * 2 : 1 pour le ranking, 1 pour dans la course
 	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
@@ -1194,7 +1219,10 @@ void Racing::update_driver_face() {
 	float x0= RANKING_ORIGIN.x;
 	float y0= RANKING_ORIGIN.y;
 	for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
-		float face_size, alpha, x_inc;
+		Car * car= _track->_sorted_cars[idx_car];
+		Driver * driver= car->_driver;
+
+		float face_size, alpha, x_inc, texture_idx;
 		if (idx_car< RANKING_FACE_SIZE.size()) {
 			face_size= RANKING_FACE_SIZE[idx_car];
 			alpha= RANKING_FACE_ALPHA[idx_car];
@@ -1211,29 +1239,26 @@ void Racing::update_driver_face() {
 			x_inc= 0.0f;
 		}
 
-		data[compt++]= x0; data[compt++]= y0; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
-		data[compt++]= x0+ face_size; data[compt++]= y0; data[compt++]= 1.0; data[compt++]= 1.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
-		data[compt++]= x0+ face_size; data[compt++]= y0+ face_size; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
+		texture_idx= driver->_expressions[driver->_current_expression_name]->_textures[driver->_current_expression_texture_idx]->_texture_idx;
 
-		data[compt++]= x0; data[compt++]= y0; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
-		data[compt++]= x0+ face_size; data[compt++]= y0+ face_size; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
-		data[compt++]= x0; data[compt++]= y0+ face_size; data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
+		data[compt++]= x0; data[compt++]= y0; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= alpha; data[compt++]= texture_idx;
+		data[compt++]= x0+ face_size; data[compt++]= y0; data[compt++]= 1.0; data[compt++]= 1.0; data[compt++]= alpha; data[compt++]= texture_idx;
+		data[compt++]= x0+ face_size; data[compt++]= y0+ face_size; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= alpha; data[compt++]= texture_idx;
+
+		data[compt++]= x0; data[compt++]= y0; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= alpha; data[compt++]= texture_idx;
+		data[compt++]= x0+ face_size; data[compt++]= y0+ face_size; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= alpha; data[compt++]= texture_idx;
+		data[compt++]= x0; data[compt++]= y0+ face_size; data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= alpha; data[compt++]= texture_idx;
 
 		x0+= x_inc;
-		y0-= face_size;
+		y0-= face_size* RANKING_FACE_MARGIN_FACTOR;
 	}
 
 	// dans la course
 	for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
 		Car * car= _track->_sorted_cars[idx_car];
+		Driver * driver= car->_driver;
 		glm::vec4 position= _world2camera* glm::vec4(float(car->_com.x), float(car->_com.y), float(car->_z), 1.0f);
-		float face_size, alpha;
+		float face_size, alpha, texture_idx;
 		if (idx_car< IN_RACE_FACE_SIZE.size()) {
 			face_size= IN_RACE_FACE_SIZE[idx_car];
 			alpha= IN_RACE_FACE_ALPHA[idx_car];
@@ -1245,19 +1270,16 @@ void Racing::update_driver_face() {
 
 		float x0= position.x+ IN_RACE_FACE_OFFSET.x;
 		float y0= position.y+ IN_RACE_FACE_OFFSET.y;
-		data[compt++]= x0; data[compt++]= y0; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
-		data[compt++]= x0+ face_size; data[compt++]= y0; data[compt++]= 1.0; data[compt++]= 1.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
-		data[compt++]= x0+ face_size; data[compt++]= y0+ face_size; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
+		
+		texture_idx= driver->_expressions[driver->_current_expression_name]->_textures[driver->_current_expression_texture_idx]->_texture_idx;
 
-		data[compt++]= x0; data[compt++]= y0; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
-		data[compt++]= x0+ face_size; data[compt++]= y0+ face_size; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
-		data[compt++]= x0; data[compt++]= y0+ face_size; data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= alpha;
-		data[compt++]= _track->_sorted_cars[idx_car]->_driver->_idx_texture_face;
+		data[compt++]= x0; data[compt++]= y0; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= alpha; data[compt++]= texture_idx;
+		data[compt++]= x0+ face_size; data[compt++]= y0; data[compt++]= 1.0; data[compt++]= 1.0; data[compt++]= alpha; data[compt++]= texture_idx;
+		data[compt++]= x0+ face_size; data[compt++]= y0+ face_size; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= alpha; data[compt++]= texture_idx;
+
+		data[compt++]= x0; data[compt++]= y0; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= alpha; data[compt++]= texture_idx;
+		data[compt++]= x0+ face_size; data[compt++]= y0+ face_size; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= alpha; data[compt++]= texture_idx;
+		data[compt++]= x0; data[compt++]= y0+ face_size; data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= alpha; data[compt++]= texture_idx;
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -1266,7 +1288,7 @@ void Racing::update_driver_face() {
 }
 
 
-void Racing::anim(std::chrono::system_clock::time_point t) {
+void Racing::anim(time_point t) {
 	if (_mode== CHOOSE_DRIVER) {
 		update_choose_driver();
 	}
@@ -1330,23 +1352,26 @@ void Racing::camera() {
 }
 
 
-bool Racing::key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) {
+bool Racing::key_down(SDL_Keycode key, time_point t) {
 	if (_mode== CHOOSE_DRIVER) {
 		if (key== SDLK_LEFT) {
 			_idx_chosen_driver--;
 			if (_idx_chosen_driver< 0) {
 				_idx_chosen_driver= 0;
 			}
+			return true;
 		}
 		else if (key== SDLK_RIGHT) {
 			_idx_chosen_driver++;
 			if (_idx_chosen_driver>= _track->_drivers.size()) {
 				_idx_chosen_driver= _track->_drivers.size()- 1;
 			}
+			return true;
 		}
 		else if (key== SDLK_RETURN) {
 			//choose_driver(_idx_chosen_driver);
 			_mode= CHOOSE_TRACK;
+			return true;
 		}
 	}
 	else if (_mode== CHOOSE_TRACK) {
@@ -1355,15 +1380,24 @@ bool Racing::key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) 
 			if (_idx_chosen_track< 1) {
 				_idx_chosen_track= 1;
 			}
+			_track_info->parse_json("../data/tracks/track"+ std::to_string(_idx_chosen_track)+ ".json");
+			return true;
 		}
 		else if (key== SDLK_RIGHT) {
 			_idx_chosen_track++;
 			if (_idx_chosen_track> _n_available_tracks) {
 				_idx_chosen_track= _n_available_tracks; // on commence à 1
 			}
+			_track_info->parse_json("../data/tracks/track"+ std::to_string(_idx_chosen_track)+ ".json");
+			return true;
 		}
 		else if (key== SDLK_RETURN) {
 			choose_track(_idx_chosen_track, t);
+			return true;
+		}
+		else if (key== SDLK_ESCAPE) {
+			_mode= CHOOSE_DRIVER;
+			return true;
 		}
 	}
 	else if (_mode== RACING) {
@@ -1406,7 +1440,9 @@ bool Racing::key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) 
 		}
 
 		// retour au choix des circuits
-		else if (key== SDLK_RETURN) {
+		else if (key== SDLK_ESCAPE) {
+			// maj potentielle des meilleurs temps
+			_track_info->parse_json("../data/tracks/track"+ std::to_string(_idx_chosen_track)+ ".json");
 			_mode= CHOOSE_TRACK;
 			return true;
 		}

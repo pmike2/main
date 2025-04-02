@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# script de création des voitures en mode bump (abimées)
+
 # cf /Volumes/Data/perso/image_magick/set_image_magick_env.sh
 # afin d'avoir une version de ImageMagick qui gère les PNG
 

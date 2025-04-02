@@ -50,16 +50,16 @@ public:
 class SmokeSystem {
 public:
 	SmokeSystem();
-	SmokeSystem(Car * car, unsigned int n_pngs, std::chrono::system_clock::time_point t);
+	SmokeSystem(Car * car, unsigned int n_pngs, time_point t);
 	~SmokeSystem();
 	Smoke * get_free_smoke();
-	void anim(std::chrono::system_clock::time_point t);
+	void anim(time_point t);
 	
 
 	Smoke ** _smokes;
 	Car * _car;
-	std::chrono::system_clock::time_point _last_exhaust_t;
-	std::chrono::system_clock::time_point _last_bump_t;
+	time_point _last_exhaust_t;
+	time_point _last_bump_t;
 	unsigned int _n_pngs;
 };
 

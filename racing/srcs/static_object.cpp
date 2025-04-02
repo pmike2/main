@@ -252,13 +252,13 @@ void StaticObject::update() {
 }
 
 
-void StaticObject::set_current_surface(Material * material, std::chrono::system_clock::time_point t) {
+void StaticObject::set_current_surface(Material * material, time_point t) {
 	_current_surface= material;
 	_last_change_surface_t= t;
 }
 
 
-void StaticObject::set_current_action(std::string action_name, std::chrono::system_clock::time_point t) {
+void StaticObject::set_current_action(std::string action_name, time_point t) {
 	_current_action_name= action_name;
 	_current_action_texture_idx= 0;
 	_last_anim_action_t= t;
@@ -266,7 +266,7 @@ void StaticObject::set_current_action(std::string action_name, std::chrono::syst
 
 
 // on renvoie true lorsqu'il y a changement de surface; ce bool est récupéré dans car.cpp pour mettre à jour le tire_track
-bool StaticObject::anim_surface(std::chrono::system_clock::time_point t) {
+bool StaticObject::anim_surface(time_point t) {
 	// ajustement _linear_friction_material / _angular_friction_material
 	if (_previous_surface!= _current_surface) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_change_surface_t).count();
@@ -286,7 +286,7 @@ bool StaticObject::anim_surface(std::chrono::system_clock::time_point t) {
 }
 
 
-void StaticObject::anim_texture(std::chrono::system_clock::time_point t) {
+void StaticObject::anim_texture(time_point t) {
 	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_action_t).count();
 	if (dt> _model->_actions[_current_action_name]->_textures[_current_action_texture_idx]->_n_ms) {
 		_last_anim_action_t= t;
@@ -298,7 +298,7 @@ void StaticObject::anim_texture(std::chrono::system_clock::time_point t) {
 }
 
 
-void StaticObject::anim(number anim_dt, std::chrono::system_clock::time_point t) {
+void StaticObject::anim(number anim_dt, time_point t) {
 	anim_texture(t);
 
 	if (_model->_fixed) {

@@ -60,7 +60,7 @@ public:
 	void preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up); // gestion touches
 	void preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick); // gestion joystick
 	//void random_ia(); //IA aléatoire, conservée pour mémoire et tests
-	void anim(number anim_dt, std::chrono::system_clock::time_point t); // animation
+	void anim(number anim_dt, time_point t); // animation
 	friend std::ostream & operator << (std::ostream & os, const Car & car);
 
 
@@ -87,8 +87,8 @@ public:
 	std::vector<number> _lap_times; // les temps pour chaque tour
 	number _total_time;
 
-	std::chrono::system_clock::time_point _last_drift_t; // dernier temps de création d'un TireTrack
-	std::chrono::system_clock::time_point _last_start_t; // dernier temps de passage sur le start de la course
+	time_point _last_drift_t; // dernier temps de création d'un TireTrack
+	time_point _last_start_t; // dernier temps de passage sur le start de la course
 
 	float _tire_track_texture_idx;
 

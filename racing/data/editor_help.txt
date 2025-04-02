@@ -1,0 +1,32 @@
+h : afficher / cacher l'aide
+
+touches directionnelles :
+    si lshift, deplacement dans les tuiles, sinon deplacement dans la piste
+    si rshift, redimensionnement de la piste
+touches 1,2,...,9 (numpad ou non) : selection nieme piste
+
+w : on ecrit la tuile courante dans l'emplacement de piste courant
+i : reinitialisation de la piste
+s : sauvegarde piste dans json
+b : affichage des bbox
+t : affichage des textures
+j : affichage de la grille
+n :
+    si lshift : diminution du nombre de tours
+    sinon : augmentation du nombre de tours
+o : si objet flottant sélectionné, rotation de 90 calé sur 0, 90, 180 ou 270
+
+f + click : creation d'un objet flottant à l'emplacement du curseur
+d + click : suppression de l'objet flottant à l'emplacement du curseur
+m + click : move de l'objet flottant à l'emplacement du curseur
+r + click : rotation de l'objet flottant à l'emplacement du curseur (a utiliser eventuellement avec o)
+g + click : grossissement de l'objet flottant à l'emplacement du curseur
+
+click :
+    sur piste : selection emplacement piste
+    sur tuiles : selection tuile
+    sur objet flottant : selection objet flottant
+
+espace + mousemove : deplacement point de vue
+
+wheel : zoom / dezoom

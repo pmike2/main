@@ -1,30 +1,30 @@
 {
     "best_lap": [
         {
-            "name": "Ora",
-            "time": 18.349
+            "name": "robin",
+            "time": 18.398
         },
         {
-            "name": "Alonzo",
-            "time": 19.632
+            "name": "pmb",
+            "time": 18.515
         },
         {
-            "name": "Ora",
-            "time": 20.75
+            "name": "minett",
+            "time": 19.166
         }
     ],
     "best_overall": [
         {
-            "name": "Ora",
-            "time": 60.45
+            "name": "robin",
+            "time": 62.583
         },
         {
-            "name": "XXX",
-            "time": 200.0
+            "name": "niek",
+            "time": 63.217
         },
         {
-            "name": "XXX",
-            "time": 300.0
+            "name": "pmb",
+            "time": 63.468
         }
     ],
     "cell_size": 2.0,

@@ -50,7 +50,7 @@ SmokeSystem::SmokeSystem() {
 }
 
 
-SmokeSystem::SmokeSystem(Car * car, unsigned int n_pngs, std::chrono::system_clock::time_point t) :
+SmokeSystem::SmokeSystem(Car * car, unsigned int n_pngs, time_point t) :
 	 _car(car), _n_pngs(n_pngs), _last_exhaust_t(t), _last_bump_t(t)
 {
 	_smokes= new Smoke *[N_SMOKES_PER_CAR];
@@ -80,7 +80,7 @@ Smoke * SmokeSystem::get_free_smoke() {
 }
 
 
-void SmokeSystem::anim(std::chrono::system_clock::time_point t) {
+void SmokeSystem::anim(time_point t) {
 	for (unsigned int i=0; i<N_SMOKES_PER_CAR; ++i) {
 		_smokes[i]->anim();
 	}

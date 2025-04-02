@@ -42,7 +42,7 @@ public:
 	TireTrackSystem();
 	~TireTrackSystem();
 	void reinit();
-	void anim(std::chrono::system_clock::time_point t, std::vector<Car *> cars);
+	void anim(time_point t, std::vector<Car *> cars);
 
 
 	TireTrack ** _tracks; // les traces

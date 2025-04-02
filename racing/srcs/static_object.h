@@ -112,8 +112,6 @@ public:
 	bool _fixed; // est-ce un objet figé
 	Material * _material; // matériau éventuel de l'objet
 	std::string _material_name; // nom du matériau
-
-	//float _texture_idx;
 	std::map<std::string, Action *> _actions;
 };
 
@@ -127,11 +125,11 @@ public:
 	void set_model(StaticObjectModel * model);
 	void reinit(pt_type position, number alpha, pt_type scale); // met à une position / orientation / taille
 	void update(); // met à jour les données calculées à partir des autres
-	void set_current_surface(Material * material, std::chrono::system_clock::time_point t);
-	void set_current_action(std::string action_name, std::chrono::system_clock::time_point t);
-	bool anim_surface(std::chrono::system_clock::time_point t);
-	void anim_texture(std::chrono::system_clock::time_point t);
-	void anim(number anim_dt, std::chrono::system_clock::time_point t); // animation
+	void set_current_surface(Material * material, time_point t);
+	void set_current_action(std::string action_name, time_point t);
+	bool anim_surface(time_point t);
+	void anim_texture(time_point t);
+	void anim(number anim_dt, time_point t); // animation
 	friend std::ostream & operator << (std::ostream & os, const StaticObject & obj);
 
 
@@ -162,12 +160,12 @@ public:
 	Material * _current_surface; // surface sur laquelle repose l'objet
 	Material * _previous_surface; // surface sur laquelle reposait l'objet avant d'être sur _current_surface
 
-	std::chrono::system_clock::time_point _last_change_surface_t; // dernier temps de changement de surface
-	std::chrono::system_clock::time_point _last_boost_t; // dernier temps où un boost a eu lieu
+	time_point _last_change_surface_t; // dernier temps de changement de surface
+	time_point _last_boost_t; // dernier temps où un boost a eu lieu
 
 	std::string _current_action_name;
 	unsigned int _current_action_texture_idx;
-	std::chrono::system_clock::time_point _last_anim_action_t;
+	time_point _last_anim_action_t;
 };
 
 

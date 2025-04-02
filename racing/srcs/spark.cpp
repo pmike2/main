@@ -71,7 +71,7 @@ void SparkSystem::reinit() {
 }
 
 
-void SparkSystem::anim(std::chrono::system_clock::time_point t, std::vector<pt_type> positions) {
+void SparkSystem::anim(time_point t, std::vector<pt_type> positions) {
 	for (unsigned int i=0; i<N_MAX_SPARKS; ++i) {
 		_sparks[i]->anim();
 	}
@@ -88,7 +88,7 @@ void SparkSystem::anim(std::chrono::system_clock::time_point t, std::vector<pt_t
 			}
 			if (spark!= NULL) {
 				number alpha= rand_number(0.0, 2.0* M_PI);
-				pt_type half_size= pt_type(rand_number(MIN_SPARK_HALF_SIZE, MAX_SPARK_HALF_SIZE), 0.01);
+				pt_type half_size= pt_type(rand_number(MIN_SPARK_HALF_SIZE, MAX_SPARK_HALF_SIZE), SPARK_HALF_WIDTH);
 				pt_type center_inc= pt_type(rand_number(MIN_SPARK_CENTER_INC, MAX_SPARK_CENTER_INC), rand_number(MIN_SPARK_CENTER_INC, MAX_SPARK_CENTER_INC));
 				number alpha_inc= rand_number(MIN_SPARK_ALPHA_INC, MAX_SPARK_ALPHA_INC);
 				pt_type half_size_inc= pt_type(rand_number(MIN_SPARK_HALF_SIZE_INC, MAX_SPARK_HALF_SIZE_INC), 0.0);

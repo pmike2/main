@@ -170,12 +170,15 @@ public:
 	TrackEditor * _track_editor; // éditeur de track
 	GridEditor * _tile_grid_editor; // éditeur des tuiles disponibles
 	GridEditor * _floating_grid_editor; // éditeur des objets flottants disponibles
-	//Font * _font; // font pour écriture textes
+	Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
 	GLuint * _textures; // texture arrays pour tous les PNGs
 
 	std::string _ppm_path; // utiles à la génération de quicklook
 	std::string _qlk_cmd;
+
+	bool _help;
+	std::vector<std::string> _help_data;
 };
 
 #endif

@@ -45,7 +45,22 @@ struct CarsPlacement {
 	int _n_max_rows;
 };
 
-const CarsPlacement CAR_PLACEMENT {2.0, 2.0, 2.0, 2, 6};
+// a terme faire un CarsPlacement par Track ?
+const CarsPlacement CAR_PLACEMENT {1.0, 2.0, 2.0, 3, 6};
+
+
+class TrackInfo {
+public:
+	TrackInfo();
+	//TrackInfo(std::string json_path);
+	~TrackInfo();
+	void parse_json(std::string json_path);
+
+
+	unsigned int _n_laps;
+	std::vector<std::pair<std::string, number> > _best_lap; // les 3 meilleurs temps au tour
+	std::vector<std::pair<std::string, number> > _best_overall; // les 3 meilleurs en tout
+};
 
 /*
 	Piste de course : associée à une grille d'objets fixes, les tuiles qui composent le décor
@@ -61,21 +76,23 @@ public:
 	//void set_car_names();
 	void set_hero(unsigned int idx_driver);
 	void place_cars();
-	void start(std::chrono::system_clock::time_point t);
+	void reinit_drivers(time_point t, bool set_normal_expression);
+	void start(time_point t);
 	void end();
 	void write_records();
 
 	void sort_cars(); // tri des voitures par position
 	unsigned int get_checkpoint_index(CheckPoint * checkpoint); // position du chkpt par rapport au start
-	void collisions(); // gestion des collisions
-	void surfaces(std::chrono::system_clock::time_point t);
-	void repair(std::chrono::system_clock::time_point t);
-	void boost(std::chrono::system_clock::time_point t);
-	void checkpoints(std::chrono::system_clock::time_point t); // gestion chkpts pour toutes les voitures
+	void collisions(time_point t); // gestion des collisions
+	void surfaces(time_point t);
+	void repair(time_point t);
+	void boost(time_point t);
+	void checkpoints(time_point t); // gestion chkpts pour toutes les voitures
 	void checkpoint_ia(Car * car); // ia basée sur les chkpts
-	void lap_time(std::chrono::system_clock::time_point t);
+	void lap_time(time_point t);
 	void total_time();
-	void anim(std::chrono::system_clock::time_point t, InputState * input_state); // animation
+	void anim_drivers(time_point t);
+	void anim(time_point t, InputState * input_state); // animation
 
 	// get / set / add / del
 	void set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx);
@@ -97,15 +114,13 @@ public:
 	std::map<std::string, StaticObjectModel *> _models; // modèles
 	StaticObjectGrid * _grid; // grille de tuiles
 	std::vector<StaticObject *> _floating_objects; // objets flottants
-	unsigned int _n_laps; // nombre de tours
+	TrackInfo * _info;
 	CheckPoint * _start; // point de départ
 	TrackMode _mode; // mode
 	std::string _current_json_path;
-	std::vector<std::pair<std::string, number> > _best_lap; // les 3 meilleurs temps au tour
-	std::vector<std::pair<std::string, number> > _best_overall; // les 3 meilleurs en tout
 	bool _new_best_lap, _new_best_overall;
 
-	std::chrono::system_clock::time_point _last_precount_t; // pour décompte avant début course
+	time_point _last_precount_t; // pour décompte avant début course
 	unsigned int _precount; // décompte avant début course
 
 	std::vector<Car *> _sorted_cars; // les voitures triées par position

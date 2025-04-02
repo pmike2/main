@@ -1,30 +1,30 @@
 {
     "best_lap": [
         {
-            "name": "Rufus",
-            "time": 10.575
+            "name": "lauren",
+            "time": 10.325
         },
         {
-            "name": "Ed",
-            "time": 10.592
+            "name": "lauren",
+            "time": 10.425
         },
         {
-            "name": "Victor",
-            "time": 10.658
+            "name": "pmb",
+            "time": 10.441
         }
     ],
     "best_overall": [
         {
-            "name": "Rufus",
-            "time": 73.775
+            "name": "pmb",
+            "time": 68.137
         },
         {
-            "name": "Victor",
-            "time": 76.043
+            "name": "lauren",
+            "time": 71.14
         },
         {
-            "name": "Ed",
-            "time": 76.744
+            "name": "lauren",
+            "time": 71.14000000000001
         }
     ],
     "cell_size": 2.0,

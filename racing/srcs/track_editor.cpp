@@ -494,10 +494,10 @@ TrackEditor::~TrackEditor() {
 void TrackEditor::reinit(unsigned int width, unsigned int height) {
 	_track->set_all("full_obst", width, height);
 	_track->clear_floating_objects();
-	_track->_n_laps= DEFAULT_N_LAPS;
+	_track->_info->_n_laps= DEFAULT_N_LAPS;
 	for (unsigned int i=0; i<3; ++i) {
-		_track->_best_lap.push_back(std::make_pair("XXX", 200.0+ number(i)* 100.0));
-		_track->_best_overall.push_back(std::make_pair("XXX", 200.0+ number(i)* 100.0));
+		_track->_info->_best_lap.push_back(std::make_pair("XXX", 200.0+ number(i)* 100.0));
+		_track->_info->_best_overall.push_back(std::make_pair("XXX", 200.0+ number(i)* 100.0));
 	}
 }
 
@@ -738,7 +738,7 @@ void TrackEditor::show_info() {
 	}*/
 
 	texts.push_back(Text("TRACK "+ std::to_string(_current_track_idx), pt_type(7.0, 7.0), 0.01, glm::vec4(1.0, 1.0, 1.0, 1.0)));
-	texts.push_back(Text("NLAPS = "+ std::to_string(_track->_n_laps), pt_type(7.0, 6.0), 0.01, glm::vec4(1.0, 1.0, 1.0, 1.0)));
+	texts.push_back(Text("NLAPS = "+ std::to_string(_track->_info->_n_laps), pt_type(7.0, 6.0), 0.01, glm::vec4(1.0, 1.0, 1.0, 1.0)));
 
 	_font->set_text(texts);
 	_font->draw();
@@ -1042,19 +1042,19 @@ bool TrackEditor::key_down(InputState * input_state, SDL_Keycode key) {
 		return true;
 	}
 	// affichage grille (SDLK_g était déjà pris...)
-	else if (key== SDLK_h) {
+	else if (key== SDLK_j) {
 		_draw_grid= !_draw_grid;
 		return true;
 	}
 	// modifs nombre de tours
 	else if (key== SDLK_n) {
 		if (input_state->get_key(SDLK_LSHIFT)) {
-			if (_track->_n_laps> 1) {
-				_track->_n_laps--;
+			if (_track->_info->_n_laps> 1) {
+				_track->_info->_n_laps--;
 			}
 		}
 		else {
-			_track->_n_laps++;
+			_track->_info->_n_laps++;
 		}
 		return true;
 	}
@@ -1207,8 +1207,14 @@ Editor::Editor() {
 }
 
 
-Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl) : _screengl(screengl) {
-	//_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
+Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl) : _screengl(screengl), _help(false) {
+	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
+
+	std::ifstream ifs("../data/editor_help.txt");
+	std::string line;
+	while (std::getline(ifs, line)) {
+		_help_data.push_back(line);
+	}
 
 	unsigned int n_textures= 1;
 	_textures= new GLuint(n_textures);
@@ -1272,19 +1278,34 @@ void Editor::fill_texture_array_models() {
 void Editor::draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// scissor permet de ne dessiner que sur un rectangle sans dépasser
-	glScissor(
-		_track_editor->_screen_coords[0], _track_editor->_screen_coords[1],
-		_track_editor->_screen_coords[2]- _track_editor->_screen_coords[0],
-		_track_editor->_screen_coords[3]- _track_editor->_screen_coords[1]
-	);
-	glEnable(GL_SCISSOR_TEST);
-	_track_editor->draw(_textures[0]);
-	glDisable(GL_SCISSOR_TEST);
-	_track_editor->show_info();
-	_floating_grid_editor->show_info();
-	_tile_grid_editor->draw(_textures[0]);
-	_floating_grid_editor->draw(_textures[0]);
+	if (_help) {
+		std::vector<Text> texts;
+		for (unsigned int idx_line=0; idx_line<_help_data.size(); ++idx_line) {
+			texts.push_back(Text(_help_data[idx_line], glm::vec2(-9.5f, 7.5f- float(idx_line)* 0.4), 0.006, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		}
+		_font->set_text(texts);
+		_font->draw();
+	}
+	else {
+		std::vector<Text> texts;
+		texts.push_back(Text("touche h pour l'aide", glm::vec2(-9.5f, 7.5f), 0.007, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		_font->set_text(texts);
+		_font->draw();
+
+		// scissor permet de ne dessiner que sur un rectangle sans dépasser
+		glScissor(
+			_track_editor->_screen_coords[0], _track_editor->_screen_coords[1],
+			_track_editor->_screen_coords[2]- _track_editor->_screen_coords[0],
+			_track_editor->_screen_coords[3]- _track_editor->_screen_coords[1]
+		);
+		glEnable(GL_SCISSOR_TEST);
+		_track_editor->draw(_textures[0]);
+		glDisable(GL_SCISSOR_TEST);
+		_track_editor->show_info();
+		_floating_grid_editor->show_info();
+		_tile_grid_editor->draw(_textures[0]);
+		_floating_grid_editor->draw(_textures[0]);
+	}
 }
 
 
@@ -1371,6 +1392,10 @@ bool Editor::key_down(InputState * input_state, SDL_Keycode key) {
 	else if (key== SDLK_w) {
 		sync_track_with_tile();
 		return true;
+	}
+	// help
+	else if (key== SDLK_h) {
+		_help= !_help;
 	}
 	else if (_track_editor->key_down(input_state, key)) {
 		return true;

@@ -18,6 +18,7 @@ Programme principal de lancement de racing
 #include "utile.h"
 #include "gl_utils.h"
 #include "input_state.h"
+#include "typedefs.h"
 
 #include "racing.h"
 
@@ -55,15 +56,15 @@ std::mutex mut;
 
 
 
-void key_down(SDL_Keycode key, std::chrono::system_clock::time_point t) {
+void key_down(SDL_Keycode key, time_point t) {
 	input_state->key_down(key);
 
-	if (key== SDLK_ESCAPE) {
-		done= true;
+	if (racing->key_down(key, t)) {
 		return;
 	}
 
-	if (racing->key_down(key, t)) {
+	if (key== SDLK_ESCAPE) {
+		done= true;
 		return;
 	}
 }
@@ -160,7 +161,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	input_state= new InputState();
-	std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+	time_point now= std::chrono::system_clock::now();
 	racing= new Racing(progs, screengl, input_state, now);
 
 	if (SDL_NumJoysticks()> 0){
@@ -201,7 +202,7 @@ void draw() {
 }
 
 
-void anim(std::chrono::system_clock::time_point t) {
+void anim(time_point t) {
 	racing->anim(t);
 }
 
@@ -238,7 +239,7 @@ void check_data_send() {
 }
 
 
-void idle(std::chrono::system_clock::time_point t) {
+void idle(time_point t) {
 	anim(t);
 	draw();
 	compute_fps();
@@ -250,7 +251,7 @@ void main_loop() {
 	SDL_Event event;
 	
 	while (!done) {
-		std::chrono::system_clock::time_point now= std::chrono::system_clock::now();
+		time_point now= std::chrono::system_clock::now();
 
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {

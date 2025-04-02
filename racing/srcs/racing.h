@@ -62,12 +62,14 @@ const float GRAY_BLEND= 0.6f;
 // faces
 const glm::vec2 RANKING_ORIGIN(-7.5f, 3.5f);
 const std::vector<float> RANKING_FACE_SIZE {1.3f, 1.1f, 0.9f, 0.7f};
-const std::vector<float> RANKING_FACE_ALPHA {1.0f, 0.9f, 0.8f, 0.7f};
-const std::vector<float> RANKING_TEXT_SCALE {0.01f, 0.008f, 0.006f, 0.005f};
+const std::vector<float> RANKING_FACE_ALPHA {1.0f, 1.0f, 1.0f, 1.0f};
+const std::vector<float> RANKING_TEXT_SCALE {0.01f, 0.008f, 0.006f, 0.004f};
+const number RANKING_FACE_MARGIN_FACTOR= 1.8f;
+const number RANKING_FACE_TEXT_MARGIN= 0.15f;
 const glm::vec2 IN_RACE_FACE_OFFSET(0.1f, 0.1f);
 const glm::vec2 IN_RACE_TEXT_OFFSET(0.1f, 0.1f);
-const std::vector<float> IN_RACE_FACE_SIZE {0.8f, 0.6f, 0.5f, 0.4f};
-const std::vector<float> IN_RACE_FACE_ALPHA {1.0f, 0.9f, 0.8f, 0.7f};
+const std::vector<float> IN_RACE_FACE_SIZE {1.0f, 0.8f, 0.7f, 0.6f};
+const std::vector<float> IN_RACE_FACE_ALPHA {1.0f, 1.0f, 1.0f, 1.0f};
 const std::vector<float> IN_RACE_TEXT_SCALE {0.006f, 0.004f, 0.003f, 0.002f};
 
 // couleurs de debug
@@ -102,15 +104,15 @@ const glm::vec4 BEST_LAP_TIME_COLOR(0.4, 0.8, 0.4, 1.0);
 class Racing {
 public:
 	Racing();
-	Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, std::chrono::system_clock::time_point t);
+	Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, time_point t);
 	~Racing();
 
 	//void choose_driver(unsigned int idx_driver);
 	// choix d'une piste
-	void choose_track(unsigned int idx_track, std::chrono::system_clock::time_point t);
+	void choose_track(unsigned int idx_track, time_point t);
 
 	// chargement des textures
-	void fill_texture_choose_driver();
+	void fill_texture_driver();
 	void fill_texture_choose_track();
 	void fill_texture_array_models();
 	void fill_texture_array_smoke();
@@ -143,14 +145,15 @@ public:
 	void update_driver_face();
 	
 	// animation
-	void anim(std::chrono::system_clock::time_point t);
+	void anim(time_point t);
 	void camera();
 
 	// input
-	bool key_down(SDL_Keycode key, std::chrono::system_clock::time_point t);
+	bool key_down(SDL_Keycode key, time_point t);
 
 
 	Track * _track; // piste courante
+	TrackInfo * _track_info;
 	std::vector<SmokeSystem *> _smoke_systems; // système de fumée : 1 par Car
 	TireTrackSystem * _tire_track_system; // traces de pneu
 	SparkSystem * _spark_system; // étincelles des collisions

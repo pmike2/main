@@ -61,7 +61,7 @@ void TireTrackSystem::reinit() {
 }
 
 
-void TireTrackSystem::anim(std::chrono::system_clock::time_point t, std::vector<Car *> cars) {
+void TireTrackSystem::anim(time_point t, std::vector<Car *> cars) {
 	for (unsigned int i=0; i<N_MAX_TIRE_TRACKS; ++i) {
 		_tracks[i]->anim();
 	}

@@ -7,20 +7,29 @@
 #include "typedefs.h"
 
 
+// nombre max de sparks pour tout le circuit
 const unsigned int N_MAX_SPARKS= 2000;
+// min, max du nombre de sparks créés lors d'une collision
 const unsigned int N_MIN_SPARKS_PER_COLLISION= 1;
-const unsigned int N_MAX_SPARKS_PER_COLLISION= 2;
+const unsigned int N_MAX_SPARKS_PER_COLLISION= 4;
+// opacité initiale - décrément d'opacité à chaque anim - seuil d'opacité -> suppression
 const number SPARKLE_OPACITY_INIT= 1.0;
-const number SPARKLE_OPACITY_DECREMENT= 0.06;
+const number SPARKLE_OPACITY_DECREMENT= 0.1;
 const number SPARKLE_OPACITY_THRESHOLD= 0.05;
+// min, max taille BBox
 const number MIN_SPARK_HALF_SIZE= 0.005;
 const number MAX_SPARK_HALF_SIZE= 0.01;
+// largeur fixe d'un spark
+const number SPARK_HALF_WIDTH= 0.01;
+// min, max incrément position
 const number MIN_SPARK_CENTER_INC= -0.05;
 const number MAX_SPARK_CENTER_INC= 0.05;
+// min, max incrément angle
 const number MIN_SPARK_ALPHA_INC= 0.0;
-const number MAX_SPARK_ALPHA_INC= 0.1;
-const number MIN_SPARK_HALF_SIZE_INC= 0.001;
-const number MAX_SPARK_HALF_SIZE_INC= 0.005;
+const number MAX_SPARK_ALPHA_INC= 0.02;
+// min, max incrément taille
+const number MIN_SPARK_HALF_SIZE_INC= 0.002;
+const number MAX_SPARK_HALF_SIZE_INC= 0.006;
 
 
 class Spark {
@@ -45,7 +54,7 @@ public:
 	SparkSystem();
 	~SparkSystem();
 	void reinit();
-	void anim(std::chrono::system_clock::time_point t, std::vector<pt_type> positions);
+	void anim(time_point t, std::vector<pt_type> positions);
 
 
 	Spark ** _sparks;

@@ -46,6 +46,30 @@
 			{
 				"texture" : "start_active_10.png",
 				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_11.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_12.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_13.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_14.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_15.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "start_active_16.png",
+				"n_ms" : 100
 			}
 		]
 	}

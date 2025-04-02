@@ -305,7 +305,7 @@ void Car::preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick)
 }*/
 
 
-void Car::anim(number anim_dt, std::chrono::system_clock::time_point t) {
+void Car::anim(number anim_dt, time_point t) {
 	CarModel * model= get_model();
 
 	if (StaticObject::anim_surface(t)) {
