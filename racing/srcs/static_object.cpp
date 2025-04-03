@@ -34,6 +34,22 @@ ActionTexture::~ActionTexture() {
 }
 
 
+// ActionForce --------------------------------------------------------------------
+ActionForce::ActionForce() {
+
+}
+
+
+ActionForce::ActionForce(pt_type direction, unsigned int n_ms) : _direction(direction), _n_ms(n_ms) {
+
+}
+
+
+ActionForce::~ActionForce() {
+
+}
+
+
 // Action -------------------------------------------------------------------------
 Action::Action() {
 
@@ -41,6 +57,29 @@ Action::Action() {
 
 
 Action::~Action() {
+	for (auto tex : _textures) {
+		delete tex;
+	}
+	_textures.clear();
+	for (auto force : _forces) {
+		delete force;
+	}
+	_forces.clear();
+}
+
+
+// Actiontransition ---------------------------------------------------------------
+Actiontransition::Actiontransition() {
+
+}
+
+
+Actiontransition::Actiontransition(std::string from, std::string to, unsigned int n_ms) : _from(from), _to(to), _n_ms(n_ms) {
+
+}
+
+
+Actiontransition::~Actiontransition() {
 
 }
 
@@ -61,6 +100,14 @@ StaticObjectModel::StaticObjectModel(std::string json_path) :
 
 StaticObjectModel::~StaticObjectModel() {
 	delete _footprint;
+	for (auto action : _actions) {
+		delete action.second;
+	}
+	_actions.clear();
+	for (auto transition : _transitions) {
+		delete transition;
+	}
+	_transitions.clear();
 }
 
 
@@ -111,33 +158,51 @@ void StaticObjectModel::load(std::string json_path) {
 	if (_type== OBSTACLE_TILE || _type== CHECKPOINT || _type== START || _type== REPAIR ||
 		_type== SURFACE_FLOATING || _type== SURFACE_TILE || _type== BOOST) {
 		_fixed= true;
+		_no_rotation= true;
 	}
-	else if (_type== OBSTACLE_FLOATING) {
+	else if (_type== OBSTACLE_FLOATING || _type== DECORATION) {
 		// on met le com (center of mass) à 0,0 afin de faciliter les rotations autour du com
 		_footprint->centroid2zero();
 		_footprint->update_all();
 		_fixed= js["fixed"];
+		if (js["no_rotation"]!= nullptr) {
+			_no_rotation= js["no_rotation"];
+		}
+		else {
+			_no_rotation= false;
+		}
 	}
 	else if (_type== CAR) {
 		// on met le com (center of mass) à 0,0 afin de faciliter les rotations autour du com
 		_footprint->centroid2zero();
 		_footprint->update_all();
 		_fixed= false;
+		_no_rotation= false;
 	}
 
 	if (js["actions"]!= nullptr) {
 		for (json::iterator it = js["actions"].begin(); it != js["actions"].end(); ++it) {
 			auto & action_name= it.key();
-			auto & l_tex= it.value();
+			auto & l_ac= it.value();
 			_actions[action_name]= new Action();
-			for (auto tex : l_tex) {
-				std::string texture_rel_path= tex["texture"];
-				std::string texture_path= dirname(_json_path)+ "/textures/"+ texture_rel_path;
-				unsigned int n_ms= 0;
-				if (tex["n_ms"]!= nullptr) {
-					n_ms= tex["n_ms"];
+			for (auto ac : l_ac) {
+				if (ac["texture"]!= nullptr) {
+					std::string texture_rel_path= ac["texture"];
+					std::string texture_path= dirname(_json_path)+ "/textures/"+ texture_rel_path;
+					unsigned int n_ms= 0;
+					if (ac["n_ms"]!= nullptr) {
+						n_ms= ac["n_ms"];
+					}
+					_actions[action_name]->_textures.push_back(new ActionTexture(texture_path, n_ms));
 				}
-				_actions[action_name]->_textures.push_back(new ActionTexture(texture_path, n_ms));
+				else if (ac["force"]!= nullptr) {
+					pt_type direction= pt_type(ac["force"][0], ac["force"][1]);
+					unsigned int n_ms= 0;
+					if (ac["n_ms"]!= nullptr) {
+						n_ms= ac["n_ms"];
+					}
+					_actions[action_name]->_forces.push_back(new ActionForce(direction, n_ms));
+				}
 			}
 		}
 	}
@@ -146,6 +211,22 @@ void StaticObjectModel::load(std::string json_path) {
 		std::string texture_path= dirname(_json_path)+ "/textures/"+ _name+ ".png";
 		_actions[MAIN_ACTION_NAME]->_textures.push_back(new ActionTexture(texture_path, 0));
 	}
+
+	if (js["transitions"]!= nullptr) {
+		for (auto transition : js["transitions"]) {
+			_transitions.push_back(new Actiontransition(transition["from"], transition["to"], transition["n_ms"]));
+		}
+	}
+}
+
+
+unsigned int StaticObjectModel::get_transition(std::string from, std::string to) {
+	for (auto transition : _transitions) {
+		if (transition->_from== from && transition->_to== to) {
+			return transition->_n_ms;
+		}
+	}
+	return 0;
 }
 
 
@@ -173,7 +254,8 @@ StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number a
 	_acceleration(pt_type(0.0)), _force(pt_type(0.0)), _alpha(0.0), _angular_velocity(0.0), _angular_acceleration(0.0),
 	_torque(0.0), _current_surface(NULL), _previous_surface(NULL),
 	_linear_friction_surface(1.0), _angular_friction_surface(1.0),
-	_current_action_name(MAIN_ACTION_NAME), _current_action_texture_idx(0)
+	_current_action_name(MAIN_ACTION_NAME), _current_action_texture_idx(0), _current_action_force_idx(0),
+	_action_force_active(false)
 {
 	_bbox= new BBox_2D(pt_type(0.0), pt_type(0.0));
 	_footprint= new Polygon2D();
@@ -259,9 +341,16 @@ void StaticObject::set_current_surface(Material * material, time_point t) {
 
 
 void StaticObject::set_current_action(std::string action_name, time_point t) {
-	_current_action_name= action_name;
-	_current_action_texture_idx= 0;
-	_last_anim_action_t= t;
+	if (_current_action_name== action_name) {
+		_next_action_name= _current_action_name;
+		return;
+	}
+	if (_next_action_name== action_name) {
+		return;
+	}
+
+	_next_action_name= action_name;
+	_last_action_change_t= t;
 }
 
 
@@ -287,9 +376,9 @@ bool StaticObject::anim_surface(time_point t) {
 
 
 void StaticObject::anim_texture(time_point t) {
-	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_action_t).count();
+	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_action_texture_t).count();
 	if (dt> _model->_actions[_current_action_name]->_textures[_current_action_texture_idx]->_n_ms) {
-		_last_anim_action_t= t;
+		_last_action_texture_t= t;
 		_current_action_texture_idx++;
 		if (_current_action_texture_idx>= _model->_actions[_current_action_name]->_textures.size()) {
 			_current_action_texture_idx= 0;
@@ -298,7 +387,44 @@ void StaticObject::anim_texture(time_point t) {
 }
 
 
+void StaticObject::anim_force(time_point t) {
+	if (_action_force_active) {
+		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_action_force_t).count();
+		if (dt> _model->_actions[_current_action_name]->_forces[_current_action_force_idx]->_n_ms) {
+			_last_action_force_t= t;
+			_current_action_force_idx++;
+			if (_current_action_force_idx>= _model->_actions[_current_action_name]->_forces.size()) {
+				_current_action_force_idx= 0;
+				if (!_model->_actions[_current_action_name]->_loop_forces) {
+					_action_force_active= false;
+				}
+			}
+		}
+	}
+}
+
+
+void StaticObject::anim_action(time_point t) {
+	if (_next_action_name!= _current_action_name) {
+		auto dt_change= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_action_change_t).count();
+		if (dt_change> _model->get_transition(_current_action_name, _next_action_name)) {
+			_current_action_name= _next_action_name;
+			_last_action_change_t= t;
+			_current_action_texture_idx= 0;
+			_last_action_texture_t= t;
+			_current_action_force_idx= 0;
+			_last_action_force_t= t;
+			_action_force_active= false;
+			if (_model->_actions[_current_action_name]->_forces.size()> 0) {
+				_action_force_active= true;
+			}
+		}
+	}
+}
+
+
 void StaticObject::anim(number anim_dt, time_point t) {
+	anim_action(t);
 	anim_texture(t);
 
 	if (_model->_fixed) {
@@ -306,11 +432,14 @@ void StaticObject::anim(number anim_dt, time_point t) {
 	}
 
 	anim_surface(t);
+	anim_force(t);
 
-	// calcul force
 	_force= pt_type(0.0);
+	if (_action_force_active) {
+		_force+= _model->_actions[_current_action_name]->_forces[_current_action_force_idx]->_direction;
+	}
 	_force-= _model->_material->_linear_friction* _linear_friction_surface* _velocity; // friction
-	
+
 	// force -> acceleration -> vitesse -> position
 	_acceleration= _force/ _mass;
 	_velocity+= _acceleration* anim_dt;
@@ -323,7 +452,10 @@ void StaticObject::anim(number anim_dt, time_point t) {
 	// torque -> acc angulaire -> vitesse angulaire -> angle
 	_angular_acceleration= _torque/ _inertia;
 	_angular_velocity+= _angular_acceleration* anim_dt;
-	_alpha+= _angular_velocity* anim_dt;
+
+	if (!_model->_no_rotation) {
+		_alpha+= _angular_velocity* anim_dt;
+	}
 
 	// on veut un angle toujours compris entre 0 et 2pi
 	while (_alpha> M_PI* 2.0) {

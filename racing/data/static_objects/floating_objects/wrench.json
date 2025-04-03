@@ -6,7 +6,7 @@
 				"texture" : "wrench_inactive.png"
 			}
 		],
-		"active" : [
+		"car_contact" : [
 			{
 				"texture" : "wrench_active_1.png",
 				"n_ms" : 100
@@ -20,5 +20,8 @@
 				"n_ms" : 100
 			}
 		]
-	}
+	},
+	"transitions" : [
+		{"from" : "car_contact", "to" : "main", "n_ms" : 1000}
+	]
 }

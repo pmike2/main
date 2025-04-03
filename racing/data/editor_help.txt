@@ -20,7 +20,9 @@ f + click : creation d'un objet flottant à l'emplacement du curseur
 d + click : suppression de l'objet flottant à l'emplacement du curseur
 m + click : move de l'objet flottant à l'emplacement du curseur
 r + click : rotation de l'objet flottant à l'emplacement du curseur (a utiliser eventuellement avec o)
-g + click : grossissement de l'objet flottant à l'emplacement du curseur
+g + click : 
+    si lshift : grossissement de l'objet flottant à l'emplacement du curseur, en conservant le rapport longueur / largeur
+    sinon : pareil mais sans conservation du rapport longueur / largeur
 
 click :
     sur piste : selection emplacement piste

@@ -545,6 +545,40 @@ unsigned int Track::get_checkpoint_index(CheckPoint * checkpoint) {
 }
 
 
+void Track::anim_objects(time_point t) {
+	// finalement un dt fixe fait plus propre
+	/*auto dt_n_ms= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
+	number dt= number(dt_n_ms)/ 1000.0;
+	_last_anim_t= t;*/
+	number dt= 0.05;
+
+	for (auto obj : _floating_objects) {
+		if (obj->_model->_type== CAR) {
+			Car * car= (Car *)(obj);
+
+			// IA
+			if (car!= _hero) {
+				//car->random_ia();
+				checkpoint_ia(car);
+			}
+
+			// animation des objets
+			car->anim(dt, t);
+		}
+		else {
+			obj->anim(dt, t);
+		}
+	}
+}
+
+
+void Track::reinit_car_contact() {
+	for (auto obj : _floating_objects) {
+		obj->_car_contact= false;
+	}
+}
+
+
 void Track::collisions(time_point t) {
 	_collisions.clear();
 	pt_type position(0.0);
@@ -553,14 +587,18 @@ void Track::collisions(time_point t) {
 
 	for (unsigned int idx_obj_1=0; idx_obj_1<_floating_objects.size()- 1; ++idx_obj_1) {
 		for (unsigned int idx_obj_2=idx_obj_1+ 1; idx_obj_2<_floating_objects.size(); ++idx_obj_2) {
-			if (collision(_floating_objects[idx_obj_1], _floating_objects[idx_obj_2], position)) {
+			StaticObject * obj1= _floating_objects[idx_obj_1];
+			StaticObject * obj2= _floating_objects[idx_obj_2];
+			if (collision(obj1, obj2, position)) {
 				_collisions.push_back(position);
 				
-				if (_floating_objects[idx_obj_1]->_model->_type== CAR) {
-					collided_cars.push_back((Car *)(_floating_objects[idx_obj_1]));
+				if (obj1->_model->_type== CAR) {
+					collided_cars.push_back((Car *)(obj1));
+					obj2->_car_contact= true;
 				}
-				if (_floating_objects[idx_obj_2]->_model->_type== CAR) {
-					collided_cars.push_back((Car *)(_floating_objects[idx_obj_2]));
+				if (obj2->_model->_type== CAR) {
+					collided_cars.push_back((Car *)(obj2));
+					obj1->_car_contact= true;
 				}
 			}
 		}
@@ -580,6 +618,7 @@ void Track::collisions(time_point t) {
 	for (auto car : collided_cars) {
 		car->_driver->_angry= true;
 	}
+
 	for (auto car : _sorted_cars) {
 		number average_bump= 0.0;
 		for (int i=0; i<N_BUMPS; ++i) {
@@ -610,6 +649,7 @@ void Track::surfaces(time_point t) {
 				continue;
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
+				obj2->_car_contact= true;
 				if (car->_current_surface!= obj2->_model->_material) {
 					car->set_current_surface(obj2->_model->_material, t);
 				}
@@ -627,6 +667,7 @@ void Track::surfaces(time_point t) {
 				continue;
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
+				obj2->_car_contact= true;
 				if (car->_current_surface!= obj2->_model->_material) {
 					car->set_current_surface(obj2->_model->_material, t);
 				}
@@ -643,13 +684,6 @@ void Track::surfaces(time_point t) {
 
 
 void Track::repair(time_point t) {
-	std::map<StaticObject *, bool> repairs;
-	for (auto obj : _floating_objects) {
-		if (obj->_model->_type== REPAIR) {
-			repairs[obj]= false;
-		}
-	}
-
 	for (auto obj1 : _floating_objects) {
 		if (obj1->_model->_type!= CAR) {
 			continue;
@@ -665,7 +699,7 @@ void Track::repair(time_point t) {
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
 				// réparation active
-				repairs[obj2]= true;
+				obj2->_car_contact= true;
 				for (int i=0; i<N_BUMPS; ++i) {
 					car->_bumps[i]-= REPAIR_INCREMENT;
 					if (car->_bumps[i]< 0.0) {
@@ -676,27 +710,10 @@ void Track::repair(time_point t) {
 			}
 		}
 	}
-
-	// animation de la zone de réparation
-	for (auto x : repairs) {
-		if (x.second && x.first->_current_action_name!= "active") {
-			x.first->set_current_action("active", t);
-		}
-		else if (!x.second && x.first->_current_action_name!= MAIN_ACTION_NAME) {
-			x.first->set_current_action(MAIN_ACTION_NAME, t);
-		}
-	}
 }
 
 
 void Track::boost(time_point t) {
-	std::map<StaticObject *, bool> boosts;
-	for (auto obj : _floating_objects) {
-		if (obj->_model->_type== BOOST) {
-			boosts[obj]= false;
-		}
-	}
-
 	for (auto obj1 : _floating_objects) {
 		if (obj1->_model->_type!= CAR) {
 			continue;
@@ -712,7 +729,7 @@ void Track::boost(time_point t) {
 			}
 			if (is_pt_inside_poly(obj1->_com, obj2->_footprint)) {
 				// boost actif
-				boosts[obj2]= true;
+				obj2->_car_contact= true;
 				auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_boost_t).count();
 				if (dt> BOOST_DELTA_T_MS) {
 					car->_last_boost_t= t;
@@ -720,16 +737,6 @@ void Track::boost(time_point t) {
 				}
 				break;
 			}
-		}
-	}
-
-	// animation de la zone boost
-	for (auto x : boosts) {
-		if (x.second && x.first->_current_action_name!= "active") {
-			x.first->set_current_action("active", t);
-		}
-		else if (!x.second && x.first->_current_action_name!= MAIN_ACTION_NAME) {
-			x.first->set_current_action(MAIN_ACTION_NAME, t);
 		}
 	}
 }
@@ -859,6 +866,18 @@ void Track::checkpoint_ia(Car * car) {
 }
 
 
+void Track::set_car_contact_action(time_point t) {
+	for (auto obj : _floating_objects) {
+		if (obj->_car_contact && obj->_model->_actions.count(CAR_CONTACT_ACTION_NAME)> 0 && obj->_current_action_name!= CAR_CONTACT_ACTION_NAME) {
+			obj->set_current_action(CAR_CONTACT_ACTION_NAME, t);
+		}
+		else if (!obj->_car_contact && obj->_current_action_name== CAR_CONTACT_ACTION_NAME) {
+			obj->set_current_action(MAIN_ACTION_NAME, t);
+		}
+	}
+}
+
+
 void Track::lap_time(time_point t) {
 	for (auto car  : _sorted_cars) {
 		if (car->_finished) {
@@ -950,31 +969,10 @@ void Track::anim(time_point t, InputState * input_state) {
 		_hero->_thrust= _hero->_wheel= 0.0;
 	}
 
-	// finalement un dt fixe fait plus propre
-	/*auto dt_n_ms= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
-	number dt= number(dt_n_ms)/ 1000.0;
-	_last_anim_t= t;*/
-	number dt= 0.05;
-
 	if (_mode== TRACK_LIVE || _mode== TRACK_FINISHED) {
+		anim_objects(t);
 		
-		for (auto obj : _floating_objects) {
-			if (obj->_model->_type== CAR) {
-				Car * car= (Car *)(obj);
-
-				// IA
-				if (car!= _hero) {
-					//car->random_ia();
-					checkpoint_ia(car);
-				}
-
-				// animation des objets
-				car->anim(dt, t);
-			}
-			else {
-				obj->anim(dt, t);
-			}
-		}
+		reinit_car_contact();
 
 		// reinit des expressions des drivers
 		reinit_drivers(t, false);
@@ -993,6 +991,8 @@ void Track::anim(time_point t, InputState * input_state) {
 
 		// maj pour chaque Car des checkpoints et des temps réalisés si passage start
 		checkpoints(t);
+
+		set_car_contact_action(t);
 
 		// maj du temps du tour en cours
 		lap_time(t);

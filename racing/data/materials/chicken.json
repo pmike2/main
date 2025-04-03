@@ -1,0 +1,6 @@
+{
+	"density" : 1.0,
+	"linear_friction" : 1.0,
+	"angular_friction" : 1.0,
+	"solid" : true
+}

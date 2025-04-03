@@ -80,15 +80,18 @@ public:
 	void start(time_point t);
 	void end();
 	void write_records();
-
 	void sort_cars(); // tri des voitures par position
 	unsigned int get_checkpoint_index(CheckPoint * checkpoint); // position du chkpt par rapport au start
+	
+	void anim_objects(time_point t);
+	void reinit_car_contact();
 	void collisions(time_point t); // gestion des collisions
 	void surfaces(time_point t);
 	void repair(time_point t);
 	void boost(time_point t);
 	void checkpoints(time_point t); // gestion chkpts pour toutes les voitures
 	void checkpoint_ia(Car * car); // ia basée sur les chkpts
+	void set_car_contact_action(time_point t);
 	void lap_time(time_point t);
 	void total_time();
 	void anim_drivers(time_point t);

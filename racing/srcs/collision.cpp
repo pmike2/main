@@ -37,6 +37,11 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 		return false;
 	}
 
+	// pour une déco on ne va pas plus loin mais on renvoie true pour que la deco->_car_contact soit à true
+	if (obj1->_model->_type== DECORATION || obj2->_model->_type== DECORATION) {
+		return true;
+	}
+
 	// on veut éviter le cas où c'est un angle du décor qui pénètre la voiture car sinon réactions bizarres
 	// on attend du coup la situation inverse où un angle de la voiture pénètre le décor, ce qui fera plus naturel
 	if (is_pt_in_poly1 && obj1->_model->_type== OBSTACLE_TILE) {

@@ -1174,7 +1174,15 @@ bool TrackEditor::mouse_motion(InputState * input_state) {
 	}
 	// g = grossissement objet
 	else if (input_state->get_key(SDLK_g) && _selected_floating_object!= NULL) {
-		pt_type scale= _selected_floating_object->_scale+ pt_type(0.05* number(input_state->_xrel), -0.05* number(input_state->_yrel));
+		pt_type motion_scale;
+		if (input_state->get_key(SDLK_LSHIFT)) {
+			motion_scale.x= motion_scale.y= 0.05* number(input_state->_xrel);
+		}
+		else {
+			motion_scale.x= 0.05* number(input_state->_xrel);
+			motion_scale.y= -0.05* number(input_state->_yrel);
+		}
+		pt_type scale= _selected_floating_object->_scale+ motion_scale;
 		_selected_floating_object->reinit(_selected_floating_object->_com, _selected_floating_object->_alpha, scale);
 		update();
 		return true;

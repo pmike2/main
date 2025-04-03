@@ -19,7 +19,7 @@
 // REPAIR : zone de réparation
 // BOOST : accélérateur
 enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, CAR, START, CHECKPOINT, 
-	SURFACE_TILE, SURFACE_FLOATING, REPAIR, BOOST};
+	SURFACE_TILE, SURFACE_FLOATING, REPAIR, BOOST, DECORATION};
 
 // type de grille : verticale, horizontale
 enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
@@ -33,7 +33,22 @@ const std::map<std::string, ObjectType> STR2OBJTYPE {
 	{"surface_tile", SURFACE_TILE},
 	{"surface_floating", SURFACE_FLOATING},
 	{"repair", REPAIR},
-	{"boost", BOOST}
+	{"boost", BOOST},
+	{"decoration", DECORATION}
+};
+
+// z d'affichage par type d'objet
+const std::map<ObjectType, number> Z_OBJECTS {
+	{OBSTACLE_TILE, -80.0},
+	{SURFACE_TILE, -80.0},
+	{START, -70.0},
+	{CHECKPOINT, -70.0},
+	{SURFACE_FLOATING, -70.0},
+	{REPAIR, -70.0},
+	{BOOST, -70.0},
+	{OBSTACLE_FLOATING, -60.0},
+	{CAR, -40.0},
+	{DECORATION, -60.0}
 };
 
 // !!!
@@ -54,20 +69,8 @@ const number BUMP_DRIFT_THRESHOLD= 0.5;
 // incrément de réparation des bosses
 const number REPAIR_INCREMENT= 0.01;
 
-// z d'affichage par type d'objet
-const std::map<ObjectType, number> Z_OBJECTS {
-	{OBSTACLE_TILE, -80.0},
-	{SURFACE_TILE, -80.0},
-	{START, -70.0},
-	{CHECKPOINT, -70.0},
-	{SURFACE_FLOATING, -70.0},
-	{REPAIR, -70.0},
-	{BOOST, -70.0},
-	{OBSTACLE_FLOATING, -60.0},
-	{CAR, -40.0}
-};
-
 const std::string MAIN_ACTION_NAME= "main";
+const std::string CAR_CONTACT_ACTION_NAME= "car_contact";
 
 
 class ActionTexture {
@@ -84,6 +87,18 @@ public:
 };
 
 
+class ActionForce {
+public:
+	ActionForce();
+	ActionForce(pt_type direction, unsigned int n_ms);
+	~ActionForce();
+
+
+	pt_type _direction;
+	unsigned int _n_ms;
+};
+
+
 class Action {
 public:
 	Action();
@@ -91,6 +106,20 @@ public:
 
 
 	std::vector<ActionTexture *> _textures;
+	std::vector<ActionForce * > _forces;
+	bool _loop_forces;
+};
+
+
+struct Actiontransition {
+	Actiontransition();
+	Actiontransition(std::string from, std::string to, unsigned int n_ms);
+	~Actiontransition();
+	
+	
+	std::string _from;
+	std::string _to;
+	unsigned int _n_ms;
 };
 
 
@@ -101,6 +130,7 @@ public:
 	StaticObjectModel(std::string json_path);
 	~StaticObjectModel();
 	void load(std::string json_path);
+	unsigned int get_transition(std::string from, std::string to);
 	friend std::ostream & operator << (std::ostream & os, const StaticObjectModel & model);
 
 
@@ -110,9 +140,11 @@ public:
 	pt_type _com2bbox_center; // vecteur centre de masse -> centre bbox ; utile pour mettre à jour StaticObject._bbox
 	Polygon2D * _footprint; // empreinte au sol, utilisée pour les collisions ; doit être convexe
 	bool _fixed; // est-ce un objet figé
+	bool _no_rotation;
 	Material * _material; // matériau éventuel de l'objet
 	std::string _material_name; // nom du matériau
 	std::map<std::string, Action *> _actions;
+	std::vector<Actiontransition * > _transitions;
 };
 
 
@@ -129,6 +161,8 @@ public:
 	void set_current_action(std::string action_name, time_point t);
 	bool anim_surface(time_point t);
 	void anim_texture(time_point t);
+	void anim_force(time_point t);
+	void anim_action(time_point t);
 	void anim(number anim_dt, time_point t); // animation
 	friend std::ostream & operator << (std::ostream & os, const StaticObject & obj);
 
@@ -164,8 +198,15 @@ public:
 	time_point _last_boost_t; // dernier temps où un boost a eu lieu
 
 	std::string _current_action_name;
+	std::string _next_action_name;
+	time_point _last_action_change_t;
 	unsigned int _current_action_texture_idx;
-	time_point _last_anim_action_t;
+	time_point _last_action_texture_t;
+	unsigned int _current_action_force_idx;
+	time_point _last_action_force_t;
+	bool _action_force_active;
+
+	bool _car_contact;
 };
 
 
