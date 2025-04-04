@@ -1,7 +1,7 @@
 {
 	"type" : "checkpoint",
 	"actions" : {
-		"main" : [
+		"inactive" : [
 			{
 				"texture" : "checkpoint_inactive.png"
 			}
@@ -28,5 +28,16 @@
 				"n_ms" : 200
 			}
 		]
-	}
+	},
+	"sequences" : {
+		"main_sequence" : [
+			["inactive", 0]
+		],
+		"active" : [
+			["active", 0]
+		]
+	},
+	"transitions" : [
+		{"from" : "active", "to" : "main_sequence", "n_ms" : 2000}
+	]
 }

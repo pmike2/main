@@ -1,11 +1,6 @@
 {
 	"type" : "start",
 	"actions" : {
-		"main" : [
-			{
-				"texture" : "start.png"
-			}
-		],
 		"active" : [
 			{
 				"texture" : "start_active_1.png",
@@ -71,6 +66,11 @@
 				"texture" : "start_active_16.png",
 				"n_ms" : 100
 			}
+		]
+	},
+	"sequences" : {
+		"main_sequence" : [
+			["active", 0]
 		]
 	}
 }

@@ -1,12 +1,12 @@
 {
 	"type" : "boost",
 	"actions" : {
-		"main" : [
+		"inactive" : [
 			{
 				"texture" : "boost_inactive.png"
 			}
 		],
-		"car_contact" : [
+		"active" : [
 			{
 				"texture" : "boost_active_1.png",
 				"n_ms" : 40
@@ -19,6 +19,14 @@
 				"texture" : "boost_active_3.png",
 				"n_ms" : 40
 			}
+		]
+	},
+	"sequences" : {
+		"main_sequence" : [
+			["inactive", 0]
+		],
+		"car_contact_sequence" : [
+			["active", 0]
 		]
 	},
 	"transitions" : [

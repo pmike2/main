@@ -200,8 +200,10 @@ void Racing::fill_texture_array_models() {
 	unsigned int compt= 0;
 	for (auto m : _track->_models) {
 		StaticObjectModel * model= m.second;
-		for (auto action : model->_actions) {
-			for (auto action_texture : action.second->_textures) {
+		std::vector<Action *> actions= model->get_unduplicated_actions();
+
+		for (auto action : actions) {
+			for (auto action_texture : action->_textures) {
 				pngs.push_back(action_texture->_texture_path);
 				pngs_bump.push_back(action_texture->_texture_path_bump);
 				action_texture->_texture_idx= float(compt++);
@@ -1032,13 +1034,14 @@ void Racing::update_texture() {
 
 	for (unsigned int idx_obj=0; idx_obj<n_grid_objects+ n_floating_objects; ++idx_obj) {
 		StaticObject * obj;
-		
+
 		if (idx_obj< n_grid_objects) {
 			obj= _track->_grid->_objects[idx_obj];
 		}
 		else if (idx_obj< n_grid_objects+ n_floating_objects) {
 			obj= _track->_floating_objects[idx_obj- n_grid_objects];
 		}
+		Action * action= obj->get_current_action();
 		
 		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
 		/*number positions[n_pts_per_obj* 5]= {
@@ -1073,7 +1076,7 @@ void Racing::update_texture() {
 			for (unsigned int i=0; i<6; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[6* idx_pt+ i]);
 			}
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= obj->_model->_actions[obj->_current_action_name]->_textures[obj->_current_action_texture_idx]->_texture_idx;
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= action->_textures[obj->_current_action_texture_idx]->_texture_idx;
 		}
 	}
 

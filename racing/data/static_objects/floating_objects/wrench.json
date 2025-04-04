@@ -1,12 +1,12 @@
 {
 	"type" : "repair",
 	"actions" : {
-		"main" : [
+		"inactive" : [
 			{
 				"texture" : "wrench_inactive.png"
 			}
 		],
-		"car_contact" : [
+		"active" : [
 			{
 				"texture" : "wrench_active_1.png",
 				"n_ms" : 100
@@ -19,6 +19,14 @@
 				"texture" : "wrench_active_3.png",
 				"n_ms" : 100
 			}
+		]
+	},
+	"sequences" : {
+		"main_sequence" : [
+			["inactive", 0]
+		],
+		"car_contact_sequence" : [
+			["active", 0]
 		]
 	},
 	"transitions" : [

@@ -68,18 +68,29 @@ Action::~Action() {
 }
 
 
+// ActionSequence -----------------------------------------------------------------
+ActionSequence::ActionSequence() {
+
+}
+
+
+ActionSequence::~ActionSequence() {
+	
+}
+
+
 // Actiontransition ---------------------------------------------------------------
-Actiontransition::Actiontransition() {
+SequenceTransition::SequenceTransition() {
 
 }
 
 
-Actiontransition::Actiontransition(std::string from, std::string to, unsigned int n_ms) : _from(from), _to(to), _n_ms(n_ms) {
+SequenceTransition::SequenceTransition(std::string from, std::string to, unsigned int n_ms) : _from(from), _to(to), _n_ms(n_ms) {
 
 }
 
 
-Actiontransition::~Actiontransition() {
+SequenceTransition::~SequenceTransition() {
 
 }
 
@@ -100,10 +111,10 @@ StaticObjectModel::StaticObjectModel(std::string json_path) :
 
 StaticObjectModel::~StaticObjectModel() {
 	delete _footprint;
-	for (auto action : _actions) {
+	/*for (auto action : _actions) {
 		delete action.second;
 	}
-	_actions.clear();
+	_actions.clear();*/
 	for (auto transition : _transitions) {
 		delete transition;
 	}
@@ -180,11 +191,12 @@ void StaticObjectModel::load(std::string json_path) {
 		_no_rotation= false;
 	}
 
+	std::map<std::string, Action *> actions;
 	if (js["actions"]!= nullptr) {
 		for (json::iterator it = js["actions"].begin(); it != js["actions"].end(); ++it) {
 			auto & action_name= it.key();
 			auto & l_ac= it.value();
-			_actions[action_name]= new Action();
+			actions[action_name]= new Action();
 			for (auto ac : l_ac) {
 				if (ac["texture"]!= nullptr) {
 					std::string texture_rel_path= ac["texture"];
@@ -193,28 +205,46 @@ void StaticObjectModel::load(std::string json_path) {
 					if (ac["n_ms"]!= nullptr) {
 						n_ms= ac["n_ms"];
 					}
-					_actions[action_name]->_textures.push_back(new ActionTexture(texture_path, n_ms));
+					actions[action_name]->_textures.push_back(new ActionTexture(texture_path, n_ms));
 				}
 				else if (ac["force"]!= nullptr) {
 					pt_type direction= pt_type(ac["force"][0], ac["force"][1]);
+					if (ac["force_rand"]!= nullptr) {
+						direction+= pt_type(rand_number(0.0, ac["force_rand"][0]), rand_number(0.0, ac["force_rand"][1]));
+					}
 					unsigned int n_ms= 0;
 					if (ac["n_ms"]!= nullptr) {
 						n_ms= ac["n_ms"];
 					}
-					_actions[action_name]->_forces.push_back(new ActionForce(direction, n_ms));
+					actions[action_name]->_forces.push_back(new ActionForce(direction, n_ms));
 				}
 			}
 		}
 	}
 	else {
-		_actions[MAIN_ACTION_NAME]= new Action();
+		actions[MAIN_ACTION_NAME]= new Action();
 		std::string texture_path= dirname(_json_path)+ "/textures/"+ _name+ ".png";
-		_actions[MAIN_ACTION_NAME]->_textures.push_back(new ActionTexture(texture_path, 0));
+		actions[MAIN_ACTION_NAME]->_textures.push_back(new ActionTexture(texture_path, 0));
+	}
+
+	if (js["sequences"]!= nullptr) {
+		for (json::iterator it = js["sequences"].begin(); it != js["sequences"].end(); ++it) {
+			auto & sequence_name= it.key();
+			auto & l_actions= it.value();
+			_sequences[sequence_name]= new ActionSequence();
+			for (auto ac : l_actions) {
+				_sequences[sequence_name]->_actions.push_back(std::make_pair(actions[ac[0]], ac[1]));
+			}
+		}
+	}
+	else {
+		_sequences[MAIN_SEQUENCE_NAME]= new ActionSequence();
+		_sequences[MAIN_SEQUENCE_NAME]->_actions.push_back(std::make_pair(actions.begin()->second, 0));
 	}
 
 	if (js["transitions"]!= nullptr) {
 		for (auto transition : js["transitions"]) {
-			_transitions.push_back(new Actiontransition(transition["from"], transition["to"], transition["n_ms"]));
+			_transitions.push_back(new SequenceTransition(transition["from"], transition["to"], transition["n_ms"]));
 		}
 	}
 }
@@ -227,6 +257,19 @@ unsigned int StaticObjectModel::get_transition(std::string from, std::string to)
 		}
 	}
 	return 0;
+}
+
+
+std::vector<Action *> StaticObjectModel::get_unduplicated_actions() {
+	std::vector<Action *> result;
+	for (auto sequence : _sequences) {
+		for (auto ac : sequence.second->_actions) {
+			if (std::find(result.begin(), result.end(), ac.first)== result.end()) {
+				result.push_back(ac.first);
+			}
+		}
+	}
+	return result;
 }
 
 
@@ -254,8 +297,9 @@ StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number a
 	_acceleration(pt_type(0.0)), _force(pt_type(0.0)), _alpha(0.0), _angular_velocity(0.0), _angular_acceleration(0.0),
 	_torque(0.0), _current_surface(NULL), _previous_surface(NULL),
 	_linear_friction_surface(1.0), _angular_friction_surface(1.0),
-	_current_action_name(MAIN_ACTION_NAME), _current_action_texture_idx(0), _current_action_force_idx(0),
-	_action_force_active(false)
+	_current_action_texture_idx(0), _current_action_force_idx(0),
+	_action_force_active(false), _current_sequence_name(MAIN_SEQUENCE_NAME), _next_sequence_name(MAIN_SEQUENCE_NAME),
+	_current_action_idx(0), _car_contact(false)
 {
 	_bbox= new BBox_2D(pt_type(0.0), pt_type(0.0));
 	_footprint= new Polygon2D();
@@ -334,15 +378,38 @@ void StaticObject::update() {
 }
 
 
+Action * StaticObject::get_current_action() {
+	//std::cout << _model->_name << " ; " << _current_sequence_name << " ; " << _current_action_idx << "\n";
+	return _model->_sequences[_current_sequence_name]->_actions[_current_action_idx].first;
+}
+
+
 void StaticObject::set_current_surface(Material * material, time_point t) {
 	_current_surface= material;
 	_last_change_surface_t= t;
 }
 
 
-void StaticObject::set_current_action(std::string action_name, time_point t) {
-	if (_current_action_name== action_name) {
-		_next_action_name= _current_action_name;
+void StaticObject::set_current_sequence(std::string sequence_name, time_point t) {
+	if (_next_sequence_name== sequence_name) {
+		return;
+	}
+
+	else if (_current_sequence_name== sequence_name) {
+		_next_sequence_name= _current_sequence_name;
+		return;
+	}
+
+	else {
+		_next_sequence_name= sequence_name;
+		_last_sequence_change_t= t;
+	}
+}
+
+
+/*void StaticObject::set_current_action(std::string action_name, time_point t) {
+	if (get_current_action_name()== action_name) {
+		_next_action_name= get_current_action_name();
 		return;
 	}
 	if (_next_action_name== action_name) {
@@ -351,7 +418,7 @@ void StaticObject::set_current_action(std::string action_name, time_point t) {
 
 	_next_action_name= action_name;
 	_last_action_change_t= t;
-}
+}*/
 
 
 // on renvoie true lorsqu'il y a changement de surface; ce bool est récupéré dans car.cpp pour mettre à jour le tire_track
@@ -377,10 +444,10 @@ bool StaticObject::anim_surface(time_point t) {
 
 void StaticObject::anim_texture(time_point t) {
 	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_action_texture_t).count();
-	if (dt> _model->_actions[_current_action_name]->_textures[_current_action_texture_idx]->_n_ms) {
+	if (dt> get_current_action()->_textures[_current_action_texture_idx]->_n_ms) {
 		_last_action_texture_t= t;
 		_current_action_texture_idx++;
-		if (_current_action_texture_idx>= _model->_actions[_current_action_name]->_textures.size()) {
+		if (_current_action_texture_idx>= get_current_action()->_textures.size()) {
 			_current_action_texture_idx= 0;
 		}
 	}
@@ -390,14 +457,14 @@ void StaticObject::anim_texture(time_point t) {
 void StaticObject::anim_force(time_point t) {
 	if (_action_force_active) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_action_force_t).count();
-		if (dt> _model->_actions[_current_action_name]->_forces[_current_action_force_idx]->_n_ms) {
+		if (dt> get_current_action()->_forces[_current_action_force_idx]->_n_ms) {
 			_last_action_force_t= t;
 			_current_action_force_idx++;
-			if (_current_action_force_idx>= _model->_actions[_current_action_name]->_forces.size()) {
+			if (_current_action_force_idx>= get_current_action()->_forces.size()) {
 				_current_action_force_idx= 0;
-				if (!_model->_actions[_current_action_name]->_loop_forces) {
+				/*if (!_model->_actions[_current_action_name]->_loop_forces) {
 					_action_force_active= false;
-				}
+				}*/
 			}
 		}
 	}
@@ -405,25 +472,34 @@ void StaticObject::anim_force(time_point t) {
 
 
 void StaticObject::anim_action(time_point t) {
-	if (_next_action_name!= _current_action_name) {
-		auto dt_change= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_action_change_t).count();
-		if (dt_change> _model->get_transition(_current_action_name, _next_action_name)) {
-			_current_action_name= _next_action_name;
-			_last_action_change_t= t;
-			_current_action_texture_idx= 0;
-			_last_action_texture_t= t;
-			_current_action_force_idx= 0;
-			_last_action_force_t= t;
-			_action_force_active= false;
-			if (_model->_actions[_current_action_name]->_forces.size()> 0) {
-				_action_force_active= true;
-			}
+	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_action_change_t).count();
+	if (dt> _model->_sequences[_current_sequence_name]->_actions[_current_action_idx].second) {
+		_last_action_change_t= t;
+		_current_action_texture_idx= 0;
+		_last_action_texture_t= t;
+		_current_action_force_idx= 0;
+		_last_action_force_t= t;
+		_action_force_active= false;
+		if (get_current_action()->_forces.size()> 0) {
+			_action_force_active= true;
 		}
 	}
 }
 
 
+void StaticObject::anim_sequence(time_point t) {
+	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_sequence_change_t).count();
+	//std::cout << _model->_name << " ; " << _current_sequence_name << " -> " << _next_sequence_name << "\n";
+	if (dt> _model->get_transition(_current_sequence_name, _next_sequence_name)) {
+		_last_sequence_change_t= t;
+		_current_sequence_name= _next_sequence_name;
+		_current_action_idx= 0;
+	}
+}
+
+
 void StaticObject::anim(number anim_dt, time_point t) {
+	anim_sequence(t);
 	anim_action(t);
 	anim_texture(t);
 
@@ -436,7 +512,7 @@ void StaticObject::anim(number anim_dt, time_point t) {
 
 	_force= pt_type(0.0);
 	if (_action_force_active) {
-		_force+= _model->_actions[_current_action_name]->_forces[_current_action_force_idx]->_direction;
+		_force+= get_current_action()->_forces[_current_action_force_idx]->_direction;
 	}
 	_force-= _model->_material->_linear_friction* _linear_friction_surface* _velocity; // friction
 

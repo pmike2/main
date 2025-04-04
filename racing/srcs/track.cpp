@@ -365,7 +365,7 @@ void Track::start(time_point t) {
 		obj->set_current_surface(_materials["road"], t);
 		obj->_previous_surface= _materials["road"];
 		// au début tous les objets sont dans leur action par défaut
-		obj->set_current_action(MAIN_ACTION_NAME, t);
+		obj->set_current_sequence(MAIN_SEQUENCE_NAME, t);
 	}
 	
 	// set des tire_tracks à road
@@ -375,8 +375,6 @@ void Track::start(time_point t) {
 
 	// reinit expressions drivers
 	reinit_drivers(t, true);
-
-	_start->set_current_action("active", t);
 }
 
 
@@ -789,9 +787,9 @@ void Track::checkpoints(time_point t) {
 			// animation de la zone de checkpoint active pour le joueur
 			if (car== _hero) {
 				if (car->_next_checkpoint!= _start) {
-					car->_next_checkpoint->set_current_action(MAIN_ACTION_NAME, t);
+					car->_next_checkpoint->set_current_sequence(MAIN_SEQUENCE_NAME, t);
 				}
-				car->_next_checkpoint->_next->set_current_action("active", t);
+				car->_next_checkpoint->_next->set_current_sequence("active", t);
 			}
 			
 			// maj du prochain checkpoint
@@ -868,11 +866,11 @@ void Track::checkpoint_ia(Car * car) {
 
 void Track::set_car_contact_action(time_point t) {
 	for (auto obj : _floating_objects) {
-		if (obj->_car_contact && obj->_model->_actions.count(CAR_CONTACT_ACTION_NAME)> 0 && obj->_current_action_name!= CAR_CONTACT_ACTION_NAME) {
-			obj->set_current_action(CAR_CONTACT_ACTION_NAME, t);
+		if (obj->_car_contact && obj->_model->_sequences.count(CAR_CONTACT_SEQUENCE_NAME)> 0 && obj->_current_sequence_name!= CAR_CONTACT_SEQUENCE_NAME) {
+			obj->set_current_sequence(CAR_CONTACT_SEQUENCE_NAME, t);
 		}
-		else if (!obj->_car_contact && obj->_current_action_name== CAR_CONTACT_ACTION_NAME) {
-			obj->set_current_action(MAIN_ACTION_NAME, t);
+		else if (!obj->_car_contact && obj->_current_sequence_name== CAR_CONTACT_SEQUENCE_NAME) {
+			obj->set_current_sequence(MAIN_SEQUENCE_NAME, t);
 		}
 	}
 }

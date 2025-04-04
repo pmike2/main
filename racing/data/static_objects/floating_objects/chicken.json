@@ -6,73 +6,106 @@
 		[-0.37, 0.07], [-0.14, -0.32], [0.18, -0.20], [0.31, 0.39], [-0.11, 0.19]
 	],
 	"actions" : {
-		"main" : [
+		"peck" : [
 			{
-				"texture" : "chicken_1.png",
+				"texture" : "chicken.png",
 				"n_ms" : 1000
 			},
 			{
-				"texture" : "chicken_2.png",
+				"texture" : "chicken_peck_1.png",
 				"n_ms" : 300
 			},
 			{
-				"texture" : "chicken_3.png",
+				"texture" : "chicken_peck_2.png",
 				"n_ms" : 300
 			},
 			{
-				"texture" : "chicken_4.png",
+				"texture" : "chicken_peck_3.png",
 				"n_ms" : 1000
 			},
 			{
-				"texture" : "chicken_5.png",
+				"texture" : "chicken_peck_4.png",
 				"n_ms" : 100
 			},
 			{
-				"texture" : "chicken_4.png",
+				"texture" : "chicken_peck_3.png",
 				"n_ms" : 100
 			},
 			{
-				"texture" : "chicken_5.png",
+				"texture" : "chicken_peck_4.png",
 				"n_ms" : 100
 			},
 			{
-				"texture" : "chicken_4.png",
+				"texture" : "chicken_peck_3.png",
 				"n_ms" : 100
 			},
 			{
-				"texture" : "chicken_5.png",
+				"texture" : "chicken_peck_4.png",
 				"n_ms" : 100
 			},
 			{
-				"texture" : "chicken_4.png",
+				"texture" : "chicken_peck_3.png",
 				"n_ms" : 100
 			},
 			{
-				"texture" : "chicken_5.png",
+				"texture" : "chicken_peck_4.png",
 				"n_ms" : 100
 			}
 		],
-		"car_contact" : [
+		"walk" : [
 			{
-				"texture" : "chicken_flying_1.png",
+				"texture" : "chicken.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "chicken_walk_1.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "chicken.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "chicken_walk_2.png",
+				"n_ms" : 300
+			},
+			{
+				"force" : [0.0, 0.2],
+				"force_rand" : [0.0, 0.1],
+				"n_ms" : 2000
+			}
+		],
+		"fly" : [
+			{
+				"texture" : "chicken_fly_1.png",
 				"n_ms" : 100
 			},
 			{
-				"texture" : "chicken_flying_2.png",
+				"texture" : "chicken_fly_2.png",
 				"n_ms" : 100
 			},
 			{
-				"force" : [0.4, 1.0],
+				"force" : [-0.4, 1.0],
+				"force_rand" : [0.8, 0.0],
 				"n_ms" : 400
 			},
 			{
-				"force" : [0.0, -0.2],
-				"n_ms" : 2000,
-				"loop" : true
+				"force" : [-0.1, -0.2],
+				"force_rand" : [0.2, 0.0],
+				"n_ms" : 2000
 			}
 		]
 	},
+	"sequences" : {
+		"main_sequence" : [
+			["peck", 5000],
+			["walk", 2000]
+		],
+		"car_contact_sequence" : [
+			["fly", 0]
+		]
+	},
 	"transitions" : [
-		{"from" : "car_contact", "to" : "main", "n_ms" : 3000}
+		{"from" : "car_contact_sequence", "to" : "main_sequence", "n_ms" : 3000}
 	]
 }

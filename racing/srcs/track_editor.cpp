@@ -324,6 +324,7 @@ void GridEditor::update_texture() {
 	for (unsigned int idx_obj=0; idx_obj<_grid->_objects.size(); ++idx_obj) {
 		StaticObject * obj;
 		obj= _grid->_objects[idx_obj];
+		Action * action= obj->get_current_action();
 		
 		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
 		number positions[n_pts_per_obj* 5]= {
@@ -340,8 +341,7 @@ void GridEditor::update_texture() {
 			for (unsigned int i=0; i<5; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
-			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_actions[obj->_current_action_name]->_textures[obj->_current_action_texture_idx]->_texture_idx;
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= action->_textures[obj->_current_action_texture_idx]->_texture_idx;
 		}
 	}
 
@@ -919,6 +919,8 @@ void TrackEditor::update_texture() {
 		else {
 			obj= _track->_grid->_objects[idx_obj- _track->_floating_objects.size()];
 		}
+
+		Action * action= obj->get_current_action();
 		
 		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
 		number positions[n_pts_per_obj* 5]= {
@@ -935,8 +937,7 @@ void TrackEditor::update_texture() {
 			for (unsigned int i=0; i<5; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
-			//data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_texture_idx;
-			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= obj->_model->_actions[obj->_current_action_name]->_textures[obj->_current_action_texture_idx]->_texture_idx;
+			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= action->_textures[obj->_current_action_texture_idx]->_texture_idx;;
 		}
 	}
 
@@ -1272,8 +1273,10 @@ void Editor::fill_texture_array_models() {
 	unsigned int compt= 0;
 	for (auto m : _track_editor->_track->_models) {
 		StaticObjectModel * model= m.second;
-		for (auto action : model->_actions) {
-			for (auto action_texture : action.second->_textures) {
+		std::vector<Action *> actions= model->get_unduplicated_actions();
+
+		for (auto action : actions) {
+			for (auto action_texture : action->_textures) {
 				pngs.push_back(action_texture->_texture_path);
 				action_texture->_texture_idx= float(compt++);
 			}

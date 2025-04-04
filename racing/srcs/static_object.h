@@ -69,8 +69,11 @@ const number BUMP_DRIFT_THRESHOLD= 0.5;
 // incrément de réparation des bosses
 const number REPAIR_INCREMENT= 0.01;
 
-const std::string MAIN_ACTION_NAME= "main";
-const std::string CAR_CONTACT_ACTION_NAME= "car_contact";
+const std::string MAIN_SEQUENCE_NAME= "main_sequence";
+const std::string CAR_CONTACT_SEQUENCE_NAME= "car_contact_sequence";
+const std::string MAIN_ACTION_NAME= "main_action";
+//const std::string CAR_CONTACT_ACTION_NAME= "car_contact";
+//const std::string FIRST_ACTION_FROM_SEQUENCE= "first_action";
 
 
 class ActionTexture {
@@ -107,14 +110,25 @@ public:
 
 	std::vector<ActionTexture *> _textures;
 	std::vector<ActionForce * > _forces;
-	bool _loop_forces;
+	std::string _name;
 };
 
 
-struct Actiontransition {
-	Actiontransition();
-	Actiontransition(std::string from, std::string to, unsigned int n_ms);
-	~Actiontransition();
+class ActionSequence {
+public:
+	ActionSequence();
+	~ActionSequence();
+
+
+	std::vector<std::pair<Action *, unsigned int> > _actions;
+};
+
+
+class SequenceTransition {
+public:
+	SequenceTransition();
+	SequenceTransition(std::string from, std::string to, unsigned int n_ms);
+	~SequenceTransition();
 	
 	
 	std::string _from;
@@ -131,6 +145,7 @@ public:
 	~StaticObjectModel();
 	void load(std::string json_path);
 	unsigned int get_transition(std::string from, std::string to);
+	std::vector<Action *> get_unduplicated_actions();
 	friend std::ostream & operator << (std::ostream & os, const StaticObjectModel & model);
 
 
@@ -143,8 +158,9 @@ public:
 	bool _no_rotation;
 	Material * _material; // matériau éventuel de l'objet
 	std::string _material_name; // nom du matériau
-	std::map<std::string, Action *> _actions;
-	std::vector<Actiontransition * > _transitions;
+	//std::map<std::string, Action *> _actions;
+	std::vector<SequenceTransition * > _transitions;
+	std::map<std::string, ActionSequence *> _sequences;
 };
 
 
@@ -157,12 +173,15 @@ public:
 	void set_model(StaticObjectModel * model);
 	void reinit(pt_type position, number alpha, pt_type scale); // met à une position / orientation / taille
 	void update(); // met à jour les données calculées à partir des autres
+	Action * get_current_action();
 	void set_current_surface(Material * material, time_point t);
-	void set_current_action(std::string action_name, time_point t);
+	void set_current_sequence(std::string sequence_name, time_point t);
+	//void set_current_action(std::string action_name, time_point t);
 	bool anim_surface(time_point t);
 	void anim_texture(time_point t);
 	void anim_force(time_point t);
 	void anim_action(time_point t);
+	void anim_sequence(time_point t);
 	void anim(number anim_dt, time_point t); // animation
 	friend std::ostream & operator << (std::ostream & os, const StaticObject & obj);
 
@@ -197,14 +216,18 @@ public:
 	time_point _last_change_surface_t; // dernier temps de changement de surface
 	time_point _last_boost_t; // dernier temps où un boost a eu lieu
 
-	std::string _current_action_name;
-	std::string _next_action_name;
+	//std::string _current_action_name;
 	time_point _last_action_change_t;
 	unsigned int _current_action_texture_idx;
 	time_point _last_action_texture_t;
 	unsigned int _current_action_force_idx;
 	time_point _last_action_force_t;
 	bool _action_force_active;
+
+	std::string _current_sequence_name;
+	std::string _next_sequence_name;
+	unsigned int _current_action_idx;
+	time_point _last_sequence_change_t;
 
 	bool _car_contact;
 };
