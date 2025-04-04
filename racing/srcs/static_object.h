@@ -120,7 +120,7 @@ public:
 	~ActionSequence();
 
 
-	std::vector<std::pair<Action *, unsigned int> > _actions;
+	std::vector<std::pair<Action *, int> > _actions;
 };
 
 

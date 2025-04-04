@@ -31,10 +31,10 @@
 	},
 	"sequences" : {
 		"main_sequence" : [
-			["inactive", 0]
+			["inactive", -1]
 		],
 		"active" : [
-			["active", 0]
+			["active", -1]
 		]
 	},
 	"transitions" : [

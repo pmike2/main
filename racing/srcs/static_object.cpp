@@ -210,7 +210,8 @@ void StaticObjectModel::load(std::string json_path) {
 				else if (ac["force"]!= nullptr) {
 					pt_type direction= pt_type(ac["force"][0], ac["force"][1]);
 					if (ac["force_rand"]!= nullptr) {
-						direction+= pt_type(rand_number(0.0, ac["force_rand"][0]), rand_number(0.0, ac["force_rand"][1]));
+						direction.x+= rand_number(0.0, ac["force_rand"][0]);
+						direction.y+= rand_number(0.0, ac["force_rand"][1]);
 					}
 					unsigned int n_ms= 0;
 					if (ac["n_ms"]!= nullptr) {
@@ -239,7 +240,7 @@ void StaticObjectModel::load(std::string json_path) {
 	}
 	else {
 		_sequences[MAIN_SEQUENCE_NAME]= new ActionSequence();
-		_sequences[MAIN_SEQUENCE_NAME]->_actions.push_back(std::make_pair(actions.begin()->second, 0));
+		_sequences[MAIN_SEQUENCE_NAME]->_actions.push_back(std::make_pair(actions.begin()->second, -1));
 	}
 
 	if (js["transitions"]!= nullptr) {
@@ -472,8 +473,21 @@ void StaticObject::anim_force(time_point t) {
 
 
 void StaticObject::anim_action(time_point t) {
+	/*if (_model->_name== "start") {
+		std::cout << _model->_sequences[_current_sequence_name]->_actions[_current_action_idx].second << "\n";
+	}*/
+
+	if (_model->_sequences[_current_sequence_name]->_actions[_current_action_idx].second< 0) {
+		return;
+	}
+
 	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_action_change_t).count();
 	if (dt> _model->_sequences[_current_sequence_name]->_actions[_current_action_idx].second) {
+		_current_action_idx++;
+		if (_current_action_idx>= _model->_sequences[_current_sequence_name]->_actions.size()) {
+			_current_action_idx= 0;
+		}
+
 		_last_action_change_t= t;
 		_current_action_texture_idx= 0;
 		_last_action_texture_t= t;
@@ -488,12 +502,24 @@ void StaticObject::anim_action(time_point t) {
 
 
 void StaticObject::anim_sequence(time_point t) {
-	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_sequence_change_t).count();
-	//std::cout << _model->_name << " ; " << _current_sequence_name << " -> " << _next_sequence_name << "\n";
-	if (dt> _model->get_transition(_current_sequence_name, _next_sequence_name)) {
-		_last_sequence_change_t= t;
-		_current_sequence_name= _next_sequence_name;
-		_current_action_idx= 0;
+	if (_next_sequence_name!= _current_sequence_name) {
+		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_sequence_change_t).count();
+		//std::cout << _model->_name << " ; " << _current_sequence_name << " -> " << _next_sequence_name << "\n";
+		if (dt> _model->get_transition(_current_sequence_name, _next_sequence_name)) {
+			_last_sequence_change_t= t;
+			_current_sequence_name= _next_sequence_name;
+			_current_action_idx= 0;
+
+			_last_action_change_t= t;
+			_current_action_texture_idx= 0;
+			_last_action_texture_t= t;
+			_current_action_force_idx= 0;
+			_last_action_force_t= t;
+			_action_force_active= false;
+			if (get_current_action()->_forces.size()> 0) {
+				_action_force_active= true;
+			}
+		}
 	}
 }
 

@@ -23,10 +23,10 @@
 	},
 	"sequences" : {
 		"main_sequence" : [
-			["inactive", 0]
+			["inactive", -1]
 		],
 		"car_contact_sequence" : [
-			["active", 0]
+			["active", -1]
 		]
 	},
 	"transitions" : [

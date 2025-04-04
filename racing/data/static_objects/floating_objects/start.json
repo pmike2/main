@@ -67,10 +67,5 @@
 				"n_ms" : 100
 			}
 		]
-	},
-	"sequences" : {
-		"main_sequence" : [
-			["active", 0]
-		]
 	}
 }

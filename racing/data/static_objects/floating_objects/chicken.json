@@ -70,8 +70,8 @@
 				"n_ms" : 300
 			},
 			{
-				"force" : [0.0, 0.2],
-				"force_rand" : [0.0, 0.1],
+				"force" : [0.0, 0.0],
+				"force_rand" : [0.1, 0.0],
 				"n_ms" : 2000
 			}
 		],
@@ -102,7 +102,7 @@
 			["walk", 2000]
 		],
 		"car_contact_sequence" : [
-			["fly", 0]
+			["fly", -1]
 		]
 	},
 	"transitions" : [
