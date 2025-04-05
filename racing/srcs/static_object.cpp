@@ -40,7 +40,9 @@ ActionForce::ActionForce() {
 }
 
 
-ActionForce::ActionForce(pt_type direction, unsigned int n_ms) : _direction(direction), _n_ms(n_ms) {
+ActionForce::ActionForce(pt_type direction, pt_type direction_rand, unsigned int n_ms) : 
+	_direction(direction), _direction_rand(direction_rand), _n_ms(n_ms) 
+{
 
 }
 
@@ -209,15 +211,15 @@ void StaticObjectModel::load(std::string json_path) {
 				}
 				else if (ac["force"]!= nullptr) {
 					pt_type direction= pt_type(ac["force"][0], ac["force"][1]);
+					pt_type direction_rand(0.0);
 					if (ac["force_rand"]!= nullptr) {
-						direction.x+= rand_number(0.0, ac["force_rand"][0]);
-						direction.y+= rand_number(0.0, ac["force_rand"][1]);
+						direction_rand= pt_type(ac["force_rand"][0], ac["force_rand"][1]);
 					}
 					unsigned int n_ms= 0;
 					if (ac["n_ms"]!= nullptr) {
 						n_ms= ac["n_ms"];
 					}
-					actions[action_name]->_forces.push_back(new ActionForce(direction, n_ms));
+					actions[action_name]->_forces.push_back(new ActionForce(direction, direction_rand, n_ms));
 				}
 			}
 		}
@@ -504,7 +506,11 @@ void StaticObject::anim_action(time_point t) {
 void StaticObject::anim_sequence(time_point t) {
 	if (_next_sequence_name!= _current_sequence_name) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_sequence_change_t).count();
-		//std::cout << _model->_name << " ; " << _current_sequence_name << " -> " << _next_sequence_name << "\n";
+		
+		/*if (_model->_name== "boost") {
+			std::cout << _model->_name << " ; " << _current_sequence_name << " -> " << _next_sequence_name << "\n";
+			std::cout << _model->get_transition(_current_sequence_name, _next_sequence_name) << "\n";
+		}*/
 		if (dt> _model->get_transition(_current_sequence_name, _next_sequence_name)) {
 			_last_sequence_change_t= t;
 			_current_sequence_name= _next_sequence_name;
@@ -539,6 +545,8 @@ void StaticObject::anim(number anim_dt, time_point t) {
 	_force= pt_type(0.0);
 	if (_action_force_active) {
 		_force+= get_current_action()->_forces[_current_action_force_idx]->_direction;
+		_force.x+= rand_number(0.0, get_current_action()->_forces[_current_action_force_idx]->_direction_rand.x);
+		_force.y+= rand_number(0.0, get_current_action()->_forces[_current_action_force_idx]->_direction_rand.y);
 	}
 	_force-= _model->_material->_linear_friction* _linear_friction_surface* _velocity; // friction
 

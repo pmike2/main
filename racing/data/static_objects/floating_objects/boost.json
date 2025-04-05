@@ -30,6 +30,6 @@
 		]
 	},
 	"transitions" : [
-		{"from" : "car_contact", "to" : "main", "n_ms" : 1000}
+		{"from" : "car_contact_sequence", "to" : "main_sequence", "n_ms" : 1000}
 	]
 }

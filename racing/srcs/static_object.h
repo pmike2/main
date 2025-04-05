@@ -93,11 +93,12 @@ public:
 class ActionForce {
 public:
 	ActionForce();
-	ActionForce(pt_type direction, unsigned int n_ms);
+	ActionForce(pt_type direction, pt_type direction_rand, unsigned int n_ms);
 	~ActionForce();
 
 
 	pt_type _direction;
+	pt_type _direction_rand;
 	unsigned int _n_ms;
 };
 
