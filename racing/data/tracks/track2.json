@@ -1,19 +1,23 @@
 {
     "best_lap": [
         {
+            "name": "pmb",
+            "time": 10.191
+        },
+        {
             "name": "lauren",
             "time": 10.325
         },
         {
             "name": "lauren",
             "time": 10.425
-        },
-        {
-            "name": "pmb",
-            "time": 10.441
         }
     ],
     "best_overall": [
+        {
+            "name": "pmb",
+            "time": 66.06700000000001
+        },
         {
             "name": "pmb",
             "time": 68.137
@@ -21,10 +25,6 @@
         {
             "name": "lauren",
             "time": 71.14
-        },
-        {
-            "name": "lauren",
-            "time": 71.14000000000001
         }
     ],
     "cell_size": 2.0,
