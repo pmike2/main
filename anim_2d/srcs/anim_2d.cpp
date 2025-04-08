@@ -81,7 +81,7 @@ CheckPoint::CheckPoint() {
 }
 
 
-CheckPoint::CheckPoint(glm::vec2 pos, float velocity) : _pos(pos), _velocity(velocity) {
+CheckPoint::CheckPoint(pt_type pos, number velocity) : _pos(pos), _velocity(velocity) {
 
 }
 
@@ -98,11 +98,11 @@ Object2D::Object2D() {
 
 
 Object2D::Object2D(AABB_2D * aabb, AABB_2D * footprint, ObjectPhysics physics, vector<CheckPoint> checkpoints) :
-	_velocity(glm::vec2(0.0f)), _physics(physics), _idx_checkpoint(0), _referential(nullptr)
+	_velocity(pt_type(0.0)), _physics(physics), _idx_checkpoint(0), _referential(nullptr)
 {
 	_aabb= new AABB_2D(*aabb);
-	_footprint= new AABB_2D(glm::vec2(0.0f), glm::vec2(_aabb->_size.x* footprint->_size.x, _aabb->_size.y* footprint->_size.y));
-	_footprint_offset= glm::vec2(_aabb->_size.x* footprint->_pos.x, _aabb->_size.y* footprint->_pos.y);
+	_footprint= new AABB_2D(pt_type(0.0), pt_type(_aabb->_size.x* footprint->_size.x, _aabb->_size.y* footprint->_size.y));
+	_footprint_offset= pt_type(_aabb->_size.x* footprint->_pos.x, _aabb->_size.y* footprint->_pos.y);
 	update_footprint_pos();
 
 	for (auto checkpoint : checkpoints) {
@@ -117,8 +117,8 @@ Object2D::Object2D(AABB_2D * aabb, AABB_2D * footprint, ObjectPhysics physics, v
 Object2D::Object2D(const Object2D & obj) {
 	_aabb= new AABB_2D(*obj._aabb);
 	_footprint= new AABB_2D(*obj._footprint);
-	_footprint_offset= glm::vec2(obj._footprint_offset);
-	_velocity= glm::vec2(obj._velocity);
+	_footprint_offset= pt_type(obj._footprint_offset);
+	_velocity= pt_type(obj._velocity);
 	_physics= obj._physics;
 	_idx_checkpoint= obj._idx_checkpoint;
 	for (auto checkpoint : obj._checkpoints) {
@@ -137,7 +137,7 @@ Object2D::~Object2D() {
 }
 
 
-void Object2D::update_pos(float elapsed_time) {
+void Object2D::update_pos(number elapsed_time) {
 	if ((_physics!= STATIC_DESTRUCTIBLE) && (_physics!= STATIC_INDESTRUCTIBLE) && (_physics!= STATIC_UNSOLID)) {
 		_aabb->_pos+= _velocity* elapsed_time;
 		update_footprint_pos();
@@ -156,13 +156,13 @@ void Object2D::update_pos(float elapsed_time) {
 void Object2D::update_velocity() {
 	if (_physics== FALLING) {
 		_velocity.y-= GRAVITY_INC;
-		if (_velocity.y< -1.0f* GRAVITY_MAX) {
-			_velocity.y= -1.0f* GRAVITY_MAX;
+		if (_velocity.y< -1.0* GRAVITY_MAX) {
+			_velocity.y= -1.0* GRAVITY_MAX;
 		}
 	}
 	else if ((_physics== CHECKPOINT_SOLID) || (_physics== CHECKPOINT_UNSOLID) || (_physics== CHECKPOINT_SOLID_TOP)) {
 		if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)> CHECKPOINT_TRESH) {
-			glm::vec2 direction= _checkpoints[_idx_checkpoint]->_pos- _aabb->_pos;
+			pt_type direction= _checkpoints[_idx_checkpoint]->_pos- _aabb->_pos;
 			_velocity= glm::normalize(direction)* _checkpoints[_idx_checkpoint]->_velocity;
 		}
 	}
@@ -174,15 +174,15 @@ void Object2D::update_footprint_pos() {
 }
 
 
-void Object2D::set_aabb_pos(glm::vec2 pos) {
+void Object2D::set_aabb_pos(pt_type pos) {
 	_aabb->_pos= pos;
 	update_footprint_pos();
 }
 
 
 void Object2D::set_footprint(AABB_2D * footprint) {
-	_footprint_offset= glm::vec2(_aabb->_size.x* footprint->_pos.x, _aabb->_size.y* footprint->_pos.y);
-	_footprint->_size= glm::vec2(_aabb->_size.x* footprint->_size.x, _aabb->_size.y* footprint->_size.y);
+	_footprint_offset= pt_type(_aabb->_size.x* footprint->_pos.x, _aabb->_size.y* footprint->_pos.y);
+	_footprint->_size= pt_type(_aabb->_size.x* footprint->_size.x, _aabb->_size.y* footprint->_size.y);
 	update_footprint_pos();
 }
 
@@ -197,19 +197,19 @@ ostream & operator << (ostream & os, const Object2D & obj) {
 
 // -------------------------------------------------------------------------------------------
 // voir refs dans bbox_2d.h pour algo
-bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time) {
+bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_obj, const number time_step, pt_type & contact_pt, pt_type & contact_normal, number & contact_time) {
 	//if (glm::length2(anim_obj->_velocity)< 1e-9f) {
-	if ((anim_obj->_velocity.x== 0.0f) && (anim_obj->_velocity.y== 0.0f)) {
+	if ((anim_obj->_velocity.x== 0.0) && (anim_obj->_velocity.y== 0.0)) {
 		return false;
 	}
 
 	AABB_2D expanded;
-	expanded._pos= static_obj->_footprint->_pos- 0.5f* anim_obj->_footprint->_size;
+	expanded._pos= static_obj->_footprint->_pos- 0.5* anim_obj->_footprint->_size;
 	expanded._size= static_obj->_footprint->_size+ anim_obj->_footprint->_size;
 
 	if (ray_intersects_aabb(anim_obj->_footprint->center(), time_step* anim_obj->_velocity, &expanded, contact_pt, contact_normal, contact_time)) {
 		// le = du >= est important
-		return ((contact_time>= 0.0f) && (contact_time< 1.0f));
+		return ((contact_time>= 0.0) && (contact_time< 1.0));
 	}
 	
 	return false;
@@ -217,9 +217,9 @@ bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_ob
 
 
 // Action ---------------------------------------------------------------------------
-Action::Action() : _name(""), _first_idx(0), _n_idx(0), _anim_time(0.0f) {
+Action::Action() : _name(""), _first_idx(0), _n_idx(0), _anim_time(0.0) {
 	// par défaut footprint prend toute l'emprise
-	_footprint= new AABB_2D(glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f));
+	_footprint= new AABB_2D(pt_type(0.0, 0.0), pt_type(1.0, 1.0));
 }
 
 
@@ -281,7 +281,7 @@ StaticTexture::StaticTexture() : Texture2D() {
 
 
 StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl, ObjectPhysics physics, CharacterType character_type) :
-	Texture2D(prog_draw, path, screengl, physics, character_type), _alpha(1.0f) 
+	Texture2D(prog_draw, path, screengl, physics, character_type), _alpha(1.0) 
 {
 	glGenTextures(1, &_texture_id);
 	glBindTexture(GL_TEXTURE_2D, _texture_id);
@@ -307,7 +307,7 @@ StaticTexture::StaticTexture(GLuint prog_draw, string path, ScreenGL * screengl,
 	
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
+	_camera2clip= glm::ortho(-0.5f* float(_screengl->_gl_width), 0.5f* float(_screengl->_gl_width), -0.5f* float(_screengl->_gl_height), 0.5f* float(_screengl->_gl_height), Z_NEAR, Z_FAR);
 	_model2world= glm::mat4(1.0f);
 
 	glUseProgram(_prog_draw);
@@ -352,8 +352,8 @@ void StaticTexture::draw() {
 	glEnableVertexAttribArray(_position_loc);
 	glEnableVertexAttribArray(_tex_coord_loc);
 
-	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)0);
-	glVertexAttribPointer(_tex_coord_loc, 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 5* sizeof(number), (void*)0);
+	glVertexAttribPointer(_tex_coord_loc, 2, GL_FLOAT, GL_FALSE, 5* sizeof(number), (void*)(3* sizeof(number)));
 
 	glDrawArrays(GL_TRIANGLES, 0, 6* _n_aabbs);
 
@@ -370,46 +370,46 @@ void StaticTexture::draw() {
 
 void StaticTexture::update() {
 	_n_aabbs= _characters.size();
-	float vertices[30* _n_aabbs];
+	number vertices[30* _n_aabbs];
 	for (unsigned int idx=0; idx<_n_aabbs; ++idx) {
 		vertices[30* idx+ 0]= _characters[idx]->_obj->_aabb->_pos.x;
 		vertices[30* idx+ 1]= _characters[idx]->_obj->_aabb->_pos.y+ _characters[idx]->_obj->_aabb->_size.y;
 		vertices[30* idx+ 2]= _characters[idx]->_z;
-		vertices[30* idx+ 3]= 0.0f;
-		vertices[30* idx+ 4]= 0.0f;
+		vertices[30* idx+ 3]= 0.0;
+		vertices[30* idx+ 4]= 0.0;
 
 		vertices[30* idx+ 5]= _characters[idx]->_obj->_aabb->_pos.x;
 		vertices[30* idx+ 6]= _characters[idx]->_obj->_aabb->_pos.y;
 		vertices[30* idx+ 7]= _characters[idx]->_z;
-		vertices[30* idx+ 8]= 0.0f;
-		vertices[30* idx+ 9]= 1.0f;
+		vertices[30* idx+ 8]= 0.0;
+		vertices[30* idx+ 9]= 1.0;
 
 		vertices[30* idx+ 10]= _characters[idx]->_obj->_aabb->_pos.x+ _characters[idx]->_obj->_aabb->_size.x;
 		vertices[30* idx+ 11]= _characters[idx]->_obj->_aabb->_pos.y;
 		vertices[30* idx+ 12]= _characters[idx]->_z;
-		vertices[30* idx+ 13]= 1.0f;
-		vertices[30* idx+ 14]= 1.0f;
+		vertices[30* idx+ 13]= 1.0;
+		vertices[30* idx+ 14]= 1.0;
 
 		vertices[30* idx+ 15]= _characters[idx]->_obj->_aabb->_pos.x;
 		vertices[30* idx+ 16]= _characters[idx]->_obj->_aabb->_pos.y+ _characters[idx]->_obj->_aabb->_size.y;
 		vertices[30* idx+ 17]= _characters[idx]->_z;
-		vertices[30* idx+ 18]= 0.0f;
-		vertices[30* idx+ 19]= 0.0f;
+		vertices[30* idx+ 18]= 0.0;
+		vertices[30* idx+ 19]= 0.0;
 
 		vertices[30* idx+ 20]= _characters[idx]->_obj->_aabb->_pos.x+ _characters[idx]->_obj->_aabb->_size.x;
 		vertices[30* idx+ 21]= _characters[idx]->_obj->_aabb->_pos.y;
 		vertices[30* idx+ 22]= _characters[idx]->_z;
-		vertices[30* idx+ 23]= 1.0f;
-		vertices[30* idx+ 24]= 1.0f;
+		vertices[30* idx+ 23]= 1.0;
+		vertices[30* idx+ 24]= 1.0;
 
 		vertices[30* idx+ 25]= _characters[idx]->_obj->_aabb->_pos.x+ _characters[idx]->_obj->_aabb->_size.x;
 		vertices[30* idx+ 26]= _characters[idx]->_obj->_aabb->_pos.y+ _characters[idx]->_obj->_aabb->_size.y;
 		vertices[30* idx+ 27]= _characters[idx]->_z;
-		vertices[30* idx+ 28]= 1.0f;
-		vertices[30* idx+ 29]= 0.0f;
+		vertices[30* idx+ 28]= 1.0;
+		vertices[30* idx+ 29]= 0.0;
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-	glBufferData(GL_ARRAY_BUFFER, 30* _n_aabbs* sizeof(float), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 30* _n_aabbs* sizeof(number), vertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -483,8 +483,8 @@ AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl, Obj
 	
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
-	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
-	_model2world= glm::mat4(1.0f);
+	_camera2clip= glm::ortho(-0.5f* float(_screengl->_gl_width), 0.5f* float(_screengl->_gl_width), -0.5f* float(_screengl->_gl_height), 0.5f* float(_screengl->_gl_height), Z_NEAR, Z_FAR);
+	_model2world= glm::mat4(1.0);
 
 	glUseProgram(_prog_draw);
 	_camera2clip_loc= glGetUniformLocation(_prog_draw, "camera2clip_matrix");
@@ -523,9 +523,9 @@ void AnimTexture::draw() {
 	glEnableVertexAttribArray(_tex_coord_loc);
 	glEnableVertexAttribArray(_current_layer_loc);
 
-	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-	glVertexAttribPointer(_tex_coord_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
-	glVertexAttribPointer(_current_layer_loc, 1, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(number), (void*)0);
+	glVertexAttribPointer(_tex_coord_loc, 2, GL_FLOAT, GL_FALSE, 6* sizeof(number), (void*)(3* sizeof(number)));
+	glVertexAttribPointer(_current_layer_loc, 1, GL_FLOAT, GL_FALSE, 6* sizeof(number), (void*)(5* sizeof(number)));
 
 	glDrawArrays(GL_TRIANGLES, 0, 6* _n_aabbs);
 
@@ -550,51 +550,51 @@ void AnimTexture::update() {
 		// on ajoute l'indice de la 1ere image liée à l'action courante + indice de l'anim courante au sein de cette action
 		float current_layer= (float)(anim_character->_current_action->_first_idx+ anim_character->_current_anim);
 
-		vertices[36* idx+ 0]= anim_character->_obj->_aabb->_pos.x;
-		vertices[36* idx+ 1]= anim_character->_obj->_aabb->_pos.y+ anim_character->_obj->_aabb->_size.y;
-		vertices[36* idx+ 2]= anim_character->_z;
+		vertices[36* idx+ 0]= float(anim_character->_obj->_aabb->_pos.x);
+		vertices[36* idx+ 1]= float(anim_character->_obj->_aabb->_pos.y+ anim_character->_obj->_aabb->_size.y);
+		vertices[36* idx+ 2]= float(anim_character->_z);
 		vertices[36* idx+ 3]= 0.0f;
 		vertices[36* idx+ 4]= 0.0f;
 		vertices[36* idx+ 5]= current_layer;
 
-		vertices[36* idx+ 6]= anim_character->_obj->_aabb->_pos.x;
-		vertices[36* idx+ 7]= anim_character->_obj->_aabb->_pos.y;
-		vertices[36* idx+ 8]= anim_character->_z;
+		vertices[36* idx+ 6]= float(anim_character->_obj->_aabb->_pos.x);
+		vertices[36* idx+ 7]= float(anim_character->_obj->_aabb->_pos.y);
+		vertices[36* idx+ 8]= float(anim_character->_z);
 		vertices[36* idx+ 9]= 0.0f;
 		vertices[36* idx+ 10]= 1.0f;
 		vertices[36* idx+ 11]= current_layer;
 
-		vertices[36* idx+ 12]= anim_character->_obj->_aabb->_pos.x+ anim_character->_obj->_aabb->_size.x;
-		vertices[36* idx+ 13]= anim_character->_obj->_aabb->_pos.y;
-		vertices[36* idx+ 14]= anim_character->_z;
+		vertices[36* idx+ 12]= float(anim_character->_obj->_aabb->_pos.x+ anim_character->_obj->_aabb->_size.x);
+		vertices[36* idx+ 13]= float(anim_character->_obj->_aabb->_pos.y);
+		vertices[36* idx+ 14]= float(anim_character->_z);
 		vertices[36* idx+ 15]= 1.0f;
 		vertices[36* idx+ 16]= 1.0f;
 		vertices[36* idx+ 17]= current_layer;
 
-		vertices[36* idx+ 18]= anim_character->_obj->_aabb->_pos.x;
-		vertices[36* idx+ 19]= anim_character->_obj->_aabb->_pos.y+ anim_character->_obj->_aabb->_size.y;
-		vertices[36* idx+ 20]= anim_character->_z;
+		vertices[36* idx+ 18]= float(anim_character->_obj->_aabb->_pos.x);
+		vertices[36* idx+ 19]= float(anim_character->_obj->_aabb->_pos.y+ anim_character->_obj->_aabb->_size.y);
+		vertices[36* idx+ 20]= float(anim_character->_z);
 		vertices[36* idx+ 21]= 0.0f;
 		vertices[36* idx+ 22]= 0.0f;
 		vertices[36* idx+ 23]= current_layer;
 
-		vertices[36* idx+ 24]= anim_character->_obj->_aabb->_pos.x+ anim_character->_obj->_aabb->_size.x;
-		vertices[36* idx+ 25]= anim_character->_obj->_aabb->_pos.y;
-		vertices[36* idx+ 26]= anim_character->_z;
+		vertices[36* idx+ 24]= float(anim_character->_obj->_aabb->_pos.x+ anim_character->_obj->_aabb->_size.x);
+		vertices[36* idx+ 25]= float(anim_character->_obj->_aabb->_pos.y);
+		vertices[36* idx+ 26]= float(anim_character->_z);
 		vertices[36* idx+ 27]= 1.0f;
 		vertices[36* idx+ 28]= 1.0f;
 		vertices[36* idx+ 29]= current_layer;
 
-		vertices[36* idx+ 30]= anim_character->_obj->_aabb->_pos.x+ anim_character->_obj->_aabb->_size.x;
-		vertices[36* idx+ 31]= anim_character->_obj->_aabb->_pos.y+ anim_character->_obj->_aabb->_size.y;
-		vertices[36* idx+ 32]= anim_character->_z;
+		vertices[36* idx+ 30]= float(anim_character->_obj->_aabb->_pos.x+ anim_character->_obj->_aabb->_size.x);
+		vertices[36* idx+ 31]= float(anim_character->_obj->_aabb->_pos.y+ anim_character->_obj->_aabb->_size.y);
+		vertices[36* idx+ 32]= float(anim_character->_z);
 		vertices[36* idx+ 33]= 1.0f;
 		vertices[36* idx+ 34]= 0.0f;
 		vertices[36* idx+ 35]= current_layer;
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-	glBufferData(GL_ARRAY_BUFFER, 36* _n_aabbs* sizeof(float), vertices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 36* _n_aabbs* sizeof(GL_FLOAT), vertices, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -605,7 +605,7 @@ Character2D::Character2D() {
 }
 
 
-Character2D::Character2D(Object2D * obj, Texture2D * texture, float z) :
+Character2D::Character2D(Object2D * obj, Texture2D * texture, number z) :
 	_obj(obj), _texture(texture), _z(z)
 {
 	
@@ -623,8 +623,8 @@ AnimatedCharacter2D::AnimatedCharacter2D() : Character2D() {
 }
 
 
-AnimatedCharacter2D::AnimatedCharacter2D(Object2D * obj, Texture2D * texture, float z) :
-	Character2D(obj, texture, z), _current_anim(0), _accumulated_time(0.0f)
+AnimatedCharacter2D::AnimatedCharacter2D(Object2D * obj, Texture2D * texture, number z) :
+	Character2D(obj, texture, z), _current_anim(0), _accumulated_time(0.0)
 {
 	_current_action= _texture->_actions[0];
 }
@@ -635,7 +635,7 @@ AnimatedCharacter2D::~AnimatedCharacter2D() {
 }
 
 
-void AnimatedCharacter2D::anim(float elapsed_time) {
+void AnimatedCharacter2D::anim(number elapsed_time) {
 	_accumulated_time+= elapsed_time;
 	if (_accumulated_time>= _current_action->_anim_time) {
 		_accumulated_time-= _current_action->_anim_time;
@@ -687,7 +687,7 @@ Person2D::Person2D() : AnimatedCharacter2D() {
 }
 
 
-Person2D::Person2D(Object2D * obj, Texture2D * texture, float z) : 
+Person2D::Person2D(Object2D * obj, Texture2D * texture, number z) : 
 	AnimatedCharacter2D(obj, texture, z), _left_pressed(false), _right_pressed(false), _down_pressed(false), _up_pressed(false),
 	_lshift_pressed(false), _jump(false)
 {
@@ -764,7 +764,7 @@ void Person2D::update_velocity() {
 
 
 void Person2D::update_action() {
-	glm::vec2 v(0.0f);
+	pt_type v(0.0);
 	if (_obj->_referential!= nullptr) {
 		v= _obj->_velocity- _obj->_referential->_velocity;
 	}
@@ -781,7 +781,7 @@ void Person2D::update_action() {
 		}
 	}
 	
-	if (v.y< 0.0f) {
+	if (v.y< 0.0) {
 		if (current_action()== "left_jump") {
 			set_action("left_fall");
 		}
@@ -1042,7 +1042,7 @@ SVGParser::SVGParser(string svg_path, ScreenGL * screengl) : _screengl(screengl)
 			}
 			// calque View contient un rectangle d'init du pt de vue au chargement du level
 			else if (layer_label== "View") {
-				_view= new AABB_2D(glm::vec2(stof(obj["x"]), stof(obj["y"])), glm::vec2(stof(obj["width"]), stof(obj["height"])));
+				_view= new AABB_2D(pt_type(stof(obj["x"]), stof(obj["y"])), pt_type(stof(obj["width"]), stof(obj["height"])));
 			}
 			else {
 				// tous les objs d'un meme calque ont le meme z
@@ -1061,18 +1061,18 @@ SVGParser::~SVGParser() {
 
 // SVG : origine = pt haut gauche ; y positif pointe vers le bas
 AABB_2D SVGParser::svg2screen(AABB_2D aabb) {
-	float x= (aabb._pos.x- (_view->_pos.x+ _view->_size.x* 0.5f))* _screengl->_gl_width / _view->_size.x;
-	float y= ((_view->_pos.y+ _view->_size.y* 0.5f)- aabb._pos.y)* _screengl->_gl_height/ _view->_size.y;
-	float w= aabb._size.x* _screengl->_gl_width / _view->_size.x;
-	float h= aabb._size.y* _screengl->_gl_height/ _view->_size.y;
+	number x= (aabb._pos.x- (_view->_pos.x+ _view->_size.x* 0.5f))* _screengl->_gl_width / _view->_size.x;
+	number y= ((_view->_pos.y+ _view->_size.y* 0.5f)- aabb._pos.y)* _screengl->_gl_height/ _view->_size.y;
+	number w= aabb._size.x* _screengl->_gl_width / _view->_size.x;
+	number h= aabb._size.y* _screengl->_gl_height/ _view->_size.y;
 
-	float snap= 0.2f;
+	number snap= 0.2f;
 	x= round(x/ snap)* snap;
 	y= round(y/ snap)* snap;
 	w= round(w/ snap)* snap;
 	h= round(h/ snap)* snap;
 
-	return AABB_2D(glm::vec2(x, y- h), glm::vec2(w, h));
+	return AABB_2D(pt_type(x, y- h), pt_type(w, h));
 }
 
 
@@ -1125,7 +1125,7 @@ void Level::update_static_textures(SVGParser * svg_parser) {
 				continue;
 			}
 			
-			AABB_2D aabb_svg(glm::vec2(stof(model["x"]), stof(model["y"])), glm::vec2(stof(model["width"]), stof(model["height"])));
+			AABB_2D aabb_svg(pt_type(stof(model["x"]), stof(model["y"])), pt_type(stof(model["width"]), stof(model["height"])));
 			AABB_2D aabb_gl= svg_parser->svg2screen(aabb_svg);
 
 			// si un rect correspond au model on modifie le footprint de l'unique action de la texture statique
@@ -1137,7 +1137,7 @@ void Level::update_static_textures(SVGParser * svg_parser) {
 					continue;
 				}
 				
-				AABB_2D footprint_svg(glm::vec2(stof(rect["x"]), stof(rect["y"])), glm::vec2(stof(rect["width"]), stof(rect["height"])));
+				AABB_2D footprint_svg(pt_type(stof(rect["x"]), stof(rect["y"])), pt_type(stof(rect["width"]), stof(rect["height"])));
 				AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
 				// Action._footprint entre 0 et 1 pour pos et size
 				static_texture->_actions[0]->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
@@ -1180,7 +1180,7 @@ void Level::update_anim_textures(SVGParser * svg_parser) {
 				}
 			}
 			
-			AABB_2D aabb_svg(glm::vec2(stof(model["x"]), stof(model["y"])), glm::vec2(stof(model["width"]), stof(model["height"])));
+			AABB_2D aabb_svg(pt_type(stof(model["x"]), stof(model["y"])), pt_type(stof(model["width"]), stof(model["height"])));
 			AABB_2D aabb_gl= svg_parser->svg2screen(aabb_svg);
 
 			for (auto action : anim_texture->_actions) {
@@ -1201,7 +1201,7 @@ void Level::update_anim_textures(SVGParser * svg_parser) {
 					}
 					
 					// footprint du rect action_name == default
-					AABB_2D footprint_svg(glm::vec2(stof(rect["x"]), stof(rect["y"])), glm::vec2(stof(rect["width"]), stof(rect["height"])));
+					AABB_2D footprint_svg(pt_type(stof(rect["x"]), stof(rect["y"])), pt_type(stof(rect["width"]), stof(rect["height"])));
 					AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
 					action->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
 					action->_footprint->_size= footprint_gl._size/ aabb_gl._size;
@@ -1227,7 +1227,7 @@ void Level::update_anim_textures(SVGParser * svg_parser) {
 			// action spécifique
 			Action * action= anim_texture->get_action(model["action_name"]);
 
-			AABB_2D aabb_svg(glm::vec2(stof(model["x"]), stof(model["y"])), glm::vec2(stof(model["width"]), stof(model["height"])));
+			AABB_2D aabb_svg(pt_type(stof(model["x"]), stof(model["y"])), pt_type(stof(model["width"]), stof(model["height"])));
 			AABB_2D aabb_gl= svg_parser->svg2screen(aabb_svg);
 
 			if (model.count("anim_time")) {
@@ -1246,7 +1246,7 @@ void Level::update_anim_textures(SVGParser * svg_parser) {
 					continue;
 				}
 				
-				AABB_2D footprint_svg(glm::vec2(stof(rect["x"]), stof(rect["y"])), glm::vec2(stof(rect["width"]), stof(rect["height"])));
+				AABB_2D footprint_svg(pt_type(stof(rect["x"]), stof(rect["y"])), pt_type(stof(rect["width"]), stof(rect["height"])));
 				AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
 				action->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
 				action->_footprint->_size= footprint_gl._size/ aabb_gl._size;
@@ -1264,7 +1264,7 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 		if (obj["type"]!= "image") {
 			continue;
 		}
-		AABB_2D aabb_svg= AABB_2D(glm::vec2(stof(obj["x"]), stof(obj["y"])), glm::vec2(stof(obj["width"]), stof(obj["height"])));
+		AABB_2D aabb_svg= AABB_2D(pt_type(stof(obj["x"]), stof(obj["y"])), pt_type(stof(obj["width"]), stof(obj["height"])));
 		AABB_2D aabb_gl= svg_parser->svg2screen(aabb_svg);
 
 		vector<CheckPoint> checkpoints;
@@ -1274,7 +1274,7 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 				if (path["type"]!= "path") {
 					continue;
 				}
-				float velocity= stof(path["velocity"]);
+				number velocity= stof(path["velocity"]);
 
 				istringstream iss(path["d"]);
 				string token;
@@ -1290,9 +1290,9 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 					}
 					else {
 						if (instruction== "M") {
-							float x= stof(token.substr(0, token.find(",")));
-							float y= stof(token.substr(token.find(",")+ 1));
-							glm::vec2 pt= glm::vec2(x, y);
+							number x= stof(token.substr(0, token.find(",")));
+							number y= stof(token.substr(token.find(",")+ 1));
+							pt_type pt= pt_type(x, y);
 							// on cherche le path dont le 1er point est contenu dans l'emprise de l'objet
 							if (!point_in_aabb(pt, &aabb_svg)) {
 								break;
@@ -1300,9 +1300,9 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 							checkpoints.push_back({pt, velocity});
 						}
 						else if (instruction== "H") {
-							float x= stof(token);
-							float y= checkpoints[checkpoints.size()- 1]._pos.y;
-							glm::vec2 pt= glm::vec2(x, y);
+							number x= stof(token);
+							number y= checkpoints[checkpoints.size()- 1]._pos.y;
+							pt_type pt= pt_type(x, y);
 							checkpoints.push_back({pt, velocity});
 						}
 					}
@@ -1314,10 +1314,10 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 			// conversion dans l'espace GL
 			for (unsigned int i=0; i<checkpoints.size(); ++i) {
 				// aabb reduite a un pt -> size == 0
-				AABB_2D pt_gl= svg_parser->svg2screen(AABB_2D(checkpoints[i]._pos, glm::vec2(0.0f)));
+				AABB_2D pt_gl= svg_parser->svg2screen(AABB_2D(checkpoints[i]._pos, pt_type(0.0)));
 				checkpoints[i]._pos= pt_gl._pos;
 			}
-			glm::vec2 v= aabb_gl._pos- checkpoints[0]._pos;
+			pt_type v= aabb_gl._pos- checkpoints[0]._pos;
 			for (unsigned int i=0; i<checkpoints.size(); ++i) {
 				checkpoints[i]._pos+= v;
 			}
@@ -1338,7 +1338,7 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 
 
 Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, string path, ScreenGL * screengl, bool verbose) :
-	_screengl(screengl), _viewpoint(glm::vec2(0.0f)), _draw(true)
+	_screengl(screengl), _viewpoint(pt_type(0.0)), _draw(true)
 {
 	SVGParser * svg_parser= new SVGParser(path, _screengl);
 	gen_textures(prog_draw_anim, prog_draw_static, screengl, svg_parser, verbose);
@@ -1381,7 +1381,7 @@ Texture2D * Level::get_texture(string texture_name, bool verbose) {
 }
 
 
-void Level::add_character(string texture_name, AABB_2D * aabb, float z, vector<CheckPoint> checkpoints, bool update_texture) {
+void Level::add_character(string texture_name, AABB_2D * aabb, number z, vector<CheckPoint> checkpoints, bool update_texture) {
 	Texture2D * texture= get_texture(texture_name);
 	Object2D * obj= new Object2D(aabb, texture->_actions[0]->_footprint, texture->_physics, checkpoints);
 	Character2D * character;
@@ -1419,7 +1419,7 @@ void Level::update_velocities() {
 		if (obj->_physics!= FALLING) {
 			continue;
 		}
-		obj->_velocity.x= 0.0f;
+		obj->_velocity.x= 0.0;
 		if (obj->_referential!= nullptr) {
 			obj->_velocity.x= obj->_referential->_velocity.x;
 		}
@@ -1444,10 +1444,10 @@ void Level::update_velocities() {
 }
 
 
-void Level::intersections(float elapsed_time) {
-	glm::vec2 contact_pt(0.0f);
-	glm::vec2 contact_normal(0.0f);
-	float contact_time= 0.0f;
+void Level::intersections(number elapsed_time) {
+	pt_type contact_pt(0.0);
+	pt_type contact_normal(0.0);
+	number contact_time= 0.0;
 
 	for (auto character : _characters) {
 		Object2D * obj= character->_obj;
@@ -1481,21 +1481,21 @@ void Level::intersections(float elapsed_time) {
 
 			if (anim_intersect_static(obj1, obj2, elapsed_time, contact_pt, contact_normal, contact_time)) {
 				// les CHECKPOINT_SOLID_TOP ne font du contact que lorsqu'on les approche par dessus
-				if ((obj2->_physics!= CHECKPOINT_SOLID_TOP) || (contact_normal.y> 0.0f)) {
+				if ((obj2->_physics!= CHECKPOINT_SOLID_TOP) || (contact_normal.y> 0.0)) {
 					// cf refs dans bbox_2d.h
-					glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
-					// malheureusement ca ne marche pas nickel, il faut * par 1.xxx a cause de l'approx float, et encore ca foire parfois. Que faire ?
+					pt_type correction= (1.0- contact_time)* pt_type(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
+					// malheureusement ca ne marche pas nickel, il faut * par 1.xxx a cause de l'approx number, et encore ca foire parfois. Que faire ?
 					obj1->_velocity+= correction* CORRECT_FACTOR;
 				}
 
-				if (contact_normal.y> 0.0f) {
+				if (contact_normal.y> 0.0) {
 					obj1->_bottom.push_back(obj2);
 					if ((obj2->_physics== CHECKPOINT_SOLID) || (obj2->_physics== CHECKPOINT_SOLID_TOP)) {
 						// on est sur une plateforme
 						obj1->_referential= obj2;
 					}
 				}
-				else if (contact_normal.y< 0.0f) {
+				else if (contact_normal.y< 0.0) {
 					obj1->_top.push_back(obj2);
 				}
 			}
@@ -1525,17 +1525,17 @@ void Level::intersections(float elapsed_time) {
 			Object2D * obj_tmp= new Object2D(*obj2);
 			obj_tmp->update_pos(elapsed_time);
 			if (anim_intersect_static(obj1, obj_tmp, elapsed_time, contact_pt, contact_normal, contact_time)) {
-				if ((obj1->_physics!= CHECKPOINT_SOLID_TOP) || (contact_normal.y> 0.0f)) {
-					glm::vec2 correction= (1.0f- contact_time)* glm::vec2(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
+				if ((obj1->_physics!= CHECKPOINT_SOLID_TOP) || (contact_normal.y> 0.0)) {
+					pt_type correction= (1.0- contact_time)* pt_type(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
 					obj2->_velocity-= correction* CORRECT_FACTOR;
 				}
 
-				if (contact_normal.y< 0.0f) {
+				if (contact_normal.y< 0.0) {
 					// obj2 sur platform obj1
 					obj2->_bottom.push_back(obj1);
 					obj2->_referential= obj1;
 				}
-				else if (contact_normal.y> 0.0f) {
+				else if (contact_normal.y> 0.0) {
 					obj2->_top.push_back(obj1);
 				}
 			}
@@ -1580,7 +1580,7 @@ void Level::deletes() {
 }
 
 
-void Level::update_positions(float elapsed_time) {
+void Level::update_positions(number elapsed_time) {
 	// pos = pos + k * velocity
 	for (auto character : _characters) {
 		Object2D * obj= character->_obj;
@@ -1600,7 +1600,7 @@ void Level::update_actions() {
 }
 
 
-void Level::anim_characters(float elapsed_time) {
+void Level::anim_characters(number elapsed_time) {
 	// animation chars animables
 	for (auto character : _characters) {
 		AnimatedCharacter2D * anim_character= dynamic_cast<AnimatedCharacter2D *>(character);
@@ -1620,7 +1620,7 @@ void Level::update_textures() {
 
 void Level::follow_hero() {
 	// la caméra suit le héros
-	glm::vec2 hero= _hero->_obj->_aabb->center();
+	pt_type hero= _hero->_obj->_aabb->center();
 	//_viewpoint= hero;
 	if (hero.x< _viewpoint.x- MOVE_VIEWPOINT.x) {
 		_viewpoint.x= hero.x+ MOVE_VIEWPOINT.x;
@@ -1636,12 +1636,12 @@ void Level::follow_hero() {
 	}
 
 	for (auto texture: _textures) {
-		texture->set_model2world(glm::translate(glm::mat4(1.0f), glm::vec3(-_viewpoint.x, -_viewpoint.y, 0.0f)));
+		texture->set_model2world(glm::translate(glm::mat4(1.0), glm::vec3(-_viewpoint.x, -_viewpoint.y, 0.0)));
 	}
 }
 
 
-void Level::anim(float elapsed_time) {
+void Level::anim(number elapsed_time) {
 	update_velocities();
 	intersections(elapsed_time);
 	deletes();
@@ -1699,8 +1699,8 @@ LevelDebug::LevelDebug() {
 LevelDebug::LevelDebug(GLuint prog_draw_aabb, Level * level, ScreenGL * screengl) :
 	_prog_draw(prog_draw_aabb), _level(level), _screengl(screengl), _n_aabbs(0), _draw_aabb(false), _draw_footprint(false)
 {
-	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
-	_model2world= glm::mat4(1.0f);
+	_camera2clip= glm::ortho(-0.5f* float(_screengl->_gl_width), 0.5f* float(_screengl->_gl_width), -0.5f* float(_screengl->_gl_height), 0.5f* float(_screengl->_gl_height), Z_NEAR, Z_FAR);
+	_model2world= glm::mat4(1.0);
 
 	glUseProgram(_prog_draw);
 	_camera2clip_loc= glGetUniformLocation(_prog_draw, "camera2clip_matrix");
@@ -1726,7 +1726,7 @@ void LevelDebug::draw() {
 	}
 
 	glUseProgram(_prog_draw);
-   	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
 
 	glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glUniformMatrix4fv(_model2world_loc, 1, GL_FALSE, glm::value_ptr(_model2world));
@@ -1735,8 +1735,8 @@ void LevelDebug::draw() {
 	glEnableVertexAttribArray(_position_loc);
 	glEnableVertexAttribArray(_color_loc);
 
-	glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)0);
-	glVertexAttribPointer(_color_loc, 3, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(2* sizeof(float)));
+	glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 5* sizeof(number), (void*)0);
+	glVertexAttribPointer(_color_loc, 3, GL_FLOAT, GL_FALSE, 5* sizeof(number), (void*)(2* sizeof(number)));
 
 	glDrawArrays(GL_LINES, 0, 8* _n_aabbs);
 
@@ -1749,38 +1749,39 @@ void LevelDebug::draw() {
 
 
 void LevelDebug::update() {
-	glm::vec3 aabb_color(1.0f, 0.0f, 0.0f);
-	glm::vec3 footprint_color(0.0f, 1.0f, 0.0f);
+	glm::vec3 aabb_color(1.0, 0.0, 0.0);
+	glm::vec3 footprint_color(0.0, 1.0, 0.0);
 
 	unsigned int n_chars= _level->_characters.size();
 
 	_n_aabbs= n_chars* 2;
 	float vertices[_n_aabbs* 40];
 	for (unsigned int i=0; i<_n_aabbs* 40; ++i) {
-		vertices[i]= 0.0f;
+		vertices[i]= 0.0;
 	}
 
 	if (_draw_aabb) {
 		for (unsigned int idx=0; idx<n_chars; ++idx) {
-			vertices[40* idx+ 0]= _level->_characters[idx]->_obj->_aabb->_pos.x;
-			vertices[40* idx+ 1]= _level->_characters[idx]->_obj->_aabb->_pos.y;
-			vertices[40* idx+ 5]= _level->_characters[idx]->_obj->_aabb->_pos.x+ _level->_characters[idx]->_obj->_aabb->_size.x;
-			vertices[40* idx+ 6]= _level->_characters[idx]->_obj->_aabb->_pos.y;
+			AABB_2D * aabb= _level->_characters[idx]->_obj->_aabb;
+			vertices[40* idx+ 0]= float(aabb->_pos.x);
+			vertices[40* idx+ 1]= float(aabb->_pos.y);
+			vertices[40* idx+ 5]= float(aabb->_pos.x+ aabb->_size.x);
+			vertices[40* idx+ 6]= float(aabb->_pos.y);
 
-			vertices[40* idx+ 10]= _level->_characters[idx]->_obj->_aabb->_pos.x+ _level->_characters[idx]->_obj->_aabb->_size.x;
-			vertices[40* idx+ 11]= _level->_characters[idx]->_obj->_aabb->_pos.y;
-			vertices[40* idx+ 15]= _level->_characters[idx]->_obj->_aabb->_pos.x+ _level->_characters[idx]->_obj->_aabb->_size.x;
-			vertices[40* idx+ 16]= _level->_characters[idx]->_obj->_aabb->_pos.y+ _level->_characters[idx]->_obj->_aabb->_size.y;
+			vertices[40* idx+ 10]= float(aabb->_pos.x+ aabb->_size.x);
+			vertices[40* idx+ 11]= float(aabb->_pos.y);
+			vertices[40* idx+ 15]= float(aabb->_pos.x+ aabb->_size.x);
+			vertices[40* idx+ 16]= float(aabb->_pos.y+ aabb->_size.y);
 
-			vertices[40* idx+ 20]= _level->_characters[idx]->_obj->_aabb->_pos.x+ _level->_characters[idx]->_obj->_aabb->_size.x;
-			vertices[40* idx+ 21]= _level->_characters[idx]->_obj->_aabb->_pos.y+ _level->_characters[idx]->_obj->_aabb->_size.y;
-			vertices[40* idx+ 25]= _level->_characters[idx]->_obj->_aabb->_pos.x;
-			vertices[40* idx+ 26]= _level->_characters[idx]->_obj->_aabb->_pos.y+ _level->_characters[idx]->_obj->_aabb->_size.y;
+			vertices[40* idx+ 20]= float(aabb->_pos.x+ aabb->_size.x);
+			vertices[40* idx+ 21]= float(aabb->_pos.y+ aabb->_size.y);
+			vertices[40* idx+ 25]= float(aabb->_pos.x);
+			vertices[40* idx+ 26]= float(aabb->_pos.y+ aabb->_size.y);
 
-			vertices[40* idx+ 30]= _level->_characters[idx]->_obj->_aabb->_pos.x;
-			vertices[40* idx+ 31]= _level->_characters[idx]->_obj->_aabb->_pos.y+ _level->_characters[idx]->_obj->_aabb->_size.y;
-			vertices[40* idx+ 35]= _level->_characters[idx]->_obj->_aabb->_pos.x;
-			vertices[40* idx+ 36]= _level->_characters[idx]->_obj->_aabb->_pos.y;
+			vertices[40* idx+ 30]= float(aabb->_pos.x);
+			vertices[40* idx+ 31]= float(aabb->_pos.y+ aabb->_size.y);
+			vertices[40* idx+ 35]= float(aabb->_pos.x);
+			vertices[40* idx+ 36]= float(aabb->_pos.y);
 
 			for (unsigned int i=0; i<8; ++i) {
 				vertices[40* idx+ 5* i+ 2]= aabb_color.x;
@@ -1792,25 +1793,26 @@ void LevelDebug::update() {
 	
 	if (_draw_footprint) {
 		for (unsigned int idx=0; idx<n_chars; ++idx) {
-			vertices[n_chars* 40+ 40* idx+ 0]= _level->_characters[idx]->_obj->_footprint->_pos.x;
-			vertices[n_chars* 40+ 40* idx+ 1]= _level->_characters[idx]->_obj->_footprint->_pos.y;
-			vertices[n_chars* 40+ 40* idx+ 5]= _level->_characters[idx]->_obj->_footprint->_pos.x+ _level->_characters[idx]->_obj->_footprint->_size.x;
-			vertices[n_chars* 40+ 40* idx+ 6]= _level->_characters[idx]->_obj->_footprint->_pos.y;
+			AABB_2D * footprint= _level->_characters[idx]->_obj->_footprint;
+			vertices[n_chars* 40+ 40* idx+ 0]= float(footprint->_pos.x);
+			vertices[n_chars* 40+ 40* idx+ 1]= float(footprint->_pos.y);
+			vertices[n_chars* 40+ 40* idx+ 5]= float(footprint->_pos.x+ footprint->_size.x);
+			vertices[n_chars* 40+ 40* idx+ 6]= float(footprint->_pos.y);
 
-			vertices[n_chars* 40+ 40* idx+ 10]= _level->_characters[idx]->_obj->_footprint->_pos.x+ _level->_characters[idx]->_obj->_footprint->_size.x;
-			vertices[n_chars* 40+ 40* idx+ 11]= _level->_characters[idx]->_obj->_footprint->_pos.y;
-			vertices[n_chars* 40+ 40* idx+ 15]= _level->_characters[idx]->_obj->_footprint->_pos.x+ _level->_characters[idx]->_obj->_footprint->_size.x;
-			vertices[n_chars* 40+ 40* idx+ 16]= _level->_characters[idx]->_obj->_footprint->_pos.y+ _level->_characters[idx]->_obj->_footprint->_size.y;
+			vertices[n_chars* 40+ 40* idx+ 10]= float(footprint->_pos.x+ footprint->_size.x);
+			vertices[n_chars* 40+ 40* idx+ 11]= float(footprint->_pos.y);
+			vertices[n_chars* 40+ 40* idx+ 15]= float(footprint->_pos.x+ footprint->_size.x);
+			vertices[n_chars* 40+ 40* idx+ 16]= float(footprint->_pos.y+ footprint->_size.y);
 
-			vertices[n_chars* 40+ 40* idx+ 20]= _level->_characters[idx]->_obj->_footprint->_pos.x+ _level->_characters[idx]->_obj->_footprint->_size.x;
-			vertices[n_chars* 40+ 40* idx+ 21]= _level->_characters[idx]->_obj->_footprint->_pos.y+ _level->_characters[idx]->_obj->_footprint->_size.y;
-			vertices[n_chars* 40+ 40* idx+ 25]= _level->_characters[idx]->_obj->_footprint->_pos.x;
-			vertices[n_chars* 40+ 40* idx+ 26]= _level->_characters[idx]->_obj->_footprint->_pos.y+ _level->_characters[idx]->_obj->_footprint->_size.y;
+			vertices[n_chars* 40+ 40* idx+ 20]= float(footprint->_pos.x+ footprint->_size.x);
+			vertices[n_chars* 40+ 40* idx+ 21]= float(footprint->_pos.y+ footprint->_size.y);
+			vertices[n_chars* 40+ 40* idx+ 25]= float(footprint->_pos.x);
+			vertices[n_chars* 40+ 40* idx+ 26]= float(footprint->_pos.y+ footprint->_size.y);
 
-			vertices[n_chars* 40+ 40* idx+ 30]= _level->_characters[idx]->_obj->_footprint->_pos.x;
-			vertices[n_chars* 40+ 40* idx+ 31]= _level->_characters[idx]->_obj->_footprint->_pos.y+ _level->_characters[idx]->_obj->_footprint->_size.y;
-			vertices[n_chars* 40+ 40* idx+ 35]= _level->_characters[idx]->_obj->_footprint->_pos.x;
-			vertices[n_chars* 40+ 40* idx+ 36]= _level->_characters[idx]->_obj->_footprint->_pos.y;
+			vertices[n_chars* 40+ 40* idx+ 30]= float(footprint->_pos.x);
+			vertices[n_chars* 40+ 40* idx+ 31]= float(footprint->_pos.y+ footprint->_size.y);
+			vertices[n_chars* 40+ 40* idx+ 35]= float(footprint->_pos.x);
+			vertices[n_chars* 40+ 40* idx+ 36]= float(footprint->_pos.y);
 
 			for (unsigned int i=0; i<8; ++i) {
 				vertices[n_chars* 40+ 40* idx+ 5* i+ 2]= footprint_color.x;
@@ -1821,11 +1823,11 @@ void LevelDebug::update() {
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, _vbo);
-	glBufferData(GL_ARRAY_BUFFER, 40* _n_aabbs* sizeof(float), vertices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 40* _n_aabbs* sizeof(GL_FLOAT), vertices, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	// suivre le mouvement de caméra
-	_model2world= glm::translate(glm::mat4(1.0f), glm::vec3(-_level->_viewpoint.x, -_level->_viewpoint.y, 0.0f));
+	_model2world= glm::translate(glm::mat4(1.0), glm::vec3(-_level->_viewpoint.x, -_level->_viewpoint.y, 0.0));
 }
 
 

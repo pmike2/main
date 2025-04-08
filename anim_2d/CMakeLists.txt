@@ -42,7 +42,7 @@ include_directories(../libs)
 include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS})
 
 
-add_library(lib_anim_2d STATIC ../libs/anim_2d.cpp ../libs/anim_2d.h)
+add_library(lib_anim_2d STATIC ./srcs/anim_2d.cpp ./srcs/anim_2d.h)
 add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)
 add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
 add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h)

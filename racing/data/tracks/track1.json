@@ -1,16 +1,16 @@
 {
     "best_lap": [
         {
+            "name": "pmb",
+            "time": 14.178
+        },
+        {
+            "name": "pmb",
+            "time": 14.578
+        },
+        {
             "name": "minett",
             "time": 14.596
-        },
-        {
-            "name": "minett",
-            "time": 14.628
-        },
-        {
-            "name": "minett",
-            "time": 14.679
         }
     ],
     "best_overall": [

@@ -9,6 +9,7 @@
 #include "gl_utils.h"
 #include "bbox_2d.h"
 #include "input_state.h"
+#include "typedefs.h"
 
 
 // constantes ------------------------------------------------------------------
@@ -17,20 +18,20 @@ const float Z_NEAR= -10.0f;
 const float Z_FAR= 10.0f;
 
 // si vitesse en dessous de ce seuil, changement d'action
-const float UPDATE_ACTION_TRESH= 0.1f;
+const number UPDATE_ACTION_TRESH= 0.1f;
 
 // si hero sort du rectangle _viewpoint +- MOVE_VIEWPOINT, o, déplace _viewpoint
-const glm::vec2 MOVE_VIEWPOINT(5.0f, 5.0f);
+const pt_type MOVE_VIEWPOINT(5.0f, 5.0f);
 
 // incrément gravité et max
-const float GRAVITY_INC= 1.0f;
-const float GRAVITY_MAX= 20.0f;
+const number GRAVITY_INC= 1.0f;
+const number GRAVITY_MAX= 20.0f;
 
 // distance seuil pour changer de checkpoint
-const float CHECKPOINT_TRESH= 0.1f;
+const number CHECKPOINT_TRESH= 0.1f;
 
 // on multiplie la correction à apporter par ce facteur pour éviter l'intersection. Foireux...
-const float CORRECT_FACTOR= 1.1f;
+const number CORRECT_FACTOR= 1.1f;
 
 
 // enums -----------------------------------------------------------------------
@@ -50,12 +51,12 @@ CharacterType str2character_type(std::string s);
 class CheckPoint {
 public:
 	CheckPoint();
-	CheckPoint(glm::vec2 pos, float velocity);
+	CheckPoint(pt_type pos, number velocity);
 	~CheckPoint();
 
 
-	glm::vec2 _pos;
-	float _velocity;
+	pt_type _pos;
+	number _velocity;
 };
 
 
@@ -67,18 +68,18 @@ public:
 	Object2D(AABB_2D * aabb, AABB_2D * footprint, ObjectPhysics physics, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>());
 	Object2D(const Object2D & obj);
 	~Object2D();
-	void update_pos(float elapsed_time);
+	void update_pos(number elapsed_time);
 	void update_velocity();
 	void update_footprint_pos();
-	void set_aabb_pos(glm::vec2 pos);
+	void set_aabb_pos(pt_type pos);
 	void set_footprint(AABB_2D * footprint);
 	friend std::ostream & operator << (std::ostream & os, const Object2D & obj);
 
 
 	AABB_2D * _aabb; // emprise texture
-	glm::vec2 _footprint_offset; // pt bas gauche du footprint dans le repere _aabb
+	pt_type _footprint_offset; // pt bas gauche du footprint dans le repere _aabb
 	AABB_2D * _footprint; // emprise physique
-	glm::vec2 _velocity; // vitesse
+	pt_type _velocity; // vitesse
 	ObjectPhysics _physics; // type physique objet
 	std::vector<CheckPoint *> _checkpoints; // chekpoints éventuels
 	unsigned int _idx_checkpoint; // indice chekpoint courant
@@ -89,7 +90,7 @@ public:
 
 
 // test d'intersection entre un obj en mouvement et un obj statique
-bool obj_intersect(const Object2D * anim_obj, const Object2D * static_obj, const float time_step, glm::vec2 & contact_pt, glm::vec2 & contact_normal, float & contact_time);
+//bool obj_intersect(const Object2D * anim_obj, const Object2D * static_obj, const number time_step, pt_type & contact_pt, pt_type & contact_normal, number & contact_time);
 
 
 // action d'un character animé -----------------------------------------------------------------------------------------------------
@@ -104,7 +105,7 @@ public:
 	std::vector<std::string> _pngs; // liste chemins images
 	unsigned int _first_idx; // indice de la 1ere image liée a cette action dans la liste d'actions stockées dans un GL_TEXTURE_2D_ARRAY
 	unsigned int _n_idx; // nombre d'images liées a cette action
-	float _anim_time; // temps à attendre pour passer d'une image à la suivante
+	number _anim_time; // temps à attendre pour passer d'une image à la suivante
 	AABB_2D * _footprint; // emprise physique ; pos et size entre 0 et 1
 };
 
@@ -148,7 +149,7 @@ public:
 
 
 	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _tex_loc, _alpha_loc;
-	float _alpha;
+	number _alpha;
 };
 
 
@@ -162,7 +163,7 @@ public:
 
 
 	GLint _camera2clip_loc, _model2world_loc, _position_loc, _tex_coord_loc, _texture_array_loc, _current_layer_loc;
-	std::map<std::string, float> _velocities; // vitesses liées à un nom
+	std::map<std::string, number> _velocities; // vitesses liées à un nom
 };
 
 
@@ -171,13 +172,13 @@ public:
 class Character2D {
 public:
 	Character2D();
-	Character2D(Object2D * obj, Texture2D * texture, float z);
+	Character2D(Object2D * obj, Texture2D * texture, number z);
 	virtual ~Character2D(); // virtual pour pouvoir faire du polymorphisme
 
 
 	Object2D * _obj;
 	Texture2D * _texture;
-	float _z;
+	number _z;
 };
 
 
@@ -185,9 +186,9 @@ public:
 class AnimatedCharacter2D : public Character2D {
 public:
 	AnimatedCharacter2D();
-	AnimatedCharacter2D(Object2D * obj, Texture2D * texture, float z);
+	AnimatedCharacter2D(Object2D * obj, Texture2D * texture, number z);
 	~AnimatedCharacter2D();
-	void anim(float elapsed_time);
+	void anim(number elapsed_time);
 	void set_action(unsigned int idx_action);
 	void set_action(std::string action_name);
 	std::string current_action();
@@ -195,7 +196,7 @@ public:
 
 	Action * _current_action; // action courante
 	unsigned int _current_anim; // indice d'animation au sein de l'action courante
-	float _accumulated_time; // temps à comparer avec Action._anim_time
+	number _accumulated_time; // temps à comparer avec Action._anim_time
 };
 
 
@@ -203,7 +204,7 @@ public:
 class Person2D : public AnimatedCharacter2D {
 public:
 	Person2D();
-	Person2D(Object2D * obj, Texture2D * texture, float z);
+	Person2D(Object2D * obj, Texture2D * texture, number z);
 	~Person2D();
 	void update_velocity();
 	void update_action();
@@ -248,18 +249,18 @@ public:
 	Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, std::string path, ScreenGL * screengl, bool verbose = false);
 	~Level();
 	Texture2D * get_texture(std::string texture_name, bool verbose = true);
-	void add_character(std::string texture_name, AABB_2D * aabb, float z, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>(), bool update_texture = true);
+	void add_character(std::string texture_name, AABB_2D * aabb, number z, std::vector<CheckPoint> checkpoints = std::vector<CheckPoint>(), bool update_texture = true);
 	void delete_character(Character2D * character);
 	// méthodes appelées par anim() -----------
 	void update_velocities();
-	void intersections(float elapsed_time);
+	void intersections(number elapsed_time);
 	void deletes();
-	void update_positions(float elapsed_time);
+	void update_positions(number elapsed_time);
 	void update_actions();
-	void anim_characters(float elapsed_time);
+	void anim_characters(number elapsed_time);
 	void update_textures();
 	void follow_hero();
-	void anim(float elapsed_time);
+	void anim(number elapsed_time);
 	// ----------------------------------------
 	void draw();
 	bool key_down(InputState * input_state, SDL_Keycode key);
@@ -270,10 +271,10 @@ public:
 	std::vector<Character2D *> _characters;
 	
 	unsigned int _w, _h;
-	float _block_w, _block_h;
+	number _block_w, _block_h;
 	ScreenGL * _screengl;
 	Person2D * _hero;
-	glm::vec2 _viewpoint;
+	pt_type _viewpoint;
 	bool _draw;
 };
 
