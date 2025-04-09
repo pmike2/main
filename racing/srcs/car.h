@@ -13,7 +13,7 @@
 
 
 // facteur d'ajustement afin d'avoir le même feeling clavier / joystick
-const number JOYSTICK_FACTOR= 0.7;
+const number JOYSTICK_FACTOR= 0.5;
 
 
 // Modèle de voiture

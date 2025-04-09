@@ -4,6 +4,6 @@
 	"angular_friction" : 0.01,
 	"solid" : true,
 	"restitution" : 0.1,
-	"collision_thrust" : 2.0,
-	"damage" : 0.1
+	"collision_thrust" : 2.5,
+	"damage" : 0.01
 }

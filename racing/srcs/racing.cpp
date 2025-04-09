@@ -27,7 +27,7 @@ Racing::Racing() {
 Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, time_point t) :
 	_draw_bbox(false), _draw_force(false), _draw_texture(true), _show_debug_info(false),
 	_cam_mode(TRANSLATE), _screengl(screengl), _input_state(input_state),
-	_mode(CHOOSE_DRIVER)
+	_mode(CHOOSE_DRIVER), _joystick_is_input(false)
 	{
 	// caméras
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
@@ -644,7 +644,7 @@ void Racing::show_info() {
 			}
 
 			// adversaires
-			if (_track->_mode== TRACK_LIVE) {
+			if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_PRECOUNT) {
 				for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
 					Car * car= _track->_sorted_cars[idx_car];
 					/*if (car== _track->_hero) {
@@ -652,7 +652,8 @@ void Racing::show_info() {
 					}*/
 					glm::vec4 position= _world2camera* glm::vec4(float(car->_com.x), float(car->_com.y), float(car->_z), 1.0f);
 					glm::vec4 color(0.9f, 0.9f, 0.9f, 0.5f);
-					if (car->_rank< _track->_hero->_rank) {
+					//if (car->_rank< _track->_hero->_rank) {
+					if (car== _track->_hero) {
 						color= glm::vec4(1.0f, 1.0f, 0.5f, 1.0f);
 					}
 					float scale;
@@ -1307,7 +1308,7 @@ void Racing::anim(time_point t) {
 		update_choose_track();
 	}
 	else if (_mode== RACING) {
-		_track->anim(t, _input_state);
+		_track->anim(t, _input_state, _joystick_is_input);
 
 		for (auto smoke_system : _smoke_systems) {
 			smoke_system->anim(t);
@@ -1427,6 +1428,12 @@ bool Racing::key_down(SDL_Keycode key, time_point t) {
 		// i : switcher infos normales / infos debug
 		else if (key== SDLK_i) {
 			_show_debug_info= !_show_debug_info;
+			return true;
+		}
+
+		// j : activer / désactiver joystick
+		else if (key== SDLK_j) {
+			_joystick_is_input= !_joystick_is_input;
 			return true;
 		}
 

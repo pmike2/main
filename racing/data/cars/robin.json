@@ -30,8 +30,8 @@
         ]
     ],
     "forward_static_friction": 1.0,
-    "friction_threshold": 0.1,
-    "friction_threshold_braking" : 0.01,
+    "friction_threshold": 0.07,
+    "friction_threshold_braking": 0.01,
     "max_brake": 1.0,
     "max_thrust": 3.5,
     "max_wheel": 1.5,
@@ -41,6 +41,6 @@
     "type": "car",
     "wheel_decrement": 0.5,
     "wheel_increment": 0.05,
-    "speed_wheel_factor" : 5.5,
-    "material" : "car"
+    "speed_wheel_factor": 5.5,
+    "material": "car"
 }

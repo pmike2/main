@@ -3,21 +3,5 @@
 	"footprint" : [
 		[-0.43, -0.03], [0.25, -0.3], [0.38, 0.04], [0.06, 0.33], [-0.27, 0.24]
 	],
-	"material" : "water",
-	"actions" : {
-		"main" : [
-			{
-				"texture" : "puddle_1.png",
-				"n_ms" : 300
-			},
-			{
-				"texture" : "puddle_2.png",
-				"n_ms" : 300
-			},
-			{
-				"texture" : "puddle_3.png",
-				"n_ms" : 300
-			}
-		]
-	}
+	"material" : "water"
 }

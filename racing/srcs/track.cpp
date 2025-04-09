@@ -966,7 +966,7 @@ void Track::direction_help() {
 }
 
 
-void Track::anim(time_point t, InputState * input_state) {
+void Track::anim(time_point t, InputState * input_state, bool joystick_is_input) {
 	// décompte avant course
 	if (_mode== TRACK_PRECOUNT) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_precount_t).count();
@@ -981,7 +981,7 @@ void Track::anim(time_point t, InputState * input_state) {
 
 	// captage input
 	if (_mode== TRACK_LIVE) {
-		if (input_state->_is_joystick) {
+		if (input_state->_is_joystick && joystick_is_input) {
 			_hero->preanim_joystick(input_state->_joystick_a, input_state->_joystick_b, input_state->_joystick);
 		}
 		else {

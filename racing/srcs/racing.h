@@ -181,6 +181,7 @@ public:
 	Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
 	InputState * _input_state;
+	bool _joystick_is_input;
 };
 
 

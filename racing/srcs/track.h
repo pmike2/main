@@ -100,7 +100,7 @@ public:
 	void total_time();
 	void anim_drivers(time_point t);
 	void direction_help();
-	void anim(time_point t, InputState * input_state); // animation
+	void anim(time_point t, InputState * input_state, bool joystick_is_input); // animation
 
 	// get / set / add / del
 	void set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx);
