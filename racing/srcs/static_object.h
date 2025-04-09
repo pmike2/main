@@ -10,6 +10,7 @@
 #include "bbox_2d.h"
 #include "typedefs.h"
 #include "material.h"
+#include "action.h"
 
 
 // OBSTACLE_TILE == tuile obstacle ; OBSTACLE_FLOATING == obstacle flottant
@@ -19,7 +20,10 @@
 // REPAIR : zone de réparation
 // BOOST : accélérateur
 enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, CAR, START, CHECKPOINT, 
-	SURFACE_TILE, SURFACE_FLOATING, REPAIR, BOOST, DECORATION};
+	SURFACE_TILE, SURFACE_FLOATING, REPAIR, BOOST, DECORATION, DIRECTION_HELP};
+
+// 
+enum ObjectMovementType {MVMT_FIXED, MVMT_ROTATE, MVMT_TRANSLATE, MVMT_TRANSLATE_CONSTRAINED, MVMT_ALL};
 
 // type de grille : verticale, horizontale
 enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
@@ -34,7 +38,16 @@ const std::map<std::string, ObjectType> STR2OBJTYPE {
 	{"surface_floating", SURFACE_FLOATING},
 	{"repair", REPAIR},
 	{"boost", BOOST},
-	{"decoration", DECORATION}
+	{"decoration", DECORATION},
+	{"direction_help", DIRECTION_HELP}
+};
+
+const std::map<std::string, ObjectMovementType> STR2OBJMVMTTYPE {
+	{"fixed", MVMT_FIXED},
+	{"rotate", MVMT_ROTATE},
+	{"translate", MVMT_TRANSLATE},
+	{"translate_constrained", MVMT_TRANSLATE_CONSTRAINED},
+	{"all", MVMT_ALL}
 };
 
 // z d'affichage par type d'objet
@@ -48,7 +61,8 @@ const std::map<ObjectType, number> Z_OBJECTS {
 	{BOOST, -70.0},
 	{OBSTACLE_FLOATING, -60.0},
 	{CAR, -40.0},
-	{DECORATION, -60.0}
+	{DECORATION, -60.0},
+	{DIRECTION_HELP, -40.0}
 };
 
 // !!!
@@ -69,120 +83,37 @@ const number BUMP_DRIFT_THRESHOLD= 0.5;
 // incrément de réparation des bosses
 const number REPAIR_INCREMENT= 0.01;
 
-const std::string MAIN_SEQUENCE_NAME= "main_sequence";
-const std::string CAR_CONTACT_SEQUENCE_NAME= "car_contact_sequence";
-const std::string MAIN_ACTION_NAME= "main_action";
-//const std::string CAR_CONTACT_ACTION_NAME= "car_contact";
-//const std::string FIRST_ACTION_FROM_SEQUENCE= "first_action";
-
-
-class ActionTexture {
-public:
-	ActionTexture();
-	ActionTexture(std::string texture_path, unsigned int n_ms);
-	~ActionTexture();
-
-
-	std::string _texture_path;
-	std::string _texture_path_bump;
-	float _texture_idx;
-	unsigned int _n_ms;
-};
-
-
-class ActionForce {
-public:
-	ActionForce();
-	ActionForce(pt_type direction, pt_type direction_rand, unsigned int n_ms);
-	~ActionForce();
-
-
-	pt_type _direction;
-	pt_type _direction_rand;
-	unsigned int _n_ms;
-};
-
-
-class Action {
-public:
-	Action();
-	~Action();
-
-
-	std::vector<ActionTexture *> _textures;
-	std::vector<ActionForce * > _forces;
-	std::string _name;
-};
-
-
-class ActionSequence {
-public:
-	ActionSequence();
-	~ActionSequence();
-
-
-	std::vector<std::pair<Action *, int> > _actions;
-};
-
-
-class SequenceTransition {
-public:
-	SequenceTransition();
-	SequenceTransition(std::string from, std::string to, unsigned int n_ms);
-	~SequenceTransition();
-	
-	
-	std::string _from;
-	std::string _to;
-	unsigned int _n_ms;
-};
-
 
 // Modèle d'objet
-class StaticObjectModel {
+class StaticObjectModel : public ActionableObjectModel {
 public:
 	StaticObjectModel();
 	StaticObjectModel(std::string json_path);
 	~StaticObjectModel();
 	void load(std::string json_path);
-	unsigned int get_transition(std::string from, std::string to);
-	std::vector<Action *> get_unduplicated_actions();
 	friend std::ostream & operator << (std::ostream & os, const StaticObjectModel & model);
 
 
-	std::string _json_path; // chemin json de config
-	std::string _name; // nom
 	ObjectType _type; // type d'objet
 	pt_type _com2bbox_center; // vecteur centre de masse -> centre bbox ; utile pour mettre à jour StaticObject._bbox
 	Polygon2D * _footprint; // empreinte au sol, utilisée pour les collisions ; doit être convexe
-	bool _fixed; // est-ce un objet figé
-	bool _no_rotation;
+	ObjectMovementType _movement; // type de mouvement possible
+	pt_type _translation_constraint;
 	Material * _material; // matériau éventuel de l'objet
 	std::string _material_name; // nom du matériau
-	//std::map<std::string, Action *> _actions;
-	std::vector<SequenceTransition * > _transitions;
-	std::map<std::string, ActionSequence *> _sequences;
 };
 
 
 // Objet générique dont hérite Car
-class StaticObject {
+class StaticObject : public ActionableObject {
 public:
 	StaticObject();
 	StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale);
 	~StaticObject();
-	void set_model(StaticObjectModel * model);
 	void reinit(pt_type position, number alpha, pt_type scale); // met à une position / orientation / taille
 	void update(); // met à jour les données calculées à partir des autres
-	Action * get_current_action();
 	void set_current_surface(Material * material, time_point t);
-	void set_current_sequence(std::string sequence_name, time_point t);
-	//void set_current_action(std::string action_name, time_point t);
 	bool anim_surface(time_point t);
-	void anim_texture(time_point t);
-	void anim_force(time_point t);
-	void anim_action(time_point t);
-	void anim_sequence(time_point t);
 	void anim(number anim_dt, time_point t); // animation
 	friend std::ostream & operator << (std::ostream & os, const StaticObject & obj);
 
@@ -216,19 +147,6 @@ public:
 
 	time_point _last_change_surface_t; // dernier temps de changement de surface
 	time_point _last_boost_t; // dernier temps où un boost a eu lieu
-
-	//std::string _current_action_name;
-	time_point _last_action_change_t;
-	unsigned int _current_action_texture_idx;
-	time_point _last_action_texture_t;
-	unsigned int _current_action_force_idx;
-	time_point _last_action_force_t;
-	bool _action_force_active;
-
-	std::string _current_sequence_name;
-	std::string _next_sequence_name;
-	unsigned int _current_action_idx;
-	time_point _last_sequence_change_t;
 
 	bool _car_contact;
 };

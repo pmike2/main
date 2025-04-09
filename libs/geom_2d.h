@@ -27,6 +27,9 @@ pt_type rot(pt_type v, number alpha);
 number norm(pt_type v);
 pt_type normalized(pt_type v);
 number scal(pt_type u, pt_type v);
+number determinant(pt_type u, pt_type v);
+pt_type proj(pt_type v2proj, pt_type v_proj_on);
+number angle(pt_type u, pt_type v);
 
 void rotation_float2mat(float rot, mat & mat);
 number cross2d(const pt_type & v1, const pt_type & v2);

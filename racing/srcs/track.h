@@ -36,6 +36,10 @@ const number IA_SCALPROD_THRESHOLD= -0.8;
 // valeur max wheel lorsque IA tourne
 const number IA_WHEEL_AMPLITUDE= 1.0;
 
+const number DIRECTION_HELP_SCALE= 1.5;
+const number DIRECTION_HELP_DIST_HERO= 4.5;
+const number DIRECTION_HELP_DRAWN_THRESHOLD= 8.0;
+
 
 struct CarsPlacement {
 	number _first_row_dist_start;
@@ -95,6 +99,7 @@ public:
 	void lap_time(time_point t);
 	void total_time();
 	void anim_drivers(time_point t);
+	void direction_help();
 	void anim(time_point t, InputState * input_state); // animation
 
 	// get / set / add / del

@@ -198,6 +198,8 @@ void Track::load_json(std::string json_path) {
 
 	// placement des voitures au start
 	place_cars();
+
+	_floating_objects.push_back(new StaticObject(_models["direction_help"], pt_type(0.0), 0.0, pt_type(DIRECTION_HELP_SCALE)));
 }
 
 
@@ -939,6 +941,31 @@ void Track::anim_drivers(time_point t) {
 }
 
 
+void Track::direction_help() {
+	StaticObject * direction_obj= NULL;
+	for (auto obj : _floating_objects) {
+		if (obj->_model->_type== DIRECTION_HELP) {
+			direction_obj= obj;
+			break;
+		}
+	}
+	number dist_hero_chkpt= norm(_hero->_next_checkpoint->_com- _hero->_com);
+	pt_type position(0.0);
+	number alpha= 0.0;
+
+	if (dist_hero_chkpt< DIRECTION_HELP_DRAWN_THRESHOLD) {
+		position.x= 10000.0;
+	} else {
+		position= _hero->_com+ DIRECTION_HELP_DIST_HERO* (_hero->_next_checkpoint->_com- _hero->_com)/ dist_hero_chkpt;
+		alpha= angle(pt_type(0.0, 1.0), _hero->_next_checkpoint->_com- _hero->_com);
+	}
+
+	direction_obj->reinit(position, alpha, pt_type(DIRECTION_HELP_SCALE));
+
+	//std::cout << position.x << " ; " << position.y << " ; " << alpha << "\n";
+}
+
+
 void Track::anim(time_point t, InputState * input_state) {
 	// décompte avant course
 	if (_mode== TRACK_PRECOUNT) {
@@ -1003,6 +1030,8 @@ void Track::anim(time_point t, InputState * input_state) {
 
 		// anim des expressions des drivers
 		anim_drivers(t);
+
+		direction_help();
 	}
 
 	// fin de la piste

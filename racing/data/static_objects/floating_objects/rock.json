@@ -1,6 +1,6 @@
 {
 	"type" : "obstacle_floating",
-	"fixed" : false,
+	"movement" : "all",
 	"footprint" : [
 		[-0.39, -0.44], [0.38, -0.44], [-0.04, 0.44], [-0.25, 0.3]
 	],

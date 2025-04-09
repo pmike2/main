@@ -1078,6 +1078,14 @@ void Racing::update_texture() {
 			}
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= action->_textures[obj->_current_action_texture_idx]->_texture_idx;
 		}
+
+		/*if (obj->_model->_type== DIRECTION_HELP) {
+			for (int i=0; i<n_pts_per_obj; ++i) {
+				std::cout << positions[i] << " ; ";
+			}
+			std::cout << action->_textures[obj->_current_action_texture_idx]->_texture_idx;
+			std::cout << "\n";
+		}*/
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);

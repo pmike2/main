@@ -8,7 +8,7 @@
 
 
 bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
-	if (obj1->_model->_fixed && obj2->_model->_fixed) {
+	if (obj1->_model->_movement== MVMT_FIXED && obj2->_model->_movement== MVMT_FIXED) {
 		return false;
 	}
 
@@ -61,10 +61,10 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 
 	// on écarte un peu plus que de 0.5 de chaque coté ou de 1.0 dans le cas fixed
 	// est-ce utile ?
-	if (obj1->_model->_fixed) {
+	if (obj1->_model->_movement== MVMT_FIXED || obj1->_model->_movement== MVMT_ROTATE || obj1->_model->_movement== MVMT_TRANSLATE_CONSTRAINED) {
 		obj2->_com+= overlap* 1.05* axis;
 	}
-	else if (obj2->_model->_fixed) {
+	else if (obj2->_model->_movement== MVMT_FIXED || obj2->_model->_movement== MVMT_ROTATE || obj2->_model->_movement== MVMT_TRANSLATE_CONSTRAINED) {
 		obj1->_com-= overlap* 1.05* axis;
 	}
 	else {
@@ -97,11 +97,11 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 	number restitution= 0.5* (obj1->_model->_material->_restitution+ obj2->_model->_material->_restitution);
 	
 	// dans le cas où 1 des 2 objets est fixe on considère que sa masse et son inertie sont infinies
-	if (obj1->_model->_fixed) {
+	if (obj1->_model->_movement== MVMT_FIXED) {
 		pt_type v= (cross2d(r2, axis)/ obj2->_inertia)* r2;
 		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj2->_mass+ dot(v, axis));
 	}
-	else if (obj2->_model->_fixed) {
+	else if (obj2->_model->_movement== MVMT_FIXED) {
 		pt_type v= (cross2d(r1, axis)/ obj1->_inertia)* r1;
 		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ dot(v, axis));
 	}
@@ -116,15 +116,27 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 	}
 
 	// on modifie directement la vitesse et la vitesse angulaire
-	if (!obj1->_model->_fixed) {
+	if (obj1->_model->_movement== MVMT_ALL || obj1->_model->_movement== MVMT_TRANSLATE) {
 		obj1->_velocity-= (impulse/ obj1->_mass)* axis;
-		// facteur multiplicatif pour _angular_velocity pour que ce soit plus dynamique...
-		obj1->_angular_velocity-= 2.0* (impulse/ obj1->_inertia)* cross2d(r1, axis);
+	}
+	else if (obj1->_model->_movement== MVMT_TRANSLATE_CONSTRAINED) {
+		obj1->_velocity-= (impulse/ obj1->_mass)* proj(axis, obj1->_model->_translation_constraint);
 	}
 
-	if (!obj2->_model->_fixed) {
+	if (obj1->_model->_movement== MVMT_ALL || obj1->_model->_movement== MVMT_ROTATE) {
+		// facteur multiplicatif pour _angular_velocity pour que ce soit plus dynamique...
+		obj1->_angular_velocity-= COLLISION_ANGULAR_FACTOR* (impulse/ obj1->_inertia)* cross2d(r1, axis);
+	}
+
+	if (obj2->_model->_movement== MVMT_ALL || obj2->_model->_movement== MVMT_TRANSLATE) {
 		obj2->_velocity+= (impulse/ obj2->_mass)* axis;
-		obj2->_angular_velocity+= 2.0* (impulse/ obj2->_inertia)* cross2d(r2, axis);
+	}
+	else if (obj2->_model->_movement== MVMT_TRANSLATE_CONSTRAINED) {
+		obj2->_velocity+= (impulse/ obj2->_mass)* proj(axis, obj2->_model->_translation_constraint);
+	}
+
+	if (obj2->_model->_movement== MVMT_ALL || obj2->_model->_movement== MVMT_ROTATE) {
+		obj2->_angular_velocity+= COLLISION_ANGULAR_FACTOR* (impulse/ obj2->_inertia)* cross2d(r2, axis);
 	}
 
 	// peut-être pas nécessaire
@@ -144,7 +156,7 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 	}
 
 	// bumps
-	if (!obj1->_model->_fixed && obj1->_model->_material->_solid && obj1->_model->_material->_bumpable) {
+	if (obj1->_model->_movement!= MVMT_FIXED && obj1->_model->_material->_solid && obj1->_model->_material->_bumpable) {
 		int obj_bump_idx_1= -1;
 		int obj_bump_idx_2= -1;
 		std::pair<BBOX_SIDE, BBOX_CORNER>p= bbox_side_corner(obj1->_bbox, obj2->_footprint->_pts[idx_pt]);
@@ -177,7 +189,7 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 		}
 	}
 
-	if (!obj2->_model->_fixed && obj2->_model->_material->_solid && obj2->_model->_material->_bumpable) {
+	if (obj2->_model->_movement!= MVMT_FIXED && obj2->_model->_material->_solid && obj2->_model->_material->_bumpable) {
 		int obj_bump_idx_1= -1;
 		int obj_bump_idx_2= -1;
 		std::pair<BBOX_SIDE, BBOX_CORNER>p= bbox_side_corner(obj2->_bbox, obj2->_footprint->_pts[idx_pt]);

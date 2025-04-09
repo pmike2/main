@@ -29,6 +29,23 @@ number scal(pt_type u, pt_type v) {
 }
 
 
+number determinant(pt_type u, pt_type v) {
+	return u.x* v.y- u.y* v.x;
+}
+
+
+pt_type proj(pt_type v2proj, pt_type v_proj_on) {
+	pt_type v_unit= normalized(v_proj_on);
+	number s= scal(v2proj, v_unit);
+	return s* v_unit;
+}
+
+
+number angle(pt_type u, pt_type v) {
+	return atan2(determinant(u, v), scal(u, v));
+}
+
+
 // angle -> matrice de rotation
 void rotation_float2mat(float rot, mat & mat) {
     // glm est en column-major order par défaut -> mat[col][row]
@@ -369,13 +386,16 @@ bool segment_intersects_poly_multi(const pt_type & pt_begin, const pt_type & pt_
 // d(pt, [seg1, seg2])
 bool distance_segment_pt(const pt_type & seg1, const pt_type & seg2, const pt_type & pt, number * dist, pt_type * proj) {
 	number seg_norm2= glm::distance2(seg1, seg2);
-	bool proj_in_segment= true;
 	
 	if (seg_norm2< EPSILON) {
-		return glm::distance(seg1, pt);
+		proj->x= seg1.x;
+		proj->y= seg1.y;
+		*dist= glm::distance(seg1, pt);
+		return true;
 	}
 	
 	number t= glm::dot(pt- seg1, seg2- seg1)/ seg_norm2;
+	bool proj_in_segment= true;
 	if ((t< 0.0) || (t> 1.0)) {
 		t= std::max((number)(0.0), std::min((number)(1.0), t));
 		proj_in_segment= false;

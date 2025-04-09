@@ -1,0 +1,21 @@
+{
+	"type" : "obstacle_floating",
+	"movement" : "translate_constrained",
+	"translation_constraint" : [1.0, 0.0],
+	"footprint" : [
+		[-0.46, -0.07], [0.46, -0.07], [0.46, 0.06], [-0.46, 0.06]
+	],
+	"material" : "barrier",
+	"actions" : {
+		"translate" : [
+			{
+				"force" : [2.0, 0.0],
+				"n_ms" : 3000
+			},
+			{
+				"force" : [-2.0, 0.0],
+				"n_ms" : 3000
+			}
+		]
+	}
+}

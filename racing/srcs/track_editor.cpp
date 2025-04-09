@@ -1242,16 +1242,15 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	_tile_grid_editor->_grid->_width= TILE_GRID_WIDTH;
 	_floating_grid_editor->_grid->_height= FLOATING_GRID_HEIGHT;
 
+	bool verbose= false;
 	for (auto model : _track_editor->_track->_models) {
 		if (model.second->_type== OBSTACLE_TILE || model.second->_type== SURFACE_TILE) {
-			//std::cout << "loading OBSTACLE_SETTING : " << model.first << "\n";
+			if (verbose) {std::cout << "loading OBSTACLE_SETTING : " << model.first << "\n";}
 			_tile_grid_editor->_grid->push_tile(model.second);
-			//std::cout << "loaded\n";
 		}
 		else if (model.second->_type!= CAR) {
-			//std::cout << "loading OBSTACLE_FLOATING : " << model.first << "\n";
+			if (verbose) {std::cout << "loading OBSTACLE_FLOATING : " << model.first << "\n";}
 			_floating_grid_editor->_grid->push_tile(model.second);
-			//std::cout << "loaded\n";
 		}
 	}
 
