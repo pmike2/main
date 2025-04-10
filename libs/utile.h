@@ -32,6 +32,9 @@ int rand_int(int x0, int x1);
 // renvoie un booléen aléatoire
 bool rand_bool();
 
+number rand_gaussian(number mean, number deviation);
+pt_type rand_gaussian(pt_type mean, pt_type deviation);
+
 // perlin noise
 float perlin_lerp(float a0, float a1, float w);
 float perlin_dot_gradient(int ix, int iy, float x, float y, float* gradient, unsigned int gradient_w, unsigned int gradient_h);

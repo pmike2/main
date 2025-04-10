@@ -1054,22 +1054,28 @@ void Racing::update_texture() {
 			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0,
 			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, 0.0, 0.0
 		};*/
+
+		number left_u= 0.0; number right_u= 1.0;
+		if (obj->_flipped) {
+			left_u= 1.0;
+			right_u= 0.0;
+		}
 		
 		number positions[n_pts_per_obj* 6]= {
-			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, 0.0, 1.0, obj->_bumps[0],
-			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, obj->_z, 1.0, 1.0, obj->_bumps[1],
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, left_u, 1.0, obj->_bumps[0],
+			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, obj->_z, right_u, 1.0, obj->_bumps[1],
 			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5, obj->_bumps[8],
 
-			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, obj->_z, 1.0, 1.0, obj->_bumps[2],
-			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0, obj->_bumps[3],
+			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, obj->_z, right_u, 1.0, obj->_bumps[2],
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, right_u, 0.0, obj->_bumps[3],
 			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5, obj->_bumps[8],
 
-			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, 1.0, 0.0, obj->_bumps[4],
-			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, 0.0, 0.0, obj->_bumps[5],
+			obj->_bbox->_pts[2].x, obj->_bbox->_pts[2].y, obj->_z, right_u, 0.0, obj->_bumps[4],
+			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, left_u, 0.0, obj->_bumps[5],
 			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5, obj->_bumps[8],
 
-			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, 0.0, 0.0, obj->_bumps[6],
-			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, 0.0, 1.0, obj->_bumps[7],
+			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, left_u, 0.0, obj->_bumps[6],
+			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, left_u, 1.0, obj->_bumps[7],
 			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5, obj->_bumps[8]
 		};
 

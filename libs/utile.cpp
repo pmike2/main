@@ -11,6 +11,7 @@
 #include <stdexcept>
 #include <array>
 #include <sys/stat.h>
+#include <random>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -74,6 +75,20 @@ bool rand_bool() {
 	if (rand()% 2)
 		return true;
 	return false;
+}
+
+
+number rand_gaussian(number mean, number deviation) {
+	std::random_device rd;
+	std::default_random_engine generator;
+	generator.seed(rd());
+	std::normal_distribution<number> distribution(mean, deviation);
+	return distribution(generator);
+}
+
+
+pt_type rand_gaussian(pt_type mean, pt_type deviation) {
+	return pt_type(rand_gaussian(mean.x, deviation.x), rand_gaussian(mean.y, deviation.y));
 }
 
 

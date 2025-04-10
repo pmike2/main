@@ -2,6 +2,7 @@
 	"type" : "decoration",
 	"movement" : "translate",
 	"material" : "chicken",
+	"flippable" : true,
 	"footprint_OLD" : [
 		[-0.37, 0.07], [-0.14, -0.32], [0.18, -0.20], [0.31, 0.39], [-0.11, 0.19]
 	],

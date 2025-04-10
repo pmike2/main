@@ -10,9 +10,6 @@ from pprint import pprint as pp
 
 
 EPS= 1e-12
-TILE_RESTITUTION= 0.02
-SAND_LINEAR_FRICTION= 5.0
-SAND_ANGULAR_FRICTION= 1.0
 FULL_FOOTPRINT= [[-0.5, -0.5], [0.5, -0.5], [0.5, 0.5], [-0.5, 0.5]]
 
 
@@ -59,14 +56,8 @@ def crop(footprint):
 	return new_footprint
 
 
-def gen_json(json_path, type_, footprint, restitution=None, linear_friction=None, angular_friction=None):	
-	data= {"type" : type_, "footprint" : footprint}
-	if restitution is not None:
-		data["restitution"]= restitution
-	if linear_friction is not None:
-		data["linear_friction"]= linear_friction
-	if angular_friction is not None:
-		data["angular_friction"]= angular_friction
+def gen_json(json_path, type_, footprint, material):
+	data= {"type" : type_, "footprint" : footprint, "material" : material}
 	
 	with open(json_path, "w") as f:
 		json.dump(data, f, indent=4)
@@ -74,20 +65,20 @@ def gen_json(json_path, type_, footprint, restitution=None, linear_friction=None
 
 def gen_jsons(root, json_name, footprint):
 	json_path= os.path.join(root, json_name+ "_obst.json")
-	gen_json(json_path, "obstacle_tile", footprint, restitution=TILE_RESTITUTION)
+	gen_json(json_path, "obstacle_tile", footprint, "wall")
 
 	json_path= os.path.join(root, json_name+ "_sand.json")
-	gen_json(json_path, "material_tile", footprint, linear_friction=SAND_LINEAR_FRICTION, angular_friction=SAND_ANGULAR_FRICTION)
+	gen_json(json_path, "surface_tile", footprint, "sand")
 
 
 def gen_all_jsons(root, n_subdiv):
 	"""Création de tous les jsons"""
-	os.system(f"rm {root}/*.json")
+	os.system(f"rm {root}/*.json 2>/dev/null")
 	#jsons= [os.path.join(root, x) for x in os.listdir(root) if os.path.splitext(x)[1]== ".json"]
 	#for json_path in jsons:
 	#	os.remove(json_path)
 
-	gen_json(os.path.join(root, "empty.json"), "obstacle_tile", [], restitution=TILE_RESTITUTION)
+	gen_json(os.path.join(root, "empty.json"), "obstacle_tile", [], "wall")
 	gen_jsons(root, "full", FULL_FOOTPRINT)
 
 	# bandes verticales gauche

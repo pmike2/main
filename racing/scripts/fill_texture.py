@@ -107,7 +107,7 @@ def fill_texture_json(tex_in_fill, tex_in_empty, tex_in_brick, tex_in_sand, bord
 		footprint= [x for y in footprint for x in y]
 		fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, border_width, footprint, result)
 	
-	elif data["type"]== "material_tile":
+	elif data["type"]== "surface_tile":
 		footprint= data["footprint"]
 		footprint= [coord2pixel(x[0], x[1]) for x in footprint]
 		footprint= [x for y in footprint for x in y]
@@ -116,7 +116,7 @@ def fill_texture_json(tex_in_fill, tex_in_empty, tex_in_brick, tex_in_sand, bord
 
 def fill_dir(tex_in_fill, tex_in_empty, tex_in_brick, tex_in_sand, border_width, dir_path):
 	"""Lancement sur un dossier de jsons"""
-	os.system(f"rm {dir_path}/textures/*.png")
+	os.system(f"rm {dir_path}/textures/*.png 2>/dev/null")
 	#pngs= [os.path.join(dir_path, x) for x in os.listdir(dir_path) if os.path.splitext(x)[1]== ".png"]
 	#for png in pngs:
 	#	if os.path.basename(png) not in ("empty.png", "full.png"):

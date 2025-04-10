@@ -8,26 +8,42 @@
 	"actions" : {
 		"still" : [
 			{
-				"texture" : "frog.png",
-				"n_ms" : 1000
+				"texture" : "frog_still_1.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "frog_still_2.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "frog_still_3.png",
+				"n_ms" : 100
+			},
+			{
+				"texture" : "frog_still_4.png",
+				"n_ms" : 300
+			},
+			{
+				"texture" : "frog_still_2.png",
+				"n_ms" : 100
 			}
 		],
 		"jump" : [
 			{
-				"texture" : "frog.png",
+				"texture" : "frog_jump_1.png",
 				"n_ms" : 300
 			},
 			{
-				"texture" : "frog.png",
-				"n_ms" : 300
+				"texture" : "frog_jump_2.png",
+				"n_ms" : 1000
 			},
 			{
-				"force" : [-0.4, 1.0],
+				"force" : [0.0, 1.0],
 				"n_ms" : 400
 			},
 			{
-				"force" : [-0.1, -0.2],
-				"n_ms" : 2000
+				"force" : [0.0, -0.8],
+				"n_ms" : 500
 			}
 		]
 	},
@@ -40,6 +56,6 @@
 		]
 	},
 	"transitions" : [
-		{"from" : "car_contact_sequence", "to" : "main_sequence", "n_ms" : 3000}
+		{"from" : "car_contact_sequence", "to" : "main_sequence", "n_ms" : 1500}
 	]
 }

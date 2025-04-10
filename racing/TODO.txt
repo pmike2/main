@@ -9,3 +9,4 @@ voitures + personnalisées visuellement ET moteurs
 sauts
 trous
 améliorer visuels herbe, piste
+chicken : collision avec une version bufferisée du footprint des Cars
