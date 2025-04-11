@@ -196,6 +196,18 @@ void Track::load_json(std::string json_path) {
 		}
 	}
 
+	for (auto barrier : _barriers) {
+		barrier.clear();
+	}
+	_barriers.clear();
+	for (auto poly : js["barriers"]) {
+		std::vector<pt_type> barrier;
+		for (auto pt : poly) {
+			barrier.push_back(pt_type(pt[0], pt[1]));
+		}
+		_barriers.push_back(barrier);
+	}
+
 	// placement des voitures au start
 	place_cars();
 
@@ -221,7 +233,7 @@ void Track::save_json(std::string json_path) {
 	js["floating_objects"]= json::array();
 	for (auto obj : _floating_objects) {
 		// on ne sauvegarde pas les voitures car elles sont replacées automatiquement par rapport au start
-		if (obj->_model->_type== CAR) {
+		if (obj->_model->_type== CAR || obj->_model->_type== DIRECTION_HELP) {
 			continue;
 		}
 
@@ -241,6 +253,18 @@ void Track::save_json(std::string json_path) {
 		}
 		
 		js["floating_objects"].push_back(js_obj);
+	}
+
+	js["barriers"]= json::array();
+	for (auto barrier : _barriers) {
+		json js_barrier= json::array();
+		for (auto pt : barrier) {
+			json js_pt= json::array();
+			js_pt.push_back(pt[0]);
+			js_pt.push_back(pt[1]);
+			js_barrier.push_back(js_pt);
+		}
+		js["barriers"].push_back(js_barrier);
 	}
 
 	ofs << std::setw(4) << js << "\n";
@@ -302,17 +326,17 @@ void Track::place_cars() {
 	// calcul des positions par rapport à la ligne de départ
 	pt_type start_dir= rot(pt_type(0.0, 1.0), _start->_alpha);
 	pt_type start_right= rot(start_dir, -0.5* M_PI);
-	pt_type first_row_center= _start->_com- (0.5* _start->_scale.y+ CAR_PLACEMENT._first_row_dist_start)* start_dir;
+	pt_type first_row_center= _start->_com- (0.5* _start->_scale.y+ DEFAULT_CAR_PLACEMENT._first_row_dist_start)* start_dir;
 	std::vector<pt_type> positions;
 	
 	bool positions_filled= false;
-	for (int idx_row=0; idx_row< CAR_PLACEMENT._n_max_rows; ++idx_row) {
+	for (int idx_row=0; idx_row< DEFAULT_CAR_PLACEMENT._n_max_rows; ++idx_row) {
 		if (positions_filled) {
 			break;
 		}
-		for (int i=0; i<CAR_PLACEMENT._n_cars_per_row; ++i) {
-			pt_type pos= first_row_center- number(idx_row)* CAR_PLACEMENT._row_dist* start_dir
-				+ (-0.5* number(CAR_PLACEMENT._n_cars_per_row- 1)+ i)* CAR_PLACEMENT._neighbour_dist* start_right;
+		for (int i=0; i<DEFAULT_CAR_PLACEMENT._n_cars_per_row; ++i) {
+			pt_type pos= first_row_center- number(idx_row)* DEFAULT_CAR_PLACEMENT._row_dist* start_dir
+				+ (-0.5* number(DEFAULT_CAR_PLACEMENT._n_cars_per_row- 1)+ i)* DEFAULT_CAR_PLACEMENT._neighbour_dist* start_right;
 			positions.push_back(pos);
 			if (positions.size()== _drivers.size()) {
 				positions_filled= true;

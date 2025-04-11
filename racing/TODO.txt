@@ -1,12 +1,8 @@
 flaques d'huile lachées derrière le joueur
 régler barrieres pour qu'elles n'accelerent plus
-plan du circuit avec positions
 attaque ceux de devant (coup spécial spécifique à chaque perso ?)
-éléments supplémentaires de décor (foule, arbres)
-grenouille
-randomize chicken
 voitures + personnalisées visuellement ET moteurs
 sauts
 trous
-améliorer visuels herbe, piste
 chicken : collision avec une version bufferisée du footprint des Cars
+son

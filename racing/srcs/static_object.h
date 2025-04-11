@@ -60,9 +60,9 @@ const std::map<ObjectType, number> Z_OBJECTS {
 	{REPAIR, -70.0},
 	{BOOST, -70.0},
 	{OBSTACLE_FLOATING, -60.0},
-	{CAR, -40.0},
-	{DECORATION, -60.0},
-	{DIRECTION_HELP, -40.0}
+	{DECORATION, -40.0},
+	{CAR, -50.0},
+	{DIRECTION_HELP, -30.0}
 };
 
 // !!!

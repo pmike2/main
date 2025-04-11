@@ -44,6 +44,8 @@ const float Z_FORCE= -10.0f;
 const float Z_TIRE_TRACK= -50.0f;
 const float Z_SPARK= -35.0f;
 const float Z_DRIVER_FACE= -5.0f;
+const float Z_BARRIER= -60.0f;
+const float Z_MAP= -5.0f;
 // voir également static_object.h / Z_OBJECTS
 
 // à quelle vitesse la caméra s'ajuste-t'elle au mouvement du héros
@@ -60,17 +62,24 @@ const float INFO_ALPHA= 0.8;
 const float GRAY_BLEND= 0.6f;
 
 // faces
-const glm::vec2 RANKING_ORIGIN(-7.5f, 3.5f);
-const std::vector<float> RANKING_FACE_SIZE {1.3f, 1.1f, 0.9f, 0.7f};
+const glm::vec2 RANKING_ORIGIN(-7.5f, 0.0f);
+const std::vector<float> RANKING_FACE_SIZE {0.7f, 0.6f, 0.5f, 0.4f};
 const std::vector<float> RANKING_FACE_ALPHA {1.0f, 1.0f, 1.0f, 1.0f};
-const std::vector<float> RANKING_TEXT_SCALE {0.01f, 0.008f, 0.006f, 0.004f};
-const number RANKING_FACE_MARGIN_FACTOR= 1.8f;
-const number RANKING_FACE_TEXT_MARGIN= 0.15f;
+const std::vector<float> RANKING_TEXT_SCALE {0.007f, 0.006f, 0.005f, 0.004f};
+const number RANKING_FACE_MARGIN_FACTOR= 1.3f;
+const number RANKING_FACE_TEXT_MARGIN= 0.1f;
 const glm::vec2 IN_RACE_FACE_OFFSET(0.1f, 0.1f);
 const glm::vec2 IN_RACE_TEXT_OFFSET(0.1f, 0.1f);
 const std::vector<float> IN_RACE_FACE_SIZE {1.0f, 0.8f, 0.7f, 0.6f};
 const std::vector<float> IN_RACE_FACE_ALPHA {1.0f, 1.0f, 1.0f, 1.0f};
-const std::vector<float> IN_RACE_TEXT_SCALE {0.006f, 0.004f, 0.003f, 0.002f};
+const std::vector<float> IN_RACE_TEXT_SCALE {0.006f, 0.005f, 0.004f, 0.003f};
+
+// map
+const glm::vec2 MAP_ORIGIN(-7.4f, 1.9f);
+const glm::vec2 MAP_SIZE(3.5f, 3.5f);
+const std::vector<float> MAP_FACE_SIZE {0.7f, 0.6f, 0.5f, 0.4f};
+const float MAP_OPACITY= 0.8;
+const float MAP_FACE_OPACITY= 0.9;
 
 // couleurs de debug
 const glm::vec4 COM_CROSS_COLOR(1.0, 0.0, 0.0, INFO_ALPHA);
@@ -89,7 +98,7 @@ const glm::vec4 FOOTPRINT_COLOR(0.0, 1.0, 0.0, 0.5);
 const glm::vec4 NLAPS_COLOR(0.0, 1.0, 0.5, 1.0);
 const glm::vec4 NLAPS_LAST_COLOR(1.0, 0.0, 0.5, 1.0);
 const glm::vec4 RANKING_HERO_COLOR(1.0, 1.0, 0.0, 1.0);
-const glm::vec4 RANKING_ENNEMY_COLOR(0.7, 0.7, 0.8, 1.0);
+const glm::vec4 RANKING_ENNEMY_COLOR(0.9, 0.8, 0.9, 1.0);
 const glm::vec4 LOW_SPEED_COLOR(0.3, 1.0, 0.5, 1.0);
 const glm::vec4 HIGH_SPEED_COLOR(1.0, 0.3, 0.5, 1.0);
 const glm::vec4 PAST_LAP_TIME_COLOR(0.6, 0.6, 0.6, 1.0);
@@ -117,6 +126,7 @@ public:
 	void fill_texture_array_models();
 	void fill_texture_array_smoke();
 	void fill_texture_array_tire_track();
+	void fill_texture_map();
 	
 	// dessins
 	void draw_choose_driver();
@@ -129,6 +139,8 @@ public:
 	void draw_tire_track();
 	void draw_spark();
 	void draw_driver_face();
+	void draw_barrier();
+	void draw_map();
 	void show_info();
 	void draw();
 
@@ -143,6 +155,8 @@ public:
 	void update_tire_track();
 	void update_spark();
 	void update_driver_face();
+	void update_barrier();
+	void update_map();
 	
 	// animation
 	void anim(time_point t);
@@ -175,7 +189,7 @@ public:
 	GLuint * _textures; // texture arrays pour tous les PNGs
 	// indices des textures
 	unsigned int _texture_idx_model, _texture_idx_bump, _texture_idx_smoke, _texture_idx_choose_track,
-		_texture_idx_tire_track, _texture_idx_driver_face;
+		_texture_idx_tire_track, _texture_idx_driver_face, _texture_idx_map;
 	glm::mat4 _camera2clip; // glm::ortho
 	glm::mat4 _world2camera; // caméra
 	Font * _font; // font pour écriture textes

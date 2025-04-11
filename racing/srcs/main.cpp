@@ -158,6 +158,8 @@ void init() {
 	progs["spark"]= create_prog("../shaders/vertexshader_spark.txt", "../shaders/fragmentshader_spark.txt");
 	progs["choose_track"]= create_prog("../shaders/vertexshader_choose_track.txt", "../shaders/fragmentshader_choose_track.txt");
 	progs["driver_face"]= create_prog("../shaders/vertexshader_driver_face.txt", "../shaders/fragmentshader_driver_face.txt");
+	progs["barrier"]= create_prog("../shaders/vertexshader_barrier.txt", "../shaders/fragmentshader_barrier.txt");
+	progs["map"]= create_prog("../shaders/vertexshader_map.txt", "../shaders/fragmentshader_map.txt");
 
 	check_gl_error();
 

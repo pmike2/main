@@ -38,12 +38,12 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
 
 	// buffers
-	unsigned int n_buffers= 10;
+	unsigned int n_buffers= 12;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
 	// textures
-	unsigned int n_textures= 6;
+	unsigned int n_textures= 7;
 	_textures= new GLuint[n_textures];
 	glGenTextures(n_textures, _textures);
 	_texture_idx_model= 0;
@@ -52,6 +52,7 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	_texture_idx_driver_face= 3;
 	_texture_idx_choose_track= 4;
 	_texture_idx_tire_track= 5;
+	_texture_idx_map= 6;
 
 	// contextes de dessin
 	_contexts["bbox"]= new DrawContext(progs["simple"], _buffers[0],
@@ -94,6 +95,14 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array", "z"});
 
+	_contexts["barrier"]= new DrawContext(progs["barrier"], _buffers[10],
+		std::vector<std::string>{"position_in", "color_in", "lambda_in"},
+		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
+
+	_contexts["map"]= new DrawContext(progs["map"], _buffers[11],
+		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
+		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
+
 	_track_info= new TrackInfo();
 	_track= new Track();
 	_tire_track_system= new TireTrackSystem();
@@ -109,6 +118,7 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	fill_texture_array_tire_track();
 	fill_texture_driver();
 	fill_texture_choose_track();
+	fill_texture_map();
 }
 
 
@@ -165,6 +175,8 @@ void Racing::choose_track(unsigned int idx_track, time_point t) {
 
 	// init caméra
 	_com_camera= _track->_hero->_com;
+
+	update_barrier();
 
 	// et c'est parti
 	_mode= RACING;
@@ -227,6 +239,21 @@ void Racing::fill_texture_array_tire_track() {
 	for (unsigned int i=0; i<pngs.size(); ++i) {
 		_track->_materials[basename(pngs[i])]->_tire_track_texture_idx= float(i);
 	}
+}
+
+
+void Racing::fill_texture_map() {
+	std::vector<std::string> pngs= list_files("../data/tracks/quicklooks", "png");
+	unsigned int compt= 0;
+	for (auto driver : _track->_drivers) {
+		for (auto expression : driver->_expressions) {
+			for (auto expression_texture : expression.second->_textures) {
+				pngs.push_back(expression_texture->_texture_path);
+			}
+		}
+	}
+
+	fill_texture_array(0, _textures[_texture_idx_map], 1024, pngs);
 }
 
 
@@ -561,6 +588,68 @@ void Racing::draw_driver_face() {
 }
 
 
+void Racing::draw_barrier() {
+	DrawContext * context= _contexts["barrier"];
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+	glUniform1f(context->_locs_uniform["z"], Z_BARRIER);
+	
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["lambda_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(2* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
+void Racing::draw_map() {
+	DrawContext * context= _contexts["map"];
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_map]);
+	glActiveTexture(0);
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["alpha_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(6* sizeof(float)));
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
 void Racing::show_info() {
 	std::vector<Text> texts;
 
@@ -647,14 +736,10 @@ void Racing::show_info() {
 			if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_PRECOUNT) {
 				for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
 					Car * car= _track->_sorted_cars[idx_car];
-					/*if (car== _track->_hero) {
-						continue;
-					}*/
 					glm::vec4 position= _world2camera* glm::vec4(float(car->_com.x), float(car->_com.y), float(car->_z), 1.0f);
-					glm::vec4 color(0.9f, 0.9f, 0.9f, 0.5f);
-					//if (car->_rank< _track->_hero->_rank) {
+					glm::vec4 color= RANKING_ENNEMY_COLOR;
 					if (car== _track->_hero) {
-						color= glm::vec4(1.0f, 1.0f, 0.5f, 1.0f);
+						color= RANKING_HERO_COLOR;
 					}
 					float scale;
 					if (idx_car< IN_RACE_TEXT_SCALE.size()) {
@@ -796,6 +881,8 @@ void Racing::draw() {
 			draw_smoke();
 			draw_spark();
 			draw_driver_face();
+			draw_barrier();
+			draw_map();
 		}
 	}
 
@@ -1227,6 +1314,7 @@ void Racing::update_driver_face() {
 
 	DrawContext * context= _contexts["driver_face"];
 	context->_n_pts= _track->_drivers.size()* 2* n_pts_per_obj; // * 2 : 1 pour le ranking, 1 pour dans la course
+	//context->_n_pts= _track->_drivers.size()* 1* n_pts_per_obj;
 	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
@@ -1306,6 +1394,121 @@ void Racing::update_driver_face() {
 }
 
 
+void Racing::update_barrier() {
+	const unsigned int n_pts_per_obj= 6;
+
+	DrawContext * context= _contexts["barrier"];
+	unsigned int n_barriers= 0;
+	for (auto poly : _track->_barriers) {
+		n_barriers+= poly.size();
+	}
+
+	context->_n_pts= n_pts_per_obj* n_barriers;
+	context->_n_attrs_per_pts= 7;
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	const glm::vec4 BARRIER_COLOR(1.0, 1.0, 1.0, 0.8);
+	const number BARRIER_WIDTH= 0.1;
+
+	unsigned int compt= 0;
+	for (auto poly : _track->_barriers) {
+		for (unsigned int idx_pt=0; idx_pt<poly.size(); ++idx_pt) {
+			pt_type pt1(poly[idx_pt]);
+			pt_type pt2;
+			if (idx_pt< poly.size()- 1) {
+				pt2= pt_type(poly[idx_pt+ 1]);
+			}
+			else {
+				pt2= pt_type(poly[0]);
+			}
+			pt_type vrot90= pt_type(pt1.y- pt2.y, pt2.x- pt1.x);
+			vrot90= normalized(vrot90);
+			pt_type p0= pt1- 0.5* BARRIER_WIDTH* vrot90;
+			pt_type p1= pt2- 0.5* BARRIER_WIDTH* vrot90;
+			pt_type p2= pt2+ 0.5* BARRIER_WIDTH* vrot90;
+			pt_type p3= pt1+ 0.5* BARRIER_WIDTH* vrot90;
+			
+			data[compt++]= p0.x; data[compt++]= p0.y; data[compt++]= 0.0f; compt+= 4;
+			data[compt++]= p1.x; data[compt++]= p1.y; data[compt++]= 0.0f; compt+= 4;
+			data[compt++]= p2.x; data[compt++]= p2.y; data[compt++]= 1.0f; compt+= 4;
+			data[compt++]= p0.x; data[compt++]= p0.y; data[compt++]= 0.0f; compt+= 4;
+			data[compt++]= p2.x; data[compt++]= p2.y; data[compt++]= 1.0f; compt+= 4;
+			data[compt++]= p3.x; data[compt++]= p3.y; data[compt++]= 1.0f; compt+= 4;
+		}
+	}
+	for (int i=0; i<context->_n_pts; ++i) {
+		data[i* context->_n_attrs_per_pts+ 3]= BARRIER_COLOR[0];
+		data[i* context->_n_attrs_per_pts+ 4]= BARRIER_COLOR[1];
+		data[i* context->_n_attrs_per_pts+ 5]= BARRIER_COLOR[2];
+		data[i* context->_n_attrs_per_pts+ 6]= BARRIER_COLOR[3];
+	}
+
+	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+		std::cout << data[i] << " ; ";
+	}
+	std::cout << "\n";*/
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void Racing::update_map() {
+	const unsigned int n_pts_per_obj= 6;
+
+	DrawContext * context= _contexts["map"];
+	context->_n_pts= (1+ _track->_drivers.size())* n_pts_per_obj;
+	context->_n_attrs_per_pts= 7;
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	unsigned int compt= 0;
+
+	float xmap0= MAP_ORIGIN.x; float ymap0= MAP_ORIGIN.y;
+	float xmap1= MAP_ORIGIN.x+ MAP_SIZE.x; float ymap1= MAP_ORIGIN.y;
+	float xmap2= MAP_ORIGIN.x+ MAP_SIZE.x; float ymap2= MAP_ORIGIN.y+ MAP_SIZE.y;
+	float xmap3= MAP_ORIGIN.x; float ymap3= MAP_ORIGIN.y+ MAP_SIZE.y;
+
+	data[compt++]= xmap0; data[compt++]= ymap0; data[compt++]= Z_MAP; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= MAP_OPACITY; data[compt++]= _idx_chosen_track- 1;
+	data[compt++]= xmap1; data[compt++]= ymap1; data[compt++]= Z_MAP; data[compt++]= 1.0; data[compt++]= 1.0; data[compt++]= MAP_OPACITY; data[compt++]= _idx_chosen_track- 1;
+	data[compt++]= xmap2; data[compt++]= ymap2; data[compt++]= Z_MAP; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= MAP_OPACITY; data[compt++]= _idx_chosen_track- 1;
+	data[compt++]= xmap0; data[compt++]= ymap0; data[compt++]= Z_MAP; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= MAP_OPACITY; data[compt++]= _idx_chosen_track- 1;
+	data[compt++]= xmap2; data[compt++]= ymap2; data[compt++]= Z_MAP; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= MAP_OPACITY; data[compt++]= _idx_chosen_track- 1;
+	data[compt++]= xmap3; data[compt++]= ymap3; data[compt++]= Z_MAP; data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= MAP_OPACITY; data[compt++]= _idx_chosen_track- 1;
+	
+	for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
+		Car * car= _track->_sorted_cars[idx_car];
+		Driver * driver= car->_driver;
+
+		float face_size, texture_idx, x0, y0;
+		if (idx_car< MAP_FACE_SIZE.size()) {
+			face_size= MAP_FACE_SIZE[idx_car];
+		}
+		else {
+			face_size= MAP_FACE_SIZE.back();
+		}
+		x0= MAP_ORIGIN.x+ MAP_SIZE.x* car->_com.x/ (number(_track->_grid->_width)* _track->_grid->_cell_size)- 0.5* face_size;
+		y0= MAP_ORIGIN.y+ MAP_SIZE.y* car->_com.y/ (number(_track->_grid->_height)* _track->_grid->_cell_size)- 0.5* face_size;
+
+		texture_idx= _n_available_tracks+ driver->_expressions[driver->_current_expression_name]->_textures[driver->_current_expression_texture_idx]->_texture_idx;
+
+		data[compt++]= x0; data[compt++]= y0; 			 			data[compt++]= Z_MAP+ 0.1f; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= MAP_FACE_OPACITY; data[compt++]= texture_idx;
+		data[compt++]= x0+ face_size; data[compt++]= y0; 			data[compt++]= Z_MAP+ 0.1f; data[compt++]= 1.0; data[compt++]= 1.0; data[compt++]= MAP_FACE_OPACITY; data[compt++]= texture_idx;
+		data[compt++]= x0+ face_size; data[compt++]= y0+ face_size; data[compt++]= Z_MAP+ 0.1f; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= MAP_FACE_OPACITY; data[compt++]= texture_idx;
+
+		data[compt++]= x0; data[compt++]= y0; 						data[compt++]= Z_MAP+ 0.1f; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= MAP_FACE_OPACITY; data[compt++]= texture_idx;
+		data[compt++]= x0+ face_size; data[compt++]= y0+ face_size; data[compt++]= Z_MAP+ 0.1f; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= MAP_FACE_OPACITY; data[compt++]= texture_idx;
+		data[compt++]= x0; data[compt++]= y0+ face_size; 			data[compt++]= Z_MAP+ 0.1f; data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= MAP_FACE_OPACITY; data[compt++]= texture_idx;
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 void Racing::anim(time_point t) {
 	if (_mode== CHOOSE_DRIVER) {
 		update_choose_driver();
@@ -1337,6 +1540,8 @@ void Racing::anim(time_point t) {
 			update_tire_track();
 			update_spark();
 			update_driver_face();
+			//update_barrier(); // fait 1 fois au début suffit
+			update_map();
 		}
 
 		camera();

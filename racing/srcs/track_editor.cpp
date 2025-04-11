@@ -482,7 +482,7 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 
 	_track= new Track();
 
-	load_track(1);
+	//load_track(1);
 }
 
 
@@ -1242,6 +1242,8 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	_tile_grid_editor->_grid->_width= TILE_GRID_WIDTH;
 	_floating_grid_editor->_grid->_height= FLOATING_GRID_HEIGHT;
 
+	fill_texture_array_models();
+
 	bool verbose= false;
 	for (auto model : _track_editor->_track->_models) {
 		if (model.second->_type== OBSTACLE_TILE || model.second->_type== SURFACE_TILE) {
@@ -1254,7 +1256,7 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 		}
 	}
 
-	fill_texture_array_models();
+	_track_editor->load_track(1);
 
 	_track_editor->update();
 	_tile_grid_editor->update();

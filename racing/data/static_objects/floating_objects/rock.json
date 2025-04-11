@@ -1,24 +1,8 @@
 {
 	"type" : "obstacle_floating",
-	"movement" : "all",
+	"movement" : "fixed",
 	"footprint" : [
 		[-0.39, -0.44], [0.38, -0.44], [-0.04, 0.44], [-0.25, 0.3]
 	],
-	"material" : "rock",
-	"actions" : {
-		"main" : [
-			{
-				"texture" : "rock_1.png",
-				"n_ms" : 2000
-			},
-			{
-				"texture" : "rock_2.png",
-				"n_ms" : 1000
-			},
-			{
-				"texture" : "rock_3.png",
-				"n_ms" : 1300
-			}
-		]
-	}
+	"material" : "rock"
 }

@@ -83,6 +83,11 @@ Action::Action() {
 }
 
 
+Action::Action(std::string name) : _name(name) {
+
+}
+
+
 Action::~Action() {
 	for (auto tex : _textures) {
 		delete tex;
@@ -151,13 +156,31 @@ std::ostream & operator << (std::ostream & os, const SequenceTransition & transi
 }
 
 
+// ActionRandom ---------------------------------------------------------------------
+ActionRandom::ActionRandom() : _randomizable(false) {
+
+}
+
+
+ActionRandom::ActionRandom(int flip, unsigned int sequence_n_ms, number force, number torque, unsigned int force_n_ms) :
+	_randomizable(true), _flip(flip), _sequence_n_ms(sequence_n_ms), _force(force), _torque(torque), _force_n_ms(force_n_ms)
+{
+
+}
+
+
+ActionRandom::~ActionRandom() {
+
+}
+
+
 // ActionableObjectModel ------------------------------------------------------------
 ActionableObjectModel::ActionableObjectModel() {
 
 }
 
 
-ActionableObjectModel::ActionableObjectModel(std::string json_path) : _flippable(false) {
+ActionableObjectModel::ActionableObjectModel(std::string json_path) {
 	load(json_path);
 }
 
@@ -165,7 +188,6 @@ ActionableObjectModel::ActionableObjectModel(std::string json_path) : _flippable
 ActionableObjectModel::ActionableObjectModel(const ActionableObjectModel & model) {
 	_json_path= model._json_path;
 	_name= model._name;
-	_flippable= model._flippable;
 	for (auto transition : model._transitions) {
 		SequenceTransition * t= new SequenceTransition(transition->_from, transition->_to, transition->_n_ms);
 		_transitions.push_back(t);
@@ -184,6 +206,12 @@ ActionableObjectModel::ActionableObjectModel(const ActionableObjectModel & model
 			_sequences[seq.first]->_actions.push_back(std::make_pair(ac, action.second));
 		}
 	}
+	if (model._rand->_randomizable) {
+		_rand= new ActionRandom(model._rand->_flip, model._rand->_sequence_n_ms, model._rand->_force, model._rand->_torque, model._rand->_force_n_ms);
+	}
+	else {
+		_rand= new ActionRandom();
+	}
 }
 
 
@@ -196,6 +224,7 @@ ActionableObjectModel::~ActionableObjectModel() {
 		delete seq.second;
 	}
 	_sequences.clear();
+	delete _rand;
 }
 
 
@@ -207,16 +236,12 @@ void ActionableObjectModel::load(std::string json_path) {
 	json js= json::parse(ifs);
 	ifs.close();
 
-	if (js["flippable"]!= nullptr) {
-		_flippable= js["flippable"];
-	}
-
 	std::map<std::string, Action *> actions;
 	if (js["actions"]!= nullptr) {
 		for (json::iterator it = js["actions"].begin(); it != js["actions"].end(); ++it) {
 			auto & action_name= it.key();
 			auto & l_ac= it.value();
-			actions[action_name]= new Action();
+			actions[action_name]= new Action(action_name);
 			for (auto ac : l_ac) {
 				if (ac["texture"]!= nullptr) {
 					std::string texture_rel_path= ac["texture"];
@@ -252,7 +277,7 @@ void ActionableObjectModel::load(std::string json_path) {
 		}
 	}
 	else {
-		actions[MAIN_ACTION_NAME]= new Action();
+		actions[MAIN_ACTION_NAME]= new Action(MAIN_ACTION_NAME);
 		std::string texture_path= dirname(_json_path)+ "/textures/"+ _name+ ".png";
 		actions[MAIN_ACTION_NAME]->_textures.push_back(new ActionTexture(texture_path, 0));
 	}
@@ -276,6 +301,34 @@ void ActionableObjectModel::load(std::string json_path) {
 		for (auto transition : js["transitions"]) {
 			_transitions.push_back(new SequenceTransition(transition["from"], transition["to"], transition["n_ms"]));
 		}
+	}
+
+	if (js["random"]!= nullptr) {
+		int flip= -1;
+		int sequence_n_ms= -1;
+		number force= 0.0;
+		number torque= 0.0;
+		int force_n_ms= -1;
+
+		if (js["random"]["flip"]!= nullptr) {
+			flip= js["random"]["flip"];
+		}
+		if (js["random"]["sequence_n_ms"]!= nullptr) {
+			sequence_n_ms= js["random"]["sequence_n_ms"];
+		}
+		if (js["random"]["force"]!= nullptr) {
+			force= js["random"]["force"];
+		}
+		if (js["random"]["torque"]!= nullptr) {
+			torque= js["random"]["torque"];
+		}
+		if (js["random"]["force_n_ms"]!= nullptr) {
+			force_n_ms= js["random"]["force_n_ms"];
+		}
+		_rand= new ActionRandom(flip, sequence_n_ms, force, torque, force_n_ms);
+	}
+	else {
+		_rand= new ActionRandom();
 	}
 }
 
@@ -370,7 +423,7 @@ void ActionableObject::anim_texture(time_point t) {
 			_current_action_texture_idx= 0;
 		}
 
-		randomize();
+		//randomize();
 	}
 }
 
@@ -385,6 +438,8 @@ void ActionableObject::anim_force(time_point t) {
 			if (_current_action_force_idx>= action->_forces.size()) {
 				_current_action_force_idx= 0;
 			}
+
+			//randomize();
 		}
 	}
 }
@@ -434,7 +489,15 @@ void ActionableObject::anim_sequence(time_point t) {
 
 
 void ActionableObject::randomize() {
-	if (_model->_flippable && rand_int(0, 100)> 80) {
+	/*if (_model->_name== "squirel") {
+		std::cout << *this << "\n";
+	}*/
+
+	if (!_model->_rand->_randomizable) {
+		return;
+	}
+
+	if (_model->_rand->_flip> 0 && rand_int(0, 100)> _model->_rand->_flip) {
 		_flipped= !_flipped;
 	}
 
@@ -448,8 +511,8 @@ void ActionableObject::randomize() {
 			Action * action_init= sequence_init->_actions[idx_action].first;
 			int n_ms_init= sequence_init->_actions[idx_action].second;
 
-			if (n_ms_init> 0) {
-				int rand_n_ms= (int)(rand_gaussian(number(n_ms_init), 1000));
+			if (n_ms_init> 0 && _model->_rand->_sequence_n_ms> 0) {
+				int rand_n_ms= (int)(rand_gaussian(number(n_ms_init), _model->_rand->_sequence_n_ms));
 				if (rand_n_ms< 0) {
 					rand_n_ms= 0;
 				}
@@ -460,16 +523,16 @@ void ActionableObject::randomize() {
 				ActionForce * force= action->_forces[idx_force];
 				ActionForce * force_init= action_init->_forces[idx_force];
 				if (force->_type== TRANSLATION) {
-					_model->_sequences[seq_key]->_actions[idx_action].first->_forces[idx_force]->_force= rand_gaussian(force_init->_force, pt_type(0.1, 0.1));
+					_model->_sequences[seq_key]->_actions[idx_action].first->_forces[idx_force]->_force= rand_gaussian(force_init->_force, pt_type(_model->_rand->_force));
 					if (_flipped) {
 						_model->_sequences[seq_key]->_actions[idx_action].first->_forces[idx_force]->_force*= -1.0;
 					}
 				}
 				else if (force->_type== ROTATION) {
-					_model->_sequences[seq_key]->_actions[idx_action].first->_forces[idx_force]->_torque= rand_gaussian(force_init->_torque, 1.0);
+					_model->_sequences[seq_key]->_actions[idx_action].first->_forces[idx_force]->_torque= rand_gaussian(force_init->_torque, _model->_rand->_torque);
 				}
-				if (force_init->_n_ms> 0) {
-					int rand_n_ms= (int)(rand_gaussian(number(force_init->_n_ms), 1000));
+				if (force_init->_n_ms> 0 && _model->_rand->_force_n_ms> 0) {
+					int rand_n_ms= (int)(rand_gaussian(number(force_init->_n_ms), _model->_rand->_force_n_ms));
 					if (rand_n_ms< 0) {
 						rand_n_ms= 0;
 					}

@@ -48,6 +48,7 @@ public:
 class Action {
 public:
 	Action();
+	Action(std::string name);
 	~Action();
 	friend std::ostream & operator << (std::ostream & os, const Action & action);
 
@@ -83,6 +84,22 @@ public:
 };
 
 
+class ActionRandom {
+public:
+	ActionRandom();
+	ActionRandom(int flip, unsigned int sequence_n_ms, number force, number torque, unsigned int force_n_ms);
+	~ActionRandom();
+
+
+	bool _randomizable;
+	int _flip; // si < 0 alors n'est pas flippable
+	int _sequence_n_ms; // si < 0 alors inactif
+	number _force;
+	number _torque;
+	int _force_n_ms; // si < 0 alors inactif
+};
+
+
 class ActionableObjectModel {
 public:
 	ActionableObjectModel();
@@ -99,7 +116,7 @@ public:
 	std::string _name; // nom
 	std::vector<SequenceTransition * > _transitions;
 	std::map<std::string, ActionSequence *> _sequences;
-	bool _flippable;
+	ActionRandom * _rand;
 };
 
 

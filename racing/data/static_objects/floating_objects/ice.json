@@ -8,43 +8,43 @@
 		"main" : [
 			{
 				"texture" : "ice_1.png",
-				"n_ms" : 300
+				"n_ms" : 100
 			},
 			{
 				"texture" : "ice_2.png",
-				"n_ms" : 300
+				"n_ms" : 100
 			},
 			{
 				"texture" : "ice_3.png",
-				"n_ms" : 300
+				"n_ms" : 100
 			},
 			{
 				"texture" : "ice_4.png",
-				"n_ms" : 300
+				"n_ms" : 100
 			},
 			{
 				"texture" : "ice_5.png",
-				"n_ms" : 300
+				"n_ms" : 100
 			},
 			{
 				"texture" : "ice_6.png",
-				"n_ms" : 300
+				"n_ms" : 100
 			},
 			{
 				"texture" : "ice_7.png",
-				"n_ms" : 300
+				"n_ms" : 100
 			},
 			{
 				"texture" : "ice_8.png",
-				"n_ms" : 300
+				"n_ms" : 100
 			},
 			{
 				"texture" : "ice_9.png",
-				"n_ms" : 300
+				"n_ms" : 100
 			},
 			{
 				"texture" : "ice_10.png",
-				"n_ms" : 300
+				"n_ms" : 100
 			}
 		]
 	}

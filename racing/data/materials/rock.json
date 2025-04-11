@@ -1,7 +1,5 @@
 {
 	"density" : 100.0,
-	"linear_friction" : 20.0,
-	"angular_friction" : 10.0,
 	"solid" : true,
 	"restitution" : 0.1,
 	"collision_thrust" : 0.8,

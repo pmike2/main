@@ -83,10 +83,15 @@ void StaticObjectModel::load(std::string json_path) {
 		// on met le com (center of mass) à 0,0 afin de faciliter les rotations autour du com
 		_footprint->centroid2zero();
 		_footprint->update_all();
-		_movement= STR2OBJMVMTTYPE.at(js["movement"]);
-		if (_movement== MVMT_TRANSLATE_CONSTRAINED) {
-			_translation_constraint.x= js["translation_constraint"][0];
-			_translation_constraint.y= js["translation_constraint"][1];
+		if (js["movement"]!= nullptr) {
+			_movement= STR2OBJMVMTTYPE.at(js["movement"]);
+			if (_movement== MVMT_TRANSLATE_CONSTRAINED) {
+				_translation_constraint.x= js["translation_constraint"][0];
+				_translation_constraint.y= js["translation_constraint"][1];
+			}
+		}
+		else {
+			_movement= MVMT_FIXED;
 		}
 	}
 	else if (_type== CAR) {

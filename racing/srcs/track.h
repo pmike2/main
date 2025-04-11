@@ -50,7 +50,7 @@ struct CarsPlacement {
 };
 
 // a terme faire un CarsPlacement par Track ?
-const CarsPlacement CAR_PLACEMENT {1.0, 2.0, 2.0, 3, 6};
+const CarsPlacement DEFAULT_CAR_PLACEMENT {1.0, 2.0, 2.0, 3, 6};
 
 
 class TrackInfo {
@@ -136,6 +136,8 @@ public:
 	std::vector<Driver *> _drivers;
 
 	std::vector<pt_type> _collisions; // les positions des collisions en cours. Utile à SparkSystem
+
+	std::vector<std::vector<pt_type> > _barriers;
 };
 
 

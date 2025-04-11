@@ -6,7 +6,7 @@ Passage footprint des tuiles obstacle -> textures
 
 import os
 import json
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 
 EPS= 1e-10
 SIZE= 1024
@@ -49,7 +49,7 @@ def fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, border_width, footprin
 	footprint = emprise polygonale du plein
 	result = png résultat
 	"""
-	fgr_img= Image.new('RGBA', (SIZE, SIZE), color=(0, 0, 0, 0))
+	new_img= Image.new('RGBA', (SIZE, SIZE), color=(0, 0, 0, 0))
 	
 	mask_img_empty = Image.new('L', (SIZE, SIZE), color=255)
 	mask_img_empty_draw = ImageDraw.Draw(mask_img_empty)
@@ -59,6 +59,9 @@ def fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, border_width, footprin
 		mask_img_fill = Image.new('L', (SIZE, SIZE), color=255)
 		mask_img_fill_draw = ImageDraw.Draw(mask_img_fill)
 		mask_img_fill_draw.polygon(footprint, fill=0)
+		# on floute pour avoir une transition + douce
+		# cf https://note.nkmk.me/en/python-pillow-composite
+		mask_img_fill_blur = mask_img_fill.filter(ImageFilter.GaussianBlur(100))
 
 		border_footprint= []
 		last_pt= None
@@ -86,11 +89,12 @@ def fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, border_width, footprin
 	with Image.open(tex_in_fill) as tex_img_fill:
 		with Image.open(tex_in_empty) as tex_img_empty:
 			with Image.open(tex_in_brick) as tex_img_brick:
-				result_img= Image.composite(fgr_img, tex_img_empty, mask_img_empty)
+				result_img= Image.composite(new_img, tex_img_empty, mask_img_empty)
 				if len(footprint)> 0:
-					result_img= Image.composite(result_img, tex_img_fill, mask_img_fill)
-					if mask_img_brick is not None:
-						result_img= Image.composite(result_img, tex_img_brick, mask_img_brick)
+					result_img= Image.composite(result_img, tex_img_fill, mask_img_fill_blur)
+					# a réactiver si on veut du bord délimitant full et empty
+					#if mask_img_brick is not None:
+					#	result_img= Image.composite(result_img, tex_img_brick, mask_img_brick)
 				result_img.save(result)
 
 

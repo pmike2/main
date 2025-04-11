@@ -1,0 +1,41 @@
+{
+	"type" : "decoration",
+	"movement" : "translate",
+	"material" : "animal",
+	"footprint" : [
+		[-0.14, -0.14], [0.21, -0.14], [0.21, 0.15], [-0.14, 0.15]
+	],
+	"actions" : {
+		"still" : [
+			{
+				"texture" : "squirel.png"
+			}
+		],
+		"move" : [
+			{
+				"texture" : "squirel.png"
+			},
+			{
+				"force" : [0.0, 0.0]
+			}
+		]
+	},
+	"sequences" : {
+		"main_sequence" : [
+			["still", 3000],
+			["move", 200]
+		],
+		"car_contact_sequence" : [
+			["move", -1]
+		]
+	},
+	"transitions" : [
+		{"from" : "car_contact_sequence", "to" : "main_sequence", "n_ms" : 500}
+	],
+	"random" : {
+		"flip" : 60,
+		"sequence_n_ms" : 100,
+		"force" : 1.0,
+		"force_n_ms" : 100
+	}
+}
