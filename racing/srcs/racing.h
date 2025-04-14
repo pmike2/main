@@ -30,7 +30,7 @@
 
 // type de caméra : fixe, suit le héros, suit et s'oriente comme le héros
 enum cam_mode {FIXED, TRANSLATE, TRANSLATE_AND_ROTATE};
-// mode : choix du joueur, choix d'une piste, course en cours
+// mode : choix du joueur, choix d'une piste, course en cours (voir également track.h TrackMode)
 enum racing_mode {CHOOSE_DRIVER, CHOOSE_TRACK, RACING};
 
 
@@ -195,7 +195,7 @@ public:
 	Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
 	InputState * _input_state;
-	bool _joystick_is_input;
+	bool _joystick_is_input; // permet de switcher entre clavier et joystick (lorsqu'il est actif)
 };
 
 

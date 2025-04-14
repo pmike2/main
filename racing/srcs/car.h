@@ -82,17 +82,17 @@ public:
 	unsigned int _n_laps; // combien de tours déjà faits
 	unsigned int _rank; // classement
 	bool _finished; // a t'il fini la course
-	bool _just_finished;
+	bool _just_finished; // _just_finished et _overlap_finish servent à départager 2 cars qui auraient fini lors du même cycle d'animation
 	number _overlap_finish;
 	std::vector<number> _lap_times; // les temps pour chaque tour
-	number _total_time;
+	number _total_time; // temps total
 
 	time_point _last_drift_t; // dernier temps de création d'un TireTrack
 	time_point _last_start_t; // dernier temps de passage sur le start de la course
 
-	float _tire_track_texture_idx;
+	float _tire_track_texture_idx; // indice de la texture de la trace de pneu courante
 
-	Driver * _driver;
+	Driver * _driver; // conducteur car
 };
 
 #endif

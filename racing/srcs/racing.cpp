@@ -109,10 +109,12 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	_spark_system= new SparkSystem();
 
 	_idx_chosen_driver= 0;
-	_idx_chosen_track= 1;
+	_idx_chosen_track= 1; // commence à 1 pas 0
 
+	// récupération d'infos globale sur la piste courante (nombre de tours, records, ...)
 	_track_info->parse_json("../data/tracks/track"+ std::to_string(_idx_chosen_track)+ ".json");
 
+	// remplissage des GL_TEXTURE_2D_ARRAY
 	fill_texture_array_models();
 	fill_texture_array_smoke();
 	fill_texture_array_tire_track();
@@ -176,6 +178,7 @@ void Racing::choose_track(unsigned int idx_track, time_point t) {
 	// init caméra
 	_com_camera= _track->_hero->_com;
 
+	// maj une fois pour toutes du dessin des barrières
 	update_barrier();
 
 	// et c'est parti
@@ -1172,14 +1175,6 @@ void Racing::update_texture() {
 			}
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= action->_textures[obj->_current_action_texture_idx]->_texture_idx;
 		}
-
-		/*if (obj->_model->_type== DIRECTION_HELP) {
-			for (int i=0; i<n_pts_per_obj; ++i) {
-				std::cout << positions[i] << " ; ";
-			}
-			std::cout << action->_textures[obj->_current_action_texture_idx]->_texture_idx;
-			std::cout << "\n";
-		}*/
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -1260,10 +1255,7 @@ void Racing::update_tire_track() {
 		data[compt++]= tt->_bbox->_pts[3].x; data[compt++]= tt->_bbox->_pts[3].y;
 		data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= tt->_opacity; data[compt++]= tt->_idx_texture;
 	}
-	/*for (int i=0;i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
-		std::cout << data[i] << " ; ";
-	}
-	std::cout << "\n";*/
+
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1299,10 +1291,7 @@ void Racing::update_spark() {
 		data[compt++]= spark->_bbox->_pts[2].x; data[compt++]= spark->_bbox->_pts[2].y; data[compt++]= spark->_opacity;
 		data[compt++]= spark->_bbox->_pts[3].x; data[compt++]= spark->_bbox->_pts[3].y; data[compt++]= spark->_opacity;
 	}
-	/*for (int i=0;i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
-		std::cout << data[i] << " ; ";
-	}
-	std::cout << "\n";*/
+
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1314,7 +1303,6 @@ void Racing::update_driver_face() {
 
 	DrawContext * context= _contexts["driver_face"];
 	context->_n_pts= _track->_drivers.size()* 2* n_pts_per_obj; // * 2 : 1 pour le ranking, 1 pour dans la course
-	//context->_n_pts= _track->_drivers.size()* 1* n_pts_per_obj;
 	context->_n_attrs_per_pts= 6;
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
@@ -1443,11 +1431,6 @@ void Racing::update_barrier() {
 		data[i* context->_n_attrs_per_pts+ 5]= BARRIER_COLOR[2];
 		data[i* context->_n_attrs_per_pts+ 6]= BARRIER_COLOR[3];
 	}
-
-	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
-		std::cout << data[i] << " ; ";
-	}
-	std::cout << "\n";*/
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);

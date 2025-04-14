@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# script applicable à tous les drivers
+
 import os, json
 from copy import deepcopy
 

@@ -9,13 +9,17 @@
 
 #include "geom_2d.h"
 #include "static_object.h"
+#include "grid.h"
 #include "car.h"
 #include "typedefs.h"
 #include "input_state.h"
 #include "material.h"
 #include "driver.h"
 
-
+// TRACK_WAITING = état initial
+// TRACK_PRECOUNT = décompte en cours
+// TRACK_LIVE = course en cours
+// TRACK_FINISHED = course finie
 enum TrackMode {TRACK_WAITING, TRACK_PRECOUNT, TRACK_LIVE, TRACK_FINISHED};
 
 // taille par défaut d'une cellule
@@ -36,11 +40,13 @@ const number IA_SCALPROD_THRESHOLD= -0.8;
 // valeur max wheel lorsque IA tourne
 const number IA_WHEEL_AMPLITUDE= 1.0;
 
+// aide de direction
 const number DIRECTION_HELP_SCALE= 1.5;
 const number DIRECTION_HELP_DIST_HERO= 4.5;
 const number DIRECTION_HELP_DRAWN_THRESHOLD= 8.0;
 
 
+// config placement voitures ligne de départ
 struct CarsPlacement {
 	number _first_row_dist_start;
 	number _row_dist;
@@ -53,15 +59,15 @@ struct CarsPlacement {
 const CarsPlacement DEFAULT_CAR_PLACEMENT {1.0, 2.0, 2.0, 3, 6};
 
 
+// Infos sur une course
 class TrackInfo {
 public:
 	TrackInfo();
-	//TrackInfo(std::string json_path);
 	~TrackInfo();
 	void parse_json(std::string json_path);
 
 
-	unsigned int _n_laps;
+	unsigned int _n_laps; // nombre de tours
 	std::vector<std::pair<std::string, number> > _best_lap; // les 3 meilleurs temps au tour
 	std::vector<std::pair<std::string, number> > _best_overall; // les 3 meilleurs en tout
 };
@@ -75,34 +81,33 @@ public:
 	Track();
 	~Track();
 	void load_models(); // chgmt des modèles de tuiles, voitures et autres
-	void load_json(std::string json_path);
-	void save_json(std::string json_path);
-	//void set_car_names();
-	void set_hero(unsigned int idx_driver);
-	void place_cars();
-	void reinit_drivers(time_point t, bool set_normal_expression);
-	void start(time_point t);
-	void end();
-	void write_records();
+	void load_json(std::string json_path); // chgmt course
+	void save_json(std::string json_path); // sauvegarde course (utilisé dans track_editor.cpp)
+	void set_hero(unsigned int idx_driver); // choix du héros
+	void place_cars(); // placement des voitures à la ligne de départ
+	void reinit_drivers(time_point t, bool set_normal_expression); // reinit des conducteurs
+	void start(time_point t); // départ course
+	void end(); // fin course
+	void write_records(); // enregistrement des meilleurs temps
 	void sort_cars(); // tri des voitures par position
 	unsigned int get_checkpoint_index(CheckPoint * checkpoint); // position du chkpt par rapport au start
 	
-	void anim_objects(time_point t);
-	void reinit_car_contact();
+	void anim_objects(time_point t); // animation des objets
+	void reinit_car_contact(); // reinitialisation des contacts des objets avec les voitures
 	void collisions(time_point t); // gestion des collisions
-	void surfaces(time_point t);
-	void repair(time_point t);
-	void boost(time_point t);
+	void surfaces(time_point t); // gestion des surfaces sur lesquelles se trouvent les objets
+	void repair(time_point t); // réparation des voitures
+	void boost(time_point t); // boost vitesse des voitures
 	void checkpoints(time_point t); // gestion chkpts pour toutes les voitures
 	void checkpoint_ia(Car * car); // ia basée sur les chkpts
-	void set_car_contact_action(time_point t);
-	void lap_time(time_point t);
-	void total_time();
-	void anim_drivers(time_point t);
-	void direction_help();
+	void set_car_contact_action(time_point t); // met à jour l'action des objets en contact avec une voiture
+	void lap_time(time_point t); // maj du temps du tour
+	void total_time(); // maj du temps total
+	void anim_drivers(time_point t); // anim des expressions des conducteurs
+	void direction_help(); // maj de l'aide de direction
 	void anim(time_point t, InputState * input_state, bool joystick_is_input); // animation
 
-	// get / set / add / del
+	// get / set / add / del; utilisé dans track_editor.cpp
 	void set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx);
 	void set_tile(std::string model_name, unsigned int idx);
 	void set_all(std::string model_name, unsigned int width, unsigned int height);
@@ -122,22 +127,21 @@ public:
 	std::map<std::string, StaticObjectModel *> _models; // modèles
 	StaticObjectGrid * _grid; // grille de tuiles
 	std::vector<StaticObject *> _floating_objects; // objets flottants
-	TrackInfo * _info;
+	TrackInfo * _info; // infos générales course
 	CheckPoint * _start; // point de départ
 	TrackMode _mode; // mode
-	std::string _current_json_path;
-	bool _new_best_lap, _new_best_overall;
+	std::string _current_json_path; // chemin json
+	bool _new_best_lap; // à la fin le héros a t'il fait le meilleur temps au tour
+	bool _new_best_overall; // à la fin le héros a t'il fait le meilleur temps total
 
 	time_point _last_precount_t; // pour décompte avant début course
 	unsigned int _precount; // décompte avant début course
 
 	std::vector<Car *> _sorted_cars; // les voitures triées par position
-	Car * _hero;
-	std::vector<Driver *> _drivers;
-
+	Car * _hero; // voiture héros
+	std::vector<Driver *> _drivers; // liste des conducteurs
 	std::vector<pt_type> _collisions; // les positions des collisions en cours. Utile à SparkSystem
-
-	std::vector<std::vector<pt_type> > _barriers;
+	std::vector<std::vector<pt_type> > _barriers; // les barrières de la course
 };
 
 

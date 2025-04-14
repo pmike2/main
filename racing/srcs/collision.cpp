@@ -110,6 +110,7 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ 1.0/ obj2->_mass+ dot(v, axis));
 	}
 
+	// on sature impulse afin que ca ne parte pas trop en cahouèt
 	if (abs(impulse)> MAX_IMPULSE) {
 		std::cout << "impulse=" << impulse << "\n";
 		impulse= MAX_IMPULSE;
@@ -120,7 +121,7 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 		obj1->_velocity-= (impulse/ obj1->_mass)* axis;
 	}
 	else if (obj1->_model->_movement== MVMT_TRANSLATE_CONSTRAINED) {
-		obj1->_velocity-= (impulse/ obj1->_mass)* proj(axis, obj1->_model->_translation_constraint);
+		obj1->_velocity-= (impulse/ obj1->_mass)* proj(axis, obj1->_translation_constraint);
 	}
 
 	if (obj1->_model->_movement== MVMT_ALL || obj1->_model->_movement== MVMT_ROTATE) {
@@ -132,7 +133,7 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 		obj2->_velocity+= (impulse/ obj2->_mass)* axis;
 	}
 	else if (obj2->_model->_movement== MVMT_TRANSLATE_CONSTRAINED) {
-		obj2->_velocity+= (impulse/ obj2->_mass)* proj(axis, obj2->_model->_translation_constraint);
+		obj2->_velocity+= (impulse/ obj2->_mass)* proj(axis, obj2->_translation_constraint);
 	}
 
 	if (obj2->_model->_movement== MVMT_ALL || obj2->_model->_movement== MVMT_ROTATE) {

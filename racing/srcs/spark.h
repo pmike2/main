@@ -32,6 +32,7 @@ const number MIN_SPARK_HALF_SIZE_INC= 0.002;
 const number MAX_SPARK_HALF_SIZE_INC= 0.006;
 
 
+// Etincelle
 class Spark {
 public:
 	Spark();
@@ -43,12 +44,13 @@ public:
 	BBox_2D * _bbox; // BBox englobante
 	number _opacity; // opacité
 	bool _is_alive; // active ?
-	pt_type _center_inc;
-	pt_type _half_size_inc;
-	number _alpha_inc;
+	pt_type _center_inc; // incrémentation position
+	pt_type _half_size_inc; // incrémentation taille
+	number _alpha_inc; // incrémentation angle rotation
 };
 
 
+// Ensemble d'étincelles
 class SparkSystem {
 public:
 	SparkSystem();

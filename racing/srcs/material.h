@@ -6,6 +6,7 @@
 #include "typedefs.h"
 
 
+// matériau
 class Material {
 public:
 	Material();

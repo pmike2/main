@@ -61,7 +61,9 @@ def fill_texture(tex_in_fill, tex_in_empty, tex_in_brick, border_width, footprin
 		mask_img_fill_draw.polygon(footprint, fill=0)
 		# on floute pour avoir une transition + douce
 		# cf https://note.nkmk.me/en/python-pillow-composite
-		mask_img_fill_blur = mask_img_fill.filter(ImageFilter.GaussianBlur(100))
+		# plus GAUSSIAN_RADIUS est grand plus la transition est large
+		GAUSSIAN_RADIUS= 100
+		mask_img_fill_blur = mask_img_fill.filter(ImageFilter.GaussianBlur(GAUSSIAN_RADIUS))
 
 		border_footprint= []
 		last_pt= None

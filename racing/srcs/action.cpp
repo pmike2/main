@@ -489,10 +489,6 @@ void ActionableObject::anim_sequence(time_point t) {
 
 
 void ActionableObject::randomize() {
-	/*if (_model->_name== "squirel") {
-		std::cout << *this << "\n";
-	}*/
-
 	if (!_model->_rand->_randomizable) {
 		return;
 	}

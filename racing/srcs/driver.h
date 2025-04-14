@@ -12,8 +12,15 @@ const unsigned int EXPRESSION_CHANGE_TO_NORMAL_MS= 1000;
 const unsigned int EXPRESSION_CHANGE_TO_OTHERS_MS= 50;
 // seuil de bump à partir duquel le driver est fatigué
 const number BUMP_TIRED_THRESHOLD= 0.6;
+// noms des expressions
+const std::string NORMAL_EXPRESSION= "normal";
+const std::string TIRED_EXPRESSION= "tired";
+const std::string ANGRY_EXPRESSION= "angry";
+const std::string HAPPY_EXPRESSION= "happy";
+const std::string SAD_EXPRESSION= "sad";
 
 
+// texture d'expression
 class ExpressionTexture {
 public:
 	ExpressionTexture();
@@ -21,12 +28,13 @@ public:
 	~ExpressionTexture();
 
 
-	std::string _texture_path;
-	float _texture_idx;
-	unsigned int _n_ms;
+	std::string _texture_path; // chemin texture
+	float _texture_idx; // indice texture
+	unsigned int _n_ms; // nombre de ms d'affichage de la texture
 };
 
 
+// expression == liste de textures d'expression
 class Expression {
 public:
 	Expression();
@@ -37,6 +45,7 @@ public:
 };
 
 
+// conducteur
 class Driver {
 public:
 	Driver();
@@ -47,14 +56,15 @@ public:
 	void anim(time_point t);
 
 
-	std::string _name;
-	std::string _json_path;
-	std::map<std::string, Expression *> _expressions;
-	std::string _current_expression_name, _next_expression_name;
-	unsigned int _current_expression_texture_idx;
-	time_point _last_anim_expression_t;
-	time_point _last_change_expression_t;
-	bool _angry, _happy, _tired, _sad;
+	std::string _name; // nom
+	std::string _json_path; // chemin json
+	std::map<std::string, Expression *> _expressions; // ensemble d'expressions
+	std::string _current_expression_name; // nom expression courante
+	std::string _next_expression_name; // nom expression suivante
+	unsigned int _current_expression_texture_idx; // indice texture d'expression courante
+	time_point _last_anim_expression_t; // dernier temps de changement d'animation de texture
+	time_point _last_change_expression_t; // dernier temps de changement d'expression
+	bool _angry, _happy, _tired, _sad; // Driver peut ressentir plusieurs choses ; un tri par priorité est effectué
 };
 
 

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# script applicable à toutes les voitures
+
 import os
 import json
 

@@ -18,6 +18,8 @@ o : si objet flottant sélectionné, rotation de 90 calé sur 0, 90, 180 ou 270
 
 f + click : creation d'un objet flottant à l'emplacement du curseur
 d + click : suppression de l'objet flottant à l'emplacement du curseur
+c + click : copie objet flottant
+p + click : paste opbjet flottant
 m + click : move de l'objet flottant à l'emplacement du curseur
 r + click : rotation de l'objet flottant à l'emplacement du curseur (a utiliser eventuellement avec o)
 g + click : 

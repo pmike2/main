@@ -30,6 +30,7 @@ const SmokeConfig EXHAUST       {0.1, 0.03, 0.8, 0.04, 0.02, -45.0, 0.01, -0.7};
 const SmokeConfig ENGINE_BUMPED {0.05, 0.005, 0.8, 0.04, 0.02, -20.0, 0.01, 0.3};
 
 
+// texture fumée
 class Smoke {
 public:
 	Smoke();
@@ -38,29 +39,30 @@ public:
 	void anim();
 
 
-	BBox_2D * _bbox;
-	number _opacity;
-	unsigned int _idx_texture;
-	bool _is_alive;
-	number _z;
-	SmokeConfig _config;
+	BBox_2D * _bbox; // emprise
+	number _opacity; // opacité
+	unsigned int _idx_texture; // indice texture
+	bool _is_alive; // est actif ?
+	number _z; // alti
+	SmokeConfig _config; // type de fumée
 };
 
 
+// ensemble de fumées
 class SmokeSystem {
 public:
 	SmokeSystem();
 	SmokeSystem(Car * car, unsigned int n_pngs, time_point t);
 	~SmokeSystem();
-	Smoke * get_free_smoke();
+	Smoke * get_free_smoke(); // renvoie la 1ère inactive
 	void anim(time_point t);
 	
 
 	Smoke ** _smokes;
-	Car * _car;
-	time_point _last_exhaust_t;
-	time_point _last_bump_t;
-	unsigned int _n_pngs;
+	Car * _car; // un système est lié à une voiture
+	time_point _last_exhaust_t; // dernier temps de création fumée échappement
+	time_point _last_bump_t; // dernier temps de création fumée liée aux dommages
+	unsigned int _n_pngs; // nombre de pngs de fumée
 };
 
 #endif

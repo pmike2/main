@@ -325,14 +325,7 @@ void Car::anim(number anim_dt, time_point t) {
 	_force_fwd= pt_type(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel); // accélération dans la direction du volant
 	// friction statique avant
-	//_force_fwd-= model->_forward_static_friction* _linear_friction_surface* scal(_forward, _velocity)* _forward;
-	if (_thrust> 0.0) {
-		_force_fwd-= model->_forward_static_friction* _linear_friction_surface* _velocity;
-	}
-	else {
-		_force_fwd-= 1.0* model->_forward_static_friction* _linear_friction_surface* _velocity;
-		//_force_fwd-= 0.1* model->_forward_static_friction* _linear_friction_surface* scal(_forward, _velocity)* _forward;
-	}
+	_force_fwd-= model->_forward_static_friction* _linear_friction_surface* _velocity;
 
 	// calcul force appliquée à l'arrière
 	_force_bwd= pt_type(0.0);

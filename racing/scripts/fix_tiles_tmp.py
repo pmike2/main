@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Utilitaire pour appliquer un traitement à tous les jsons d'un dossier
+Utilitaire pour appliquer un traitement à tous les jsons tuile d'un dossier
 """
 
 import os

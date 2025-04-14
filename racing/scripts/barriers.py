@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+#
+# renseignement balise barriers des modèles
+#
+
 import os
 import json
 
@@ -7,6 +11,7 @@ import shapely
 from shapely import Polygon, MultiPolygon
 
 
+# lecture des footprints
 root_tiles= "../data/static_objects/tiles"
 jsons= [os.path.join(root_tiles, x) for x in os.listdir(root_tiles) if os.path.splitext(x)[1]== ".json"]
 tile2poly= {}
@@ -26,6 +31,7 @@ for js in jsons:
 	tile2poly[os.path.basename(os.path.splitext(js)[0])]= footprint
 
 
+# pour chaque piste on fait l'union des footprints des tuiles
 root_tracks= "../data/tracks"
 tracks= [os.path.join(root_tracks, x) for x in os.listdir(root_tracks) if os.path.splitext(x)[1]== ".json"]
 for track_path in tracks:

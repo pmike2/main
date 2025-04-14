@@ -22,6 +22,7 @@ const number TIRE_TRACK_OPACITY_THRESHOLD= 0.05;
 const number TIRE_TRACK_SCALE_FACTOR= 0.3;
 
 
+// trace de pneu
 class TireTrack {
 public:
 	TireTrack();
@@ -37,6 +38,7 @@ public:
 };
 
 
+// Ensemble de traces de pneus
 class TireTrackSystem {
 public:
 	TireTrackSystem();

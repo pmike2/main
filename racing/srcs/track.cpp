@@ -13,15 +13,11 @@
 
 using json = nlohmann::json;
 
+
 // TrackInfo ---------------------------------------------------------------------------------
 TrackInfo::TrackInfo() {
 
 }
-
-
-/*TrackInfo::TrackInfo(std::string json_path) {
-	parse_json(json_path);
-}*/
 
 
 TrackInfo::~TrackInfo() {
@@ -273,35 +269,6 @@ void Track::save_json(std::string json_path) {
 	_current_json_path= json_path;
 	write_records();
 }
-
-
-/*void Track::set_car_names() {
-	std::ifstream ifs("../data/names.txt");
-	std::string name;
-	std::vector<std::string> names;
-	while (ifs >> name) {
-		names.push_back(name);
-	}
-
-	for (unsigned int idx_car=0; idx_car<_sorted_cars.size(); ++idx_car) {
-		Car * car= _sorted_cars[idx_car];
-		while (true) {
-			int idx_name= rand_int(0, names.size()- 1);
-			bool already_taken= false;
-			for (unsigned int idx_car_2=0; idx_car_2<idx_car; ++idx_car_2) {
-				Car * car_2= _sorted_cars[idx_car_2];
-				if (car_2->_name== names[idx_name]) {
-					already_taken= true;
-					break;
-				}
-			}
-			if (!already_taken) {
-				car->_name= names[idx_name];
-				break;
-			}
-		}
-	}
-}*/
 
 
 void Track::set_hero(unsigned int idx_driver) {
@@ -571,9 +538,11 @@ unsigned int Track::get_checkpoint_index(CheckPoint * checkpoint) {
 
 void Track::anim_objects(time_point t) {
 	// finalement un dt fixe fait plus propre
+	
 	/*auto dt_n_ms= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
 	number dt= number(dt_n_ms)/ 1000.0;
 	_last_anim_t= t;*/
+	
 	number dt= 0.05;
 
 	for (auto obj : _floating_objects) {
@@ -609,6 +578,7 @@ void Track::collisions(time_point t) {
 
 	std::vector<Car *> collided_cars;
 
+	// collisions entre objets flottants
 	for (unsigned int idx_obj_1=0; idx_obj_1<_floating_objects.size()- 1; ++idx_obj_1) {
 		for (unsigned int idx_obj_2=idx_obj_1+ 1; idx_obj_2<_floating_objects.size(); ++idx_obj_2) {
 			StaticObject * obj1= _floating_objects[idx_obj_1];
@@ -628,6 +598,7 @@ void Track::collisions(time_point t) {
 		}
 	}
 	
+	// collisions entre objet flottant et tuile
 	for (auto object : _floating_objects) {
 		for (auto tile : _grid->_objects) {
 			if (collision(object, tile, position)) {
@@ -639,10 +610,12 @@ void Track::collisions(time_point t) {
 		}
 	}
 
+	// les conducteurs des voitures en collisions sont enervés
 	for (auto car : collided_cars) {
 		car->_driver->_angry= true;
 	}
 
+	// bump liés aux collisions
 	for (auto car : _sorted_cars) {
 		number average_bump= 0.0;
 		for (int i=0; i<N_BUMPS; ++i) {
@@ -940,26 +913,6 @@ void Track::total_time() {
 
 void Track::anim_drivers(time_point t) {
 	for (auto driver : _drivers) {
-		if (driver->_tired) {
-			driver->set_current_expression("tired", t);
-			continue;
-		}
-		if (driver->_angry) {
-			driver->set_current_expression("angry", t);
-			continue;
-		}
-		if (driver->_happy) {
-			driver->set_current_expression("happy", t);
-			continue;
-		}
-		if (driver->_sad) {
-			driver->set_current_expression("sad", t);
-			continue;
-		}
-		driver->set_current_expression("normal", t);
-	}
-
-	for (auto driver : _drivers) {
 		driver->anim(t);
 	}
 }
@@ -977,6 +930,7 @@ void Track::direction_help() {
 	pt_type position(0.0);
 	number alpha= 0.0;
 
+	// on la met loin pour ne plus la voir lorsque l'on est suffisamment proche du prochain checkpoint
 	if (dist_hero_chkpt< DIRECTION_HELP_DRAWN_THRESHOLD) {
 		position.x= 10000.0;
 	} else {
@@ -985,8 +939,6 @@ void Track::direction_help() {
 	}
 
 	direction_obj->reinit(position, alpha, pt_type(DIRECTION_HELP_SCALE));
-
-	//std::cout << position.x << " ; " << position.y << " ; " << alpha << "\n";
 }
 
 

@@ -1,6 +1,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <algorithm>
 
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -191,15 +192,10 @@ void GridEditor::draw(GLuint texture) {
 
 
 void GridEditor::show_info() {
-	const float font_scale= 0.002f;
-	const glm::vec4 text_color(1.0, 1.0, 1.0, 0.8);
-
 	std::vector<Text> texts;
 
-	/*for (auto obj : _grid->_objects) {
-		glm::vec4 v= _world2camera* glm::vec4(obj->_com.x, obj->_com.y, 0.0, 1.0);
-		texts.push_back(Text(basename(obj->_model->_json_path), pt_type(v.x, v.y), font_scale, glm::vec4(1.0, 1.0, 1.0, 1.0)));
-	}*/
+	StaticObject * obj= _grid->get_tile(_col_idx_select, _row_idx_select);
+	texts.push_back(Text(obj->_model->_name, pt_type(-5.0, 7.3), 0.008f, glm::vec4(1.0, 1.0, 1.0, 1.0)));
 
 	_font->set_text(texts);
 	_font->draw();
@@ -443,7 +439,7 @@ TrackEditor::TrackEditor() {
 TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, number cell_size) :
 	_draw_bbox(false), _draw_texture(true), _draw_grid(false),
 	_row_idx_select(0), _col_idx_select(0), _screengl(screengl), _translation(pt_type(0.0)), _scale(1.0), _last_checkpoint(NULL),
-	_selected_floating_object(NULL), _current_track_idx(1)
+	_selected_floating_object(NULL), _copy_floating_object(NULL), _current_track_idx(1)
 {
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::mat4(1.0f);
@@ -481,8 +477,6 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
 	_track= new Track();
-
-	//load_track(1);
 }
 
 
@@ -1130,6 +1124,15 @@ bool TrackEditor::mouse_button_down(InputState * input_state) {
 			return true;
 		}
 	}
+	// c : copie
+	else if (input_state->get_key(SDLK_c)) {
+		pt_type pos= screen2pt(input_state->_x, input_state->_y);
+		StaticObject * obj= _track->get_floating_object(pos);
+		if (obj!= NULL) {
+			_copy_floating_object= obj;
+			return true;
+		}
+	}
 	// sinon sélection tuile
 	else {
 		pt_type pos= screen2pt(input_state->_x, input_state->_y);
@@ -1245,13 +1248,25 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	fill_texture_array_models();
 
 	bool verbose= false;
+	// chgmt tiles obstacle
 	for (auto model : _track_editor->_track->_models) {
-		if (model.second->_type== OBSTACLE_TILE || model.second->_type== SURFACE_TILE) {
-			if (verbose) {std::cout << "loading OBSTACLE_SETTING : " << model.first << "\n";}
+		if (model.second->_type== OBSTACLE_TILE) {
+			if (verbose) {std::cout << "loading OBSTACLE_TILE : " << model.first << "\n";}
 			_tile_grid_editor->_grid->push_tile(model.second);
 		}
-		else if (model.second->_type!= CAR) {
-			if (verbose) {std::cout << "loading OBSTACLE_FLOATING : " << model.first << "\n";}
+	}
+	// chgmt tiles surface
+	for (auto model : _track_editor->_track->_models) {
+		if (model.second->_type== SURFACE_TILE) {
+			if (verbose) {std::cout << "loading SURFACE_TILE : " << model.first << "\n";}
+			_tile_grid_editor->_grid->push_tile(model.second);
+		}
+	}
+	// chgmt objets flottants
+	for (auto model : _track_editor->_track->_models) {
+		if (model.second->_type!= OBSTACLE_TILE && model.second->_type!= SURFACE_TILE
+			&& model.second->_type!= CAR && model.second->_type!= DIRECTION_HELP) {
+			if (verbose) {std::cout << "loading floating object : " << model.first << "\n";}
 			_floating_grid_editor->_grid->push_tile(model.second);
 		}
 	}
@@ -1331,13 +1346,25 @@ void Editor::sync_track_with_tile() {
 
 
 // ajout d'un objet flottant
-void Editor::add_floating_object(pt_type pos) {
-	StaticObject * current_floating_object= _floating_grid_editor->_grid->get_tile(_floating_grid_editor->_col_idx_select, _floating_grid_editor->_row_idx_select);
-	StaticObjectModel * model= current_floating_object->_model;
+void Editor::add_floating_object(pt_type pos, bool copy_paste) {
+	StaticObject * floating_object;
+	number alpha;
+	pt_type scale;
+	if (copy_paste) {
+		floating_object= _track_editor->_copy_floating_object;
+		alpha= _track_editor->_copy_floating_object->_alpha;
+		scale= _track_editor->_copy_floating_object->_scale;
+	}
+	else {
+		floating_object= _floating_grid_editor->_grid->get_tile(_floating_grid_editor->_col_idx_select, _floating_grid_editor->_row_idx_select);
+		alpha= 0.0;
+		scale= pt_type(1.0);
+	}
+	StaticObjectModel * model= floating_object->_model;
 
 	// gestion des checkpoints
 	if (model->_type== START) {
-		CheckPoint * checkpoint= new CheckPoint(model, pt_type(pos.x, pos.y), 0.0, pt_type(1.0));
+		CheckPoint * checkpoint= new CheckPoint(model, pos, alpha, scale);
 		_track_editor->_track->_start= checkpoint;
 		_track_editor->_last_checkpoint= checkpoint;
 		_track_editor->_track->_floating_objects.push_back(checkpoint);
@@ -1347,14 +1374,14 @@ void Editor::add_floating_object(pt_type pos) {
 			std::cerr << "pas de checkpoint sans start\n";
 			return;
 		}
-		CheckPoint * checkpoint= new CheckPoint(model, pt_type(pos.x, pos.y), 0.0, pt_type(1.0));
+		CheckPoint * checkpoint= new CheckPoint(model, pos, alpha, scale);
 		checkpoint->_next= _track_editor->_track->_start;
 		_track_editor->_last_checkpoint->_next= checkpoint;
 		_track_editor->_last_checkpoint= checkpoint;
 		_track_editor->_track->_floating_objects.push_back(checkpoint);
 	}
 	else {
-		_track_editor->_track->_floating_objects.push_back(new StaticObject(model, pt_type(pos.x, pos.y), 0.0, pt_type(1.0)));
+		_track_editor->_track->_floating_objects.push_back(new StaticObject(model, pos, alpha, scale));
 	}
 	
 	_track_editor->update();
@@ -1422,13 +1449,21 @@ bool Editor::key_up(InputState * input_state, SDL_Keycode key) {
 
 
 bool Editor::mouse_button_down(InputState * input_state) {
-	// f = ajout d'un objet flottant
-	if (input_state->get_key(SDLK_f)) {
-		pt_type pos= _track_editor->screen2pt(input_state->_x, input_state->_y);
-		if (pos.x>= 0 && pos.x< number(_track_editor->_track->_grid->_width)* _track_editor->_track->_grid->_cell_size
-		&& pos.y>= 0 && pos.y< number(_track_editor->_track->_grid->_height)* _track_editor->_track->_grid->_cell_size) {
+	pt_type pos= _track_editor->screen2pt(input_state->_x, input_state->_y);
+	
+	if (pos.x>= 0 && pos.x< number(_track_editor->_track->_grid->_width)* _track_editor->_track->_grid->_cell_size
+	&& pos.y>= 0 && pos.y< number(_track_editor->_track->_grid->_height)* _track_editor->_track->_grid->_cell_size) {
+		// f = ajout d'un objet flottant
+		if (input_state->get_key(SDLK_f)) {
 			add_floating_object(pos);
 			return true;
+		}
+		// p = paste
+		else if (input_state->get_key(SDLK_p)) {
+			if (_track_editor->_copy_floating_object!= NULL) {
+				add_floating_object(pos, true);
+				return true;
+			}
 		}
 	}
 

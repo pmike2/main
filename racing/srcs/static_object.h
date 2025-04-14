@@ -13,21 +13,29 @@
 #include "action.h"
 
 
-// OBSTACLE_TILE == tuile obstacle ; OBSTACLE_FLOATING == obstacle flottant
-// CAR == voiture
-// START == ligne de départ (et d'arrivée) ; CHECKPOINT == chekpt
-// SURFACE_TILE, SURFACE_FLOATING == matériau sol
-// REPAIR : zone de réparation
-// BOOST : accélérateur
+// OBSTACLE_TILE = tuile obstacle
+// OBSTACLE_FLOATING = obstacle flottant
+// CAR = voiture
+// START = ligne de départ (et d'arrivée)
+// CHECKPOINT = checkpoint
+// SURFACE_TILE = matériau sol liée à une tuile
+// SURFACE_FLOATING = matériau sol flottant
+// REPAIR = zone de réparation
+// BOOST = accélérateur
+// DECORATION = objet décoratif
+// DIRECTION_HELP = aide flèche de direction
 enum ObjectType {OBSTACLE_TILE, OBSTACLE_FLOATING, CAR, START, CHECKPOINT, 
 	SURFACE_TILE, SURFACE_FLOATING, REPAIR, BOOST, DECORATION, DIRECTION_HELP};
 
-// 
+// type de mouvement autorisé
+// MVMT_FIXED = ne bouge pas
+// MVMT_ROTATE = rotations autorisées
+// MVMT_TRANSLATE = translations autorisées
+// MVMT_TRANSLATE_CONSTRAINED = translations autorisées uniquement le long de _translation_constraint
+// MVMT_ALL = rotations et translations autorisées
 enum ObjectMovementType {MVMT_FIXED, MVMT_ROTATE, MVMT_TRANSLATE, MVMT_TRANSLATE_CONSTRAINED, MVMT_ALL};
 
-// type de grille : verticale, horizontale
-enum GridType {VERTICAL_GRID, HORIZONTAL_GRID};
-
+// pour chargement json
 const std::map<std::string, ObjectType> STR2OBJTYPE {
 	{"obstacle_tile", OBSTACLE_TILE},
 	{"obstacle_floating", OBSTACLE_FLOATING},
@@ -42,6 +50,7 @@ const std::map<std::string, ObjectType> STR2OBJTYPE {
 	{"direction_help", DIRECTION_HELP}
 };
 
+// pour chargement json
 const std::map<std::string, ObjectMovementType> STR2OBJMVMTTYPE {
 	{"fixed", MVMT_FIXED},
 	{"rotate", MVMT_ROTATE},
@@ -98,7 +107,7 @@ public:
 	pt_type _com2bbox_center; // vecteur centre de masse -> centre bbox ; utile pour mettre à jour StaticObject._bbox
 	Polygon2D * _footprint; // empreinte au sol, utilisée pour les collisions ; doit être convexe
 	ObjectMovementType _movement; // type de mouvement possible
-	pt_type _translation_constraint;
+	pt_type _translation_constraint; // vecteur de contrainte de translation si _movement == MVMT_TRANSLATE_CONSTRAINED
 	Material * _material; // matériau éventuel de l'objet
 	std::string _material_name; // nom du matériau
 };
@@ -135,6 +144,8 @@ public:
 	number _angular_acceleration; // accélaration angulaire
 	number _torque; // torque == équivalent force pour angle
 
+	pt_type _translation_constraint; // vecteur de contrainte de translation si _movement == MVMT_TRANSLATE_CONSTRAINED
+
 	number _linear_friction_surface; // facteur multiplicatif de friction lié au sol; varie si on est sur une flaque par ex
 	number _angular_friction_surface;
 
@@ -148,7 +159,7 @@ public:
 	time_point _last_change_surface_t; // dernier temps de changement de surface
 	time_point _last_boost_t; // dernier temps où un boost a eu lieu
 
-	bool _car_contact;
+	bool _car_contact; // l'objet est-t'il en contact avec une voiture
 };
 
 
@@ -162,41 +173,6 @@ public:
 
 	CheckPoint * _next; // le suivant
 	CheckPoint * _previous; // le précédent
-};
-
-
-// grille d'objets
-class StaticObjectGrid {
-public:
-	StaticObjectGrid();
-	StaticObjectGrid(number cell_size, GridType type);
-	~StaticObjectGrid();
-	void clear();
-	
-	// méthodes de chgmt de système de coord
-	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
-	std::pair<unsigned int, unsigned int> idx2coord(unsigned int idx);
-	std::pair<int, int> number2coord(pt_type pos);
-	pt_type coord2number(unsigned int col_idx, unsigned int row_idx);
-	pt_type idx2number(unsigned int idx);
-	
-	// get / set / add / del
-	StaticObject * get_tile(unsigned int col_idx, unsigned int row_idx);
-	void push_tile(StaticObjectModel * model);
-	void set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx);
-	void set_tile(StaticObjectModel * model, unsigned int idx);
-	void set_all(StaticObjectModel * model, unsigned int width, unsigned int height);
-	void add_row(StaticObjectModel * model);
-	void add_col(StaticObjectModel * model);
-	void drop_row();
-	void drop_col();
-
-
-	std::vector<StaticObject *> _objects;
-	unsigned int _width; // dimensions
-	unsigned int _height;
-	number _cell_size; // taille cellule
-	GridType _type; // type
 };
 
 
