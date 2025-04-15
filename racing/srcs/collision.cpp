@@ -7,7 +7,7 @@
 #include "collision.h"
 
 
-bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
+bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, time_point t) {
 	if (obj1->_model->_movement== MVMT_FIXED && obj2->_model->_movement== MVMT_FIXED) {
 		return false;
 	}
@@ -220,6 +220,32 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position) {
 			if (obj2->_bumps[i]> BUMP_MAX) {
 				obj2->_bumps[i]= BUMP_MAX;
 			}
+		}
+	}
+
+	Action * obj1_action= obj1->get_current_action();
+	if (obj1_action->_forces.size()> 0) {
+		ActionForce * force= obj1_action->_forces[obj1->_current_action_force_idx];
+		if (force->_type== TRANSLATION && scal(force->_force, axis)> 0.0) {
+			std::cout << "obj1 " << obj1->_model->_name << "\n";
+			obj1->_current_action_force_idx++;
+			if (obj1->_current_action_force_idx>= obj1_action->_forces.size()) {
+				obj1->_current_action_force_idx= 0;
+			}
+			obj1->_last_action_force_t= t;
+		}
+	}
+
+	Action * obj2_action= obj2->get_current_action();
+	if (obj2_action->_forces.size()> 0) {
+		ActionForce * force= obj2_action->_forces[obj2->_current_action_force_idx];
+		if (force->_type== TRANSLATION && scal(force->_force, axis)< 0.0) {
+			std::cout << "obj2 " << obj1->_model->_name << "\n";
+			obj2->_current_action_force_idx++;
+			if (obj2->_current_action_force_idx>= obj2_action->_forces.size()) {
+				obj2->_current_action_force_idx= 0;
+			}
+			obj2->_last_action_force_t= t;
 		}
 	}
 

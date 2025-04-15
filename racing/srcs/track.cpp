@@ -583,7 +583,7 @@ void Track::collisions(time_point t) {
 		for (unsigned int idx_obj_2=idx_obj_1+ 1; idx_obj_2<_floating_objects.size(); ++idx_obj_2) {
 			StaticObject * obj1= _floating_objects[idx_obj_1];
 			StaticObject * obj2= _floating_objects[idx_obj_2];
-			if (collision(obj1, obj2, position)) {
+			if (collision(obj1, obj2, position, t)) {
 				_collisions.push_back(position);
 				
 				if (obj1->_model->_type== CAR) {
@@ -601,7 +601,7 @@ void Track::collisions(time_point t) {
 	// collisions entre objet flottant et tuile
 	for (auto object : _floating_objects) {
 		for (auto tile : _grid->_objects) {
-			if (collision(object, tile, position)) {
+			if (collision(object, tile, position, t)) {
 				_collisions.push_back(position);
 				if (object->_model->_type== CAR) {
 					collided_cars.push_back((Car *)(object));
