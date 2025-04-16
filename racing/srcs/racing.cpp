@@ -27,7 +27,7 @@ Racing::Racing() {
 Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, time_point t) :
 	_draw_bbox(false), _draw_force(false), _draw_texture(true), _show_debug_info(false),
 	_cam_mode(TRANSLATE), _screengl(screengl), _input_state(input_state),
-	_mode(CHOOSE_DRIVER), _joystick_is_input(false)
+	_mode(CHOOSE_DRIVER), _joystick_is_input(false), _help(false)
 	{
 	// caméras
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
@@ -36,6 +36,13 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	// font
 	_font= new Font(progs["font"], "../../fonts/Silom.ttf", 48, screengl);
 	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
+
+	// aide
+	std::ifstream ifs("../data/main_help.txt");
+	std::string line;
+	while (std::getline(ifs, line)) {
+		_help_data.push_back(line);
+	}
 
 	// buffers
 	unsigned int n_buffers= 12;
@@ -656,10 +663,17 @@ void Racing::draw_map() {
 void Racing::show_info() {
 	std::vector<Text> texts;
 
-	if (_mode== CHOOSE_DRIVER) {
+	if (_help) {
+		for (unsigned int idx_line=0; idx_line<_help_data.size(); ++idx_line) {
+			texts.push_back(Text(_help_data[idx_line], glm::vec2(-7.0f, 5.0f- float(idx_line)* 0.4), 0.006, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		}
+	}
+	else if (_mode== CHOOSE_DRIVER) {
+		texts.push_back(Text("touche h pour l'aide", glm::vec2(-7.0f, -5.0f), 0.004, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 		texts.push_back(Text(_track->_drivers[_idx_chosen_driver]->_name, glm::vec2(-1.5f, 4.0f), 0.02, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 	else if (_mode== CHOOSE_TRACK) {
+		texts.push_back(Text("touche h pour l'aide", glm::vec2(-7.0f, -5.0f), 0.004, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 		texts.push_back(Text("Track "+ std::to_string(_idx_chosen_track), glm::vec2(-1.5f, 4.0f), 0.02, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 		
 		texts.push_back(Text("NLAPS = "+ std::to_string(_track_info->_n_laps), glm::vec2(4.0f, 4.0f), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
@@ -864,10 +878,10 @@ void Racing::show_info() {
 void Racing::draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	if (_mode== CHOOSE_DRIVER) {
+	if (_mode== CHOOSE_DRIVER && !_help) {
 		draw_choose_driver();
 	}
-	else if (_mode== CHOOSE_TRACK) {
+	else if (_mode== CHOOSE_TRACK && !_help) {
 		draw_choose_track();
 	}
 	else if (_mode== RACING) {
@@ -1559,6 +1573,12 @@ void Racing::camera() {
 
 
 bool Racing::key_down(SDL_Keycode key, time_point t) {
+	// aide
+	if (key== SDLK_h) {
+		_help= !_help;
+		return true;
+	}
+
 	if (_mode== CHOOSE_DRIVER) {
 		if (key== SDLK_LEFT) {
 			_idx_chosen_driver--;
@@ -1619,6 +1639,12 @@ bool Racing::key_down(SDL_Keycode key, time_point t) {
 			return true;
 		}
 
+		// t : dessiner textures
+		else if (key== SDLK_t) {
+			_draw_texture= !_draw_texture;
+			return true;
+		}
+
 		// i : switcher infos normales / infos debug
 		else if (key== SDLK_i) {
 			_show_debug_info= !_show_debug_info;
@@ -1628,12 +1654,6 @@ bool Racing::key_down(SDL_Keycode key, time_point t) {
 		// j : activer / désactiver joystick
 		else if (key== SDLK_j) {
 			_joystick_is_input= !_joystick_is_input;
-			return true;
-		}
-
-		// t : dessiner textures
-		else if (key== SDLK_t) {
-			_draw_texture= !_draw_texture;
 			return true;
 		}
 

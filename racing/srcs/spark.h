@@ -8,7 +8,7 @@
 
 
 // nombre max de sparks pour tout le circuit
-const unsigned int N_MAX_SPARKS= 2000;
+const unsigned int N_MAX_SPARKS= 4000;
 // min, max du nombre de sparks créés lors d'une collision
 const unsigned int N_MIN_SPARKS_PER_COLLISION= 1;
 const unsigned int N_MAX_SPARKS_PER_COLLISION= 4;

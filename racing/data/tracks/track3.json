@@ -949,30 +949,30 @@
     ],
     "best_lap": [
         {
-            "name": "minett",
-            "time": 7.239
+            "name": "pmb",
+            "time": 7.389
         },
         {
-            "name": "robin",
-            "time": 7.256
+            "name": "pmb",
+            "time": 7.422
         },
         {
-            "name": "minett",
-            "time": 7.487
+            "name": "pmb",
+            "time": 7.522
         }
     ],
     "best_overall": [
         {
-            "name": "lauren",
-            "time": 57.775999999999996
+            "name": "robin",
+            "time": 88.78400000000002
         },
         {
             "name": "pmb",
-            "time": 58.063
+            "time": 167.184
         },
         {
-            "name": "niek",
-            "time": 58.295
+            "name": "pmb",
+            "time": 173.589
         }
     ],
     "cell_size": 2.0,
@@ -1488,7 +1488,7 @@
         }
     ],
     "height": 16,
-    "n_laps": 7,
+    "n_laps": 10,
     "tiles": [
         "full_obst",
         "full_obst",

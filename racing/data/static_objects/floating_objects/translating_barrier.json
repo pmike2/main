@@ -3,8 +3,9 @@
 	"movement" : "translate_constrained",
 	"translation_constraint" : [1.0, 0.0],
 	"footprint" : [
-		[-0.46, -0.07], [0.46, -0.07], [0.46, 0.06], [-0.46, 0.06]
+		[-0.46, 0.0], [-0.40, -0.07], [0.40, -0.07], [0.46, 0.0], [0.40, 0.07], [-0.40, 0.07]
 	],
+	"commentaire" : "il faut faire un footprint pointu sinon les collisions avec les murs sont ambigues",
 	"material" : "barrier",
 	"actions" : {
 		"translate" : [

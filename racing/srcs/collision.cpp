@@ -112,7 +112,7 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, tim
 
 	// on sature impulse afin que ca ne parte pas trop en cahouèt
 	if (abs(impulse)> MAX_IMPULSE) {
-		std::cout << "impulse=" << impulse << "\n";
+		//std::cout << "impulse=" << impulse << "\n";
 		impulse= MAX_IMPULSE;
 	}
 
@@ -223,11 +223,13 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, tim
 		}
 	}
 
+	// pour les objets soumis à des forces, genre barrier, lors d'une collision je passe à l'action
+	// suivante pour aller dans l'autre sens
 	Action * obj1_action= obj1->get_current_action();
 	if (obj1_action->_forces.size()> 0) {
-		ActionForce * force= obj1_action->_forces[obj1->_current_action_force_idx];
-		if (force->_type== TRANSLATION && scal(force->_force, axis)> 0.0) {
-			std::cout << "obj1 " << obj1->_model->_name << "\n";
+		ActionForce * action_force= obj1_action->_forces[obj1->_current_action_force_idx];
+		pt_type force= rot(action_force->_force, obj1->_alpha);
+		if (action_force->_type== TRANSLATION && scal(force, axis)> 0.0) {
 			obj1->_current_action_force_idx++;
 			if (obj1->_current_action_force_idx>= obj1_action->_forces.size()) {
 				obj1->_current_action_force_idx= 0;
@@ -238,9 +240,9 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, tim
 
 	Action * obj2_action= obj2->get_current_action();
 	if (obj2_action->_forces.size()> 0) {
-		ActionForce * force= obj2_action->_forces[obj2->_current_action_force_idx];
-		if (force->_type== TRANSLATION && scal(force->_force, axis)< 0.0) {
-			std::cout << "obj2 " << obj1->_model->_name << "\n";
+		ActionForce * action_force= obj2_action->_forces[obj2->_current_action_force_idx];
+		pt_type force= rot(action_force->_force, obj2->_alpha);
+		if (action_force->_type== TRANSLATION && scal(force, axis)< 0.0) {
 			obj2->_current_action_force_idx++;
 			if (obj2->_current_action_force_idx>= obj2_action->_forces.size()) {
 				obj2->_current_action_force_idx= 0;

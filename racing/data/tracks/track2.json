@@ -941,30 +941,30 @@
     ],
     "best_lap": [
         {
-            "name": "pmb",
-            "time": 10.191
+            "name": "mneit",
+            "time": 11.092
         },
         {
-            "name": "lauren",
-            "time": 10.325
+            "name": "robin",
+            "time": 11.342
         },
         {
-            "name": "lauren",
-            "time": 10.425
+            "name": "robin",
+            "time": 11.608
         }
     ],
     "best_overall": [
         {
-            "name": "pmb",
-            "time": 66.06700000000001
+            "name": "robin",
+            "time": 77.777
         },
         {
             "name": "pmb",
-            "time": 68.137
+            "time": 94.393
         },
         {
-            "name": "lauren",
-            "time": 71.14
+            "name": "pmb",
+            "time": 95.743
         }
     ],
     "cell_size": 2.0,

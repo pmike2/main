@@ -1,0 +1,21 @@
+h : afficher / cacher l'aide
+
+choix pilote / circuit :
+    touches directionnelles gauche, droite : selection pilote / circuit
+    entree : choix selection
+    escape : retour en arriere
+
+en course :
+    touches directionnelles :
+        avant : acceleration
+        arriere : frein
+        gauche, droite : volant
+
+    b : afficher / cacher emprises bbox et footprints
+    t : afficher / cacher textures
+    f : afficher / cacher forces
+    i : afficher / cacher infos de debug
+    j : activer / desactiver joystick (si disponible)
+    c : camera mode : fixe / suit le heros / suit et s'oriente comme le heros
+    escape : sortie course
+    

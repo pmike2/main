@@ -8,7 +8,7 @@
 	"actions" : {
 		"rotate" : [
 			{
-				"torque" : 10.0
+				"torque" : 5.0
 			}
 		]
 	}

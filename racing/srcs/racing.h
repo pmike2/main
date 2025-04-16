@@ -50,7 +50,7 @@ const float Z_MAP= -5.0f;
 
 // à quelle vitesse la caméra s'ajuste-t'elle au mouvement du héros
 const number CAM_INC= 0.1;
-const number CAM_INC_ALPHA= 0.01;
+const number CAM_INC_ALPHA= 0.03;
 
 // params de debug des forces
 const float CROSS_SIZE= 0.1;
@@ -70,14 +70,14 @@ const number RANKING_FACE_MARGIN_FACTOR= 1.3f;
 const number RANKING_FACE_TEXT_MARGIN= 0.1f;
 const glm::vec2 IN_RACE_FACE_OFFSET(0.1f, 0.1f);
 const glm::vec2 IN_RACE_TEXT_OFFSET(0.1f, 0.1f);
-const std::vector<float> IN_RACE_FACE_SIZE {1.0f, 0.8f, 0.7f, 0.6f};
+const std::vector<float> IN_RACE_FACE_SIZE {0.8f, 0.7f, 0.6f, 0.5f};
 const std::vector<float> IN_RACE_FACE_ALPHA {1.0f, 1.0f, 1.0f, 1.0f};
 const std::vector<float> IN_RACE_TEXT_SCALE {0.006f, 0.005f, 0.004f, 0.003f};
 
 // map
 const glm::vec2 MAP_ORIGIN(-7.4f, 1.9f);
 const glm::vec2 MAP_SIZE(3.5f, 3.5f);
-const std::vector<float> MAP_FACE_SIZE {0.7f, 0.6f, 0.5f, 0.4f};
+const std::vector<float> MAP_FACE_SIZE {0.5f, 0.5f, 0.5f, 0.5f};
 const float MAP_OPACITY= 0.8;
 const float MAP_FACE_OPACITY= 0.9;
 
@@ -192,10 +192,13 @@ public:
 		_texture_idx_tire_track, _texture_idx_driver_face, _texture_idx_map;
 	glm::mat4 _camera2clip; // glm::ortho
 	glm::mat4 _world2camera; // caméra
+
 	Font * _font; // font pour écriture textes
 	ScreenGL * _screengl;
 	InputState * _input_state;
 	bool _joystick_is_input; // permet de switcher entre clavier et joystick (lorsqu'il est actif)
+	bool _help; // help est t'il affiché
+	std::vector<std::string> _help_data; // les lignes de texte de l'aide
 };
 
 
