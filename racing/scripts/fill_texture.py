@@ -2,6 +2,8 @@
 
 """
 Passage footprint des tuiles obstacle -> textures
+
+Je pourrais sans doute remplacer ce script par des appels à magick (cf gen_beach.sh)
 """
 
 import os

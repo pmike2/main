@@ -7,7 +7,7 @@
 
 source /Volumes/Data/perso/image_magick/set_image_magick_env.sh
 
-start="/Volumes/Data/perso/dev/main/racing/data/static_objects/floating_objects/textures/start.png"
+start="../data/static_objects/floating_objects/textures/start.png"
 
 rm ${start%.*}*
 
@@ -37,14 +37,19 @@ magick -size 1024x1024 canvas:white $start
 magick $start -fill black -draw "$draw_str" $start
 magick $start -alpha set -background none -channel A -evaluate multiply 0.5 +channel $start
 
-for i in {1..16}
+for i in {0..31}
 do
-	start_warped="${start%.*}_active_${i}.png"
-	offset=$((i*30))
-	magick $start -splice ${offset}x0+0+0 -wave 30x500 -chop ${offset}x0+0+0 $start_warped
+	s=`printf '%02d' $i`
+	start_warped="${start%.*}_${s}.png"
+	offset=$((i*32))
+	magick $start -splice ${offset}x0+0+0 -wave 10x512 -chop ${offset}x0+0+0 $start_warped
 	magick $start_warped -gravity South -chop 0x60 $start_warped
 	magick $start_warped -transparent white -transparent black $start_warped
 	magick $start_warped -fill red -draw "rectangle 0,970 1024,1024" $start_warped
 done
 
-magick $start -fill red -draw "rectangle 0,970 1024,1024" $start
+#magick $start -fill red -draw "rectangle 0,970 1024,1024" $start
+rm $start
+
+pyscript_path=`dirname $0`/gen_flag_json.py
+python3 $pyscript_path

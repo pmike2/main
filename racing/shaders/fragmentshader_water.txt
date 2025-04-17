@@ -1,0 +1,17 @@
+#version 410 core
+
+
+uniform sampler2DArray texture_array;
+uniform float gray_blend;
+
+in vec2 tex_coord;
+in float current_layer;
+
+out vec4 color;
+
+
+void main() {
+	vec4 current_color= texture(texture_array, vec3(tex_coord.x, tex_coord.y, current_layer));
+	
+	color= mix(current_color, vec4(0.2, 0.2, 0.2, 0.1), gray_blend);
+}

@@ -6,3 +6,7 @@ sauts
 trous
 chicken : collision avec une version bufferisée du footprint des Cars
 son
+
+
+BUG sparkle créés en 0.0, 0.0 lors d'une collision
+

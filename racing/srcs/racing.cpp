@@ -45,12 +45,12 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	}
 
 	// buffers
-	unsigned int n_buffers= 12;
+	unsigned int n_buffers= 13;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
 	// textures
-	unsigned int n_textures= 7;
+	unsigned int n_textures= 8;
 	_textures= new GLuint[n_textures];
 	glGenTextures(n_textures, _textures);
 	_texture_idx_model= 0;
@@ -60,6 +60,7 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	_texture_idx_choose_track= 4;
 	_texture_idx_tire_track= 5;
 	_texture_idx_map= 6;
+	_texture_idx_water= 7;
 
 	// contextes de dessin
 	_contexts["bbox"]= new DrawContext(progs["simple"], _buffers[0],
@@ -110,10 +111,15 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
+	_contexts["water"]= new DrawContext(progs["water"], _buffers[12],
+		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
+		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array", "gray_blend"});
+
 	_track_info= new TrackInfo();
 	_track= new Track();
 	_tire_track_system= new TireTrackSystem();
 	_spark_system= new SparkSystem();
+	_water_system= new WaterSystem(_track->_grid->_cell_size);
 
 	_idx_chosen_driver= 0;
 	_idx_chosen_track= 1; // commence à 1 pas 0
@@ -128,6 +134,7 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	fill_texture_driver();
 	fill_texture_choose_track();
 	fill_texture_map();
+	fill_texture_water();
 }
 
 
@@ -140,6 +147,7 @@ Racing::~Racing() {
 	_smoke_systems.clear();
 	delete _tire_track_system;
 	delete _spark_system;
+	delete _water_system;
 	for (auto context : _contexts) {
 		delete context.second;
 	}
@@ -177,6 +185,9 @@ void Racing::choose_track(unsigned int idx_track, time_point t) {
 	
 	// reinit étincelles
 	_spark_system->reinit();
+
+	// eau background
+	_water_system->set_track_grid(_track->_grid);
 
 	// on récupère les records de la piste
 	_track_lap_record= _track->_info->_best_lap[0].second;
@@ -254,7 +265,6 @@ void Racing::fill_texture_array_tire_track() {
 
 void Racing::fill_texture_map() {
 	std::vector<std::string> pngs= list_files("../data/tracks/quicklooks", "png");
-	unsigned int compt= 0;
 	for (auto driver : _track->_drivers) {
 		for (auto expression : driver->_expressions) {
 			for (auto expression_texture : expression.second->_textures) {
@@ -264,6 +274,13 @@ void Racing::fill_texture_map() {
 	}
 
 	fill_texture_array(0, _textures[_texture_idx_map], 1024, pngs);
+}
+
+
+void Racing::fill_texture_water() {
+	std::vector<std::string> pngs= list_files("../data/water", "png");
+	fill_texture_array(0, _textures[_texture_idx_water], 1024, pngs);
+	_water_system->set_pngs(pngs);
 }
 
 
@@ -660,6 +677,46 @@ void Racing::draw_map() {
 }
 
 
+void Racing::draw_water() {
+	DrawContext * context= _contexts["water"];
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_water]);
+	glActiveTexture(0);
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniformMatrix4fv(context->_locs_uniform["world2camera_matrix"], 1, GL_FALSE, glm::value_ptr(_world2camera));
+
+	if (_track->_mode== TRACK_LIVE) {
+		glUniform1f(context->_locs_uniform["gray_blend"], 0.0f);
+	}
+	else {
+		glUniform1f(context->_locs_uniform["gray_blend"], GRAY_BLEND);
+	}
+
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
 void Racing::show_info() {
 	std::vector<Text> texts;
 
@@ -900,6 +957,7 @@ void Racing::draw() {
 			draw_driver_face();
 			draw_barrier();
 			draw_map();
+			draw_water();
 		}
 	}
 
@@ -1148,7 +1206,7 @@ void Racing::update_texture() {
 		}
 		Action * action= obj->get_current_action();
 		
-		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
+		// on prend + de points que d'ahbitude pour les bumps car
 		/*number positions[n_pts_per_obj* 5]= {
 			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, 0.0, 1.0,
 			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, obj->_z, 1.0, 1.0,
@@ -1165,6 +1223,7 @@ void Racing::update_texture() {
 			right_u= 0.0;
 		}
 		
+		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
 		number positions[n_pts_per_obj* 6]= {
 			obj->_bbox->_pts[0].x, obj->_bbox->_pts[0].y, obj->_z, left_u, 1.0, obj->_bumps[0],
 			obj->_bbox->_pts[1].x, obj->_bbox->_pts[1].y, obj->_z, right_u, 1.0, obj->_bumps[1],
@@ -1506,6 +1565,36 @@ void Racing::update_map() {
 }
 
 
+void Racing::update_water() {
+	const unsigned int n_pts_per_obj= 6;
+
+	DrawContext * context= _contexts["water"];
+	context->_n_pts= _water_system->_tiles.size()* n_pts_per_obj;
+	context->_n_attrs_per_pts= 6;
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	unsigned int compt= 0;
+	for (auto tile : _water_system->_tiles) {
+		data[compt++]= tile->_aabb->_pos.x; data[compt++]= tile->_aabb->_pos.y; data[compt++]= tile->_z; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= float(tile->_idx_texture);
+		data[compt++]= tile->_aabb->_pos.x+ tile->_aabb->_size.x; data[compt++]= tile->_aabb->_pos.y; data[compt++]= tile->_z; data[compt++]= 1.0; data[compt++]= 1.0; data[compt++]= float(tile->_idx_texture);
+		data[compt++]= tile->_aabb->_pos.x+ tile->_aabb->_size.x; data[compt++]= tile->_aabb->_pos.y+ tile->_aabb->_size.y; data[compt++]= tile->_z; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= float(tile->_idx_texture);
+
+		data[compt++]= tile->_aabb->_pos.x; data[compt++]= tile->_aabb->_pos.y; data[compt++]= tile->_z; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= float(tile->_idx_texture);
+		data[compt++]= tile->_aabb->_pos.x+ tile->_aabb->_size.x; data[compt++]= tile->_aabb->_pos.y+ tile->_aabb->_size.y; data[compt++]= tile->_z; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= float(tile->_idx_texture);
+		data[compt++]= tile->_aabb->_pos.x; data[compt++]= tile->_aabb->_pos.y+ tile->_aabb->_size.y; data[compt++]= tile->_z; data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= float(tile->_idx_texture);
+	}
+	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+		std::cout << data[i] << " ; ";
+	}
+	std::cout << "\n";*/
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 void Racing::anim(time_point t) {
 	if (_mode== CHOOSE_DRIVER) {
 		update_choose_driver();
@@ -1524,6 +1613,8 @@ void Racing::anim(time_point t) {
 
 		_spark_system->anim(t, _track->_collisions);
 
+		_water_system->anim(t);
+
 		if (_draw_bbox) {
 			update_bbox();
 			update_footprint();
@@ -1539,6 +1630,7 @@ void Racing::anim(time_point t) {
 			update_driver_face();
 			//update_barrier(); // fait 1 fois au début suffit
 			update_map();
+			update_water();
 		}
 
 		camera();

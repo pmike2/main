@@ -160,6 +160,7 @@ void init() {
 	progs["driver_face"]= create_prog("../shaders/vertexshader_driver_face.txt", "../shaders/fragmentshader_driver_face.txt");
 	progs["barrier"]= create_prog("../shaders/vertexshader_barrier.txt", "../shaders/fragmentshader_barrier.txt");
 	progs["map"]= create_prog("../shaders/vertexshader_map.txt", "../shaders/fragmentshader_map.txt");
+	progs["water"]= create_prog("../shaders/vertexshader_water.txt", "../shaders/fragmentshader_water.txt");
 
 	check_gl_error();
 

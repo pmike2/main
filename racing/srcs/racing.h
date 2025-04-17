@@ -26,6 +26,7 @@
 #include "tire_track.h"
 #include "spark.h"
 #include "driver.h"
+#include "water.h"
 
 
 // type de caméra : fixe, suit le héros, suit et s'oriente comme le héros
@@ -127,6 +128,7 @@ public:
 	void fill_texture_array_smoke();
 	void fill_texture_array_tire_track();
 	void fill_texture_map();
+	void fill_texture_water();
 	
 	// dessins
 	void draw_choose_driver();
@@ -141,6 +143,7 @@ public:
 	void draw_driver_face();
 	void draw_barrier();
 	void draw_map();
+	void draw_water();
 	void show_info();
 	void draw();
 
@@ -157,6 +160,7 @@ public:
 	void update_driver_face();
 	void update_barrier();
 	void update_map();
+	void update_water();
 	
 	// animation
 	void anim(time_point t);
@@ -171,6 +175,7 @@ public:
 	std::vector<SmokeSystem *> _smoke_systems; // système de fumée : 1 par Car
 	TireTrackSystem * _tire_track_system; // traces de pneu
 	SparkSystem * _spark_system; // étincelles des collisions
+	WaterSystem * _water_system;
 
 	// params caméra
 	pt_type _com_camera;
@@ -189,7 +194,7 @@ public:
 	GLuint * _textures; // texture arrays pour tous les PNGs
 	// indices des textures
 	unsigned int _texture_idx_model, _texture_idx_bump, _texture_idx_smoke, _texture_idx_choose_track,
-		_texture_idx_tire_track, _texture_idx_driver_face, _texture_idx_map;
+		_texture_idx_tire_track, _texture_idx_driver_face, _texture_idx_map, _texture_idx_water;
 	glm::mat4 _camera2clip; // glm::ortho
 	glm::mat4 _world2camera; // caméra
 

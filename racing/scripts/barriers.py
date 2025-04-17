@@ -57,13 +57,24 @@ for track_path in tracks:
 	#print(union.wkt)
 
 	data["barriers"]= []
+	
+	# on ne veut pas mettre de barrière sur l'extérieur du plus grand polygone
 	if union.geom_type== "MultiPolygon":
-		for poly in union.geoms:
-			data["barriers"].append(list(poly.exterior.coords))
+		idx_biggest_poly, max_area= -1, -1.0
+		for idx_poly, poly in enumerate(union.geoms):
+			area= poly.exterior.area
+			if area> max_area:
+				max_area= area
+				idx_biggest_poly= idx_poly
+		
+		for idx_poly, poly in enumerate(union.geoms):
+			if idx_poly!= idx_biggest_poly:
+				data["barriers"].append(list(poly.exterior.coords))
 			for interior in poly.interiors:
 				data["barriers"].append(list(interior.coords))
+	
 	elif union.geom_type== "Polygon":
-		data["barriers"].append(list(union.exterior.coords))
+		#data["barriers"].append(list(union.exterior.coords))
 		for interior in union.interiors:
 			data["barriers"].append(list(interior.coords))
 	else:

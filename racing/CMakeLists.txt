@@ -41,6 +41,7 @@ add_library(lib_spark STATIC ../srcs/spark.cpp ../srcs/spark.h)
 add_library(lib_driver STATIC ../srcs/driver.cpp ../srcs/driver.h)
 add_library(lib_action STATIC ../srcs/action.cpp ../srcs/action.h)
 add_library(lib_grid STATIC ../srcs/grid.cpp ../srcs/grid.h)
+add_library(lib_water STATIC ../srcs/water.cpp ../srcs/water.h)
 
 add_executable(main ./srcs/main.cpp)
 add_executable(editor ./srcs/editor.cpp)
@@ -48,7 +49,7 @@ add_executable(editor ./srcs/editor.cpp)
 set(EXT_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${SDL2_MIXER_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES} sioclient)
 set(LOCAL_COMMON_LIBS lib_repere lib_gl_utils lib_utile lib_input_state lib_bbox lib_bbox_2d lib_geom_2d lib_triangulation 
 	lib_font lib_track lib_static_object lib_car lib_material lib_collision lib_driver lib_action lib_grid)
-set(LOCAL_MAIN_LIBS lib_racing lib_smoke lib_tire_track lib_spark)
+set(LOCAL_MAIN_LIBS lib_racing lib_smoke lib_tire_track lib_spark lib_water)
 set(LOCAL_EDITOR_LIBS lib_track_editor)
  
 target_link_libraries(main PUBLIC ${EXT_LIBS})

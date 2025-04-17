@@ -788,7 +788,9 @@ void Track::checkpoints(time_point t) {
 				if (car->_next_checkpoint!= _start) {
 					car->_next_checkpoint->set_current_sequence(MAIN_SEQUENCE_NAME, t);
 				}
-				car->_next_checkpoint->_next->set_current_sequence("active", t);
+				if (car->_next_checkpoint->_next!= _start) {
+					car->_next_checkpoint->_next->set_current_sequence("active", t);
+				}
 			}
 			
 			// maj du prochain checkpoint
