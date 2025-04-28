@@ -3,6 +3,7 @@
 #define REPERE_H
 
 #include <iostream>
+#include <map>
 
 #include <OpenGL/gl3.h>
 
@@ -19,6 +20,8 @@
 
 #include "input_state.h"
 #include "bbox.h"
+#include "font.h"
+#include "gl_utils.h"
 
 
 
@@ -42,6 +45,10 @@ const float RIGHT_MOUSE_SENSIVITY= 0.01f;
 
 // modes de vision : vue libre , 3e personne libre, 3e personne fixe
 enum ViewSystemType {FREE_VIEW, THIRD_PERSON_FREE, THIRD_PERSON_BEHIND};
+
+// couleurs
+const glm::vec3 GROUND_COLOR(0.3f, 0.3f, 0.3f);
+const glm::vec3 BOX_COLOR(0.5f, 0.5f, 0.5f);
 
 
 // affichage repère
@@ -89,7 +96,7 @@ public:
 class ViewSystem {
 public:
 	ViewSystem();
-	ViewSystem(GLuint prog_repere, GLuint prog_select, unsigned int screen_width, unsigned int screen_height);
+	ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl);
 	~ViewSystem();
 	bool mouse_button_down(InputState * input_state);
 	bool mouse_button_up(InputState * input_state);
@@ -122,8 +129,8 @@ public:
 
 	
 	// paramètres en entrée
+	ScreenGL * _screengl;
 	float _frustum_near, _frustum_far, _frustum_halfsize;
-	unsigned int _screen_width, _screen_height;
 	glm::vec3 _target;
 	float _free_view_x, _free_view_y;
 
@@ -141,6 +148,8 @@ public:
 	ViewSystemType _type;
 	
 	Repere * _repere;
+
+	Font * _font;
 	
 	RectSelect * _rect_select;
 	bool _new_single_selection;

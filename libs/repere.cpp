@@ -26,29 +26,29 @@ Repere::Repere(GLuint prog_draw) : _prog_draw(prog_draw), _is_repere(true), _is_
 	
 	float EPS= 0.01f;
 	float data_ground[]= {
-		-REPERE_GROUND, -REPERE_GROUND, -EPS, 0.0f, 0.0f, 0.0f,
-		 REPERE_GROUND, -REPERE_GROUND, -EPS, 0.0f, 0.0f, 0.0f,
-		 REPERE_GROUND,  REPERE_GROUND, -EPS, 0.0f, 0.0f, 0.0f,
-		-REPERE_GROUND, -REPERE_GROUND, -EPS, 0.0f, 0.0f, 0.0f,
-		 REPERE_GROUND,  REPERE_GROUND, -EPS, 0.0f, 0.0f, 0.0f,
-		-REPERE_GROUND,  REPERE_GROUND, -EPS, 0.0f, 0.0f, 0.0f
+		-REPERE_GROUND, -REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2],
+		 REPERE_GROUND, -REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2],
+		 REPERE_GROUND,  REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2],
+		-REPERE_GROUND, -REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2],
+		 REPERE_GROUND,  REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2],
+		-REPERE_GROUND,  REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2]
 	};
 
 	float data_box[]= {
-		-REPERE_BOX, -REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  REPERE_BOX, -REPERE_BOX, -REPERE_BOX , 0.0f, 0.0f, 0.0f,
-		REPERE_BOX, -REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  REPERE_BOX, REPERE_BOX, -REPERE_BOX , 0.0f, 0.0f, 0.0f,
-		REPERE_BOX, REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  -REPERE_BOX, REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  
-		-REPERE_BOX, REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  -REPERE_BOX, -REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,
+		-REPERE_BOX, -REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, -REPERE_BOX, -REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
+		REPERE_BOX, -REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, REPERE_BOX, -REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
+		REPERE_BOX, REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
+		-REPERE_BOX, REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, -REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
 
-		-REPERE_BOX, -REPERE_BOX, REPERE_BOX, 0.0f, 0.0f, 0.0f,  REPERE_BOX, -REPERE_BOX, REPERE_BOX , 0.0f, 0.0f, 0.0f,
-		REPERE_BOX, -REPERE_BOX, REPERE_BOX, 0.0f, 0.0f, 0.0f,  REPERE_BOX, REPERE_BOX, REPERE_BOX , 0.0f, 0.0f, 0.0f,
-		REPERE_BOX, REPERE_BOX, REPERE_BOX, 0.0f, 0.0f, 0.0f,  -REPERE_BOX, REPERE_BOX, REPERE_BOX, 0.0f, 0.0f, 0.0f,  
-		-REPERE_BOX, REPERE_BOX, REPERE_BOX, 0.0f, 0.0f, 0.0f,  -REPERE_BOX, -REPERE_BOX, REPERE_BOX, 0.0f, 0.0f, 0.0f,
+		-REPERE_BOX, -REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, -REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
+		REPERE_BOX, -REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
+		REPERE_BOX, REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
+		-REPERE_BOX, REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, -REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
 		
-		-REPERE_BOX, -REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  -REPERE_BOX, -REPERE_BOX, REPERE_BOX , 0.0f, 0.0f, 0.0f,
-		REPERE_BOX, -REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  REPERE_BOX, -REPERE_BOX, REPERE_BOX , 0.0f, 0.0f, 0.0f,
-		-REPERE_BOX, REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  -REPERE_BOX, REPERE_BOX, REPERE_BOX , 0.0f, 0.0f, 0.0f,
-		REPERE_BOX, REPERE_BOX, -REPERE_BOX, 0.0f, 0.0f, 0.0f,  REPERE_BOX, REPERE_BOX, REPERE_BOX , 0.0f, 0.0f, 0.0f
+		-REPERE_BOX, -REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, -REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
+		REPERE_BOX, -REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, -REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
+		-REPERE_BOX, REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
+		REPERE_BOX, REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2]
 	};
 
 	glGenBuffers(3, _buffers);
@@ -233,24 +233,29 @@ ViewSystem::ViewSystem() {
 }
 
 
-ViewSystem::ViewSystem(GLuint prog_repere, GLuint prog_select, unsigned int screen_width, unsigned int screen_height) :
+ViewSystem::ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl) :
+	_screengl(screengl),
 	_target(glm::vec3(0.0f, 0.0f, 0.0f)), _eye(glm::vec3(0.0f, 0.0f, 0.0f)), _up(glm::vec3(0.0f, 0.0f, 0.0f)), 
-	_phi(0.0f), _theta(0.0f), _rho(1.0f), _screen_width(screen_width), _screen_height(screen_height),
+	_phi(0.0f), _theta(0.0f), _rho(1.0f),
 	_type(FREE_VIEW), _frustum_halfsize(FRUSTUM_HALFSIZE), _frustum_near(FRUSTUM_NEAR), _frustum_far(FRUSTUM_FAR),
 	_new_single_selection(false), _new_rect_selection(false), _new_destination(false), _free_view_x(0.0f), _free_view_y(0.0f)
 {
-	_camera2clip= glm::frustum(-_frustum_halfsize* (float)(_screen_width)/ (float)(_screen_height), _frustum_halfsize* (float)(_screen_width)/ (float)(_screen_height), -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
+	_camera2clip= glm::frustum(-_frustum_halfsize* (float)(_screengl->_screen_width)/ (float)(_screengl->_screen_height), _frustum_halfsize* (float)(_screengl->_screen_width)/ (float)(_screengl->_screen_height), -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
 
 	update();
 
-	_repere= new Repere(prog_repere);
-	_rect_select= new RectSelect(prog_select);
+	_repere= new Repere(progs["repere"]);
+	_rect_select= new RectSelect(progs["select"]);
+
+	_font= new Font(progs["font"], "../../fonts/Silom.ttf", 48, screengl);
+	//_font->_z= 100.0f;
 }
 
 
 ViewSystem::~ViewSystem() {
 	delete _repere;
 	delete _rect_select;
+	delete _font;
 }
 
 
@@ -418,8 +423,8 @@ void ViewSystem::update() {
 	_center_far = _eye+ _frustum_far * _dir;
 	_norm_near= _dir;
 	_norm_far= -_dir;
-	_norm_right= glm::cross(_up, glm::normalize(_center_near- _eye+ _right* _frustum_halfsize* (float)(_screen_width)/ (float)(_screen_height)));
-	_norm_left = glm::cross(glm::normalize(_center_near- _eye- _right* _frustum_halfsize* (float)(_screen_width)/ (float)(_screen_height)), _up);
+	_norm_right= glm::cross(_up, glm::normalize(_center_near- _eye+ _right* _frustum_halfsize* (float)(_screengl->_screen_width)/ (float)(_screengl->_screen_height)));
+	_norm_left = glm::cross(glm::normalize(_center_near- _eye- _right* _frustum_halfsize* (float)(_screengl->_screen_width)/ (float)(_screengl->_screen_height)), _up);
 	_norm_top= glm::cross(glm::normalize(_center_near- _eye+ _up* _frustum_halfsize), _right);
 	_norm_bottom= glm::cross(_right, glm::normalize(_center_near- _eye- _up* _frustum_halfsize));
 }
@@ -451,7 +456,7 @@ void ViewSystem::move_target(int screen_delta_x, int screen_delta_y, float z) {
 	Ici il y a une meilleure corrélation entre mouvement curseur et translation terrain
 	A terme fournir en argument optionnel un Terrain afin de s'ajuster à un relief plus complexe que z = 0
 	*/
-	glm::vec2 v= screen2world(_screen_width*0.5- screen_delta_x, _screen_height*0.5- screen_delta_y, z);
+	glm::vec2 v= screen2world(_screengl->_screen_width* 0.5- screen_delta_x, _screengl->_screen_height* 0.5- screen_delta_y, z);
 	_target.x= v.x;
 	_target.y= v.y;
 	update();
@@ -495,6 +500,11 @@ void ViewSystem::move_rho(float x) {
 void ViewSystem::draw() {
 	_repere->draw(_world2clip);
 	_rect_select->draw();
+
+	std::vector<Text> texts;
+	texts.push_back(Text("hello", glm::vec2(0.0f, 0.0f), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	_font->set_text(texts);
+	_font->draw();
 }
 
 
@@ -556,15 +566,15 @@ glm::vec2 ViewSystem::screen2world(glm::vec2 gl_coords, float z) {
 
 glm::vec2 ViewSystem::screen2gl(unsigned int x, unsigned int y) {
 	// les coords OpenGL sont [-1, 1] x [-1, 1]
-	float x_gl= 2.0f* (float)(x)/ (float)(_screen_width)- 1.0f;
-	float y_gl= 1.0f- 2.0f* (float)(y)/ (float)(_screen_height);
+	float x_gl= 2.0f* (float)(x)/ (float)(_screengl->_screen_width)- 1.0f;
+	float y_gl= 1.0f- 2.0f* (float)(y)/ (float)(_screengl->_screen_height);
 	return glm::vec2(x_gl, y_gl);
 }
 
 
 glm::uvec2 ViewSystem::gl2screen(glm::vec2 gl_coords) {
-	unsigned int x= (unsigned int)((gl_coords.x+ 1.0f)* (float)(_screen_width)* 0.5f);
-	unsigned int y= (unsigned int)((1.0f- gl_coords.y)* (float)(_screen_height)* 0.5f);
+	unsigned int x= (unsigned int)((gl_coords.x+ 1.0f)* (float)(_screengl->_screen_width)* 0.5f);
+	unsigned int y= (unsigned int)((1.0f- gl_coords.y)* (float)(_screengl->_screen_height)* 0.5f);
 	return glm::vec2(x, y);
 }
 
@@ -722,7 +732,7 @@ bool ViewSystem::single_selection_intersects_aabb(AABB * aabb) {
 	glm::uvec2 screen_coords= gl2screen(_rect_select->_gl_origin);
 	float buffer_depth;
 	// attention au height- y
-	glReadPixels(screen_coords.x, _screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
+	glReadPixels(screen_coords.x, _screengl->_screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
 	float world_depth= depthbuffer2world(buffer_depth);
 	if (abs(abs(world_depth)- t_hit)< 40.0f) {
 		return true;
@@ -742,7 +752,7 @@ bool ViewSystem::rect_selection_intersects_bbox(BBox * bbox) {
 	glm::uvec2 screen_coords= gl2screen(glm::vec2(v.x/ v.w, v.y/ v.w));
 	float buffer_depth;
 	// attention au height- y
-	glReadPixels(screen_coords.x, _screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
+	glReadPixels(screen_coords.x, _screengl->_screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
 	float world_depth= depthbuffer2world(buffer_depth);
 	float t_hit= glm::distance(center, _eye);
 	if (abs(abs(world_depth)- t_hit)< 40.0f) {

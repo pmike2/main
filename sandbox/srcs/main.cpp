@@ -1,38 +1,34 @@
 
 #include <iostream>
+
 #include <OpenGL/gl3.h>
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 
 #include "repere.h"
 #include "utile.h"
 #include "gl_utils.h"
 #include "input_state.h"
 
-// en ms; temps entre 2 anims
-const unsigned int DELTA_ANIM= 1;
 
 // dimensions écran
 const int MAIN_WIN_WIDTH= 1280;
 const int MAIN_WIN_HEIGHT= 1024;
-const float MAIN_BCK[]= {0.2f, 0.2f, 0.2f, 1.0f};
+const float GL_WIDTH= 15.0f;
+const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDTH);
 
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
 InputState * input_state;
+ViewSystem * view_system;
+ScreenGL * screengl;
 
 bool done= false;
-float bck_factor= 1.0f;
 
 unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+unsigned int tikfps1, tikfps2;
 
-GLuint prog_repere, prog_select;
 GLuint g_vao;
-
-ViewSystem * view_system;
-
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
@@ -62,7 +58,6 @@ void mouse_button_down(int x, int y, unsigned short button) {
 	if (view_system->mouse_button_down(input_state)) {
 		return;
 	}
-
 }
 
 
@@ -76,7 +71,6 @@ void key_down(SDL_Keycode key) {
 	if (view_system->key_down(input_state, key)) {
 		return;
 	}
-
 }
 
 
@@ -107,15 +101,8 @@ void init() {
 
 	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
 	
-	/*int x= 0;
-	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &x); // 2048
-	std::cout << x << "\n";*/
-
 	SDL_GL_SetSwapInterval(1);
-	// meme couleur que le brouillard
-	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
 	glClearDepth(1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LESS);
@@ -131,8 +118,6 @@ void init() {
 	// pour gérer l'alpha
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glPointSize(2.0f);
 	
 	SDL_GL_SwapWindow(window);
 	
@@ -146,14 +131,18 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_repere= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
-	prog_select= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
+	std::map<std::string, GLuint> progs;
+	progs["repere"]= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
+	progs["select"]= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
+	progs["font"]= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
+
+	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	
 	// --------------------------------------------------------------------------
-	view_system= new ViewSystem(prog_repere, prog_select, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	view_system->_repere->_is_ground= false;
+	view_system= new ViewSystem(progs, screengl);
+	view_system->_repere->_is_ground= true;
 	view_system->_repere->_is_repere= true;
 	view_system->_repere->_is_box= true;
 	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 1.0f, 200.0f);
@@ -166,7 +155,7 @@ void init() {
 void draw() {
 	compt_fps++;
 
-	glClearColor(MAIN_BCK[0]* bck_factor, MAIN_BCK[1]* bck_factor, MAIN_BCK[2]* bck_factor, MAIN_BCK[3]);
+	glClearColor(0.1, 0.1, 0.1, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->draw();
@@ -176,12 +165,6 @@ void draw() {
 
 
 void anim() {
-	tikanim2= SDL_GetTicks();
-	int tikanim_delta= tikanim2- tikanim1;
-	if (tikanim_delta< DELTA_ANIM)
-		return;
-	
-	tikanim1= SDL_GetTicks();
 }
 
 
