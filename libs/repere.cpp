@@ -501,10 +501,11 @@ void ViewSystem::draw() {
 	_repere->draw(_world2clip);
 	_rect_select->draw();
 
-	std::vector<Text> texts;
+	// TODO : afficher des infos relatives à ViewSystem
+	/*std::vector<Text> texts;
 	texts.push_back(Text("hello", glm::vec2(0.0f, 0.0f), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	_font->set_text(texts);
-	_font->draw();
+	_font->draw();*/
 }
 
 

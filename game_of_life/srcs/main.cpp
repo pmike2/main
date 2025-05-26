@@ -5,10 +5,11 @@
 
 #include <SDL2/SDL.h>
 
-#include "repere.h"
 #include "utile.h"
 #include "gl_utils.h"
 #include "input_state.h"
+
+#include "gol.h"
 
 
 // dimensions écran
@@ -20,32 +21,22 @@ const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDT
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
 InputState * input_state;
-ViewSystem * view_system;
 ScreenGL * screengl;
 
 bool done= false;
 
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2;
+unsigned int val_fps, compt_fps, tikfps1, tikfps2;
 
 GLuint g_vao;
+
+GOL * gol;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (view_system->mouse_motion(input_state)) {
-		//return;
-	}
-}
-
-
-void mouse_button_up(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
-	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
-
-	if (view_system->mouse_button_up(input_state)) {
+	if (gol->mouse_motion()) {
 		return;
 	}
 }
@@ -55,7 +46,7 @@ void mouse_button_down(int x, int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (view_system->mouse_button_down(input_state)) {
+	if (gol->mouse_button_down()) {
 		return;
 	}
 }
@@ -68,7 +59,7 @@ void key_down(SDL_Keycode key) {
 		done= true;
 	}
 
-	if (view_system->key_down(input_state, key)) {
+	if (gol->key_down(key)) {
 		return;
 	}
 }
@@ -76,10 +67,6 @@ void key_down(SDL_Keycode key) {
 
 void key_up(SDL_Keycode key) {
 	input_state->key_up(key);
-
-	if (view_system->key_up(input_state, key)) {
-		return;
-	}
 }
 
 
@@ -118,6 +105,8 @@ void init() {
 	// pour gérer l'alpha
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	glClearColor(0.1, 0.1, 0.1, 1.0);
 	
 	SDL_GL_SwapWindow(window);
 	
@@ -132,39 +121,30 @@ void init() {
 	glBindVertexArray(g_vao);
 
 	std::map<std::string, GLuint> progs;
-	progs["repere"]= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
-	progs["select"]= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
-	progs["font"]= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
+	progs["simple"]= create_prog("../shaders/vertexshader_simple.txt", "../shaders/fragmentshader_simple.txt");
 
 	check_gl_error();
 
 	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-	
-	// --------------------------------------------------------------------------
-	view_system= new ViewSystem(progs, screengl);
-	view_system->_repere->_is_ground= true;
-	view_system->_repere->_is_repere= true;
-	view_system->_repere->_is_box= true;
-	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), -1.0f* M_PI_2, 0.0f, 200.0f);
-
-	// --------------------------------------------------------------------------
 	input_state= new InputState();
+	time_point now= std::chrono::system_clock::now();
+	gol= new GOL(progs, screengl, input_state, now);
 }
 
 
 void draw() {
 	compt_fps++;
 
-	glClearColor(0.1, 0.1, 0.1, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	view_system->draw();
+	gol->draw();
 
 	SDL_GL_SwapWindow(window);
 }
 
 
-void anim() {
+void anim(time_point t) {
+	gol->anim(t);
 }
 
 
@@ -182,8 +162,8 @@ void compute_fps() {
 }
 
 
-void idle() {
-	anim();
+void idle(time_point t) {
+	anim(t);
 	draw();
 	compute_fps();
 }
@@ -193,16 +173,14 @@ void main_loop() {
 	SDL_Event event;
 	
 	while (!done) {
+		time_point now= std::chrono::system_clock::now();
+
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				case SDL_MOUSEMOTION:
 					mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
 					break;
-					
-				case SDL_MOUSEBUTTONUP:
-					mouse_button_up(event.button.x, event.button.y, event.button.button);
-					break;
-					
+
 				case SDL_MOUSEBUTTONDOWN:
 					mouse_button_down(event.button.x, event.button.y, event.button.button);
 					break;
@@ -223,14 +201,15 @@ void main_loop() {
 					break;
 			}
 		}
-		idle();
+		idle(now);
 	}
 }
 
 
 void clean() {
-	delete view_system;
+	delete gol;
 	delete input_state;
+	delete screengl;
 
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
