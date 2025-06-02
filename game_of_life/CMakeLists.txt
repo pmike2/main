@@ -24,12 +24,20 @@ add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h
 add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
 add_library(lib_font STATIC ../libs/font.cpp ../libs/font.h)
 
+add_library(lib_grid STATIC ../srcs/grid.cpp ../srcs/grid.h)
 add_library(lib_gol STATIC ../srcs/gol.cpp ../srcs/gol.h)
+add_library(lib_turmite STATIC ../srcs/turmite.cpp ../srcs/turmite.h)
 
-add_executable(main ./srcs/main.cpp)
+add_executable(main_gol ./srcs/main_gol.cpp)
+add_executable(main_turmite ./srcs/main_turmite.cpp)
 
 set(EXT_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
-set(LOCAL_LIBS lib_gl_utils lib_utile lib_input_state lib_bbox_2d lib_font lib_gol)
+set(LOCAL_LIBS lib_gl_utils lib_utile lib_input_state lib_bbox_2d lib_font lib_grid)
  
-target_link_libraries(main PUBLIC ${EXT_LIBS})
-target_link_libraries(main PUBLIC ${LOCAL_LIBS})
+target_link_libraries(main_gol PUBLIC ${EXT_LIBS})
+target_link_libraries(main_gol PUBLIC ${LOCAL_LIBS})
+target_link_libraries(main_gol PUBLIC lib_gol)
+
+target_link_libraries(main_turmite PUBLIC ${EXT_LIBS})
+target_link_libraries(main_turmite PUBLIC ${LOCAL_LIBS})
+target_link_libraries(main_turmite PUBLIC lib_turmite)
