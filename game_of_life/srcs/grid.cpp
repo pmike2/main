@@ -7,7 +7,7 @@ Cell::Cell() {
 }
 
 
-Cell::Cell(unsigned int col, unsigned int row) : _col(col), _row(row) {
+Cell::Cell(unsigned int col, unsigned int row) : _col(col), _row(row), _state(0) {
 	_aabb= new AABB_2D();
 }
 

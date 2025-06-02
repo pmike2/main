@@ -55,7 +55,7 @@ Turmite::~Turmite() {
 
 
 void Turmite::next() {
-	Rule r= RULES_1.at(std::make_pair(_state, _current_cell->_state));
+	Rule r= RULES_2.at(std::make_pair(_state, _current_cell->_state));
 	_current_cell->_state= r._write_color;
 	_state= r._next_state;
 	_orientation= rotate(_orientation, r._rotation);

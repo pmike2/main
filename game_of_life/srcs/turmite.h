@@ -36,6 +36,13 @@ const std::map<std::pair<unsigned int, unsigned int>, Rule> RULES_1 {
 	{std::make_pair(1, 1), {0, NO_TURN, 1}}
 };
 
+const std::map<std::pair<unsigned int, unsigned int>, Rule> RULES_2 {
+	{std::make_pair(0, 0), {1, LEFT, 0}},
+	{std::make_pair(0, 1), {1, RIGHT, 1}},
+	{std::make_pair(1, 0), {0, NO_TURN, 0}},
+	{std::make_pair(1, 1), {0, NO_TURN, 1}}
+};
+
 
 Orientation rotate(Orientation orientation, Rotation r);
 
