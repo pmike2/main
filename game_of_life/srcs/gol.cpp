@@ -43,8 +43,11 @@ GOL::GOL() {
 
 
 GOL::GOL(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, time_point t) :
-	Grid(GOL_CELL_STATES, progs, screengl, input_state, t)
+	Grid(progs, screengl, input_state, t)
 {
+	
+	set_cell_states(GOL_CELL_STATES);
+
 	for (unsigned int row=0; row<_height; ++row) {
 		for (unsigned int col=0; col<_width; ++col) {
 			GolCell * cell= new GolCell(col, row);
@@ -101,9 +104,21 @@ void GOL::anim(time_point t) {
 }
 
 
+void GOL::randomize() {
+	for (auto cell : _cells) {
+		cell->_state= rand_int(0, _cell_states.size()- 1);
+	}
+}
+
+
 bool GOL::key_down(SDL_Keycode key) {
 	if (key== SDLK_n) {
 		next();
+		update_cell();
+		return true;
+	}
+	else if (key== SDLK_r) {
+		randomize();
 		update_cell();
 		return true;
 	}

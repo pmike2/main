@@ -18,9 +18,9 @@
 #include "input_state.h"
 
 
-const unsigned int DEFAULT_WIDTH= 200;
-const unsigned int DEFAULT_HEIGHT= 200;
-const number DEFAULT_CELL_SIZE= 0.05;
+const unsigned int DEFAULT_WIDTH= 100;
+const unsigned int DEFAULT_HEIGHT= 100;
+const number DEFAULT_CELL_SIZE= 0.10;
 const number DEFAULT_CELL_MARGIN= 0.0;
 const float Z_NEAR= 0.0f;
 const float Z_FAR= 1000.0f;
@@ -47,12 +47,12 @@ public:
 class Grid {
 public:
 	Grid();
-	Grid(std::map<unsigned int, glm::vec4> cell_states, std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, time_point t);
+	Grid(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, time_point t);
 	~Grid();
 
+	void set_cell_states(std::map<unsigned int, glm::vec4> cell_states);
 	Cell * get_cell(unsigned int col, unsigned int row);
 	pt_type idx2pt(unsigned int col, unsigned int row);
-	void randomize();
 	void clear();
 
 	void draw_cell();

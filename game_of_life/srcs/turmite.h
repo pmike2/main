@@ -19,32 +19,21 @@
 enum Rotation {LEFT, RIGHT, NO_TURN, U_TURN};
 enum Orientation {NORTH, SOUTH, EAST, WEST};
 
-const std::map<unsigned int, glm::vec4> TURMITE_CELL_STATES {{0, glm::vec4(0.0, 0.0, 0.0, 1.0)}, {1, glm::vec4(0.8, 0.5, 0.0, 1.0)}};
+const int N_MACHINE_STATES_MIN= 2;
+const int N_MACHINE_STATES_MAX= 10;
+const int N_CELL_STATES_MIN= 2;
+const int N_CELL_STATES_MAX= 10;
+
+Orientation rotate(Orientation orientation, Rotation r);
+Orientation rand_orientation();
+Rotation rand_rotation();
+
 
 struct Rule {
 	unsigned int _write_color;
 	Rotation _rotation;
-	unsigned int _next_state;
+	unsigned int _next_machine_state;
 };
-
-
-// 1ere valeur = état machine ; 2emme valeur = couleur case courante
-const std::map<std::pair<unsigned int, unsigned int>, Rule> RULES_1 {
-	{std::make_pair(0, 0), {1, RIGHT, 0}},
-	{std::make_pair(0, 1), {1, RIGHT, 1}},
-	{std::make_pair(1, 0), {0, NO_TURN, 0}},
-	{std::make_pair(1, 1), {0, NO_TURN, 1}}
-};
-
-const std::map<std::pair<unsigned int, unsigned int>, Rule> RULES_2 {
-	{std::make_pair(0, 0), {1, LEFT, 0}},
-	{std::make_pair(0, 1), {1, RIGHT, 1}},
-	{std::make_pair(1, 0), {0, NO_TURN, 0}},
-	{std::make_pair(1, 1), {0, NO_TURN, 1}}
-};
-
-
-Orientation rotate(Orientation orientation, Rotation r);
 
 
 class Turmite : public Grid {
@@ -54,14 +43,18 @@ public:
 	~Turmite();
 	void next();
 	void anim(time_point t);
+	void randomize();
 	bool key_down(SDL_Keycode key);
 	bool mouse_button_down();
 	bool mouse_motion();
 
 
-	unsigned int _state;
+	unsigned int _n_machine_states;
+	unsigned int _n_cell_states;
+	unsigned int _current_machine_state;
 	Cell * _current_cell;
 	Orientation _orientation;
+	Rule * _rules;
 };
 
 #endif

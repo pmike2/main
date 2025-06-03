@@ -23,10 +23,10 @@ Grid::Grid() {
 }
 
 
-Grid::Grid(std::map<unsigned int, glm::vec4> cell_states, std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, time_point t) :
-	_cell_states(cell_states), _width(DEFAULT_WIDTH), _height(DEFAULT_HEIGHT), _cell_size(DEFAULT_CELL_SIZE), 
+Grid::Grid(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, time_point t) :
+	_width(DEFAULT_WIDTH), _height(DEFAULT_HEIGHT), _cell_size(DEFAULT_CELL_SIZE), 
 	_cell_margin(DEFAULT_CELL_MARGIN), _delta_anim(DEFAULT_DELTA_ANIM), _last_anim(t), _screengl(screengl), 
-	_input_state(input_state), _draw_grid(true), _anim(false)
+	_input_state(input_state), _draw_grid(false), _anim(true)
 {
 	_camera2clip= glm::ortho(float(-_screengl->_gl_width)* 0.5f, float(_screengl->_gl_width)* 0.5f, -float(_screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::translate(glm::mat4(1.0f), glm::vec3(-0.5* _screengl->_gl_width+ 1.0, -0.5* _screengl->_gl_height+ 1.0, 0.0));
@@ -62,6 +62,11 @@ Grid::~Grid() {
 }
 
 
+void Grid::set_cell_states(std::map<unsigned int, glm::vec4> cell_states) {
+	_cell_states= cell_states;
+}
+
+
 Cell * Grid::get_cell(unsigned int col, unsigned int row) {
 	unsigned int idx= _width* row+ col;
 	return _cells[idx];
@@ -70,13 +75,6 @@ Cell * Grid::get_cell(unsigned int col, unsigned int row) {
 
 pt_type Grid::idx2pt(unsigned int col, unsigned int row) {
 	return pt_type(col* _cell_size, row* _cell_size);
-}
-
-
-void Grid::randomize() {
-	for (auto cell : _cells) {
-		cell->_state= rand_int(0, _cell_states.size()- 1);
-	}
 }
 
 
@@ -208,11 +206,6 @@ bool Grid::key_down(SDL_Keycode key) {
 	}
 	else if (key== SDLK_SPACE) {
 		_anim= !_anim;
-		return true;
-	}
-	else if (key== SDLK_r) {
-		randomize();
-		update_cell();
 		return true;
 	}
 	else if (key== SDLK_c) {

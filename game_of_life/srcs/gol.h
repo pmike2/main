@@ -36,6 +36,7 @@ public:
 	~GOL();
 	void next();
 	void anim(time_point t);
+	void randomize();
 	bool key_down(SDL_Keycode key);
 	void click_cell();
 	bool mouse_button_down();
