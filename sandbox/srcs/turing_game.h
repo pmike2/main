@@ -2,25 +2,28 @@
 #ifndef TURING_GAME
 #define TURING_GAME
 
-typedef unsigned int (*TEST_TYPE)(unsigned int *);
+#include <vector>
 
-const unsigned int VSIZE= 3;
-const unsigned int NVALUES= 5;
-const unsigned int NTESTS= 3;
-const unsigned int NPOSSIBLESV= pow(NVALUES, VSIZE);
+using uint = uint;
 
-unsigned int v2val(unsigned int *v);
-void val2v(unsigned int val, unsigned int *v);
+typedef uint (*TEST_TYPE)(std::vector<uint>);
 
-unsigned int f1(unsigned int *v);
-unsigned int f2(unsigned int *v);
-unsigned int f3(unsigned int *v);
+const uint VSIZE= 3;
+const uint NVALUES= 5;
+const uint NTESTS= 3;
+const uint NPOSSIBLESV= pow(NVALUES, VSIZE);
 
-//const unsigned int (*(tests[NTESTS]))(unsigned int *) = {f1, f2, f3};
+uint v2val(std::vector<uint> v);
+std::vector<uint> val2v(uint val);
+
+uint f1(std::vector<uint>);
+uint f2(std::vector<uint>);
+uint f3(std::vector<uint>);
+
 const TEST_TYPE TESTS[3]= {&f1, &f2, &f3};
 
-void compute_values(unsigned int *values);
-void tests_list(unsigned int n_tests, unsigned int *tests_idx, unsigned int *v);
+std::vector<std::vector<uint> > compute_values();
+void tests_list(std::vector<uint> tests_idx, std::vector<uint> v);
 void gen_game();
 
 #endif
