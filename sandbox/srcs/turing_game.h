@@ -19,7 +19,7 @@ unsigned int f3(unsigned int *v);
 //const unsigned int (*(tests[NTESTS]))(unsigned int *) = {f1, f2, f3};
 const TEST_TYPE TESTS[3]= {&f1, &f2, &f3};
 
-void compute_values(unsigned int **values);
+void compute_values(unsigned int *values);
 void tests_list(unsigned int n_tests, unsigned int *tests_idx, unsigned int *v);
 void gen_game();
 

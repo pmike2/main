@@ -62,7 +62,7 @@ unsigned int f3(unsigned int *v) {
 }
 
 
-void compute_values(unsigned int **values) {
+void compute_values(unsigned int *values) {
 	unsigned int v[VSIZE];
 	for (unsigned int idx_test=0; idx_test<NTESTS; ++idx_test) {
 		for (unsigned int idx_v=0; idx_v<NPOSSIBLESV; ++idx_v) {
@@ -78,7 +78,7 @@ void compute_values(unsigned int **values) {
 void tests_list(unsigned int n_tests, unsigned int *tests_idx, unsigned int *v) {
 	unsigned int values[NPOSSIBLESV][NTESTS];
 	std::cout << "ok\n";
-	compute_values(values);
+	compute_values((unsigned int *)values);
 	bool v_unique= true;
 	for (unsigned int idx_test=0; idx_test<n_tests; ++idx_test) {
 		bool ok= true;
