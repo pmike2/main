@@ -11,9 +11,10 @@ include_directories(/usr/local/include)
 include_directories(../libs)
 
 add_library(lib_utile STATIC ../libs/utile.cpp ../libs/utile.h)
+add_library(lib_turing STATIC ../srcs/turing_game.cpp ../srcs/turing_game.h)
 
 add_executable(main ./srcs/main.cpp)
 
-set(LOCAL_LIBS lib_utile)
+set(LOCAL_LIBS lib_utile lib_turing)
  
 target_link_libraries(main PUBLIC ${LOCAL_LIBS})
