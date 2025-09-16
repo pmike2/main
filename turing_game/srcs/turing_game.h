@@ -45,8 +45,8 @@ const std::vector<test_function_ptr> TESTS {&v0eq0, &v0eq2, &v1eq2, &v1eq3, &v0m
 
 const std::vector<std::string> TESTS_DOCS {"V0 == 0 ou > 0", "V0 < 2 ou == 2 ou > 2", "V1 < 2 ou == 2 ou > 2",
 	"V1 < 3 ou == 3 ou > 3", "V0 % 2 == 0 ou == 1", "V1 % 2 == 0 ou == 1", "V2 % 2 == 0 ou == 1", "n1 == 0 ou 1 ou 2 ou 3", 
-	"n3 == 0 ou 1 ou 2 ou 3", "n4 == 0 ou 1 ou 2 ou 3", "v0 < v1 ou v0 == v1 ou v0 > v1", "v0 < v2 ou v0 == v2 ou v0 > v2",
-	"V1 < V2 ou V1 == V2 ou V1 > V2", "npairs < nimpairs ou npairs > nimpairs", "npairs == 0 ou npairs == 1 ou npairs == 2",
+	"n3 == 0 ou 1 ou 2 ou 3", "n4 == 0 ou 1 ou 2 ou 3", "V0 < V1 ou V0 == V1 ou V0 > V1", "V0 < V2 ou V0 == V2 ou V0 > V2",
+	"V1 < V2 ou V1 == V2 ou V1 > V2", "npairs < nimpairs ou npairs > nimpairs", "npairs == 0 ou == 1 ou == 2 ou == 3",
 	"sum paire ou sum impaire", "V0 + V1 < 6 ou V0 + V1 == 6 ou V0 + V1 > 6", "nidentiques == 0 ou == 1 ou == 2 ou == 3",
 	"existe (2 ou +) identiques ou non", "V0 + V1 + V2 < 6 ou == 6 ou > 6", "suite croissante de 3 ou de 2 ou non",
 	"suite croissante ou décroissante de 3 ou de 2 ou non"};
@@ -54,6 +54,7 @@ const std::vector<std::string> TESTS_DOCS {"V0 == 0 ou > 0", "V0 < 2 ou == 2 ou 
 const uint VSIZE= 3;
 const uint NVALUES= 5;
 const uint NPOSSIBLESV= pow(NVALUES, VSIZE);
+const uint N_FILTERS= 4;
 const uint N_FILTERS_PER_PROPOSITION= 3;
 const std::string ALPHABET= "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 

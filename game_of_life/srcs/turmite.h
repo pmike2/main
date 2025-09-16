@@ -20,9 +20,9 @@ enum Rotation {LEFT, RIGHT, NO_TURN, U_TURN};
 enum Orientation {NORTH, SOUTH, EAST, WEST};
 
 const int N_MACHINE_STATES_MIN= 2;
-const int N_MACHINE_STATES_MAX= 10;
+const int N_MACHINE_STATES_MAX= 2;
 const int N_CELL_STATES_MIN= 2;
-const int N_CELL_STATES_MAX= 10;
+const int N_CELL_STATES_MAX= 2;
 
 Orientation rotate(Orientation orientation, Rotation r);
 Orientation rand_orientation();

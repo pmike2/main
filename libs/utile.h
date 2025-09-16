@@ -63,4 +63,26 @@ std::string glm_to_string(pt_type v);
 
 std::string get_cmd_output(std::string cmd);
 
+
+template <typename T> void dfs(std::vector<T> & main_set, int i, std::vector<std::vector<T>> & res, std::vector<T> & subset) {
+	if (i == main_set.size()) {
+		res.push_back(subset);
+		return;
+	}
+
+	subset.push_back(main_set[i]);
+	dfs(main_set, i+ 1, res, subset);
+	subset.pop_back();
+	dfs(main_set, i+ 1, res, subset);
+}
+
+
+template <typename T> std::vector<std::vector<T> > subsets(std::vector<T> & main_set) {
+	std::vector<T> subset;
+	std::vector<std::vector<T>> res;
+	dfs(main_set, 0, res, subset);
+	return res;
+}
+
+
 #endif

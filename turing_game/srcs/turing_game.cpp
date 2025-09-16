@@ -393,34 +393,21 @@ bool tests_filters_unique_solution(enigma * e) {
 bool tests_filters_all_filters_needed(enigma * e) {
 	enigma * e2= new enigma;
 
-	for (auto test_idx : e->_tests_idx) {
+	// tous les sous-ensembles d'indices possibles
+	std::vector<std::vector<uint> > tests_idx_subsets= subsets<uint>(e->_tests_idx);
+	for (auto subset : tests_idx_subsets) {
+		// on ignore l'ensemble vide et l'ensemble total
+		if (subset.size()== 0 || subset.size()== e->_tests_idx.size()) {
+			continue;
+		}
+
 		e2->_tests_idx.clear();
-		e2->_tests_idx.push_back(test_idx);
+		for (auto test_idx : subset) {
+			e2->_tests_idx.push_back(test_idx);
+		}
 		if (tests_filters_unique_solution(e2)) {
 			return false;
 		}
-	}
-
-	// TODO : comment généraliser à + de 3 tests ?
-	e2->_tests_idx.clear();
-	e2->_tests_idx.push_back(e->_tests_idx[0]);
-	e2->_tests_idx.push_back(e->_tests_idx[1]);
-	if (tests_filters_unique_solution(e2)) {
-		return false;
-	}
-
-	e2->_tests_idx.clear();
-	e2->_tests_idx.push_back(e->_tests_idx[0]);
-	e2->_tests_idx.push_back(e->_tests_idx[2]);
-	if (tests_filters_unique_solution(e2)) {
-		return false;
-	}
-
-	e2->_tests_idx.clear();
-	e2->_tests_idx.push_back(e->_tests_idx[1]);
-	e2->_tests_idx.push_back(e->_tests_idx[2]);
-	if (tests_filters_unique_solution(e2)) {
-		return false;
 	}
 
 	delete e2;
@@ -467,12 +454,11 @@ enigma * find_enigma(uint n_tests) {
 void gen_game() {
 	const bool DEBUG= false;
 
-	uint n_tests= 3;
 	uint n_try= 0;
 	bool stop= false;
 
-	// recherche d'une énigme avec n_tests tests
-	enigma * e= find_enigma(n_tests);
+	// recherche d'une énigme
+	enigma * e= find_enigma(N_FILTERS);
 
 	// affichage des docs des tests
 	std::cout << "\n-----------------\n";
