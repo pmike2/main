@@ -38,10 +38,6 @@ unsigned int tikfps1, tikfps2;
 
 
 
-class 
-
-
-
 
 
 void key_down(SDL_Keycode key, time_point t) {
