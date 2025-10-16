@@ -7,17 +7,20 @@
 #include <cmath>
 
 #include <fftw3.h>
-
 #include "sndfile.h"
+#include "json.hpp"
+
+using json = nlohmann::json;
 
 
 int main() {
 	srand(time(NULL));
 
-	const unsigned int BLOCK_SIZE = 2048;
-	const unsigned int DELTA_OFFSET = 1024;
+	const unsigned int BLOCK_SIZE = 1024;
+	const unsigned int DELTA_OFFSET = 512;
 
-	std::string wav_path = "../data/wav/bcl1.wav";
+	//std::string wav_path = "../data/wav/sine_noise.wav";
+	std::string wav_path = "../data/wav/test.wav";
 	//std::string wav_path = "../data/wav/sine_100.wav";
 	//std::string wav_path = "../data/wav/sine_1000.wav";
 
@@ -28,6 +31,17 @@ int main() {
 		std::cerr << "sf_open erreur " << wav_path << "\n";
 		return 1;
 	}
+
+	std::string json_path = "../data/wav/test.json";
+	std::ofstream ofs(json_path);
+	json js;
+	js["frames"] = info.frames;
+	js["samplerate"] = info.samplerate;
+	js["channels"] = info.channels;
+	js["block_size"] = BLOCK_SIZE;
+	js["delta_offset"] = DELTA_OFFSET;
+	ofs << std::setw(4) << js << "\n";
+	ofs.close();
 
 	double buff[info.channels* info.frames];
 	sf_read_double(file, buff, info.channels* info.frames);
@@ -60,6 +74,8 @@ int main() {
 	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * BLOCK_SIZE);
 	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * BLOCK_SIZE);
 
+	std::system("rm ../data/fft/test*");
+
 	bool done = false;
 	unsigned int offset = 0;
 	while (true) {
@@ -70,7 +86,7 @@ int main() {
 			}
 			double hanning= 0.5* (1.0- cos(2.0* M_PI* (double)(i)/ (double)(BLOCK_SIZE)));
 
-			//in[i][0] = buff_mono[i];
+			//in[i][0] = buff_mono[offset + i];
 			in[i][0] = buff_mono[offset + i] * hanning;
 			in[i][1] = 0.0;
 		}
