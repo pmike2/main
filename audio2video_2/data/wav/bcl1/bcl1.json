@@ -1,0 +1,7 @@
+{
+    "block_size": 1024,
+    "channels": 2,
+    "delta_offset": 512,
+    "frames": 146908,
+    "samplerate": 44100
+}
