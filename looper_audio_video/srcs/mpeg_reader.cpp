@@ -62,7 +62,7 @@ AlphaPolygon::AlphaPolygon() : _fadeout(0.0f), _curve(0.0f), _alpha_max(0.0f), _
 }
 
 
-AlphaPolygon::AlphaPolygon(float * points, unsigned int n_points, float fadeout, float curve, float alpha_max) :
+AlphaPolygon::AlphaPolygon(number * points, unsigned int n_points, float fadeout, float curve, float alpha_max) :
 	_fadeout(fadeout), _curve(curve), _alpha_max(alpha_max), _polygon(Polygon2D())
 {
 	_polygon.set_points(points, n_points, false);
@@ -428,9 +428,9 @@ void MPEGReaders::load_json(json js) {
 			alpha_polygon._fadeout= js_poly["fadeout"].get<float>();
 			alpha_polygon._curve= js_poly["curve"].get<float>();
 			alpha_polygon._alpha_max= js_poly["alpha_max"].get<float>();
-			vector<glm::vec2> points;
+			vector<pt_type> points;
 			for (unsigned int i=0; i<js_poly["polygon"].size(); ++i) {
-				points.push_back(glm::vec2(js_poly["polygon"][i]["x"].get<float>(), js_poly["polygon"][i]["y"].get<float>()));
+				points.push_back(pt_type(js_poly["polygon"][i]["x"].get<float>(), js_poly["polygon"][i]["y"].get<float>()));
 			}
 			alpha_polygon._polygon.set_points(points);
 			alpha_config._polygons.push_back(AlphaPolygon(alpha_polygon));
@@ -554,7 +554,7 @@ void MPEGReaders::randomize() {
 			float ysize= rand_float(0.01f, 0.3f);
 			float xmin= rand_float(0.0f, 1.0f- xsize);
 			float ymin= rand_float(0.0f, 1.0f- ysize);
-			float points[8]= {xmin, ymin, xmin+ xsize, ymin, xmin+ xsize, ymin+ ysize, xmin, ymin+ ysize};
+			number points[8]= {xmin, ymin, xmin+ xsize, ymin, xmin+ xsize, ymin+ ysize, xmin, ymin+ ysize};
 			float fadeout= rand_float(0.0f, 0.1f);
 			float curve= rand_float(1.0f, 5.0f);
 			float alpha_max= rand_float(0.3f, 1.0f);

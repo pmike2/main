@@ -61,7 +61,7 @@ LooperGL::LooperGL(GLuint prog_2d, GLuint prog_font, ScreenGL * screengl) :
 	_color_loc= glGetAttribLocation(_prog_2d, "color_in");
 	glUseProgram(0);
 
-	_camera2clip= glm::ortho(-_screengl->_gl_width* 0.5f, _screengl->_gl_width* 0.5f, -_screengl->_gl_height* 0.5f, _screengl->_gl_height* 0.5f, -1.0f, 1.0f);
+	_camera2clip= glm::ortho(-1.0f * float(_screengl->_gl_width)* 0.5f, float(_screengl->_gl_width)* 0.5f, -1.0f* float(_screengl->_gl_height)* 0.5f, float(_screengl->_gl_height)* 0.5f, -1.0f, 1.0f);
 
 	glGenBuffers(2+ 2* N_TRACKS, _vbos);
 
@@ -72,7 +72,7 @@ LooperGL::LooperGL(GLuint prog_2d, GLuint prog_font, ScreenGL * screengl) :
 		update_vbo_track_data(idx_track);
 	}
 
-	_font= new Font(_prog_font, "../../fonts/Arial.ttf", 96, _screengl, 1+ 2* N_TRACKS);
+	_font= new Font(_prog_font, "../../fonts/Arial.ttf", 96, _screengl);
 	update_text_general();
 	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		update_text_track_info(idx_track);
@@ -323,7 +323,7 @@ void LooperGL::update_text_general() {
 	}
 	texts.push_back(Text("NOSHIFT+", glm::vec2(rect_general._x, rect_general._y+ 0.5f), 0.004f, glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)));
 	texts.push_back(Text("1a9:amp", glm::vec2(rect_general._x, rect_general._y), 0.004f, glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)));
-	_font->set_text_group(0, texts);
+	_font->set_text(texts);
 }
 
 
@@ -338,7 +338,7 @@ void LooperGL::update_text_track_info(unsigned int idx_track) {
 	texts.push_back(Text("H "+ bool2onoff(_tracks[idx_track]->_hold), glm::vec2(rect_track_info._x+ 0.1f, rect_track_info._y+ rect_track_info._h- 0.8f), scale, glm::vec4(1.0f, 0.1f, 0.1f, 0.7f)));
 	texts.push_back(Text("Y "+ bool2onoff(_tracks[idx_track]->_repeat), glm::vec2(rect_track_info._x+ 0.1f, rect_track_info._y+ rect_track_info._h- 1.0f), scale, glm::vec4(1.0f, 0.1f, 0.1f, 0.7f)));
 	texts.push_back(Text("R "+ to_string(_tracks[idx_track]->_ratio_to_master_track.first)+ "/"+ to_string(_tracks[idx_track]->_ratio_to_master_track.second), glm::vec2(rect_track_info._x+ 0.1f, rect_track_info._y+ rect_track_info._h- 1.2f), scale, glm::vec4(1.0f, 0.1f, 0.1f, 0.7f)));
-	_font->set_text_group(1+ idx_track, texts);
+	_font->set_text(texts);
 }
 
 
@@ -352,7 +352,7 @@ void LooperGL::update_text_track_data(unsigned int idx_track) {
 		get_event_rectangle(rect_event, idx_track, idx_event, false);
 		texts.push_back(Text(string(1, _tracks[idx_track]->_events[idx_event]->_data._key), glm::vec2(rect_event._x+ rect_event._w* 0.5f- 0.1f, rect_event._y+ rect_event._h* 0.5f- 0.1f), 0.005f, glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)));
 	}
-	_font->set_text_group(1+ N_TRACKS+ idx_track, texts);
+	_font->set_text(texts);
 }
 
 

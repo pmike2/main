@@ -11,15 +11,16 @@ import numpy as np
 
 FREQ_GROUPS_LIMITS = [100.0, 300.0, 600.0, 1000.0, 2000.0, 3000.0, 7000.0, 50000.0]
 TRANSIENT_THRESHOLD = 0.5
-ENVELOPE_END_RATIO = 0.008
+ENVELOPE_END_RATIO = 0.01
 MIN_DIST_BETWEEN_TRANSIENT = 20
+MIN_MAX_WINDOW = 100
 BAND_COLORS = ["red", "blueviolet", "blue", "darkturquoise", "green", "orange", "olive", "gold"]
 
 
 #root = "../data/wav/sine_100"
 #root = "../data/wav/sine_1000"
 #root = "../data/wav/sine_noise"
-root = "../data/wav/bcl6"
+root = "../data/wav/bcl7"
 
 
 json_path = os.path.join(root, os.path.basename(root) + ".json")
@@ -54,8 +55,14 @@ transients = {}
 for idx_freq, data in enumerate(fft_data_by_freq):
 	transients[idx_freq] = []
 	freq = idx_freq * sample_rate / block_size
-	min_data, max_data = min(data), max(data)
 	for idx in range(n_blocks- 1):
+		window_idx_min = idx - MIN_MAX_WINDOW
+		if window_idx_min < 0:
+			window_idx_min = 0
+		window_idx_max = idx + MIN_MAX_WINDOW
+		if window_idx_max > n_blocks - 1:
+			window_idx_max = n_blocks - 1
+		min_data, max_data = min(data[window_idx_min:window_idx_max]), max(data[window_idx_min:window_idx_max])
 		if data[idx + 1] - data[idx] > (max_data - min_data) * TRANSIENT_THRESHOLD:
 			transients[idx_freq].append(idx + 1)
 

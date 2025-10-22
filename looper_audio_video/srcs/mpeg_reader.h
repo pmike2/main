@@ -10,6 +10,8 @@
 #include "mpeg.h"
 #include "geom_2d.h"
 #include "constantes.h"
+#include "typedefs.h"
+
 
 
 const unsigned int N_MAX_MOVIES= 8;
@@ -30,7 +32,7 @@ public:
 class AlphaPolygon {
 public:
 	AlphaPolygon();
-	AlphaPolygon(float * points, unsigned int n_points, float fadeout, float curve, float alpha_max);
+	AlphaPolygon(number * points, unsigned int n_points, float fadeout, float curve, float alpha_max);
 	AlphaPolygon(const AlphaPolygon & alpha_polygon);
 	~AlphaPolygon();
 
