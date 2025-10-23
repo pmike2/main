@@ -2,10 +2,11 @@
 
 """
 Pour faire fonctionner cs script il faut 
-l'installer dans un env conda
+
+créer un env conda
 activer cet env
+installer pyaudacity
 ouvrir Audacity préférences / Modules -> activé puis redémarrer Audacity
-installer dans l'env pythonosc (https://pypi.org/project/python-osc/)
 
 ref des actions de pyaudacity : https://manual.audacityteam.org/man/scripting_reference.html
 """
@@ -15,11 +16,9 @@ import sys
 
 import time
 import json
+import socket
 
 import pyaudacity as pa
-from pythonosc import udp_client
-from pythonosc import osc_bundle_builder
-from pythonosc import osc_message_builder
 
 
 json_path = "../data/wav/bcl7/bcl7.json"
@@ -40,8 +39,8 @@ time_start = time.time()
 time_end = time_start + float(js["frames"])/ float(js["samplerate"])
 print(f"time_start = {time_start} ; time_end = {time_end}")
 
-client = udp_client.SimpleUDPClient("127.0.0.1", 57111)
-
+connexion_serveur = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+connexion_serveur.connect(("127.0.0.1", 8080))
 
 last_idx_env = -1
 while True:
@@ -54,19 +53,9 @@ while True:
 			continue
 		time_envelope = time_start + float(envelope["block_idx"] * js["delta_offset"]) / float(js["samplerate"])
 		if time_current > time_envelope:
-			#print(envelope["block_idx"])
-			
-			# message simple
-			#client.send_message("/block_idx", envelope["block_idx"])
-			
-			# bundle
-			msg = osc_message_builder.OscMessageBuilder(address="/env")
-			msg.add_arg("idx_freq_group")
-			msg.add_arg(envelope["idx_freq_group"])
-			bundle = osc_bundle_builder.OscBundleBuilder(osc_bundle_builder.IMMEDIATELY)
-			bundle.add_content(msg.build())
-			bundle = bundle.build()
-			client.send(bundle)
+			print(envelope["block_idx"])
+
+			connexion_serveur.send(json.dumps(envelope).encode("utf-8")+ b"|")
 
 			last_idx_env = idx_env
 		else:
