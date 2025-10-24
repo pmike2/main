@@ -54,6 +54,7 @@ io.on('connection', (socket) => {
 	//console.log('a user is connected');
 
 	socket.on('client2server_get_data', () => {
+		console.log("client2server_get_data");
 		let data2send= {};
 
 		let model_path= path.join(__dirname, "./json/video_model.json");
@@ -64,6 +65,7 @@ io.on('connection', (socket) => {
 
 		function walker_func(directory, filename) {
 			const abs_path= path.resolve(directory, filename);
+			//console.log(abs_path);
 			
 			if (filename.split(".").pop()== "json") {
 				const json_data= fs.readFileSync(abs_path, "utf8");

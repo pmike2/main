@@ -243,7 +243,7 @@
 				}
 				
 				let node_id= detail.node_id;
-				//console.log("js_config_changed : "+ node_id);
+				console.log("js_config_changed : "+ node_id);
 
 				let found_regexs= {};
 				for (let key in regex_nodes) {
@@ -301,7 +301,8 @@
 			// --------------------------------------------------------------------------------------------------------------
 			window.onload= function () {
 				socket.on('server2client_data_send', (data) => {
-					//console.log(JSON.stringify(data, null, 4));
+					console.log('server2client_data_send');
+					console.log(JSON.stringify(data, null, 4));
 					let js_configs= {};
 					let js_model= null;
 					let mpegs= [];
@@ -317,8 +318,12 @@
 						}
 					}
 					js_model.path.possible_values= mpegs;
+
+					//console.log(js_model);
+					//console.log(js_configs);
 					
 					config_edit= new ConfigEdit(js_model, js_configs);
+					console.log(config_edit);
 					config_edit.send_event("/");
 				});
 				

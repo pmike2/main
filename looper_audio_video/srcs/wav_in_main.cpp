@@ -56,10 +56,12 @@ void main_loop(int clientSocket) {
         char buffer[3000] = {0};
         recv(clientSocket, buffer, sizeof(buffer), 0);
         if (buffer[0] != 0) {
-			std::cout << "-------------------------------------------\n";
-            std::cout << buffer << "\n";
+			//std::cout << "-------------------------------------------\n";
+            //std::cout << buffer << "\n";
 			wav_in->new_envelope(std::string(buffer));
         }
+
+		wav_in->main_loop();
 	}
 }
 

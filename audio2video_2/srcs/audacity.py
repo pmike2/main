@@ -30,6 +30,10 @@ with open(json_path) as f:
 envelopes = js["envelopes"]
 envelopes.sort(key=lambda x : x["block_idx"])
 
+connexion_serveur = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+connexion_serveur.connect(("127.0.0.1", 8080))
+connexion_serveur.send(json.dumps({"delta_offset" : js["delta_offset"], "samplerate" : js["samplerate"]}).encode("utf-8"))
+
 pa.do("CursProjectStart")
 # sleep nécessaire entre les pa.do sinon plante
 time.sleep(0.1)
@@ -37,10 +41,7 @@ time.sleep(0.1)
 time_start = time.time()
 #pa.do("Play")
 time_end = time_start + float(js["frames"])/ float(js["samplerate"])
-print(f"time_start = {time_start} ; time_end = {time_end}")
-
-connexion_serveur = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-connexion_serveur.connect(("127.0.0.1", 8080))
+#print(f"time_start = {time_start} ; time_end = {time_end}")
 
 last_idx_env = -1
 while True:

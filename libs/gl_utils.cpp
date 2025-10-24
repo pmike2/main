@@ -285,7 +285,7 @@ GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path
 		glAttachShader(prog, gs);
 	}
 	glLinkProgram(prog);
-	check_gl_program(prog);
+	//check_gl_program(prog);
 
 	return prog;
 }
