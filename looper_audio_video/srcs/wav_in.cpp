@@ -70,19 +70,17 @@ void WavIn::new_envelope(std::string s) {
 			if (!_mapping.count(idx_freq_group)) {
 				continue;
 			}
-			//std::vector<float> amplitudes;
-			unsigned int idx_amplitude = 0;
-			for (auto amplitude : js["amplitudes"]) {
-				//amplitudes.push_back(a);
-				for (auto config : _mapping[idx_freq_group]) {
+			for (auto config : _mapping[idx_freq_group]) {
+				unsigned int idx_amplitude = 0;
+				for (auto amplitude : js["amplitudes"]) {
 					unsigned int ms = (unsigned int)((double)(idx_amplitude) * _delta_event* 1000.0);
 					time_point t = now + std::chrono::milliseconds(ms);
-					//time_point t = now + std::chrono::duration<double>((double)(idx_amplitude) * _delta_event);
-					//time_point t = now + std::chrono::seconds((double)(idx_amplitude) * _delta_event);
-					//time_point t = now + std::chrono::duration_cast<std::chrono::steady_clock::duration>(std::chrono::duration<double>((double)(idx_amplitude) * _delta_event));
 					_events.insert({config._idx_track, config._key, amplitude, t});
+					idx_amplitude++;
 				}
-				idx_amplitude++;
+				unsigned int ms = (unsigned int)((double)(idx_amplitude) * _delta_event* 1000.0);
+				time_point t = now + std::chrono::milliseconds(ms);
+				_events.insert({config._idx_track, NULL_KEY, NULL_AMPLITUDE, t});
 			}
 		}
 	}

@@ -23,6 +23,8 @@ public:
 	TimeConfig(std::vector<std::pair<float, float> > time_checkpoints, float speed);
 	TimeConfig(const TimeConfig & time_config);
 	~TimeConfig();
+	friend std::ostream & operator << (std::ostream & os, const TimeConfig & t);
+
 
 	std::vector<std::pair<float, float> > _time_checkpoints;
 	float _speed;
@@ -35,6 +37,8 @@ public:
 	AlphaPolygon(number * points, unsigned int n_points, float fadeout, float curve, float alpha_max);
 	AlphaPolygon(const AlphaPolygon & alpha_polygon);
 	~AlphaPolygon();
+	friend std::ostream & operator << (std::ostream & os, const AlphaPolygon & a);
+
 
 	Polygon2D _polygon;
 	float _fadeout;
@@ -49,6 +53,8 @@ public:
 	AlphaConfig(std::vector<AlphaPolygon> polygons, float decrease_speed);
 	AlphaConfig(const AlphaConfig & alpha_config);
 	~AlphaConfig();
+	friend std::ostream & operator << (std::ostream & os, const AlphaConfig & a);
+
 
 	std::vector<AlphaPolygon> _polygons;
 	float _decrease_speed;
@@ -61,6 +67,8 @@ public:
 	ReaderConfig(AlphaConfig alpha_config, TimeConfig time_config, std::string mpeg_path= "", unsigned int key= 0);
 	ReaderConfig(const ReaderConfig & reader_config);
 	~ReaderConfig();
+	friend std::ostream & operator << (std::ostream & os, const ReaderConfig & r);
+	
 
 	AlphaConfig _alpha_config;
 	TimeConfig _time_config;
@@ -74,6 +82,7 @@ public:
 	ModifierConfig();
 	ModifierConfig(const ModifierConfig & modifier_config);
 	~ModifierConfig();
+	friend std::ostream & operator << (std::ostream & os, const ModifierConfig & m);
 
 	float _movie_mult[4];
 	float _movie_add[2];
@@ -105,6 +114,8 @@ public:
 	~GlobalConfig();
 	std::vector<std::string> get_mpegs_paths();
 	GlobalConfig & operator=(const GlobalConfig & rhs);
+	friend std::ostream & operator << (std::ostream & os, const GlobalConfig & g);
+
 
 	unsigned int _alpha_width;
 	unsigned int _alpha_height;

@@ -36,10 +36,10 @@ connexion_serveur.send(json.dumps({"delta_offset" : js["delta_offset"], "sampler
 
 pa.do("CursProjectStart")
 # sleep nécessaire entre les pa.do sinon plante
-time.sleep(0.1)
+time.sleep(0.5)
 
 time_start = time.time()
-#pa.do("Play")
+pa.do("Play")
 time_end = time_start + float(js["frames"])/ float(js["samplerate"])
 #print(f"time_start = {time_start} ; time_end = {time_end}")
 
@@ -54,7 +54,7 @@ while True:
 			continue
 		time_envelope = time_start + float(envelope["block_idx"] * js["delta_offset"]) / float(js["samplerate"])
 		if time_current > time_envelope:
-			print(envelope["block_idx"])
+			print(f"idx_freq_group={envelope['idx_freq_group']}")
 
 			connexion_serveur.send(json.dumps(envelope).encode("utf-8")+ b"|")
 

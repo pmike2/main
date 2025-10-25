@@ -44,7 +44,7 @@ TimeConfig::~TimeConfig() {
 }
 
 
-ostream & operator << (ostream & stream, TimeConfig & t) {
+ostream & operator << (ostream & stream, const TimeConfig & t) {
 	stream << "speed=" << t._speed << "\n";
 	stream << "time_checkpoints=";
 	for (auto & tc : t._time_checkpoints) {
@@ -66,13 +66,14 @@ AlphaPolygon::AlphaPolygon(number * points, unsigned int n_points, float fadeout
 	_fadeout(fadeout), _curve(curve), _alpha_max(alpha_max), _polygon(Polygon2D())
 {
 	_polygon.set_points(points, n_points, false);
+	_polygon.update_all();
 }
 
 
 AlphaPolygon::AlphaPolygon(const AlphaPolygon & alpha_polygon) :
 	_polygon(alpha_polygon._polygon), _fadeout(alpha_polygon._fadeout), _curve(alpha_polygon._curve), _alpha_max(alpha_polygon._alpha_max)
 {
-	
+	_polygon.update_all();
 }
 
 
@@ -81,7 +82,7 @@ AlphaPolygon::~AlphaPolygon() {
 }
 
 
-ostream & operator << (ostream & stream, AlphaPolygon & a) {
+ostream & operator << (ostream & stream, const AlphaPolygon & a) {
 	stream << "fadeout=" << a._fadeout << " ; curve=" << a._curve << " ; alpha_max=" << a._alpha_max << "\n";
 	stream << "polygon=";
 	for (auto & pt : a._polygon._pts) {
@@ -118,7 +119,7 @@ AlphaConfig::~AlphaConfig() {
 }
 
 
-ostream & operator << (ostream & stream, AlphaConfig & a) {
+ostream & operator << (ostream & stream, const AlphaConfig & a) {
 	stream << "decrease_speed=" << a._decrease_speed << "\n";
 	stream << "polygons=\n";
 	for (auto p : a._polygons) {
@@ -154,7 +155,7 @@ ReaderConfig::~ReaderConfig() {
 }
 
 
-ostream & operator << (ostream & stream, ReaderConfig & r) {
+ostream & operator << (ostream & stream, const ReaderConfig & r) {
 	stream << "mpeg_path=" << r._mpeg_path << " ; key=" << r._key << "\n";
 	stream << "alpha_config=\n";
 	stream << r._alpha_config;
@@ -198,15 +199,15 @@ ModifierConfig::~ModifierConfig() {
 }
 
 
-ostream & operator << (ostream & stream, ModifierConfig & g) {
-	stream << "idx_track=" << g._idx_track << " ; key=" << g._key << "\n";
-	stream << "movie_mult=(" << g._movie_mult[0] << " ; " << g._movie_mult[1] << " ; " << g._movie_mult[2] << " ; " << g._movie_mult[3] << ")\n";
-	stream << "movie_add=(" << g._movie_add[0] << " ; " << g._movie_add[1] << ")\n";
-	stream << "movie_speed=" << g._movie_speed << "\n";
-	stream << "alpha_mult=(" << g._alpha_mult[0] << " ; " << g._alpha_mult[1] << " ; " << g._alpha_mult[2] << " ; " << g._alpha_mult[3] << ")\n";
-	stream << "alpha_add=(" << g._alpha_add[0] << " ; " << g._alpha_add[1] << ")\n";
-	stream << "alpha_speed=" << g._alpha_speed << "\n";
-	stream << "time_mult=" << g._time_mult << " ; time_add=" << g._time_add << " ; time_speed=" << g._time_speed << "\n";
+ostream & operator << (ostream & stream, const ModifierConfig & m) {
+	stream << "idx_track=" << m._idx_track << " ; key=" << m._key << "\n";
+	stream << "movie_mult=(" << m._movie_mult[0] << " ; " << m._movie_mult[1] << " ; " << m._movie_mult[2] << " ; " << m._movie_mult[3] << ")\n";
+	stream << "movie_add=(" << m._movie_add[0] << " ; " << m._movie_add[1] << ")\n";
+	stream << "movie_speed=" << m._movie_speed << "\n";
+	stream << "alpha_mult=(" << m._alpha_mult[0] << " ; " << m._alpha_mult[1] << " ; " << m._alpha_mult[2] << " ; " << m._alpha_mult[3] << ")\n";
+	stream << "alpha_add=(" << m._alpha_add[0] << " ; " << m._alpha_add[1] << ")\n";
+	stream << "alpha_speed=" << m._alpha_speed << "\n";
+	stream << "time_mult=" << m._time_mult << " ; time_add=" << m._time_add << " ; time_speed=" << m._time_speed << "\n";
 	return stream;
 }
 
@@ -295,12 +296,12 @@ GlobalConfig & GlobalConfig::operator=(const GlobalConfig & rhs) {
 }
 
 
-ostream & operator << (ostream & stream, GlobalConfig & g) {
+ostream & operator << (ostream & stream, const GlobalConfig & g) {
 	stream << "alpha_width=" << g._alpha_width << " ; alpha_height=" << g._alpha_height << " ; alpha_depth=" << g._alpha_depth << " ; alpha_depth0=" << g._alpha_depth0 << "\n";
 	stream << "time_width=" << g._time_width << " ; time_height=" << g._time_height << " ; time_height0=" << g._time_height0 << "\n";
 	stream << "index_time_width=" << g._index_time_width << " ; index_movie_width=" << g._index_movie_width << " ; index_movie_width0=" << g._index_movie_width0 << "\n";
 	stream << "global_alpha_width=" << g._global_alpha_width << "\n";
-	stream << "modifier_width=" << g._modifier_width << "modifier_height=" << g._modifier_height << "\n";
+	stream << "modifier_width=" << g._modifier_width << " ; modifier_height=" << g._modifier_height << "\n";
 	stream << "reader_configs=\n";
 	for (auto & r : g._reader_configs) {
 		stream << r;
@@ -631,9 +632,12 @@ void MPEGReaders::load_mpegs() {
 			continue;
 		}
 		
-		cout << "loading " << mpegs_paths[i] << "\n";
-
 		MPEGReader * mpeg= new MPEGReader(mpegs_paths[i]);
+		/*cout << "load_mpegs i=" << i << " ; mpeg_path=" << mpegs_paths[i];
+		cout << " ; width=" << mpeg->_width << " ; height=" << mpeg->_height << " ; nframes=" << mpeg->_n_frames;
+		cout << " ; _movie_textures_indices[i]=" << _movie_textures_indices[i] << " ;  _movies_ids[i]=" <<  _movies_ids[i];
+		cout << "\n";*/
+
 		
 		glActiveTexture(GL_TEXTURE0+ _movie_textures_indices[i]);
 		glBindTexture(GL_TEXTURE_3D, _movies_ids[i]);
@@ -652,6 +656,7 @@ void MPEGReaders::load_mpegs() {
 		glBindTexture(GL_TEXTURE_3D, 0);
 	}
 
+	//cout << "load_mpegs end ; _movie_loc=" << _movie_loc << " ; _movie_textures_indices[0]=" << _movie_textures_indices[0] << "\n";
 	glUniform1iv(_movie_loc, N_MAX_MOVIES, &_movie_textures_indices[0]);
 }
 
@@ -783,6 +788,13 @@ void MPEGReaders::compute_alpha_data0() {
 			_alpha_data0[i]= 1.0f;
 		}
 	}
+
+	/*for (unsigned int i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth0; ++i) {
+		if (_alpha_data0[i]> 0.0) {
+			cout << _alpha_data0[i] << " ; ";
+		}
+	}
+	cout << "\n";*/
 }
 
 

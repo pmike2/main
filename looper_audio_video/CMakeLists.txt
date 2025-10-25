@@ -51,6 +51,7 @@ add_executable(cv_in_main ./srcs/cv_in_main.cpp ./srcs/cv_in.cpp ./srcs/cv_in.h)
 add_executable(list_audio_devices ./srcs/list_audio_devices.cpp)
 add_executable(video_sampler_main ./srcs/video_sampler_main.cpp ./srcs/video_sampler.cpp ./srcs/video_sampler.h)
 add_executable(wav_in_main ./srcs/wav_in_main.cpp ./srcs/wav_in.cpp ./srcs/wav_in.h)
+add_executable(mpeg_reader_test ./srcs/mpeg_reader_test.cpp)
 
 
 set(FFMPEG_OPTIONS "-Wl,-no_compact_unwind -L/usr/local/lib" "-L/usr/lib" "-lbz2" "-liconv" "-lz" "-lavutil" "-lavcodec" "-lavdevice" "-lavformat" "-lavfilter" "-lswresample" "-lswscale" "-pthread" "-lm" "-framework AudioUnit" "-framework AudioToolbox" "-framework CoreAudio" "-framework VideoToolbox" "-framework CoreFoundation" "-framework CoreMedia" "-framework CoreVideo" "-framework CoreGraphics" "-framework CoreImage" "-framework CoreServices" "-framework Security" "-framework Foundation" "-framework AppKit")
@@ -65,3 +66,4 @@ target_link_libraries(cv_in_main PUBLIC ${EXT_LIBS} lib_shared_mem lib_pa_utils 
 target_link_libraries(list_audio_devices PUBLIC ${EXT_LIBS} lib_pa_utils)
 target_link_libraries(video_sampler_main PUBLIC ${EXT_LIBS} lib_shared_mem lib_input_state lib_utile lib_gl_utils lib_mpeg lib_mpeg_reader lib_geom_2d lib_triangulation lib_bbox_2d lib_sio_util)
 target_link_libraries(wav_in_main PUBLIC ${EXT_LIBS} lib_shared_mem lib_sio_util)
+target_link_libraries(mpeg_reader_test PUBLIC ${EXT_LIBS} lib_shared_mem lib_input_state lib_utile lib_gl_utils lib_mpeg lib_mpeg_reader lib_geom_2d lib_triangulation lib_bbox_2d)
