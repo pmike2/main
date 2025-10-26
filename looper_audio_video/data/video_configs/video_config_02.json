@@ -1,7 +1,6 @@
 {
 	"mpegs" : [
-		"../data/video_samples/flower_04.mov",
-		"../data/video_samples/flower_06.mov"
+		"../data/video_samples/flower_01.mov"
 	],
 	
 	"alpha_width" : 512,
@@ -13,44 +12,152 @@
 			"alpha" : {
 				"alpha_polygons" : [
 					{
-						"polygon" : [{"x" : 0.3, "y" : 0.3}, {"x" : 0.5, "y" : 0.3}, {"x" : 0.5, "y" : 0.5}, {"x" : 0.3, "y" : 0.5}],
-						"fadeout" : 0.1,
+						"polygon" : [{"x" : 0.1, "y" : 0.1}, {"x" : 0.2, "y" : 0.1}, {"x" : 0.2, "y" : 0.2}, {"x" : 0.1, "y" : 0.2}],
+						"fadeout" : 0.0,
 						"curve" : 2.0,
-						"alpha_max" : 0.9
-					},
-					{
-						"polygon" : [{"x" : 0.6, "y" : 0.6}, {"x" : 0.7, "y" : 0.6}, {"x" : 0.7, "y" : 0.7}, {"x" : 0.6, "y" : 0.7}],
-						"fadeout" : 0.5,
-						"curve" : 1.0,
 						"alpha_max" : 1.0
 					}
 				],
-				"decrease_speed" : 0.05
+				"decrease_speed" : 0.0
 			},
 			"time" : {
 				"checkpoints" : [
-					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 0.7}
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0}
 				],
-				"speed" : 0.01
+				"speed" : 0.05
 			}
 		},
 		{
 			"alpha" : {
 				"alpha_polygons" : [
 					{
-						"polygon" : [{"x" : 0.6, "y" : 0.6}, {"x" : 0.7, "y" : 0.6}, {"x" : 0.7, "y" : 0.7}, {"x" : 0.6, "y" : 0.7}],
-						"fadeout" : 0.5,
-						"curve" : 1.0,
+						"polygon" : [{"x" : 0.1, "y" : 0.2}, {"x" : 0.2, "y" : 0.2}, {"x" : 0.2, "y" : 0.3}, {"x" : 0.1, "y" : 0.3}],
+						"fadeout" : 0.0,
+						"curve" : 2.0,
 						"alpha_max" : 1.0
 					}
 				],
-				"decrease_speed" : 0.2
+				"decrease_speed" : 0.0
 			},
 			"time" : {
 				"checkpoints" : [
-					{"x" : 0.0, "y" : 0.0}, {"x" : 0.3, "y" : 1.0}, {"x" : 1.0, "y" : 0.7}
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0}
 				],
-				"speed" : 0.01
+				"speed" : 0.05
+			}
+		},
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [{"x" : 0.1, "y" : 0.3}, {"x" : 0.2, "y" : 0.3}, {"x" : 0.2, "y" : 0.4}, {"x" : 0.1, "y" : 0.4}],
+						"fadeout" : 0.0,
+						"curve" : 2.0,
+						"alpha_max" : 1.0
+					}
+				],
+				"decrease_speed" : 0.0
+			},
+			"time" : {
+				"checkpoints" : [
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0}
+				],
+				"speed" : 0.05
+			}
+		},
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [{"x" : 0.1, "y" : 0.4}, {"x" : 0.2, "y" : 0.4}, {"x" : 0.2, "y" : 0.5}, {"x" : 0.1, "y" : 0.5}],
+						"fadeout" : 0.0,
+						"curve" : 2.0,
+						"alpha_max" : 1.0
+					}
+				],
+				"decrease_speed" : 0.0
+			},
+			"time" : {
+				"checkpoints" : [
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0}
+				],
+				"speed" : 0.05
+			}
+		},
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [{"x" : 0.1, "y" : 0.5}, {"x" : 0.2, "y" : 0.5}, {"x" : 0.2, "y" : 0.6}, {"x" : 0.1, "y" : 0.6}],
+						"fadeout" : 0.0,
+						"curve" : 2.0,
+						"alpha_max" : 1.0
+					}
+				],
+				"decrease_speed" : 0.0
+			},
+			"time" : {
+				"checkpoints" : [
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0}
+				],
+				"speed" : 0.05
+			}
+		},
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [{"x" : 0.1, "y" : 0.6}, {"x" : 0.2, "y" : 0.6}, {"x" : 0.2, "y" : 0.7}, {"x" : 0.1, "y" : 0.7}],
+						"fadeout" : 0.0,
+						"curve" : 2.0,
+						"alpha_max" : 1.0
+					}
+				],
+				"decrease_speed" : 0.0
+			},
+			"time" : {
+				"checkpoints" : [
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0}
+				],
+				"speed" : 0.05
+			}
+		},
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [{"x" : 0.1, "y" : 0.7}, {"x" : 0.2, "y" : 0.7}, {"x" : 0.2, "y" : 0.8}, {"x" : 0.1, "y" : 0.8}],
+						"fadeout" : 0.0,
+						"curve" : 2.0,
+						"alpha_max" : 1.0
+					}
+				],
+				"decrease_speed" : 0.0
+			},
+			"time" : {
+				"checkpoints" : [
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0}
+				],
+				"speed" : 0.05
+			}
+		},
+		{
+			"alpha" : {
+				"alpha_polygons" : [
+					{
+						"polygon" : [{"x" : 0.1, "y" : 0.8}, {"x" : 0.2, "y" : 0.8}, {"x" : 0.2, "y" : 0.9}, {"x" : 0.1, "y" : 0.9}],
+						"fadeout" : 0.0,
+						"curve" : 2.0,
+						"alpha_max" : 1.0
+					}
+				],
+				"decrease_speed" : 0.0
+			},
+			"time" : {
+				"checkpoints" : [
+					{"x" : 0.0, "y" : 0.0}, {"x" : 1.0, "y" : 1.0}
+				],
+				"speed" : 0.05
 			}
 		}
 	],
@@ -60,10 +167,25 @@
 			"mpeg" : 0, "reader" : 0
 		},
 		"b" : {
-			"mpeg" : 1, "reader" : 0
+			"mpeg" : 0, "reader" : 1
 		},
 		"c" : {
-			"mpeg" : 0, "reader" : 1
+			"mpeg" : 0, "reader" : 2
+		},
+		"d" : {
+			"mpeg" : 0, "reader" : 3
+		},
+		"e" : {
+			"mpeg" : 0, "reader" : 4
+		},
+		"f" : {
+			"mpeg" : 0, "reader" : 5
+		},
+		"g" : {
+			"mpeg" : 0, "reader" : 6
+		},
+		"h" : {
+			"mpeg" : 0, "reader" : 7
 		}
 	},
 
@@ -82,11 +204,8 @@
 	],
 
 	"keymapping_modifier" : {
-		"d" : {
+		"z" : {
 			"modifier" : 0, "track" : 0
-		},
-		"e" : {
-			"modifier" : 0, "track" : 1
 		}
 	}
 }

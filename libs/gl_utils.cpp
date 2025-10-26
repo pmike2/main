@@ -274,7 +274,7 @@ GLuint load_shader(GLenum type, const char * filename) {
 }
 
 
-GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path) {
+GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path, bool check_program) {
 	GLuint vs= load_shader(GL_VERTEX_SHADER  , vs_path.c_str());
 	GLuint fs= load_shader(GL_FRAGMENT_SHADER, fs_path.c_str());
 	GLuint prog= glCreateProgram();
@@ -285,7 +285,10 @@ GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path
 		glAttachShader(prog, gs);
 	}
 	glLinkProgram(prog);
-	//check_gl_program(prog);
+
+	if (check_program) {
+		check_gl_program(prog);
+	}
 
 	return prog;
 }

@@ -25,6 +25,7 @@ struct WavEvent {
 struct WavEventConfig {
 	unsigned int _idx_track;
 	key_type _key;
+	float _amplitude_factor;
 };
 
 

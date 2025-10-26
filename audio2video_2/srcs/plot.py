@@ -20,7 +20,8 @@ BAND_COLORS = ["red", "blueviolet", "blue", "darkturquoise", "green", "orange", 
 #root = "../data/wav/sine_100"
 #root = "../data/wav/sine_1000"
 #root = "../data/wav/sine_noise"
-root = "../data/wav/bcl7"
+#root = "../data/wav/bcl7"
+root = "../data/wav/record_beat_simple"
 
 
 json_path = os.path.join(root, os.path.basename(root) + ".json")

@@ -1,5 +1,26 @@
 {
 	"0" : [
-		{"track" : 1, "key" : "a"}
+		{"track" : 0, "key" : "a", "amplitude_factor" : 0.002}
+	],
+	"1" : [
+		{"track" : 1, "key" : "b", "amplitude_factor" : 0.004}
+	],
+	"2" : [
+		{"track" : 2, "key" : "c", "amplitude_factor" : 0.006}
+	],
+	"3" : [
+		{"track" : 3, "key" : "d", "amplitude_factor" : 0.008}
+	],
+	"4" : [
+		{"track" : 4, "key" : "e", "amplitude_factor" : 0.010}
+	],
+	"5" : [
+		{"track" : 5, "key" : "f", "amplitude_factor" : 0.012}
+	],
+	"6" : [
+		{"track" : 6, "key" : "g", "amplitude_factor" : 0.014}
+	],
+	"7" : [
+		{"track" : 7, "key" : "h", "amplitude_factor" : 0.016}
 	]
 }

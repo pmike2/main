@@ -24,7 +24,8 @@ int main() {
 	//std::filesystem::path wav_path = "../data/wav/sine_100.wav";
 	//std::filesystem::path wav_path = "../data/wav/sine_1000.wav";
 	//std::filesystem::path wav_path = "../data/wav/sine_noise.wav";
-	std::filesystem::path wav_path = "../data/wav/bcl7.wav";
+	//std::filesystem::path wav_path = "../data/wav/bcl7.wav";
+	std::filesystem::path wav_path = "../data/wav/record_beat_simple.wav";
 
 	std::filesystem::path parent_path = wav_path.parent_path() / wav_path.stem();
 	std::filesystem::path ffts_path = parent_path / "fft";

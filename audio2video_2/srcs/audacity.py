@@ -21,7 +21,8 @@ import socket
 import pyaudacity as pa
 
 
-json_path = "../data/wav/bcl7/bcl7.json"
+#json_path = "../data/wav/bcl7/bcl7.json"
+json_path = "../data/wav/record_beat_simple/record_beat_simple.json"
 
 
 with open(json_path) as f:
@@ -36,7 +37,7 @@ connexion_serveur.send(json.dumps({"delta_offset" : js["delta_offset"], "sampler
 
 pa.do("CursProjectStart")
 # sleep nécessaire entre les pa.do sinon plante
-time.sleep(0.5)
+time.sleep(3.0)
 
 time_start = time.time()
 pa.do("Play")
@@ -61,3 +62,5 @@ while True:
 			last_idx_env = idx_env
 		else:
 			break
+
+pa.do("Stop")
