@@ -56,7 +56,7 @@ void WavIn::new_envelope(std::string s) {
 	std::string s_split;
 	time_point now= std::chrono::system_clock::now();
 
-	//std::cout << "new_envelope : " << s << "\n";
+	std::cout << "new_envelope : ";
 
 	while(std::getline(ss, s_split, '|')) {
 		json js = json::parse(s_split);
@@ -76,11 +76,13 @@ void WavIn::new_envelope(std::string s) {
 				for (auto amplitude : js["amplitudes"]) {
 					unsigned int ms = (unsigned int)((double)(idx_amplitude) * _delta_event* 1000.0);
 					time_point t = now + std::chrono::milliseconds(ms);
+					std::cout << t.time_since_epoch().count() << " ; ";
 					_events.insert({config._idx_track, config._key, (float)(amplitude) * config._amplitude_factor, t});
 					idx_amplitude++;
 				}
 				unsigned int ms = (unsigned int)((double)(idx_amplitude) * _delta_event* 1000.0);
 				time_point t = now + std::chrono::milliseconds(ms);
+				std::cout << t.time_since_epoch().count() << "\n";
 				_events.insert({config._idx_track, NULL_KEY, NULL_AMPLITUDE, t});
 			}
 		}
@@ -89,15 +91,15 @@ void WavIn::new_envelope(std::string s) {
 
 
 void WavIn::main_loop() {
+	time_point now= std::chrono::system_clock::now();
+	//std::cout << "now = " << now.time_since_epoch().count() << "\n";
 	if (_events.empty()) {
 		return;
 	}
 
-	time_point now= std::chrono::system_clock::now();
 	std::set<WavEvent>::iterator it = _events.begin();
-	//std::cout << now.time_since_epoch().count() << " ; " << it->_t.time_since_epoch().count() << "\n";
 	while (it->_t <= now) {
-		std::cout << "WavIn::main_loop : t = " << it->_t.time_since_epoch().count() << " ; idx_track = " << it->_idx_track << " ; key = " << it->_key << " ; amplitude = " << it->_amplitude << "\n";
+		std::cout << "WavIn::main_loop : now = " << now.time_since_epoch().count() << " ; t = " << it->_t.time_since_epoch().count() << " ; idx_track = " << it->_idx_track << " ; key = " << it->_key << " ; amplitude = " << it->_amplitude << "\n";
 		_data[it->_idx_track]._key= it->_key;
 		_data[it->_idx_track]._amplitude= it->_amplitude;
 		it = _events.erase(it);
