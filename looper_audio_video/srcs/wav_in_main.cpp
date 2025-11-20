@@ -19,23 +19,14 @@
 #include "sio_util.h"
 
 
-
-
-// https://stackoverflow.com/questions/71572056/multithreaded-server-c-socket-programming
-
-
-
-
 //using json = nlohmann::json;
 
 
 //SocketIOUtil * sio_util;
 WavIn * wav_in;
-//SocketIOUtil * sio_envelope;
 
 std::mutex mtx;
 void read_socket();
-std::thread t(read_socket);
 int client_socket;
 int server_socket;
 sockaddr_in serverAddress;
@@ -58,20 +49,14 @@ void init(std::string json_path) {
 
 	wav_in= new WavIn(json_path);
 	//sio_util= new SocketIOUtil("http://127.0.0.1:3003", "server2client_config_changed", 2000);
-	//sio_envelope= new SocketIOUtil("http://127.0.0.1:3004", "envelope", 5);
 }
 
 
 void read_socket() {
-	int addrlen = sizeof(serverAddress);
-	while ((client_socket = accept(server_socket, (struct sockaddr *)&serverAddress, (socklen_t *)&addrlen)) >= 0) {
+	int n_bytes_read;
+	char buffer[3000] = {0};
+	while ((n_bytes_read = recv(client_socket, buffer, sizeof(buffer), 0))) {
 
-		//mtx.lock();
-		char buffer[3000] = {0};
-		//int n_bytes_read = recv(client_socket, buffer, sizeof(buffer), 0);
-		int n_bytes_read = read(client_socket, buffer, sizeof(buffer));
-		//std::cout << n_bytes_read << "\n";
-		//if (buffer[0] != 0) {
 		if (n_bytes_read == -1 && errno != EAGAIN) {
 			printf("Erreur lors de la réception du message. %s (%d)\n", strerror(errno), errno);
 			exit(EXIT_FAILURE);
@@ -79,14 +64,14 @@ void read_socket() {
 			printf("Le client s'est déconnecté (extrémité de la socket fermée)\n");
 			exit(EXIT_FAILURE);
 		} else if (n_bytes_read > 0) {
-			std::cout << "OK recu :" << n_bytes_read << "\n";
-			//std::cout << "-------------------------------------------\n";
-			//std::cout << buffer << "\n";
-			wav_in->new_envelope(std::string(buffer));
-		}
-		//mtx.unlock();
+			/*std::cout << "OK recu :" << n_bytes_read << "\n";
+			std::cout << "-------------------------------------------\n";
+			std::cout << buffer << "\n";*/
 
-		close(client_socket);
+			mtx.lock();
+			wav_in->new_envelope(std::string(buffer).substr(0, n_bytes_read));
+			mtx.unlock();
+		}
 	}
 }
 
@@ -94,9 +79,6 @@ void read_socket() {
 void main_loop() {
 
 	while (true) {
-		/*if (sio_envelope->update()) {
-			wav_in->new_envelope(sio_envelope->_last_msg);
-		}*/
 		//if (sio_util->update()) {
 			//osc_in->load_json(json::parse(sio_util->_last_msg));
 			//cout << *osc_in;
@@ -105,9 +87,9 @@ void main_loop() {
             //std::cout << sio_util->_last_msg << "\n";
 		//}
 
-		//read_socket();
-
+		mtx.lock();
 		wav_in->main_loop();
+		mtx.unlock();
 	}
 }
 
@@ -143,15 +125,15 @@ int main(int argc, char **argv) {
 		close(server_socket);
     	exit(EXIT_FAILURE);
 	}
-	//int addrlen = sizeof(serverAddress);
-    //client_socket = accept(server_socket, (struct sockaddr *)&serverAddress, (socklen_t *)&addrlen);
-	/*if (client_socket < 0) {
+	int addrlen = sizeof(serverAddress);
+    client_socket = accept(server_socket, (struct sockaddr *)&serverAddress, (socklen_t *)&addrlen);
+	if (client_socket < 0) {
 		perror("accept failed");
     	exit(EXIT_FAILURE);		
-	}*/
-
+	}
+	
+	std::thread t(read_socket);
     main_loop();
-	t.join();
 
 	clean();
 

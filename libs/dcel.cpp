@@ -23,7 +23,7 @@ DCEL_Vertex::DCEL_Vertex(const pt_type & coords) : _coords(coords), _incident_ed
 
 DCEL_Vertex::~DCEL_Vertex() {
 	if (_data!= NULL) {
-		delete _data;
+		//delete _data; // pas safe de delete un pointer sur void
 	}
 }
 
@@ -101,7 +101,7 @@ _origin(NULL), _twin(NULL), _next(NULL), _previous(NULL), _incident_face(NULL), 
 
 DCEL_HalfEdge::~DCEL_HalfEdge() {
 	if (_data!= NULL) {
-		delete _data;
+		//delete _data; // pas safe de delete un pointer sur void
 	}
 }
 
@@ -237,7 +237,7 @@ DCEL_Face::DCEL_Face() : _outer_edge(NULL), _data(NULL) {
 
 DCEL_Face::~DCEL_Face() {
 	if (_data!= NULL) {
-		delete _data;
+		//delete _data; // pas safe de delete un pointer sur void
 	}
 }
 

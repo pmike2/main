@@ -103,7 +103,7 @@ void init_buffer() {
 	z_loc= glGetUniformLocation(prog_2d, "z");
 	glUseProgram(0);
 
-	camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, -1.0f, 1.0f);
+	camera2clip= glm::ortho(-1.0f * float(screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -1.0f * float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, -1.0f, 1.0f);
 	angle_rot= 0.0f;
 	model2world= glm::rotate(glm::mat4(1.0f), angle_rot, glm::vec3(0.f, 0.f, 1.f));
 

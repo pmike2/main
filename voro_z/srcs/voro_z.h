@@ -105,11 +105,11 @@ public:
 class VoroZ {
 public:
 	VoroZ();
-	VoroZ(GLuint prog_draw_simple, GLuint prog_draw_texture, GLuint prog_draw_light, GLuint prog_draw_normal, GLuint prog_draw_parallax);
+	VoroZ(std::map<std::string, GLuint> progs);
 	~VoroZ();
 
 	void init_biome();
-	void init_context(GLuint prog_draw_simple, GLuint prog_draw_texture, GLuint prog_draw_light, GLuint prog_draw_normal, GLuint prog_draw_parallax);
+	void init_context(std::map<std::string, GLuint> progs);
 	void init_texture_diffuse();
 	void init_texture_normal();
 	void init_texture_parallax();

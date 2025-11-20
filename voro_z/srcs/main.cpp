@@ -36,6 +36,7 @@ unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
 GLuint prog_repere, prog_select, prog_texture, prog_light, prog_normal, prog_parallax;
 GLuint g_vao;
 
+ScreenGL * screen_gl;
 ViewSystem * view_system;
 
 VoroZ * voroz;
@@ -154,17 +155,20 @@ void init() {
 	glGenVertexArrays(1, &g_vao);
 	glBindVertexArray(g_vao);
 
-	prog_repere= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
-	prog_select= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
-	prog_texture= create_prog("../../shaders/vertexshader_3d_tex.txt", "../../shaders/fragmentshader_3d_tex.txt");
-	prog_light= create_prog("../../shaders/vertexshader_3d_light.txt", "../../shaders/fragmentshader_3d_light.txt");
-	prog_normal= create_prog("../../shaders/vertexshader_3d_normal.txt", "../../shaders/fragmentshader_3d_normal.txt");
-	prog_parallax= create_prog("../../shaders/vertexshader_3d_parallax.txt", "../../shaders/fragmentshader_3d_parallax.txt");
+	std::map<std::string, GLuint> progs;
+	progs["repere"]= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
+	progs["select"]= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
+	progs["font"]= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
+	progs["texture"]= create_prog("../../shaders/vertexshader_3d_tex.txt", "../../shaders/fragmentshader_3d_tex.txt");
+	progs["light"]= create_prog("../../shaders/vertexshader_3d_light.txt", "../../shaders/fragmentshader_3d_light.txt");
+	progs["normal"]= create_prog("../../shaders/vertexshader_3d_normal.txt", "../../shaders/fragmentshader_3d_normal.txt");
+	progs["parallax"]= create_prog("../../shaders/vertexshader_3d_parallax.txt", "../../shaders/fragmentshader_3d_parallax.txt");
 
 	check_gl_error();
 	
 	// --------------------------------------------------------------------------
-	view_system= new ViewSystem(prog_repere, prog_select, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+	screen_gl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, 10.0, 10.0);
+	view_system= new ViewSystem(progs, screen_gl);
 	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_repere= false;
 	view_system->_repere->_is_box= false;
@@ -173,7 +177,7 @@ void init() {
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
 
-	voroz= new VoroZ(prog_repere, prog_texture, prog_light, prog_normal, prog_parallax);
+	voroz= new VoroZ(progs);
 
 }
 

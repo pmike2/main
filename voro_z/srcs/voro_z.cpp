@@ -221,11 +221,11 @@ VoroZ::VoroZ() {
 }
 
 
-VoroZ::VoroZ(GLuint prog_draw_simple, GLuint prog_draw_texture, GLuint prog_draw_light, GLuint prog_draw_normal, GLuint prog_draw_parallax) :
+VoroZ::VoroZ(std::map<std::string, GLuint> progs) :
 	_draw_mode(NORMAL)
 {
 	init_biome();
-	init_context(prog_draw_simple, prog_draw_texture, prog_draw_light, prog_draw_normal, prog_draw_parallax);
+	init_context(progs);
 	init_texture_diffuse();
 	init_texture_normal();
 	init_texture_parallax();
@@ -254,27 +254,27 @@ void VoroZ::init_biome() {
 }
 
 
-void VoroZ::init_context(GLuint prog_draw_simple, GLuint prog_draw_texture, GLuint prog_draw_light, GLuint prog_draw_normal, GLuint prog_draw_parallax) {
+void VoroZ::init_context(std::map<std::string, GLuint> progs) {
 	GLuint buffers[5];
 	glGenBuffers(5, buffers);
 
-	_contexts["simple"]= new DrawContext(prog_draw_simple, buffers[0],
+	_contexts["simple"]= new DrawContext(progs["repere"], buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 	
-	_contexts["texture"]= new DrawContext(prog_draw_texture, buffers[1],
+	_contexts["texture"]= new DrawContext(progs["texture"], buffers[1],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
 		std::vector<std::string>{"world2clip_matrix", "diffuse_texture_array"});
 	
-	_contexts["light"]= new DrawContext(prog_draw_light, buffers[2],
+	_contexts["light"]= new DrawContext(progs["light"], buffers[2],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
-	_contexts["normal"]= new DrawContext(prog_draw_normal, buffers[3],
+	_contexts["normal"]= new DrawContext(progs["normal"], buffers[3],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_diffuse_in", "current_layer_normal_in", "normal_in", "tangent_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "diffuse_texture_array", "normal_texture_array"});
 
-	_contexts["parallax"]= new DrawContext(prog_draw_parallax, buffers[4],
+	_contexts["parallax"]= new DrawContext(progs["parallax"], buffers[4],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_diffuse_in", "current_layer_normal_in", "current_layer_parallax_in", "normal_in", "tangent_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "diffuse_texture_array", "normal_texture_array", "parallax_texture_array", "height_scale"});
 }
@@ -584,18 +584,18 @@ void VoroZ::draw_simple(const glm::mat4 & world2clip) {
 	glUseProgram(_contexts["simple"]->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["simple"]->_buffer);
 	
-	glUniformMatrix4fv(_contexts["simple"]->_locs["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
+	glUniformMatrix4fv(_contexts["simple"]->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
 	
-	glEnableVertexAttribArray(_contexts["simple"]->_locs["position_in"]);
-	glEnableVertexAttribArray(_contexts["simple"]->_locs["color_in"]);
+	glEnableVertexAttribArray(_contexts["simple"]->_locs_attrib["position_in"]);
+	glEnableVertexAttribArray(_contexts["simple"]->_locs_attrib["color_in"]);
 
-	glVertexAttribPointer(_contexts["simple"]->_locs["position_in"], 3, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)0);
-	glVertexAttribPointer(_contexts["simple"]->_locs["color_in"], 4, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(_contexts["simple"]->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)0);
+	glVertexAttribPointer(_contexts["simple"]->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)(3* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, _n_pts);
 
-	glDisableVertexAttribArray(_contexts["simple"]->_locs["position_in"]);
-	glDisableVertexAttribArray(_contexts["simple"]->_locs["color_in"]);
+	glDisableVertexAttribArray(_contexts["simple"]->_locs_attrib["position_in"]);
+	glDisableVertexAttribArray(_contexts["simple"]->_locs_attrib["color_in"]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
@@ -610,22 +610,22 @@ void VoroZ::draw_texture(const glm::mat4 & world2clip) {
 	glUseProgram(_contexts["texture"]->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["texture"]->_buffer);
 
-	glUniform1i(_contexts["texture"]->_locs["diffuse_texture_array"], 0); //Sampler refers to texture unit 0
-	glUniformMatrix4fv(_contexts["texture"]->_locs["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
+	glUniform1i(_contexts["texture"]->_locs_uniform["diffuse_texture_array"], 0); //Sampler refers to texture unit 0
+	glUniformMatrix4fv(_contexts["texture"]->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
 	
-	glEnableVertexAttribArray(_contexts["texture"]->_locs["position_in"]);
-	glEnableVertexAttribArray(_contexts["texture"]->_locs["tex_coord_in"]);
-	glEnableVertexAttribArray(_contexts["texture"]->_locs["current_layer_in"]);
+	glEnableVertexAttribArray(_contexts["texture"]->_locs_attrib["position_in"]);
+	glEnableVertexAttribArray(_contexts["texture"]->_locs_attrib["tex_coord_in"]);
+	glEnableVertexAttribArray(_contexts["texture"]->_locs_attrib["current_layer_in"]);
 
-	glVertexAttribPointer(_contexts["texture"]->_locs["position_in"], 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-	glVertexAttribPointer(_contexts["texture"]->_locs["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
-	glVertexAttribPointer(_contexts["texture"]->_locs["current_layer_in"], 1, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(_contexts["texture"]->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+	glVertexAttribPointer(_contexts["texture"]->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(_contexts["texture"]->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(5* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, _n_pts);
 
-	glDisableVertexAttribArray(_contexts["texture"]->_locs["position_in"]);
-	glDisableVertexAttribArray(_contexts["texture"]->_locs["tex_coord_in"]);
-	glDisableVertexAttribArray(_contexts["texture"]->_locs["current_layer_in"]);
+	glDisableVertexAttribArray(_contexts["texture"]->_locs_attrib["position_in"]);
+	glDisableVertexAttribArray(_contexts["texture"]->_locs_attrib["tex_coord_in"]);
+	glDisableVertexAttribArray(_contexts["texture"]->_locs_attrib["current_layer_in"]);
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -637,24 +637,24 @@ void VoroZ::draw_light(const glm::mat4 & world2clip, const glm::vec3 & camera_po
 	glUseProgram(_contexts["light"]->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["light"]->_buffer);
 	
-	glUniformMatrix4fv(_contexts["light"]->_locs["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
-	glUniform3fv(_contexts["light"]->_locs["light_position"], 1, glm::value_ptr(_light->_position));
-	glUniform3fv(_contexts["light"]->_locs["light_color"], 1, glm::value_ptr(_light->_color));
-	glUniform3fv(_contexts["light"]->_locs["view_position"], 1, glm::value_ptr(camera_position));
+	glUniformMatrix4fv(_contexts["light"]->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
+	glUniform3fv(_contexts["light"]->_locs_uniform["light_position"], 1, glm::value_ptr(_light->_position));
+	glUniform3fv(_contexts["light"]->_locs_uniform["light_color"], 1, glm::value_ptr(_light->_color));
+	glUniform3fv(_contexts["light"]->_locs_uniform["view_position"], 1, glm::value_ptr(camera_position));
 
-	glEnableVertexAttribArray(_contexts["light"]->_locs["position_in"]);
-	glEnableVertexAttribArray(_contexts["light"]->_locs["color_in"]);
-	glEnableVertexAttribArray(_contexts["light"]->_locs["normal_in"]);
+	glEnableVertexAttribArray(_contexts["light"]->_locs_attrib["position_in"]);
+	glEnableVertexAttribArray(_contexts["light"]->_locs_attrib["color_in"]);
+	glEnableVertexAttribArray(_contexts["light"]->_locs_attrib["normal_in"]);
 
-	glVertexAttribPointer(_contexts["light"]->_locs["position_in"], 3, GL_FLOAT, GL_FALSE, 10* sizeof(float), (void*)0);
-	glVertexAttribPointer(_contexts["light"]->_locs["color_in"], 4, GL_FLOAT, GL_FALSE, 10* sizeof(float), (void*)(3* sizeof(float)));
-	glVertexAttribPointer(_contexts["light"]->_locs["normal_in"], 3, GL_FLOAT, GL_FALSE, 10* sizeof(float), (void*)(7* sizeof(float)));
+	glVertexAttribPointer(_contexts["light"]->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, 10* sizeof(float), (void*)0);
+	glVertexAttribPointer(_contexts["light"]->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, 10* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(_contexts["light"]->_locs_attrib["normal_in"], 3, GL_FLOAT, GL_FALSE, 10* sizeof(float), (void*)(7* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, _n_pts);
 
-	glDisableVertexAttribArray(_contexts["light"]->_locs["position_in"]);
-	glDisableVertexAttribArray(_contexts["light"]->_locs["color_in"]);
-	glDisableVertexAttribArray(_contexts["light"]->_locs["normal_in"]);
+	glDisableVertexAttribArray(_contexts["light"]->_locs_attrib["position_in"]);
+	glDisableVertexAttribArray(_contexts["light"]->_locs_attrib["color_in"]);
+	glDisableVertexAttribArray(_contexts["light"]->_locs_attrib["normal_in"]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
@@ -671,35 +671,35 @@ void VoroZ::draw_normal(const glm::mat4 & world2clip, const glm::vec3 & camera_p
 	glUseProgram(_contexts["normal"]->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["normal"]->_buffer);
 
-	glUniformMatrix4fv(_contexts["normal"]->_locs["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
-	glUniform3fv(_contexts["normal"]->_locs["light_position"], 1, glm::value_ptr(_light->_position));
-	glUniform3fv(_contexts["normal"]->_locs["light_color"], 1, glm::value_ptr(_light->_color));
-	glUniform3fv(_contexts["normal"]->_locs["view_position"], 1, glm::value_ptr(camera_position));
-	glUniform1i(_contexts["normal"]->_locs["diffuse_texture_array"], 0); //Sampler refers to texture unit 0
-	glUniform1i(_contexts["normal"]->_locs["normal_texture_array"], 1); //Sampler refers to texture unit 1
+	glUniformMatrix4fv(_contexts["normal"]->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
+	glUniform3fv(_contexts["normal"]->_locs_uniform["light_position"], 1, glm::value_ptr(_light->_position));
+	glUniform3fv(_contexts["normal"]->_locs_uniform["light_color"], 1, glm::value_ptr(_light->_color));
+	glUniform3fv(_contexts["normal"]->_locs_uniform["view_position"], 1, glm::value_ptr(camera_position));
+	glUniform1i(_contexts["normal"]->_locs_uniform["diffuse_texture_array"], 0); //Sampler refers to texture unit 0
+	glUniform1i(_contexts["normal"]->_locs_uniform["normal_texture_array"], 1); //Sampler refers to texture unit 1
 
-	glEnableVertexAttribArray(_contexts["normal"]->_locs["position_in"]);
-	glEnableVertexAttribArray(_contexts["normal"]->_locs["tex_coord_in"]);
-	glEnableVertexAttribArray(_contexts["normal"]->_locs["current_layer_diffuse_in"]);
-	glEnableVertexAttribArray(_contexts["normal"]->_locs["current_layer_normal_in"]);
-	glEnableVertexAttribArray(_contexts["normal"]->_locs["normal_in"]);
-	glEnableVertexAttribArray(_contexts["normal"]->_locs["tangent_in"]);
+	glEnableVertexAttribArray(_contexts["normal"]->_locs_attrib["position_in"]);
+	glEnableVertexAttribArray(_contexts["normal"]->_locs_attrib["tex_coord_in"]);
+	glEnableVertexAttribArray(_contexts["normal"]->_locs_attrib["current_layer_diffuse_in"]);
+	glEnableVertexAttribArray(_contexts["normal"]->_locs_attrib["current_layer_normal_in"]);
+	glEnableVertexAttribArray(_contexts["normal"]->_locs_attrib["normal_in"]);
+	glEnableVertexAttribArray(_contexts["normal"]->_locs_attrib["tangent_in"]);
 
-	glVertexAttribPointer(_contexts["normal"]->_locs["position_in"], 3, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)0);
-	glVertexAttribPointer(_contexts["normal"]->_locs["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)(3* sizeof(float)));
-	glVertexAttribPointer(_contexts["normal"]->_locs["current_layer_diffuse_in"], 1, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)(5* sizeof(float)));
-	glVertexAttribPointer(_contexts["normal"]->_locs["current_layer_normal_in"], 1, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)(6* sizeof(float)));
-	glVertexAttribPointer(_contexts["normal"]->_locs["normal_in"], 3, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)(7* sizeof(float)));
-	glVertexAttribPointer(_contexts["normal"]->_locs["tangent_in"], 3, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)(10* sizeof(float)));
+	glVertexAttribPointer(_contexts["normal"]->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)0);
+	glVertexAttribPointer(_contexts["normal"]->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(_contexts["normal"]->_locs_attrib["current_layer_diffuse_in"], 1, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(_contexts["normal"]->_locs_attrib["current_layer_normal_in"], 1, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)(6* sizeof(float)));
+	glVertexAttribPointer(_contexts["normal"]->_locs_attrib["normal_in"], 3, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)(7* sizeof(float)));
+	glVertexAttribPointer(_contexts["normal"]->_locs_attrib["tangent_in"], 3, GL_FLOAT, GL_FALSE, 13* sizeof(float), (void*)(10* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, _n_pts);
 
-	glDisableVertexAttribArray(_contexts["normal"]->_locs["position_in"]);
-	glDisableVertexAttribArray(_contexts["normal"]->_locs["tex_coord_in"]);
-	glDisableVertexAttribArray(_contexts["normal"]->_locs["current_layer_diffuse_in"]);
-	glDisableVertexAttribArray(_contexts["normal"]->_locs["current_layer_normal_in"]);
-	glDisableVertexAttribArray(_contexts["normal"]->_locs["normal_in"]);
-	glDisableVertexAttribArray(_contexts["normal"]->_locs["tangent_in"]);
+	glDisableVertexAttribArray(_contexts["normal"]->_locs_attrib["position_in"]);
+	glDisableVertexAttribArray(_contexts["normal"]->_locs_attrib["tex_coord_in"]);
+	glDisableVertexAttribArray(_contexts["normal"]->_locs_attrib["current_layer_diffuse_in"]);
+	glDisableVertexAttribArray(_contexts["normal"]->_locs_attrib["current_layer_normal_in"]);
+	glDisableVertexAttribArray(_contexts["normal"]->_locs_attrib["normal_in"]);
+	glDisableVertexAttribArray(_contexts["normal"]->_locs_attrib["tangent_in"]);
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -718,40 +718,40 @@ void VoroZ::draw_parallax(const glm::mat4 & world2clip, const glm::vec3 & camera
 	glUseProgram(_contexts["parallax"]->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["parallax"]->_buffer);
 
-	glUniformMatrix4fv(_contexts["parallax"]->_locs["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
-	glUniform3fv(_contexts["parallax"]->_locs["light_position"], 1, glm::value_ptr(_light->_position));
-	glUniform3fv(_contexts["parallax"]->_locs["light_color"], 1, glm::value_ptr(_light->_color));
-	glUniform3fv(_contexts["parallax"]->_locs["view_position"], 1, glm::value_ptr(camera_position));
-	glUniform1i(_contexts["parallax"]->_locs["diffuse_texture_array"], 0); //Sampler refers to texture unit 0
-	glUniform1i(_contexts["parallax"]->_locs["normal_texture_array"], 1); //Sampler refers to texture unit 1
-	glUniform1i(_contexts["parallax"]->_locs["parallax_texture_array"], 2); //Sampler refers to texture unit 2
-	glUniform1f(_contexts["parallax"]->_locs["height_scale"], 0.1);
+	glUniformMatrix4fv(_contexts["parallax"]->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
+	glUniform3fv(_contexts["parallax"]->_locs_uniform["light_position"], 1, glm::value_ptr(_light->_position));
+	glUniform3fv(_contexts["parallax"]->_locs_uniform["light_color"], 1, glm::value_ptr(_light->_color));
+	glUniform3fv(_contexts["parallax"]->_locs_uniform["view_position"], 1, glm::value_ptr(camera_position));
+	glUniform1i(_contexts["parallax"]->_locs_uniform["diffuse_texture_array"], 0); //Sampler refers to texture unit 0
+	glUniform1i(_contexts["parallax"]->_locs_uniform["normal_texture_array"], 1); //Sampler refers to texture unit 1
+	glUniform1i(_contexts["parallax"]->_locs_uniform["parallax_texture_array"], 2); //Sampler refers to texture unit 2
+	glUniform1f(_contexts["parallax"]->_locs_uniform["height_scale"], 0.1);
 
-	glEnableVertexAttribArray(_contexts["parallax"]->_locs["position_in"]);
-	glEnableVertexAttribArray(_contexts["parallax"]->_locs["tex_coord_in"]);
-	glEnableVertexAttribArray(_contexts["parallax"]->_locs["current_layer_diffuse_in"]);
-	glEnableVertexAttribArray(_contexts["parallax"]->_locs["current_layer_normal_in"]);
-	glEnableVertexAttribArray(_contexts["parallax"]->_locs["current_layer_parallax_in"]);
-	glEnableVertexAttribArray(_contexts["parallax"]->_locs["normal_in"]);
-	glEnableVertexAttribArray(_contexts["parallax"]->_locs["tangent_in"]);
+	glEnableVertexAttribArray(_contexts["parallax"]->_locs_attrib["position_in"]);
+	glEnableVertexAttribArray(_contexts["parallax"]->_locs_attrib["tex_coord_in"]);
+	glEnableVertexAttribArray(_contexts["parallax"]->_locs_attrib["current_layer_diffuse_in"]);
+	glEnableVertexAttribArray(_contexts["parallax"]->_locs_attrib["current_layer_normal_in"]);
+	glEnableVertexAttribArray(_contexts["parallax"]->_locs_attrib["current_layer_parallax_in"]);
+	glEnableVertexAttribArray(_contexts["parallax"]->_locs_attrib["normal_in"]);
+	glEnableVertexAttribArray(_contexts["parallax"]->_locs_attrib["tangent_in"]);
 
-	glVertexAttribPointer(_contexts["parallax"]->_locs["position_in"], 3, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)0);
-	glVertexAttribPointer(_contexts["parallax"]->_locs["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(3* sizeof(float)));
-	glVertexAttribPointer(_contexts["parallax"]->_locs["current_layer_diffuse_in"], 1, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(5* sizeof(float)));
-	glVertexAttribPointer(_contexts["parallax"]->_locs["current_layer_normal_in"], 1, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(6* sizeof(float)));
-	glVertexAttribPointer(_contexts["parallax"]->_locs["current_layer_parallax_in"], 1, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(7* sizeof(float)));
-	glVertexAttribPointer(_contexts["parallax"]->_locs["normal_in"], 3, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(8* sizeof(float)));
-	glVertexAttribPointer(_contexts["parallax"]->_locs["tangent_in"], 3, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(11* sizeof(float)));
+	glVertexAttribPointer(_contexts["parallax"]->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)0);
+	glVertexAttribPointer(_contexts["parallax"]->_locs_attrib["tex_coord_in"], 2, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(_contexts["parallax"]->_locs_attrib["current_layer_diffuse_in"], 1, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(_contexts["parallax"]->_locs_attrib["current_layer_normal_in"], 1, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(6* sizeof(float)));
+	glVertexAttribPointer(_contexts["parallax"]->_locs_attrib["current_layer_parallax_in"], 1, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(7* sizeof(float)));
+	glVertexAttribPointer(_contexts["parallax"]->_locs_attrib["normal_in"], 3, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(8* sizeof(float)));
+	glVertexAttribPointer(_contexts["parallax"]->_locs_attrib["tangent_in"], 3, GL_FLOAT, GL_FALSE, 14* sizeof(float), (void*)(11* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, _n_pts);
 
-	glDisableVertexAttribArray(_contexts["parallax"]->_locs["position_in"]);
-	glDisableVertexAttribArray(_contexts["parallax"]->_locs["tex_coord_in"]);
-	glDisableVertexAttribArray(_contexts["parallax"]->_locs["current_layer_diffuse_in"]);
-	glDisableVertexAttribArray(_contexts["parallax"]->_locs["current_layer_normal_in"]);
-	glDisableVertexAttribArray(_contexts["parallax"]->_locs["current_layer_parallax_in"]);
-	glDisableVertexAttribArray(_contexts["parallax"]->_locs["normal_in"]);
-	glDisableVertexAttribArray(_contexts["parallax"]->_locs["tangent_in"]);
+	glDisableVertexAttribArray(_contexts["parallax"]->_locs_attrib["position_in"]);
+	glDisableVertexAttribArray(_contexts["parallax"]->_locs_attrib["tex_coord_in"]);
+	glDisableVertexAttribArray(_contexts["parallax"]->_locs_attrib["current_layer_diffuse_in"]);
+	glDisableVertexAttribArray(_contexts["parallax"]->_locs_attrib["current_layer_normal_in"]);
+	glDisableVertexAttribArray(_contexts["parallax"]->_locs_attrib["current_layer_parallax_in"]);
+	glDisableVertexAttribArray(_contexts["parallax"]->_locs_attrib["normal_in"]);
+	glDisableVertexAttribArray(_contexts["parallax"]->_locs_attrib["tangent_in"]);
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);

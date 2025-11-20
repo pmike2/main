@@ -204,7 +204,7 @@ void init(string json_path) {
 	init_mpeg_writer();
 
 	done= false;
-	recording= false;
+	recording= true;
 }
 
 

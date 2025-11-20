@@ -1123,7 +1123,7 @@ void MPEGReaders::note_on(unsigned int idx_track, unsigned int key, float amplit
 		update_index_movie_texture(idx_track);
 
 		_global_alpha_data[idx_track]= amplitude;
-		cout << amplitude << "\n";
+		//cout << amplitude << "\n";
 		update_global_alpha_texture(idx_track);
 	}
 

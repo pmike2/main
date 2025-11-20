@@ -14,6 +14,7 @@ TRANSIENT_THRESHOLD = 0.5
 ENVELOPE_END_RATIO = 0.01
 MIN_DIST_BETWEEN_TRANSIENT = 20
 MIN_MAX_WINDOW = 100
+MIN_DIFF = 0.1
 BAND_COLORS = ["red", "blueviolet", "blue", "darkturquoise", "green", "orange", "olive", "gold"]
 
 
@@ -21,7 +22,8 @@ BAND_COLORS = ["red", "blueviolet", "blue", "darkturquoise", "green", "orange", 
 #root = "../data/wav/sine_1000"
 #root = "../data/wav/sine_noise"
 #root = "../data/wav/bcl7"
-root = "../data/wav/record_beat_simple"
+#root = "../data/wav/record_beat_simple"
+root = "../data/wav/metronome"
 
 
 json_path = os.path.join(root, os.path.basename(root) + ".json")
@@ -42,6 +44,7 @@ with open(wav_txt_path) as f:
 	b = f.readlines()
 wav_data = [float(x.strip()) for x in b if x.strip()]
 
+# lecture ffts
 fft_files = [os.path.join(root_fft, x) for x in os.listdir(root_fft) if os.path.splitext(x)[1] == ".txt" and not x.startswith(".")]
 fft_files.sort(key=lambda x : int(os.path.splitext(os.path.basename(x))[0]))
 fft_data = []
@@ -50,8 +53,10 @@ for i, fft_file in enumerate(fft_files):
 		b = f.readlines()
 	fft_data.append([float(x.strip()) for x in b if x.strip()])
 
+# ffts triés par fréquence
 fft_data_by_freq = list(zip(*fft_data))
 
+# transients pour chaque bande de fréquence
 transients = {}
 for idx_freq, data in enumerate(fft_data_by_freq):
 	transients[idx_freq] = []
@@ -64,12 +69,15 @@ for idx_freq, data in enumerate(fft_data_by_freq):
 		if window_idx_max > n_blocks - 1:
 			window_idx_max = n_blocks - 1
 		min_data, max_data = min(data[window_idx_min:window_idx_max]), max(data[window_idx_min:window_idx_max])
+		if max_data - min_data < MIN_DIFF:
+			continue
 		if data[idx + 1] - data[idx] > (max_data - min_data) * TRANSIENT_THRESHOLD:
 			transients[idx_freq].append(idx + 1)
 
 #pp(transients)
 #sys.exit()
 
+# transients regroupés par bandes + larges
 transients_grouped = []
 for i in range(len(FREQ_GROUPS_LIMITS)):
 	transients_grouped.append([])
@@ -89,10 +97,8 @@ for i in range(len(transients_grouped)):
 #pp(transients_grouped)
 #sys.exit()
 
+# suppression des transients trop proches
 transients_grouped_pruned = []
-#for i in range(len(FREQ_GROUPS_LIMITS)):
-#	transients_grouped_pruned.append([])
-
 for idx_freq_group, l_block_idx_transient in enumerate(transients_grouped):
 	if len(l_block_idx_transient) == 0:
 		transients_grouped_pruned.append([])
@@ -112,6 +118,7 @@ for idx_freq_group, l_block_idx_transient in enumerate(transients_grouped):
 #pp(transients_grouped_pruned)
 #sys.exit()
 
+# enveloppes
 envelopes = []
 for idx_freq_group, l_block_idx_transient in enumerate(transients_grouped_pruned):
 	if idx_freq_group == 0:
