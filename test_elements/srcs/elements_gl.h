@@ -13,20 +13,20 @@
 #include "elements.h"
 
 
-uint TREE_N_POINTS_PER_CIRCLE = 6;
 
-
-class ForestGL {
+class ElementsGL {
 public:
-	ForestGL();
-	ForestGL(std::map<std::string, GLuint> progs);
-	~ForestGL();
+	ElementsGL();
+	ElementsGL(std::map<std::string, GLuint> progs);
+	~ElementsGL();
 	void draw_simple(const glm::mat4 & world2clip);
+	void draw_light(const glm::mat4 & world2clip, const glm::vec3 & camera_position);
 	void update_simple();
+	void update_light();
 
 
-	std::map<std::string, TreeSpecies *> _species;
-	std::vector<Tree *> _trees;
+	Forest * _forest;
+
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 };

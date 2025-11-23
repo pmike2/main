@@ -32,7 +32,7 @@ const float REPERE_BOX= 100.0f;
 
 // sert à initialiser camera2clip pour fenetres 3D
 const float FRUSTUM_NEAR= 10.0f;
-const float FRUSTUM_FAR= 5000.0f;
+const float FRUSTUM_FAR= 1000.0f;
 const float FRUSTUM_HALFSIZE= 5.0f;
 
 // ajoute une marge a l'ensemble des points contenus dans le champ de vision

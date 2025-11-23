@@ -33,7 +33,7 @@ unsigned int tikfps1, tikfps2;
 
 GLuint g_vao;
 
-ForestGL * forest;
+ElementsGL * elements_gl;
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
@@ -139,6 +139,7 @@ void init() {
 	progs["repere"]= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
 	progs["select"]= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
 	progs["font"]= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
+	progs["light"]= create_prog("../../shaders/vertexshader_3d_light.txt", "../../shaders/fragmentshader_3d_light.txt");
 
 	check_gl_error();
 
@@ -146,16 +147,16 @@ void init() {
 	
 	// --------------------------------------------------------------------------
 	view_system= new ViewSystem(progs, screengl);
-	view_system->_repere->_is_ground= true;
+	view_system->_repere->_is_ground= false;
 	view_system->_repere->_is_repere= true;
 	view_system->_repere->_is_box= true;
-	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), -1.0f* M_PI_2, 0.0f, 200.0f);
+	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 1.0f, 100.0f);
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
 
 	// --------------------------------------------------------------------------
-	forest = new ForestGL();
+	elements_gl = new ElementsGL(progs);
 }
 
 
@@ -166,6 +167,9 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->draw();
+
+	//elements_gl->draw_simple(view_system->_world2clip);
+	elements_gl->draw_light(view_system->_world2clip, view_system->_eye);
 
 	SDL_GL_SwapWindow(window);
 }
@@ -236,7 +240,7 @@ void main_loop() {
 
 
 void clean() {
-	delete forest;
+	delete elements_gl;
 
 	delete view_system;
 	delete input_state;
