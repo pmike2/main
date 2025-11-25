@@ -201,8 +201,8 @@ void test5() {
 int main(int argc, char * argv[]) {
 	srand(time(NULL));
 
-	//test1();
-	test2();
+	test1();
+	//test2();
 	//test3();
 	//test4();
 	//test5();

@@ -11,7 +11,7 @@ TestGeom2D::TestGeom2D() {
 TestGeom2D::TestGeom2D(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl) {
 	_pt_min= pt_type(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
 	_pt_max= pt_type(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
-	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f, Z_NEAR, Z_FAR);
+	_camera2clip= glm::ortho(-1.0f* float(screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -1.0f* float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
 	unsigned int n_buffers= 1;
