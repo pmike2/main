@@ -155,7 +155,6 @@ void init() {
 	input_state= new InputState();
 
 	// --------------------------------------------------------------------------
-	elements_gl = new ElementsGL(progs);
 }
 
 
@@ -166,9 +165,6 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->draw();
-
-	//elements_gl->draw_simple(view_system->_world2clip);
-	elements_gl->draw_light(view_system->_world2clip, view_system->_eye);
 
 	SDL_GL_SwapWindow(window);
 }
@@ -239,8 +235,6 @@ void main_loop() {
 
 
 void clean() {
-	delete elements_gl;
-
 	delete view_system;
 	delete input_state;
 
