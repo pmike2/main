@@ -11,7 +11,7 @@
 #include "input_state.h"
 #include "typedefs.h"
 
-#include "geom.h"
+#include "test_geom.h"
 
 
 // dimensions écran
@@ -32,6 +32,8 @@ unsigned int val_fps, compt_fps;
 unsigned int tikfps1, tikfps2;
 
 GLuint g_vao;
+
+TestGeom * test_geom;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
@@ -74,6 +76,13 @@ void key_down(SDL_Keycode key) {
 	if (view_system->key_down(input_state, key)) {
 		return;
 	}
+
+	if (key== SDLK_a) {
+		test_geom->randomize();
+	}
+	if (key== SDLK_h) {
+		test_geom->_draw_hull = !test_geom->_draw_hull;
+	}
 }
 
 
@@ -111,6 +120,8 @@ void init() {
 	glDepthFunc(GL_LESS);
 	//glDepthFunc(GL_LEQUAL); // ne fonctionne pas je ne sais pas pourquoi; mais necessaire pour bumpmapping et autres
 	glDepthRange(0.0f, 1.0f);
+
+	glPointSize(5.0f);
 	
 	// frontfaces en counterclockwise
 	glFrontFace(GL_CCW);
@@ -155,6 +166,9 @@ void init() {
 	input_state= new InputState();
 
 	// --------------------------------------------------------------------------
+	test_geom = new TestGeom(progs);
+	test_geom->randomize();
+	//test_geom->test_simple();
 }
 
 
@@ -165,6 +179,8 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->draw();
+
+	test_geom->draw(view_system->_world2clip, view_system->_eye);
 
 	SDL_GL_SwapWindow(window);
 }
@@ -235,6 +251,8 @@ void main_loop() {
 
 
 void clean() {
+	delete test_geom;
+
 	delete view_system;
 	delete input_state;
 

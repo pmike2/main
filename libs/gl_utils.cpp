@@ -69,6 +69,21 @@ DrawContext::~DrawContext() {
 }
 
 
+std::ostream & operator << (std::ostream & os, const DrawContext & dc) {
+	os << "prog = " << dc._prog;
+	os << " ; n_pts = " << dc._n_pts << " ; n_attrs_per_pts = " << dc._n_attrs_per_pts;
+	os << "\nlocs_attribs : ";
+	for (auto attrib : dc._locs_attrib) {
+		os << attrib.first << " -> " << attrib.second << " ; ";
+	}
+	os << "\nlocs_uniform :";
+	for (auto unif : dc._locs_uniform) {
+		os << unif.first << " -> " << unif.second << " ; ";
+	}
+	return os;
+}
+
+
 // -------------------------------------------------------------------------------------------
 void _check_gl_error(const char * file, int line){
 	GLenum err(glGetError());

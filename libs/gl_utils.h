@@ -37,6 +37,7 @@ public:
 	DrawContext();
 	DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform);
 	~DrawContext();
+	friend std::ostream & operator << (std::ostream & os, const DrawContext & dc);
 
 
 	GLuint _prog;

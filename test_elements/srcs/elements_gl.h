@@ -28,7 +28,6 @@ public:
 	Forest * _forest;
 
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
-	GLuint * _buffers; // buffers OpenGL
 };
 
 #endif

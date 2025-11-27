@@ -77,9 +77,9 @@ void ElementsGL::draw_light(const glm::mat4 & world2clip, const glm::vec3 & came
 	glm::vec3 light_color(1.0f);
 
 	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
-	glUniform3fv(_contexts["light"]->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
-	glUniform3fv(_contexts["light"]->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
-	glUniform3fv(_contexts["light"]->_locs_uniform["view_position"], 1, glm::value_ptr(camera_position));
+	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
+	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
+	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(camera_position));
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);

@@ -26,12 +26,13 @@ add_library(lib_bbox STATIC ../libs/bbox.cpp ../libs/bbox.h)
 add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
 add_library(lib_font STATIC ../libs/font.cpp ../libs/font.h)
 add_library(lib_geom STATIC ../libs/geom.cpp ../libs/geom.h)
+add_library(lib_test_geom STATIC ./srcs/test_geom.cpp ./srcs/test_geom.h)
 
 add_executable(main ./srcs/main.cpp)
 add_executable(main_gl ./srcs/main_gl.cpp)
 
 set(EXT_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
-set(LOCAL_LIBS lib_repere lib_gl_utils lib_utile lib_input_state lib_bbox lib_bbox_2d lib_font lib_geom)
+set(LOCAL_LIBS lib_repere lib_gl_utils lib_utile lib_input_state lib_bbox lib_bbox_2d lib_font lib_geom lib_test_geom)
  
 target_link_libraries(main PUBLIC ${EXT_LIBS})
 target_link_libraries(main PUBLIC ${LOCAL_LIBS})
