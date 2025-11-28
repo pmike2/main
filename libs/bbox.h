@@ -8,6 +8,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 
+#include "typedefs.h"
 #include "bbox_2d.h"
 
 
@@ -15,18 +16,19 @@
 class AABB {
 public:
 	AABB();
-	AABB(const glm::vec3 & vmin, const glm::vec3 & vmax);
+	AABB(const pt_type_3d & vmin, const pt_type_3d & vmax);
 	~AABB();
-	void set_vmin_vmax(const glm::vec3 & vmin, const glm::vec3 & vmax);
+	void set_vmin_vmax(const pt_type_3d & vmin, const pt_type_3d & vmax);
 	static std::vector<std::vector<unsigned int> > triangles_idxs();
-	void translate(glm::vec3 v);
-	void scale(float x);
+	std::vector<pt_type_3d> segments();
+	void translate(pt_type_3d v);
+	void scale(number x);
 	friend std::ostream & operator << (std::ostream & os, const AABB & aabb);
 
 
-	glm::vec3 _vmin, _vmax;
-	float _radius;
-	glm::vec3 _pts[8]; // sommets du parallelepipede droit
+	pt_type_3d _vmin, _vmax;
+	number _radius;
+	pt_type_3d _pts[8]; // sommets du parallelepipede droit
 };
 
 
@@ -34,16 +36,16 @@ public:
 class BBox {
 public:
 	BBox();
-	BBox(const glm::vec3 & vmin, const glm::vec3 & vmax, const glm::mat4 & model2world);
+	BBox(const pt_type_3d & vmin, const pt_type_3d & vmax, const mat_4d & model2world);
 	~BBox();
-	void set_model2world(const glm::mat4 & model2world);
+	void set_model2world(const mat_4d & model2world);
 	static std::vector<std::vector<unsigned int> > triangles_idxs();
 
 
-	glm::vec3 _vmin, _vmax;
-	float _radius;
-	glm::mat4 _model2world;
-	glm::vec3 _pts[8]; // sommets du parallelepipede droit
+	pt_type_3d _vmin, _vmax;
+	number _radius;
+	mat_4d _model2world;
+	pt_type_3d _pts[8]; // sommets du parallelepipede droit
 	AABB * _aabb;
 };
 
@@ -52,24 +54,24 @@ public:
 class InstancePosRot {
 public:
 	InstancePosRot();
-	InstancePosRot(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale);
-	InstancePosRot(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale, AABB * aabb);
+	InstancePosRot(const pt_type_3d & position, const quat & rotation, const pt_type_3d & scale);
+	InstancePosRot(const pt_type_3d & position, const quat & rotation, const pt_type_3d & scale, AABB * aabb);
 	~InstancePosRot();
-	void set_pos_rot_scale(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale);
+	void set_pos_rot_scale(const pt_type_3d & position, const quat & rotation, const pt_type_3d & scale);
 	// lent, mieux vaut utiliser l'autre
-	void set_pos_rot_scale(const glm::mat4 & mat);
-	void update_dist2(glm::vec3 view_eye);
+	void set_pos_rot_scale(const mat_4d & mat);
+	void update_dist2(pt_type_3d view_eye);
 
 
-	glm::vec3 _position;
-	glm::quat _rotation;
-	glm::vec3 _scale;
-	glm::mat4 _model2world;
+	pt_type_3d _position;
+	quat _rotation;
+	pt_type_3d _scale;
+	mat_4d _model2world;
 	BBox * _bbox;
 	AABB_2D * _emprise;
 	bool _active;
 	bool _selected;
-	float _dist2;
+	number _dist2;
 };
 
 
@@ -77,35 +79,10 @@ public:
 bool aabb_intersects_aabb(AABB * aabb_1, AABB * aabb_2);
 bool aabb_intersects_bbox(AABB * aabb, BBox * bbox);
 bool bbox_intersects_bbox(BBox * bbox_1, BBox * bbox_2);
-float aabb_distance_pt_2(AABB * aabb, const glm::vec3 & pt);
-float aabb_distance_pt(AABB * aabb, const glm::vec3 & pt);
-bool ray_intersects_aabb(glm::vec3 origin, glm::vec3 direction, AABB * aabb, float & t_hit);
-bool segment_intersects_aabb(const glm::vec3 & pt1, const glm::vec3 & pt2, AABB * aabb);
-
-
-// dessin de BBox ; a utiliser avec parcimonie ; lent si trop d'objets
-/*class BBoxDraw {
-public:
-	BBoxDraw();
-	BBoxDraw(GLuint prog_draw, const glm::vec3 & vmin, const glm::vec3 & vmax, const glm::vec3 & color);
-	BBoxDraw(GLuint prog_draw, AABB * aabb, const glm::vec3 & color);
-	BBoxDraw(GLuint prog_draw, BBox * bbox, const glm::vec3 & color);
-	~BBoxDraw();
-	void init();
-	void draw();
-	void anim(const glm::mat4 & world2clip);
-	void set_model2world(const glm::mat4 & model2world);
-
-
-	glm::mat4 _model2world;
-	glm::mat4 _world2clip;
-	glm::vec3 _vmin, _vmax;
-	glm::vec4 _color;
-	GLuint _prog_draw;
-	GLint _model2world_loc, _world2clip_loc, _position_loc, _color_loc;
-	GLuint _buffer;
-	float _data[72];
-};*/
+number aabb_distance_pt_2(AABB * aabb, const pt_type_3d & pt);
+number aabb_distance_pt(AABB * aabb, const pt_type_3d & pt);
+bool ray_intersects_aabb(pt_type_3d origin, pt_type_3d direction, AABB * aabb, number & t_hit);
+bool segment_intersects_aabb(const pt_type_3d & pt1, const pt_type_3d & pt2, AABB * aabb);
 
 
 #endif

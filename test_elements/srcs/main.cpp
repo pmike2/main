@@ -34,6 +34,8 @@ unsigned int tikfps1, tikfps2;
 GLuint g_vao;
 
 ElementsGL * elements_gl;
+bool draw_bbox = true;
+
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
@@ -74,6 +76,10 @@ void key_down(SDL_Keycode key) {
 
 	if (view_system->key_down(input_state, key)) {
 		return;
+	}
+
+	if (key == SDLK_b) {
+		draw_bbox = !draw_bbox;
 	}
 }
 
@@ -168,7 +174,9 @@ void draw() {
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->draw();
 
-	//elements_gl->draw_simple(view_system->_world2clip);
+	if (draw_bbox) {
+		elements_gl->draw_bbox(view_system->_world2clip);
+	}
 	elements_gl->draw_light(view_system->_world2clip, view_system->_eye);
 
 	SDL_GL_SwapWindow(window);

@@ -19,13 +19,13 @@ public:
 	ElementsGL();
 	ElementsGL(std::map<std::string, GLuint> progs);
 	~ElementsGL();
-	void draw_simple(const glm::mat4 & world2clip);
+	void draw_bbox(const glm::mat4 & world2clip);
 	void draw_light(const glm::mat4 & world2clip, const glm::vec3 & camera_position);
-	void update_simple();
+	void update_bbox();
 	void update_light();
 
 
-	Forest * _forest;
+	Elements * _elements;
 
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 };

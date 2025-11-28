@@ -16,5 +16,6 @@
 	"theta_child_max" : 0.3,
 	"tree_depth" : 2,
 	"n_childrens_min" : 2,
-	"n_childrens_max" : 5
+	"n_childrens_max" : 5,
+	"branch_color" : [0.5, 0.3, 0.2, 1.0]
 }

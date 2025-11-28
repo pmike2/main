@@ -11,13 +11,14 @@ int main() {
 
 	ConvexHull * hull = new ConvexHull();
 	
-	hull->randomize(10, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
+	//hull->randomize(10, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0);
 
-	/*hull->add_pt(0.0, 0.0, 0.0);
-	hull->add_pt(1.0, 0.0, 0.0);
-	hull->add_pt(0.0, 1.0, 0.0);
-	hull->add_pt(0.0, 0.0, 1.0);
-	hull->add_pt(-1.0, 0.0, 0.0);*/
+	hull->add_pt(4.0, 10.0, 1.0);
+	hull->add_pt(3.0, 8.0, 3.0);
+	hull->add_pt(2.0, 1.0, 8.0);
+	hull->add_pt(9.0, 7.0, 2.0);
+	hull->add_pt(2.0, 1.7, 6.0);
+	hull->add_pt(9.0, 4.0, 10.0);
 
 	hull->compute();
 

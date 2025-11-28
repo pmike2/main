@@ -26,29 +26,29 @@
 
 
 // dimensions repere
-const float REPERE_AXIS= 10.0f;
-const float REPERE_GROUND= 10.0f;
-const float REPERE_BOX= 100.0f;
+const number REPERE_AXIS= 10.0;
+const number REPERE_GROUND= 10.0;
+const number REPERE_BOX= 100.0;
 
 // sert à initialiser camera2clip pour fenetres 3D
-const float FRUSTUM_NEAR= 10.0f;
-const float FRUSTUM_FAR= 1000.0f;
-const float FRUSTUM_HALFSIZE= 5.0f;
+const number FRUSTUM_NEAR= 10.0;
+const number FRUSTUM_FAR= 1000.0;
+const number FRUSTUM_HALFSIZE= 5.0;
 
 // ajoute une marge a l'ensemble des points contenus dans le champ de vision
-//const float CONTAINS_POINT_TOLERANCE= 20.0f;
+//const number CONTAINS_POINT_TOLERANCE= 20.0;
 
 // sensibilité souris
-//const float LEFT_MOUSE_SENSIVITY= 3.0f;
-const float MIDDLE_MOUSE_SENSIVITY= 3.0f;
-const float RIGHT_MOUSE_SENSIVITY= 0.01f;
+//const number LEFT_MOUSE_SENSIVITY= 3.0;
+const number MIDDLE_MOUSE_SENSIVITY= 3.0;
+const number RIGHT_MOUSE_SENSIVITY= 0.01;
 
 // modes de vision : vue libre , 3e personne libre, 3e personne fixe
 enum ViewSystemType {FREE_VIEW, THIRD_PERSON_FREE, THIRD_PERSON_BEHIND};
 
 // couleurs
-const glm::vec3 GROUND_COLOR(0.3f, 0.3f, 0.3f);
-const glm::vec3 BOX_COLOR(0.5f, 0.5f, 0.5f);
+const pt_type_3d GROUND_COLOR(0.3f, 0.3f, 0.3f);
+const pt_type_3d BOX_COLOR(0.5f, 0.5f, 0.5f);
 
 
 // affichage repère
@@ -57,7 +57,7 @@ public:
 	Repere();
 	Repere(GLuint prog_draw);
 	~Repere();
-	void draw(const glm::mat4 & world2clip);
+	void draw(const mat_4d & world2clip);
 	
 	
 	GLuint _prog_draw;
@@ -75,8 +75,8 @@ public:
 	RectSelect(GLuint prog_draw);
 	~RectSelect();
 	void draw();
-	void set_origin(glm::vec2 gl_v);
-	void set_moving(glm::vec2 gl_v);
+	void set_origin(pt_type gl_v);
+	void set_moving(pt_type gl_v);
 	void set_active(bool is_active);
 	void update_draw();
 
@@ -85,10 +85,10 @@ public:
 	GLint _position_loc, _color_loc;
 	GLuint _buffer;
 	bool _is_active;
-	glm::vec2 _gl_origin;
-	glm::vec2 _gl_moving;
-	glm::vec3 _color;
-	glm::vec3 _norms[4];
+	pt_type _gl_origin;
+	pt_type _gl_moving;
+	pt_type_3d _color;
+	pt_type_3d _norms[4];
 };
 
 
@@ -105,24 +105,24 @@ public:
 	bool key_up(InputState * input_state, SDL_Keycode key);
 	void update();
 	void draw();
-	void anim(const glm::vec3 & target, const glm::quat & rotation);
-	void set(const glm::vec3 & target, float phi, float theta, float rho);
-	//void move_target(const glm::vec3 & v);
-	void move_target(int screen_delta_x, int screen_delta_y, float z);
-	void move_phi(float x);
-	void move_theta(float x);
-	void move_rho(float x);
-	glm::vec2 screen2world(unsigned int x, unsigned int y, float z);
-	glm::vec2 screen2world(glm::vec2 gl_coords, float z);
-	glm::vec2 screen2gl(unsigned int x, unsigned int y);
-	glm::uvec2 gl2screen(glm::vec2 gl_coords);
-	float depthbuffer2world(float depth);
-	//bool contains_point(const glm::vec3 & pos);
+	void anim(const pt_type_3d & target, const quat & rotation);
+	void set(const pt_type_3d & target, number phi, number theta, number rho);
+	//void move_target(const pt_type_3d & v);
+	void move_target(int screen_delta_x, int screen_delta_y, number z);
+	void move_phi(number x);
+	void move_theta(number x);
+	void move_rho(number x);
+	pt_type screen2world(uint x, uint y, number z);
+	pt_type screen2world(pt_type gl_coords, number z);
+	pt_type screen2gl(uint x, uint y);
+	glm::uvec2 gl2screen(pt_type gl_coords);
+	number depthbuffer2world(number depth);
+	//bool contains_point(const pt_type_3d & pos);
 	bool intersects_bbox(BBox * bbox, bool selection=false);
 	bool intersects_aabb(AABB * aabb, bool selection=false);
-	bool intersects_aabb(AABB * aabb, const glm::mat4 & model2world_matrix, bool selection=false);
-	bool intersects_pts(glm::vec3 * pts, unsigned int n_pts, bool selection=false);
-	//bool selection_contains_point(const glm::vec3 & pt);
+	bool intersects_aabb(AABB * aabb, const mat_4d & model2world_matrix, bool selection=false);
+	bool intersects_pts(pt_type_3d * pts, uint n_pts, bool selection=false);
+	//bool selection_contains_point(const pt_type_3d & pt);
 	void update_selection_norms();
 	bool single_selection_intersects_aabb(AABB * aabb);
 	bool rect_selection_intersects_bbox(BBox * bbox);
@@ -130,20 +130,20 @@ public:
 	
 	// paramètres en entrée
 	ScreenGL * _screengl;
-	float _frustum_near, _frustum_far, _frustum_halfsize;
-	glm::vec3 _target;
-	float _free_view_x, _free_view_y;
+	number _frustum_near, _frustum_far, _frustum_halfsize;
+	pt_type_3d _target;
+	number _free_view_x, _free_view_y;
 
-	float _phi, _theta, _rho;
+	number _phi, _theta, _rho;
 	
 	// paramètres calculés
-	glm::vec3 _eye;
-	glm::vec3 _up, _right, _dir;
-	glm::mat4 _camera2clip;
-	glm::mat4 _world2camera;
-	glm::mat4 _world2clip;
-	glm::vec3 _center_near, _center_far;
-	glm::vec3 _norm_near, _norm_far, _norm_left, _norm_right, _norm_top, _norm_bottom;
+	pt_type_3d _eye;
+	pt_type_3d _up, _right, _dir;
+	mat_4d _camera2clip;
+	mat_4d _world2camera;
+	mat_4d _world2clip;
+	pt_type_3d _center_near, _center_far;
+	pt_type_3d _norm_near, _norm_far, _norm_left, _norm_right, _norm_top, _norm_bottom;
 
 	ViewSystemType _type;
 	
@@ -156,7 +156,7 @@ public:
 	bool _new_rect_selection;
 
 	bool _new_destination;
-	glm::vec3 _destination;
+	pt_type_3d _destination;
 };
 
 

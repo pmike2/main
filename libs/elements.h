@@ -8,10 +8,30 @@
 #include <glm/glm.hpp>
 
 #include "typedefs.h"
+#include "bbox.h"
+#include "geom.h"
 
 
 const uint BRANCH_N_POINTS_PER_CIRCLE = 6;
+const uint N_PTS_PER_BRANCH_SIDE= BRANCH_N_POINTS_PER_CIRCLE * 6;
+const uint N_PTS_PER_BRANCH_BOTTOM = BRANCH_N_POINTS_PER_CIRCLE * 3;
+const uint N_PTS_PER_BRANCH_TOP = BRANCH_N_POINTS_PER_CIRCLE * 3;
 
+const uint STONE_N_POINTS_HULL = 30;
+
+
+class Element {
+public:
+	Element();
+	Element(pt_type_3d pt_base, pt_type_3d size);
+	virtual ~Element() = default;
+	virtual void update_data() = 0;
+	//friend std::ostream & operator << (std::ostream & os, const Element & t);
+
+	AABB * _aabb;
+	float * _data;
+	uint _n_pts;
+};
 
 
 class TreeSpecies {
@@ -31,13 +51,14 @@ public:
 	number _theta_child_min, _theta_child_max;
 	uint _tree_depth;
 	uint _n_childrens_min, _n_childrens_max;
+	glm::vec4 _branch_color;
 };
 
 
 class Branch {
 public:
 	Branch();
-	Branch(pt_type_3d pt_base, number radius_base, number radius_end, number r, number theta, number phi, uint n_childrens, uint idx);
+	Branch(pt_type_3d pt_base, number radius_base, number radius_end, number r, number theta, number phi, uint n_childrens, uint idx, glm::vec4 color);
 	~Branch();
 	friend std::ostream & operator << (std::ostream & os, const Branch & b);
 
@@ -46,8 +67,9 @@ public:
 	number _radius_base;
 	number _radius_end;
 	number _r, _theta, _phi;
-	uint _idx;
 	uint _n_childrens;
+	uint _idx;
+	glm::vec4 _color;
 	
 	pt_type_3d * _vertices_side;
 	pt_type_3d * _normals_side;
@@ -55,14 +77,18 @@ public:
 	pt_type_3d * _normals_bottom;
 	pt_type_3d * _vertices_top;
 	pt_type_3d * _normals_top;
+
+	AABB * _aabb;
 };
 
 
-class Tree {
+class Tree : public Element {
 public:
-	Tree(TreeSpecies * species, pt_type_3d pt_base);
+	Tree(TreeSpecies * species, pt_type_3d pt_base, pt_type_3d size);
 	Tree();
 	~Tree();
+	void gen_branches(Tree * tree, Branch * branch);
+	void update_data();
 	friend std::ostream & operator << (std::ostream & os, const Tree & t);
 
 
@@ -71,20 +97,29 @@ public:
 };
 
 
-void gen_branches(Tree * tree, Branch * branch);
-
-
-class Forest {
+class Stone : public Element {
 public:
-	Forest();
-	Forest(std::string dir_jsons);
-	~Forest();
-	void add_tree(std::string species_name, pt_type_3d pt_base);
-	friend std::ostream & operator << (std::ostream & os, const Forest & f);
+	Stone();
+	Stone(pt_type_3d pt_base, pt_type_3d size);
+	~Stone();
+	void update_data();
 
 
-	std::map<std::string, TreeSpecies *> _species;
-	std::vector<Tree *> _trees;
+	ConvexHull * _hull;
+};
+
+
+class Elements {
+public:
+	Elements();
+	Elements(std::string dir_tree_jsons);
+	~Elements();
+	void add_tree(std::string species_name, pt_type_3d pt_base, pt_type_3d size);
+	void add_stone(pt_type_3d pt_base, pt_type_3d size);
+
+
+	std::map<std::string, TreeSpecies *> _tree_species;
+	std::vector<Element *> _elements;
 };
 
 

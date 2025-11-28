@@ -1,55 +1,64 @@
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/string_cast.hpp>
 
-#include "elements_gl.h"
+#include "test_geom.h"
 
 
-// ElementsGL -------------------------------------------------------------------------------------------------------
-ElementsGL::ElementsGL() {
+TestGeom::TestGeom() {
 
 }
 
 
-ElementsGL::ElementsGL(std::map<std::string, GLuint> progs) {
-	_elements = new Elements("../data");
-	for (uint i=0; i<10; ++i) {
-		for (uint j=0; j<10; ++j) {
-			//std::cout << i << " ; " << j << "\n";
-			_elements->add_tree("tree_test", pt_type_3d(number(i) * 3.0, number(j) * 3.0, 0.0), pt_type_3d(1.0, 1.0, 4.0));
-		}
-	}
-	
-	for (uint i=0; i<10; ++i) {
-		_elements->add_stone(pt_type_3d(number(i) * 3.0, -2.0, 0.0), pt_type_3d(1.0, 1.0, 1.0));
-	}
-
+TestGeom::TestGeom(std::map<std::string, GLuint> progs) : _draw_points(true), _draw_hull(true) {
 	GLuint buffers[2];
 	glGenBuffers(2, buffers);
 
-	_contexts["bbox"]= new DrawContext(progs["repere"], buffers[0],
+	_contexts["points"]= new DrawContext(progs["repere"], buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 
-	_contexts["light"]= new DrawContext(progs["light"], buffers[1],
+	_contexts["hull"]= new DrawContext(progs["light"], buffers[1],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
-
-	update_bbox();
-	update_light();
+	
+	_hull = new ConvexHull();
 }
 
 
-ElementsGL::~ElementsGL() {
-
+TestGeom::~TestGeom() {
+	delete _hull;
 }
 
 
-void ElementsGL::draw_bbox(const glm::mat4 & world2clip) {
-	DrawContext * context= _contexts["bbox"];
+void TestGeom::test_simple() {
+	_hull->add_pt(4.0, 10.0, 1.0);
+	_hull->add_pt(3.0, 8.0, 3.0);
+	_hull->add_pt(2.0, 1.0, 8.0);
+	_hull->add_pt(9.0, 7.0, 2.0);
+	_hull->add_pt(2.0, 1.7, 6.0);
+	_hull->add_pt(9.0, 4.0, 10.0);
+
+	_hull->compute();
+	update_points();
+	update_hull();
+}
+
+
+void TestGeom::randomize() {
+	uint n_pts = 600;
+	double size = 10.0;
+	_hull->randomize(n_pts, 0.0, size, 0.0, size, 0.0, size);
+
+	_hull->compute();
+	update_points();
+	update_hull();
+}
+
+
+void TestGeom::draw_points(const glm::mat4 & world2clip) {
+	DrawContext * context= _contexts["points"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
-	
 	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
 	
 	for (auto attr : context->_locs_attrib) {
@@ -59,7 +68,7 @@ void ElementsGL::draw_bbox(const glm::mat4 & world2clip) {
 	glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
 	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
 
-	glDrawArrays(GL_LINES, 0, context->_n_pts);
+	glDrawArrays(GL_POINTS, 0, context->_n_pts);
 
 	for (auto attr : context->_locs_attrib) {
 		glDisableVertexAttribArray(attr.second);
@@ -70,8 +79,8 @@ void ElementsGL::draw_bbox(const glm::mat4 & world2clip) {
 }
 
 
-void ElementsGL::draw_light(const glm::mat4 & world2clip, const glm::vec3 & camera_position) {
-	DrawContext * context= _contexts["light"];
+void TestGeom::draw_hull(const glm::mat4 & world2clip, const glm::vec3 & camera_position) {
+	DrawContext * context= _contexts["hull"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -103,34 +112,34 @@ void ElementsGL::draw_light(const glm::mat4 & world2clip, const glm::vec3 & came
 }
 
 
-void ElementsGL::update_bbox() {
-	DrawContext * context= _contexts["bbox"];
-	context->_n_pts= _elements->_elements.size() * 48;
+void TestGeom::draw(const glm::mat4 & world2clip, const glm::vec3 & camera_position) {
+	if (_draw_points) {
+		draw_points(world2clip);
+	}
+	if (_draw_hull) {
+		draw_hull(world2clip, camera_position);
+	}
+}
+
+
+void TestGeom::update_points() {
+	DrawContext * context= _contexts["points"];
+	context->_n_pts= _hull->_pts.size();
 	context->_n_attrs_per_pts= 7;
-	
+
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr= data;
-	glm::vec4 bbox_color(1.0, 0.8, 0.2, 1.0);
-
-	for (auto element : _elements->_elements) {
-		AABB * aabb = element->_aabb;
-		std::vector<pt_type_3d> pts = aabb->segments();
-		for (auto pt : pts) {
-			ptr[0] = float(pt.x);
-			ptr[1] = float(pt.y);
-			ptr[2] = float(pt.z);
-			ptr[3] = bbox_color[0];
-			ptr[4] = bbox_color[1];
-			ptr[5] = bbox_color[2];
-			ptr[6] = bbox_color[3];
-			ptr += 7;
-		}
+	glm::vec4 color(1.0f, 0.0f, 0.0f, 1.0f);
+	for (auto pt : _hull->_pts) {
+		ptr[0] = float(pt->_coords.x);
+		ptr[1] = float(pt->_coords.y);
+		ptr[2] = float(pt->_coords.z);
+		ptr[3] = color[0];
+		ptr[4] = color[1];
+		ptr[5] = color[2];
+		ptr[6] = color[3];
+		ptr += 7;
 	}
-
-	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
-		std::cout << data[i] << " ; ";
-	}
-	std::cout << "\n";*/
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_STATIC_DRAW);
@@ -138,23 +147,28 @@ void ElementsGL::update_bbox() {
 }
 
 
-void ElementsGL::update_light() {
-
-	uint n_pts = 0;
-	for (auto element : _elements->_elements) {
-		n_pts += element->_n_pts;
-	}
-
-	DrawContext * context= _contexts["light"];
-	context->_n_pts= n_pts;
+void TestGeom::update_hull() {
+	DrawContext * context= _contexts["hull"];
+	context->_n_pts= _hull->_faces.size() * 3;
 	context->_n_attrs_per_pts= 10;
-
+	
 	float data[context->_n_pts* context->_n_attrs_per_pts];
-
-	uint compt = 0;
-	for (auto element : _elements->_elements) {
-		for (uint i=0; i<element->_n_pts * context->_n_attrs_per_pts; ++i) {
-			data[compt++] = element->_data[i];
+	float * ptr= data;
+	glm::vec4 color(0.0f, 1.0f, 1.0f, 0.5f);
+	for (auto face : _hull->_faces) {
+		for (uint i=0; i<3; ++i) {
+			Pt * pt = _hull->_pts[face->_idx[i]];
+			ptr[0] = float(pt->_coords.x);
+			ptr[1] = float(pt->_coords.y);
+			ptr[2] = float(pt->_coords.z);
+			ptr[3] = color[0];
+			ptr[4] = color[1];
+			ptr[5] = color[2];
+			ptr[6] = color[3];
+			ptr[7] = float(face->_normal.x);
+			ptr[8] = float(face->_normal.y);
+			ptr[9] = float(face->_normal.z);
+			ptr += 10;
 		}
 	}
 

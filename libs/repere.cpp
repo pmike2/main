@@ -13,42 +13,42 @@ Repere::Repere() {
 
 
 Repere::Repere(GLuint prog_draw) : _prog_draw(prog_draw), _is_repere(true), _is_ground(true), _is_box(true) {
-	unsigned int i;
+	uint i;
 	
 	float data_repere[]= {
-		0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-		REPERE_AXIS, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, REPERE_AXIS, 0.0f, 0.0f, 1.0f, 0.0f,
-		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-		0.0f, 0.0f, REPERE_AXIS, 0.0f, 0.0f, 1.0f
+		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
+		float(REPERE_AXIS), 0.0, 0.0, 1.0, 0.0, 0.0,
+		0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
+		0.0, float(REPERE_AXIS), 0.0, 0.0, 1.0, 0.0,
+		0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
+		0.0, 0.0, float(REPERE_AXIS), 0.0, 0.0, 1.0
 	};
 	
-	float EPS= 0.01f;
+	number EPS= 0.01;
 	float data_ground[]= {
-		-REPERE_GROUND, -REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2],
-		 REPERE_GROUND, -REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2],
-		 REPERE_GROUND,  REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2],
-		-REPERE_GROUND, -REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2],
-		 REPERE_GROUND,  REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2],
-		-REPERE_GROUND,  REPERE_GROUND, -EPS, GROUND_COLOR[0], GROUND_COLOR[1], GROUND_COLOR[2]
+		-1.0f* float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2]),
+		float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2]),
+		float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2]),
+		-1.0f* float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2]),
+		float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2]),
+		-1.0f* float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2])
 	};
 
 	float data_box[]= {
-		-REPERE_BOX, -REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, -REPERE_BOX, -REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
-		REPERE_BOX, -REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, REPERE_BOX, -REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
-		REPERE_BOX, REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
-		-REPERE_BOX, REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, -REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
+		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
+		float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
+		float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
+		-1.0f * float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
 
-		-REPERE_BOX, -REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, -REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
-		REPERE_BOX, -REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
-		REPERE_BOX, REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
-		-REPERE_BOX, REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, -REPERE_BOX, REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
+		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
+		float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
+		float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
+		-1.0f * float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
 		
-		-REPERE_BOX, -REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, -REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
-		REPERE_BOX, -REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, -REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
-		-REPERE_BOX, REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], -REPERE_BOX, REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2],
-		REPERE_BOX, REPERE_BOX, -REPERE_BOX, BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2], REPERE_BOX, REPERE_BOX, REPERE_BOX , BOX_COLOR[0], BOX_COLOR[1], BOX_COLOR[2]
+		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
+		float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
+		-1.0f * float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
+		float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2])
 	};
 
 	glGenBuffers(3, _buffers);
@@ -76,7 +76,7 @@ Repere::~Repere() {
 }
 
 
-void Repere::draw(const glm::mat4 & world2clip) {
+void Repere::draw(const mat_4d & world2clip) {
 	if (_is_repere) {
 		glUseProgram(_prog_draw);
 		glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
@@ -84,7 +84,7 @@ void Repere::draw(const glm::mat4 & world2clip) {
 		glEnableVertexAttribArray(_position_loc);
 		glEnableVertexAttribArray(_diffuse_color_loc);
 
-		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
+		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
 		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
 		glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 
@@ -104,7 +104,7 @@ void Repere::draw(const glm::mat4 & world2clip) {
 		glEnableVertexAttribArray(_position_loc);
 		glEnableVertexAttribArray(_diffuse_color_loc);
 		
-		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
+		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
 		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
 		glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 
@@ -124,7 +124,7 @@ void Repere::draw(const glm::mat4 & world2clip) {
 		glEnableVertexAttribArray(_position_loc);
 		glEnableVertexAttribArray(_diffuse_color_loc);
 		
-		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(world2clip));
+		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
 		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
 		glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 
@@ -146,15 +146,15 @@ RectSelect::RectSelect() {
 
 
 RectSelect::RectSelect(GLuint prog_draw) : 
-	_prog_draw(prog_draw), _is_active(false), _gl_origin(glm::vec2(0.0f)), _gl_moving(glm::vec2(0.0f)),	_color(glm::vec3(1.0f, 1.0f, 0.0f))
+	_prog_draw(prog_draw), _is_active(false), _gl_origin(pt_type(0.0)), _gl_moving(pt_type(0.0)),	_color(pt_type_3d(1.0, 1.0, 0.0))
 {
 	glGenBuffers(1, &_buffer);
 	
 	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
 	_color_loc= glGetAttribLocation(_prog_draw, "color_in");
 
-	for (unsigned int i=0; i<4; ++i) {
-		_norms[i]= glm::vec3(0.0f);
+	for (uint i=0; i<4; ++i) {
+		_norms[i]= pt_type_3d(0.0);
 	}
 
 	update_draw();
@@ -188,14 +188,14 @@ void RectSelect::draw() {
 }
 
 
-void RectSelect::set_origin(glm::vec2 gl_v) {
+void RectSelect::set_origin(pt_type gl_v) {
 	_gl_origin= gl_v;
 	_gl_moving= _gl_origin;
 	update_draw();
 }
 
 
-void RectSelect::set_moving(glm::vec2 gl_v) {
+void RectSelect::set_moving(pt_type gl_v) {
 	_gl_moving= gl_v;
 	update_draw();
 }
@@ -208,17 +208,17 @@ void RectSelect::set_active(bool is_active) {
 
 void RectSelect::update_draw() {
 	float data_selection[]= {
-		_gl_origin.x, _gl_origin.y, _color.x, _color.y, _color.z,
-		_gl_moving.x, _gl_origin.y, _color.x, _color.y, _color.z,
+		float(_gl_origin.x), float(_gl_origin.y), float(_color.x), float(_color.y), float(_color.z),
+		float(_gl_moving.x), float(_gl_origin.y), float(_color.x), float(_color.y), float(_color.z),
 		
-		_gl_moving.x, _gl_origin.y, _color.x, _color.y, _color.z,
-		_gl_moving.x, _gl_moving.y, _color.x, _color.y, _color.z,
+		float(_gl_moving.x), float(_gl_origin.y), float(_color.x), float(_color.y), float(_color.z),
+		float(_gl_moving.x), float(_gl_moving.y), float(_color.x), float(_color.y), float(_color.z),
 		
-		_gl_moving.x, _gl_moving.y, _color.x, _color.y, _color.z,
-		_gl_origin.x, _gl_moving.y, _color.x, _color.y, _color.z,
+		float(_gl_moving.x), float(_gl_moving.y), float(_color.x), float(_color.y), float(_color.z),
+		float(_gl_origin.x), float(_gl_moving.y), float(_color.x), float(_color.y), float(_color.z),
 
-		_gl_origin.x, _gl_moving.y, _color.x, _color.y, _color.z,
-		_gl_origin.x, _gl_origin.y, _color.x, _color.y, _color.z,
+		float(_gl_origin.x), float(_gl_moving.y), float(_color.x), float(_color.y), float(_color.z),
+		float(_gl_origin.x), float(_gl_origin.y), float(_color.x), float(_color.y), float(_color.z),
 	};
 
 	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
@@ -235,12 +235,12 @@ ViewSystem::ViewSystem() {
 
 ViewSystem::ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl) :
 	_screengl(screengl),
-	_target(glm::vec3(0.0f, 0.0f, 0.0f)), _eye(glm::vec3(0.0f, 0.0f, 0.0f)), _up(glm::vec3(0.0f, 0.0f, 0.0f)), 
-	_phi(0.0f), _theta(0.0f), _rho(1.0f),
+	_target(pt_type_3d(0.0, 0.0, 0.0)), _eye(pt_type_3d(0.0, 0.0, 0.0)), _up(pt_type_3d(0.0, 0.0, 0.0)), 
+	_phi(0.0), _theta(0.0), _rho(1.0),
 	_type(FREE_VIEW), _frustum_halfsize(FRUSTUM_HALFSIZE), _frustum_near(FRUSTUM_NEAR), _frustum_far(FRUSTUM_FAR),
-	_new_single_selection(false), _new_rect_selection(false), _new_destination(false), _free_view_x(0.0f), _free_view_y(0.0f)
+	_new_single_selection(false), _new_rect_selection(false), _new_destination(false), _free_view_x(0.0), _free_view_y(0.0)
 {
-	_camera2clip= glm::frustum(-_frustum_halfsize* (float)(_screengl->_screen_width)/ (float)(_screengl->_screen_height), _frustum_halfsize* (float)(_screengl->_screen_width)/ (float)(_screengl->_screen_height), -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
+	_camera2clip= glm::frustum(-_frustum_halfsize* _screengl->_screen_width/ _screengl->_screen_height, _frustum_halfsize* _screengl->_screen_width/ _screengl->_screen_height, -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
 
 	update();
 
@@ -248,7 +248,7 @@ ViewSystem::ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl)
 	_rect_select= new RectSelect(progs["select"]);
 
 	_font= new Font(progs["font"], "../../fonts/Silom.ttf", 48, screengl);
-	//_font->_z= 100.0f;
+	//_font->_z= 100.0;
 }
 
 
@@ -260,13 +260,13 @@ ViewSystem::~ViewSystem() {
 
 
 bool ViewSystem::mouse_button_down(InputState * input_state) {
-	_free_view_x= 0.0f;
-	_free_view_y= 0.0f;
+	_free_view_x= 0.0;
+	_free_view_y= 0.0;
 
 	if (input_state->_left_mouse) {
 		if (input_state->_keys[SDLK_m]) {
 			_new_destination= true;
-			_destination= glm::vec3(screen2world(input_state->_x, input_state->_y, 0.0f), 0.0f);
+			_destination= pt_type_3d(screen2world(input_state->_x, input_state->_y, 0.0), 0.0);
 			return true;
 		}
 		else {
@@ -280,8 +280,8 @@ bool ViewSystem::mouse_button_down(InputState * input_state) {
 
 
 bool ViewSystem::mouse_button_up(InputState * input_state) {
-	_free_view_x= float(input_state->_xrel);
-	_free_view_y= float(input_state->_yrel);
+	_free_view_x= number(input_state->_xrel);
+	_free_view_y= number(input_state->_yrel);
 
 	if (_rect_select->_is_active) {
 		_rect_select->set_active(false);
@@ -304,7 +304,7 @@ bool ViewSystem::mouse_motion(InputState * input_state) {
 		if (input_state->_left_mouse) {
 			// translation
 			if (input_state->_keys[SDLK_LSHIFT]) {
-				move_target(input_state->_xrel, input_state->_yrel, 0.0f);
+				move_target(input_state->_xrel, input_state->_yrel, 0.0);
 				return true;
 			}
 			// selection rectangulaire
@@ -315,13 +315,13 @@ bool ViewSystem::mouse_motion(InputState * input_state) {
 		}
 		// zoom
 		else if ((input_state->_middle_mouse) || (input_state->_keys[SDLK_LCTRL])) {
-			move_rho(-(float)(input_state->_yrel)* MIDDLE_MOUSE_SENSIVITY);
+			move_rho(-(number)(input_state->_yrel)* MIDDLE_MOUSE_SENSIVITY);
 			return true;
 		}
 		// rotations
 		else if (input_state->_right_mouse) {
-			move_theta((float)(-input_state->_yrel)* RIGHT_MOUSE_SENSIVITY);
-			move_phi((float)(-input_state->_xrel)* RIGHT_MOUSE_SENSIVITY);
+			move_theta((number)(-input_state->_yrel)* RIGHT_MOUSE_SENSIVITY);
+			move_phi((number)(-input_state->_xrel)* RIGHT_MOUSE_SENSIVITY);
 			return true;
 		}
 	}
@@ -331,13 +331,13 @@ bool ViewSystem::mouse_motion(InputState * input_state) {
 		}
 		// zoom
 		else if ((input_state->_middle_mouse) || (input_state->_keys[SDLK_LCTRL])) {
-			move_rho(-(float)(input_state->_yrel)* MIDDLE_MOUSE_SENSIVITY);
+			move_rho(-(number)(input_state->_yrel)* MIDDLE_MOUSE_SENSIVITY);
 			return true;
 		}
 		// rotations
 		else if (input_state->_right_mouse) {
-			move_theta((float)(-input_state->_yrel)* RIGHT_MOUSE_SENSIVITY);
-			move_phi((float)(-input_state->_xrel)* RIGHT_MOUSE_SENSIVITY);
+			move_theta((number)(-input_state->_yrel)* RIGHT_MOUSE_SENSIVITY);
+			move_phi((number)(-input_state->_xrel)* RIGHT_MOUSE_SENSIVITY);
 			return true;
 		}
 	}
@@ -347,7 +347,7 @@ bool ViewSystem::mouse_motion(InputState * input_state) {
 		}
 		// zoom
 		else if ((input_state->_middle_mouse) || (input_state->_keys[SDLK_LCTRL])) {
-			move_rho(-(float)(input_state->_yrel)* MIDDLE_MOUSE_SENSIVITY);
+			move_rho(-(number)(input_state->_yrel)* MIDDLE_MOUSE_SENSIVITY);
 			return true;
 		}
 		else if (input_state->_right_mouse) {
@@ -355,7 +355,7 @@ bool ViewSystem::mouse_motion(InputState * input_state) {
 		}
 		else {
 			// rotation haut - bas ; la rotation gauche - droite est assurée par world.mouse_motion et view_system.anim
-			move_theta((float)(-input_state->_yrel)* RIGHT_MOUSE_SENSIVITY);
+			move_theta((number)(-input_state->_yrel)* RIGHT_MOUSE_SENSIVITY);
 			return true;
 		}
 	}
@@ -405,9 +405,9 @@ bool ViewSystem::key_up(InputState * input_state, SDL_Keycode key) {
 // a appeler des qu'un param est modifie
 void ViewSystem::update() {
 	// https://en.wikipedia.org/wiki/Spherical_coordinate_system
-	_dir= -glm::vec3(cos(_phi)* sin(_theta), sin(_phi)* sin(_theta), cos(_theta));
+	_dir= -pt_type_3d(cos(_phi)* sin(_theta), sin(_phi)* sin(_theta), cos(_theta));
 	_eye= _target- _rho* _dir;
-	_up= -glm::vec3(cos(_phi)* cos(_theta), sin(_phi)* cos(_theta), -sin(_theta));
+	_up= -pt_type_3d(cos(_phi)* cos(_theta), sin(_phi)* cos(_theta), -sin(_theta));
 	_right= glm::cross(_dir, _up);
 	_world2camera= glm::lookAt(_eye, _target, _up);
 
@@ -423,14 +423,14 @@ void ViewSystem::update() {
 	_center_far = _eye+ _frustum_far * _dir;
 	_norm_near= _dir;
 	_norm_far= -_dir;
-	_norm_right= glm::cross(_up, glm::normalize(_center_near- _eye+ _right* _frustum_halfsize* (float)(_screengl->_screen_width)/ (float)(_screengl->_screen_height)));
-	_norm_left = glm::cross(glm::normalize(_center_near- _eye- _right* _frustum_halfsize* (float)(_screengl->_screen_width)/ (float)(_screengl->_screen_height)), _up);
+	_norm_right= glm::cross(_up, glm::normalize(_center_near- _eye+ _right* _frustum_halfsize* number(_screengl->_screen_width)/ number(_screengl->_screen_height)));
+	_norm_left = glm::cross(glm::normalize(_center_near- _eye- _right* _frustum_halfsize* number(_screengl->_screen_width)/ number(_screengl->_screen_height)), _up);
 	_norm_top= glm::cross(glm::normalize(_center_near- _eye+ _up* _frustum_halfsize), _right);
 	_norm_bottom= glm::cross(_right, glm::normalize(_center_near- _eye- _up* _frustum_halfsize));
 }
 
 
-void ViewSystem::set(const glm::vec3 & target, float phi, float theta, float rho) {
+void ViewSystem::set(const pt_type_3d & target, number phi, number theta, number rho) {
 	_target= target;
 	_phi= phi;
 	_theta= theta;
@@ -441,7 +441,7 @@ void ViewSystem::set(const glm::vec3 & target, float phi, float theta, float rho
 
 
 // les move sont des modif delta, contrairement a set ou anim qui font des modifs absolues
-/*void ViewSystem::move_target(const glm::vec3 & v) {
+/*void ViewSystem::move_target(const pt_type_3d & v) {
 	_target.x+= v.x* sin(_phi)- v.y* cos(_phi);
 	_target.y+= -v.x* cos(_phi)- v.y* sin(_phi);
 	_target.z+= v.z;
@@ -449,14 +449,14 @@ void ViewSystem::set(const glm::vec3 & target, float phi, float theta, float rho
 	update();
 }*/
 
-void ViewSystem::move_target(int screen_delta_x, int screen_delta_y, float z) {
+void ViewSystem::move_target(int screen_delta_x, int screen_delta_y, number z) {
 	/*
-	Avant j'utilisais move_target(glm::vec3) avec LEFT_MOUSE_SENSIVITY mais du coup la translation ne dépendait pas de l'altitude
+	Avant j'utilisais move_target(pt_type_3d) avec LEFT_MOUSE_SENSIVITY mais du coup la translation ne dépendait pas de l'altitude
 	et du coup à basse alti ça bougeait vite, haute alti lentement.
 	Ici il y a une meilleure corrélation entre mouvement curseur et translation terrain
 	A terme fournir en argument optionnel un Terrain afin de s'ajuster à un relief plus complexe que z = 0
 	*/
-	glm::vec2 v= screen2world(_screengl->_screen_width* 0.5- screen_delta_x, _screengl->_screen_height* 0.5- screen_delta_y, z);
+	pt_type v= screen2world(_screengl->_screen_width* 0.5- screen_delta_x, _screengl->_screen_height* 0.5- screen_delta_y, z);
 	_target.x= v.x;
 	_target.y= v.y;
 	update();
@@ -464,13 +464,13 @@ void ViewSystem::move_target(int screen_delta_x, int screen_delta_y, float z) {
 
 
 // phi est l'angle horizontal compris entre 0 et 2PI
-void ViewSystem::move_phi(float x) {
+void ViewSystem::move_phi(number x) {
 	_phi+= x;
-	while (_phi< 0.0f) {
-		_phi+= M_PI* 2.0f;
+	while (_phi< 0.0) {
+		_phi+= M_PI* 2.0;
 	}
-	while (_phi> M_PI* 2.0f) {
-		_phi-= M_PI* 2.0f;
+	while (_phi> M_PI* 2.0) {
+		_phi-= M_PI* 2.0;
 	}
 	
 	update();
@@ -478,8 +478,8 @@ void ViewSystem::move_phi(float x) {
 
 
 // theta est l'angle vertical, compris entre 0 et PI
-void ViewSystem::move_theta(float x) {
-	if ((_theta+ x> 0.0f) && (_theta+ x< M_PI)) {
+void ViewSystem::move_theta(number x) {
+	if ((_theta+ x> 0.0) && (_theta+ x< M_PI)) {
 		_theta+= x;
 	}
 	
@@ -487,10 +487,10 @@ void ViewSystem::move_theta(float x) {
 }
 
 
-void ViewSystem::move_rho(float x) {
+void ViewSystem::move_rho(number x) {
 	_rho+= x;
-	if (_rho< 0.0f) {
-		_rho= 0.0f;
+	if (_rho< 0.0) {
+		_rho= 0.0;
 	}
 	
 	update();
@@ -503,21 +503,21 @@ void ViewSystem::draw() {
 
 	// TODO : afficher des infos relatives à ViewSystem
 	/*std::vector<Text> texts;
-	texts.push_back(Text("hello", glm::vec2(0.0f, 0.0f), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	texts.push_back(Text("hello", pt_type(0.0, 0.0), 0.01, pt_type_4d(0.7f, 0.6f, 0.5f, 1.0)));
 	_font->set_text(texts);
 	_font->draw();*/
 }
 
 
-void ViewSystem::anim(const glm::vec3 & target, const glm::quat & rotation) {
+void ViewSystem::anim(const pt_type_3d & target, const quat & rotation) {
 	if (_type== FREE_VIEW) {
 		// legère inertie aux translations
-		float tresh= 1e-9;
-		float decay_factor= 0.95;
+		number tresh= 1e-9;
+		number decay_factor= 0.95;
 		if (abs(_free_view_x)> tresh) { _free_view_x*= decay_factor; }
 		if (abs(_free_view_y)> tresh) { _free_view_y*= decay_factor; }
 		if ((abs(_free_view_x)> tresh) || (abs(_free_view_y)> tresh)) {
-			move_target(int(_free_view_x), int(_free_view_y), 0.0f);
+			move_target(int(_free_view_x), int(_free_view_y), 0.0);
 		}
 	}
 	else if (_type== THIRD_PERSON_FREE) {
@@ -535,63 +535,63 @@ void ViewSystem::anim(const glm::vec3 & target, const glm::quat & rotation) {
 
 
 // cf http://antongerdelan.net/opengl/raycasting.html
-glm::vec2 ViewSystem::screen2world(unsigned int x, unsigned int y, float z) {
-	glm::vec2 gl_coords= screen2gl(x, y);
+pt_type ViewSystem::screen2world(uint x, uint y, number z) {
+	pt_type gl_coords= screen2gl(x, y);
 	return screen2world(gl_coords, z);
 }
 
 
-glm::vec2 ViewSystem::screen2world(glm::vec2 gl_coords, float z) {
-	glm::vec4 ray_clip= glm::vec4(gl_coords.x, gl_coords.y, -1.0f, 1.0f);
+pt_type ViewSystem::screen2world(pt_type gl_coords, number z) {
+	pt_type_4d ray_clip= pt_type_4d(gl_coords.x, gl_coords.y, -1.0, 1.0);
 	//cout << "ray_clip=" << glm::to_string(ray_clip) << "\n";
 	
-	glm::vec4 ray_eye= glm::inverse(_camera2clip)* ray_clip;
-	ray_eye= glm::vec4(ray_eye.x, ray_eye.y, -1.0f, 0.0f);
+	pt_type_4d ray_eye= glm::inverse(_camera2clip)* ray_clip;
+	ray_eye= pt_type_4d(ray_eye.x, ray_eye.y, -1.0, 0.0);
 	//cout << "_camera2clip=" << glm::to_string(_camera2clip) << "\n";
 	//cout << "inverse(_camera2clip)=" << glm::to_string(glm::inverse(_camera2clip)) << "\n";
 	//cout << "ray_eye=" << glm::to_string(ray_eye) << "\n";
 	
-	glm::vec3 ray_world= glm::vec3(glm::inverse(_world2camera)* ray_eye);
+	pt_type_3d ray_world= pt_type_3d(glm::inverse(_world2camera)* ray_eye);
 	ray_world= glm::normalize(ray_world);
 	//cout << "ray_world=" << glm::to_string(ray_world) << "\n";
 	
-	float lambda= (z- _eye.z)/ ray_world.z;
+	number lambda= (z- _eye.z)/ ray_world.z;
 	//cout << "lambda=" << lambda << "\n";
 	
-	glm::vec3 v= _eye+ lambda* ray_world;
+	pt_type_3d v= _eye+ lambda* ray_world;
 	//cout << "result=" << glm::to_string(v) << "\n";
 
-	return glm::vec2(v.x, v.y);
+	return pt_type(v.x, v.y);
 }
 
 
-glm::vec2 ViewSystem::screen2gl(unsigned int x, unsigned int y) {
+pt_type ViewSystem::screen2gl(uint x, uint y) {
 	// les coords OpenGL sont [-1, 1] x [-1, 1]
-	float x_gl= 2.0f* (float)(x)/ (float)(_screengl->_screen_width)- 1.0f;
-	float y_gl= 1.0f- 2.0f* (float)(y)/ (float)(_screengl->_screen_height);
-	return glm::vec2(x_gl, y_gl);
+	number x_gl= 2.0* (number)(x)/ (number)(_screengl->_screen_width)- 1.0;
+	number y_gl= 1.0- 2.0* (number)(y)/ (number)(_screengl->_screen_height);
+	return pt_type(x_gl, y_gl);
 }
 
 
-glm::uvec2 ViewSystem::gl2screen(glm::vec2 gl_coords) {
-	unsigned int x= (unsigned int)((gl_coords.x+ 1.0f)* (float)(_screengl->_screen_width)* 0.5f);
-	unsigned int y= (unsigned int)((1.0f- gl_coords.y)* (float)(_screengl->_screen_height)* 0.5f);
-	return glm::vec2(x, y);
+glm::uvec2 ViewSystem::gl2screen(pt_type gl_coords) {
+	uint x= (uint)((gl_coords.x+ 1.0)* (number)(_screengl->_screen_width)* 0.5);
+	uint y= (uint)((1.0- gl_coords.y)* (number)(_screengl->_screen_height)* 0.5);
+	return pt_type(x, y);
 }
 
 
-float ViewSystem::depthbuffer2world(float depth) {
-	return _frustum_near* _frustum_far* 2.0f/ ((2.0f* depth- 1.0f)* (_frustum_far- _frustum_near) - (_frustum_far+ _frustum_near));
+number ViewSystem::depthbuffer2world(number depth) {
+	return _frustum_near* _frustum_far* 2.0/ ((2.0* depth- 1.0)* (_frustum_far- _frustum_near) - (_frustum_far+ _frustum_near));
 }
 
 
 // cf http://cgvr.cs.uni-bremen.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
-/*bool ViewSystem::contains_point(const glm::vec3 & pos) {
-	glm::vec3 pos2= glm::vec3(_world2camera* glm::vec4(pos.x, pos.y, pos.z, 1.0f));
+/*bool ViewSystem::contains_point(const pt_type_3d & pos) {
+	pt_type_3d pos2= pt_type_3d(_world2camera* pt_type_4d(pos.x, pos.y, pos.z, 1.0));
 
 	// z pointe vers l'extérieur il faut donc l'inverser
-	float y= -pos2.z* _frustum_halfsize/ _frustum_near;
-	float x= y* (float)(_screen_width)/ (float)(_screen_height);
+	number y= -pos2.z* _frustum_halfsize/ _frustum_near;
+	number x= y* (number)(_screen_width)/ (number)(_screen_height);
 
 	x+= CONTAINS_POINT_TOLERANCE;
 	y+= CONTAINS_POINT_TOLERANCE;
@@ -615,10 +615,10 @@ bool ViewSystem::intersects_aabb(AABB * aabb, bool selection) {
 }
 
 
-bool ViewSystem::intersects_aabb(AABB * aabb, const glm::mat4 & model2world_matrix, bool selection) {
-	glm::vec3 pts[8];
-	for (unsigned int i=0; i<8; ++i) {
-		pts[i]= glm::vec3(model2world_matrix* glm::vec4(aabb->_pts[i], 1.0f));
+bool ViewSystem::intersects_aabb(AABB * aabb, const mat_4d & model2world_matrix, bool selection) {
+	pt_type_3d pts[8];
+	for (uint i=0; i<8; ++i) {
+		pts[i]= pt_type_3d(model2world_matrix* pt_type_4d(pt_type_3d(aabb->_pts[i]), 1.0));
 	}
 
 	return intersects_pts(pts, 8, selection);
@@ -626,11 +626,11 @@ bool ViewSystem::intersects_aabb(AABB * aabb, const glm::mat4 & model2world_matr
 
 
 // cf https://zeux.io/2009/01/31/view-frustum-culling-optimization-introduction
-bool ViewSystem::intersects_pts(glm::vec3 * pts, unsigned int n_pts, bool selection) {
+bool ViewSystem::intersects_pts(pt_type_3d * pts, uint n_pts, bool selection) {
 	bool b= false;
-	glm::vec3 norms[4];
+	pt_type_3d norms[4];
 	if (selection) {
-		for (unsigned int i=0; i<4; ++i) {
+		for (uint i=0; i<4; ++i) {
 			norms[i]= _rect_select->_norms[i];
 		}
 	}
@@ -642,9 +642,9 @@ bool ViewSystem::intersects_pts(glm::vec3 * pts, unsigned int n_pts, bool select
 		norms[3]= _norm_bottom;
 	}
 
-	for (unsigned int i=0; i<4; ++i) {
+	for (uint i=0; i<4; ++i) {
 		b= false;
-		for (unsigned int j=0; j<n_pts; ++j) {
+		for (uint j=0; j<n_pts; ++j) {
 			if (glm::dot(pts[j]- _center_near, norms[i])> 0) {
 				b= true;
 				break;
@@ -658,28 +658,28 @@ bool ViewSystem::intersects_pts(glm::vec3 * pts, unsigned int n_pts, bool select
 }
 
 /*
-bool ViewSystem::selection_contains_point(const glm::vec3 & pt) {
+bool ViewSystem::selection_contains_point(const pt_type_3d & pt) {
 	float xmin= min(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
 	float ymin= min(_rect_select->_gl_origin.y, _rect_select->_gl_moving.y);
 	float xmax= max(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
 	float ymax= max(_rect_select->_gl_origin.y, _rect_select->_gl_moving.y);
 	
-	glm::vec2 v1= screen2world(glm::vec2(xmin, ymin), 0.0f);
-	glm::vec2 v2= screen2world(glm::vec2(xmax, ymin), 0.0f);
-	glm::vec2 v3= screen2world(glm::vec2(xmax, ymax), 0.0f);
-	glm::vec2 v4= screen2world(glm::vec2(xmin, ymax), 0.0f);
+	pt_type v1= screen2world(pt_type(xmin, ymin), 0.0);
+	pt_type v2= screen2world(pt_type(xmax, ymin), 0.0);
+	pt_type v3= screen2world(pt_type(xmax, ymax), 0.0);
+	pt_type v4= screen2world(pt_type(xmin, ymax), 0.0);
 
-	glm::vec3 dir1= glm::vec3(v1, 0.0f)- _eye;
-	glm::vec3 dir2= glm::vec3(v2, 0.0f)- _eye;
-	glm::vec3 dir3= glm::vec3(v3, 0.0f)- _eye;
-	glm::vec3 dir4= glm::vec3(v4, 0.0f)- _eye;
+	pt_type_3d dir1= pt_type_3d(v1, 0.0)- _eye;
+	pt_type_3d dir2= pt_type_3d(v2, 0.0)- _eye;
+	pt_type_3d dir3= pt_type_3d(v3, 0.0)- _eye;
+	pt_type_3d dir4= pt_type_3d(v4, 0.0)- _eye;
 
-	glm::vec3 n1= glm::cross(dir2, dir1);
-	glm::vec3 n2= glm::cross(dir3, dir2);
-	glm::vec3 n3= glm::cross(dir4, dir3);
-	glm::vec3 n4= glm::cross(dir1, dir4);
+	pt_type_3d n1= glm::cross(dir2, dir1);
+	pt_type_3d n2= glm::cross(dir3, dir2);
+	pt_type_3d n3= glm::cross(dir4, dir3);
+	pt_type_3d n4= glm::cross(dir1, dir4);
 
-	glm::vec3 dir_pt= pt- _eye;
+	pt_type_3d dir_pt= pt- _eye;
 
 	cout << "-----------------\n";
 	cout << "xmin=" << xmin << " ; " << " ; xmax=" << xmax << " ; " << "ymin=" << ymin << " ; " << " ; ymax=" << ymax << "\n";
@@ -690,7 +690,7 @@ bool ViewSystem::selection_contains_point(const glm::vec3 & pt) {
 	cout << glm::dot(n1, pt- _eye) << " ; " << glm::dot(n2, pt- _eye) << " ; " << glm::dot(n3, pt- _eye) << " ; " << glm::dot(n4, pt- _eye) << "\n";
 	cout << "-----------------\n";
 
-	if ((glm::dot(n1, dir_pt)< 0.0f) || (glm::dot(n2, dir_pt)< 0.0f) || (glm::dot(n3, dir_pt)< 0.0f) || (glm::dot(n4, dir_pt)< 0.0f)) {
+	if ((glm::dot(n1, dir_pt)< 0.0) || (glm::dot(n2, dir_pt)< 0.0) || (glm::dot(n3, dir_pt)< 0.0) || (glm::dot(n4, dir_pt)< 0.0)) {
 		return false;
 	}
 
@@ -700,20 +700,20 @@ bool ViewSystem::selection_contains_point(const glm::vec3 & pt) {
 
 
 void ViewSystem::update_selection_norms() {
-	float xmin= min(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
-	float ymin= min(_rect_select->_gl_origin.y, _rect_select->_gl_moving.y);
-	float xmax= max(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
-	float ymax= max(_rect_select->_gl_origin.y, _rect_select->_gl_moving.y);
+	number xmin= min(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
+	number ymin= min(_rect_select->_gl_origin.y, _rect_select->_gl_moving.y);
+	number xmax= max(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
+	number ymax= max(_rect_select->_gl_origin.y, _rect_select->_gl_moving.y);
 	
-	glm::vec2 v1= screen2world(glm::vec2(xmin, ymin), 0.0f);
-	glm::vec2 v2= screen2world(glm::vec2(xmax, ymin), 0.0f);
-	glm::vec2 v3= screen2world(glm::vec2(xmax, ymax), 0.0f);
-	glm::vec2 v4= screen2world(glm::vec2(xmin, ymax), 0.0f);
+	pt_type v1= screen2world(pt_type(xmin, ymin), 0.0);
+	pt_type v2= screen2world(pt_type(xmax, ymin), 0.0);
+	pt_type v3= screen2world(pt_type(xmax, ymax), 0.0);
+	pt_type v4= screen2world(pt_type(xmin, ymax), 0.0);
 
-	glm::vec3 dir1= glm::vec3(v1, 0.0f)- _eye;
-	glm::vec3 dir2= glm::vec3(v2, 0.0f)- _eye;
-	glm::vec3 dir3= glm::vec3(v3, 0.0f)- _eye;
-	glm::vec3 dir4= glm::vec3(v4, 0.0f)- _eye;
+	pt_type_3d dir1= pt_type_3d(v1, 0.0)- _eye;
+	pt_type_3d dir2= pt_type_3d(v2, 0.0)- _eye;
+	pt_type_3d dir3= pt_type_3d(v3, 0.0)- _eye;
+	pt_type_3d dir4= pt_type_3d(v4, 0.0)- _eye;
 
 	_rect_select->_norms[0]= glm::cross(dir2, dir1);
 	_rect_select->_norms[1]= glm::cross(dir3, dir2);
@@ -723,19 +723,19 @@ void ViewSystem::update_selection_norms() {
 
 
 bool ViewSystem::single_selection_intersects_aabb(AABB * aabb) {
-	glm::vec2 click_world= screen2world(_rect_select->_gl_origin, 0.0f);
-	float t_hit;
-	bool intersect= ray_intersects_aabb(_eye, glm::vec3(click_world, 0.0f)- _eye, aabb, t_hit);
+	pt_type click_world= screen2world(_rect_select->_gl_origin, 0.0);
+	number t_hit;
+	bool intersect= ray_intersects_aabb(_eye, pt_type_3d(click_world, 0.0)- _eye, aabb, t_hit);
 	if (!intersect) {
 		return false;
 	}
 
 	glm::uvec2 screen_coords= gl2screen(_rect_select->_gl_origin);
-	float buffer_depth;
+	number buffer_depth;
 	// attention au height- y
 	glReadPixels(screen_coords.x, _screengl->_screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
-	float world_depth= depthbuffer2world(buffer_depth);
-	if (abs(abs(world_depth)- t_hit)< 40.0f) {
+	number world_depth= depthbuffer2world(buffer_depth);
+	if (abs(abs(world_depth)- t_hit)< 40.0) {
 		return true;
 	}
 
@@ -748,15 +748,15 @@ bool ViewSystem::rect_selection_intersects_bbox(BBox * bbox) {
 		return false;
 	}
 
-	glm::vec3 center= 0.5f* (bbox->_aabb->_vmin+ bbox->_aabb->_vmax);
-	glm::vec4 v= _world2clip* glm::vec4(center, 1.0f);
-	glm::uvec2 screen_coords= gl2screen(glm::vec2(v.x/ v.w, v.y/ v.w));
-	float buffer_depth;
+	pt_type_3d center= 0.5* (bbox->_aabb->_vmin+ bbox->_aabb->_vmax);
+	pt_type_4d v= _world2clip* pt_type_4d(center, 1.0);
+	glm::uvec2 screen_coords= gl2screen(pt_type(v.x/ v.w, v.y/ v.w));
+	number buffer_depth;
 	// attention au height- y
 	glReadPixels(screen_coords.x, _screengl->_screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
-	float world_depth= depthbuffer2world(buffer_depth);
-	float t_hit= glm::distance(center, _eye);
-	if (abs(abs(world_depth)- t_hit)< 40.0f) {
+	number world_depth= depthbuffer2world(buffer_depth);
+	number t_hit= glm::distance(center, _eye);
+	if (abs(abs(world_depth)- t_hit)< 40.0) {
 		return true;
 	}
 

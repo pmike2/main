@@ -13,6 +13,21 @@
 using json = nlohmann::json;
 
 
+
+// Element -------------------------------------------------------------------------------------------------
+Element::Element() {
+
+}
+
+
+Element::Element(pt_type_3d pt_base, pt_type_3d size) {
+	_aabb = new AABB(
+		pt_type_3d(pt_base.x - 0.5 * size.x, pt_base.y - 0.5 * size.y, pt_base.z),
+		pt_type_3d(pt_base.x + 0.5 * size.x, pt_base.y + 0.5 * size.y, pt_base.z + size.z)
+	);
+}
+
+
 // TreeSpecies ---------------------------------------------------------------------------------------------
 TreeSpecies::TreeSpecies() {
 
@@ -42,6 +57,10 @@ TreeSpecies::TreeSpecies(std::string json_path) {
 	_tree_depth = js["tree_depth"];
 	_n_childrens_min = js["n_childrens_min"];
 	_n_childrens_max = js["n_childrens_max"];
+	_branch_color[0] = js["branch_color"][0];
+	_branch_color[1] = js["branch_color"][1];
+	_branch_color[2] = js["branch_color"][2];
+	_branch_color[3] = js["branch_color"][3];
 }
 
 
@@ -56,8 +75,8 @@ Branch::Branch() {
 }
 
 
-Branch::Branch(pt_type_3d pt_base, number radius_base, number radius_end, number r, number theta, number phi, uint n_childrens, uint idx) :
-	_pt_base(pt_base), _radius_base(radius_base), _radius_end(radius_end), _r(r), _theta(theta), _phi(phi), _n_childrens(n_childrens), _idx(idx)
+Branch::Branch(pt_type_3d pt_base, number radius_base, number radius_end, number r, number theta, number phi, uint n_childrens, uint idx, glm::vec4 color) :
+	_pt_base(pt_base), _radius_base(radius_base), _radius_end(radius_end), _r(r), _theta(theta), _phi(phi), _n_childrens(n_childrens), _idx(idx), _color(color)
 {
 	glm::dmat3 rot(
 		cos(_theta) * cos(_phi), cos(_theta) * sin(_phi), -1.0 * sin(_theta),
@@ -147,6 +166,26 @@ Branch::Branch(pt_type_3d pt_base, number radius_base, number radius_end, number
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE * 3; ++i) {
 		_normals_top[i] = direction;
 	}
+
+	pt_type_3d vmin(1e7);
+	pt_type_3d vmax(-1e7);
+	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE; ++i) {
+		for (uint j=0; j<3; ++j) {
+			if (circle_base[i][j] < vmin[j]) {
+				vmin[j] = circle_base[i][j];
+			}
+			if (circle_end[i][j] < vmin[j]) {
+				vmin[j] = circle_end[i][j];
+			}
+			if (circle_base[i][j] > vmax[j]) {
+				vmax[j] = circle_base[i][j];
+			}
+			if (circle_end[i][j] > vmax[j]) {
+				vmax[j] = circle_end[i][j];
+			}
+		}
+	}
+	_aabb = new AABB(vmin, vmax);
 }
 
 
@@ -157,6 +196,7 @@ Branch::~Branch() {
 	delete _normals_bottom;
 	delete _vertices_top;
 	delete _normals_top;
+	delete _aabb;
 }
 
 
@@ -174,7 +214,7 @@ Tree::Tree() {
 }
 
 
-Tree::Tree(TreeSpecies * species, pt_type_3d pt_base) : _species(species) {
+Tree::Tree(TreeSpecies * species, pt_type_3d pt_base, pt_type_3d size) : Element(pt_base, size), _species(species) {
 	number radius_base = rand_number(_species->_root_radius_base_min, _species->_root_radius_base_max);
 	number radius_end = radius_base * rand_number(_species->_ratio_base_end_radius_min, _species->_ratio_base_end_radius_max);
 	number r = rand_number(_species->_root_r_min, _species->_root_r_max);
@@ -183,13 +223,44 @@ Tree::Tree(TreeSpecies * species, pt_type_3d pt_base) : _species(species) {
 	//number phi = 1.0;
 	uint n_childrens = rand_number(_species->_n_childrens_min, _species->_n_childrens_max);
 	uint idx = 0;
-	Branch * root = new Branch(pt_base, radius_base, radius_end, r, theta, phi, n_childrens, idx);
+	Branch * root = new Branch(pt_base, radius_base, radius_end, r, theta, phi, n_childrens, idx, _species->_branch_color);
 	//std::cout << *root << "\n";
 	_branches.push_back(root);
 	
 	gen_branches(this, root);
 
-	std::sort(_branches.begin(), _branches.end(), [](const Branch * a, const Branch * b) { return a->_idx > b->_idx; });
+	// essayé ça pour résoudre le problème d'affichage mais inutile...
+	//std::sort(_branches.begin(), _branches.end(), [](const Branch * a, const Branch * b) { return a->_idx > b->_idx; });
+
+	pt_type_3d vmin(1e7);
+	pt_type_3d vmax(-1e7);
+	for (auto branch : _branches) {
+		for (uint j=0; j<3; ++j) {
+			if (branch->_aabb->_vmin[j] < vmin[j]) {
+				vmin[j] = branch->_aabb->_vmin[j];
+			}
+			if (branch->_aabb->_vmax[j] > vmax[j]) {
+				vmax[j] = branch->_aabb->_vmax[j];
+			}
+		}
+	}
+	pt_type_3d scale(size.x / (vmax.x - vmin.x), size.y / (vmax.y - vmin.y), size.z / (vmax.z - vmin.z));
+	for (auto branch : _branches) {
+		for (uint i=0; i<N_PTS_PER_BRANCH_SIDE; ++i) {
+			branch->_vertices_side[i] = (branch->_vertices_side[i] - pt_base) * scale + pt_base;
+		}
+		for (uint i=0; i<N_PTS_PER_BRANCH_TOP; ++i) {
+			branch->_vertices_top[i] = (branch->_vertices_top[i] - pt_base) * scale + pt_base;
+		}
+		for (uint i=0; i<N_PTS_PER_BRANCH_BOTTOM; ++i) {
+			branch->_vertices_bottom[i] = (branch->_vertices_bottom[i] - pt_base) * scale + pt_base;
+		}
+	}
+
+	uint n_attrs_per_pts= 10;
+	_n_pts = _branches.size() * (N_PTS_PER_BRANCH_SIDE + N_PTS_PER_BRANCH_TOP + N_PTS_PER_BRANCH_BOTTOM);
+	_data = new float[_n_pts * n_attrs_per_pts];
+	update_data();
 }
 
 
@@ -198,19 +269,11 @@ Tree::~Tree() {
 		delete branch;
 	}
 	_branches.clear();
+	delete _data;
 }
 
 
-std::ostream & operator << (std::ostream & os, const Tree & t) {
-	for (auto branch : t._branches) {
-		os << *branch << "\n";
-	}
-	return os;
-}
-
-
-// ---------------------------------------------------------------------------------------------------------------
-void gen_branches(Tree * tree, Branch * branch) {
+void Tree::gen_branches(Tree * tree, Branch * branch) {
 	if (branch->_idx>= tree->_species->_tree_depth) {
 		return;
 	}
@@ -224,53 +287,152 @@ void gen_branches(Tree * tree, Branch * branch) {
 		number phi = rand_number(0.0, 2.0 * M_PI);
 		uint n_childrens = rand_int(tree->_species->_n_childrens_min, tree->_species->_n_childrens_max);
 		uint idx = branch->_idx + 1;
-		Branch * child = new Branch(pt_base, radius_base, radius_end, r, theta, phi, n_childrens, idx);
+		Branch * child = new Branch(pt_base, radius_base, radius_end, r, theta, phi, n_childrens, idx, _species->_branch_color);
 		tree->_branches.push_back(child);
 		gen_branches(tree, child);
 	}
 }
 
 
+void Tree::update_data() {
+	float * ptr = _data;
+	for (auto branch : _branches) {
+		for (uint i=0; i<N_PTS_PER_BRANCH_SIDE; ++i) {
+			ptr[0] = float(branch->_vertices_side[i].x);
+			ptr[1] = float(branch->_vertices_side[i].y);
+			ptr[2] = float(branch->_vertices_side[i].z);
+			ptr[3] = float(branch->_color[0]);
+			ptr[4] = float(branch->_color[1]);
+			ptr[5] = float(branch->_color[2]);
+			ptr[6] = float(branch->_color[3]);
+			ptr[7] = float(branch->_normals_side[i].x);
+			ptr[8] = float(branch->_normals_side[i].y);
+			ptr[9] = float(branch->_normals_side[i].z);
+			ptr += 10;
+		}
+		for (uint i=0; i<N_PTS_PER_BRANCH_BOTTOM; ++i) {
+			ptr[0] = float(branch->_vertices_bottom[i].x);
+			ptr[1] = float(branch->_vertices_bottom[i].y);
+			ptr[2] = float(branch->_vertices_bottom[i].z);
+			ptr[3] = float(branch->_color[0]);
+			ptr[4] = float(branch->_color[1]);
+			ptr[5] = float(branch->_color[2]);
+			ptr[6] = float(branch->_color[3]);
+			ptr[7] = float(branch->_normals_bottom[i].x);
+			ptr[8] = float(branch->_normals_bottom[i].y);
+			ptr[9] = float(branch->_normals_bottom[i].z);
+			ptr += 10;
+		}
+		for (uint i=0; i<N_PTS_PER_BRANCH_TOP; ++i) {
+			ptr[0] = float(branch->_vertices_top[i].x);
+			ptr[1] = float(branch->_vertices_top[i].y);
+			ptr[2] = float(branch->_vertices_top[i].z);
+			ptr[3] = float(branch->_color[0]);
+			ptr[4] = float(branch->_color[1]);
+			ptr[5] = float(branch->_color[2]);
+			ptr[6] = float(branch->_color[3]);
+			ptr[7] = float(branch->_normals_top[i].x);
+			ptr[8] = float(branch->_normals_top[i].y);
+			ptr[9] = float(branch->_normals_top[i].z);
+			ptr += 10;
+		}
+	}
+
+}
+
+
+std::ostream & operator << (std::ostream & os, const Tree & t) {
+	for (auto branch : t._branches) {
+		os << *branch << "\n";
+	}
+	return os;
+}
+
+
+// Stone ----------------------------------------------------------------------------------------
+Stone::Stone() {
+
+}
+
+
+Stone::Stone(pt_type_3d pt_base, pt_type_3d size) : Element(pt_base, size) {
+	_hull = new ConvexHull();
+	_hull->randomize(STONE_N_POINTS_HULL, pt_type_3d(pt_base.x - 0.5 * size.x, pt_base.y - 0.5 * size.y, pt_base.z), pt_type_3d(pt_base.x + 0.5 * size.x, pt_base.y + 0.5 * size.y, pt_base.z + size.z));
+	_hull->compute();
+
+	uint n_attrs_per_pts= 10;
+	_n_pts = _hull->_faces.size() * 3;
+	_data = new float[_n_pts * n_attrs_per_pts];
+	update_data();
+}
+
+
+Stone::~Stone() {
+	delete _hull;
+	delete _data;
+}
+
+
+void Stone::update_data() {
+	uint compt = 0;
+	glm::vec4 color(0.0f, 1.0f, 1.0f, 0.5f);
+	for (auto face : _hull->_faces) {
+		for (uint i=0; i<3; ++i) {
+			Pt * pt = _hull->_pts[face->_idx[i]];
+			_data[compt++] = float(pt->_coords.x);
+			_data[compt++] = float(pt->_coords.y);
+			_data[compt++] = float(pt->_coords.z);
+			_data[compt++] = color[0];
+			_data[compt++] = color[1];
+			_data[compt++] = color[2];
+			_data[compt++] = color[3];
+			_data[compt++] = float(face->_normal.x);
+			_data[compt++] = float(face->_normal.y);
+			_data[compt++] = float(face->_normal.z);
+		}
+	}
+}
+
+
 // Forest ---------------------------------------------------------------------------------------------------------
-Forest::Forest() {
+Elements::Elements() {
 
 }
 
 
-Forest::Forest(std::string dir_jsons) {
-	std::vector<std::string> jsons = list_files(dir_jsons, "json");
+Elements::Elements(std::string dir_tree_jsons) {
+	std::vector<std::string> jsons = list_files(dir_tree_jsons, "json");
 	for (auto json_path : jsons) {
-		_species[basename(json_path)] = new TreeSpecies(json_path);
+		_tree_species[basename(json_path)] = new TreeSpecies(json_path);
 	}
 }
 
 
-Forest::~Forest() {
-	for (auto tree : _trees) {
-		delete tree;
+Elements::~Elements() {
+	for (auto element : _elements) {
+		delete element;
 	}
-	_trees.clear();
-	for (auto species : _species) {
+	_elements.clear();
+	for (auto species : _tree_species) {
 		delete species.second;
 	}
-	_species.clear();
+	_tree_species.clear();
 }
 
 
-void Forest::add_tree(std::string species_name, pt_type_3d pt_base) {
-	if (_species.count(species_name) == 0) {
+void Elements::add_tree(std::string species_name, pt_type_3d pt_base, pt_type_3d size) {
+	if (_tree_species.count(species_name) == 0) {
 		std::cerr << species_name << " espece inconnue\n";
 		return;
 	}
 
-	Tree * tree = new Tree(_species[species_name], pt_base);
-	_trees.push_back(tree);
+	Tree * tree = new Tree(_tree_species[species_name], pt_base, size);
+	_elements.push_back(tree);
 }
 
 
-std::ostream & operator << (std::ostream & os, const Forest & f) {
-	for (auto tree : f._trees) {
-		std::cout << *tree << "\n";
-	}
-	return os;
+void Elements::add_stone(pt_type_3d pt_base, pt_type_3d size) {
+	Stone * stone = new Stone(pt_base, size);
+	_elements.push_back(stone);
 }
+

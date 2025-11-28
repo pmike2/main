@@ -234,36 +234,6 @@ Face * ConvexHull::add_face(glm::uvec3 idx) {
 }
 
 
-/*Pt * ConvexHull::get_pt_not_in_face(Face * face) {
-	uint idx_pt = 0;
-	for (auto face2 : _faces) {
-		std::cout << *face2 << "\n";
-		if (face2 == face) {
-			continue;
-		}
-		for (uint i=0; i<3; ++i) {
-			if (face->_idx[0] != face2->_idx[i] && face->_idx[1] != face2->_idx[i] && face->_idx[2] != face2->_idx[i]) {
-				return _pts[face2->_idx[i]];
-			}
-		}
-	}
-	std::cerr << "ConvexHull::get_pt_not_in_face : pas de point trouvé : " << *face << ".\n";
-	return NULL;
-}*/
-
-
-/*void ConvexHull::ccw(Face * face) {
-	Pt * pt = get_pt_not_in_face(face);
-	
-	if (glm::dot(face->_normal, pt->_coords - _pts[face->_idx[0]]->_coords) < 0.0) {
-		uint tmp = face->_idx[0];
-		face->_idx[0] = face->_idx[1];
-		face->_idx[1] = tmp;
-		face->_normal*= -1.0;
-	}
-}*/
-
-
 Face * ConvexHull::opposite_face(Face * face, uint idx_edge) {
 	for (auto face2 : _faces) {
 		if (face == face2) {
@@ -308,6 +278,11 @@ void ConvexHull::randomize(uint n_pts, number xmin, number xmax, number ymin, nu
 }
 
 
+void ConvexHull::randomize(uint n_pts, pt_type_3d vmin, pt_type_3d vmax) {
+	randomize(n_pts, vmin.x, vmax.x, vmin.y, vmax.y, vmin.z, vmax.z);
+}
+
+
 void ConvexHull::compute() {
 	_faces.clear();
 
@@ -316,6 +291,7 @@ void ConvexHull::compute() {
 		return;
 	}
 
+	// création tétraèdre initial
 	Face * face1 = add_face(glm::uvec3(0, 1, 2));
 	Face * face2 = add_face(glm::uvec3(0, 1, 3));
 	Face * face3 = add_face(glm::uvec3(0, 2, 3));
@@ -340,6 +316,7 @@ void ConvexHull::compute() {
 		}	
 	}
 
+	// boucle sur les pts restants
 	for (uint idx_pt=4; idx_pt<_pts.size(); ++idx_pt) {
 		Pt * pt = _pts[idx_pt];
 
@@ -349,15 +326,19 @@ void ConvexHull::compute() {
 			std::cout << *this;
 		}
 
+		// pt->_conflict vide => pt situé à l'intérieur de l'enveloppe
 		if (pt->_conflict.empty()) {
 			continue;
 		}
 
+		// construction de l'horizon ; pour chaque face en conflit avec le pt, pour chaque edge de la face
+		// si la face opposée par rapport au edge n'est pas en conflit avec le pt, alors edge est dans l'horizon
 		std::vector<Horizon> horizon;
 		for (auto face : pt->_conflict) {
 			for (uint idx_edge = 0; idx_edge<3; ++idx_edge) {
 				bool op_face_in_conflict = false;
 				Face * op_face = opposite_face(face, idx_edge);
+				
 				if (op_face == NULL) {
 					std::cout << "DEBUG----------------------\n";
 					std::cout << *this << "\n";
@@ -368,12 +349,14 @@ void ConvexHull::compute() {
 					std::cout << "DEBUG----------------------\n";
 					return;
 				}
+				
 				for (auto face2 : pt->_conflict) {
 					if (face2 == op_face) {
 						op_face_in_conflict = true;
 						break;
 					}
 				}
+				
 				if (!op_face_in_conflict) {
 					horizon.push_back({face, op_face, idx_edge});
 					if (VERBOSE) {
@@ -383,25 +366,31 @@ void ConvexHull::compute() {
 			}
 		}
 
+		// pour chaque edge de l'horizon on crée une nouvelle face edge-pt; les points en conflit avec cette nouvelle face
+		// sont inclus dans les conflits de la face à supprimer et de la face opposée
 		for (auto h : horizon) {
 			Face * face = add_face(glm::uvec3(h._face->_idx[h._idx_edge], h._face->_idx[(h._idx_edge + 1) % 3], idx_pt));
 			std::vector<Pt * > possible_conflict_points;
 			for (auto pt2 : h._face->_conflict) {
+				if (pt2 == pt) { // on ne prend pas en compte pt évidemment
+					continue;
+				}
 				possible_conflict_points.push_back(pt2);
 			}
 			for (auto pt2 : h._opposite_face->_conflict) {
+				if (pt2 == pt) {
+					continue;
+				}
 				possible_conflict_points.push_back(pt2);
 			}
 			for (auto pt2 : possible_conflict_points) {
 				if (is_conflict(pt2, face)) {
-					add_conflict(pt2, face);
+					add_conflict(pt2, face); // add_conflict empeche les doublons
 				}
 			}
 		}
 
-		/*for (auto h : horizon) {
-			h._face->_delete = true;
-		}*/
+		// suppression des faces en conflit
 		for (auto face : pt->_conflict) {
 			if (VERBOSE) {
 				std::cout << "delete face : " << *face << "\n";
