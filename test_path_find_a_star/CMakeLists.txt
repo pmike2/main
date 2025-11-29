@@ -27,7 +27,9 @@ add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
 add_library(lib_shapefile STATIC ../libs/shapefile.cpp ../libs/shapefile.h)
 add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
 add_library(lib_graph STATIC ../libs/graph.cpp ../libs/graph.h)
+add_library(lib_triangulation STATIC ../libs/triangulation.cpp ../libs/triangulation.h)
+
 
 add_executable(main ./srcs/main.cpp)
 
-target_link_libraries(main PUBLIC ${GDAL_LIBRARIES} ${OPENGL_LIBRARIES} lib_path_find lib_utile lib_geom_2d lib_shapefile lib_bbox_2d lib_graph)
+target_link_libraries(main PUBLIC ${GDAL_LIBRARIES} ${OPENGL_LIBRARIES} lib_path_find lib_utile lib_geom_2d lib_shapefile lib_bbox_2d lib_graph lib_triangulation)

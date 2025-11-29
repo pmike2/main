@@ -12,7 +12,7 @@ Graph::~Graph() {
 	
 }
 
-void Graph::add_vertex(unsigned int i, glm::vec3 pos, float weight) {
+void Graph::add_vertex(unsigned int i, pt_type_3d pos, number weight) {
 	if (!_vertices.count(i)) {
 		GraphVertex v= {};
 		v._weight= weight;
@@ -23,7 +23,7 @@ void Graph::add_vertex(unsigned int i, glm::vec3 pos, float weight) {
 }
 
 
-void Graph::add_edge(unsigned int i, unsigned int j, float weight, bool weight_is_dist) {
+void Graph::add_edge(unsigned int i, unsigned int j, number weight, bool weight_is_dist) {
 	if ((_vertices.count(i)) && (_vertices.count(j))) {
 		GraphEdge e= {};
 		if (weight_is_dist) {
@@ -90,8 +90,8 @@ void Graph::clear() {
 	clear();
 
 	for (unsigned int i=0; i<n_vertices; ++i) {
-		float x= rand_float(-5.0f, 5.0f);
-		float y= rand_float(-5.0f, 5.0f);
+		number x= rand_number(-5.0f, 5.0f);
+		number y= rand_number(-5.0f, 5.0f);
 		add_vertex(i, 0.0f, x, y);
 	}
 
@@ -99,7 +99,7 @@ void Graph::clear() {
 	while (_it_v!= _vertices.end()) {
 		for (unsigned int i=0; i<100; ++i) {
 			unsigned int a= rand_int(0, n_vertices- 1);
-			float d= glm::distance(_it_v->second._pos, _vertices[a]._pos);
+			number d= glm::distance(_it_v->second._pos, _vertices[a]._pos);
 			if (d< 2.0f) {
 				add_edge(_it_v->first, a, 0.0f, true);
 			}

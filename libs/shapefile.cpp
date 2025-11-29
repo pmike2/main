@@ -28,11 +28,11 @@ void read_shp(string shp_path, vector<Polygon2D *> & polygons) {
 			OGRRawPoint * raw_points= new OGRRawPoint[n_pts];
 			ring->getPoints(raw_points);
 			Polygon2D * polygon= new Polygon2D();
-			float points[2* n_pts];
+			number points[2* n_pts];
 			for (unsigned int i=0; i<n_pts; ++i) {
 				//cout << raw_points[i].x << " ; " << raw_points[i].y << "\n";
-				points[2* i]= (float)(raw_points[i].x);
-				points[2* i+ 1]= (float)(raw_points[i].y);
+				points[2* i]= (number)(raw_points[i].x);
+				points[2* i+ 1]= (number)(raw_points[i].y);
 			}
 			delete[] raw_points;
 			polygon->set_points(points, n_pts);

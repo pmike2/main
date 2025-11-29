@@ -8,17 +8,19 @@
 
 #include <glm/glm.hpp>
 
+#include "typedefs.h"
+
 
 struct GraphEdge {
 	//unsigned int _start_node;
 	//unsigned int _end_node;
-	float _weight;
+	number _weight;
 };
 
 
 struct GraphVertex {
-	glm::vec3 _pos;
-	float _weight;
+	pt_type_3d _pos;
+	number _weight;
 	std::unordered_map<unsigned int, GraphEdge> _edges;
 	//bool _active;
 };
@@ -27,8 +29,8 @@ struct GraphVertex {
 struct Graph {
 	Graph();
 	~Graph();
-	void add_vertex(unsigned int i, glm::vec3 pos=glm::vec3(0.0f), float weight=1.0f);
-	void add_edge(unsigned int i, unsigned int j, float weight=1.0f, bool weight_is_dist=false);
+	void add_vertex(unsigned int i, pt_type_3d pos=pt_type_3d(0.0f), number weight=1.0f);
+	void add_edge(unsigned int i, unsigned int j, number weight=1.0f, bool weight_is_dist=false);
 	void remove_vertex(unsigned int i);
 	void remove_edge(unsigned int i, unsigned int j);
 	std::vector<unsigned int> neighbors(unsigned int i);
