@@ -687,16 +687,16 @@
     ],
     "best_lap": [
         {
+            "name": "minett",
+            "time": 7.336
+        },
+        {
             "name": "pmb",
             "time": 7.389
         },
         {
             "name": "pmb",
             "time": 7.422
-        },
-        {
-            "name": "pmb",
-            "time": 7.522
         }
     ],
     "best_overall": [
@@ -706,11 +706,11 @@
         },
         {
             "name": "minett",
-            "time": 92.102
+            "time": 88.827
         },
         {
-            "name": "robin",
-            "time": 93.25400000000002
+            "name": "minett",
+            "time": 92.102
         }
     ],
     "cell_size": 2.0,

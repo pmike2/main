@@ -2,6 +2,7 @@
 
 #include "ogrsf_frmts.h"
 
+#include "utile.h"
 #include "shapefile.h"
 
 using namespace std;
@@ -14,7 +15,10 @@ void read_shp(string shp_path, vector<Polygon2D *> & polygons) {
 		cout << "Shapefile " << shp_path << " : open failed.\n";
 		return;
 	}
-	OGRLayer * poLayer= poDS->GetLayer(0);
+	std::string layer_name = basename(shp_path);
+	//OGRLayer * poLayer= poDS->GetLayer(0);
+	OGRLayer * poLayer= poDS->GetLayerByName(layer_name.c_str());
+
 	OGRFeature * poFeature;
 	poLayer->ResetReading();
 	while ((poFeature= poLayer->GetNextFeature())!= NULL) {
