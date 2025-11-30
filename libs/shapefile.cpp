@@ -15,9 +15,9 @@ void read_shp(string shp_path, vector<Polygon2D *> & polygons) {
 		cout << "Shapefile " << shp_path << " : open failed.\n";
 		return;
 	}
-	std::string layer_name = basename(shp_path);
-	//OGRLayer * poLayer= poDS->GetLayer(0);
-	OGRLayer * poLayer= poDS->GetLayerByName(layer_name.c_str());
+	//std::string layer_name = basename(shp_path);
+	//OGRLayer * poLayer= poDS->GetLayerByName(layer_name.c_str());
+	OGRLayer * poLayer= poDS->GetLayer(0);
 
 	OGRFeature * poFeature;
 	poLayer->ResetReading();
