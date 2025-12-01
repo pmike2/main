@@ -107,6 +107,7 @@ public:
 	void draw();
 	void anim(const pt_type_3d & target, const quat & rotation);
 	void set(const pt_type_3d & target, number phi, number theta, number rho);
+	void set_2d(number rho);
 	//void move_target(const pt_type_3d & v);
 	void move_target(int screen_delta_x, int screen_delta_y, number z);
 	void move_phi(number x);
@@ -120,12 +121,14 @@ public:
 	//bool contains_point(const pt_type_3d & pos);
 	bool intersects_bbox(BBox * bbox, bool selection=false);
 	bool intersects_aabb(AABB * aabb, bool selection=false);
+	//bool intersects_aabb_2d(AABB_2D * aabb, bool selection=false);
 	bool intersects_aabb(AABB * aabb, const mat_4d & model2world_matrix, bool selection=false);
+	bool intersects_pts(std::vector<pt_type_3d> pts, bool selection=false);
 	bool intersects_pts(pt_type_3d * pts, uint n_pts, bool selection=false);
 	//bool selection_contains_point(const pt_type_3d & pt);
 	void update_selection_norms();
 	bool single_selection_intersects_aabb(AABB * aabb);
-	bool rect_selection_intersects_bbox(BBox * bbox);
+	bool rect_selection_intersects_bbox(BBox * bbox, bool check_depth=true);
 
 	
 	// paramètres en entrée

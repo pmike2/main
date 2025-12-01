@@ -17,6 +17,7 @@ class AABB {
 public:
 	AABB();
 	AABB(const pt_type_3d & vmin, const pt_type_3d & vmax);
+	AABB(AABB_2D * aabb_2d);
 	~AABB();
 	void set_vmin_vmax(const pt_type_3d & vmin, const pt_type_3d & vmax);
 	static std::vector<std::vector<unsigned int> > triangles_idxs();
@@ -37,9 +38,11 @@ class BBox {
 public:
 	BBox();
 	BBox(const pt_type_3d & vmin, const pt_type_3d & vmax, const mat_4d & model2world);
+	BBox(AABB * aabb);
 	~BBox();
 	void set_model2world(const mat_4d & model2world);
 	static std::vector<std::vector<unsigned int> > triangles_idxs();
+	friend std::ostream & operator << (std::ostream & os, const BBox & bbox);
 
 
 	pt_type_3d _vmin, _vmax;

@@ -25,6 +25,11 @@ AABB::AABB(const pt_type_3d & vmin, const pt_type_3d & vmax) {
 }
 
 
+AABB::AABB(AABB_2D * aabb_2d) {
+	set_vmin_vmax(pt_type_3d(aabb_2d->_pos.x, aabb_2d->_pos.y, 0.0), pt_type_3d(aabb_2d->_pos.x + aabb_2d->_size.x, aabb_2d->_pos.y + aabb_2d->_size.y, 0.0));
+}
+
+
 AABB::~AABB() {
 
 }
@@ -94,7 +99,7 @@ ostream & operator << (ostream & os, const AABB & aabb) {
 
 // ------------------------------------------------------------------------------------------------------
 BBox::BBox() : _vmin(pt_type_3d(0.0)), _vmax(pt_type_3d(0.0)), _radius(0.0) {
-	
+	_aabb= new AABB();
 }
 
 
@@ -105,9 +110,22 @@ BBox::BBox(const pt_type_3d & vmin, const pt_type_3d & vmax, const mat_4d & mode
 	if (abs(_vmax.y)> _radius) _radius= abs(_vmax.y);
 	if (abs(_vmin.z)> _radius) _radius= abs(_vmin.z);
 	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);
+	
 	_aabb= new AABB();
+	set_model2world(_model2world);
+}
 
-	set_model2world(model2world);
+
+BBox::BBox(AABB * aabb) : _vmin(aabb->_vmin), _vmax(aabb->_vmax), _model2world(mat_4d(1.0)) {
+	_radius= abs(_vmin.x);
+	if (abs(_vmax.x)> _radius) _radius= abs(_vmax.x);
+	if (abs(_vmin.y)> _radius) _radius= abs(_vmin.y);
+	if (abs(_vmax.y)> _radius) _radius= abs(_vmax.y);
+	if (abs(_vmin.z)> _radius) _radius= abs(_vmin.z);
+	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);
+
+	_aabb= new AABB();
+	set_model2world(_model2world);
 }
 
 
@@ -164,6 +182,13 @@ vector<vector<unsigned int> > BBox::triangles_idxs() {
 		{5, 7, 6}, {5, 6, 4} // z+
 	};
 	return idx;
+}
+
+
+std::ostream & operator << (std::ostream & os, const BBox & bbox) {
+	os << "aabb = " << *bbox._aabb;
+	os << " ; vmin=" << glm::to_string(bbox._vmin) << " ; vmax=" << glm::to_string(bbox._vmax);
+	return os;
 }
 
 

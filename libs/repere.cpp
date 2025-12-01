@@ -440,6 +440,15 @@ void ViewSystem::set(const pt_type_3d & target, number phi, number theta, number
 }
 
 
+void ViewSystem::set_2d(number rho) {
+	_target= pt_type_3d(0.0);
+	_phi= -1.0 * M_PI_2;
+	_theta= 0.0;
+	_rho= rho;
+
+	update();
+}
+
 // les move sont des modif delta, contrairement a set ou anim qui font des modifs absolues
 /*void ViewSystem::move_target(const pt_type_3d & v) {
 	_target.x+= v.x* sin(_phi)- v.y* cos(_phi);
@@ -615,13 +624,25 @@ bool ViewSystem::intersects_aabb(AABB * aabb, bool selection) {
 }
 
 
+/*bool ViewSystem::intersects_aabb_2d(AABB_2D * aabb, bool selection=false) {
+	std::vector<pt_type_3d> pts;
+	return intersects_pts(pts, 8, selection);
+}*/
+
+
 bool ViewSystem::intersects_aabb(AABB * aabb, const mat_4d & model2world_matrix, bool selection) {
-	pt_type_3d pts[8];
+	std::vector<pt_type_3d> pts;
 	for (uint i=0; i<8; ++i) {
-		pts[i]= pt_type_3d(model2world_matrix* pt_type_4d(pt_type_3d(aabb->_pts[i]), 1.0));
+		pts.push_back(pt_type_3d(model2world_matrix* pt_type_4d(pt_type_3d(aabb->_pts[i]), 1.0)));
 	}
 
-	return intersects_pts(pts, 8, selection);
+	return intersects_pts(pts, selection);
+}
+
+
+bool ViewSystem::intersects_pts(std::vector<pt_type_3d> pts, bool selection) {
+	pt_type_3d * add = pts.data();
+	return intersects_pts(add, pts.size(), selection);
 }
 
 
@@ -743,9 +764,13 @@ bool ViewSystem::single_selection_intersects_aabb(AABB * aabb) {
 }
 
 
-bool ViewSystem::rect_selection_intersects_bbox(BBox * bbox) {
+bool ViewSystem::rect_selection_intersects_bbox(BBox * bbox, bool check_depth) {
 	if (!intersects_bbox(bbox, true)) {
 		return false;
+	}
+
+	if (!check_depth) {
+		return true;
 	}
 
 	pt_type_3d center= 0.5* (bbox->_aabb->_vmin+ bbox->_aabb->_vmax);

@@ -24,7 +24,7 @@ struct GraphGrid : public Graph {
 	~GraphGrid();
 	std::pair<unsigned int, unsigned int> id2col_lig(unsigned int id);
 	unsigned int col_lig2id(unsigned int col, unsigned int lig);
-	void set_heavy_weight(AABB_2D * aabb);
+	//void set_heavy_weight(AABB_2D * aabb);
 	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
 
 
@@ -49,32 +49,14 @@ struct PathFinder {
 	number cost(unsigned int i, unsigned int j);
 	number heuristic(unsigned int i, unsigned int j);
 	bool line_of_sight(unsigned int i, unsigned int j);
-	bool path_find_nodes(unsigned int start, unsigned int goal, std::vector<unsigned int> & path, std::vector<unsigned int> & visited);
-	bool path_find(pt_type start, pt_type goal, std::vector<pt_type> & path, std::vector<unsigned int> & visited);
-	void draw_svg(const std::vector<unsigned int> & path, const std::vector<unsigned int> & visited, std::string svg_path);
+	bool path_find_nodes(unsigned int start, unsigned int goal, std::vector<unsigned int> & path);
+	bool path_find(pt_type start, pt_type goal, std::vector<pt_type> & path);
+	void draw_svg(const std::vector<unsigned int> & path, std::string svg_path);
 
 
 	GraphGrid * _grid;
 	std::vector<Polygon2D *> _polygons;
 };
-
-
-struct PathFinderDebug {
-	PathFinderDebug();
-	PathFinderDebug(GLuint prog_draw);
-	~PathFinderDebug();
-	void draw();
-	void anim(const glm::mat4 & world2clip);
-	void update(const PathFinder & path_finder, const std::vector<pt_type> & path, const std::vector<unsigned int> & visited);
-
-
-	GLuint _prog_draw;
-	GLint _world2clip_loc, _position_loc, _color_loc;
-	GLuint _buffers[3];
-	glm::mat4 _world2clip;
-	unsigned int _n_pts_grid, _n_pts_obstacle, _n_pts_path;
-};
-
 
 
 #endif

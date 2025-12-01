@@ -62,7 +62,9 @@ class Polygon2D {
 public:
 	Polygon2D();
 	Polygon2D(const Polygon2D & polygon);
+	Polygon2D(const std::vector<pt_type> pts, bool convexhull=false);
 	~Polygon2D();
+	void clear();
 	void set_points(const number * points, unsigned int n_points, bool convexhull=false);
 	void set_points(const std::vector<pt_type> pts, bool convexhull=false);
 	void centroid2zero();

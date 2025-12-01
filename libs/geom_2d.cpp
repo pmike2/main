@@ -728,10 +728,28 @@ Polygon2D::Polygon2D(const Polygon2D & polygon) {
 }
 
 
+Polygon2D::Polygon2D(const std::vector<pt_type> pts, bool convexhull) {
+	_aabb= new AABB_2D();
+	set_points(pts, convexhull);
+}
+
+
 Polygon2D::~Polygon2D() {
+	clear();
+	delete _aabb;
+}
+
+
+void Polygon2D::clear() {
 	_pts.clear();
 	_normals.clear();
-	delete _aabb;
+	_area = 0.0;
+	_centroid = pt_type(0.0);
+	_radius = 0.0;
+	_aabb->_pos = pt_type(0.0);
+	_aabb->_size = pt_type(0.0);
+	_triangles_idx.clear();
+	_inertia = 0.0;
 }
 
 
