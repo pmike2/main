@@ -60,8 +60,8 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs) : _mode(FREE) {
 	glm::vec2 size(100.0f, 100.0f);
 	_path_finder = new PathFinder(n_ligs, n_cols, origin, size);
 
-	_unit_types["small"] = new UnitType(pt_type(0.5, 0.5), 0.08);
-	_unit_types["big"] = new UnitType(pt_type(2.0, 2.0), 0.04);
+	_unit_types["small"] = new UnitType(pt_type(0.5, 0.5), 0.12);
+	_unit_types["big"] = new UnitType(pt_type(2.0, 2.0), 0.08);
 }
 
 
@@ -122,13 +122,7 @@ void TestAStar::anim(time_point t, ViewSystem * view_system) {
 
 	for (auto unit : _units) {
 		if (unit->_mode == MOVING) {
-			/*if (glm::distance(unit->_aabb->_pos, unit->_path[unit->_path.size() - 1]) < 0.1) {
-				unit->_mode = WAITING;
-				unit->clear_path();
-				continue;
-			}*/
-
-			if (glm::distance(unit->_aabb->_pos, unit->_path[unit->_idx_path]) < 0.1) {
+			if (glm::distance(unit->_aabb->center(), unit->_path[unit->_idx_path]) < 0.1) {
 				unit->_idx_path++;
 				if (unit->_idx_path == unit->_path.size()) {
 					unit->_mode = WAITING;
@@ -137,7 +131,7 @@ void TestAStar::anim(time_point t, ViewSystem * view_system) {
 				}
 			}
 
-			unit->_aabb->_pos += unit->_type->_velocity * glm::normalize(unit->_path[unit->_idx_path] - unit->_aabb->_pos);
+			unit->_aabb->_pos += unit->_type->_velocity * glm::normalize(unit->_path[unit->_idx_path] - unit->_aabb->_size * 0.5 - unit->_aabb->_pos);
 		}
 	}
 
@@ -147,6 +141,7 @@ void TestAStar::anim(time_point t, ViewSystem * view_system) {
 
 void TestAStar::update() {
 	DrawContext * context= _contexts["normal"];
+	
 	context->_n_pts = 0;
 
 	_path_finder->_grid->_it_v= _path_finder->_grid->_vertices.begin();
@@ -158,6 +153,11 @@ void TestAStar::update() {
 	for (auto poly : _path_finder->_polygons) {
 		context->_n_pts += poly->_pts.size() * 2;
 	}
+	
+	if (_polygon_pts.size() > 1) {
+		context->_n_pts += 2 * (_polygon_pts.size() - 1);
+	}
+
 	for (auto unit : _units) {
 		context->_n_pts += 8; // dessin AABB
 		context->_n_pts += unit->_path.size() * 2;
@@ -167,6 +167,7 @@ void TestAStar::update() {
 
 	glm::vec4 grid_color(0.8f, 0.8f, 0.7f, 1.0f);
 	glm::vec4 obstacle_color(1.0f, 0.0f, 0.0f, 1.0f);
+	glm::vec4 edited_obstacle_color(1.0f, 0.3f, 0.3f, 1.0f);
 	glm::vec4 unit_color(0.0f, 1.0f, 0.0f, 1.0f);
 	glm::vec4 selected_unit_color(1.0f, 1.0f, 0.0f, 1.0f);
 	glm::vec4 path_color(0.7f, 0.8f, 0.3f, 1.0f);
@@ -218,6 +219,28 @@ void TestAStar::update() {
 			ptr[11] = obstacle_color.g;
 			ptr[12] = obstacle_color.b;
 			ptr[13] = obstacle_color.a;
+
+			ptr += 14;
+		}
+	}
+
+	if (_polygon_pts.size() > 1) {
+		for (uint i=0; i<_polygon_pts.size() - 1; ++i) {
+			ptr[0] = float(_polygon_pts[i].x);
+			ptr[1] = float(_polygon_pts[i].y);
+			ptr[2] = 0.0f;
+			ptr[3] = edited_obstacle_color.r;
+			ptr[4] = edited_obstacle_color.g;
+			ptr[5] = edited_obstacle_color.b;
+			ptr[6] = edited_obstacle_color.a;
+
+			ptr[7] = float(_polygon_pts[i + 1].x);
+			ptr[8] = float(_polygon_pts[i + 1].y);
+			ptr[9] = 0.0f;
+			ptr[10] = edited_obstacle_color.r;
+			ptr[11] = edited_obstacle_color.g;
+			ptr[12] = edited_obstacle_color.b;
+			ptr[13] = edited_obstacle_color.a;
 
 			ptr += 14;
 		}
@@ -290,22 +313,29 @@ void TestAStar::update() {
 
 bool TestAStar::mouse_button_down(InputState * input_state, ViewSystem * view_system) {
 	pt_type pt = view_system->screen2world(input_state->_x, input_state->_y, 0.0);
-	if (input_state->_left_mouse) {
-		if (input_state->_keys[SDLK_a]) {
-			_units.push_back(new Unit(_unit_types["small"], pt));
-			return true;
-		}
-		else if (input_state->_keys[SDLK_b]) {
-			_units.push_back(new Unit(_unit_types["big"], pt));
-			return true;
-		}
-		else if (input_state->_keys[SDLK_g]) {
-			for (auto unit : _units) {
-				if (unit->_selected) {
-					unit->clear_path();
-					_path_finder->path_find(unit->_aabb->_pos, pt, unit->_path);
-					unit->_mode = MOVING;
+	if (_mode == ADDING_OBSTACLE) {
+		_polygon_pts.clear();
+		return true;
+	}
+	else if (_mode == FREE) {
+		if (input_state->_left_mouse) {
+			if (input_state->_keys[SDLK_a]) {
+				_units.push_back(new Unit(_unit_types["small"], pt));
+				return true;
+			}
+			else if (input_state->_keys[SDLK_b]) {
+				_units.push_back(new Unit(_unit_types["big"], pt));
+				return true;
+			}
+			else if (input_state->_keys[SDLK_g]) {
+				for (auto unit : _units) {
+					if (unit->_selected) {
+						unit->clear_path();
+						_path_finder->path_find(unit->_aabb->_pos, pt, unit->_path);
+						unit->_mode = MOVING;
+					}
 				}
+				return true;
 			}
 		}
 	}
@@ -313,8 +343,20 @@ bool TestAStar::mouse_button_down(InputState * input_state, ViewSystem * view_sy
 }
 
 
-bool TestAStar::mouse_motion(InputState * input_state, ViewSystem * view_system, time_point t) {
+bool TestAStar::mouse_button_up(InputState * input_state, ViewSystem * view_system) {
 	if (_mode == ADDING_OBSTACLE) {
+		Polygon2D * polygon = new Polygon2D(_polygon_pts, true);
+		polygon->update_all();
+		_path_finder->_polygons.push_back(polygon);
+		_path_finder->update_grid();
+		return true;
+	}
+	return false;
+}
+
+
+bool TestAStar::mouse_motion(InputState * input_state, ViewSystem * view_system, time_point t) {
+	if (_mode == ADDING_OBSTACLE && input_state->_left_mouse) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_added_pt_t).count();
 		if (dt> NEW_PT_IN_POLYGON_MS) {
 			pt_type pt = view_system->screen2world(input_state->_x, input_state->_y, 0.0);
@@ -328,12 +370,8 @@ bool TestAStar::mouse_motion(InputState * input_state, ViewSystem * view_system,
 
 bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
 	if (key == SDLK_o) {
-		if (_mode == FREE) {
-			_mode = ADDING_OBSTACLE;
-			//_edited_polygon->clear();
-			_polygon_pts.clear();
-			return true;
-		}
+		_mode = ADDING_OBSTACLE;
+		return true;
 	}
 	return false;
 }
@@ -342,10 +380,6 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
 bool TestAStar::key_up(InputState * input_state, SDL_Keycode key) {
 	if (key == SDLK_o) {
 		_mode = FREE;
-		Polygon2D * polygon = new Polygon2D(_polygon_pts, true);
-		polygon->update_all();
-		_path_finder->_polygons.push_back(polygon);
-		_path_finder->update_grid();
 		return true;
 	}
 	return false;

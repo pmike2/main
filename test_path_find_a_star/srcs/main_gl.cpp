@@ -40,12 +40,12 @@ void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (view_system->mouse_motion(input_state)) {
-		//return;
+	if (test_a_star->mouse_motion(input_state, view_system, t)) {
+		return;
 	}
 
-	if (test_a_star->mouse_motion(input_state, view_system, t)) {
-
+	if (view_system->mouse_motion(input_state)) {
+		return;
 	}
 }
 
@@ -53,6 +53,10 @@ void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
 void mouse_button_up(int x, int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
+
+	if (test_a_star->mouse_button_up(input_state, view_system)) {
+		return;
+	}
 
 	if (view_system->mouse_button_up(input_state)) {
 		return;
@@ -81,11 +85,11 @@ void key_down(SDL_Keycode key) {
 		done= true;
 	}
 
-	if (view_system->key_down(input_state, key)) {
+	if (test_a_star->key_down(input_state, key)) {
 		return;
 	}
 
-	if (test_a_star->key_down(input_state, key)) {
+	if (view_system->key_down(input_state, key)) {
 		return;
 	}
 }
@@ -94,11 +98,11 @@ void key_down(SDL_Keycode key) {
 void key_up(SDL_Keycode key) {
 	input_state->key_up(key);
 
-	if (view_system->key_up(input_state, key)) {
+	if (test_a_star->key_up(input_state, key)) {
 		return;
 	}
 
-	if (test_a_star->key_up(input_state, key)) {
+	if (view_system->key_up(input_state, key)) {
 		return;
 	}
 }
