@@ -83,6 +83,12 @@ uint GraphGrid::col_lig2id(uint col, uint lig) {
 }
 
 
+uint GraphGrid::pt2id(pt_type pt) {
+	uint col_min= (uint)(((pt.x- _origin.x)/ _size.x)* (number)(_n_cols- 1));
+	uint lig_min= (uint)(((pt.y- _origin.y)/ _size.y)* (number)(_n_ligs- 1));
+	return col_lig2id(col_min, lig_min);
+}
+
 /*void GraphGrid::set_heavy_weight(AABB_2D * aabb) {
 	int col_min= (int)((aabb->_pos.x- _origin.x)* (number)(_n_cols)/ _size.x);
 	int col_max= (int)((aabb->_pos.x+ aabb->_size.x- _origin.x)* (number)(_n_cols)/ _size.x);
@@ -124,6 +130,7 @@ PathFinder::PathFinder(uint n_ligs, uint n_cols, const pt_type & origin, const p
 
 
 PathFinder::~PathFinder() {
+	clear();
 	delete _grid;
 }
 
@@ -167,6 +174,14 @@ void PathFinder::update_grid() {
 	/*for (auto it_erase : edges_to_erase) {
 		_grid->remove_edge(it_erase.first, it_erase.second);
 	}*/
+}
+
+
+void PathFinder::clear() {
+	for (auto polygon : _polygons) {
+		delete polygon;
+	}
+	_polygons.clear();
 }
 
 
@@ -232,6 +247,17 @@ bool PathFinder::line_of_sight(uint i, uint j) {
 }
 
 
+bool PathFinder::line_of_sight(pt_type pt1, pt_type pt2) {
+	for (auto poly : _polygons) {
+		if (segment_intersects_poly(pt1, pt2, poly, NULL)) {
+		//if (distance_poly_segment(poly, pt_begin, pt_end, NULL)< 0.1) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
 bool PathFinder::path_find_nodes(uint start, uint goal, std::vector<uint> & path) {
 	std::priority_queue< std::pair<uint, number>, std::vector<std::pair<uint, number> >, decltype(&frontier_cmp) > frontier(frontier_cmp);
 	std::unordered_map<uint, uint> came_from;
@@ -271,11 +297,12 @@ bool PathFinder::path_find_nodes(uint start, uint goal, std::vector<uint> & path
 	uint current = goal;
 	while (current != start) {
 		path.push_back(current);
-		uint previous_sight = came_from[current];
+		current = came_from[current];
+		/*uint previous_sight = came_from[current];
 		while (previous_sight != start && line_of_sight(current, came_from[previous_sight])) {
 			previous_sight = came_from[previous_sight];
 		}
-		current = previous_sight;
+		current = previous_sight;*/
 	}
 	path.push_back(start);
 	std::reverse(path.begin(), path.end());
@@ -290,7 +317,17 @@ bool PathFinder::path_find(pt_type start, pt_type goal, std::vector<pt_type> & p
 		return false;
 	}
 
-	uint start_col_min= (uint)(((start.x- _grid->_origin.x)/ _grid->_size.x)* (number)(_grid->_n_cols- 1));
+	uint start_id = _grid->pt2id(start);
+	uint goal_id = _grid->pt2id(goal);
+	std::vector<uint> nodes;
+	bool is_path_ok= path_find_nodes(start_id, goal_id, nodes);
+	if (!is_path_ok) {
+		std::cerr << "PathFinder::path_find : pas de chemin trouvé\n";
+		return false;
+	}
+
+
+	/*uint start_col_min= (uint)(((start.x- _grid->_origin.x)/ _grid->_size.x)* (number)(_grid->_n_cols- 1));
 	uint start_col_max= start_col_min+ 1;
 	uint start_lig_min= (uint)(((start.y- _grid->_origin.y)/ _grid->_size.y)* (number)(_grid->_n_ligs- 1));
 	uint start_lig_max= start_lig_min+ 1;
@@ -329,13 +366,35 @@ bool PathFinder::path_find(pt_type start, pt_type goal, std::vector<pt_type> & p
 			goal_idx= i+ 1;
 			break;
 		}
-	}
+	}*/
 
-	path.push_back(start);
-	for (uint i=start_idx; i<=goal_idx; ++i) {
-		path.push_back(_grid->_vertices[nodes[i]]._pos);
+	std::vector<pt_type> raw_path;
+	raw_path.push_back(start);
+	for (uint i=0; i<nodes.size(); ++i) {
+		raw_path.push_back(_grid->_vertices[nodes[i]]._pos);
+	}
+	raw_path.push_back(goal);
+
+	path.clear();
+	//path.push_back(start);
+	uint idx = 1;
+	uint last = 0;
+	while (idx < raw_path.size()) {
+		std::cout << "last = " << last << " ; idx = " << idx << "\n";
+		path.push_back(raw_path[last]);
+		while (idx < raw_path.size() && line_of_sight(raw_path[last], raw_path[idx])) {
+			idx++;
+		}
+		last = idx - 1;
+		/*if (idx != raw_path.size()) {
+			path.push_back(raw_path[last]);
+		}*/
 	}
 	path.push_back(goal);
+	
+	/*for (auto p : raw_path) {
+		path.push_back(p);
+	}*/
 
 	return true;
 }

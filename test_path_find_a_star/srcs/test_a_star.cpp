@@ -9,7 +9,7 @@ UnitType::UnitType() {
 }
 
 
-UnitType::UnitType(pt_type size, number velocity) : _size(size), _velocity(velocity) {
+UnitType::UnitType(std::string name, pt_type size, number velocity) : _name(name), _size(size), _velocity(velocity) {
 
 }
 
@@ -46,7 +46,7 @@ TestAStar::TestAStar() {
 }
 
 
-TestAStar::TestAStar(std::map<std::string, GLuint> progs) : _mode(FREE) {
+TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system) : _mode(FREE), _view_system(view_system) {
 	GLuint buffers[2];
 	glGenBuffers(2, buffers);
 
@@ -60,22 +60,47 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs) : _mode(FREE) {
 	glm::vec2 size(100.0f, 100.0f);
 	_path_finder = new PathFinder(n_ligs, n_cols, origin, size);
 
-	_unit_types["small"] = new UnitType(pt_type(0.5, 0.5), 0.12);
-	_unit_types["big"] = new UnitType(pt_type(2.0, 2.0), 0.08);
+	_unit_types["small"] = new UnitType("S", pt_type(0.5, 0.5), 0.12);
+	_unit_types["big"] = new UnitType("B", pt_type(2.0, 2.0), 0.08);
+
+	_font= new Font(progs["font"], "../../fonts/Silom.ttf", 48, _view_system->_screengl);
+	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
+
+	update();
 }
 
 
 TestAStar::~TestAStar() {
+	clear();
 	delete _path_finder;
+	for (auto unit_type : _unit_types) {
+		delete unit_type.second;
+	}
+	_unit_types.clear();
+	for (auto context : _contexts) {
+		delete context.second;
+	}
+	_contexts.clear();
+	delete _font;
 }
 
 
-void TestAStar::draw(const glm::mat4 & world2clip) {
+void TestAStar::clear() {
+	_path_finder->clear();
+	_path_finder->update_grid();
+	for (auto unit : _units) {
+		delete unit;
+	}
+	_units.clear();
+}
+
+
+void TestAStar::draw() {
 	DrawContext * context= _contexts["normal"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -92,27 +117,31 @@ void TestAStar::draw(const glm::mat4 & world2clip) {
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
+
+	_font->draw();
 }
 
 
-void TestAStar::anim(time_point t, ViewSystem * view_system) {
-	if (view_system->_new_single_selection) {
-		view_system->_new_single_selection= false;
+void TestAStar::anim(time_point t) {
+	if (_view_system->_new_single_selection) {
+		_view_system->_new_single_selection= false;
 		for (auto unit : _units) {
 			AABB * aabb = new AABB(unit->_aabb);
-			if (view_system->single_selection_intersects_aabb(aabb)) {
-				std::cout << "ok\n";
+			if (_view_system->single_selection_intersects_aabb(aabb, false)) {
+				unit->_selected = true;
 			}
 			delete aabb;
 		}
 	}
-	else if (view_system->_new_rect_selection) {
-		view_system->_new_rect_selection= false;
+	else if (_view_system->_new_rect_selection) {
+		_view_system->_new_rect_selection= false;
 		for (auto unit : _units) {
 			unit->_selected = false;
 			AABB * aabb = new AABB(unit->_aabb);
 			BBox * bbox = new BBox(aabb);
-			if (view_system->rect_selection_intersects_bbox(bbox, false)) {
+			//std::cout << *unit->_aabb << "\n";
+			//std::cout << *bbox << "\n";
+			if (_view_system->rect_selection_intersects_bbox(bbox, false)) {
 				unit->_selected = true;
 			}
 			delete aabb;
@@ -308,11 +337,18 @@ void TestAStar::update() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	std::vector<Text> texts;
+	for (auto unit : _units) {
+		glm::vec2 pos = glm::vec2(_view_system->_world2camera * glm::vec4(unit->_aabb->_pos.x, unit->_aabb->_pos.y, 0.0f, 1.0f));
+		texts.push_back(Text(unit->_type->_name, pos, 0.006, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	}
+	_font->set_text(texts);
 }
 
 
-bool TestAStar::mouse_button_down(InputState * input_state, ViewSystem * view_system) {
-	pt_type pt = view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+bool TestAStar::mouse_button_down(InputState * input_state) {
+	pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 	if (_mode == ADDING_OBSTACLE) {
 		_polygon_pts.clear();
 		return true;
@@ -331,7 +367,7 @@ bool TestAStar::mouse_button_down(InputState * input_state, ViewSystem * view_sy
 				for (auto unit : _units) {
 					if (unit->_selected) {
 						unit->clear_path();
-						_path_finder->path_find(unit->_aabb->_pos, pt, unit->_path);
+						_path_finder->path_find(unit->_aabb->center(), pt, unit->_path);
 						unit->_mode = MOVING;
 					}
 				}
@@ -343,23 +379,24 @@ bool TestAStar::mouse_button_down(InputState * input_state, ViewSystem * view_sy
 }
 
 
-bool TestAStar::mouse_button_up(InputState * input_state, ViewSystem * view_system) {
+bool TestAStar::mouse_button_up(InputState * input_state) {
 	if (_mode == ADDING_OBSTACLE) {
 		Polygon2D * polygon = new Polygon2D(_polygon_pts, true);
 		polygon->update_all();
 		_path_finder->_polygons.push_back(polygon);
 		_path_finder->update_grid();
+		_polygon_pts.clear();
 		return true;
 	}
 	return false;
 }
 
 
-bool TestAStar::mouse_motion(InputState * input_state, ViewSystem * view_system, time_point t) {
+bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
 	if (_mode == ADDING_OBSTACLE && input_state->_left_mouse) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_added_pt_t).count();
 		if (dt> NEW_PT_IN_POLYGON_MS) {
-			pt_type pt = view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+			pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 			_polygon_pts.push_back(pt);
 		}
 		return true;
@@ -372,6 +409,9 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
 	if (key == SDLK_o) {
 		_mode = ADDING_OBSTACLE;
 		return true;
+	}
+	else if (key == SDLK_c) {
+		clear();
 	}
 	return false;
 }

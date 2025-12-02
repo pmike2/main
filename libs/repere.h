@@ -127,7 +127,7 @@ public:
 	bool intersects_pts(pt_type_3d * pts, uint n_pts, bool selection=false);
 	//bool selection_contains_point(const pt_type_3d & pt);
 	void update_selection_norms();
-	bool single_selection_intersects_aabb(AABB * aabb);
+	bool single_selection_intersects_aabb(AABB * aabb, bool check_depth=true);
 	bool rect_selection_intersects_bbox(BBox * bbox, bool check_depth=true);
 
 	

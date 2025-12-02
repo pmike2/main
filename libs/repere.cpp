@@ -256,6 +256,7 @@ ViewSystem::~ViewSystem() {
 	delete _repere;
 	delete _rect_select;
 	delete _font;
+	delete _screengl;
 }
 
 
@@ -285,7 +286,7 @@ bool ViewSystem::mouse_button_up(InputState * input_state) {
 
 	if (_rect_select->_is_active) {
 		_rect_select->set_active(false);
-		if (glm::distance2(_rect_select->_gl_origin, _rect_select->_gl_moving)< 0.0001f) {
+		if (glm::distance2(_rect_select->_gl_origin, _rect_select->_gl_moving)< 0.0001) {
 			_new_single_selection= true;
 		}
 		else {
@@ -662,11 +663,20 @@ bool ViewSystem::intersects_pts(pt_type_3d * pts, uint n_pts, bool selection) {
 		norms[2]= _norm_top;
 		norms[3]= _norm_bottom;
 	}
+	/*for (uint i=0; i<n_pts; ++i) {
+		std::cout << glm::to_string(pts[i]) << " ; ";
+	}
+	std::cout << "\n";
+	for (uint i=0; i<4; ++i) {
+		std::cout << glm::to_string(norms[i]) << " ; ";
+	}
+	std::cout << "\n";*/
 
 	for (uint i=0; i<4; ++i) {
 		b= false;
 		for (uint j=0; j<n_pts; ++j) {
-			if (glm::dot(pts[j]- _center_near, norms[i])> 0) {
+			//std::cout << "i=" << i << " ; j=" << j << " ; pts[j]=" << glm::to_string(pts[j]) << " ; center_near" << glm::to_string(_center_near) << " ; norms[i]" << glm::to_string(norms[i]) << " ; dot=" << glm::dot(pts[j]- _center_near, norms[i]) << "\n";
+			if (glm::dot(pts[j]- _eye, norms[i])> 0.0) {
 				b= true;
 				break;
 			}
@@ -730,6 +740,8 @@ void ViewSystem::update_selection_norms() {
 	pt_type v2= screen2world(pt_type(xmax, ymin), 0.0);
 	pt_type v3= screen2world(pt_type(xmax, ymax), 0.0);
 	pt_type v4= screen2world(pt_type(xmin, ymax), 0.0);
+	//std::cout << "v1=" << glm::to_string(v1) << " ; v2=" << glm::to_string(v2) << " ; v3=" << glm::to_string(v3) << " ; v4=" << glm::to_string(v4) << "\n";
+	//std::cout << "center_near=" << glm::to_string(_center_near) << " ; eye=" << glm::to_string(_eye) << "\n";
 
 	pt_type_3d dir1= pt_type_3d(v1, 0.0)- _eye;
 	pt_type_3d dir2= pt_type_3d(v2, 0.0)- _eye;
@@ -743,12 +755,16 @@ void ViewSystem::update_selection_norms() {
 }
 
 
-bool ViewSystem::single_selection_intersects_aabb(AABB * aabb) {
+bool ViewSystem::single_selection_intersects_aabb(AABB * aabb, bool check_depth) {
 	pt_type click_world= screen2world(_rect_select->_gl_origin, 0.0);
 	number t_hit;
 	bool intersect= ray_intersects_aabb(_eye, pt_type_3d(click_world, 0.0)- _eye, aabb, t_hit);
 	if (!intersect) {
 		return false;
+	}
+
+	if (!check_depth) {
+		return true;
 	}
 
 	glm::uvec2 screen_coords= gl2screen(_rect_select->_gl_origin);

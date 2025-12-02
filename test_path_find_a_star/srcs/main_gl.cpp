@@ -17,14 +17,13 @@
 // dimensions écran
 const int MAIN_WIN_WIDTH= 1280;
 const int MAIN_WIN_HEIGHT= 1024;
-const float GL_WIDTH= 15.0f;
+const float GL_WIDTH= 10.0f;
 const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDTH);
 
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
 InputState * input_state;
 ViewSystem * view_system;
-ScreenGL * screengl;
 
 bool done= false;
 
@@ -40,7 +39,7 @@ void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (test_a_star->mouse_motion(input_state, view_system, t)) {
+	if (test_a_star->mouse_motion(input_state, t)) {
 		return;
 	}
 
@@ -54,7 +53,7 @@ void mouse_button_up(int x, int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (test_a_star->mouse_button_up(input_state, view_system)) {
+	if (test_a_star->mouse_button_up(input_state)) {
 		return;
 	}
 
@@ -68,7 +67,7 @@ void mouse_button_down(int x, int y, unsigned short button) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (test_a_star->mouse_button_down(input_state, view_system)) {
+	if (test_a_star->mouse_button_down(input_state)) {
 		return;
 	}
 
@@ -166,7 +165,7 @@ void init() {
 
 	check_gl_error();
 
-	screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+	ScreenGL * screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	
 	// --------------------------------------------------------------------------
 	view_system= new ViewSystem(progs, screengl);
@@ -179,7 +178,7 @@ void init() {
 	input_state= new InputState();
 
 	// --------------------------------------------------------------------------
-	test_a_star = new TestAStar(progs);
+	test_a_star = new TestAStar(progs, view_system);
 }
 
 
@@ -189,16 +188,16 @@ void draw() {
 	glClearColor(0.1, 0.1, 0.1, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	view_system->draw();
 
-	test_a_star->draw(view_system->_world2clip);
+	view_system->draw();
+	test_a_star->draw();
 
 	SDL_GL_SwapWindow(window);
 }
 
 
 void anim(time_point t) {
-	test_a_star->anim(t, view_system);
+	test_a_star->anim(t);
 }
 
 

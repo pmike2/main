@@ -23,10 +23,11 @@ const uint NEW_PT_IN_POLYGON_MS = 300;
 
 struct UnitType {
 	UnitType();
-	UnitType(pt_type size, number velocity);
+	UnitType(std::string name, pt_type size, number velocity);
 	~UnitType();
 	
 	
+	std::string _name;
 	pt_type _size;
 	number _velocity;
 };
@@ -52,14 +53,15 @@ struct Unit {
 class TestAStar {
 public:
 	TestAStar();
-	TestAStar(std::map<std::string, GLuint> progs);
+	TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system);
 	~TestAStar();
-	void draw(const glm::mat4 & world2clip);
-	void anim(time_point t, ViewSystem * view_system);
+	void clear();
+	void draw();
+	void anim(time_point t);
 	void update();
-	bool mouse_button_down(InputState * input_state, ViewSystem * view_system);
-	bool mouse_button_up(InputState * input_state, ViewSystem * view_system);
-	bool mouse_motion(InputState * input_state, ViewSystem * view_system, time_point t);
+	bool mouse_button_down(InputState * input_state);
+	bool mouse_button_up(InputState * input_state);
+	bool mouse_motion(InputState * input_state, time_point t);
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
 
@@ -71,6 +73,8 @@ public:
 	EDIT_MODE _mode;
 	std::vector<pt_type> _polygon_pts;
 	time_point _last_added_pt_t;
+	Font * _font;
+	ViewSystem * _view_system;
 };
 
 #endif
