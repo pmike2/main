@@ -339,8 +339,10 @@ void TestAStar::update() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	std::vector<Text> texts;
+	texts.push_back(Text("X", glm::vec2(2., 0.), 0.006, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	for (auto unit : _units) {
-		glm::vec2 pos = glm::vec2(_view_system->_world2camera * glm::vec4(unit->_aabb->_pos.x, unit->_aabb->_pos.y, 0.0f, 1.0f));
+		glm::vec2 pos = glm::vec2(_view_system->_world2camera * glm::vec4(float(unit->_aabb->_pos.x), float(unit->_aabb->_pos.y), 0.0f, 1.0f));
+		std::cout << glm::to_string(pos) << "\n";
 		texts.push_back(Text(unit->_type->_name, pos, 0.006, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 	_font->set_text(texts);
