@@ -27,13 +27,30 @@ Text::~Text() {
 
 
 // ---------------------------------------------------------------------------------
+Text3D::Text3D() {
 
+}
+
+
+Text3D::Text3D(std::string text, glm::vec3 pos, float scale, glm::vec4 color) :
+	_text(text), _pos(pos), _scale(scale), _color(color)
+{
+
+}
+
+
+Text3D::~Text3D() {
+
+}
+
+
+// ---------------------------------------------------------------------------------
 Font::Font() {
 
 }
 
 
-Font::Font(GLuint prog_font, std::string font_path, unsigned int font_size, ScreenGL * screengl) : _z(0.0) {
+Font::Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned int font_size, ScreenGL * screengl, mat_4d * world2clip) : _z(0.0) {
 	FT_Library ft_lib;
 	FT_Face face;
 
@@ -121,23 +138,38 @@ Font::Font(GLuint prog_font, std::string font_path, unsigned int font_size, Scre
 	GLuint buffer;
 	glGenBuffers(1, &buffer);
 
-	_context= new DrawContext(prog_font, buffer,
+	_contexts["font"]= new DrawContext(progs["font"], buffer,
 		std::vector<std::string>{"vertex_in", "color_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "z", "texture_array"});
-	_context->_n_pts= 0;
-	_context->_n_attrs_per_pts= 9;
+	_contexts["font"]->_n_attrs_per_pts= 9;
+
+	_contexts["font3d"]= new DrawContext(progs["font3d"], buffer,
+		std::vector<std::string>{"vertex_in", "tex_in", "color_in", "current_layer_in"},
+		std::vector<std::string>{"world2clip_matrix", "texture_array"});
+	_contexts["font3d"]->_n_attrs_per_pts= 10;
+
+	_camera2clip = glm::ortho(-screengl->_gl_width* 0.5, screengl->_gl_width* 0.5, -screengl->_gl_height* 0.5, screengl->_gl_height* 0.5);
 	
-	_camera2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f);
+	if (world2clip == NULL) {
+		//_world2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f);
+		_world2clip == NULL;
+	}
+	else {
+		_world2clip = world2clip;
+		//std::cout << glm::to_string(_camera2clip) << "\n";
+	}
 }
 
 
 void Font::set_text(std::vector<Text> & texts) {
+	DrawContext * context = _contexts["font"];
+
 	const unsigned int n_pts_per_char= 6;
-	_context->_n_pts= 0;
+	context->_n_pts= 0;
 	for (auto text : texts) {
-		_context->_n_pts+= n_pts_per_char* text._text.size();
+		context->_n_pts+= n_pts_per_char* text._text.size();
 	}
-	float data[_context->_n_pts* _context->_n_attrs_per_pts];
+	float data[context->_n_pts* context->_n_attrs_per_pts];
 
 	unsigned int idx= 0;
 	for (auto text: texts) {
@@ -169,12 +201,12 @@ void Font::set_text(std::vector<Text> & texts) {
 			};
 			for (int i=0; i<n_pts_per_char; ++i) {
 				for (int j=0; j<4; ++j) {
-					data[idx* n_pts_per_char* _context->_n_attrs_per_pts+ i* _context->_n_attrs_per_pts+ j]= positions[i][j];
+					data[idx* n_pts_per_char* context->_n_attrs_per_pts+ i* context->_n_attrs_per_pts+ j]= positions[i][j];
 				}
 				for (int k=0; k<4; ++k) {
-					data[idx* n_pts_per_char* _context->_n_attrs_per_pts+ i* _context->_n_attrs_per_pts+ 4+ k]= text._color[k];
+					data[idx* n_pts_per_char* context->_n_attrs_per_pts+ i* context->_n_attrs_per_pts+ 4+ k]= text._color[k];
 				}
-				data[idx* n_pts_per_char* _context->_n_attrs_per_pts+ i* _context->_n_attrs_per_pts+ 8]= float(ch._char);
+				data[idx* n_pts_per_char* context->_n_attrs_per_pts+ i* context->_n_attrs_per_pts+ 8]= float(ch._char);
 			}
 
 			// Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
@@ -184,8 +216,8 @@ void Font::set_text(std::vector<Text> & texts) {
 		}
 	}
 
-	glBindBuffer(GL_ARRAY_BUFFER, _context->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* _context->_n_pts* _context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -198,37 +230,146 @@ void Font::set_text(Text & text) {
 }
 
 
+void Font::set_text(std::vector<Text3D> & texts) {
+	DrawContext * context = _contexts["font3d"];
+
+	const unsigned int n_pts_per_char= 6;
+	context->_n_pts= 0;
+	for (auto text : texts) {
+		context->_n_pts+= n_pts_per_char* text._text.size();
+	}
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+
+	unsigned int idx= 0;
+	for (auto text: texts) {
+		float x0= text._pos.x;
+		float y0= text._pos.y;
+		float z = text._pos.z;
+		for (std::string::const_iterator c=text._text.begin(); c!=text._text.end(); c++) {
+			Character ch= _characters[*c];
+			
+			// affichage attributs lettres
+			//std::cout << ch << "\n";
+
+			float xpos= x0+ (float)(ch._bearing.x)* text._scale;
+			float ypos= y0- (float)(ch._size.y- ch._bearing.y)* text._scale;
+
+			float w= (float)(ch._size.x)* text._scale;
+			float h= (float)(ch._size.y)* text._scale;
+
+			float u= (float)(ch._size.x)/ float(_tex_size);
+			float v= (float)(ch._size.y)/ float(_tex_size);
+
+			float positions[n_pts_per_char][5]= {
+				{xpos, ypos, z, 0.0, v},
+				{xpos+ w, ypos, z, u, v},
+				{xpos+ w, ypos+ h, z, u, 0.0},
+
+				{xpos, ypos, z, 0.0, v},
+				{xpos+ w, ypos+ h, z, u, 0.0},
+				{xpos, ypos+ h, z, 0.0, 0.0},
+			};
+			for (int i=0; i<n_pts_per_char; ++i) {
+				for (int j=0; j<5; ++j) {
+					data[idx* n_pts_per_char* context->_n_attrs_per_pts+ i* context->_n_attrs_per_pts+ j]= positions[i][j];
+				}
+				for (int k=0; k<4; ++k) {
+					data[idx* n_pts_per_char* context->_n_attrs_per_pts+ i* context->_n_attrs_per_pts+ 5+ k]= text._color[k];
+				}
+				data[idx* n_pts_per_char* context->_n_attrs_per_pts+ i* context->_n_attrs_per_pts+ 9]= float(ch._char);
+			}
+
+			// Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
+			x0+= (float)(ch._advance >> 6)* text._scale; // Bitshift by 6 to get value in pixels (2^6 = 64)
+
+			idx++;
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+// raccourci lorsque l'on a qu'un seul texte à afficher
+void Font::set_text(Text3D & text) {
+	std::vector<Text3D> texts;
+	texts.push_back(text);
+	set_text(texts);
+}
+
+
 void Font::clear() {
-	glBindBuffer(GL_ARRAY_BUFFER, _context->_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, _contexts["font"]->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, _contexts["font3d"]->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
 void Font::draw() {
-	glUseProgram(_context->_prog);
+	DrawContext * context = _contexts["font"];
+	glUseProgram(context->_prog);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
 	glActiveTexture(0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, _context->_buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 
-	glUniform1i(_context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
-	glUniform1f(_context->_locs_uniform["z"], _z);
-	glUniformMatrix4fv(_context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniform1f(context->_locs_uniform["z"], _z);
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_camera2clip)));
 	
-	for (auto attr : _context->_locs_attrib) {
+	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
 	}
 
-	glVertexAttribPointer(_context->_locs_attrib["vertex_in"], 4, GL_FLOAT, GL_FALSE, _context->_n_attrs_per_pts* sizeof(float), (void*)0);
-	glVertexAttribPointer(_context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, _context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
-	glVertexAttribPointer(_context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, _context->_n_attrs_per_pts* sizeof(float), (void*)(8* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["vertex_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(4* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(8* sizeof(float)));
 
-	glDrawArrays(GL_TRIANGLES, 0, _context->_n_pts);
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 
-	for (auto attr : _context->_locs_attrib) {
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+	
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
+void Font::draw_3d() {
+	DrawContext * context = _contexts["font3d"];
+	glUseProgram(context->_prog);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
+	glActiveTexture(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(*_world2clip)));
+	
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["vertex_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["tex_in"], 2, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(5* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["current_layer_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(9* sizeof(float)));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
 		glDisableVertexAttribArray(attr.second);
 	}
 	

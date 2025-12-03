@@ -161,7 +161,7 @@ void init() {
 	progs["repere"]= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
 	progs["select"]= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
 	progs["font"]= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
-	progs["light"]= create_prog("../../shaders/vertexshader_3d_light.txt", "../../shaders/fragmentshader_3d_light.txt");
+	progs["font3d"]= create_prog("../../shaders/vertexshader_font_3d.txt", "../../shaders/fragmentshader_font.txt");
 
 	check_gl_error();
 

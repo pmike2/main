@@ -5,43 +5,72 @@
 #include "utile.h"
 #include "shapefile.h"
 
-using namespace std;
+
+ShpEntry::ShpEntry() {
+
+}
 
 
-void read_shp(string shp_path, vector<Polygon2D *> & polygons) {
+ShpEntry::ShpEntry(Polygon2D * polygon, std::map<std::string, std::string> fields) : _polygon(polygon), _fields(fields) {
+
+}
+
+
+ShpEntry::~ShpEntry() {
+	delete _polygon;
+}
+
+
+void read_shp(std::string shp_path, std::vector<ShpEntry *> & entries) {
 	GDALAllRegister();
 	GDALDataset * poDS= (GDALDataset *) GDALOpenEx(shp_path.c_str(), GDAL_OF_VECTOR, NULL, NULL, NULL);
 	if (poDS== NULL) {
-		cout << "Shapefile " << shp_path << " : open failed.\n";
+		std::cerr << "Shapefile " << shp_path << " : open failed.\n";
 		return;
 	}
-	//std::string layer_name = basename(shp_path);
-	//OGRLayer * poLayer= poDS->GetLayerByName(layer_name.c_str());
 	OGRLayer * poLayer= poDS->GetLayer(0);
+
+	std::vector<std::string> field_names;
+	OGRFeatureDefn * poFDefn = poLayer->GetLayerDefn();
+	for (int iField = 0; iField < poFDefn->GetFieldCount(); iField++ ) {
+		OGRFieldDefn *poFieldDefn = poFDefn->GetFieldDefn(iField);
+		std::string field_name = poFieldDefn->GetNameRef();
+		field_names.push_back(field_name);
+	}
 
 	OGRFeature * poFeature;
 	poLayer->ResetReading();
 	while ((poFeature= poLayer->GetNextFeature())!= NULL) {
-		//cout << "feat\n";
+
 		OGRGeometry * poGeometry;
 		poGeometry= poFeature->GetGeometryRef();
+		Polygon2D * polygon= new Polygon2D();
 		if ((poGeometry!= NULL) && (wkbFlatten(poGeometry->getGeometryType())== wkbPolygon)) {
 			OGRPolygon * poPoly= (OGRPolygon *) poGeometry;
 			OGRLinearRing * ring= poPoly->getExteriorRing();
 			unsigned int n_pts= ring->getNumPoints();
 			OGRRawPoint * raw_points= new OGRRawPoint[n_pts];
 			ring->getPoints(raw_points);
-			Polygon2D * polygon= new Polygon2D();
 			number points[2* n_pts];
 			for (unsigned int i=0; i<n_pts; ++i) {
-				//cout << raw_points[i].x << " ; " << raw_points[i].y << "\n";
 				points[2* i]= (number)(raw_points[i].x);
 				points[2* i+ 1]= (number)(raw_points[i].y);
 			}
 			delete[] raw_points;
 			polygon->set_points(points, n_pts);
-			polygons.push_back(polygon);
+			polygon->update_all();
 		}
+
+		unsigned int compt = 0;
+		std::map<std::string, std::string> fields;
+		for (auto && oField: *poFeature) {
+			std::string field_value = oField.GetAsString();
+			fields[field_names[compt]] = field_value;
+			compt++;
+		}
+
+		entries.push_back(new ShpEntry(polygon, fields));
+
 		OGRFeature::DestroyFeature(poFeature);
 	}
 	GDALClose(poDS);

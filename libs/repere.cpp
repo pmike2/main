@@ -247,7 +247,7 @@ ViewSystem::ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl)
 	_repere= new Repere(progs["repere"]);
 	_rect_select= new RectSelect(progs["select"]);
 
-	_font= new Font(progs["font"], "../../fonts/Silom.ttf", 48, screengl);
+	_font= new Font(progs, "../../fonts/Silom.ttf", 48, screengl);
 	//_font->_z= 100.0;
 }
 

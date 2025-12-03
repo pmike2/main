@@ -1,0 +1,10 @@
+{
+	"name" : "tank",
+	"size" : [6.0, 4.0],
+	"velocity" : 0.12,
+	"weights" : {
+		"GROUND" : 1.0,
+		"SOLID" : 1000.0,
+		"WATER" : 2000.0
+	}
+}

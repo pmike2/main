@@ -223,6 +223,45 @@ bool bbox_intersects_bbox(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_type 
 
 // cf https://stackoverflow.com/questions/563198/how-do-you-detect-where-two-line-segments-intersect
 bool segment_intersects_segment(const pt_type & pt1_begin, const pt_type & pt1_end, const pt_type & pt2_begin, const pt_type & pt2_end, pt_type * result, bool exclude_seg1_extremities, bool exclude_seg2_extremities) {
+	number xmin1, xmax1, ymin1, ymax1;
+	number xmin2, xmax2, ymin2, ymax2;
+	if (pt1_begin.x < pt1_end.x) {
+		xmin1 = pt1_begin.x;
+		xmax1 = pt1_end.x;
+	}
+	else {
+		xmin1 = pt1_end.x;
+		xmax1 = pt1_begin.x;
+	}
+	if (pt1_begin.y < pt1_end.y) {
+		ymin1 = pt1_begin.y;
+		ymax1 = pt1_end.y;
+	}
+	else {
+		ymin1 = pt1_end.y;
+		ymax1 = pt1_begin.y;
+	}
+	if (pt2_begin.x < pt2_end.x) {
+		xmin2 = pt2_begin.x;
+		xmax2 = pt2_end.x;
+	}
+	else {
+		xmin2 = pt2_end.x;
+		xmax2 = pt2_begin.x;
+	}
+	if (pt2_begin.y < pt2_end.y) {
+		ymin2 = pt2_begin.y;
+		ymax2 = pt2_end.y;
+	}
+	else {
+		ymin2 = pt2_end.y;
+		ymax2 = pt2_begin.y;
+	}
+
+	if (xmax1 < xmin2 || xmax2 < xmin1 || ymax1 < ymin2 || ymax2 < ymin1) {
+		return false;
+	}
+
 	pt_type dir1= pt1_end- pt1_begin;
 	pt_type dir2= pt2_end- pt2_begin;
 	
@@ -236,8 +275,10 @@ bool segment_intersects_segment(const pt_type & pt1_begin, const pt_type & pt1_e
 	number t1= cross2d(pt2_begin- pt1_begin, dir2)/ a;
 
 	// on fait ca ici meme si on renvoie false c'est utile dans les cas limites
-	result->x= pt1_begin.x+ t1* dir1.x;
-	result->y= pt1_begin.y+ t1* dir1.y;
+	if (result!= NULL) {
+		result->x= pt1_begin.x+ t1* dir1.x;
+		result->y= pt1_begin.y+ t1* dir1.y;
+	}
 
 	if (exclude_seg1_extremities) {
 		if ((t1<= EPSILON) || (t1>= 1.0- EPSILON)) {

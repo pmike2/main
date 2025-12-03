@@ -4,112 +4,95 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+#include "json.hpp"
+
 #include "path_find.h"
 #include "utile.h"
 #include "shapefile.h"
 
+using json = nlohmann::json;
+
+
+OBSTACLE_TYPE str2type(std::string s) {
+	if (s == "GROUND") {
+		return GROUND;
+	}
+	else if (s == "SOLID") {
+		return SOLID;
+	}
+	else if (s == "WATER") {
+		return WATER;
+	}
+	std::cerr << s << " : type d'obstacle non reconnu\n";
+	return UNKNOWN;
+}
+
+
+// -------------------------------------------------
+UnitType::UnitType() {
+
+}
+
+
+UnitType::UnitType(std::string json_path) {
+	std::ifstream ifs(json_path);
+	json js= json::parse(ifs);
+	ifs.close();
+
+	_name = js["name"];
+	_size = pt_type(js["size"][0], js["size"][1]);
+	_velocity = js["velocity"];
+	for (json::iterator it = js["weights"].begin(); it != js["weights"].end(); ++it) {
+		OBSTACLE_TYPE ot = str2type(it.key());
+		if (ot == UNKNOWN) {
+			continue;
+		}
+		_weights[ot] = it.value();
+	}
+}
+
+
+UnitType::~UnitType() {
+
+}
+
+
+Unit::Unit() {
+
+}
+
+
+Unit::Unit(UnitType * type, pt_type pos, GraphGrid * grid) : _type(type), _selected(false), _idx_path(0), _mode(WAITING), _grid(grid) {
+	_aabb = new AABB_2D(pos - 0.5 * _type->_size, _type->_size);
+}
+
+
+Unit::~Unit() {
+	
+}
+
+
+void Unit::clear_path() {
+	_path.clear();
+	_idx_path = 0;
+	_mode = WAITING;
+}
 
 
 // ----------------------------------------------------------------------------------------
-GraphGrid::GraphGrid() {
+Obstacle::Obstacle() {
 
 }
 
 
-GraphGrid::GraphGrid(uint n_ligs, uint n_cols, const pt_type & origin, const pt_type & size, bool is8connex) :
-	_n_ligs(n_ligs), _n_cols(n_cols), _origin(origin), _size(size) 
-{
-	for (uint lig=0; lig<_n_ligs; ++lig) {
-		for (uint col=0; col<_n_cols; ++col) {
-			uint id= col_lig2id(col, lig);
-			number weight= 1.0;
-			number x= _origin.x+ ((number)(col)/ (number)(_n_cols))* _size.x;
-			number y= _origin.y+ ((number)(lig)/ (number)(_n_ligs))* _size.y;
-			add_vertex(id, pt_type_3d(x, y, 0.0), weight);
-		}
-	}
-	
-	_it_v= _vertices.begin();
-	while (_it_v!= _vertices.end()) {
-		uint col= id2col_lig(_it_v->first).first;
-		uint lig= id2col_lig(_it_v->first).second;
-		if (col> 0) {
-			add_edge(_it_v->first, _it_v->first- 1);
-		}
-		if (col< _n_cols- 1) {
-			add_edge(_it_v->first, _it_v->first+ 1);
-		}
-		if (lig> 0) {
-			add_edge(_it_v->first, _it_v->first- _n_cols);
-		}
-		if (lig< _n_ligs- 1) {
-			add_edge(_it_v->first, _it_v->first+ _n_cols);
-		}
-
-		if (is8connex) {
-			if ((col> 0) && (lig> 0)) {
-				add_edge(_it_v->first, _it_v->first- 1- _n_cols);
-			}
-			if ((col< _n_cols- 1) && (lig> 0)) {
-				add_edge(_it_v->first, _it_v->first+ 1- _n_cols);
-			}
-			if ((col> 0) && (lig< _n_ligs- 1)) {
-				add_edge(_it_v->first, _it_v->first- 1+ _n_cols);
-			}
-			if ((col< _n_cols- 1) && (lig< _n_ligs- 1)) {
-				add_edge(_it_v->first, _it_v->first+ 1+ _n_cols);
-			}
-		}
-
-		_it_v++;
-	}
-
-	_aabb= new AABB_2D(_origin, _size);
+Obstacle::Obstacle(OBSTACLE_TYPE type, const std::vector<pt_type> & pts) : _type(type) {
+	_polygon = new Polygon2D(pts);
+	_polygon->update_all();
 }
 
 
-GraphGrid::~GraphGrid() {
-	delete _aabb;
-}
-
-
-std::pair<uint, uint> GraphGrid::id2col_lig(uint id) {
-	return std::make_pair(id % _n_cols, id/ _n_cols);
-}
-
-
-uint GraphGrid::col_lig2id(uint col, uint lig) {
-	return col+ _n_cols* lig;
-}
-
-
-uint GraphGrid::pt2id(pt_type pt) {
-	uint col_min= (uint)(((pt.x- _origin.x)/ _size.x)* (number)(_n_cols- 1));
-	uint lig_min= (uint)(((pt.y- _origin.y)/ _size.y)* (number)(_n_ligs- 1));
-	return col_lig2id(col_min, lig_min);
-}
-
-/*void GraphGrid::set_heavy_weight(AABB_2D * aabb) {
-	int col_min= (int)((aabb->_pos.x- _origin.x)* (number)(_n_cols)/ _size.x);
-	int col_max= (int)((aabb->_pos.x+ aabb->_size.x- _origin.x)* (number)(_n_cols)/ _size.x);
-	int lig_min= (int)((aabb->_pos.y- _origin.y)* (number)(_n_ligs)/ _size.y);
-	int lig_max= (int)((aabb->_pos.y+ aabb->_size.y- _origin.y)* (number)(_n_ligs)/ _size.y);
-
-	for (int col=col_min; col<=col_max; ++col) {
-		for (int lig=lig_min; lig<=lig_max; ++lig) {
-			if ((col< 0) || (col>= _n_cols) || (lig< 0) || (lig>= _n_ligs)) {
-				continue;
-			}
-			_vertices[col_lig2id(col, lig)]._weight= 10.0f;
-			//_vertices[col_lig2id(col, lig)]._active= false;
-		}
-	}
-}*/
-
-
-std::ostream & operator << (std::ostream & os, GraphGrid & g) {
-	os << static_cast<Graph &>(g);
-	return os;
+Obstacle::~Obstacle() {
+	delete _polygon;
 }
 
 
@@ -124,141 +107,43 @@ PathFinder::PathFinder() {
 }
 
 
-PathFinder::PathFinder(uint n_ligs, uint n_cols, const pt_type & origin, const pt_type & size, bool is8connex) {
-	_grid= new GraphGrid(n_ligs, n_cols, origin, size, is8connex);
-}
-
-
 PathFinder::~PathFinder() {
-	clear();
-	delete _grid;
+
 }
 
 
-void PathFinder::update_grid() {
-	/*std::vector<uint> vertices_to_erase;
-	_grid->_it_v= _grid->_vertices.begin();
-	while (_grid->_it_v!= _grid->_vertices.end()) {
-		for (auto poly : _polygons) {
-			pt_type v(_grid->_it_v->second._pos);
-			if (is_pt_inside_poly(v, poly)) {
-			//if (distance_poly_pt(poly, _grid->_it_v->second._pos, NULL)< 0.1f) {
-				vertices_to_erase.push_back(_grid->_it_v->first);
-				break;
-			}
-		}
-		_grid->_it_v++;
-	}
-	for (auto it_erase : vertices_to_erase) {
-		_grid->remove_vertex(it_erase);
-	}*/
+number PathFinder::cost(uint i, uint j, GraphGrid * grid) {
+	return grid->_vertices[i]._edges[j]._weight;
+}
 
-	//std::vector<std::pair<uint, uint> > edges_to_erase;
-	_grid->_it_v= _grid->_vertices.begin();
-	while (_grid->_it_v!= _grid->_vertices.end()) {
-		_grid->_it_e= _grid->_it_v->second._edges.begin();
-		while (_grid->_it_e!= _grid->_it_v->second._edges.end()) {
-			pt_type pt_begin= _grid->_it_v->second._pos;
-			pt_type pt_end= _grid->_vertices[_grid->_it_e->first]._pos;
-			for (auto poly : _polygons) {
-				if (segment_intersects_poly(pt_begin, pt_end, poly, NULL)) {
-					//edges_to_erase.push_back(std::make_pair(_grid->_it_v->first, _grid->_it_e->first));
-					_grid->_vertices[_grid->_it_v->first]._edges[_grid->_it_e->first]._weight = 1000.0;
-					break;
+
+number PathFinder::heuristic(uint i, uint j, GraphGrid * grid) {
+	return glm::distance(grid->_vertices[i]._pos, grid->_vertices[j]._pos);
+}
+
+
+bool PathFinder::line_of_sight(pt_type pt1, pt_type pt2, GraphGrid * grid) {
+	grid->_it_v= grid->_vertices.begin();
+	while (grid->_it_v!= grid->_vertices.end()) {
+		grid->_it_e= grid->_it_v->second._edges.begin();
+		while (grid->_it_e!= grid->_it_v->second._edges.end()) {
+			pt_type pt_begin= grid->_it_v->second._pos;
+			pt_type pt_end= grid->_vertices[grid->_it_e->first]._pos;
+			if (segment_intersects_segment(pt1, pt2, pt_begin, pt_end, NULL, true, true)) {
+				if (grid->_it_e->second._weight > 2.0) {
+					return false;
 				}
 			}
-			_grid->_it_e++;
+			grid->_it_e++;
 		}
-		_grid->_it_v++;
-	}
-	/*for (auto it_erase : edges_to_erase) {
-		_grid->remove_edge(it_erase.first, it_erase.second);
-	}*/
-}
-
-
-void PathFinder::clear() {
-	for (auto polygon : _polygons) {
-		delete polygon;
-	}
-	_polygons.clear();
-}
-
-
-void PathFinder::read_shapefile(std::string shp_path, pt_type origin, pt_type size, bool reverse_y) {
-	std::vector<Polygon2D *> polygons;
-	read_shp(shp_path, polygons);
-	for (auto poly : polygons) {
-		Polygon2D * poly_reproj= new Polygon2D();
-		std::vector<pt_type> pts;
-		for (auto pt : poly->_pts) {
-			number x= ((pt.x- origin.x)/ size.x)* _grid->_size.x+ _grid->_origin.x;
-			number y;
-			if (reverse_y) {
-				y= ((origin.y- pt.y)/ size.y)* _grid->_size.y+ _grid->_origin.y;
-			}
-			else {
-				y= ((pt.y- origin.y)/ size.y)* _grid->_size.y+ _grid->_origin.y;
-			}
-			pts.push_back(pt_type(x, y));
-		}
-		poly_reproj->set_points(pts);
-		poly_reproj->update_all();
-		_polygons.push_back(poly_reproj);
-		delete poly;
-	}
-}
-
-
-void PathFinder::rand(uint n_polys, uint n_pts_per_poly, number poly_radius) {
-	for (uint i=0; i<n_polys; ++i) {
-		Polygon2D * poly= new Polygon2D();
-		number x= rand_number(_grid->_origin.x, _grid->_origin.x+ _grid->_size.x);
-		number y= rand_number(_grid->_origin.y, _grid->_origin.y+ _grid->_size.y);
-		poly->randomize(n_pts_per_poly, poly_radius, pt_type(x, y));
-		_polygons.push_back(poly);
+		grid->_it_v++;
 	}
 
-	update_grid();
-}
-
-
-number PathFinder::cost(uint i, uint j) {
-	return _grid->_vertices[i]._edges[j]._weight;
-}
-
-
-number PathFinder::heuristic(uint i, uint j) {
-	//return abs(_grid->_vertices[i]._pos.x- _grid->_vertices[j]._pos.x)+ abs(_grid->_vertices[i]._pos.y- _grid->_vertices[j]._pos.y);
-	return glm::distance(_grid->_vertices[i]._pos, _grid->_vertices[j]._pos);
-}
-
-
-bool PathFinder::line_of_sight(uint i, uint j) {
-	pt_type pt_begin= _grid->_vertices[i]._pos;
-	pt_type pt_end= _grid->_vertices[j]._pos;
-	for (auto poly : _polygons) {
-		if (segment_intersects_poly(pt_begin, pt_end, poly, NULL)) {
-		//if (distance_poly_segment(poly, pt_begin, pt_end, NULL)< 0.1) {
-			return false;
-		}
-	}
 	return true;
 }
 
 
-bool PathFinder::line_of_sight(pt_type pt1, pt_type pt2) {
-	for (auto poly : _polygons) {
-		if (segment_intersects_poly(pt1, pt2, poly, NULL)) {
-		//if (distance_poly_segment(poly, pt_begin, pt_end, NULL)< 0.1) {
-			return false;
-		}
-	}
-	return true;
-}
-
-
-bool PathFinder::path_find_nodes(uint start, uint goal, std::vector<uint> & path) {
+bool PathFinder::path_find_nodes(uint start, uint goal, GraphGrid * grid, std::vector<uint> & path) {
 	std::priority_queue< std::pair<uint, number>, std::vector<std::pair<uint, number> >, decltype(&frontier_cmp) > frontier(frontier_cmp);
 	std::unordered_map<uint, uint> came_from;
 	std::unordered_map<uint, number> cost_so_far;
@@ -275,15 +160,15 @@ bool PathFinder::path_find_nodes(uint start, uint goal, std::vector<uint> & path
 			break;
 		}
 
-		std::vector<uint> nexts= _grid->neighbors(current);
+		std::vector<uint> nexts= grid->neighbors(current);
 		for (auto next : nexts) {
-			number new_cost= cost_so_far[current]+ cost(current, next);
+			number new_cost= cost_so_far[current]+ cost(current, next, grid);
 			if ((!cost_so_far.count(next)) || (new_cost< cost_so_far[next])) {
 				cost_so_far[next]= new_cost;
 				came_from[next]= current;
 				//number priority= new_cost; // dijkstra
 				//number priority= heuristic(next, goal); // greedy best first search
-				number priority= new_cost+ heuristic(next, goal); // A *
+				number priority= new_cost+ heuristic(next, goal, grid); // A *
 				frontier.emplace(next, priority);
 			}
 		}
@@ -298,11 +183,6 @@ bool PathFinder::path_find_nodes(uint start, uint goal, std::vector<uint> & path
 	while (current != start) {
 		path.push_back(current);
 		current = came_from[current];
-		/*uint previous_sight = came_from[current];
-		while (previous_sight != start && line_of_sight(current, came_from[previous_sight])) {
-			previous_sight = came_from[previous_sight];
-		}
-		current = previous_sight;*/
 	}
 	path.push_back(start);
 	std::reverse(path.begin(), path.end());
@@ -311,100 +191,225 @@ bool PathFinder::path_find_nodes(uint start, uint goal, std::vector<uint> & path
 }
 
 
-bool PathFinder::path_find(pt_type start, pt_type goal, std::vector<pt_type> & path) {
-	if ((!point_in_aabb(start, _grid->_aabb)) || (!point_in_aabb(goal, _grid->_aabb))) {
+bool PathFinder::path_find(pt_type start, pt_type goal, GraphGrid * grid, std::vector<pt_type> & path) {
+	if ((!point_in_aabb(start, grid->_aabb)) || (!point_in_aabb(goal, grid->_aabb))) {
 		std::cerr << "PathFinder::path_find : point hors grille\n";
 		return false;
 	}
 
-	uint start_id = _grid->pt2id(start);
-	uint goal_id = _grid->pt2id(goal);
+	uint start_id = grid->pt2id(start);
+	uint goal_id = grid->pt2id(goal);
 	std::vector<uint> nodes;
-	bool is_path_ok= path_find_nodes(start_id, goal_id, nodes);
+	bool is_path_ok= path_find_nodes(start_id, goal_id, grid, nodes);
 	if (!is_path_ok) {
 		std::cerr << "PathFinder::path_find : pas de chemin trouvé\n";
 		return false;
 	}
 
-
-	/*uint start_col_min= (uint)(((start.x- _grid->_origin.x)/ _grid->_size.x)* (number)(_grid->_n_cols- 1));
-	uint start_col_max= start_col_min+ 1;
-	uint start_lig_min= (uint)(((start.y- _grid->_origin.y)/ _grid->_size.y)* (number)(_grid->_n_ligs- 1));
-	uint start_lig_max= start_lig_min+ 1;
-	std::vector<uint> start_ids;
-	start_ids.push_back(_grid->col_lig2id(start_col_min, start_lig_min));
-	start_ids.push_back(_grid->col_lig2id(start_col_max, start_lig_min));
-	start_ids.push_back(_grid->col_lig2id(start_col_max, start_lig_max));
-	start_ids.push_back(_grid->col_lig2id(start_col_min, start_lig_max));
-
-	uint goal_col_min= (uint)(((goal.x- _grid->_origin.x)/ _grid->_size.x)* (number)(_grid->_n_cols- 1));
-	uint goal_col_max= goal_col_min+ 1;
-	uint goal_lig_min= (uint)(((goal.y- _grid->_origin.y)/ _grid->_size.y)* (number)(_grid->_n_ligs- 1));
-	uint goal_lig_max= goal_lig_min+ 1;
-	std::vector<uint> goal_ids;
-	goal_ids.push_back(_grid->col_lig2id(goal_col_min, goal_lig_min));
-	goal_ids.push_back(_grid->col_lig2id(goal_col_max, goal_lig_min));
-	goal_ids.push_back(_grid->col_lig2id(goal_col_max, goal_lig_max));
-	goal_ids.push_back(_grid->col_lig2id(goal_col_min, goal_lig_max));
-
-	std::vector<uint> nodes;
-	bool is_path_ok= path_find_nodes(start_ids[0], goal_ids[0], nodes);
-	if (!is_path_ok) {
-		return false;
-	}
-	
-	uint start_idx= 0;
-	for (uint i=1; i<nodes.size(); ++i) {
-		if (std::find(start_ids.begin(), start_ids.end(), nodes[i])== start_ids.end()) {
-			start_idx= i- 1;
-			break;
-		}
-	}
-	uint goal_idx= nodes.size()- 1;
-	for (uint i=nodes.size()-2; i>=0; --i) {
-		if (std::find(goal_ids.begin(), goal_ids.end(), nodes[i])== goal_ids.end()) {
-			goal_idx= i+ 1;
-			break;
-		}
-	}*/
-
 	std::vector<pt_type> raw_path;
 	raw_path.push_back(start);
 	for (uint i=0; i<nodes.size(); ++i) {
-		raw_path.push_back(_grid->_vertices[nodes[i]]._pos);
+		raw_path.push_back(grid->_vertices[nodes[i]]._pos);
 	}
 	raw_path.push_back(goal);
 
 	path.clear();
-	//path.push_back(start);
-	uint idx = 1;
-	uint last = 0;
-	while (idx < raw_path.size()) {
-		std::cout << "last = " << last << " ; idx = " << idx << "\n";
-		path.push_back(raw_path[last]);
-		while (idx < raw_path.size() && line_of_sight(raw_path[last], raw_path[idx])) {
-			idx++;
-		}
-		last = idx - 1;
-		/*if (idx != raw_path.size()) {
-			path.push_back(raw_path[last]);
-		}*/
-	}
-	path.push_back(goal);
 	
-	/*for (auto p : raw_path) {
-		path.push_back(p);
-	}*/
+	bool use_line_of_sight = false;
+	if (use_line_of_sight) {
+		uint idx = 1;
+		uint last = 0;
+		//std::cout << "raw_path size=" << raw_path.size() << "\n";
+		while (idx < raw_path.size()) {
+			//std::cout << "last = " << last << " ; idx = " << idx << "\n";
+			path.push_back(raw_path[last]);
+			
+			while (idx < raw_path.size() && line_of_sight(raw_path[last], raw_path[idx], grid)) {
+				//std::cout << "line of sight ok entre " << last << " et " << idx << "\n";
+				idx++;
+			}
+
+			if (idx == last + 1) {
+				//std::cout << "bug idx = " << idx << " last = " << last << "\n";
+				idx++;
+			}
+			
+			//idx++;
+			
+			last = idx - 1;
+			/*if (idx != raw_path.size()) {
+				path.push_back(raw_path[last]);
+			}*/
+		}
+		path.push_back(goal);
+	}
+	else {
+		for (auto p : raw_path) {
+			path.push_back(p);
+		}
+	}
 
 	return true;
 }
 
 
-void PathFinder::draw_svg(const std::vector<uint> & path, std::string svg_path) {
+// ---------------------------------------------------------------------------------------------------
+Map::Map() {
+
+}
+
+
+Map::Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution) : _origin(origin), _size(size) {
+	uint n_ligs = uint(_size.y / path_resolution.y);
+	uint n_cols = uint(_size.x / path_resolution.x);
+
+	std::vector<std::string> jsons_paths = list_files(unit_types_dir, "json");
+	for (auto json_path : jsons_paths) {
+		_unit_types[basename(json_path)] = new UnitType(json_path);
+		_grids[_unit_types[basename(json_path)]] = new GraphGrid(n_ligs, n_cols, _origin, _size);
+	}
+	_path_finder = new PathFinder();
+}
+
+
+Map::~Map() {
+
+}
+
+
+void Map::add_unit(std::string type_name, pt_type pos) {
+	if (pos.x < _origin.x || pos.y < _origin.y || pos.x >= _origin.x + _size.x || pos.y >= _origin.y + _size.y) {
+		std::cerr << "Map::add_unit hors terrain\n";
+		return;
+	}
+	GraphGrid * grid = _grids[_unit_types[type_name]];
+	_units.push_back(new Unit(_unit_types[type_name], pos, grid));
+}
+
+
+void Map::add_obstacle(OBSTACLE_TYPE type, const std::vector<pt_type> & pts) {
+	for (auto pt : pts) {
+		if (pt.x < _origin.x || pt.y < _origin.y || pt.x >= _origin.x + _size.x || pt.y >= _origin.y + _size.y) {
+			std::cerr << "Map::add_obstacle hors terrain\n";
+			return;
+		}
+	}
+	_obstacles.push_back(new Obstacle(type, pts));
+}
+
+
+void Map::update_grids() {
+	const number EPS = 0.1;
+	for (auto type_grid : _grids) {
+		//std::cout << type_grid.first->_name << "\n";
+		GraphGrid * grid = type_grid.second;
+
+		grid->_it_v= grid->_vertices.begin();
+		while (grid->_it_v!= grid->_vertices.end()) {
+			grid->_it_e= grid->_it_v->second._edges.begin();
+			while (grid->_it_e!= grid->_it_v->second._edges.end()) {
+				pt_type pt_begin= grid->_it_v->second._pos;
+				pt_type pt_end= grid->_vertices[grid->_it_e->first]._pos;
+				for (auto obstacle : _obstacles) {
+					//if (segment_intersects_poly(pt_begin, pt_end, obstacle->_polygon, NULL)) {
+					if (distance_poly_segment(obstacle->_polygon, pt_begin, pt_end, NULL) < 0.5 * std::max(type_grid.first->_size.x, type_grid.first->_size.y) + EPS) {
+						grid->_vertices[grid->_it_v->first]._edges[grid->_it_e->first]._weight = type_grid.first->_weights[obstacle->_type];
+						break;
+					}
+				}
+				grid->_it_e++;
+			}
+			grid->_it_v++;
+		}
+	}
+}
+
+
+void Map::clear() {
+	for (auto obstacle : _obstacles) {
+		delete obstacle;
+	}
+	_obstacles.clear();
+	for (auto unit : _units) {
+		delete unit;
+	}
+	_units.clear();
+}
+
+
+void Map::read_shapefile(std::string shp_path, pt_type origin, pt_type size, bool reverse_y) {
+	std::vector<ShpEntry *> entries;
+	read_shp(shp_path, entries);
+	for (auto entry : entries) {
+		std::vector<pt_type> pts;
+		for (auto pt : entry->_polygon->_pts) {
+			number x= ((pt.x- origin.x)/ size.x)* _size.x+ _origin.x;
+			number y;
+			if (reverse_y) {
+				y= ((origin.y- pt.y)/ size.y)* _size.y+ _origin.y;
+			}
+			else {
+				y= ((pt.y- origin.y)/ size.y)* _size.y+ _origin.y;
+			}
+			pts.push_back(pt_type(x, y));
+		}
+		OBSTACLE_TYPE obst_type = str2type(entry->_fields["type"]);
+		if (obst_type != UNKNOWN) {
+			add_obstacle(obst_type, pts);
+		}
+		delete entry;
+	}
+}
+
+
+void Map::anim() {
+	for (auto unit : _units) {
+		if (unit->_mode == MOVING) {
+			if (glm::distance(unit->_aabb->center(), unit->_path[unit->_idx_path]) < 0.1) {
+				unit->_idx_path++;
+				if (unit->_idx_path == unit->_path.size()) {
+					unit->_mode = WAITING;
+					unit->clear_path();
+					continue;
+				}
+			}
+
+			unit->_aabb->_pos += unit->_type->_velocity * glm::normalize(unit->_path[unit->_idx_path] - unit->_aabb->_size * 0.5 - unit->_aabb->_pos);
+		}
+	}
+}
+
+
+void Map::selected_units_goto(pt_type pt) {
+	for (auto unit : _units) {
+		if (unit->_selected) {
+			unit->clear_path();
+			_path_finder->path_find(unit->_aabb->center(), pt, _grids[unit->_type], unit->_path);
+			unit->_mode = MOVING;
+		}
+	}
+}
+
+
+/*void Map::rand(uint n_polys, uint n_pts_per_poly, number poly_radius) {
+	for (uint i=0; i<n_polys; ++i) {
+		Polygon2D * poly= new Polygon2D();
+		number x= rand_number(_grid->_origin.x, _grid->_origin.x+ _grid->_size.x);
+		number y= rand_number(_grid->_origin.y, _grid->_origin.y+ _grid->_size.y);
+		poly->randomize(n_pts_per_poly, poly_radius, pt_type(x, y));
+		_polygons.push_back(poly);
+	}
+
+	update_grid();
+}
+*/
+
+
+/*void Map::draw_svg(const std::vector<uint> & path, std::string svg_path) {
 	std::ofstream f;
 	f.open(svg_path);
 	f << "<!DOCTYPE html>\n<html>\n<body>\n";
-	f << "<svg width=\"1000\" height=\"1000\" viewbox=\"" << _grid->_origin.x << " " << _grid->_origin.y << " " << _grid->_size.x << " " << _grid->_size.y << "\">\n";
+	f << "<svg width=\"1000\" height=\"1000\" viewbox=\"" << _origin.x << " " << _origin.y << " " << _size.x << " " << _size.y << "\">\n";
 
 	if (path.size()) {
 		for (uint i=0; i<path.size()- 1; ++i) {
@@ -457,5 +462,4 @@ void PathFinder::draw_svg(const std::vector<uint> & path, std::string svg_path) 
 	f << "</svg>\n</body>\n</html>\n";
 	f.close();
 }
-
-
+*/

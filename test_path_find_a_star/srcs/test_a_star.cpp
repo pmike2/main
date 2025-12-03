@@ -4,43 +4,6 @@
 
 
 // -------------------------------------------------
-UnitType::UnitType() {
-
-}
-
-
-UnitType::UnitType(std::string name, pt_type size, number velocity) : _name(name), _size(size), _velocity(velocity) {
-
-}
-
-
-UnitType::~UnitType() {
-
-}
-
-
-Unit::Unit() {
-
-}
-
-
-Unit::Unit(UnitType * type, pt_type pos) :_type(type), _selected(false), _idx_path(0), _mode(WAITING) {
-	_aabb = new AABB_2D(pos - 0.5 * _type->_size, _type->_size);
-}
-
-
-Unit::~Unit() {
-	
-}
-
-
-void Unit::clear_path() {
-	_path.clear();
-	_idx_path = 0;
-}
-
-
-// -------------------------------------------------
 TestAStar::TestAStar() {
 
 }
@@ -54,17 +17,9 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 	
-	unsigned int n_ligs= 50;
-	unsigned int n_cols= 50;
-	glm::vec2 origin(-50.0f, -50.0f);
-	glm::vec2 size(100.0f, 100.0f);
-	_path_finder = new PathFinder(n_ligs, n_cols, origin, size);
+	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl, &_view_system->_world2clip);
 
-	_unit_types["small"] = new UnitType("S", pt_type(0.5, 0.5), 0.12);
-	_unit_types["big"] = new UnitType("B", pt_type(2.0, 2.0), 0.08);
-
-	_font= new Font(progs["font"], "../../fonts/Silom.ttf", 48, _view_system->_screengl);
-	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
+	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(1.0, 1.0));
 
 	update();
 }
@@ -72,11 +27,7 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 
 TestAStar::~TestAStar() {
 	clear();
-	delete _path_finder;
-	for (auto unit_type : _unit_types) {
-		delete unit_type.second;
-	}
-	_unit_types.clear();
+	delete _map;
 	for (auto context : _contexts) {
 		delete context.second;
 	}
@@ -86,12 +37,8 @@ TestAStar::~TestAStar() {
 
 
 void TestAStar::clear() {
-	_path_finder->clear();
-	_path_finder->update_grid();
-	for (auto unit : _units) {
-		delete unit;
-	}
-	_units.clear();
+	_map->clear();
+	_map->update_grids();
 }
 
 
@@ -118,14 +65,14 @@ void TestAStar::draw() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
 
-	_font->draw();
+	_font->draw_3d();
 }
 
 
 void TestAStar::anim(time_point t) {
 	if (_view_system->_new_single_selection) {
 		_view_system->_new_single_selection= false;
-		for (auto unit : _units) {
+		for (auto unit : _map->_units) {
 			AABB * aabb = new AABB(unit->_aabb);
 			if (_view_system->single_selection_intersects_aabb(aabb, false)) {
 				unit->_selected = true;
@@ -135,12 +82,10 @@ void TestAStar::anim(time_point t) {
 	}
 	else if (_view_system->_new_rect_selection) {
 		_view_system->_new_rect_selection= false;
-		for (auto unit : _units) {
+		for (auto unit : _map->_units) {
 			unit->_selected = false;
 			AABB * aabb = new AABB(unit->_aabb);
 			BBox * bbox = new BBox(aabb);
-			//std::cout << *unit->_aabb << "\n";
-			//std::cout << *bbox << "\n";
 			if (_view_system->rect_selection_intersects_bbox(bbox, false)) {
 				unit->_selected = true;
 			}
@@ -149,20 +94,7 @@ void TestAStar::anim(time_point t) {
 		}
 	}
 
-	for (auto unit : _units) {
-		if (unit->_mode == MOVING) {
-			if (glm::distance(unit->_aabb->center(), unit->_path[unit->_idx_path]) < 0.1) {
-				unit->_idx_path++;
-				if (unit->_idx_path == unit->_path.size()) {
-					unit->_mode = WAITING;
-					unit->clear_path();
-					continue;
-				}
-			}
-
-			unit->_aabb->_pos += unit->_type->_velocity * glm::normalize(unit->_path[unit->_idx_path] - unit->_aabb->_size * 0.5 - unit->_aabb->_pos);
-		}
-	}
+	_map->anim();
 
 	update();
 }
@@ -173,109 +105,104 @@ void TestAStar::update() {
 	
 	context->_n_pts = 0;
 
-	_path_finder->_grid->_it_v= _path_finder->_grid->_vertices.begin();
-	while (_path_finder->_grid->_it_v!= _path_finder->_grid->_vertices.end()) {
+	// les croix de la grille
+	GraphGrid * grid = _map->_grids[_map->_unit_types["infantery"]];
+	
+	grid->_it_v= grid->_vertices.begin();
+	while (grid->_it_v!= grid->_vertices.end()) {
 		context->_n_pts += 4;
-		_path_finder->_grid->_it_v++;
+		grid->_it_v++;
 	}
 
-	for (auto poly : _path_finder->_polygons) {
-		context->_n_pts += poly->_pts.size() * 2;
+	for (auto obstacle : _map->_obstacles) {
+		context->_n_pts += obstacle->_polygon->_pts.size() * 2;
 	}
 	
-	if (_polygon_pts.size() > 1) {
-		context->_n_pts += 2 * (_polygon_pts.size() - 1);
+	if (_obstacle_pts.size() > 1) {
+		context->_n_pts += 2 * (_obstacle_pts.size() - 1);
 	}
 
-	for (auto unit : _units) {
+	for (auto unit : _map->_units) {
 		context->_n_pts += 8; // dessin AABB
 		context->_n_pts += unit->_path.size() * 2;
 	}
 
 	context->_n_attrs_per_pts= 7;
 
-	glm::vec4 grid_color(0.8f, 0.8f, 0.7f, 1.0f);
-	glm::vec4 obstacle_color(1.0f, 0.0f, 0.0f, 1.0f);
-	glm::vec4 edited_obstacle_color(1.0f, 0.3f, 0.3f, 1.0f);
-	glm::vec4 unit_color(0.0f, 1.0f, 0.0f, 1.0f);
-	glm::vec4 selected_unit_color(1.0f, 1.0f, 0.0f, 1.0f);
-	glm::vec4 path_color(0.7f, 0.8f, 0.3f, 1.0f);
-
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
 
-	number cross_size = 0.2;
-	_path_finder->_grid->_it_v= _path_finder->_grid->_vertices.begin();
-	while (_path_finder->_grid->_it_v!= _path_finder->_grid->_vertices.end()) {
-		pt_type_3d pos = _path_finder->_grid->_it_v->second._pos;
+	grid->_it_v= grid->_vertices.begin();
+	while (grid->_it_v!= grid->_vertices.end()) {
+		pt_type_3d pos = grid->_it_v->second._pos;
 		number positions[8] = {
-			pos.x - cross_size, pos.y - cross_size, 
-			pos.x + cross_size, pos.y + cross_size, 
-			pos.x - cross_size, pos.y + cross_size, 
-			pos.x + cross_size, pos.y - cross_size
+			pos.x - CROSS_SIZE, pos.y - CROSS_SIZE, 
+			pos.x + CROSS_SIZE, pos.y + CROSS_SIZE, 
+			pos.x - CROSS_SIZE, pos.y + CROSS_SIZE, 
+			pos.x + CROSS_SIZE, pos.y - CROSS_SIZE
 		};
 		for (uint i=0; i<4; ++i) {
 			ptr[0] = float(positions[2 * i]);
 			ptr[1] = float(positions[2 * i + 1]);
 			ptr[2] = 0.0f;
-			ptr[3] = grid_color.r;
-			ptr[4] = grid_color.g;
-			ptr[5] = grid_color.b;
-			ptr[6] = grid_color.a;
+			ptr[3] = GRID_COLOR.r;
+			ptr[4] = GRID_COLOR.g;
+			ptr[5] = GRID_COLOR.b;
+			ptr[6] = GRID_COLOR.a;
 			ptr += 7;
 		}
-		_path_finder->_grid->_it_v++;
+		grid->_it_v++;
 	}
 
-	for (auto poly : _path_finder->_polygons) {
-		for (uint i=0; i<poly->_pts.size(); ++i) {
+	for (auto obstacle : _map->_obstacles) {
+		for (uint i=0; i<obstacle->_polygon->_pts.size(); ++i) {
 			uint j = i + 1;
-			if (j == poly->_pts.size()) {
+			if (j == obstacle->_polygon->_pts.size()) {
 				j = 0;
 			}
-			ptr[0] = float(poly->_pts[i].x);
-			ptr[1] = float(poly->_pts[i].y);
+			ptr[0] = float(obstacle->_polygon->_pts[i].x);
+			ptr[1] = float(obstacle->_polygon->_pts[i].y);
 			ptr[2] = 0.0f;
-			ptr[3] = obstacle_color.r;
-			ptr[4] = obstacle_color.g;
-			ptr[5] = obstacle_color.b;
-			ptr[6] = obstacle_color.a;
+			ptr[3] = OBSTACLE_COLORS.at(obstacle->_type).r;
+			ptr[4] = OBSTACLE_COLORS.at(obstacle->_type).g;
+			ptr[5] = OBSTACLE_COLORS.at(obstacle->_type).b;
+			ptr[6] = OBSTACLE_COLORS.at(obstacle->_type).a;
 
-			ptr[7] = float(poly->_pts[j].x);
-			ptr[8] = float(poly->_pts[j].y);
+			ptr[7] = float(obstacle->_polygon->_pts[j].x);
+			ptr[8] = float(obstacle->_polygon->_pts[j].y);
 			ptr[9] = 0.0f;
-			ptr[10] = obstacle_color.r;
-			ptr[11] = obstacle_color.g;
-			ptr[12] = obstacle_color.b;
-			ptr[13] = obstacle_color.a;
+			ptr[10] = OBSTACLE_COLORS.at(obstacle->_type).r;
+			ptr[11] = OBSTACLE_COLORS.at(obstacle->_type).g;
+			ptr[12] = OBSTACLE_COLORS.at(obstacle->_type).b;
+			ptr[13] = OBSTACLE_COLORS.at(obstacle->_type).a;
 
 			ptr += 14;
 		}
 	}
 
-	if (_polygon_pts.size() > 1) {
-		for (uint i=0; i<_polygon_pts.size() - 1; ++i) {
-			ptr[0] = float(_polygon_pts[i].x);
-			ptr[1] = float(_polygon_pts[i].y);
+	if (_obstacle_pts.size() > 1) {
+		for (uint i=0; i<_obstacle_pts.size() - 1; ++i) {
+			ptr[0] = float(_obstacle_pts[i].x);
+			ptr[1] = float(_obstacle_pts[i].y);
 			ptr[2] = 0.0f;
-			ptr[3] = edited_obstacle_color.r;
-			ptr[4] = edited_obstacle_color.g;
-			ptr[5] = edited_obstacle_color.b;
-			ptr[6] = edited_obstacle_color.a;
+			ptr[3] = EDITED_OBSTACLE_COLORS.at(_mode).r;
+			ptr[4] = EDITED_OBSTACLE_COLORS.at(_mode).g;
+			ptr[5] = EDITED_OBSTACLE_COLORS.at(_mode).b;
+			ptr[6] = EDITED_OBSTACLE_COLORS.at(_mode).a;
 
-			ptr[7] = float(_polygon_pts[i + 1].x);
-			ptr[8] = float(_polygon_pts[i + 1].y);
+			ptr[7] = float(_obstacle_pts[i + 1].x);
+			ptr[8] = float(_obstacle_pts[i + 1].y);
 			ptr[9] = 0.0f;
-			ptr[10] = edited_obstacle_color.r;
-			ptr[11] = edited_obstacle_color.g;
-			ptr[12] = edited_obstacle_color.b;
-			ptr[13] = edited_obstacle_color.a;
+			ptr[10] = EDITED_OBSTACLE_COLORS.at(_mode).r;
+			ptr[11] = EDITED_OBSTACLE_COLORS.at(_mode).g;
+			ptr[12] = EDITED_OBSTACLE_COLORS.at(_mode).b;
+			ptr[13] = EDITED_OBSTACLE_COLORS.at(_mode).a;
 
 			ptr += 14;
 		}
 	}
 
-	for (auto unit : _units) {
+	for (auto unit : _map->_units) {
 		number positions[16] = {
 			unit->_aabb->_pos.x, unit->_aabb->_pos.y,
 			unit->_aabb->_pos.x + unit->_aabb->_size.x, unit->_aabb->_pos.y,
@@ -294,22 +221,22 @@ void TestAStar::update() {
 			ptr[1] = float(positions[2 * i + 1]);
 			ptr[2] = 0.0f;
 			if (unit->_selected) {
-				ptr[3] = selected_unit_color.r;
-				ptr[4] = selected_unit_color.g;
-				ptr[5] = selected_unit_color.b;
-				ptr[6] = selected_unit_color.a;
+				ptr[3] = SELECTED_UNIT_COLOR.r;
+				ptr[4] = SELECTED_UNIT_COLOR.g;
+				ptr[5] = SELECTED_UNIT_COLOR.b;
+				ptr[6] = SELECTED_UNIT_COLOR.a;
 			}
 			else {
-				ptr[3] = unit_color.r;
-				ptr[4] = unit_color.g;
-				ptr[5] = unit_color.b;
-				ptr[6] = unit_color.a;
+				ptr[3] = UNIT_COLORS.at(unit->_type->_name).r;
+				ptr[4] = UNIT_COLORS.at(unit->_type->_name).g;
+				ptr[5] = UNIT_COLORS.at(unit->_type->_name).b;
+				ptr[6] = UNIT_COLORS.at(unit->_type->_name).a;
 			}
 			ptr += 7;
 		}
 	}
 
-	for (auto unit : _units) {
+	for (auto unit : _map->_units) {
 		if (unit->_path.empty()) {
 			continue;
 		}
@@ -317,18 +244,18 @@ void TestAStar::update() {
 			ptr[0] = float(unit->_path[i].x);
 			ptr[1] = float(unit->_path[i].y);
 			ptr[2] = 0.0f;
-			ptr[3] = path_color.r;
-			ptr[4] = path_color.g;
-			ptr[5] = path_color.b;
-			ptr[6] = path_color.a;
+			ptr[3] = PATH_COLOR.r;
+			ptr[4] = PATH_COLOR.g;
+			ptr[5] = PATH_COLOR.b;
+			ptr[6] = PATH_COLOR.a;
 
 			ptr[7] = float(unit->_path[i + 1].x);
 			ptr[8] = float(unit->_path[i + 1].y);
 			ptr[9] = 0.0f;
-			ptr[10] = path_color.r;
-			ptr[11] = path_color.g;
-			ptr[12] = path_color.b;
-			ptr[13] = path_color.a;
+			ptr[10] = PATH_COLOR.r;
+			ptr[11] = PATH_COLOR.g;
+			ptr[12] = PATH_COLOR.b;
+			ptr[13] = PATH_COLOR.a;
 
 			ptr += 14;
 		}
@@ -338,12 +265,9 @@ void TestAStar::update() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	std::vector<Text> texts;
-	texts.push_back(Text("X", glm::vec2(2., 0.), 0.006, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
-	for (auto unit : _units) {
-		glm::vec2 pos = glm::vec2(_view_system->_world2camera * glm::vec4(float(unit->_aabb->_pos.x), float(unit->_aabb->_pos.y), 0.0f, 1.0f));
-		std::cout << glm::to_string(pos) << "\n";
-		texts.push_back(Text(unit->_type->_name, pos, 0.006, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	std::vector<Text3D> texts;
+	for (auto unit : _map->_units) {
+		texts.push_back(Text3D(unit->_type->_name, glm::vec3(float(unit->_aabb->_pos.x), float(unit->_aabb->_pos.y), 0.0), 0.06, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 	_font->set_text(texts);
 }
@@ -351,28 +275,26 @@ void TestAStar::update() {
 
 bool TestAStar::mouse_button_down(InputState * input_state) {
 	pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
-	if (_mode == ADDING_OBSTACLE) {
-		_polygon_pts.clear();
+	if (_mode == ADDING_SOLID_OBSTACLE) {
+		_obstacle_pts.clear();
 		return true;
 	}
 	else if (_mode == FREE) {
 		if (input_state->_left_mouse) {
-			if (input_state->_keys[SDLK_a]) {
-				_units.push_back(new Unit(_unit_types["small"], pt));
+			if (input_state->_keys[SDLK_i]) {
+				_map->add_unit("infantery", pt);
+				return true;
+			}
+			else if (input_state->_keys[SDLK_t]) {
+				_map->add_unit("tank", pt);
 				return true;
 			}
 			else if (input_state->_keys[SDLK_b]) {
-				_units.push_back(new Unit(_unit_types["big"], pt));
+				_map->add_unit("boat", pt);
 				return true;
 			}
 			else if (input_state->_keys[SDLK_g]) {
-				for (auto unit : _units) {
-					if (unit->_selected) {
-						unit->clear_path();
-						_path_finder->path_find(unit->_aabb->center(), pt, unit->_path);
-						unit->_mode = MOVING;
-					}
-				}
+				_map->selected_units_goto(pt);
 				return true;
 			}
 		}
@@ -382,12 +304,16 @@ bool TestAStar::mouse_button_down(InputState * input_state) {
 
 
 bool TestAStar::mouse_button_up(InputState * input_state) {
-	if (_mode == ADDING_OBSTACLE) {
-		Polygon2D * polygon = new Polygon2D(_polygon_pts, true);
-		polygon->update_all();
-		_path_finder->_polygons.push_back(polygon);
-		_path_finder->update_grid();
-		_polygon_pts.clear();
+	if (_mode == ADDING_SOLID_OBSTACLE) {
+		_map->add_obstacle(SOLID, _obstacle_pts);
+		_map->update_grids();
+		_obstacle_pts.clear();
+		return true;
+	}
+	else if (_mode == ADDING_WATER_OBSTACLE) {
+		_map->add_obstacle(WATER, _obstacle_pts);
+		_map->update_grids();
+		_obstacle_pts.clear();
 		return true;
 	}
 	return false;
@@ -395,11 +321,11 @@ bool TestAStar::mouse_button_up(InputState * input_state) {
 
 
 bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
-	if (_mode == ADDING_OBSTACLE && input_state->_left_mouse) {
+	if ((_mode == ADDING_SOLID_OBSTACLE || _mode == ADDING_WATER_OBSTACLE) && input_state->_left_mouse) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_added_pt_t).count();
 		if (dt> NEW_PT_IN_POLYGON_MS) {
 			pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
-			_polygon_pts.push_back(pt);
+			_obstacle_pts.push_back(pt);
 		}
 		return true;
 	}
@@ -409,18 +335,23 @@ bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
 
 bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
 	if (key == SDLK_o) {
-		_mode = ADDING_OBSTACLE;
+		_mode = ADDING_SOLID_OBSTACLE;
+		return true;
+	}
+	else if (key == SDLK_w) {
+		_mode = ADDING_WATER_OBSTACLE;
 		return true;
 	}
 	else if (key == SDLK_c) {
 		clear();
+		return true;
 	}
 	return false;
 }
 
 
 bool TestAStar::key_up(InputState * input_state, SDL_Keycode key) {
-	if (key == SDLK_o) {
+	if (key == SDLK_o || key == SDLK_w) {
 		_mode = FREE;
 		return true;
 	}

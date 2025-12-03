@@ -9,11 +9,10 @@
 #include <glm/glm.hpp>
 
 #include "typedefs.h"
+#include "bbox_2d.h"
 
 
 struct GraphEdge {
-	//unsigned int _start_node;
-	//unsigned int _end_node;
 	number _weight;
 };
 
@@ -21,35 +20,51 @@ struct GraphEdge {
 struct GraphVertex {
 	pt_type_3d _pos;
 	number _weight;
-	std::unordered_map<unsigned int, GraphEdge> _edges;
-	//bool _active;
+	std::unordered_map<uint, GraphEdge> _edges;
 };
 
 
 struct Graph {
 	Graph();
 	~Graph();
-	void add_vertex(unsigned int i, pt_type_3d pos=pt_type_3d(0.0f), number weight=1.0f);
-	void add_edge(unsigned int i, unsigned int j, number weight=1.0f, bool weight_is_dist=false);
-	void remove_vertex(unsigned int i);
-	void remove_edge(unsigned int i, unsigned int j);
-	std::vector<unsigned int> neighbors(unsigned int i);
+	void add_vertex(uint i, pt_type_3d pos=pt_type_3d(0.0f), number weight=1.0f);
+	void add_edge(uint i, uint j, number weight=1.0f, bool weight_is_dist=false);
+	void remove_vertex(uint i);
+	void remove_edge(uint i, uint j);
+	std::vector<uint> neighbors(uint i);
 	void clear();
-	//void rand();
 	void reinit_weights();
 	friend std::ostream & operator << (std::ostream & os, Graph & g);
 
 
-	std::unordered_map<unsigned int, GraphVertex> _vertices;
-	std::unordered_map<unsigned int, GraphVertex>::iterator _it_v;
-	std::unordered_map<unsigned int, GraphEdge>::iterator _it_e;
+	std::unordered_map<uint, GraphVertex> _vertices;
+	std::unordered_map<uint, GraphVertex>::iterator _it_v;
+	std::unordered_map<uint, GraphEdge>::iterator _it_e;
 };
 
 
+struct GraphGrid : public Graph {
+	GraphGrid();
+	GraphGrid(uint n_ligs, uint n_cols, const pt_type & origin, const pt_type & size, bool is8connex=true);
+	~GraphGrid();
+	std::pair<uint, uint> id2col_lig(uint id);
+	uint col_lig2id(uint col, uint lig);
+	uint pt2id(pt_type pt);
+	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
+
+
+	uint _n_ligs;
+	uint _n_cols;
+	pt_type _origin;
+	pt_type _size;
+	AABB_2D * _aabb;
+};
+
+/*
 struct Mesh {
-	std::vector<std::pair<unsigned int, unsigned int> > _edges;
+	std::vector<std::pair<uint, uint> > _edges;
 	bool _debug= true;
 };
-
+*/
 
 #endif

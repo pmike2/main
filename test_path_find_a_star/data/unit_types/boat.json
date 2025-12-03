@@ -1,0 +1,10 @@
+{
+	"name" : "boat",
+	"size" : [2.0, 2.0],
+	"velocity" : 0.10,
+	"weights" : {
+		"GROUND" : 1000.0,
+		"SOLID" : 1000.0,
+		"WATER" : 1.0
+	}
+}

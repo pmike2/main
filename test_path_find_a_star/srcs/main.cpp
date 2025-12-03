@@ -13,13 +13,12 @@ using namespace std::chrono;
 
 
 void test() {
-	unsigned int n_ligs= 50;
+	/*unsigned int n_ligs= 50;
 	unsigned int n_cols= 50;
 	glm::vec2 origin(0.0f, 0.0f);
 	glm::vec2 size(10.0f, 10.0f);
 	
 	PathFinder * pf= new PathFinder(n_ligs, n_cols, origin, size);
-	//pf->rand(8, 20, 1.0f);
 	pf->read_shapefile("../data/obstacle.shp", glm::vec2(0.0f, 0.0f), glm::vec2(513.0f, 513.0f), true);
 	pf->update_grid();
 
@@ -40,7 +39,7 @@ void test() {
 	auto ms= duration_cast<milliseconds>(t2- t1);
 	cout << ms.count() << " ms\n";
 
-	delete pf;
+	delete pf;*/
 }
 
 

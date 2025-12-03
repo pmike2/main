@@ -13,6 +13,7 @@
 #include <glm/glm.hpp>
 
 #include "gl_utils.h"
+#include "typedefs.h"
 
 
 // classe d'affichage de texte ; utilise la lib freetype
@@ -48,20 +49,39 @@ public:
 };
 
 
+class Text3D {
+public:
+	Text3D();
+	Text3D(std::string text, glm::vec3 pos, float scale, glm::vec4 color);
+	~Text3D();
+
+	std::string _text;
+	glm::vec3 _pos;
+	float _scale;
+	glm::vec4 _color;
+};
+
+
+
+
 class Font {
 public:
 	Font();
-	Font(GLuint prog_font, std::string font_path, unsigned int font_size, ScreenGL * screengl);
+	Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned int font_size, ScreenGL * screengl, mat_4d * world2clip=NULL);
 	void set_text(std::vector<Text> & texts);
 	void set_text(Text & text);
+	void set_text(std::vector<Text3D> & texts);
+	void set_text(Text3D & text);
 	void clear();
 	void draw();
+	void draw_3d();
 	
 	GLuint _texture_id;
 	unsigned int _tex_size;
-	DrawContext * _context;
+	std::map<std::string, DrawContext *> _contexts;
 	std::map<char, Character> _characters;
-	glm::mat4 _camera2clip;
+	mat_4d _camera2clip;
+	mat_4d * _world2clip;
 	float _z;
 };
 

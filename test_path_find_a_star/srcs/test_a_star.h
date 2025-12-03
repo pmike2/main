@@ -15,39 +15,27 @@
 #include "repere.h"
 
 
-enum EDIT_MODE {ADDING_OBSTACLE, FREE};
-enum UNIT_MODE {WAITING, MOVING};
+enum EDIT_MODE {ADDING_SOLID_OBSTACLE, ADDING_WATER_OBSTACLE, FREE};
 
 const uint NEW_PT_IN_POLYGON_MS = 300;
+const number CROSS_SIZE = 0.2;
 
-
-struct UnitType {
-	UnitType();
-	UnitType(std::string name, pt_type size, number velocity);
-	~UnitType();
-	
-	
-	std::string _name;
-	pt_type _size;
-	number _velocity;
+const glm::vec4 GRID_COLOR(0.8f, 0.8f, 0.7f, 1.0f);
+const std::map<OBSTACLE_TYPE, glm::vec4> OBSTACLE_COLORS = {
+	{SOLID, glm::vec4(1.0f, 0.5f, 0.1f, 1.0f)},
+	{WATER, glm::vec4(0.1f, 0.5f, 0.9f, 1.0f)}
 };
-
-
-struct Unit {
-	Unit();
-	Unit(UnitType * type, pt_type pos);
-	~Unit();
-	void clear_path();
-	
-	
-	UnitType * _type;
-	bool _selected;
-	AABB_2D * _aabb;
-	std::vector<pt_type> _path;
-	uint _idx_path;
-	UNIT_MODE _mode;
+const std::map<EDIT_MODE, glm::vec4> EDITED_OBSTACLE_COLORS = {
+	{ADDING_SOLID_OBSTACLE, glm::vec4(1.0f, 0.5f, 0.1f, 1.0f)},
+	{ADDING_WATER_OBSTACLE, glm::vec4(0.1f, 0.5f, 0.9f, 1.0f)}
 };
-
+const std::map<std::string, glm::vec4> UNIT_COLORS = {
+	{"infantery", glm::vec4(1.0f, 0.7f, 0.2f, 1.0f)},
+	{"tank", glm::vec4(0.5f, 0.5f, 0.6f, 1.0f)},
+	{"boat", glm::vec4(0.3f, 0.4f, 0.7f, 1.0f)}
+};
+const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
+const glm::vec4 PATH_COLOR(0.7f, 0.8f, 0.3f, 1.0f);
 
 
 class TestAStar {
@@ -67,14 +55,12 @@ public:
 
 	
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
-	PathFinder * _path_finder;
-	std::map<std::string, UnitType *> _unit_types;
-	std::vector<Unit *> _units;
 	EDIT_MODE _mode;
-	std::vector<pt_type> _polygon_pts;
+	std::vector<pt_type> _obstacle_pts;
 	time_point _last_added_pt_t;
 	Font * _font;
 	ViewSystem * _view_system;
+	Map * _map;
 };
 
 #endif
