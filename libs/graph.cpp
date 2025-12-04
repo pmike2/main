@@ -110,8 +110,8 @@ GraphGrid::GraphGrid() {
 }
 
 
-GraphGrid::GraphGrid(uint n_ligs, uint n_cols, const pt_type & origin, const pt_type & size, bool is8connex) :
-	_n_ligs(n_ligs), _n_cols(n_cols), _origin(origin), _size(size) 
+GraphGrid::GraphGrid(const pt_type & origin, const pt_type & size, uint n_ligs, uint n_cols, bool is8connex) :
+	_origin(origin), _size(size), _n_ligs(n_ligs), _n_cols(n_cols)
 {
 	for (uint lig=0; lig<_n_ligs; ++lig) {
 		for (uint col=0; col<_n_cols; ++col) {

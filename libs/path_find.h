@@ -25,6 +25,13 @@ enum OBSTACLE_TYPE {UNKNOWN, GROUND, SOLID, WATER};
 OBSTACLE_TYPE str2type(std::string s);
 
 
+struct UnitElevationCoeff {
+	number _elevation_min;
+	number _elevation_max;
+	number _coeff;
+};
+
+
 struct UnitType {
 	UnitType();
 	UnitType(std::string json_path);
@@ -35,6 +42,7 @@ struct UnitType {
 	pt_type _size;
 	number _velocity;
 	std::map<OBSTACLE_TYPE, number> _weights;
+	std::vector<UnitElevationCoeff> _elevation_coeffs;
 };
 
 

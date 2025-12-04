@@ -45,7 +45,7 @@ struct Graph {
 
 struct GraphGrid : public Graph {
 	GraphGrid();
-	GraphGrid(uint n_ligs, uint n_cols, const pt_type & origin, const pt_type & size, bool is8connex=true);
+	GraphGrid(const pt_type & origin, const pt_type & size, uint n_ligs, uint n_cols, bool is8connex=true);
 	~GraphGrid();
 	std::pair<uint, uint> id2col_lig(uint id);
 	uint col_lig2id(uint col, uint lig);

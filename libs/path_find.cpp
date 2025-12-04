@@ -49,6 +49,11 @@ UnitType::UnitType(std::string json_path) {
 		}
 		_weights[ot] = it.value();
 	}
+
+	for (auto ec : "elevation_coeffs") {
+		UnitElevationCoeff coeff = {ec["min"], ec["max"], ec["coeff"]};
+		_elevation_coeffs.push_back(coeff);
+	}
 }
 
 
@@ -102,23 +107,35 @@ Terrain::Terrain() {
 }
 
 
-Terrain::Terrain(pt_type origin, pt_type size, uint n_ligs, uint n_cols) {
-
+Terrain::Terrain(pt_type origin, pt_type size, uint n_ligs, uint n_cols) : _origin(origin), _size(size), _n_ligs(n_ligs), _n_cols(n_cols) {
+	_altis = new number[_n_ligs * _n_cols];
+	for (uint i=0; i<_n_ligs * _n_cols; ++i) {
+		_altis[i] = 0.0;
+	}
 }
 
 
 Terrain::~Terrain() {
-	
+	delete _altis;
 }
 
 
 number Terrain::get_alti(pt_type pt) {
-	return 0.0;
+	if (pt.x < _origin.x || pt.x >= _origin.x + _size.x || pt.y < _origin.y || pt.y >= _origin.y + _size.y) {
+		std::cerr << "Terrain::get_alti : " << glm::to_string(pt) << " hors terrain\n";
+		return 0.0;
+	}
+	uint idx_lig = uint(floor(pt.y - _origin.y));
+	uint idx_col = uint(floor(pt.x - _origin.x));
+
+	return _altis[idx_lig * _n_cols + idx_col];
 }
 
 
 void Terrain::randomize() {
-
+	for (uint i=0; i<_n_ligs * _n_cols; ++i) {
+		_altis[i] = rand_number(0.0, 1000.0);
+	}
 }
 
 
@@ -286,20 +303,38 @@ Map::Map() {
 
 
 Map::Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution) : _origin(origin), _size(size) {
-	uint n_ligs = uint(_size.y / path_resolution.y);
-	uint n_cols = uint(_size.x / path_resolution.x);
+	uint n_ligs_path = uint(_size.y / path_resolution.y);
+	uint n_cols_path = uint(_size.x / path_resolution.x);
+
+	uint n_ligs_terrain = uint(_size.y / terrain_resolution.y);
+	uint n_cols_terrain = uint(_size.x / terrain_resolution.x);
 
 	std::vector<std::string> jsons_paths = list_files(unit_types_dir, "json");
 	for (auto json_path : jsons_paths) {
 		_unit_types[basename(json_path)] = new UnitType(json_path);
-		_grids[_unit_types[basename(json_path)]] = new GraphGrid(n_ligs, n_cols, _origin, _size);
+		_grids[_unit_types[basename(json_path)]] = new GraphGrid(_origin, _size, n_ligs_path, n_cols_path);
 	}
 	_path_finder = new PathFinder();
+	_terrain = new Terrain(_origin, _size, n_ligs_terrain, n_cols_terrain);
 }
 
 
 Map::~Map() {
-
+	clear();
+	for (auto obstacle : _obstacles) {
+		delete obstacle;
+	}
+	_obstacles.clear();
+	for (auto ut : _unit_types) {
+		delete ut.second;
+	}
+	_unit_types.clear();
+	for (auto grid : _grids) {
+		delete grid.second;
+	}
+	_grids.clear();
+	delete _path_finder;
+	delete _terrain;
 }
 
 

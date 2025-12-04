@@ -1,0 +1,13 @@
+{
+	"name" : "helicopter",
+	"size" : [2.0, 2.0],
+	"velocity" : 0.15,
+	"weights" : {
+		"GROUND" : 1.0,
+		"SOLID" : 1.0,
+		"WATER" : 1.0
+	},
+	"elevation_coeffs" : [
+		{"min" : -1000.0, "max" : 1000.0, "coeff" : 0.0}
+	]
+}
