@@ -81,8 +81,7 @@ void Graph::clear() {
 void Graph::reinit_weights() {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
-		_it_v->second._weight= 1.0f;
-		//_it_v->second._active= true;
+		_it_v->second._weight= 1.0;
 		_it_v++;
 	}
 }

@@ -19,7 +19,7 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	
 	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl, &_view_system->_world2clip);
 
-	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(1.0, 1.0));
+	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(1.0, 1.0), pt_type(2.0, 2.0));
 
 	update();
 }

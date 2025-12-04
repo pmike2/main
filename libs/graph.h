@@ -27,8 +27,8 @@ struct GraphVertex {
 struct Graph {
 	Graph();
 	~Graph();
-	void add_vertex(uint i, pt_type_3d pos=pt_type_3d(0.0f), number weight=1.0f);
-	void add_edge(uint i, uint j, number weight=1.0f, bool weight_is_dist=false);
+	void add_vertex(uint i, pt_type_3d pos=pt_type_3d(0.0), number weight=1.0);
+	void add_edge(uint i, uint j, number weight=1.0, bool weight_is_dist=false);
 	void remove_vertex(uint i);
 	void remove_edge(uint i, uint j);
 	std::vector<uint> neighbors(uint i);

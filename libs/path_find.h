@@ -66,6 +66,22 @@ struct Obstacle {
 };
 
 
+struct Terrain {
+	Terrain();
+	Terrain(pt_type origin, pt_type size, uint n_ligs, uint n_cols);
+	~Terrain();
+	number get_alti(pt_type pt);
+	void randomize();
+
+
+	pt_type _origin;
+	pt_type _size;
+	uint _n_ligs;
+	uint _n_cols;
+	number * _altis;
+};
+
+
 bool frontier_cmp(std::pair<uint, number> x, std::pair<uint, number> y);
 
 
@@ -82,7 +98,7 @@ struct PathFinder {
 
 struct Map {
 	Map();
-	Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution);
+	Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution);
 	~Map();
 	void add_unit(std::string type_name, pt_type pos);
 	void add_obstacle(OBSTACLE_TYPE type, const std::vector<pt_type> & pts);
@@ -102,6 +118,7 @@ struct Map {
 	std::vector<Obstacle *> _obstacles;
 	PathFinder * _path_finder;
 	std::map<UnitType * , GraphGrid *> _grids;
+	Terrain * _terrain;
 };
 
 

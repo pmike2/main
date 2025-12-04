@@ -97,6 +97,32 @@ Obstacle::~Obstacle() {
 
 
 // ----------------------------------------------------------------------------------------
+Terrain::Terrain() {
+
+}
+
+
+Terrain::Terrain(pt_type origin, pt_type size, uint n_ligs, uint n_cols) {
+
+}
+
+
+Terrain::~Terrain() {
+	
+}
+
+
+number Terrain::get_alti(pt_type pt) {
+	return 0.0;
+}
+
+
+void Terrain::randomize() {
+
+}
+
+
+// ----------------------------------------------------------------------------------------
 bool frontier_cmp(std::pair<uint, number> x, std::pair<uint, number> y) {
 	return x.second> y.second;
 }
@@ -148,9 +174,9 @@ bool PathFinder::path_find_nodes(uint start, uint goal, GraphGrid * grid, std::v
 	std::unordered_map<uint, uint> came_from;
 	std::unordered_map<uint, number> cost_so_far;
 
-	frontier.emplace(start, 0.0f);
+	frontier.emplace(start, 0.0);
 	came_from[start]= start;
-	cost_so_far[start]= 0.0f;
+	cost_so_far[start]= 0.0;
 
 	while (!frontier.empty()) {
 		uint current= frontier.top().first;
@@ -259,7 +285,7 @@ Map::Map() {
 }
 
 
-Map::Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution) : _origin(origin), _size(size) {
+Map::Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution) : _origin(origin), _size(size) {
 	uint n_ligs = uint(_size.y / path_resolution.y);
 	uint n_cols = uint(_size.x / path_resolution.x);
 

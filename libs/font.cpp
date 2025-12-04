@@ -152,7 +152,7 @@ Font::Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned 
 	
 	if (world2clip == NULL) {
 		//_world2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f);
-		_world2clip == NULL;
+		_world2clip = NULL;
 	}
 	else {
 		_world2clip = world2clip;

@@ -40,7 +40,6 @@ add_library(lib_graph STATIC ../libs/graph.cpp ../libs/graph.h)
 add_library(lib_triangulation STATIC ../libs/triangulation.cpp ../libs/triangulation.h)
 add_library(lib_test_a_star STATIC ./srcs/test_a_star.cpp ./srcs/test_a_star.h)
 
-
 add_executable(main ./srcs/main.cpp)
 add_executable(main_gl ./srcs/main_gl.cpp)
 
@@ -49,5 +48,5 @@ set(EXT_LIBS ${GDAL_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENG
 target_link_libraries(main PUBLIC ${EXT_LIBS})
 target_link_libraries(main PUBLIC lib_path_find lib_utile lib_geom_2d lib_shapefile lib_bbox_2d lib_graph lib_triangulation)
 
-target_link_libraries(main_gl PUBLIC ${GDAL_LIBRARIES} ${OPENGL_LIBRARIES} lib_path_find lib_utile lib_geom_2d lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_test_a_star lib_repere lib_gl_utils lib_input_state lib_bbox lib_font)
+target_link_libraries(main_gl PUBLIC lib_path_find lib_utile lib_geom_2d lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_test_a_star lib_repere lib_gl_utils lib_input_state lib_bbox lib_font)
 target_link_libraries(main_gl PUBLIC ${EXT_LIBS})
