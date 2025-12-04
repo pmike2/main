@@ -51,7 +51,10 @@ UnitType::UnitType(std::string json_path) {
 	}
 
 	for (auto ec : "elevation_coeffs") {
-		UnitElevationCoeff coeff = {ec["min"], ec["max"], ec["coeff"]};
+		number ec_min = ec["min"];
+		number ec_max = ec["max"];
+		number ec_coeff = ec["coeff"];
+		UnitElevationCoeff coeff = {ec_min, ec_max, ec_coeff};
 		_elevation_coeffs.push_back(coeff);
 	}
 }
@@ -62,6 +65,18 @@ UnitType::~UnitType() {
 }
 
 
+number UnitType::elevation_coeff(number elevation) {
+	for (auto ec : _elevation_coeffs) {
+		if (elevation >= ec._elevation_min && elevation <= ec._elevation_max) {
+			return ec._coeff;
+		}
+	}
+	std::cerr << "UnitType " << _name << " ::elevation_coeff : " << elevation << " non gérée\n";
+	return 0.0;
+}
+
+
+// -------------------------------------------------
 Unit::Unit() {
 
 }
@@ -371,10 +386,13 @@ void Map::update_grids() {
 			while (grid->_it_e!= grid->_it_v->second._edges.end()) {
 				pt_type pt_begin= grid->_it_v->second._pos;
 				pt_type pt_end= grid->_vertices[grid->_it_e->first]._pos;
+				number alti_begin = _terrain->get_alti(pt_begin);
+				number alti_end = _terrain->get_alti(pt_end);
+				grid->_vertices[grid->_it_v->first]._edges[grid->_it_e->first]._weight = type_grid.first->elevation_coeff(alti_end - alti_begin);
 				for (auto obstacle : _obstacles) {
 					//if (segment_intersects_poly(pt_begin, pt_end, obstacle->_polygon, NULL)) {
 					if (distance_poly_segment(obstacle->_polygon, pt_begin, pt_end, NULL) < 0.5 * std::max(type_grid.first->_size.x, type_grid.first->_size.y) + EPS) {
-						grid->_vertices[grid->_it_v->first]._edges[grid->_it_e->first]._weight = type_grid.first->_weights[obstacle->_type];
+						grid->_vertices[grid->_it_v->first]._edges[grid->_it_e->first]._weight += type_grid.first->_weights[obstacle->_type];
 						break;
 					}
 				}

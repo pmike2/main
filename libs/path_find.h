@@ -36,6 +36,7 @@ struct UnitType {
 	UnitType();
 	UnitType(std::string json_path);
 	~UnitType();
+	number elevation_coeff(number elevation);
 	
 	
 	std::string _name;

@@ -13,15 +13,20 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	GLuint buffers[2];
 	glGenBuffers(2, buffers);
 
-	_contexts["normal"]= new DrawContext(progs["repere"], buffers[0],
+	_contexts["linear"]= new DrawContext(progs["repere"], buffers[0],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"world2clip_matrix"});
+
+	_contexts["terrain"]= new DrawContext(progs["repere"], buffers[1],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 	
-	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl, &_view_system->_world2clip);
+	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
 
 	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(1.0, 1.0), pt_type(2.0, 2.0));
 
-	update();
+	update_linear();
+	update_terrain();
 }
 
 
@@ -42,8 +47,8 @@ void TestAStar::clear() {
 }
 
 
-void TestAStar::draw() {
-	DrawContext * context= _contexts["normal"];
+void TestAStar::draw_linear() {
+	DrawContext * context= _contexts["linear"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -64,8 +69,38 @@ void TestAStar::draw() {
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
+}
 
-	_font->draw_3d();
+
+void TestAStar::draw_terrain() {
+	DrawContext * context= _contexts["terrain"];
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
+void TestAStar::draw() {
+	draw_linear();
+	draw_terrain();
+	_font->draw_3d(_view_system->_world2clip);
 }
 
 
@@ -96,12 +131,18 @@ void TestAStar::anim(time_point t) {
 
 	_map->anim();
 
-	update();
+	update_linear();
+
+	std::vector<Text3D> texts;
+	for (auto unit : _map->_units) {
+		texts.push_back(Text3D(unit->_type->_name, glm::vec3(float(unit->_aabb->_pos.x), float(unit->_aabb->_pos.y), 0.0), 0.06, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	}
+	_font->set_text(texts);
 }
 
 
-void TestAStar::update() {
-	DrawContext * context= _contexts["normal"];
+void TestAStar::update_linear() {
+	DrawContext * context= _contexts["linear"];
 	
 	context->_n_pts = 0;
 
@@ -264,12 +305,21 @@ void TestAStar::update() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
 
-	std::vector<Text3D> texts;
-	for (auto unit : _map->_units) {
-		texts.push_back(Text3D(unit->_type->_name, glm::vec3(float(unit->_aabb->_pos.x), float(unit->_aabb->_pos.y), 0.0), 0.06, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
-	}
-	_font->set_text(texts);
+
+void TestAStar::update_terrain() {
+	DrawContext * context= _contexts["terrain"];
+	
+	context->_n_pts = 0;
+	context->_n_attrs_per_pts= 7;
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+	float * ptr = data;
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 

@@ -50,7 +50,7 @@ Font::Font() {
 }
 
 
-Font::Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned int font_size, ScreenGL * screengl, mat_4d * world2clip) : _z(0.0) {
+Font::Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned int font_size, ScreenGL * screengl) : _z(0.0) {
 	FT_Library ft_lib;
 	FT_Face face;
 
@@ -149,15 +149,6 @@ Font::Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned 
 	_contexts["font3d"]->_n_attrs_per_pts= 10;
 
 	_camera2clip = glm::ortho(-screengl->_gl_width* 0.5, screengl->_gl_width* 0.5, -screengl->_gl_height* 0.5, screengl->_gl_height* 0.5);
-	
-	if (world2clip == NULL) {
-		//_world2clip= glm::ortho(-screengl->_gl_width* 0.5f, screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f, screengl->_gl_height* 0.5f);
-		_world2clip = NULL;
-	}
-	else {
-		_world2clip = world2clip;
-		//std::cout << glm::to_string(_camera2clip) << "\n";
-	}
 }
 
 
@@ -345,7 +336,7 @@ void Font::draw() {
 }
 
 
-void Font::draw_3d() {
+void Font::draw_3d(const mat_4d & world2clip) {
 	DrawContext * context = _contexts["font3d"];
 	glUseProgram(context->_prog);
 
@@ -356,7 +347,7 @@ void Font::draw_3d() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 
 	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(*_world2clip)));
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);

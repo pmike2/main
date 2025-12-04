@@ -44,9 +44,12 @@ public:
 	TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system);
 	~TestAStar();
 	void clear();
+	void draw_linear();
+	void draw_terrain();
 	void draw();
 	void anim(time_point t);
-	void update();
+	void update_linear();
+	void update_terrain();
 	bool mouse_button_down(InputState * input_state);
 	bool mouse_button_up(InputState * input_state);
 	bool mouse_motion(InputState * input_state, time_point t);

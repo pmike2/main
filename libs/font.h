@@ -67,21 +67,20 @@ public:
 class Font {
 public:
 	Font();
-	Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned int font_size, ScreenGL * screengl, mat_4d * world2clip=NULL);
+	Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned int font_size, ScreenGL * screengl);
 	void set_text(std::vector<Text> & texts);
 	void set_text(Text & text);
 	void set_text(std::vector<Text3D> & texts);
 	void set_text(Text3D & text);
 	void clear();
 	void draw();
-	void draw_3d();
+	void draw_3d(const mat_4d & world2clip);
 	
 	GLuint _texture_id;
 	unsigned int _tex_size;
 	std::map<std::string, DrawContext *> _contexts;
 	std::map<char, Character> _characters;
 	mat_4d _camera2clip;
-	mat_4d * _world2clip;
 	float _z;
 };
 
