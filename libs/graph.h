@@ -10,6 +10,7 @@
 
 #include "typedefs.h"
 #include "bbox_2d.h"
+#include "geom_2d.h"
 
 
 struct GraphEdge {
@@ -49,6 +50,8 @@ struct GraphGrid : public Graph {
 	~GraphGrid();
 	std::pair<uint, uint> id2col_lig(uint id);
 	uint col_lig2id(uint col, uint lig);
+	pt_type col_lig2pt(uint col, uint lig);
+	std::pair<uint, uint> pt2col_lig(pt_type pt);
 	uint pt2id(pt_type pt);
 	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
 

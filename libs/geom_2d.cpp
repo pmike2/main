@@ -1013,6 +1013,16 @@ void Polygon2D::triangulate() {
 }
 
 
+// attention ne fonctionne que pour des polys convexes avec buffer_size > 0
+Polygon2D * Polygon2D::buffered(number buffer_size) {
+	Polygon2D * result = new Polygon2D(*this);
+	for (auto & pt : result->_pts) {
+		pt += buffer_size * glm::normalize(pt - _centroid);
+	}
+	return result;
+}
+
+
 std::ostream & operator << (std::ostream & os, const Polygon2D & polygon) {
 	os << "area= " << polygon._area << " ; centroid= " << glm::to_string(polygon._centroid);
 	os << " ; aabb_pos=" << glm::to_string(polygon._aabb->_pos) << " ; aabb_size=" << glm::to_string(polygon._aabb->_size);

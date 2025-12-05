@@ -19,10 +19,13 @@
 
 
 enum UNIT_MODE {WAITING, MOVING};
+std::string mode2str(UNIT_MODE mode);
+
 enum OBSTACLE_TYPE {UNKNOWN, GROUND, SOLID, WATER};
-
-
 OBSTACLE_TYPE str2type(std::string s);
+std::string type2str(OBSTACLE_TYPE t);
+
+
 
 
 struct UnitElevationCoeff {
@@ -37,6 +40,7 @@ struct UnitType {
 	UnitType(std::string json_path);
 	~UnitType();
 	number elevation_coeff(number elevation);
+	friend std::ostream & operator << (std::ostream & os, UnitType & ut);
 	
 	
 	std::string _name;
@@ -52,6 +56,7 @@ struct Unit {
 	Unit(UnitType * type, pt_type pos, GraphGrid * grid);
 	~Unit();
 	void clear_path();
+	friend std::ostream & operator << (std::ostream & os, Unit & unit);
 	
 	
 	UnitType * _type;
@@ -67,6 +72,7 @@ struct Unit {
 struct Obstacle {
 	Obstacle();
 	Obstacle(OBSTACLE_TYPE type, const std::vector<pt_type> & pts);
+	Obstacle(OBSTACLE_TYPE type, Polygon2D * polygon);
 	~Obstacle();
 
 
@@ -79,7 +85,15 @@ struct Terrain {
 	Terrain();
 	Terrain(pt_type origin, pt_type size, uint n_ligs, uint n_cols);
 	~Terrain();
+	std::pair<uint, uint> id2col_lig(uint id);
+	uint col_lig2id(uint col, uint lig);
+	pt_type col_lig2pt(uint col, uint lig);
+	number get_alti(int col, int lig);
 	number get_alti(pt_type pt);
+	number get_alti_over_polygon(Polygon2D * polygon);
+	void set_alti(int col, int lig, number alti);
+	void set_alti_over_polygon(Polygon2D * polygon, number alti);
+	void set_alti_all(number alti);
 	void randomize();
 
 
@@ -99,7 +113,7 @@ struct PathFinder {
 	~PathFinder();
 	number cost(uint i, uint j, GraphGrid * grid);
 	number heuristic(uint i, uint j, GraphGrid * grid);
-	bool line_of_sight(pt_type pt1, pt_type pt2, GraphGrid * grid);
+	number line_of_sight_max_weight(pt_type pt1, pt_type pt2, GraphGrid * grid);
 	bool path_find_nodes(uint start, uint goal, GraphGrid * grid, std::vector<uint> & path);
 	bool path_find(pt_type start, pt_type goal, GraphGrid * grid, std::vector<pt_type> & path);
 };
@@ -110,7 +124,7 @@ struct Map {
 	Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution);
 	~Map();
 	void add_unit(std::string type_name, pt_type pos);
-	void add_obstacle(OBSTACLE_TYPE type, const std::vector<pt_type> & pts);
+	Obstacle * add_obstacle(OBSTACLE_TYPE type, const std::vector<pt_type> & pts);
 	void update_grids();
 	void clear();
 	void read_shapefile(std::string shp_path, pt_type origin, pt_type size, bool reverse_y=false);
@@ -118,6 +132,7 @@ struct Map {
 	void selected_units_goto(pt_type pt);
 	//void rand(uint n_polys, uint n_pts_per_poly, number poly_radius);
 	//void draw_svg(const std::vector<uint> & path, std::string svg_path);
+	friend std::ostream & operator << (std::ostream & os, Map & map);
 
 
 	pt_type _origin;
@@ -127,6 +142,7 @@ struct Map {
 	std::vector<Obstacle *> _obstacles;
 	PathFinder * _path_finder;
 	std::map<UnitType * , GraphGrid *> _grids;
+	std::map<UnitType * , std::vector<Obstacle *> > _buffered_obstacles;
 	Terrain * _terrain;
 };
 

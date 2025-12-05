@@ -15,7 +15,7 @@
 #include "repere.h"
 
 
-enum EDIT_MODE {ADDING_SOLID_OBSTACLE, ADDING_WATER_OBSTACLE, FREE};
+enum EDIT_MODE {ADDING_SOLID_OBSTACLE, ADDING_WATER_OBSTACLE, FREE, EDIT_ALTI};
 
 const uint NEW_PT_IN_POLYGON_MS = 300;
 const number CROSS_SIZE = 0.2;
@@ -37,13 +37,20 @@ const std::map<std::string, glm::vec4> UNIT_COLORS = {
 const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
 const glm::vec4 PATH_COLOR(0.7f, 0.8f, 0.3f, 1.0f);
 
+const number ALTI_UNIT = 0.0;
+const number ALTI_PATH = -0.1;
+const number ALTI_OBSTACLE = -0.2;
+const number ALTI_CROSS = -0.3;
+const number ALTI_EDGE = -0.4;
+const number ALTI_TERRAIN = -0.5;
+
+
 
 class TestAStar {
 public:
 	TestAStar();
 	TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system);
 	~TestAStar();
-	void clear();
 	void draw_linear();
 	void draw_terrain();
 	void draw();

@@ -8,17 +8,17 @@ TestGeom2D::TestGeom2D() {
 }
 
 
-TestGeom2D::TestGeom2D(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl) {
+TestGeom2D::TestGeom2D(std::map<std::string, GLuint> progs, ScreenGL * screengl) {
 	_pt_min= pt_type(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
 	_pt_max= pt_type(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
 	_camera2clip= glm::ortho(-1.0f* float(screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -1.0f* float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
-	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
+	_font= new Font(progs, "../../fonts/Silom.ttf", 48, screengl);
 
 	unsigned int n_buffers= 1;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
-	_contexts["bbox"]= new DrawContext(prog_bbox, _buffers[0],
+	_contexts["bbox"]= new DrawContext(progs["bbox"], _buffers[0],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix"});
 

@@ -22,7 +22,7 @@ const float Z_FAR= 1000.0f;
 class TestGeom2D {
 public:
 	TestGeom2D();
-	TestGeom2D(GLuint prog_bbox, GLuint prog_font, ScreenGL * screengl);
+	TestGeom2D(std::map<std::string, GLuint> progs, ScreenGL * screengl);
 	~TestGeom2D();
 	void randomize();
 	void draw();

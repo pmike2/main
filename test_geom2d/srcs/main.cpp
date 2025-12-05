@@ -3,6 +3,7 @@
 
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include "typedefs.h"
 #include "geom_2d.h"
@@ -76,12 +77,26 @@ void test5() {
 }
 
 
+void test6() {
+	Polygon2D * poly= new Polygon2D();
+	poly->set_points(std::vector<pt_type>{pt_type(0.0 , 0.0), pt_type(1.0 , 0.0), pt_type(1.0 , 1.0), pt_type(0.0 , 1.0)});
+	poly->update_all();
+	Polygon2D * buffered = poly->buffered(0.5);
+	buffered->update_all();
+	//std::cout << *buffered << "\n";
+	for (auto pt : buffered->_pts) {
+		std::cout << glm::to_string(pt) << "\n";
+	}
+}
+
+
 int main() {
 	//test1();
 	//test2();
 	//test3();
 	//test4();
-	test5();
+	//test5();
+	test6();
 	
 	return 0;
 }

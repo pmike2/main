@@ -23,7 +23,8 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	
 	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
 
-	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(1.0, 1.0), pt_type(2.0, 2.0));
+	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(1.0, 1.0), pt_type(1.0, 1.0));
+	//std::cout << *_map << "\n";
 
 	update_linear();
 	update_terrain();
@@ -31,19 +32,12 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 
 
 TestAStar::~TestAStar() {
-	clear();
 	delete _map;
 	for (auto context : _contexts) {
 		delete context.second;
 	}
 	_contexts.clear();
 	delete _font;
-}
-
-
-void TestAStar::clear() {
-	_map->clear();
-	_map->update_grids();
 }
 
 
@@ -147,11 +141,21 @@ void TestAStar::update_linear() {
 	context->_n_pts = 0;
 
 	// les croix de la grille
-	GraphGrid * grid = _map->_grids[_map->_unit_types["infantery"]];
+	GraphGrid * grid = _map->_grids[_map->_unit_types["tank"]];
 	
 	grid->_it_v= grid->_vertices.begin();
 	while (grid->_it_v!= grid->_vertices.end()) {
 		context->_n_pts += 4;
+		grid->_it_v++;
+	}
+
+	grid->_it_v= grid->_vertices.begin();
+	while (grid->_it_v!= grid->_vertices.end()) {
+		grid->_it_e= grid->_it_v->second._edges.begin();
+		while (grid->_it_e!= grid->_it_v->second._edges.end()) {
+			context->_n_pts += 2;
+			grid->_it_e++;
+		}
 		grid->_it_v++;
 	}
 
@@ -173,6 +177,7 @@ void TestAStar::update_linear() {
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
 
+	// croix noeuds grille
 	grid->_it_v= grid->_vertices.begin();
 	while (grid->_it_v!= grid->_vertices.end()) {
 		pt_type_3d pos = grid->_it_v->second._pos;
@@ -185,7 +190,7 @@ void TestAStar::update_linear() {
 		for (uint i=0; i<4; ++i) {
 			ptr[0] = float(positions[2 * i]);
 			ptr[1] = float(positions[2 * i + 1]);
-			ptr[2] = 0.0f;
+			ptr[2] = float(ALTI_CROSS);
 			ptr[3] = GRID_COLOR.r;
 			ptr[4] = GRID_COLOR.g;
 			ptr[5] = GRID_COLOR.b;
@@ -195,6 +200,47 @@ void TestAStar::update_linear() {
 		grid->_it_v++;
 	}
 
+	// poids des edges
+	grid->_it_v= grid->_vertices.begin();
+	while (grid->_it_v!= grid->_vertices.end()) {
+		grid->_it_e= grid->_it_v->second._edges.begin();
+		while (grid->_it_e!= grid->_it_v->second._edges.end()) {
+			glm::vec4 edge_color;
+			number edge_weight = grid->_it_e->second._weight;
+			if (edge_weight < 0.0) {
+				edge_color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
+			}
+			else if (edge_weight > 1500.0) {
+				edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+			}
+			else {
+				edge_color = glm::vec4(0.5f, float(edge_weight) / 1500.0, 0.5f, 1.0f);
+			}
+			
+			ptr[0] = float(grid->_it_v->second._pos.x);
+			ptr[1] = float(grid->_it_v->second._pos.y);
+			ptr[2] = float(ALTI_EDGE);
+			ptr[3] = edge_color.r;
+			ptr[4] = edge_color.g;
+			ptr[5] = edge_color.b;
+			ptr[6] = edge_color.a;
+
+			ptr[7] = float(grid->_vertices[grid->_it_e->first]._pos.x);
+			ptr[8] = float(grid->_vertices[grid->_it_e->first]._pos.y);
+			ptr[9] = float(ALTI_EDGE);
+			ptr[10] = edge_color.r;
+			ptr[11] = edge_color.g;
+			ptr[12] = edge_color.b;
+			ptr[13] = edge_color.a;
+
+			ptr += 14;
+			
+			grid->_it_e++;
+		}
+		grid->_it_v++;
+	}
+
+	// obstacles
 	for (auto obstacle : _map->_obstacles) {
 		for (uint i=0; i<obstacle->_polygon->_pts.size(); ++i) {
 			uint j = i + 1;
@@ -203,7 +249,7 @@ void TestAStar::update_linear() {
 			}
 			ptr[0] = float(obstacle->_polygon->_pts[i].x);
 			ptr[1] = float(obstacle->_polygon->_pts[i].y);
-			ptr[2] = 0.0f;
+			ptr[2] = float(ALTI_OBSTACLE);
 			ptr[3] = OBSTACLE_COLORS.at(obstacle->_type).r;
 			ptr[4] = OBSTACLE_COLORS.at(obstacle->_type).g;
 			ptr[5] = OBSTACLE_COLORS.at(obstacle->_type).b;
@@ -211,7 +257,7 @@ void TestAStar::update_linear() {
 
 			ptr[7] = float(obstacle->_polygon->_pts[j].x);
 			ptr[8] = float(obstacle->_polygon->_pts[j].y);
-			ptr[9] = 0.0f;
+			ptr[9] = float(ALTI_OBSTACLE);
 			ptr[10] = OBSTACLE_COLORS.at(obstacle->_type).r;
 			ptr[11] = OBSTACLE_COLORS.at(obstacle->_type).g;
 			ptr[12] = OBSTACLE_COLORS.at(obstacle->_type).b;
@@ -221,11 +267,12 @@ void TestAStar::update_linear() {
 		}
 	}
 
+	// obstacle édité
 	if (_obstacle_pts.size() > 1) {
 		for (uint i=0; i<_obstacle_pts.size() - 1; ++i) {
 			ptr[0] = float(_obstacle_pts[i].x);
 			ptr[1] = float(_obstacle_pts[i].y);
-			ptr[2] = 0.0f;
+			ptr[2] = float(ALTI_OBSTACLE);
 			ptr[3] = EDITED_OBSTACLE_COLORS.at(_mode).r;
 			ptr[4] = EDITED_OBSTACLE_COLORS.at(_mode).g;
 			ptr[5] = EDITED_OBSTACLE_COLORS.at(_mode).b;
@@ -233,7 +280,7 @@ void TestAStar::update_linear() {
 
 			ptr[7] = float(_obstacle_pts[i + 1].x);
 			ptr[8] = float(_obstacle_pts[i + 1].y);
-			ptr[9] = 0.0f;
+			ptr[9] = float(ALTI_OBSTACLE);
 			ptr[10] = EDITED_OBSTACLE_COLORS.at(_mode).r;
 			ptr[11] = EDITED_OBSTACLE_COLORS.at(_mode).g;
 			ptr[12] = EDITED_OBSTACLE_COLORS.at(_mode).b;
@@ -243,6 +290,7 @@ void TestAStar::update_linear() {
 		}
 	}
 
+	// units
 	for (auto unit : _map->_units) {
 		number positions[16] = {
 			unit->_aabb->_pos.x, unit->_aabb->_pos.y,
@@ -260,7 +308,7 @@ void TestAStar::update_linear() {
 		for (uint i=0; i<8; ++i) {
 			ptr[0] = float(positions[2 * i]);
 			ptr[1] = float(positions[2 * i + 1]);
-			ptr[2] = 0.0f;
+			ptr[2] = float(ALTI_UNIT);
 			if (unit->_selected) {
 				ptr[3] = SELECTED_UNIT_COLOR.r;
 				ptr[4] = SELECTED_UNIT_COLOR.g;
@@ -277,6 +325,7 @@ void TestAStar::update_linear() {
 		}
 	}
 
+	// chemins
 	for (auto unit : _map->_units) {
 		if (unit->_path.empty()) {
 			continue;
@@ -284,7 +333,7 @@ void TestAStar::update_linear() {
 		for (uint i=0; i<unit->_path.size() - 1; ++i) {
 			ptr[0] = float(unit->_path[i].x);
 			ptr[1] = float(unit->_path[i].y);
-			ptr[2] = 0.0f;
+			ptr[2] = float(ALTI_PATH);
 			ptr[3] = PATH_COLOR.r;
 			ptr[4] = PATH_COLOR.g;
 			ptr[5] = PATH_COLOR.b;
@@ -292,7 +341,7 @@ void TestAStar::update_linear() {
 
 			ptr[7] = float(unit->_path[i + 1].x);
 			ptr[8] = float(unit->_path[i + 1].y);
-			ptr[9] = 0.0f;
+			ptr[9] = float(ALTI_PATH);
 			ptr[10] = PATH_COLOR.r;
 			ptr[11] = PATH_COLOR.g;
 			ptr[12] = PATH_COLOR.b;
@@ -311,11 +360,48 @@ void TestAStar::update_linear() {
 void TestAStar::update_terrain() {
 	DrawContext * context= _contexts["terrain"];
 	
-	context->_n_pts = 0;
-	context->_n_attrs_per_pts= 7;
+	context->_n_pts = 6 * (_map->_terrain->_n_ligs - 1) * (_map->_terrain->_n_cols - 1);
+	context->_n_attrs_per_pts = 7;
 
+	uint idx_tris[6] = {0, 1, 2, 0, 2, 3};
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
+	for (uint col = 0; col<_map->_terrain->_n_cols - 1; ++col) {
+		for (uint lig = 0; lig<_map->_terrain->_n_ligs - 1; ++lig) {
+			pt_type pts[4] = {
+				_map->_terrain->col_lig2pt(col, lig),
+				_map->_terrain->col_lig2pt(col + 1, lig),
+				_map->_terrain->col_lig2pt(col + 1, lig + 1),
+				_map->_terrain->col_lig2pt(col, lig + 1)
+			};
+			std::vector<glm::vec4> terrain_color;
+			for (uint i=0; i<4; ++i) {
+				number alti = _map->_terrain->get_alti(pts[i]);
+				glm::vec4 color;
+				if (alti < 0.0) {
+					color = glm::vec4(0.0f, 0.7f, 0.8f, 1.0f);
+				}
+				else if (alti > 1000.0) {
+					color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+				}
+				else  {
+					color = glm::vec4(float(alti) / 1000.0f, float(alti) / 1000.0f, 0.5f, 1.0f);
+				}
+				terrain_color.push_back(color);
+			}
+			for (uint i=0; i<6; ++i) {
+				ptr[0] = float(pts[idx_tris[i]].x);
+				ptr[1] = float(pts[idx_tris[i]].y);
+				ptr[2] = float(ALTI_TERRAIN);
+				ptr[3] = terrain_color[idx_tris[i]].r;
+				ptr[4] = terrain_color[idx_tris[i]].g;
+				ptr[5] = terrain_color[idx_tris[i]].b;
+				ptr[6] = terrain_color[idx_tris[i]].a;
+
+				ptr += 7;
+			}
+		}
+	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
@@ -325,6 +411,7 @@ void TestAStar::update_terrain() {
 
 bool TestAStar::mouse_button_down(InputState * input_state) {
 	pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+
 	if (_mode == ADDING_SOLID_OBSTACLE) {
 		_obstacle_pts.clear();
 		return true;
@@ -361,8 +448,10 @@ bool TestAStar::mouse_button_up(InputState * input_state) {
 		return true;
 	}
 	else if (_mode == ADDING_WATER_OBSTACLE) {
-		_map->add_obstacle(WATER, _obstacle_pts);
+		Obstacle * obstacle = _map->add_obstacle(WATER, _obstacle_pts);
+		_map->_terrain->set_alti_over_polygon(obstacle->_polygon, 0.0);
 		_map->update_grids();
+		update_terrain();
 		_obstacle_pts.clear();
 		return true;
 	}
@@ -371,12 +460,33 @@ bool TestAStar::mouse_button_up(InputState * input_state) {
 
 
 bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
+	pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+
 	if ((_mode == ADDING_SOLID_OBSTACLE || _mode == ADDING_WATER_OBSTACLE) && input_state->_left_mouse) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_added_pt_t).count();
 		if (dt> NEW_PT_IN_POLYGON_MS) {
 			pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 			_obstacle_pts.push_back(pt);
 		}
+		return true;
+	}
+	else if (_mode == EDIT_ALTI && input_state->_left_mouse) {
+		Polygon2D * polygon = new Polygon2D();
+		polygon->set_rectangle(pt - pt_type(1.0), pt_type(2.0));
+		polygon->update_all();
+
+		number old_alti = _map->_terrain->get_alti_over_polygon(polygon);
+		number new_alti;
+		if (input_state->_keys[SDLK_LSHIFT]) {
+			new_alti = old_alti - 10.0;
+		}
+		else {
+			new_alti = old_alti + 10.0;
+		}
+		_map->_terrain->set_alti_over_polygon(polygon, new_alti);
+		_map->update_grids();
+		update_terrain();
+		delete polygon;
 		return true;
 	}
 	return false;
@@ -392,8 +502,17 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
 		_mode = ADDING_WATER_OBSTACLE;
 		return true;
 	}
+	else if (key == SDLK_z) {
+		_mode = EDIT_ALTI;
+		return true;
+	}
 	else if (key == SDLK_c) {
-		clear();
+		_map->clear();
+		update_terrain();
+		return true;
+	}
+	else if (key == SDLK_SPACE) {
+		std::cout << *_map->_grids[_map->_unit_types["tank"]] << "\n";
 		return true;
 	}
 	return false;
@@ -401,10 +520,7 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
 
 
 bool TestAStar::key_up(InputState * input_state, SDL_Keycode key) {
-	if (key == SDLK_o || key == SDLK_w) {
-		_mode = FREE;
-		return true;
-	}
-	return false;
+	_mode = FREE;
+	return true;
 }
 

@@ -5,7 +5,7 @@ in vec2 position_in;
 in vec3 color_in;
 
 
-out vec4 vertex_color;
+flat out vec4 vertex_color;
 
 
 void main(void)
