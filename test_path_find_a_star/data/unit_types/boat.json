@@ -5,7 +5,7 @@
 	"weights" : {
 		"GROUND" : 1000.0,
 		"SOLID" : 1000.0,
-		"WATER" : 1.0
+		"WATER" : 0.0
 	},
 	"elevation_coeffs" : [
 		{"min" : -1000.0, "max" : -1.0, "coeff" : 1000.0},

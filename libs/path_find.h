@@ -55,6 +55,7 @@ struct Path {
 	Path();
 	~Path();
 	void clear();
+	friend std::ostream & operator << (std::ostream & os, Path & p);
 
 
 	std::vector<pt_type> _pts;
@@ -129,6 +130,7 @@ struct PathFinder {
 	number line_of_sight_max_weight(pt_type pt1, pt_type pt2, GraphGrid * grid);
 	bool path_find_nodes(uint start, uint goal, GraphGrid * grid, std::vector<uint> & path);
 	bool path_find(pt_type start, pt_type goal, GraphGrid * grid, Path * path);
+	void draw_svg(GraphGrid * grid, Path * path, std::string svg_path);
 };
 
 
@@ -144,7 +146,6 @@ struct Map {
 	void anim();
 	void selected_units_goto(pt_type pt);
 	//void rand(uint n_polys, uint n_pts_per_poly, number poly_radius);
-	//void draw_svg(const std::vector<uint> & path, std::string svg_path);
 	friend std::ostream & operator << (std::ostream & os, Map & map);
 
 

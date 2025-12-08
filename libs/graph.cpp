@@ -196,7 +196,7 @@ std::pair<uint, uint> GraphGrid::pt2col_lig(pt_type pt) {
 	int col= (int)(((pt.x- _origin.x)/ _size.x)* (number)(_n_cols- 1));
 	int lig= (int)(((pt.y- _origin.y)/ _size.y)* (number)(_n_ligs- 1));
 	if (col < 0 || lig < 0 || col >= _n_cols || lig >= _n_ligs) {
-		std::cerr << "GraphGrid::pt2col_lig : pt" << glm::to_string(pt) << " hors grille\n";
+		std::cerr << "GraphGrid::pt2col_lig : pt" << glm::to_string(pt) << " hors grille : col = " << col << " ; lig = " << lig << "\n";
 		return std::make_pair(0, 0);
 	}
 	return std::make_pair(uint(col), uint(lig));

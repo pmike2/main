@@ -136,6 +136,24 @@ void Path::clear() {
 }
 
 
+std::ostream & operator << (std::ostream & os, Path & p) {
+	os << "pts = ";
+	for (auto pt : p._pts) {
+		os << glm::to_string(pt) << " ; ";
+	}
+	os << " | nodes = ";
+	for (auto node : p._nodes) {
+		os << node << " ; ";
+	}
+	os << " | weights = ";
+	for (auto w : p._weights) {
+		os << w << " ; ";
+	}
+	os << " | idx_path = " << p._idx_path;
+	return os;
+}
+
+
 // -------------------------------------------------
 Unit::Unit() {
 
@@ -173,7 +191,10 @@ void Unit::anim() {
 
 		number unit_velociy = _type->_velocity * (1.0 - _path->_weights[_path->_idx_path] / MAX_UNIT_MOVING_WEIGHT);
 		if (unit_velociy > 0.0) {
-			_aabb->_pos += unit_velociy * glm::normalize(_path->_pts[_path->_idx_path] - _aabb->_size * 0.5 - _aabb->_pos);
+			_aabb->_pos += unit_velociy * glm::normalize(_path->_pts[_path->_idx_path] - _aabb->center());
+		}
+		else {
+			std::cerr << "Unit::anim unit_velociy = " << unit_velociy << "\n";
 		}
 	}
 }
@@ -353,7 +374,7 @@ number PathFinder::heuristic(uint i, uint j, GraphGrid * grid) {
 
 number PathFinder::line_of_sight_max_weight(pt_type pt1, pt_type pt2, GraphGrid * grid) {
 	std::vector<std::pair<uint, uint> > edges = grid->segment_intersection(pt1, pt2);
-	number result = -100000.0;
+	number result = 0.0;
 	for (auto edge : edges) {
 		pt_type v1 = pt_type(grid->_vertices[edge.first]._pos);
 		pt_type v2 = pt_type(grid->_vertices[edge.second]._pos);
@@ -455,11 +476,11 @@ bool PathFinder::path_find(pt_type start, pt_type goal, GraphGrid * grid, Path *
 	raw_path.push_back(goal);
 
 	std::vector<number> weights;
-	weights.push_back(-10000.0);
+	weights.push_back(0.0);
 	for (uint i=0; i<path->_nodes.size() - 1; ++i) {
 		weights.push_back(grid->_vertices[path->_nodes[i]]._edges[path->_nodes[i + 1]]._weight);
 	}
-	weights.push_back(-10000.0);
+	weights.push_back(0.0);
 
 	path->_pts.clear();
 	path->_weights.clear();
@@ -472,11 +493,15 @@ bool PathFinder::path_find(pt_type start, pt_type goal, GraphGrid * grid, Path *
 		path->_weights.push_back(0.0); // inutilisé mais nécessaire ?
 		
 		while (idx < raw_path.size()) {
-			//std::cout << "last = " << last << " ; idx = " << idx << "\n";
+			//std::cout << "last = " << last << " ; idx = " << idx << " ; raw_path.size() = " << raw_path.size();
+			//std::cout << " ; raw_path[last]=" << raw_path[last] << " ; raw_path[idx]=" << raw_path[idx] << "\n";
 			number raw_max_weight = weights[last];
 			number last_los_weight_ok = 0.0;
-			while (idx < raw_path.size()) {
+			while (true) {
 				idx++;
+				if (idx >= raw_path.size()) {
+					break;
+				}
 				number los_weight = line_of_sight_max_weight(raw_path[last], raw_path[idx], grid);
 				//std::cout << "los_weight = " << los_weight << " ; raw_max_weight = " << raw_max_weight << "\n";
 				if (los_weight> raw_max_weight) {
@@ -498,7 +523,70 @@ bool PathFinder::path_find(pt_type start, pt_type goal, GraphGrid * grid, Path *
 		}
 	}
 
+	//std::cout << *path << "\n";
+
 	return true;
+}
+
+
+void PathFinder::draw_svg(GraphGrid * grid, Path * path, std::string svg_path) {
+	std::ofstream f;
+	f.open(svg_path);
+	f << "<!DOCTYPE html>\n<html>\n<body>\n";
+	f << "<svg width=\"1000\" height=\"1000\" viewbox=\"" << grid->_origin.x << " " << grid->_origin.y << " " << grid->_size.x << " " << grid->_size.y << "\">\n";
+
+	// a revoir
+
+	/*if (path->_pts.size()) {
+		for (uint i=0; i<path->_pts.size()- 1; ++i) {
+			number x1= grid->_vertices[path->_pts[i]]._pos.x;
+			number y1= grid->_vertices[path[i]]._pos.y;
+			number x2= _grid->_vertices[path[i+ 1]]._pos.x;
+			number y2= _grid->_vertices[path[i+ 1]]._pos.y;
+			f << "<line x1=\"" << x1 << "\" y1=\"" << y1 << "\" x2=\"" << x2 << "\" y2=\"" << y2 << "\" stroke=\"red\" stroke-width=\"0.06\" />\n";
+		}
+
+		number radius = 0.1;
+		std::string color_start = "green";
+		number x_start= _grid->_vertices[path[0]]._pos.x;
+		number y_start= _grid->_vertices[path[0]]._pos.y;
+		f << "<circle cx=\"" << x_start << "\" cy=\"" << y_start << "\" r=\"" << radius << "\" fill=\"" << color_start << "\" />\n";
+		std::string color_end = "orange";
+		number x_end= _grid->_vertices[path[path.size() - 1]]._pos.x;
+		number y_end= _grid->_vertices[path[path.size() - 1]]._pos.y;
+		f << "<circle cx=\"" << x_end << "\" cy=\"" << y_end << "\" r=\"" << radius << "\" fill=\"" << color_end << "\" />\n";
+	}
+
+	for (auto poly : _polygons) {
+		f << "<polygon points=\"";
+		for (auto pt : poly->_pts) {
+			f << pt.x << "," << pt.y << " ";
+		}
+		f << "\" fill=\"none\" stroke=\"purple\" stroke-width=\"0.02\" />\n";
+	}
+
+	_grid->_it_v= _grid->_vertices.begin();
+	while (_grid->_it_v!= _grid->_vertices.end()) {
+		number x1= _grid->_it_v->second._pos.x;
+		number y1= _grid->_it_v->second._pos.y;
+		std::string color= "black";
+		number radius= 0.01* _grid->_it_v->second._weight;
+		f << "<circle cx=\"" << x1 << "\" cy=\"" << y1 << "\" r=\"" << radius << "\" fill=\"" << color << "\" />\n";
+		//f << "<text x=\"" << x1+ 0.15f << "\" y=\"" << y1- 0.15f << "\" fill=\"black\" font-size=\"0.2px\">" << to_string(_grid->_it_v->first) << "</text>\n";
+
+		_grid->_it_e= _grid->_it_v->second._edges.begin();
+		while (_grid->_it_e!= _grid->_it_v->second._edges.end()) {
+			number x2= _grid->_vertices[_grid->_it_e->first]._pos.x;
+			number y2= _grid->_vertices[_grid->_it_e->first]._pos.y;
+			f << "<line x1=\"" << x1 << "\" y1=\"" << y1 << "\" x2=\"" << x2 << "\" y2=\"" << y2 << "\" stroke=\"black\" stroke-width=\"0.01\" />\n";
+			_grid->_it_e++;
+		}
+
+		_grid->_it_v++;
+	}*/
+	
+	f << "</svg>\n</body>\n</html>\n";
+	f.close();
 }
 
 
@@ -681,66 +769,6 @@ void Map::selected_units_goto(pt_type pt) {
 	}
 
 	update_grid();
-}
-*/
-
-
-/*void Map::draw_svg(const std::vector<uint> & path, std::string svg_path) {
-	std::ofstream f;
-	f.open(svg_path);
-	f << "<!DOCTYPE html>\n<html>\n<body>\n";
-	f << "<svg width=\"1000\" height=\"1000\" viewbox=\"" << _origin.x << " " << _origin.y << " " << _size.x << " " << _size.y << "\">\n";
-
-	if (path.size()) {
-		for (uint i=0; i<path.size()- 1; ++i) {
-			number x1= _grid->_vertices[path[i]]._pos.x;
-			number y1= _grid->_vertices[path[i]]._pos.y;
-			number x2= _grid->_vertices[path[i+ 1]]._pos.x;
-			number y2= _grid->_vertices[path[i+ 1]]._pos.y;
-			f << "<line x1=\"" << x1 << "\" y1=\"" << y1 << "\" x2=\"" << x2 << "\" y2=\"" << y2 << "\" stroke=\"red\" stroke-width=\"0.06\" />\n";
-		}
-
-		number radius = 0.1;
-		std::string color_start = "green";
-		number x_start= _grid->_vertices[path[0]]._pos.x;
-		number y_start= _grid->_vertices[path[0]]._pos.y;
-		f << "<circle cx=\"" << x_start << "\" cy=\"" << y_start << "\" r=\"" << radius << "\" fill=\"" << color_start << "\" />\n";
-		std::string color_end = "orange";
-		number x_end= _grid->_vertices[path[path.size() - 1]]._pos.x;
-		number y_end= _grid->_vertices[path[path.size() - 1]]._pos.y;
-		f << "<circle cx=\"" << x_end << "\" cy=\"" << y_end << "\" r=\"" << radius << "\" fill=\"" << color_end << "\" />\n";
-	}
-
-	for (auto poly : _polygons) {
-		f << "<polygon points=\"";
-		for (auto pt : poly->_pts) {
-			f << pt.x << "," << pt.y << " ";
-		}
-		f << "\" fill=\"none\" stroke=\"purple\" stroke-width=\"0.02\" />\n";
-	}
-
-	_grid->_it_v= _grid->_vertices.begin();
-	while (_grid->_it_v!= _grid->_vertices.end()) {
-		number x1= _grid->_it_v->second._pos.x;
-		number y1= _grid->_it_v->second._pos.y;
-		std::string color= "black";
-		number radius= 0.01* _grid->_it_v->second._weight;
-		f << "<circle cx=\"" << x1 << "\" cy=\"" << y1 << "\" r=\"" << radius << "\" fill=\"" << color << "\" />\n";
-		//f << "<text x=\"" << x1+ 0.15f << "\" y=\"" << y1- 0.15f << "\" fill=\"black\" font-size=\"0.2px\">" << to_string(_grid->_it_v->first) << "</text>\n";
-
-		_grid->_it_e= _grid->_it_v->second._edges.begin();
-		while (_grid->_it_e!= _grid->_it_v->second._edges.end()) {
-			number x2= _grid->_vertices[_grid->_it_e->first]._pos.x;
-			number y2= _grid->_vertices[_grid->_it_e->first]._pos.y;
-			f << "<line x1=\"" << x1 << "\" y1=\"" << y1 << "\" x2=\"" << x2 << "\" y2=\"" << y2 << "\" stroke=\"black\" stroke-width=\"0.01\" />\n";
-			_grid->_it_e++;
-		}
-
-		_grid->_it_v++;
-	}
-	
-	f << "</svg>\n</body>\n</html>\n";
-	f.close();
 }
 */
 
