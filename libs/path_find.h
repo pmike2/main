@@ -59,6 +59,7 @@ struct Path {
 
 	std::vector<pt_type> _pts;
 	std::vector<uint> _nodes;
+	std::vector<number> _weights;
 	uint _idx_path;
 };
 

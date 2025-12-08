@@ -132,6 +132,7 @@ void Path::clear() {
 	_idx_path = 0;
 	_pts.clear();
 	_nodes.clear();
+	_weights.clear();
 }
 
 
@@ -159,6 +160,7 @@ void Unit::clear_path() {
 
 
 void Unit::anim() {
+	const number MAX_UNIT_MOVING_WEIGHT = 2000.0;
 	if (_mode == MOVING) {
 		if (glm::distance(_aabb->center(), _path->_pts[_path->_idx_path]) < 0.1) {
 			_path->_idx_path++;
@@ -169,7 +171,10 @@ void Unit::anim() {
 			}
 		}
 
-		_aabb->_pos += _type->_velocity * glm::normalize(_path->_pts[_path->_idx_path] - _aabb->_size * 0.5 - _aabb->_pos);
+		number unit_velociy = _type->_velocity * (1.0 - _path->_weights[_path->_idx_path] / MAX_UNIT_MOVING_WEIGHT);
+		if (unit_velociy > 0.0) {
+			_aabb->_pos += unit_velociy * glm::normalize(_path->_pts[_path->_idx_path] - _aabb->_size * 0.5 - _aabb->_pos);
+		}
 	}
 }
 
@@ -348,7 +353,7 @@ number PathFinder::heuristic(uint i, uint j, GraphGrid * grid) {
 
 number PathFinder::line_of_sight_max_weight(pt_type pt1, pt_type pt2, GraphGrid * grid) {
 	std::vector<std::pair<uint, uint> > edges = grid->segment_intersection(pt1, pt2);
-	number result = -1000.0;
+	number result = -100000.0;
 	for (auto edge : edges) {
 		pt_type v1 = pt_type(grid->_vertices[edge.first]._pos);
 		pt_type v2 = pt_type(grid->_vertices[edge.second]._pos);
@@ -456,40 +461,36 @@ bool PathFinder::path_find(pt_type start, pt_type goal, GraphGrid * grid, Path *
 	}
 	weights.push_back(-10000.0);
 
-
 	path->_pts.clear();
+	path->_weights.clear();
 	
 	bool use_line_of_sight = true;
 	if (use_line_of_sight) {
-		uint idx = 1;
+		uint idx = 0;
 		uint last = 0;
+		path->_pts.push_back(start);
+		path->_weights.push_back(0.0); // inutilisé mais nécessaire ?
 		
-		//std::cout << "raw_path size=" << raw_path.size() << "\n";
 		while (idx < raw_path.size()) {
 			//std::cout << "last = " << last << " ; idx = " << idx << "\n";
-
-			path->_pts.push_back(raw_path[last]);
-
 			number raw_max_weight = weights[last];
-			while (idx < raw_path.size() && line_of_sight_max_weight(raw_path[last], raw_path[idx], grid) <= raw_max_weight) {
-				//std::cout << "line of sight ok entre " << last << " et " << idx << "\n";
-				raw_max_weight = std::max(raw_max_weight, weights[idx]);
+			number last_los_weight_ok = 0.0;
+			while (idx < raw_path.size()) {
 				idx++;
+				number los_weight = line_of_sight_max_weight(raw_path[last], raw_path[idx], grid);
+				//std::cout << "los_weight = " << los_weight << " ; raw_max_weight = " << raw_max_weight << "\n";
+				if (los_weight> raw_max_weight) {
+					break;
+				}
+				raw_max_weight = std::max(raw_max_weight, weights[idx]);
+				last_los_weight_ok = los_weight;
 			}
 
-			if (idx == last + 1) {
-				//std::cout << "bug idx = " << idx << " last = " << last << "\n";
-				idx++;
-			}
-			
-			//idx++;
-			
 			last = idx - 1;
-			/*if (idx != raw_path.size()) {
-				path.push_back(raw_path[last]);
-			}*/
+			
+			path->_pts.push_back(raw_path[last]);
+			path->_weights.push_back(last_los_weight_ok);
 		}
-		path->_pts.push_back(goal);
 	}
 	else {
 		for (auto & p : raw_path) {
@@ -565,7 +566,7 @@ Obstacle * Map::add_obstacle(OBSTACLE_TYPE type, const std::vector<pt_type> & pt
 	_obstacles.push_back(obstacle);
 
 	for (auto & unit_type : _unit_types) {
-		Polygon2D * buffered_polygon = obstacle->_polygon->buffered(std::max(unit_type.second->_size.x, unit_type.second->_size.y) + EPS);
+		Polygon2D * buffered_polygon = obstacle->_polygon->buffered(0.5 * std::max(unit_type.second->_size.x, unit_type.second->_size.y) + EPS);
 		_buffered_obstacles[unit_type.second].push_back(new Obstacle(type, buffered_polygon));
 	}
 

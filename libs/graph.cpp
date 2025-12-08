@@ -196,7 +196,7 @@ std::pair<uint, uint> GraphGrid::pt2col_lig(pt_type pt) {
 	int col= (int)(((pt.x- _origin.x)/ _size.x)* (number)(_n_cols- 1));
 	int lig= (int)(((pt.y- _origin.y)/ _size.y)* (number)(_n_ligs- 1));
 	if (col < 0 || lig < 0 || col >= _n_cols || lig >= _n_ligs) {
-		std::cerr << "GraphGrid::pt2col_lig : pt" << glm::to_string(pt) << "hors jeu\n";
+		std::cerr << "GraphGrid::pt2col_lig : pt" << glm::to_string(pt) << " hors grille\n";
 		return std::make_pair(0, 0);
 	}
 	return std::make_pair(uint(col), uint(lig));
@@ -209,12 +209,17 @@ uint GraphGrid::pt2id(pt_type pt) {
 }
 
 
+// améliorable avec un algo genre Bresenham au lieu de parcourir tout le AABB
 std::vector<std::pair<uint, uint> > GraphGrid::segment_intersection(pt_type pt1, pt_type pt2) {
 	std::vector<std::pair<uint, uint> > result;
 	std::pair<uint, uint> col_lig_1 = pt2col_lig(pt1);
 	std::pair<uint, uint> col_lig_2 = pt2col_lig(pt2);
-	for (uint col=col_lig_1.first; col<col_lig_2.first; ++col) {
-		for (uint lig=col_lig_1.second; lig<col_lig_2.second; ++lig) {
+	uint col_min = std::min(col_lig_1.first, col_lig_2.first);
+	uint col_max = std::max(col_lig_1.first, col_lig_2.first);
+	uint lig_min = std::min(col_lig_1.second, col_lig_2.second);
+	uint lig_max = std::max(col_lig_1.second, col_lig_2.second);
+	for (uint col=col_min; col<col_max; ++col) {
+		for (uint lig=lig_min; lig<lig_max; ++lig) {
 			pt_type v1 = col_lig2pt(col, lig);
 			pt_type v2 = col_lig2pt(col + 1, lig);
 			pt_type v3 = col_lig2pt(col + 1, lig + 1);
