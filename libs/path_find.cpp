@@ -118,13 +118,32 @@ std::ostream & operator << (std::ostream & os, UnitType & ut) {
 
 
 // -------------------------------------------------
+Path::Path() : _idx_path(0) {
+
+}
+
+
+Path::~Path() {
+	
+}
+
+
+void Path::clear() {
+	_idx_path = 0;
+	_pts.clear();
+	_nodes.clear();
+}
+
+
+// -------------------------------------------------
 Unit::Unit() {
 
 }
 
 
-Unit::Unit(UnitType * type, pt_type pos, GraphGrid * grid) : _type(type), _selected(false), _idx_path(0), _mode(WAITING), _grid(grid) {
+Unit::Unit(UnitType * type, pt_type pos, GraphGrid * grid) : _type(type), _selected(false), _mode(WAITING), _grid(grid) {
 	_aabb = new AABB_2D(pos - 0.5 * _type->_size, _type->_size);
+	_path = new Path();
 }
 
 
@@ -134,9 +153,24 @@ Unit::~Unit() {
 
 
 void Unit::clear_path() {
-	_path.clear();
-	_idx_path = 0;
+	_path->clear();
 	_mode = WAITING;
+}
+
+
+void Unit::anim() {
+	if (_mode == MOVING) {
+		if (glm::distance(_aabb->center(), _path->_pts[_path->_idx_path]) < 0.1) {
+			_path->_idx_path++;
+			if (_path->_idx_path == _path->_pts.size()) {
+				_mode = WAITING;
+				clear_path();
+				return;
+			}
+		}
+
+		_aabb->_pos += _type->_velocity * glm::normalize(_path->_pts[_path->_idx_path] - _aabb->_size * 0.5 - _aabb->_pos);
+	}
 }
 
 
@@ -313,8 +347,18 @@ number PathFinder::heuristic(uint i, uint j, GraphGrid * grid) {
 
 
 number PathFinder::line_of_sight_max_weight(pt_type pt1, pt_type pt2, GraphGrid * grid) {
+	std::vector<std::pair<uint, uint> > edges = grid->segment_intersection(pt1, pt2);
 	number result = -1000.0;
-	grid->_it_v= grid->_vertices.begin();
+	for (auto edge : edges) {
+		pt_type v1 = pt_type(grid->_vertices[edge.first]._pos);
+		pt_type v2 = pt_type(grid->_vertices[edge.second]._pos);
+		number weight = grid->_vertices[edge.first]._edges[edge.second]._weight;
+		if (glm::dot(v2 - v1, pt2 - pt1) >= 0.0 && weight > result) {
+			result = weight;
+		}
+		
+	}
+	/*grid->_it_v= grid->_vertices.begin();
 	while (grid->_it_v!= grid->_vertices.end()) {
 		grid->_it_e= grid->_it_v->second._edges.begin();
 		while (grid->_it_e!= grid->_it_v->second._edges.end()) {
@@ -328,7 +372,7 @@ number PathFinder::line_of_sight_max_weight(pt_type pt1, pt_type pt2, GraphGrid 
 			grid->_it_e++;
 		}
 		grid->_it_v++;
-	}
+	}*/
 
 	return result;
 }
@@ -357,9 +401,9 @@ bool PathFinder::path_find_nodes(uint start, uint goal, GraphGrid * grid, std::v
 			if ((!cost_so_far.count(next)) || (new_cost< cost_so_far[next])) {
 				cost_so_far[next]= new_cost;
 				came_from[next]= current;
-				number priority= new_cost; // dijkstra
+				//number priority= new_cost; // dijkstra
 				//number priority= heuristic(next, goal, grid); // greedy best first search
-				//number priority= new_cost+ heuristic(next, goal, grid); // A *
+				number priority= new_cost+ heuristic(next, goal, grid); // A *
 				//std::cout << priority << "\n";
 				frontier.emplace(next, priority);
 			}
@@ -371,6 +415,7 @@ bool PathFinder::path_find_nodes(uint start, uint goal, GraphGrid * grid, std::v
 		return false;
 	}
 
+	path.clear();
 	uint current = goal;
 	while (current != start) {
 		path.push_back(current);
@@ -383,7 +428,7 @@ bool PathFinder::path_find_nodes(uint start, uint goal, GraphGrid * grid, std::v
 }
 
 
-bool PathFinder::path_find(pt_type start, pt_type goal, GraphGrid * grid, std::vector<pt_type> & path) {
+bool PathFinder::path_find(pt_type start, pt_type goal, GraphGrid * grid, Path * path) {
 	if ((!point_in_aabb(start, grid->_aabb)) || (!point_in_aabb(goal, grid->_aabb))) {
 		std::cerr << "PathFinder::path_find : point hors grille\n";
 		return false;
@@ -391,33 +436,44 @@ bool PathFinder::path_find(pt_type start, pt_type goal, GraphGrid * grid, std::v
 
 	uint start_id = grid->pt2id(start);
 	uint goal_id = grid->pt2id(goal);
-	std::vector<uint> nodes;
-	bool is_path_ok= path_find_nodes(start_id, goal_id, grid, nodes);
+	bool is_path_ok= path_find_nodes(start_id, goal_id, grid, path->_nodes);
 	if (!is_path_ok) {
 		std::cerr << "PathFinder::path_find : pas de chemin trouvé\n";
 		return false;
 	}
 
 	std::vector<pt_type> raw_path;
-	raw_path.push_back(start);
-	for (uint i=0; i<nodes.size(); ++i) {
-		raw_path.push_back(grid->_vertices[nodes[i]]._pos);
+	raw_path.push_back(start); // inutile ?
+	for (uint i=0; i<path->_nodes.size(); ++i) {
+		raw_path.push_back(grid->_vertices[path->_nodes[i]]._pos);
 	}
 	raw_path.push_back(goal);
 
-	path.clear();
+	std::vector<number> weights;
+	weights.push_back(-10000.0);
+	for (uint i=0; i<path->_nodes.size() - 1; ++i) {
+		weights.push_back(grid->_vertices[path->_nodes[i]]._edges[path->_nodes[i + 1]]._weight);
+	}
+	weights.push_back(-10000.0);
+
+
+	path->_pts.clear();
 	
-	bool use_line_of_sight = false;
+	bool use_line_of_sight = true;
 	if (use_line_of_sight) {
 		uint idx = 1;
 		uint last = 0;
+		
 		//std::cout << "raw_path size=" << raw_path.size() << "\n";
 		while (idx < raw_path.size()) {
 			//std::cout << "last = " << last << " ; idx = " << idx << "\n";
-			path.push_back(raw_path[last]);
-			
-			while (idx < raw_path.size() && line_of_sight_max_weight(raw_path[last], raw_path[idx], grid) < 100.0) {
+
+			path->_pts.push_back(raw_path[last]);
+
+			number raw_max_weight = weights[last];
+			while (idx < raw_path.size() && line_of_sight_max_weight(raw_path[last], raw_path[idx], grid) <= raw_max_weight) {
 				//std::cout << "line of sight ok entre " << last << " et " << idx << "\n";
+				raw_max_weight = std::max(raw_max_weight, weights[idx]);
 				idx++;
 			}
 
@@ -433,11 +489,11 @@ bool PathFinder::path_find(pt_type start, pt_type goal, GraphGrid * grid, std::v
 				path.push_back(raw_path[last]);
 			}*/
 		}
-		path.push_back(goal);
+		path->_pts.push_back(goal);
 	}
 	else {
 		for (auto & p : raw_path) {
-			path.push_back(p);
+			path->_pts.push_back(p);
 		}
 	}
 
@@ -598,18 +654,7 @@ void Map::read_shapefile(std::string shp_path, pt_type origin, pt_type size, boo
 
 void Map::anim() {
 	for (auto & unit : _units) {
-		if (unit->_mode == MOVING) {
-			if (glm::distance(unit->_aabb->center(), unit->_path[unit->_idx_path]) < 0.1) {
-				unit->_idx_path++;
-				if (unit->_idx_path == unit->_path.size()) {
-					unit->_mode = WAITING;
-					unit->clear_path();
-					continue;
-				}
-			}
-
-			unit->_aabb->_pos += unit->_type->_velocity * glm::normalize(unit->_path[unit->_idx_path] - unit->_aabb->_size * 0.5 - unit->_aabb->_pos);
-		}
+		unit->anim();
 	}
 }
 

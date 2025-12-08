@@ -209,6 +209,38 @@ uint GraphGrid::pt2id(pt_type pt) {
 }
 
 
+std::vector<std::pair<uint, uint> > GraphGrid::segment_intersection(pt_type pt1, pt_type pt2) {
+	std::vector<std::pair<uint, uint> > result;
+	std::pair<uint, uint> col_lig_1 = pt2col_lig(pt1);
+	std::pair<uint, uint> col_lig_2 = pt2col_lig(pt2);
+	for (uint col=col_lig_1.first; col<col_lig_2.first; ++col) {
+		for (uint lig=col_lig_1.second; lig<col_lig_2.second; ++lig) {
+			pt_type v1 = col_lig2pt(col, lig);
+			pt_type v2 = col_lig2pt(col + 1, lig);
+			pt_type v3 = col_lig2pt(col + 1, lig + 1);
+			pt_type v4 = col_lig2pt(col, lig + 1);
+			if (segment_intersects_segment(pt1, pt2, v1, v2, NULL)) {
+				result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col + 1, lig)));
+				result.push_back(std::make_pair(col_lig2id(col + 1, lig), col_lig2id(col, lig)));
+			}
+			if (segment_intersects_segment(pt1, pt2, v1, v3, NULL)) {
+				result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col + 1, lig + 1)));
+				result.push_back(std::make_pair(col_lig2id(col + 1, lig + 1), col_lig2id(col, lig)));
+			}
+			if (segment_intersects_segment(pt1, pt2, v1, v4, NULL)) {
+				result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col, lig + 1)));
+				result.push_back(std::make_pair(col_lig2id(col, lig + 1), col_lig2id(col, lig)));
+			}
+			if (segment_intersects_segment(pt1, pt2, v2, v4, NULL)) {
+				result.push_back(std::make_pair(col_lig2id(col + 1, lig), col_lig2id(col, lig + 1)));
+				result.push_back(std::make_pair(col_lig2id(col, lig + 1), col_lig2id(col + 1, lig)));
+			}
+		}
+	}
+	return result;
+}
+
+
 std::ostream & operator << (std::ostream & os, GraphGrid & g) {
 	os << static_cast<Graph &>(g);
 	return os;

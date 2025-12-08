@@ -53,6 +53,7 @@ struct GraphGrid : public Graph {
 	pt_type col_lig2pt(uint col, uint lig);
 	std::pair<uint, uint> pt2col_lig(pt_type pt);
 	uint pt2id(pt_type pt);
+	std::vector<std::pair<uint, uint> > segment_intersection(pt_type pt1, pt_type pt2);
 	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
 
 

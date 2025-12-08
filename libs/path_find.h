@@ -51,21 +51,33 @@ struct UnitType {
 };
 
 
+struct Path {
+	Path();
+	~Path();
+	void clear();
+
+
+	std::vector<pt_type> _pts;
+	std::vector<uint> _nodes;
+	uint _idx_path;
+};
+
+
 struct Unit {
 	Unit();
 	Unit(UnitType * type, pt_type pos, GraphGrid * grid);
 	~Unit();
 	void clear_path();
+	void anim();
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
 	
 	
 	UnitType * _type;
 	bool _selected;
 	AABB_2D * _aabb;
-	std::vector<pt_type> _path;
-	uint _idx_path;
 	UNIT_MODE _mode;
 	GraphGrid * _grid;
+	Path * _path;
 };
 
 
@@ -115,7 +127,7 @@ struct PathFinder {
 	number heuristic(uint i, uint j, GraphGrid * grid);
 	number line_of_sight_max_weight(pt_type pt1, pt_type pt2, GraphGrid * grid);
 	bool path_find_nodes(uint start, uint goal, GraphGrid * grid, std::vector<uint> & path);
-	bool path_find(pt_type start, pt_type goal, GraphGrid * grid, std::vector<pt_type> & path);
+	bool path_find(pt_type start, pt_type goal, GraphGrid * grid, Path * path);
 };
 
 

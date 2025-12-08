@@ -16,12 +16,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-//#include "CoreFoundation/CoreFoundation.h"
 
 #include "utile.h"
 
-
-using namespace std;
 
 
 // test égalité stricte
@@ -183,7 +180,7 @@ unsigned int diff_time_ms_from_now(struct timeval * begin) {
 }
 
 
-string current_date_time() {
+std::string current_date_time() {
 	time_t now = time(0);
 	struct tm tstruct;
 	char buf[256];
@@ -194,14 +191,14 @@ string current_date_time() {
 }
 
 
-vector<string> list_files(string ch_dir, string ext) {
-	vector<string> res;
+std::vector<std::string> list_files(std::string ch_dir, std::string ext) {
+	std::vector<std::string> res;
 	DIR *d;
 	struct dirent *dir;
 	d = opendir(ch_dir.c_str());
 	if (d) {
 		while ((dir = readdir(d)) != NULL) {
-			string f= string(dir->d_name);
+			std::string f= std::string(dir->d_name);
 			if ((ext== "") || (f.substr(f.find_last_of(".")+ 1)== ext))
 
 				if (f.back()!= '.') {
@@ -218,32 +215,32 @@ vector<string> list_files(string ch_dir, string ext) {
 }
 
 
-bool file_exists(const string filepath) {
+bool file_exists(const std::string filepath) {
 	struct stat buffer;
 	return (stat(filepath.c_str(), &buffer)== 0);
 }
 
 
-string basename(string s) {
-	string with_ext= s.substr(s.find_last_of("/")+ 1);
+std::string basename(std::string s) {
+	std::string with_ext= s.substr(s.find_last_of("/")+ 1);
 	return with_ext.substr(0, with_ext.find("."));
 }
 
 
-string dirname(string s) {
+std::string dirname(std::string s) {
 	return s.substr(0, s.find_last_of("/"));
 }
 
 
 std::pair<std::string, std::string> splitext(std::string s) {
-	string without_ext= s.substr(0, s.find_last_of("."));
-	string ext= s.substr(s.find_last_of(".") + 1);
+	std::string without_ext= s.substr(0, s.find_last_of("."));
+	std::string ext= s.substr(s.find_last_of(".") + 1);
 	return std::make_pair(without_ext, ext);
 }
 
 
 // trim from start (in place)
-void ltrim(string &s) {
+void ltrim(std::string &s) {
 	s.erase(s.begin(), find_if(s.begin(), s.end(), [](unsigned char ch) {
 		return !isspace(ch);
 	}));
@@ -251,7 +248,7 @@ void ltrim(string &s) {
 
 
 // trim from end (in place)
-void rtrim(string &s) {
+void rtrim(std::string &s) {
 	s.erase(find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
 		return !isspace(ch);
 	}).base(), s.end());
@@ -259,18 +256,18 @@ void rtrim(string &s) {
 
 
 // trim from both ends (in place)
-void trim(string &s) {
+void trim(std::string &s) {
 	rtrim(s);
 	ltrim(s);
 }
 
 
-vector<string> split(const string & s, const string & delimiter) {
+std::vector<std::string> split(const std::string & s, const std::string & delimiter) {
 	size_t pos_start= 0, pos_end, delim_len= delimiter.length();
-	string token;
-	vector<string> res;
+	std::string token;
+	std::vector<std::string> res;
 
-	while ((pos_end= s.find(delimiter, pos_start))!= string::npos) {
+	while ((pos_end= s.find(delimiter, pos_start))!= std::string::npos) {
 		token= s.substr(pos_start, pos_end- pos_start);
 		pos_start= pos_end+ delim_len;
 		res.push_back(token);
@@ -282,14 +279,14 @@ vector<string> split(const string & s, const string & delimiter) {
 
 
 // remplace glm::to_string en supprimant les 0 dans les décimales
-string glm_to_string(pt_type v) {
-	string str_x= to_string (v.x);
-	str_x.erase(str_x.find_last_not_of('0')+ 1, string::npos);
-	str_x.erase(str_x.find_last_not_of('.')+ 1, string::npos);
+std::string glm_to_string(pt_type v) {
+	std::string str_x= std::to_string (v.x);
+	str_x.erase(str_x.find_last_not_of('0')+ 1, std::string::npos);
+	str_x.erase(str_x.find_last_not_of('.')+ 1, std::string::npos);
 
-	string str_y= to_string (v.y);
-	str_y.erase(str_y.find_last_not_of('0')+ 1, string::npos);
-	str_y.erase(str_y.find_last_not_of('.')+ 1, string::npos);
+	std::string str_y= std::to_string (v.y);
+	str_y.erase(str_y.find_last_not_of('0')+ 1, std::string::npos);
+	str_y.erase(str_y.find_last_not_of('.')+ 1, std::string::npos);
 
 	return "("+ str_x+ ", "+ str_y+ ")";
 }

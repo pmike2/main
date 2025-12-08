@@ -4,6 +4,7 @@
 #include <chrono>
 
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include "utile.h"
 #include "path_find.h"

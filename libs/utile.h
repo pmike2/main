@@ -36,6 +36,7 @@ bool rand_bool();
 
 number rand_gaussian(number mean, number deviation);
 pt_type rand_gaussian(pt_type mean, pt_type deviation);
+;
 
 // perlin noise
 float perlin_lerp(float a0, float a1, float w);

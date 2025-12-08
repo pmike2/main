@@ -169,7 +169,7 @@ void TestAStar::update_linear() {
 
 	for (auto unit : _map->_units) {
 		context->_n_pts += 8; // dessin AABB
-		context->_n_pts += unit->_path.size() * 2;
+		context->_n_pts += unit->_path->_pts.size() * 2;
 	}
 
 	context->_n_attrs_per_pts= 7;
@@ -327,20 +327,20 @@ void TestAStar::update_linear() {
 
 	// chemins
 	for (auto unit : _map->_units) {
-		if (unit->_path.empty()) {
+		if (unit->_path->_pts.empty()) {
 			continue;
 		}
-		for (uint i=0; i<unit->_path.size() - 1; ++i) {
-			ptr[0] = float(unit->_path[i].x);
-			ptr[1] = float(unit->_path[i].y);
+		for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
+			ptr[0] = float(unit->_path->_pts[i].x);
+			ptr[1] = float(unit->_path->_pts[i].y);
 			ptr[2] = float(ALTI_PATH);
 			ptr[3] = PATH_COLOR.r;
 			ptr[4] = PATH_COLOR.g;
 			ptr[5] = PATH_COLOR.b;
 			ptr[6] = PATH_COLOR.a;
 
-			ptr[7] = float(unit->_path[i + 1].x);
-			ptr[8] = float(unit->_path[i + 1].y);
+			ptr[7] = float(unit->_path->_pts[i + 1].x);
+			ptr[8] = float(unit->_path->_pts[i + 1].y);
 			ptr[9] = float(ALTI_PATH);
 			ptr[10] = PATH_COLOR.r;
 			ptr[11] = PATH_COLOR.g;
