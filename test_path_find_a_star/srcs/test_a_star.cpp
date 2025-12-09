@@ -9,25 +9,41 @@ TestAStar::TestAStar() {
 }
 
 
-TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system) : _mode(FREE), _view_system(view_system) {
-	GLuint buffers[2];
-	glGenBuffers(2, buffers);
+TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system) :
+	_mode(FREE), _view_system(view_system)
+{
+	GLuint buffers[5];
+	glGenBuffers(5, buffers);
 
-	_contexts["linear"]= new DrawContext(progs["repere"], buffers[0],
+	_contexts["grid"]= new DrawContext(progs["repere"], buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 
-	_contexts["terrain"]= new DrawContext(progs["repere"], buffers[1],
+	_contexts["obstacle"]= new DrawContext(progs["repere"], buffers[1],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
+
+	_contexts["unit"]= new DrawContext(progs["repere"], buffers[2],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"world2clip_matrix"});
+
+	_contexts["path"]= new DrawContext(progs["repere"], buffers[3],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"world2clip_matrix"});
+
+	_contexts["terrain"]= new DrawContext(progs["light"], buffers[4],
+		std::vector<std::string>{"position_in", "color_in", "normal_in"},
+		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 	
 	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
 
 	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(2.0, 2.0), pt_type(1.0, 1.0));
+	//_map = new Map("../data/unit_types", pt_type(0.0, 0.0), pt_type(10.0, 10.0), pt_type(2.0, 2.0), pt_type(2.0, 2.0));
 	//std::cout << *_map << "\n";
+	//std::pair<uint, uint> x = _map->_terrain->pt2col_lig(pt_type(3.5, 0.1));
+	//std::cout << x.first << " ; " << x.second << "\n";
 
-	update_linear();
-	update_terrain();
+	update_all();
 }
 
 
@@ -41,8 +57,11 @@ TestAStar::~TestAStar() {
 }
 
 
-void TestAStar::draw_linear() {
-	DrawContext * context= _contexts["linear"];
+void TestAStar::draw_linear(std::string context_name) {
+	DrawContext * context= _contexts[context_name];
+	if (!context->_active) {
+		return;
+	}
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -68,10 +87,20 @@ void TestAStar::draw_linear() {
 
 void TestAStar::draw_terrain() {
 	DrawContext * context= _contexts["terrain"];
+	if (!context->_active) {
+		return;
+	}
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+
+	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
+	glm::vec3 light_color(1.0f);
+
 	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
+	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
+	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
 	
 	for (auto attr : context->_locs_attrib) {
 		glEnableVertexAttribArray(attr.second);
@@ -79,6 +108,7 @@ void TestAStar::draw_terrain() {
 
 	glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
 	glVertexAttribPointer(context->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3* sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["normal_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(7* sizeof(float)));
 
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 
@@ -92,16 +122,19 @@ void TestAStar::draw_terrain() {
 
 
 void TestAStar::draw() {
-	draw_linear();
+	for (auto context_name : std::vector<std::string>{"grid", "obstacle", "unit", "path"}) {
+		draw_linear(context_name);
+	}
 	draw_terrain();
 	_font->draw_3d(_view_system->_world2clip);
 }
 
 
-void TestAStar::anim(time_point t) {
+void TestAStar::anim(time_point t, InputState * input_state) {
 	if (_view_system->_new_single_selection) {
 		_view_system->_new_single_selection= false;
 		for (auto unit : _map->_units) {
+			unit->_selected = false;
 			AABB * aabb = new AABB(unit->_aabb);
 			if (_view_system->single_selection_intersects_aabb(aabb, false)) {
 				unit->_selected = true;
@@ -125,30 +158,69 @@ void TestAStar::anim(time_point t) {
 
 	_map->anim();
 
-	update_linear();
+	update_unit();
+	update_path();
 
 	std::vector<Text3D> texts;
 	for (auto unit : _map->_units) {
 		texts.push_back(Text3D(unit->_type->_name, glm::vec3(float(unit->_aabb->_pos.x), float(unit->_aabb->_pos.y), 0.0), 0.06, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 	_font->set_text(texts);
+
+
+	if (_mode == EDIT_ALTI && input_state->_left_mouse) {
+		/*Polygon2D * polygon = new Polygon2D();
+		polygon->set_rectangle(pt - pt_type(1.0), pt_type(2.0));
+		polygon->update_all();
+
+		number old_alti = _map->_terrain->get_alti_over_polygon(polygon);
+		number new_alti;
+		if (input_state->_keys[SDLK_LSHIFT]) {
+			new_alti = old_alti - 10.0;
+		}
+		else {
+			new_alti = old_alti + 10.0;
+		}
+		_map->_terrain->set_alti_over_polygon(polygon, new_alti);
+		delete polygon;*/
+
+		const number alti_aabb_size = 10.0;
+		const number alti_inc = 30.0;
+		pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+		AABB_2D * aabb = new AABB_2D(pt - pt_type(alti_aabb_size * 0.5), pt_type(alti_aabb_size));
+		std::vector<uint> ids = _map->_terrain->get_ids_over_aabb(aabb);
+		delete aabb;
+		for (auto id : ids) {
+			if (input_state->_keys[SDLK_LSHIFT]) {
+				_map->_terrain->_altis[id] -= alti_inc;
+			}
+			else {
+				_map->_terrain->_altis[id] += alti_inc;
+			}
+		}
+
+		_map->update_grids();
+		update_terrain();
+	}
 }
 
 
-void TestAStar::update_linear() {
-	DrawContext * context= _contexts["linear"];
+void TestAStar::update_grid() {
+	DrawContext * context= _contexts["grid"];
 	
+	context->_n_attrs_per_pts= 7;
 	context->_n_pts = 0;
 
-	// les croix de la grille
 	GraphGrid * grid = _map->_grids[_map->_unit_types["tank"]];
 	
+	// croix sommets
 	grid->_it_v= grid->_vertices.begin();
 	while (grid->_it_v!= grid->_vertices.end()) {
 		context->_n_pts += 4;
 		grid->_it_v++;
 	}
 
+	// edges
 	grid->_it_v= grid->_vertices.begin();
 	while (grid->_it_v!= grid->_vertices.end()) {
 		grid->_it_e= grid->_it_v->second._edges.begin();
@@ -159,25 +231,10 @@ void TestAStar::update_linear() {
 		grid->_it_v++;
 	}
 
-	for (auto obstacle : _map->_obstacles) {
-		context->_n_pts += obstacle->_polygon->_pts.size() * 2;
-	}
-	
-	if (_obstacle_pts.size() > 1) {
-		context->_n_pts += 2 * (_obstacle_pts.size() - 1);
-	}
-
-	for (auto unit : _map->_units) {
-		context->_n_pts += 8; // dessin AABB
-		context->_n_pts += unit->_path->_pts.size() * 2;
-	}
-
-	context->_n_attrs_per_pts= 7;
-
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
 
-	// croix noeuds grille
+	// croix sommets
 	grid->_it_v= grid->_vertices.begin();
 	while (grid->_it_v!= grid->_vertices.end()) {
 		pt_type_3d pos = grid->_it_v->second._pos;
@@ -200,7 +257,7 @@ void TestAStar::update_linear() {
 		grid->_it_v++;
 	}
 
-	// poids des edges
+	// edges
 	grid->_it_v= grid->_vertices.begin();
 	while (grid->_it_v!= grid->_vertices.end()) {
 		grid->_it_e= grid->_it_v->second._edges.begin();
@@ -239,6 +296,30 @@ void TestAStar::update_linear() {
 		}
 		grid->_it_v++;
 	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+void TestAStar::update_obstacle() {
+	DrawContext * context= _contexts["obstacle"];
+	
+	context->_n_attrs_per_pts= 7;
+	context->_n_pts = 0;
+
+	// obstacles existants
+	for (auto obstacle : _map->_obstacles) {
+		context->_n_pts += obstacle->_polygon->_pts.size() * 2;
+	}
+	
+	// obstacle édité
+	if (_obstacle_pts.size() > 1) {
+		context->_n_pts += 2 * (_obstacle_pts.size() - 1);
+	}
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+	float * ptr = data;
 
 	// obstacles
 	for (auto obstacle : _map->_obstacles) {
@@ -290,6 +371,25 @@ void TestAStar::update_linear() {
 		}
 	}
 
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void TestAStar::update_unit() {
+	DrawContext * context= _contexts["unit"];
+	
+	context->_n_attrs_per_pts= 7;
+	context->_n_pts = 0;
+
+	for (auto unit : _map->_units) {
+		context->_n_pts += 8; // dessin AABB
+	}
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+	float * ptr = data;
+
 	// units
 	for (auto unit : _map->_units) {
 		number positions[16] = {
@@ -325,7 +425,25 @@ void TestAStar::update_linear() {
 		}
 	}
 
-	// chemins
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void TestAStar::update_path() {
+	DrawContext * context= _contexts["path"];
+	
+	context->_n_attrs_per_pts= 7;
+	context->_n_pts = 0;
+	
+	for (auto unit : _map->_units) {
+		context->_n_pts += unit->_path->_pts.size() * 2;
+	}
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+	float * ptr = data;
+
 	for (auto unit : _map->_units) {
 		if (unit->_path->_pts.empty()) {
 			continue;
@@ -361,23 +479,40 @@ void TestAStar::update_terrain() {
 	DrawContext * context= _contexts["terrain"];
 	
 	context->_n_pts = 6 * (_map->_terrain->_n_ligs - 1) * (_map->_terrain->_n_cols - 1);
-	context->_n_attrs_per_pts = 7;
+	context->_n_attrs_per_pts = 10;
 
 	uint idx_tris[6] = {0, 1, 2, 0, 2, 3};
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
 	for (uint col = 0; col<_map->_terrain->_n_cols - 1; ++col) {
 		for (uint lig = 0; lig<_map->_terrain->_n_ligs - 1; ++lig) {
-			pt_type pts[4] = {
-				_map->_terrain->col_lig2pt(col, lig),
-				_map->_terrain->col_lig2pt(col + 1, lig),
-				_map->_terrain->col_lig2pt(col + 1, lig + 1),
-				_map->_terrain->col_lig2pt(col, lig + 1)
+			pt_type_3d pts[4] = {
+				pt_type_3d(_map->_terrain->col_lig2pt(col, lig), 0.0),
+				pt_type_3d(_map->_terrain->col_lig2pt(col + 1, lig), 0.0),
+				pt_type_3d(_map->_terrain->col_lig2pt(col + 1, lig + 1), 0.0),
+				pt_type_3d(_map->_terrain->col_lig2pt(col, lig + 1), 0.0)
 			};
-			std::vector<glm::vec4> terrain_color;
+
+			/*std::cout << "col = " << col << " ; lig = " << lig;
+			std::cout << " ; pts[0] = " << glm::to_string(pts[0]);
+			std::cout << " ; pts[1] = " << glm::to_string(pts[1]);
+			std::cout << " ; pts[2] = " << glm::to_string(pts[2]);
+			std::cout << " ; pts[3] = " << glm::to_string(pts[3]);
+			std::cout << "\n";*/
+
 			for (uint i=0; i<4; ++i) {
-				number alti = _map->_terrain->get_alti(pts[i]);
+				pts[i].z = _map->_terrain->get_alti(pt_type(pts[i].x, pts[i].y));
+			}
+			
+			std::vector<pt_type_3d> normals;
+			normals.push_back(glm::normalize(glm::cross(pts[1] - pts[0], pts[2] - pts[0])));
+			normals.push_back(glm::normalize(glm::cross(pts[2] - pts[0], pts[3] - pts[0])));
+			
+			for (uint i=0; i<6; ++i) {
 				glm::vec4 color;
+				number alti = pts[idx_tris[i]].z;
+				uint idx_normal = i / 3;
+
 				if (alti < 0.0) {
 					color = glm::vec4(0.0f, 0.7f, 0.8f, 1.0f);
 				}
@@ -387,18 +522,20 @@ void TestAStar::update_terrain() {
 				else  {
 					color = glm::vec4(float(alti) / 1000.0f, float(alti) / 1000.0f, 0.5f, 1.0f);
 				}
-				terrain_color.push_back(color);
-			}
-			for (uint i=0; i<6; ++i) {
+
 				ptr[0] = float(pts[idx_tris[i]].x);
 				ptr[1] = float(pts[idx_tris[i]].y);
-				ptr[2] = float(ALTI_TERRAIN);
-				ptr[3] = terrain_color[idx_tris[i]].r;
-				ptr[4] = terrain_color[idx_tris[i]].g;
-				ptr[5] = terrain_color[idx_tris[i]].b;
-				ptr[6] = terrain_color[idx_tris[i]].a;
+				//ptr[2] = float(ALTI_TERRAIN);
+				ptr[2] = float(alti) * 0.03f;
+				ptr[3] = color.r;
+				ptr[4] = color.g;
+				ptr[5] = color.b;
+				ptr[6] = color.a;
+				ptr[7] = float(normals[idx_normal].x);
+				ptr[8] = float(normals[idx_normal].y);
+				ptr[9] = float(normals[idx_normal].z);
 
-				ptr += 7;
+				ptr += 10;
 			}
 		}
 	}
@@ -406,6 +543,15 @@ void TestAStar::update_terrain() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
+void TestAStar::update_all() {
+	update_grid();
+	update_obstacle();
+	update_unit();
+	update_path();
+	update_terrain();
 }
 
 
@@ -445,14 +591,18 @@ bool TestAStar::mouse_button_up(InputState * input_state) {
 		_map->add_obstacle(SOLID, _obstacle_pts);
 		_map->update_grids();
 		_obstacle_pts.clear();
+		update_grid();
+		update_obstacle();
 		return true;
 	}
 	else if (_mode == ADDING_WATER_OBSTACLE) {
 		Obstacle * obstacle = _map->add_obstacle(WATER, _obstacle_pts);
 		_map->_terrain->set_alti_over_polygon(obstacle->_polygon, 0.0);
 		_map->update_grids();
-		update_terrain();
 		_obstacle_pts.clear();
+		update_grid();
+		update_obstacle();
+		update_terrain();
 		return true;
 	}
 	return false;
@@ -470,23 +620,8 @@ bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
 		}
 		return true;
 	}
-	else if (_mode == EDIT_ALTI && input_state->_left_mouse) {
-		Polygon2D * polygon = new Polygon2D();
-		polygon->set_rectangle(pt - pt_type(1.0), pt_type(2.0));
-		polygon->update_all();
-
-		number old_alti = _map->_terrain->get_alti_over_polygon(polygon);
-		number new_alti;
-		if (input_state->_keys[SDLK_LSHIFT]) {
-			new_alti = old_alti - 10.0;
-		}
-		else {
-			new_alti = old_alti + 10.0;
-		}
-		_map->_terrain->set_alti_over_polygon(polygon, new_alti);
-		_map->update_grids();
-		update_terrain();
-		delete polygon;
+	else if (_mode == EDIT_ALTI) {
+		// le code est dans anim
 		return true;
 	}
 	return false;
@@ -508,7 +643,20 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 	else if (key == SDLK_c) {
 		_map->clear();
-		update_terrain();
+		update_all();
+		return true;
+	}
+	else if (key == SDLK_g) {
+		_contexts["grid"]->_active = !_contexts["grid"]->_active;
+		return true;
+	}
+	else if (key == SDLK_h) {
+		_contexts["terrain"]->_active = !_contexts["terrain"]->_active;
+		return true;
+	}
+	else if (key == SDLK_r) {
+		_map->randomize();
+		update_all();
 		return true;
 	}
 	else if (key == SDLK_SPACE) {

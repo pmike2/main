@@ -265,6 +265,23 @@ pt_type Terrain::col_lig2pt(uint col, uint lig) {
 }
 
 
+std::pair<uint, uint> Terrain::pt2col_lig(pt_type pt) {
+	if (pt.x < _origin.x || pt.x > _origin.x + _size.x || pt.y < _origin.y || pt.y > _origin.y + _size.y) {
+		std::cerr << "Terrain::pt2col_lig : " << glm::to_string(pt) << " hors terrain\n";
+		return std::make_pair(0, 0);
+	}
+	int col= (int)(((pt.x- _origin.x)/ _size.x)* (number)(_n_cols- 1));
+	int lig= (int)(((pt.y- _origin.y)/ _size.y)* (number)(_n_ligs- 1));
+	return std::make_pair(col, lig);
+}
+
+
+uint Terrain::pt2id(pt_type pt) {
+	std::pair<uint, uint> col_lig = pt2col_lig(pt);
+	return col_lig2id(col_lig.first, col_lig.second);
+}
+
+
 number Terrain::get_alti(int col, int lig) {
 	if (col < 0 || lig < 0 || col >= _n_cols || lig >= _n_ligs) {
 		std::cerr << "Terrain::get_alti : (" << col << " ; " << lig << ") hors terrain (2!)\n";
@@ -276,13 +293,8 @@ number Terrain::get_alti(int col, int lig) {
 
 // TODO : interpolation linéaire ?
 number Terrain::get_alti(pt_type pt) {
-	if (pt.x < _origin.x || pt.x > _origin.x + _size.x || pt.y < _origin.y || pt.y > _origin.y + _size.y) {
-		std::cerr << "Terrain::get_alti : " << glm::to_string(pt) << " hors terrain\n";
-		return 0.0;
-	}
-	int col= (int)(((pt.x- _origin.x)/ _size.x)* (number)(_n_cols- 1));
-	int lig= (int)(((pt.y- _origin.y)/ _size.y)* (number)(_n_ligs- 1));
-	return get_alti(col, lig);
+	std::pair<uint, uint> col_lig = pt2col_lig(pt);
+	return get_alti(col_lig.first, col_lig.second);
 }
 
 
@@ -306,6 +318,19 @@ number Terrain::get_alti_over_polygon(Polygon2D * polygon) {
 		std::cerr << "Terrain::get_alti_over_polygon pas de pt dans polygon\n";
 		return 0.0;
 	}
+}
+
+
+std::vector<uint> Terrain::get_ids_over_aabb(AABB_2D * aabb) {
+	std::vector<uint> result;
+	std::pair<uint, uint> col_lig_min = pt2col_lig(aabb->_pos);
+	std::pair<uint, uint> col_lig_max = pt2col_lig(aabb->_pos + aabb->_size);
+	for (uint col = col_lig_min.first; col<= col_lig_max.first; ++col) {
+		for (uint lig = col_lig_min.second; lig<= col_lig_max.second; ++lig) {
+			result.push_back(col_lig2id(col, lig));
+		}
+	}
+	return result;
 }
 
 
@@ -597,11 +622,11 @@ Map::Map() {
 
 
 Map::Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution) : _origin(origin), _size(size) {
-	uint n_ligs_path = uint(_size.y / path_resolution.y);
-	uint n_cols_path = uint(_size.x / path_resolution.x);
+	uint n_ligs_path = uint(_size.y / path_resolution.y) + 1;
+	uint n_cols_path = uint(_size.x / path_resolution.x) + 1;
 
-	uint n_ligs_terrain = uint(_size.y / terrain_resolution.y);
-	uint n_cols_terrain = uint(_size.x / terrain_resolution.x);
+	uint n_ligs_terrain = uint(_size.y / terrain_resolution.y) + 1;
+	uint n_cols_terrain = uint(_size.x / terrain_resolution.x) + 1;
 
 	std::vector<std::string> jsons_paths = list_files(unit_types_dir, "json");
 	for (auto & json_path : jsons_paths) {
@@ -759,18 +784,12 @@ void Map::selected_units_goto(pt_type pt) {
 }
 
 
-/*void Map::rand(uint n_polys, uint n_pts_per_poly, number poly_radius) {
-	for (uint i=0; i<n_polys; ++i) {
-		Polygon2D * poly= new Polygon2D();
-		number x= rand_number(_grid->_origin.x, _grid->_origin.x+ _grid->_size.x);
-		number y= rand_number(_grid->_origin.y, _grid->_origin.y+ _grid->_size.y);
-		poly->randomize(n_pts_per_poly, poly_radius, pt_type(x, y));
-		_polygons.push_back(poly);
-	}
-
-	update_grid();
+void Map::randomize() {
+	clear();
+	_terrain->randomize();
+	update_grids();
 }
-*/
+
 
 
 std::ostream & operator << (std::ostream & os, Map & map) {

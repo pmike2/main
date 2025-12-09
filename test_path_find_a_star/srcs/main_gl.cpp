@@ -162,6 +162,7 @@ void init() {
 	progs["select"]= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
 	progs["font"]= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 	progs["font3d"]= create_prog("../../shaders/vertexshader_font_3d.txt", "../../shaders/fragmentshader_font.txt");
+	progs["light"]= create_prog("../../shaders/vertexshader_3d_light.txt", "../../shaders/fragmentshader_3d_light.txt");
 
 	check_gl_error();
 
@@ -197,7 +198,7 @@ void draw() {
 
 
 void anim(time_point t) {
-	test_a_star->anim(t);
+	test_a_star->anim(t, input_state);
 }
 
 

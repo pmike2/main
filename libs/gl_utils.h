@@ -45,6 +45,7 @@ public:
 	GLuint _buffer;
 	unsigned int _n_pts;
 	unsigned int _n_attrs_per_pts;
+	bool _active;
 };
 
 

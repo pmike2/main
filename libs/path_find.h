@@ -102,9 +102,12 @@ struct Terrain {
 	std::pair<uint, uint> id2col_lig(uint id);
 	uint col_lig2id(uint col, uint lig);
 	pt_type col_lig2pt(uint col, uint lig);
+	std::pair<uint, uint> pt2col_lig(pt_type pt);
+	uint pt2id(pt_type pt);
 	number get_alti(int col, int lig);
 	number get_alti(pt_type pt);
 	number get_alti_over_polygon(Polygon2D * polygon);
+	std::vector<uint> get_ids_over_aabb(AABB_2D * aabb);
 	void set_alti(int col, int lig, number alti);
 	void set_alti_over_polygon(Polygon2D * polygon, number alti);
 	void set_alti_all(number alti);
@@ -145,7 +148,7 @@ struct Map {
 	void read_shapefile(std::string shp_path, pt_type origin, pt_type size, bool reverse_y=false);
 	void anim();
 	void selected_units_goto(pt_type pt);
-	//void rand(uint n_polys, uint n_pts_per_poly, number poly_radius);
+	void randomize();
 	friend std::ostream & operator << (std::ostream & os, Map & map);
 
 
