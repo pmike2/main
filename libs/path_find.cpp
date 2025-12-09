@@ -160,7 +160,9 @@ Unit::Unit() {
 }
 
 
-Unit::Unit(UnitType * type, pt_type pos, GraphGrid * grid) : _type(type), _selected(false), _mode(WAITING), _grid(grid) {
+Unit::Unit(UnitType * type, pt_type pos, GraphGrid * grid) :
+	_type(type), _selected(false), _mode(WAITING), _grid(grid), _z(0.0)
+{
 	_aabb = new AABB_2D(pos - 0.5 * _type->_size, _type->_size);
 	_path = new Path();
 }
@@ -361,13 +363,73 @@ void Terrain::set_alti_all(number alti) {
 
 
 void Terrain::randomize() {
+	_alti_offset = 10.0;
+	_n_levels = 5;
+	_gradient_base_size = 10;
+	_max_factor = 100.0;
+	_redistribution_power = 1.2;
+
+	unsigned int gradient_w= _n_cols;
+	unsigned int gradient_h= _n_ligs;
+	number gradient[gradient_w* gradient_h* 2];
+
+	for (unsigned i=0; i<gradient_w; ++i) {
+		for (unsigned j=0; j<gradient_h; ++j) {
+			number rand_angle= rand_number(0.0, 2.0* M_PI);
+			gradient[2 * (i + j * gradient_w)] = cos(rand_angle);
+			gradient[2 * (i + j * gradient_w) + 1] = sin(rand_angle);
+		}
+
+	}
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
 			//_altis[col_lig2id(col, lig)] = rand_number(0.0, 1000.0);
-			pt_type pt = col_lig2pt(col, lig);
-			_altis[col_lig2id(col, lig)] = rand_number(300.0, 1000.0) * exp(-1.0 * pow(glm::distance(pt, _origin + 0.5 * _size) / (0.5 * _size.x), 2.0));
+			//pt_type pt = col_lig2pt(col, lig);
+			//_altis[col_lig2id(col, lig)] = rand_number(0.0, 100.0) * exp(-1.0 * pow(glm::distance(pt, _origin + 0.5 * _size) / (0.5 * _size.x), 2.0));
+			//_altis[col_lig2id(col, lig)] = perlin(col, lig, gradient, gradient_w, gradient_h);
+			//number p = perlin(col, lig, gradient, gradient_w, gradient_h);
+			//std::cout << col << " ; " << lig << " ; " << p << "\n";
+
+			_altis[col_lig2id(col, lig)] = _alti_offset;
+
 		}
 	}
+
+	for (unsigned int level=0; level<_n_levels; ++level) {
+		unsigned int gradient_w= _gradient_base_size* (level+ 1);
+		unsigned int gradient_h= _gradient_base_size* (level+ 1);
+		number gradient[gradient_w* gradient_h* 2];
+		number factor= _max_factor* pow(2.0, -1.0 * number(level));
+	
+		for (unsigned i=0; i<gradient_w; ++i) {
+			for (unsigned j=0; j<gradient_h; ++j) {
+				number rand_angle= rand_number(0.0, 2.0* M_PI);
+				gradient[2*(i+ j* gradient_w)]   = cos(rand_angle);
+				gradient[2*(i+ j* gradient_w)+ 1]= sin(rand_angle);
+			}
+		}
+	
+		for (uint col=0; col< _n_cols; ++col) {
+			for (uint lig=0; lig< _n_ligs; ++lig) {
+				number ii= number(col)* (gradient_w- 1)/ _n_cols;
+				number jj= number(lig)* (gradient_h- 1)/ _n_ligs;
+				_altis[col_lig2id(col, lig)]+= factor* perlin(ii, jj, gradient, gradient_w, gradient_h);
+			}
+		}
+	}
+
+	for (uint col=0; col< _n_cols; ++col) {
+		for (uint lig=0; lig< _n_ligs; ++lig) {
+			uint id = col_lig2id(col, lig);
+			if (_altis[id]< 0.0) {
+				_altis[id]= 0.0;
+			}
+			else {
+				_altis[id]= pow(_altis[id], _redistribution_power);
+			}
+		}
+	}
+
 }
 
 
@@ -769,6 +831,8 @@ void Map::read_shapefile(std::string shp_path, pt_type origin, pt_type size, boo
 void Map::anim() {
 	for (auto & unit : _units) {
 		unit->anim();
+		unit->_z = _terrain->get_alti(unit->_aabb->center());
+		std::cout << unit->_z << "\n";
 	}
 }
 

@@ -42,6 +42,7 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	//std::cout << *_map << "\n";
 	//std::pair<uint, uint> x = _map->_terrain->pt2col_lig(pt_type(3.5, 0.1));
 	//std::cout << x.first << " ; " << x.second << "\n";
+	_map->randomize();
 
 	update_all();
 }
@@ -408,7 +409,8 @@ void TestAStar::update_unit() {
 		for (uint i=0; i<8; ++i) {
 			ptr[0] = float(positions[2 * i]);
 			ptr[1] = float(positions[2 * i + 1]);
-			ptr[2] = float(ALTI_UNIT);
+			ptr[2] = float(unit->_z);
+			//ptr[2] = float(ALTI_UNIT);
 			if (unit->_selected) {
 				ptr[3] = SELECTED_UNIT_COLOR.r;
 				ptr[4] = SELECTED_UNIT_COLOR.g;

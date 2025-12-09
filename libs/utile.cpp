@@ -43,7 +43,7 @@ double rand_double(double x0, double x1) {
 
 
 // renvoie un float aléatoire entre x0 et x1
-float rand_float(float x0, float x1) {
+float rand_number(float x0, float x1) {
 	if (x1> x0)
 		return x0+ (x1- x0)* (float)(rand()% 10000)/ 10000;
 	else
@@ -95,17 +95,18 @@ pt_type rand_gaussian(pt_type mean, pt_type deviation) {
 
 
 // interpolation linéaire ; w doit etre entre 0 et 1
-float perlin_lerp(float a0, float a1, float w) {
-	return (1.0f- w)* a0+ w* a1;
+number perlin_lerp(number a0, number a1, number w) {
+	//std::cout << a0 << " : " << a1 << " : " << w << "\n";
+	return (1.0- w)* a0+ w* a1;
 }
 
 
 // Computes the dot product of the distance and gradient vectors.
-float perlin_dot_gradient(int ix, int iy, float x, float y, float* gradient, unsigned int gradient_w, unsigned int gradient_h) {
+number perlin_dot_gradient(int ix, int iy, number x, number y, number* gradient, unsigned int gradient_w, unsigned int gradient_h) {
 
 	// Compute the distance vector
-	float dx= x- (float)ix;
-	float dy= y- (float)iy;
+	number dx= x- (number)ix;
+	number dy= y- (number)iy;
 
 	// Compute the dot-product
 	return (dx* gradient[2* (ix+ iy* gradient_w)]+ dy* gradient[2* (ix+ iy* gradient_w)+ 1]);
@@ -113,7 +114,7 @@ float perlin_dot_gradient(int ix, int iy, float x, float y, float* gradient, uns
 
 
 // Compute Perlin noise at coordinates x, y
-float perlin(float x, float y, float* gradient, unsigned int gradient_w, unsigned int gradient_h) {
+number perlin(number x, number y, number* gradient, unsigned int gradient_w, unsigned int gradient_h) {
 	
 	// Determine grid cell coordinates
 	int x0= int(x);
@@ -123,11 +124,11 @@ float perlin(float x, float y, float* gradient, unsigned int gradient_w, unsigne
 
 	// Determine interpolation weights
 	// Could also use higher order polynomial/s-curve here
-	float sx= x- (float)x0;
-	float sy= y- (float)y0;
+	number sx= x- (number)x0;
+	number sy= y- (number)y0;
 
 	// Interpolate between grid point gradients
-	float n0, n1, ix0, ix1, value;
+	number n0, n1, ix0, ix1, value;
 	n0= perlin_dot_gradient(x0, y0, x, y, gradient, gradient_w, gradient_h);
 	n1= perlin_dot_gradient(x1, y0, x, y, gradient, gradient_w, gradient_h);
 	ix0= perlin_lerp(n0, n1, sx);
@@ -140,9 +141,9 @@ float perlin(float x, float y, float* gradient, unsigned int gradient_w, unsigne
 }
 
 
-void calculate_normal(float *coord1, float *coord2, float *coord3, float *norm) {
+void calculate_normal(number *coord1, number *coord2, number *coord3, number *norm) {
 	/* calculate Vector1 and Vector2 */
-	float va[3], vb[3], vr[3], val;
+	number va[3], vb[3], vr[3], val;
 	va[0]= coord1[0]- coord2[0];
 	va[1]= coord1[1]- coord2[1];
 	va[2]= coord1[2]- coord2[2];

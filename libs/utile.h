@@ -21,7 +21,7 @@ bool number_equals_epsilon(number x, number y, number threshold=1e-9);
 // renvoie un double aléatoire entre x0 et x1
 double rand_double(double x0, double x1);
 
-// renvoie un float aléatoire entre x0 et x1
+// renvoie un number aléatoire entre x0 et x1
 float rand_float(float x0, float x1);
 
 number rand_number(number x0, number x1);
@@ -39,12 +39,12 @@ pt_type rand_gaussian(pt_type mean, pt_type deviation);
 ;
 
 // perlin noise
-float perlin_lerp(float a0, float a1, float w);
-float perlin_dot_gradient(int ix, int iy, float x, float y, float* gradient, unsigned int gradient_w, unsigned int gradient_h);
-float perlin(float x, float y, float* gradient, unsigned int gradient_w, unsigned int gradient_h);
+number perlin_lerp(number a0, number a1, number w);
+number perlin_dot_gradient(int ix, int iy, number x, number y, number* gradient, unsigned int gradient_w, unsigned int gradient_h);
+number perlin(number x, number y, number* gradient, unsigned int gradient_w, unsigned int gradient_h);
 
 // a terme remplacer ça par un appel à glm
-void calculate_normal(float * coord1, float * coord2, float * coord3, float * norm);
+void calculate_normal(number * coord1, number * coord2, number * coord3, number * norm);
 
 unsigned int diff_time_ms(struct timeval * after, struct timeval * before);
 unsigned int diff_time_ms_from_now(struct timeval * begin);
