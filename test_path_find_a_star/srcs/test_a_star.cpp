@@ -164,7 +164,7 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 
 	std::vector<Text3D> texts;
 	for (auto unit : _map->_units) {
-		texts.push_back(Text3D(unit->_type->_name, glm::vec3(float(unit->_aabb->_pos.x), float(unit->_aabb->_pos.y), 0.0), 0.06, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		texts.push_back(Text3D(unit->_type->_name, glm::vec3(float(unit->_aabb->_pos.x), float(unit->_aabb->_pos.y), float(unit->_z)), 0.06, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 	_font->set_text(texts);
 
@@ -518,17 +518,17 @@ void TestAStar::update_terrain() {
 				if (alti < 0.0) {
 					color = glm::vec4(0.0f, 0.7f, 0.8f, 1.0f);
 				}
-				else if (alti > 1000.0) {
+				else if (alti > 10.0) {
 					color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 				}
 				else  {
-					color = glm::vec4(float(alti) / 1000.0f, float(alti) / 1000.0f, 0.5f, 1.0f);
+					color = glm::vec4(float(alti) / 10.0f, float(alti) / 10.0f, 0.5f, 1.0f);
 				}
 
 				ptr[0] = float(pts[idx_tris[i]].x);
 				ptr[1] = float(pts[idx_tris[i]].y);
 				//ptr[2] = float(ALTI_TERRAIN);
-				ptr[2] = float(alti) * 0.03f;
+				ptr[2] = float(alti);
 				ptr[3] = color.r;
 				ptr[4] = color.g;
 				ptr[5] = color.b;

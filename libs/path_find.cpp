@@ -363,11 +363,11 @@ void Terrain::set_alti_all(number alti) {
 
 
 void Terrain::randomize() {
-	_alti_offset = 10.0;
+	_alti_offset = 1.0;
 	_n_levels = 5;
 	_gradient_base_size = 10;
-	_max_factor = 100.0;
-	_redistribution_power = 1.2;
+	_max_factor = 8.0;
+	_redistribution_power = 1.0;
 
 	unsigned int gradient_w= _n_cols;
 	unsigned int gradient_h= _n_ligs;
@@ -391,7 +391,6 @@ void Terrain::randomize() {
 			//std::cout << col << " ; " << lig << " ; " << p << "\n";
 
 			_altis[col_lig2id(col, lig)] = _alti_offset;
-
 		}
 	}
 
@@ -831,8 +830,7 @@ void Map::read_shapefile(std::string shp_path, pt_type origin, pt_type size, boo
 void Map::anim() {
 	for (auto & unit : _units) {
 		unit->anim();
-		unit->_z = _terrain->get_alti(unit->_aabb->center());
-		std::cout << unit->_z << "\n";
+		unit->_z = _terrain->get_alti(unit->_aabb->center()) + 0.2;
 	}
 }
 
