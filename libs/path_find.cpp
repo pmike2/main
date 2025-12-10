@@ -363,24 +363,23 @@ void Terrain::set_alti_all(number alti) {
 
 
 void Terrain::randomize() {
-	_alti_offset = 1.0;
-	_n_levels = 5;
-	_gradient_base_size = 10;
-	_max_factor = 8.0;
-	_redistribution_power = 1.0;
+	// https://www.redblobgames.com/maps/terrain-from-noise/
 
-	unsigned int gradient_w= _n_cols;
-	unsigned int gradient_h= _n_ligs;
-	number gradient[gradient_w* gradient_h* 2];
-
-	for (unsigned i=0; i<gradient_w; ++i) {
-		for (unsigned j=0; j<gradient_h; ++j) {
-			number rand_angle= rand_number(0.0, 2.0* M_PI);
-			gradient[2 * (i + j * gradient_w)] = cos(rand_angle);
-			gradient[2 * (i + j * gradient_w) + 1] = sin(rand_angle);
-		}
-
+	number alti_offset = -1.0;
+	uint n_levels = 5;
+	uint gradient_base_size = 10;
+	number max_factor = 10.0;
+	number redistribution_power = 1.2;
+	number fudge_factor = 1.2;
+	number mix_island = 0.1;
+	number island_max_alti = 10.0;
+	std::vector<number> amplitudes {1.0, 0.5, 0.25, 0.12, 0.06};
+	//std::vector<number> amplitudes {1.0, 0.5, 0.33, 0.25, 0.2};
+	number amp_sum = 0.0;
+	for (auto & a : amplitudes) {
+		amp_sum += a;
 	}
+
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
 			//_altis[col_lig2id(col, lig)] = rand_number(0.0, 1000.0);
@@ -390,21 +389,24 @@ void Terrain::randomize() {
 			//number p = perlin(col, lig, gradient, gradient_w, gradient_h);
 			//std::cout << col << " ; " << lig << " ; " << p << "\n";
 
-			_altis[col_lig2id(col, lig)] = _alti_offset;
+			_altis[col_lig2id(col, lig)] = alti_offset;
 		}
 	}
 
-	for (unsigned int level=0; level<_n_levels; ++level) {
-		unsigned int gradient_w= _gradient_base_size* (level+ 1);
-		unsigned int gradient_h= _gradient_base_size* (level+ 1);
+	for (unsigned int level=0; level<n_levels; ++level) {
+		srand(time(NULL));
+
+		unsigned int gradient_w= gradient_base_size* (level+ 1);
+		unsigned int gradient_h= gradient_base_size* (level+ 1);
 		number gradient[gradient_w* gradient_h* 2];
-		number factor= _max_factor* pow(2.0, -1.0 * number(level));
+		//number factor= max_factor* pow(2.0, -1.0 * number(level)) / amp_sum;
+		number factor = max_factor* amplitudes[level] / amp_sum;
 	
 		for (unsigned i=0; i<gradient_w; ++i) {
 			for (unsigned j=0; j<gradient_h; ++j) {
 				number rand_angle= rand_number(0.0, 2.0* M_PI);
-				gradient[2*(i+ j* gradient_w)]   = cos(rand_angle);
-				gradient[2*(i+ j* gradient_w)+ 1]= sin(rand_angle);
+				gradient[2*(i+ j* gradient_w)]    = cos(rand_angle);
+				gradient[2*(i+ j* gradient_w)+ 1] = sin(rand_angle);
 			}
 		}
 	
@@ -412,7 +414,7 @@ void Terrain::randomize() {
 			for (uint lig=0; lig< _n_ligs; ++lig) {
 				number ii= number(col)* (gradient_w- 1)/ _n_cols;
 				number jj= number(lig)* (gradient_h- 1)/ _n_ligs;
-				_altis[col_lig2id(col, lig)]+= factor* perlin(ii, jj, gradient, gradient_w, gradient_h);
+				_altis[col_lig2id(col, lig)] += factor* perlin(ii, jj, gradient, gradient_w, gradient_h);
 			}
 		}
 	}
@@ -420,15 +422,31 @@ void Terrain::randomize() {
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
 			uint id = col_lig2id(col, lig);
-			if (_altis[id]< 0.0) {
-				_altis[id]= 0.0;
-			}
-			else {
-				_altis[id]= pow(_altis[id], _redistribution_power);
+			if (_altis[id]> 0.0) {
+				//_altis[id] = pow(_altis[id] * fudge_factor, redistribution_power);
+				_altis[id] = round(_altis[id]) + 0.5 * pow((2.0 * (_altis[id] - round(_altis[id]))), 5.0);
 			}
 		}
 	}
 
+	for (uint col=0; col< _n_cols; ++col) {
+		for (uint lig=0; lig< _n_ligs; ++lig) {
+			uint id = col_lig2id(col, lig);
+			number nx = 2.0 * number(col) / _n_cols - 1.0;
+			number ny = 2.0 * number(lig) / _n_ligs - 1.0;
+			number d = 1.0 - (1.0 - nx * nx) * (1.0 - ny * ny);
+			_altis[id] = (1.0 - mix_island) * _altis[id] + mix_island * (1.0 - d) * island_max_alti;
+		}
+	}
+
+	for (uint col=0; col< _n_cols; ++col) {
+		for (uint lig=0; lig< _n_ligs; ++lig) {
+			uint id = col_lig2id(col, lig);
+			if (_altis[id]< 0.0) {
+				_altis[id] = 0.0;
+			}
+		}
+	}
 }
 
 
@@ -696,7 +714,6 @@ Map::Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_
 	}
 	_path_finder = new PathFinder();
 	_terrain = new Terrain(_origin, _size, n_ligs_terrain, n_cols_terrain);
-	//_terrain->randomize();
 
 	update_grids();
 }

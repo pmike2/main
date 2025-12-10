@@ -120,12 +120,6 @@ struct Terrain {
 	uint _n_ligs;
 	uint _n_cols;
 	number * _altis;
-
-	number _alti_offset;
-	unsigned int _n_levels;
-	unsigned int _gradient_base_size;
-	number _max_factor;
-	number _redistribution_power;
 };
 
 

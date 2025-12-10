@@ -37,7 +37,7 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	
 	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
 
-	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(2.0, 2.0), pt_type(1.0, 1.0));
+	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(2.0, 2.0), pt_type(0.25, 0.25));
 	//_map = new Map("../data/unit_types", pt_type(0.0, 0.0), pt_type(10.0, 10.0), pt_type(2.0, 2.0), pt_type(2.0, 2.0));
 	//std::cout << *_map << "\n";
 	//std::pair<uint, uint> x = _map->_terrain->pt2col_lig(pt_type(3.5, 0.1));
@@ -186,7 +186,7 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 		delete polygon;*/
 
 		const number alti_aabb_size = 10.0;
-		const number alti_inc = 30.0;
+		const number alti_inc = 1.0;
 		pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 		AABB_2D * aabb = new AABB_2D(pt - pt_type(alti_aabb_size * 0.5), pt_type(alti_aabb_size));
 		std::vector<uint> ids = _map->_terrain->get_ids_over_aabb(aabb);
@@ -479,33 +479,23 @@ void TestAStar::update_path() {
 
 void TestAStar::update_terrain() {
 	DrawContext * context= _contexts["terrain"];
-	
+
 	context->_n_pts = 6 * (_map->_terrain->_n_ligs - 1) * (_map->_terrain->_n_cols - 1);
 	context->_n_attrs_per_pts = 10;
 
 	uint idx_tris[6] = {0, 1, 2, 0, 2, 3};
-	float data[context->_n_pts* context->_n_attrs_per_pts];
+	//float data[context->_n_pts* context->_n_attrs_per_pts]; // génère segfault car trop grand
+	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
 	for (uint col = 0; col<_map->_terrain->_n_cols - 1; ++col) {
 		for (uint lig = 0; lig<_map->_terrain->_n_ligs - 1; ++lig) {
 			pt_type_3d pts[4] = {
-				pt_type_3d(_map->_terrain->col_lig2pt(col, lig), 0.0),
-				pt_type_3d(_map->_terrain->col_lig2pt(col + 1, lig), 0.0),
-				pt_type_3d(_map->_terrain->col_lig2pt(col + 1, lig + 1), 0.0),
-				pt_type_3d(_map->_terrain->col_lig2pt(col, lig + 1), 0.0)
+				pt_type_3d(_map->_terrain->col_lig2pt(col, lig), _map->_terrain->get_alti(col, lig)),
+				pt_type_3d(_map->_terrain->col_lig2pt(col + 1, lig), _map->_terrain->get_alti(col + 1, lig)),
+				pt_type_3d(_map->_terrain->col_lig2pt(col + 1, lig + 1), _map->_terrain->get_alti(col + 1, lig + 1)),
+				pt_type_3d(_map->_terrain->col_lig2pt(col, lig + 1), _map->_terrain->get_alti(col, lig + 1))
 			};
 
-			/*std::cout << "col = " << col << " ; lig = " << lig;
-			std::cout << " ; pts[0] = " << glm::to_string(pts[0]);
-			std::cout << " ; pts[1] = " << glm::to_string(pts[1]);
-			std::cout << " ; pts[2] = " << glm::to_string(pts[2]);
-			std::cout << " ; pts[3] = " << glm::to_string(pts[3]);
-			std::cout << "\n";*/
-
-			for (uint i=0; i<4; ++i) {
-				pts[i].z = _map->_terrain->get_alti(pt_type(pts[i].x, pts[i].y));
-			}
-			
 			std::vector<pt_type_3d> normals;
 			normals.push_back(glm::normalize(glm::cross(pts[1] - pts[0], pts[2] - pts[0])));
 			normals.push_back(glm::normalize(glm::cross(pts[2] - pts[0], pts[3] - pts[0])));
@@ -545,6 +535,7 @@ void TestAStar::update_terrain() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	delete[] data;
 }
 
 
