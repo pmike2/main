@@ -94,6 +94,19 @@ pt_type rand_gaussian(pt_type mean, pt_type deviation) {
 }
 
 
+number * perlin_gradient(uint gradient_w, uint gradient_h) {
+	number * gradient = new number[gradient_w * gradient_h * 2];
+	for (uint i=0; i<gradient_w; ++i) {
+		for (uint j=0; j<gradient_h; ++j) {
+			number rand_angle= rand_number(0.0, 2.0* M_PI);
+			gradient[2 * (i + j * gradient_w)]     = cos(rand_angle);
+			gradient[2 * (i + j * gradient_w) + 1] = sin(rand_angle);
+		}
+	}
+	return gradient;
+}
+
+
 // interpolation linéaire ; w doit etre entre 0 et 1
 number perlin_lerp(number a0, number a1, number w) {
 	//std::cout << a0 << " : " << a1 << " : " << w << "\n";
@@ -102,7 +115,7 @@ number perlin_lerp(number a0, number a1, number w) {
 
 
 // Computes the dot product of the distance and gradient vectors.
-number perlin_dot_gradient(int ix, int iy, number x, number y, number* gradient, unsigned int gradient_w, unsigned int gradient_h) {
+number perlin_dot_gradient(int ix, int iy, number x, number y, number* gradient, uint gradient_w, uint gradient_h) {
 
 	// Compute the distance vector
 	number dx= x- (number)ix;
@@ -114,7 +127,7 @@ number perlin_dot_gradient(int ix, int iy, number x, number y, number* gradient,
 
 
 // Compute Perlin noise at coordinates x, y
-number perlin(number x, number y, number* gradient, unsigned int gradient_w, unsigned int gradient_h) {
+number perlin(number x, number y, number* gradient, uint gradient_w, uint gradient_h) {
 	
 	// Determine grid cell coordinates
 	int x0= int(x);
@@ -166,7 +179,7 @@ void calculate_normal(number *coord1, number *coord2, number *coord3, number *no
 }
 
 
-unsigned int diff_time_ms(struct timeval * after, struct timeval * before) {
+uint diff_time_ms(struct timeval * after, struct timeval * before) {
 	struct timeval diff;
 	timersub(after, before, &diff);
 	unsigned long i= diff.tv_sec* 1e6+ diff.tv_usec;
@@ -174,7 +187,7 @@ unsigned int diff_time_ms(struct timeval * after, struct timeval * before) {
 }
 
 
-unsigned int diff_time_ms_from_now(struct timeval * begin) {
+uint diff_time_ms_from_now(struct timeval * begin) {
 	struct timeval now;
 	gettimeofday(&now, NULL);
 	return diff_time_ms(&now, begin);

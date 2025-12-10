@@ -375,6 +375,11 @@ void Terrain::randomize() {
 	number mix_island = 0.4;
 	number island_max_alti = 20.0;
 	number terrace_factor = 0.5;
+	number terrace_hmin = 1.0;
+	number terrace_hmax = 4.0;
+	number terrace_perlin_factor = 20.0;
+	uint terrace_gradient_w= 4;
+	uint terrace_gradient_h= 4;
 
 	//std::vector<number> amplitudes {1.0, 0.5, 0.25, 0.12, 0.06};
 	std::vector<number> amplitudes {1.0, 0.5, 0.33, 0.25, 0.2};
@@ -396,22 +401,14 @@ void Terrain::randomize() {
 		}
 	}
 
-	for (unsigned int level=0; level<n_levels; ++level) {
+	for (uint level=0; level<n_levels; ++level) {
 		srand(time(NULL));
 
-		unsigned int gradient_w= gradient_base_size* (level+ 1);
-		unsigned int gradient_h= gradient_base_size* (level+ 1);
-		number gradient[gradient_w* gradient_h* 2];
+		uint gradient_w= gradient_base_size* (level+ 1);
+		uint gradient_h= gradient_base_size* (level+ 1);
+		number * gradient = perlin_gradient(gradient_w, gradient_h);
 		//number factor= max_factor* pow(2.0, -1.0 * number(level)) / amp_sum;
 		number factor = max_factor* amplitudes[level] / amp_sum;
-	
-		for (unsigned i=0; i<gradient_w; ++i) {
-			for (unsigned j=0; j<gradient_h; ++j) {
-				number rand_angle= rand_number(0.0, 2.0* M_PI);
-				gradient[2*(i+ j* gradient_w)]    = cos(rand_angle);
-				gradient[2*(i+ j* gradient_w)+ 1] = sin(rand_angle);
-			}
-		}
 	
 		for (uint col=0; col< _n_cols; ++col) {
 			for (uint lig=0; lig< _n_ligs; ++lig) {
@@ -442,25 +439,14 @@ void Terrain::randomize() {
 		}
 	}
 
-	unsigned int gradient_w= 4;
-	unsigned int gradient_h= 4;
-	number gradient[gradient_w* gradient_h* 2];
-	for (unsigned i=0; i<gradient_w; ++i) {
-		for (unsigned j=0; j<gradient_h; ++j) {
-			number rand_angle= rand_number(0.0, 2.0* M_PI);
-			gradient[2*(i+ j* gradient_w)]    = cos(rand_angle);
-			gradient[2*(i+ j* gradient_w)+ 1] = sin(rand_angle);
-		}
-	}
-	number h_terrace_min = 2.0;
-	number h_terrace_max = 4.0;
+	number * gradient = perlin_gradient(terrace_gradient_w, terrace_gradient_h);
 	//number damp = 0.9;
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
 			uint id = col_lig2id(col, lig);
-			number ii= number(col)* (gradient_w- 1)/ _n_cols;
-			number jj= number(lig)* (gradient_h- 1)/ _n_ligs;
-			number hm = 10.0 * perlin(ii, jj, gradient, gradient_w, gradient_h);
+			number ii= number(col)* (terrace_gradient_w- 1)/ _n_cols;
+			number jj= number(lig)* (terrace_gradient_h- 1)/ _n_ligs;
+			number hm = terrace_perlin_factor * perlin(ii, jj, gradient, terrace_gradient_w, terrace_gradient_h);
 			
 			/*if (h1 + hm < _altis[id] && h2 + hm > _altis[id]) {
 				_altis[id] *= damp;
@@ -469,14 +455,18 @@ void Terrain::randomize() {
 				_altis[id] -= (h2 - h1) * damp;
 			}*/
 
-			number k = floor(_altis[id] / terrace_factor);
+			/*number k = floor(_altis[id] / terrace_factor);
 			number f = (_altis[id] - k * terrace_factor) / terrace_factor;
 			number s = std::min(2.0 * f, 1.0);
-			if (h1 + hm < _altis[id] && h2 + hm > _altis[id]) {
+			if (terrace_hmin + hm < _altis[id] && terrace_hmax + hm > _altis[id]) {
 				_altis[id] = (k + s) * terrace_factor;
+			}*/
+			if (terrace_hmin + hm < _altis[id] && terrace_hmax + hm > _altis[id]) {
+				_altis[id] = round(_altis[id] * 2.0) / 2.0;
 			}
 		}
 	}
+	delete gradient;
 
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {

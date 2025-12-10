@@ -39,15 +39,16 @@ pt_type rand_gaussian(pt_type mean, pt_type deviation);
 ;
 
 // perlin noise
+number * perlin_gradient(uint gradient_w, uint gradient_h);
 number perlin_lerp(number a0, number a1, number w);
-number perlin_dot_gradient(int ix, int iy, number x, number y, number* gradient, unsigned int gradient_w, unsigned int gradient_h);
-number perlin(number x, number y, number* gradient, unsigned int gradient_w, unsigned int gradient_h);
+number perlin_dot_gradient(int ix, int iy, number x, number y, number * gradient, uint gradient_w, uint gradient_h);
+number perlin(number x, number y, number * gradient, uint gradient_w, uint gradient_h);
 
 // a terme remplacer ça par un appel à glm
 void calculate_normal(number * coord1, number * coord2, number * coord3, number * norm);
 
-unsigned int diff_time_ms(struct timeval * after, struct timeval * before);
-unsigned int diff_time_ms_from_now(struct timeval * begin);
+uint diff_time_ms(struct timeval * after, struct timeval * before);
+uint diff_time_ms_from_now(struct timeval * begin);
 std::string current_date_time();
 
 std::vector<std::string> list_files(std::string ch_dir, std::string ext="");
