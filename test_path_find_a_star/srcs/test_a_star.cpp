@@ -37,8 +37,8 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	
 	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
 
-	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(2.0, 2.0), pt_type(0.25, 0.25));
-	//_map = new Map("../data/unit_types", pt_type(0.0, 0.0), pt_type(10.0, 10.0), pt_type(2.0, 2.0), pt_type(2.0, 2.0));
+	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(2.0), pt_type(0.25));
+	//_map = new Map("../data/unit_types", pt_type(0.0, 0.0), pt_type(10.0, 10.0), pt_type(2.0), pt_type(2.0));
 	//std::cout << *_map << "\n";
 	//std::pair<uint, uint> x = _map->_terrain->pt2col_lig(pt_type(3.5, 0.1));
 	//std::cout << x.first << " ; " << x.second << "\n";
@@ -128,10 +128,13 @@ void TestAStar::draw() {
 	}
 	draw_terrain();
 	_font->draw_3d(_view_system->_world2clip);
+	_font->draw();
 }
 
 
 void TestAStar::anim(time_point t, InputState * input_state) {
+	pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+
 	if (_view_system->_new_single_selection) {
 		_view_system->_new_single_selection= false;
 		for (auto unit : _map->_units) {
@@ -162,11 +165,16 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 	update_unit();
 	update_path();
 
-	std::vector<Text3D> texts;
+	std::vector<Text3D> texts_3d;
 	for (auto unit : _map->_units) {
-		texts.push_back(Text3D(unit->_type->_name, glm::vec3(float(unit->_aabb->_pos.x), float(unit->_aabb->_pos.y), float(unit->_z)), 0.06, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		texts_3d.push_back(Text3D(unit->_type->_name, glm::vec3(float(unit->_aabb->_pos.x), float(unit->_aabb->_pos.y), float(unit->_z)), 0.06, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
-	_font->set_text(texts);
+	_font->set_text(texts_3d);
+
+	std::vector<Text> texts_2d;
+	std::string s = "x=" + std::to_string(pt.x) + " y=" + std::to_string(pt.y) + " z=" + std::to_string(_map->_terrain->get_alti(pt));
+	texts_2d.push_back(Text(s, glm::vec2(-4.0, 3.7), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	_font->set_text(texts_2d);
 
 
 	if (_mode == EDIT_ALTI && input_state->_left_mouse) {
@@ -187,7 +195,6 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 
 		const number alti_aabb_size = 10.0;
 		const number alti_inc = 1.0;
-		pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 		AABB_2D * aabb = new AABB_2D(pt - pt_type(alti_aabb_size * 0.5), pt_type(alti_aabb_size));
 		std::vector<uint> ids = _map->_terrain->get_ids_over_aabb(aabb);
 		delete aabb;

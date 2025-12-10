@@ -364,17 +364,20 @@ void Terrain::set_alti_all(number alti) {
 
 void Terrain::randomize() {
 	// https://www.redblobgames.com/maps/terrain-from-noise/
+	// https://gamedev.stackexchange.com/questions/116205/terracing-mountain-features/188513
 
-	number alti_offset = -1.0;
+	number alti_offset = -5.0;
 	uint n_levels = 5;
 	uint gradient_base_size = 10;
-	number max_factor = 10.0;
-	number redistribution_power = 1.2;
-	number fudge_factor = 1.2;
-	number mix_island = 0.1;
-	number island_max_alti = 10.0;
-	std::vector<number> amplitudes {1.0, 0.5, 0.25, 0.12, 0.06};
-	//std::vector<number> amplitudes {1.0, 0.5, 0.33, 0.25, 0.2};
+	number max_factor = 20.0;
+	number redistribution_power = 0.8;
+	number fudge_factor = 1.5;
+	number mix_island = 0.4;
+	number island_max_alti = 20.0;
+	number terrace_factor = 0.5;
+
+	//std::vector<number> amplitudes {1.0, 0.5, 0.25, 0.12, 0.06};
+	std::vector<number> amplitudes {1.0, 0.5, 0.33, 0.25, 0.2};
 	number amp_sum = 0.0;
 	for (auto & a : amplitudes) {
 		amp_sum += a;
@@ -423,11 +426,11 @@ void Terrain::randomize() {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
 			uint id = col_lig2id(col, lig);
 			if (_altis[id]> 0.0) {
-				//_altis[id] = pow(_altis[id] * fudge_factor, redistribution_power);
-				_altis[id] = round(_altis[id]) + 0.5 * pow((2.0 * (_altis[id] - round(_altis[id]))), 5.0);
+				_altis[id] = pow(_altis[id] * fudge_factor, redistribution_power);
 			}
 		}
 	}
+	
 
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
@@ -436,6 +439,42 @@ void Terrain::randomize() {
 			number ny = 2.0 * number(lig) / _n_ligs - 1.0;
 			number d = 1.0 - (1.0 - nx * nx) * (1.0 - ny * ny);
 			_altis[id] = (1.0 - mix_island) * _altis[id] + mix_island * (1.0 - d) * island_max_alti;
+		}
+	}
+
+	unsigned int gradient_w= 4;
+	unsigned int gradient_h= 4;
+	number gradient[gradient_w* gradient_h* 2];
+	for (unsigned i=0; i<gradient_w; ++i) {
+		for (unsigned j=0; j<gradient_h; ++j) {
+			number rand_angle= rand_number(0.0, 2.0* M_PI);
+			gradient[2*(i+ j* gradient_w)]    = cos(rand_angle);
+			gradient[2*(i+ j* gradient_w)+ 1] = sin(rand_angle);
+		}
+	}
+	number h_terrace_min = 2.0;
+	number h_terrace_max = 4.0;
+	//number damp = 0.9;
+	for (uint col=0; col< _n_cols; ++col) {
+		for (uint lig=0; lig< _n_ligs; ++lig) {
+			uint id = col_lig2id(col, lig);
+			number ii= number(col)* (gradient_w- 1)/ _n_cols;
+			number jj= number(lig)* (gradient_h- 1)/ _n_ligs;
+			number hm = 10.0 * perlin(ii, jj, gradient, gradient_w, gradient_h);
+			
+			/*if (h1 + hm < _altis[id] && h2 + hm > _altis[id]) {
+				_altis[id] *= damp;
+			}
+			else if (h2 + hm < _altis[id]) {
+				_altis[id] -= (h2 - h1) * damp;
+			}*/
+
+			number k = floor(_altis[id] / terrace_factor);
+			number f = (_altis[id] - k * terrace_factor) / terrace_factor;
+			number s = std::min(2.0 * f, 1.0);
+			if (h1 + hm < _altis[id] && h2 + hm > _altis[id]) {
+				_altis[id] = (k + s) * terrace_factor;
+			}
 		}
 	}
 
