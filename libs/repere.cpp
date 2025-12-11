@@ -758,6 +758,7 @@ void ViewSystem::update_selection_norms() {
 bool ViewSystem::single_selection_intersects_aabb(AABB * aabb, bool check_depth) {
 	pt_type click_world= screen2world(_rect_select->_gl_origin, 0.0);
 	number t_hit;
+	//std::cout << glm::to_string(_eye) << " ; " << glm::to_string(click_world) << " ; " << *aabb << "\n";
 	bool intersect= ray_intersects_aabb(_eye, pt_type_3d(click_world, 0.0)- _eye, aabb, t_hit);
 	if (!intersect) {
 		return false;

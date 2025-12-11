@@ -7,6 +7,7 @@
 #define GLM_FORCE_RADIANS
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include "typedefs.h"
 #include "bbox_2d.h"
@@ -24,6 +25,8 @@ public:
 	std::vector<pt_type_3d> segments();
 	void translate(pt_type_3d v);
 	void scale(number x);
+	pt_type_3d center();
+	void set_z(number z);
 	friend std::ostream & operator << (std::ostream & os, const AABB & aabb);
 
 

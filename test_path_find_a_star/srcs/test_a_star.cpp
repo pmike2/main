@@ -1,3 +1,6 @@
+#include <iostream>
+#include <sstream>
+
 #include <glm/gtc/type_ptr.hpp>
 
 #include "test_a_star.h"
@@ -139,23 +142,19 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 		_view_system->_new_single_selection= false;
 		for (auto unit : _map->_units) {
 			unit->_selected = false;
-			AABB * aabb = new AABB(unit->_aabb);
-			if (_view_system->single_selection_intersects_aabb(aabb, false)) {
+			if (_view_system->single_selection_intersects_aabb(unit->_aabb, false)) {
 				unit->_selected = true;
 			}
-			delete aabb;
 		}
 	}
 	else if (_view_system->_new_rect_selection) {
 		_view_system->_new_rect_selection= false;
 		for (auto unit : _map->_units) {
 			unit->_selected = false;
-			AABB * aabb = new AABB(unit->_aabb);
-			BBox * bbox = new BBox(aabb);
+			BBox * bbox = new BBox(unit->_aabb);
 			if (_view_system->rect_selection_intersects_bbox(bbox, false)) {
 				unit->_selected = true;
 			}
-			delete aabb;
 			delete bbox;
 		}
 	}
@@ -167,13 +166,25 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 
 	std::vector<Text3D> texts_3d;
 	for (auto unit : _map->_units) {
-		texts_3d.push_back(Text3D(unit->_type->_name, glm::vec3(float(unit->_aabb->_pos.x), float(unit->_aabb->_pos.y), float(unit->_z)), 0.06, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		texts_3d.push_back(Text3D(unit->_type->_name, glm::vec3(unit->_aabb->_vmin), 0.02, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 	_font->set_text(texts_3d);
 
 	std::vector<Text> texts_2d;
-	std::string s = "x=" + std::to_string(pt.x) + " y=" + std::to_string(pt.y) + " z=" + std::to_string(_map->_terrain->get_alti(pt));
-	texts_2d.push_back(Text(s, glm::vec2(-4.0, 3.7), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	
+	std::string s_pos = "x=" + std::to_string(pt.x) + " y=" + std::to_string(pt.y) + " z=" + std::to_string(_map->_terrain->get_alti(pt));
+	texts_2d.push_back(Text(s_pos, glm::vec2(-4.8, 3.8), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+
+	for (auto unit : _map->_units) {
+		if (unit->_selected) {
+			std::ostringstream stream;
+			stream << *unit;
+			std::string s_unit = stream.str();
+			texts_2d.push_back(Text(s_unit, glm::vec2(-4.8, 3.2), 0.002, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f), 8.0f));
+			break;
+		}
+	}
+
 	_font->set_text(texts_2d);
 
 
@@ -255,7 +266,8 @@ void TestAStar::update_grid() {
 		for (uint i=0; i<4; ++i) {
 			ptr[0] = float(positions[2 * i]);
 			ptr[1] = float(positions[2 * i + 1]);
-			ptr[2] = float(ALTI_CROSS);
+			//ptr[2] = float(ALTI_CROSS);
+			ptr[2] = float(pos.z + Z_OFFSET_CROSS);
 			ptr[3] = GRID_COLOR.r;
 			ptr[4] = GRID_COLOR.g;
 			ptr[5] = GRID_COLOR.b;
@@ -284,7 +296,8 @@ void TestAStar::update_grid() {
 			
 			ptr[0] = float(grid->_it_v->second._pos.x);
 			ptr[1] = float(grid->_it_v->second._pos.y);
-			ptr[2] = float(ALTI_EDGE);
+			//ptr[2] = float(ALTI_EDGE);
+			ptr[2] = float(grid->_it_v->second._pos.z) + 0.1f;
 			ptr[3] = edge_color.r;
 			ptr[4] = edge_color.g;
 			ptr[5] = edge_color.b;
@@ -292,7 +305,8 @@ void TestAStar::update_grid() {
 
 			ptr[7] = float(grid->_vertices[grid->_it_e->first]._pos.x);
 			ptr[8] = float(grid->_vertices[grid->_it_e->first]._pos.y);
-			ptr[9] = float(ALTI_EDGE);
+			//ptr[9] = float(ALTI_EDGE);
+			ptr[9] = float(grid->_vertices[grid->_it_e->first]._pos.z + Z_OFFSET_EDGE);
 			ptr[10] = edge_color.r;
 			ptr[11] = edge_color.g;
 			ptr[12] = edge_color.b;
@@ -392,7 +406,7 @@ void TestAStar::update_unit() {
 	context->_n_pts = 0;
 
 	for (auto unit : _map->_units) {
-		context->_n_pts += 8; // dessin AABB
+		context->_n_pts += 48; // dessin AABB
 	}
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
@@ -400,7 +414,8 @@ void TestAStar::update_unit() {
 
 	// units
 	for (auto unit : _map->_units) {
-		number positions[16] = {
+		std::vector<pt_type_3d> segs = unit->_aabb->segments();
+		/*number positions[16] = {
 			unit->_aabb->_pos.x, unit->_aabb->_pos.y,
 			unit->_aabb->_pos.x + unit->_aabb->_size.x, unit->_aabb->_pos.y,
 			
@@ -412,12 +427,15 @@ void TestAStar::update_unit() {
 			
 			unit->_aabb->_pos.x, unit->_aabb->_pos.y + unit->_aabb->_size.y,
 			unit->_aabb->_pos.x, unit->_aabb->_pos.y
-		};
-		for (uint i=0; i<8; ++i) {
-			ptr[0] = float(positions[2 * i]);
-			ptr[1] = float(positions[2 * i + 1]);
-			ptr[2] = float(unit->_z);
+		};*/
+		for (uint i=0; i < segs.size(); ++i) {
+			//ptr[0] = float(positions[2 * i]);
+			//ptr[1] = float(positions[2 * i + 1]);
+			//ptr[2] = float(unit->_z);
 			//ptr[2] = float(ALTI_UNIT);
+			ptr[0] = float(segs[i].x);
+			ptr[1] = float(segs[i].y);
+			ptr[2] = float(segs[i].z + Z_OFFSET_UNIT);
 			if (unit->_selected) {
 				ptr[3] = SELECTED_UNIT_COLOR.r;
 				ptr[4] = SELECTED_UNIT_COLOR.g;
@@ -460,7 +478,8 @@ void TestAStar::update_path() {
 		for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
 			ptr[0] = float(unit->_path->_pts[i].x);
 			ptr[1] = float(unit->_path->_pts[i].y);
-			ptr[2] = float(ALTI_PATH);
+			ptr[2] = float(unit->_path->_pts[i].z + Z_OFFSET_PATH);
+			//ptr[2] = float(ALTI_PATH);
 			ptr[3] = PATH_COLOR.r;
 			ptr[4] = PATH_COLOR.g;
 			ptr[5] = PATH_COLOR.b;
@@ -468,7 +487,8 @@ void TestAStar::update_path() {
 
 			ptr[7] = float(unit->_path->_pts[i + 1].x);
 			ptr[8] = float(unit->_path->_pts[i + 1].y);
-			ptr[9] = float(ALTI_PATH);
+			ptr[9] = float(unit->_path->_pts[i + 1].z + Z_OFFSET_PATH);
+			//ptr[9] = float(ALTI_PATH);
 			ptr[10] = PATH_COLOR.r;
 			ptr[11] = PATH_COLOR.g;
 			ptr[12] = PATH_COLOR.b;
@@ -576,7 +596,7 @@ bool TestAStar::mouse_button_down(InputState * input_state) {
 				_map->add_unit("boat", pt);
 				return true;
 			}
-			else if (input_state->_keys[SDLK_g]) {
+			else if (input_state->_keys[SDLK_p]) {
 				_map->selected_units_goto(pt);
 				return true;
 			}

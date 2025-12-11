@@ -15,6 +15,7 @@
 #include "typedefs.h"
 #include "geom_2d.h"
 #include "bbox_2d.h"
+#include "bbox.h"
 #include "graph.h"
 
 
@@ -44,7 +45,7 @@ struct UnitType {
 	
 	
 	std::string _name;
-	pt_type _size;
+	pt_type_3d _size;
 	number _velocity;
 	std::map<OBSTACLE_TYPE, number> _weights;
 	std::vector<UnitElevationCoeff> _elevation_coeffs;
@@ -58,7 +59,7 @@ struct Path {
 	friend std::ostream & operator << (std::ostream & os, Path & p);
 
 
-	std::vector<pt_type> _pts;
+	std::vector<pt_type_3d> _pts;
 	std::vector<uint> _nodes;
 	std::vector<number> _weights;
 	uint _idx_path;
@@ -67,7 +68,7 @@ struct Path {
 
 struct Unit {
 	Unit();
-	Unit(UnitType * type, pt_type pos, GraphGrid * grid);
+	Unit(UnitType * type, pt_type_3d pos, GraphGrid * grid);
 	~Unit();
 	void clear_path();
 	void anim();
@@ -76,11 +77,11 @@ struct Unit {
 	
 	UnitType * _type;
 	bool _selected;
-	AABB_2D * _aabb;
+	AABB * _aabb;
 	UNIT_MODE _mode;
 	GraphGrid * _grid;
 	Path * _path;
-	number _z;
+	number _velocity;
 };
 
 
@@ -131,9 +132,9 @@ struct PathFinder {
 	~PathFinder();
 	number cost(uint i, uint j, GraphGrid * grid);
 	number heuristic(uint i, uint j, GraphGrid * grid);
-	number line_of_sight_max_weight(pt_type pt1, pt_type pt2, GraphGrid * grid);
+	number line_of_sight_max_weight(pt_type_3d pt1, pt_type_3d pt2, GraphGrid * grid);
 	bool path_find_nodes(uint start, uint goal, GraphGrid * grid, std::vector<uint> & path);
-	bool path_find(pt_type start, pt_type goal, GraphGrid * grid, Path * path);
+	bool path_find(pt_type_3d start, pt_type_3d goal, GraphGrid * grid, Path * path);
 	void draw_svg(GraphGrid * grid, Path * path, std::string svg_path);
 };
 

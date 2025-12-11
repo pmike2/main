@@ -2,6 +2,7 @@
 #include <iostream>
 #include <algorithm>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/string_cast.hpp>
@@ -14,8 +15,8 @@ Text::Text() {
 }
 
 
-Text::Text(std::string text, glm::vec2 pos, float scale, glm::vec4 color) :
-	_text(text), _pos(pos), _scale(scale), _color(color)
+Text::Text(std::string text, glm::vec2 pos, float scale, glm::vec4 color, float wrapping) :
+	_text(text), _pos(pos), _scale(scale), _color(color), _wrapping(wrapping)
 {
 
 }
@@ -32,8 +33,8 @@ Text3D::Text3D() {
 }
 
 
-Text3D::Text3D(std::string text, glm::vec3 pos, float scale, glm::vec4 color) :
-	_text(text), _pos(pos), _scale(scale), _color(color)
+Text3D::Text3D(std::string text, glm::vec3 pos, float scale, glm::vec4 color, float wrapping) :
+	_text(text), _pos(pos), _scale(scale), _color(color), _wrapping(wrapping)
 {
 
 }
@@ -50,7 +51,7 @@ Font::Font() {
 }
 
 
-Font::Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned int font_size, ScreenGL * screengl) : _z(0.0) {
+Font::Font(std::map<std::string, GLuint> progs, std::string font_path, uint font_size, ScreenGL * screengl) : _z(0.0) {
 	FT_Library ft_lib;
 	FT_Face face;
 
@@ -70,8 +71,8 @@ Font::Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned 
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	// on crée une texture qui va contenir tous les chars dans une bande horizontale
-	unsigned int max_width= 0;
-	unsigned int max_height= 0;
+	uint max_width= 0;
+	uint max_height= 0;
 	for (unsigned char c=0; c<128; ++c) {
 		if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
 			std::cout << "Failed to load Glyph\n";
@@ -101,7 +102,7 @@ Font::Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned 
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (unsigned char c=0; c<128; ++c) {
 		if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
 			std::cout << "Failed to load Glyph\n";
@@ -155,17 +156,18 @@ Font::Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned 
 void Font::set_text(std::vector<Text> & texts) {
 	DrawContext * context = _contexts["font"];
 
-	const unsigned int n_pts_per_char= 6;
+	const uint n_pts_per_char= 6;
 	context->_n_pts= 0;
 	for (auto text : texts) {
 		context->_n_pts+= n_pts_per_char* text._text.size();
 	}
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int idx= 0;
+	uint idx= 0;
 	for (auto text: texts) {
 		float x0= text._pos.x;
 		float y0= text._pos.y;
+		
 		for (std::string::const_iterator c=text._text.begin(); c!=text._text.end(); c++) {
 			Character ch= _characters[*c];
 			
@@ -203,6 +205,12 @@ void Font::set_text(std::vector<Text> & texts) {
 			// Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
 			x0+= (float)(ch._advance >> 6)* text._scale; // Bitshift by 6 to get value in pixels (2^6 = 64)
 
+			// retour à la ligne si wrapping > 0 (pas par défaut)
+			if (text._wrapping > 0.0 && x0 - text._pos.x > text._wrapping) {
+				x0 = text._pos.x;
+				y0 -= 0.1; // à mettre en argument ?
+			}
+
 			idx++;
 		}
 	}
@@ -224,18 +232,19 @@ void Font::set_text(Text & text) {
 void Font::set_text(std::vector<Text3D> & texts) {
 	DrawContext * context = _contexts["font3d"];
 
-	const unsigned int n_pts_per_char= 6;
+	const uint n_pts_per_char= 6;
 	context->_n_pts= 0;
 	for (auto text : texts) {
 		context->_n_pts+= n_pts_per_char* text._text.size();
 	}
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int idx= 0;
+	uint idx= 0;
 	for (auto text: texts) {
 		float x0= text._pos.x;
 		float y0= text._pos.y;
 		float z = text._pos.z;
+		
 		for (std::string::const_iterator c=text._text.begin(); c!=text._text.end(); c++) {
 			Character ch= _characters[*c];
 			
@@ -272,6 +281,12 @@ void Font::set_text(std::vector<Text3D> & texts) {
 
 			// Now advance cursors for next glyph (note that advance is number of 1/64 pixels)
 			x0+= (float)(ch._advance >> 6)* text._scale; // Bitshift by 6 to get value in pixels (2^6 = 64)
+
+			// retour à la ligne si wrapping > 0 (pas par défaut)
+			if (text._wrapping > 0.0 && x0 - text._pos.x > text._wrapping) {
+				x0 = text._pos.x;
+				y0 -= 0.1; // à mettre en argument ?
+			}
 
 			idx++;
 		}

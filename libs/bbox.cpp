@@ -2,6 +2,7 @@
 #include <iostream>
 #include <cstdlib>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/constants.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -38,12 +39,15 @@ AABB::~AABB() {
 void AABB::set_vmin_vmax(const pt_type_3d & vmin, const pt_type_3d & vmax) {
 	_vmin= vmin;
 	_vmax= vmax;
-	_radius= abs(_vmin.x);
+	
+	/*_radius= abs(_vmin.x);
 	if (abs(_vmax.x)> _radius) _radius= abs(_vmax.x);
 	if (abs(_vmin.y)> _radius) _radius= abs(_vmin.y);
 	if (abs(_vmax.y)> _radius) _radius= abs(_vmax.y);
 	if (abs(_vmin.z)> _radius) _radius= abs(_vmin.z);
-	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);
+	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);*/
+
+	_radius = glm::distance(_vmin, _vmax) * 0.5;
 
 	_pts[0]= pt_type_3d(_vmin.x, _vmin.y, _vmin.z);
 	_pts[1]= pt_type_3d(_vmax.x, _vmin.y, _vmin.z);
@@ -57,7 +61,7 @@ void AABB::set_vmin_vmax(const pt_type_3d & vmin, const pt_type_3d & vmax) {
 
 
 vector<vector<unsigned int> > AABB::triangles_idxs() {
-	vector<vector<unsigned int> > idx= {
+	vector<vector<unsigned int> > idx = {
 		{0, 4, 2}, {2, 4, 6}, // x-
 		{1, 3, 7}, {1, 7, 5}, // x+
 		{0, 1, 5}, {0, 5, 4}, // y-
@@ -70,7 +74,7 @@ vector<vector<unsigned int> > AABB::triangles_idxs() {
 
 
 std::vector<pt_type_3d> AABB::segments() {
-	return std::vector<pt_type_3d>{
+	return std::vector<pt_type_3d> {
 		_pts[0], _pts[1], _pts[1], _pts[3], _pts[3], _pts[2], _pts[2], _pts[0], // bottom
 		_pts[4], _pts[5], _pts[5], _pts[7], _pts[7], _pts[6], _pts[6], _pts[4], // top
 		_pts[0], _pts[1], _pts[1], _pts[5], _pts[5], _pts[4], _pts[4], _pts[0], // left
@@ -88,6 +92,16 @@ void AABB::translate(pt_type_3d v) {
 
 void AABB::scale(number x) {
 	set_vmin_vmax(x* _vmin, x* _vmax);
+}
+
+
+pt_type_3d AABB::center() {
+	return 0.5 * (_vmin + _vmax);
+}
+
+
+void AABB::set_z(number z) {
+	set_vmin_vmax(pt_type_3d(_vmin.x, _vmin.y, z), pt_type_3d(_vmax.x, _vmax.y, _vmax.z - _vmin.z + z));
 }
 
 

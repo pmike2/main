@@ -1,6 +1,6 @@
 {
 	"name" : "boat",
-	"size" : [2.0, 2.0],
+	"size" : [1.0, 1.0, 0.5],
 	"velocity" : 0.10,
 	"weights" : {
 		"GROUND" : 1000.0,

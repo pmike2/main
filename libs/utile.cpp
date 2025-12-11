@@ -293,16 +293,25 @@ std::vector<std::string> split(const std::string & s, const std::string & delimi
 
 
 // remplace glm::to_string en supprimant les 0 dans les décimales
-std::string glm_to_string(pt_type v) {
-	std::string str_x= std::to_string (v.x);
-	str_x.erase(str_x.find_last_not_of('0')+ 1, std::string::npos);
-	str_x.erase(str_x.find_last_not_of('.')+ 1, std::string::npos);
+std::string glm_to_string(pt_type v, int n_decimals) {
+	std::string str_x, str_y;
+	if (n_decimals < 0) {
+		str_x= std::to_string(v.x);
+		str_x.erase(str_x.find_last_not_of('0')+ 1, std::string::npos);
+		str_x.erase(str_x.find_last_not_of('.')+ 1, std::string::npos);
 
-	std::string str_y= std::to_string (v.y);
-	str_y.erase(str_y.find_last_not_of('0')+ 1, std::string::npos);
-	str_y.erase(str_y.find_last_not_of('.')+ 1, std::string::npos);
-
-	return "("+ str_x+ ", "+ str_y+ ")";
+		str_y= std::to_string(v.y);
+		str_y.erase(str_y.find_last_not_of('0')+ 1, std::string::npos);
+		str_y.erase(str_y.find_last_not_of('.')+ 1, std::string::npos);
+	}
+	else {
+		std::stringstream stream_x, stream_y;
+		stream_x << std::fixed << std::setprecision(n_decimals) << v.x;
+		stream_y << std::fixed << std::setprecision(n_decimals) << v.y;
+		str_x = stream_x.str();
+		str_y = stream_y.str();
+	}
+	return "("+ str_x+ " , "+ str_y+ ")";
 }
 
 

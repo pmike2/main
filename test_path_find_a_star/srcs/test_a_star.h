@@ -31,19 +31,23 @@ const std::map<EDIT_MODE, glm::vec4> EDITED_OBSTACLE_COLORS = {
 };
 const std::map<std::string, glm::vec4> UNIT_COLORS = {
 	{"infantery", glm::vec4(1.0f, 0.7f, 0.2f, 1.0f)},
-	{"tank", glm::vec4(0.5f, 0.5f, 0.6f, 1.0f)},
-	{"boat", glm::vec4(0.3f, 0.4f, 0.7f, 1.0f)}
+	{"tank", glm::vec4(0.7f, 0.7f, 0.6f, 1.0f)},
+	{"boat", glm::vec4(0.6f, 0.4f, 0.9f, 1.0f)}
 };
 const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
 const glm::vec4 PATH_COLOR(0.7f, 0.8f, 0.3f, 1.0f);
 
-const number ALTI_UNIT = 0.0;
-const number ALTI_PATH = -0.1;
+//const number ALTI_UNIT = 0.0;
+//const number ALTI_PATH = -0.1;
 const number ALTI_OBSTACLE = -0.2;
-const number ALTI_CROSS = -0.3;
-const number ALTI_EDGE = -0.4;
-const number ALTI_TERRAIN = -0.5;
+//const number ALTI_CROSS = -0.3;
+//const number ALTI_EDGE = -0.4;
+//const number ALTI_TERRAIN = -0.5;
 
+const number Z_OFFSET_CROSS = 0.12;
+const number Z_OFFSET_EDGE = 0.1;
+const number Z_OFFSET_UNIT = 0.2;
+const number Z_OFFSET_PATH = 0.2;
 
 
 class TestAStar {

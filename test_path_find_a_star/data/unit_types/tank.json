@@ -1,6 +1,6 @@
 {
 	"name" : "tank",
-	"size" : [6.0, 4.0],
+	"size" : [1.0, 1.0, 0.5],
 	"velocity" : 0.12,
 	"weights" : {
 		"GROUND" : 0.0,

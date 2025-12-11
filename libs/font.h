@@ -39,26 +39,28 @@ struct Character {
 class Text {
 public:
 	Text();
-	Text(std::string text, glm::vec2 pos, float scale, glm::vec4 color);
+	Text(std::string text, glm::vec2 pos, float scale, glm::vec4 color, float wrapping=-1.0f);
 	~Text();
 
 	std::string _text;
 	glm::vec2 _pos;
 	float _scale;
 	glm::vec4 _color;
+	float _wrapping;
 };
 
 
 class Text3D {
 public:
 	Text3D();
-	Text3D(std::string text, glm::vec3 pos, float scale, glm::vec4 color);
+	Text3D(std::string text, glm::vec3 pos, float scale, glm::vec4 color, float wrapping=-1.0f);
 	~Text3D();
 
 	std::string _text;
 	glm::vec3 _pos;
 	float _scale;
 	glm::vec4 _color;
+	float _wrapping;
 };
 
 
@@ -67,7 +69,7 @@ public:
 class Font {
 public:
 	Font();
-	Font(std::map<std::string, GLuint> progs, std::string font_path, unsigned int font_size, ScreenGL * screengl);
+	Font(std::map<std::string, GLuint> progs, std::string font_path, uint font_size, ScreenGL * screengl);
 	void set_text(std::vector<Text> & texts);
 	void set_text(Text & text);
 	void set_text(std::vector<Text3D> & texts);
@@ -77,7 +79,7 @@ public:
 	void draw_3d(const mat_4d & world2clip);
 	
 	GLuint _texture_id;
-	unsigned int _tex_size;
+	uint _tex_size;
 	std::map<std::string, DrawContext *> _contexts;
 	std::map<char, Character> _characters;
 	mat_4d _camera2clip;
