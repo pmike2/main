@@ -117,7 +117,7 @@ void init() {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	
 	window= SDL_CreateWindow("sandbox", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
@@ -170,10 +170,8 @@ void init() {
 	
 	// --------------------------------------------------------------------------
 	view_system= new ViewSystem(progs, screengl);
-	view_system->_repere->_is_ground= false;
-	view_system->_repere->_is_repere= true;
-	view_system->_repere->_is_box= true;
-	view_system->set_2d(100.0);
+	view_system->_repere->_contexts["ground"]->_active= false;
+	view_system->set_2d(30.0);
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();
@@ -280,6 +278,12 @@ int main() {
 	init();
 	main_loop();
 	clean();
+
+	/*number x = 0.2;
+	number size = 0.25;
+	number y = fmod(x, size);
+	number z = y / size;
+	std::cout << y << " ; " << z << "\n";*/
 
 	return 0;
 }

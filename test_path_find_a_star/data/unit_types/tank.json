@@ -1,7 +1,7 @@
 {
 	"name" : "tank",
 	"size" : [1.0, 1.0, 0.5],
-	"velocity" : 0.12,
+	"max_velocity" : 0.12,
 	"weights" : {
 		"GROUND" : 0.0,
 		"SOLID" : 1000.0,

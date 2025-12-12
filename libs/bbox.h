@@ -26,6 +26,7 @@ public:
 	void translate(pt_type_3d v);
 	void scale(number x);
 	pt_type_3d center();
+	pt_type_3d bottom_center();
 	void set_z(number z);
 	friend std::ostream & operator << (std::ostream & os, const AABB & aabb);
 

@@ -12,8 +12,7 @@ Repere::Repere() {
 }
 
 
-Repere::Repere(GLuint prog_draw) : _prog_draw(prog_draw), _is_repere(true), _is_ground(true), _is_box(true) {
-	uint i;
+Repere::Repere(std::map<std::string, GLuint> progs) {
 	
 	float data_repere[]= {
 		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
@@ -51,90 +50,76 @@ Repere::Repere(GLuint prog_draw) : _prog_draw(prog_draw), _is_repere(true), _is_
 		float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2])
 	};
 
-	glGenBuffers(3, _buffers);
+	GLuint buffers[3];
+	glGenBuffers(3, buffers);
+
+	_contexts["repere"] = new DrawContext(progs["repere"], buffers[0],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"world2clip_matrix"});
+	_contexts["repere"]->_n_pts = 6;
+
+	_contexts["ground"] = new DrawContext(progs["repere"], buffers[1],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"world2clip_matrix"});
+	_contexts["ground"]->_n_pts = 6;
+
+	_contexts["box"] = new DrawContext(progs["repere"], buffers[2],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"world2clip_matrix"});
+	_contexts["box"]->_n_pts = 24;
 	
-	glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
+	glBindBuffer(GL_ARRAY_BUFFER, _contexts["repere"]->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(data_repere), data_repere, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, _buffers[1]);
+	glBindBuffer(GL_ARRAY_BUFFER, _contexts["ground"]->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(data_ground), data_ground, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
-	glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
+	glBindBuffer(GL_ARRAY_BUFFER, _contexts["box"]->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(data_box), data_box, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	
-	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
-	_diffuse_color_loc= glGetAttribLocation(_prog_draw, "color_in");
-	_world2clip_loc= glGetUniformLocation(_prog_draw, "world2clip_matrix");
 }
 
 
 Repere::~Repere() {
-	
+	for (auto & context : _contexts) {
+		delete context.second;
+	}
+	_contexts.clear();
 }
 
 
 void Repere::draw(const mat_4d & world2clip) {
-	if (_is_repere) {
-		glUseProgram(_prog_draw);
-		glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
-		
-		glEnableVertexAttribArray(_position_loc);
-		glEnableVertexAttribArray(_diffuse_color_loc);
+	for (auto & context_name : std::vector<std::string>{"repere", "ground", "box"}) {
+		DrawContext * context = _contexts[context_name];
+		if (context->_active) {
+			glUseProgram(context->_prog);
+			glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+			
+			glUniformMatrix4fv(context->_locs_uniform["world2clip"], 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
 
-		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
-		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-		glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
+			for (auto attr : context->_locs_attrib) {
+				glEnableVertexAttribArray(attr.second);
+			}
 
-		glDrawArrays(GL_LINES, 0, 6);
+			glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+			glVertexAttribPointer(context->_locs_attrib["color_in"], 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
 
-		glDisableVertexAttribArray(_position_loc);
-		glDisableVertexAttribArray(_diffuse_color_loc);
+			if (context_name == "ground") {
+				glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+			}
+			else {
+				glDrawArrays(GL_LINES, 0, context->_n_pts);
+			}
 
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glUseProgram(0);
-	}
-	
-	if (_is_ground) {
-		glUseProgram(_prog_draw);
-		glBindBuffer(GL_ARRAY_BUFFER, _buffers[1]);
+			for (auto attr : context->_locs_attrib) {
+				glDisableVertexAttribArray(attr.second);
+			}
 
-		glEnableVertexAttribArray(_position_loc);
-		glEnableVertexAttribArray(_diffuse_color_loc);
-		
-		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
-		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-		glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
-
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		glDisableVertexAttribArray(_position_loc);
-		glDisableVertexAttribArray(_diffuse_color_loc);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);		
-		glUseProgram(0);
-	}
-
-	if (_is_box) {
-		glUseProgram(_prog_draw);
-		glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
-
-		glEnableVertexAttribArray(_position_loc);
-		glEnableVertexAttribArray(_diffuse_color_loc);
-		
-		glUniformMatrix4fv(_world2clip_loc, 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
-		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-		glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
-
-		glDrawArrays(GL_LINES, 0, 24);
-
-		glDisableVertexAttribArray(_position_loc);
-		glDisableVertexAttribArray(_diffuse_color_loc);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);		
-		glUseProgram(0);
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+			glUseProgram(0);
+		}
 	}
 }
 
@@ -145,13 +130,16 @@ RectSelect::RectSelect() {
 }
 
 
-RectSelect::RectSelect(GLuint prog_draw) : 
-	_prog_draw(prog_draw), _is_active(false), _gl_origin(pt_type(0.0)), _gl_moving(pt_type(0.0)),	_color(pt_type_3d(1.0, 1.0, 0.0))
+RectSelect::RectSelect(std::map<std::string, GLuint> progs) : 
+	_is_active(false), _gl_origin(pt_type(0.0)), _gl_moving(pt_type(0.0)),	_color(pt_type_3d(1.0, 1.0, 0.0)), _z(0.0)
 {
-	glGenBuffers(1, &_buffer);
-	
-	_position_loc= glGetAttribLocation(_prog_draw, "position_in");
-	_color_loc= glGetAttribLocation(_prog_draw, "color_in");
+	GLuint buffer;
+	glGenBuffers(1, &buffer);
+
+	_context= new DrawContext(progs["select"], buffer,
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"z"});
+	_context->_n_pts = 8;
 
 	for (uint i=0; i<4; ++i) {
 		_norms[i]= pt_type_3d(0.0);
@@ -162,29 +150,35 @@ RectSelect::RectSelect(GLuint prog_draw) :
 
 
 RectSelect::~RectSelect() {
-
+	delete _context;
 }
 
 
 void RectSelect::draw() {
-	if (_is_active) {
-		glUseProgram(_prog_draw);
-		glBindBuffer(GL_ARRAY_BUFFER, _buffer);
-
-		glEnableVertexAttribArray(_position_loc);
-		glEnableVertexAttribArray(_color_loc);
-		
-		glVertexAttribPointer(_position_loc, 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)0);
-		glVertexAttribPointer(_color_loc, 3, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(2* sizeof(float)));
-
-		glDrawArrays(GL_LINES, 0, 8);
-
-		glDisableVertexAttribArray(_position_loc);
-		glDisableVertexAttribArray(_color_loc);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);		
-		glUseProgram(0);
+	if (!_is_active) {
+		return;
 	}
+
+	glUseProgram(_context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, _context->_buffer);
+
+	glUniform1f(_context->_locs_uniform["z"], float(_z));
+
+	for (auto attr : _context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+		
+	glVertexAttribPointer(_context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)0);
+	glVertexAttribPointer(_context->_locs_attrib["color_in"], 3, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(2* sizeof(float)));
+
+	glDrawArrays(GL_LINES, 0, _context->_n_pts);
+
+	for (auto attr : _context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);		
+	glUseProgram(0);
 }
 
 
@@ -221,7 +215,7 @@ void RectSelect::update_draw() {
 		float(_gl_origin.x), float(_gl_origin.y), float(_color.x), float(_color.y), float(_color.z),
 	};
 
-	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+	glBindBuffer(GL_ARRAY_BUFFER, _context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(data_selection), data_selection, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
@@ -244,10 +238,10 @@ ViewSystem::ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl)
 
 	update();
 
-	_repere= new Repere(progs["repere"]);
-	_rect_select= new RectSelect(progs["select"]);
+	_repere= new Repere(progs);
+	_rect_select= new RectSelect(progs);
 
-	_font= new Font(progs, "../../fonts/Silom.ttf", 48, screengl);
+	//_font= new Font(progs, "../../fonts/Silom.ttf", 48, screengl);
 	//_font->_z= 100.0;
 }
 
@@ -255,7 +249,7 @@ ViewSystem::ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl)
 ViewSystem::~ViewSystem() {
 	delete _repere;
 	delete _rect_select;
-	delete _font;
+	//delete _font;
 	delete _screengl;
 }
 
@@ -382,8 +376,9 @@ bool ViewSystem::key_down(InputState * input_state, SDL_Keycode key) {
 	if (_type== FREE_VIEW) {
 		// affichage repere
 		if (key== SDLK_r) {
-			_repere->_is_repere= !_repere->_is_repere;
-			_repere->_is_box= !_repere->_is_box;
+			_repere->_contexts["repere"]->_active = !_repere->_contexts["repere"]->_active;
+			_repere->_contexts["box"]->_active = !_repere->_contexts["box"]->_active;
+			_repere->_contexts["ground"]->_active = !_repere->_contexts["ground"]->_active;
 			return true;
 		}
 	}
@@ -545,33 +540,60 @@ void ViewSystem::anim(const pt_type_3d & target, const quat & rotation) {
 
 
 // cf http://antongerdelan.net/opengl/raycasting.html
-pt_type ViewSystem::screen2world(uint x, uint y, number z) {
-	pt_type gl_coords= screen2gl(x, y);
-	return screen2world(gl_coords, z);
-}
-
-
+// renvoie le pt 2d qui intersecte le plan d'alti z
 pt_type ViewSystem::screen2world(pt_type gl_coords, number z) {
 	pt_type_4d ray_clip= pt_type_4d(gl_coords.x, gl_coords.y, -1.0, 1.0);
-	//cout << "ray_clip=" << glm::to_string(ray_clip) << "\n";
 	
 	pt_type_4d ray_eye= glm::inverse(_camera2clip)* ray_clip;
 	ray_eye= pt_type_4d(ray_eye.x, ray_eye.y, -1.0, 0.0);
-	//cout << "_camera2clip=" << glm::to_string(_camera2clip) << "\n";
-	//cout << "inverse(_camera2clip)=" << glm::to_string(glm::inverse(_camera2clip)) << "\n";
-	//cout << "ray_eye=" << glm::to_string(ray_eye) << "\n";
 	
 	pt_type_3d ray_world= pt_type_3d(glm::inverse(_world2camera)* ray_eye);
 	ray_world= glm::normalize(ray_world);
-	//cout << "ray_world=" << glm::to_string(ray_world) << "\n";
 	
 	number lambda= (z- _eye.z)/ ray_world.z;
-	//cout << "lambda=" << lambda << "\n";
 	
 	pt_type_3d v= _eye+ lambda* ray_world;
-	//cout << "result=" << glm::to_string(v) << "\n";
 
 	return pt_type(v.x, v.y);
+}
+
+
+pt_type ViewSystem::screen2world(uint x, uint y, number z) {
+	return screen2world(screen2gl(x, y), z);
+}
+
+
+pt_type_3d ViewSystem::screen2world_depthbuffer(pt_type gl_coords) {
+	pt_type_4d ray_clip= pt_type_4d(gl_coords.x, gl_coords.y, -1.0, 1.0);
+	pt_type_4d ray_eye= glm::inverse(_camera2clip)* ray_clip;
+	ray_eye= pt_type_4d(ray_eye.x, ray_eye.y, -1.0, 0.0);
+	pt_type_3d ray_world= pt_type_3d(glm::inverse(_world2camera)* ray_eye);
+	ray_world= glm::normalize(ray_world);
+
+	glm::uvec2 screen_coords= gl2screen(gl_coords);
+	float buffer_depth;
+	// attention au height- y
+	glReadPixels(screen_coords.x, _screengl->_screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
+	number world_depth= depthbuffer2world(number(buffer_depth));
+	//number lambda= world_depth + _frustum_near;
+	//number lambda= world_depth;
+	//pt_type v(gl_coords.x * _frustum_halfsize, gl_coords.y * _frustum_halfsize);
+	//number lambda= sqrt(world_depth * world_depth + glm::length2(v));
+	number lambda= world_depth / glm::dot(ray_world, _dir);
+	
+	pt_type_3d result = _eye + lambda * ray_world;
+
+	/*std::cout << glm::to_string(ray_world);
+	std::cout << " ; " << buffer_depth << " ; " << world_depth;
+	std::cout << " ; " << glm::to_string(result);
+	std::cout << "\n";*/
+
+	return _eye + lambda * ray_world;
+}
+
+
+pt_type_3d ViewSystem::screen2world_depthbuffer(uint x, uint y) {
+	return screen2world_depthbuffer(screen2gl(x, y));
 }
 
 
@@ -591,7 +613,7 @@ glm::uvec2 ViewSystem::gl2screen(pt_type gl_coords) {
 
 
 number ViewSystem::depthbuffer2world(number depth) {
-	return _frustum_near* _frustum_far* 2.0/ ((2.0* depth- 1.0)* (_frustum_far- _frustum_near) - (_frustum_far+ _frustum_near));
+	return _frustum_near* _frustum_far* 2.0/ (_frustum_far+ _frustum_near - (2.0* depth- 1.0)* (_frustum_far- _frustum_near));
 }
 
 
@@ -769,10 +791,10 @@ bool ViewSystem::single_selection_intersects_aabb(AABB * aabb, bool check_depth)
 	}
 
 	glm::uvec2 screen_coords= gl2screen(_rect_select->_gl_origin);
-	number buffer_depth;
+	float buffer_depth;
 	// attention au height- y
 	glReadPixels(screen_coords.x, _screengl->_screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
-	number world_depth= depthbuffer2world(buffer_depth);
+	number world_depth= depthbuffer2world(number(buffer_depth));
 	if (abs(abs(world_depth)- t_hit)< 40.0) {
 		return true;
 	}
@@ -793,10 +815,10 @@ bool ViewSystem::rect_selection_intersects_bbox(BBox * bbox, bool check_depth) {
 	pt_type_3d center= 0.5* (bbox->_aabb->_vmin+ bbox->_aabb->_vmax);
 	pt_type_4d v= _world2clip* pt_type_4d(center, 1.0);
 	glm::uvec2 screen_coords= gl2screen(pt_type(v.x/ v.w, v.y/ v.w));
-	number buffer_depth;
+	float buffer_depth;
 	// attention au height- y
 	glReadPixels(screen_coords.x, _screengl->_screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
-	number world_depth= depthbuffer2world(buffer_depth);
+	number world_depth= depthbuffer2world(number(buffer_depth));
 	number t_hit= glm::distance(center, _eye);
 	if (abs(abs(world_depth)- t_hit)< 40.0) {
 		return true;

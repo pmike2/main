@@ -19,14 +19,16 @@
 #include "graph.h"
 
 
+const number MAX_UNIT_MOVING_WEIGHT = 100.0;
+const number UNIT_DIST_PATH_EPS = 0.05;
+
+
 enum UNIT_MODE {WAITING, MOVING};
 std::string mode2str(UNIT_MODE mode);
 
 enum OBSTACLE_TYPE {UNKNOWN, GROUND, SOLID, WATER};
 OBSTACLE_TYPE str2type(std::string s);
 std::string type2str(OBSTACLE_TYPE t);
-
-
 
 
 struct UnitElevationCoeff {
@@ -46,7 +48,7 @@ struct UnitType {
 	
 	std::string _name;
 	pt_type_3d _size;
-	number _velocity;
+	number _max_velocity;
 	std::map<OBSTACLE_TYPE, number> _weights;
 	std::vector<UnitElevationCoeff> _elevation_coeffs;
 };
@@ -56,6 +58,7 @@ struct Path {
 	Path();
 	~Path();
 	void clear();
+	bool empty();
 	friend std::ostream & operator << (std::ostream & os, Path & p);
 
 
@@ -70,8 +73,9 @@ struct Unit {
 	Unit();
 	Unit(UnitType * type, pt_type_3d pos, GraphGrid * grid);
 	~Unit();
-	void clear_path();
 	void anim();
+	void goto_next_checkpoint();
+	void stop();
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
 	
 	
@@ -81,7 +85,7 @@ struct Unit {
 	UNIT_MODE _mode;
 	GraphGrid * _grid;
 	Path * _path;
-	number _velocity;
+	pt_type_3d _velocity;
 };
 
 
@@ -104,6 +108,7 @@ struct Terrain {
 	std::pair<uint, uint> id2col_lig(uint id);
 	uint col_lig2id(uint col, uint lig);
 	pt_type col_lig2pt(uint col, uint lig);
+	pt_type id2pt(uint id);
 	std::pair<uint, uint> pt2col_lig(pt_type pt);
 	uint pt2id(pt_type pt);
 	number get_alti(int col, int lig);
@@ -118,6 +123,7 @@ struct Terrain {
 
 	pt_type _origin;
 	pt_type _size;
+	pt_type _resolution;
 	uint _n_ligs;
 	uint _n_cols;
 	number * _altis;
@@ -163,6 +169,7 @@ struct Map {
 	std::map<UnitType * , GraphGrid *> _grids;
 	std::map<UnitType * , std::vector<Obstacle *> > _buffered_obstacles;
 	Terrain * _terrain;
+	bool _paused;
 };
 
 

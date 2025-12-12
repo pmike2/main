@@ -44,10 +44,10 @@ const number ALTI_OBSTACLE = -0.2;
 //const number ALTI_EDGE = -0.4;
 //const number ALTI_TERRAIN = -0.5;
 
-const number Z_OFFSET_CROSS = 0.12;
-const number Z_OFFSET_EDGE = 0.1;
-const number Z_OFFSET_UNIT = 0.2;
-const number Z_OFFSET_PATH = 0.2;
+const number Z_OFFSET_CROSS = 0.02;
+const number Z_OFFSET_EDGE = 0.05;
+const number Z_OFFSET_UNIT = 0.05;
+const number Z_OFFSET_PATH = 0.08;
 
 
 class TestAStar {
@@ -63,8 +63,10 @@ public:
 	void update_obstacle();
 	void update_unit();
 	void update_path();
+	void update_debug();
 	void update_terrain();
 	void update_all();
+	void update_text(InputState * input_state);
 	bool mouse_button_down(InputState * input_state);
 	bool mouse_button_up(InputState * input_state);
 	bool mouse_motion(InputState * input_state, time_point t);

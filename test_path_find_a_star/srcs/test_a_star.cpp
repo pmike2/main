@@ -15,12 +15,14 @@ TestAStar::TestAStar() {
 TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system) :
 	_mode(FREE), _view_system(view_system)
 {
-	GLuint buffers[5];
-	glGenBuffers(5, buffers);
+	GLuint buffers[6];
+	glGenBuffers(6, buffers);
 
 	_contexts["grid"]= new DrawContext(progs["repere"], buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
+	
+	//_contexts["grid"]->_active = false;
 
 	_contexts["obstacle"]= new DrawContext(progs["repere"], buffers[1],
 		std::vector<std::string>{"position_in", "color_in"},
@@ -37,15 +39,20 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	_contexts["terrain"]= new DrawContext(progs["light"], buffers[4],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
-	
-	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
 
-	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(2.0), pt_type(0.25));
+	_contexts["debug"]= new DrawContext(progs["repere"], buffers[5],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"world2clip_matrix"});
+
+	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
+	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
+
+	_view_system->_rect_select->_z = -1.0; // pour que l'affichage du rectangle de sélection se fassent par dessus le reste
+
+	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(1.0), pt_type(0.25));
 	//_map = new Map("../data/unit_types", pt_type(0.0, 0.0), pt_type(10.0, 10.0), pt_type(2.0), pt_type(2.0));
 	//std::cout << *_map << "\n";
-	//std::pair<uint, uint> x = _map->_terrain->pt2col_lig(pt_type(3.5, 0.1));
-	//std::cout << x.first << " ; " << x.second << "\n";
-	_map->randomize();
+	//_map->randomize();
 
 	update_all();
 }
@@ -126,7 +133,7 @@ void TestAStar::draw_terrain() {
 
 
 void TestAStar::draw() {
-	for (auto context_name : std::vector<std::string>{"grid", "obstacle", "unit", "path"}) {
+	for (auto context_name : std::vector<std::string>{"grid", "obstacle", "unit", "path", "debug"}) {
 		draw_linear(context_name);
 	}
 	draw_terrain();
@@ -136,7 +143,8 @@ void TestAStar::draw() {
 
 
 void TestAStar::anim(time_point t, InputState * input_state) {
-	pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+	//pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+	pt_type_3d pt = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 
 	if (_view_system->_new_single_selection) {
 		_view_system->_new_single_selection= false;
@@ -163,53 +171,22 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 
 	update_unit();
 	update_path();
-
-	std::vector<Text3D> texts_3d;
-	for (auto unit : _map->_units) {
-		texts_3d.push_back(Text3D(unit->_type->_name, glm::vec3(unit->_aabb->_vmin), 0.02, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
-	}
-	_font->set_text(texts_3d);
-
-	std::vector<Text> texts_2d;
-	
-	std::string s_pos = "x=" + std::to_string(pt.x) + " y=" + std::to_string(pt.y) + " z=" + std::to_string(_map->_terrain->get_alti(pt));
-	texts_2d.push_back(Text(s_pos, glm::vec2(-4.8, 3.8), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
-
-	for (auto unit : _map->_units) {
-		if (unit->_selected) {
-			std::ostringstream stream;
-			stream << *unit;
-			std::string s_unit = stream.str();
-			texts_2d.push_back(Text(s_unit, glm::vec2(-4.8, 3.2), 0.002, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f), 8.0f));
-			break;
-		}
-	}
-
-	_font->set_text(texts_2d);
-
+	update_text(input_state);
 
 	if (_mode == EDIT_ALTI && input_state->_left_mouse) {
-		/*Polygon2D * polygon = new Polygon2D();
-		polygon->set_rectangle(pt - pt_type(1.0), pt_type(2.0));
-		polygon->update_all();
-
-		number old_alti = _map->_terrain->get_alti_over_polygon(polygon);
-		number new_alti;
-		if (input_state->_keys[SDLK_LSHIFT]) {
-			new_alti = old_alti - 10.0;
-		}
-		else {
-			new_alti = old_alti + 10.0;
-		}
-		_map->_terrain->set_alti_over_polygon(polygon, new_alti);
-		delete polygon;*/
-
 		const number alti_aabb_size = 10.0;
-		const number alti_inc = 1.0;
-		AABB_2D * aabb = new AABB_2D(pt - pt_type(alti_aabb_size * 0.5), pt_type(alti_aabb_size));
+		const number alti_inc_max = 1.0;
+		AABB_2D * aabb = new AABB_2D(pt_type(pt) - pt_type(alti_aabb_size * 0.5), pt_type(alti_aabb_size));
 		std::vector<uint> ids = _map->_terrain->get_ids_over_aabb(aabb);
 		delete aabb;
 		for (auto id : ids) {
+			pt_type pt2 = _map->_terrain->id2pt(id);
+			number dist = glm::distance(pt_type(pt), pt2) / (alti_aabb_size * 0.5);
+			if (dist > 1.0) {
+				continue;
+			}
+			number alti_inc = alti_inc_max * (1.0 - dist * dist);
+
 			if (input_state->_keys[SDLK_LSHIFT]) {
 				_map->_terrain->_altis[id] -= alti_inc;
 			}
@@ -220,6 +197,7 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 
 		_map->update_grids();
 		update_terrain();
+		update_grid();
 	}
 }
 
@@ -230,14 +208,14 @@ void TestAStar::update_grid() {
 	context->_n_attrs_per_pts= 7;
 	context->_n_pts = 0;
 
-	GraphGrid * grid = _map->_grids[_map->_unit_types["tank"]];
+	GraphGrid * grid = _map->_grids[_map->_unit_types["infantery"]];
 	
 	// croix sommets
-	grid->_it_v= grid->_vertices.begin();
+	/*grid->_it_v= grid->_vertices.begin();
 	while (grid->_it_v!= grid->_vertices.end()) {
 		context->_n_pts += 4;
 		grid->_it_v++;
-	}
+	}*/
 
 	// edges
 	grid->_it_v= grid->_vertices.begin();
@@ -250,11 +228,11 @@ void TestAStar::update_grid() {
 		grid->_it_v++;
 	}
 
-	float data[context->_n_pts* context->_n_attrs_per_pts];
+	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
 
 	// croix sommets
-	grid->_it_v= grid->_vertices.begin();
+	/*grid->_it_v= grid->_vertices.begin();
 	while (grid->_it_v!= grid->_vertices.end()) {
 		pt_type_3d pos = grid->_it_v->second._pos;
 		number positions[8] = {
@@ -275,7 +253,7 @@ void TestAStar::update_grid() {
 			ptr += 7;
 		}
 		grid->_it_v++;
-	}
+	}*/
 
 	// edges
 	grid->_it_v= grid->_vertices.begin();
@@ -287,26 +265,31 @@ void TestAStar::update_grid() {
 			if (edge_weight < 0.0) {
 				edge_color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 			}
-			else if (edge_weight > 1500.0) {
-				edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+			else if (edge_weight > 100.0) {
+				edge_color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
 			}
 			else {
-				edge_color = glm::vec4(0.5f, float(edge_weight) / 1500.0, 0.5f, 1.0f);
+				edge_color = glm::vec4(float(edge_weight) / 100.0, 1.0 - float(edge_weight) / 100.0, 0.5f, 1.0f);
 			}
+
+			pt_type_3d & p1 = grid->_it_v->second._pos;
+			pt_type_3d & p2 = grid->_vertices[grid->_it_e->first]._pos;
+			pt_type_3d p1b = p1 + (p2 - p1) * 0.1;
+			pt_type_3d p_middle = (p1 + p2) * 0.5 - (p2 - p1) * 0.1;
 			
-			ptr[0] = float(grid->_it_v->second._pos.x);
-			ptr[1] = float(grid->_it_v->second._pos.y);
+			ptr[0] = float(p1b.x);
+			ptr[1] = float(p1b.y);
 			//ptr[2] = float(ALTI_EDGE);
-			ptr[2] = float(grid->_it_v->second._pos.z) + 0.1f;
+			ptr[2] = float(p1b.z + Z_OFFSET_EDGE);
 			ptr[3] = edge_color.r;
 			ptr[4] = edge_color.g;
 			ptr[5] = edge_color.b;
 			ptr[6] = edge_color.a;
 
-			ptr[7] = float(grid->_vertices[grid->_it_e->first]._pos.x);
-			ptr[8] = float(grid->_vertices[grid->_it_e->first]._pos.y);
+			ptr[7] = float(p_middle.x);
+			ptr[8] = float(p_middle.y);
 			//ptr[9] = float(ALTI_EDGE);
-			ptr[9] = float(grid->_vertices[grid->_it_e->first]._pos.z + Z_OFFSET_EDGE);
+			ptr[9] = float(p_middle.z + Z_OFFSET_EDGE);
 			ptr[10] = edge_color.r;
 			ptr[11] = edge_color.g;
 			ptr[12] = edge_color.b;
@@ -322,6 +305,8 @@ void TestAStar::update_grid() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	delete[] data;
 }
 
 void TestAStar::update_obstacle() {
@@ -504,6 +489,55 @@ void TestAStar::update_path() {
 }
 
 
+void TestAStar::update_debug() {
+	DrawContext * context= _contexts["debug"];
+	
+	context->_n_attrs_per_pts= 7;
+	
+	uint w = 100;
+	uint h = 100;
+	number step = 0.1;
+	context->_n_pts = w * h * 2;
+
+	glm::vec4 DEBUG_COLOR(1.0, 0.8, 0.7, 1.0);
+
+	float data[context->_n_pts* context->_n_attrs_per_pts];
+	float * ptr = data;
+
+	for (uint col=0; col<w; ++col) {
+		for (uint lig=0; lig<h; ++lig) {
+			pt_type pt(number(col) * step, number(lig) * step);
+			ptr[0] = float(pt.x);
+			ptr[1] = float(pt.y);
+			ptr[2] = float(_map->_terrain->get_alti(pt));
+			ptr[3] = DEBUG_COLOR.r;
+			ptr[4] = DEBUG_COLOR.g;
+			ptr[5] = DEBUG_COLOR.b;
+			ptr[6] = DEBUG_COLOR.a;
+
+			ptr[7] = float(pt.x + 0.02);
+			ptr[8] = float(pt.y + 0.02);
+			ptr[9] = float(_map->_terrain->get_alti(pt));
+			ptr[10] = DEBUG_COLOR.r;
+			ptr[11] = DEBUG_COLOR.g;
+			ptr[12] = DEBUG_COLOR.b;
+			ptr[13] = DEBUG_COLOR.a;
+
+			ptr += 14;
+		}
+	}
+
+	/*for (uint i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+		std::cout << data[i] << " ; ";
+	}
+	std::cout << "\n";*/
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 void TestAStar::update_terrain() {
 	DrawContext * context= _contexts["terrain"];
 
@@ -575,8 +609,38 @@ void TestAStar::update_all() {
 }
 
 
+void TestAStar::update_text(InputState * input_state) {
+	pt_type_3d pt = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
+
+	std::vector<Text3D> texts_3d;
+	for (auto unit : _map->_units) {
+		texts_3d.push_back(Text3D(unit->_type->_name, glm::vec3(unit->_aabb->_vmin)+ glm::vec3(0.1, 0.1, 0.1), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	}
+	_font->set_text(texts_3d);
+
+	std::vector<Text> texts_2d;
+	
+	std::string s_pos = glm_to_string(pt);
+	texts_2d.push_back(Text(s_pos, glm::vec2(-4.8, 3.8), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+
+	for (auto unit : _map->_units) {
+		if (unit->_selected) {
+			std::ostringstream stream;
+			stream << *unit;
+			std::string s_unit = stream.str();
+			texts_2d.push_back(Text(s_unit, glm::vec2(-4.8, 3.2), 0.002, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f), 8.0f));
+			break;
+		}
+	}
+
+	_font->set_text(texts_2d);
+}
+
+
 bool TestAStar::mouse_button_down(InputState * input_state) {
-	pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+	//pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+	pt_type_3d pt_3d = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
+	pt_type pt(pt_3d.x, pt_3d.y);
 
 	if (_mode == ADDING_SOLID_OBSTACLE) {
 		_obstacle_pts.clear();
@@ -630,8 +694,6 @@ bool TestAStar::mouse_button_up(InputState * input_state) {
 
 
 bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
-	pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
-
 	if ((_mode == ADDING_SOLID_OBSTACLE || _mode == ADDING_WATER_OBSTACLE) && input_state->_left_mouse) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_added_pt_t).count();
 		if (dt> NEW_PT_IN_POLYGON_MS) {
@@ -649,6 +711,12 @@ bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
 
 
 bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
+	if (key == SDLK_a) {
+		/*std::cout << _map->_terrain->get_alti(pt_type(0.0, 0.0)) << " ; ";
+		std::cout << _map->_terrain->get_alti(pt_type(-0.1, -0.1)) << " ; ";
+		std::cout << _map->_terrain->get_alti(pt_type(0.1, 0.1)) << "\n";*/
+		update_debug();
+	}
 	if (key == SDLK_o) {
 		_mode = ADDING_SOLID_OBSTACLE;
 		return true;
@@ -680,7 +748,7 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
 		return true;
 	}
 	else if (key == SDLK_SPACE) {
-		std::cout << *_map->_grids[_map->_unit_types["tank"]] << "\n";
+		_map->_paused = !_map->_paused;
 		return true;
 	}
 	return false;

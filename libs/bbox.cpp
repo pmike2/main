@@ -100,6 +100,11 @@ pt_type_3d AABB::center() {
 }
 
 
+pt_type_3d AABB::bottom_center() {
+	return pt_type_3d(0.5 * (_vmin.x + _vmax.x), 0.5 * (_vmin.y + _vmax.y), _vmin.z);
+}
+
+
 void AABB::set_z(number z) {
 	set_vmin_vmax(pt_type_3d(_vmin.x, _vmin.y, z), pt_type_3d(_vmax.x, _vmax.y, _vmax.z - _vmin.z + z));
 }

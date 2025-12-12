@@ -64,6 +64,7 @@ void trim(std::string &s);
 std::vector<std::string> split(const std::string& s, const std::string& delimiter);
 
 std::string glm_to_string(pt_type v, int n_decimals=-1);
+std::string glm_to_string(pt_type_3d v, int n_decimals=-1);
 
 std::string get_cmd_output(std::string cmd);
 

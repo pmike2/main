@@ -32,7 +32,7 @@ const number REPERE_BOX= 100.0;
 
 // sert à initialiser camera2clip pour fenetres 3D
 const number FRUSTUM_NEAR= 10.0;
-const number FRUSTUM_FAR= 1000.0;
+const number FRUSTUM_FAR= 500.0;
 const number FRUSTUM_HALFSIZE= 5.0;
 
 // ajoute une marge a l'ensemble des points contenus dans le champ de vision
@@ -55,24 +55,19 @@ const pt_type_3d BOX_COLOR(0.5f, 0.5f, 0.5f);
 class Repere {
 public:
 	Repere();
-	Repere(GLuint prog_draw);
+	Repere(std::map<std::string, GLuint> progs);
 	~Repere();
 	void draw(const mat_4d & world2clip);
 	
 	
-	GLuint _prog_draw;
-	GLint _world2clip_loc, _position_loc, _diffuse_color_loc;
-	GLuint _buffers[3];
-	bool _is_repere;
-	bool _is_ground;
-	bool _is_box;
+	std::map<std::string, DrawContext *> _contexts;
 };
 
 
 class RectSelect {
 public:
 	RectSelect();
-	RectSelect(GLuint prog_draw);
+	RectSelect(std::map<std::string, GLuint> progs);
 	~RectSelect();
 	void draw();
 	void set_origin(pt_type gl_v);
@@ -81,9 +76,8 @@ public:
 	void update_draw();
 
 
-	GLuint _prog_draw;
-	GLint _position_loc, _color_loc;
-	GLuint _buffer;
+	DrawContext * _context;
+	number _z;
 	bool _is_active;
 	pt_type _gl_origin;
 	pt_type _gl_moving;
@@ -113,8 +107,10 @@ public:
 	void move_phi(number x);
 	void move_theta(number x);
 	void move_rho(number x);
-	pt_type screen2world(uint x, uint y, number z);
 	pt_type screen2world(pt_type gl_coords, number z);
+	pt_type screen2world(uint x, uint y, number z);
+	pt_type_3d screen2world_depthbuffer(pt_type gl_coords);
+	pt_type_3d screen2world_depthbuffer(uint x, uint y);
 	pt_type screen2gl(uint x, uint y);
 	glm::uvec2 gl2screen(pt_type gl_coords);
 	number depthbuffer2world(number depth);
@@ -152,7 +148,7 @@ public:
 	
 	Repere * _repere;
 
-	Font * _font;
+	//Font * _font;
 	
 	RectSelect * _rect_select;
 	bool _new_single_selection;

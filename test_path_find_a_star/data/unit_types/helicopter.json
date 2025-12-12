@@ -1,7 +1,7 @@
 {
 	"name" : "helicopter",
 	"size" : [1.0, 1.0, 0.5],
-	"velocity" : 0.15,
+	"max_velocity" : 0.15,
 	"weights" : {
 		"GROUND" : 1.0,
 		"SOLID" : 1.0,
