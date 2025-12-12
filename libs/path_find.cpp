@@ -298,8 +298,8 @@ uint Terrain::col_lig2id(uint col, uint lig) {
 
 pt_type Terrain::col_lig2pt(uint col, uint lig) {
 	return pt_type(
-		_origin.x+ ((number)(col)/ (number)(_n_cols - 1))* _size.x,
-		_origin.y+ ((number)(lig)/ (number)(_n_ligs - 1))* _size.y
+		_origin.x+ (number)(col) * _resolution.x,
+		_origin.y+ (number)(lig) * _resolution.y
 	);
 }
 
