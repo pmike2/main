@@ -559,6 +559,28 @@ void Terrain::randomize() {
 			}
 		}
 	}
+
+	alti2pbm("../data/test.pgm");
+}
+
+
+void Terrain::alti2pbm(std::string pbm_path) {
+	FILE *f;
+	f= fopen(pbm_path.c_str(), "wb");
+	//fprintf(f, "P1\n%d %d\n", _n_cols, _n_ligs);
+	fprintf(f, "P2\n%d %d\n1\n", _n_cols, _n_ligs);
+	for (uint lig=0; lig<_n_ligs; ++lig) {
+		for (uint col=0; col<_n_cols; ++col) {
+			int v = 0;
+			if (get_alti(col, lig) < 0.1) {
+				v = 1;
+			}
+			fprintf(f, "%d ", v);
+		}
+		fprintf(f, "\n");
+	}
+	fclose(f);
+
 }
 
 

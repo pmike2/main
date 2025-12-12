@@ -119,6 +119,7 @@ struct Terrain {
 	void set_alti_over_polygon(Polygon2D * polygon, number alti);
 	void set_alti_all(number alti);
 	void randomize();
+	void alti2pbm(std::string pbm_path);
 
 
 	pt_type _origin;
