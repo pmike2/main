@@ -378,8 +378,8 @@ number Terrain::get_alti(pt_type pt) {
 	alti_left = alti_left_bottom * (1.0 - lig_mod) + alti_left_top * lig_mod;
 	alti_right = alti_right_bottom * (1.0 - lig_mod) + alti_right_top * lig_mod;
 
-	//return alti_left * (1.0 - col_mod) + alti_right * col_mod;
-	return lig_mod;
+	return alti_left * (1.0 - col_mod) + alti_right * col_mod;
+	//return lig_mod;
 }
 
 
