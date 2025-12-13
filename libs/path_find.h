@@ -143,6 +143,9 @@ struct PathFinder {
 	bool path_find_nodes(uint start, uint goal, GraphGrid * grid, std::vector<uint> & path);
 	bool path_find(pt_type_3d start, pt_type_3d goal, GraphGrid * grid, Path * path);
 	void draw_svg(GraphGrid * grid, Path * path, std::string svg_path);
+
+
+	bool _use_line_of_sight;
 };
 
 

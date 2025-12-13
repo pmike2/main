@@ -747,6 +747,10 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
 		update_all();
 		return true;
 	}
+	else if (key == SDLK_l) {
+		_map->_path_finder->_use_line_of_sight = !_map->_path_finder->_use_line_of_sight;
+		return true;
+	}
 	else if (key == SDLK_SPACE) {
 		_map->_paused = !_map->_paused;
 		return true;

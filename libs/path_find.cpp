@@ -590,7 +590,7 @@ bool frontier_cmp(std::pair<uint, number> x, std::pair<uint, number> y) {
 }
 
 
-PathFinder::PathFinder() {
+PathFinder::PathFinder() : _use_line_of_sight(true) {
 
 }
 
@@ -713,45 +713,60 @@ bool PathFinder::path_find(pt_type_3d start, pt_type_3d goal, GraphGrid * grid, 
 	raw_path.push_back(goal);
 
 	std::vector<number> weights;
-	weights.push_back(0.0); // du pt de départ au 1er node on met weight = 0
-	for (uint i=0; i<path->_nodes.size() - 1; ++i) {
+	//weights.push_back(0.0); // du pt de départ au 1er node on met weight = 0
+	weights.push_back(grid->_vertices[path->_nodes[0]]._edges[path->_nodes[1]]._weight);
+	number n_nodes = path->_nodes.size();
+	for (uint i=0; i < n_nodes - 1; ++i) {
 		weights.push_back(grid->_vertices[path->_nodes[i]]._edges[path->_nodes[i + 1]]._weight);
 	}
-	weights.push_back(0.0); // du dernier node au point d'arrivée on met weight = 0
+	//weights.push_back(0.0); // du dernier node au point d'arrivée on met weight = 0
+	weights.push_back(grid->_vertices[path->_nodes[n_nodes - 2]]._edges[path->_nodes[n_nodes - 1]]._weight);
 
 	path->_pts.clear();
 	path->_weights.clear();
 	
-	bool use_line_of_sight = false;
-	if (use_line_of_sight) {
+	if (_use_line_of_sight) {
 		uint idx = 0;
 		uint last = 0;
 		//path->_pts.push_back(start);
-		path->_weights.push_back(0.0); // inutilisé mais nécessaire ?
+		//path->_weights.push_back(0.0); // inutilisé mais nécessaire ?
 		
+		std::cout << "raw_path.size() = " << raw_path.size() << "\n\n";
 		while (idx < raw_path.size()) {
-			//std::cout << "last = " << last << " ; idx = " << idx << " ; raw_path.size() = " << raw_path.size();
-			//std::cout << " ; raw_path[last]=" << raw_path[last] << " ; raw_path[idx]=" << raw_path[idx] << "\n";
 			number raw_max_weight = weights[last];
 			number last_los_weight_ok = 0.0;
+
+			std::cout << "BEGIN while\n";
+			std::cout << "last = " << last << " ; idx = " << idx;
+			std::cout << " ; raw_max_weight=" << raw_max_weight;
+			//std::cout << " ; raw_path[last]=" << glm::to_string(raw_path[last]),
+			//std::cout << " ; raw_path[idx]=" << glm::to_string(raw_path[idx]);
+			std::cout << "\n";
 			while (true) {
 				idx++;
+				std::cout << "idx = " << idx << "\n";
 				if (idx >= raw_path.size()) {
 					break;
 				}
 				number los_weight = line_of_sight_max_weight(raw_path[last], raw_path[idx], grid);
-				//std::cout << "los_weight = " << los_weight << " ; raw_max_weight = " << raw_max_weight << "\n";
+				std::cout << "\tlos_weight = " << los_weight << " ; raw_max_weight = " << raw_max_weight << "\n";
 				if (los_weight> raw_max_weight) {
 					break;
 				}
 				raw_max_weight = std::max(raw_max_weight, weights[idx]);
 				last_los_weight_ok = los_weight;
+				std::cout << "\tlast_los_weight_ok = " << last_los_weight_ok << " ; raw_max_weight = " << raw_max_weight << "\n";
 			}
 
 			last = idx - 1;
 			
 			path->_pts.push_back(raw_path[last]);
 			path->_weights.push_back(last_los_weight_ok);
+			std::cout << "END while\n";
+			std::cout << "last = " << last << " ; idx = " << idx;
+			//std::cout << " ; raw_path[last]=" << glm::to_string(raw_path[last]) << " ; raw_path[idx]=" << glm::to_string(raw_path[idx]) << "\n";
+			std::cout << " ; raw_max_weight=" << raw_max_weight;
+			std::cout << "\n\n";
 		}
 	}
 	else {
