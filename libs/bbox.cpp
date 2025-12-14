@@ -105,6 +105,11 @@ pt_type_3d AABB::bottom_center() {
 }
 
 
+pt_type_3d AABB::size() {
+	return _vmax - _vmin;
+}
+
+
 void AABB::set_z(number z) {
 	set_vmin_vmax(pt_type_3d(_vmin.x, _vmin.y, z), pt_type_3d(_vmax.x, _vmax.y, _vmax.z - _vmin.z + z));
 }

@@ -209,6 +209,34 @@ uint GraphGrid::pt2id(pt_type pt) {
 }
 
 
+std::vector<std::pair<uint, uint> > GraphGrid::aabb_intersection(AABB_2D * aabb) {
+	std::vector<std::pair<uint, uint> > result;
+	std::pair<uint, uint> col_lig_min = pt2col_lig(aabb->_pos);
+	std::pair<uint, uint> col_lig_max = pt2col_lig(aabb->_pos + aabb->_size);
+	uint col_min = col_lig_min.first;
+	uint lig_min = col_lig_min.second;
+	uint col_max = col_lig_max.first + 1; // +1 car pt2col_lig renvoie le coin bas-gauche du carré contenant pt
+	uint lig_max = col_lig_max.second + 1;
+	for (uint col=col_min; col<col_max; ++col) {
+		for (uint lig=lig_min; lig<lig_max; ++lig) {
+			if (lig > lig_min) {
+				result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col + 1, lig)));
+				result.push_back(std::make_pair(col_lig2id(col + 1, lig), col_lig2id(col, lig)));
+			}
+			if (col > col_min) {
+				result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col, lig + 1)));
+				result.push_back(std::make_pair(col_lig2id(col, lig + 1), col_lig2id(col, lig)));
+			}
+			result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col + 1, lig + 1)));
+			result.push_back(std::make_pair(col_lig2id(col + 1, lig + 1), col_lig2id(col, lig)));
+			result.push_back(std::make_pair(col_lig2id(col + 1, lig), col_lig2id(col, lig + 1)));
+			result.push_back(std::make_pair(col_lig2id(col, lig + 1), col_lig2id(col + 1, lig)));
+		}
+	}
+	return result;
+}
+
+
 // améliorable avec un algo genre Bresenham au lieu de parcourir tout le AABB
 std::vector<std::pair<uint, uint> > GraphGrid::segment_intersection(pt_type pt1, pt_type pt2) {
 	std::vector<std::pair<uint, uint> > result;

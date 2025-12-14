@@ -53,12 +53,13 @@ const number Z_OFFSET_PATH = 0.08;
 class TestAStar {
 public:
 	TestAStar();
-	TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system);
+	TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t);
 	~TestAStar();
 	void draw_linear(std::string context_name);
 	void draw_terrain();
 	void draw();
 	void anim(time_point t, InputState * input_state);
+	glm::vec4 get_edge_color();
 	void update_grid();
 	void update_obstacle();
 	void update_unit();
@@ -81,6 +82,7 @@ public:
 	Font * _font;
 	ViewSystem * _view_system;
 	Map * _map;
+	GraphGrid * _visible_grid;
 };
 
 #endif

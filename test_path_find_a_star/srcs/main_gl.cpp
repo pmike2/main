@@ -177,7 +177,8 @@ void init() {
 	input_state= new InputState();
 
 	// --------------------------------------------------------------------------
-	test_a_star = new TestAStar(progs, view_system);
+	time_point now= std::chrono::system_clock::now();
+	test_a_star = new TestAStar(progs, view_system, now);
 }
 
 
@@ -223,9 +224,10 @@ void idle(time_point t) {
 
 void main_loop() {
 	SDL_Event event;
-	time_point now= std::chrono::system_clock::now();
 	
 	while (!done) {
+		time_point now= std::chrono::system_clock::now();
+		
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				case SDL_MOUSEMOTION:
@@ -256,6 +258,7 @@ void main_loop() {
 					break;
 			}
 		}
+		
 		idle(now);
 	}
 }
