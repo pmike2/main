@@ -91,7 +91,9 @@ void AABB::translate(pt_type_3d v) {
 
 
 void AABB::scale(number x) {
-	set_vmin_vmax(x* _vmin, x* _vmax);
+	pt_type_3d c = center();
+	
+	set_vmin_vmax(x* (_vmin - c) + c, x* (_vmax - c) + c);
 }
 
 

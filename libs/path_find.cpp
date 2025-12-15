@@ -593,7 +593,7 @@ bool frontier_cmp(std::pair<uint, number> x, std::pair<uint, number> y) {
 }
 
 
-PathFinder::PathFinder() : _use_line_of_sight(true) {
+PathFinder::PathFinder() : _use_line_of_sight(false) {
 
 }
 
@@ -1192,7 +1192,13 @@ void Map::anim(time_point t) {
 			if (unit2 == unit) {
 				continue;
 			}
-			if (aabb_intersects_aabb(aabb_next, unit2->_aabb)) {
+
+
+// https://en.wikipedia.org/wiki/Multi-agent_pathfinding
+
+			AABB * aabb2_buffered = new AABB(*unit2->_aabb);
+			aabb2_buffered->scale(2.0);
+			if (aabb_intersects_aabb(aabb_next, aabb2_buffered)) {
 				_instructions.push({unit, unit->_path->_pts[unit->_path->_pts.size() - 1]});
 				unit->stop();
 				add_unit_to_position_grids(unit);
