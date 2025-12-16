@@ -1077,14 +1077,45 @@ void Map::add_unit_to_position_grids(Unit * unit) {
 	for (auto & unit_grid : _units_position_grids) {
 		UnitType * unit_type = unit_grid.first;
 		GraphGrid * grid = unit_grid.second;
-		AABB_2D * aabb = new AABB_2D(pt_type(unit->_aabb->_vmin - 0.5 * unit_type->_size), pt_type(unit->_aabb->size() + unit_type->_size));
-		std::vector<std::pair<uint, uint> > edges= grid->aabb_intersection(aabb);
+
+		std::vector<std::pair<uint, uint> > edges;
+
+		if (unit->_mode == WAITING) {
+			AABB_2D * aabb = new AABB_2D(pt_type(unit->_aabb->_vmin - 0.5 * unit_type->_size), pt_type(unit->_aabb->size() + unit_type->_size));
+			edges= grid->aabb_intersection(aabb);
+		}
+		else if (unit->_mode == MOVING) {
+			number r = unit->_aabb->_radius;
+			std::vector<pt_type_4d> segments;
+			pt_type p1 = pt_type(unit->_aabb->bottom_center());
+			pt_type p2 = pt_type(unit->_path->_pts[0]);
+			segments.push_back(pt_type_4d(p1.x, p1.y, p2.x, p2.y));
+			
+			for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
+				pt_type p1 = pt_type(unit->_aabb->_pts[i]);
+				pt_type p2 = pt_type(unit->_path->_pts[i + 1]);
+				segments.push_back(pt_type_4d(p1.x, p1.y, p2.x, p2.y));
+			}
+
+			for (auto & segment : segments) {
+				pt_type p1(segment.x, segment.y);
+				pt_type p2(segment.z, segment.w);
+				pt_type v = glm::normalize(p2 - p1);
+				pt_type u(v.y, -v.x);
+				std::vector<pt_type> pts = {p1 - r * u - r * v, p1 + r * u - r * v, p2 + r * u + r * v, p2 - r * u + r * v};
+				Polygon2D * polygon = new Polygon2D(pts);
+				std::vector<std::pair<uint, uint> > path_edges = grid->polygon_intersection(polygon);
+				edges.insert(edges.end(), path_edges.begin(), path_edges.end());
+			}
+		}
+
 		for (auto & e : edges) {
 			GraphEdge & edge = grid->_vertices[e.first]._edges[e.second];
 			if (edge._weight < 2.0) {
 				edge._weight = number(unit->_id) + 0.5;
 			}
 		}
+
 	}
 }
 
@@ -1199,7 +1230,7 @@ void Map::anim(time_point t) {
 			AABB * aabb2_buffered = new AABB(*unit2->_aabb);
 			aabb2_buffered->scale(2.0);
 			if (aabb_intersects_aabb(aabb_next, aabb2_buffered)) {
-				_instructions.push({unit, unit->_path->_pts[unit->_path->_pts.size() - 1]});
+				//_instructions.push({unit, unit->_path->_pts[unit->_path->_pts.size() - 1]});
 				unit->stop();
 				add_unit_to_position_grids(unit);
 				break;
