@@ -69,6 +69,12 @@ struct Path {
 };
 
 
+struct Instruction {
+	pt_type _destination;
+	time_point _t;
+};
+
+
 struct Unit {
 	Unit();
 	Unit(UnitType * type, pt_type_3d pos);
@@ -86,6 +92,7 @@ struct Unit {
 	UNIT_MODE _mode;
 	Path * _path;
 	pt_type_3d _velocity;
+	std::queue<Instruction> _instructions;
 };
 
 
@@ -149,12 +156,6 @@ struct PathFinder {
 };
 
 
-struct Instruction {
-	Unit * _unit;
-	pt_type _destination;
-};
-
-
 struct Map {
 	Map();
 	Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution, time_point t);
@@ -169,7 +170,7 @@ struct Map {
 	void clear();
 	void read_shapefile(std::string shp_path, pt_type origin, pt_type size, bool reverse_y=false);
 	void anim(time_point t);
-	void selected_units_goto(pt_type pt);
+	void selected_units_goto(pt_type pt, time_point t);
 	void randomize();
 	void save(std::string json_path);
 	void load(std::string json_path);
@@ -189,8 +190,6 @@ struct Map {
 	std::map<UnitType * , std::vector<Obstacle *> > _buffered_obstacles;
 	Terrain * _terrain;
 	bool _paused;
-	std::queue<Instruction> _instructions;
-	time_point _last_instruction_t;
 };
 
 

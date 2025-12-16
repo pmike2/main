@@ -277,6 +277,7 @@ std::vector<std::pair<uint, uint> > GraphGrid::aabb_intersection(AABB_2D * aabb)
 
 std::vector<std::pair<uint, uint> > GraphGrid::polygon_intersection(Polygon2D * polygon) {
 	std::vector<std::pair<uint, uint> > result;
+	//std::cout << *polygon->_aabb << "\n";
 	std::pair<uint, uint> col_lig_min = pt2col_lig(polygon->_aabb->_pos);
 	std::pair<uint, uint> col_lig_max = pt2col_lig(polygon->_aabb->_pos + polygon->_aabb->_size);
 	uint col_min = col_lig_min.first;
@@ -286,15 +287,24 @@ std::vector<std::pair<uint, uint> > GraphGrid::polygon_intersection(Polygon2D * 
 	for (uint col=col_min; col<col_max; ++col) {
 		for (uint lig=lig_min; lig<lig_max; ++lig) {
 			pt_type pt = col_lig2pt(col, lig);
+			//std::cout << glm_to_string(pt) << " ; " << col << " ; " << lig << "\n";
 			if (is_pt_inside_poly(pt, polygon)) {
-				result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col + 1, lig)));
+				/*result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col + 1, lig)));
 				result.push_back(std::make_pair(col_lig2id(col + 1, lig), col_lig2id(col, lig)));
 				result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col, lig + 1)));
 				result.push_back(std::make_pair(col_lig2id(col, lig + 1), col_lig2id(col, lig)));
 				result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col + 1, lig + 1)));
 				result.push_back(std::make_pair(col_lig2id(col + 1, lig + 1), col_lig2id(col, lig)));
 				result.push_back(std::make_pair(col_lig2id(col + 1, lig), col_lig2id(col, lig + 1)));
-				result.push_back(std::make_pair(col_lig2id(col, lig + 1), col_lig2id(col + 1, lig)));
+				result.push_back(std::make_pair(col_lig2id(col, lig + 1), col_lig2id(col + 1, lig)));*/
+				uint id = col_lig2id(col, lig);
+				GraphVertex v = _vertices[id];
+				_it_e= v._edges.begin();
+				while (_it_e!= v._edges.end()) {
+					result.push_back(std::make_pair(id, _it_e->first));
+					_it_e++;
+				}
+
 			}
 		}
 	}

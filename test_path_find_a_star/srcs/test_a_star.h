@@ -68,7 +68,7 @@ public:
 	void update_terrain();
 	void update_all();
 	void update_text(InputState * input_state);
-	bool mouse_button_down(InputState * input_state);
+	bool mouse_button_down(InputState * input_state, time_point t);
 	bool mouse_button_up(InputState * input_state);
 	bool mouse_motion(InputState * input_state, time_point t);
 	bool key_down(InputState * input_state, SDL_Keycode key);

@@ -11,6 +11,7 @@
 #include "typedefs.h"
 #include "bbox_2d.h"
 #include "geom_2d.h"
+#include "utile.h"
 
 
 struct GraphEdge {

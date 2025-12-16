@@ -196,7 +196,6 @@ void Unit::anim() {
 		if (glm::distance(_aabb->bottom_center(), _path->_pts[_path->_idx_path]) < _aabb->_radius + UNIT_DIST_PATH_EPS) {
 			_path->_idx_path++;
 			if (_path->_idx_path == _path->_pts.size()) {
-				_mode = WAITING;
 				stop();
 			}
 			else {
@@ -898,7 +897,7 @@ Map::Map() {
 
 
 Map::Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution, time_point t) :
-	_origin(origin), _size(size), _paused(false), _last_instruction_t(t)
+	_origin(origin), _size(size), _paused(false)
 {
 	uint n_ligs_path = uint(_size.y / path_resolution.y) + 1;
 	uint n_cols_path = uint(_size.x / path_resolution.x) + 1;
@@ -1085,14 +1084,14 @@ void Map::add_unit_to_position_grids(Unit * unit) {
 			edges= grid->aabb_intersection(aabb);
 		}
 		else if (unit->_mode == MOVING) {
-			number r = unit->_aabb->_radius;
+			number r = unit->_aabb->_radius * 3.0;
 			std::vector<pt_type_4d> segments;
 			pt_type p1 = pt_type(unit->_aabb->bottom_center());
 			pt_type p2 = pt_type(unit->_path->_pts[0]);
 			segments.push_back(pt_type_4d(p1.x, p1.y, p2.x, p2.y));
 			
-			for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
-				pt_type p1 = pt_type(unit->_aabb->_pts[i]);
+			for (int i=0; i<unit->_path->_pts.size() - 1; ++i) {
+				pt_type p1 = pt_type(unit->_path->_pts[i]);
 				pt_type p2 = pt_type(unit->_path->_pts[i + 1]);
 				segments.push_back(pt_type_4d(p1.x, p1.y, p2.x, p2.y));
 			}
@@ -1100,11 +1099,22 @@ void Map::add_unit_to_position_grids(Unit * unit) {
 			for (auto & segment : segments) {
 				pt_type p1(segment.x, segment.y);
 				pt_type p2(segment.z, segment.w);
+				//std::cout << glm_to_string(p1) << " ; "  << glm_to_string(p2) << "\n";
+				if (glm::distance(p1, p2) < 0.001) {
+					continue;
+				}
 				pt_type v = glm::normalize(p2 - p1);
 				pt_type u(v.y, -v.x);
 				std::vector<pt_type> pts = {p1 - r * u - r * v, p1 + r * u - r * v, p2 + r * u + r * v, p2 - r * u + r * v};
+				/*std::cout << "\n";
+				for (auto pt : pts) {
+					std::cout << glm_to_string(pt) << " ; ";
+				}
+				std::cout << "\n";*/
 				Polygon2D * polygon = new Polygon2D(pts);
+				polygon->update_all();
 				std::vector<std::pair<uint, uint> > path_edges = grid->polygon_intersection(polygon);
+				delete polygon;
 				edges.insert(edges.end(), path_edges.begin(), path_edges.end());
 			}
 		}
@@ -1124,13 +1134,27 @@ void Map::remove_unit_from_position_grids(Unit * unit) {
 	for (auto & unit_grid : _units_position_grids) {
 		UnitType * unit_type = unit_grid.first;
 		GraphGrid * grid = unit_grid.second;
-		AABB_2D * aabb = new AABB_2D(pt_type(unit->_aabb->_vmin - 0.5 * unit_type->_size), pt_type(unit->_aabb->size() + unit_type->_size));
+		
+		/*AABB_2D * aabb = new AABB_2D(pt_type(unit->_aabb->_vmin - 0.5 * unit_type->_size), pt_type(unit->_aabb->size() + unit_type->_size));
 		std::vector<std::pair<uint, uint> > edges= grid->aabb_intersection(aabb);
 		for (auto & e : edges) {
 			GraphEdge & edge = grid->_vertices[e.first]._edges[e.second];
 			if (uint(edge._weight) == unit->_id) {
-				edge._weight = 0;
+				edge._weight = 0.0;
 			}
+		}*/
+
+		grid->_it_v= grid->_vertices.begin();
+		while (grid->_it_v!= grid->_vertices.end()) {
+			grid->_it_e= grid->_it_v->second._edges.begin();
+			while (grid->_it_e!= grid->_it_v->second._edges.end()) {
+				GraphEdge & edge = grid->_vertices[grid->_it_v->first]._edges[grid->_it_e->first];
+				if (uint(edge._weight) == unit->_id) {
+					edge._weight = 0.0;
+				}
+				grid->_it_e++;
+			}
+			grid->_it_v++;
 		}
 	}
 }
@@ -1192,68 +1216,73 @@ void Map::anim(time_point t) {
 		return;
 	}
 
-	auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_instruction_t).count();
-
-	if (!_instructions.empty() && d > 300) {
-		_last_instruction_t = t;
-
-		Instruction i = _instructions.front();
-		_instructions.pop();
-
-		Unit * unit = i._unit;
-		pt_type pt = i._destination;
-
-		unit->stop();
-		update_unit_grid(unit);
-		_path_finder->path_find(unit->_aabb->bottom_center(), pt_type_3d(pt.x, pt.y, _terrain->get_alti(pt)), std::vector<GraphGrid *>{_static_grids[unit->_type], _unit_grids[unit]}, unit->_path);
-		unit->goto_next_checkpoint();
-
-		//std::queue<Instruction> empty;
-		//std::swap(_instructions, empty);
-	}
-	
+		
 	for (auto & unit : _units) {
-		if (unit->_mode == MOVING) {
+		/*if (unit->_mode == MOVING) {
 			remove_unit_from_position_grids(unit);
-		}
+		}*/
 
-		AABB * aabb_next = new AABB(*unit->_aabb);
-		aabb_next->translate(unit->_velocity);
-		for (auto & unit2 : _units) {
-			if (unit2 == unit) {
-				continue;
-			}
+		if (!unit->_instructions.empty()) {
+			Instruction i = unit->_instructions.front();
+			if (i._t <= t) {
+				unit->_instructions.pop();
 
+				pt_type pt = i._destination;
 
-// https://en.wikipedia.org/wiki/Multi-agent_pathfinding
-
-			AABB * aabb2_buffered = new AABB(*unit2->_aabb);
-			aabb2_buffered->scale(2.0);
-			if (aabb_intersects_aabb(aabb_next, aabb2_buffered)) {
-				//_instructions.push({unit, unit->_path->_pts[unit->_path->_pts.size() - 1]});
 				unit->stop();
+				update_unit_grid(unit);
+				_path_finder->path_find(unit->_aabb->bottom_center(), pt_type_3d(pt.x, pt.y, _terrain->get_alti(pt)), std::vector<GraphGrid *>{_static_grids[unit->_type], _unit_grids[unit]}, unit->_path);
 				add_unit_to_position_grids(unit);
-				break;
+				unit->goto_next_checkpoint();
+			}
+		}
+
+		//auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_instruction_t).count();
+		
+
+		if (unit->_mode == MOVING) {
+			AABB * aabb_next = new AABB(*unit->_aabb);
+			aabb_next->translate(unit->_velocity);
+			for (auto & unit2 : _units) {
+				if (unit2 == unit) {
+					continue;
+				}
+
+				AABB * aabb2_buffered = new AABB(*unit2->_aabb);
+				aabb2_buffered->scale(1.0);
+				if (aabb_intersects_aabb(aabb_next, aabb2_buffered)) {
+					unit->_instructions.push({unit->_path->_pts[unit->_path->_pts.size() - 1], t + std::chrono::milliseconds(2000 + rand_int(0, 2000))});
+					unit->stop();
+					//add_unit_to_position_grids(unit);
+					break;
+				}
+			}
+			unit->anim();
+			
+			/*if (unit->_mode == MOVING) {
+				add_unit_to_position_grids(unit);
+			}*/
+
+			pt_type_3d unit_center = unit->_aabb->bottom_center();
+			number alti = _terrain->get_alti(unit_center);
+			unit->_aabb->set_z(alti);
+
+			if (unit->_mode == WAITING) {
+				remove_unit_from_position_grids(unit);
+				add_unit_to_position_grids(unit);
 			}
 		}
 		
-		unit->anim();
-		
-		if (unit->_mode == MOVING) {
-			add_unit_to_position_grids(unit);
-		}
-
-		pt_type_3d unit_center = unit->_aabb->bottom_center();
-		number alti = _terrain->get_alti(unit_center);
-		unit->_aabb->set_z(alti);
 	}
 }
 
 
-void Map::selected_units_goto(pt_type pt) {
+void Map::selected_units_goto(pt_type pt, time_point t) {
+	uint compt = 0;
 	for (auto & unit : _units) {
 		if (unit->_selected) {
-			_instructions.push({unit, pt});
+			unit->_instructions.push({pt, t + std::chrono::milliseconds(2000 * compt)});
+			compt++;
 		}
 	}
 }

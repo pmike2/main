@@ -676,7 +676,7 @@ void TestAStar::update_text(InputState * input_state) {
 }
 
 
-bool TestAStar::mouse_button_down(InputState * input_state) {
+bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 	//pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 	pt_type_3d pt_3d = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 	pt_type pt(pt_3d.x, pt_3d.y);
@@ -703,7 +703,7 @@ bool TestAStar::mouse_button_down(InputState * input_state) {
 				return true;
 			}
 			else if (input_state->_keys[SDLK_p]) {
-				_map->selected_units_goto(pt);
+				_map->selected_units_goto(pt, t);
 				return true;
 			}
 		}

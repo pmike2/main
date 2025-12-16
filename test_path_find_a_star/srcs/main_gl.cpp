@@ -49,7 +49,7 @@ void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
 }
 
 
-void mouse_button_up(int x, int y, unsigned short button) {
+void mouse_button_up(int x, int y, unsigned short button, time_point t) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
@@ -63,11 +63,11 @@ void mouse_button_up(int x, int y, unsigned short button) {
 }
 
 
-void mouse_button_down(int x, int y, unsigned short button) {
+void mouse_button_down(int x, int y, unsigned short button, time_point t) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (test_a_star->mouse_button_down(input_state)) {
+	if (test_a_star->mouse_button_down(input_state, t)) {
 		return;
 	}
 
@@ -77,7 +77,7 @@ void mouse_button_down(int x, int y, unsigned short button) {
 }
 
 
-void key_down(SDL_Keycode key) {
+void key_down(SDL_Keycode key, time_point t) {
 	input_state->key_down(key);
 
 	if (key== SDLK_ESCAPE) {
@@ -94,7 +94,7 @@ void key_down(SDL_Keycode key) {
 }
 
 
-void key_up(SDL_Keycode key) {
+void key_up(SDL_Keycode key, time_point t) {
 	input_state->key_up(key);
 
 	if (test_a_star->key_up(input_state, key)) {
@@ -235,19 +235,19 @@ void main_loop() {
 					break;
 					
 				case SDL_MOUSEBUTTONUP:
-					mouse_button_up(event.button.x, event.button.y, event.button.button);
+					mouse_button_up(event.button.x, event.button.y, event.button.button, now);
 					break;
 					
 				case SDL_MOUSEBUTTONDOWN:
-					mouse_button_down(event.button.x, event.button.y, event.button.button);
+					mouse_button_down(event.button.x, event.button.y, event.button.button, now);
 					break;
 
 				case SDL_KEYDOWN:
-					key_down(event.key.keysym.sym);
+					key_down(event.key.keysym.sym, now);
 					break;
 					
 				case SDL_KEYUP:
-					key_up(event.key.keysym.sym);
+					key_up(event.key.keysym.sym, now);
 					break;
 					
 				case SDL_QUIT:
@@ -281,6 +281,10 @@ int main() {
 	init();
 	main_loop();
 	clean();
+
+	/*pt_type_3d p(1, 2, 3);
+	pt_type q = pt_type(p);
+	std::cout << glm_to_string(q) << "\n";*/
 
 	/*number x = 0.2;
 	number size = 0.25;
