@@ -56,7 +56,7 @@ public:
 	TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t);
 	~TestAStar();
 	void draw_linear(std::string context_name);
-	void draw_terrain();
+	void draw_surface(std::string context_name);
 	void draw();
 	void anim(time_point t, InputState * input_state);
 	glm::vec4 get_edge_color();
@@ -66,6 +66,7 @@ public:
 	void update_path();
 	void update_debug();
 	void update_terrain();
+	void update_elements();
 	void update_all();
 	void update_text(InputState * input_state);
 	bool mouse_button_down(InputState * input_state, time_point t);

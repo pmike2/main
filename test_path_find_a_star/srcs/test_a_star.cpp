@@ -15,7 +15,7 @@ TestAStar::TestAStar() {
 TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t) :
 	_mode(FREE), _view_system(view_system)
 {
-	GLuint buffers[6];
+	GLuint buffers[7];
 	glGenBuffers(6, buffers);
 
 	_contexts["grid"]= new DrawContext(progs["repere"], buffers[0],
@@ -40,7 +40,11 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
-	_contexts["debug"]= new DrawContext(progs["repere"], buffers[5],
+	_contexts["elements"]= new DrawContext(progs["light"], buffers[5],
+		std::vector<std::string>{"position_in", "color_in", "normal_in"},
+		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
+
+	_contexts["debug"]= new DrawContext(progs["repere"], buffers[6],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 
@@ -49,7 +53,7 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 
 	_view_system->_rect_select->_z = -1.0; // pour que l'affichage du rectangle de sélection se fassent par dessus le reste
 
-	_map = new Map("../data/unit_types", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(1.0), pt_type(0.25), t);
+	_map = new Map("../data/unit_types", "../data/elements", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(1.0), pt_type(0.25), t);
 	//_map = new Map("../data/unit_types", pt_type(0.0, 0.0), pt_type(10.0, 10.0), pt_type(2.0), pt_type(2.0), t);
 	//std::cout << *_map << "\n";
 	//_map->randomize();
@@ -98,8 +102,8 @@ void TestAStar::draw_linear(std::string context_name) {
 }
 
 
-void TestAStar::draw_terrain() {
-	DrawContext * context= _contexts["terrain"];
+void TestAStar::draw_surface(std::string context_name) {
+	DrawContext * context= _contexts[context_name];
 	if (!context->_active) {
 		return;
 	}
@@ -138,7 +142,9 @@ void TestAStar::draw() {
 	for (auto context_name : std::vector<std::string>{"grid", "obstacle", "unit", "path", "debug"}) {
 		draw_linear(context_name);
 	}
-	draw_terrain();
+	for (auto context_name : std::vector<std::string>{"terrain", "elements"}) {
+		draw_surface(context_name);
+	}
 	_font->draw_3d(_view_system->_world2clip);
 	_font->draw();
 }
@@ -657,12 +663,40 @@ void TestAStar::update_terrain() {
 }
 
 
+void TestAStar::update_elements() {
+
+	uint n_pts = 0;
+	for (auto element : _map->_elements->_elements) {
+		n_pts += element->_n_pts;
+	}
+
+	DrawContext * context= _contexts["elements"];
+	context->_n_pts= n_pts;
+	context->_n_attrs_per_pts= 10;
+
+	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
+
+	uint compt = 0;
+	for (auto element : _map->_elements->_elements) {
+		for (uint i=0; i<element->_n_pts * context->_n_attrs_per_pts; ++i) {
+			data[compt++] = element->_data[i];
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	delete[] data;
+}
+
+
 void TestAStar::update_all() {
 	update_grid();
 	update_obstacle();
 	update_unit();
 	update_path();
 	update_terrain();
+	update_elements();
 }
 
 

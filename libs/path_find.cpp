@@ -918,7 +918,7 @@ Map::Map() {
 }
 
 
-Map::Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution, time_point t) :
+Map::Map(std::string unit_types_dir, std::string elements_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution, time_point t) :
 	_origin(origin), _size(size), _paused(false)
 {
 	uint n_ligs_path = uint(_size.y / path_resolution.y) + 1;
@@ -941,6 +941,8 @@ Map::Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_
 		_units_position_grids[_unit_types[basename(json_path)]] = units_position_grid;
 
 	}
+
+	_elements = new Elements(elements_dir);
 
 	update_static_grids();
 }
@@ -1032,8 +1034,8 @@ void Map::update_static_grids() {
 	for (auto & type_grid : _static_grids) {
 		GraphGrid * grid = type_grid.second;
 
-		number max_weight = -1e-5;
-		number min_weight = 1e-5;
+		//number max_weight = -1e-5;
+		//number min_weight = 1e-5;
 
 		grid->_it_v= grid->_vertices.begin();
 		while (grid->_it_v!= grid->_vertices.end()) {
@@ -1049,12 +1051,12 @@ void Map::update_static_grids() {
 						break;
 					}
 				}
-				if (edge._weight > max_weight) {
+				/*if (edge._weight > max_weight) {
 					max_weight = edge._weight;
 				}
 				if (edge._weight < min_weight) {
 					min_weight = edge._weight;
-				}
+				}*/
 
 				grid->_it_e++;
 			}
@@ -1327,10 +1329,28 @@ void Map::randomize() {
 	for (auto grid : _static_grids) {
 		update_alti_grid(grid.second);
 	}
-	/*for (auto grid : _unit_grids) {
-		update_alti_grid(grid.second);
-	}*/
+
+	for (uint i=0; i<1000; ++i) {
+		pt_type pt = rand_pt(_origin, _origin + _size);
+		pt_type_3d size = rand_pt_3d(0.2, 1.0, 0.2, 1.0, 1.0, 2.0);
+		_elements->add_tree("tree_test", pt_type_3d(pt.x, pt.y, _terrain->get_alti(pt)), size);
+	}
 	
+	for (uint i=0; i<1000; ++i) {
+		pt_type pt = rand_pt(_origin, _origin + _size);
+		pt_type_3d size = rand_pt_3d(0.2, 1.0, 0.2, 1.0, 0.2, 1.0);
+		_elements->add_stone(pt_type_3d(pt.x, pt.y, _terrain->get_alti(pt)), size);
+	}
+
+	for (auto & element : _elements->_elements) {
+		std::vector<pt_type> pts;
+		pts.push_back(pt_type(element->_aabb->_vmin.x, element->_aabb->_vmin.y));
+		pts.push_back(pt_type(element->_aabb->_vmax.x, element->_aabb->_vmin.y));
+		pts.push_back(pt_type(element->_aabb->_vmax.x, element->_aabb->_vmax.y));
+		pts.push_back(pt_type(element->_aabb->_vmin.x, element->_aabb->_vmax.y));
+		add_obstacle(SOLID, pts);
+	}
+
 	update_static_grids();
 }
 

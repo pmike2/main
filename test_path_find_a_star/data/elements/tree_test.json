@@ -1,0 +1,21 @@
+{
+	"name" : "test",
+	"root_r_min" : 3.0,
+	"root_r_max" : 5.0,
+	"root_radius_base_min" : 0.5,
+	"root_radius_base_max" : 1.0,
+	"root_theta_min" : 0.0,
+	"root_theta_max" : 0.2,
+	"ratio_child_r_min" : 0.4,
+	"ratio_child_r_max" : 0.8,
+	"ratio_child_radius_min" : 0.3,
+	"ratio_child_radius_max" : 0.7,
+	"ratio_base_end_radius_min" : 0.5,
+	"ratio_base_end_radius_max" : 1.0,
+	"theta_child_min" : 0.1,
+	"theta_child_max" : 0.3,
+	"tree_depth" : 2,
+	"n_childrens_min" : 2,
+	"n_childrens_max" : 5,
+	"branch_color" : [0.5, 0.3, 0.2, 1.0]
+}

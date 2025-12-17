@@ -59,8 +59,23 @@ number rand_number(number x0, number x1) {
 }
 
 
+pt_type rand_pt(number xmin, number xmax, number ymin, number ymax) {
+	return pt_type(rand_number(xmin, xmax), rand_number(ymin, ymax));
+}
+
+
+pt_type rand_pt(pt_type pt_min, pt_type pt_max) {
+	return rand_pt(pt_min.x, pt_max.x, pt_min.y, pt_max.y);
+}
+
+
 pt_type_3d rand_pt_3d(number xmin, number xmax, number ymin, number ymax, number zmin, number zmax) {
 	return pt_type_3d(rand_number(xmin, xmax), rand_number(ymin, ymax), rand_number(zmin, zmax));
+}
+
+
+pt_type rand_pt_3d(pt_type_3d pt_min, pt_type_3d pt_max) {
+	return rand_pt_3d(pt_min.x, pt_max.x, pt_min.y, pt_max.y, pt_min.z, pt_max.z);
 }
 
 

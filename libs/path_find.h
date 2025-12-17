@@ -17,6 +17,7 @@
 #include "bbox_2d.h"
 #include "bbox.h"
 #include "graph.h"
+#include "elements.h"
 
 
 const number MAX_UNIT_MOVING_WEIGHT = 100.0;
@@ -161,7 +162,7 @@ struct PathFinder {
 
 struct Map {
 	Map();
-	Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution, time_point t);
+	Map(std::string unit_types_dir, std::string elements_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution, time_point t);
 	~Map();
 	void add_unit(std::string type_name, pt_type pos, time_point t);
 	Obstacle * add_obstacle(OBSTACLE_TYPE type, const std::vector<pt_type> & pts);
@@ -191,6 +192,7 @@ struct Map {
 	std::map<UnitType * , GraphGrid *> _units_position_grids;
 	std::map<UnitType * , std::vector<Obstacle *> > _buffered_obstacles;
 	Terrain * _terrain;
+	Elements * _elements;
 	bool _paused;
 };
 

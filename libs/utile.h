@@ -26,7 +26,11 @@ float rand_float(float x0, float x1);
 
 number rand_number(number x0, number x1);
 
+pt_type rand_pt(number xmin, number xmax, number ymin, number ymax, number zmin, number zmax);
+pt_type rand_pt(pt_type pt_min, pt_type pt_max);
+
 pt_type_3d rand_pt_3d(number xmin, number xmax, number ymin, number ymax, number zmin, number zmax);
+pt_type_3d rand_pt(pt_type_3d pt_min, pt_type_3d pt_max);
 
 // renvoie un int aléatoire entre x0 et x1 compris
 int rand_int(int x0, int x1);
