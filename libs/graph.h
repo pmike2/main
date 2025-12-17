@@ -48,6 +48,7 @@ struct Graph {
 struct GraphGrid : public Graph {
 	GraphGrid();
 	GraphGrid(const pt_type & origin, const pt_type & size, uint n_ligs, uint n_cols, bool is8connex=true);
+	GraphGrid(const GraphGrid & grid);
 	~GraphGrid();
 	std::pair<uint, uint> id2col_lig(uint id);
 	uint col_lig2id(uint col, uint lig);
@@ -57,6 +58,7 @@ struct GraphGrid : public Graph {
 	std::vector<std::pair<uint, uint> > segment_intersection(pt_type pt1, pt_type pt2);
 	std::vector<std::pair<uint, uint> > aabb_intersection(AABB_2D * aabb);
 	std::vector<std::pair<uint, uint> > polygon_intersection(Polygon2D * polygon);
+	std::vector<number> weights_in_cell_containing_pt(pt_type pt);
 	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
 
 

@@ -69,10 +69,10 @@ public:
 	void update_all();
 	void update_text(InputState * input_state);
 	bool mouse_button_down(InputState * input_state, time_point t);
-	bool mouse_button_up(InputState * input_state);
+	bool mouse_button_up(InputState * input_state, time_point t);
 	bool mouse_motion(InputState * input_state, time_point t);
-	bool key_down(InputState * input_state, SDL_Keycode key);
-	bool key_up(InputState * input_state, SDL_Keycode key);
+	bool key_down(InputState * input_state, SDL_Keycode key, time_point t);
+	bool key_up(InputState * input_state, SDL_Keycode key, time_point t);
 
 	
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin

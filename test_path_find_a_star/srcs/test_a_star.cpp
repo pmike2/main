@@ -201,9 +201,9 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 		for (auto grid : _map->_static_grids) {
 			_map->update_alti_grid(grid.second);
 		}
-		for (auto grid : _map->_unit_grids) {
+		/*for (auto grid : _map->_unit_grids) {
 			_map->update_alti_grid(grid.second);
-		}
+		}*/
 		_map->update_static_grids();
 		update_terrain();
 		update_grid();
@@ -439,6 +439,20 @@ void TestAStar::update_unit() {
 	// units
 	for (auto unit : _map->_units) {
 		std::vector<pt_type_3d> segs = unit->_aabb->segments();
+
+		glm::vec4 unit_color;
+		if (unit->_mode == MOVING) {
+			unit_color = glm::vec4(0.5, 1.0, 0.5, 1.0);
+		}
+		else if (unit->_mode == WAITING) {
+			if (unit->_instructions.empty()) {
+				unit_color = glm::vec4(1.0, 0.5, 0.5, 1.0);
+			}
+			else {
+				unit_color = glm::vec4(0.5, 0.5, 1.0, 1.0);
+			}
+		}
+
 		/*number positions[16] = {
 			unit->_aabb->_pos.x, unit->_aabb->_pos.y,
 			unit->_aabb->_pos.x + unit->_aabb->_size.x, unit->_aabb->_pos.y,
@@ -467,10 +481,14 @@ void TestAStar::update_unit() {
 				ptr[6] = SELECTED_UNIT_COLOR.a;
 			}
 			else {
-				ptr[3] = UNIT_COLORS.at(unit->_type->_name).r;
+				/*ptr[3] = UNIT_COLORS.at(unit->_type->_name).r;
 				ptr[4] = UNIT_COLORS.at(unit->_type->_name).g;
 				ptr[5] = UNIT_COLORS.at(unit->_type->_name).b;
-				ptr[6] = UNIT_COLORS.at(unit->_type->_name).a;
+				ptr[6] = UNIT_COLORS.at(unit->_type->_name).a;*/
+				ptr[3] = unit_color.r;
+				ptr[4] = unit_color.g;
+				ptr[5] = unit_color.b;
+				ptr[6] = unit_color.a;
 			}
 			ptr += 7;
 		}
@@ -653,7 +671,7 @@ void TestAStar::update_text(InputState * input_state) {
 
 	std::vector<Text3D> texts_3d;
 	for (auto unit : _map->_units) {
-		texts_3d.push_back(Text3D(unit->_type->_name, glm::vec3(unit->_aabb->_vmin)+ glm::vec3(0.1, 0.1, 0.1), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		texts_3d.push_back(Text3D(unit->_type->_name + " " + std::to_string(unit->_id), glm::vec3(unit->_aabb->_vmin)+ glm::vec3(0.1, 0.1, 0.5), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 	_font->set_text(texts_3d);
 
@@ -662,7 +680,7 @@ void TestAStar::update_text(InputState * input_state) {
 	std::string s_pos = glm_to_string(pt);
 	texts_2d.push_back(Text(s_pos, glm::vec2(-4.8, 3.8), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 
-	for (auto unit : _map->_units) {
+	/*for (auto unit : _map->_units) {
 		if (unit->_selected) {
 			std::ostringstream stream;
 			stream << *unit;
@@ -670,7 +688,10 @@ void TestAStar::update_text(InputState * input_state) {
 			texts_2d.push_back(Text(s_unit, glm::vec2(-4.8, 3.2), 0.002, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f), 8.0f));
 			break;
 		}
-	}
+	}*/
+
+	//number w = _map->_units_position_grids[_map->_unit_types["infantery"]]->average_weight_in_cell_containing_pt(pt_type(pt.x, pt.y));
+	//texts_2d.push_back(Text(std::to_string(w), glm::vec2(-4.8, 3.2), 0.002, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f), 8.0f));
 
 	_font->set_text(texts_2d);
 }
@@ -688,18 +709,18 @@ bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 	else if (_mode == FREE) {
 		if (input_state->_left_mouse) {
 			if (input_state->_keys[SDLK_i]) {
-				_map->add_unit("infantery", pt);
-				update_grid();
+				_map->add_unit("infantery", pt, t);
+				//update_grid();
 				return true;
 			}
 			else if (input_state->_keys[SDLK_t]) {
-				_map->add_unit("tank", pt);
-				update_grid();
+				_map->add_unit("tank", pt, t);
+				//update_grid();
 				return true;
 			}
 			else if (input_state->_keys[SDLK_b]) {
-				_map->add_unit("boat", pt);
-				update_grid();
+				_map->add_unit("boat", pt, t);
+				//update_grid();
 				return true;
 			}
 			else if (input_state->_keys[SDLK_p]) {
@@ -712,7 +733,7 @@ bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 }
 
 
-bool TestAStar::mouse_button_up(InputState * input_state) {
+bool TestAStar::mouse_button_up(InputState * input_state, time_point t) {
 	if (_mode == ADDING_SOLID_OBSTACLE) {
 		_map->add_obstacle(SOLID, _obstacle_pts);
 		_map->update_static_grids();
@@ -752,7 +773,7 @@ bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
 }
 
 
-bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
+bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
 	if (key == SDLK_a) {
 		/*std::cout << _map->_terrain->get_alti(pt_type(0.0, 0.0)) << " ; ";
 		std::cout << _map->_terrain->get_alti(pt_type(-0.1, -0.1)) << " ; ";
@@ -806,7 +827,7 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
 		return true;
 	}
 	else if (key == SDLK_l) {
-		_map->load("../data/map.json");
+		_map->load("../data/map.json", t);
 		update_all();
 		return true;
 	}
@@ -822,7 +843,7 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key) {
 }
 
 
-bool TestAStar::key_up(InputState * input_state, SDL_Keycode key) {
+bool TestAStar::key_up(InputState * input_state, SDL_Keycode key, time_point t) {
 	_mode = FREE;
 	return true;
 }

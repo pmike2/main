@@ -170,6 +170,16 @@ GraphGrid::GraphGrid(const pt_type & origin, const pt_type & size, uint n_ligs, 
 }
 
 
+GraphGrid::GraphGrid(const GraphGrid & grid) : 
+	_origin(grid._origin), _size(grid._size), _n_ligs(grid._n_ligs), _n_cols(grid._n_cols)
+{
+	_aabb= new AABB_2D(*grid._aabb);
+	for (auto v : grid._vertices) {
+		_vertices[v.first] = v.second;
+	}
+}
+
+
 GraphGrid::~GraphGrid() {
 	delete _aabb;
 }
@@ -302,12 +312,28 @@ std::vector<std::pair<uint, uint> > GraphGrid::polygon_intersection(Polygon2D * 
 				_it_e= v._edges.begin();
 				while (_it_e!= v._edges.end()) {
 					result.push_back(std::make_pair(id, _it_e->first));
+					result.push_back(std::make_pair(_it_e->first, id));
 					_it_e++;
 				}
 
 			}
 		}
 	}
+	return result;
+}
+
+
+std::vector<number> GraphGrid::weights_in_cell_containing_pt(pt_type pt) {
+	std::pair<uint, uint> col_lig = pt2col_lig(pt);
+	uint id_left_bottom = col_lig2id(col_lig.first, col_lig.second);
+	uint id_right_bottom = col_lig2id(col_lig.first + 1, col_lig.second);
+	uint id_left_top = col_lig2id(col_lig.first, col_lig.second + 1);
+	uint id_right_top = col_lig2id(col_lig.first + 1, col_lig.second + 1);
+	std::vector<number> result;
+	result.push_back(_vertices[id_left_bottom]._edges[id_right_top]._weight);
+	result.push_back(_vertices[id_right_top]._edges[id_left_bottom]._weight);
+	result.push_back(_vertices[id_right_bottom]._edges[id_left_top]._weight);
+	result.push_back(_vertices[id_left_top]._edges[id_right_bottom]._weight);
 	return result;
 }
 

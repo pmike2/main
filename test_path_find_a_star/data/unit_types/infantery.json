@@ -1,7 +1,7 @@
 {
 	"name" : "infantery",
 	"size" : [0.3, 0.3, 0.5],
-	"max_velocity" : 0.05,
+	"max_velocity" : 0.005,
 	"weights" : {
 		"GROUND" : 1.0,
 		"SOLID" : 1000.0,
@@ -12,7 +12,7 @@
 		{"min" : -2.0, "max" : -0.2, "coeff" : 0.0},
 		{"min" : -0.2, "max" : 0.2, "coeff" : 10.0},
 		{"min" : 0.2, "max" : 0.5, "coeff" : 40.0},
-		{"min" : 0.5, "max" : 2.0, "coeff" : 80.0},
-		{"min" : 2.0, "max" : 1000.0, "coeff" : 1000.0}
+		{"min" : 0.5, "max" : 1.0, "coeff" : 80.0},
+		{"min" : 1.0, "max" : 1000.0, "coeff" : 1000.0}
 	]
 }

@@ -53,7 +53,7 @@ void mouse_button_up(int x, int y, unsigned short button, time_point t) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (test_a_star->mouse_button_up(input_state)) {
+	if (test_a_star->mouse_button_up(input_state, t)) {
 		return;
 	}
 
@@ -84,7 +84,7 @@ void key_down(SDL_Keycode key, time_point t) {
 		done= true;
 	}
 
-	if (test_a_star->key_down(input_state, key)) {
+	if (test_a_star->key_down(input_state, key, t)) {
 		return;
 	}
 
@@ -97,7 +97,7 @@ void key_down(SDL_Keycode key, time_point t) {
 void key_up(SDL_Keycode key, time_point t) {
 	input_state->key_up(key);
 
-	if (test_a_star->key_up(input_state, key)) {
+	if (test_a_star->key_up(input_state, key, t)) {
 		return;
 	}
 

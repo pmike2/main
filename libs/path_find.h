@@ -59,6 +59,7 @@ struct Path {
 	~Path();
 	void clear();
 	bool empty();
+	pt_type_3d destination();
 	friend std::ostream & operator << (std::ostream & os, Path & p);
 
 
@@ -77,10 +78,10 @@ struct Instruction {
 
 struct Unit {
 	Unit();
-	Unit(UnitType * type, pt_type_3d pos);
+	Unit(UnitType * type, pt_type_3d pos, time_point t);
 	~Unit();
-	void anim();
-	void goto_next_checkpoint();
+	void anim(time_point t);
+	void goto_next_checkpoint(time_point t);
 	void stop();
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
 	
@@ -93,6 +94,7 @@ struct Unit {
 	Path * _path;
 	pt_type_3d _velocity;
 	std::queue<Instruction> _instructions;
+	time_point _last_anim_t;
 };
 
 
@@ -144,11 +146,12 @@ bool frontier_cmp(std::pair<uint, number> x, std::pair<uint, number> y);
 struct PathFinder {
 	PathFinder();
 	~PathFinder();
-	number cost(uint i, uint j, std::vector<GraphGrid *> grid);
-	number heuristic(uint i, uint j, std::vector<GraphGrid *> grid);
-	number line_of_sight_max_weight(pt_type_3d pt1, pt_type_3d pt2, std::vector<GraphGrid *> grid);
-	bool path_find_nodes(uint start, uint goal, std::vector<GraphGrid *> grid, std::vector<uint> & path);
-	bool path_find(pt_type_3d start, pt_type_3d goal, std::vector<GraphGrid *> grid, Path * path);
+	number units_position_weight(number weight, Unit * unit);
+	number cost(uint i, uint j, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit);
+	number heuristic(uint i, uint j, GraphGrid * grid);
+	number line_of_sight_max_weight(pt_type pt1, pt_type pt2, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit);
+	bool path_find_nodes(uint start, uint goal, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit);
+	bool path_find(pt_type start, pt_type goal, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit);
 	void draw_svg(GraphGrid * grid, Path * path, std::string svg_path);
 
 
@@ -160,11 +163,11 @@ struct Map {
 	Map();
 	Map(std::string unit_types_dir, pt_type origin, pt_type size, pt_type path_resolution, pt_type terrain_resolution, time_point t);
 	~Map();
-	void add_unit(std::string type_name, pt_type pos);
+	void add_unit(std::string type_name, pt_type pos, time_point t);
 	Obstacle * add_obstacle(OBSTACLE_TYPE type, const std::vector<pt_type> & pts);
 	void update_alti_grid(GraphGrid * grid);
+	void update_alti_path(Unit * unit);
 	void update_static_grids();
-	void update_unit_grid(Unit * unit);
 	void add_unit_to_position_grids(Unit * unit);
 	void remove_unit_from_position_grids(Unit * unit);
 	void clear();
@@ -173,7 +176,7 @@ struct Map {
 	void selected_units_goto(pt_type pt, time_point t);
 	void randomize();
 	void save(std::string json_path);
-	void load(std::string json_path);
+	void load(std::string json_path, time_point t);
 	friend std::ostream & operator << (std::ostream & os, Map & map);
 
 
@@ -186,7 +189,6 @@ struct Map {
 	PathFinder * _path_finder;
 	std::map<UnitType * , GraphGrid *> _static_grids;
 	std::map<UnitType * , GraphGrid *> _units_position_grids;
-	std::map<Unit * , GraphGrid *> _unit_grids;
 	std::map<UnitType * , std::vector<Obstacle *> > _buffered_obstacles;
 	Terrain * _terrain;
 	bool _paused;

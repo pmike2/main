@@ -148,6 +148,15 @@ bool Path::empty() {
 }
 
 
+pt_type_3d Path::destination() {
+	if (_pts.empty()) {
+		std::cerr << "Path::destination() : path vide\n";
+		return pt_type_3d(0.0);
+	}
+	return _pts[_pts.size() - 1];
+}
+
+
 std::ostream & operator << (std::ostream & os, Path & p) {
 	os << "pts = ";
 	for (auto pt : p._pts) {
@@ -172,8 +181,8 @@ Unit::Unit() {
 }
 
 
-Unit::Unit(UnitType * type, pt_type_3d pos) :
-	_type(type), _selected(false), _mode(WAITING), _velocity(pt_type_3d(0.0))
+Unit::Unit(UnitType * type, pt_type_3d pos, time_point t) :
+	_type(type), _selected(false), _mode(WAITING), _velocity(pt_type_3d(0.0)), _last_anim_t(t)
 {
 	//_aabb = new AABB(pos - 0.5 * _type->_size, pos + 0.5 * _type->_size);
 	pt_type_3d vmin(pos.x - 0.5 * _type->_size.x, pos.y - 0.5 * _type->_size.y, pos.z);
@@ -189,9 +198,13 @@ Unit::~Unit() {
 }
 
 
-void Unit::anim() {
+void Unit::anim(time_point t) {
 	if (_mode == MOVING) {
-		_aabb->translate(_velocity);
+		auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
+		_last_anim_t = t;
+		
+		//_aabb->translate(number(d) * _velocity);
+		_aabb->translate(15.0 * _velocity);
 
 		if (glm::distance(_aabb->bottom_center(), _path->_pts[_path->_idx_path]) < _aabb->_radius + UNIT_DIST_PATH_EPS) {
 			_path->_idx_path++;
@@ -199,14 +212,14 @@ void Unit::anim() {
 				stop();
 			}
 			else {
-				goto_next_checkpoint();
+				goto_next_checkpoint(t);
 			}
 		}
 	}
 }
 
 
-void Unit::goto_next_checkpoint() {
+void Unit::goto_next_checkpoint(time_point t) {
 	_mode = MOVING;
 
 	if (_path->empty()) {
@@ -224,6 +237,7 @@ void Unit::goto_next_checkpoint() {
 	pt_type_3d direction = glm::normalize(_path->_pts[_path->_idx_path] - _aabb->bottom_center());
 	//_velocity = velocity_amp * direction;
 	_velocity = velocity_amp * pt_type_3d(direction.x, direction.y, 0.0);
+	_last_anim_t = t;
 }
 
 
@@ -602,56 +616,44 @@ PathFinder::~PathFinder() {
 }
 
 
-number PathFinder::cost(uint i, uint j, std::vector<GraphGrid *> grid) {
-	number result = 0.0;
-	for (auto g : grid) {
-		result += g->_vertices[i]._edges[j]._weight;
+number PathFinder::units_position_weight(number weight, Unit * unit) {
+	uint weight_i = uint(weight);
+	if (weight_i != unit->_id && weight_i > 1) {
+		return MAX_UNIT_MOVING_WEIGHT;
 	}
+	return 0.0;
+}
+
+
+number PathFinder::cost(uint i, uint j, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit) {
+	number result = 0.0;
+	result += static_grid->_vertices[i]._edges[j]._weight;
+	result += units_position_weight(units_position_grid->_vertices[i]._edges[j]._weight, unit);
 	return result;
 }
 
 
-number PathFinder::heuristic(uint i, uint j, std::vector<GraphGrid *> grid) {
-	number result = 0.0;
-	for (auto g : grid) {
-		result += glm::distance(g->_vertices[i]._pos, g->_vertices[j]._pos);
-	}
-	return result;
+number PathFinder::heuristic(uint i, uint j, GraphGrid * grid) {
+	return glm::distance(grid->_vertices[i]._pos, grid->_vertices[j]._pos);
 }
 
 
-number PathFinder::line_of_sight_max_weight(pt_type_3d pt1, pt_type_3d pt2, std::vector<GraphGrid *> grid) {
-	std::vector<std::pair<uint, uint> > edges = grid[0]->segment_intersection(pt_type(pt1), pt_type(pt2));
+number PathFinder::line_of_sight_max_weight(pt_type pt1, pt_type pt2, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit) {
+	std::vector<std::pair<uint, uint> > edges = static_grid->segment_intersection(pt_type(pt1), pt_type(pt2));
 	number result = 0.0;
 	for (auto edge : edges) {
-		pt_type v1 = pt_type(grid[0]->_vertices[edge.first]._pos);
-		pt_type v2 = pt_type(grid[0]->_vertices[edge.second]._pos);
-		number weight = cost(edge.first, edge.second, grid);
+		pt_type v1 = pt_type(static_grid->_vertices[edge.first]._pos);
+		pt_type v2 = pt_type(static_grid->_vertices[edge.second]._pos);
+		number weight = cost(edge.first, edge.second, static_grid, units_position_grid, unit);
 		if (glm::dot(v2 - v1, pt_type(pt2 - pt1)) >= 0.0 && weight > result) {
 			result = weight;
 		}
 	}
-	/*grid->_it_v= grid->_vertices.begin();
-	while (grid->_it_v!= grid->_vertices.end()) {
-		grid->_it_e= grid->_it_v->second._edges.begin();
-		while (grid->_it_e!= grid->_it_v->second._edges.end()) {
-			pt_type pt_begin= grid->_it_v->second._pos;
-			pt_type pt_end= grid->_vertices[grid->_it_e->first]._pos;
-			if (segment_intersects_segment(pt1, pt2, pt_begin, pt_end, NULL, true, true)) {
-				if (grid->_it_e->second._weight > result) {
-					result = grid->_it_e->second._weight;
-				}
-			}
-			grid->_it_e++;
-		}
-		grid->_it_v++;
-	}*/
-
 	return result;
 }
 
 
-bool PathFinder::path_find_nodes(uint start, uint goal, std::vector<GraphGrid *> grid, std::vector<uint> & path) {
+bool PathFinder::path_find_nodes(uint start, uint goal, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit) {
 	std::priority_queue< std::pair<uint, number>, std::vector<std::pair<uint, number> >, decltype(&frontier_cmp) > frontier(frontier_cmp);
 	std::unordered_map<uint, uint> came_from;
 	std::unordered_map<uint, number> cost_so_far;
@@ -668,15 +670,15 @@ bool PathFinder::path_find_nodes(uint start, uint goal, std::vector<GraphGrid *>
 			break;
 		}
 
-		std::vector<uint> nexts= grid[0]->neighbors(current);
+		std::vector<uint> nexts= static_grid->neighbors(current);
 		for (auto & next : nexts) {
-			number new_cost= cost_so_far[current]+ cost(current, next, grid);
+			number new_cost= cost_so_far[current]+ cost(current, next, static_grid, units_position_grid, unit);
 			if ((!cost_so_far.count(next)) || (new_cost< cost_so_far[next])) {
 				cost_so_far[next]= new_cost;
 				came_from[next]= current;
 				//number priority= new_cost; // dijkstra
 				//number priority= heuristic(next, goal, grid); // greedy best first search
-				number priority= new_cost+ heuristic(next, goal, grid); // A *
+				number priority= new_cost+ heuristic(next, goal, static_grid); // A *
 				//std::cout << priority << "\n";
 				frontier.emplace(next, priority);
 			}
@@ -688,67 +690,87 @@ bool PathFinder::path_find_nodes(uint start, uint goal, std::vector<GraphGrid *>
 		return false;
 	}
 
-	path.clear();
+	unit->_path->_nodes.clear();
 	uint current = goal;
 	while (current != start) {
-		path.push_back(current);
+		unit->_path->_nodes.push_back(current);
 		current = came_from[current];
 	}
-	path.push_back(start);
-	std::reverse(path.begin(), path.end());
+	unit->_path->_nodes.push_back(start);
+	std::reverse(unit->_path->_nodes.begin(), unit->_path->_nodes.end());
 
 	return true;
 }
 
 
-bool PathFinder::path_find(pt_type_3d start, pt_type_3d goal, std::vector<GraphGrid *> grid, Path * path) {
-	if ((!point_in_aabb(start, grid[0]->_aabb)) || (!point_in_aabb(goal, grid[0]->_aabb))) {
+bool PathFinder::path_find(pt_type start, pt_type goal, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit) {
+	if ((!point_in_aabb(start, static_grid->_aabb)) || (!point_in_aabb(goal, static_grid->_aabb))) {
 		std::cerr << "PathFinder::path_find : point hors grille\n";
 		return false;
 	}
 
-	uint start_id = grid[0]->pt2id(pt_type(start));
-	uint goal_id = grid[0]->pt2id(pt_type(goal));
-	bool is_path_ok= path_find_nodes(start_id, goal_id, grid, path->_nodes);
+	uint start_id = static_grid->pt2id(pt_type(start));
+	uint goal_id = static_grid->pt2id(pt_type(goal));
+	bool is_path_ok= path_find_nodes(start_id, goal_id, static_grid, units_position_grid, unit);
 	if (!is_path_ok) {
 		std::cerr << "PathFinder::path_find : pas de chemin trouvé\n";
 		return false;
 	}
 
-	std::vector<pt_type_3d> raw_path;
+	std::vector<pt_type> raw_path;
 	//raw_path.push_back(start); // inutile ?
-	for (uint i=0; i<path->_nodes.size(); ++i) {
-		raw_path.push_back(grid[0]->_vertices[path->_nodes[i]]._pos);
+	for (uint i=0; i<unit->_path->_nodes.size(); ++i) {
+		raw_path.push_back(static_grid->_vertices[unit->_path->_nodes[i]]._pos);
 	}
 	raw_path.push_back(goal);
 
 	std::vector<number> weights;
-	number weight;
-	weight = 0.0;
-	for (auto g : grid) {
-		weight += g->_vertices[path->_nodes[0]]._edges[path->_nodes[1]]._weight;
-	}
-	//weights.push_back(0.0); // du pt de départ au 1er node on met weight = 0
-	weights.push_back(weight);
-	number n_nodes = path->_nodes.size();
+	/*weights.push_back(
+		static_grid->_vertices[unit->_path->_nodes[0]]._edges[unit->_path->_nodes[1]]._weight
+		+ units_position_grid->_vertices[unit->_path->_nodes[0]]._edges[unit->_path->_nodes[1]]._weight
+	);*/
+	number weight_start = 0.0;
+	std::vector<number> w_statics_start = static_grid->weights_in_cell_containing_pt(start);
+	weight_start += *std::max_element(w_statics_start.begin(), w_statics_start.end());
+	std::vector<number> w_unit_positions_start = units_position_grid->weights_in_cell_containing_pt(start);
+	std::for_each(w_unit_positions_start.begin(), w_unit_positions_start.end(), [unit, this](number &w) { units_position_weight(w, unit); });
+	weight_start += *std::max_element(w_unit_positions_start.begin(), w_unit_positions_start.end());
+	weights.push_back(weight_start);
+
+	number n_nodes = unit->_path->_nodes.size();
 	for (uint i=0; i < n_nodes - 1; ++i) {
+		weights.push_back(
+			static_grid->_vertices[unit->_path->_nodes[i]]._edges[unit->_path->_nodes[i + 1]]._weight
+			+ units_position_grid->_vertices[unit->_path->_nodes[i]]._edges[unit->_path->_nodes[i + 1]]._weight
+		);
+	}
 
-		weight = 0.0;
-		for (auto g : grid) {
-			weight += g->_vertices[path->_nodes[i]]._edges[path->_nodes[i + 1]]._weight;
+	/*weights.push_back(
+		static_grid->_vertices[unit->_path->_nodes[n_nodes - 2]]._edges[unit->_path->_nodes[n_nodes - 1]]._weight
+		+ units_position_grid->_vertices[unit->_path->_nodes[n_nodes - 2]]._edges[unit->_path->_nodes[n_nodes - 1]]._weight
+	);*/
+	number weight_goal = 0.0;
+	std::vector<number> w_statics_goal = static_grid->weights_in_cell_containing_pt(goal);
+	weight_goal += *std::max_element(w_statics_goal.begin(), w_statics_goal.end());
+	std::vector<number> w_unit_positions_goal = units_position_grid->weights_in_cell_containing_pt(goal);
+	std::for_each(w_unit_positions_goal.begin(), w_unit_positions_goal.end(), [unit, this](number & w) { w = units_position_weight(w, unit); });
+	/*for (auto x: w_unit_positions_goal) {
+		std::cout << x << " ; ";
+	}*/
+	weight_goal += *std::max_element(w_unit_positions_goal.begin(), w_unit_positions_goal.end());
+	weights.push_back(weight_goal);
+
+	std::cout << " ; unit " << unit->_id << " : " << weights[weights.size() - 1] << " ; " << unit->_path->_nodes[n_nodes - 1] << "\n";
+
+	for (uint i=0; i<weights.size(); ++i) {
+		if (weights[i] >= MAX_UNIT_MOVING_WEIGHT) {
+			raw_path.erase(raw_path.begin() + i, raw_path.end());
+			break;
 		}
-		weights.push_back(weight);
 	}
-	//weights.push_back(0.0); // du dernier node au point d'arrivée on met weight = 0
 
-	weight = 0.0;
-	for (auto g : grid) {
-		weight += g->_vertices[path->_nodes[n_nodes - 2]]._edges[path->_nodes[n_nodes - 1]]._weight;
-	}
-	weights.push_back(weight);
-
-	path->_pts.clear();
-	path->_weights.clear();
+	unit->_path->_pts.clear();
+	unit->_path->_weights.clear();
 
 	bool verbose = false;
 	
@@ -785,7 +807,7 @@ bool PathFinder::path_find(pt_type_3d start, pt_type_3d goal, std::vector<GraphG
 				if (idx >= raw_path.size()) {
 					break;
 				}
-				number los_weight = line_of_sight_max_weight(raw_path[last], raw_path[idx], grid);
+				number los_weight = line_of_sight_max_weight(raw_path[last], raw_path[idx], static_grid, units_position_grid, unit);
 
 				if (verbose) {
 					std::cout << "\tlos_weight = " << los_weight << " ; raw_max_weight = " << raw_max_weight << "\n";
@@ -804,8 +826,8 @@ bool PathFinder::path_find(pt_type_3d start, pt_type_3d goal, std::vector<GraphG
 
 			last = idx - 1;
 			
-			path->_pts.push_back(raw_path[last]);
-			path->_weights.push_back(last_los_weight_ok);
+			unit->_path->_pts.push_back(pt_type_3d(raw_path[last].x, raw_path[last].y, 0.0));
+			unit->_path->_weights.push_back(last_los_weight_ok);
 
 			if (verbose) {
 				std::cout << "END while\n";
@@ -818,8 +840,8 @@ bool PathFinder::path_find(pt_type_3d start, pt_type_3d goal, std::vector<GraphG
 	}
 	else {
 		for (uint i=0; i<raw_path.size(); ++i) {
-			path->_pts.push_back(raw_path[i]);
-			path->_weights.push_back(weights[i]);
+			unit->_path->_pts.push_back(pt_type_3d(raw_path[i].x, raw_path[i].y, 0.0));
+			unit->_path->_weights.push_back(weights[i]);
 		}
 	}
 
@@ -937,30 +959,31 @@ Map::~Map() {
 	}
 	_static_grids.clear();
 	
-	for (auto & grid : _unit_grids) {
+	/*for (auto & grid : _unit_grids) {
 		delete grid.second;
 	}
-	_unit_grids.clear();
+	_unit_grids.clear();*/
 	
 	delete _path_finder;
 	delete _terrain;
 }
 
 
-void Map::add_unit(std::string type_name, pt_type pos) {
+void Map::add_unit(std::string type_name, pt_type pos, time_point t) {
 	if (pos.x < _origin.x || pos.y < _origin.y || pos.x >= _origin.x + _size.x || pos.y >= _origin.y + _size.y) {
 		std::cerr << "Map::add_unit hors terrain\n";
 		return;
 	}
 
 	pt_type_3d pt3d(pos.x, pos.y, _terrain->get_alti(pos));
-	Unit * unit = new Unit(_unit_types[type_name], pt3d);
+	//pt_type_3d pt3d(pos.x, pos.y, 0.0);
+	Unit * unit = new Unit(_unit_types[type_name], pt3d, t);
 	unit->_id = ++_next_unit_id;
 	_units.push_back(unit);
-	
-	GraphGrid * grid = new GraphGrid(_origin, _size, _static_grids[_unit_types[type_name]]->_n_ligs, _static_grids[_unit_types[type_name]]->_n_cols);
-	update_alti_grid(grid);
-	_unit_grids[unit] = grid;
+	//GraphGrid * grid = new GraphGrid(_origin, _size, _static_grids[_unit_types[type_name]]->_n_ligs, _static_grids[_unit_types[type_name]]->_n_cols);
+	//GraphGrid * grid = new GraphGrid(*_static_grids[_unit_types[type_name]]);
+	//update_alti_grid(grid);
+	//_unit_grids[unit] = grid;
 
 	add_unit_to_position_grids(unit);
 }
@@ -994,6 +1017,13 @@ void Map::update_alti_grid(GraphGrid * grid) {
 		pt_type_3d & pt= grid->_it_v->second._pos;
 		pt.z = _terrain->get_alti(pt);
 		grid->_it_v++;
+	}
+}
+
+
+void Map::update_alti_path(Unit * unit) {
+	for (auto & pt : unit->_path->_pts) {
+		pt.z = _terrain->get_alti(pt);
 	}
 }
 
@@ -1036,7 +1066,7 @@ void Map::update_static_grids() {
 }
 
 
-void Map::update_unit_grid(Unit * unit) {
+/*void Map::update_unit_grid(Unit * unit) {
 	GraphGrid * unit_grid = _unit_grids[unit];
 	GraphGrid * units_position_grid = _units_position_grids[unit->_type];
 
@@ -1057,19 +1087,7 @@ void Map::update_unit_grid(Unit * unit) {
 		}
 		units_position_grid->_it_v++;
 	}
-
-	/*for (auto unit2 : _units) {
-		if (unit2 == unit) {
-			continue;
-		}
-		AABB_2D * aabb = new AABB_2D(pt_type(unit2->_aabb->_vmin - 0.5 * unit->_type->_size), pt_type(unit2->_aabb->size() + unit->_type->_size));
-		std::vector<std::pair<uint, uint> > l_edges= grid->aabb_intersection(aabb);
-		for (auto & e : l_edges) {
-			GraphEdge & edge = grid->_vertices[e.first]._edges[e.second];
-			edge._weight = 1000;
-		}
-	}*/
-}
+}*/
 
 
 void Map::add_unit_to_position_grids(Unit * unit) {
@@ -1081,10 +1099,11 @@ void Map::add_unit_to_position_grids(Unit * unit) {
 
 		if (unit->_mode == WAITING) {
 			AABB_2D * aabb = new AABB_2D(pt_type(unit->_aabb->_vmin - 0.5 * unit_type->_size), pt_type(unit->_aabb->size() + unit_type->_size));
+			//aabb->buffer(2.0);
 			edges= grid->aabb_intersection(aabb);
 		}
 		else if (unit->_mode == MOVING) {
-			number r = unit->_aabb->_radius * 3.0;
+			number r = unit->_aabb->_radius;
 			std::vector<pt_type_4d> segments;
 			pt_type p1 = pt_type(unit->_aabb->bottom_center());
 			pt_type p2 = pt_type(unit->_path->_pts[0]);
@@ -1114,6 +1133,7 @@ void Map::add_unit_to_position_grids(Unit * unit) {
 				Polygon2D * polygon = new Polygon2D(pts);
 				polygon->update_all();
 				std::vector<std::pair<uint, uint> > path_edges = grid->polygon_intersection(polygon);
+				//std::vector<std::pair<uint, uint> > path_edges;
 				delete polygon;
 				edges.insert(edges.end(), path_edges.begin(), path_edges.end());
 			}
@@ -1125,7 +1145,6 @@ void Map::add_unit_to_position_grids(Unit * unit) {
 				edge._weight = number(unit->_id) + 0.5;
 			}
 		}
-
 	}
 }
 
@@ -1172,6 +1191,9 @@ void Map::clear() {
 		buffered_obstacle.second.clear();
 	}
 	for (auto & unit : _units) {
+		remove_unit_from_position_grids(unit);
+	}
+	for (auto & unit : _units) {
 		delete unit;
 	}
 	_units.clear();
@@ -1179,9 +1201,9 @@ void Map::clear() {
 	for (auto grid : _static_grids) {
 		update_alti_grid(grid.second);
 	}
-	for (auto grid : _unit_grids) {
+	/*for (auto grid : _unit_grids) {
 		update_alti_grid(grid.second);
-	}
+	}*/
 	update_static_grids();
 }
 
@@ -1216,7 +1238,6 @@ void Map::anim(time_point t) {
 		return;
 	}
 
-		
 	for (auto & unit : _units) {
 		/*if (unit->_mode == MOVING) {
 			remove_unit_from_position_grids(unit);
@@ -1228,20 +1249,19 @@ void Map::anim(time_point t) {
 				unit->_instructions.pop();
 
 				pt_type pt = i._destination;
+				std::cout << "unit " << unit->_id << " : goto " << glm_to_string(pt) << "\n";
 
 				unit->stop();
-				update_unit_grid(unit);
-				_path_finder->path_find(unit->_aabb->bottom_center(), pt_type_3d(pt.x, pt.y, _terrain->get_alti(pt)), std::vector<GraphGrid *>{_static_grids[unit->_type], _unit_grids[unit]}, unit->_path);
+				//update_unit_grid(unit);
+				_path_finder->path_find(unit->_aabb->bottom_center(), pt, _static_grids[unit->_type], _units_position_grids[unit->_type], unit);
+				update_alti_path(unit);
+				unit->goto_next_checkpoint(t);
 				add_unit_to_position_grids(unit);
-				unit->goto_next_checkpoint();
 			}
 		}
 
-		//auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_instruction_t).count();
-		
-
 		if (unit->_mode == MOVING) {
-			AABB * aabb_next = new AABB(*unit->_aabb);
+			/*AABB * aabb_next = new AABB(*unit->_aabb);
 			aabb_next->translate(unit->_velocity);
 			for (auto & unit2 : _units) {
 				if (unit2 == unit) {
@@ -1249,16 +1269,27 @@ void Map::anim(time_point t) {
 				}
 
 				AABB * aabb2_buffered = new AABB(*unit2->_aabb);
-				aabb2_buffered->scale(1.0);
+				//aabb2_buffered->scale(1.0);
 				if (aabb_intersects_aabb(aabb_next, aabb2_buffered)) {
-					unit->_instructions.push({unit->_path->_pts[unit->_path->_pts.size() - 1], t + std::chrono::milliseconds(2000 + rand_int(0, 2000))});
+					std::cout << "unit " << unit->_id << " : collision stop\n";
+					unit->_instructions.push({unit->_path->destination(), t + std::chrono::milliseconds(2000 + rand_int(0, 2000))});
 					unit->stop();
 					//add_unit_to_position_grids(unit);
 					break;
 				}
-			}
-			unit->anim();
-			
+			}*/
+			unit->anim(t);
+			for (auto & unit2 : _units) {
+				if (unit2 == unit) {
+					continue;
+				}
+
+				//AABB * aabb2_buffered = new AABB(*unit2->_aabb);
+				//aabb2_buffered->scale(1.0);
+				if (aabb_intersects_aabb(unit->_aabb, unit2->_aabb)) {
+					std::cerr << "intersection unit " << unit->_id << " et " << unit2->_id << "\n";
+				}
+			}			
 			/*if (unit->_mode == MOVING) {
 				add_unit_to_position_grids(unit);
 			}*/
@@ -1268,11 +1299,11 @@ void Map::anim(time_point t) {
 			unit->_aabb->set_z(alti);
 
 			if (unit->_mode == WAITING) {
+				std::cout << "unit " << unit->_id << " waiting\n";
 				remove_unit_from_position_grids(unit);
 				add_unit_to_position_grids(unit);
 			}
 		}
-		
 	}
 }
 
@@ -1281,7 +1312,7 @@ void Map::selected_units_goto(pt_type pt, time_point t) {
 	uint compt = 0;
 	for (auto & unit : _units) {
 		if (unit->_selected) {
-			unit->_instructions.push({pt, t + std::chrono::milliseconds(2000 * compt)});
+			unit->_instructions.push({pt, t + std::chrono::milliseconds(500 * compt)});
 			compt++;
 		}
 	}
@@ -1296,9 +1327,9 @@ void Map::randomize() {
 	for (auto grid : _static_grids) {
 		update_alti_grid(grid.second);
 	}
-	for (auto grid : _unit_grids) {
+	/*for (auto grid : _unit_grids) {
 		update_alti_grid(grid.second);
-	}
+	}*/
 	
 	update_static_grids();
 }
@@ -1331,7 +1362,7 @@ void Map::save(std::string json_path) {
 }
 
 
-void Map::load(std::string json_path) {
+void Map::load(std::string json_path, time_point t) {
 	clear();
 
 	std::ifstream ifs(json_path);
@@ -1345,15 +1376,15 @@ void Map::load(std::string json_path) {
 	}
 
 	for (auto & unit : js["units"]) {
-		add_unit(unit["type"], pt_type(unit["position"][0], unit["position"][1]));
+		add_unit(unit["type"], pt_type(unit["position"][0], unit["position"][1]), t);
 	}
 
 	for (auto grid : _static_grids) {
 		update_alti_grid(grid.second);
 	}
-	for (auto grid : _unit_grids) {
+	/*for (auto grid : _unit_grids) {
 		update_alti_grid(grid.second);
-	}
+	}*/
 	update_static_grids();
 }
 
