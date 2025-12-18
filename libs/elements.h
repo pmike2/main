@@ -114,8 +114,8 @@ public:
 	Elements();
 	Elements(std::string dir_tree_jsons);
 	~Elements();
-	void add_tree(std::string species_name, pt_type_3d pt_base, pt_type_3d size);
-	void add_stone(pt_type_3d pt_base, pt_type_3d size);
+	Tree * add_tree(std::string species_name, pt_type_3d pt_base, pt_type_3d size);
+	Stone * add_stone(pt_type_3d pt_base, pt_type_3d size);
 
 
 	std::map<std::string, TreeSpecies *> _tree_species;

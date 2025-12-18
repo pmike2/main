@@ -28,12 +28,14 @@ public:
 	pt_type_3d center();
 	pt_type_3d bottom_center();
 	pt_type_3d size();
+	AABB_2D * aabb2d();
 	void set_z(number z);
 	friend std::ostream & operator << (std::ostream & os, const AABB & aabb);
 
 
 	pt_type_3d _vmin, _vmax;
-	number _radius;
+	number _radius; // rayon sphère englobante
+	number _base_radius; // rayon cercle englobant AABB2D
 	pt_type_3d _pts[8]; // sommets du parallelepipede droit
 };
 

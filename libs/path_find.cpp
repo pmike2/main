@@ -1012,6 +1012,30 @@ Obstacle * Map::add_obstacle(OBSTACLE_TYPE type, const std::vector<pt_type> & pt
 }
 
 
+void Map::add_static_element(std::string element_name, pt_type_3d pos, pt_type_3d size) {
+	AABB_2D * aabb;
+	if (element_name == "stone") {
+		Stone * stone = _elements->add_stone(pos, size);
+		aabb = stone->_aabb->aabb2d();
+	}
+	else {
+		Tree * tree = _elements->add_tree(element_name, pos, size);
+		aabb = tree->_aabb->aabb2d();
+	}
+
+	for (auto & unit_grid : _static_grids) {
+		UnitType * unit_type = unit_grid.first;
+		GraphGrid * grid = unit_grid.second;
+		std::vector<std::pair<uint, uint> > edges= grid->aabb_intersection(aabb);
+
+		for (auto & e : edges) {
+			GraphEdge & edge = grid->_vertices[e.first]._edges[e.second];
+			edge._weight += unit_type->_weights[SOLID];
+		}
+	}
+}
+
+
 // maj des altis des vertices de la grille
 void Map::update_alti_grid(GraphGrid * grid) {
 	grid->_it_v= grid->_vertices.begin();
@@ -1045,12 +1069,21 @@ void Map::update_static_grids() {
 				pt_type_3d & pt_begin= grid->_it_v->second._pos;
 				pt_type_3d & pt_end= grid->_vertices[grid->_it_e->first]._pos;
 				edge._weight = type_grid.first->elevation_coeff(pt_end.z - pt_begin.z);
-				for (auto & obstacle : _buffered_obstacles[type_grid.first]) {
+
+				if (pt_begin.z < 0.01 && pt_end.z < 0.01) {
+					edge._weight += type_grid.first->_weights[WATER];
+				}
+				else {
+					edge._weight += type_grid.first->_weights[GROUND];
+				}
+				
+				/*for (auto & obstacle : _buffered_obstacles[type_grid.first]) {
 					if (segment_intersects_poly(pt_begin, pt_end, obstacle->_polygon, NULL)) {
 						edge._weight += type_grid.first->_weights[obstacle->_type];
 						break;
 					}
-				}
+				}*/
+
 				/*if (edge._weight > max_weight) {
 					max_weight = edge._weight;
 				}
@@ -1068,30 +1101,6 @@ void Map::update_static_grids() {
 }
 
 
-/*void Map::update_unit_grid(Unit * unit) {
-	GraphGrid * unit_grid = _unit_grids[unit];
-	GraphGrid * units_position_grid = _units_position_grids[unit->_type];
-
-	units_position_grid->_it_v= units_position_grid->_vertices.begin();
-	while (units_position_grid->_it_v!= units_position_grid->_vertices.end()) {
-		units_position_grid->_it_e= units_position_grid->_it_v->second._edges.begin();
-		while (units_position_grid->_it_e!= units_position_grid->_it_v->second._edges.end()) {
-			GraphEdge & units_position_edge = units_position_grid->_vertices[units_position_grid->_it_v->first]._edges[units_position_grid->_it_e->first];
-			GraphEdge & unit_edge = unit_grid->_vertices[units_position_grid->_it_v->first]._edges[units_position_grid->_it_e->first];
-			//std::cout << uint(units_position_edge._weight) << "\n";
-			if (uint(units_position_edge._weight) < 2 || uint(units_position_edge._weight) == unit->_id) {
-				unit_edge._weight = 0.0;
-			}
-			else {
-				unit_edge._weight = 1000.0;
-			}
-			units_position_grid->_it_e++;
-		}
-		units_position_grid->_it_v++;
-	}
-}*/
-
-
 void Map::add_unit_to_position_grids(Unit * unit) {
 	for (auto & unit_grid : _units_position_grids) {
 		UnitType * unit_type = unit_grid.first;
@@ -1105,7 +1114,7 @@ void Map::add_unit_to_position_grids(Unit * unit) {
 			edges= grid->aabb_intersection(aabb);
 		}
 		else if (unit->_mode == MOVING) {
-			number r = unit->_aabb->_radius;
+			number r = unit->_aabb->_base_radius + 0.5 * std::max(unit_type->_size.x, unit_type->_size.y);
 			std::vector<pt_type_4d> segments;
 			pt_type p1 = pt_type(unit->_aabb->bottom_center());
 			pt_type p2 = pt_type(unit->_path->_pts[0]);
@@ -1330,28 +1339,33 @@ void Map::randomize() {
 		update_alti_grid(grid.second);
 	}
 
+	update_static_grids();
+
 	for (uint i=0; i<1000; ++i) {
-		pt_type pt = rand_pt(_origin, _origin + _size);
-		pt_type_3d size = rand_pt_3d(0.2, 1.0, 0.2, 1.0, 1.0, 2.0);
-		_elements->add_tree("tree_test", pt_type_3d(pt.x, pt.y, _terrain->get_alti(pt)), size);
-	}
-	
-	for (uint i=0; i<1000; ++i) {
-		pt_type pt = rand_pt(_origin, _origin + _size);
-		pt_type_3d size = rand_pt_3d(0.2, 1.0, 0.2, 1.0, 0.2, 1.0);
-		_elements->add_stone(pt_type_3d(pt.x, pt.y, _terrain->get_alti(pt)), size);
+		std::string element_name = std::vector<std::string>{"tree_test", "stone"}[rand_int(0, 1)];
+		pt_type_3d size;
+		if (element_name == "stone") {
+			size = rand_pt_3d(0.2, 1.0, 0.2, 1.0, 0.1, 0.5);
+		}
+		else {
+			size = rand_pt_3d(0.2, 1.0, 0.2, 1.0, 1.0, 2.0);
+		}
+		pt_type pt = rand_pt(_origin + 0.5 * pt_type(size.x, size.y)+ 0.1, _origin + _size - 0.5 * pt_type(size.x, size.y)- 0.1);
+		number alti = _terrain->get_alti(pt);
+		if (alti > 0.01) {
+			add_static_element(element_name, pt_type_3d(pt.x, pt.y, alti), size);
+		}
 	}
 
-	for (auto & element : _elements->_elements) {
+	/*for (auto & element : _elements->_elements) {
 		std::vector<pt_type> pts;
 		pts.push_back(pt_type(element->_aabb->_vmin.x, element->_aabb->_vmin.y));
 		pts.push_back(pt_type(element->_aabb->_vmax.x, element->_aabb->_vmin.y));
 		pts.push_back(pt_type(element->_aabb->_vmax.x, element->_aabb->_vmax.y));
 		pts.push_back(pt_type(element->_aabb->_vmin.x, element->_aabb->_vmax.y));
 		add_obstacle(SOLID, pts);
-	}
+	}*/
 
-	update_static_grids();
 }
 
 

@@ -166,6 +166,7 @@ struct Map {
 	~Map();
 	void add_unit(std::string type_name, pt_type pos, time_point t);
 	Obstacle * add_obstacle(OBSTACLE_TYPE type, const std::vector<pt_type> & pts);
+	void add_static_element(std::string element_name, pt_type_3d pos, pt_type_3d size);
 	void update_alti_grid(GraphGrid * grid);
 	void update_alti_path(Unit * unit);
 	void update_static_grids();

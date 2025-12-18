@@ -2,6 +2,7 @@
 #include <sstream>
 #include <math.h>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
 #include "json.hpp"
@@ -420,19 +421,21 @@ Elements::~Elements() {
 }
 
 
-void Elements::add_tree(std::string species_name, pt_type_3d pt_base, pt_type_3d size) {
+Tree * Elements::add_tree(std::string species_name, pt_type_3d pt_base, pt_type_3d size) {
 	if (_tree_species.count(species_name) == 0) {
 		std::cerr << species_name << " espece inconnue\n";
-		return;
+		return NULL;
 	}
 
 	Tree * tree = new Tree(_tree_species[species_name], pt_base, size);
 	_elements.push_back(tree);
+	return tree;
 }
 
 
-void Elements::add_stone(pt_type_3d pt_base, pt_type_3d size) {
+Stone * Elements::add_stone(pt_type_3d pt_base, pt_type_3d size) {
 	Stone * stone = new Stone(pt_base, size);
 	_elements.push_back(stone);
+	return stone;
 }
 

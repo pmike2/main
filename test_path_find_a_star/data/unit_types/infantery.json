@@ -3,7 +3,7 @@
 	"size" : [0.3, 0.3, 0.5],
 	"max_velocity" : 0.005,
 	"weights" : {
-		"GROUND" : 1.0,
+		"GROUND" : 0.0,
 		"SOLID" : 1000.0,
 		"WATER" : 1000.0
 	},

@@ -48,6 +48,7 @@ void AABB::set_vmin_vmax(const pt_type_3d & vmin, const pt_type_3d & vmax) {
 	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);*/
 
 	_radius = glm::distance(_vmin, _vmax) * 0.5;
+	_base_radius = glm::distance(pt_type(_vmin.x, _vmin.y), pt_type(_vmax.x, _vmax.y)) * 0.5;
 
 	_pts[0]= pt_type_3d(_vmin.x, _vmin.y, _vmin.z);
 	_pts[1]= pt_type_3d(_vmax.x, _vmin.y, _vmin.z);
@@ -109,6 +110,11 @@ pt_type_3d AABB::bottom_center() {
 
 pt_type_3d AABB::size() {
 	return _vmax - _vmin;
+}
+
+
+AABB_2D * AABB::aabb2d() {
+	return new AABB_2D(pt_type(_vmin.x, _vmin.y), pt_type(_vmax.x - _vmin.x, _vmax.y - _vmin.y));
 }
 
 

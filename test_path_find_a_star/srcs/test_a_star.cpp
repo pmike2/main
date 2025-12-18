@@ -629,8 +629,8 @@ void TestAStar::update_terrain() {
 				number alti = pts[idx_tris[i]].z;
 				uint idx_normal = i / 3;
 
-				if (alti < 0.0) {
-					color = glm::vec4(0.0f, 0.7f, 0.8f, 1.0f);
+				if (alti < 0.01) {
+					color = glm::vec4(0.0f, 0.2f, 0.8f, 1.0f);
 				}
 				else if (alti > 10.0) {
 					color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
