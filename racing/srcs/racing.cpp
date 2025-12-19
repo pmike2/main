@@ -1060,11 +1060,11 @@ void Racing::update_bbox() {
 
 	float * ptr= data;
 	for (auto obj : _track->_grid->_objects) {
-		std::vector<pt_type> pts(obj->_bbox->_pts, obj->_bbox->_pts+ 4);
+		std::vector<pt_2d> pts(obj->_bbox->_pts, obj->_bbox->_pts+ 4);
 		ptr= draw_polygon(ptr, pts, BBOX_COLOR);
 	}
 	for (auto obj : _track->_floating_objects) {
-		std::vector<pt_type> pts(obj->_bbox->_pts, obj->_bbox->_pts+ 4);
+		std::vector<pt_2d> pts(obj->_bbox->_pts, obj->_bbox->_pts+ 4);
 		ptr= draw_polygon(ptr, pts, BBOX_COLOR);
 	}
 
@@ -1094,7 +1094,7 @@ void Racing::update_footprint() {
 	for (auto obj : _track->_floating_objects) {
 		for (auto tri : obj->_footprint->_triangles_idx) {
 			for (int i=0; i<3; ++i) {
-				pt_type pt= obj->_footprint->_pts[tri[i]];
+				pt_2d pt= obj->_footprint->_pts[tri[i]];
 				data[compt++]= float(pt.x);
 				data[compt++]= float(pt.y);
 				compt+= 4;
@@ -1105,7 +1105,7 @@ void Racing::update_footprint() {
 	for (auto obj : _track->_grid->_objects) {
 		for (auto tri : obj->_footprint->_triangles_idx) {
 			for (int i=0; i<3; ++i) {
-				pt_type pt= obj->_footprint->_pts[tri[i]];
+				pt_2d pt= obj->_footprint->_pts[tri[i]];
 				data[compt++]= float(pt.x);
 				data[compt++]= float(pt.y);
 
@@ -1475,20 +1475,20 @@ void Racing::update_barrier() {
 	unsigned int compt= 0;
 	for (auto poly : _track->_barriers) {
 		for (unsigned int idx_pt=0; idx_pt<poly.size(); ++idx_pt) {
-			pt_type pt1(poly[idx_pt]);
-			pt_type pt2;
+			pt_2d pt1(poly[idx_pt]);
+			pt_2d pt2;
 			if (idx_pt< poly.size()- 1) {
-				pt2= pt_type(poly[idx_pt+ 1]);
+				pt2= pt_2d(poly[idx_pt+ 1]);
 			}
 			else {
-				pt2= pt_type(poly[0]);
+				pt2= pt_2d(poly[0]);
 			}
-			pt_type vrot90= pt_type(pt1.y- pt2.y, pt2.x- pt1.x);
+			pt_2d vrot90= pt_2d(pt1.y- pt2.y, pt2.x- pt1.x);
 			vrot90= normalized(vrot90);
-			pt_type p0= pt1- 0.5* BARRIER_WIDTH* vrot90;
-			pt_type p1= pt2- 0.5* BARRIER_WIDTH* vrot90;
-			pt_type p2= pt2+ 0.5* BARRIER_WIDTH* vrot90;
-			pt_type p3= pt1+ 0.5* BARRIER_WIDTH* vrot90;
+			pt_2d p0= pt1- 0.5* BARRIER_WIDTH* vrot90;
+			pt_2d p1= pt2- 0.5* BARRIER_WIDTH* vrot90;
+			pt_2d p2= pt2+ 0.5* BARRIER_WIDTH* vrot90;
+			pt_2d p3= pt1+ 0.5* BARRIER_WIDTH* vrot90;
 			
 			data[compt++]= p0.x; data[compt++]= p0.y; data[compt++]= 0.0f; compt+= 4;
 			data[compt++]= p1.x; data[compt++]= p1.y; data[compt++]= 0.0f; compt+= 4;

@@ -26,7 +26,7 @@ enum WaterTileType {WATER_TILE, BEACH_TILE};
 class WaterTile {
 public:
 	WaterTile();
-	WaterTile(WaterTileType type, pt_type pos, pt_type size, unsigned int idx_texture);
+	WaterTile(WaterTileType type, pt_2d pos, pt_2d size, unsigned int idx_texture);
 	~WaterTile();
 
 
@@ -44,8 +44,8 @@ public:
 	WaterSystem(number tile_size);
 	~WaterSystem();
 	void set_pngs(std::vector<std::string> pngs);
-	std::pair<int, int> number2coord(pt_type pos);
-	pt_type coord2number(int col_idx, int row_idx);
+	std::pair<int, int> number2coord(pt_2d pos);
+	pt_2d coord2number(int col_idx, int row_idx);
 	void clear();
 	void set_track_grid(StaticObjectGrid * grid);
 	void anim(time_point t);

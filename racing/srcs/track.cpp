@@ -158,9 +158,9 @@ void Track::load_json(std::string json_path) {
 	std::vector<std::pair<CheckPoint *, unsigned int> > checkpoints;
 	for (auto object : js["floating_objects"]) {
 		std::string model_name= object["name"];
-		pt_type position= pt_type(object["position"][0], object["position"][1]);
+		pt_2d position= pt_2d(object["position"][0], object["position"][1]);
 		number alpha= object["alpha"];
-		pt_type scale= pt_type(object["scale"][0], object["scale"][1]);
+		pt_2d scale= pt_2d(object["scale"][0], object["scale"][1]);
 		if (_models[model_name]->_type== CHECKPOINT || _models[model_name]->_type== START) {
 			CheckPoint * checkpoint= new CheckPoint(_models[model_name], position, alpha, scale);
 			if (_models[model_name]->_type== START) {
@@ -197,9 +197,9 @@ void Track::load_json(std::string json_path) {
 	}
 	_barriers.clear();
 	for (auto poly : js["barriers"]) {
-		std::vector<pt_type> barrier;
+		std::vector<pt_2d> barrier;
 		for (auto pt : poly) {
-			barrier.push_back(pt_type(pt[0], pt[1]));
+			barrier.push_back(pt_2d(pt[0], pt[1]));
 		}
 		_barriers.push_back(barrier);
 	}
@@ -207,7 +207,7 @@ void Track::load_json(std::string json_path) {
 	// placement des voitures au start
 	place_cars();
 
-	_floating_objects.push_back(new StaticObject(_models["direction_help"], pt_type(0.0), 0.0, pt_type(DIRECTION_HELP_SCALE)));
+	_floating_objects.push_back(new StaticObject(_models["direction_help"], pt_2d(0.0), 0.0, pt_2d(DIRECTION_HELP_SCALE)));
 }
 
 
@@ -291,10 +291,10 @@ void Track::set_hero(unsigned int idx_driver) {
 
 void Track::place_cars() {
 	// calcul des positions par rapport à la ligne de départ
-	pt_type start_dir= rot(pt_type(0.0, 1.0), _start->_alpha);
-	pt_type start_right= rot(start_dir, -0.5* M_PI);
-	pt_type first_row_center= _start->_com- (0.5* _start->_scale.y+ DEFAULT_CAR_PLACEMENT._first_row_dist_start)* start_dir;
-	std::vector<pt_type> positions;
+	pt_2d start_dir= rot(pt_2d(0.0, 1.0), _start->_alpha);
+	pt_2d start_right= rot(start_dir, -0.5* M_PI);
+	pt_2d first_row_center= _start->_com- (0.5* _start->_scale.y+ DEFAULT_CAR_PLACEMENT._first_row_dist_start)* start_dir;
+	std::vector<pt_2d> positions;
 	
 	bool positions_filled= false;
 	for (int idx_row=0; idx_row< DEFAULT_CAR_PLACEMENT._n_max_rows; ++idx_row) {
@@ -302,7 +302,7 @@ void Track::place_cars() {
 			break;
 		}
 		for (int i=0; i<DEFAULT_CAR_PLACEMENT._n_cars_per_row; ++i) {
-			pt_type pos= first_row_center- number(idx_row)* DEFAULT_CAR_PLACEMENT._row_dist* start_dir
+			pt_2d pos= first_row_center- number(idx_row)* DEFAULT_CAR_PLACEMENT._row_dist* start_dir
 				+ (-0.5* number(DEFAULT_CAR_PLACEMENT._n_cars_per_row- 1)+ i)* DEFAULT_CAR_PLACEMENT._neighbour_dist* start_right;
 			positions.push_back(pos);
 			if (positions.size()== _drivers.size()) {
@@ -320,7 +320,7 @@ void Track::place_cars() {
 	// création des voitures
 	for (unsigned int idx_driver=0; idx_driver<_drivers.size(); ++idx_driver) {
 		CarModel * model= (CarModel *)(_models[_drivers[idx_driver]->_name]);
-		Car * car= new Car(model, positions[idx_driver], _start->_alpha, pt_type(1.0));
+		Car * car= new Car(model, positions[idx_driver], _start->_alpha, pt_2d(1.0));
 		car->_driver= _drivers[idx_driver];
 		_floating_objects.push_back(car);
 		_sorted_cars.push_back(car);
@@ -574,7 +574,7 @@ void Track::reinit_car_contact() {
 
 void Track::collisions(time_point t) {
 	_collisions.clear();
-	pt_type position(0.0);
+	pt_2d position(0.0);
 
 	std::vector<Car *> collided_cars;
 
@@ -730,7 +730,7 @@ void Track::boost(time_point t) {
 				auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_boost_t).count();
 				if (dt> BOOST_DELTA_T_MS) {
 					car->_last_boost_t= t;
-					car->_velocity+= rot(pt_type(0.0, BOOST_AMPLITUDE), obj2->_alpha);
+					car->_velocity+= rot(pt_2d(0.0, BOOST_AMPLITUDE), obj2->_alpha);
 				}
 				break;
 			}
@@ -755,7 +755,7 @@ void Track::checkpoints(time_point t) {
 			continue;
 		}
 
-		pt_type axis(0.0, 0.0);
+		pt_2d axis(0.0, 0.0);
 		number overlap= 0.0;
 		unsigned int idx_pt= 0;
 		bool is_pt_in_poly1= false;
@@ -807,7 +807,7 @@ void Track::checkpoint_ia(Car * car) {
 	}
 
 	CheckPoint * checkpoint= car->_next_checkpoint;
-	pt_type direction(checkpoint->_com- car->_com);
+	pt_2d direction(checkpoint->_com- car->_com);
 	number dist= number(glm::length(direction));
 	number scalprod= scal(car->_forward, direction/ dist);
 	number sign= 1.0;
@@ -929,7 +929,7 @@ void Track::direction_help() {
 		}
 	}
 	number dist_hero_chkpt= norm(_hero->_next_checkpoint->_com- _hero->_com);
-	pt_type position(0.0);
+	pt_2d position(0.0);
 	number alpha= 0.0;
 
 	// on la met loin pour ne plus la voir lorsque l'on est suffisamment proche du prochain checkpoint
@@ -937,10 +937,10 @@ void Track::direction_help() {
 		position.x= 10000.0;
 	} else {
 		position= _hero->_com+ DIRECTION_HELP_DIST_HERO* (_hero->_next_checkpoint->_com- _hero->_com)/ dist_hero_chkpt;
-		alpha= angle(pt_type(0.0, 1.0), _hero->_next_checkpoint->_com- _hero->_com);
+		alpha= angle(pt_2d(0.0, 1.0), _hero->_next_checkpoint->_com- _hero->_com);
 	}
 
-	direction_obj->reinit(position, alpha, pt_type(DIRECTION_HELP_SCALE));
+	direction_obj->reinit(position, alpha, pt_2d(DIRECTION_HELP_SCALE));
 }
 
 
@@ -1054,7 +1054,7 @@ void Track::drop_col() {
 }
 
 
-StaticObject * Track::get_floating_object(pt_type pos) {
+StaticObject * Track::get_floating_object(pt_2d pos) {
 	for (auto obj : _floating_objects) {
 		if (is_pt_inside_poly(pos, obj->_footprint)) {
 			return obj;

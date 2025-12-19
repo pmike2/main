@@ -13,7 +13,7 @@ Smoke::~Smoke() {
 }
 
 
-void Smoke::reinit(const SmokeConfig & config, pt_type position, number alpha, pt_type scale, unsigned int idx_texture) {
+void Smoke::reinit(const SmokeConfig & config, pt_2d position, number alpha, pt_2d scale, unsigned int idx_texture) {
 	_config= config;
 	_bbox->_center= position;
 	_bbox->_alpha= alpha;
@@ -91,7 +91,7 @@ void SmokeSystem::anim(time_point t) {
 		if (smoke!= NULL) {
 			_last_exhaust_t= t;
 			number smoke_size= EXHAUST._size_init_factor* sqrt(_car->_velocity.x* _car->_velocity.x+ _car->_velocity.y* _car->_velocity.y);
-			smoke->reinit(EXHAUST, _car->_com+ EXHAUST._dist_from_com* _car->_forward, _car->_alpha, pt_type(smoke_size, smoke_size), rand_int(0, _n_pngs- 1));
+			smoke->reinit(EXHAUST, _car->_com+ EXHAUST._dist_from_com* _car->_forward, _car->_alpha, pt_2d(smoke_size, smoke_size), rand_int(0, _n_pngs- 1));
 		}
 		else {
 			std::cout << "SmokeSystem saturé\n";
@@ -105,7 +105,7 @@ void SmokeSystem::anim(time_point t) {
 			if (smoke!= NULL) {
 				_last_bump_t= t;
 				number smoke_size= ENGINE_BUMPED._size_init_factor* (_car->_bumps[4]+ _car->_bumps[5]);
-				smoke->reinit(ENGINE_BUMPED, _car->_com+ ENGINE_BUMPED._dist_from_com* _car->_forward, _car->_alpha, pt_type(smoke_size, smoke_size), rand_int(0, _n_pngs- 1));
+				smoke->reinit(ENGINE_BUMPED, _car->_com+ ENGINE_BUMPED._dist_from_com* _car->_forward, _car->_alpha, pt_2d(smoke_size, smoke_size), rand_int(0, _n_pngs- 1));
 			}
 			else {
 				std::cout << "SmokeSystem saturé\n";

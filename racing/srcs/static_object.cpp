@@ -19,7 +19,7 @@ StaticObjectModel::StaticObjectModel() : ActionableObjectModel() {
 
 StaticObjectModel::StaticObjectModel(std::string json_path) :
 	ActionableObjectModel(json_path),
-	_material_name(""), _material(NULL), _translation_constraint(pt_type(0.0))
+	_material_name(""), _material(NULL), _translation_constraint(pt_2d(0.0))
 {
 	_footprint= new Polygon2D();
 	load(json_path);
@@ -48,19 +48,19 @@ void StaticObjectModel::load(std::string json_path) {
 	}
 
 	// empreinte au sol
-	std::vector<pt_type> pts;
+	std::vector<pt_2d> pts;
 	if (js["footprint"]!= nullptr) {
 		for (auto coord : js["footprint"]) {
-			pt_type pt(coord[0], coord[1]);
+			pt_2d pt(coord[0], coord[1]);
 			pts.push_back(pt);
 		}
 	}
 	else {
 		// emprise totale
-		pts.push_back(pt_type(-0.5, -0.5));
-		pts.push_back(pt_type(0.5, -0.5));
-		pts.push_back(pt_type(0.5, 0.5));
-		pts.push_back(pt_type(-0.5, 0.5));
+		pts.push_back(pt_2d(-0.5, -0.5));
+		pts.push_back(pt_2d(0.5, -0.5));
+		pts.push_back(pt_2d(0.5, 0.5));
+		pts.push_back(pt_2d(-0.5, 0.5));
 	}
 	_footprint->set_points(pts);
 	_footprint->update_all();
@@ -121,14 +121,14 @@ StaticObject::StaticObject() {
 }
 
 
-StaticObject::StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) :
+StaticObject::StaticObject(StaticObjectModel * model, pt_2d position, number alpha, pt_2d scale) :
  	ActionableObject((ActionableObjectModel *)(model)),
-	_model(model), _scale(pt_type(0.0)), _mass(0.0), _inertia(0.0), _com(pt_type(0.0)), _velocity(pt_type(0.0)),
-	_acceleration(pt_type(0.0)), _force(pt_type(0.0)), _alpha(0.0), _angular_velocity(0.0), _angular_acceleration(0.0),
+	_model(model), _scale(pt_2d(0.0)), _mass(0.0), _inertia(0.0), _com(pt_2d(0.0)), _velocity(pt_2d(0.0)),
+	_acceleration(pt_2d(0.0)), _force(pt_2d(0.0)), _alpha(0.0), _angular_velocity(0.0), _angular_acceleration(0.0),
 	_torque(0.0), _current_surface(NULL), _previous_surface(NULL),
 	_linear_friction_surface(1.0), _angular_friction_surface(1.0), _car_contact(false)
 {
-	_bbox= new BBox_2D(pt_type(0.0), pt_type(0.0));
+	_bbox= new BBox_2D(pt_2d(0.0), pt_2d(0.0));
 	_footprint= new Polygon2D();
 	_footprint->set_points(_model->_footprint->_pts);
 	_footprint->triangulate(); // on a besoin de trianguler pour l'affichage par des triangles du footprint
@@ -145,14 +145,14 @@ StaticObject::~StaticObject() {
 }
 
 
-void StaticObject::reinit(pt_type position, number alpha, pt_type scale) {
+void StaticObject::reinit(pt_2d position, number alpha, pt_2d scale) {
 	_com= position;
 	_alpha= alpha;
 	_scale= scale;
 
-	_velocity= pt_type(0.0);
-	_acceleration= pt_type(0.0);
-	_force= pt_type(0.0);
+	_velocity= pt_2d(0.0);
+	_acceleration= pt_2d(0.0);
+	_force= pt_2d(0.0);
 	_angular_velocity= 0.0;
 	_angular_acceleration= 0.0;
 	_torque= 0.0;
@@ -169,7 +169,7 @@ void StaticObject::update() {
 	// maj du footprint
 	_footprint->set_points(_model->_footprint->_pts);
 	_footprint->scale(_scale);
-	_footprint->rotate(pt_type(0.0), _alpha); // on a recentré sur 0 le footprint des objets susceptibles de tourner
+	_footprint->rotate(pt_2d(0.0), _alpha); // on a recentré sur 0 le footprint des objets susceptibles de tourner
 	_footprint->translate(_com);
 	_footprint->update_all(); // peut-être pas besoin de tout updater
 
@@ -180,7 +180,7 @@ void StaticObject::update() {
 		_bbox->_half_size= 0.5* _scale;
 	}
 	else {
-		_bbox->_center= _com+ rot(pt_type(_model->_com2bbox_center.x* _scale.x, _model->_com2bbox_center.y* _scale.y), _alpha);
+		_bbox->_center= _com+ rot(pt_2d(_model->_com2bbox_center.x* _scale.x, _model->_com2bbox_center.y* _scale.y), _alpha);
 		_bbox->_half_size= 0.5* _scale;
 	}
 	_bbox->update();
@@ -244,7 +244,7 @@ void StaticObject::anim(number anim_dt, time_point t) {
 	Action * action= get_current_action();
 
 	if (_model->_movement== MVMT_ALL || _model->_movement== MVMT_TRANSLATE || _model->_movement== MVMT_TRANSLATE_CONSTRAINED) {
-		_force= pt_type(0.0);
+		_force= pt_2d(0.0);
 		if (!action->_forces.empty() && action->_forces[_current_action_force_idx]->_type== TRANSLATION) {
 			_force+= rot(action->_forces[_current_action_force_idx]->_force, _alpha);
 		}
@@ -298,7 +298,7 @@ CheckPoint::CheckPoint() {
 }
 
 
-CheckPoint::CheckPoint(StaticObjectModel * model, pt_type position, number alpha, pt_type scale) :
+CheckPoint::CheckPoint(StaticObjectModel * model, pt_2d position, number alpha, pt_2d scale) :
 	StaticObject(model, position, alpha, scale), _next(NULL), _previous(NULL)
 {
 

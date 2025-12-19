@@ -53,12 +53,12 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 
 	_view_system->_rect_select->_z = -1.0; // pour que l'affichage du rectangle de sélection se fassent par dessus le reste
 
-	_map = new Map("../data/unit_types", "../data/elements", pt_type(-50.0, -50.0), pt_type(100.0, 100.0), pt_type(1.0), pt_type(0.25), t);
-	//_map = new Map("../data/unit_types", pt_type(0.0, 0.0), pt_type(10.0, 10.0), pt_type(2.0), pt_type(2.0), t);
+	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-50.0, -50.0), pt_2d(100.0, 100.0), pt_2d(1.0), pt_2d(0.25), t);
+	//_map = new Map("../data/unit_types", pt_2d(0.0, 0.0), pt_2d(10.0, 10.0), pt_2d(2.0), pt_2d(2.0), t);
 	//std::cout << *_map << "\n";
 	//_map->randomize();
 
-	_visible_grid = _map->_static_grids[_map->_unit_types["infantery"]];
+	_visible_grid = _map->_static_grids[_map->_unit_types["boat"]];
 
 	update_all();
 }
@@ -151,8 +151,8 @@ void TestAStar::draw() {
 
 
 void TestAStar::anim(time_point t, InputState * input_state) {
-	//pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
-	pt_type_3d pt = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
+	//pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+	pt_3d pt = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 
 	if (_view_system->_new_single_selection) {
 		_view_system->_new_single_selection= false;
@@ -185,12 +185,12 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 	if (_mode == EDIT_ALTI && input_state->_left_mouse) {
 		const number alti_aabb_size = 10.0;
 		const number alti_inc_max = 1.0;
-		AABB_2D * aabb = new AABB_2D(pt_type(pt) - pt_type(alti_aabb_size * 0.5), pt_type(alti_aabb_size));
+		AABB_2D * aabb = new AABB_2D(pt_2d(pt) - pt_2d(alti_aabb_size * 0.5), pt_2d(alti_aabb_size));
 		std::vector<uint> ids = _map->_terrain->get_ids_over_aabb(aabb);
 		delete aabb;
 		for (auto id : ids) {
-			pt_type pt2 = _map->_terrain->id2pt(id);
-			number dist = glm::distance(pt_type(pt), pt2) / (alti_aabb_size * 0.5);
+			pt_2d pt2 = _map->_terrain->id2pt(id);
+			number dist = glm::distance(pt_2d(pt), pt2) / (alti_aabb_size * 0.5);
 			if (dist > 1.0) {
 				continue;
 			}
@@ -203,6 +203,7 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 				_map->_terrain->_altis[id] += alti_inc;
 			}
 		}
+		_map->_terrain->set_negative_alti_2zero();
 
 		for (auto grid : _map->_static_grids) {
 			_map->update_alti_grid(grid.second);
@@ -231,26 +232,36 @@ glm::vec4 TestAStar::get_edge_color() {
 			edge_color = glm::vec4(float(edge_weight) / 100.0f, 1.0f - float(edge_weight) / 100.0f, 0.5f, 1.0f);
 		}
 	}
-	else if (_visible_grid == _map->_units_position_grids[_map->_unit_types["infantery"]]) {
-		if (edge_weight < 2.0) {
+	else if (_visible_grid == _map->_static_grids[_map->_unit_types["boat"]]) {
+		if (edge_weight > 0.1 ) {
 			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
-		else if (edge_weight < 3.0) {
+		else {
 			edge_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 		}
-		else if (edge_weight < 4.0) {
+	}
+	else if (_visible_grid == _map->_units_position_grids[_map->_unit_types["infantery"]]
+	|| _visible_grid == _map->_units_position_grids[_map->_unit_types["boat"]]) {
+		edge_weight = fmod(edge_weight, 7.0);
+		if (edge_weight < 1.0) {
+			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		}
+		else if (edge_weight < 2.0) {
+			edge_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+		}
+		else if (edge_weight < 3.0) {
 			edge_color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
-		else if (edge_weight < 5.0) {
+		else if (edge_weight < 4.0) {
 			edge_color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
 		}
-		else if (edge_weight < 6.0) {
+		else if (edge_weight < 5.0) {
 			edge_color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
 		}
-		else if (edge_weight < 7.0) {
+		else if (edge_weight < 6.0) {
 			edge_color = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
 		}
-		else if (edge_weight < 8.0) {
+		else {
 			edge_color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
@@ -289,7 +300,7 @@ void TestAStar::update_grid() {
 	// croix sommets
 	/*grid->_it_v= grid->_vertices.begin();
 	while (grid->_it_v!= grid->_vertices.end()) {
-		pt_type_3d pos = grid->_it_v->second._pos;
+		pt_3d pos = grid->_it_v->second._pos;
 		number positions[8] = {
 			pos.x - CROSS_SIZE, pos.y - CROSS_SIZE, 
 			pos.x + CROSS_SIZE, pos.y + CROSS_SIZE, 
@@ -317,10 +328,10 @@ void TestAStar::update_grid() {
 		while (_visible_grid->_it_e!= _visible_grid->_it_v->second._edges.end()) {
 			glm::vec4 edge_color = get_edge_color();
 
-			pt_type_3d & p1 = _visible_grid->_it_v->second._pos;
-			pt_type_3d & p2 = _visible_grid->_vertices[_visible_grid->_it_e->first]._pos;
-			pt_type_3d p1b = p1 + (p2 - p1) * 0.1;
-			pt_type_3d p_middle = (p1 + p2) * 0.5 - (p2 - p1) * 0.1;
+			pt_3d & p1 = _visible_grid->_it_v->second._pos;
+			pt_3d & p2 = _visible_grid->_vertices[_visible_grid->_it_e->first]._pos;
+			pt_3d p1b = p1 + (p2 - p1) * 0.1;
+			pt_3d p_middle = (p1 + p2) * 0.5 - (p2 - p1) * 0.1;
 			
 			ptr[0] = float(p1b.x);
 			ptr[1] = float(p1b.y);
@@ -444,7 +455,7 @@ void TestAStar::update_unit() {
 
 	// units
 	for (auto unit : _map->_units) {
-		std::vector<pt_type_3d> segs = unit->_aabb->segments();
+		std::vector<pt_3d> segs = unit->_aabb->segments();
 
 		glm::vec4 unit_color;
 		if (unit->_mode == MOVING) {
@@ -569,7 +580,7 @@ void TestAStar::update_debug() {
 
 	for (uint col=0; col<w; ++col) {
 		for (uint lig=0; lig<h; ++lig) {
-			pt_type pt(number(col) * step, number(lig) * step);
+			pt_2d pt(number(col) * step, number(lig) * step);
 			ptr[0] = float(pt.x);
 			ptr[1] = float(pt.y);
 			ptr[2] = float(_map->_terrain->get_alti(pt));
@@ -613,14 +624,14 @@ void TestAStar::update_terrain() {
 	float * ptr = data;
 	for (uint col = 0; col<_map->_terrain->_n_cols - 1; ++col) {
 		for (uint lig = 0; lig<_map->_terrain->_n_ligs - 1; ++lig) {
-			pt_type_3d pts[4] = {
-				pt_type_3d(_map->_terrain->col_lig2pt(col, lig), _map->_terrain->get_alti(col, lig)),
-				pt_type_3d(_map->_terrain->col_lig2pt(col + 1, lig), _map->_terrain->get_alti(col + 1, lig)),
-				pt_type_3d(_map->_terrain->col_lig2pt(col + 1, lig + 1), _map->_terrain->get_alti(col + 1, lig + 1)),
-				pt_type_3d(_map->_terrain->col_lig2pt(col, lig + 1), _map->_terrain->get_alti(col, lig + 1))
+			pt_3d pts[4] = {
+				pt_3d(_map->_terrain->col_lig2pt(col, lig), _map->_terrain->get_alti(col, lig)),
+				pt_3d(_map->_terrain->col_lig2pt(col + 1, lig), _map->_terrain->get_alti(col + 1, lig)),
+				pt_3d(_map->_terrain->col_lig2pt(col + 1, lig + 1), _map->_terrain->get_alti(col + 1, lig + 1)),
+				pt_3d(_map->_terrain->col_lig2pt(col, lig + 1), _map->_terrain->get_alti(col, lig + 1))
 			};
 
-			std::vector<pt_type_3d> normals;
+			std::vector<pt_3d> normals;
 			normals.push_back(glm::normalize(glm::cross(pts[1] - pts[0], pts[2] - pts[0])));
 			normals.push_back(glm::normalize(glm::cross(pts[2] - pts[0], pts[3] - pts[0])));
 			
@@ -701,7 +712,7 @@ void TestAStar::update_all() {
 
 
 void TestAStar::update_text(InputState * input_state) {
-	pt_type_3d pt = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
+	pt_3d pt = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 
 	std::vector<Text3D> texts_3d;
 	for (auto unit : _map->_units) {
@@ -724,7 +735,7 @@ void TestAStar::update_text(InputState * input_state) {
 		}
 	}*/
 
-	//number w = _map->_units_position_grids[_map->_unit_types["infantery"]]->average_weight_in_cell_containing_pt(pt_type(pt.x, pt.y));
+	//number w = _map->_units_position_grids[_map->_unit_types["infantery"]]->average_weight_in_cell_containing_pt(pt_2d(pt.x, pt.y));
 	//texts_2d.push_back(Text(std::to_string(w), glm::vec2(-4.8, 3.2), 0.002, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f), 8.0f));
 
 	_font->set_text(texts_2d);
@@ -732,9 +743,15 @@ void TestAStar::update_text(InputState * input_state) {
 
 
 bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
-	//pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
-	pt_type_3d pt_3d = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
-	pt_type pt(pt_3d.x, pt_3d.y);
+	//pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+	pt_3d pt_3d = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
+	pt_2d pt(pt_3d.x, pt_3d.y);
+
+	std::vector<number> v = _map->_static_grids[_map->_unit_types["boat"]]->weights_in_cell_containing_pt(pt);
+	for (auto x : v) {
+		std::cout << x << " ; ";
+	}
+	std::cout << "\n";
 
 	if (_mode == ADDING_SOLID_OBSTACLE) {
 		_obstacle_pts.clear();
@@ -794,7 +811,7 @@ bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
 	if ((_mode == ADDING_SOLID_OBSTACLE || _mode == ADDING_WATER_OBSTACLE) && input_state->_left_mouse) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_added_pt_t).count();
 		if (dt> NEW_PT_IN_POLYGON_MS) {
-			pt_type pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+			pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 			_obstacle_pts.push_back(pt);
 		}
 		return true;
@@ -809,9 +826,9 @@ bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
 
 bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
 	if (key == SDLK_a) {
-		/*std::cout << _map->_terrain->get_alti(pt_type(0.0, 0.0)) << " ; ";
-		std::cout << _map->_terrain->get_alti(pt_type(-0.1, -0.1)) << " ; ";
-		std::cout << _map->_terrain->get_alti(pt_type(0.1, 0.1)) << "\n";*/
+		/*std::cout << _map->_terrain->get_alti(pt_2d(0.0, 0.0)) << " ; ";
+		std::cout << _map->_terrain->get_alti(pt_2d(-0.1, -0.1)) << " ; ";
+		std::cout << _map->_terrain->get_alti(pt_2d(0.1, 0.1)) << "\n";*/
 		update_debug();
 	}
 	if (key == SDLK_o) {
@@ -833,12 +850,11 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 	}
 	else if (key == SDLK_g) {
 		if (input_state->_keys[SDLK_LSHIFT]) {
-			if (_visible_grid == _map->_static_grids[_map->_unit_types["infantery"]] && _map->_units.size() > 0) {
-				//_visible_grid = _map->_unit_grids[_map->_units[0]];
-				_visible_grid = _map->_units_position_grids[_map->_unit_types["infantery"]];
+			if (_visible_grid == _map->_static_grids[_map->_unit_types["boat"]]) {
+				_visible_grid = _map->_units_position_grids[_map->_unit_types["boat"]];
 			}
 			else {
-				_visible_grid = _map->_static_grids[_map->_unit_types["infantery"]];
+				_visible_grid = _map->_static_grids[_map->_unit_types["boat"]];
 			}
 			update_grid();
 		}

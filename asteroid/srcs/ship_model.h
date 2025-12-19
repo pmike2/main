@@ -61,7 +61,7 @@ public:
 
 	std::string _json_path; // chemin du json de paramètres
 	ShipType _type; // type de vaisseau
-	pt_type _size; // taille
+	pt_2d _size; // taille
 	unsigned int _score_hit; // valeur remportée par le joueur lors d'un hit
 	unsigned int _score_death; // valeur remportée par le joueur lors d'une mort
 	unsigned int _lives; // nombre de vies

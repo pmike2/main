@@ -7,11 +7,11 @@
 
 using number = double;
 
-using pt_type = glm::dvec2;
-using pt_type_3d = glm::dvec3;
-using pt_type_4d = glm::dvec4;
+using pt_2d = glm::dvec2;
+using pt_3d = glm::dvec3;
+using pt_4d = glm::dvec4;
 
-using mat = glm::dmat2;
+using mat_2d = glm::dmat2;
 using mat_3d = glm::dmat3;
 using mat_4d = glm::dmat4;
 

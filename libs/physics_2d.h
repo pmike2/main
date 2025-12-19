@@ -31,7 +31,7 @@ https://gafferongames.com/post/integration_basics/
 // constantes ------------------------------------------------------------------------------
 
 // vecteur gravité
-const pt_type GRAVITY(0.0f, -50.0f);
+const pt_2d GRAVITY(0.0f, -50.0f);
 
 // nombre d'itérations max lors de la résolution des collisions
 const unsigned int N_ITER_MAX= 100;
@@ -58,9 +58,9 @@ const number NEW_EXPLOSION_FACTOR= 700.0f;
 class RigidBody2D;
 
 
-bool is_pt_inside_body(pt_type pt, RigidBody2D * body);
-bool segment_intersects_body(pt_type pt_begin, pt_type pt_end, RigidBody2D * body, pt_type * result);
-number distance_body_pt(RigidBody2D * body, pt_type pt, pt_type * proj);
+bool is_pt_inside_body(pt_2d pt, RigidBody2D * body);
+bool segment_intersects_body(pt_2d pt_begin, pt_2d pt_end, RigidBody2D * body, pt_2d * result);
+number distance_body_pt(RigidBody2D * body, pt_2d pt, pt_2d * proj);
 void axis_least_penetration(RigidBody2D * body_a, RigidBody2D * body_b, unsigned int * idx_pt_max, number * penetration_max);
 bool biased_cmp(number a, number b);
 
@@ -85,10 +85,10 @@ public:
 class RigidBody2DState {
 public:
     RigidBody2DState();
-    RigidBody2DState(pt_type position, number orientation);
+    RigidBody2DState(pt_2d position, number orientation);
     ~RigidBody2DState();
 
-    pt_type _position;
+    pt_2d _position;
     number _orientation;
 };
 
@@ -96,12 +96,12 @@ public:
 class RigidBody2D {
 public:
     RigidBody2D();
-    RigidBody2D(Polygon2D * polygon, Material * material, pt_type position, number orientation);
+    RigidBody2D(Polygon2D * polygon, Material * material, pt_2d position, number orientation);
     ~RigidBody2D();
     void set_orientation(number orientation);
     void integrate_forces(number dt);
     void integrate_velocity(number dt);
-    void apply_impulse(pt_type impulse, pt_type contact);
+    void apply_impulse(pt_2d impulse, pt_2d contact);
     void clear_forces();
     void update_previous_state();
     void print();
@@ -120,12 +120,12 @@ public:
     number _inertia_moment_inv;
     bool _is_static;
 
-    pt_type _position;
-    pt_type _velocity;
-    pt_type _force;
+    pt_2d _position;
+    pt_2d _velocity;
+    pt_2d _force;
 
     number _orientation;
-    mat _orientation_mat;
+    mat_2d _orientation_mat;
     number _angular_velocity; // en 2D on a juste besoin d'un scalaire
     number _torque; // en 2D on a juste besoin d'un scalaire
 
@@ -137,23 +137,23 @@ public:
 class Contact2D {
 public:
     Contact2D();
-    Contact2D(pt_type position, RigidBody2D * body_reference, RigidBody2D * body_incident, pt_type normal);
+    Contact2D(pt_2d position, RigidBody2D * body_reference, RigidBody2D * body_incident, pt_2d normal);
     ~Contact2D();
-    pt_type contact_relative_velocity();
+    pt_2d contact_relative_velocity();
     void update_normal(number dt);
 	void update_tangent(number dt);
     void print();
 
 
-    pt_type _position;
+    pt_2d _position;
     RigidBody2D * _body_reference;
     RigidBody2D * _body_incident;
-    pt_type _normal;
-    pt_type _r_ref;
-    pt_type _r_incid;
-    pt_type _normal_impulse;
-    pt_type _normal_impulse_cumul;
-    pt_type _tangent_impulse;
+    pt_2d _normal;
+    pt_2d _r_ref;
+    pt_2d _r_incid;
+    pt_2d _normal_impulse;
+    pt_2d _normal_impulse_cumul;
+    pt_2d _tangent_impulse;
     bool _is_valid;
     bool _is_tangent_valid;
     number _mass_inv_sum;
@@ -177,7 +177,7 @@ public:
     RigidBody2D * _body_incident;
     std::vector<Contact2D *> _contacts;
     number _penetration;
-    pt_type _normal;
+    pt_2d _normal;
 	bool _verbose;
 
     unsigned long long _hash;
@@ -193,8 +193,8 @@ public:
     ~LastImpulse();
 
 
-    std::vector<pt_type> _normal_impulses;
-    std::vector<pt_type> _tangent_impulses;
+    std::vector<pt_2d> _normal_impulses;
+    std::vector<pt_2d> _tangent_impulses;
     bool _is_2delete;
 };
 
@@ -206,10 +206,10 @@ public:
     ~Physics2D();
 	// on peut générer plusieurs body avec le meme polygon et avec des matériaux différents par ex
 	void add_polygon(Polygon2D * polygon);
-    void add_body(unsigned int idx_polygon, unsigned int idx_material, pt_type position, number orientation);
+    void add_body(unsigned int idx_polygon, unsigned int idx_material, pt_2d position, number orientation);
     void step(bool verbose=false);
-    void new_external_force(pt_type pt_begin, pt_type pt_end);
-    void new_explosion(pt_type center, number radius);
+    void new_external_force(pt_2d pt_begin, pt_2d pt_end);
+    void new_explosion(pt_2d center, number radius);
     void load_body(std::string ch_file, unsigned int idx_material);
 
 

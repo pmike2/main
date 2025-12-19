@@ -12,7 +12,7 @@ TireTrack::~TireTrack() {
 }
 
 
-void TireTrack::reinit(pt_type position, number alpha, pt_type scale, unsigned int idx_texture) {
+void TireTrack::reinit(pt_2d position, number alpha, pt_2d scale, unsigned int idx_texture) {
 	_bbox->_center= position;
 	_bbox->_alpha= alpha;
 	_bbox->_half_size= scale;

@@ -24,42 +24,42 @@
 using namespace std;
 using namespace std::chrono;
 
-vector<pt_type> pts;
+vector<pt_2d> pts;
 bool end_loop= false;
 
 
 void test1() {
-	std::map<std::string, std::vector<pt_type> > m;
+	std::map<std::string, std::vector<pt_2d> > m;
 	
 	// jeu test de base, sans ambiguité
-	m["simple"]= std::vector<pt_type> {pt_type(0.1, 0.7), pt_type(0.2, 0.8), pt_type(0.4, 0.1), pt_type(0.5, 0.4)};
+	m["simple"]= std::vector<pt_2d> {pt_2d(0.1, 0.7), pt_2d(0.2, 0.8), pt_2d(0.4, 0.1), pt_2d(0.5, 0.4)};
 	// jeu test où un site est situé pile en dessous d'un bkpt
-	m["site_bkpt_x_align"]= std::vector<pt_type> {pt_type(0.1, 0.7), pt_type(0.2, 0.8), pt_type(0.3, 0.3), pt_type(0.5, 0.4)};
+	m["site_bkpt_x_align"]= std::vector<pt_2d> {pt_2d(0.1, 0.7), pt_2d(0.2, 0.8), pt_2d(0.3, 0.3), pt_2d(0.5, 0.4)};
 	// jeu test où les sites les + hauts sont alignés
-	m["higher_y_align"]= std::vector<pt_type> {pt_type(0.4, 0.6), pt_type(0.1, 0.6), pt_type(0.6, 0.6), pt_type(0.3, 0.2)};
+	m["higher_y_align"]= std::vector<pt_2d> {pt_2d(0.4, 0.6), pt_2d(0.1, 0.6), pt_2d(0.6, 0.6), pt_2d(0.3, 0.2)};
 	// jeu test où des sites sont alignés mais pas tout en haut
-	m["y_align"]= std::vector<pt_type> {pt_type(0.4, 0.8), pt_type(0.1, 0.6), pt_type(0.6, 0.6), pt_type(0.3, 0.6)};
+	m["y_align"]= std::vector<pt_2d> {pt_2d(0.4, 0.8), pt_2d(0.1, 0.6), pt_2d(0.6, 0.6), pt_2d(0.3, 0.6)};
 	// jeu test avec 2 fois le même site
-	m["site_doublon"]= std::vector<pt_type> {pt_type(0.4, 0.8), pt_type(0.1, 0.6), pt_type(0.1, 0.6), pt_type(0.3, 0.2)};
+	m["site_doublon"]= std::vector<pt_2d> {pt_2d(0.4, 0.8), pt_2d(0.1, 0.6), pt_2d(0.1, 0.6), pt_2d(0.3, 0.2)};
 	// racine niemes de l'unité
 	int n1= 5;
-	m["unit_root"]= std::vector<pt_type> {};
+	m["unit_root"]= std::vector<pt_2d> {};
 	for (int i=0; i<n1; ++i) {
-		m["unit_root"].push_back(pt_type(cos(2.0* M_PI* (double)(i)/ (double)(n1)), sin(2.0* M_PI* (double)(i)/ (double)(n1))));
+		m["unit_root"].push_back(pt_2d(cos(2.0* M_PI* (double)(i)/ (double)(n1)), sin(2.0* M_PI* (double)(i)/ (double)(n1))));
 	}
 	// racine niemes de l'unité avec centre
 	int n2= 7;
-	m["unit_root_center"]= std::vector<pt_type> {};
+	m["unit_root_center"]= std::vector<pt_2d> {};
 	for (int i=0; i<n2; ++i) {
-		m["unit_root_center"].push_back(pt_type(cos(2.0* M_PI* (double)(i)/ (double)(n2)), sin(2.0* M_PI* (double)(i)/ (double)(n2))));
+		m["unit_root_center"].push_back(pt_2d(cos(2.0* M_PI* (double)(i)/ (double)(n2)), sin(2.0* M_PI* (double)(i)/ (double)(n2))));
 	}
-	m["unit_root_center"].push_back(pt_type(0.0, 0.0));
+	m["unit_root_center"].push_back(pt_2d(0.0, 0.0));
 	// grille
 	int n3= 3;
-	m["grid"]= std::vector<pt_type> {};
+	m["grid"]= std::vector<pt_2d> {};
 	for (int i=0; i<n3; ++i) {
 		for (int j=0; j<n3; ++j) {
-			m["grid"].push_back(pt_type(number(i)/ number(n3), number(j)/ number(n3)));
+			m["grid"].push_back(pt_2d(number(i)/ number(n3), number(j)/ number(n3)));
 		}
 	}
 
@@ -69,9 +69,9 @@ void test1() {
 		std::cout << "TEST1 " << x.first << " ----------------------\n";
 		Voronoi * v= new Voronoi(x.second, true, true, true, true, "../data/test1/"+ x.first);
 
-		pt_type bbox_min, bbox_max;
+		pt_2d bbox_min, bbox_max;
 		v->_diagram->get_bbox(&bbox_min, &bbox_max);
-		v->_diagram->export_html("../data/test1/"+ x.first+ "/result.html", false, bbox_min- pt_type(0.2f), bbox_max+ pt_type(0.2f), x.second);
+		v->_diagram->export_html("../data/test1/"+ x.first+ "/result.html", false, bbox_min- pt_2d(0.2f), bbox_max+ pt_2d(0.2f), x.second);
 		delete v;
 	}
 }
@@ -86,7 +86,7 @@ void test2() {
 	number min_dist= 0.3;
 	
 	for (unsigned int i=0; i<n_pts; ++i) {
-		pt_type pt(rand_number(xmin, xmax), rand_number(ymin, ymax));
+		pt_2d pt(rand_number(xmin, xmax), rand_number(ymin, ymax));
 		bool ok= true;
 		/*for (auto pt2 : pts) {
 			if (glm::distance2(pt, pt2)< min_dist* min_dist) {
@@ -100,11 +100,11 @@ void test2() {
 	}
 	
 	/*for (unsigned int i=0; i<n_pts; ++i) {
-		pt_type pt(rand_number(xmin, xmax), number(i)* 0.1);
+		pt_2d pt(rand_number(xmin, xmax), number(i)* 0.1);
 		pts.push_back(pt);
 	}*/
 
-	std::sort(pts.begin(), pts.end(), [](const pt_type &a, const pt_type &b) { return a.y > b.y; });
+	std::sort(pts.begin(), pts.end(), [](const pt_2d &a, const pt_2d &b) { return a.y > b.y; });
 	
 	/*ofstream f;
 	f.open("../data/test4/pts.txt");
@@ -121,9 +121,9 @@ void test2() {
 		std::cout << face->get_adjacent_faces().size() << "\n";
 	}*/
 	
-	pt_type bbox_min, bbox_max;
+	pt_2d bbox_min, bbox_max;
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);
-	v->_diagram->export_html("../data/test2/result.html", true, bbox_min- pt_type(0.2), bbox_max+ pt_type(0.2), pts);
+	v->_diagram->export_html("../data/test2/result.html", true, bbox_min- pt_2d(0.2), bbox_max+ pt_2d(0.2), pts);
 
 	//v->_beachline->draw("../data/test2/beachline.pbm");
 
@@ -144,7 +144,7 @@ void test3() {
 		std::cout << compt++ << "\n";
 		pts.clear();
 		for (unsigned int i=0; i<n_pts; ++i) {
-			pts.push_back(pt_type(rand_number(xmin, xmax), rand_number(ymin, ymax)));
+			pts.push_back(pt_2d(rand_number(xmin, xmax), rand_number(ymin, ymax)));
 		}
 
 		ofstream f;
@@ -156,9 +156,9 @@ void test3() {
 
 		Voronoi * v= new Voronoi(pts);
 		
-		pt_type bbox_min, bbox_max;
+		pt_2d bbox_min, bbox_max;
 		v->_diagram->get_bbox(&bbox_min, &bbox_max);
-		v->_diagram->export_html("../data/test3/result.html", true, bbox_min- pt_type(0.5), bbox_max+ pt_type(0.5), pts);
+		v->_diagram->export_html("../data/test3/result.html", true, bbox_min- pt_2d(0.5), bbox_max+ pt_2d(0.5), pts);
 		if (!v->_diagram->is_valid()) {
 			break;
 		}
@@ -175,22 +175,22 @@ void test4() {
 		istringstream iss(line);
 		number x, y;
 		iss >> x >> y;
-		pt_type pt(x, y);
+		pt_2d pt(x, y);
 		pts.push_back(pt);
 	}
 
 	Voronoi * v= new Voronoi(pts);
 
-	pt_type bbox_min, bbox_max;
+	pt_2d bbox_min, bbox_max;
 	v->_diagram->get_bbox(&bbox_min, &bbox_max);
-	v->_diagram->export_html("../data/test4/result.html", true, bbox_min- pt_type(0.5), bbox_max+ pt_type(0.5), pts);
+	v->_diagram->export_html("../data/test4/result.html", true, bbox_min- pt_2d(0.5), bbox_max+ pt_2d(0.5), pts);
 	delete v;
 }
 
 
 void test5() {
-	pt_type site_left(3, 9.98);
-	pt_type site_right(2, 9.996);
+	pt_2d site_left(3, 9.98);
+	pt_2d site_right(2, 9.996);
 	number yline= 9.975;
 	number x= parabolas_intersection(site_left, site_right, yline);
 	std::cout << x << "\n";

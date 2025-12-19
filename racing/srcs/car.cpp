@@ -33,10 +33,10 @@ void CarModel::load(std::string json_path) {
 	ifs.close();
 
 	// on suppose qu'initialement le véhicule est dirigé vers y positif
-	_forward= pt_type(0.0, 1.0);
-	_right= pt_type(1.0, 0.0);
-	_com2force_fwd= pt_type(js["com2force_fwd"][0], js["com2force_fwd"][1]);
-	_com2force_bwd= pt_type(js["com2force_bwd"][0], js["com2force_bwd"][1]);
+	_forward= pt_2d(0.0, 1.0);
+	_right= pt_2d(1.0, 0.0);
+	_com2force_fwd= pt_2d(js["com2force_fwd"][0], js["com2force_fwd"][1]);
+	_com2force_bwd= pt_2d(js["com2force_bwd"][0], js["com2force_bwd"][1]);
 	_max_wheel= js["max_wheel"];
 	_max_wheel_reverse= js["max_wheel_reverse"];
 	_wheel_increment= js["wheel_increment"];
@@ -62,10 +62,10 @@ Car::Car() {
 }
 
 
-Car::Car(CarModel * model, pt_type position, number alpha, pt_type scale) : 
+Car::Car(CarModel * model, pt_2d position, number alpha, pt_2d scale) : 
 	StaticObject(model, position, alpha, scale),
-	_com2force_fwd(pt_type(0.0)), _com2force_bwd(pt_type(0.0)), _forward(pt_type(0.0)), _right(pt_type(0.0)),
-	_force_fwd(pt_type(0.0)), _force_bwd(pt_type(0.0)), _wheel(0.0), _thrust(0.0), _drift(false),
+	_com2force_fwd(pt_2d(0.0)), _com2force_bwd(pt_2d(0.0)), _forward(pt_2d(0.0)), _right(pt_2d(0.0)),
+	_force_fwd(pt_2d(0.0)), _force_bwd(pt_2d(0.0)), _wheel(0.0), _thrust(0.0), _drift(false),
 	_next_checkpoint(NULL), _n_laps(0), _rank(0), _finished(false), _just_finished(false), _overlap_finish(0.0),
 	_tire_track_texture_idx(0),	_total_time(999.9), _driver(NULL)
 {
@@ -83,11 +83,11 @@ CarModel * Car::get_model() {
 }
 
 
-void Car::reinit(pt_type position, number alpha, pt_type scale) {
+void Car::reinit(pt_2d position, number alpha, pt_2d scale) {
 	StaticObject::reinit(position, alpha, scale);
 
-	_force_fwd= pt_type(0.0);
-	_force_bwd= pt_type(0.0);
+	_force_fwd= pt_2d(0.0);
+	_force_bwd= pt_2d(0.0);
 	_wheel= 0.0;
 	_thrust= 0.0;
 	_drift= false;
@@ -322,13 +322,13 @@ void Car::anim(number anim_dt, time_point t) {
 	_thrust*= _current_surface->_slippery;
 
 	// calcul force appliquée à l'avant
-	_force_fwd= pt_type(0.0);
+	_force_fwd= pt_2d(0.0);
 	_force_fwd+= _thrust* rot(_forward, _wheel); // accélération dans la direction du volant
 	// friction statique avant
 	_force_fwd-= model->_forward_static_friction* _linear_friction_surface* _velocity;
 
 	// calcul force appliquée à l'arrière
-	_force_bwd= pt_type(0.0);
+	_force_bwd= pt_2d(0.0);
 	// + la vitesse est grande et + on tourne abruptement, + on a de chance d'être en dérapage
 	// les bumps 2 et 7 (roues arrières) influent sur _drift
 	number right_turn= scal(_right, _velocity);

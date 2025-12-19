@@ -27,9 +27,9 @@ void test_convex_hull() {
 
 
 void test_bbox() {
-	pt_type_3d origin(0.0, 0.0, 50.0);
-	pt_type_3d direction(-14.0, -5.0, -50.0);
-	AABB * aabb = new AABB(pt_type_3d(0.01, 0.01, 0.5), pt_type_3d(1.0, 1.0, 0.5));
+	pt_3d origin(0.0, 0.0, 50.0);
+	pt_3d direction(-14.0, -5.0, -50.0);
+	AABB * aabb = new AABB(pt_3d(0.01, 0.01, 0.5), pt_3d(1.0, 1.0, 0.5));
 	number t_hit = 0.0;
 
 	bool b = ray_intersects_aabb(origin, direction, aabb, t_hit);

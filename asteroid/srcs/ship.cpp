@@ -11,7 +11,7 @@ Ship::Ship() {
 }
 
 
-Ship::Ship(ShipModel * model, pt_type pos, bool friendly, std::chrono::system_clock::time_point t) :
+Ship::Ship(ShipModel * model, pt_2d pos, bool friendly, std::chrono::system_clock::time_point t) :
 	_model(model), _friendly(friendly), _dead(false), _shooting(false), _current_action_name(MAIN_ACTION_NAME),
 	_idx_action(0), _velocity(glm::vec2(0.0)), _idx_anim(0), 
 	_hit(false), _hit_value(0.0), _delete(false), _alpha(1.0), _lives(_model->_lives),
@@ -20,8 +20,8 @@ Ship::Ship(ShipModel * model, pt_type pos, bool friendly, std::chrono::system_cl
 	_aabb= AABB_2D(pos, model->_size);
 	ActionTexture * current_texture= get_current_texture();
 	_footprint= AABB_2D(
-		pt_type(pos.x+ current_texture->_footprint._pos.x* _model->_size.x, pos.y+ current_texture->_footprint._pos.y* _model->_size.y),
-		pt_type(_model->_size.x* current_texture->_footprint._size.x, _model->_size.y* current_texture->_footprint._size.y)
+		pt_2d(pos.x+ current_texture->_footprint._pos.x* _model->_size.x, pos.y+ current_texture->_footprint._pos.y* _model->_size.y),
+		pt_2d(_model->_size.x* current_texture->_footprint._size.x, _model->_size.y* current_texture->_footprint._size.y)
 	);
 	_t_action_start= _t_last_hit= _t_die= _t_last_bullet= _t_anim_start= t;
 }

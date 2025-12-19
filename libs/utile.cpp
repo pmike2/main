@@ -59,22 +59,22 @@ number rand_number(number x0, number x1) {
 }
 
 
-pt_type rand_pt(number xmin, number xmax, number ymin, number ymax) {
-	return pt_type(rand_number(xmin, xmax), rand_number(ymin, ymax));
+pt_2d rand_pt(number xmin, number xmax, number ymin, number ymax) {
+	return pt_2d(rand_number(xmin, xmax), rand_number(ymin, ymax));
 }
 
 
-pt_type rand_pt(pt_type pt_min, pt_type pt_max) {
+pt_2d rand_pt(pt_2d pt_min, pt_2d pt_max) {
 	return rand_pt(pt_min.x, pt_max.x, pt_min.y, pt_max.y);
 }
 
 
-pt_type_3d rand_pt_3d(number xmin, number xmax, number ymin, number ymax, number zmin, number zmax) {
-	return pt_type_3d(rand_number(xmin, xmax), rand_number(ymin, ymax), rand_number(zmin, zmax));
+pt_3d rand_pt_3d(number xmin, number xmax, number ymin, number ymax, number zmin, number zmax) {
+	return pt_3d(rand_number(xmin, xmax), rand_number(ymin, ymax), rand_number(zmin, zmax));
 }
 
 
-pt_type rand_pt_3d(pt_type_3d pt_min, pt_type_3d pt_max) {
+pt_2d rand_pt_3d(pt_3d pt_min, pt_3d pt_max) {
 	return rand_pt_3d(pt_min.x, pt_max.x, pt_min.y, pt_max.y, pt_min.z, pt_max.z);
 }
 
@@ -104,8 +104,8 @@ number rand_gaussian(number mean, number deviation) {
 }
 
 
-pt_type rand_gaussian(pt_type mean, pt_type deviation) {
-	return pt_type(rand_gaussian(mean.x, deviation.x), rand_gaussian(mean.y, deviation.y));
+pt_2d rand_gaussian(pt_2d mean, pt_2d deviation) {
+	return pt_2d(rand_gaussian(mean.x, deviation.x), rand_gaussian(mean.y, deviation.y));
 }
 
 
@@ -308,7 +308,7 @@ std::vector<std::string> split(const std::string & s, const std::string & delimi
 
 
 // remplace glm::to_string en supprimant les 0 dans les décimales ou en se restreignant à un nombre de décimales fixe
-std::string glm_to_string(pt_type v, int n_decimals) {
+std::string glm_to_string(pt_2d v, int n_decimals) {
 	std::string str_x, str_y;
 	if (n_decimals < 0) {
 		str_x= std::to_string(v.x);
@@ -330,7 +330,7 @@ std::string glm_to_string(pt_type v, int n_decimals) {
 }
 
 
-std::string glm_to_string(pt_type_3d v, int n_decimals) {
+std::string glm_to_string(pt_3d v, int n_decimals) {
 	std::string str_x, str_y, str_z;
 	if (n_decimals < 0) {
 		str_x= std::to_string(v.x);

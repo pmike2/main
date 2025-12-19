@@ -41,10 +41,10 @@ typedef enum {Arc, BreakPoint} BeachLineNodeType;
 class Event;
 
 
-number y_parabola(const pt_type & site, number yline, number x);
-number y_derivative_parabola(const pt_type & site, number yline, number x);
-std::string parabola_equation(const pt_type & site, number yline);
-number parabolas_intersection(const pt_type & site1, const pt_type & site2, number yline);
+number y_parabola(const pt_2d & site, number yline, number x);
+number y_derivative_parabola(const pt_2d & site, number yline, number x);
+std::string parabola_equation(const pt_2d & site, number yline);
+number parabolas_intersection(const pt_2d & site1, const pt_2d & site2, number yline);
 bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2);
 bool events_are_equal(Event * lhs, Event * rhs);
 
@@ -53,15 +53,15 @@ bool events_are_equal(Event * lhs, Event * rhs);
 class DCEL_HalfEdgeData {
 public:
 	DCEL_HalfEdgeData();
-	DCEL_HalfEdgeData(bool is_full_line, pt_type direction);
-	DCEL_HalfEdgeData(bool is_full_line, pt_type center, pt_type direction);
+	DCEL_HalfEdgeData(bool is_full_line, pt_2d direction);
+	DCEL_HalfEdgeData(bool is_full_line, pt_2d center, pt_2d direction);
 	~DCEL_HalfEdgeData();
 	friend std::ostream & operator << (std::ostream & os, const DCEL_HalfEdgeData & d);
 
 
 	bool _is_full_line;
-	pt_type _center;
-	pt_type _direction;
+	pt_2d _center;
+	pt_2d _direction;
 };
 
 
@@ -77,11 +77,11 @@ public:
 	BeachLineNodeType _type;
 
 	// node feuille = arc, lié à un site; _circle_event est l'event qui fera disparaitre cet arc
-	pt_type _site;
+	pt_2d _site;
 	Event * _circle_event;
 	
 	// node interne = breakpoint, lié à 2 sites; _half_edge est l'un des 2 half-edges en train d'etre dessiné
-	std::pair<pt_type, pt_type> _sites;
+	std::pair<pt_2d, pt_2d> _sites;
 	DCEL_HalfEdge * _half_edge;
 };
 
@@ -102,10 +102,10 @@ public:
 	bool _is_valid= true;
 
 	// SiteEvent : on ne stocke que le site lié à l'event
-	pt_type _site;
+	pt_2d _site;
 
 	// CircleEvent : on stocke le centre du cercle, son rayon et l'arc qui sera supprimé par cet event
-	pt_type _circle_center;
+	pt_2d _circle_center;
 	number _circle_radius;
 	Node<BeachLineNode> * _leaf;
 };
@@ -121,11 +121,11 @@ struct EventCmp {
 class Voronoi {
 public:
 	Voronoi();
-	Voronoi(const std::vector<pt_type> & sites, bool verbose=false, bool output_beachline=false,
+	Voronoi(const std::vector<pt_2d> & sites, bool verbose=false, bool output_beachline=false,
 		bool output_intermediate=false, bool output_stat=false, std::string debug_path=std::string(getenv("HOME"))+ "/voronoi");
 	~Voronoi();
-	DCEL_HalfEdge * add_full_line(pt_type position, pt_type direction);
-	DCEL_HalfEdge * add_half_line(pt_type position, pt_type direction);
+	DCEL_HalfEdge * add_full_line(pt_2d position, pt_2d direction);
+	DCEL_HalfEdge * add_half_line(pt_2d position, pt_2d direction);
 	void set_halfedge_origin(DCEL_HalfEdge * he, DCEL_Vertex * v);
 	void handle_first_sites_event(Event * e);
 	void handle_site_event(Event * e);
@@ -133,15 +133,15 @@ public:
 	void export_debug_html(std::string html_path);
 
 
-	std::vector<pt_type> _sites;
+	std::vector<pt_2d> _sites;
 	DCEL * _diagram;
 	BST<BeachLineNode> * _beachline;
 	std::priority_queue<Event *, std::vector<Event *>, EventCmp> _queue;
 	number _current_y;
 	number _first_y;
 	bool _verbose;
-	pt_type _bbox_min;
-	pt_type _bbox_max;
+	pt_2d _bbox_min;
+	pt_2d _bbox_max;
 
 	// pour debug, optimisation
 	unsigned int _debug_count= 0;

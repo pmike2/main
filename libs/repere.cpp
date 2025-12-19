@@ -131,7 +131,7 @@ RectSelect::RectSelect() {
 
 
 RectSelect::RectSelect(std::map<std::string, GLuint> progs) : 
-	_is_active(false), _gl_origin(pt_type(0.0)), _gl_moving(pt_type(0.0)),	_color(pt_type_3d(1.0, 1.0, 0.0)), _z(0.0)
+	_is_active(false), _gl_origin(pt_2d(0.0)), _gl_moving(pt_2d(0.0)),	_color(pt_3d(1.0, 1.0, 0.0)), _z(0.0)
 {
 	GLuint buffer;
 	glGenBuffers(1, &buffer);
@@ -142,7 +142,7 @@ RectSelect::RectSelect(std::map<std::string, GLuint> progs) :
 	_context->_n_pts = 8;
 
 	for (uint i=0; i<4; ++i) {
-		_norms[i]= pt_type_3d(0.0);
+		_norms[i]= pt_3d(0.0);
 	}
 
 	update_draw();
@@ -182,14 +182,14 @@ void RectSelect::draw() {
 }
 
 
-void RectSelect::set_origin(pt_type gl_v) {
+void RectSelect::set_origin(pt_2d gl_v) {
 	_gl_origin= gl_v;
 	_gl_moving= _gl_origin;
 	update_draw();
 }
 
 
-void RectSelect::set_moving(pt_type gl_v) {
+void RectSelect::set_moving(pt_2d gl_v) {
 	_gl_moving= gl_v;
 	update_draw();
 }
@@ -229,7 +229,7 @@ ViewSystem::ViewSystem() {
 
 ViewSystem::ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl) :
 	_screengl(screengl),
-	_target(pt_type_3d(0.0, 0.0, 0.0)), _eye(pt_type_3d(0.0, 0.0, 0.0)), _up(pt_type_3d(0.0, 0.0, 0.0)), 
+	_target(pt_3d(0.0, 0.0, 0.0)), _eye(pt_3d(0.0, 0.0, 0.0)), _up(pt_3d(0.0, 0.0, 0.0)), 
 	_phi(0.0), _theta(0.0), _rho(1.0),
 	_type(FREE_VIEW), _frustum_halfsize(FRUSTUM_HALFSIZE), _frustum_near(FRUSTUM_NEAR), _frustum_far(FRUSTUM_FAR),
 	_new_single_selection(false), _new_rect_selection(false), _new_destination(false), _free_view_x(0.0), _free_view_y(0.0)
@@ -261,7 +261,7 @@ bool ViewSystem::mouse_button_down(InputState * input_state) {
 	if (input_state->_left_mouse) {
 		if (input_state->_keys[SDLK_m]) {
 			_new_destination= true;
-			_destination= pt_type_3d(screen2world(input_state->_x, input_state->_y, 0.0), 0.0);
+			_destination= pt_3d(screen2world(input_state->_x, input_state->_y, 0.0), 0.0);
 			return true;
 		}
 		else {
@@ -401,9 +401,9 @@ bool ViewSystem::key_up(InputState * input_state, SDL_Keycode key) {
 // a appeler des qu'un param est modifie
 void ViewSystem::update() {
 	// https://en.wikipedia.org/wiki/Spherical_coordinate_system
-	_dir= -pt_type_3d(cos(_phi)* sin(_theta), sin(_phi)* sin(_theta), cos(_theta));
+	_dir= -pt_3d(cos(_phi)* sin(_theta), sin(_phi)* sin(_theta), cos(_theta));
 	_eye= _target- _rho* _dir;
-	_up= -pt_type_3d(cos(_phi)* cos(_theta), sin(_phi)* cos(_theta), -sin(_theta));
+	_up= -pt_3d(cos(_phi)* cos(_theta), sin(_phi)* cos(_theta), -sin(_theta));
 	_right= glm::cross(_dir, _up);
 	_world2camera= glm::lookAt(_eye, _target, _up);
 
@@ -426,7 +426,7 @@ void ViewSystem::update() {
 }
 
 
-void ViewSystem::set(const pt_type_3d & target, number phi, number theta, number rho) {
+void ViewSystem::set(const pt_3d & target, number phi, number theta, number rho) {
 	_target= target;
 	_phi= phi;
 	_theta= theta;
@@ -437,7 +437,7 @@ void ViewSystem::set(const pt_type_3d & target, number phi, number theta, number
 
 
 void ViewSystem::set_2d(number rho) {
-	_target= pt_type_3d(0.0);
+	_target= pt_3d(0.0);
 	_phi= -1.0 * M_PI_2;
 	_theta= 0.0;
 	_rho= rho;
@@ -446,7 +446,7 @@ void ViewSystem::set_2d(number rho) {
 }
 
 // les move sont des modif delta, contrairement a set ou anim qui font des modifs absolues
-/*void ViewSystem::move_target(const pt_type_3d & v) {
+/*void ViewSystem::move_target(const pt_3d & v) {
 	_target.x+= v.x* sin(_phi)- v.y* cos(_phi);
 	_target.y+= -v.x* cos(_phi)- v.y* sin(_phi);
 	_target.z+= v.z;
@@ -456,12 +456,12 @@ void ViewSystem::set_2d(number rho) {
 
 void ViewSystem::move_target(int screen_delta_x, int screen_delta_y, number z) {
 	/*
-	Avant j'utilisais move_target(pt_type_3d) avec LEFT_MOUSE_SENSIVITY mais du coup la translation ne dépendait pas de l'altitude
+	Avant j'utilisais move_target(pt_3d) avec LEFT_MOUSE_SENSIVITY mais du coup la translation ne dépendait pas de l'altitude
 	et du coup à basse alti ça bougeait vite, haute alti lentement.
 	Ici il y a une meilleure corrélation entre mouvement curseur et translation terrain
 	A terme fournir en argument optionnel un Terrain afin de s'ajuster à un relief plus complexe que z = 0
 	*/
-	pt_type v= screen2world(_screengl->_screen_width* 0.5- screen_delta_x, _screengl->_screen_height* 0.5- screen_delta_y, z);
+	pt_2d v= screen2world(_screengl->_screen_width* 0.5- screen_delta_x, _screengl->_screen_height* 0.5- screen_delta_y, z);
 	_target.x= v.x;
 	_target.y= v.y;
 	update();
@@ -508,13 +508,13 @@ void ViewSystem::draw() {
 
 	// TODO : afficher des infos relatives à ViewSystem
 	/*std::vector<Text> texts;
-	texts.push_back(Text("hello", pt_type(0.0, 0.0), 0.01, pt_type_4d(0.7f, 0.6f, 0.5f, 1.0)));
+	texts.push_back(Text("hello", pt_2d(0.0, 0.0), 0.01, pt_4d(0.7f, 0.6f, 0.5f, 1.0)));
 	_font->set_text(texts);
 	_font->draw();*/
 }
 
 
-void ViewSystem::anim(const pt_type_3d & target, const quat & rotation) {
+void ViewSystem::anim(const pt_3d & target, const quat & rotation) {
 	if (_type== FREE_VIEW) {
 		// legère inertie aux translations
 		number tresh= 1e-9;
@@ -541,33 +541,33 @@ void ViewSystem::anim(const pt_type_3d & target, const quat & rotation) {
 
 // cf http://antongerdelan.net/opengl/raycasting.html
 // renvoie le pt 2d qui intersecte le plan d'alti z
-pt_type ViewSystem::screen2world(pt_type gl_coords, number z) {
-	pt_type_4d ray_clip= pt_type_4d(gl_coords.x, gl_coords.y, -1.0, 1.0);
+pt_2d ViewSystem::screen2world(pt_2d gl_coords, number z) {
+	pt_4d ray_clip= pt_4d(gl_coords.x, gl_coords.y, -1.0, 1.0);
 	
-	pt_type_4d ray_eye= glm::inverse(_camera2clip)* ray_clip;
-	ray_eye= pt_type_4d(ray_eye.x, ray_eye.y, -1.0, 0.0);
+	pt_4d ray_eye= glm::inverse(_camera2clip)* ray_clip;
+	ray_eye= pt_4d(ray_eye.x, ray_eye.y, -1.0, 0.0);
 	
-	pt_type_3d ray_world= pt_type_3d(glm::inverse(_world2camera)* ray_eye);
+	pt_3d ray_world= pt_3d(glm::inverse(_world2camera)* ray_eye);
 	ray_world= glm::normalize(ray_world);
 	
 	number lambda= (z- _eye.z)/ ray_world.z;
 	
-	pt_type_3d v= _eye+ lambda* ray_world;
+	pt_3d v= _eye+ lambda* ray_world;
 
-	return pt_type(v.x, v.y);
+	return pt_2d(v.x, v.y);
 }
 
 
-pt_type ViewSystem::screen2world(uint x, uint y, number z) {
+pt_2d ViewSystem::screen2world(uint x, uint y, number z) {
 	return screen2world(screen2gl(x, y), z);
 }
 
 
-pt_type_3d ViewSystem::screen2world_depthbuffer(pt_type gl_coords) {
-	pt_type_4d ray_clip= pt_type_4d(gl_coords.x, gl_coords.y, -1.0, 1.0);
-	pt_type_4d ray_eye= glm::inverse(_camera2clip)* ray_clip;
-	ray_eye= pt_type_4d(ray_eye.x, ray_eye.y, -1.0, 0.0);
-	pt_type_3d ray_world= pt_type_3d(glm::inverse(_world2camera)* ray_eye);
+pt_3d ViewSystem::screen2world_depthbuffer(pt_2d gl_coords) {
+	pt_4d ray_clip= pt_4d(gl_coords.x, gl_coords.y, -1.0, 1.0);
+	pt_4d ray_eye= glm::inverse(_camera2clip)* ray_clip;
+	ray_eye= pt_4d(ray_eye.x, ray_eye.y, -1.0, 0.0);
+	pt_3d ray_world= pt_3d(glm::inverse(_world2camera)* ray_eye);
 	ray_world= glm::normalize(ray_world);
 
 	glm::uvec2 screen_coords= gl2screen(gl_coords);
@@ -577,11 +577,11 @@ pt_type_3d ViewSystem::screen2world_depthbuffer(pt_type gl_coords) {
 	number world_depth= depthbuffer2world(number(buffer_depth));
 	//number lambda= world_depth + _frustum_near;
 	//number lambda= world_depth;
-	//pt_type v(gl_coords.x * _frustum_halfsize, gl_coords.y * _frustum_halfsize);
+	//pt_2d v(gl_coords.x * _frustum_halfsize, gl_coords.y * _frustum_halfsize);
 	//number lambda= sqrt(world_depth * world_depth + glm::length2(v));
 	number lambda= world_depth / glm::dot(ray_world, _dir);
 	
-	pt_type_3d result = _eye + lambda * ray_world;
+	pt_3d result = _eye + lambda * ray_world;
 
 	/*std::cout << glm::to_string(ray_world);
 	std::cout << " ; " << buffer_depth << " ; " << world_depth;
@@ -592,23 +592,23 @@ pt_type_3d ViewSystem::screen2world_depthbuffer(pt_type gl_coords) {
 }
 
 
-pt_type_3d ViewSystem::screen2world_depthbuffer(uint x, uint y) {
+pt_3d ViewSystem::screen2world_depthbuffer(uint x, uint y) {
 	return screen2world_depthbuffer(screen2gl(x, y));
 }
 
 
-pt_type ViewSystem::screen2gl(uint x, uint y) {
+pt_2d ViewSystem::screen2gl(uint x, uint y) {
 	// les coords OpenGL sont [-1, 1] x [-1, 1]
 	number x_gl= 2.0* (number)(x)/ (number)(_screengl->_screen_width)- 1.0;
 	number y_gl= 1.0- 2.0* (number)(y)/ (number)(_screengl->_screen_height);
-	return pt_type(x_gl, y_gl);
+	return pt_2d(x_gl, y_gl);
 }
 
 
-glm::uvec2 ViewSystem::gl2screen(pt_type gl_coords) {
+glm::uvec2 ViewSystem::gl2screen(pt_2d gl_coords) {
 	uint x= (uint)((gl_coords.x+ 1.0)* (number)(_screengl->_screen_width)* 0.5);
 	uint y= (uint)((1.0- gl_coords.y)* (number)(_screengl->_screen_height)* 0.5);
-	return pt_type(x, y);
+	return pt_2d(x, y);
 }
 
 
@@ -618,8 +618,8 @@ number ViewSystem::depthbuffer2world(number depth) {
 
 
 // cf http://cgvr.cs.uni-bremen.de/teaching/cg_literatur/lighthouse3d_view_frustum_culling/index.html
-/*bool ViewSystem::contains_point(const pt_type_3d & pos) {
-	pt_type_3d pos2= pt_type_3d(_world2camera* pt_type_4d(pos.x, pos.y, pos.z, 1.0));
+/*bool ViewSystem::contains_point(const pt_3d & pos) {
+	pt_3d pos2= pt_3d(_world2camera* pt_4d(pos.x, pos.y, pos.z, 1.0));
 
 	// z pointe vers l'extérieur il faut donc l'inverser
 	number y= -pos2.z* _frustum_halfsize/ _frustum_near;
@@ -648,31 +648,31 @@ bool ViewSystem::intersects_aabb(AABB * aabb, bool selection) {
 
 
 /*bool ViewSystem::intersects_aabb_2d(AABB_2D * aabb, bool selection=false) {
-	std::vector<pt_type_3d> pts;
+	std::vector<pt_3d> pts;
 	return intersects_pts(pts, 8, selection);
 }*/
 
 
 bool ViewSystem::intersects_aabb(AABB * aabb, const mat_4d & model2world_matrix, bool selection) {
-	std::vector<pt_type_3d> pts;
+	std::vector<pt_3d> pts;
 	for (uint i=0; i<8; ++i) {
-		pts.push_back(pt_type_3d(model2world_matrix* pt_type_4d(pt_type_3d(aabb->_pts[i]), 1.0)));
+		pts.push_back(pt_3d(model2world_matrix* pt_4d(pt_3d(aabb->_pts[i]), 1.0)));
 	}
 
 	return intersects_pts(pts, selection);
 }
 
 
-bool ViewSystem::intersects_pts(std::vector<pt_type_3d> pts, bool selection) {
-	pt_type_3d * add = pts.data();
+bool ViewSystem::intersects_pts(std::vector<pt_3d> pts, bool selection) {
+	pt_3d * add = pts.data();
 	return intersects_pts(add, pts.size(), selection);
 }
 
 
 // cf https://zeux.io/2009/01/31/view-frustum-culling-optimization-introduction
-bool ViewSystem::intersects_pts(pt_type_3d * pts, uint n_pts, bool selection) {
+bool ViewSystem::intersects_pts(pt_3d * pts, uint n_pts, bool selection) {
 	bool b= false;
-	pt_type_3d norms[4];
+	pt_3d norms[4];
 	if (selection) {
 		for (uint i=0; i<4; ++i) {
 			norms[i]= _rect_select->_norms[i];
@@ -711,28 +711,28 @@ bool ViewSystem::intersects_pts(pt_type_3d * pts, uint n_pts, bool selection) {
 }
 
 /*
-bool ViewSystem::selection_contains_point(const pt_type_3d & pt) {
+bool ViewSystem::selection_contains_point(const pt_3d & pt) {
 	float xmin= min(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
 	float ymin= min(_rect_select->_gl_origin.y, _rect_select->_gl_moving.y);
 	float xmax= max(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
 	float ymax= max(_rect_select->_gl_origin.y, _rect_select->_gl_moving.y);
 	
-	pt_type v1= screen2world(pt_type(xmin, ymin), 0.0);
-	pt_type v2= screen2world(pt_type(xmax, ymin), 0.0);
-	pt_type v3= screen2world(pt_type(xmax, ymax), 0.0);
-	pt_type v4= screen2world(pt_type(xmin, ymax), 0.0);
+	pt_2d v1= screen2world(pt_2d(xmin, ymin), 0.0);
+	pt_2d v2= screen2world(pt_2d(xmax, ymin), 0.0);
+	pt_2d v3= screen2world(pt_2d(xmax, ymax), 0.0);
+	pt_2d v4= screen2world(pt_2d(xmin, ymax), 0.0);
 
-	pt_type_3d dir1= pt_type_3d(v1, 0.0)- _eye;
-	pt_type_3d dir2= pt_type_3d(v2, 0.0)- _eye;
-	pt_type_3d dir3= pt_type_3d(v3, 0.0)- _eye;
-	pt_type_3d dir4= pt_type_3d(v4, 0.0)- _eye;
+	pt_3d dir1= pt_3d(v1, 0.0)- _eye;
+	pt_3d dir2= pt_3d(v2, 0.0)- _eye;
+	pt_3d dir3= pt_3d(v3, 0.0)- _eye;
+	pt_3d dir4= pt_3d(v4, 0.0)- _eye;
 
-	pt_type_3d n1= glm::cross(dir2, dir1);
-	pt_type_3d n2= glm::cross(dir3, dir2);
-	pt_type_3d n3= glm::cross(dir4, dir3);
-	pt_type_3d n4= glm::cross(dir1, dir4);
+	pt_3d n1= glm::cross(dir2, dir1);
+	pt_3d n2= glm::cross(dir3, dir2);
+	pt_3d n3= glm::cross(dir4, dir3);
+	pt_3d n4= glm::cross(dir1, dir4);
 
-	pt_type_3d dir_pt= pt- _eye;
+	pt_3d dir_pt= pt- _eye;
 
 	cout << "-----------------\n";
 	cout << "xmin=" << xmin << " ; " << " ; xmax=" << xmax << " ; " << "ymin=" << ymin << " ; " << " ; ymax=" << ymax << "\n";
@@ -758,17 +758,17 @@ void ViewSystem::update_selection_norms() {
 	number xmax= max(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
 	number ymax= max(_rect_select->_gl_origin.y, _rect_select->_gl_moving.y);
 	
-	pt_type v1= screen2world(pt_type(xmin, ymin), 0.0);
-	pt_type v2= screen2world(pt_type(xmax, ymin), 0.0);
-	pt_type v3= screen2world(pt_type(xmax, ymax), 0.0);
-	pt_type v4= screen2world(pt_type(xmin, ymax), 0.0);
+	pt_2d v1= screen2world(pt_2d(xmin, ymin), 0.0);
+	pt_2d v2= screen2world(pt_2d(xmax, ymin), 0.0);
+	pt_2d v3= screen2world(pt_2d(xmax, ymax), 0.0);
+	pt_2d v4= screen2world(pt_2d(xmin, ymax), 0.0);
 	//std::cout << "v1=" << glm::to_string(v1) << " ; v2=" << glm::to_string(v2) << " ; v3=" << glm::to_string(v3) << " ; v4=" << glm::to_string(v4) << "\n";
 	//std::cout << "center_near=" << glm::to_string(_center_near) << " ; eye=" << glm::to_string(_eye) << "\n";
 
-	pt_type_3d dir1= pt_type_3d(v1, 0.0)- _eye;
-	pt_type_3d dir2= pt_type_3d(v2, 0.0)- _eye;
-	pt_type_3d dir3= pt_type_3d(v3, 0.0)- _eye;
-	pt_type_3d dir4= pt_type_3d(v4, 0.0)- _eye;
+	pt_3d dir1= pt_3d(v1, 0.0)- _eye;
+	pt_3d dir2= pt_3d(v2, 0.0)- _eye;
+	pt_3d dir3= pt_3d(v3, 0.0)- _eye;
+	pt_3d dir4= pt_3d(v4, 0.0)- _eye;
 
 	_rect_select->_norms[0]= glm::cross(dir2, dir1);
 	_rect_select->_norms[1]= glm::cross(dir3, dir2);
@@ -778,10 +778,10 @@ void ViewSystem::update_selection_norms() {
 
 
 bool ViewSystem::single_selection_intersects_aabb(AABB * aabb, bool check_depth) {
-	pt_type click_world= screen2world(_rect_select->_gl_origin, 0.0);
+	pt_2d click_world= screen2world(_rect_select->_gl_origin, 0.0);
 	number t_hit;
 	//std::cout << glm::to_string(_eye) << " ; " << glm::to_string(click_world) << " ; " << *aabb << "\n";
-	bool intersect= ray_intersects_aabb(_eye, pt_type_3d(click_world, 0.0)- _eye, aabb, t_hit);
+	bool intersect= ray_intersects_aabb(_eye, pt_3d(click_world, 0.0)- _eye, aabb, t_hit);
 	if (!intersect) {
 		return false;
 	}
@@ -812,9 +812,9 @@ bool ViewSystem::rect_selection_intersects_bbox(BBox * bbox, bool check_depth) {
 		return true;
 	}
 
-	pt_type_3d center= 0.5* (bbox->_aabb->_vmin+ bbox->_aabb->_vmax);
-	pt_type_4d v= _world2clip* pt_type_4d(center, 1.0);
-	glm::uvec2 screen_coords= gl2screen(pt_type(v.x/ v.w, v.y/ v.w));
+	pt_3d center= 0.5* (bbox->_aabb->_vmin+ bbox->_aabb->_vmax);
+	pt_4d v= _world2clip* pt_4d(center, 1.0);
+	glm::uvec2 screen_coords= gl2screen(pt_2d(v.x/ v.w, v.y/ v.w));
 	float buffer_depth;
 	// attention au height- y
 	glReadPixels(screen_coords.x, _screengl->_screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);

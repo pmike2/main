@@ -32,10 +32,10 @@ void ScreenGL::screen2gl(int i, int j, number & x, number & y) {
 }
 
 
-pt_type ScreenGL::screen2gl(int i, int j) {
+pt_2d ScreenGL::screen2gl(int i, int j) {
 	number x, y;
 	screen2gl(i, j, x, y);
-	return pt_type(x, y);
+	return pt_2d(x, y);
 }
 
 
@@ -372,7 +372,7 @@ void export_screen_to_ppm(std::string ppm_path, unsigned int x, unsigned int y, 
 }
 
 
-float * draw_cross(float * data, pt_type center, float size, glm::vec4 color) {
+float * draw_cross(float * data, pt_2d center, float size, glm::vec4 color) {
 	data[0]= float(center.x)- size;
 	data[1]= float(center.y)- size;
 	data[6]= float(center.x)+ size;
@@ -391,7 +391,7 @@ float * draw_cross(float * data, pt_type center, float size, glm::vec4 color) {
 }
 
 
-float * draw_arrow(float * data, pt_type start, pt_type end, float tip_size, float angle, glm::vec4 color) {
+float * draw_arrow(float * data, pt_2d start, pt_2d end, float tip_size, float angle, glm::vec4 color) {
 	bool start_is_end= false;
 	if ((abs(start.x- end.x)< 1e-5) && (abs(start.y- end.y)< 1e-5)) {
 		start_is_end= true;
@@ -404,7 +404,7 @@ float * draw_arrow(float * data, pt_type start, pt_type end, float tip_size, flo
 		}
 	}
 	else {
-		pt_type norm= glm::normalize(start- end);
+		pt_2d norm= glm::normalize(start- end);
 		data[0]= float(start.x);
 		data[1]= float(start.y);
 		data[6]= float(end.x);
@@ -430,7 +430,7 @@ float * draw_arrow(float * data, pt_type start, pt_type end, float tip_size, flo
 }
 
 
-float * draw_polygon(float * data, std::vector<pt_type> pts, glm::vec4 color) {
+float * draw_polygon(float * data, std::vector<pt_2d> pts, glm::vec4 color) {
 	for (unsigned int idx_pt=0; idx_pt<pts.size(); ++idx_pt) {
 		data[idx_pt* 6* 2+ 0]= float(pts[idx_pt].x);
 		data[idx_pt* 6* 2+ 1]= float(pts[idx_pt].y);

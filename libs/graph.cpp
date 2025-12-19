@@ -13,7 +13,7 @@ Graph::~Graph() {
 	
 }
 
-void Graph::add_vertex(uint i, pt_type_3d pos, number weight) {
+void Graph::add_vertex(uint i, pt_3d pos, number weight) {
 	if (!_vertices.count(i)) {
 		GraphVertex v= {};
 		v._weight= weight;
@@ -119,15 +119,15 @@ GraphGrid::GraphGrid() {
 }
 
 
-GraphGrid::GraphGrid(const pt_type & origin, const pt_type & size, uint n_ligs, uint n_cols, bool is8connex) :
+GraphGrid::GraphGrid(const pt_2d & origin, const pt_2d & size, uint n_ligs, uint n_cols, bool is8connex) :
 	_origin(origin), _size(size), _n_ligs(n_ligs), _n_cols(n_cols)
 {
 	for (uint lig=0; lig<_n_ligs; ++lig) {
 		for (uint col=0; col<_n_cols; ++col) {
 			uint id= col_lig2id(col, lig);
-			pt_type pt = col_lig2pt(col, lig);
+			pt_2d pt = col_lig2pt(col, lig);
 			number weight= 1.0;
-			add_vertex(id, pt_type_3d(pt.x, pt.y, 0.0), weight);
+			add_vertex(id, pt_3d(pt.x, pt.y, 0.0), weight);
 		}
 	}
 	
@@ -195,15 +195,15 @@ uint GraphGrid::col_lig2id(uint col, uint lig) {
 }
 
 
-pt_type GraphGrid::col_lig2pt(uint col, uint lig) {
-	return pt_type(
+pt_2d GraphGrid::col_lig2pt(uint col, uint lig) {
+	return pt_2d(
 		_origin.x+ ((number)(col)/ (number)(_n_cols - 1))* _size.x,
 		_origin.y+ ((number)(lig)/ (number)(_n_ligs - 1))* _size.y
 	);
 }
 
 
-std::pair<uint, uint> GraphGrid::pt2col_lig(pt_type pt) {
+std::pair<uint, uint> GraphGrid::pt2col_lig(pt_2d pt) {
 	int col= (int)(((pt.x- _origin.x)/ _size.x)* (number)(_n_cols- 1));
 	int lig= (int)(((pt.y- _origin.y)/ _size.y)* (number)(_n_ligs- 1));
 	if (col < 0 || lig < 0 || col >= _n_cols || lig >= _n_ligs) {
@@ -214,14 +214,14 @@ std::pair<uint, uint> GraphGrid::pt2col_lig(pt_type pt) {
 }
 
 
-uint GraphGrid::pt2id(pt_type pt) {
+uint GraphGrid::pt2id(pt_2d pt) {
 	std::pair<uint, uint> col_lig = pt2col_lig(pt);
 	return col_lig2id(col_lig.first, col_lig.second);
 }
 
 
 // améliorable avec un algo genre Bresenham au lieu de parcourir tout le AABB
-std::vector<std::pair<uint, uint> > GraphGrid::segment_intersection(pt_type pt1, pt_type pt2) {
+std::vector<std::pair<uint, uint> > GraphGrid::segment_intersection(pt_2d pt1, pt_2d pt2) {
 	std::vector<std::pair<uint, uint> > result;
 	std::pair<uint, uint> col_lig_1 = pt2col_lig(pt1);
 	std::pair<uint, uint> col_lig_2 = pt2col_lig(pt2);
@@ -231,10 +231,10 @@ std::vector<std::pair<uint, uint> > GraphGrid::segment_intersection(pt_type pt1,
 	uint lig_max = std::max(col_lig_1.second, col_lig_2.second);
 	for (uint col=col_min; col<col_max; ++col) {
 		for (uint lig=lig_min; lig<lig_max; ++lig) {
-			pt_type v1 = col_lig2pt(col, lig);
-			pt_type v2 = col_lig2pt(col + 1, lig);
-			pt_type v3 = col_lig2pt(col + 1, lig + 1);
-			pt_type v4 = col_lig2pt(col, lig + 1);
+			pt_2d v1 = col_lig2pt(col, lig);
+			pt_2d v2 = col_lig2pt(col + 1, lig);
+			pt_2d v3 = col_lig2pt(col + 1, lig + 1);
+			pt_2d v4 = col_lig2pt(col, lig + 1);
 			if (segment_intersects_segment(pt1, pt2, v1, v2, NULL)) {
 				result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col + 1, lig)));
 				result.push_back(std::make_pair(col_lig2id(col + 1, lig), col_lig2id(col, lig)));
@@ -285,6 +285,33 @@ std::vector<std::pair<uint, uint> > GraphGrid::aabb_intersection(AABB_2D * aabb)
 }
 
 
+std::vector<std::pair<uint, uint> > GraphGrid::bbox_intersection(BBox_2D * bbox) {
+	std::vector<std::pair<uint, uint> > result;
+	std::pair<uint, uint> col_lig_min = pt2col_lig(bbox->_aabb->_pos);
+	std::pair<uint, uint> col_lig_max = pt2col_lig(bbox->_aabb->_pos + bbox->_aabb->_size);
+	uint col_min = col_lig_min.first;
+	uint lig_min = col_lig_min.second;
+	uint col_max = col_lig_max.first + 1; // +1 car pt2col_lig renvoie le coin bas-gauche du carré contenant pt
+	uint lig_max = col_lig_max.second + 1;
+	for (uint col=col_min; col<col_max; ++col) {
+		for (uint lig=lig_min; lig<lig_max; ++lig) {
+			pt_2d pt = col_lig2pt(col, lig);
+			if (pt_in_bbox(pt, bbox)) {
+				uint id = col_lig2id(col, lig);
+				GraphVertex v = _vertices[id];
+				_it_e= v._edges.begin();
+				while (_it_e!= v._edges.end()) {
+					result.push_back(std::make_pair(id, _it_e->first));
+					result.push_back(std::make_pair(_it_e->first, id));
+					_it_e++;
+				}
+			}
+		}
+	}
+	return result;
+}
+
+
 std::vector<std::pair<uint, uint> > GraphGrid::polygon_intersection(Polygon2D * polygon) {
 	std::vector<std::pair<uint, uint> > result;
 	//std::cout << *polygon->_aabb << "\n";
@@ -296,7 +323,7 @@ std::vector<std::pair<uint, uint> > GraphGrid::polygon_intersection(Polygon2D * 
 	uint lig_max = col_lig_max.second + 1;
 	for (uint col=col_min; col<col_max; ++col) {
 		for (uint lig=lig_min; lig<lig_max; ++lig) {
-			pt_type pt = col_lig2pt(col, lig);
+			pt_2d pt = col_lig2pt(col, lig);
 			//std::cout << glm_to_string(pt) << " ; " << col << " ; " << lig << "\n";
 			if (is_pt_inside_poly(pt, polygon)) {
 				/*result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col + 1, lig)));
@@ -315,7 +342,6 @@ std::vector<std::pair<uint, uint> > GraphGrid::polygon_intersection(Polygon2D * 
 					result.push_back(std::make_pair(_it_e->first, id));
 					_it_e++;
 				}
-
 			}
 		}
 	}
@@ -323,7 +349,7 @@ std::vector<std::pair<uint, uint> > GraphGrid::polygon_intersection(Polygon2D * 
 }
 
 
-std::vector<number> GraphGrid::weights_in_cell_containing_pt(pt_type pt) {
+std::vector<number> GraphGrid::weights_in_cell_containing_pt(pt_2d pt) {
 	std::pair<uint, uint> col_lig = pt2col_lig(pt);
 	uint id_left_bottom = col_lig2id(col_lig.first, col_lig.second);
 	uint id_right_bottom = col_lig2id(col_lig.first + 1, col_lig.second);

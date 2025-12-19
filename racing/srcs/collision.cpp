@@ -7,7 +7,7 @@
 #include "collision.h"
 
 
-bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, time_point t) {
+bool collision(StaticObject * obj1, StaticObject * obj2, pt_2d & position, time_point t) {
 	if (obj1->_model->_movement== MVMT_FIXED && obj2->_model->_movement== MVMT_FIXED) {
 		return false;
 	}
@@ -26,7 +26,7 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, tim
 	// idx_pt est l'indice du pt de l'objet qui pénètre l'autre
 	// is_pt_in_poly1 indique si c'est poly1 qui est pénétrant ou pénétré
 	// is_inter vaudra true s'il y a intersection
-	pt_type axis(0.0, 0.0);
+	pt_2d axis(0.0, 0.0);
 	number overlap= 0.0;
 	unsigned int idx_pt= 0;
 	bool is_pt_in_poly1= false;
@@ -73,19 +73,19 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, tim
 	}
 
 	// voir doc/collision.png récupéré de https://en.wikipedia.org/wiki/Collision_response
-	pt_type r1, r2;
+	pt_2d r1, r2;
 	r1= obj2->_footprint->_pts[idx_pt]- obj1->_com;
 	r2= obj2->_footprint->_pts[idx_pt]- obj2->_com;
 	
-	pt_type r1_norm= normalized(r1);
-	pt_type r1_norm_perp(-1.0* r1_norm.y, r1_norm.x);
-	pt_type contact_pt_velocity1= obj1->_velocity+ obj1->_angular_velocity* r1_norm_perp;
+	pt_2d r1_norm= normalized(r1);
+	pt_2d r1_norm_perp(-1.0* r1_norm.y, r1_norm.x);
+	pt_2d contact_pt_velocity1= obj1->_velocity+ obj1->_angular_velocity* r1_norm_perp;
 
-	pt_type r2_norm= normalized(r2);
-	pt_type r2_norm_perp(-1.0* r2_norm.y, r2_norm.x);
-	pt_type contact_pt_velocity2= obj2->_velocity+ obj2->_angular_velocity* r2_norm_perp;
+	pt_2d r2_norm= normalized(r2);
+	pt_2d r2_norm_perp(-1.0* r2_norm.y, r2_norm.x);
+	pt_2d contact_pt_velocity2= obj2->_velocity+ obj2->_angular_velocity* r2_norm_perp;
 
-	pt_type vr= contact_pt_velocity2- contact_pt_velocity1;
+	pt_2d vr= contact_pt_velocity2- contact_pt_velocity1;
 
 	// sera la norme de la nouvelle vitesse des objets
 	number impulse;
@@ -98,15 +98,15 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, tim
 	
 	// dans le cas où 1 des 2 objets est fixe on considère que sa masse et son inertie sont infinies
 	if (obj1->_model->_movement== MVMT_FIXED) {
-		pt_type v= (cross2d(r2, axis)/ obj2->_inertia)* r2;
+		pt_2d v= (cross2d(r2, axis)/ obj2->_inertia)* r2;
 		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj2->_mass+ dot(v, axis));
 	}
 	else if (obj2->_model->_movement== MVMT_FIXED) {
-		pt_type v= (cross2d(r1, axis)/ obj1->_inertia)* r1;
+		pt_2d v= (cross2d(r1, axis)/ obj1->_inertia)* r1;
 		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ dot(v, axis));
 	}
 	else {
-		pt_type v= (cross2d(r1, axis)/ obj1->_inertia)* r1+ (cross2d(r2, axis)/ obj2->_inertia)* r2;
+		pt_2d v= (cross2d(r1, axis)/ obj1->_inertia)* r1+ (cross2d(r2, axis)/ obj2->_inertia)* r2;
 		impulse= (-(1.0+ restitution)* dot(vr, axis)) / (1.0/ obj1->_mass+ 1.0/ obj2->_mass+ dot(v, axis));
 	}
 
@@ -141,9 +141,9 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, tim
 	}
 
 	// peut-être pas nécessaire
-	obj1->_acceleration= pt_type(0.0);
+	obj1->_acceleration= pt_2d(0.0);
 	obj1->_angular_acceleration= 0.0;
-	obj2->_acceleration= pt_type(0.0);
+	obj2->_acceleration= pt_2d(0.0);
 	obj2->_angular_acceleration= 0.0;
 
 	// thrust max brimé par matériau en collision
@@ -228,7 +228,7 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, tim
 	Action * obj1_action= obj1->get_current_action();
 	if (obj1_action->_forces.size()> 0) {
 		ActionForce * action_force= obj1_action->_forces[obj1->_current_action_force_idx];
-		pt_type force= rot(action_force->_force, obj1->_alpha);
+		pt_2d force= rot(action_force->_force, obj1->_alpha);
 		if (action_force->_type== TRANSLATION && scal(force, axis)> 0.0) {
 			obj1->_current_action_force_idx++;
 			if (obj1->_current_action_force_idx>= obj1_action->_forces.size()) {
@@ -241,7 +241,7 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, tim
 	Action * obj2_action= obj2->get_current_action();
 	if (obj2_action->_forces.size()> 0) {
 		ActionForce * action_force= obj2_action->_forces[obj2->_current_action_force_idx];
-		pt_type force= rot(action_force->_force, obj2->_alpha);
+		pt_2d force= rot(action_force->_force, obj2->_alpha);
 		if (action_force->_type== TRANSLATION && scal(force, axis)< 0.0) {
 			obj2->_current_action_force_idx++;
 			if (obj2->_current_action_force_idx>= obj2_action->_forces.size()) {

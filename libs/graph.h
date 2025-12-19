@@ -20,7 +20,7 @@ struct GraphEdge {
 
 
 struct GraphVertex {
-	pt_type_3d _pos;
+	pt_3d _pos;
 	number _weight;
 	std::unordered_map<uint, GraphEdge> _edges;
 };
@@ -29,7 +29,7 @@ struct GraphVertex {
 struct Graph {
 	Graph();
 	~Graph();
-	void add_vertex(uint i, pt_type_3d pos=pt_type_3d(0.0), number weight=1.0);
+	void add_vertex(uint i, pt_3d pos=pt_3d(0.0), number weight=1.0);
 	void add_edge(uint i, uint j, number weight=1.0, bool weight_is_dist=false);
 	void remove_vertex(uint i);
 	void remove_edge(uint i, uint j);
@@ -47,25 +47,26 @@ struct Graph {
 
 struct GraphGrid : public Graph {
 	GraphGrid();
-	GraphGrid(const pt_type & origin, const pt_type & size, uint n_ligs, uint n_cols, bool is8connex=true);
+	GraphGrid(const pt_2d & origin, const pt_2d & size, uint n_ligs, uint n_cols, bool is8connex=true);
 	GraphGrid(const GraphGrid & grid);
 	~GraphGrid();
 	std::pair<uint, uint> id2col_lig(uint id);
 	uint col_lig2id(uint col, uint lig);
-	pt_type col_lig2pt(uint col, uint lig);
-	std::pair<uint, uint> pt2col_lig(pt_type pt);
-	uint pt2id(pt_type pt);
-	std::vector<std::pair<uint, uint> > segment_intersection(pt_type pt1, pt_type pt2);
+	pt_2d col_lig2pt(uint col, uint lig);
+	std::pair<uint, uint> pt2col_lig(pt_2d pt);
+	uint pt2id(pt_2d pt);
+	std::vector<std::pair<uint, uint> > segment_intersection(pt_2d pt1, pt_2d pt2);
 	std::vector<std::pair<uint, uint> > aabb_intersection(AABB_2D * aabb);
+	std::vector<std::pair<uint, uint> > bbox_intersection(BBox_2D * bbox);
 	std::vector<std::pair<uint, uint> > polygon_intersection(Polygon2D * polygon);
-	std::vector<number> weights_in_cell_containing_pt(pt_type pt);
+	std::vector<number> weights_in_cell_containing_pt(pt_2d pt);
 	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
 
 
 	uint _n_ligs;
 	uint _n_cols;
-	pt_type _origin;
-	pt_type _size;
+	pt_2d _origin;
+	pt_2d _size;
 	AABB_2D * _aabb;
 };
 

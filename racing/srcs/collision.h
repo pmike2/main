@@ -13,7 +13,7 @@ const number MAX_IMPULSE= 3.0;
 const number COLLISION_ANGULAR_FACTOR= 3.0;
 
 // collision entre 2 objets
-bool collision(StaticObject * obj1, StaticObject * obj2, pt_type & position, time_point t);
+bool collision(StaticObject * obj1, StaticObject * obj2, pt_2d & position, time_point t);
 
 
 #endif

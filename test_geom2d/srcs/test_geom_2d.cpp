@@ -9,8 +9,8 @@ TestGeom2D::TestGeom2D() {
 
 
 TestGeom2D::TestGeom2D(std::map<std::string, GLuint> progs, ScreenGL * screengl) {
-	_pt_min= pt_type(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
-	_pt_max= pt_type(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
+	_pt_min= pt_2d(-screengl->_gl_width* 0.5f, -screengl->_gl_height* 0.5f);
+	_pt_max= pt_2d(screengl->_gl_width* 0.5f, screengl->_gl_height* 0.5f);
 	_camera2clip= glm::ortho(-1.0f* float(screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -1.0f* float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_font= new Font(progs, "../../fonts/Silom.ttf", 48, screengl);
 
@@ -35,15 +35,15 @@ TestGeom2D::~TestGeom2D() {
 
 
 void TestGeom2D::randomize() {
-	std::vector<pt_type> pts1;
+	std::vector<pt_2d> pts1;
 	for (unsigned int i=0; i<3; ++i) {
-		pts1.push_back(pt_type(0.5* rand_number(_pt_min.x, _pt_max.x), 0.5* rand_number(_pt_min.y, _pt_max.y)));
+		pts1.push_back(pt_2d(0.5* rand_number(_pt_min.x, _pt_max.x), 0.5* rand_number(_pt_min.y, _pt_max.y)));
 	}
 	_poly1->set_points(pts1);
 
-	std::vector<pt_type> pts2;
+	std::vector<pt_2d> pts2;
 	for (unsigned int i=0; i<3; ++i) {
-		pts2.push_back(pt_type(0.5* rand_number(_pt_min.x, _pt_max.x), 0.5* rand_number(_pt_min.y, _pt_max.y)));
+		pts2.push_back(pt_2d(0.5* rand_number(_pt_min.x, _pt_max.x), 0.5* rand_number(_pt_min.y, _pt_max.y)));
 	}
 	_poly2->set_points(pts2);
 
@@ -113,7 +113,7 @@ void TestGeom2D::update() {
 	ptr= draw_polygon(ptr, _poly1->_pts, POLY1_COLOR);
 	ptr= draw_polygon(ptr, _poly2->_pts, POLY2_COLOR);
 	if (_inter) {
-		pt_type start, end;
+		pt_2d start, end;
 		if (_is_pt_in_poly1) {
 			start= _poly1->_pts[_idx_pt];
 		}
@@ -124,7 +124,7 @@ void TestGeom2D::update() {
 		ptr= draw_arrow(ptr, start, end, ARROW_TIP_SIZE, ARROW_ANGLE, ARROW_COLOR);
 	}
 	else {
-		ptr= draw_arrow(ptr, pt_type(1000.0, 1000.0), pt_type(1000.0, 1000.0), ARROW_TIP_SIZE, ARROW_ANGLE, ARROW_COLOR);
+		ptr= draw_arrow(ptr, pt_2d(1000.0, 1000.0), pt_2d(1000.0, 1000.0), ARROW_TIP_SIZE, ARROW_ANGLE, ARROW_COLOR);
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);

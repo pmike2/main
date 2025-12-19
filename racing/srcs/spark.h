@@ -37,15 +37,15 @@ class Spark {
 public:
 	Spark();
 	~Spark();
-	void reinit(pt_type center, number alpha, pt_type half_size, pt_type center_inc, number alpha_inc, pt_type half_size_inc);
+	void reinit(pt_2d center, number alpha, pt_2d half_size, pt_2d center_inc, number alpha_inc, pt_2d half_size_inc);
 	void anim();
 
 
 	BBox_2D * _bbox; // BBox englobante
 	number _opacity; // opacité
 	bool _is_alive; // active ?
-	pt_type _center_inc; // incrémentation position
-	pt_type _half_size_inc; // incrémentation taille
+	pt_2d _center_inc; // incrémentation position
+	pt_2d _half_size_inc; // incrémentation taille
 	number _alpha_inc; // incrémentation angle rotation
 };
 
@@ -56,7 +56,7 @@ public:
 	SparkSystem();
 	~SparkSystem();
 	void reinit();
-	void anim(time_point t, std::vector<pt_type> positions);
+	void anim(time_point t, std::vector<pt_2d> positions);
 
 
 	Spark ** _sparks;

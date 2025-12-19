@@ -104,10 +104,10 @@ public:
 
 
 	ObjectType _type; // type d'objet
-	pt_type _com2bbox_center; // vecteur centre de masse -> centre bbox ; utile pour mettre à jour StaticObject._bbox
+	pt_2d _com2bbox_center; // vecteur centre de masse -> centre bbox ; utile pour mettre à jour StaticObject._bbox
 	Polygon2D * _footprint; // empreinte au sol, utilisée pour les collisions ; doit être convexe
 	ObjectMovementType _movement; // type de mouvement possible
-	pt_type _translation_constraint; // vecteur de contrainte de translation si _movement == MVMT_TRANSLATE_CONSTRAINED
+	pt_2d _translation_constraint; // vecteur de contrainte de translation si _movement == MVMT_TRANSLATE_CONSTRAINED
 	Material * _material; // matériau éventuel de l'objet
 	std::string _material_name; // nom du matériau
 };
@@ -117,9 +117,9 @@ public:
 class StaticObject : public ActionableObject {
 public:
 	StaticObject();
-	StaticObject(StaticObjectModel * model, pt_type position, number alpha, pt_type scale);
+	StaticObject(StaticObjectModel * model, pt_2d position, number alpha, pt_2d scale);
 	~StaticObject();
-	void reinit(pt_type position, number alpha, pt_type scale); // met à une position / orientation / taille
+	void reinit(pt_2d position, number alpha, pt_2d scale); // met à une position / orientation / taille
 	void update(); // met à jour les données calculées à partir des autres
 	void set_current_surface(Material * material, time_point t);
 	bool anim_surface(time_point t);
@@ -131,20 +131,20 @@ public:
 
 	Polygon2D * _footprint; // empreinte au sol, utilisée pour les collisions ; doit être convexe
 	BBox_2D * _bbox; // bounding box utilisée pour l'affichage des textures
-	pt_type _scale; // grossissement
+	pt_2d _scale; // grossissement
 	number _mass; // == model->_mass* _scale.x* _scale.y
 	number _inertia; // inertie
 
-	pt_type _com; // center of mass
-	pt_type _velocity; // vitesse
-	pt_type _acceleration; // acceleration
-	pt_type _force; // force appliquée ; non utilisé pour Car
+	pt_2d _com; // center of mass
+	pt_2d _velocity; // vitesse
+	pt_2d _acceleration; // acceleration
+	pt_2d _force; // force appliquée ; non utilisé pour Car
 	number _alpha; // angle de rotation
 	number _angular_velocity; // vitesse angulaire
 	number _angular_acceleration; // accélaration angulaire
 	number _torque; // torque == équivalent force pour angle
 
-	pt_type _translation_constraint; // vecteur de contrainte de translation si _movement == MVMT_TRANSLATE_CONSTRAINED
+	pt_2d _translation_constraint; // vecteur de contrainte de translation si _movement == MVMT_TRANSLATE_CONSTRAINED
 
 	number _linear_friction_surface; // facteur multiplicatif de friction lié au sol; varie si on est sur une flaque par ex
 	number _angular_friction_surface;
@@ -167,7 +167,7 @@ public:
 class CheckPoint : public StaticObject {
 public:
 	CheckPoint();
-	CheckPoint(StaticObjectModel * model, pt_type position, number alpha, pt_type scale);
+	CheckPoint(StaticObjectModel * model, pt_2d position, number alpha, pt_2d scale);
 	~CheckPoint();
 
 

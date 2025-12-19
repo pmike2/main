@@ -73,8 +73,8 @@ Cell * Grid::get_cell(unsigned int col, unsigned int row) {
 }
 
 
-pt_type Grid::idx2pt(unsigned int col, unsigned int row) {
-	return pt_type(col* _cell_size, row* _cell_size);
+pt_2d Grid::idx2pt(unsigned int col, unsigned int row) {
+	return pt_2d(col* _cell_size, row* _cell_size);
 }
 
 

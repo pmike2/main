@@ -11,12 +11,12 @@
 
 
 // ----------------------------------------------------------------------
-DCEL_Vertex::DCEL_Vertex() : _coords(pt_type(0.0f)), _incident_edge(NULL), _data(NULL) {
+DCEL_Vertex::DCEL_Vertex() : _coords(pt_2d(0.0f)), _incident_edge(NULL), _data(NULL) {
 
 }
 
 
-DCEL_Vertex::DCEL_Vertex(const pt_type & coords) : _coords(coords), _incident_edge(NULL), _data(NULL) {
+DCEL_Vertex::DCEL_Vertex(const pt_2d & coords) : _coords(coords), _incident_edge(NULL), _data(NULL) {
 
 }
 
@@ -341,8 +341,8 @@ std::vector<DCEL_Face *> DCEL_Face::get_adjacent_faces() {
 
 
 // renvoie le centre de gravité, utile pour le html
-pt_type DCEL_Face::get_gravity_center() {
-	pt_type result(0.0f);
+pt_2d DCEL_Face::get_gravity_center() {
+	pt_2d result(0.0f);
 	std::vector<DCEL_Vertex *> vertices= get_vertices();
 	for (auto v : vertices) {
 		result+= v->_coords;
@@ -354,7 +354,7 @@ pt_type DCEL_Face::get_gravity_center() {
 
 // renvoie un objet de type Polygon2D
 Polygon2D * DCEL_Face::get_polygon() {
-	std::vector<pt_type> pts;
+	std::vector<pt_2d> pts;
 	for (auto v : get_vertices()) {
 		pts.push_back(v->_coords);
 	}
@@ -368,7 +368,7 @@ Polygon2D * DCEL_Face::get_polygon() {
 bool DCEL_Face::ccw() {
 	bool verbose= false;
 
-	std::vector<pt_type> pts;
+	std::vector<pt_2d> pts;
 	for (auto v : get_vertices()) {
 		pts.push_back(v->_coords);
 		if (verbose) {
@@ -440,7 +440,7 @@ DCEL::~DCEL() {
 
 
 // ajout d'un sommet
-DCEL_Vertex * DCEL::add_vertex(const pt_type & coords) {
+DCEL_Vertex * DCEL::add_vertex(const pt_2d & coords) {
 	bool verbose= false;
 
 	DCEL_Vertex * v= get_vertex(coords);
@@ -490,7 +490,7 @@ DCEL_HalfEdge * DCEL::add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2) {
 
 
 // ajout de 2 hedges
-DCEL_HalfEdge * DCEL::add_edge(const pt_type & ori, const pt_type & dst) {
+DCEL_HalfEdge * DCEL::add_edge(const pt_2d & ori, const pt_2d & dst) {
 	DCEL_Vertex * v_ori= add_vertex(ori);
 	DCEL_Vertex * v_dst= add_vertex(dst);
 	return add_edge(v_ori, v_dst);
@@ -538,7 +538,7 @@ void DCEL::delete_face(DCEL_Face * face) {
 
 
 // scinde he en 2 via coords
-DCEL_HalfEdge * DCEL::split_edge(DCEL_HalfEdge * he, const pt_type & coords) {
+DCEL_HalfEdge * DCEL::split_edge(DCEL_HalfEdge * he, const pt_2d & coords) {
 	DCEL_Vertex * v= add_vertex(coords);
 	DCEL_HalfEdge * he2= add_edge(v, he->destination());
 	he2->set_next(he->_next);
@@ -877,7 +877,7 @@ bool DCEL::is_empty() {
 
 
 // ajout d'une bounding box qui peut rogner le DCEL ; code à simplifier ?
-void DCEL::add_bbox(const pt_type & bbox_min, const pt_type & bbox_max) {
+void DCEL::add_bbox(const pt_2d & bbox_min, const pt_2d & bbox_max) {
 	bool verbose= false;
 
 	// si vide on crée un carré de taille 1
@@ -885,10 +885,10 @@ void DCEL::add_bbox(const pt_type & bbox_min, const pt_type & bbox_max) {
 		if (verbose) {
 			std::cout << "DCEL::add_bbox : DCEL vide -> carré 1x1\n";
 		}
-		DCEL_Vertex * v1= add_vertex(pt_type(0.0f, 0.0f));
-		DCEL_Vertex * v2= add_vertex(pt_type(1.0f, 0.0f));
-		DCEL_Vertex * v3= add_vertex(pt_type(1.0f, 1.0f));
-		DCEL_Vertex * v4= add_vertex(pt_type(0.0f, 1.0f));
+		DCEL_Vertex * v1= add_vertex(pt_2d(0.0f, 0.0f));
+		DCEL_Vertex * v2= add_vertex(pt_2d(1.0f, 0.0f));
+		DCEL_Vertex * v3= add_vertex(pt_2d(1.0f, 1.0f));
+		DCEL_Vertex * v4= add_vertex(pt_2d(0.0f, 1.0f));
 		DCEL_HalfEdge * he1= add_edge(v1, v2);
 		DCEL_HalfEdge * he2= add_edge(v2, v3);
 		DCEL_HalfEdge * he3= add_edge(v3, v4);
@@ -919,8 +919,8 @@ void DCEL::add_bbox(const pt_type & bbox_min, const pt_type & bbox_max) {
 
 	// ajout des sommets de la bbox
 	DCEL_Vertex * bottom_left_corner= add_vertex(bbox_min);
-	DCEL_Vertex * bottom_right_corner= add_vertex(pt_type(bbox_max.x, bbox_min.y));
-	DCEL_Vertex * top_left_corner= add_vertex(pt_type(bbox_min.x, bbox_max.y));
+	DCEL_Vertex * bottom_right_corner= add_vertex(pt_2d(bbox_max.x, bbox_min.y));
+	DCEL_Vertex * top_left_corner= add_vertex(pt_2d(bbox_min.x, bbox_max.y));
 	DCEL_Vertex * top_right_corner= add_vertex(bbox_max);
 
 	// les origin_* contiendront les hedges dont l'origine est sur la bbox
@@ -960,7 +960,7 @@ void DCEL::add_bbox(const pt_type & bbox_min, const pt_type & bbox_max) {
 
 		// recherche des intersections avec les 4 cotés de la bbox
 		bool is_inter_bottom= false, is_inter_top= false, is_inter_left= false, is_inter_right= false;
-		pt_type inter_bottom, inter_top, inter_left, inter_right;
+		pt_2d inter_bottom, inter_top, inter_left, inter_right;
 		is_inter_bottom= segment_intersects_segment(he->_origin->_coords, he->destination()->_coords, bottom_left_corner->_coords , bottom_right_corner->_coords, &inter_bottom);
 		is_inter_top   = segment_intersects_segment(he->_origin->_coords, he->destination()->_coords, top_left_corner->_coords    , top_right_corner->_coords   , &inter_top);
 		is_inter_left  = segment_intersects_segment(he->_origin->_coords, he->destination()->_coords, bottom_left_corner->_coords , top_left_corner->_coords    , &inter_left);
@@ -1324,7 +1324,7 @@ bool DCEL::is_valid() {
 	bool verbose= false;
 
 	const number EPS= 1e-7;
-	pt_type inter;
+	pt_2d inter;
 	
 	for (auto he1 : _half_edges) {
 		for (auto he2 : _half_edges) {
@@ -1390,7 +1390,7 @@ void DCEL::import(std::string s) {
 				if (verbose) {
 					std::cout << "import : new vertex : " << "x=" << x << " ; y=" << y << "\n";
 				}
-				v= add_vertex(pt_type(x, y));
+				v= add_vertex(pt_2d(x, y));
 			}
 			if (first_v== NULL) {
 				first_v= v;
@@ -1458,7 +1458,7 @@ void DCEL::import(std::string s) {
 
 
 // renvoie si existe le vertex à coords
-DCEL_Vertex * DCEL::get_vertex(const pt_type & coords) {
+DCEL_Vertex * DCEL::get_vertex(const pt_2d & coords) {
 	const number EPS= 1e-9;
 	for (auto v : _vertices) {
 		if (glm::distance2(v->_coords, coords)< EPS) {
@@ -1470,7 +1470,7 @@ DCEL_Vertex * DCEL::get_vertex(const pt_type & coords) {
 
 
 // renvoie si possible le edge allant de ori à dst
-DCEL_HalfEdge * DCEL::get_edge(const pt_type & ori, const pt_type & dst) {
+DCEL_HalfEdge * DCEL::get_edge(const pt_2d & ori, const pt_2d & dst) {
 	DCEL_Vertex * origin= get_vertex(ori);
 	DCEL_Vertex * destination= get_vertex(dst);
 	if (origin== NULL || destination== NULL) {
@@ -1486,7 +1486,7 @@ DCEL_HalfEdge * DCEL::get_edge(const pt_type & ori, const pt_type & dst) {
 
 
 // calcul des limites de vertices
-void DCEL::get_bbox(pt_type * bbox_min, pt_type * bbox_max) {
+void DCEL::get_bbox(pt_2d * bbox_min, pt_2d * bbox_max) {
 	bbox_min->x= 1e8; bbox_min->y= 1e8; bbox_max->x= -1e8; bbox_max->y= -1e8;
 	for (auto v : _vertices) {
 		if (v->_coords.x< bbox_min->x) {
@@ -1547,14 +1547,14 @@ DCEL_Face * DCEL::get_unbounded_face() {
 
 
 // export sous forme de html
-void DCEL::export_html(std::string html_path, bool simple, const pt_type & bbox_min, const pt_type & bbox_max, const std::vector<pt_type> & sites) {
+void DCEL::export_html(std::string html_path, bool simple, const pt_2d & bbox_min, const pt_2d & bbox_max, const std::vector<pt_2d> & sites) {
 	bool verbose= false;
 
 	const unsigned int SVG_WIDTH= 1200;
 	const unsigned int SVG_HEIGHT= 700;
 	const number MARGIN_FACTOR= 1.5;
-	const pt_type VIEW_MIN= (bbox_min- (number)(0.5)* (bbox_min+ bbox_max))* MARGIN_FACTOR+ (number)(0.5)* (bbox_min+ bbox_max);
-	const pt_type VIEW_MAX= (bbox_max- (number)(0.5)* (bbox_min+ bbox_max))* MARGIN_FACTOR+ (number)(0.5)* (bbox_min+ bbox_max);
+	const pt_2d VIEW_MIN= (bbox_min- (number)(0.5)* (bbox_min+ bbox_max))* MARGIN_FACTOR+ (number)(0.5)* (bbox_min+ bbox_max);
+	const pt_2d VIEW_MAX= (bbox_max- (number)(0.5)* (bbox_min+ bbox_max))* MARGIN_FACTOR+ (number)(0.5)* (bbox_min+ bbox_max);
 	const number SIZE= std::max((VIEW_MAX- VIEW_MIN).x, (VIEW_MAX- VIEW_MIN).y);
 	const number POINT_RADIUS= 0.001* SIZE;
 	const number SITE_POINT_RADIUS= 0.001* SIZE;
@@ -1662,10 +1662,10 @@ void DCEL::export_html(std::string html_path, bool simple, const pt_type & bbox_
 				y4+= DELTA_BUFFER* u34;
 
 				// on cherche l'intersection des 2 edges avec buffer appliqué
-				pt_type inter;
+				pt_2d inter;
 				if (!ray_intersects_ray(
-					pt_type(x1, y1), pt_type(u12, v12),
-					pt_type(x4, y4), -pt_type(u34, v34),
+					pt_2d(x1, y1), pt_2d(u12, v12),
+					pt_2d(x4, y4), -pt_2d(u34, v34),
 					&inter
 				)) {
 					//std::cerr << "ERR : DCEL::export_html : ray_intersects_ray false\n";

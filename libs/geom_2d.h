@@ -11,7 +11,7 @@
 
 #include "typedefs.h"
 #include "bbox_2d.h"
-#include "triangulation.h"
+#include "polygon_2d.h"
 
 
 // 1.0 / 3.0
@@ -23,81 +23,56 @@ const number EPSILON= 1e-6;
 class Polygon2D;
 
 
-pt_type rot(pt_type v, number alpha);
-number norm(pt_type v);
-pt_type normalized(pt_type v);
-number scal(pt_type u, pt_type v);
-number determinant(pt_type u, pt_type v);
-pt_type proj(pt_type v2proj, pt_type v_proj_on);
-number angle(pt_type u, pt_type v);
+// fonctions basiques
+pt_2d rot(pt_2d v, number alpha);
+number norm(pt_2d v);
+number norm2(pt_2d v);
+pt_2d normalized(pt_2d v);
+number scal(pt_2d u, pt_2d v);
+number determinant(pt_2d u, pt_2d v);
+pt_2d proj(pt_2d v2proj, pt_2d v_proj_on);
+number angle(pt_2d u, pt_2d v);
+void rotation_float2mat(float rot, mat_2d & mat);
+number cross2d(const pt_2d & v1, const pt_2d & v2);
+bool is_left(const pt_2d & pt_ref, const pt_2d & dir_ref, const pt_2d & pt_test);
+bool is_ccw(const pt_2d & pt1, const pt_2d & pt2, const pt_2d & pt3);
+bool is_ccw(const std::vector<pt_2d> & pts);
 
-void rotation_float2mat(float rot, mat & mat);
-number cross2d(const pt_type & v1, const pt_type & v2);
-bool cmp_points(const pt_type & pt1, const pt_type & pt2);
-bool is_left(const pt_type & pt_ref, const pt_type & dir_ref, const pt_type & pt_test);
-bool is_pt_inside_poly(const pt_type & pt, const Polygon2D * poly);
+// tests AABB
+bool point_in_aabb(const pt_2d & pt, const AABB_2D * aabb);
+bool aabb_intersects_aabb(const AABB_2D * aabb_1, const AABB_2D * aabb_2);
+bool aabb_contains_aabb(const AABB_2D * big_aabb, const AABB_2D * small_aabb);
+bool ray_intersects_aabb(const pt_2d & ray_origin, const pt_2d & ray_dir, const AABB_2D * aabb, pt_2d & contact_pt, pt_2d & contact_normal, number & t_hit_near);
+
+// tests BBOX
+bool bbox_intersects_bbox(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1);
+bool pt_in_bbox(const pt_2d & pt, const BBox_2D * bbox);
+std::pair<BBOX_SIDE, BBOX_CORNER> bbox_side_corner(const BBox_2D * bbox, const pt_2d & pt);
+
+// tests segments / droites
+bool segment_intersects_segment(const pt_2d & pt1_begin, const pt_2d & pt1_end, const pt_2d & pt2_begin, const pt_2d & pt2_end, pt_2d * result, bool exclude_seg1_extremities=false, bool exclude_seg2_extremities=false);
+bool ray_intersects_segment(const pt_2d & origin, const pt_2d & direction, const pt_2d & pt_begin, const pt_2d & pt_end, pt_2d * result);
+bool ray_intersects_ray(const pt_2d & origin1, const pt_2d & direction1, const pt_2d & origin2, const pt_2d & direction2, pt_2d * result);
+bool distance_segment_pt(const pt_2d & seg1, const pt_2d & seg2, const pt_2d & pt, number * dist, pt_2d * proj);
+
+// tests Polygon
+bool is_pt_inside_poly(const pt_2d & pt, const Polygon2D * poly);
 bool is_poly_inside_poly(const Polygon2D * small_poly, const Polygon2D * big_poly);
-bool poly_intersects_poly(const Polygon2D * poly1, const Polygon2D * poly2, pt_type * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1);
-bool bbox_intersects_bbox(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_type * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1);
-bool segment_intersects_segment(const pt_type & pt1_begin, const pt_type & pt1_end, const pt_type & pt2_begin, const pt_type & pt2_end, pt_type * result, bool exclude_seg1_extremities=false, bool exclude_seg2_extremities=false);
-bool ray_intersects_segment(const pt_type & origin, const pt_type & direction, const pt_type & pt_begin, const pt_type & pt_end, pt_type * result);
-bool ray_intersects_ray(const pt_type & origin1, const pt_type & direction1, const pt_type & origin2, const pt_type & direction2, pt_type * result);
-bool segment_intersects_poly(const pt_type & pt_begin, const pt_type & pt_end, const Polygon2D * poly, pt_type * result);
-bool segment_intersects_poly_multi(const pt_type & pt_begin, const pt_type & pt_end, const Polygon2D * poly, std::vector<pt_type> * result);
-bool distance_segment_pt(const pt_type & seg1, const pt_type & seg2, const pt_type & pt, number * dist, pt_type * proj);
-number distance_poly_pt(const Polygon2D * poly, const pt_type & pt, pt_type * proj);
-number distance_poly_segment(const Polygon2D * poly, const pt_type & seg1, const pt_type & seg2, pt_type * proj);
-void convex_hull_2d(std::vector<pt_type> & pts);
-bool is_ccw(const pt_type & pt1, const pt_type & pt2, const pt_type & pt3);
-bool is_ccw(const std::vector<pt_type> & pts);
-std::pair<pt_type, number> circumcircle(const pt_type & circle_pt1, const pt_type & circle_pt2, const pt_type & circle_pt3);
-bool point_in_circumcircle(const pt_type & circle_pt1, const pt_type & circle_pt2, const pt_type & circle_pt3, const pt_type & pt);
-bool point_in_circle(const pt_type & center, number radius, const pt_type & pt);
-void get_circle_center(const pt_type & circle_pt1, const pt_type & circle_pt2, const pt_type & circle_pt3, pt_type & center, number * radius);
-bool is_quad_convex(const pt_type * pts);
-std::pair<BBOX_SIDE, BBOX_CORNER> bbox_side_corner(const BBox_2D * bbox, const pt_type & pt);
+bool poly_intersects_poly(const Polygon2D * poly1, const Polygon2D * poly2, pt_2d * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1);
+bool segment_intersects_poly(const pt_2d & pt_begin, const pt_2d & pt_end, const Polygon2D * poly, pt_2d * result);
+bool segment_intersects_poly_multi(const pt_2d & pt_begin, const pt_2d & pt_end, const Polygon2D * poly, std::vector<pt_2d> * result);
+number distance_poly_pt(const Polygon2D * poly, const pt_2d & pt, pt_2d * proj);
+number distance_poly_segment(const Polygon2D * poly, const pt_2d & seg1, const pt_2d & seg2, pt_2d * proj);
 
+// tests cercle
+std::pair<pt_2d, number> circumcircle(const pt_2d & circle_pt1, const pt_2d & circle_pt2, const pt_2d & circle_pt3);
+bool point_in_circumcircle(const pt_2d & circle_pt1, const pt_2d & circle_pt2, const pt_2d & circle_pt3, const pt_2d & pt);
+bool point_in_circle(const pt_2d & center, number radius, const pt_2d & pt);
+void get_circle_center(const pt_2d & circle_pt1, const pt_2d & circle_pt2, const pt_2d & circle_pt3, pt_2d & center, number * radius);
+bool is_quad_convex(const pt_2d * pts);
 
-class Polygon2D {
-public:
-	Polygon2D();
-	Polygon2D(const Polygon2D & polygon);
-	Polygon2D(const std::vector<pt_type> pts, bool convexhull=false);
-	~Polygon2D();
-	void clear();
-	void set_points(const number * points, unsigned int n_points, bool convexhull=false);
-	void set_points(const std::vector<pt_type> pts, bool convexhull=false);
-	void centroid2zero();
-	void randomize(unsigned int n_points, number radius=1.0, pt_type center=pt_type(0.0), bool convexhull=false);
-	void set_rectangle(const pt_type origin, const pt_type size);
-	void set_bbox(const BBox_2D & bbox);
-	void translate(pt_type v);
-	void rotate(pt_type center, number alpha);
-	void scale(pt_type scale);
-	void min_max_pt_along_dir(const pt_type direction, unsigned int * idx_pt_min, number * dist_min, unsigned int * idx_pt_max, number * dist_max) const;
-	void triangulate();
-	Polygon2D * buffered(number buffer_size); // attention ne fonctionne que pour des polys convexes avec buffer_size > 0
-
-	void update_area();
-	void update_centroid();
-	void update_normals();
-	void update_radius();
-	void update_aabb();
-	void update_inertia();
-	void update_all();
-
-	friend std::ostream & operator << (std::ostream & os, const Polygon2D & polygon);
-
-
-	std::vector<pt_type> _pts;
-	std::vector<pt_type> _normals;
-	number _area;
-	pt_type _centroid;
-	number _radius; // rayon cercle englobant
-	AABB_2D * _aabb;
-	std::vector<std::vector<int> > _triangles_idx;
-	number _inertia; // https://physics.stackexchange.com/questions/493736/moment-of-inertia-for-an-arbitrary-polygon
-};
+// enveloppe convexe
+void convex_hull_2d(std::vector<pt_2d> & pts);
 
 
 #endif

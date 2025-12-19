@@ -23,7 +23,7 @@ public:
 	ScreenGL(int screen_width, int screen_height, number gl_width, number gl_height);
 	~ScreenGL();
 	void screen2gl(int i, int j, number & x, number & y);
-	pt_type screen2gl(int i, int j);
+	pt_2d screen2gl(int i, int j);
 	void gl2screen(number x, number y, int & i, int & j);
 
 
@@ -64,9 +64,9 @@ void export_texture2pgm(std::string pgm_path, unsigned int width, unsigned int h
 void export_texture_array2pgm(std::string pgm_dir_path, unsigned int width, unsigned int height, unsigned int depth);
 void export_screen_to_ppm(std::string ppm_path, unsigned int x, unsigned int y, unsigned int width, unsigned int height);
 
-float * draw_cross(float * data, pt_type center, float size, glm::vec4 color);
-float * draw_arrow(float * data, pt_type start, pt_type end, float tip_size, float angle, glm::vec4 color);
-float * draw_polygon(float * data, std::vector<pt_type> pts, glm::vec4 color);
+float * draw_cross(float * data, pt_2d center, float size, glm::vec4 color);
+float * draw_arrow(float * data, pt_2d start, pt_2d end, float tip_size, float angle, glm::vec4 color);
+float * draw_polygon(float * data, std::vector<pt_2d> pts, glm::vec4 color);
 float * draw_nothing(float * data, unsigned int n_attrs_per_pts, unsigned int n_pts);
 
 void fill_texture_array(unsigned int texture_offset, unsigned int texture_idx, unsigned int texture_size, std::vector<std::string> pngs);

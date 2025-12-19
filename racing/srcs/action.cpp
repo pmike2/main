@@ -52,7 +52,7 @@ ActionForce::ActionForce() {
 }
 
 
-ActionForce::ActionForce(ActionForceType type, pt_type force, number torque, int n_ms) :
+ActionForce::ActionForce(ActionForceType type, pt_2d force, number torque, int n_ms) :
 	_type(type), _force(force), _torque(torque), _n_ms(n_ms) 
 {
 
@@ -253,7 +253,7 @@ void ActionableObjectModel::load(std::string json_path) {
 					actions[action_name]->_textures.push_back(new ActionTexture(texture_path, n_ms));
 				}
 				else if (ac["force"]!= nullptr) {
-					pt_type force= pt_type(ac["force"][0], ac["force"][1]);
+					pt_2d force= pt_2d(ac["force"][0], ac["force"][1]);
 					int n_ms= 0;
 					if (ac["n_ms"]!= nullptr) {
 						n_ms= ac["n_ms"];
@@ -266,7 +266,7 @@ void ActionableObjectModel::load(std::string json_path) {
 					if (ac["n_ms"]!= nullptr) {
 						n_ms= ac["n_ms"];
 					}
-					actions[action_name]->_forces.push_back(new ActionForce(ROTATION, pt_type(0.0), torque, n_ms));
+					actions[action_name]->_forces.push_back(new ActionForce(ROTATION, pt_2d(0.0), torque, n_ms));
 				}
 			}
 
@@ -519,7 +519,7 @@ void ActionableObject::randomize() {
 				ActionForce * force= action->_forces[idx_force];
 				ActionForce * force_init= action_init->_forces[idx_force];
 				if (force->_type== TRANSLATION) {
-					_model->_sequences[seq_key]->_actions[idx_action].first->_forces[idx_force]->_force= rand_gaussian(force_init->_force, pt_type(_model->_rand->_force));
+					_model->_sequences[seq_key]->_actions[idx_action].first->_forces[idx_force]->_force= rand_gaussian(force_init->_force, pt_2d(_model->_rand->_force));
 					if (_flipped) {
 						_model->_sequences[seq_key]->_actions[idx_action].first->_forces[idx_force]->_force*= -1.0;
 					}

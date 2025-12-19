@@ -22,40 +22,36 @@ enum BBOX_CORNER {BOTTOMLEFT_CORNER, BOTTOMRIGHT_CORNER, TOPLEFT_CORNER, TOPRIGH
 class AABB_2D {
 public:
 	AABB_2D();
-	AABB_2D(pt_type pos, pt_type size);
+	AABB_2D(pt_2d pos, pt_2d size);
 	AABB_2D(const AABB_2D & aabb);
 	~AABB_2D();
-	pt_type center();
+	pt_2d center();
 	AABB_2D * buffered(number size);
 	void buffer(number size);
 	friend std::ostream & operator << (std::ostream & os, const AABB_2D & aabb);
 
 
-	pt_type _pos;
-	pt_type _size;
+	pt_2d _pos;
+	pt_2d _size;
 };
-
-
-bool point_in_aabb(const pt_type & pt, const AABB_2D * aabb);
-bool aabb_intersects_aabb(const AABB_2D * aabb_1, const AABB_2D * aabb_2);
-bool aabb_contains_aabb(const AABB_2D * big_aabb, const AABB_2D * small_aabb);
-bool ray_intersects_aabb(const pt_type & ray_origin, const pt_type & ray_dir, const AABB_2D * aabb, pt_type & contact_pt, pt_type & contact_normal, number & t_hit_near);
 
 
 class BBox_2D {
 public:
 	BBox_2D();
-	BBox_2D(pt_type center, pt_type half_size, number alpha=0.0);
+	BBox_2D(pt_2d center, pt_2d half_size, number alpha=0.0);
+	BBox_2D(number width, pt_2d pt1, pt_2d pt2);
 	~BBox_2D();
 	void set_aabb(AABB_2D & aabb);
 	void update();
+	BBox_2D * buffered(number size);
 	friend std::ostream & operator << (std::ostream & os, const BBox_2D & bbox);
 
 
-	pt_type _center;
-	pt_type _half_size;
+	pt_2d _center;
+	pt_2d _half_size;
 	number _alpha; // rotation
-	pt_type _pts[4];
+	pt_2d _pts[4];
 	AABB_2D * _aabb;
 };
 

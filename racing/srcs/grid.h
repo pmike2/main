@@ -23,9 +23,9 @@ public:
 	// méthodes de chgmt de système de coord
 	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
 	std::pair<unsigned int, unsigned int> idx2coord(unsigned int idx);
-	std::pair<int, int> number2coord(pt_type pos);
-	pt_type coord2number(unsigned int col_idx, unsigned int row_idx);
-	pt_type idx2number(unsigned int idx);
+	std::pair<int, int> number2coord(pt_2d pos);
+	pt_2d coord2number(unsigned int col_idx, unsigned int row_idx);
+	pt_2d idx2number(unsigned int idx);
 	
 	// get / set / add / del
 	StaticObject * get_tile(unsigned int col_idx, unsigned int row_idx);

@@ -29,7 +29,7 @@ public:
 	void update();
 	
 	
-	pt_type _pt_min, _pt_max;
+	pt_2d _pt_min, _pt_max;
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers;
 	glm::mat4 _camera2clip; // glm::ortho
@@ -38,7 +38,7 @@ public:
 	Polygon2D * _poly1;
 	Polygon2D * _poly2;
 	bool _inter;
-	pt_type _axis;
+	pt_2d _axis;
 	number _overlap;
 	unsigned int _idx_pt;
 	bool _is_pt_in_poly1;

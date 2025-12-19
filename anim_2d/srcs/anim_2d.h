@@ -21,7 +21,7 @@ const float Z_FAR= 10.0f;
 const number UPDATE_ACTION_TRESH= 0.1f;
 
 // si hero sort du rectangle _viewpoint +- MOVE_VIEWPOINT, o, déplace _viewpoint
-const pt_type MOVE_VIEWPOINT(5.0f, 5.0f);
+const pt_2d MOVE_VIEWPOINT(5.0f, 5.0f);
 
 // incrément gravité et max
 const number GRAVITY_INC= 1.0f;
@@ -51,11 +51,11 @@ CharacterType str2character_type(std::string s);
 class CheckPoint {
 public:
 	CheckPoint();
-	CheckPoint(pt_type pos, number velocity);
+	CheckPoint(pt_2d pos, number velocity);
 	~CheckPoint();
 
 
-	pt_type _pos;
+	pt_2d _pos;
 	number _velocity;
 };
 
@@ -71,15 +71,15 @@ public:
 	void update_pos(number elapsed_time);
 	void update_velocity();
 	void update_footprint_pos();
-	void set_aabb_pos(pt_type pos);
+	void set_aabb_pos(pt_2d pos);
 	void set_footprint(AABB_2D * footprint);
 	friend std::ostream & operator << (std::ostream & os, const Object2D & obj);
 
 
 	AABB_2D * _aabb; // emprise texture
-	pt_type _footprint_offset; // pt bas gauche du footprint dans le repere _aabb
+	pt_2d _footprint_offset; // pt bas gauche du footprint dans le repere _aabb
 	AABB_2D * _footprint; // emprise physique
-	pt_type _velocity; // vitesse
+	pt_2d _velocity; // vitesse
 	ObjectPhysics _physics; // type physique objet
 	std::vector<CheckPoint *> _checkpoints; // chekpoints éventuels
 	unsigned int _idx_checkpoint; // indice chekpoint courant
@@ -90,7 +90,7 @@ public:
 
 
 // test d'intersection entre un obj en mouvement et un obj statique
-//bool obj_intersect(const Object2D * anim_obj, const Object2D * static_obj, const number time_step, pt_type & contact_pt, pt_type & contact_normal, number & contact_time);
+//bool obj_intersect(const Object2D * anim_obj, const Object2D * static_obj, const number time_step, pt_2d & contact_pt, pt_2d & contact_normal, number & contact_time);
 
 
 // action d'un character animé -----------------------------------------------------------------------------------------------------
@@ -274,7 +274,7 @@ public:
 	number _block_w, _block_h;
 	ScreenGL * _screengl;
 	Person2D * _hero;
-	pt_type _viewpoint;
+	pt_2d _viewpoint;
 	bool _draw;
 };
 

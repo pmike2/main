@@ -12,11 +12,11 @@
 // Intersection de 2 triangles en 3D
 // http://web.stanford.edu/class/cs277/resources/papers/Moller1997b.pdf
 // ATTENTION : reste à gérer le cas ou les triangles sont coplanaires !
-bool triangle_intersects_triangle(pt_type_3d v[3], pt_type_3d w[3]) {
+bool triangle_intersects_triangle(pt_3d v[3], pt_3d w[3]) {
 	// -------
-	pt_type_3d nv= glm::cross(v[1]- v[0], v[2]- v[0]);
+	pt_3d nv= glm::cross(v[1]- v[0], v[2]- v[0]);
 	number dv= -1.0f* glm::dot(nv, v[0]);
-	pt_type_3d dvw;
+	pt_3d dvw;
 	dvw[0]= glm::dot(nv, w[0])+ dv;
 	dvw[1]= glm::dot(nv, w[1])+ dv;
 	dvw[2]= glm::dot(nv, w[2])+ dv;
@@ -25,9 +25,9 @@ bool triangle_intersects_triangle(pt_type_3d v[3], pt_type_3d w[3]) {
 	}
 
 	// -------
-	pt_type_3d nw= glm::cross(w[1]- w[0], w[2]- w[0]);
+	pt_3d nw= glm::cross(w[1]- w[0], w[2]- w[0]);
 	number dw= -1.0f* glm::dot(nw, w[0]);
-	pt_type_3d dwv;
+	pt_3d dwv;
 	dwv[0]= glm::dot(nw, v[0])+ dw;
 	dwv[1]= glm::dot(nw, v[1])+ dw;
 	dwv[2]= glm::dot(nw, v[2])+ dw;
@@ -36,8 +36,8 @@ bool triangle_intersects_triangle(pt_type_3d v[3], pt_type_3d w[3]) {
 	}
 
 	// -------
-	//pt_type_3d d= glm::normalize(glm::cross(nv, nw));
-	pt_type_3d d= glm::cross(nv, nw);
+	//pt_3d d= glm::normalize(glm::cross(nv, nw));
+	pt_3d d= glm::cross(nv, nw);
 
 	// -------
 	uint v_idx_alone, v_idx_couple_1, v_idx_couple_2;
@@ -59,7 +59,7 @@ bool triangle_intersects_triangle(pt_type_3d v[3], pt_type_3d w[3]) {
 		v_idx_couple_2= 1;
 	}
 
-	pt_type_3d v_dot_d;
+	pt_3d v_dot_d;
 	v_dot_d[0]= glm::dot(d, v[0]);
 	v_dot_d[1]= glm::dot(d, v[1]);
 	v_dot_d[2]= glm::dot(d, v[2]);
@@ -87,7 +87,7 @@ bool triangle_intersects_triangle(pt_type_3d v[3], pt_type_3d w[3]) {
 		w_idx_couple_2= 1;
 	}
 
-	pt_type_3d w_dot_d;
+	pt_3d w_dot_d;
 	w_dot_d[0]= glm::dot(d, w[0]);
 	w_dot_d[1]= glm::dot(d, w[1]);
 	w_dot_d[2]= glm::dot(d, w[2]);
@@ -120,7 +120,7 @@ Pt::Pt() {
 }
 
 
-Pt::Pt(pt_type_3d coords) : _coords(coords) {
+Pt::Pt(pt_3d coords) : _coords(coords) {
 
 }
 
@@ -215,7 +215,7 @@ void ConvexHull::add_conflict(Pt * pt, Face * face) {
 }
 
 
-Pt * ConvexHull::add_pt(pt_type_3d coords) {
+Pt * ConvexHull::add_pt(pt_3d coords) {
 	Pt * pt = new Pt(coords);
 	_pts.push_back(pt);
 	return pt;
@@ -223,7 +223,7 @@ Pt * ConvexHull::add_pt(pt_type_3d coords) {
 
 
 Pt * ConvexHull::add_pt(number x, number y, number z) {
-	return add_pt(pt_type_3d(x, y, z));
+	return add_pt(pt_3d(x, y, z));
 }
 
 
@@ -279,7 +279,7 @@ void ConvexHull::randomize(uint n_pts, number xmin, number xmax, number ymin, nu
 }
 
 
-void ConvexHull::randomize(uint n_pts, pt_type_3d vmin, pt_type_3d vmax) {
+void ConvexHull::randomize(uint n_pts, pt_3d vmin, pt_3d vmax) {
 	randomize(n_pts, vmin.x, vmax.x, vmin.y, vmax.y, vmin.z, vmax.z);
 }
 

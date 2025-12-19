@@ -116,7 +116,7 @@ public:
 	void drop_row();
 	void drop_col();
 	
-	StaticObject * get_floating_object(pt_type pos); // renvoie le floating object à une coord
+	StaticObject * get_floating_object(pt_2d pos); // renvoie le floating object à une coord
 	void delete_floating_object(StaticObject * obj); // suppression floating object
 	void clear_floating_objects(); // suppression de tous les floating object
 
@@ -140,8 +140,8 @@ public:
 	std::vector<Car *> _sorted_cars; // les voitures triées par position
 	Car * _hero; // voiture héros
 	std::vector<Driver *> _drivers; // liste des conducteurs
-	std::vector<pt_type> _collisions; // les positions des collisions en cours. Utile à SparkSystem
-	std::vector<std::vector<pt_type> > _barriers; // les barrières de la course
+	std::vector<pt_2d> _collisions; // les positions des collisions en cours. Utile à SparkSystem
+	std::vector<std::vector<pt_2d> > _barriers; // les barrières de la course
 };
 
 

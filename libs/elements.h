@@ -23,7 +23,7 @@ const uint STONE_N_POINTS_HULL = 30;
 class Element {
 public:
 	Element();
-	Element(pt_type_3d pt_base, pt_type_3d size);
+	Element(pt_3d pt_base, pt_3d size);
 	virtual ~Element() = default;
 	virtual void update_data() = 0;
 	//friend std::ostream & operator << (std::ostream & os, const Element & t);
@@ -58,12 +58,12 @@ public:
 class Branch {
 public:
 	Branch();
-	Branch(pt_type_3d pt_base, number radius_base, number radius_end, number r, number theta, number phi, uint n_childrens, uint idx, glm::vec4 color);
+	Branch(pt_3d pt_base, number radius_base, number radius_end, number r, number theta, number phi, uint n_childrens, uint idx, glm::vec4 color);
 	~Branch();
 	friend std::ostream & operator << (std::ostream & os, const Branch & b);
 
 
-	pt_type_3d _pt_base;
+	pt_3d _pt_base;
 	number _radius_base;
 	number _radius_end;
 	number _r, _theta, _phi;
@@ -71,12 +71,12 @@ public:
 	uint _idx;
 	glm::vec4 _color;
 	
-	pt_type_3d * _vertices_side;
-	pt_type_3d * _normals_side;
-	pt_type_3d * _vertices_bottom;
-	pt_type_3d * _normals_bottom;
-	pt_type_3d * _vertices_top;
-	pt_type_3d * _normals_top;
+	pt_3d * _vertices_side;
+	pt_3d * _normals_side;
+	pt_3d * _vertices_bottom;
+	pt_3d * _normals_bottom;
+	pt_3d * _vertices_top;
+	pt_3d * _normals_top;
 
 	AABB * _aabb;
 };
@@ -84,7 +84,7 @@ public:
 
 class Tree : public Element {
 public:
-	Tree(TreeSpecies * species, pt_type_3d pt_base, pt_type_3d size);
+	Tree(TreeSpecies * species, pt_3d pt_base, pt_3d size);
 	Tree();
 	~Tree();
 	void gen_branches(Tree * tree, Branch * branch);
@@ -100,7 +100,7 @@ public:
 class Stone : public Element {
 public:
 	Stone();
-	Stone(pt_type_3d pt_base, pt_type_3d size);
+	Stone(pt_3d pt_base, pt_3d size);
 	~Stone();
 	void update_data();
 
@@ -114,8 +114,8 @@ public:
 	Elements();
 	Elements(std::string dir_tree_jsons);
 	~Elements();
-	Tree * add_tree(std::string species_name, pt_type_3d pt_base, pt_type_3d size);
-	Stone * add_stone(pt_type_3d pt_base, pt_type_3d size);
+	Tree * add_tree(std::string species_name, pt_3d pt_base, pt_3d size);
+	Stone * add_stone(pt_3d pt_base, pt_3d size);
 
 
 	std::map<std::string, TreeSpecies *> _tree_species;

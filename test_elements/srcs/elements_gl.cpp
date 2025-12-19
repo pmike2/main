@@ -15,12 +15,12 @@ ElementsGL::ElementsGL(std::map<std::string, GLuint> progs) {
 	for (uint i=0; i<10; ++i) {
 		for (uint j=0; j<10; ++j) {
 			//std::cout << i << " ; " << j << "\n";
-			_elements->add_tree("tree_test", pt_type_3d(number(i) * 3.0, number(j) * 3.0, 0.0), pt_type_3d(1.0, 1.0, 4.0));
+			_elements->add_tree("tree_test", pt_3d(number(i) * 3.0, number(j) * 3.0, 0.0), pt_3d(1.0, 1.0, 4.0));
 		}
 	}
 	
 	for (uint i=0; i<10; ++i) {
-		_elements->add_stone(pt_type_3d(number(i) * 3.0, -2.0, 0.0), pt_type_3d(1.0, 1.0, 1.0));
+		_elements->add_stone(pt_3d(number(i) * 3.0, -2.0, 0.0), pt_3d(1.0, 1.0, 1.0));
 	}
 
 	GLuint buffers[2];
@@ -114,7 +114,7 @@ void ElementsGL::update_bbox() {
 
 	for (auto element : _elements->_elements) {
 		AABB * aabb = element->_aabb;
-		std::vector<pt_type_3d> pts = aabb->segments();
+		std::vector<pt_3d> pts = aabb->segments();
 		for (auto pt : pts) {
 			ptr[0] = float(pt.x);
 			ptr[1] = float(pt.y);

@@ -11,7 +11,7 @@
 
 
 // renvoie le y du pt de la parabole définie par site et yline, en x
-number y_parabola(const pt_type & site, number yline, number x) {
+number y_parabola(const pt_2d & site, number yline, number x) {
 	bool verbose= false;
 
 	if (number_equals_strict(site.y, yline)) {
@@ -29,7 +29,7 @@ number y_parabola(const pt_type & site, number yline, number x) {
 
 
 // renvoie la dérivée de la parabole définie par site et yline, en x
-number y_derivative_parabola(const pt_type & site, number yline, number x) {
+number y_derivative_parabola(const pt_2d & site, number yline, number x) {
 	if (number_equals_strict(site.y, yline)) {
 		std::cerr << "y_derivative_parabola problème : site = " << glm_to_string(site) << " ; yline = " << yline << " ; x = " << x << "\n";
 		return 0.0;
@@ -39,7 +39,7 @@ number y_derivative_parabola(const pt_type & site, number yline, number x) {
 
 
 // string pour debug de l'équation de la parabole définie par site et yline
-std::string parabola_equation(const pt_type & site, number yline) {
+std::string parabola_equation(const pt_2d & site, number yline) {
 	if (number_equals_strict(site.y, yline)) {
 		std::cerr << "parabola_equation problème : site = " << glm_to_string(site) << " ; yline = " << yline << "\n";
 		return "";
@@ -52,7 +52,7 @@ std::string parabola_equation(const pt_type & site, number yline) {
 
 
 // x de l'intersection de 2 paraboles définies par site_left, site_right et yline
-number parabolas_intersection(const pt_type & site_left, const pt_type & site_right, number yline) {
+number parabolas_intersection(const pt_2d & site_left, const pt_2d & site_right, number yline) {
 	bool verbose= false;
 
 	// cas limite des sites situés sur yline
@@ -120,8 +120,8 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 		std::cout << "breakpoints_converge he1 = " << *he1 << " ; he2 = " << *he2 << "\n";
 	}
 
-	pt_type result;
-	pt_type he1_origin, he2_origin;
+	pt_2d result;
+	pt_2d he1_origin, he2_origin;
 	DCEL_HalfEdgeData * he1_data= (DCEL_HalfEdgeData *)(he1->_data);
 	DCEL_HalfEdgeData * he2_data= (DCEL_HalfEdgeData *)(he2->_data);
 
@@ -162,19 +162,19 @@ bool breakpoints_converge(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2) {
 
 
 // ---------------------------------------------------------------------------------------------
-DCEL_HalfEdgeData::DCEL_HalfEdgeData() : _is_full_line(false), _center(pt_type(0.0)) {
+DCEL_HalfEdgeData::DCEL_HalfEdgeData() : _is_full_line(false), _center(pt_2d(0.0)) {
 
 }
 
 
-DCEL_HalfEdgeData::DCEL_HalfEdgeData(bool is_full_line, pt_type direction) :
-_is_full_line(is_full_line), _center(pt_type(0.0)), _direction(direction)
+DCEL_HalfEdgeData::DCEL_HalfEdgeData(bool is_full_line, pt_2d direction) :
+_is_full_line(is_full_line), _center(pt_2d(0.0)), _direction(direction)
 {
 
 }
 
 
-DCEL_HalfEdgeData::DCEL_HalfEdgeData(bool is_full_line, pt_type center, pt_type direction) :
+DCEL_HalfEdgeData::DCEL_HalfEdgeData(bool is_full_line, pt_2d center, pt_2d direction) :
 	_is_full_line(is_full_line), _center(center), _direction(direction)
 {
 	
@@ -193,14 +193,14 @@ std::ostream & operator << (std::ostream & os, const DCEL_HalfEdgeData & d) {
 
 // ---------------------------------------------------------------------------------------------
 BeachLineNode::BeachLineNode() :
-	_type(Arc), _site(pt_type(0.0, 0.0)), _circle_event(NULL), _sites(std::make_pair(pt_type(0.0, 0.0), pt_type(0.0, 0.0))), _half_edge(NULL) 
+	_type(Arc), _site(pt_2d(0.0, 0.0)), _circle_event(NULL), _sites(std::make_pair(pt_2d(0.0, 0.0), pt_2d(0.0, 0.0))), _half_edge(NULL) 
 {
 
 }
 
 
 BeachLineNode::BeachLineNode(BeachLineNodeType type) :
-	_type(type), _site(pt_type(0.0, 0.0)), _circle_event(NULL), _sites(std::make_pair(pt_type(0.0, 0.0), pt_type(0.0, 0.0))), _half_edge(NULL) 
+	_type(type), _site(pt_2d(0.0, 0.0)), _circle_event(NULL), _sites(std::make_pair(pt_2d(0.0, 0.0), pt_2d(0.0, 0.0))), _half_edge(NULL) 
 {
 
 }
@@ -224,14 +224,14 @@ std::ostream & operator << (std::ostream & os, const BeachLineNode & b) {
 
 // ---------------------------------------------------------------------------------------------
 Event::Event() :
-	_type(CircleEvent), _site(pt_type(0.0, 0.0)), _circle_center(pt_type(0.0, 0.0)), _circle_radius(0.0), _leaf(NULL)
+	_type(CircleEvent), _site(pt_2d(0.0, 0.0)), _circle_center(pt_2d(0.0, 0.0)), _circle_radius(0.0), _leaf(NULL)
 {
 
 }
 
 
 Event::Event(EventType type) :
-	_type(type), _site(pt_type(0.0, 0.0)), _circle_center(pt_type(0.0, 0.0)), _circle_radius(0.0), _leaf(NULL)
+	_type(type), _site(pt_2d(0.0, 0.0)), _circle_center(pt_2d(0.0, 0.0)), _circle_radius(0.0), _leaf(NULL)
 {
 
 }
@@ -362,7 +362,7 @@ Voronoi::Voronoi() : _current_y(0.0), _max_height(0), _max_height_n_nodes(0), _m
 }
 
 
-Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, bool output_beachline, bool output_intermediate, bool output_stat, std::string debug_path) : Voronoi()
+Voronoi::Voronoi(const std::vector<pt_2d> & sites, bool verbose, bool output_beachline, bool output_intermediate, bool output_stat, std::string debug_path) : Voronoi()
 {
 	_sites= sites;
 	_debug_path= debug_path;
@@ -503,8 +503,8 @@ Voronoi::Voronoi(const std::vector<pt_type> & sites, bool verbose, bool output_b
 
 	// aojut bbox englobante
 	number max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
-	pt_type bbox_min= pt_type(_bbox_min.x- BBOX_MARGIN_PERCENT* max_size, _bbox_min.y- BBOX_MARGIN_PERCENT* max_size);
-	pt_type bbox_max= pt_type(_bbox_max.x+ BBOX_MARGIN_PERCENT* max_size, _bbox_max.y+ BBOX_MARGIN_PERCENT* max_size);
+	pt_2d bbox_min= pt_2d(_bbox_min.x- BBOX_MARGIN_PERCENT* max_size, _bbox_min.y- BBOX_MARGIN_PERCENT* max_size);
+	pt_2d bbox_max= pt_2d(_bbox_max.x+ BBOX_MARGIN_PERCENT* max_size, _bbox_max.y+ BBOX_MARGIN_PERCENT* max_size);
 	_diagram->add_bbox(bbox_min, bbox_max);
 
 	if (output_stat) {
@@ -545,7 +545,7 @@ Voronoi::~Voronoi() {
 // dans ces 2 fonctions que choisir pour size ? on veut être surs que ces lignes intersecteront la bbox 
 // mais position peut être n'importe où
 // si je prends size trop faible ca bugge
-DCEL_HalfEdge * Voronoi::add_full_line(pt_type position, pt_type direction) {
+DCEL_HalfEdge * Voronoi::add_full_line(pt_2d position, pt_2d direction) {
 	// dans le cas add_full_segment on sait que norm(direction)> 1, donc pas besoin de diviser pas sa norme
 	number size= 1e9;
 	DCEL_HalfEdge * he= _diagram->add_edge(position- size* direction, position+ size* direction);
@@ -557,7 +557,7 @@ DCEL_HalfEdge * Voronoi::add_full_line(pt_type position, pt_type direction) {
 
 
 // ajout d'une demi-ligne
-DCEL_HalfEdge * Voronoi::add_half_line(pt_type position, pt_type direction) {
+DCEL_HalfEdge * Voronoi::add_half_line(pt_2d position, pt_2d direction) {
 	number size= 1e9;
 	DCEL_HalfEdge * he= _diagram->add_edge(position, position+ size* direction/ sqrt(direction.x* direction.x+ direction.y* direction.y));
 	he->_data= new DCEL_HalfEdgeData(false, direction);
@@ -594,8 +594,8 @@ void Voronoi::handle_first_sites_event(Event * e) {
 		BeachLineNode * new_bkpt= new BeachLineNode(BreakPoint);
 		new_bkpt->_sites= std::make_pair(max_node->_data._site, e->_site);
 
-		pt_type position= pt_type((max_node->_data._site.x+ e->_site.x)* 0.5, _current_y);
-		pt_type direction= pt_type(0.0, -1.0);
+		pt_2d position= pt_2d((max_node->_data._site.x+ e->_site.x)* 0.5, _current_y);
+		pt_2d direction= pt_2d(0.0, -1.0);
 		DCEL_HalfEdge * he= add_full_line(position, direction);
 
 		new_bkpt->_half_edge= he;
@@ -621,7 +621,7 @@ void Voronoi::handle_site_event(Event * e) {
 
 	// recherche de l'arc au dessus du site
 	BeachLineNode * new_arc= new BeachLineNode(Arc);
-	new_arc->_site= pt_type(e->_site);
+	new_arc->_site= pt_2d(e->_site);
 	Node<BeachLineNode> * node_above_site= _beachline->search(*new_arc, false);
 
 	// sites et breakpoints voisins
@@ -658,8 +658,8 @@ void Voronoi::handle_site_event(Event * e) {
 	// y = valeur de la parabole au dessus du site en site.x ; pente = tangente à la parabole
 	number y= y_parabola(node_above_site->_data._site, _current_y, e->_site.x);
 	number dy= y_derivative_parabola(node_above_site->_data._site, _current_y, e->_site.x);
-	pt_type position= pt_type(e->_site.x, y);
-	pt_type direction= pt_type(1.0, dy);
+	pt_2d position= pt_2d(e->_site.x, y);
+	pt_2d direction= pt_2d(1.0, dy);
 	DCEL_HalfEdge * he= add_full_line(position, direction);
 
 	if (_verbose) {
@@ -682,8 +682,8 @@ void Voronoi::handle_site_event(Event * e) {
 
 	// voir si les nouveaux breakpoints consécutifs convergent ; si c'est le cas on crée un circle event
 	if (prev_site!= NULL && prev_bkpt!= NULL && breakpoints_converge(prev_bkpt->_data._half_edge, breakpoint_left->_half_edge)) {
-		std::pair<pt_type, number> circle= circumcircle(prev_site->_data._site, node_above_site->_data._site, new_arc->_site);
-		pt_type center= circle.first;
+		std::pair<pt_2d, number> circle= circumcircle(prev_site->_data._site, node_above_site->_data._site, new_arc->_site);
+		pt_2d center= circle.first;
 		number radius= circle.second;
 
 		Event * new_circle_event= new Event(CircleEvent);
@@ -699,8 +699,8 @@ void Voronoi::handle_site_event(Event * e) {
 	}
 
 	if ((next_site!= NULL) && (next_bkpt!= NULL) && (breakpoints_converge(next_bkpt->_data._half_edge, breakpoint_right->_half_edge))) {
-		std::pair<pt_type, number> circle= circumcircle(new_arc->_site, node_above_site->_data._site, next_site->_data._site);
-		pt_type center= circle.first;
+		std::pair<pt_2d, number> circle= circumcircle(new_arc->_site, node_above_site->_data._site, next_site->_data._site);
+		pt_2d center= circle.first;
 		number radius= circle.second;
 
 		Event * new_circle_event= new Event(CircleEvent);
@@ -767,8 +767,8 @@ void Voronoi::handle_circle_event(Event * e) {
 
 	// ajout du centre du cercle comme sommet du diagram et d'un nouveau he délimitant les breakpoints voisins
 	// direction du nouveau he perpendiculaire à site_droit - site_gauche et pointant vers les y< 0
-	pt_type v= successor_leaf->_data._site- predecessor_leaf->_data._site;
-	DCEL_HalfEdge * he= add_half_line(e->_circle_center, pt_type(v.y, -v.x));
+	pt_2d v= successor_leaf->_data._site- predecessor_leaf->_data._site;
+	DCEL_HalfEdge * he= add_half_line(e->_circle_center, pt_2d(v.y, -v.x));
 	DCEL_Vertex * circle_center_vertex= he->_origin;
 	
 	if (_verbose) {
@@ -800,8 +800,8 @@ void Voronoi::handle_circle_event(Event * e) {
 
 	// on regarde si le nouveau half-edge converge avec ses voisins ; si oui création d'un nouveau circle event
 	if ((predecessor_predecessor_leaf!= NULL) && (breakpoints_converge(predecessor_bkpt->_data._half_edge, he))) {
-		std::pair<pt_type, number> circle= circumcircle(predecessor_predecessor_leaf->_data._site, predecessor_leaf->_data._site, successor_leaf->_data._site);
-		pt_type center= circle.first;
+		std::pair<pt_2d, number> circle= circumcircle(predecessor_predecessor_leaf->_data._site, predecessor_leaf->_data._site, successor_leaf->_data._site);
+		pt_2d center= circle.first;
 		number radius= circle.second;
 
 		Event * new_circle_event= new Event(CircleEvent);
@@ -816,8 +816,8 @@ void Voronoi::handle_circle_event(Event * e) {
 	}
 
 	if ((successor_successor_leaf!= NULL) && (breakpoints_converge(successor_bkpt->_data._half_edge, he))) {
-		std::pair<pt_type, number> circle= circumcircle(predecessor_leaf->_data._site, successor_leaf->_data._site, successor_successor_leaf->_data._site);
-		pt_type center= circle.first;
+		std::pair<pt_2d, number> circle= circumcircle(predecessor_leaf->_data._site, successor_leaf->_data._site, successor_successor_leaf->_data._site);
+		pt_2d center= circle.first;
 		number radius= circle.second;
 
 		Event * new_circle_event= new Event(CircleEvent);
@@ -839,7 +839,7 @@ void Voronoi::handle_circle_event(Event * e) {
 		else {
 			grand_parent->set_right(parent->_right);
 		}
-		predecessor->_data._sites.second= pt_type(successor_leaf->_data._site);
+		predecessor->_data._sites.second= pt_2d(successor_leaf->_data._site);
 		predecessor->_data._half_edge= he;
 	}
 	else if ((e->_leaf->is_right()) && (parent->_left!= NULL) && (grand_parent!= NULL)) {
@@ -849,7 +849,7 @@ void Voronoi::handle_circle_event(Event * e) {
 		else {
 			grand_parent->set_right(parent->_left);
 		}
-		successor->_data._sites.first= pt_type(predecessor_leaf->_data._site);
+		successor->_data._sites.first= pt_2d(predecessor_leaf->_data._site);
 		successor->_data._half_edge= he;
 	}
 
@@ -891,7 +891,7 @@ void Voronoi::export_debug_html(std::string html_path) {
 
 	auto y_html= [VIEW_YMIN, VIEW_YMAX](number y) -> number {return VIEW_YMIN+ VIEW_YMAX- y;};
 
-	auto site_color= [](pt_type s) -> glm::ivec3 {
+	auto site_color= [](pt_2d s) -> glm::ivec3 {
 		number intpart;
 		number fractpartx= modf(s.x, &intpart);
 		number fractparty= modf(s.y, &intpart);

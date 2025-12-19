@@ -1,7 +1,7 @@
 {
 	"name" : "boat",
 	"size" : [1.0, 1.0, 0.5],
-	"max_velocity" : 0.009,
+	"max_velocity" : 0.005,
 	"weights" : {
 		"GROUND" : 1000.0,
 		"SOLID" : 1000.0,

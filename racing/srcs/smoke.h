@@ -35,7 +35,7 @@ class Smoke {
 public:
 	Smoke();
 	~Smoke();
-	void reinit(const SmokeConfig & config, pt_type position, number alpha, pt_type scale, unsigned int idx_texture);
+	void reinit(const SmokeConfig & config, pt_2d position, number alpha, pt_2d scale, unsigned int idx_texture);
 	void anim();
 
 

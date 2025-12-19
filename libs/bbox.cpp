@@ -17,17 +17,17 @@ using namespace std;
 
 
 AABB::AABB() {
-	set_vmin_vmax(pt_type_3d(0.0), pt_type_3d(0.0));
+	set_vmin_vmax(pt_3d(0.0), pt_3d(0.0));
 }
 
 
-AABB::AABB(const pt_type_3d & vmin, const pt_type_3d & vmax) {
+AABB::AABB(const pt_3d & vmin, const pt_3d & vmax) {
 	set_vmin_vmax(vmin, vmax);
 }
 
 
 AABB::AABB(AABB_2D * aabb_2d) {
-	set_vmin_vmax(pt_type_3d(aabb_2d->_pos.x, aabb_2d->_pos.y, -0.01), pt_type_3d(aabb_2d->_pos.x + aabb_2d->_size.x, aabb_2d->_pos.y + aabb_2d->_size.y, 0.01));
+	set_vmin_vmax(pt_3d(aabb_2d->_pos.x, aabb_2d->_pos.y, -0.01), pt_3d(aabb_2d->_pos.x + aabb_2d->_size.x, aabb_2d->_pos.y + aabb_2d->_size.y, 0.01));
 }
 
 
@@ -36,7 +36,7 @@ AABB::~AABB() {
 }
 
 
-void AABB::set_vmin_vmax(const pt_type_3d & vmin, const pt_type_3d & vmax) {
+void AABB::set_vmin_vmax(const pt_3d & vmin, const pt_3d & vmax) {
 	_vmin= vmin;
 	_vmax= vmax;
 	
@@ -48,16 +48,16 @@ void AABB::set_vmin_vmax(const pt_type_3d & vmin, const pt_type_3d & vmax) {
 	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);*/
 
 	_radius = glm::distance(_vmin, _vmax) * 0.5;
-	_base_radius = glm::distance(pt_type(_vmin.x, _vmin.y), pt_type(_vmax.x, _vmax.y)) * 0.5;
+	_base_radius = glm::distance(pt_2d(_vmin.x, _vmin.y), pt_2d(_vmax.x, _vmax.y)) * 0.5;
 
-	_pts[0]= pt_type_3d(_vmin.x, _vmin.y, _vmin.z);
-	_pts[1]= pt_type_3d(_vmax.x, _vmin.y, _vmin.z);
-	_pts[2]= pt_type_3d(_vmin.x, _vmax.y, _vmin.z);
-	_pts[3]= pt_type_3d(_vmax.x, _vmax.y, _vmin.z);
-	_pts[4]= pt_type_3d(_vmin.x, _vmin.y, _vmax.z);
-	_pts[5]= pt_type_3d(_vmax.x, _vmin.y, _vmax.z);
-	_pts[6]= pt_type_3d(_vmin.x, _vmax.y, _vmax.z);
-	_pts[7]= pt_type_3d(_vmax.x, _vmax.y, _vmax.z);
+	_pts[0]= pt_3d(_vmin.x, _vmin.y, _vmin.z);
+	_pts[1]= pt_3d(_vmax.x, _vmin.y, _vmin.z);
+	_pts[2]= pt_3d(_vmin.x, _vmax.y, _vmin.z);
+	_pts[3]= pt_3d(_vmax.x, _vmax.y, _vmin.z);
+	_pts[4]= pt_3d(_vmin.x, _vmin.y, _vmax.z);
+	_pts[5]= pt_3d(_vmax.x, _vmin.y, _vmax.z);
+	_pts[6]= pt_3d(_vmin.x, _vmax.y, _vmax.z);
+	_pts[7]= pt_3d(_vmax.x, _vmax.y, _vmax.z);
 }
 
 
@@ -74,8 +74,8 @@ vector<vector<unsigned int> > AABB::triangles_idxs() {
 }
 
 
-std::vector<pt_type_3d> AABB::segments() {
-	return std::vector<pt_type_3d> {
+std::vector<pt_3d> AABB::segments() {
+	return std::vector<pt_3d> {
 		_pts[0], _pts[1], _pts[1], _pts[3], _pts[3], _pts[2], _pts[2], _pts[0], // bottom
 		_pts[4], _pts[5], _pts[5], _pts[7], _pts[7], _pts[6], _pts[6], _pts[4], // top
 		_pts[0], _pts[1], _pts[1], _pts[5], _pts[5], _pts[4], _pts[4], _pts[0], // left
@@ -86,40 +86,40 @@ std::vector<pt_type_3d> AABB::segments() {
 }
 
 
-void AABB::translate(pt_type_3d v) {
+void AABB::translate(pt_3d v) {
 	set_vmin_vmax(_vmin+ v, _vmax+ v);
 }
 
 
 void AABB::scale(number x) {
-	pt_type_3d c = center();
+	pt_3d c = center();
 	
 	set_vmin_vmax(x* (_vmin - c) + c, x* (_vmax - c) + c);
 }
 
 
-pt_type_3d AABB::center() {
+pt_3d AABB::center() {
 	return 0.5 * (_vmin + _vmax);
 }
 
 
-pt_type_3d AABB::bottom_center() {
-	return pt_type_3d(0.5 * (_vmin.x + _vmax.x), 0.5 * (_vmin.y + _vmax.y), _vmin.z);
+pt_3d AABB::bottom_center() {
+	return pt_3d(0.5 * (_vmin.x + _vmax.x), 0.5 * (_vmin.y + _vmax.y), _vmin.z);
 }
 
 
-pt_type_3d AABB::size() {
+pt_3d AABB::size() {
 	return _vmax - _vmin;
 }
 
 
 AABB_2D * AABB::aabb2d() {
-	return new AABB_2D(pt_type(_vmin.x, _vmin.y), pt_type(_vmax.x - _vmin.x, _vmax.y - _vmin.y));
+	return new AABB_2D(pt_2d(_vmin.x, _vmin.y), pt_2d(_vmax.x - _vmin.x, _vmax.y - _vmin.y));
 }
 
 
 void AABB::set_z(number z) {
-	set_vmin_vmax(pt_type_3d(_vmin.x, _vmin.y, z), pt_type_3d(_vmax.x, _vmax.y, _vmax.z - _vmin.z + z));
+	set_vmin_vmax(pt_3d(_vmin.x, _vmin.y, z), pt_3d(_vmax.x, _vmax.y, _vmax.z - _vmin.z + z));
 }
 
 
@@ -130,12 +130,12 @@ ostream & operator << (ostream & os, const AABB & aabb) {
 
 
 // ------------------------------------------------------------------------------------------------------
-BBox::BBox() : _vmin(pt_type_3d(0.0)), _vmax(pt_type_3d(0.0)), _radius(0.0) {
+BBox::BBox() : _vmin(pt_3d(0.0)), _vmax(pt_3d(0.0)), _radius(0.0) {
 	_aabb= new AABB();
 }
 
 
-BBox::BBox(const pt_type_3d & vmin, const pt_type_3d & vmax, const mat_4d & model2world) : _vmin(vmin), _vmax(vmax), _model2world(model2world) {
+BBox::BBox(const pt_3d & vmin, const pt_3d & vmax, const mat_4d & model2world) : _vmin(vmin), _vmax(vmax), _model2world(model2world) {
 	_radius= abs(_vmin.x);
 	if (abs(_vmax.x)> _radius) _radius= abs(_vmax.x);
 	if (abs(_vmin.y)> _radius) _radius= abs(_vmin.y);
@@ -169,17 +169,17 @@ BBox::~BBox() {
 void BBox::set_model2world(const mat_4d & model2world) {
 	_model2world= model2world;
 
-	_pts[0]= pt_type_3d(_model2world* pt_type_4d(_vmin.x, _vmin.y, _vmin.z, 1.0));
-	_pts[1]= pt_type_3d(_model2world* pt_type_4d(_vmax.x, _vmin.y, _vmin.z, 1.0));
-	_pts[2]= pt_type_3d(_model2world* pt_type_4d(_vmin.x, _vmax.y, _vmin.z, 1.0));
-	_pts[3]= pt_type_3d(_model2world* pt_type_4d(_vmax.x, _vmax.y, _vmin.z, 1.0));
-	_pts[4]= pt_type_3d(_model2world* pt_type_4d(_vmin.x, _vmin.y, _vmax.z, 1.0));
-	_pts[5]= pt_type_3d(_model2world* pt_type_4d(_vmax.x, _vmin.y, _vmax.z, 1.0));
-	_pts[6]= pt_type_3d(_model2world* pt_type_4d(_vmin.x, _vmax.y, _vmax.z, 1.0));
-	_pts[7]= pt_type_3d(_model2world* pt_type_4d(_vmax.x, _vmax.y, _vmax.z, 1.0));
+	_pts[0]= pt_3d(_model2world* pt_4d(_vmin.x, _vmin.y, _vmin.z, 1.0));
+	_pts[1]= pt_3d(_model2world* pt_4d(_vmax.x, _vmin.y, _vmin.z, 1.0));
+	_pts[2]= pt_3d(_model2world* pt_4d(_vmin.x, _vmax.y, _vmin.z, 1.0));
+	_pts[3]= pt_3d(_model2world* pt_4d(_vmax.x, _vmax.y, _vmin.z, 1.0));
+	_pts[4]= pt_3d(_model2world* pt_4d(_vmin.x, _vmin.y, _vmax.z, 1.0));
+	_pts[5]= pt_3d(_model2world* pt_4d(_vmax.x, _vmin.y, _vmax.z, 1.0));
+	_pts[6]= pt_3d(_model2world* pt_4d(_vmin.x, _vmax.y, _vmax.z, 1.0));
+	_pts[7]= pt_3d(_model2world* pt_4d(_vmax.x, _vmax.y, _vmax.z, 1.0));
 
-	pt_type_3d vmin(_pts[0]);
-	pt_type_3d vmax(_pts[0]);
+	pt_3d vmin(_pts[0]);
+	pt_3d vmax(_pts[0]);
 	for (unsigned int i=1; i<8; ++i) {
 		if (_pts[i].x< vmin.x) {
 			vmin.x= _pts[i].x;
@@ -230,7 +230,7 @@ InstancePosRot::InstancePosRot() {
 }
 
 
-InstancePosRot::InstancePosRot(const pt_type_3d & position, const quat & rotation, const pt_type_3d & scale) :
+InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, const pt_3d & scale) :
 	_position(position), _rotation(rotation), _scale(scale), _active(false), _dist2(0.0), _selected(false)
 {
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
@@ -239,12 +239,12 @@ InstancePosRot::InstancePosRot(const pt_type_3d & position, const quat & rotatio
 }
 
 
-InstancePosRot::InstancePosRot(const pt_type_3d & position, const quat & rotation, const pt_type_3d & scale, AABB * aabb) : 
+InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, const pt_3d & scale, AABB * aabb) : 
 	_position(position), _rotation(rotation), _scale(scale), _active(false), _dist2(0.0), _selected(false)
 {
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox= new BBox(aabb->_vmin, aabb->_vmax, _model2world);
-	_emprise= new AABB_2D(pt_type(_bbox->_aabb->_vmin), pt_type(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin));
+	_emprise= new AABB_2D(pt_2d(_bbox->_aabb->_vmin), pt_2d(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin));
 }
 
 
@@ -254,28 +254,28 @@ InstancePosRot::~InstancePosRot() {
 }
 
 
-void InstancePosRot::set_pos_rot_scale(const pt_type_3d & position, const quat & rotation, const pt_type_3d & scale) {
+void InstancePosRot::set_pos_rot_scale(const pt_3d & position, const quat & rotation, const pt_3d & scale) {
 	_position= position;
 	_rotation= rotation;
 	_scale= scale;
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox->set_model2world(_model2world);
-	_emprise->_pos= pt_type(_bbox->_aabb->_vmin);
-	_emprise->_size= pt_type(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin);
+	_emprise->_pos= pt_2d(_bbox->_aabb->_vmin);
+	_emprise->_size= pt_2d(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin);
 }
 
 
 // lent, mieux vaut utiliser l'autre
 void InstancePosRot::set_pos_rot_scale(const mat_4d & mat) {
-	pt_type_3d skew;
-	pt_type_4d perspective;
+	pt_3d skew;
+	pt_4d perspective;
 	glm::decompose(mat, _scale, _rotation, _position, skew, perspective);
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox->set_model2world(_model2world);
 }
 
 
-void InstancePosRot::update_dist2(pt_type_3d view_eye) {
+void InstancePosRot::update_dist2(pt_3d view_eye) {
 	// glm::distance2 est lent !
 	//_dist2= glm::distance2(_position, view_eye);
 	_dist2= (_position.x- view_eye.x)* (_position.x- view_eye.x)+ (_position.y- view_eye.y)* (_position.y- view_eye.y)+ (_position.z- view_eye.z)* (_position.z- view_eye.z);
@@ -307,23 +307,23 @@ bool aabb_intersects_bbox(AABB * aabb, BBox * bbox) {
 
 // https://www.jkh.me/files/tutorials/Separating%20Axis%20Theorem%20or%20Oriented%20Bounding%20Boxes.pdf
 bool bbox_intersects_bbox(BBox * bbox_1, BBox * bbox_2) {
-	pt_type_3d center_1= 0.5* (bbox_1->_pts[7]+ bbox_1->_pts[0]);
-	pt_type_3d x_1= glm::normalize(bbox_1->_pts[1]- bbox_1->_pts[0]);
-	pt_type_3d y_1= glm::normalize(bbox_1->_pts[2]- bbox_1->_pts[0]);
-	pt_type_3d z_1= glm::normalize(bbox_1->_pts[4]- bbox_1->_pts[0]);
+	pt_3d center_1= 0.5* (bbox_1->_pts[7]+ bbox_1->_pts[0]);
+	pt_3d x_1= glm::normalize(bbox_1->_pts[1]- bbox_1->_pts[0]);
+	pt_3d y_1= glm::normalize(bbox_1->_pts[2]- bbox_1->_pts[0]);
+	pt_3d z_1= glm::normalize(bbox_1->_pts[4]- bbox_1->_pts[0]);
 	number half_width_1= 0.5* (bbox_1->_vmax[0]- bbox_1->_vmin[0]);
 	number half_height_1= 0.5* (bbox_1->_vmax[1]- bbox_1->_vmin[1]);
 	number half_depth_1= 0.5* (bbox_1->_vmax[2]- bbox_1->_vmin[2]);
 
-	pt_type_3d center_2= 0.5* (bbox_2->_pts[7]+ bbox_2->_pts[0]);
-	pt_type_3d x_2= glm::normalize(bbox_2->_pts[1]- bbox_2->_pts[0]);
-	pt_type_3d y_2= glm::normalize(bbox_2->_pts[2]- bbox_2->_pts[0]);
-	pt_type_3d z_2= glm::normalize(bbox_2->_pts[4]- bbox_2->_pts[0]);
+	pt_3d center_2= 0.5* (bbox_2->_pts[7]+ bbox_2->_pts[0]);
+	pt_3d x_2= glm::normalize(bbox_2->_pts[1]- bbox_2->_pts[0]);
+	pt_3d y_2= glm::normalize(bbox_2->_pts[2]- bbox_2->_pts[0]);
+	pt_3d z_2= glm::normalize(bbox_2->_pts[4]- bbox_2->_pts[0]);
 	number half_width_2= 0.5* (bbox_2->_vmax[0]- bbox_2->_vmin[0]);
 	number half_height_2= 0.5* (bbox_2->_vmax[1]- bbox_2->_vmin[1]);
 	number half_depth_2= 0.5* (bbox_2->_vmax[2]- bbox_2->_vmin[2]);
 
-	pt_type_3d axes[15]= {
+	pt_3d axes[15]= {
 		x_1, y_1, z_1, x_2, y_2, z_2, 
 		glm::cross(x_1, x_2), glm::cross(x_1, y_2), glm::cross(x_1, z_2), 
 		glm::cross(y_1, x_2), glm::cross(y_1, y_2), glm::cross(y_1, z_2), 
@@ -342,7 +342,7 @@ bool bbox_intersects_bbox(BBox * bbox_1, BBox * bbox_2) {
 }
 
 
-number aabb_distance_pt_2(AABB * aabb, const pt_type_3d & pt) {
+number aabb_distance_pt_2(AABB * aabb, const pt_3d & pt) {
 	number dx, dy, dz;
 	
 	if (pt.x> aabb->_vmax.x) {
@@ -379,13 +379,13 @@ number aabb_distance_pt_2(AABB * aabb, const pt_type_3d & pt) {
 }
 
 
-number aabb_distance_pt(AABB * aabb, const pt_type_3d & pt) {
+number aabb_distance_pt(AABB * aabb, const pt_3d & pt) {
 	return sqrt(aabb_distance_pt_2(aabb, pt));
 }
 
 
 // cf https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
-bool ray_intersects_aabb(pt_type_3d origin, pt_type_3d direction, AABB * aabb, number & t_hit) {
+bool ray_intersects_aabb(pt_3d origin, pt_3d direction, AABB * aabb, number & t_hit) {
 	direction= glm::normalize(direction);
 	if (direction.x== 0.0) {
 		direction.x= 1e-7;
@@ -396,7 +396,7 @@ bool ray_intersects_aabb(pt_type_3d origin, pt_type_3d direction, AABB * aabb, n
 	if (direction.z== 0.0) {
 		direction.z= 1e-7;
 	}
-	pt_type_3d dirfrac(1.0/ direction.x, 1.0/ direction.y, 1.0/ direction.z);
+	pt_3d dirfrac(1.0/ direction.x, 1.0/ direction.y, 1.0/ direction.z);
 	number t1= (aabb->_vmin.x- origin.x)* dirfrac.x;
 	number t2= (aabb->_vmax.x- origin.x)* dirfrac.x;
 	number t3= (aabb->_vmin.y- origin.y)* dirfrac.y;
@@ -424,7 +424,7 @@ bool ray_intersects_aabb(pt_type_3d origin, pt_type_3d direction, AABB * aabb, n
 }
 
 
-bool segment_intersects_aabb(const pt_type_3d & pt1, const pt_type_3d & pt2, AABB * aabb) {
+bool segment_intersects_aabb(const pt_3d & pt1, const pt_3d & pt2, AABB * aabb) {
 	number t_hit;
 	bool ray_inter= ray_intersects_aabb(pt1, pt2- pt1, aabb, t_hit);
 	//cout << ray_inter << " ; " << t_hit << " ; " << glm::length(pt2- pt1) << "\n";

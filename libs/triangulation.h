@@ -32,12 +32,12 @@ struct Triangle {
 
 struct PointBin {
 	PointBin();
-	PointBin(pt_type pt_init, pt_type pt, int idx_init, int idx_bin);
+	PointBin(pt_2d pt_init, pt_2d pt, int idx_init, int idx_bin);
 	~PointBin();
 
 
-	pt_type _pt_init;
-	pt_type _pt;
+	pt_2d _pt_init;
+	pt_2d _pt;
 	int _idx_init;
 	int _idx_bin;
 	std::vector<Triangle *> _triangles;
@@ -76,7 +76,7 @@ struct ConstrainedEdge {
 struct Triangulation {
 	Triangulation();
 	Triangulation(
-		const std::vector<pt_type> & pts,
+		const std::vector<pt_2d> & pts,
 		const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges=std::vector<std::pair<unsigned int, unsigned int> >(),
 		bool clean_in_constrained_polygon=false,
 		bool sort_by_bin=true,
@@ -85,7 +85,7 @@ struct Triangulation {
 	~Triangulation();
 	
 	// méthodes utiles
-	void init(const std::vector<pt_type> & pts, const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges);
+	void init(const std::vector<pt_2d> & pts, const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges);
 	void add_large_triangle();
 	Triangle * get_containing_triangle(unsigned int idx_pt);
 	void delete_triangle(Triangle * triangle, bool update_point_bin=false);
@@ -103,7 +103,7 @@ struct Triangulation {
 	int idx_triangle(Triangle * triangle);
 	void print_triangle(Triangle * triangle, bool verbose=false, bool is_pt_init=true);
 	void draw(std::string svg_path, bool verbose=false);
-	pt_type svg_coords(pt_type & v);
+	pt_2d svg_coords(pt_2d & v);
 
 
 	std::vector<PointBin *> _pts;

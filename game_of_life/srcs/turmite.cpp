@@ -70,8 +70,8 @@ Turmite::Turmite(std::map<std::string, GLuint> progs, ScreenGL * screengl, Input
 	for (unsigned int row=0; row<_height; ++row) {
 		for (unsigned int col=0; col<_width; ++col) {
 			Cell * cell= new Cell(col, row);
-			cell->_aabb->_pos= idx2pt(col, row)+ pt_type(_cell_margin);
-			cell->_aabb->_size= pt_type(_cell_size- 2.0* _cell_margin);
+			cell->_aabb->_pos= idx2pt(col, row)+ pt_2d(_cell_margin);
+			cell->_aabb->_size= pt_2d(_cell_size- 2.0* _cell_margin);
 			_cells.push_back(cell);
 		}
 	}

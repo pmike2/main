@@ -52,7 +52,7 @@ public:
 
 	void set_cell_states(std::map<unsigned int, glm::vec4> cell_states);
 	Cell * get_cell(unsigned int col, unsigned int row);
-	pt_type idx2pt(unsigned int col, unsigned int row);
+	pt_2d idx2pt(unsigned int col, unsigned int row);
 	void clear();
 
 	void draw_cell();

@@ -21,10 +21,10 @@ Element::Element() {
 }
 
 
-Element::Element(pt_type_3d pt_base, pt_type_3d size) {
+Element::Element(pt_3d pt_base, pt_3d size) {
 	_aabb = new AABB(
-		pt_type_3d(pt_base.x - 0.5 * size.x, pt_base.y - 0.5 * size.y, pt_base.z),
-		pt_type_3d(pt_base.x + 0.5 * size.x, pt_base.y + 0.5 * size.y, pt_base.z + size.z)
+		pt_3d(pt_base.x - 0.5 * size.x, pt_base.y - 0.5 * size.y, pt_base.z),
+		pt_3d(pt_base.x + 0.5 * size.x, pt_base.y + 0.5 * size.y, pt_base.z + size.z)
 	);
 }
 
@@ -76,7 +76,7 @@ Branch::Branch() {
 }
 
 
-Branch::Branch(pt_type_3d pt_base, number radius_base, number radius_end, number r, number theta, number phi, uint n_childrens, uint idx, glm::vec4 color) :
+Branch::Branch(pt_3d pt_base, number radius_base, number radius_end, number r, number theta, number phi, uint n_childrens, uint idx, glm::vec4 color) :
 	_pt_base(pt_base), _radius_base(radius_base), _radius_end(radius_end), _r(r), _theta(theta), _phi(phi), _n_childrens(n_childrens), _idx(idx), _color(color)
 {
 	glm::dmat3 rot(
@@ -85,24 +85,24 @@ Branch::Branch(pt_type_3d pt_base, number radius_base, number radius_end, number
 		cos(_phi) * sin(_theta), sin(_phi) * sin(_theta), cos(_theta)
 	);
 
-	pt_type_3d direction(sin(_theta) * cos(_phi), sin(_theta) * sin(_phi), cos(_theta));
+	pt_3d direction(sin(_theta) * cos(_phi), sin(_theta) * sin(_phi), cos(_theta));
 	
-	pt_type_3d circle_base[BRANCH_N_POINTS_PER_CIRCLE];
+	pt_3d circle_base[BRANCH_N_POINTS_PER_CIRCLE];
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE; ++i) {
 		circle_base[i] = _pt_base + 
-			rot * pt_type_3d(_radius_base * cos(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), _radius_base * sin(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), 0.0);
+			rot * pt_3d(_radius_base * cos(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), _radius_base * sin(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), 0.0);
 		//std::cout << "circle_base " << i << " : " << glm::to_string(circle_base[i]) << "\n";
 	}
 
-	pt_type_3d circle_end[BRANCH_N_POINTS_PER_CIRCLE];
+	pt_3d circle_end[BRANCH_N_POINTS_PER_CIRCLE];
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE; ++i) {
 		circle_end[i] = _pt_base + 
-			rot * pt_type_3d(_radius_base * cos(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), _radius_base * sin(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), 0.0) +
+			rot * pt_3d(_radius_base * cos(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), _radius_base * sin(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), 0.0) +
 			_r * direction;
 		//std::cout << "circle_end " << i << " : " << glm::to_string(circle_end[i]) << "\n";
 	}
 
-	_vertices_side = new pt_type_3d[BRANCH_N_POINTS_PER_CIRCLE * 6];
+	_vertices_side = new pt_3d[BRANCH_N_POINTS_PER_CIRCLE * 6];
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE; ++i) {
 		uint i2 = i + 1;
 		if (i2 >= BRANCH_N_POINTS_PER_CIRCLE) {
@@ -117,16 +117,16 @@ Branch::Branch(pt_type_3d pt_base, number radius_base, number radius_end, number
 		_vertices_side[6 * i + 5] = circle_end[i];
 	}
 
-	_normals_side = new pt_type_3d[BRANCH_N_POINTS_PER_CIRCLE * 6];
+	_normals_side = new pt_3d[BRANCH_N_POINTS_PER_CIRCLE * 6];
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE; ++i) {
 		uint i2 = i + 1;
 		if (i2 >= BRANCH_N_POINTS_PER_CIRCLE) {
 			i2 = 0;
 		}
 		
-		pt_type_3d u = circle_base[i2] - circle_base[i];
-		pt_type_3d v = circle_end[i] - circle_base[i];
-		pt_type_3d n = pt_type_3d(u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]);
+		pt_3d u = circle_base[i2] - circle_base[i];
+		pt_3d v = circle_end[i] - circle_base[i];
+		pt_3d n = pt_3d(u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]);
 		n /= sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
 
 		for (uint j=0; j<6; ++j) {
@@ -134,7 +134,7 @@ Branch::Branch(pt_type_3d pt_base, number radius_base, number radius_end, number
 		}
 	}
 
-	_vertices_bottom = new pt_type_3d[BRANCH_N_POINTS_PER_CIRCLE * 3];
+	_vertices_bottom = new pt_3d[BRANCH_N_POINTS_PER_CIRCLE * 3];
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE; ++i) {
 		uint i2 = i + 1;
 		if (i2 >= BRANCH_N_POINTS_PER_CIRCLE) {
@@ -146,12 +146,12 @@ Branch::Branch(pt_type_3d pt_base, number radius_base, number radius_end, number
 		_vertices_bottom[3 * i + 2] = circle_base[i2];
 	}
 
-	_normals_bottom = new pt_type_3d[BRANCH_N_POINTS_PER_CIRCLE * 3];
+	_normals_bottom = new pt_3d[BRANCH_N_POINTS_PER_CIRCLE * 3];
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE * 3; ++i) {
 		_normals_bottom[i] = -1.0 * direction;
 	}
 
-	_vertices_top = new pt_type_3d[BRANCH_N_POINTS_PER_CIRCLE * 3];
+	_vertices_top = new pt_3d[BRANCH_N_POINTS_PER_CIRCLE * 3];
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE; ++i) {
 		uint i2 = i + 1;
 		if (i2 >= BRANCH_N_POINTS_PER_CIRCLE) {
@@ -163,13 +163,13 @@ Branch::Branch(pt_type_3d pt_base, number radius_base, number radius_end, number
 		_vertices_top[3 * i + 2] = pt_base;
 	}
 
-	_normals_top = new pt_type_3d[BRANCH_N_POINTS_PER_CIRCLE * 3];
+	_normals_top = new pt_3d[BRANCH_N_POINTS_PER_CIRCLE * 3];
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE * 3; ++i) {
 		_normals_top[i] = direction;
 	}
 
-	pt_type_3d vmin(1e7);
-	pt_type_3d vmax(-1e7);
+	pt_3d vmin(1e7);
+	pt_3d vmax(-1e7);
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE; ++i) {
 		for (uint j=0; j<3; ++j) {
 			if (circle_base[i][j] < vmin[j]) {
@@ -215,7 +215,7 @@ Tree::Tree() {
 }
 
 
-Tree::Tree(TreeSpecies * species, pt_type_3d pt_base, pt_type_3d size) : Element(pt_base, size), _species(species) {
+Tree::Tree(TreeSpecies * species, pt_3d pt_base, pt_3d size) : Element(pt_base, size), _species(species) {
 	number radius_base = rand_number(_species->_root_radius_base_min, _species->_root_radius_base_max);
 	number radius_end = radius_base * rand_number(_species->_ratio_base_end_radius_min, _species->_ratio_base_end_radius_max);
 	number r = rand_number(_species->_root_r_min, _species->_root_r_max);
@@ -233,8 +233,8 @@ Tree::Tree(TreeSpecies * species, pt_type_3d pt_base, pt_type_3d size) : Element
 	// essayé ça pour résoudre le problème d'affichage mais inutile...
 	//std::sort(_branches.begin(), _branches.end(), [](const Branch * a, const Branch * b) { return a->_idx > b->_idx; });
 
-	pt_type_3d vmin(1e7);
-	pt_type_3d vmax(-1e7);
+	pt_3d vmin(1e7);
+	pt_3d vmax(-1e7);
 	for (auto branch : _branches) {
 		for (uint j=0; j<3; ++j) {
 			if (branch->_aabb->_vmin[j] < vmin[j]) {
@@ -245,7 +245,7 @@ Tree::Tree(TreeSpecies * species, pt_type_3d pt_base, pt_type_3d size) : Element
 			}
 		}
 	}
-	pt_type_3d scale(size.x / (vmax.x - vmin.x), size.y / (vmax.y - vmin.y), size.z / (vmax.z - vmin.z));
+	pt_3d scale(size.x / (vmax.x - vmin.x), size.y / (vmax.y - vmin.y), size.z / (vmax.z - vmin.z));
 	for (auto branch : _branches) {
 		for (uint i=0; i<N_PTS_PER_BRANCH_SIDE; ++i) {
 			branch->_vertices_side[i] = (branch->_vertices_side[i] - pt_base) * scale + pt_base;
@@ -280,7 +280,7 @@ void Tree::gen_branches(Tree * tree, Branch * branch) {
 	}
 
 	for (uint idx_branch=0; idx_branch<branch->_n_childrens; ++idx_branch) {
-		pt_type_3d pt_base = branch->_pt_base + rand_number(0.0, branch->_r) * pt_type_3d(sin(branch->_theta) * cos(branch->_phi), sin(branch->_theta) * sin(branch->_phi), cos(branch->_theta));
+		pt_3d pt_base = branch->_pt_base + rand_number(0.0, branch->_r) * pt_3d(sin(branch->_theta) * cos(branch->_phi), sin(branch->_theta) * sin(branch->_phi), cos(branch->_theta));
 		number radius_base = branch->_radius_base * rand_number(tree->_species->_ratio_child_radius_min, tree->_species->_ratio_child_radius_max);
 		number radius_end = radius_base * rand_number(tree->_species->_ratio_base_end_radius_min, tree->_species->_ratio_base_end_radius_max);
 		number r = branch->_r * rand_number(tree->_species->_ratio_child_r_min, tree->_species->_ratio_child_r_max);
@@ -356,9 +356,9 @@ Stone::Stone() {
 }
 
 
-Stone::Stone(pt_type_3d pt_base, pt_type_3d size) : Element(pt_base, size) {
+Stone::Stone(pt_3d pt_base, pt_3d size) : Element(pt_base, size) {
 	_hull = new ConvexHull();
-	_hull->randomize(STONE_N_POINTS_HULL, pt_type_3d(pt_base.x - 0.5 * size.x, pt_base.y - 0.5 * size.y, pt_base.z), pt_type_3d(pt_base.x + 0.5 * size.x, pt_base.y + 0.5 * size.y, pt_base.z + size.z));
+	_hull->randomize(STONE_N_POINTS_HULL, pt_3d(pt_base.x - 0.5 * size.x, pt_base.y - 0.5 * size.y, pt_base.z), pt_3d(pt_base.x + 0.5 * size.x, pt_base.y + 0.5 * size.y, pt_base.z + size.z));
 	_hull->compute();
 
 	uint n_attrs_per_pts= 10;
@@ -421,7 +421,7 @@ Elements::~Elements() {
 }
 
 
-Tree * Elements::add_tree(std::string species_name, pt_type_3d pt_base, pt_type_3d size) {
+Tree * Elements::add_tree(std::string species_name, pt_3d pt_base, pt_3d size) {
 	if (_tree_species.count(species_name) == 0) {
 		std::cerr << species_name << " espece inconnue\n";
 		return NULL;
@@ -433,7 +433,7 @@ Tree * Elements::add_tree(std::string species_name, pt_type_3d pt_base, pt_type_
 }
 
 
-Stone * Elements::add_stone(pt_type_3d pt_base, pt_type_3d size) {
+Stone * Elements::add_stone(pt_3d pt_base, pt_3d size) {
 	Stone * stone = new Stone(pt_base, size);
 	_elements.push_back(stone);
 	return stone;

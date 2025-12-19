@@ -23,7 +23,7 @@ GridEditor::GridEditor() {
 
 GridEditor::GridEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, glm::vec4 tile_color, number cell_size, GridType type) :
 	_draw_bbox(false), _draw_texture(true),
-	_screengl(screengl), _row_idx_select(0), _col_idx_select(0), _tile_color(tile_color), _translation(pt_type(0.0)), _scale(1.0)
+	_screengl(screengl), _row_idx_select(0), _col_idx_select(0), _tile_color(tile_color), _translation(pt_2d(0.0)), _scale(1.0)
 {
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_world2camera= glm::mat4(1.0f);
@@ -195,7 +195,7 @@ void GridEditor::show_info() {
 	std::vector<Text> texts;
 
 	StaticObject * obj= _grid->get_tile(_col_idx_select, _row_idx_select);
-	texts.push_back(Text(obj->_model->_name, pt_type(-5.0, 7.3), 0.008f, glm::vec4(1.0, 1.0, 1.0, 1.0)));
+	texts.push_back(Text(obj->_model->_name, pt_2d(-5.0, 7.3), 0.008f, glm::vec4(1.0, 1.0, 1.0, 1.0)));
 
 	_font->set_text(texts);
 	_font->draw();
@@ -288,7 +288,7 @@ void GridEditor::update_tiles() {
 	for (auto obj : _grid->_objects) {
 		for (auto tri : obj->_footprint->_triangles_idx) {
 			for (int i=0; i<3; ++i) {
-				pt_type pt= obj->_footprint->_pts[tri[i]];
+				pt_2d pt= obj->_footprint->_pts[tri[i]];
 				data[compt++]= float(pt.x);
 				data[compt++]= float(pt.y);
 				compt+= 4;
@@ -408,15 +408,15 @@ bool GridEditor::key_up(InputState * input_state, SDL_Keycode key) {
 }
 
 
-pt_type GridEditor::screen2pt(int x, int y) {
-	pt_type pos= _screengl->screen2gl(x, y);
+pt_2d GridEditor::screen2pt(int x, int y) {
+	pt_2d pos= _screengl->screen2gl(x, y);
 	glm::vec4 v= glm::inverse(_world2camera)* glm::vec4(float(pos.x), float(pos.y), 0.0f, 1.0f);
-	return pt_type(v.x, v.y);
+	return pt_2d(v.x, v.y);
 }
 
 
 bool GridEditor::mouse_button_down(InputState * input_state) {
-	pt_type pos= screen2pt(input_state->_x, input_state->_y);
+	pt_2d pos= screen2pt(input_state->_x, input_state->_y);
 	std::pair<int, int> coord= _grid->number2coord(pos);
 	if (coord.first>= 0) {
 		_col_idx_select= coord.first;
@@ -438,7 +438,7 @@ TrackEditor::TrackEditor() {
 
 TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, number cell_size) :
 	_draw_bbox(false), _draw_texture(true), _draw_grid(false),
-	_row_idx_select(0), _col_idx_select(0), _screengl(screengl), _translation(pt_type(0.0)), _scale(1.0), _last_checkpoint(NULL),
+	_row_idx_select(0), _col_idx_select(0), _screengl(screengl), _translation(pt_2d(0.0)), _scale(1.0), _last_checkpoint(NULL),
 	_selected_floating_object(NULL), _copy_floating_object(NULL), _current_track_idx(1)
 {
 	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
@@ -728,11 +728,11 @@ void TrackEditor::show_info() {
 			CheckPoint * checkpoint= (CheckPoint *)(obj);
 			s+= std::to_string(_track->get_checkpoint_index(checkpoint));
 		}
-		texts.push_back(Text(s, pt_type(v.x, v.y), font_scale, glm::vec4(1.0, 1.0, 1.0, 1.0)));
+		texts.push_back(Text(s, pt_2d(v.x, v.y), font_scale, glm::vec4(1.0, 1.0, 1.0, 1.0)));
 	}*/
 
-	texts.push_back(Text("TRACK "+ std::to_string(_current_track_idx), pt_type(7.0, 7.0), 0.01, glm::vec4(1.0, 1.0, 1.0, 1.0)));
-	texts.push_back(Text("NLAPS = "+ std::to_string(_track->_info->_n_laps), pt_type(7.0, 6.0), 0.01, glm::vec4(1.0, 1.0, 1.0, 1.0)));
+	texts.push_back(Text("TRACK "+ std::to_string(_current_track_idx), pt_2d(7.0, 7.0), 0.01, glm::vec4(1.0, 1.0, 1.0, 1.0)));
+	texts.push_back(Text("NLAPS = "+ std::to_string(_track->_info->_n_laps), pt_2d(7.0, 6.0), 0.01, glm::vec4(1.0, 1.0, 1.0, 1.0)));
 
 	_font->set_text(texts);
 	_font->draw();
@@ -824,7 +824,7 @@ void TrackEditor::update_tiles() {
 	for (auto obj : _track->_grid->_objects) {
 		for (auto tri : obj->_footprint->_triangles_idx) {
 			for (int i=0; i<3; ++i) {
-				pt_type pt= obj->_footprint->_pts[tri[i]];
+				pt_2d pt= obj->_footprint->_pts[tri[i]];
 				data[compt++]= float(pt.x);
 				data[compt++]= float(pt.y);
 				compt+= 4;
@@ -858,7 +858,7 @@ void TrackEditor::update_floating_objects_footprint() {
 	for (auto obj : _track->_floating_objects) {
 		for (auto tri : obj->_footprint->_triangles_idx) {
 			for (int i=0; i<3; ++i) {
-				pt_type pt= obj->_footprint->_pts[tri[i]];
+				pt_2d pt= obj->_footprint->_pts[tri[i]];
 				data[compt++]= float(pt.x);
 				data[compt++]= float(pt.y);
 				compt+= 4;
@@ -886,7 +886,7 @@ void TrackEditor::update_floating_objects_bbox() {
 
 	float * ptr= data;
 	for (auto obj : _track->_floating_objects) {
-		std::vector<pt_type> pts(obj->_bbox->_pts, obj->_bbox->_pts+ 4);
+		std::vector<pt_2d> pts(obj->_bbox->_pts, obj->_bbox->_pts+ 4);
 		ptr= draw_polygon(ptr, pts, OBSTACLE_FLOATING_BBOX_COLOR);
 	}
 
@@ -1097,17 +1097,17 @@ bool TrackEditor::key_up(InputState * input_state, SDL_Keycode key) {
 }
 
 
-pt_type TrackEditor::screen2pt(int x, int y) {
-	pt_type pos= _screengl->screen2gl(x, y);
+pt_2d TrackEditor::screen2pt(int x, int y) {
+	pt_2d pos= _screengl->screen2gl(x, y);
 	glm::vec4 v= glm::inverse(_world2camera)* glm::vec4(float(pos.x), float(pos.y), 0.0f, 1.0f);
-	return pt_type(v.x, v.y);
+	return pt_2d(v.x, v.y);
 }
 
 
 bool TrackEditor::mouse_button_down(InputState * input_state) {
 	// click + d = delete objet flottant
 	if (input_state->get_key(SDLK_d)) {
-		pt_type pos= screen2pt(input_state->_x, input_state->_y);
+		pt_2d pos= screen2pt(input_state->_x, input_state->_y);
 		StaticObject * obj= _track->get_floating_object(pos);
 		if (obj!= NULL) {
 			_track->delete_floating_object(obj);
@@ -1117,7 +1117,7 @@ bool TrackEditor::mouse_button_down(InputState * input_state) {
 	}
 	// m,r,g -> sélection (voir mouse_motion())
 	else if (input_state->get_key(SDLK_m) || input_state->get_key(SDLK_r) || input_state->get_key(SDLK_g)) {
-		pt_type pos= screen2pt(input_state->_x, input_state->_y);
+		pt_2d pos= screen2pt(input_state->_x, input_state->_y);
 		StaticObject * obj= _track->get_floating_object(pos);
 		if (obj!= NULL) {
 			_selected_floating_object= obj;
@@ -1126,7 +1126,7 @@ bool TrackEditor::mouse_button_down(InputState * input_state) {
 	}
 	// c : copie
 	else if (input_state->get_key(SDLK_c)) {
-		pt_type pos= screen2pt(input_state->_x, input_state->_y);
+		pt_2d pos= screen2pt(input_state->_x, input_state->_y);
 		StaticObject * obj= _track->get_floating_object(pos);
 		if (obj!= NULL) {
 			_copy_floating_object= obj;
@@ -1135,7 +1135,7 @@ bool TrackEditor::mouse_button_down(InputState * input_state) {
 	}
 	// sinon sélection tuile
 	else {
-		pt_type pos= screen2pt(input_state->_x, input_state->_y);
+		pt_2d pos= screen2pt(input_state->_x, input_state->_y);
 		std::pair<int, int> coord= _track->_grid->number2coord(pos);
 		if (coord.first>= 0) {
 			_col_idx_select= coord.first;
@@ -1157,7 +1157,7 @@ bool TrackEditor::mouse_button_up(InputState * input_state) {
 bool TrackEditor::mouse_motion(InputState * input_state) {
 	// m = move objet
 	if (input_state->get_key(SDLK_m) && _selected_floating_object!= NULL) {
-		pt_type pos= screen2pt(input_state->_x, input_state->_y);
+		pt_2d pos= screen2pt(input_state->_x, input_state->_y);
 		_selected_floating_object->reinit(pos, _selected_floating_object->_alpha, _selected_floating_object->_scale);
 		update();
 		return true;
@@ -1178,7 +1178,7 @@ bool TrackEditor::mouse_motion(InputState * input_state) {
 	}
 	// g = grossissement objet
 	else if (input_state->get_key(SDLK_g) && _selected_floating_object!= NULL) {
-		pt_type motion_scale;
+		pt_2d motion_scale;
 		if (input_state->get_key(SDLK_LSHIFT)) {
 			motion_scale.x= motion_scale.y= 0.05* number(input_state->_xrel);
 		}
@@ -1186,7 +1186,7 @@ bool TrackEditor::mouse_motion(InputState * input_state) {
 			motion_scale.x= 0.05* number(input_state->_xrel);
 			motion_scale.y= -0.05* number(input_state->_yrel);
 		}
-		pt_type scale= _selected_floating_object->_scale+ motion_scale;
+		pt_2d scale= _selected_floating_object->_scale+ motion_scale;
 		_selected_floating_object->reinit(_selected_floating_object->_com, _selected_floating_object->_alpha, scale);
 		update();
 		return true;
@@ -1240,7 +1240,7 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 	_tile_grid_editor->_translation= TILES_ORIGIN;
 	_floating_grid_editor->_translation= FLOATING_OBJECTS_ORIGIN;
 
-	_track_editor->_scale= pt_type(DEFAULT_TRACK_EDITOR_SCALE, DEFAULT_TRACK_EDITOR_SCALE);
+	_track_editor->_scale= pt_2d(DEFAULT_TRACK_EDITOR_SCALE, DEFAULT_TRACK_EDITOR_SCALE);
 
 	_tile_grid_editor->_grid->_width= TILE_GRID_WIDTH;
 	_floating_grid_editor->_grid->_height= FLOATING_GRID_HEIGHT;
@@ -1346,10 +1346,10 @@ void Editor::sync_track_with_tile() {
 
 
 // ajout d'un objet flottant
-void Editor::add_floating_object(pt_type pos, bool copy_paste) {
+void Editor::add_floating_object(pt_2d pos, bool copy_paste) {
 	StaticObject * floating_object;
 	number alpha;
-	pt_type scale;
+	pt_2d scale;
 	if (copy_paste) {
 		floating_object= _track_editor->_copy_floating_object;
 		alpha= _track_editor->_copy_floating_object->_alpha;
@@ -1358,7 +1358,7 @@ void Editor::add_floating_object(pt_type pos, bool copy_paste) {
 	else {
 		floating_object= _floating_grid_editor->_grid->get_tile(_floating_grid_editor->_col_idx_select, _floating_grid_editor->_row_idx_select);
 		alpha= 0.0;
-		scale= pt_type(1.0);
+		scale= pt_2d(1.0);
 	}
 	StaticObjectModel * model= floating_object->_model;
 
@@ -1449,7 +1449,7 @@ bool Editor::key_up(InputState * input_state, SDL_Keycode key) {
 
 
 bool Editor::mouse_button_down(InputState * input_state) {
-	pt_type pos= _track_editor->screen2pt(input_state->_x, input_state->_y);
+	pt_2d pos= _track_editor->screen2pt(input_state->_x, input_state->_y);
 	
 	if (pos.x>= 0 && pos.x< number(_track_editor->_track->_grid->_width)* _track_editor->_track->_grid->_cell_size
 	&& pos.y>= 0 && pos.y< number(_track_editor->_track->_grid->_height)* _track_editor->_track->_grid->_cell_size) {

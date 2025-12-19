@@ -9,7 +9,7 @@ Star::Star() {
 }
 
 
-Star::Star(pt_type pos, pt_type size, float z, glm::vec2 velocity, glm::vec4 color, unsigned int idx_texture) :
+Star::Star(pt_2d pos, pt_2d size, float z, glm::vec2 velocity, glm::vec4 color, unsigned int idx_texture) :
 	_aabb(AABB_2D(pos, size)), _z(z), _velocity(velocity), _color(color), _idx_texture(idx_texture)
 {
 	
@@ -51,14 +51,14 @@ StarSystem::~StarSystem() {
 
 
 void StarSystem::add_random_star() {
-	pt_type pos= pt_type(rand_float(_pt_min.x, _pt_max.x), rand_float(_pt_min.y, _pt_max.y));
+	pt_2d pos= pt_2d(rand_float(_pt_min.x, _pt_max.x), rand_float(_pt_min.y, _pt_max.y));
 	float size= MIN_STAR_SIZE+ pow(rand_float(0.0, 1.0), STAR_POW_EXP)* (MAX_STAR_SIZE- MIN_STAR_SIZE);
 	float z= -1.0/ size; // derrière les ships qui sont à z == 0.0 ; les + grosses sont les + proches
-	//pt_type velocity(0.0, -1.0* rand_float(0.01, 0.1));
+	//pt_2d velocity(0.0, -1.0* rand_float(0.01, 0.1));
 	// taille proportionnelle à la vitesse
-	pt_type velocity(0.0, -1.0* size* STAR_SIZE_VELOCITY_RATIO);
+	pt_2d velocity(0.0, -1.0* size* STAR_SIZE_VELOCITY_RATIO);
 	glm::vec4 color(rand_float(0.01, 1.0), rand_float(0.01, 1.0), rand_float(0.01, 1.0), 1.0);
-	_stars.push_back(new Star(pos, pt_type(size, size), z, velocity, color, rand_int(0, _pngs.size()- 1)));
+	_stars.push_back(new Star(pos, pt_2d(size, size), z, velocity, color, rand_int(0, _pngs.size()- 1)));
 }
 
 

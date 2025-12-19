@@ -178,7 +178,7 @@ public:
 	WaterSystem * _water_system;
 
 	// params caméra
-	pt_type _com_camera;
+	pt_2d _com_camera;
 	number _alpha_camera;
 	cam_mode _cam_mode;
 

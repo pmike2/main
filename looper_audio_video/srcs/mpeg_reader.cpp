@@ -429,9 +429,9 @@ void MPEGReaders::load_json(json js) {
 			alpha_polygon._fadeout= js_poly["fadeout"].get<float>();
 			alpha_polygon._curve= js_poly["curve"].get<float>();
 			alpha_polygon._alpha_max= js_poly["alpha_max"].get<float>();
-			vector<pt_type> points;
+			vector<pt_2d> points;
 			for (unsigned int i=0; i<js_poly["polygon"].size(); ++i) {
-				points.push_back(pt_type(js_poly["polygon"][i]["x"].get<float>(), js_poly["polygon"][i]["y"].get<float>()));
+				points.push_back(pt_2d(js_poly["polygon"][i]["x"].get<float>(), js_poly["polygon"][i]["y"].get<float>()));
 			}
 			alpha_polygon._polygon.set_points(points);
 			alpha_config._polygons.push_back(AlphaPolygon(alpha_polygon));

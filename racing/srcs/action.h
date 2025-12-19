@@ -38,13 +38,13 @@ public:
 class ActionForce {
 public:
 	ActionForce();
-	ActionForce(ActionForceType type, pt_type force, number torque, int n_ms);
+	ActionForce(ActionForceType type, pt_2d force, number torque, int n_ms);
 	~ActionForce();
 	friend std::ostream & operator << (std::ostream & os, const ActionForce & force);
 
 
 	ActionForceType _type; // translation ou rotation
-	pt_type _force; // cas translation
+	pt_2d _force; // cas translation
 	number _torque; // cas rotation
 	int _n_ms; // nombre de ms avant de passer à la suivante ; si vaut -1 on loope sur cette texture
 };

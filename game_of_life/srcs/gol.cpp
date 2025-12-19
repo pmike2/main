@@ -51,8 +51,8 @@ GOL::GOL(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * 
 	for (unsigned int row=0; row<_height; ++row) {
 		for (unsigned int col=0; col<_width; ++col) {
 			GolCell * cell= new GolCell(col, row);
-			cell->_aabb->_pos= idx2pt(col, row)+ pt_type(_cell_margin);
-			cell->_aabb->_size= pt_type(_cell_size- 2.0* _cell_margin);
+			cell->_aabb->_pos= idx2pt(col, row)+ pt_2d(_cell_margin);
+			cell->_aabb->_size= pt_2d(_cell_size- 2.0* _cell_margin);
 			_cells.push_back(cell);
 		}
 	}
@@ -132,7 +132,7 @@ bool GOL::key_down(SDL_Keycode key) {
 void GOL::click_cell() {
 	_anim= false;
 
-	pt_type pos= _screengl->screen2gl(_input_state->_x, _input_state->_y);
+	pt_2d pos= _screengl->screen2gl(_input_state->_x, _input_state->_y);
 	glm::vec4 coords= glm::inverse(_world2camera)* glm::vec4(float(pos.x), float(pos.y), 0.0f, 1.0f);
 	if (coords.x< 0.0 || coords.x>= _cell_size* number(_width) || coords.y< 0.0 || coords.y>= _cell_size* number(_height)) {
 		return;

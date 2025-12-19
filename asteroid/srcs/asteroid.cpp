@@ -1253,7 +1253,7 @@ void Asteroid::set_level(unsigned int level_idx, std::chrono::system_clock::time
 
 
 void Asteroid::add_rand_enemy(std::chrono::system_clock::time_point t) {
-	pt_type pos= pt_type(rand_float(_pt_min.x, _pt_max.x), _pt_max.y);
+	pt_2d pos= pt_2d(rand_float(_pt_min.x, _pt_max.x), _pt_max.y);
 
 	std::string model_name= "";
 	std::vector<std::string> enemies;

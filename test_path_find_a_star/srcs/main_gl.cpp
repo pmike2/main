@@ -282,8 +282,8 @@ int main() {
 	main_loop();
 	clean();
 
-	/*pt_type_3d p(1, 2, 3);
-	pt_type q = pt_type(p);
+	/*pt_3d p(1, 2, 3);
+	pt_2d q = pt_2d(p);
 	std::cout << glm_to_string(q) << "\n";*/
 
 	/*number x = 0.2;

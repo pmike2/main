@@ -9,12 +9,20 @@
 
 #include "utile.h"
 #include "path_find.h"
-
-using namespace std;
-using namespace std::chrono;
+#include "bbox_2d.h"
 
 
 void test() {
+	pt_2d pt1(-1.0, -1.0);
+	pt_2d pt2(0.0, 0.0);
+	number width = 1.0;
+	BBox_2D * bbox = new BBox_2D(width, pt1, pt2);
+	for (auto & pt : bbox->_pts) {
+		std::cout << glm_to_string(pt) << "\n";
+	}
+	pt_2d pt(-1.0, -0.4);
+	bool x = pt_in_bbox(pt, bbox);
+	std::cout << x << "\n";
 	/*unsigned int n_ligs= 50;
 	unsigned int n_cols= 50;
 	glm::vec2 origin(0.0f, 0.0f);

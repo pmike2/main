@@ -453,23 +453,23 @@ void VoroZ::init_dcel() {
 	const number amplification= 1.0;
 
 	// pts aléatoires
-	std::vector<pt_type> pts;
+	std::vector<pt_2d> pts;
 
 	std::random_device rd{};
 	std::mt19937 gen{rd()};
 	std::normal_distribution<number> d{0.0, deviation};
 
 	for (unsigned int i=0; i<n_pts; ++i) {
-		//pt_type pt(rand_number(xmin, xmax), rand_number(ymin, ymax));
-		pt_type pt(d(gen), d(gen));
+		//pt_2d pt(rand_number(xmin, xmax), rand_number(ymin, ymax));
+		pt_2d pt(d(gen), d(gen));
 		pts.push_back(pt);
 	}
 	
 	// trous
 	for (unsigned int i=0; i<n_holes; ++i) {
-		//pt_type center(rand_number(xmin, xmax), rand_number(ymin, ymax));
-		pt_type center(d(gen), d(gen));
-		pts.erase(std::remove_if(pts.begin(), pts.end(), [center, hole_radius](pt_type pt){
+		//pt_2d center(rand_number(xmin, xmax), rand_number(ymin, ymax));
+		pt_2d center(d(gen), d(gen));
+		pts.erase(std::remove_if(pts.begin(), pts.end(), [center, hole_radius](pt_2d pt){
 			return point_in_circle(center, hole_radius, pt);
 		}), pts.end());
 	}
@@ -789,7 +789,7 @@ void VoroZ::update_triangle_data() {
 			continue;
 		}
 		std::vector<DCEL_Vertex *> vertices= face->get_vertices();
-		pt_type g= face->get_gravity_center();
+		pt_2d g= face->get_gravity_center();
 		DCEL_FaceData * face_data= (DCEL_FaceData *)(face->_data);
 		for (unsigned int idx_vertex=0; idx_vertex<vertices.size(); ++idx_vertex) {
 			_n_pts+= 3;
@@ -838,8 +838,8 @@ void VoroZ::update_triangle_data() {
 				_n_pts+= 6;
 
 				DCEL_HalfEdge * edge= _dcel->get_dividing_edge(face_adj, face);
-				pt_type p1= edge->_origin->_coords;
-				pt_type p2= edge->destination()->_coords;
+				pt_2d p1= edge->_origin->_coords;
+				pt_2d p2= edge->destination()->_coords;
 
 				glm::vec3 pt1(float(p1.x), float(p1.y), float(face_z));
 				glm::vec3 pt2(float(p2.x), float(p2.y), float(face_z));
@@ -888,8 +888,8 @@ void VoroZ::update_triangle_data() {
 		if (face_z> 0.0) {
 			_n_pts+= 6;
 
-			pt_type p1= edge->_origin->_coords;
-			pt_type p2= edge->destination()->_coords;
+			pt_2d p1= edge->_origin->_coords;
+			pt_2d p2= edge->destination()->_coords;
 			number dx= p2.x- p1.x;
 			number dy= p2.y- p1.y;
 

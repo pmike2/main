@@ -16,7 +16,7 @@
 class Ship {
 public:
 	Ship();
-	Ship(ShipModel * model, pt_type pos, bool friendly, std::chrono::system_clock::time_point t);
+	Ship(ShipModel * model, pt_2d pos, bool friendly, std::chrono::system_clock::time_point t);
 	~Ship();
 	void anim(std::chrono::system_clock::time_point t, bool play_sounds);
 	Action * get_current_action();

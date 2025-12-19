@@ -31,7 +31,7 @@ public:
 	int _x_wheel, _y_wheel;
 	std::map<SDL_Keycode, bool> _keys;
 	bool _is_joystick; // joystick est-t'il activé
-	pt_type _joystick; // valeurs x, y stick joystick
+	pt_2d _joystick; // valeurs x, y stick joystick
 	bool _joystick_a, _joystick_b; // boutons 
 };
 

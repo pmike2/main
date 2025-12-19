@@ -25,10 +25,10 @@ public:
 	void load(std::string json_path);
 
 
-	pt_type _forward; // direction avant
-	pt_type _right; // direction à droite
-	pt_type _com2force_fwd; // vecteur COM (center of mass) -> point d'application des forces avant
-	pt_type _com2force_bwd; // vecteur COM (center of mass) -> point d'application des forces arrière
+	pt_2d _forward; // direction avant
+	pt_2d _right; // direction à droite
+	pt_2d _com2force_fwd; // vecteur COM (center of mass) -> point d'application des forces avant
+	pt_2d _com2force_bwd; // vecteur COM (center of mass) -> point d'application des forces arrière
 	number _max_wheel; // rotation max du volant
 	number _max_wheel_reverse; // rotation max du volant quand Car est en marche arrière
 	number _wheel_increment; // incrément de rotation du volant lors d'un appui touche gauche-droite
@@ -52,10 +52,10 @@ public:
 class Car : public StaticObject {
 public:
 	Car();
-	Car(CarModel * model, pt_type position, number alpha, pt_type scale);
+	Car(CarModel * model, pt_2d position, number alpha, pt_2d scale);
 	~Car();
 	CarModel * get_model(); // renvoie le modèle de voiture
-	void reinit(pt_type position, number alpha, pt_type scale); // met à une position / orientation / taille
+	void reinit(pt_2d position, number alpha, pt_2d scale); // met à une position / orientation / taille
 	void update(); // met à jour les données calculées à partir des autres
 	void preanim_keys(bool key_left, bool key_right, bool key_down, bool key_up); // gestion touches
 	void preanim_joystick(bool joystick_a, bool joystick_b, glm::vec2 joystick); // gestion joystick
@@ -64,13 +64,13 @@ public:
 	friend std::ostream & operator << (std::ostream & os, const Car & car);
 
 
-	pt_type _com2force_fwd; // vecteur com -> point ou on applique les forces à l'avant (milieu des roues avant)
-	pt_type _com2force_bwd; // vecteur com -> point ou on applique les forces à l'arrière (milieu des roues arrière)
-	pt_type _forward; // vecteur unitaire indiquant la direction
-	pt_type _right; // perpendiculaire à _forward, pointant vers la droite
+	pt_2d _com2force_fwd; // vecteur com -> point ou on applique les forces à l'avant (milieu des roues avant)
+	pt_2d _com2force_bwd; // vecteur com -> point ou on applique les forces à l'arrière (milieu des roues arrière)
+	pt_2d _forward; // vecteur unitaire indiquant la direction
+	pt_2d _right; // perpendiculaire à _forward, pointant vers la droite
 
-	pt_type _force_fwd; // force appliquée à l'avant
-	pt_type _force_bwd; // force appliquée à l'arrière
+	pt_2d _force_fwd; // force appliquée à l'avant
+	pt_2d _force_bwd; // force appliquée à l'arrière
 
 	number _wheel; // quantité de volant tourné
 	number _thrust; // quantité de pédale d'accélération

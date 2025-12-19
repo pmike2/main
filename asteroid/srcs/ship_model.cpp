@@ -140,14 +140,14 @@ ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 		auto & l_textures= it.value();
 		std::vector<std::string> pngs;
 		std::vector<unsigned int> t_anims;
-		AABB_2D footprint(pt_type(0.0, 0.0), pt_type(1.0, 1.0));
+		AABB_2D footprint(pt_2d(0.0, 0.0), pt_2d(1.0, 1.0));
 		for (auto texture : l_textures) {
 			std::string png= texture["png"];
 			unsigned int t= texture["t"];
 			pngs.push_back(png);
 			t_anims.push_back(t);
-			pt_type pos(texture["footprint"]["pos"][0], texture["footprint"]["pos"][1]);
-			pt_type size(texture["footprint"]["size"][0], texture["footprint"]["size"][1]);
+			pt_2d pos(texture["footprint"]["pos"][0], texture["footprint"]["pos"][1]);
+			pt_2d size(texture["footprint"]["size"][0], texture["footprint"]["size"][1]);
 			// on prend l'intersection de tous les footprints
 			if (pos.x> footprint._pos.x) {
 				footprint._pos.x= pos.x;

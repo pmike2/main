@@ -8,7 +8,7 @@ using namespace std;
 InputState::InputState() : 
 	_left_mouse(false), _middle_mouse(false), _right_mouse(false),
 	_x(0), _y(0), _xrel(0), _yrel(0),
-	_is_joystick(false), _joystick(pt_type(0.0, 0.0)), _joystick_a(false), _joystick_b(false)
+	_is_joystick(false), _joystick(pt_2d(0.0, 0.0)), _joystick_a(false), _joystick_b(false)
 {
 
 }

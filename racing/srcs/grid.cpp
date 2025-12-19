@@ -47,7 +47,7 @@ std::pair<unsigned int, unsigned int> StaticObjectGrid::idx2coord(unsigned int i
 }
 
 
-std::pair<int, int> StaticObjectGrid::number2coord(pt_type pos) {
+std::pair<int, int> StaticObjectGrid::number2coord(pt_2d pos) {
 	int col_idx= int(floor(pos.x/ _cell_size));
 	int row_idx= int(floor(pos.y/ _cell_size));
 	if (col_idx>=0 && col_idx<_width && row_idx>=0 && row_idx< _height) {
@@ -58,12 +58,12 @@ std::pair<int, int> StaticObjectGrid::number2coord(pt_type pos) {
 
 
 // renvoie le centre de la cellule
-pt_type StaticObjectGrid::coord2number(unsigned int col_idx, unsigned int row_idx) {
-	return pt_type((number(col_idx)+ 0.5)* _cell_size, (number(row_idx)+ 0.5)* _cell_size);
+pt_2d StaticObjectGrid::coord2number(unsigned int col_idx, unsigned int row_idx) {
+	return pt_2d((number(col_idx)+ 0.5)* _cell_size, (number(row_idx)+ 0.5)* _cell_size);
 }
 
 
-pt_type StaticObjectGrid::idx2number(unsigned int idx) {
+pt_2d StaticObjectGrid::idx2number(unsigned int idx) {
 	std::pair<int, int> coord= idx2coord(idx);
 	return coord2number(coord.first, coord.second);
 }
@@ -96,7 +96,7 @@ void StaticObjectGrid::push_tile(StaticObjectModel * model) {
 			_width++;
 		}
 	}
-	StaticObject * obj= new StaticObject(model, idx2number(_objects.size()), 0.0, pt_type(_cell_size));
+	StaticObject * obj= new StaticObject(model, idx2number(_objects.size()), 0.0, pt_2d(_cell_size));
 	_objects.push_back(obj);
 }
 
@@ -104,7 +104,7 @@ void StaticObjectGrid::push_tile(StaticObjectModel * model) {
 void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx) {
 	unsigned int idx_tile= coord2idx(col_idx, row_idx);
 	delete _objects[idx_tile];
-	_objects[idx_tile]= new StaticObject(model, idx2number(idx_tile), 0.0, pt_type(_cell_size));
+	_objects[idx_tile]= new StaticObject(model, idx2number(idx_tile), 0.0, pt_2d(_cell_size));
 }
 
 
@@ -121,7 +121,7 @@ void StaticObjectGrid::set_all(StaticObjectModel * model, unsigned int width, un
 	_height= height;
 	for (unsigned int row_idx=0; row_idx<height; ++row_idx) {
 		for (unsigned int col_idx=0; col_idx<width; ++col_idx) {
-			_objects.push_back(new StaticObject(model, coord2number(col_idx, row_idx), 0.0, pt_type(_cell_size)));
+			_objects.push_back(new StaticObject(model, coord2number(col_idx, row_idx), 0.0, pt_2d(_cell_size)));
 		}
 	}
 }
@@ -129,7 +129,7 @@ void StaticObjectGrid::set_all(StaticObjectModel * model, unsigned int width, un
 
 void StaticObjectGrid::add_row(StaticObjectModel * model) {
 	for (unsigned int col_idx=0; col_idx<_width; ++col_idx) {
-		StaticObject * obj= new StaticObject(model, coord2number(col_idx, _height), 0.0, pt_type(_cell_size));
+		StaticObject * obj= new StaticObject(model, coord2number(col_idx, _height), 0.0, pt_2d(_cell_size));
 		_objects.push_back(obj);
 	}
 	_height++;
@@ -138,7 +138,7 @@ void StaticObjectGrid::add_row(StaticObjectModel * model) {
 
 void StaticObjectGrid::add_col(StaticObjectModel * model) {
 	for (int row_idx=_height- 1; row_idx>=0; --row_idx) {
-		StaticObject * obj= new StaticObject(model, coord2number(_width, row_idx), 0.0, pt_type(_cell_size));
+		StaticObject * obj= new StaticObject(model, coord2number(_width, row_idx), 0.0, pt_2d(_cell_size));
 		_objects.insert(_objects.begin()+ row_idx* _width+ _width, obj);
 	}
 	_width++;

@@ -8,6 +8,7 @@
 #include <fstream>
 #include <sstream>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/string_cast.hpp>
 
 #include "triangulation.h"
@@ -68,7 +69,7 @@ PointBin::PointBin() {
 }
 
 
-PointBin::PointBin(pt_type pt_init, pt_type pt, int idx_init, int idx_bin) :
+PointBin::PointBin(pt_2d pt_init, pt_2d pt, int idx_init, int idx_bin) :
 	_pt_init(pt_init), _pt(pt), _idx_init(idx_init), _idx_bin(idx_bin) {
 	
 }
@@ -160,7 +161,7 @@ Triangulation::Triangulation() {
 }
 
 
-Triangulation::Triangulation(const vector<pt_type> & pts, const vector<pair<unsigned int, unsigned int> > & constrained_edges, 
+Triangulation::Triangulation(const vector<pt_2d> & pts, const vector<pair<unsigned int, unsigned int> > & constrained_edges, 
 	bool clean_in_constrained_polygon, bool sort_by_bin, bool verbose) :
 	_sort_by_bin(sort_by_bin), _verbose(verbose)
 {
@@ -235,7 +236,7 @@ Triangulation::~Triangulation() {
 
 
 // initialisation de la liste des points et des constrained edges
-void Triangulation::init(const vector<pt_type> & pts, const vector<pair<unsigned int, unsigned int> > & constrained_edges) {
+void Triangulation::init(const vector<pt_2d> & pts, const vector<pair<unsigned int, unsigned int> > & constrained_edges) {
 	if (_verbose) {
 		cout << "\ninit\n";
 	}
@@ -269,21 +270,21 @@ void Triangulation::init(const vector<pt_type> & pts, const vector<pair<unsigned
 		if (row% 2== 1) {
 			col= subdiv- 1- col;
 		}
-		AABB_2D * aabb= new AABB_2D(pt_type(col* step, row* step), pt_type(step, step));
+		AABB_2D * aabb= new AABB_2D(pt_2d(col* step, row* step), pt_2d(step, step));
 		if (_verbose) {
 			cout << "bin=" << *aabb << "\n";
 		}
 		_bins.push_back(aabb);
 	}
 
-	_aabb= new AABB_2D(pt_type(xmin, ymin), pt_type(xmax- xmin, ymax- ymin));
+	_aabb= new AABB_2D(pt_2d(xmin, ymin), pt_2d(xmax- xmin, ymax- ymin));
 	if (_verbose) {
 		cout << "aabb=" << *_aabb << "\n";
 	}
 	
 	number m= max(_aabb->_size.x, _aabb->_size.y);
 	for (unsigned int i=0; i<pts.size(); ++i) {
-		pt_type normalized_pt((pts[i].x- _aabb->_pos.x)/ m, (pts[i].y- _aabb->_pos.y)/ m);
+		pt_2d normalized_pt((pts[i].x- _aabb->_pos.x)/ m, (pts[i].y- _aabb->_pos.y)/ m);
 		int idx_bin_ok= -1;
 		for (unsigned int idx_bin=0; idx_bin<_bins.size(); ++idx_bin) {
 			if (point_in_aabb(normalized_pt, _bins[idx_bin])) {
@@ -337,9 +338,9 @@ void Triangulation::add_large_triangle() {
 		cout << "\nadd_large_triangle\n";
 	}
 
-	_pts.push_back(new PointBin(pt_type(-100.0f, -100.0f), pt_type(-100.0f, -100.0f), -1, -1));
-	_pts.push_back(new PointBin(pt_type(100.0f, -100.0f), pt_type(100.0f, -100.0f), -1, -1));
-	_pts.push_back(new PointBin(pt_type(0.0f, 100.0f), pt_type(0.0f, 100.0f), -1, -1));
+	_pts.push_back(new PointBin(pt_2d(-100.0f, -100.0f), pt_2d(-100.0f, -100.0f), -1, -1));
+	_pts.push_back(new PointBin(pt_2d(100.0f, -100.0f), pt_2d(100.0f, -100.0f), -1, -1));
+	_pts.push_back(new PointBin(pt_2d(0.0f, 100.0f), pt_2d(0.0f, 100.0f), -1, -1));
 
 	Triangle * t= new Triangle();
 	t->_vertices[0]= _pts.size()- 3;
@@ -371,7 +372,7 @@ Triangle * Triangulation::get_containing_triangle(unsigned int idx_pt) {
 		}
 		
 		search_triangle= false;
-		pt_type bary= (_pts[last_triangle->_vertices[0]]->_pt+ _pts[last_triangle->_vertices[1]]->_pt+ _pts[last_triangle->_vertices[2]]->_pt)/ 3.0;
+		pt_2d bary= (_pts[last_triangle->_vertices[0]]->_pt+ _pts[last_triangle->_vertices[1]]->_pt+ _pts[last_triangle->_vertices[2]]->_pt)/ 3.0;
 		
 		if (_verbose) {
 			cout << "bary=" << glm::to_string(bary) << "\n";
@@ -379,7 +380,7 @@ Triangle * Triangulation::get_containing_triangle(unsigned int idx_pt) {
 		
 		// pour chaque arête du triangle courant, si le segment [barycentre, point_a _inserer] intersecte l'arête on passe au triangle adjacent
 		for (unsigned int i=0; i<3; ++i) {
-			pt_type result;
+			pt_2d result;
 			if (segment_intersects_segment(bary, _pts[idx_pt]->_pt, _pts[last_triangle->_vertices[i]]->_pt, _pts[last_triangle->_vertices[(i+ 1)% 3]]->_pt, &result, true, false)) {
 				last_triangle= last_triangle->_adjacents[i];
 				if (!last_triangle) {
@@ -664,8 +665,8 @@ void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 	deque<pair<unsigned int, unsigned int> > intersecting_edges;
 	Triangle * intersecting_triangle;
 	unsigned int intersecting_edge= 0;
-	pt_type pt1_begin= _pts[constrained_edge.first]->_pt;
-	pt_type pt1_end  = _pts[constrained_edge.second]->_pt;
+	pt_2d pt1_begin= _pts[constrained_edge.first]->_pt;
+	pt_2d pt1_end  = _pts[constrained_edge.second]->_pt;
 
 	for (auto triangle : _pts[constrained_edge.first]->_triangles) {
 		unsigned int idx_pt= 0;
@@ -675,9 +676,9 @@ void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 				break;
 			}
 		}
-		pt_type pt2_begin= _pts[triangle->_vertices[(idx_pt+ 1)% 3]]->_pt;
-		pt_type pt2_end  = _pts[triangle->_vertices[(idx_pt+ 2)% 3]]->_pt;
-		pt_type result;
+		pt_2d pt2_begin= _pts[triangle->_vertices[(idx_pt+ 1)% 3]]->_pt;
+		pt_2d pt2_end  = _pts[triangle->_vertices[(idx_pt+ 2)% 3]]->_pt;
+		pt_2d result;
 
 		if (segment_intersects_segment(pt1_begin, pt1_end, pt2_begin, pt2_end, &result)) {
 			intersecting_triangle= triangle;
@@ -701,9 +702,9 @@ void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 			break;
 		}
 		
-		pt_type pt2_begin= _pts[intersecting_triangle->_vertices[idx_pt]]->_pt;
-		pt_type pt2_end  = _pts[intersecting_triangle->_vertices[(idx_pt+ 1)% 3]]->_pt;
-		pt_type result;
+		pt_2d pt2_begin= _pts[intersecting_triangle->_vertices[idx_pt]]->_pt;
+		pt_2d pt2_end  = _pts[intersecting_triangle->_vertices[(idx_pt+ 1)% 3]]->_pt;
+		pt_2d result;
 
 		if (segment_intersects_segment(pt1_begin, pt1_end, pt2_begin, pt2_end, &result)) {
 			intersecting_edge= idx_pt;
@@ -731,7 +732,7 @@ void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 
 		Opposition * opposition= opposition_from_edge(intersecting_edge);
 
-		pt_type quad[4]= {
+		pt_2d quad[4]= {
 			_pts[opposition->_triangle_1->_vertices[(opposition->_edge_idx_1+ 2)% 3]]->_pt,
 			_pts[opposition->_triangle_1->_vertices[opposition->_edge_idx_1]]->_pt,
 			_pts[opposition->_triangle_2->_vertices[(opposition->_edge_idx_2+ 2)% 3]]->_pt,
@@ -756,9 +757,9 @@ void Triangulation::add_constrained_edge(unsigned int idx_edge) {
 		insert_triangle(new_triangle_1, true);
 		insert_triangle(new_triangle_2, true);
 
-		pt_type pt2_begin= _pts[idx_pt_1]->_pt;
-		pt_type pt2_end  = _pts[idx_pt_2]->_pt;
-		pt_type result;
+		pt_2d pt2_begin= _pts[idx_pt_1]->_pt;
+		pt_2d pt2_end  = _pts[idx_pt_2]->_pt;
+		pt_2d result;
 
 		if (segment_intersects_segment(pt1_begin, pt1_end, pt2_begin, pt2_end, &result, true)) {
 			intersecting_edges.push_back(make_pair(idx_pt_1, idx_pt_2));
@@ -828,7 +829,7 @@ void Triangulation::clean_in_constrained_poly() {
 			//std::cout << *constrained_poly << "\n";
 			pts.clear();
 			for (auto & t : _triangles) {
-				pt_type bary= (_pts[t->_vertices[0]]->_pt+ _pts[t->_vertices[1]]->_pt+ _pts[t->_vertices[2]]->_pt)/ 3.0;
+				pt_2d bary= (_pts[t->_vertices[0]]->_pt+ _pts[t->_vertices[1]]->_pt+ _pts[t->_vertices[2]]->_pt)/ 3.0;
 				if (is_pt_inside_poly(bary, constrained_poly)) {
 					if (_verbose) {
 						cout << "remove :";
@@ -960,7 +961,7 @@ void Triangulation::draw(std::string svg_path, bool verbose) {
 	f << "<svg width=\"" << svg_width << "\" height=\"" << svg_height << "\" viewbox=\"" << 0 << " " << 0 << " " << viewbox_width << " " << viewbox_height << "\">\n";
 
 	for (unsigned int i=0; i<_pts.size(); ++i) {
-		pt_type pt_svg= svg_coords(_pts[i]->_pt_init);
+		pt_2d pt_svg= svg_coords(_pts[i]->_pt_init);
 		if (verbose) {
 			f << "<text class=\"point_text_class\" x=\"" << pt_svg.x+ 0.02f << "\" y=\"" << pt_svg.y << "\" >" << _pts[i]->_idx_init << "</text>\n";
 			//f << "<text class=\"point_text_class\" x=\"" << pt_svg.x+ 0.02f << "\" y=\"" << pt_svg.y << "\" >" << _pts[i]->_idx_bin << "</text>\n";
@@ -973,7 +974,7 @@ void Triangulation::draw(std::string svg_path, bool verbose) {
 		f << "<g>\n";
 
 		if (verbose) {
-			pt_type bary= (_pts[_triangles[idx_tri]->_vertices_init[0]]->_pt_init+ _pts[_triangles[idx_tri]->_vertices_init[1]]->_pt_init+ _pts[_triangles[idx_tri]->_vertices_init[2]]->_pt_init)/ 3.0;
+			pt_2d bary= (_pts[_triangles[idx_tri]->_vertices_init[0]]->_pt_init+ _pts[_triangles[idx_tri]->_vertices_init[1]]->_pt_init+ _pts[_triangles[idx_tri]->_vertices_init[2]]->_pt_init)/ 3.0;
 			bary= svg_coords(bary);
 			f << "<text class=\"circle_text_class\" x=\"" << bary.x << "\" y=\"" << bary.y << "\">" << idx_tri << "</text>\n";
 		}
@@ -994,14 +995,14 @@ void Triangulation::draw(std::string svg_path, bool verbose) {
 		}
 		f << "\" points=\"";
 		for (unsigned int i=0; i<3; ++i) {
-			pt_type pt_svg_1= svg_coords(_pts[_triangles[idx_tri]->_vertices_init[i]]->_pt_init);
+			pt_2d pt_svg_1= svg_coords(_pts[_triangles[idx_tri]->_vertices_init[i]]->_pt_init);
 			f << pt_svg_1.x << "," << pt_svg_1.y << " ";
 		}
 		f << "\" />\n";
 		
 		if (verbose) {
 			number radius;
-			pt_type center(0.0f);
+			pt_2d center(0.0f);
 			get_circle_center(_pts[_triangles[idx_tri]->_vertices_init[0]]->_pt_init, _pts[_triangles[idx_tri]->_vertices_init[1]]->_pt_init, _pts[_triangles[idx_tri]->_vertices_init[2]]->_pt_init, center, &radius);
 			center= svg_coords(center);
 			f << "<circle class=\"circle_class\" cx=\"" << center.x << "\" cy=\"" << center.y << "\" r=\"" << radius/ m << "\" />\n";
@@ -1050,9 +1051,9 @@ void Triangulation::draw(std::string svg_path, bool verbose) {
 }
 
 
-pt_type Triangulation::svg_coords(pt_type & v) {
+pt_2d Triangulation::svg_coords(pt_2d & v) {
 	number m= max(_aabb->_size.x, _aabb->_size.y);
-	return pt_type(_svg_margin+ (v.x- _aabb->_pos.x)/ m, _svg_margin+ (_aabb->_pos.y+ _aabb->_size.y- v.y)/ m);
+	return pt_2d(_svg_margin+ (v.x- _aabb->_pos.x)/ m, _svg_margin+ (_aabb->_pos.y+ _aabb->_size.y- v.y)/ m);
 }
 
 

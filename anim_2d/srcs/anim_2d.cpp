@@ -81,7 +81,7 @@ CheckPoint::CheckPoint() {
 }
 
 
-CheckPoint::CheckPoint(pt_type pos, number velocity) : _pos(pos), _velocity(velocity) {
+CheckPoint::CheckPoint(pt_2d pos, number velocity) : _pos(pos), _velocity(velocity) {
 
 }
 
@@ -98,11 +98,11 @@ Object2D::Object2D() {
 
 
 Object2D::Object2D(AABB_2D * aabb, AABB_2D * footprint, ObjectPhysics physics, vector<CheckPoint> checkpoints) :
-	_velocity(pt_type(0.0)), _physics(physics), _idx_checkpoint(0), _referential(nullptr)
+	_velocity(pt_2d(0.0)), _physics(physics), _idx_checkpoint(0), _referential(nullptr)
 {
 	_aabb= new AABB_2D(*aabb);
-	_footprint= new AABB_2D(pt_type(0.0), pt_type(_aabb->_size.x* footprint->_size.x, _aabb->_size.y* footprint->_size.y));
-	_footprint_offset= pt_type(_aabb->_size.x* footprint->_pos.x, _aabb->_size.y* footprint->_pos.y);
+	_footprint= new AABB_2D(pt_2d(0.0), pt_2d(_aabb->_size.x* footprint->_size.x, _aabb->_size.y* footprint->_size.y));
+	_footprint_offset= pt_2d(_aabb->_size.x* footprint->_pos.x, _aabb->_size.y* footprint->_pos.y);
 	update_footprint_pos();
 
 	for (auto checkpoint : checkpoints) {
@@ -117,8 +117,8 @@ Object2D::Object2D(AABB_2D * aabb, AABB_2D * footprint, ObjectPhysics physics, v
 Object2D::Object2D(const Object2D & obj) {
 	_aabb= new AABB_2D(*obj._aabb);
 	_footprint= new AABB_2D(*obj._footprint);
-	_footprint_offset= pt_type(obj._footprint_offset);
-	_velocity= pt_type(obj._velocity);
+	_footprint_offset= pt_2d(obj._footprint_offset);
+	_velocity= pt_2d(obj._velocity);
 	_physics= obj._physics;
 	_idx_checkpoint= obj._idx_checkpoint;
 	for (auto checkpoint : obj._checkpoints) {
@@ -162,7 +162,7 @@ void Object2D::update_velocity() {
 	}
 	else if ((_physics== CHECKPOINT_SOLID) || (_physics== CHECKPOINT_UNSOLID) || (_physics== CHECKPOINT_SOLID_TOP)) {
 		if (glm::distance2(_checkpoints[_idx_checkpoint]->_pos, _aabb->_pos)> CHECKPOINT_TRESH) {
-			pt_type direction= _checkpoints[_idx_checkpoint]->_pos- _aabb->_pos;
+			pt_2d direction= _checkpoints[_idx_checkpoint]->_pos- _aabb->_pos;
 			_velocity= glm::normalize(direction)* _checkpoints[_idx_checkpoint]->_velocity;
 		}
 	}
@@ -174,15 +174,15 @@ void Object2D::update_footprint_pos() {
 }
 
 
-void Object2D::set_aabb_pos(pt_type pos) {
+void Object2D::set_aabb_pos(pt_2d pos) {
 	_aabb->_pos= pos;
 	update_footprint_pos();
 }
 
 
 void Object2D::set_footprint(AABB_2D * footprint) {
-	_footprint_offset= pt_type(_aabb->_size.x* footprint->_pos.x, _aabb->_size.y* footprint->_pos.y);
-	_footprint->_size= pt_type(_aabb->_size.x* footprint->_size.x, _aabb->_size.y* footprint->_size.y);
+	_footprint_offset= pt_2d(_aabb->_size.x* footprint->_pos.x, _aabb->_size.y* footprint->_pos.y);
+	_footprint->_size= pt_2d(_aabb->_size.x* footprint->_size.x, _aabb->_size.y* footprint->_size.y);
 	update_footprint_pos();
 }
 
@@ -197,7 +197,7 @@ ostream & operator << (ostream & os, const Object2D & obj) {
 
 // -------------------------------------------------------------------------------------------
 // voir refs dans bbox_2d.h pour algo
-bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_obj, const number time_step, pt_type & contact_pt, pt_type & contact_normal, number & contact_time) {
+bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_obj, const number time_step, pt_2d & contact_pt, pt_2d & contact_normal, number & contact_time) {
 	//if (glm::length2(anim_obj->_velocity)< 1e-9f) {
 	if ((anim_obj->_velocity.x== 0.0) && (anim_obj->_velocity.y== 0.0)) {
 		return false;
@@ -219,7 +219,7 @@ bool anim_intersect_static(const Object2D * anim_obj, const Object2D * static_ob
 // Action ---------------------------------------------------------------------------
 Action::Action() : _name(""), _first_idx(0), _n_idx(0), _anim_time(0.0) {
 	// par défaut footprint prend toute l'emprise
-	_footprint= new AABB_2D(pt_type(0.0, 0.0), pt_type(1.0, 1.0));
+	_footprint= new AABB_2D(pt_2d(0.0, 0.0), pt_2d(1.0, 1.0));
 }
 
 
@@ -764,7 +764,7 @@ void Person2D::update_velocity() {
 
 
 void Person2D::update_action() {
-	pt_type v(0.0);
+	pt_2d v(0.0);
 	if (_obj->_referential!= nullptr) {
 		v= _obj->_velocity- _obj->_referential->_velocity;
 	}
@@ -1042,7 +1042,7 @@ SVGParser::SVGParser(string svg_path, ScreenGL * screengl) : _screengl(screengl)
 			}
 			// calque View contient un rectangle d'init du pt de vue au chargement du level
 			else if (layer_label== "View") {
-				_view= new AABB_2D(pt_type(stof(obj["x"]), stof(obj["y"])), pt_type(stof(obj["width"]), stof(obj["height"])));
+				_view= new AABB_2D(pt_2d(stof(obj["x"]), stof(obj["y"])), pt_2d(stof(obj["width"]), stof(obj["height"])));
 			}
 			else {
 				// tous les objs d'un meme calque ont le meme z
@@ -1072,7 +1072,7 @@ AABB_2D SVGParser::svg2screen(AABB_2D aabb) {
 	w= round(w/ snap)* snap;
 	h= round(h/ snap)* snap;
 
-	return AABB_2D(pt_type(x, y- h), pt_type(w, h));
+	return AABB_2D(pt_2d(x, y- h), pt_2d(w, h));
 }
 
 
@@ -1125,7 +1125,7 @@ void Level::update_static_textures(SVGParser * svg_parser) {
 				continue;
 			}
 			
-			AABB_2D aabb_svg(pt_type(stof(model["x"]), stof(model["y"])), pt_type(stof(model["width"]), stof(model["height"])));
+			AABB_2D aabb_svg(pt_2d(stof(model["x"]), stof(model["y"])), pt_2d(stof(model["width"]), stof(model["height"])));
 			AABB_2D aabb_gl= svg_parser->svg2screen(aabb_svg);
 
 			// si un rect correspond au model on modifie le footprint de l'unique action de la texture statique
@@ -1137,7 +1137,7 @@ void Level::update_static_textures(SVGParser * svg_parser) {
 					continue;
 				}
 				
-				AABB_2D footprint_svg(pt_type(stof(rect["x"]), stof(rect["y"])), pt_type(stof(rect["width"]), stof(rect["height"])));
+				AABB_2D footprint_svg(pt_2d(stof(rect["x"]), stof(rect["y"])), pt_2d(stof(rect["width"]), stof(rect["height"])));
 				AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
 				// Action._footprint entre 0 et 1 pour pos et size
 				static_texture->_actions[0]->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
@@ -1180,7 +1180,7 @@ void Level::update_anim_textures(SVGParser * svg_parser) {
 				}
 			}
 			
-			AABB_2D aabb_svg(pt_type(stof(model["x"]), stof(model["y"])), pt_type(stof(model["width"]), stof(model["height"])));
+			AABB_2D aabb_svg(pt_2d(stof(model["x"]), stof(model["y"])), pt_2d(stof(model["width"]), stof(model["height"])));
 			AABB_2D aabb_gl= svg_parser->svg2screen(aabb_svg);
 
 			for (auto action : anim_texture->_actions) {
@@ -1201,7 +1201,7 @@ void Level::update_anim_textures(SVGParser * svg_parser) {
 					}
 					
 					// footprint du rect action_name == default
-					AABB_2D footprint_svg(pt_type(stof(rect["x"]), stof(rect["y"])), pt_type(stof(rect["width"]), stof(rect["height"])));
+					AABB_2D footprint_svg(pt_2d(stof(rect["x"]), stof(rect["y"])), pt_2d(stof(rect["width"]), stof(rect["height"])));
 					AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
 					action->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
 					action->_footprint->_size= footprint_gl._size/ aabb_gl._size;
@@ -1227,7 +1227,7 @@ void Level::update_anim_textures(SVGParser * svg_parser) {
 			// action spécifique
 			Action * action= anim_texture->get_action(model["action_name"]);
 
-			AABB_2D aabb_svg(pt_type(stof(model["x"]), stof(model["y"])), pt_type(stof(model["width"]), stof(model["height"])));
+			AABB_2D aabb_svg(pt_2d(stof(model["x"]), stof(model["y"])), pt_2d(stof(model["width"]), stof(model["height"])));
 			AABB_2D aabb_gl= svg_parser->svg2screen(aabb_svg);
 
 			if (model.count("anim_time")) {
@@ -1246,7 +1246,7 @@ void Level::update_anim_textures(SVGParser * svg_parser) {
 					continue;
 				}
 				
-				AABB_2D footprint_svg(pt_type(stof(rect["x"]), stof(rect["y"])), pt_type(stof(rect["width"]), stof(rect["height"])));
+				AABB_2D footprint_svg(pt_2d(stof(rect["x"]), stof(rect["y"])), pt_2d(stof(rect["width"]), stof(rect["height"])));
 				AABB_2D footprint_gl= svg_parser->svg2screen(footprint_svg);
 				action->_footprint->_pos= (footprint_gl._pos- aabb_gl._pos)/ aabb_gl._size;
 				action->_footprint->_size= footprint_gl._size/ aabb_gl._size;
@@ -1264,7 +1264,7 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 		if (obj["type"]!= "image") {
 			continue;
 		}
-		AABB_2D aabb_svg= AABB_2D(pt_type(stof(obj["x"]), stof(obj["y"])), pt_type(stof(obj["width"]), stof(obj["height"])));
+		AABB_2D aabb_svg= AABB_2D(pt_2d(stof(obj["x"]), stof(obj["y"])), pt_2d(stof(obj["width"]), stof(obj["height"])));
 		AABB_2D aabb_gl= svg_parser->svg2screen(aabb_svg);
 
 		vector<CheckPoint> checkpoints;
@@ -1292,7 +1292,7 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 						if (instruction== "M") {
 							number x= stof(token.substr(0, token.find(",")));
 							number y= stof(token.substr(token.find(",")+ 1));
-							pt_type pt= pt_type(x, y);
+							pt_2d pt= pt_2d(x, y);
 							// on cherche le path dont le 1er point est contenu dans l'emprise de l'objet
 							if (!point_in_aabb(pt, &aabb_svg)) {
 								break;
@@ -1302,7 +1302,7 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 						else if (instruction== "H") {
 							number x= stof(token);
 							number y= checkpoints[checkpoints.size()- 1]._pos.y;
-							pt_type pt= pt_type(x, y);
+							pt_2d pt= pt_2d(x, y);
 							checkpoints.push_back({pt, velocity});
 						}
 					}
@@ -1314,10 +1314,10 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 			// conversion dans l'espace GL
 			for (unsigned int i=0; i<checkpoints.size(); ++i) {
 				// aabb reduite a un pt -> size == 0
-				AABB_2D pt_gl= svg_parser->svg2screen(AABB_2D(checkpoints[i]._pos, pt_type(0.0)));
+				AABB_2D pt_gl= svg_parser->svg2screen(AABB_2D(checkpoints[i]._pos, pt_2d(0.0)));
 				checkpoints[i]._pos= pt_gl._pos;
 			}
-			pt_type v= aabb_gl._pos- checkpoints[0]._pos;
+			pt_2d v= aabb_gl._pos- checkpoints[0]._pos;
 			for (unsigned int i=0; i<checkpoints.size(); ++i) {
 				checkpoints[i]._pos+= v;
 			}
@@ -1338,7 +1338,7 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 
 
 Level::Level(GLuint prog_draw_anim, GLuint prog_draw_static, GLuint prog_draw_aabb, string path, ScreenGL * screengl, bool verbose) :
-	_screengl(screengl), _viewpoint(pt_type(0.0)), _draw(true)
+	_screengl(screengl), _viewpoint(pt_2d(0.0)), _draw(true)
 {
 	SVGParser * svg_parser= new SVGParser(path, _screengl);
 	gen_textures(prog_draw_anim, prog_draw_static, screengl, svg_parser, verbose);
@@ -1445,8 +1445,8 @@ void Level::update_velocities() {
 
 
 void Level::intersections(number elapsed_time) {
-	pt_type contact_pt(0.0);
-	pt_type contact_normal(0.0);
+	pt_2d contact_pt(0.0);
+	pt_2d contact_normal(0.0);
 	number contact_time= 0.0;
 
 	for (auto character : _characters) {
@@ -1483,7 +1483,7 @@ void Level::intersections(number elapsed_time) {
 				// les CHECKPOINT_SOLID_TOP ne font du contact que lorsqu'on les approche par dessus
 				if ((obj2->_physics!= CHECKPOINT_SOLID_TOP) || (contact_normal.y> 0.0)) {
 					// cf refs dans bbox_2d.h
-					pt_type correction= (1.0- contact_time)* pt_type(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
+					pt_2d correction= (1.0- contact_time)* pt_2d(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
 					// malheureusement ca ne marche pas nickel, il faut * par 1.xxx a cause de l'approx number, et encore ca foire parfois. Que faire ?
 					obj1->_velocity+= correction* CORRECT_FACTOR;
 				}
@@ -1526,7 +1526,7 @@ void Level::intersections(number elapsed_time) {
 			obj_tmp->update_pos(elapsed_time);
 			if (anim_intersect_static(obj1, obj_tmp, elapsed_time, contact_pt, contact_normal, contact_time)) {
 				if ((obj1->_physics!= CHECKPOINT_SOLID_TOP) || (contact_normal.y> 0.0)) {
-					pt_type correction= (1.0- contact_time)* pt_type(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
+					pt_2d correction= (1.0- contact_time)* pt_2d(abs(obj1->_velocity.x)* contact_normal.x, abs(obj1->_velocity.y)* contact_normal.y);
 					obj2->_velocity-= correction* CORRECT_FACTOR;
 				}
 
@@ -1620,7 +1620,7 @@ void Level::update_textures() {
 
 void Level::follow_hero() {
 	// la caméra suit le héros
-	pt_type hero= _hero->_obj->_aabb->center();
+	pt_2d hero= _hero->_obj->_aabb->center();
 	//_viewpoint= hero;
 	if (hero.x< _viewpoint.x- MOVE_VIEWPOINT.x) {
 		_viewpoint.x= hero.x+ MOVE_VIEWPOINT.x;

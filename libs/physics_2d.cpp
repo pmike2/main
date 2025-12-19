@@ -18,13 +18,13 @@
 using namespace std;
 
 
-bool is_pt_inside_body(pt_type pt, RigidBody2D * body) {
+bool is_pt_inside_body(pt_2d pt, RigidBody2D * body) {
     if (glm::distance(pt, body->_position)> body->_polygon->_radius) {
         return false;
     }
     for (unsigned int i=0; i<body->_polygon->_pts.size(); ++i) {
-        pt_type pt1= body->_orientation_mat* body->_polygon->_pts[i]+ body->_position;
-        pt_type pt2= body->_orientation_mat* body->_polygon->_pts[(i+ 1)% body->_polygon->_pts.size()]+ body->_position;
+        pt_2d pt1= body->_orientation_mat* body->_polygon->_pts[i]+ body->_position;
+        pt_2d pt2= body->_orientation_mat* body->_polygon->_pts[(i+ 1)% body->_polygon->_pts.size()]+ body->_position;
         if (!is_left(pt1, pt2- pt1, pt)) {
             return false;
         }
@@ -34,13 +34,13 @@ bool is_pt_inside_body(pt_type pt, RigidBody2D * body) {
 
 
 // si existe intersection la + proche du pt de départ du segment avec le poly
-bool segment_intersects_body(pt_type pt_begin, pt_type pt_end, RigidBody2D * body, pt_type * result) {
+bool segment_intersects_body(pt_2d pt_begin, pt_2d pt_end, RigidBody2D * body, pt_2d * result) {
     number min_dist= 1e10;
     bool is_inter= false;
-    pt_type inter(0.0f);
+    pt_2d inter(0.0f);
     for (unsigned int i=0; i<body->_polygon->_pts.size(); ++i) {
-        pt_type pt1= body->_orientation_mat* body->_polygon->_pts[i]+ body->_position;
-        pt_type pt2= body->_orientation_mat* body->_polygon->_pts[(i+ 1)% body->_polygon->_pts.size()]+ body->_position;
+        pt_2d pt1= body->_orientation_mat* body->_polygon->_pts[i]+ body->_position;
+        pt_2d pt2= body->_orientation_mat* body->_polygon->_pts[(i+ 1)% body->_polygon->_pts.size()]+ body->_position;
         
         if (segment_intersects_segment(pt1, pt2, pt_begin, pt_end, &inter)) {
             number dist2= glm::distance2(pt_begin, inter);
@@ -56,10 +56,10 @@ bool segment_intersects_body(pt_type pt_begin, pt_type pt_end, RigidBody2D * bod
 }
 
 
-number distance_body_pt(RigidBody2D * body, pt_type pt, pt_type * proj) {
+number distance_body_pt(RigidBody2D * body, pt_2d pt, pt_2d * proj) {
     number dist_min= 1e10;
     number dist;
-    pt_type proj2;
+    pt_2d proj2;
 
     if (is_pt_inside_body(pt, body)) {
         proj->x= pt.x;
@@ -68,8 +68,8 @@ number distance_body_pt(RigidBody2D * body, pt_type pt, pt_type * proj) {
     }
 
     for (unsigned int i=0; i<body->_polygon->_pts.size(); ++i) {
-        pt_type pt1= body->_orientation_mat* body->_polygon->_pts[i]+ body->_position;
-        pt_type pt2= body->_orientation_mat* body->_polygon->_pts[(i+ 1)% body->_polygon->_pts.size()]+ body->_position;
+        pt_2d pt1= body->_orientation_mat* body->_polygon->_pts[i]+ body->_position;
+        pt_2d pt2= body->_orientation_mat* body->_polygon->_pts[(i+ 1)% body->_polygon->_pts.size()]+ body->_position;
 
         bool x= distance_segment_pt(pt1, pt2, pt, &dist, &proj2);
         if (dist< dist_min) {
@@ -93,15 +93,15 @@ void axis_least_penetration(RigidBody2D * body_a, RigidBody2D * body_b, unsigned
     *idx_pt_max= 0;
     for (unsigned short idx_pt=0; idx_pt<body_a->_polygon->_pts.size(); ++idx_pt) {
         // normale dans le repère body_a
-        pt_type normal_a= body_a->_polygon->_normals[idx_pt];
+        pt_2d normal_a= body_a->_polygon->_normals[idx_pt];
         // normale dans le repère body_b
-        pt_type normal_b= glm::transpose(body_b->_orientation_mat)* body_a->_orientation_mat* normal_a;
+        pt_2d normal_b= glm::transpose(body_b->_orientation_mat)* body_a->_orientation_mat* normal_a;
         // pt de body_b le + éloigné dans la direction opposée à la normale dans le repère body_b
-        pt_type farthest_pt= body_b->_polygon->farthest_pt_along_dir(-normal_b);
+        pt_2d farthest_pt= body_b->_polygon->farthest_pt_along_dir(-normal_b);
         // sommet dans le repère body_a
-        pt_type pt_a= body_a->_polygon->_pts[idx_pt];
+        pt_2d pt_a= body_a->_polygon->_pts[idx_pt];
         // sommet dans le repère body_b
-        pt_type pt_b= glm::transpose(body_b->_orientation_mat)* (body_a->_orientation_mat* pt_a+ body_a->_position- body_b->_position);
+        pt_2d pt_b= glm::transpose(body_b->_orientation_mat)* (body_a->_orientation_mat* pt_a+ body_a->_position- body_b->_position);
         // plus grande pénétration dans le repère body_b
         number penetration= glm::dot(normal_b, farthest_pt- pt_b);
         if (*penetration_max< penetration) {
@@ -147,7 +147,7 @@ RigidBody2DState::RigidBody2DState() {
 }
 
 
-RigidBody2DState::RigidBody2DState(pt_type position, number orientation) : _position(position), _orientation(orientation) {
+RigidBody2DState::RigidBody2DState(pt_2d position, number orientation) : _position(position), _orientation(orientation) {
 
 }
 
@@ -168,9 +168,9 @@ RigidBody2D::RigidBody2D() {
 }
 
 
-RigidBody2D::RigidBody2D(Polygon2D * polygon, Material * material, pt_type position, number orientation) :
+RigidBody2D::RigidBody2D(Polygon2D * polygon, Material * material, pt_2d position, number orientation) :
     _id(CurrentID++),
-    _polygon(polygon), _material(material), _position(position), _velocity(pt_type(0.0f)), _angular_velocity(0.0f), _force(pt_type(0.0f)), _torque(0.0f),
+    _polygon(polygon), _material(material), _position(position), _velocity(pt_2d(0.0f)), _angular_velocity(0.0f), _force(pt_2d(0.0f)), _torque(0.0f),
 	_mass(0.0f), _mass_inv(0.0f), _inertia_moment(0.0f), _inertia_moment_inv(0.0f), _is_static(false)
 {
     set_orientation(orientation);
@@ -181,8 +181,8 @@ RigidBody2D::RigidBody2D(Polygon2D * polygon, Material * material, pt_type posit
     // calcul moment d'inertie
     _inertia_moment= 0.0f;
     for (unsigned int i=0; i<_polygon->_pts.size(); ++i) {
-        pt_type pt1= _polygon->_pts[i];
-        pt_type pt2= _polygon->_pts[(i+ 1)% _polygon->_pts.size()];
+        pt_2d pt1= _polygon->_pts[i];
+        pt_2d pt2= _polygon->_pts[(i+ 1)% _polygon->_pts.size()];
         _inertia_moment+= 0.25f* THIRD* _material->_density* cross2d(pt1, pt2)* (glm::dot(pt1, pt1)+ glm::dot(pt1, pt2)+ glm::dot(pt2, pt2));
     }
 
@@ -238,7 +238,7 @@ void RigidBody2D::integrate_velocity(number dt) {
 }
 
 
-void RigidBody2D::apply_impulse(pt_type impulse, pt_type contact) {
+void RigidBody2D::apply_impulse(pt_2d impulse, pt_2d contact) {
     // inamovible
     if (_is_static) {
         return;
@@ -250,7 +250,7 @@ void RigidBody2D::apply_impulse(pt_type impulse, pt_type contact) {
 
 
 void RigidBody2D::clear_forces() {
-    _force= pt_type(0.0f);
+    _force= pt_2d(0.0f);
     _torque= 0.0f;
 }
 
@@ -288,9 +288,9 @@ Contact2D::Contact2D() {
 }
 
 
-Contact2D::Contact2D(pt_type position, RigidBody2D * body_reference, RigidBody2D * body_incident, pt_type normal) :
+Contact2D::Contact2D(pt_2d position, RigidBody2D * body_reference, RigidBody2D * body_incident, pt_2d normal) :
     _position(position), _body_reference(body_reference), _body_incident(body_incident), _is_valid(true), _is_tangent_valid(true), _normal(normal), _j(0.0f), _jt(0.0f),
-	_normal_impulse(pt_type(0.0f)), _tangent_impulse(pt_type(0.0f)), _normal_impulse_cumul(pt_type(0.0f)), _is_resting(true)
+	_normal_impulse(pt_2d(0.0f)), _tangent_impulse(pt_2d(0.0f)), _normal_impulse_cumul(pt_2d(0.0f)), _is_resting(true)
 {
     _r_ref  = _position- _body_reference->_position;
     _r_incid= _position- _body_incident->_position;
@@ -310,9 +310,9 @@ Contact2D::~Contact2D() {
 }
 
 
-pt_type Contact2D::contact_relative_velocity() {
-    pt_type contact_velocity_ref  = _body_reference->_velocity+ _body_reference->_angular_velocity* pt_type(-_r_ref.y, _r_ref.x);
-    pt_type contact_velocity_incid= _body_incident->_velocity + _body_incident->_angular_velocity * pt_type(-_r_incid.y, _r_incid.x);
+pt_2d Contact2D::contact_relative_velocity() {
+    pt_2d contact_velocity_ref  = _body_reference->_velocity+ _body_reference->_angular_velocity* pt_2d(-_r_ref.y, _r_ref.x);
+    pt_2d contact_velocity_incid= _body_incident->_velocity + _body_incident->_angular_velocity * pt_2d(-_r_incid.y, _r_incid.x);
 
     return contact_velocity_incid- contact_velocity_ref;
 }
@@ -320,14 +320,14 @@ pt_type Contact2D::contact_relative_velocity() {
 
 void Contact2D::update_normal(number dt) {
     // vitesse relative du contact en B par rapport à A
-    pt_type rel_vel= contact_relative_velocity();
+    pt_2d rel_vel= contact_relative_velocity();
     // projetée sur la normale
     number rel_vel_normal= glm::dot(rel_vel, _normal);
 
     // si objets s'éloignent
     if (rel_vel_normal> 0.0f) {
         _is_valid= false;
-        _normal_impulse= pt_type(0.0f);
+        _normal_impulse= pt_2d(0.0f);
         return;
     }
     
@@ -356,15 +356,15 @@ void Contact2D::update_normal(number dt) {
 
 void Contact2D::update_tangent(number dt) {
     // vitesse relative du contact en B par rapport à A
-    pt_type rel_vel= contact_relative_velocity();
+    pt_2d rel_vel= contact_relative_velocity();
 
     // projetée sur la tangente et normalisée ; si _normal et rel_vel colinéaires on sort
     if (abs(cross2d(rel_vel, _normal))< EPSILON) {
         _is_tangent_valid= false;
-        _tangent_impulse= pt_type(0.0f);
+        _tangent_impulse= pt_2d(0.0f);
         return;
     }
-    pt_type rel_vel_tan= glm::normalize(rel_vel- glm::dot(rel_vel, _normal)* _normal);
+    pt_2d rel_vel_tan= glm::normalize(rel_vel- glm::dot(rel_vel, _normal)* _normal);
 
     // jt est l'amplitude de l'impulsion tangentielle
     _jt= -glm::dot(rel_vel, rel_vel_tan);
@@ -373,7 +373,7 @@ void Contact2D::update_tangent(number dt) {
     // on ignore les petites frictions
     if (abs(_jt)< EPSILON) {
         _is_tangent_valid= false;
-        _tangent_impulse= pt_type(0.0f);
+        _tangent_impulse= pt_2d(0.0f);
         return;
     }
 
@@ -450,10 +450,10 @@ Collision2D::Collision2D(RigidBody2D * body_a, RigidBody2D * body_b, bool verbos
     _hash= ((unsigned long long)(_body_reference->_id) << 48) + ((unsigned long long)(ref_face_idx) << 32)+ ((unsigned long long)(_body_incident->_id) << 16) + (unsigned long long)(incid_face_idx);
 
     // sommets impliqués
-    pt_type ref_1= _body_reference->_polygon->_pts[ref_face_idx];
-    pt_type ref_2= _body_reference->_polygon->_pts[(ref_face_idx+ 1)% _body_reference->_polygon->_pts.size()];
-    pt_type incid_1= _body_incident->_polygon->_pts[incid_face_idx];
-    pt_type incid_2= _body_incident->_polygon->_pts[(incid_face_idx+ 1)% _body_incident->_polygon->_pts.size()];
+    pt_2d ref_1= _body_reference->_polygon->_pts[ref_face_idx];
+    pt_2d ref_2= _body_reference->_polygon->_pts[(ref_face_idx+ 1)% _body_reference->_polygon->_pts.size()];
+    pt_2d incid_1= _body_incident->_polygon->_pts[incid_face_idx];
+    pt_2d incid_2= _body_incident->_polygon->_pts[(incid_face_idx+ 1)% _body_incident->_polygon->_pts.size()];
 
     // dans le système world
     ref_1= _body_reference->_orientation_mat* ref_1+ _body_reference->_position;
@@ -466,8 +466,8 @@ Collision2D::Collision2D(RigidBody2D * body_a, RigidBody2D * body_b, bool verbos
     //cout << glm::to_string(_body_reference->_orientation_mat) << " ; " << glm::to_string(_body_reference->_polygon->_normals[ref_face_idx]) << "\n";
 
     // clip
-    pt_type inter_1(0.0f);
-    pt_type inter_2(0.0f);
+    pt_2d inter_1(0.0f);
+    pt_2d inter_2(0.0f);
     bool is_intersect_ref_1= ray_intersects_segment(ref_1, _normal, incid_1, incid_2, &inter_1);
     bool is_intersect_ref_2= ray_intersects_segment(ref_2, _normal, incid_1, incid_2, &inter_2);
     //bool is_intersect_ref_1= segment_intersects_line(incid_1, incid_2, ref_1, _normal, inter_1);
@@ -481,7 +481,7 @@ Collision2D::Collision2D(RigidBody2D * body_a, RigidBody2D * body_b, bool verbos
         is_incid_2_unclipped= false;
     }
 
-    vector<pt_type> contacts;
+    vector<pt_2d> contacts;
     if (is_intersect_ref_1) {
         contacts.push_back(inter_1);
         if (is_intersect_ref_2) {
@@ -524,7 +524,7 @@ Collision2D::Collision2D(RigidBody2D * body_a, RigidBody2D * body_b, bool verbos
     // on ne garde que les points situés à l'intérieur du polygone de ref
     _penetration= 0.0f;
     number dist;
-    pt_type proj;
+    pt_2d proj;
     for (auto it_contact : contacts) {
         if ((is_left(ref_1, ref_2- ref_1, it_contact)) && (distance_segment_pt(ref_1, ref_2, it_contact, &dist, &proj))) {
             _contacts.push_back(new Contact2D(it_contact, _body_reference, _body_incident, _normal));
@@ -541,7 +541,7 @@ Collision2D::Collision2D(RigidBody2D * body_a, RigidBody2D * body_b, bool verbos
 
     /*_penetration= 0.0f;
     number dist;
-    pt_type proj;
+    pt_2d proj;
     for (auto it_contact : _contacts) {
         if (distance_segment_pt(ref_1, ref_2, it_contact, &dist, &proj)) {
             _penetration+= dist;
@@ -555,11 +555,11 @@ Collision2D::Collision2D(RigidBody2D * body_a, RigidBody2D * body_b, bool verbos
 
             ofstream ofs("coll.txt");
             for (auto it_pt : _body_reference->_polygon->_pts) {
-                pt_type pt= _body_reference->_orientation_mat* it_pt+ _body_reference->_position;
+                pt_2d pt= _body_reference->_orientation_mat* it_pt+ _body_reference->_position;
                 ofs << pt.x << " " << pt.y << " r\n";
             }
             for (auto it_pt : _body_incident->_polygon->_pts) {
-                pt_type pt= _body_incident->_orientation_mat* it_pt+ _body_incident->_position;
+                pt_2d pt= _body_incident->_orientation_mat* it_pt+ _body_incident->_position;
                 ofs << pt.x << " " << pt.y << " i\n";
             }
             ofs << ref_1.x << " " << ref_1.y << " ref_1\n";
@@ -597,7 +597,7 @@ Collision2D::~Collision2D() {
 
 // recherche de la face du polygon incident
 unsigned int Collision2D::incident_face_idx(unsigned int reference_face_idx) {
-    pt_type reference_normal= _body_reference->_polygon->_normals[reference_face_idx];
+    pt_2d reference_normal= _body_reference->_polygon->_normals[reference_face_idx];
     // passage repere body_incident
     reference_normal= glm::transpose(_body_incident->_orientation_mat)* _body_reference->_orientation_mat* reference_normal;
     // recherche de la normale la plus opposée
@@ -617,8 +617,8 @@ unsigned int Collision2D::incident_face_idx(unsigned int reference_face_idx) {
 void Collision2D::apply_impulse(number dt) {
     // les 2 sont inamovibles
     if ((_body_reference->_is_static) && (_body_incident->_is_static)) {
-        _body_reference->_velocity= pt_type(0.0f);
-        _body_incident->_velocity = pt_type(0.0f);
+        _body_reference->_velocity= pt_2d(0.0f);
+        _body_incident->_velocity = pt_2d(0.0f);
 		_is_valid= false;
     }
 
@@ -656,7 +656,7 @@ void Collision2D::apply_impulse(number dt) {
 	for (auto it_contact : _contacts) {
         // impulse selon la normale ------------------------------------------------------
         if (it_contact->_is_valid) {
-            pt_type normal_impulse= it_contact->_normal_impulse/ (number)(_contacts.size());
+            pt_2d normal_impulse= it_contact->_normal_impulse/ (number)(_contacts.size());
             _body_reference->apply_impulse(-normal_impulse, it_contact->_r_ref);
             _body_incident->apply_impulse(normal_impulse  , it_contact->_r_incid);
 			if (_verbose) {
@@ -673,7 +673,7 @@ void Collision2D::apply_impulse(number dt) {
         if (it_contact->_is_valid) {
             // impulse tangentielle -> friction --------------------------------------------
             if (it_contact->_is_tangent_valid) {
-                pt_type tangent_impulse= it_contact->_tangent_impulse/ (number)(_contacts.size());
+                pt_2d tangent_impulse= it_contact->_tangent_impulse/ (number)(_contacts.size());
                 _body_reference->apply_impulse(-tangent_impulse, it_contact->_r_ref);
                 _body_incident->apply_impulse(tangent_impulse, it_contact->_r_incid);
                 if (_verbose) {
@@ -691,7 +691,7 @@ void Collision2D::positional_correction() {
     	cout << "\nCollision2D::positional_correction() :\n";
 	}
     
-    pt_type correction= (max(_penetration- PENETRATION_ALLOWANCE, 0.0)/ (_body_reference->_mass_inv+ _body_incident->_mass_inv))* _normal* PENETRATION_PERCENT2CORRECT;
+    pt_2d correction= (max(_penetration- PENETRATION_ALLOWANCE, 0.0)/ (_body_reference->_mass_inv+ _body_incident->_mass_inv))* _normal* PENETRATION_PERCENT2CORRECT;
     _body_reference->_position-= correction* _body_reference->_mass_inv;
     _body_incident->_position += correction* _body_incident->_mass_inv;
 
@@ -771,7 +771,7 @@ void Physics2D::add_polygon(Polygon2D * polygon) {
 }
 
 
-void Physics2D::add_body(unsigned int idx_polygon, unsigned int idx_material, pt_type position, number orientation) {
+void Physics2D::add_body(unsigned int idx_polygon, unsigned int idx_material, pt_2d position, number orientation) {
 	if (idx_polygon>= _polygons.size()) {
 		cout << "Physics2D::add_body : bad idx_polygon\n";
 		return;
@@ -839,7 +839,7 @@ void Physics2D::step(bool verbose) {
                 it_collision->_warm_starting= true;
                 for (unsigned int i=0; i<_collisions_hash_table[it_collision->_hash]->_normal_impulses.size(); ++i) {
                     if (i< it_collision->_contacts.size()) {
-                        it_collision->_contacts[i]->_normal_impulse= 0.98* pt_type(_collisions_hash_table[it_collision->_hash]->_normal_impulses[i]);
+                        it_collision->_contacts[i]->_normal_impulse= 0.98* pt_2d(_collisions_hash_table[it_collision->_hash]->_normal_impulses[i]);
                     }
                 }
             }
@@ -910,7 +910,7 @@ void Physics2D::step(bool verbose) {
         }
         _collisions_hash_table[it_collision->_hash]->_normal_impulses.clear();
         for (auto it_contact : it_collision->_contacts) {
-            _collisions_hash_table[it_collision->_hash]->_normal_impulses.push_back(pt_type(it_contact->_normal_impulse_cumul));
+            _collisions_hash_table[it_collision->_hash]->_normal_impulses.push_back(pt_2d(it_contact->_normal_impulse_cumul));
         }
     }
 
@@ -950,11 +950,11 @@ void Physics2D::step(bool verbose) {
 }
 
 
-void Physics2D::new_external_force(pt_type pt_begin, pt_type pt_end) {
-    pt_type inter(0.0f);
+void Physics2D::new_external_force(pt_2d pt_begin, pt_2d pt_end) {
+    pt_2d inter(0.0f);
     for (auto it_body : _bodies) {
         if (segment_intersects_body(pt_begin, pt_end, it_body, &inter)) {
-            pt_type force= (pt_end- pt_begin)* NEW_EXTERNAL_FORCE_FACTOR;
+            pt_2d force= (pt_end- pt_begin)* NEW_EXTERNAL_FORCE_FACTOR;
             it_body->_force= force;
             it_body->_torque= cross2d(inter- it_body->_position, force);
         }
@@ -962,10 +962,10 @@ void Physics2D::new_external_force(pt_type pt_begin, pt_type pt_end) {
 }
 
 
-void Physics2D::new_explosion(pt_type center, number radius) {
+void Physics2D::new_explosion(pt_2d center, number radius) {
     const number C= 0.01f;
 
-    pt_type proj(0.0f);
+    pt_2d proj(0.0f);
     for (auto it_body : _bodies) {
         number dist= distance_body_pt(it_body, center, &proj);
         if (dist< radius) {
@@ -975,7 +975,7 @@ void Physics2D::new_explosion(pt_type center, number radius) {
             if (dist< EPSILON) {
                 // ???
             }
-            pt_type force= (proj- center)* NEW_EXPLOSION_FACTOR/ (dist* dist);
+            pt_2d force= (proj- center)* NEW_EXPLOSION_FACTOR/ (dist* dist);
             it_body->_force= force;
             it_body->_torque= cross2d(proj- it_body->_position, force);
             cout << dist << " ; " << glm::to_string(force) << " ; " << it_body->_torque << "\n";
@@ -990,7 +990,7 @@ void Physics2D::load_body(string ch_file, unsigned int idx_material) {
     string current_operation= "pts";
     number x, y;
     Polygon2D * polygon= new Polygon2D();
-    pt_type position(0.0f);
+    pt_2d position(0.0f);
     number orientation= 0.0f;
     vector<number> pts;
 
@@ -1215,13 +1215,13 @@ void DebugPhysics2D::update(number alpha) {
     unsigned int compt= 0;
     for (auto it_body : _physics_2d->_bodies) {
         // interpolation cf https://gafferongames.com/post/fix_your_timestep/
-        mat interpolated_orientation_mat;
+        mat_2d interpolated_orientation_mat;
         rotation_float2mat((1.0- alpha)* it_body->_previous_state->_orientation+ alpha* it_body->_orientation, interpolated_orientation_mat);
-        pt_type interpolated_position= (1.0f- alpha)* it_body->_previous_state->_position+ alpha* it_body->_position;
+        pt_2d interpolated_position= (1.0f- alpha)* it_body->_previous_state->_position+ alpha* it_body->_position;
 
         for (unsigned int i=0; i<it_body->_polygon->_pts.size(); ++i) {
-            pt_type pt_world_1= interpolated_orientation_mat* it_body->_polygon->_pts[i]+ interpolated_position;
-			pt_type pt_world_2= interpolated_orientation_mat* it_body->_polygon->_pts[(i+ 1)% it_body->_polygon->_pts.size()]+ interpolated_position;
+            pt_2d pt_world_1= interpolated_orientation_mat* it_body->_polygon->_pts[i]+ interpolated_position;
+			pt_2d pt_world_2= interpolated_orientation_mat* it_body->_polygon->_pts[(i+ 1)% it_body->_polygon->_pts.size()]+ interpolated_position;
 
             data_pts[compt* 10+ 0]= float(pt_world_1.x);
             data_pts[compt* 10+ 1]= float(pt_world_1.y);
@@ -1249,10 +1249,10 @@ void DebugPhysics2D::update(number alpha) {
     compt= 0;
     for (auto it_body : _physics_2d->_bodies) {
         for (unsigned int i=0; i<it_body->_polygon->_pts.size(); ++i) {
-            pt_type pt_world_1= it_body->_orientation_mat* it_body->_polygon->_pts[i]+ it_body->_position;
-			pt_type pt_world_2= it_body->_orientation_mat* it_body->_polygon->_pts[(i+ 1)% it_body->_polygon->_pts.size()]+ it_body->_position;
-			pt_type normal_1= 0.5* (pt_world_1+ pt_world_2);
-			pt_type normal_2= normal_1+ it_body->_orientation_mat* it_body->_polygon->_normals[i];
+            pt_2d pt_world_1= it_body->_orientation_mat* it_body->_polygon->_pts[i]+ it_body->_position;
+			pt_2d pt_world_2= it_body->_orientation_mat* it_body->_polygon->_pts[(i+ 1)% it_body->_polygon->_pts.size()]+ it_body->_position;
+			pt_2d normal_1= 0.5* (pt_world_1+ pt_world_2);
+			pt_2d normal_2= normal_1+ it_body->_orientation_mat* it_body->_polygon->_normals[i];
 
             data_normals[compt* 10+ 0]= float(normal_1.x);
             data_normals[compt* 10+ 1]= float(normal_1.y);
@@ -1278,8 +1278,8 @@ void DebugPhysics2D::update(number alpha) {
 	float data_centers[_n_bodies* 10];
     compt= 0;
     for (auto it_body : _physics_2d->_bodies) {
-		pt_type center= it_body->_position;
-		pt_type centroid= it_body->_orientation_mat* it_body->_polygon->_centroid+ it_body->_position;
+		pt_2d center= it_body->_position;
+		pt_2d centroid= it_body->_orientation_mat* it_body->_polygon->_centroid+ it_body->_position;
 
 		data_centers[compt* 10+ 0]= float(center.x);
 		data_centers[compt* 10+ 1]= float(center.y);
@@ -1304,9 +1304,9 @@ void DebugPhysics2D::update(number alpha) {
 	float data_vel_force[_n_bodies* 20];
     compt= 0;
     for (auto it_body : _physics_2d->_bodies) {
-		pt_type centroid= it_body->_orientation_mat* it_body->_polygon->_centroid+ it_body->_position;
-		pt_type velocity= centroid+ it_body->_velocity* 0.1; // facteur mult pour mieux y voir
-		pt_type force= centroid+ it_body->_force;
+		pt_2d centroid= it_body->_orientation_mat* it_body->_polygon->_centroid+ it_body->_position;
+		pt_2d velocity= centroid+ it_body->_velocity* 0.1; // facteur mult pour mieux y voir
+		pt_2d force= centroid+ it_body->_force;
 
 		data_centers[compt* 20+ 0]= float(centroid.x);
 		data_centers[compt* 20+ 1]= float(centroid.y);
@@ -1344,7 +1344,7 @@ void DebugPhysics2D::update(number alpha) {
 	compt= 0;
 	for (auto it_collision : _physics_2d->_collisions) {
 		for (auto it_contact : it_collision->_contacts) {
-			pt_type normal= it_contact->_position+ it_collision->_normal* it_collision->_penetration;
+			pt_2d normal= it_contact->_position+ it_collision->_normal* it_collision->_penetration;
 
 			data_collisions[10* compt+ 0]= float(it_contact->_position.x);
 			data_collisions[10* compt+ 1]= float(it_contact->_position.y);

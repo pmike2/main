@@ -47,8 +47,8 @@ const number RIGHT_MOUSE_SENSIVITY= 0.01;
 enum ViewSystemType {FREE_VIEW, THIRD_PERSON_FREE, THIRD_PERSON_BEHIND};
 
 // couleurs
-const pt_type_3d GROUND_COLOR(0.3f, 0.3f, 0.3f);
-const pt_type_3d BOX_COLOR(0.5f, 0.5f, 0.5f);
+const pt_3d GROUND_COLOR(0.3f, 0.3f, 0.3f);
+const pt_3d BOX_COLOR(0.5f, 0.5f, 0.5f);
 
 
 // affichage repère
@@ -70,8 +70,8 @@ public:
 	RectSelect(std::map<std::string, GLuint> progs);
 	~RectSelect();
 	void draw();
-	void set_origin(pt_type gl_v);
-	void set_moving(pt_type gl_v);
+	void set_origin(pt_2d gl_v);
+	void set_moving(pt_2d gl_v);
 	void set_active(bool is_active);
 	void update_draw();
 
@@ -79,10 +79,10 @@ public:
 	DrawContext * _context;
 	number _z;
 	bool _is_active;
-	pt_type _gl_origin;
-	pt_type _gl_moving;
-	pt_type_3d _color;
-	pt_type_3d _norms[4];
+	pt_2d _gl_origin;
+	pt_2d _gl_moving;
+	pt_3d _color;
+	pt_3d _norms[4];
 };
 
 
@@ -99,29 +99,29 @@ public:
 	bool key_up(InputState * input_state, SDL_Keycode key);
 	void update();
 	void draw();
-	void anim(const pt_type_3d & target, const quat & rotation);
-	void set(const pt_type_3d & target, number phi, number theta, number rho);
+	void anim(const pt_3d & target, const quat & rotation);
+	void set(const pt_3d & target, number phi, number theta, number rho);
 	void set_2d(number rho);
-	//void move_target(const pt_type_3d & v);
+	//void move_target(const pt_3d & v);
 	void move_target(int screen_delta_x, int screen_delta_y, number z);
 	void move_phi(number x);
 	void move_theta(number x);
 	void move_rho(number x);
-	pt_type screen2world(pt_type gl_coords, number z);
-	pt_type screen2world(uint x, uint y, number z);
-	pt_type_3d screen2world_depthbuffer(pt_type gl_coords);
-	pt_type_3d screen2world_depthbuffer(uint x, uint y);
-	pt_type screen2gl(uint x, uint y);
-	glm::uvec2 gl2screen(pt_type gl_coords);
+	pt_2d screen2world(pt_2d gl_coords, number z);
+	pt_2d screen2world(uint x, uint y, number z);
+	pt_3d screen2world_depthbuffer(pt_2d gl_coords);
+	pt_3d screen2world_depthbuffer(uint x, uint y);
+	pt_2d screen2gl(uint x, uint y);
+	glm::uvec2 gl2screen(pt_2d gl_coords);
 	number depthbuffer2world(number depth);
-	//bool contains_point(const pt_type_3d & pos);
+	//bool contains_point(const pt_3d & pos);
 	bool intersects_bbox(BBox * bbox, bool selection=false);
 	bool intersects_aabb(AABB * aabb, bool selection=false);
 	//bool intersects_aabb_2d(AABB_2D * aabb, bool selection=false);
 	bool intersects_aabb(AABB * aabb, const mat_4d & model2world_matrix, bool selection=false);
-	bool intersects_pts(std::vector<pt_type_3d> pts, bool selection=false);
-	bool intersects_pts(pt_type_3d * pts, uint n_pts, bool selection=false);
-	//bool selection_contains_point(const pt_type_3d & pt);
+	bool intersects_pts(std::vector<pt_3d> pts, bool selection=false);
+	bool intersects_pts(pt_3d * pts, uint n_pts, bool selection=false);
+	//bool selection_contains_point(const pt_3d & pt);
 	void update_selection_norms();
 	bool single_selection_intersects_aabb(AABB * aabb, bool check_depth=true);
 	bool rect_selection_intersects_bbox(BBox * bbox, bool check_depth=true);
@@ -130,19 +130,19 @@ public:
 	// paramètres en entrée
 	ScreenGL * _screengl;
 	number _frustum_near, _frustum_far, _frustum_halfsize;
-	pt_type_3d _target;
+	pt_3d _target;
 	number _free_view_x, _free_view_y;
 
 	number _phi, _theta, _rho;
 	
 	// paramètres calculés
-	pt_type_3d _eye;
-	pt_type_3d _up, _right, _dir;
+	pt_3d _eye;
+	pt_3d _up, _right, _dir;
 	mat_4d _camera2clip;
 	mat_4d _world2camera;
 	mat_4d _world2clip;
-	pt_type_3d _center_near, _center_far;
-	pt_type_3d _norm_near, _norm_far, _norm_left, _norm_right, _norm_top, _norm_bottom;
+	pt_3d _center_near, _center_far;
+	pt_3d _norm_near, _norm_far, _norm_left, _norm_right, _norm_top, _norm_bottom;
 
 	ViewSystemType _type;
 	
@@ -155,7 +155,7 @@ public:
 	bool _new_rect_selection;
 
 	bool _new_destination;
-	pt_type_3d _destination;
+	pt_3d _destination;
 };
 
 

@@ -36,12 +36,12 @@ struct DCEL_Face;
 // sommet
 struct DCEL_Vertex {
 	DCEL_Vertex();
-	DCEL_Vertex(const pt_type & coords);
+	DCEL_Vertex(const pt_2d & coords);
 	~DCEL_Vertex();
 	std::vector<DCEL_HalfEdge *> get_incident_edges();
 	friend std::ostream & operator << (std::ostream & os, DCEL_Vertex & v);
 
-	pt_type _coords;
+	pt_2d _coords;
 	DCEL_HalfEdge * _incident_edge; // 1 des edges ayant ce vertex comme origine
 	void * _data; // on peut utiliser _data pour ajouter des infos par sommet, edge ou face
 };
@@ -78,7 +78,7 @@ struct DCEL_Face {
 	std::vector<DCEL_HalfEdge *> get_outer_edges();
 	std::vector<std::vector<DCEL_HalfEdge *> > get_inner_edges();
 	std::vector<DCEL_Face *> get_adjacent_faces();
-	pt_type get_gravity_center();
+	pt_2d get_gravity_center();
 	bool ccw();
 	friend std::ostream & operator << (std::ostream & os, DCEL_Face & f);
 
@@ -93,14 +93,14 @@ class DCEL {
 public:
 	DCEL();
 	~DCEL();
-	DCEL_Vertex * add_vertex(const pt_type & coords);
+	DCEL_Vertex * add_vertex(const pt_2d & coords);
 	DCEL_HalfEdge * add_edge(DCEL_Vertex * v1, DCEL_Vertex * v2);
-	DCEL_HalfEdge * add_edge(const pt_type & ori, const pt_type & dst);
+	DCEL_HalfEdge * add_edge(const pt_2d & ori, const pt_2d & dst);
 	DCEL_Face * add_face();
 	/*void delete_vertex(DCEL_Vertex * v);
 	void delete_edge(DCEL_HalfEdge * he);
 	void delete_face(DCEL_Face * face);*/
-	DCEL_HalfEdge * split_edge(DCEL_HalfEdge * he, const pt_type & coords);
+	DCEL_HalfEdge * split_edge(DCEL_HalfEdge * he, const pt_2d & coords);
 	DCEL_HalfEdge * cut_face(DCEL_HalfEdge * he1, DCEL_HalfEdge * he2);
 	void clear();
 	void create_nexts_from_twins();
@@ -112,16 +112,16 @@ public:
 	void add2queue(DeleteEvent evt);
 	void delete_queue();
 	bool is_empty();
-	void add_bbox(const pt_type & bbox_min, const pt_type & bbox_max);
+	void add_bbox(const pt_2d & bbox_min, const pt_2d & bbox_max);
 	bool is_valid();
 	void import(std::string s);
-	DCEL_Vertex * get_vertex(const pt_type & coords);
-	DCEL_HalfEdge * get_edge(const pt_type & ori, const pt_type & dst);
-	void get_bbox(pt_type * bbox_min, pt_type * bbox_max);
+	DCEL_Vertex * get_vertex(const pt_2d & coords);
+	DCEL_HalfEdge * get_edge(const pt_2d & ori, const pt_2d & dst);
+	void get_bbox(pt_2d * bbox_min, pt_2d * bbox_max);
 	number smallest_edge();
 	DCEL_HalfEdge * get_dividing_edge(DCEL_Face * face1, DCEL_Face * face2);
 	DCEL_Face * get_unbounded_face();
-	void export_html(std::string html_path, bool simple, const pt_type & bbox_min, const pt_type & bbox_max, const std::vector<pt_type> & sites=std::vector<pt_type>());
+	void export_html(std::string html_path, bool simple, const pt_2d & bbox_min, const pt_2d & bbox_max, const std::vector<pt_2d> & sites=std::vector<pt_2d>());
 	friend std::ostream & operator << (std::ostream & os, DCEL & d);
 	
 	

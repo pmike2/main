@@ -78,7 +78,7 @@ public:
 	
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	EDIT_MODE _mode;
-	std::vector<pt_type> _obstacle_pts;
+	std::vector<pt_2d> _obstacle_pts;
 	time_point _last_added_pt_t;
 	Font * _font;
 	ViewSystem * _view_system;
