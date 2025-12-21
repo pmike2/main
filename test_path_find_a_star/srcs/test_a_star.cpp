@@ -186,6 +186,7 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 		const number alti_aabb_size = 10.0;
 		const number alti_inc_max = 1.0;
 		AABB_2D * aabb = new AABB_2D(pt_2d(pt) - pt_2d(alti_aabb_size * 0.5), pt_2d(alti_aabb_size));
+		_map->_elements->remove_in_aabb(aabb);
 		std::vector<uint> ids = _map->_terrain->get_ids_over_aabb(aabb);
 		delete aabb;
 		for (auto id : ids) {
@@ -458,10 +459,10 @@ void TestAStar::update_unit() {
 		std::vector<pt_3d> segs = unit->_aabb->segments();
 
 		glm::vec4 unit_color;
-		if (unit->_mode == MOVING) {
+		if (unit->_status == MOVING) {
 			unit_color = glm::vec4(0.5, 1.0, 0.5, 1.0);
 		}
-		else if (unit->_mode == WAITING) {
+		else if (unit->_status == WAITING) {
 			if (unit->_instructions.empty()) {
 				unit_color = glm::vec4(1.0, 0.5, 0.5, 1.0);
 			}
@@ -643,11 +644,14 @@ void TestAStar::update_terrain() {
 				if (alti < 0.01) {
 					color = glm::vec4(0.0f, 0.2f, 0.8f, 1.0f);
 				}
-				else if (alti > 10.0) {
+				else if (alti < 0.3) {
+					color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+				}
+				else if (alti > 7.0) {
 					color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 				}
 				else  {
-					color = glm::vec4(float(alti) / 10.0f, float(alti) / 10.0f, 0.5f, 1.0f);
+					color = glm::vec4(0.2f, 1.0f - float(alti) / 10.0f, 0.2f, 1.0f);
 				}
 
 				ptr[0] = float(pts[idx_tris[i]].x);
@@ -747,7 +751,8 @@ bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 	pt_3d pt_3d = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 	pt_2d pt(pt_3d.x, pt_3d.y);
 
-	std::vector<number> v = _map->_static_grids[_map->_unit_types["boat"]]->weights_in_cell_containing_pt(pt);
+	//std::vector<number> v = _map->_static_grids[_map->_unit_types["boat"]]->weights_in_cell_containing_pt(pt);
+	std::vector<number> v = _map->_units_position_grids[_map->_unit_types["boat"]]->weights_in_cell_containing_pt(pt);
 	for (auto x : v) {
 		std::cout << x << " ; ";
 	}

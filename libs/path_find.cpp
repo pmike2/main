@@ -17,7 +17,7 @@ using json = nlohmann::json;
 uint Map::_next_unit_id = 1;
 
 
-std::string mode2str(UNIT_MODE mode) {
+std::string mode2str(UNIT_STATUS mode) {
 	if (mode == WAITING) {
 		return "WAITING";
 	}
@@ -186,7 +186,7 @@ Unit::Unit() {
 
 
 Unit::Unit(UnitType * type, pt_3d pos, time_point t) :
-	_type(type), _selected(false), _mode(WAITING), _velocity(pt_3d(0.0)), _last_anim_t(t)
+	_type(type), _selected(false), _status(WAITING), _velocity(pt_3d(0.0)), _last_anim_t(t)
 {
 	//_aabb = new AABB(pos - 0.5 * _type->_size, pos + 0.5 * _type->_size);
 	pt_3d vmin(pos.x - 0.5 * _type->_size.x, pos.y - 0.5 * _type->_size.y, pos.z);
@@ -203,7 +203,7 @@ Unit::~Unit() {
 
 
 void Unit::anim(time_point t) {
-	if (_mode == MOVING) {
+	if (_status == MOVING) {
 		auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
 		_last_anim_t = t;
 
@@ -233,7 +233,7 @@ void Unit::anim(time_point t) {
 
 
 void Unit::goto_next_checkpoint(time_point t) {
-	_mode = MOVING;
+	_status = MOVING;
 
 	if (_path->empty()) {
 		std::cerr << "Unit::follow_path : path empty\n";
@@ -255,14 +255,14 @@ void Unit::goto_next_checkpoint(time_point t) {
 
 
 void Unit::stop() {
-	_mode = WAITING;
+	_status = WAITING;
 	//_path->clear();
 }
 
 
 std::ostream & operator << (std::ostream & os, Unit & unit) {
 	os << "type = " << unit._type->_name;
-	os << " ; mode = " << mode2str(unit._mode);
+	os << " ; mode = " << mode2str(unit._status);
 	os << " ; aabb = " << *unit._aabb;
 	os << " ; velocity = " << glm_to_string(unit._velocity);
 	os << " ; path = " << *unit._path;
@@ -635,10 +635,10 @@ PathFinder::~PathFinder() {
 
 number PathFinder::units_position_weight(number weight, Unit * unit) {
 	uint weight_i = uint(weight);
-	if (weight_i != unit->_id && weight_i > 1) {
+	if (weight_i > 0 && weight_i != unit->_id) {
 		return MAX_UNIT_MOVING_WEIGHT;
 	}
-	return 0.0;
+	return DEFAULT_EDGE_WEIGHT;
 }
 
 
@@ -779,6 +779,7 @@ bool PathFinder::path_find(pt_2d start, pt_2d goal, GraphGrid * static_grid, Gra
 		std::cout << x << " ; ";
 	}*/
 	weight_goal += *std::min_element(w_unit_positions_goal.begin(), w_unit_positions_goal.end());
+	std::cout << "weight_goal = " << weight_goal << "\n";
 	weights.push_back(weight_goal);
 
 	//std::cout << " ; unit " << unit->_id << " : " << weights[weights.size() - 1] << " ; " << unit->_path->_nodes[n_nodes - 1] << "\n";
@@ -902,6 +903,8 @@ bool PathFinder::path_find(pt_2d start, pt_2d goal, GraphGrid * static_grid, Gra
 		unit->_path->_bboxs.push_back(new BBox_2D(2.0 * r, p1 - r * v, p2 - r * v));
 	}
 	//std::cout << *path << "\n";
+
+	unit->_status = COMPUTING_PATH_DONE;
 
 	return true;
 }
@@ -1036,7 +1039,7 @@ void Map::add_unit(std::string type_name, pt_2d pos, time_point t) {
 	pt_3d pt3d(pos.x, pos.y, _terrain->get_alti(pos));
 	//pt_3d pt3d(pos.x, pos.y, 0.0);
 	Unit * unit = new Unit(_unit_types[type_name], pt3d, t);
-	unit->_id = ++_next_unit_id;
+	unit->_id = _next_unit_id++;
 	_units.push_back(unit);
 	//GraphGrid * grid = new GraphGrid(_origin, _size, _static_grids[_unit_types[type_name]]->_n_ligs, _static_grids[_unit_types[type_name]]->_n_cols);
 	//GraphGrid * grid = new GraphGrid(*_static_grids[_unit_types[type_name]]);
@@ -1191,7 +1194,7 @@ void Map::add_unit_to_position_grids(Unit * unit) {
 
 		for (auto & e : edges) {
 			GraphEdge & edge = grid->_vertices[e.first]._edges[e.second];
-			if (edge._weight < 2.0) {
+			if (edge._weight < 1.0) {
 				edge._weight = number(unit->_id) + 0.5;
 			}
 		}
@@ -1208,9 +1211,9 @@ void Map::remove_unit_from_position_grids(Unit * unit) {
 
 		for (auto & e : edges) {
 			GraphEdge & edge = grid->_vertices[e.first]._edges[e.second];
-			//if (uint(edge._weight) == unit->_id) {
-				edge._weight = 0.0;
-			//}
+			if (uint(edge._weight) == unit->_id) {
+				edge._weight = DEFAULT_EDGE_WEIGHT;
+			}
 		}
 		
 		/*AABB_2D * aabb = new AABB_2D(pt_2d(unit->_aabb->_vmin - 0.5 * unit_type->_size), pt_2d(unit->_aabb->size() + unit_type->_size));
@@ -1235,6 +1238,11 @@ void Map::remove_unit_from_position_grids(Unit * unit) {
 			grid->_it_v++;
 		}*/
 	}
+}
+
+
+void Map::path_find(Unit * unit, pt_2d goal) {
+	_path_finder->path_find(unit->_aabb->bottom_center(), goal, _static_grids[unit->_type], _units_position_grids[unit->_type], unit);
 }
 
 
@@ -1298,9 +1306,20 @@ void Map::anim(time_point t) {
 	}
 
 	for (auto & unit : _units) {
-		/*if (unit->_mode == MOVING) {
+		/*if (unit->_status == MOVING) {
 			remove_unit_from_position_grids(unit);
 		}*/
+
+		if (unit->_status == COMPUTING_PATH) {
+			continue;
+		}
+
+		if (unit->_status == COMPUTING_PATH_DONE) {
+			unit->_thr.join();
+			update_alti_path(unit);
+			unit->goto_next_checkpoint(t);
+			add_unit_to_position_grids(unit);
+		}
 
 		if (!unit->_instructions.empty()) {
 			Instruction i = unit->_instructions.front();
@@ -1311,16 +1330,16 @@ void Map::anim(time_point t) {
 				std::cout << "unit " << unit->_id << " : goto " << glm_to_string(pt) << "\n";
 
 				unit->stop();
-				//update_unit_grid(unit);
-				_path_finder->path_find(unit->_aabb->bottom_center(), pt, _static_grids[unit->_type], _units_position_grids[unit->_type], unit);
+				unit->_status = COMPUTING_PATH;
+				unit->_thr= std::thread(&Map::path_find, this, unit, pt);
+				/*_path_finder->path_find(unit->_aabb->bottom_center(), pt, _static_grids[unit->_type], _units_position_grids[unit->_type], unit);
 				update_alti_path(unit);
-
 				unit->goto_next_checkpoint(t);
-				add_unit_to_position_grids(unit);
+				add_unit_to_position_grids(unit);*/
 			}
 		}
 
-		if (unit->_mode == MOVING) {
+		if (unit->_status == MOVING) {
 			/*AABB * aabb_next = new AABB(*unit->_aabb);
 			aabb_next->translate(unit->_velocity);
 			for (auto & unit2 : _units) {
@@ -1350,7 +1369,7 @@ void Map::anim(time_point t) {
 					std::cerr << "intersection unit " << unit->_id << " et " << unit2->_id << "\n";
 				}
 			}			
-			/*if (unit->_mode == MOVING) {
+			/*if (unit->_status == MOVING) {
 				add_unit_to_position_grids(unit);
 			}*/
 
@@ -1358,7 +1377,7 @@ void Map::anim(time_point t) {
 			number alti = _terrain->get_alti(unit_center);
 			unit->_aabb->set_z(alti);
 
-			if (unit->_mode == WAITING) {
+			if (unit->_status == WAITING) {
 				std::cout << "unit " << unit->_id << " waiting\n";
 				remove_unit_from_position_grids(unit);
 				unit->_path->clear();

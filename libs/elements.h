@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 
 #include "typedefs.h"
+#include "bbox_2d.h"
 #include "bbox.h"
 #include "geom.h"
 
@@ -116,6 +117,7 @@ public:
 	~Elements();
 	Tree * add_tree(std::string species_name, pt_3d pt_base, pt_3d size);
 	Stone * add_stone(pt_3d pt_base, pt_3d size);
+	void remove_in_aabb(AABB_2D * aabb);
 
 
 	std::map<std::string, TreeSpecies *> _tree_species;

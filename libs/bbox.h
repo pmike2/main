@@ -21,7 +21,7 @@ public:
 	AABB(AABB_2D * aabb_2d);
 	~AABB();
 	void set_vmin_vmax(const pt_3d & vmin, const pt_3d & vmax);
-	static std::vector<std::vector<unsigned int> > triangles_idxs();
+	static std::vector<std::vector<uint> > triangles_idxs();
 	std::vector<pt_3d> segments();
 	void translate(pt_3d v);
 	void scale(number x);
@@ -48,7 +48,7 @@ public:
 	BBox(AABB * aabb);
 	~BBox();
 	void set_model2world(const mat_4d & model2world);
-	static std::vector<std::vector<unsigned int> > triangles_idxs();
+	static std::vector<std::vector<uint> > triangles_idxs();
 	friend std::ostream & operator << (std::ostream & os, const BBox & bbox);
 
 
@@ -83,16 +83,6 @@ public:
 	bool _selected;
 	number _dist2;
 };
-
-
-// fonctions utilitaires
-bool aabb_intersects_aabb(AABB * aabb_1, AABB * aabb_2);
-bool aabb_intersects_bbox(AABB * aabb, BBox * bbox);
-bool bbox_intersects_bbox(BBox * bbox_1, BBox * bbox_2);
-number aabb_distance_pt_2(AABB * aabb, const pt_3d & pt);
-number aabb_distance_pt(AABB * aabb, const pt_3d & pt);
-bool ray_intersects_aabb(pt_3d origin, pt_3d direction, AABB * aabb, number & t_hit);
-bool segment_intersects_aabb(const pt_3d & pt1, const pt_3d & pt2, AABB * aabb);
 
 
 #endif

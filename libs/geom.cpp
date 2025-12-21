@@ -114,318 +114,155 @@ bool triangle_intersects_triangle(pt_3d v[3], pt_3d w[3]) {
 	return true;
 }
 
-// ----------------------------------
-Pt::Pt() {
 
-}
-
-
-Pt::Pt(pt_3d coords) : _coords(coords) {
-
-}
-
-Pt::~Pt() {
-
-}
-
-
-std::ostream & operator << (std::ostream & os, const Pt & pt) {
-	os << "pt coords=" << glm::to_string(pt._coords);
-	os << " ; pt conflict=";
-	for (auto face : pt._conflict) {
-		os << glm::to_string(face->_idx) << " ; ";
+bool aabb_intersects_aabb(AABB * aabb_1, AABB * aabb_2) {
+	if ((aabb_1->_vmin.x> aabb_2->_vmax.x) || (aabb_1->_vmax.x< aabb_2->_vmin.x) ||
+		(aabb_1->_vmin.y> aabb_2->_vmax.y) || (aabb_1->_vmax.y< aabb_2->_vmin.y) ||
+		(aabb_1->_vmin.z> aabb_2->_vmax.z) || (aabb_1->_vmax.z< aabb_2->_vmin.z)) {
+		return false;
 	}
-	return os;
+	return true;
 }
 
 
-// ----------------------------------
-Face::Face() {
-
-}
-
-
-Face::Face(glm::uvec3 idx) : _idx(idx), _delete(false) {
-	
-}
-
-
-Face::~Face() {
-
-}
-
-
-void Face::change_orientation() {
-	uint tmp = _idx[0];
-	_idx[0] = _idx[1];
-	_idx[1] = tmp;
-	_normal *= -1.0;
-}
-
-
-std::ostream & operator << (std::ostream & os, const Face & face) {
-	os << "face idx=" << glm::to_string(face._idx);
-	os << " ; face conflict=";
-	for (auto pt : face._conflict) {
-		os << glm::to_string(pt->_coords) << " ; ";
-	}
-	return os;
-}
-
-
-// ----------------------------------
-ConvexHull::ConvexHull() {
-	
-}
-
-
-ConvexHull::~ConvexHull() {
-	clear();
-}
-
-
-void ConvexHull::clear() {
-	for (auto pt : _pts) {
-		delete pt;
-	}
-	_pts.clear();
-	for (auto face : _faces) {
-		delete face;
-	}
-	_faces.clear();
-}
-
-
-bool ConvexHull::is_conflict(Pt * pt, Face * face) {
-	if (glm::dot(face->_normal, pt->_coords - _pts[face->_idx[0]]->_coords) > 0.0) {
-		return true;
+bool aabb_intersects_bbox(AABB * aabb, BBox * bbox) {
+	for (unsigned int i=0; i<8; ++i) {
+		if ((bbox->_pts[i].x> aabb->_vmin.x) && (bbox->_pts[i].x< aabb->_vmax.x) &&
+			(bbox->_pts[i].y> aabb->_vmin.y) && (bbox->_pts[i].y< aabb->_vmax.y) &&
+			(bbox->_pts[i].z> aabb->_vmin.z) && (bbox->_pts[i].z< aabb->_vmax.z)) {
+			return true;
+		}
 	}
 	return false;
 }
 
 
-void ConvexHull::add_conflict(Pt * pt, Face * face) {
-	if (std::find(face->_conflict.begin(), face->_conflict.end(), pt) == face->_conflict.end()) {
-		face->_conflict.push_back(pt);
+// https://www.jkh.me/files/tutorials/Separating%20Axis%20Theorem%20or%20Oriented%20Bounding%20Boxes.pdf
+bool bbox_intersects_bbox(BBox * bbox_1, BBox * bbox_2) {
+	pt_3d center_1= 0.5* (bbox_1->_pts[7]+ bbox_1->_pts[0]);
+	pt_3d x_1= glm::normalize(bbox_1->_pts[1]- bbox_1->_pts[0]);
+	pt_3d y_1= glm::normalize(bbox_1->_pts[2]- bbox_1->_pts[0]);
+	pt_3d z_1= glm::normalize(bbox_1->_pts[4]- bbox_1->_pts[0]);
+	number half_width_1= 0.5* (bbox_1->_vmax[0]- bbox_1->_vmin[0]);
+	number half_height_1= 0.5* (bbox_1->_vmax[1]- bbox_1->_vmin[1]);
+	number half_depth_1= 0.5* (bbox_1->_vmax[2]- bbox_1->_vmin[2]);
+
+	pt_3d center_2= 0.5* (bbox_2->_pts[7]+ bbox_2->_pts[0]);
+	pt_3d x_2= glm::normalize(bbox_2->_pts[1]- bbox_2->_pts[0]);
+	pt_3d y_2= glm::normalize(bbox_2->_pts[2]- bbox_2->_pts[0]);
+	pt_3d z_2= glm::normalize(bbox_2->_pts[4]- bbox_2->_pts[0]);
+	number half_width_2= 0.5* (bbox_2->_vmax[0]- bbox_2->_vmin[0]);
+	number half_height_2= 0.5* (bbox_2->_vmax[1]- bbox_2->_vmin[1]);
+	number half_depth_2= 0.5* (bbox_2->_vmax[2]- bbox_2->_vmin[2]);
+
+	pt_3d axes[15]= {
+		x_1, y_1, z_1, x_2, y_2, z_2, 
+		glm::cross(x_1, x_2), glm::cross(x_1, y_2), glm::cross(x_1, z_2), 
+		glm::cross(y_1, x_2), glm::cross(y_1, y_2), glm::cross(y_1, z_2), 
+		glm::cross(z_1, x_2), glm::cross(z_1, y_2), glm::cross(z_1, z_2)
+	};
+
+	for (unsigned i=0; i<15; ++i) {
+		number a= abs(glm::dot(axes[i], center_2- center_1));
+		number b= abs(half_width_1* glm::dot(axes[i], x_1))+ abs(half_height_1* glm::dot(axes[i], y_1))+ abs(half_depth_1* glm::dot(axes[i], z_1))+
+				 abs(half_width_2* glm::dot(axes[i], x_2))+ abs(half_height_2* glm::dot(axes[i], y_2))+ abs(half_depth_2* glm::dot(axes[i], z_2));
+		if (a> b) {
+			return false;
+		}
 	}
+	return true;
+}
+
+
+number aabb_distance_pt_2(AABB * aabb, const pt_3d & pt) {
+	number dx, dy, dz;
 	
-	if (std::find(pt->_conflict.begin(), pt->_conflict.end(), face) == pt->_conflict.end()) {
-		pt->_conflict.push_back(face);
+	if (pt.x> aabb->_vmax.x) {
+		dx= pt.x- aabb->_vmax.x;
 	}
+	else if (pt.x< aabb->_vmin.x) {
+		dx= aabb->_vmin.x- pt.x;
+	}
+	else {
+		dx= 0.0;
+	}
+
+	if (pt.y> aabb->_vmax.y) {
+		dy= pt.y- aabb->_vmax.y;
+	}
+	else if (pt.y< aabb->_vmin.y) {
+		dy= aabb->_vmin.y- pt.y;
+	}
+	else {
+		dy= 0.0;
+	}
+
+	if (pt.z> aabb->_vmax.z) {
+		dz= pt.z- aabb->_vmax.z;
+	}
+	else if (pt.z< aabb->_vmin.z) {
+		dz= aabb->_vmin.z- pt.z;
+	}
+	else {
+		dz= 0.0;
+	}
+
+	return dx* dx+ dy* dy+ dz* dz;
 }
 
 
-Pt * ConvexHull::add_pt(pt_3d coords) {
-	Pt * pt = new Pt(coords);
-	_pts.push_back(pt);
-	return pt;
+number aabb_distance_pt(AABB * aabb, const pt_3d & pt) {
+	return sqrt(aabb_distance_pt_2(aabb, pt));
 }
 
 
-Pt * ConvexHull::add_pt(number x, number y, number z) {
-	return add_pt(pt_3d(x, y, z));
+// cf https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
+bool ray_intersects_aabb(pt_3d origin, pt_3d direction, AABB * aabb, number & t_hit) {
+	direction= glm::normalize(direction);
+	if (direction.x== 0.0) {
+		direction.x= 1e-7;
+	}
+	if (direction.y== 0.0) {
+		direction.y= 1e-7;
+	}
+	if (direction.z== 0.0) {
+		direction.z= 1e-7;
+	}
+	pt_3d dirfrac(1.0/ direction.x, 1.0/ direction.y, 1.0/ direction.z);
+	number t1= (aabb->_vmin.x- origin.x)* dirfrac.x;
+	number t2= (aabb->_vmax.x- origin.x)* dirfrac.x;
+	number t3= (aabb->_vmin.y- origin.y)* dirfrac.y;
+	number t4= (aabb->_vmax.y- origin.y)* dirfrac.y;
+	number t5= (aabb->_vmin.z- origin.z)* dirfrac.z;
+	number t6= (aabb->_vmax.z- origin.z)* dirfrac.z;
+
+	number tmin= std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
+	number tmax= std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
+
+	// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
+	if (tmax < 0) {
+		t_hit= tmax;
+		return false;
+	}
+
+	// if tmin > tmax, ray doesn't intersect AABB
+	if (tmin > tmax) {
+		t_hit= tmax;
+		return false;
+	}
+
+	t_hit= tmin;
+	return true;
 }
 
 
-Face * ConvexHull::add_face(glm::uvec3 idx) {
-	Face * face = new Face(idx);
-	face->_normal = glm::cross(_pts[face->_idx[1]]->_coords- _pts[face->_idx[0]]->_coords, _pts[face->_idx[2]]->_coords- _pts[face->_idx[0]]->_coords);
-	_faces.push_back(face);
-	return face;
+bool segment_intersects_aabb(const pt_3d & pt1, const pt_3d & pt2, AABB * aabb) {
+	number t_hit;
+	bool ray_inter= ray_intersects_aabb(pt1, pt2- pt1, aabb, t_hit);
+	//cout << ray_inter << " ; " << t_hit << " ; " << glm::length(pt2- pt1) << "\n";
+	if ((!ray_inter) || (t_hit> glm::length(pt2- pt1))) {
+		return false;
+	}
+	return true;
 }
 
-
-Face * ConvexHull::opposite_face(Face * face, uint idx_edge) {
-	for (auto face2 : _faces) {
-		if (face == face2) {
-			continue;
-		}
-
-		uint idx0 = 0;
-		uint idx1 = 0;
-		bool found_idx0 = false;
-		bool found_idx1 = false;
-		for (uint i = 0; i<3; ++i) {
-			if (face->_idx[idx_edge] == face2->_idx[i]) {
-				idx0 = i;
-				found_idx0 = true;
-				break;
-			}
-		}
-		for (uint i = 0; i<3; ++i) {
-			if (face->_idx[(idx_edge + 1) % 3] == face2->_idx[i]) {
-				idx1 = i;
-				found_idx1 = true;
-				break;
-			}
-		}
-		if (found_idx0 && found_idx1) {
-			return face2;
-		}
-	}
-
-	std::cerr << "ConvexHull::opposite_face : non trouvé.\n";
-	return NULL;
-}
-
-
-void ConvexHull::randomize(uint n_pts, number xmin, number xmax, number ymin, number ymax, number zmin, number zmax) {
-	clear();
-	for (uint i=0; i<n_pts; ++i) {
-		Pt * pt = new Pt();
-		pt->_coords = rand_pt_3d(xmin, xmax, ymin, ymax, zmin, zmax);
-		_pts.push_back(pt);
-	}
-}
-
-
-void ConvexHull::randomize(uint n_pts, pt_3d vmin, pt_3d vmax) {
-	randomize(n_pts, vmin.x, vmax.x, vmin.y, vmax.y, vmin.z, vmax.z);
-}
-
-
-void ConvexHull::compute() {
-	_faces.clear();
-
-	if (_pts.size()< 4) {
-		std::cerr << "ConvexHull pas assez de points : " << _pts.size() << "\n";
-		return;
-	}
-
-	// création tétraèdre initial
-	Face * face1 = add_face(glm::uvec3(0, 1, 2));
-	Face * face2 = add_face(glm::uvec3(0, 1, 3));
-	Face * face3 = add_face(glm::uvec3(0, 2, 3));
-	Face * face4 = add_face(glm::uvec3(1, 2, 3));
-	if (is_conflict(_pts[3], face1)) {
-		face1->change_orientation();
-	}
-	if (is_conflict(_pts[2], face2)) {
-		face2->change_orientation();
-	}
-	if (is_conflict(_pts[1], face3)) {
-		face3->change_orientation();
-	}
-	if (is_conflict(_pts[0], face4)) {
-		face4->change_orientation();
-	}
-	for (auto face : _faces) {
-		for (uint idx_pt=4; idx_pt<_pts.size(); ++idx_pt) {
-			if (is_conflict(_pts[idx_pt], face)) {
-				add_conflict(_pts[idx_pt], face);
-			}
-		}	
-	}
-
-	// boucle sur les pts restants
-	for (uint idx_pt=4; idx_pt<_pts.size(); ++idx_pt) {
-		Pt * pt = _pts[idx_pt];
-
-		if (VERBOSE) {
-			std::cout << "idx_pt = " << idx_pt << "-----------------------\n";
-			std::cout << "pt = " << *pt << "\n";
-			std::cout << *this;
-		}
-
-		// pt->_conflict vide => pt situé à l'intérieur de l'enveloppe
-		if (pt->_conflict.empty()) {
-			continue;
-		}
-
-		// construction de l'horizon ; pour chaque face en conflit avec le pt, pour chaque edge de la face
-		// si la face opposée par rapport au edge n'est pas en conflit avec le pt, alors edge est dans l'horizon
-		std::vector<Horizon> horizon;
-		for (auto face : pt->_conflict) {
-			for (uint idx_edge = 0; idx_edge<3; ++idx_edge) {
-				bool op_face_in_conflict = false;
-				Face * op_face = opposite_face(face, idx_edge);
-				
-				if (op_face == NULL) {
-					std::cout << "DEBUG----------------------\n";
-					std::cout << *this << "\n";
-					std::cout << "----\n";
-					std::cout << "pt = " << *pt << "\n";
-					std::cout << "face = " << *face << "\n";
-					std::cout << "idx_edge = " << idx_edge << "\n";
-					std::cout << "DEBUG----------------------\n";
-					return;
-				}
-				
-				for (auto face2 : pt->_conflict) {
-					if (face2 == op_face) {
-						op_face_in_conflict = true;
-						break;
-					}
-				}
-				
-				if (!op_face_in_conflict) {
-					horizon.push_back({face, op_face, idx_edge});
-					if (VERBOSE) {
-						std::cout << "ajout horizon : face = " << *face << " ; op_face = " << *op_face << " ; idx_edge = " << idx_edge << "\n";
-					}
-				}
-			}
-		}
-
-		// pour chaque edge de l'horizon on crée une nouvelle face edge-pt; les points en conflit avec cette nouvelle face
-		// sont inclus dans les conflits de la face à supprimer et de la face opposée
-		for (auto h : horizon) {
-			Face * face = add_face(glm::uvec3(h._face->_idx[h._idx_edge], h._face->_idx[(h._idx_edge + 1) % 3], idx_pt));
-			std::vector<Pt * > possible_conflict_points;
-			for (auto pt2 : h._face->_conflict) {
-				if (pt2 == pt) { // on ne prend pas en compte pt évidemment
-					continue;
-				}
-				possible_conflict_points.push_back(pt2);
-			}
-			for (auto pt2 : h._opposite_face->_conflict) {
-				if (pt2 == pt) {
-					continue;
-				}
-				possible_conflict_points.push_back(pt2);
-			}
-			for (auto pt2 : possible_conflict_points) {
-				if (is_conflict(pt2, face)) {
-					add_conflict(pt2, face); // add_conflict empeche les doublons
-				}
-			}
-		}
-
-		// suppression des faces en conflit
-		for (auto face : pt->_conflict) {
-			if (VERBOSE) {
-				std::cout << "delete face : " << *face << "\n";
-			}
-			face->_delete = true;
-		}
-
-		for (auto pt2 : _pts) {
-			pt2->_conflict.erase(std::remove_if(pt2->_conflict.begin(), pt2->_conflict.end(), [](Face * face) {
-				return face->_delete;
-			}), pt2->_conflict.end());
-		}
-
-		_faces.erase(std::remove_if(_faces.begin(), _faces.end(), [](Face * face) {
-			return face->_delete;
-		}), _faces.end());
-	}
-
-	if (VERBOSE) {
-		std::cout << "FIN\n\n";
-		std::cout << *this;
-	}	
-}
-
-
-std::ostream & operator << (std::ostream & os, const ConvexHull & hull) {
-	os << "pts :\n";
-	for (auto pt : hull._pts) {
-		os << *pt << "\n";
-	}
-	os << "faces :\n";
-	for (auto face : hull._faces) {
-		os << *face << "\n";
-	}
-	os << "\n";
-	return os;
-}

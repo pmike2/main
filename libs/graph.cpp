@@ -84,7 +84,7 @@ void Graph::clear() {
 void Graph::reinit_weights() {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
-		_it_v->second._weight= 1.0;
+		_it_v->second._weight= DEFAULT_EDGE_WEIGHT;
 		_it_v++;
 	}
 }
@@ -126,8 +126,7 @@ GraphGrid::GraphGrid(const pt_2d & origin, const pt_2d & size, uint n_ligs, uint
 		for (uint col=0; col<_n_cols; ++col) {
 			uint id= col_lig2id(col, lig);
 			pt_2d pt = col_lig2pt(col, lig);
-			number weight= 1.0;
-			add_vertex(id, pt_3d(pt.x, pt.y, 0.0), weight);
+			add_vertex(id, pt_3d(pt.x, pt.y, 0.0));
 		}
 	}
 	

@@ -25,8 +25,8 @@ const number MAX_UNIT_MOVING_WEIGHT = 100.0;
 const number UNIT_DIST_PATH_EPS = 0.05;
 
 
-enum UNIT_MODE {WAITING, MOVING};
-std::string mode2str(UNIT_MODE mode);
+enum UNIT_STATUS {WAITING, MOVING, COMPUTING_PATH, COMPUTING_PATH_DONE};
+std::string mode2str(UNIT_STATUS mode);
 
 enum OBSTACLE_TYPE {UNKNOWN, GROUND, SOLID, WATER};
 OBSTACLE_TYPE str2type(std::string s);
@@ -93,11 +93,12 @@ struct Unit {
 	UnitType * _type;
 	bool _selected;
 	AABB * _aabb;
-	UNIT_MODE _mode;
+	UNIT_STATUS _status;
 	Path * _path;
 	pt_3d _velocity;
 	std::queue<Instruction> _instructions;
 	time_point _last_anim_t;
+	std::thread _thr;
 };
 
 
@@ -176,6 +177,7 @@ struct Map {
 	std::vector<std::pair<uint, uint> > unit_positions_edges(Unit * unit, UnitType * unit_type);
 	void add_unit_to_position_grids(Unit * unit);
 	void remove_unit_from_position_grids(Unit * unit);
+	void path_find(Unit * unit, pt_2d goal);
 	void clear();
 	void read_shapefile(std::string shp_path, pt_2d origin, pt_2d size, bool reverse_y=false);
 	void anim(time_point t);

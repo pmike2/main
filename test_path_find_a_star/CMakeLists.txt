@@ -41,6 +41,7 @@ add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
 add_library(lib_graph STATIC ../libs/graph.cpp ../libs/graph.h)
 add_library(lib_triangulation STATIC ../libs/triangulation.cpp ../libs/triangulation.h)
 add_library(lib_elements STATIC ../libs/elements.cpp ../libs/elements.h)
+add_library(lib_convex_hull STATIC ../libs/convex_hull.cpp ../libs/convex_hull.h)
 add_library(lib_test_a_star STATIC ./srcs/test_a_star.cpp ./srcs/test_a_star.h)
 
 add_executable(main ./srcs/main.cpp)
@@ -51,5 +52,5 @@ set(EXT_LIBS ${GDAL_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENG
 target_link_libraries(main PUBLIC ${EXT_LIBS})
 target_link_libraries(main PUBLIC lib_path_find lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation)
 
-target_link_libraries(main_gl PUBLIC lib_path_find lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_test_a_star lib_repere lib_gl_utils lib_input_state lib_bbox lib_font lib_elements)
+target_link_libraries(main_gl PUBLIC lib_path_find lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_test_a_star lib_repere lib_gl_utils lib_input_state lib_bbox lib_font lib_elements lib_convex_hull)
 target_link_libraries(main_gl PUBLIC ${EXT_LIBS})
