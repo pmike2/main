@@ -10,8 +10,6 @@
 #include "bbox.h"
 
 
-const bool VERBOSE = false;
-
 
 bool triangle_intersects_triangle(pt_3d v[3], pt_3d w[3]);
 bool aabb_intersects_aabb(AABB * aabb_1, AABB * aabb_2);

@@ -220,7 +220,8 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 
 
 glm::vec4 TestAStar::get_edge_color() {
-	number edge_weight = _visible_grid->_it_e->second._weight;
+	GraphEdge edge = _visible_grid->_it_e->second;
+	number edge_weight = edge._weight;
 	glm::vec4 edge_color;
 	if (_visible_grid == _map->_static_grids[_map->_unit_types["infantery"]]) {
 		if (edge_weight < 0.0) {
@@ -243,7 +244,8 @@ glm::vec4 TestAStar::get_edge_color() {
 	}
 	else if (_visible_grid == _map->_units_position_grids[_map->_unit_types["infantery"]]
 	|| _visible_grid == _map->_units_position_grids[_map->_unit_types["boat"]]) {
-		edge_weight = fmod(edge_weight, 7.0);
+		
+		/*edge_weight = fmod(edge_weight, 7.0);
 		if (edge_weight < 1.0) {
 			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
@@ -264,6 +266,17 @@ glm::vec4 TestAStar::get_edge_color() {
 		}
 		else {
 			edge_color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+		}*/
+
+		UnitsPositionEdgeData * data = (UnitsPositionEdgeData *)(edge._data);
+		if (data->_ids.size() == 0) {
+			edge_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+		}
+		else if (data->_ids.size() == 1) {
+			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		}
+		else {
+			edge_color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
 		}
 	}
 
@@ -752,11 +765,11 @@ bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 	pt_2d pt(pt_3d.x, pt_3d.y);
 
 	//std::vector<number> v = _map->_static_grids[_map->_unit_types["boat"]]->weights_in_cell_containing_pt(pt);
-	std::vector<number> v = _map->_units_position_grids[_map->_unit_types["boat"]]->weights_in_cell_containing_pt(pt);
+	/*std::vector<number> v = _map->_units_position_grids[_map->_unit_types["boat"]]->weights_in_cell_containing_pt(pt);
 	for (auto x : v) {
 		std::cout << x << " ; ";
 	}
-	std::cout << "\n";
+	std::cout << "\n";*/
 
 	if (_mode == ADDING_SOLID_OBSTACLE) {
 		_obstacle_pts.clear();

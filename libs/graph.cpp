@@ -295,7 +295,7 @@ std::vector<std::pair<uint, uint> > GraphGrid::bbox_intersection(BBox_2D * bbox)
 	for (uint col=col_min; col<col_max; ++col) {
 		for (uint lig=lig_min; lig<lig_max; ++lig) {
 			pt_2d pt = col_lig2pt(col, lig);
-			if (pt_in_bbox(pt, bbox)) {
+			if (pt_in_bbox2d(pt, bbox)) {
 				uint id = col_lig2id(col, lig);
 				GraphVertex v = _vertices[id];
 				_it_e= v._edges.begin();
@@ -348,7 +348,7 @@ std::vector<std::pair<uint, uint> > GraphGrid::polygon_intersection(Polygon2D * 
 }
 
 
-std::vector<number> GraphGrid::weights_in_cell_containing_pt(pt_2d pt) {
+/*std::vector<number> GraphGrid::weights_in_cell_containing_pt(pt_2d pt) {
 	std::pair<uint, uint> col_lig = pt2col_lig(pt);
 	uint id_left_bottom = col_lig2id(col_lig.first, col_lig.second);
 	uint id_right_bottom = col_lig2id(col_lig.first + 1, col_lig.second);
@@ -359,6 +359,21 @@ std::vector<number> GraphGrid::weights_in_cell_containing_pt(pt_2d pt) {
 	result.push_back(_vertices[id_right_top]._edges[id_left_bottom]._weight);
 	result.push_back(_vertices[id_right_bottom]._edges[id_left_top]._weight);
 	result.push_back(_vertices[id_left_top]._edges[id_right_bottom]._weight);
+	return result;
+}*/
+
+
+std::vector<GraphEdge> GraphGrid::edges_in_cell_containing_pt(pt_2d pt) {
+	std::pair<uint, uint> col_lig = pt2col_lig(pt);
+	uint id_left_bottom = col_lig2id(col_lig.first, col_lig.second);
+	uint id_right_bottom = col_lig2id(col_lig.first + 1, col_lig.second);
+	uint id_left_top = col_lig2id(col_lig.first, col_lig.second + 1);
+	uint id_right_top = col_lig2id(col_lig.first + 1, col_lig.second + 1);
+	std::vector<GraphEdge> result;
+	result.push_back(_vertices[id_left_bottom]._edges[id_right_top]);
+	result.push_back(_vertices[id_right_top]._edges[id_left_bottom]);
+	result.push_back(_vertices[id_right_bottom]._edges[id_left_top]);
+	result.push_back(_vertices[id_left_top]._edges[id_right_bottom]);
 	return result;
 }
 

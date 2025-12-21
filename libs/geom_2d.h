@@ -39,15 +39,15 @@ bool is_ccw(const pt_2d & pt1, const pt_2d & pt2, const pt_2d & pt3);
 bool is_ccw(const std::vector<pt_2d> & pts);
 
 // tests AABB
-bool point_in_aabb(const pt_2d & pt, const AABB_2D * aabb);
-bool aabb_intersects_aabb(const AABB_2D * aabb_1, const AABB_2D * aabb_2);
-bool aabb_contains_aabb(const AABB_2D * big_aabb, const AABB_2D * small_aabb);
-bool ray_intersects_aabb(const pt_2d & ray_origin, const pt_2d & ray_dir, const AABB_2D * aabb, pt_2d & contact_pt, pt_2d & contact_normal, number & t_hit_near);
+bool point_in_aabb2d(const pt_2d & pt, const AABB_2D * aabb);
+bool aabb2d_intersects_aabb2d(const AABB_2D * aabb_1, const AABB_2D * aabb_2);
+bool aabb2d_contains_aabb2d(const AABB_2D * big_aabb, const AABB_2D * small_aabb);
+bool ray_intersects_aabb2d(const pt_2d & ray_origin, const pt_2d & ray_dir, const AABB_2D * aabb, pt_2d & contact_pt, pt_2d & contact_normal, number & t_hit_near);
 
 // tests BBOX
-bool bbox_intersects_bbox(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1);
-bool pt_in_bbox(const pt_2d & pt, const BBox_2D * bbox);
-std::pair<BBOX_SIDE, BBOX_CORNER> bbox_side_corner(const BBox_2D * bbox, const pt_2d & pt);
+bool bbox2d_intersects_bbox2d(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1);
+bool pt_in_bbox2d(const pt_2d & pt, const BBox_2D * bbox);
+std::pair<BBOX_SIDE, BBOX_CORNER> bbox2d_side_corner(const BBox_2D * bbox, const pt_2d & pt);
 
 // tests segments / droites
 bool segment_intersects_segment(const pt_2d & pt1_begin, const pt_2d & pt1_end, const pt_2d & pt2_begin, const pt_2d & pt2_end, pt_2d * result, bool exclude_seg1_extremities=false, bool exclude_seg2_extremities=false);

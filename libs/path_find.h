@@ -151,7 +151,7 @@ bool frontier_cmp(std::pair<uint, number> x, std::pair<uint, number> y);
 struct PathFinder {
 	PathFinder();
 	~PathFinder();
-	number units_position_weight(number weight, Unit * unit);
+	number units_position_weight(GraphEdge edge, Unit * unit);
 	number cost(uint i, uint j, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit);
 	number heuristic(uint i, uint j, GraphGrid * grid);
 	number line_of_sight_max_weight(pt_2d pt1, pt_2d pt2, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit);
@@ -161,6 +161,11 @@ struct PathFinder {
 
 
 	bool _use_line_of_sight;
+};
+
+
+struct UnitsPositionEdgeData {
+	std::vector<uint> _ids;
 };
 
 

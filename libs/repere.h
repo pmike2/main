@@ -22,7 +22,7 @@
 #include "bbox.h"
 #include "font.h"
 #include "gl_utils.h"
-
+#include "geom.h"
 
 
 // dimensions repere

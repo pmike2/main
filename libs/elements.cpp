@@ -442,7 +442,7 @@ Stone * Elements::add_stone(pt_3d pt_base, pt_3d size) {
 
 void Elements::remove_in_aabb(AABB_2D * aabb) {
 	_elements.erase(std::remove_if(_elements.begin(), _elements.end(), [aabb](Element * e){
-		return aabb_intersects_aabb(aabb, e->_aabb->aabb2d());
+		return aabb2d_intersects_aabb2d(aabb, e->_aabb->aabb2d());
 	}), _elements.end());
 
 }

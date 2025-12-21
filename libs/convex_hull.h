@@ -9,8 +9,6 @@
 #include "typedefs.h"
 
 
-const bool VERBOSE = false;
-
 
 struct Face;
 

@@ -180,6 +180,8 @@ void ConvexHull::randomize(uint n_pts, pt_3d vmin, pt_3d vmax) {
 
 
 void ConvexHull::compute() {
+	const bool VERBOSE = false;
+	
 	_faces.clear();
 
 	if (_pts.size()< 4) {

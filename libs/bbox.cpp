@@ -60,8 +60,8 @@ void AABB::set_vmin_vmax(const pt_3d & vmin, const pt_3d & vmax) {
 }
 
 
-vector<vector<uint> > AABB::triangles_idxs() {
-	vector<vector<uint> > idx = {
+std::vector<std::vector<uint> > AABB::triangles_idxs() {
+	std::vector<std::vector<uint> > idx = {
 		{0, 4, 2}, {2, 4, 6}, // x-
 		{1, 3, 7}, {1, 7, 5}, // x+
 		{0, 1, 5}, {0, 5, 4}, // y-

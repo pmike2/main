@@ -21,7 +21,7 @@ void test() {
 		std::cout << glm_to_string(pt) << "\n";
 	}
 	pt_2d pt(-1.0, -0.4);
-	bool x = pt_in_bbox(pt, bbox);
+	bool x = pt_in_bbox2d(pt, bbox);
 	std::cout << x << "\n";
 	/*unsigned int n_ligs= 50;
 	unsigned int n_cols= 50;

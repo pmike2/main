@@ -287,7 +287,7 @@ void Triangulation::init(const vector<pt_2d> & pts, const vector<pair<unsigned i
 		pt_2d normalized_pt((pts[i].x- _aabb->_pos.x)/ m, (pts[i].y- _aabb->_pos.y)/ m);
 		int idx_bin_ok= -1;
 		for (unsigned int idx_bin=0; idx_bin<_bins.size(); ++idx_bin) {
-			if (point_in_aabb(normalized_pt, _bins[idx_bin])) {
+			if (point_in_aabb2d(normalized_pt, _bins[idx_bin])) {
 				idx_bin_ok= idx_bin;
 				break;
 			}

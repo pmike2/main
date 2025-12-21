@@ -10,7 +10,9 @@
 #include "typedefs.h"
 #include "bbox_2d.h"
 #include "bbox.h"
+#include "geom_2d.h"
 #include "geom.h"
+#include "convex_hull.h"
 
 
 const uint BRANCH_N_POINTS_PER_CIRCLE = 6;

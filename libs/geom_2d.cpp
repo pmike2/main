@@ -107,21 +107,21 @@ bool is_ccw(const std::vector<pt_2d> & pts) {
 }
 
 
-bool point_in_aabb(const pt_2d & pt, const AABB_2D * aabb) {
+bool point_in_aabb2d(const pt_2d & pt, const AABB_2D * aabb) {
 	return ((pt.x>= aabb->_pos.x) && (pt.x<= aabb->_pos.x+ aabb->_size.x) && (pt.y>= aabb->_pos.y) && (pt.y<= aabb->_pos.y+ aabb->_size.y));
 }
 
 
-bool aabb_intersects_aabb(const AABB_2D * aabb_1, const AABB_2D * aabb_2) {
+bool aabb2d_intersects_aabb2d(const AABB_2D * aabb_1, const AABB_2D * aabb_2) {
 	return ((aabb_1->_pos.x<= aabb_2->_pos.x+ aabb_2->_size.x) && (aabb_1->_pos.x+ aabb_1->_size.x>= aabb_2->_pos.x) && (aabb_1->_pos.y<= aabb_2->_pos.y+ aabb_2->_size.y) && (aabb_1->_pos.y+ aabb_1->_size.y>= aabb_2->_pos.y));
 }
 
-bool aabb_contains_aabb(const AABB_2D * big_aabb, const AABB_2D * small_aabb) {
+bool aabb2d_contains_aabb2d(const AABB_2D * big_aabb, const AABB_2D * small_aabb) {
 	return (big_aabb->_pos.x<= small_aabb->_pos.x && big_aabb->_pos.y<= small_aabb->_pos.y && big_aabb->_size.x>= small_aabb->_size.x && big_aabb->_size.y>= small_aabb->_size.y);
 }
 
 
-bool ray_intersects_aabb(const pt_2d & ray_origin, const pt_2d & ray_dir, const AABB_2D * aabb, pt_2d & contact_pt, pt_2d & contact_normal, number & t_hit_near) {
+bool ray_intersects_aabb2d(const pt_2d & ray_origin, const pt_2d & ray_dir, const AABB_2D * aabb, pt_2d & contact_pt, pt_2d & contact_normal, number & t_hit_near) {
 	contact_pt.x= 0.0;
 	contact_pt.y= 0.0;
 	contact_normal.x= 0.0;
@@ -194,7 +194,7 @@ bool ray_intersects_aabb(const pt_2d & ray_origin, const pt_2d & ray_dir, const 
 
 
 // TODO : ne pas utiliser Polygon2D pour ce test
-bool bbox_intersects_bbox(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1) {
+bool bbox2d_intersects_bbox2d(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1) {
 	Polygon2D * poly1= new Polygon2D();
 	poly1->set_bbox(*bbox1);
 	Polygon2D * poly2= new Polygon2D();
@@ -206,7 +206,7 @@ bool bbox_intersects_bbox(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * 
 }
 
 
-bool pt_in_bbox(const pt_2d & pt, const BBox_2D * bbox) {
+bool pt_in_bbox2d(const pt_2d & pt, const BBox_2D * bbox) {
 	for (uint i=0; i<4; ++i) {
 		uint j = i + 1;
 		if (j >= 4) {
@@ -220,8 +220,8 @@ bool pt_in_bbox(const pt_2d & pt, const BBox_2D * bbox) {
 }
 
 
-std::pair<BBOX_SIDE, BBOX_CORNER> bbox_side_corner(const BBox_2D * bbox, const pt_2d & pt) {
-	const number THRESHOLD= 0.01;
+std::pair<BBOX_SIDE, BBOX_CORNER> bbox2d_side_corner(const BBox_2D * bbox, const pt_2d & pt) {
+	//const number THRESHOLD= 0.01;
 
 	number bottom, right, top, left;
 	pt_2d proj;
@@ -422,7 +422,7 @@ bool is_pt_inside_poly(const pt_2d & pt, const Polygon2D * poly) {
 	}
 	return true;*/
 
-	if (!point_in_aabb(pt, poly->_aabb)) {
+	if (!point_in_aabb2d(pt, poly->_aabb)) {
 		return false;
 	}
 
@@ -441,7 +441,7 @@ bool is_pt_inside_poly(const pt_2d & pt, const Polygon2D * poly) {
 
 
 bool is_poly_inside_poly(const Polygon2D * small_poly, const Polygon2D * big_poly) {
-	if (!aabb_contains_aabb(big_poly->_aabb, small_poly->_aabb)) {
+	if (!aabb2d_contains_aabb2d(big_poly->_aabb, small_poly->_aabb)) {
 		return false;
 	}
 	for (auto pt : small_poly->_pts) {

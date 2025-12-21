@@ -633,19 +633,24 @@ PathFinder::~PathFinder() {
 }
 
 
-number PathFinder::units_position_weight(number weight, Unit * unit) {
-	uint weight_i = uint(weight);
+number PathFinder::units_position_weight(GraphEdge edge, Unit * unit) {
+	/*uint weight_i = uint(weight);
 	if (weight_i > 0 && weight_i != unit->_id) {
 		return MAX_UNIT_MOVING_WEIGHT;
 	}
-	return DEFAULT_EDGE_WEIGHT;
+	return DEFAULT_EDGE_WEIGHT;*/
+	UnitsPositionEdgeData * data = (UnitsPositionEdgeData *)(edge._data);
+	if (data->_ids.empty() || (data->_ids.size() == 1 && data->_ids[0] == unit->_id)) {
+		return DEFAULT_EDGE_WEIGHT;
+	}
+	return MAX_UNIT_MOVING_WEIGHT;
 }
 
 
 number PathFinder::cost(uint i, uint j, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit) {
 	number result = 0.0;
 	result += static_grid->_vertices[i]._edges[j]._weight;
-	result += units_position_weight(units_position_grid->_vertices[i]._edges[j]._weight, unit);
+	result += units_position_weight(units_position_grid->_vertices[i]._edges[j], unit);
 	return result;
 }
 
@@ -723,7 +728,7 @@ bool PathFinder::path_find_nodes(uint start, uint goal, GraphGrid * static_grid,
 bool PathFinder::path_find(pt_2d start, pt_2d goal, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit) {
 	unit->_path->clear();
 
-	if ((!point_in_aabb(start, static_grid->_aabb)) || (!point_in_aabb(goal, static_grid->_aabb))) {
+	if ((!point_in_aabb2d(start, static_grid->_aabb)) || (!point_in_aabb2d(goal, static_grid->_aabb))) {
 		std::cerr << "PathFinder::path_find : point hors grille\n";
 		return false;
 	}
@@ -746,18 +751,37 @@ bool PathFinder::path_find(pt_2d start, pt_2d goal, GraphGrid * static_grid, Gra
 	//std::cout << raw_path.size() << "\n";
 
 	std::vector<number> weights;
-	/*weights.push_back(
-		static_grid->_vertices[unit->_path->_nodes[0]]._edges[unit->_path->_nodes[1]]._weight
-		+ units_position_grid->_vertices[unit->_path->_nodes[0]]._edges[unit->_path->_nodes[1]]._weight
-	);*/
+	
+	//std::vector<number> w_statics_start = static_grid->weights_in_cell_containing_pt(start);
+	//weight_start += *std::min_element(w_statics_start.begin(), w_statics_start.end());
+	//std::vector<number> w_unit_positions_start = units_position_grid->weights_in_cell_containing_pt(start);
+	//std::for_each(w_unit_positions_start.begin(), w_unit_positions_start.end(), [unit, this](number &w) { units_position_weight(w, unit); });
+	//weight_start += *std::min_element(w_unit_positions_start.begin(), w_unit_positions_start.end());
+
+	// start
 	number weight_start = 0.0;
-	std::vector<number> w_statics_start = static_grid->weights_in_cell_containing_pt(start);
-	weight_start += *std::min_element(w_statics_start.begin(), w_statics_start.end());
-	std::vector<number> w_unit_positions_start = units_position_grid->weights_in_cell_containing_pt(start);
-	std::for_each(w_unit_positions_start.begin(), w_unit_positions_start.end(), [unit, this](number &w) { units_position_weight(w, unit); });
-	weight_start += *std::min_element(w_unit_positions_start.begin(), w_unit_positions_start.end());
+	
+	std::vector<GraphEdge> static_start_edges = static_grid->edges_in_cell_containing_pt(start);
+	number w_static_start = 1e9;
+	for (auto & edge : static_start_edges) {
+		if (edge._weight < w_static_start) {
+			w_static_start = edge._weight;
+		}
+	}
+	weight_start += w_static_start;
+
+	std::vector<GraphEdge> units_position_start_edges = units_position_grid->edges_in_cell_containing_pt(start);
+	number w_units_position_start = 1e9;
+	for (auto & edge : units_position_start_edges) {
+		number w = units_position_weight(edge, unit);
+		if (w < w_units_position_start) {
+			w_units_position_start = w;
+		}
+	}
+	weight_start += w_units_position_start;
 	weights.push_back(weight_start);
 
+	// path
 	number n_nodes = unit->_path->_nodes.size();
 	for (uint i=0; i < n_nodes - 1; ++i) {
 		weights.push_back(
@@ -766,21 +790,37 @@ bool PathFinder::path_find(pt_2d start, pt_2d goal, GraphGrid * static_grid, Gra
 		);
 	}
 
-	/*weights.push_back(
-		static_grid->_vertices[unit->_path->_nodes[n_nodes - 2]]._edges[unit->_path->_nodes[n_nodes - 1]]._weight
-		+ units_position_grid->_vertices[unit->_path->_nodes[n_nodes - 2]]._edges[unit->_path->_nodes[n_nodes - 1]]._weight
-	);*/
+	// goal
 	number weight_goal = 0.0;
+	
+	std::vector<GraphEdge> static_goal_edges = static_grid->edges_in_cell_containing_pt(goal);
+	number w_static_goal = 1e9;
+	for (auto & edge : static_goal_edges) {
+		if (edge._weight < w_static_goal) {
+			w_static_goal = edge._weight;
+		}
+	}
+	weight_goal += w_static_goal;
+
+	std::vector<GraphEdge> units_position_goal_edges = units_position_grid->edges_in_cell_containing_pt(goal);
+	number w_units_position_goal = 1e9;
+	for (auto & edge : units_position_goal_edges) {
+		number w = units_position_weight(edge, unit);
+		if (w < w_units_position_goal) {
+			w_units_position_goal = w;
+		}
+	}
+	weight_goal += w_units_position_goal;
+	weights.push_back(weight_goal);
+
+	/*number weight_goal = 0.0;
 	std::vector<number> w_statics_goal = static_grid->weights_in_cell_containing_pt(goal);
 	weight_goal += *std::min_element(w_statics_goal.begin(), w_statics_goal.end());
 	std::vector<number> w_unit_positions_goal = units_position_grid->weights_in_cell_containing_pt(goal);
 	std::for_each(w_unit_positions_goal.begin(), w_unit_positions_goal.end(), [unit, this](number & w) { w = units_position_weight(w, unit); });
-	/*for (auto x: w_unit_positions_goal) {
-		std::cout << x << " ; ";
-	}*/
 	weight_goal += *std::min_element(w_unit_positions_goal.begin(), w_unit_positions_goal.end());
 	std::cout << "weight_goal = " << weight_goal << "\n";
-	weights.push_back(weight_goal);
+	weights.push_back(weight_goal);*/
 
 	//std::cout << " ; unit " << unit->_id << " : " << weights[weights.size() - 1] << " ; " << unit->_path->_nodes[n_nodes - 1] << "\n";
 
@@ -999,6 +1039,17 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 		GraphGrid * units_position_grid = new GraphGrid(_origin, _size, n_ligs_path, n_cols_path);
 		_units_position_grids[_unit_types[basename(json_path)]] = units_position_grid;
 
+		units_position_grid->_it_v= units_position_grid->_vertices.begin();
+		while (units_position_grid->_it_v!= units_position_grid->_vertices.end()) {
+			units_position_grid->_it_e= units_position_grid->_it_v->second._edges.begin();
+			while (units_position_grid->_it_e!= units_position_grid->_it_v->second._edges.end()) {
+				GraphEdge & edge = units_position_grid->_vertices[units_position_grid->_it_v->first]._edges[units_position_grid->_it_e->first];
+				edge._data = new UnitsPositionEdgeData();
+				units_position_grid->_it_e++;
+			}
+			units_position_grid->_it_v++;
+		}
+
 	}
 
 	_elements = new Elements(elements_dir);
@@ -1019,11 +1070,6 @@ Map::~Map() {
 		delete grid.second;
 	}
 	_static_grids.clear();
-	
-	/*for (auto & grid : _unit_grids) {
-		delete grid.second;
-	}
-	_unit_grids.clear();*/
 	
 	delete _path_finder;
 	delete _terrain;
@@ -1194,8 +1240,12 @@ void Map::add_unit_to_position_grids(Unit * unit) {
 
 		for (auto & e : edges) {
 			GraphEdge & edge = grid->_vertices[e.first]._edges[e.second];
-			if (edge._weight < 1.0) {
+			/*if (edge._weight < 1.0) {
 				edge._weight = number(unit->_id) + 0.5;
+			}*/
+			UnitsPositionEdgeData * data = (UnitsPositionEdgeData *)(edge._data);
+			if (std::find(data->_ids.begin(), data->_ids.end(), unit->_id) == data->_ids.end()) {
+				data->_ids.push_back(unit->_id);
 			}
 		}
 	}
@@ -1211,8 +1261,12 @@ void Map::remove_unit_from_position_grids(Unit * unit) {
 
 		for (auto & e : edges) {
 			GraphEdge & edge = grid->_vertices[e.first]._edges[e.second];
-			if (uint(edge._weight) == unit->_id) {
+			/*if (uint(edge._weight) == unit->_id) {
 				edge._weight = DEFAULT_EDGE_WEIGHT;
+			}*/
+			UnitsPositionEdgeData * data = (UnitsPositionEdgeData *)(edge._data);
+			if (std::find(data->_ids.begin(), data->_ids.end(), unit->_id) != data->_ids.end()) {
+				data->_ids.erase(std::find(data->_ids.begin(), data->_ids.end(), unit->_id));
 			}
 		}
 		
