@@ -484,24 +484,7 @@ void TestAStar::update_unit() {
 			}
 		}
 
-		/*number positions[16] = {
-			unit->_aabb->_pos.x, unit->_aabb->_pos.y,
-			unit->_aabb->_pos.x + unit->_aabb->_size.x, unit->_aabb->_pos.y,
-			
-			unit->_aabb->_pos.x + unit->_aabb->_size.x, unit->_aabb->_pos.y,
-			unit->_aabb->_pos.x + unit->_aabb->_size.x, unit->_aabb->_pos.y + unit->_aabb->_size.y,
-			
-			unit->_aabb->_pos.x + unit->_aabb->_size.x, unit->_aabb->_pos.y + unit->_aabb->_size.y,
-			unit->_aabb->_pos.x, unit->_aabb->_pos.y + unit->_aabb->_size.y,
-			
-			unit->_aabb->_pos.x, unit->_aabb->_pos.y + unit->_aabb->_size.y,
-			unit->_aabb->_pos.x, unit->_aabb->_pos.y
-		};*/
 		for (uint i=0; i < segs.size(); ++i) {
-			//ptr[0] = float(positions[2 * i]);
-			//ptr[1] = float(positions[2 * i + 1]);
-			//ptr[2] = float(unit->_z);
-			//ptr[2] = float(ALTI_UNIT);
 			ptr[0] = float(segs[i].x);
 			ptr[1] = float(segs[i].y);
 			ptr[2] = float(segs[i].z + Z_OFFSET_UNIT);
@@ -512,10 +495,6 @@ void TestAStar::update_unit() {
 				ptr[6] = SELECTED_UNIT_COLOR.a;
 			}
 			else {
-				/*ptr[3] = UNIT_COLORS.at(unit->_type->_name).r;
-				ptr[4] = UNIT_COLORS.at(unit->_type->_name).g;
-				ptr[5] = UNIT_COLORS.at(unit->_type->_name).b;
-				ptr[6] = UNIT_COLORS.at(unit->_type->_name).a;*/
 				ptr[3] = unit_color.r;
 				ptr[4] = unit_color.g;
 				ptr[5] = unit_color.b;
@@ -581,31 +560,40 @@ void TestAStar::update_debug() {
 	DrawContext * context= _contexts["debug"];
 	
 	context->_n_attrs_per_pts= 7;
-	
-	uint w = 100;
-	uint h = 100;
-	number step = 0.1;
-	context->_n_pts = w * h * 2;
+	context->_n_pts = 0;
 
+	if (_map->_units.empty()) {
+		return;
+	}
+
+	std::vector<BBox_2D *> bboxs = _map->_units[0]->_path->_bboxs;
+	for (auto & bbox : bboxs) {
+		context->_n_pts += 8;
+	}
+	
 	glm::vec4 DEBUG_COLOR(1.0, 0.8, 0.7, 1.0);
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
 
-	for (uint col=0; col<w; ++col) {
-		for (uint lig=0; lig<h; ++lig) {
-			pt_2d pt(number(col) * step, number(lig) * step);
-			ptr[0] = float(pt.x);
-			ptr[1] = float(pt.y);
-			ptr[2] = float(_map->_terrain->get_alti(pt));
+	for (auto & bbox : bboxs) {
+		for (uint i=0; i<4; ++i) {
+			uint j  = i + 1;
+			if (j >= 4) {
+				j = 0;
+			}
+
+			ptr[0] = float(bbox->_pts[i].x);
+			ptr[1] = float(bbox->_pts[i].y);
+			ptr[2] = float(_map->_terrain->get_alti(bbox->_pts[i]) + 0.5);
 			ptr[3] = DEBUG_COLOR.r;
 			ptr[4] = DEBUG_COLOR.g;
 			ptr[5] = DEBUG_COLOR.b;
 			ptr[6] = DEBUG_COLOR.a;
 
-			ptr[7] = float(pt.x + 0.02);
-			ptr[8] = float(pt.y + 0.02);
-			ptr[9] = float(_map->_terrain->get_alti(pt));
+			ptr[7] = float(bbox->_pts[j].x);
+			ptr[8] = float(bbox->_pts[j].y);
+			ptr[9] = float(_map->_terrain->get_alti(bbox->_pts[j]) + 0.5);
 			ptr[10] = DEBUG_COLOR.r;
 			ptr[11] = DEBUG_COLOR.g;
 			ptr[12] = DEBUG_COLOR.b;
@@ -615,10 +603,10 @@ void TestAStar::update_debug() {
 		}
 	}
 
-	/*for (uint i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+	for (uint i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
 		std::cout << data[i] << " ; ";
 	}
-	std::cout << "\n";*/
+	std::cout << "\n";
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
@@ -862,7 +850,6 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 		/*std::cout << _map->_terrain->get_alti(pt_2d(0.0, 0.0)) << " ; ";
 		std::cout << _map->_terrain->get_alti(pt_2d(-0.1, -0.1)) << " ; ";
 		std::cout << _map->_terrain->get_alti(pt_2d(0.1, 0.1)) << "\n";*/
-		update_debug();
 	}
 	if (key == SDLK_o) {
 		_mode = ADDING_SOLID_OBSTACLE;
@@ -924,6 +911,7 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 	}
 	else if (key == SDLK_SPACE) {
 		update_grid();
+		update_debug();
 		return true;
 	}
 	return false;

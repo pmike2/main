@@ -1468,6 +1468,18 @@ void Map::anim(time_point t) {
 		return;
 	}
 
+	bool one_unit_computing = false;
+	std::mutex mtx;
+	mtx.lock();
+	for (auto & unit : _units) {
+
+		if (unit->_status == COMPUTING_PATH) {
+			one_unit_computing = true;
+			break;
+		}
+	}
+	mtx.unlock();
+
 	for (auto & unit : _units) {
 
 		std::mutex mtx;
@@ -1544,7 +1556,7 @@ void Map::anim(time_point t) {
 			}*/
 		}
 
-		if (!unit->_instructions.empty()) {
+		if (!one_unit_computing && !unit->_instructions.empty()) {
 			Instruction i = unit->_instructions.front();
 			if (i._t <= t) {
 				unit->_instructions.pop();
@@ -1658,9 +1670,6 @@ void Map::load(std::string json_path, time_point t) {
 	for (auto grid : _static_grids) {
 		update_alti_grid(grid.second);
 	}
-	/*for (auto grid : _unit_grids) {
-		update_alti_grid(grid.second);
-	}*/
 	update_static_grids();
 }
 
