@@ -84,6 +84,7 @@ struct Unit {
 	Unit(UnitType * type, pt_3d pos, time_point t);
 	~Unit();
 	void anim(time_point t);
+	bool checkpoint_checked();
 	void goto_next_checkpoint(time_point t);
 	void stop();
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
@@ -179,9 +180,12 @@ struct Map {
 	void update_alti_grid(GraphGrid * grid);
 	void update_alti_path(Unit * unit);
 	void update_static_grids();
-	std::vector<std::pair<uint, uint> > unit_positions_edges(Unit * unit, UnitType * unit_type);
-	void add_unit_to_position_grids(Unit * unit);
-	void remove_unit_from_position_grids(Unit * unit);
+	//std::vector<std::pair<uint, uint> > unit_positions_edges(Unit * unit, UnitType * unit_type, int idx_path=-1);
+	void clear_position_grids();
+	void add_waiting_unit_to_position_grids(Unit * unit);
+	void add_moving_unit_to_position_grids(Unit * unit);
+	void remove_waiting_unit_from_position_grids(Unit * unit);
+	void remove_moving_unit_from_position_grids(Unit * unit);
 	void path_find(Unit * unit, pt_2d goal);
 	void clear();
 	void read_shapefile(std::string shp_path, pt_2d origin, pt_2d size, bool reverse_y=false);

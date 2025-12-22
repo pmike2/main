@@ -276,7 +276,7 @@ glm::vec4 TestAStar::get_edge_color() {
 			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
 		else {
-			edge_color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+			edge_color = glm::vec4(0.5f, 0.0f, 1.0f, 1.0f);
 		}
 	}
 
@@ -771,6 +771,21 @@ bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 	}
 	std::cout << "\n";*/
 
+	/*if (_map->_units.size() > 0) {
+		std::vector<std::pair<uint, uint>> edges = _map->_units_position_grids[_map->_unit_types["boat"]]->edges_in_cell_containing_pt(pt);
+		for (auto & edge : edges) {
+			GraphEdge e = _map->_units_position_grids[_map->_unit_types["boat"]]->_vertices[edge.first]._edges[edge.second];
+			UnitsPositionEdgeData * data = (UnitsPositionEdgeData *)(e._data);
+			//number w = _map->_path_finder->units_position_weight(edge, _map->_units[0]);
+			//std::cout << w << " ; ";
+			for (auto & x : data->_ids) {
+				std::cout << x << ",";
+			}
+			std::cout << " ; ";
+		}
+		std::cout << "\n";
+	}*/
+
 	if (_mode == ADDING_SOLID_OBSTACLE) {
 		_obstacle_pts.clear();
 		return true;
@@ -903,8 +918,12 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 		_map->save("../data/map.json");
 		return true;
 	}
-	else if (key == SDLK_SPACE) {
+	else if (key == SDLK_q) {
 		_map->_paused = !_map->_paused;
+		return true;
+	}
+	else if (key == SDLK_SPACE) {
+		update_grid();
 		return true;
 	}
 	return false;

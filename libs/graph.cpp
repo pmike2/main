@@ -219,6 +219,24 @@ uint GraphGrid::pt2id(pt_2d pt) {
 }
 
 
+uint GraphGrid::pt2closest_id(pt_2d pt) {
+	std::pair<uint, uint> col_lig = pt2col_lig(pt);
+	uint result = 0;
+	number min_dist = 1e9;
+	for (int col_offset=0; col_offset<2; ++col_offset) {
+		for (int lig_offset=0; lig_offset<2; ++lig_offset) {
+			pt_2d pt_vertex = col_lig2pt(col_lig.first + col_offset, col_lig.second + lig_offset);
+			number dist = glm::distance(pt, pt_vertex);
+			if (dist < min_dist) {
+				min_dist = dist;
+				result = col_lig2id(col_lig.first + col_offset, col_lig.second + lig_offset);
+			}
+		}
+	}
+	return result;
+}
+
+
 // améliorable avec un algo genre Bresenham au lieu de parcourir tout le AABB
 std::vector<std::pair<uint, uint> > GraphGrid::segment_intersection(pt_2d pt1, pt_2d pt2) {
 	std::vector<std::pair<uint, uint> > result;
@@ -253,6 +271,13 @@ std::vector<std::pair<uint, uint> > GraphGrid::segment_intersection(pt_2d pt1, p
 		}
 	}
 	return result;
+}
+
+
+bool GraphGrid::segment_intersects_edge(pt_2d pt1, pt_2d pt2, std::pair<uint, uint> edge) {
+	pt_2d pt1_edge = pt_2d(_vertices[edge.first]._pos);
+	pt_2d pt2_edge = pt_2d(_vertices[edge.second]._pos);
+	return segment_intersects_segment(pt1, pt2, pt1_edge, pt2_edge, NULL);
 }
 
 
@@ -363,9 +388,29 @@ std::vector<std::pair<uint, uint> > GraphGrid::polygon_intersection(Polygon2D * 
 }*/
 
 
-std::vector<GraphEdge> GraphGrid::edges_in_cell_containing_pt(pt_2d pt) {
+std::vector<std::pair<uint, uint> > GraphGrid::edges_in_cell_containing_pt(pt_2d pt, bool only_diagonals) {
 	std::pair<uint, uint> col_lig = pt2col_lig(pt);
-	uint id_left_bottom = col_lig2id(col_lig.first, col_lig.second);
+	std::vector<glm::uvec4> offsets = {
+		glm::uvec4(0, 0, 1, 1), glm::uvec4(1, 1, 0, 0), glm::uvec4(0, 1, 1, 0), glm::uvec4(1, 0, 0, 1)
+	};
+	if (!only_diagonals) {
+		offsets.insert(offsets.end(), {
+			glm::uvec4(0, 0, 1, 0), glm::uvec4(1, 0, 0, 0),
+			glm::uvec4(1, 0, 1, 1), glm::uvec4(1, 1, 1, 0),
+			glm::uvec4(1, 1, 0, 1), glm::uvec4(0, 1, 1, 1),
+			glm::uvec4(0, 1, 0, 0), glm::uvec4(0, 0, 0, 1)
+		});
+	}
+
+	std::vector<std::pair<uint, uint> > result;
+	for (auto & offset : offsets) {
+		uint id1 = col_lig2id(col_lig.first + offset[0], col_lig.second + offset[1]);
+		uint id2 = col_lig2id(col_lig.first + offset[2], col_lig.second + offset[3]);
+		//result.push_back(_vertices[id1]._edges[id2]);
+		result.push_back(std::make_pair(id1, id2));
+	}
+
+	/*uint id_left_bottom = col_lig2id(col_lig.first, col_lig.second);
 	uint id_right_bottom = col_lig2id(col_lig.first + 1, col_lig.second);
 	uint id_left_top = col_lig2id(col_lig.first, col_lig.second + 1);
 	uint id_right_top = col_lig2id(col_lig.first + 1, col_lig.second + 1);
@@ -374,6 +419,24 @@ std::vector<GraphEdge> GraphGrid::edges_in_cell_containing_pt(pt_2d pt) {
 	result.push_back(_vertices[id_right_top]._edges[id_left_bottom]);
 	result.push_back(_vertices[id_right_bottom]._edges[id_left_top]);
 	result.push_back(_vertices[id_left_top]._edges[id_right_bottom]);
+	if (!only_diagonals) {
+		result.push_back(_vertices[id_left_bottom]._edges[id_right_bottom]);
+		result.push_back(_vertices[id_right_bottom]._edges[id_left_bottom]);
+
+		result.push_back(_vertices[id_left_bottom]._edges[id_left_top]);
+		result.push_back(_vertices[id_left_bottom]._edges[id_right_bottom]);
+	}*/
+	return result;
+}
+
+
+std::vector<uint> GraphGrid::vertices_in_cell_containing_pt(pt_2d pt) {
+	std::pair<uint, uint> col_lig = pt2col_lig(pt);
+	uint id_left_bottom = col_lig2id(col_lig.first, col_lig.second);
+	uint id_right_bottom = col_lig2id(col_lig.first + 1, col_lig.second);
+	uint id_left_top = col_lig2id(col_lig.first, col_lig.second + 1);
+	uint id_right_top = col_lig2id(col_lig.first + 1, col_lig.second + 1);	
+	std::vector<uint> result = {id_left_bottom, id_right_bottom, id_left_top, id_right_top};
 	return result;
 }
 

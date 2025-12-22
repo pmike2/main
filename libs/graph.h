@@ -60,12 +60,15 @@ struct GraphGrid : public Graph {
 	pt_2d col_lig2pt(uint col, uint lig);
 	std::pair<uint, uint> pt2col_lig(pt_2d pt);
 	uint pt2id(pt_2d pt);
+	uint pt2closest_id(pt_2d pt);
 	std::vector<std::pair<uint, uint> > segment_intersection(pt_2d pt1, pt_2d pt2);
+	bool segment_intersects_edge(pt_2d pt1, pt_2d pt2, std::pair<uint, uint> edge);
 	std::vector<std::pair<uint, uint> > aabb_intersection(AABB_2D * aabb);
 	std::vector<std::pair<uint, uint> > bbox_intersection(BBox_2D * bbox);
 	std::vector<std::pair<uint, uint> > polygon_intersection(Polygon2D * polygon);
 	//std::vector<number> weights_in_cell_containing_pt(pt_2d pt);
-	std::vector<GraphEdge> edges_in_cell_containing_pt(pt_2d pt);
+	std::vector<std::pair<uint, uint> > edges_in_cell_containing_pt(pt_2d pt, bool only_diagonals=false);
+	std::vector<uint> vertices_in_cell_containing_pt(pt_2d pt);
 	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
 
 
