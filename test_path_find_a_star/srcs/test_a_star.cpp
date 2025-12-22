@@ -15,8 +15,9 @@ TestAStar::TestAStar() {
 TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t) :
 	_mode(FREE), _view_system(view_system)
 {
-	GLuint buffers[7];
-	glGenBuffers(6, buffers);
+	const uint n_buffers = 7;
+	GLuint buffers[n_buffers];
+	glGenBuffers(n_buffers, buffers);
 
 	_contexts["grid"]= new DrawContext(progs["repere"], buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
@@ -58,7 +59,8 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	//std::cout << *_map << "\n";
 	//_map->randomize();
 
-	_visible_grid = _map->_static_grids[_map->_unit_types["boat"]];
+	//_visible_grid = _map->_static_grids[_map->_unit_types["boat"]];
+	_visible_grid = _map->_units_position_grids[_map->_unit_types["boat"]];
 
 	update_all();
 }
@@ -528,23 +530,31 @@ void TestAStar::update_path() {
 			continue;
 		}
 		for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
+			glm::vec4 path_color;
+			if (unit->_path->_weights[i + 1]>= MAX_UNIT_MOVING_WEIGHT) {
+				path_color = glm::vec4(1.0, 0.0, 0.0, 1.0);
+			}
+			else {
+				path_color = glm::vec4(0.0, 1.0, 0.0, 1.0);
+			}
+
 			ptr[0] = float(unit->_path->_pts[i].x);
 			ptr[1] = float(unit->_path->_pts[i].y);
 			ptr[2] = float(unit->_path->_pts[i].z + Z_OFFSET_PATH);
 			//ptr[2] = float(ALTI_PATH);
-			ptr[3] = PATH_COLOR.r;
-			ptr[4] = PATH_COLOR.g;
-			ptr[5] = PATH_COLOR.b;
-			ptr[6] = PATH_COLOR.a;
+			ptr[3] = path_color.r;
+			ptr[4] = path_color.g;
+			ptr[5] = path_color.b;
+			ptr[6] = path_color.a;
 
 			ptr[7] = float(unit->_path->_pts[i + 1].x);
 			ptr[8] = float(unit->_path->_pts[i + 1].y);
 			ptr[9] = float(unit->_path->_pts[i + 1].z + Z_OFFSET_PATH);
 			//ptr[9] = float(ALTI_PATH);
-			ptr[10] = PATH_COLOR.r;
-			ptr[11] = PATH_COLOR.g;
-			ptr[12] = PATH_COLOR.b;
-			ptr[13] = PATH_COLOR.a;
+			ptr[10] = path_color.r;
+			ptr[11] = path_color.g;
+			ptr[12] = path_color.b;
+			ptr[13] = path_color.a;
 
 			ptr += 14;
 		}
@@ -563,23 +573,37 @@ void TestAStar::update_debug() {
 	context->_n_pts = 0;
 
 	if (_map->_units.empty()) {
+		context->_active = false;
+		/*glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);*/
 		return;
 	}
 
 	std::vector<BBox_2D *> bboxs = _map->_units[0]->_path->_bboxs;
+	if (bboxs.empty()) {
+		context->_active = false;
+		/*glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);*/
+		return;
+	}
+
+	context->_active = true;
 	for (auto & bbox : bboxs) {
 		context->_n_pts += 8;
 	}
 	
 	glm::vec4 DEBUG_COLOR(1.0, 0.8, 0.7, 1.0);
 
-	float data[context->_n_pts* context->_n_attrs_per_pts];
+	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
 
+	uint compt = 0;
 	for (auto & bbox : bboxs) {
 		for (uint i=0; i<4; ++i) {
-			uint j  = i + 1;
-			if (j >= 4) {
+			uint j = i + 1;
+			if (j == 4) {
 				j = 0;
 			}
 
@@ -600,17 +624,23 @@ void TestAStar::update_debug() {
 			ptr[13] = DEBUG_COLOR.a;
 
 			ptr += 14;
+			compt++;
 		}
 	}
+	//std::cout << "compt = " << compt << " ; data_size=" << context->_n_pts* context->_n_attrs_per_pts << "\n";
 
-	for (uint i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
+		if (i % 7 == 0) {
+			std::cout << "\n\n";
+		}
 		std::cout << data[i] << " ; ";
 	}
-	std::cout << "\n";
+	std::cout << "\n";*/
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	delete[] data;
 }
 
 
@@ -850,6 +880,10 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 		/*std::cout << _map->_terrain->get_alti(pt_2d(0.0, 0.0)) << " ; ";
 		std::cout << _map->_terrain->get_alti(pt_2d(-0.1, -0.1)) << " ; ";
 		std::cout << _map->_terrain->get_alti(pt_2d(0.1, 0.1)) << "\n";*/
+		_contexts["debug"]->_active = !_contexts["debug"]->_active;
+		_contexts["unit"]->_active = !_contexts["unit"]->_active;
+		_contexts["path"]->_active = !_contexts["path"]->_active;
+		_contexts["obstacle"]->_active = !_contexts["obstacle"]->_active;
 	}
 	if (key == SDLK_o) {
 		_mode = ADDING_SOLID_OBSTACLE;

@@ -838,7 +838,7 @@ bool PathFinder::path_find(pt_2d start, pt_2d goal, GraphGrid * static_grid, Gra
 	for (uint i=0; i < n_nodes - 1; ++i) {
 		weights.push_back(
 			static_grid->_vertices[unit->_path->_nodes[i]]._edges[unit->_path->_nodes[i + 1]]._weight
-			+ units_position_grid->_vertices[unit->_path->_nodes[i]]._edges[unit->_path->_nodes[i + 1]]._weight
+			+ units_position_weight(units_position_grid->_vertices[unit->_path->_nodes[i]]._edges[unit->_path->_nodes[i + 1]], unit)
 		);
 	}
 
@@ -1004,7 +1004,9 @@ bool PathFinder::path_find(pt_2d start, pt_2d goal, GraphGrid * static_grid, Gra
 		delete polygon;*/
 		
 		pt_2d v = glm::normalize(p2 - p1);
-		unit->_path->_bboxs.push_back(new BBox_2D(2.0 * r, p1 - r * v, p2 - r * v));
+		BBox_2D * bbox = new BBox_2D(2.0 * r, p1 - r * v, p2 + r * v);
+		//std::cout << *bbox << "\n";
+		unit->_path->_bboxs.push_back(bbox);
 	}
 	//std::cout << *path << "\n";
 
@@ -1377,13 +1379,22 @@ void Map::remove_waiting_unit_from_position_grids(Unit * unit) {
 }
 
 
-void Map::remove_moving_unit_from_position_grids(Unit * unit) {
+void Map::remove_moving_unit_from_position_grids(Unit * unit, bool remove_all) {
 	const number EPS = 1.0; // je ne sais pas trop pquoi mais il faut ajouter un eps sinon des egdes avec unit->_id restent
 	for (auto & unit_grid : _units_position_grids) {
 		UnitType * unit_type = unit_grid.first;
 		GraphGrid * grid = unit_grid.second;
 		std::vector<std::pair<uint, uint> > edges;
-		for (uint i=0; i<unit->_path->_idx_path; ++i) {
+		int idx_max = unit->_path->_idx_path - 3;
+		if (remove_all) {
+			idx_max = unit->_path->_bboxs.size();
+		}
+		if (idx_max < 0) {
+			return;
+		}
+		//std::cout << "remove 0 -> " << idx_max - 1 << " ; size = " << unit->_path->_bboxs.size() << "\n";
+
+		for (int i=0; i<idx_max; ++i) {
 			BBox_2D * buffered_bbox = unit->_path->_bboxs[i]->buffered(0.5 * norm(unit_type->_size) + EPS);
 			std::vector<std::pair<uint, uint> > path_edges = grid->bbox_intersection(buffered_bbox);
 			delete buffered_bbox;
@@ -1518,19 +1529,19 @@ void Map::anim(time_point t) {
 			unit->anim(t);
 
 			if (unit->checkpoint_checked()) {
-				unit->_path->_idx_path++;
-				if (unit->_path->_idx_path >= unit->_path->_pts.size()) {
-					remove_moving_unit_from_position_grids(unit);
+				if (unit->_path->_idx_path + 1 >= unit->_path->_pts.size()) {
+					remove_moving_unit_from_position_grids(unit, true);
 					add_waiting_unit_to_position_grids(unit);
 					unit->stop();
 				}
 				else {
-					remove_moving_unit_from_position_grids(unit);
+					//remove_moving_unit_from_position_grids(unit);
+					unit->_path->_idx_path++;
 					unit->goto_next_checkpoint(t);
-					if (unit->_path->_weights[unit->_path->_idx_path] >= MAX_UNIT_MOVING_WEIGHT) {
+					/*if (unit->_path->_weights[unit->_path->_idx_path] >= MAX_UNIT_MOVING_WEIGHT) {
 						std::cout << "unit " << unit->_id << "stops : path weight\n";
 						unit->stop();
-					}
+					}*/
 				}
 			}
 			

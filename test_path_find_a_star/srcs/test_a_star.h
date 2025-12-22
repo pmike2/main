@@ -20,7 +20,7 @@ enum EDIT_MODE {ADDING_SOLID_OBSTACLE, ADDING_WATER_OBSTACLE, FREE, EDIT_ALTI};
 const uint NEW_PT_IN_POLYGON_MS = 300;
 const number CROSS_SIZE = 0.2;
 
-const glm::vec4 GRID_COLOR(0.8f, 0.8f, 0.7f, 1.0f);
+//const glm::vec4 GRID_COLOR(0.8f, 0.8f, 0.7f, 1.0f);
 const std::map<OBSTACLE_TYPE, glm::vec4> OBSTACLE_COLORS = {
 	{SOLID, glm::vec4(1.0f, 0.5f, 0.1f, 1.0f)},
 	{WATER, glm::vec4(0.1f, 0.5f, 0.9f, 1.0f)}
@@ -35,7 +35,7 @@ const std::map<std::string, glm::vec4> UNIT_COLORS = {
 	{"boat", glm::vec4(0.6f, 0.4f, 0.9f, 1.0f)}
 };
 const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
-const glm::vec4 PATH_COLOR(0.7f, 0.8f, 0.3f, 1.0f);
+//const glm::vec4 PATH_COLOR(0.7f, 0.8f, 0.3f, 1.0f);
 
 //const number ALTI_UNIT = 0.0;
 //const number ALTI_PATH = -0.1;

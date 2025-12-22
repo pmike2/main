@@ -185,7 +185,7 @@ struct Map {
 	void add_waiting_unit_to_position_grids(Unit * unit);
 	void add_moving_unit_to_position_grids(Unit * unit);
 	void remove_waiting_unit_from_position_grids(Unit * unit);
-	void remove_moving_unit_from_position_grids(Unit * unit);
+	void remove_moving_unit_from_position_grids(Unit * unit, bool remove_all=false);
 	void path_find(Unit * unit, pt_2d goal);
 	void clear();
 	void read_shapefile(std::string shp_path, pt_2d origin, pt_2d size, bool reverse_y=false);
