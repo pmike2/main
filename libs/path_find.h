@@ -25,7 +25,7 @@ const number MAX_UNIT_MOVING_WEIGHT = 100.0;
 const number UNIT_DIST_PATH_EPS = 0.05;
 
 
-enum UNIT_STATUS {WAITING, MOVING, COMPUTING_PATH, COMPUTING_PATH_DONE};
+enum UNIT_STATUS {WAITING, MOVING, COMPUTING_PATH, COMPUTING_PATH_DONE, COMPUTING_PATH_FAILED};
 std::string mode2str(UNIT_STATUS mode);
 
 enum OBSTACLE_TYPE {UNKNOWN, GROUND, SOLID, WATER};
@@ -61,10 +61,11 @@ struct Path {
 	~Path();
 	void clear();
 	bool empty();
-	pt_3d destination();
 	friend std::ostream & operator << (std::ostream & os, Path & p);
 
 
+	pt_2d _start;
+	pt_2d _goal;
 	std::vector<pt_3d> _pts;
 	std::vector<uint> _nodes;
 	std::vector<number> _weights;
@@ -99,7 +100,6 @@ struct Unit {
 	pt_3d _velocity;
 	std::queue<Instruction> _instructions;
 	time_point _last_anim_t;
-	std::thread _thr;
 };
 
 
@@ -152,12 +152,12 @@ bool frontier_cmp(std::pair<uint, number> x, std::pair<uint, number> y);
 struct PathFinder {
 	PathFinder();
 	~PathFinder();
-	number units_position_weight(GraphEdge edge, Unit * unit);
-	number cost(uint i, uint j, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit);
+	number units_position_weight(Unit * unit, GraphEdge edge);
+	number cost(Unit * unit, uint i, uint j, GraphGrid * static_grid, GraphGrid * units_position_grid);
 	number heuristic(uint i, uint j, GraphGrid * grid);
-	number line_of_sight_max_weight(pt_2d pt1, pt_2d pt2, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit);
-	bool path_find_nodes(uint start, uint goal, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit);
-	bool path_find(pt_2d start, pt_2d goal, GraphGrid * static_grid, GraphGrid * units_position_grid, Unit * unit);
+	number line_of_sight_max_weight(Unit * unit, pt_2d pt1, pt_2d pt2, GraphGrid * static_grid, GraphGrid * units_position_grid);
+	bool path_find_nodes(Unit * unit, uint start, uint goal, GraphGrid * static_grid, GraphGrid * units_position_grid);
+	bool path_find(Unit * unit, pt_2d goal, GraphGrid * static_grid, GraphGrid * units_position_grid);
 	void draw_svg(GraphGrid * grid, Path * path, std::string svg_path);
 
 
@@ -180,12 +180,13 @@ struct Map {
 	void update_alti_grid(GraphGrid * grid);
 	void update_alti_path(Unit * unit);
 	void update_static_grids();
-	//std::vector<std::pair<uint, uint> > unit_positions_edges(Unit * unit, UnitType * unit_type, int idx_path=-1);
 	void clear_position_grids();
+	std::vector<std::pair<uint, uint> > waiting_unit_positions_edges(Unit * unit, UnitType * unit_type);
+	std::vector<std::pair<uint, uint> > moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all);
 	void add_waiting_unit_to_position_grids(Unit * unit);
-	void add_moving_unit_to_position_grids(Unit * unit);
 	void remove_waiting_unit_from_position_grids(Unit * unit);
-	void remove_moving_unit_from_position_grids(Unit * unit, bool remove_all=false);
+	void add_moving_unit_to_position_grids(Unit * unit);
+	void remove_moving_unit_from_position_grids(Unit * unit, bool all);
 	void path_find(Unit * unit, pt_2d goal);
 	void clear();
 	void read_shapefile(std::string shp_path, pt_2d origin, pt_2d size, bool reverse_y=false);
@@ -210,6 +211,8 @@ struct Map {
 	Terrain * _terrain;
 	Elements * _elements;
 	bool _paused;
+	std::thread _path_find_thr;
+	bool _path_find_thr_active;
 };
 
 

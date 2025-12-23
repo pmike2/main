@@ -1,15 +1,15 @@
 {
 	"name" : "boat",
 	"size" : [1.0, 1.0, 0.5],
-	"max_velocity" : 0.001,
+	"max_velocity" : 0.002,
 	"weights" : {
 		"GROUND" : 1000.0,
 		"SOLID" : 1000.0,
 		"WATER" : 0.0
 	},
 	"elevation_coeffs" : [
-		{"min" : -1000.0, "max" : -0.1, "coeff" : 1000.0},
-		{"min" : -0.1, "max" : 0.1, "coeff" : 0.0},
-		{"min" : 0.1, "max" : 1000.0, "coeff" : 1000.0}
+		{"min" : -1000.0, "max" : -0.01, "coeff" : 1000.0},
+		{"min" : -0.01, "max" : 0.01, "coeff" : 0.0},
+		{"min" : 0.01, "max" : 1000.0, "coeff" : 1000.0}
 	]
 }

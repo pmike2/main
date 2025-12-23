@@ -217,6 +217,7 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 		_map->update_static_grids();
 		update_terrain();
 		update_grid();
+		update_elements();
 	}
 }
 

@@ -153,9 +153,7 @@ void init() {
 	
 	// --------------------------------------------------------------------------
 	view_system= new ViewSystem(progs, screengl);
-	view_system->_repere->_is_ground= false;
-	view_system->_repere->_is_repere= true;
-	view_system->_repere->_is_box= true;
+	view_system->_repere->_contexts["ground"]->_active= false;
 	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 0.0f, 1.0f, 100.0f);
 
 	// --------------------------------------------------------------------------
