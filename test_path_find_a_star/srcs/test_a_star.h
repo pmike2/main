@@ -15,20 +15,22 @@
 #include "repere.h"
 
 
-enum EDIT_MODE {ADDING_SOLID_OBSTACLE, ADDING_WATER_OBSTACLE, FREE, EDIT_ALTI};
+//enum EDIT_MODE {ADDING_SOLID_OBSTACLE, ADDING_WATER_OBSTACLE, FREE, EDIT_ALTI};
+enum EDIT_MODE {FREE, EDIT_ALTI};
 
 const uint NEW_PT_IN_POLYGON_MS = 300;
-const number CROSS_SIZE = 0.2;
+//const number CROSS_SIZE = 0.2;
 
 //const glm::vec4 GRID_COLOR(0.8f, 0.8f, 0.7f, 1.0f);
-const std::map<OBSTACLE_TYPE, glm::vec4> OBSTACLE_COLORS = {
+/*const std::map<OBSTACLE_TYPE, glm::vec4> OBSTACLE_COLORS = {
 	{SOLID, glm::vec4(1.0f, 0.5f, 0.1f, 1.0f)},
 	{WATER, glm::vec4(0.1f, 0.5f, 0.9f, 1.0f)}
 };
 const std::map<EDIT_MODE, glm::vec4> EDITED_OBSTACLE_COLORS = {
 	{ADDING_SOLID_OBSTACLE, glm::vec4(1.0f, 0.5f, 0.1f, 1.0f)},
 	{ADDING_WATER_OBSTACLE, glm::vec4(0.1f, 0.5f, 0.9f, 1.0f)}
-};
+};*/
+
 const std::map<std::string, glm::vec4> UNIT_COLORS = {
 	{"infantery", glm::vec4(1.0f, 0.7f, 0.2f, 1.0f)},
 	{"tank", glm::vec4(0.7f, 0.7f, 0.6f, 1.0f)},
@@ -39,12 +41,12 @@ const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
 
 //const number ALTI_UNIT = 0.0;
 //const number ALTI_PATH = -0.1;
-const number ALTI_OBSTACLE = -0.2;
+//const number ALTI_OBSTACLE = -0.2;
 //const number ALTI_CROSS = -0.3;
 //const number ALTI_EDGE = -0.4;
 //const number ALTI_TERRAIN = -0.5;
 
-const number Z_OFFSET_CROSS = 0.02;
+//const number Z_OFFSET_CROSS = 0.02;
 const number Z_OFFSET_EDGE = 0.05;
 const number Z_OFFSET_UNIT = 0.05;
 const number Z_OFFSET_PATH = 0.08;
@@ -59,13 +61,14 @@ public:
 	void draw_surface(std::string context_name);
 	void draw();
 	void anim(time_point t, InputState * input_state);
+	GraphGrid * get_visible_grid();
 	glm::vec4 get_edge_color();
 	void update_grid();
-	void update_obstacle();
+	//void update_obstacle();
 	void update_unit();
 	void update_path();
 	void update_debug();
-	void update_terrain();
+	void update_elevation();
 	void update_elements();
 	void update_all();
 	void update_text(InputState * input_state);
@@ -78,12 +81,13 @@ public:
 	
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	EDIT_MODE _mode;
-	std::vector<pt_2d> _obstacle_pts;
-	time_point _last_added_pt_t;
+	//std::vector<pt_2d> _obstacle_pts;
+	//time_point _last_added_pt_t;
 	Font * _font;
 	ViewSystem * _view_system;
 	Map * _map;
-	GraphGrid * _visible_grid;
+	std::string _visible_grid_type;
+	std::string _visible_grid_unit_type;
 };
 
 #endif

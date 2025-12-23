@@ -15,7 +15,7 @@ TestAStar::TestAStar() {
 TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t) :
 	_mode(FREE), _view_system(view_system)
 {
-	const uint n_buffers = 7;
+	const uint n_buffers = 6;
 	GLuint buffers[n_buffers];
 	glGenBuffers(n_buffers, buffers);
 
@@ -25,27 +25,27 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	
 	//_contexts["grid"]->_active = false;
 
-	_contexts["obstacle"]= new DrawContext(progs["repere"], buffers[1],
+	/*_contexts["obstacle"]= new DrawContext(progs["repere"], buffers[1],
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"world2clip_matrix"});*/
+
+	_contexts["unit"]= new DrawContext(progs["repere"], buffers[1],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 
-	_contexts["unit"]= new DrawContext(progs["repere"], buffers[2],
+	_contexts["path"]= new DrawContext(progs["repere"], buffers[2],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 
-	_contexts["path"]= new DrawContext(progs["repere"], buffers[3],
-		std::vector<std::string>{"position_in", "color_in"},
-		std::vector<std::string>{"world2clip_matrix"});
-
-	_contexts["terrain"]= new DrawContext(progs["light"], buffers[4],
+	_contexts["elevation"]= new DrawContext(progs["light"], buffers[3],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
-	_contexts["elements"]= new DrawContext(progs["light"], buffers[5],
+	_contexts["elements"]= new DrawContext(progs["light"], buffers[4],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
-	_contexts["debug"]= new DrawContext(progs["repere"], buffers[6],
+	_contexts["debug"]= new DrawContext(progs["repere"], buffers[5],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 
@@ -59,8 +59,8 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	//std::cout << *_map << "\n";
 	//_map->randomize();
 
-	//_visible_grid = _map->_static_grids[_map->_unit_types["boat"]];
-	_visible_grid = _map->_units_position_grids[_map->_unit_types["boat"]];
+	_visible_grid_unit_type = "boat";
+	_visible_grid_type = "units_position";
 
 	update_all();
 }
@@ -141,10 +141,11 @@ void TestAStar::draw_surface(std::string context_name) {
 
 
 void TestAStar::draw() {
-	for (auto context_name : std::vector<std::string>{"grid", "obstacle", "unit", "path", "debug"}) {
+	//for (auto context_name : std::vector<std::string>{"grid", "obstacle", "unit", "path", "debug"}) {
+	for (auto context_name : std::vector<std::string>{"grid", "unit", "path", "debug"}) {
 		draw_linear(context_name);
 	}
-	for (auto context_name : std::vector<std::string>{"terrain", "elements"}) {
+	for (auto context_name : std::vector<std::string>{"elevation", "elements"}) {
 		draw_surface(context_name);
 	}
 	_font->draw_3d(_view_system->_world2clip);
@@ -189,10 +190,10 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 		const number alti_inc_max = 1.0;
 		AABB_2D * aabb = new AABB_2D(pt_2d(pt) - pt_2d(alti_aabb_size * 0.5), pt_2d(alti_aabb_size));
 		_map->_elements->remove_in_aabb(aabb);
-		std::vector<uint> ids = _map->_terrain->get_ids_over_aabb(aabb);
+		std::vector<uint> ids = _map->_elevation->get_ids_over_aabb(aabb);
 		delete aabb;
 		for (auto id : ids) {
-			pt_2d pt2 = _map->_terrain->id2pt(id);
+			pt_2d pt2 = _map->_elevation->id2pt(id);
 			number dist = glm::distance(pt_2d(pt), pt2) / (alti_aabb_size * 0.5);
 			if (dist > 1.0) {
 				continue;
@@ -200,77 +201,74 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 			number alti_inc = alti_inc_max * (1.0 - dist * dist);
 
 			if (input_state->_keys[SDLK_LSHIFT]) {
-				_map->_terrain->_altis[id] -= alti_inc;
+				_map->_elevation->_altis[id] -= alti_inc;
 			}
 			else {
-				_map->_terrain->_altis[id] += alti_inc;
+				_map->_elevation->_altis[id] += alti_inc;
 			}
 		}
-		_map->_terrain->set_negative_alti_2zero();
 
-		for (auto grid : _map->_static_grids) {
-			_map->update_alti_grid(grid.second);
-		}
-		/*for (auto grid : _map->_unit_grids) {
-			_map->update_alti_grid(grid.second);
-		}*/
-		_map->update_static_grids();
-		update_terrain();
+		_map->_elevation->set_negative_alti_2zero();
+
+		_map->sync2elevation();
+
+		update_elevation();
 		update_grid();
 		update_elements();
 	}
 }
 
 
+GraphGrid * TestAStar::get_visible_grid() {
+	if (_visible_grid_type == "elevation") {
+		return _map->_path_finders[_map->_unit_types[_visible_grid_unit_type]]->_elevation_grid;
+	}
+	if (_visible_grid_type == "units_position") {
+		return _map->_path_finders[_map->_unit_types[_visible_grid_unit_type]]->_units_position_grid;
+	}
+	if (_visible_grid_type == "terrain") {
+		return _map->_path_finders[_map->_unit_types[_visible_grid_unit_type]]->_terrain_grid;
+	}
+	std::cerr << "TestAStar::get_visible_grid() error\n";
+	return NULL;
+}
+
+
 glm::vec4 TestAStar::get_edge_color() {
-	GraphEdge edge = _visible_grid->_it_e->second;
-	number edge_weight = edge._weight;
+	//return glm::vec4(1.0, 0.0, 0.0, 1.0);
+	GraphGrid * grid = get_visible_grid();
+
+	GraphEdge edge = grid->_it_e->second;
 	glm::vec4 edge_color;
-	if (_visible_grid == _map->_static_grids[_map->_unit_types["infantery"]]) {
-		if (edge_weight < 0.0) {
+
+	if (_visible_grid_type == "elevation") {
+		ElevationEdgeData * data = (ElevationEdgeData *)(edge._data);
+		if (data->_delta_elevation < 0.0) {
 			edge_color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
-		else if (edge_weight > 100.0) {
+		else if (data->_delta_elevation > 100.0) {
 			edge_color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
 		}
 		else {
-			edge_color = glm::vec4(float(edge_weight) / 100.0f, 1.0f - float(edge_weight) / 100.0f, 0.5f, 1.0f);
+			edge_color = glm::vec4(float(data->_delta_elevation) / 100.0f, 1.0f - float(data->_delta_elevation) / 100.0f, 0.5f, 1.0f);
 		}
 	}
-	else if (_visible_grid == _map->_static_grids[_map->_unit_types["boat"]]) {
-		if (edge_weight > 0.1 ) {
-			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-		}
-		else {
-			edge_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-		}
-	}
-	else if (_visible_grid == _map->_units_position_grids[_map->_unit_types["infantery"]]
-	|| _visible_grid == _map->_units_position_grids[_map->_unit_types["boat"]]) {
-		
-		/*edge_weight = fmod(edge_weight, 7.0);
-		if (edge_weight < 1.0) {
-			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
-		}
-		else if (edge_weight < 2.0) {
-			edge_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-		}
-		else if (edge_weight < 3.0) {
+	else if (_visible_grid_type == "terrain") {
+		TerrainEdgeData * data = (TerrainEdgeData *)(edge._data);
+		if (data->_type == WATER ) {
 			edge_color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
-		else if (edge_weight < 4.0) {
-			edge_color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
-		}
-		else if (edge_weight < 5.0) {
-			edge_color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
-		}
-		else if (edge_weight < 6.0) {
+		else if (data->_type == GROUND ) {
 			edge_color = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
+		}
+		else if (data->_type == OBSTACLE ) {
+			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
 		else {
 			edge_color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-		}*/
-
+		}
+	}
+	else if (_visible_grid_type == "units_position") {
 		UnitsPositionEdgeData * data = (UnitsPositionEdgeData *)(edge._data);
 		if (data->_ids.size() == 0) {
 			edge_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
@@ -293,60 +291,29 @@ void TestAStar::update_grid() {
 	context->_n_attrs_per_pts= 7;
 	context->_n_pts = 0;
 
-	// croix sommets
-	/*grid->_it_v= grid->_vertices.begin();
-	while (grid->_it_v!= grid->_vertices.end()) {
-		context->_n_pts += 4;
-		grid->_it_v++;
-	}*/
+	GraphGrid * visible_grid = get_visible_grid();
 
-	// edges
-	_visible_grid->_it_v= _visible_grid->_vertices.begin();
-	while (_visible_grid->_it_v!= _visible_grid->_vertices.end()) {
-		_visible_grid->_it_e= _visible_grid->_it_v->second._edges.begin();
-		while (_visible_grid->_it_e!= _visible_grid->_it_v->second._edges.end()) {
+	visible_grid->_it_v= visible_grid->_vertices.begin();
+	while (visible_grid->_it_v!= visible_grid->_vertices.end()) {
+		visible_grid->_it_e= visible_grid->_it_v->second._edges.begin();
+		while (visible_grid->_it_e!= visible_grid->_it_v->second._edges.end()) {
 			context->_n_pts += 2;
-			_visible_grid->_it_e++;
+			visible_grid->_it_e++;
 		}
-		_visible_grid->_it_v++;
+		visible_grid->_it_v++;
 	}
 
 	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
 
-	// croix sommets
-	/*grid->_it_v= grid->_vertices.begin();
-	while (grid->_it_v!= grid->_vertices.end()) {
-		pt_3d pos = grid->_it_v->second._pos;
-		number positions[8] = {
-			pos.x - CROSS_SIZE, pos.y - CROSS_SIZE, 
-			pos.x + CROSS_SIZE, pos.y + CROSS_SIZE, 
-			pos.x - CROSS_SIZE, pos.y + CROSS_SIZE, 
-			pos.x + CROSS_SIZE, pos.y - CROSS_SIZE
-		};
-		for (uint i=0; i<4; ++i) {
-			ptr[0] = float(positions[2 * i]);
-			ptr[1] = float(positions[2 * i + 1]);
-			//ptr[2] = float(ALTI_CROSS);
-			ptr[2] = float(pos.z + Z_OFFSET_CROSS);
-			ptr[3] = GRID_COLOR.r;
-			ptr[4] = GRID_COLOR.g;
-			ptr[5] = GRID_COLOR.b;
-			ptr[6] = GRID_COLOR.a;
-			ptr += 7;
-		}
-		grid->_it_v++;
-	}*/
-
-	// edges
-	_visible_grid->_it_v= _visible_grid->_vertices.begin();
-	while (_visible_grid->_it_v!= _visible_grid->_vertices.end()) {
-		_visible_grid->_it_e= _visible_grid->_it_v->second._edges.begin();
-		while (_visible_grid->_it_e!= _visible_grid->_it_v->second._edges.end()) {
+	visible_grid->_it_v= visible_grid->_vertices.begin();
+	while (visible_grid->_it_v!= visible_grid->_vertices.end()) {
+		visible_grid->_it_e= visible_grid->_it_v->second._edges.begin();
+		while (visible_grid->_it_e!= visible_grid->_it_v->second._edges.end()) {
 			glm::vec4 edge_color = get_edge_color();
 
-			pt_3d & p1 = _visible_grid->_it_v->second._pos;
-			pt_3d & p2 = _visible_grid->_vertices[_visible_grid->_it_e->first]._pos;
+			pt_3d & p1 = visible_grid->_it_v->second._pos;
+			pt_3d & p2 = visible_grid->_vertices[visible_grid->_it_e->first]._pos;
 			pt_3d p1b = p1 + (p2 - p1) * 0.1;
 			pt_3d p_middle = (p1 + p2) * 0.5 - (p2 - p1) * 0.1;
 			
@@ -370,9 +337,9 @@ void TestAStar::update_grid() {
 
 			ptr += 14;
 			
-			_visible_grid->_it_e++;
+			visible_grid->_it_e++;
 		}
-		_visible_grid->_it_v++;
+		visible_grid->_it_v++;
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -382,7 +349,8 @@ void TestAStar::update_grid() {
 	delete[] data;
 }
 
-void TestAStar::update_obstacle() {
+
+/*void TestAStar::update_obstacle() {
 	DrawContext * context= _contexts["obstacle"];
 	
 	context->_n_attrs_per_pts= 7;
@@ -454,7 +422,7 @@ void TestAStar::update_obstacle() {
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
+}*/
 
 
 void TestAStar::update_unit() {
@@ -610,7 +578,7 @@ void TestAStar::update_debug() {
 
 			ptr[0] = float(bbox->_pts[i].x);
 			ptr[1] = float(bbox->_pts[i].y);
-			ptr[2] = float(_map->_terrain->get_alti(bbox->_pts[i]) + 0.5);
+			ptr[2] = float(_map->_elevation->get_alti(bbox->_pts[i]) + 0.5);
 			ptr[3] = DEBUG_COLOR.r;
 			ptr[4] = DEBUG_COLOR.g;
 			ptr[5] = DEBUG_COLOR.b;
@@ -618,7 +586,7 @@ void TestAStar::update_debug() {
 
 			ptr[7] = float(bbox->_pts[j].x);
 			ptr[8] = float(bbox->_pts[j].y);
-			ptr[9] = float(_map->_terrain->get_alti(bbox->_pts[j]) + 0.5);
+			ptr[9] = float(_map->_elevation->get_alti(bbox->_pts[j]) + 0.5);
 			ptr[10] = DEBUG_COLOR.r;
 			ptr[11] = DEBUG_COLOR.g;
 			ptr[12] = DEBUG_COLOR.b;
@@ -645,23 +613,23 @@ void TestAStar::update_debug() {
 }
 
 
-void TestAStar::update_terrain() {
-	DrawContext * context= _contexts["terrain"];
+void TestAStar::update_elevation() {
+	DrawContext * context= _contexts["elevation"];
 
-	context->_n_pts = 6 * (_map->_terrain->_n_ligs - 1) * (_map->_terrain->_n_cols - 1);
+	context->_n_pts = 6 * (_map->_elevation->_n_ligs - 1) * (_map->_elevation->_n_cols - 1);
 	context->_n_attrs_per_pts = 10;
 
 	uint idx_tris[6] = {0, 1, 2, 0, 2, 3};
 	//float data[context->_n_pts* context->_n_attrs_per_pts]; // génère segfault car trop grand
 	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
-	for (uint col = 0; col<_map->_terrain->_n_cols - 1; ++col) {
-		for (uint lig = 0; lig<_map->_terrain->_n_ligs - 1; ++lig) {
+	for (uint col = 0; col<_map->_elevation->_n_cols - 1; ++col) {
+		for (uint lig = 0; lig<_map->_elevation->_n_ligs - 1; ++lig) {
 			pt_3d pts[4] = {
-				pt_3d(_map->_terrain->col_lig2pt(col, lig), _map->_terrain->get_alti(col, lig)),
-				pt_3d(_map->_terrain->col_lig2pt(col + 1, lig), _map->_terrain->get_alti(col + 1, lig)),
-				pt_3d(_map->_terrain->col_lig2pt(col + 1, lig + 1), _map->_terrain->get_alti(col + 1, lig + 1)),
-				pt_3d(_map->_terrain->col_lig2pt(col, lig + 1), _map->_terrain->get_alti(col, lig + 1))
+				pt_3d(_map->_elevation->col_lig2pt(col, lig), _map->_elevation->get_alti(col, lig)),
+				pt_3d(_map->_elevation->col_lig2pt(col + 1, lig), _map->_elevation->get_alti(col + 1, lig)),
+				pt_3d(_map->_elevation->col_lig2pt(col + 1, lig + 1), _map->_elevation->get_alti(col + 1, lig + 1)),
+				pt_3d(_map->_elevation->col_lig2pt(col, lig + 1), _map->_elevation->get_alti(col, lig + 1))
 			};
 
 			std::vector<pt_3d> normals;
@@ -688,7 +656,6 @@ void TestAStar::update_terrain() {
 
 				ptr[0] = float(pts[idx_tris[i]].x);
 				ptr[1] = float(pts[idx_tris[i]].y);
-				//ptr[2] = float(ALTI_TERRAIN);
 				ptr[2] = float(alti);
 				ptr[3] = color.r;
 				ptr[4] = color.g;
@@ -739,10 +706,10 @@ void TestAStar::update_elements() {
 
 void TestAStar::update_all() {
 	update_grid();
-	update_obstacle();
+	//update_obstacle();
 	update_unit();
 	update_path();
-	update_terrain();
+	update_elevation();
 	update_elements();
 }
 
@@ -805,11 +772,12 @@ bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 		std::cout << "\n";
 	}*/
 
-	if (_mode == ADDING_SOLID_OBSTACLE) {
+	/*if (_mode == ADDING_SOLID_OBSTACLE) {
 		_obstacle_pts.clear();
 		return true;
 	}
-	else if (_mode == FREE) {
+	else*/
+	if (_mode == FREE) {
 		if (input_state->_left_mouse) {
 			if (input_state->_keys[SDLK_i]) {
 				_map->add_unit("infantery", pt, t);
@@ -837,7 +805,7 @@ bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 
 
 bool TestAStar::mouse_button_up(InputState * input_state, time_point t) {
-	if (_mode == ADDING_SOLID_OBSTACLE) {
+	/*if (_mode == ADDING_SOLID_OBSTACLE) {
 		_map->add_obstacle(SOLID, _obstacle_pts);
 		_map->update_static_grids();
 		_obstacle_pts.clear();
@@ -847,20 +815,20 @@ bool TestAStar::mouse_button_up(InputState * input_state, time_point t) {
 	}
 	else if (_mode == ADDING_WATER_OBSTACLE) {
 		Obstacle * obstacle = _map->add_obstacle(WATER, _obstacle_pts);
-		_map->_terrain->set_alti_over_polygon(obstacle->_polygon, 0.0);
+		_map->_elevation->set_alti_over_polygon(obstacle->_polygon, 0.0);
 		_map->update_static_grids();
 		_obstacle_pts.clear();
 		update_grid();
 		update_obstacle();
-		update_terrain();
+		update_elevation();
 		return true;
-	}
+	}*/
 	return false;
 }
 
 
 bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
-	if ((_mode == ADDING_SOLID_OBSTACLE || _mode == ADDING_WATER_OBSTACLE) && input_state->_left_mouse) {
+	/*if ((_mode == ADDING_SOLID_OBSTACLE || _mode == ADDING_WATER_OBSTACLE) && input_state->_left_mouse) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_added_pt_t).count();
 		if (dt> NEW_PT_IN_POLYGON_MS) {
 			pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
@@ -868,7 +836,7 @@ bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
 		}
 		return true;
 	}
-	else if (_mode == EDIT_ALTI) {
+	else*/ if (_mode == EDIT_ALTI) {
 		// le code est dans anim
 		return true;
 	}
@@ -878,15 +846,15 @@ bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
 
 bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
 	if (key == SDLK_a) {
-		/*std::cout << _map->_terrain->get_alti(pt_2d(0.0, 0.0)) << " ; ";
-		std::cout << _map->_terrain->get_alti(pt_2d(-0.1, -0.1)) << " ; ";
-		std::cout << _map->_terrain->get_alti(pt_2d(0.1, 0.1)) << "\n";*/
+		/*std::cout << _map->_elevation->get_alti(pt_2d(0.0, 0.0)) << " ; ";
+		std::cout << _map->_elevation->get_alti(pt_2d(-0.1, -0.1)) << " ; ";
+		std::cout << _map->_elevation->get_alti(pt_2d(0.1, 0.1)) << "\n";*/
 		_contexts["debug"]->_active = !_contexts["debug"]->_active;
 		_contexts["unit"]->_active = !_contexts["unit"]->_active;
 		_contexts["path"]->_active = !_contexts["path"]->_active;
-		_contexts["obstacle"]->_active = !_contexts["obstacle"]->_active;
+		//_contexts["obstacle"]->_active = !_contexts["obstacle"]->_active;
 	}
-	if (key == SDLK_o) {
+	/*if (key == SDLK_o) {
 		_mode = ADDING_SOLID_OBSTACLE;
 		return true;
 	}
@@ -894,7 +862,7 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 		_mode = ADDING_WATER_OBSTACLE;
 		return true;
 	}
-	else if (key == SDLK_z) {
+	else*/ if (key == SDLK_z) {
 		_mode = EDIT_ALTI;
 		return true;
 	}
@@ -905,12 +873,26 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 	}
 	else if (key == SDLK_g) {
 		if (input_state->_keys[SDLK_LSHIFT]) {
-			if (_visible_grid == _map->_static_grids[_map->_unit_types["boat"]]) {
-				_visible_grid = _map->_units_position_grids[_map->_unit_types["boat"]];
+			if (_visible_grid_type == "elevation") {
+				_visible_grid_type = "units_position";
+			}
+			else if (_visible_grid_type == "units_position") {
+				_visible_grid_type = "terrain";
+			}
+			else if (_visible_grid_type == "terrain") {
+				_visible_grid_type = "elevation";
+			}
+			std::cout << "visible_grid_type = " << _visible_grid_type << " ; visible_grid_unit_type = " << _visible_grid_unit_type << "\n";
+			update_grid();
+		}
+		else if (input_state->_keys[SDLK_RSHIFT]) {
+			if (_visible_grid_unit_type == "boat") {
+				_visible_grid_unit_type = "infantery";
 			}
 			else {
-				_visible_grid = _map->_static_grids[_map->_unit_types["boat"]];
+				_visible_grid_unit_type = "boat";
 			}
+			std::cout << "visible_grid_type = " << _visible_grid_type << " ; visible_grid_unit_type = " << _visible_grid_unit_type << "\n";
 			update_grid();
 		}
 		else {
@@ -919,7 +901,7 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 		return true;
 	}
 	else if (key == SDLK_h) {
-		_contexts["terrain"]->_active = !_contexts["terrain"]->_active;
+		_contexts["elevation"]->_active = !_contexts["elevation"]->_active;
 		return true;
 	}
 	else if (key == SDLK_r) {
@@ -928,7 +910,9 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 		return true;
 	}
 	else if (key == SDLK_m) {
-		_map->_path_finder->_use_line_of_sight = !_map->_path_finder->_use_line_of_sight;
+		for (auto & path_finder : _map->_path_finders) {
+			path_finder.second->_use_line_of_sight = !path_finder.second->_use_line_of_sight;
+		}
 		return true;
 	}
 	else if (key == SDLK_l) {

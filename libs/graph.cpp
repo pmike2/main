@@ -10,29 +10,34 @@ Graph::Graph() {
 
 
 Graph::~Graph() {
-	
+	// le nettoyage de edge._data ne peut pas se faire ici car void * ici
+
+	/*_it_v= _vertices.begin();
+	while (_it_v!= _vertices.end()) {
+		_it_e= _it_v->second._edges.begin();
+		while (_it_e!= _it_v->second._edges.end()) {
+			if (_it_e->second._data != NULL) {
+				delete _it_e->second._data;
+			}
+			_it_e++;
+		}
+		_it_v++;
+	}*/
 }
 
-void Graph::add_vertex(uint i, pt_3d pos, number weight) {
+
+void Graph::add_vertex(uint i, pt_3d pos) {
 	if (!_vertices.count(i)) {
 		GraphVertex v= {};
-		v._weight= weight;
 		v._pos= pos;
 		_vertices[i]= v;
 	}
 }
 
 
-void Graph::add_edge(uint i, uint j, number weight, bool weight_is_dist) {
+void Graph::add_edge(uint i, uint j) {
 	if ((_vertices.count(i)) && (_vertices.count(j))) {
 		GraphEdge e= {};
-		if (weight_is_dist) {
-			e._weight= glm::distance(_vertices[i]._pos, _vertices[j]._pos);
-		}
-		else {
-			e._weight= weight;
-		}
-		
 		_vertices[i]._edges[j]= e;
 	}
 }
@@ -41,11 +46,6 @@ void Graph::add_edge(uint i, uint j, number weight, bool weight_is_dist) {
 void Graph::remove_vertex(uint i) {
 	if (_vertices.count(i)) {
 		_vertices.erase(i);
-
-		// lent
-		//for (pair<uint, Vertex> v : _vertices) {
-			//v.second._edges.erase(i);
-		//}
 
 		_it_v= _vertices.begin();
 		while (_it_v!= _vertices.end()) {
@@ -81,13 +81,13 @@ void Graph::clear() {
 }
 
 
-void Graph::reinit_weights() {
+/*void Graph::reinit_weights() {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
 		_it_v->second._weight= DEFAULT_EDGE_WEIGHT;
 		_it_v++;
 	}
-}
+}*/
 
 
 std::ostream & operator << (std::ostream & os, Graph & g) {
@@ -100,10 +100,10 @@ std::ostream & operator << (std::ostream & os, Graph & g) {
 		for (auto neighbor : l) {
 			std::cout << "\t-> " << neighbor;
 		}*/
-		std::cout << " ; edge weights = ";
+		/*std::cout << " ; edge weights = ";
 		for (auto edge : g._it_v->second._edges) {
 			std::cout << edge.second._weight << " ; ";
-		}
+		}*/
 		std::cout << "\n";
 
 		g._it_v++;

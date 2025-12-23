@@ -4,10 +4,10 @@
 	"max_velocity" : 0.002,
 	"weights" : {
 		"GROUND" : 1000.0,
-		"SOLID" : 1000.0,
+		"OBSTACLE" : 1000.0,
 		"WATER" : 0.0
 	},
-	"elevation_coeffs" : [
+	"delta_elevation_coeffs" : [
 		{"min" : -1000.0, "max" : -0.01, "coeff" : 1000.0},
 		{"min" : -0.01, "max" : 0.01, "coeff" : 0.0},
 		{"min" : 0.01, "max" : 1000.0, "coeff" : 1000.0}

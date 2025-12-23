@@ -119,6 +119,7 @@ public:
 	~Elements();
 	Tree * add_tree(std::string species_name, pt_3d pt_base, pt_3d size);
 	Stone * add_stone(pt_3d pt_base, pt_3d size);
+	void clear();
 	void remove_in_aabb(AABB_2D * aabb);
 
 

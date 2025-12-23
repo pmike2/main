@@ -410,10 +410,8 @@ Elements::Elements(std::string dir_tree_jsons) {
 
 
 Elements::~Elements() {
-	for (auto element : _elements) {
-		delete element;
-	}
-	_elements.clear();
+	clear();
+
 	for (auto species : _tree_species) {
 		delete species.second;
 	}
@@ -437,6 +435,14 @@ Stone * Elements::add_stone(pt_3d pt_base, pt_3d size) {
 	Stone * stone = new Stone(pt_base, size);
 	_elements.push_back(stone);
 	return stone;
+}
+
+
+void Elements::clear() {
+	for (auto element : _elements) {
+		delete element;
+	}
+	_elements.clear();
 }
 
 

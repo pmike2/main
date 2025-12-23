@@ -14,19 +14,19 @@
 #include "utile.h"
 
 
-const number DEFAULT_VERTEX_WEIGHT = 0.0;
+//const number DEFAULT_VERTEX_WEIGHT = 0.0;
 const number DEFAULT_EDGE_WEIGHT = 0.0;
 
 
 struct GraphEdge {
-	number _weight;
-	void * _data;
+	//number _weight;
+	void * _data = NULL;
 };
 
 
 struct GraphVertex {
 	pt_3d _pos;
-	number _weight;
+	//number _weight;
 	std::unordered_map<uint, GraphEdge> _edges;
 };
 
@@ -34,13 +34,13 @@ struct GraphVertex {
 struct Graph {
 	Graph();
 	~Graph();
-	void add_vertex(uint i, pt_3d pos=pt_3d(0.0), number weight=DEFAULT_VERTEX_WEIGHT);
-	void add_edge(uint i, uint j, number weight=DEFAULT_EDGE_WEIGHT, bool weight_is_dist=false);
+	void add_vertex(uint i, pt_3d pos=pt_3d(0.0));
+	void add_edge(uint i, uint j);
 	void remove_vertex(uint i);
 	void remove_edge(uint i, uint j);
 	std::vector<uint> neighbors(uint i);
 	void clear();
-	void reinit_weights();
+	//void reinit_weights();
 	friend std::ostream & operator << (std::ostream & os, Graph & g);
 
 
