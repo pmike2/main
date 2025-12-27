@@ -1,5 +1,7 @@
 #include <queue>
 #include <fstream>
+#include <tuple>
+#include <algorithm>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/type_ptr.hpp>
@@ -339,9 +341,15 @@ pt_2d Elevation::col_lig2pt(uint col, uint lig) {
 }
 
 
-pt_2d Elevation::id2pt(uint id) {
+pt_2d Elevation::id2pt_2d(uint id) {
 	std::pair<uint, uint> col_lig = id2col_lig(id);
 	return col_lig2pt(col_lig.first, col_lig.second);
+}
+
+
+pt_3d Elevation::id2pt_3d(uint id) {
+	pt_2d pt = id2pt_2d(id);
+	return pt_3d(pt.x, pt.y, get_alti(id));
 }
 
 
@@ -359,6 +367,11 @@ std::pair<uint, uint> Elevation::pt2col_lig(pt_2d pt) {
 uint Elevation::pt2id(pt_2d pt) {
 	std::pair<uint, uint> col_lig = pt2col_lig(pt);
 	return col_lig2id(col_lig.first, col_lig.second);
+}
+
+
+number Elevation::get_alti(uint id) {
+	return _altis[id];
 }
 
 
@@ -450,6 +463,81 @@ std::vector<uint> Elevation::get_ids_over_aabb(AABB_2D * aabb) {
 			result.push_back(col_lig2id(col, lig));
 		}
 	}
+	return result;
+}
+
+
+std::vector<uint> Elevation::get_neighbors(uint id) {
+	std::vector<uint> result;
+	std::pair<uint, uint> col_lig = id2col_lig(id);
+	uint col = col_lig.first;
+	uint lig = col_lig.second;
+	if (col > 0) {
+		result.push_back(col_lig2id(col - 1, lig));
+		if (lig > 0) {
+			result.push_back(col_lig2id(col - 1, lig - 1));
+		}
+		if (lig < _n_ligs - 1) {
+			result.push_back(col_lig2id(col - 1, lig + 1));
+		}
+	}
+	if (col < _n_cols - 1) {
+		result.push_back(col_lig2id(col + 1, lig));
+		if (lig > 0) {
+			result.push_back(col_lig2id(col + 1, lig - 1));
+		}
+		if (lig < _n_ligs - 1) {
+			result.push_back(col_lig2id(col + 1, lig + 1));
+		}
+	}
+	if (lig > 0) {
+		result.push_back(col_lig2id(col, lig - 1));
+	}
+	if (lig < _n_ligs - 1) {
+		result.push_back(col_lig2id(col, lig + 1));
+	}
+
+	std::sort(result.begin(), result.end());
+
+	return result;
+}
+
+
+pt_3d Elevation::get_normal(uint id) {
+	std::pair<uint, uint> col_lig = id2col_lig(id);
+	uint col = col_lig.first;
+	uint lig = col_lig.second;
+	std::vector<std::tuple<uint, uint, uint> > triangles;
+
+	if (col > 0) {
+		if (lig > 0) {
+			triangles.push_back(std::make_tuple(col_lig2id(col - 1, lig), col_lig2id(col - 1, lig - 1), id));
+			triangles.push_back(std::make_tuple(col_lig2id(col - 1, lig - 1), col_lig2id(col, lig - 1), id));
+		}
+		if (lig < _n_ligs - 1) {
+			triangles.push_back(std::make_tuple(col_lig2id(col - 1, lig + 1), col_lig2id(col - 1, lig), id));
+			triangles.push_back(std::make_tuple(col_lig2id(col, lig + 1), col_lig2id(col - 1, lig + 1), id));
+		}
+	}
+	if (col < _n_cols - 1) {
+		if (lig > 0) {
+			triangles.push_back(std::make_tuple(col_lig2id(col, lig - 1), col_lig2id(col + 1, lig - 1), id));
+			triangles.push_back(std::make_tuple(col_lig2id(col + 1, lig - 1), col_lig2id(col + 1, lig), id));
+		}
+		if (lig < _n_ligs - 1) {
+			triangles.push_back(std::make_tuple(col_lig2id(col + 1, lig), col_lig2id(col + 1, lig + 1), id));
+			triangles.push_back(std::make_tuple(col_lig2id(col + 1, lig + 1), col_lig2id(col, lig + 1), id));
+		}
+	}
+
+	pt_3d result(0.0);
+	for (auto & triangle : triangles) {
+		pt_3d u = glm::normalize(id2pt_3d(std::get<1>(triangle)) - id2pt_3d(std::get<0>(triangle)));
+		pt_3d v = glm::normalize(id2pt_3d(std::get<2>(triangle)) - id2pt_3d(std::get<0>(triangle)));
+		result += glm::cross(u, v);
+	}
+	result = glm::normalize(result);
+	
 	return result;
 }
 
@@ -620,6 +708,117 @@ void Elevation::alti2pbm(std::string pbm_path) {
 		fprintf(f, "\n");
 	}
 	fclose(f);
+}
+
+
+// River ---------------------------------------------------------------------------
+River::River() {
+
+}
+
+
+River::River(Elevation * elevation, pt_2d src) : _elevation(elevation) {
+
+	uint id_current = _elevation->pt2id(src);
+	number alti_current = _elevation->get_alti(id_current);
+	while (true) {
+		_id_nodes.push_back(id_current);
+		std::vector<uint> neighbors = _elevation->get_neighbors(id_current);
+		number alti_min = 1e7;
+		uint id_next = 0;
+		for (auto & id : neighbors) {
+			number alti_id = _elevation->get_alti(id);
+			if (alti_id < alti_min) {
+				alti_min = alti_id;
+				id_next = id;
+			}
+		}
+		if (alti_min <= 0.0 || alti_min > alti_current) {
+			break;
+		}
+		id_current = id_next;
+	}
+
+	uint n_attrs_per_pts= 10;
+	_n_pts = 6 * (_id_nodes.size() - 1);
+	_data = new float[_n_pts * n_attrs_per_pts];
+	update_data();
+}
+
+
+River::~River() {
+	delete _data;
+}
+
+
+void River::update_data() {
+	//std::vector<number> widths;
+	std::vector<std::tuple<pt_3d, pt_3d, pt_3d, pt_3d> > triangles;
+	for (uint i=0; i<_id_nodes.size() - 1; ++i) {
+		//widths.push_back(1.0);
+		//BBox_2D * bbox = new BBox_2D(1.0, pt_2d(_grid->_vertices[i]._pos), pt_2d(_grid->_vertices[i + 1]._pos));
+		//delete bbox;
+		
+		/*std::pair<uint, uint> col_lig_1 = _grid->id2col_lig(_id_nodes[i]);
+		std::pair<uint, uint> col_lig_2 = _grid->id2col_lig(_id_nodes[i + 1]);
+		std::pair<int, int> offsets[4];
+		if (col_lig_2.first == col_lig_1.first + 1 && col_lig_2.second == col_lig_1.second) {
+			offsets[0] = std::make_pair(0, -1);
+			offsets[1] = std::make_pair(1, -1);
+			offsets[2] = std::make_pair(1, 1);
+			offsets[3] = std::make_pair(0, 1);
+		}
+		else if (col_lig_2.first == col_lig_1.first && col_lig_2.second == col_lig_1.second + 1) {
+			offsets[0] = std::make_pair(-1, 0);
+			offsets[1] = std::make_pair(1, 0);
+			offsets[2] = std::make_pair(1, 1);
+			offsets[3] = std::make_pair(-1, 0);
+		}
+		else if (col_lig_2.first == col_lig_1.first && col_lig_2.second == col_lig_1.second + 1) {
+			offsets[0] = std::make_pair(-1, 0);
+			offsets[1] = std::make_pair(1, 0);
+			offsets[2] = std::make_pair(1, 1);
+			offsets[3] = std::make_pair(-1, 0);
+		}*/
+
+		pt_3d pt_begin = _elevation->id2pt_3d(_id_nodes[i]);
+		pt_3d pt_end = _elevation->id2pt_3d(_id_nodes[i + 1]);
+		number length = glm::length(pt_end - pt_begin);
+		pt_3d u = (pt_end - pt_begin) / length;
+		pt_3d normal = _elevation->get_normal(_id_nodes[i]);
+		pt_3d v = glm::cross(normal, u);
+		number width = 1.0;
+		pt_3d pt0 = pt_begin - 0.5 * width * v;
+		pt_3d pt1 = pt_begin - 0.5 * width * v + length * u;
+		pt_3d pt2 = pt_begin + 0.5 * width * v + length * u;
+		pt_3d pt3 = pt_begin + 0.5 * width * v;
+		/*for (auto & pt : std::vector<pt_3d>{pt0, pt1, pt2, pt3}) {
+			
+		}*/
+		triangles.push_back(std::make_tuple(pt0, pt1, pt2, normal));
+		triangles.push_back(std::make_tuple(pt0, pt2, pt3, normal));
+	}
+
+	float * ptr = _data;
+	glm::vec4 RIVER_COLOR(0.4, 0.5, 0.9, 1.0);
+	for (auto & triangle : triangles) {
+		std::vector<pt_3d> pts = {std::get<0>(triangle), std::get<1>(triangle), std::get<2>(triangle)};
+		glm::vec3 normal = std::get<3>(triangle);
+
+		for (uint i=0; i<3; ++i) {
+			ptr[0] = pts[i].x;
+			ptr[1] = pts[i].y;
+			ptr[2] = pts[i].z;
+			ptr[3] = RIVER_COLOR.r;
+			ptr[4] = RIVER_COLOR.g;
+			ptr[5] = RIVER_COLOR.b;
+			ptr[6] = RIVER_COLOR.a;
+			ptr[7] = normal.x;
+			ptr[8] = normal.y;
+			ptr[9] = normal.z;
+			ptr += 10;
+		}
+	}
 }
 
 
@@ -1234,6 +1433,11 @@ void Map::add_static_element(std::string element_name, pt_3d pos, pt_3d size) {
 			data->_type = OBSTACLE;
 		}
 	}
+}
+
+
+void Map::add_river(pt_2d src) {
+	_rivers.push_back(new River(_elevation, src));
 }
 
 

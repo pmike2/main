@@ -15,7 +15,7 @@ TestAStar::TestAStar() {
 TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t) :
 	_mode(FREE), _view_system(view_system)
 {
-	const uint n_buffers = 6;
+	const uint n_buffers = 7;
 	GLuint buffers[n_buffers];
 	glGenBuffers(n_buffers, buffers);
 
@@ -45,7 +45,11 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
-	_contexts["debug"]= new DrawContext(progs["repere"], buffers[5],
+	_contexts["river"]= new DrawContext(progs["light"], buffers[5],
+		std::vector<std::string>{"position_in", "color_in", "normal_in"},
+		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
+
+	_contexts["debug"]= new DrawContext(progs["repere"], buffers[6],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 
@@ -145,7 +149,7 @@ void TestAStar::draw() {
 	for (auto context_name : std::vector<std::string>{"grid", "unit", "path", "debug"}) {
 		draw_linear(context_name);
 	}
-	for (auto context_name : std::vector<std::string>{"elevation", "elements"}) {
+	for (auto context_name : std::vector<std::string>{"elevation", "elements", "river"}) {
 		draw_surface(context_name);
 	}
 	_font->draw_3d(_view_system->_world2clip);
@@ -193,7 +197,7 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 		std::vector<uint> ids = _map->_elevation->get_ids_over_aabb(aabb);
 		delete aabb;
 		for (auto id : ids) {
-			pt_2d pt2 = _map->_elevation->id2pt(id);
+			pt_2d pt2 = _map->_elevation->id2pt_2d(id);
 			number dist = glm::distance(pt_2d(pt), pt2) / (alti_aabb_size * 0.5);
 			if (dist > 1.0) {
 				continue;
@@ -678,22 +682,45 @@ void TestAStar::update_elevation() {
 
 
 void TestAStar::update_elements() {
-
-	uint n_pts = 0;
-	for (auto element : _map->_elements->_elements) {
-		n_pts += element->_n_pts;
-	}
-
 	DrawContext * context= _contexts["elements"];
-	context->_n_pts= n_pts;
+
+	context->_n_pts = 0;
+	for (auto & element : _map->_elements->_elements) {
+		context->_n_pts += element->_n_pts;
+	}
 	context->_n_attrs_per_pts= 10;
 
 	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 
 	uint compt = 0;
-	for (auto element : _map->_elements->_elements) {
+	for (auto & element : _map->_elements->_elements) {
 		for (uint i=0; i<element->_n_pts * context->_n_attrs_per_pts; ++i) {
 			data[compt++] = element->_data[i];
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	delete[] data;
+}
+
+
+void TestAStar::update_river() {
+	DrawContext * context= _contexts["river"];
+
+	context->_n_pts = 0;
+	for (auto & river : _map->_rivers) {
+		context->_n_pts += river->_n_pts;
+	}
+	context->_n_attrs_per_pts= 10;
+
+	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
+
+	uint compt = 0;
+	for (auto & river : _map->_rivers) {
+		for (uint i=0; i<river->_n_pts * context->_n_attrs_per_pts; ++i) {
+			data[compt++] = river->_data[i];
 		}
 	}
 
@@ -711,6 +738,7 @@ void TestAStar::update_all() {
 	update_path();
 	update_elevation();
 	update_elements();
+	update_river();
 }
 
 
@@ -798,6 +826,11 @@ bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 				_map->selected_units_goto(pt, t);
 				return true;
 			}
+			else if (input_state->_keys[SDLK_w]) {
+				_map->add_river(pt);
+				update_river();
+				return true;
+			}
 		}
 	}
 	return false;
@@ -854,15 +887,7 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 		_contexts["path"]->_active = !_contexts["path"]->_active;
 		//_contexts["obstacle"]->_active = !_contexts["obstacle"]->_active;
 	}
-	/*if (key == SDLK_o) {
-		_mode = ADDING_SOLID_OBSTACLE;
-		return true;
-	}
-	else if (key == SDLK_w) {
-		_mode = ADDING_WATER_OBSTACLE;
-		return true;
-	}
-	else*/ if (key == SDLK_z) {
+	else if (key == SDLK_z) {
 		_mode = EDIT_ALTI;
 		return true;
 	}

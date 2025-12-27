@@ -271,6 +271,7 @@ Tree::~Tree() {
 	}
 	_branches.clear();
 	delete _data;
+	delete _aabb;
 }
 
 
@@ -371,6 +372,7 @@ Stone::Stone(pt_3d pt_base, pt_3d size) : Element(pt_base, size) {
 Stone::~Stone() {
 	delete _hull;
 	delete _data;
+	delete _aabb;
 }
 
 
@@ -395,7 +397,7 @@ void Stone::update_data() {
 }
 
 
-// Forest ---------------------------------------------------------------------------------------------------------
+// Elements ---------------------------------------------------------------------------------------------------------
 Elements::Elements() {
 
 }

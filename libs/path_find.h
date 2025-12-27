@@ -122,13 +122,17 @@ struct Elevation {
 	std::pair<uint, uint> id2col_lig(uint id);
 	uint col_lig2id(uint col, uint lig);
 	pt_2d col_lig2pt(uint col, uint lig);
-	pt_2d id2pt(uint id);
+	pt_2d id2pt_2d(uint id);
+	pt_3d id2pt_3d(uint id);
 	std::pair<uint, uint> pt2col_lig(pt_2d pt);
 	uint pt2id(pt_2d pt);
+	number get_alti(uint id);
 	number get_alti(int col, int lig);
 	number get_alti(pt_2d pt);
 	number get_alti_over_polygon(Polygon2D * polygon);
 	std::vector<uint> get_ids_over_aabb(AABB_2D * aabb);
+	std::vector<uint> get_neighbors(uint id);
+	pt_3d get_normal(uint id);
 	void set_alti(int col, int lig, number alti);
 	void set_alti_over_polygon(Polygon2D * polygon, number alti);
 	void set_alti_all(number alti);
@@ -144,6 +148,22 @@ struct Elevation {
 	uint _n_cols;
 	number * _altis;
 };
+
+
+struct River {
+	River();
+	River(Elevation * elevation, pt_2d src);
+	~River();
+	void update_data();
+	
+
+	Elevation * _elevation;
+	std::vector<uint> _id_nodes;
+	float * _data;
+	uint _n_pts;
+};
+
+
 
 
 bool frontier_cmp(std::pair<uint, number> x, std::pair<uint, number> y);
@@ -193,6 +213,7 @@ struct Map {
 	~Map();
 	void add_unit(std::string type_name, pt_2d pos, time_point t);
 	void add_static_element(std::string element_name, pt_3d pos, pt_3d size);
+	void add_river(pt_2d src);
 	
 	void update_alti_grid(GraphGrid * grid);
 	void update_alti_path(Unit * unit);
@@ -229,6 +250,7 @@ struct Map {
 	std::map<UnitType *, PathFinder *> _path_finders;
 	Elevation * _elevation;
 	Elements * _elements;
+	std::vector<River * > _rivers;
 
 	bool _paused;
 	std::thread _path_find_thr;

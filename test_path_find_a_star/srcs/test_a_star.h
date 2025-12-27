@@ -70,6 +70,7 @@ public:
 	void update_debug();
 	void update_elevation();
 	void update_elements();
+	void update_river();
 	void update_all();
 	void update_text(InputState * input_state);
 	bool mouse_button_down(InputState * input_state, time_point t);

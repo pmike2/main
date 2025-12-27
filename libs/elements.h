@@ -13,6 +13,7 @@
 #include "geom_2d.h"
 #include "geom.h"
 #include "convex_hull.h"
+#include "graph.h"
 
 
 const uint BRANCH_N_POINTS_PER_CIRCLE = 6;
