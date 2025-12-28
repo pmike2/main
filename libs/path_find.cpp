@@ -719,10 +719,11 @@ River::River() {
 
 River::River(Elevation * elevation, pt_2d src) : _elevation(elevation) {
 
+	std::cout << "river begin\n";
 	uint id_current = _elevation->pt2id(src);
-	number alti_current = _elevation->get_alti(id_current);
 	while (true) {
 		_id_nodes.push_back(id_current);
+		number alti_current = _elevation->get_alti(id_current);
 		std::vector<uint> neighbors = _elevation->get_neighbors(id_current);
 		number alti_min = 1e7;
 		uint id_next = 0;
@@ -733,15 +734,54 @@ River::River(Elevation * elevation, pt_2d src) : _elevation(elevation) {
 				id_next = id;
 			}
 		}
-		if (alti_min <= 0.0 || alti_min > alti_current) {
+		// >= car juste > implique bcle infinie va-et-vient entre 2 ids
+		if (alti_min <= 0.0 || alti_min >= alti_current) {
 			break;
 		}
+		//std::cout << id_current << " ; " << alti_current << " ; " << id_next << " ; " << alti_min << "\n";
 		id_current = id_next;
 	}
+	
+std::cout << "river triangles\n";
+	for (uint i=0; i<_id_nodes.size() - 1; ++i) {
+		pt_3d pt_begin = _elevation->id2pt_3d(_id_nodes[i]);
+		pt_3d pt_end = _elevation->id2pt_3d(_id_nodes[i + 1]);
+		number length = glm::length(pt_end - pt_begin);
+		pt_3d u = (pt_end - pt_begin) / length;
+		pt_3d normal = _elevation->get_normal(_id_nodes[i]);
+		pt_3d v = glm::cross(normal, u);
+		//number width = rand_number(0.1, 0.5);
+		//number width = 0.5;
+		number width = 0.1 + 0.4 * number(i) / number(_id_nodes.size() - 2);
+		number offset = 0.3;
+		pt_3d pt0 = pt_begin - 0.5 * width * v + offset * length * u;
+		pt_3d pt1 = pt_begin - 0.5 * width * v + (1.0 - offset) * length * u;
+		pt_3d pt2 = pt_begin + 0.5 * width * v + (1.0 - offset) * length * u;
+		pt_3d pt3 = pt_begin + 0.5 * width * v + offset * length * u;
+
+		_triangles.push_back(std::make_tuple(pt0, pt1, pt2, normal));
+		_triangles.push_back(std::make_tuple(pt0, pt2, pt3, normal));
+	}
+
+std::cout << "river jointures\n";
+	std::vector<std::tuple<pt_3d, pt_3d, pt_3d, pt_3d> > triangles_jointure;
+	for (uint i=0; i<=(_triangles.size() - 4) / 2; ++i) {
+		pt_3d pt0 = std::get<1>(_triangles[2 * i]);
+		pt_3d pt1 = std::get<0>(_triangles[2 * i + 3]);
+		pt_3d pt2 = std::get<2>(_triangles[2 * i + 3]);
+		pt_3d pt3 = std::get<2>(_triangles[2 * i]);
+		pt_3d normal = glm::normalize(std::get<3>(_triangles[2 * i]) + std::get<3>(_triangles[2 * i + 3]));
+
+		triangles_jointure.push_back(std::make_tuple(pt0, pt1, pt2, normal));
+		triangles_jointure.push_back(std::make_tuple(pt0, pt2, pt3, normal));
+	}
+
+	_triangles.insert(_triangles.end(), triangles_jointure.begin(), triangles_jointure.end());
 
 	uint n_attrs_per_pts= 10;
-	_n_pts = 6 * (_id_nodes.size() - 1);
+	_n_pts = 3 * _triangles.size();
 	_data = new float[_n_pts * n_attrs_per_pts];
+	std::cout << "river end\n";
 	update_data();
 }
 
@@ -752,82 +792,95 @@ River::~River() {
 
 
 void River::update_data() {
-	//std::vector<number> widths;
-	std::vector<std::tuple<pt_3d, pt_3d, pt_3d, pt_3d> > triangles;
-	for (uint i=0; i<_id_nodes.size() - 1; ++i) {
-		//widths.push_back(1.0);
-		//BBox_2D * bbox = new BBox_2D(1.0, pt_2d(_grid->_vertices[i]._pos), pt_2d(_grid->_vertices[i + 1]._pos));
-		//delete bbox;
-		
-		/*std::pair<uint, uint> col_lig_1 = _grid->id2col_lig(_id_nodes[i]);
-		std::pair<uint, uint> col_lig_2 = _grid->id2col_lig(_id_nodes[i + 1]);
-		std::pair<int, int> offsets[4];
-		if (col_lig_2.first == col_lig_1.first + 1 && col_lig_2.second == col_lig_1.second) {
-			offsets[0] = std::make_pair(0, -1);
-			offsets[1] = std::make_pair(1, -1);
-			offsets[2] = std::make_pair(1, 1);
-			offsets[3] = std::make_pair(0, 1);
-		}
-		else if (col_lig_2.first == col_lig_1.first && col_lig_2.second == col_lig_1.second + 1) {
-			offsets[0] = std::make_pair(-1, 0);
-			offsets[1] = std::make_pair(1, 0);
-			offsets[2] = std::make_pair(1, 1);
-			offsets[3] = std::make_pair(-1, 0);
-		}
-		else if (col_lig_2.first == col_lig_1.first && col_lig_2.second == col_lig_1.second + 1) {
-			offsets[0] = std::make_pair(-1, 0);
-			offsets[1] = std::make_pair(1, 0);
-			offsets[2] = std::make_pair(1, 1);
-			offsets[3] = std::make_pair(-1, 0);
-		}*/
-
-		pt_3d pt_begin = _elevation->id2pt_3d(_id_nodes[i]);
-		pt_3d pt_end = _elevation->id2pt_3d(_id_nodes[i + 1]);
-		number length = glm::length(pt_end - pt_begin);
-		pt_3d u = (pt_end - pt_begin) / length;
-		pt_3d normal = _elevation->get_normal(_id_nodes[i]);
-		pt_3d v = glm::cross(normal, u);
-		number width = 1.0;
-		pt_3d pt0 = pt_begin - 0.5 * width * v;
-		pt_3d pt1 = pt_begin - 0.5 * width * v + length * u;
-		pt_3d pt2 = pt_begin + 0.5 * width * v + length * u;
-		pt_3d pt3 = pt_begin + 0.5 * width * v;
-		/*for (auto & pt : std::vector<pt_3d>{pt0, pt1, pt2, pt3}) {
-			
-		}*/
-		triangles.push_back(std::make_tuple(pt0, pt1, pt2, normal));
-		triangles.push_back(std::make_tuple(pt0, pt2, pt3, normal));
-	}
-
+	std::cout << "river update\n";
+	const number RIVER_Z_OFFSET = 0.1;
+	const glm::vec4 RIVER_COLOR(0.5, 0.7, 0.9, 1.0);
+	const glm::vec4 RIVER_COLOR_DEBUG(0.9, 0.3, 0.3, 1.0);
 	float * ptr = _data;
-	glm::vec4 RIVER_COLOR(0.4, 0.5, 0.9, 1.0);
-	for (auto & triangle : triangles) {
+	uint debug = 0;
+	for (auto & triangle : _triangles) {
 		std::vector<pt_3d> pts = {std::get<0>(triangle), std::get<1>(triangle), std::get<2>(triangle)};
-		glm::vec3 normal = std::get<3>(triangle);
+		pt_3d normal = std::get<3>(triangle);
 
 		for (uint i=0; i<3; ++i) {
-			ptr[0] = pts[i].x;
-			ptr[1] = pts[i].y;
-			ptr[2] = pts[i].z;
+			ptr[0] = float(pts[i].x);
+			ptr[1] = float(pts[i].y);
+			ptr[2] = float(pts[i].z + RIVER_Z_OFFSET);
+			if (debug < (2 * _id_nodes.size() - 1)) {
 			ptr[3] = RIVER_COLOR.r;
 			ptr[4] = RIVER_COLOR.g;
 			ptr[5] = RIVER_COLOR.b;
 			ptr[6] = RIVER_COLOR.a;
-			ptr[7] = normal.x;
-			ptr[8] = normal.y;
-			ptr[9] = normal.z;
+			}
+			else {
+			ptr[3] = RIVER_COLOR_DEBUG.r;
+			ptr[4] = RIVER_COLOR_DEBUG.g;
+			ptr[5] = RIVER_COLOR_DEBUG.b;
+			ptr[6] = RIVER_COLOR_DEBUG.a;
+			}
+			ptr[7] = float(normal.x);
+			ptr[8] = float(normal.y);
+			ptr[9] = float(normal.z);
 			ptr += 10;
 		}
+		debug++;
 	}
+	std::cout << "river update end\n";
+}
+
+
+// Lake ----------------------------------------------------------------
+Lake::Lake() {
+
+}
+
+
+Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation) {
+	uint id_src = _elevation->pt2id(src);
+	std::queue<uint> frontier;
+	std::vector<uint> checked;
+	frontier.push(id_src);
+	
+	while (!frontier.empty()) {
+		uint id = frontier.front();
+		frontier.pop();
+		number alti = _elevation->get_alti(id);
+		checked.push_back(id);
+		std::cout << id << " ; " << frontier.size() << " ; " << checked.size() << " ; " << "\n";
+
+		std::vector<uint> id_neighbors = _elevation->get_neighbors(id);
+		for (auto & id_n : id_neighbors) {
+			if (std::find(checked.begin(), checked.end(), id_n) == checked.end()) {
+				continue;
+			}
+			number alti_n = _elevation->get_alti(id_n);
+			if (alti_n < alti) {
+				if (std::find(_id_nodes.begin(), _id_nodes.end(), id) == _id_nodes.end()) {
+					_id_nodes.push_back(id);
+				}
+			}
+			else if (std::find(checked.begin(), checked.end(), id_n) == checked.end()) {
+				frontier.push(id_n);
+				checked.push_back(id_n);
+			}
+		}
+	}
+
+	update_data();
+}
+
+
+Lake::~Lake() {
+	delete _data;
+}
+
+
+void Lake::update_data() {
+
 }
 
 
 // ----------------------------------------------------------------------------------------
-bool frontier_cmp(std::pair<uint, number> x, std::pair<uint, number> y) {
-	return x.second> y.second;
-}
-
-
 PathFinder::PathFinder() {
 	
 }
@@ -938,7 +991,8 @@ number PathFinder::line_of_sight_max_weight(Unit * unit, pt_2d pt1, pt_2d pt2) {
 
 
 bool PathFinder::path_find_nodes(Unit * unit, uint start, uint goal) {
-	std::priority_queue< std::pair<uint, number>, std::vector<std::pair<uint, number> >, decltype(&frontier_cmp) > frontier(frontier_cmp);
+	auto frontier_cmp = [](std::pair<uint, number> x, std::pair<uint, number> y) { return x.second > y.second; };
+	std::priority_queue< std::pair<uint, number>, std::vector<std::pair<uint, number> >, decltype(frontier_cmp) > frontier(frontier_cmp);
 	std::unordered_map<uint, uint> came_from;
 	std::unordered_map<uint, number> cost_so_far;
 
@@ -1351,14 +1405,14 @@ Map::Map() {
 }
 
 
-Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d Elevation_resolution, time_point t) :
+Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t) :
 	_origin(origin), _size(size), _paused(false), _path_find_thr_active(false)
 {
 	uint n_ligs_path = uint(_size.y / path_resolution.y) + 1;
 	uint n_cols_path = uint(_size.x / path_resolution.x) + 1;
 
-	uint n_ligs_elevation = uint(_size.y / Elevation_resolution.y) + 1;
-	uint n_cols_elevation = uint(_size.x / Elevation_resolution.x) + 1;
+	uint n_ligs_elevation = uint(_size.y / elevation_resolution.y) + 1;
+	uint n_cols_elevation = uint(_size.x / elevation_resolution.x) + 1;
 
 	_elevation = new Elevation(_origin, _size, n_ligs_elevation, n_cols_elevation);
 
@@ -1438,6 +1492,11 @@ void Map::add_static_element(std::string element_name, pt_3d pos, pt_3d size) {
 
 void Map::add_river(pt_2d src) {
 	_rivers.push_back(new River(_elevation, src));
+}
+
+
+void Map::add_lake(pt_2d src) {
+	_lakes.push_back(new Lake(_elevation, src));
 }
 
 
@@ -1893,11 +1952,15 @@ void Map::selected_units_goto(pt_2d pt, time_point t) {
 
 
 void Map::randomize() {
+	std::cout << "random begin\n";
 	clear();
 	
 	_elevation->randomize();
+	std::cout << "random 1\n";
 	
 	sync2elevation();
+
+	std::cout << "random 2\n";
 
 	for (uint i=0; i<1000; ++i) {
 		std::string element_name = std::vector<std::string>{"tree_test", "stone"}[rand_int(0, 1)];
@@ -1914,6 +1977,7 @@ void Map::randomize() {
 			add_static_element(element_name, pt_3d(pt.x, pt.y, alti), size);
 		}
 	}
+	std::cout << "random end\n";
 }
 
 

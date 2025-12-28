@@ -23,7 +23,7 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 	
-	//_contexts["grid"]->_active = false;
+	_contexts["grid"]->_active = false;
 
 	/*_contexts["obstacle"]= new DrawContext(progs["repere"], buffers[1],
 		std::vector<std::string>{"position_in", "color_in"},
@@ -67,6 +67,11 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	_visible_grid_type = "units_position";
 
 	update_all();
+
+	/*std::vector<uint> v= _map->_elevation->get_neighbors(1000);
+	for (auto x : v) {
+		std::cout << x << " ; ";
+	}std::cout << "\n";*/
 }
 
 
@@ -545,35 +550,42 @@ void TestAStar::update_debug() {
 	context->_n_attrs_per_pts= 7;
 	context->_n_pts = 0;
 
-	if (_map->_units.empty()) {
+	/*if (_map->_units.empty()) {
 		context->_active = false;
-		/*glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
-		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);*/
 		return;
 	}
 
 	std::vector<BBox_2D *> bboxs = _map->_units[0]->_path->_bboxs;
 	if (bboxs.empty()) {
 		context->_active = false;
-		/*glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
-		glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);*/
 		return;
 	}
 
-	context->_active = true;
 	for (auto & bbox : bboxs) {
 		context->_n_pts += 8;
+	}*/
+
+	/*if (_map->_rivers.empty()) {
+		context->_active = false;
+		return;
 	}
+	context->_n_pts = 2 * (_map->_rivers[0]->_id_nodes.size() - 1);*/
 	
-	glm::vec4 DEBUG_COLOR(1.0, 0.8, 0.7, 1.0);
+	if (_map->_lakes.empty()) {
+		context->_active = false;
+		return;
+	}
+	context->_n_pts = 2 * _map->_lakes[0]->_id_nodes.size();
+
+	context->_active = true;
+
+	glm::vec4 DEBUG_COLOR(1.0, 0.0, 0.0, 1.0);
+	glm::vec4 DEBUG_COLOR2(0.0, 1.0, 0.0, 1.0);
 
 	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
 
-	uint compt = 0;
-	for (auto & bbox : bboxs) {
+	/*for (auto & bbox : bboxs) {
 		for (uint i=0; i<4; ++i) {
 			uint j = i + 1;
 			if (j == 4) {
@@ -597,10 +609,36 @@ void TestAStar::update_debug() {
 			ptr[13] = DEBUG_COLOR.a;
 
 			ptr += 14;
-			compt++;
 		}
+	}*/
+
+	//for (uint i=0; i<_map->_rivers[0]->_id_nodes.size() - 1; ++i) {
+		//pt_3d pt1 = _map->_elevation->id2pt_3d(_map->_rivers[0]->_id_nodes[i]);
+		//pt_3d pt2 = _map->_elevation->id2pt_3d(_map->_rivers[0]->_id_nodes[i + 1]);
+		//pt_3d pt2 = pt1 + _map->_elevation->get_normal(_map->_rivers[0]->_id_nodes[i]);
+	
+	for (uint i=0; i<_map->_lakes[0]->_id_nodes.size(); ++i) {
+		pt_3d pt1 = _map->_elevation->id2pt_3d(_map->_lakes[0]->_id_nodes[i]);
+		pt_3d pt2 = pt1 + pt_3d(0.2);
+
+		ptr[0] = float(pt1.x);
+		ptr[1] = float(pt1.y);
+		ptr[2] = float(pt1.z);
+		ptr[3] = DEBUG_COLOR.r;
+		ptr[4] = DEBUG_COLOR.g;
+		ptr[5] = DEBUG_COLOR.b;
+		ptr[6] = DEBUG_COLOR.a;
+
+		ptr[7] = float(pt2.x);
+		ptr[8] = float(pt2.y);
+		ptr[9] = float(pt2.z);
+		ptr[10] = DEBUG_COLOR.r;
+		ptr[11] = DEBUG_COLOR.g;
+		ptr[12] = DEBUG_COLOR.b;
+		ptr[13] = DEBUG_COLOR.a;
+
+		ptr += 14;
 	}
-	//std::cout << "compt = " << compt << " ; data_size=" << context->_n_pts* context->_n_attrs_per_pts << "\n";
 
 	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
 		if (i % 7 == 0) {
@@ -749,6 +787,12 @@ void TestAStar::update_text(InputState * input_state) {
 	for (auto unit : _map->_units) {
 		texts_3d.push_back(Text3D(unit->_type->_name + " " + std::to_string(unit->_id), glm::vec3(unit->_aabb->_vmin)+ glm::vec3(0.1, 0.1, 0.5), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
+
+	if (!_map->_rivers.empty()) {
+		for (uint i=0; i<_map->_rivers[0]->_id_nodes.size(); ++i) {
+			texts_3d.push_back(Text3D(std::to_string(i), _map->_elevation->id2pt_3d(_map->_rivers[0]->_id_nodes[i]), 0.005, glm::vec4(0.9f, 0.8f, 0.8f, 1.0f)));
+		}
+	}
 	_font->set_text(texts_3d);
 
 	std::vector<Text> texts_2d;
@@ -827,8 +871,10 @@ bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 				return true;
 			}
 			else if (input_state->_keys[SDLK_w]) {
-				_map->add_river(pt);
-				update_river();
+				//_map->add_river(pt);
+				//update_river();
+				_map->add_lake(pt);
+				update_debug();
 				return true;
 			}
 		}
@@ -954,8 +1000,9 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 		return true;
 	}
 	else if (key == SDLK_SPACE) {
-		update_grid();
+		//update_grid();
 		update_debug();
+		_contexts["river"]->_active = !_contexts["river"]->_active;
 		return true;
 	}
 	return false;

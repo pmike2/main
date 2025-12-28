@@ -159,14 +159,24 @@ struct River {
 
 	Elevation * _elevation;
 	std::vector<uint> _id_nodes;
+	std::vector<std::tuple<pt_3d, pt_3d, pt_3d, pt_3d> > _triangles;
 	float * _data;
 	uint _n_pts;
 };
 
 
+struct Lake {
+	Lake();
+	Lake(Elevation * elevation, pt_2d src);
+	~Lake();
+	void update_data();
 
-
-bool frontier_cmp(std::pair<uint, number> x, std::pair<uint, number> y);
+	Elevation * _elevation;
+	std::vector<uint> _id_nodes;
+	std::vector<std::tuple<pt_3d, pt_3d, pt_3d, pt_3d> > _triangles;
+	float * _data;
+	uint _n_pts;
+};
 
 
 struct PathFinder {
@@ -209,11 +219,12 @@ struct TerrainEdgeData {
 
 struct Map {
 	Map();
-	Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d terrain_resolution, time_point t);
+	Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t);
 	~Map();
 	void add_unit(std::string type_name, pt_2d pos, time_point t);
 	void add_static_element(std::string element_name, pt_3d pos, pt_3d size);
 	void add_river(pt_2d src);
+	void add_lake(pt_2d src);
 	
 	void update_alti_grid(GraphGrid * grid);
 	void update_alti_path(Unit * unit);
@@ -251,6 +262,7 @@ struct Map {
 	Elevation * _elevation;
 	Elements * _elements;
 	std::vector<River * > _rivers;
+	std::vector<Lake *> _lakes;
 
 	bool _paused;
 	std::thread _path_find_thr;
