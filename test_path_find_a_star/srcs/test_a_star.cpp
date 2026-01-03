@@ -617,9 +617,10 @@ void TestAStar::update_debug() {
 		//pt_3d pt2 = _map->_elevation->id2pt_3d(_map->_rivers[0]->_id_nodes[i + 1]);
 		//pt_3d pt2 = pt1 + _map->_elevation->get_normal(_map->_rivers[0]->_id_nodes[i]);
 	
-	for (uint i=0; i<_map->_lakes[0]->_id_nodes.size(); ++i) {
-		pt_3d pt1 = _map->_elevation->id2pt_3d(_map->_lakes[0]->_id_nodes[i]);
-		pt_3d pt2 = pt1 + pt_3d(0.2);
+	Lake * lake = _map->_lakes[_map->_lakes.size() - 1];
+	for (uint i=0; i<lake->_id_nodes.size(); ++i) {
+		pt_3d pt1 = _map->_elevation->id2pt_3d(lake->_id_nodes[i]) + pt_3d(0.0, 0.0, 0.2);
+		pt_3d pt2 = pt1 + pt_3d(0.1, 0.1, 0.0);
 
 		ptr[0] = float(pt1.x);
 		ptr[1] = float(pt1.y);

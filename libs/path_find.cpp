@@ -323,6 +323,22 @@ Elevation::~Elevation() {
 }
 
 
+bool Elevation::in_boundaries(int col, int lig) {
+	if (col < 0 || lig < 0 || col >= _n_cols || lig >= _n_ligs) {
+		return false;
+	}
+	return true;
+}
+
+
+bool Elevation::in_boundaries(pt_2d pt) {
+	if (pt.x < _origin.x || pt.x > _origin.x + _size.x || pt.y < _origin.y || pt.y > _origin.y + _size.y) {
+		return false;
+	}
+	return true;
+}
+
+
 std::pair<uint, uint> Elevation::id2col_lig(uint id) {
 	return std::make_pair(id % _n_cols, id/ _n_cols);
 }
@@ -354,7 +370,7 @@ pt_3d Elevation::id2pt_3d(uint id) {
 
 
 std::pair<uint, uint> Elevation::pt2col_lig(pt_2d pt) {
-	if (pt.x < _origin.x || pt.x > _origin.x + _size.x || pt.y < _origin.y || pt.y > _origin.y + _size.y) {
+	if (!in_boundaries(pt)) {
 		std::cerr << "Elevation::pt2col_lig : " << glm::to_string(pt) << " hors Elevation\n";
 		return std::make_pair(0, 0);
 	}
@@ -376,7 +392,7 @@ number Elevation::get_alti(uint id) {
 
 
 number Elevation::get_alti(int col, int lig) {
-	if (col < 0 || lig < 0 || col >= _n_cols || lig >= _n_ligs) {
+	if (!in_boundaries(col, lig)) {
 		std::cerr << "Elevation::get_alti : (" << col << " ; " << lig << ") hors Elevation (2!)\n";
 		return 0.0;
 	}
@@ -388,7 +404,7 @@ number Elevation::get_alti(pt_2d pt) {
 	//std::pair<uint, uint> col_lig = pt2col_lig(pt);
 	//return get_alti(col_lig.first, col_lig.second);
 	
-	if (pt.x < _origin.x || pt.x > _origin.x + _size.x || pt.y < _origin.y || pt.y > _origin.y + _size.y) {
+	if (!in_boundaries(pt)) {
 		std::cerr << "Elevation::get_alti : " << glm::to_string(pt) << " hors Elevation\n";
 		return 0.0;
 	}
@@ -538,6 +554,44 @@ pt_3d Elevation::get_normal(uint id) {
 	}
 	result = glm::normalize(result);
 	
+	return result;
+}
+
+
+std::vector<uint> Elevation::lowest_gradient(uint id_src) {
+	std::vector<uint> result;
+	uint id_current = id_src;
+	
+	while (true) {
+		result.push_back(id_current);
+		number alti_current = get_alti(id_current);
+		std::vector<uint> neighbors = get_neighbors(id_current);
+		number alti_min = 1e7;
+		uint id_next = 0;
+		for (auto & id : neighbors) {
+			if (std::find(result.begin(), result.end(), id) != result.end()) {
+				continue;
+			}
+			number alti_id = get_alti(id);
+			if (alti_id < alti_min) {
+				alti_min = alti_id;
+				id_next = id;
+			}
+		}
+		
+		if (alti_min <= 0.0) {
+			result.push_back(id_next);
+			break;
+		}
+
+		if (alti_min > alti_current) {
+			break;
+		}
+
+		//std::cout << id_current << " ; " << alti_current << " ; " << id_next << " ; " << alti_min << "\n";
+		id_current = id_next;
+	}
+
 	return result;
 }
 
@@ -720,27 +774,8 @@ River::River() {
 River::River(Elevation * elevation, pt_2d src) : _elevation(elevation) {
 
 	std::cout << "river begin\n";
-	uint id_current = _elevation->pt2id(src);
-	while (true) {
-		_id_nodes.push_back(id_current);
-		number alti_current = _elevation->get_alti(id_current);
-		std::vector<uint> neighbors = _elevation->get_neighbors(id_current);
-		number alti_min = 1e7;
-		uint id_next = 0;
-		for (auto & id : neighbors) {
-			number alti_id = _elevation->get_alti(id);
-			if (alti_id < alti_min) {
-				alti_min = alti_id;
-				id_next = id;
-			}
-		}
-		// >= car juste > implique bcle infinie va-et-vient entre 2 ids
-		if (alti_min <= 0.0 || alti_min >= alti_current) {
-			break;
-		}
-		//std::cout << id_current << " ; " << alti_current << " ; " << id_next << " ; " << alti_min << "\n";
-		id_current = id_next;
-	}
+	uint id_src = _elevation->pt2id(src);
+	_id_nodes = _elevation->lowest_gradient(id_src);
 	
 std::cout << "river triangles\n";
 	for (uint i=0; i<_id_nodes.size() - 1; ++i) {
@@ -837,34 +872,133 @@ Lake::Lake() {
 
 Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation) {
 	uint id_src = _elevation->pt2id(src);
+	std::vector<uint> id_nodes_src = _elevation->lowest_gradient(id_src);
+	uint id_lowest = id_nodes_src[id_nodes_src.size() - 1];
+	if (_elevation->get_alti(id_lowest) <= 0.0) {
+		std::cerr << "Lake impossible lowest pt alti <= 0.0\n";
+		return;
+	}
+
+	// std::pair<uint, uint> col_lig = _elevation->id2col_lig(id_lowest);
+	// int size = 1000;
+	// std::vector<uint> id_nodes;
+	// for (int col = int(col_lig.first) - size; col < int(col_lig.first) + size; ++col) {
+	// 	for (int lig = int(col_lig.second) - size; lig < int(col_lig.second) + size; ++lig) {
+	// 		if (!_elevation->in_boundaries(col, lig)) {
+	// 			continue;
+	// 		}
+
+	// 		uint id = _elevation->col_lig2id(uint(col), uint(lig));
+	// 		std::vector<uint> l_ids = _elevation->lowest_gradient(id);
+	// 		if (l_ids[l_ids.size() - 1] == id_lowest) {
+	// 			id_nodes.push_back(id);
+	// 		}
+	// 	}
+	// }
+
+	// for (auto & id : id_nodes) {
+	// 	std::vector<uint> id_neighbors = _elevation->get_neighbors(id);
+	// 	bool is_in_frontier = false;
+	// 	for (auto & id_n : id_neighbors) {
+	// 		if (std::find(id_nodes.begin(), id_nodes.end(), id_n) == id_nodes.end()) {
+	// 			is_in_frontier = true;
+	// 			break;
+	// 		}
+	// 	}
+	// 	if (is_in_frontier) {
+	// 		_id_nodes.push_back(id);
+	// 	}
+	// }
+
 	std::queue<uint> frontier;
 	std::vector<uint> checked;
-	frontier.push(id_src);
+	frontier.push(id_lowest);
+	checked.push_back(id_lowest);
+	//number current_alti = _elevation->get_alti(id_lowest);
+	//number alti_max = 1e9;
+
+	number alti_max = _elevation->get_alti(id_lowest) + 0.2;
 	
 	while (!frontier.empty()) {
 		uint id = frontier.front();
 		frontier.pop();
 		number alti = _elevation->get_alti(id);
-		checked.push_back(id);
-		std::cout << id << " ; " << frontier.size() << " ; " << checked.size() << " ; " << "\n";
+
+		if (alti < alti_max) {
+			_id_nodes.push_back(id);
+		}
+
+		//std::cout << "alti = " << alti << "\n";
+
+		/*if (alti < current_alti) {
+			continue;
+		}*/
+
+		//_id_nodes.push_back(id);
+
+		//std::cout << id << " ; " << frontier.size() << " ; " << checked.size() << " ; " << "\n";
 
 		std::vector<uint> id_neighbors = _elevation->get_neighbors(id);
+
 		for (auto & id_n : id_neighbors) {
-			if (std::find(checked.begin(), checked.end(), id_n) == checked.end()) {
+			if (std::find(checked.begin(), checked.end(), id_n) != checked.end()) {
 				continue;
 			}
+			checked.push_back(id_n);
+
+
 			number alti_n = _elevation->get_alti(id_n);
-			if (alti_n < alti) {
-				if (std::find(_id_nodes.begin(), _id_nodes.end(), id) == _id_nodes.end()) {
-					_id_nodes.push_back(id);
-				}
+
+			//std::cout << "\talti_n = " << alti_n << "\n";
+
+			/*if (alti_n >= current_alti) {
+				frontier.push(id_n);
+			}*/
+
+			if (alti_n < alti_max) {
+				frontier.push(id_n);
+			}
+		}
+			
+	}
+
+	/*std::cout << "alti_max = " << alti_max << " ; checked.size() = " << checked.size() << "\n";
+
+	checked.clear();
+	frontier.push(id_lowest);
+
+	while (!frontier.empty()) {
+		uint id = frontier.front();
+		frontier.pop();
+		number alti = _elevation->get_alti(id);
+
+		std::cout << "alti = " << alti << "\n";
+
+		if (alti > alti_max) {
+			continue;
+		}
+
+		_id_nodes.push_back(id);
+
+		std::vector<uint> id_neighbors = _elevation->get_neighbors(id);
+
+		for (auto & id_n : id_neighbors) {
+			if (std::find(checked.begin(), checked.end(), id_n) != checked.end()) {
+				continue;
+			}
+
+			number alti_n = _elevation->get_alti(id_n);
+
+			if (alti_n <= alti) {
 			}
 			else if (std::find(checked.begin(), checked.end(), id_n) == checked.end()) {
 				frontier.push(id_n);
 				checked.push_back(id_n);
 			}
 		}
-	}
+	}*/
+
+	std::cout << _id_nodes.size() << "\n";
 
 	update_data();
 }
@@ -1974,7 +2108,7 @@ void Map::randomize() {
 		pt_2d pt = rand_pt(_origin + 0.5 * pt_2d(size.x, size.y)+ 0.1, _origin + _size - 0.5 * pt_2d(size.x, size.y)- 0.1);
 		number alti = _elevation->get_alti(pt);
 		if (alti > 0.01) {
-			add_static_element(element_name, pt_3d(pt.x, pt.y, alti), size);
+			//add_static_element(element_name, pt_3d(pt.x, pt.y, alti), size);
 		}
 	}
 	std::cout << "random end\n";

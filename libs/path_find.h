@@ -119,6 +119,8 @@ struct Elevation {
 	Elevation();
 	Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols);
 	~Elevation();
+	bool in_boundaries(int col, int lig);
+	bool in_boundaries(pt_2d pt);
 	std::pair<uint, uint> id2col_lig(uint id);
 	uint col_lig2id(uint col, uint lig);
 	pt_2d col_lig2pt(uint col, uint lig);
@@ -133,6 +135,7 @@ struct Elevation {
 	std::vector<uint> get_ids_over_aabb(AABB_2D * aabb);
 	std::vector<uint> get_neighbors(uint id);
 	pt_3d get_normal(uint id);
+	std::vector<uint> lowest_gradient(uint id_src);
 	void set_alti(int col, int lig, number alti);
 	void set_alti_over_polygon(Polygon2D * polygon, number alti);
 	void set_alti_all(number alti);
