@@ -202,6 +202,12 @@ pt_2d GraphGrid::col_lig2pt(uint col, uint lig) {
 }
 
 
+pt_2d GraphGrid::id2pt(uint id) {
+	std::pair<uint, uint> col_lig = id2col_lig(id);
+	return col_lig2pt(col_lig.first, col_lig.second);
+}
+
+
 std::pair<uint, uint> GraphGrid::pt2col_lig(pt_2d pt) {
 	int col= (int)(((pt.x- _origin.x)/ _size.x)* (number)(_n_cols- 1));
 	int lig= (int)(((pt.y- _origin.y)/ _size.y)* (number)(_n_ligs- 1));
@@ -437,6 +443,94 @@ std::vector<uint> GraphGrid::vertices_in_cell_containing_pt(pt_2d pt) {
 	uint id_left_top = col_lig2id(col_lig.first, col_lig.second + 1);
 	uint id_right_top = col_lig2id(col_lig.first + 1, col_lig.second + 1);	
 	std::vector<uint> result = {id_left_bottom, id_right_bottom, id_left_top, id_right_top};
+	return result;
+}
+
+
+std::pair<int, int> GraphGrid::next_direction(std::pair<int, int> u) {
+	if (u.first == 1 && u.second == 0) {
+		return std::make_pair(1, 1);
+	}
+	else if (u.first == 1 && u.second == 1) {
+		return std::make_pair(0, 1);
+	}
+	else if (u.first == 0 && u.second == 1) {
+		return std::make_pair(-1, 1);
+	}
+	else if (u.first == -1 && u.second == 1) {
+		return std::make_pair(-1, 0);
+	}
+	else if (u.first == -1 && u.second == 0) {
+		return std::make_pair(-1, -1);
+	}
+	else if (u.first == -1 && u.second == -1) {
+		return std::make_pair(0, -1);
+	}
+	else if (u.first == 0 && u.second == -1) {
+		return std::make_pair(1, -1);
+	}
+	else if (u.first == 1 && u.second == -1) {
+		return std::make_pair(1, 0);
+	}
+	
+	std::cerr << "GraphGrid::next_direction error\n";
+	return std::make_pair(0, 0);
+}
+
+
+uint GraphGrid::angle(std::pair<int, int> u, std::pair<int, int> v) {
+	uint result = 0;
+	std::pair<int, int> d = u;
+	while (d.first != v.first && d.second != v.second) {
+		result++;
+		d = next_direction(d);
+	}
+	return result;
+}
+
+
+Polygon2D * GraphGrid::ids2polygon(std::vector<uint> ids) {
+	Polygon2D * result = new Polygon2D();
+	std::vector<pt_2d> pts;
+
+	uint id_max_col = 0;
+	number max_col = -1e9;
+	for (auto & id : ids) {
+		std::pair<uint, uint> col_lig = id2col_lig(id);
+		if (col_lig.first > max_col) {
+			max_col = col_lig.first;
+			id_max_col = id;
+		}
+	}
+
+	uint current_id = id_max_col;
+	std::pair<int, int> current_direction = std::make_pair(1, 0);
+	while (true) {
+		pts.push_back(id2pt(current_id));
+		std::vector<uint> ids_neighbors = neighbors(current_id);
+		std::pair<uint, uint> current_col_lig = id2col_lig(current_id);
+		uint next_id = 0;
+		uint min_angle = 1e9;
+
+		for (auto & id_neighbor : ids_neighbors) {
+			if (std::find(ids.begin(), ids.end(), id_neighbor)!= ids.end()) {
+				std::pair<uint, uint> neighbour_col_lig = id2col_lig(id_neighbor);
+				std::pair<int, int> direction = std::make_pair(neighbour_col_lig.first - current_col_lig.first, neighbour_col_lig.second - current_col_lig.second);
+				uint a = angle(current_direction, direction);
+				if (a < min_angle) {
+					min_angle = a;
+					next_id = id_neighbor;
+				}
+			}
+		}
+
+		current_id = next_id;
+		if (current_id == id_max_col) {
+			break;
+		}
+	}
+
+	result->set_points(pts);
 	return result;
 }
 

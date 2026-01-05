@@ -1,5 +1,5 @@
-#ifndef TEST_GEOM
-#define TEST_GEOM
+#ifndef STRATEGY
+#define STRATEGY
 
 #include <string>
 #include <vector>
@@ -7,12 +7,13 @@
 #include <OpenGL/gl3.h>
 #include <glm/glm.hpp>
 
-#include "path_find.h"
 #include "gl_utils.h"
 #include "input_state.h"
 #include "font.h"
 #include "typedefs.h"
 #include "repere.h"
+
+#include "map.h"
 
 
 //enum EDIT_MODE {ADDING_SOLID_OBSTACLE, ADDING_WATER_OBSTACLE, FREE, EDIT_ALTI};
@@ -52,11 +53,11 @@ const number Z_OFFSET_UNIT = 0.05;
 const number Z_OFFSET_PATH = 0.08;
 
 
-class TestAStar {
+class Strategy {
 public:
-	TestAStar();
-	TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t);
-	~TestAStar();
+	Strategy();
+	Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t);
+	~Strategy();
 	void draw_linear(std::string context_name);
 	void draw_surface(std::string context_name);
 	void draw();
@@ -71,6 +72,7 @@ public:
 	void update_elevation();
 	void update_elements();
 	void update_river();
+	void update_lake();
 	void update_all();
 	void update_text(InputState * input_state);
 	bool mouse_button_down(InputState * input_state, time_point t);

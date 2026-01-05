@@ -28,6 +28,30 @@ AABB_2D::AABB_2D(const AABB_2D & aabb) {
 }
 
 
+AABB_2D::AABB_2D(const std::vector<pt_2d> & pts) {
+	pt_2d pos_min = pt_2d(1e9);
+	pt_2d pos_max = pt_2d(-1e9);
+
+	for (auto & pt : pts) {
+		if (pt.x < pos_min.x) {
+			pos_min.x = pt.x;
+		}
+		if (pt.y < pos_min.y) {
+			pos_min.y = pt.y;
+		}
+		if (pt.x > pos_max.x) {
+			pos_max.x = pt.x;
+		}
+		if (pt.y > pos_max.y) {
+			pos_max.y = pt.y;
+		}
+	}
+
+	_pos = pos_min;
+	_size = pos_max - pos_min;
+}
+
+
 AABB_2D::~AABB_2D() {
 
 }

@@ -5,7 +5,8 @@
 	"weights" : {
 		"GROUND" : 1000.0,
 		"OBSTACLE" : 1000.0,
-		"WATER" : 0.0
+		"WATER" : 0.0,
+		"COAST" : 0.0
 	},
 	"delta_elevation_coeffs" : [
 		{"min" : -1000.0, "max" : -0.01, "coeff" : 1000.0},

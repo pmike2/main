@@ -3,19 +3,19 @@
 
 #include <glm/gtc/type_ptr.hpp>
 
-#include "test_a_star.h"
+#include "strategy.h"
 
 
 // -------------------------------------------------
-TestAStar::TestAStar() {
+Strategy::Strategy() {
 
 }
 
 
-TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t) :
+Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t) :
 	_mode(FREE), _view_system(view_system)
 {
-	const uint n_buffers = 7;
+	const uint n_buffers = 8;
 	GLuint buffers[n_buffers];
 	glGenBuffers(n_buffers, buffers);
 
@@ -49,7 +49,11 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
-	_contexts["debug"]= new DrawContext(progs["repere"], buffers[6],
+	_contexts["lake"]= new DrawContext(progs["light"], buffers[6],
+		std::vector<std::string>{"position_in", "color_in", "normal_in"},
+		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
+
+	_contexts["debug"]= new DrawContext(progs["repere"], buffers[7],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 
@@ -61,7 +65,7 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-50.0, -50.0), pt_2d(100.0, 100.0), pt_2d(1.0), pt_2d(0.25), t);
 	//_map = new Map("../data/unit_types", pt_2d(0.0, 0.0), pt_2d(10.0, 10.0), pt_2d(2.0), pt_2d(2.0), t);
 	//std::cout << *_map << "\n";
-	//_map->randomize();
+	_map->randomize();
 
 	_visible_grid_unit_type = "boat";
 	_visible_grid_type = "units_position";
@@ -75,7 +79,7 @@ TestAStar::TestAStar(std::map<std::string, GLuint> progs, ViewSystem * view_syst
 }
 
 
-TestAStar::~TestAStar() {
+Strategy::~Strategy() {
 	delete _map;
 	for (auto context : _contexts) {
 		delete context.second;
@@ -85,7 +89,7 @@ TestAStar::~TestAStar() {
 }
 
 
-void TestAStar::draw_linear(std::string context_name) {
+void Strategy::draw_linear(std::string context_name) {
 	DrawContext * context= _contexts[context_name];
 	if (!context->_active) {
 		return;
@@ -113,7 +117,7 @@ void TestAStar::draw_linear(std::string context_name) {
 }
 
 
-void TestAStar::draw_surface(std::string context_name) {
+void Strategy::draw_surface(std::string context_name) {
 	DrawContext * context= _contexts[context_name];
 	if (!context->_active) {
 		return;
@@ -149,12 +153,12 @@ void TestAStar::draw_surface(std::string context_name) {
 }
 
 
-void TestAStar::draw() {
+void Strategy::draw() {
 	//for (auto context_name : std::vector<std::string>{"grid", "obstacle", "unit", "path", "debug"}) {
 	for (auto context_name : std::vector<std::string>{"grid", "unit", "path", "debug"}) {
 		draw_linear(context_name);
 	}
-	for (auto context_name : std::vector<std::string>{"elevation", "elements", "river"}) {
+	for (auto context_name : std::vector<std::string>{"elevation", "elements", "river", "lake"}) {
 		draw_surface(context_name);
 	}
 	_font->draw_3d(_view_system->_world2clip);
@@ -162,7 +166,7 @@ void TestAStar::draw() {
 }
 
 
-void TestAStar::anim(time_point t, InputState * input_state) {
+void Strategy::anim(time_point t, InputState * input_state) {
 	//pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 	pt_3d pt = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 
@@ -228,7 +232,7 @@ void TestAStar::anim(time_point t, InputState * input_state) {
 }
 
 
-GraphGrid * TestAStar::get_visible_grid() {
+GraphGrid * Strategy::get_visible_grid() {
 	if (_visible_grid_type == "elevation") {
 		return _map->_path_finders[_map->_unit_types[_visible_grid_unit_type]]->_elevation_grid;
 	}
@@ -238,12 +242,12 @@ GraphGrid * TestAStar::get_visible_grid() {
 	if (_visible_grid_type == "terrain") {
 		return _map->_path_finders[_map->_unit_types[_visible_grid_unit_type]]->_terrain_grid;
 	}
-	std::cerr << "TestAStar::get_visible_grid() error\n";
+	std::cerr << "Strategy::get_visible_grid() error\n";
 	return NULL;
 }
 
 
-glm::vec4 TestAStar::get_edge_color() {
+glm::vec4 Strategy::get_edge_color() {
 	//return glm::vec4(1.0, 0.0, 0.0, 1.0);
 	GraphGrid * grid = get_visible_grid();
 
@@ -273,6 +277,9 @@ glm::vec4 TestAStar::get_edge_color() {
 		else if (data->_type == OBSTACLE ) {
 			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
+		else if (data->_type == COAST ) {
+			edge_color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+		}
 		else {
 			edge_color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
@@ -294,7 +301,7 @@ glm::vec4 TestAStar::get_edge_color() {
 }
 
 
-void TestAStar::update_grid() {
+void Strategy::update_grid() {
 	DrawContext * context= _contexts["grid"];
 	
 	context->_n_attrs_per_pts= 7;
@@ -359,7 +366,7 @@ void TestAStar::update_grid() {
 }
 
 
-/*void TestAStar::update_obstacle() {
+/*void Strategy::update_obstacle() {
 	DrawContext * context= _contexts["obstacle"];
 	
 	context->_n_attrs_per_pts= 7;
@@ -434,7 +441,7 @@ void TestAStar::update_grid() {
 }*/
 
 
-void TestAStar::update_unit() {
+void Strategy::update_unit() {
 	DrawContext * context= _contexts["unit"];
 	
 	context->_n_attrs_per_pts= 7;
@@ -490,7 +497,7 @@ void TestAStar::update_unit() {
 }
 
 
-void TestAStar::update_path() {
+void Strategy::update_path() {
 	DrawContext * context= _contexts["path"];
 	
 	context->_n_attrs_per_pts= 7;
@@ -544,7 +551,7 @@ void TestAStar::update_path() {
 }
 
 
-void TestAStar::update_debug() {
+void Strategy::update_debug() {
 	DrawContext * context= _contexts["debug"];
 	
 	context->_n_attrs_per_pts= 7;
@@ -656,7 +663,7 @@ void TestAStar::update_debug() {
 }
 
 
-void TestAStar::update_elevation() {
+void Strategy::update_elevation() {
 	DrawContext * context= _contexts["elevation"];
 
 	context->_n_pts = 6 * (_map->_elevation->_n_ligs - 1) * (_map->_elevation->_n_cols - 1);
@@ -720,7 +727,7 @@ void TestAStar::update_elevation() {
 }
 
 
-void TestAStar::update_elements() {
+void Strategy::update_elements() {
 	DrawContext * context= _contexts["elements"];
 
 	context->_n_pts = 0;
@@ -745,7 +752,7 @@ void TestAStar::update_elements() {
 }
 
 
-void TestAStar::update_river() {
+void Strategy::update_river() {
 	DrawContext * context= _contexts["river"];
 
 	context->_n_pts = 0;
@@ -770,7 +777,32 @@ void TestAStar::update_river() {
 }
 
 
-void TestAStar::update_all() {
+void Strategy::update_lake() {
+	DrawContext * context= _contexts["lake"];
+
+	context->_n_pts = 0;
+	for (auto & lake : _map->_lakes) {
+		context->_n_pts += lake->_n_pts;
+	}
+	context->_n_attrs_per_pts= 10;
+
+	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
+
+	uint compt = 0;
+	for (auto & lake : _map->_lakes) {
+		for (uint i=0; i<lake->_n_pts * context->_n_attrs_per_pts; ++i) {
+			data[compt++] = lake->_data[i];
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	delete[] data;
+}
+
+
+void Strategy::update_all() {
 	update_grid();
 	//update_obstacle();
 	update_unit();
@@ -778,10 +810,11 @@ void TestAStar::update_all() {
 	update_elevation();
 	update_elements();
 	update_river();
+	update_lake();
 }
 
 
-void TestAStar::update_text(InputState * input_state) {
+void Strategy::update_text(InputState * input_state) {
 	pt_3d pt = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 
 	std::vector<Text3D> texts_3d;
@@ -818,7 +851,7 @@ void TestAStar::update_text(InputState * input_state) {
 }
 
 
-bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
+bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 	//pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 	pt_3d pt_3d = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 	pt_2d pt(pt_3d.x, pt_3d.y);
@@ -876,6 +909,7 @@ bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 				//update_river();
 				_map->add_lake(pt);
 				update_debug();
+				update_lake();
 				return true;
 			}
 		}
@@ -884,7 +918,7 @@ bool TestAStar::mouse_button_down(InputState * input_state, time_point t) {
 }
 
 
-bool TestAStar::mouse_button_up(InputState * input_state, time_point t) {
+bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 	/*if (_mode == ADDING_SOLID_OBSTACLE) {
 		_map->add_obstacle(SOLID, _obstacle_pts);
 		_map->update_static_grids();
@@ -907,7 +941,7 @@ bool TestAStar::mouse_button_up(InputState * input_state, time_point t) {
 }
 
 
-bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
+bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 	/*if ((_mode == ADDING_SOLID_OBSTACLE || _mode == ADDING_WATER_OBSTACLE) && input_state->_left_mouse) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_added_pt_t).count();
 		if (dt> NEW_PT_IN_POLYGON_MS) {
@@ -924,7 +958,7 @@ bool TestAStar::mouse_motion(InputState * input_state, time_point t) {
 }
 
 
-bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
+bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
 	if (key == SDLK_a) {
 		/*std::cout << _map->_elevation->get_alti(pt_2d(0.0, 0.0)) << " ; ";
 		std::cout << _map->_elevation->get_alti(pt_2d(-0.1, -0.1)) << " ; ";
@@ -1010,7 +1044,7 @@ bool TestAStar::key_down(InputState * input_state, SDL_Keycode key, time_point t
 }
 
 
-bool TestAStar::key_up(InputState * input_state, SDL_Keycode key, time_point t) {
+bool Strategy::key_up(InputState * input_state, SDL_Keycode key, time_point t) {
 	_mode = FREE;
 	return true;
 }

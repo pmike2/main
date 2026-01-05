@@ -58,6 +58,7 @@ struct GraphGrid : public Graph {
 	std::pair<uint, uint> id2col_lig(uint id);
 	uint col_lig2id(uint col, uint lig);
 	pt_2d col_lig2pt(uint col, uint lig);
+	pt_2d id2pt(uint id);
 	std::pair<uint, uint> pt2col_lig(pt_2d pt);
 	uint pt2id(pt_2d pt);
 	uint pt2closest_id(pt_2d pt);
@@ -69,6 +70,11 @@ struct GraphGrid : public Graph {
 	//std::vector<number> weights_in_cell_containing_pt(pt_2d pt);
 	std::vector<std::pair<uint, uint> > edges_in_cell_containing_pt(pt_2d pt, bool only_diagonals=false);
 	std::vector<uint> vertices_in_cell_containing_pt(pt_2d pt);
+	
+	std::pair<int, int> next_direction(std::pair<int, int> u);
+	uint angle(std::pair<int, int> u, std::pair<int, int> v);
+	Polygon2D * ids2polygon(std::vector<uint> ids);
+	
 	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
 
 

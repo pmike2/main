@@ -9,6 +9,7 @@ https://github.com/OneLoneCoder/olcPixelGameEngine/blob/master/Videos/OneLoneCod
 */
 
 #include <iostream>
+#include <vector>
 
 #include <glm/glm.hpp>
 
@@ -24,6 +25,7 @@ public:
 	AABB_2D();
 	AABB_2D(pt_2d pos, pt_2d size);
 	AABB_2D(const AABB_2D & aabb);
+	AABB_2D(const std::vector<pt_2d> & pts);
 	~AABB_2D();
 	pt_2d center();
 	AABB_2D * buffered(number size);

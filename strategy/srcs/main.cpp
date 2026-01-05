@@ -11,7 +11,7 @@
 #include "input_state.h"
 #include "typedefs.h"
 
-#include "test_a_star.h"
+#include "strategy.h"
 
 
 // dimensions écran
@@ -32,14 +32,14 @@ unsigned int tikfps1, tikfps2;
 
 GLuint g_vao;
 
-TestAStar * test_a_star;
+Strategy * strategy;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (test_a_star->mouse_motion(input_state, t)) {
+	if (strategy->mouse_motion(input_state, t)) {
 		return;
 	}
 
@@ -53,7 +53,7 @@ void mouse_button_up(int x, int y, unsigned short button, time_point t) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (test_a_star->mouse_button_up(input_state, t)) {
+	if (strategy->mouse_button_up(input_state, t)) {
 		return;
 	}
 
@@ -67,7 +67,7 @@ void mouse_button_down(int x, int y, unsigned short button, time_point t) {
 	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (test_a_star->mouse_button_down(input_state, t)) {
+	if (strategy->mouse_button_down(input_state, t)) {
 		return;
 	}
 
@@ -84,7 +84,7 @@ void key_down(SDL_Keycode key, time_point t) {
 		done= true;
 	}
 
-	if (test_a_star->key_down(input_state, key, t)) {
+	if (strategy->key_down(input_state, key, t)) {
 		return;
 	}
 
@@ -97,7 +97,7 @@ void key_down(SDL_Keycode key, time_point t) {
 void key_up(SDL_Keycode key, time_point t) {
 	input_state->key_up(key);
 
-	if (test_a_star->key_up(input_state, key, t)) {
+	if (strategy->key_up(input_state, key, t)) {
 		return;
 	}
 
@@ -178,7 +178,7 @@ void init() {
 
 	// --------------------------------------------------------------------------
 	time_point now= std::chrono::system_clock::now();
-	test_a_star = new TestAStar(progs, view_system, now);
+	strategy = new Strategy(progs, view_system, now);
 }
 
 
@@ -190,14 +190,14 @@ void draw() {
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 
 	view_system->draw();
-	test_a_star->draw();
+	strategy->draw();
 
 	SDL_GL_SwapWindow(window);
 }
 
 
 void anim(time_point t) {
-	test_a_star->anim(t, input_state);
+	strategy->anim(t, input_state);
 }
 
 
@@ -265,8 +265,7 @@ void main_loop() {
 
 
 void clean() {
-	delete test_a_star;
-
+	delete strategy;
 	delete view_system;
 	delete input_state;
 
@@ -281,16 +280,6 @@ int main() {
 	init();
 	main_loop();
 	clean();
-
-	/*pt_3d p(1, 2, 3);
-	pt_2d q = pt_2d(p);
-	std::cout << glm_to_string(q) << "\n";*/
-
-	/*number x = 0.2;
-	number size = 0.25;
-	number y = fmod(x, size);
-	number z = y / size;
-	std::cout << y << " ; " << z << "\n";*/
 
 	return 0;
 }
