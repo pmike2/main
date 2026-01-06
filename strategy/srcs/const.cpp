@@ -31,11 +31,20 @@ TERRAIN_TYPE str2terrain_type(std::string s) {
 	else if (s == "OBSTACLE") {
 		return OBSTACLE;
 	}
-	else if (s == "WATER") {
-		return WATER;
+	else if (s == "SEA") {
+		return SEA;
 	}
-	else if (s == "COAST") {
-		return COAST;
+	else if (s == "LAKE") {
+		return LAKE;
+	}
+	else if (s == "RIVER") {
+		return RIVER;
+	}
+	else if (s == "SEA_COAST") {
+		return SEA_COAST;
+	}
+	else if (s == "LAKE_COAST") {
+		return LAKE_COAST;
 	}
 	std::cerr << s << " : type d'obstacle non reconnu\n";
 	return UNKNOWN;
@@ -49,11 +58,20 @@ std::string terrain_type2str(TERRAIN_TYPE t) {
 	else if (t == OBSTACLE) {
 		return "OBSTACLE";
 	}
-	else if (t == WATER) {
-		return "WATER";
+	else if (t == SEA) {
+		return "SEA";
 	}
-	else if (t == COAST) {
-		return "COAST";
+	else if (t == LAKE) {
+		return "LAKE";
+	}
+	else if (t == RIVER) {
+		return "RIVER";
+	}
+	else if (t == SEA_COAST) {
+		return "SEA_COAST";
+	}
+	else if (t == LAKE_COAST) {
+		return "LAKE_COAST";
 	}
 	std::cerr << t << " : type d'obstacle non reconnu\n";
 	return "UNKNOWN";

@@ -62,7 +62,7 @@ public:
 	void draw_surface(std::string context_name);
 	void draw();
 	void anim(time_point t, InputState * input_state);
-	GraphGrid * get_visible_grid();
+	//GraphGrid * get_visible_grid();
 	glm::vec4 get_edge_color();
 	void update_grid();
 	//void update_obstacle();

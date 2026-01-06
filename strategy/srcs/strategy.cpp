@@ -154,8 +154,8 @@ void Strategy::draw_surface(std::string context_name) {
 
 
 void Strategy::draw() {
-	//for (auto context_name : std::vector<std::string>{"grid", "obstacle", "unit", "path", "debug"}) {
 	for (auto context_name : std::vector<std::string>{"grid", "unit", "path", "debug"}) {
+	//for (auto context_name : std::vector<std::string>{"grid", "unit", "path"}) {
 		draw_linear(context_name);
 	}
 	for (auto context_name : std::vector<std::string>{"elevation", "elements", "river", "lake"}) {
@@ -203,7 +203,7 @@ void Strategy::anim(time_point t, InputState * input_state) {
 		const number alti_inc_max = 1.0;
 		AABB_2D * aabb = new AABB_2D(pt_2d(pt) - pt_2d(alti_aabb_size * 0.5), pt_2d(alti_aabb_size));
 		_map->_elements->remove_in_aabb(aabb);
-		std::vector<uint> ids = _map->_elevation->get_ids_over_aabb(aabb);
+		std::vector<uint> ids = _map->_elevation->vertices_in_aabb(aabb);
 		delete aabb;
 		for (auto id : ids) {
 			pt_2d pt2 = _map->_elevation->id2pt_2d(id);
@@ -214,10 +214,10 @@ void Strategy::anim(time_point t, InputState * input_state) {
 			number alti_inc = alti_inc_max * (1.0 - dist * dist);
 
 			if (input_state->_keys[SDLK_LSHIFT]) {
-				_map->_elevation->_altis[id] -= alti_inc;
+				_map->_elevation->set_alti(id, _map->_elevation->get_alti(id) - alti_inc);
 			}
 			else {
-				_map->_elevation->_altis[id] += alti_inc;
+				_map->_elevation->set_alti(id, _map->_elevation->get_alti(id) + alti_inc);
 			}
 		}
 
@@ -232,7 +232,7 @@ void Strategy::anim(time_point t, InputState * input_state) {
 }
 
 
-GraphGrid * Strategy::get_visible_grid() {
+/*GraphGrid * Strategy::get_visible_grid() {
 	if (_visible_grid_type == "elevation") {
 		return _map->_path_finders[_map->_unit_types[_visible_grid_unit_type]]->_elevation_grid;
 	}
@@ -244,52 +244,60 @@ GraphGrid * Strategy::get_visible_grid() {
 	}
 	std::cerr << "Strategy::get_visible_grid() error\n";
 	return NULL;
-}
+}*/
 
 
 glm::vec4 Strategy::get_edge_color() {
 	//return glm::vec4(1.0, 0.0, 0.0, 1.0);
-	GraphGrid * grid = get_visible_grid();
+	//GraphGrid * grid = get_visible_grid();
 
-	GraphEdge edge = grid->_it_e->second;
+	GraphEdge edge = _map->_path_finder->_it_e->second;
+	EdgeData * data = (EdgeData *)(edge._data);
+	UnitType * unit_type = _map->_unit_types[_visible_grid_unit_type];
 	glm::vec4 edge_color;
 
 	if (_visible_grid_type == "elevation") {
-		ElevationEdgeData * data = (ElevationEdgeData *)(edge._data);
-		if (data->_delta_elevation < 0.0) {
+		if (data->_delta_elevation[unit_type] < 0.0) {
 			edge_color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
-		else if (data->_delta_elevation > 100.0) {
+		else if (data->_delta_elevation[unit_type] > 100.0) {
 			edge_color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
 		}
 		else {
-			edge_color = glm::vec4(float(data->_delta_elevation) / 100.0f, 1.0f - float(data->_delta_elevation) / 100.0f, 0.5f, 1.0f);
+			edge_color = glm::vec4(float(data->_delta_elevation[unit_type]) / 100.0f, 1.0f - float(data->_delta_elevation[unit_type]) / 100.0f, 0.5f, 1.0f);
 		}
 	}
 	else if (_visible_grid_type == "terrain") {
-		TerrainEdgeData * data = (TerrainEdgeData *)(edge._data);
-		if (data->_type == WATER ) {
+		if (data->_type[unit_type] == SEA ) {
 			edge_color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
-		else if (data->_type == GROUND ) {
+		else if (data->_type[unit_type] == GROUND ) {
 			edge_color = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
 		}
-		else if (data->_type == OBSTACLE ) {
+		else if (data->_type[unit_type] == OBSTACLE ) {
 			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
-		else if (data->_type == COAST ) {
+		else if (data->_type[unit_type] == LAKE ) {
+			edge_color = glm::vec4(0.5f, 0.0f, 1.0f, 1.0f);
+		}
+		else if (data->_type[unit_type] == RIVER ) {
+			edge_color = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
+		}
+		else if (data->_type[unit_type] == SEA_COAST ) {
 			edge_color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+		}
+		else if (data->_type[unit_type] == LAKE_COAST ) {
+			edge_color = glm::vec4(1.0f, 1.0f, 0.5f, 1.0f);
 		}
 		else {
 			edge_color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
 	else if (_visible_grid_type == "units_position") {
-		UnitsPositionEdgeData * data = (UnitsPositionEdgeData *)(edge._data);
-		if (data->_ids.size() == 0) {
+		if (data->_ids[unit_type].size() == 0) {
 			edge_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 		}
-		else if (data->_ids.size() == 1) {
+		else if (data->_ids[unit_type].size() == 1) {
 			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
 		else {
@@ -307,29 +315,27 @@ void Strategy::update_grid() {
 	context->_n_attrs_per_pts= 7;
 	context->_n_pts = 0;
 
-	GraphGrid * visible_grid = get_visible_grid();
-
-	visible_grid->_it_v= visible_grid->_vertices.begin();
-	while (visible_grid->_it_v!= visible_grid->_vertices.end()) {
-		visible_grid->_it_e= visible_grid->_it_v->second._edges.begin();
-		while (visible_grid->_it_e!= visible_grid->_it_v->second._edges.end()) {
+	_map->_path_finder->_it_v= _map->_path_finder->_vertices.begin();
+	while (_map->_path_finder->_it_v!= _map->_path_finder->_vertices.end()) {
+		_map->_path_finder->_it_e= _map->_path_finder->_it_v->second._edges.begin();
+		while (_map->_path_finder->_it_e!= _map->_path_finder->_it_v->second._edges.end()) {
 			context->_n_pts += 2;
-			visible_grid->_it_e++;
+			_map->_path_finder->_it_e++;
 		}
-		visible_grid->_it_v++;
+		_map->_path_finder->_it_v++;
 	}
 
 	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 	float * ptr = data;
 
-	visible_grid->_it_v= visible_grid->_vertices.begin();
-	while (visible_grid->_it_v!= visible_grid->_vertices.end()) {
-		visible_grid->_it_e= visible_grid->_it_v->second._edges.begin();
-		while (visible_grid->_it_e!= visible_grid->_it_v->second._edges.end()) {
+	_map->_path_finder->_it_v= _map->_path_finder->_vertices.begin();
+	while (_map->_path_finder->_it_v!= _map->_path_finder->_vertices.end()) {
+		_map->_path_finder->_it_e= _map->_path_finder->_it_v->second._edges.begin();
+		while (_map->_path_finder->_it_e!= _map->_path_finder->_it_v->second._edges.end()) {
 			glm::vec4 edge_color = get_edge_color();
 
-			pt_3d & p1 = visible_grid->_it_v->second._pos;
-			pt_3d & p2 = visible_grid->_vertices[visible_grid->_it_e->first]._pos;
+			pt_3d & p1 = _map->_path_finder->_it_v->second._pos;
+			pt_3d & p2 = _map->_path_finder->_vertices[_map->_path_finder->_it_e->first]._pos;
 			pt_3d p1b = p1 + (p2 - p1) * 0.1;
 			pt_3d p_middle = (p1 + p2) * 0.5 - (p2 - p1) * 0.1;
 			
@@ -353,9 +359,9 @@ void Strategy::update_grid() {
 
 			ptr += 14;
 			
-			visible_grid->_it_e++;
+			_map->_path_finder->_it_e++;
 		}
-		visible_grid->_it_v++;
+		_map->_path_finder->_it_v++;
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -572,17 +578,17 @@ void Strategy::update_debug() {
 		context->_n_pts += 8;
 	}*/
 
-	/*if (_map->_rivers.empty()) {
+	if (_map->_rivers.empty()) {
 		context->_active = false;
 		return;
 	}
-	context->_n_pts = 2 * (_map->_rivers[0]->_id_nodes.size() - 1);*/
+	context->_n_pts = 2 * _map->_rivers[0]->_id_nodes.size();
 	
-	if (_map->_lakes.empty()) {
+	/*if (_map->_lakes.empty()) {
 		context->_active = false;
 		return;
 	}
-	context->_n_pts = 2 * _map->_lakes[0]->_id_nodes.size();
+	context->_n_pts = 2 * _map->_lakes[0]->_id_nodes.size();*/
 
 	context->_active = true;
 
@@ -619,15 +625,16 @@ void Strategy::update_debug() {
 		}
 	}*/
 
-	//for (uint i=0; i<_map->_rivers[0]->_id_nodes.size() - 1; ++i) {
-		//pt_3d pt1 = _map->_elevation->id2pt_3d(_map->_rivers[0]->_id_nodes[i]);
+	for (uint i=0; i<_map->_rivers[0]->_id_nodes.size(); ++i) {
+		pt_3d pt1 = _map->_elevation->id2pt_3d(_map->_rivers[0]->_id_nodes[i]) + pt_3d(0.0, 0.0, 0.2);
 		//pt_3d pt2 = _map->_elevation->id2pt_3d(_map->_rivers[0]->_id_nodes[i + 1]);
 		//pt_3d pt2 = pt1 + _map->_elevation->get_normal(_map->_rivers[0]->_id_nodes[i]);
-	
-	Lake * lake = _map->_lakes[_map->_lakes.size() - 1];
-	for (uint i=0; i<lake->_id_nodes.size(); ++i) {
-		pt_3d pt1 = _map->_elevation->id2pt_3d(lake->_id_nodes[i]) + pt_3d(0.0, 0.0, 0.2);
 		pt_3d pt2 = pt1 + pt_3d(0.1, 0.1, 0.0);
+	
+	//Lake * lake = _map->_lakes[_map->_lakes.size() - 1];
+	//for (uint i=0; i<lake->_id_nodes.size(); ++i) {
+		//pt_3d pt1 = _map->_elevation->id2pt_3d(lake->_id_nodes[i]) + pt_3d(0.0, 0.0, 0.2);
+		//pt_3d pt2 = pt1 + pt_3d(0.1, 0.1, 0.0);
 
 		ptr[0] = float(pt1.x);
 		ptr[1] = float(pt1.y);
@@ -822,11 +829,11 @@ void Strategy::update_text(InputState * input_state) {
 		texts_3d.push_back(Text3D(unit->_type->_name + " " + std::to_string(unit->_id), glm::vec3(unit->_aabb->_vmin)+ glm::vec3(0.1, 0.1, 0.5), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 
-	if (!_map->_rivers.empty()) {
+	/*if (!_map->_rivers.empty()) {
 		for (uint i=0; i<_map->_rivers[0]->_id_nodes.size(); ++i) {
 			texts_3d.push_back(Text3D(std::to_string(i), _map->_elevation->id2pt_3d(_map->_rivers[0]->_id_nodes[i]), 0.005, glm::vec4(0.9f, 0.8f, 0.8f, 1.0f)));
 		}
-	}
+	}*/
 	_font->set_text(texts_3d);
 
 	std::vector<Text> texts_2d;
@@ -905,11 +912,20 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 				return true;
 			}
 			else if (input_state->_keys[SDLK_w]) {
-				//_map->add_river(pt);
-				//update_river();
-				_map->add_lake(pt);
-				update_debug();
-				update_lake();
+				if (input_state->_keys[SDLK_LSHIFT]) {
+					_map->add_river(pt);
+					update_debug();
+					update_river();
+					update_elevation();
+					update_grid();
+				}
+				else {
+					_map->add_lake(pt);
+					update_debug();
+					update_lake();
+					update_elevation();
+					update_grid();
+				}
 				return true;
 			}
 		}
@@ -1007,7 +1023,9 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 		return true;
 	}
 	else if (key == SDLK_h) {
-		_contexts["elevation"]->_active = !_contexts["elevation"]->_active;
+		for (auto & context_name : std::vector<std::string> {"elevation", "lake", "river", "elements"}) {
+			_contexts[context_name]->_active = !_contexts[context_name]->_active;
+		}
 		return true;
 	}
 	else if (key == SDLK_r) {
@@ -1016,9 +1034,7 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 		return true;
 	}
 	else if (key == SDLK_m) {
-		for (auto & path_finder : _map->_path_finders) {
-			path_finder.second->_use_line_of_sight = !path_finder.second->_use_line_of_sight;
-		}
+		_map->_path_finder->_use_line_of_sight = !_map->_path_finder->_use_line_of_sight;
 		return true;
 	}
 	else if (key == SDLK_l) {

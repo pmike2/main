@@ -18,7 +18,8 @@ struct Lake {
 
 	Elevation * _elevation;
 	std::vector<uint> _id_nodes;
-	std::vector<std::tuple<pt_3d, pt_3d, pt_3d, pt_3d> > _triangles;
+	std::vector<std::tuple<uint, uint, uint> > _triangles;
+	number _alti_lake;
 	float * _data;
 	uint _n_pts;
 	bool _valid;

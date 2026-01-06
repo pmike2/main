@@ -50,7 +50,7 @@ struct Map {
 	void add_river(pt_2d src);
 	void add_lake(pt_2d src);
 	
-	void update_alti_grid(GraphGrid * grid);
+	void update_alti_grid();
 	void update_alti_path(Unit * unit);
 	void update_elevation_grids();
 	
@@ -82,7 +82,7 @@ struct Map {
 	pt_2d _size;
 	std::map<std::string, UnitType *> _unit_types;
 	std::vector<Unit *> _units;
-	std::map<UnitType *, PathFinder *> _path_finders;
+	PathFinder * _path_finder;
 	Elevation * _elevation;
 	Elements * _elements;
 	std::vector<River * > _rivers;

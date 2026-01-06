@@ -56,9 +56,9 @@ Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0),
 	//number alti_max = 1e9;
 
 	const uint n_max_nodes = 1000;
-	const number alti_step = 0.2;
+	const number alti_step = 0.1;
 	const number max_lake_depth = 2.0;
-	number alti_lake = _elevation->get_alti(id_lowest) + max_lake_depth;
+	_alti_lake = _elevation->get_alti(id_lowest) + max_lake_depth;
 
 	while (true) {
 
@@ -74,7 +74,7 @@ Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0),
 			frontier.pop();
 			number alti = _elevation->get_alti(id);
 
-			if (alti < alti_lake) {
+			if (alti < _alti_lake) {
 				_id_nodes.push_back(id);
 			}
 
@@ -83,7 +83,7 @@ Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0),
 				break;
 			}
 
-			std::vector<uint> id_neighbors = _elevation->get_neighbors(id);
+			std::vector<uint> id_neighbors = _elevation->neighbors(id);
 
 			for (auto & id_n : id_neighbors) {
 				if (std::find(checked.begin(), checked.end(), id_n) != checked.end()) {
@@ -94,7 +94,7 @@ Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0),
 
 				number alti_n = _elevation->get_alti(id_n);
 
-				if (alti_n < alti_lake) {
+				if (alti_n < _alti_lake) {
 					frontier.push(id_n);
 				}
 			}
@@ -104,7 +104,12 @@ Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0),
 			break;
 		}
 
-		alti_lake -= alti_step;
+		_alti_lake -= alti_step;
+		if (_alti_lake <= _elevation->get_alti(id_lowest)) {
+			std::cerr << "Lake impossible pas d'alti trouvée\n";
+			_valid = false;
+			return;
+		}
 	}
 
 	/*std::cout << "alti_max = " << alti_max << " ; checked.size() = " << checked.size() << "\n";
@@ -154,22 +159,41 @@ Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0),
 		
 		if (_elevation->in_boundaries(col_lig.first + 1, col_lig.second) && std::find(_id_nodes.begin(), _id_nodes.end(), id_right) != _id_nodes.end()
 		 && _elevation->in_boundaries(col_lig.first, col_lig.second + 1) && std::find(_id_nodes.begin(), _id_nodes.end(), id_top) != _id_nodes.end()) {
-			pt_3d pt0 = pt_3d(_elevation->id2pt_2d(id_node), alti_lake);
+			/*pt_3d pt0 = pt_3d(_elevation->id2pt_2d(id_node), alti_lake);
 			pt_3d pt1 = pt_3d(_elevation->id2pt_2d(id_right), alti_lake);
 			pt_3d pt2 = pt_3d(_elevation->id2pt_2d(id_top), alti_lake);
 			pt_3d normal(0.0, 0.0, 1.0);
-			_triangles.push_back(std::make_tuple(pt0, pt1, pt2, normal));
+			_triangles.push_back(std::make_tuple(pt0, pt1, pt2, normal));*/
+			_triangles.push_back(std::make_tuple(id_node, id_right, id_top));
 		}
 
 		if (_elevation->in_boundaries(col_lig.first - 1, col_lig.second) && std::find(_id_nodes.begin(), _id_nodes.end(), id_left) != _id_nodes.end()
 		 && _elevation->in_boundaries(col_lig.first, col_lig.second - 1) && std::find(_id_nodes.begin(), _id_nodes.end(), id_bottom) != _id_nodes.end()) {
-			pt_3d pt0 = pt_3d(_elevation->id2pt_2d(id_node), alti_lake);
+			/*pt_3d pt0 = pt_3d(_elevation->id2pt_2d(id_node), alti_lake);
 			pt_3d pt1 = pt_3d(_elevation->id2pt_2d(id_left), alti_lake);
 			pt_3d pt2 = pt_3d(_elevation->id2pt_2d(id_bottom), alti_lake);
 			pt_3d normal(0.0, 0.0, 1.0);
-			_triangles.push_back(std::make_tuple(pt0, pt1, pt2, normal));
+			_triangles.push_back(std::make_tuple(pt0, pt1, pt2, normal));*/
+			_triangles.push_back(std::make_tuple(id_node, id_left, id_bottom));
 		}
 	}
+
+	_id_nodes.clear();
+	for (auto & triangle : _triangles) {
+		std::vector<uint> ids = {std::get<0>(triangle), std::get<1>(triangle), std::get<2>(triangle)};
+		for (auto & id : ids) {
+			if (std::find(_id_nodes.begin(), _id_nodes.end(), id) == _id_nodes.end()) {
+				_id_nodes.push_back(id);
+			}
+		}
+	}
+
+	number EPS = 0.1;
+	for (auto & id : _id_nodes) {
+		_elevation->set_alti(id, _alti_lake - EPS);
+	}
+
+	//std::cout << _elevation->ids2wkt(_id_nodes) << "\n";
 
 	uint n_attrs_per_pts= 10;
 	_n_pts = 3 * _triangles.size();
@@ -188,20 +212,20 @@ void Lake::update_data() {
 	const glm::vec4 LAKE_COLOR(0.8, 0.7, 0.9, 1.0);
 	float * ptr = _data;
 	for (auto & triangle : _triangles) {
-		std::vector<pt_3d> pts = {std::get<0>(triangle), std::get<1>(triangle), std::get<2>(triangle)};
-		pt_3d normal = std::get<3>(triangle);
+		std::vector<uint> ids = {std::get<0>(triangle), std::get<1>(triangle), std::get<2>(triangle)};
 
 		for (uint i=0; i<3; ++i) {
-			ptr[0] = float(pts[i].x);
-			ptr[1] = float(pts[i].y);
-			ptr[2] = float(pts[i].z);
+			pt_3d pt = pt_3d(_elevation->id2pt_2d(ids[i]), _alti_lake);
+			ptr[0] = float(pt.x);
+			ptr[1] = float(pt.y);
+			ptr[2] = float(pt.z);
 			ptr[3] = LAKE_COLOR.r;
 			ptr[4] = LAKE_COLOR.g;
 			ptr[5] = LAKE_COLOR.b;
 			ptr[6] = LAKE_COLOR.a;
-			ptr[7] = float(normal.x);
-			ptr[8] = float(normal.y);
-			ptr[9] = float(normal.z);
+			ptr[7] = 0.0f;
+			ptr[8] = 0.0f;
+			ptr[9] = 1.0f;
 			ptr += 10;
 		}
 	}

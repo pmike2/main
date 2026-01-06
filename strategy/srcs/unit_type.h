@@ -23,6 +23,7 @@ struct UnitType {
 	UnitType(std::string json_path);
 	~UnitType();
 	number elevation_coeff(number delta_elevation);
+	number buffer_size();
 	friend std::ostream & operator << (std::ostream & os, UnitType & ut);
 	
 	

@@ -3,6 +3,7 @@
 #include "json.hpp"
 
 #include "utile.h"
+#include "geom_2d.h"
 
 #include "unit_type.h"
 
@@ -53,6 +54,12 @@ number UnitType::elevation_coeff(number delta_elevation) {
 	}
 	std::cerr << "UnitType " << _name << " ::elevation_coeff : " << delta_elevation << " non gérée\n";
 	return 0.0;
+}
+
+
+// demi-taille de la diagonale du + petit carré contenant unit_type->_size (+ epsilon)
+number UnitType::buffer_size() {
+	return 0.5 * norm(pt_2d(std::max(_size.x, _size.y))) + EPS_UNIT_TYPE_BUFFER_SIZE;
 }
 
 

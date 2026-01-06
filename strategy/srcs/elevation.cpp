@@ -8,24 +8,24 @@ Elevation::Elevation() {
 }
 
 
-Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) :
-	_origin(origin), _size(size), _n_ligs(n_ligs), _n_cols(n_cols) 
+Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : GraphGrid(origin, size, n_ligs, n_cols)
+	//_origin(origin), _size(size), _n_ligs(n_ligs), _n_cols(n_cols) 
 {
-	_resolution = pt_2d(_size.x / (number)(_n_cols- 1), _size.y / (number)(_n_ligs- 1));
+	//_resolution = pt_2d(_size.x / (number)(_n_cols- 1), _size.y / (number)(_n_ligs- 1));
 
-	_altis = new number[_n_ligs * _n_cols];
+	/*_altis = new number[_n_ligs * _n_cols];
 	for (uint i=0; i<_n_ligs * _n_cols; ++i) {
 		_altis[i] = 0.0;
-	}
+	}*/
 }
 
 
 Elevation::~Elevation() {
-	delete _altis;
+	//delete _altis;
 }
 
 
-bool Elevation::in_boundaries(int col, int lig) {
+/*bool Elevation::in_boundaries(int col, int lig) {
 	if (col < 0 || lig < 0 || col >= _n_cols || lig >= _n_ligs) {
 		return false;
 	}
@@ -85,11 +85,12 @@ std::pair<uint, uint> Elevation::pt2col_lig(pt_2d pt) {
 uint Elevation::pt2id(pt_2d pt) {
 	std::pair<uint, uint> col_lig = pt2col_lig(pt);
 	return col_lig2id(col_lig.first, col_lig.second);
-}
+}*/
 
 
 number Elevation::get_alti(uint id) {
-	return _altis[id];
+	//return _altis[id];
+	return _vertices[id]._pos.z;
 }
 
 
@@ -98,7 +99,8 @@ number Elevation::get_alti(int col, int lig) {
 		std::cerr << "Elevation::get_alti : (" << col << " ; " << lig << ") hors Elevation (2!)\n";
 		return 0.0;
 	}
-	return _altis[col_lig2id(col, lig)];
+	//return _altis[col_lig2id(col, lig)];
+	return _vertices[col_lig2id(col, lig)]._pos.z;
 }
 
 
@@ -172,7 +174,7 @@ number Elevation::get_alti_over_polygon(Polygon2D * polygon) {
 }
 
 
-std::vector<uint> Elevation::get_ids_over_aabb(AABB_2D * aabb) {
+/*std::vector<uint> Elevation::get_ids_over_aabb(AABB_2D * aabb) {
 	std::vector<uint> result;
 	std::pair<uint, uint> col_lig_min = pt2col_lig(aabb->_pos);
 	std::pair<uint, uint> col_lig_max = pt2col_lig(aabb->_pos + aabb->_size);
@@ -182,10 +184,10 @@ std::vector<uint> Elevation::get_ids_over_aabb(AABB_2D * aabb) {
 		}
 	}
 	return result;
-}
+}*/
 
 
-std::vector<uint> Elevation::get_neighbors(uint id) {
+/*std::vector<uint> Elevation::get_neighbors(uint id) {
 	std::vector<uint> result;
 	std::pair<uint, uint> col_lig = id2col_lig(id);
 	uint col = col_lig.first;
@@ -218,7 +220,7 @@ std::vector<uint> Elevation::get_neighbors(uint id) {
 	std::sort(result.begin(), result.end());
 
 	return result;
-}
+}*/
 
 
 pt_3d Elevation::get_normal(uint id) {
@@ -267,10 +269,10 @@ std::vector<uint> Elevation::lowest_gradient(uint id_src) {
 	while (true) {
 		result.push_back(id_current);
 		number alti_current = get_alti(id_current);
-		std::vector<uint> neighbors = get_neighbors(id_current);
+		std::vector<uint> l_neighbors = neighbors(id_current);
 		number alti_min = 1e7;
 		uint id_next = 0;
-		for (auto & id : neighbors) {
+		for (auto & id : l_neighbors) {
 			if (std::find(result.begin(), result.end(), id) != result.end()) {
 				continue;
 			}
@@ -298,8 +300,14 @@ std::vector<uint> Elevation::lowest_gradient(uint id_src) {
 }
 
 
+void Elevation::set_alti(uint id, number alti) {
+	_vertices[id]._pos.z = alti;
+}
+
+
 void Elevation::set_alti(int col, int lig, number alti) {
-	_altis[col_lig2id(col, lig)] = alti;
+	//_altis[col_lig2id(col, lig)] = alti;
+	set_alti(col_lig2id(col, lig), alti);
 }
 
 
@@ -327,9 +335,12 @@ void Elevation::set_alti_all(number alti) {
 void Elevation::set_negative_alti_2zero() {
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
-			uint id = col_lig2id(col, lig);
-			if (_altis[id]< 0.0) {
+			//uint id = col_lig2id(col, lig);
+			/*if (_altis[id]< 0.0) {
 				_altis[id] = 0.0;
+			}*/
+			if (get_alti(col, lig) < 0.0) {
+				set_alti(col, lig, 0.0);
 			}
 		}
 	}
@@ -371,7 +382,8 @@ void Elevation::randomize() {
 			//number p = perlin(col, lig, gradient, gradient_w, gradient_h);
 			//std::cout << col << " ; " << lig << " ; " << p << "\n";
 
-			_altis[col_lig2id(col, lig)] = alti_offset;
+			//_altis[col_lig2id(col, lig)] = alti_offset;
+			set_alti(col, lig, alti_offset);
 		}
 	}
 
@@ -388,16 +400,20 @@ void Elevation::randomize() {
 			for (uint lig=0; lig< _n_ligs; ++lig) {
 				number ii= number(col)* (gradient_w- 1)/ _n_cols;
 				number jj= number(lig)* (gradient_h- 1)/ _n_ligs;
-				_altis[col_lig2id(col, lig)] += factor* perlin(ii, jj, gradient, gradient_w, gradient_h);
+				//_altis[col_lig2id(col, lig)] += factor* perlin(ii, jj, gradient, gradient_w, gradient_h);
+				set_alti(col, lig, get_alti(col, lig) + factor* perlin(ii, jj, gradient, gradient_w, gradient_h));
 			}
 		}
 	}
 
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
-			uint id = col_lig2id(col, lig);
-			if (_altis[id]> 0.0) {
+			//uint id = col_lig2id(col, lig);
+			/*if (_altis[id]> 0.0) {
 				_altis[id] = pow(_altis[id] * fudge_factor, redistribution_power);
+			}*/
+			if (get_alti(col, lig) > 0.0) {
+				set_alti(col, lig, pow(get_alti(col, lig) * fudge_factor, redistribution_power));
 			}
 		}
 	}
@@ -405,11 +421,12 @@ void Elevation::randomize() {
 
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
-			uint id = col_lig2id(col, lig);
+			//uint id = col_lig2id(col, lig);
 			number nx = 2.0 * number(col) / _n_cols - 1.0;
 			number ny = 2.0 * number(lig) / _n_ligs - 1.0;
 			number d = 1.0 - (1.0 - nx * nx) * (1.0 - ny * ny);
-			_altis[id] = (1.0 - mix_island) * _altis[id] + mix_island * (1.0 - d) * island_max_alti;
+			//_altis[id] = (1.0 - mix_island) * _altis[id] + mix_island * (1.0 - d) * island_max_alti;
+			set_alti(col, lig, (1.0 - mix_island) * get_alti(col, lig) + mix_island * (1.0 - d) * island_max_alti);
 		}
 	}
 
@@ -417,7 +434,7 @@ void Elevation::randomize() {
 	//number damp = 0.9;
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
-			uint id = col_lig2id(col, lig);
+			//uint id = col_lig2id(col, lig);
 			number ii= number(col)* (terrace_gradient_w- 1)/ _n_cols;
 			number jj= number(lig)* (terrace_gradient_h- 1)/ _n_ligs;
 			number hm = terrace_perlin_factor * perlin(ii, jj, gradient, terrace_gradient_w, terrace_gradient_h);
@@ -435,8 +452,12 @@ void Elevation::randomize() {
 			if (terrace_hmin + hm < _altis[id] && terrace_hmax + hm > _altis[id]) {
 				_altis[id] = (k + s) * terrace_factor;
 			}*/
-			if (terrace_hmin + hm < _altis[id] && terrace_hmax + hm > _altis[id]) {
+			
+			/*if (terrace_hmin + hm < _altis[id] && terrace_hmax + hm > _altis[id]) {
 				_altis[id] = round(_altis[id] * 2.0) / 2.0;
+			}*/
+			if (terrace_hmin + hm < get_alti(col, lig) && terrace_hmax + hm > get_alti(col, lig)) {
+				set_alti(col, lig, round(get_alti(col, lig) * 2.0) / 2.0);
 			}
 		}
 	}

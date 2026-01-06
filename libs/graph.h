@@ -55,10 +55,14 @@ struct GraphGrid : public Graph {
 	GraphGrid(const pt_2d & origin, const pt_2d & size, uint n_ligs, uint n_cols, bool is8connex=true);
 	GraphGrid(const GraphGrid & grid);
 	~GraphGrid();
+	bool in_boundaries(uint id);
+	bool in_boundaries(int col, int lig);
+	bool in_boundaries(pt_2d pt);
 	std::pair<uint, uint> id2col_lig(uint id);
 	uint col_lig2id(uint col, uint lig);
 	pt_2d col_lig2pt(uint col, uint lig);
-	pt_2d id2pt(uint id);
+	pt_2d id2pt_2d(uint id);
+	pt_3d id2pt_3d(uint id);
 	std::pair<uint, uint> pt2col_lig(pt_2d pt);
 	uint pt2id(pt_2d pt);
 	uint pt2closest_id(pt_2d pt);
@@ -69,11 +73,15 @@ struct GraphGrid : public Graph {
 	std::vector<std::pair<uint, uint> > polygon_intersection(Polygon2D * polygon);
 	//std::vector<number> weights_in_cell_containing_pt(pt_2d pt);
 	std::vector<std::pair<uint, uint> > edges_in_cell_containing_pt(pt_2d pt, bool only_diagonals=false);
+	std::vector<uint> vertices_in_aabb(AABB_2D * aabb);
 	std::vector<uint> vertices_in_cell_containing_pt(pt_2d pt);
 	
 	std::pair<int, int> next_direction(std::pair<int, int> u);
 	uint angle(std::pair<int, int> u, std::pair<int, int> v);
 	Polygon2D * ids2polygon(std::vector<uint> ids);
+	Polygon2D * pts2polygon(std::vector<pt_2d> pts);
+
+	std::string ids2wkt(std::vector<uint> ids);
 	
 	friend std::ostream & operator << (std::ostream & os, GraphGrid & g);
 
@@ -82,6 +90,7 @@ struct GraphGrid : public Graph {
 	uint _n_cols;
 	pt_2d _origin;
 	pt_2d _size;
+	pt_2d _resolution;
 	AABB_2D * _aabb;
 };
 

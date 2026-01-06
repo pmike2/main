@@ -5,6 +5,7 @@
 #include <utility>
 
 #include "typedefs.h"
+#include "polygon_2d.h"
 
 #include "elevation.h"
 
@@ -21,6 +22,7 @@ struct River {
 	std::vector<std::tuple<pt_3d, pt_3d, pt_3d, pt_3d> > _triangles;
 	float * _data;
 	uint _n_pts;
+	Polygon2D * _polygon;
 };
 
 
