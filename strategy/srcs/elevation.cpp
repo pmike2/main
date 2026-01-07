@@ -9,107 +9,37 @@ Elevation::Elevation() {
 
 
 Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : GraphGrid(origin, size, n_ligs, n_cols)
-	//_origin(origin), _size(size), _n_ligs(n_ligs), _n_cols(n_cols) 
 {
-	//_resolution = pt_2d(_size.x / (number)(_n_cols- 1), _size.y / (number)(_n_ligs- 1));
 
-	/*_altis = new number[_n_ligs * _n_cols];
-	for (uint i=0; i<_n_ligs * _n_cols; ++i) {
-		_altis[i] = 0.0;
-	}*/
 }
 
 
 Elevation::~Elevation() {
-	//delete _altis;
+	
 }
-
-
-/*bool Elevation::in_boundaries(int col, int lig) {
-	if (col < 0 || lig < 0 || col >= _n_cols || lig >= _n_ligs) {
-		return false;
-	}
-	return true;
-}
-
-
-bool Elevation::in_boundaries(pt_2d pt) {
-	if (pt.x < _origin.x || pt.x > _origin.x + _size.x || pt.y < _origin.y || pt.y > _origin.y + _size.y) {
-		return false;
-	}
-	return true;
-}
-
-
-std::pair<uint, uint> Elevation::id2col_lig(uint id) {
-	return std::make_pair(id % _n_cols, id/ _n_cols);
-}
-
-
-uint Elevation::col_lig2id(uint col, uint lig) {
-	return col+ _n_cols* lig;
-}
-
-
-pt_2d Elevation::col_lig2pt(uint col, uint lig) {
-	return pt_2d(
-		_origin.x+ (number)(col) * _resolution.x,
-		_origin.y+ (number)(lig) * _resolution.y
-	);
-}
-
-
-pt_2d Elevation::id2pt_2d(uint id) {
-	std::pair<uint, uint> col_lig = id2col_lig(id);
-	return col_lig2pt(col_lig.first, col_lig.second);
-}
-
-
-pt_3d Elevation::id2pt_3d(uint id) {
-	pt_2d pt = id2pt_2d(id);
-	return pt_3d(pt.x, pt.y, get_alti(id));
-}
-
-
-std::pair<uint, uint> Elevation::pt2col_lig(pt_2d pt) {
-	if (!in_boundaries(pt)) {
-		std::cerr << "Elevation::pt2col_lig : " << glm_to_string(pt) << " hors Elevation\n";
-		return std::make_pair(0, 0);
-	}
-	int col= (int)((pt.x- _origin.x) / _resolution.x);
-	int lig= (int)((pt.y- _origin.y) / _resolution.y);
-	return std::make_pair(col, lig);
-}
-
-
-uint Elevation::pt2id(pt_2d pt) {
-	std::pair<uint, uint> col_lig = pt2col_lig(pt);
-	return col_lig2id(col_lig.first, col_lig.second);
-}*/
 
 
 number Elevation::get_alti(uint id) {
-	//return _altis[id];
+	if (!in_boundaries(id)) {
+		std::cerr << "Elevation::get_alti : " << id << " hors grille\n";
+		return 0.0;
+	}
 	return _vertices[id]._pos.z;
 }
 
 
 number Elevation::get_alti(int col, int lig) {
 	if (!in_boundaries(col, lig)) {
-		std::cerr << "Elevation::get_alti : (" << col << " ; " << lig << ") hors Elevation (2!)\n";
+		std::cerr << "Elevation::get_alti : (" << col << " ; " << lig << ") hors grille\n";
 		return 0.0;
 	}
-	//return _altis[col_lig2id(col, lig)];
 	return _vertices[col_lig2id(col, lig)]._pos.z;
 }
 
 
 number Elevation::get_alti(pt_2d pt) {
-	//std::pair<uint, uint> col_lig = pt2col_lig(pt);
-	//return get_alti(col_lig.first, col_lig.second);
-	
 	if (!in_boundaries(pt)) {
-		std::cerr << "Elevation::get_alti : " << glm_to_string(pt) << " hors Elevation\n";
+		std::cerr << "Elevation::get_alti : " << glm_to_string(pt) << " hors grille\n";
 		return 0.0;
 	}
 	int col_left= (int)((pt.x- _origin.x) / _resolution.x);
@@ -147,7 +77,6 @@ number Elevation::get_alti(pt_2d pt) {
 	alti_right = alti_right_bottom * (1.0 - lig_mod) + alti_right_top * lig_mod;
 
 	return alti_left * (1.0 - col_mod) + alti_right * col_mod;
-	//return lig_mod;
 }
 
 
@@ -156,7 +85,7 @@ number Elevation::get_alti_over_polygon(Polygon2D * polygon) {
 	uint n_pts = 0;
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
-			pt_2d pt = col_lig2pt(col, lig);
+			pt_2d pt = col_lig2pt_2d(col, lig);
 			if (is_pt_inside_poly(pt, polygon)) {
 				n_pts++;
 				result += get_alti(col, lig);
@@ -174,91 +103,46 @@ number Elevation::get_alti_over_polygon(Polygon2D * polygon) {
 }
 
 
-/*std::vector<uint> Elevation::get_ids_over_aabb(AABB_2D * aabb) {
-	std::vector<uint> result;
-	std::pair<uint, uint> col_lig_min = pt2col_lig(aabb->_pos);
-	std::pair<uint, uint> col_lig_max = pt2col_lig(aabb->_pos + aabb->_size);
-	for (uint col = col_lig_min.first; col<= col_lig_max.first; ++col) {
-		for (uint lig = col_lig_min.second; lig<= col_lig_max.second; ++lig) {
-			result.push_back(col_lig2id(col, lig));
-		}
-	}
-	return result;
-}*/
-
-
-/*std::vector<uint> Elevation::get_neighbors(uint id) {
-	std::vector<uint> result;
-	std::pair<uint, uint> col_lig = id2col_lig(id);
-	uint col = col_lig.first;
-	uint lig = col_lig.second;
-	if (col > 0) {
-		result.push_back(col_lig2id(col - 1, lig));
-		if (lig > 0) {
-			result.push_back(col_lig2id(col - 1, lig - 1));
-		}
-		if (lig < _n_ligs - 1) {
-			result.push_back(col_lig2id(col - 1, lig + 1));
-		}
-	}
-	if (col < _n_cols - 1) {
-		result.push_back(col_lig2id(col + 1, lig));
-		if (lig > 0) {
-			result.push_back(col_lig2id(col + 1, lig - 1));
-		}
-		if (lig < _n_ligs - 1) {
-			result.push_back(col_lig2id(col + 1, lig + 1));
-		}
-	}
-	if (lig > 0) {
-		result.push_back(col_lig2id(col, lig - 1));
-	}
-	if (lig < _n_ligs - 1) {
-		result.push_back(col_lig2id(col, lig + 1));
-	}
-
-	std::sort(result.begin(), result.end());
-
-	return result;
-}*/
-
-
-pt_3d Elevation::get_normal(uint id) {
-	std::pair<uint, uint> col_lig = id2col_lig(id);
-	uint col = col_lig.first;
-	uint lig = col_lig.second;
-	std::vector<std::tuple<uint, uint, uint> > triangles;
+pt_3d Elevation::get_normal(int col, int lig) {
+	std::vector<std::pair<uint, uint> > ids;
 
 	if (col > 0) {
 		if (lig > 0) {
-			triangles.push_back(std::make_tuple(col_lig2id(col - 1, lig), col_lig2id(col - 1, lig - 1), id));
-			triangles.push_back(std::make_tuple(col_lig2id(col - 1, lig - 1), col_lig2id(col, lig - 1), id));
+			ids.push_back(std::make_pair(col_lig2id(col - 1, lig), col_lig2id(col - 1, lig - 1)));
+			ids.push_back(std::make_pair(col_lig2id(col - 1, lig - 1), col_lig2id(col, lig - 1)));
 		}
 		if (lig < _n_ligs - 1) {
-			triangles.push_back(std::make_tuple(col_lig2id(col - 1, lig + 1), col_lig2id(col - 1, lig), id));
-			triangles.push_back(std::make_tuple(col_lig2id(col, lig + 1), col_lig2id(col - 1, lig + 1), id));
+			ids.push_back(std::make_pair(col_lig2id(col - 1, lig + 1), col_lig2id(col - 1, lig)));
+			ids.push_back(std::make_pair(col_lig2id(col, lig + 1), col_lig2id(col - 1, lig + 1)));
 		}
 	}
 	if (col < _n_cols - 1) {
 		if (lig > 0) {
-			triangles.push_back(std::make_tuple(col_lig2id(col, lig - 1), col_lig2id(col + 1, lig - 1), id));
-			triangles.push_back(std::make_tuple(col_lig2id(col + 1, lig - 1), col_lig2id(col + 1, lig), id));
+			ids.push_back(std::make_pair(col_lig2id(col, lig - 1), col_lig2id(col + 1, lig - 1)));
+			ids.push_back(std::make_pair(col_lig2id(col + 1, lig - 1), col_lig2id(col + 1, lig)));
 		}
 		if (lig < _n_ligs - 1) {
-			triangles.push_back(std::make_tuple(col_lig2id(col + 1, lig), col_lig2id(col + 1, lig + 1), id));
-			triangles.push_back(std::make_tuple(col_lig2id(col + 1, lig + 1), col_lig2id(col, lig + 1), id));
+			ids.push_back(std::make_pair(col_lig2id(col + 1, lig), col_lig2id(col + 1, lig + 1)));
+			ids.push_back(std::make_pair(col_lig2id(col + 1, lig + 1), col_lig2id(col, lig + 1)));
 		}
 	}
 
+	pt_3d pt = col_lig2pt_3d(col, lig);
 	pt_3d result(0.0);
-	for (auto & triangle : triangles) {
-		pt_3d u = glm::normalize(id2pt_3d(std::get<1>(triangle)) - id2pt_3d(std::get<0>(triangle)));
-		pt_3d v = glm::normalize(id2pt_3d(std::get<2>(triangle)) - id2pt_3d(std::get<0>(triangle)));
+	for (auto & id_pair : ids) {
+		pt_3d u = glm::normalize(id2pt_3d(id_pair.first) - pt);
+		pt_3d v = glm::normalize(id2pt_3d(id_pair.second) - pt);
 		result += glm::cross(u, v);
 	}
 	result = glm::normalize(result);
 	
 	return result;
+}
+
+
+pt_3d Elevation::get_normal(uint id) {
+	std::pair<uint, uint> col_lig = id2col_lig(id);
+	return get_normal(col_lig2id(col_lig.first, col_lig.second));
 }
 
 
@@ -314,7 +198,7 @@ void Elevation::set_alti(int col, int lig, number alti) {
 void Elevation::set_alti_over_polygon(Polygon2D * polygon, number alti) {
 	for (uint col=0; col< _n_cols; ++col) {
 		for (uint lig=0; lig< _n_ligs; ++lig) {
-			pt_2d pt = col_lig2pt(col, lig);
+			pt_2d pt = col_lig2pt_2d(col, lig);
 			if (is_pt_inside_poly(pt, polygon)) {
 				set_alti(col, lig, alti);
 			}
@@ -366,8 +250,8 @@ void Elevation::randomize() {
 	uint terrace_gradient_w= 4;
 	uint terrace_gradient_h= 4;
 
-	//std::vector<number> amplitudes {1.0, 0.5, 0.25, 0.12, 0.06};
-	std::vector<number> amplitudes {1.0, 0.5, 0.33, 0.25, 0.2};
+	std::vector<number> amplitudes {1.0, 0.5, 0.25, 0.12, 0.06};
+	//std::vector<number> amplitudes {1.0, 0.5, 0.33, 0.25, 0.2};
 	number amp_sum = 0.0;
 	for (auto & a : amplitudes) {
 		amp_sum += a;
@@ -456,9 +340,10 @@ void Elevation::randomize() {
 			/*if (terrace_hmin + hm < _altis[id] && terrace_hmax + hm > _altis[id]) {
 				_altis[id] = round(_altis[id] * 2.0) / 2.0;
 			}*/
-			if (terrace_hmin + hm < get_alti(col, lig) && terrace_hmax + hm > get_alti(col, lig)) {
+			
+			/*if (terrace_hmin + hm < get_alti(col, lig) && terrace_hmax + hm > get_alti(col, lig)) {
 				set_alti(col, lig, round(get_alti(col, lig) * 2.0) / 2.0);
-			}
+			}*/
 		}
 	}
 	delete gradient;

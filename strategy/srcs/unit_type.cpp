@@ -59,7 +59,10 @@ number UnitType::elevation_coeff(number delta_elevation) {
 
 // demi-taille de la diagonale du + petit carré contenant unit_type->_size (+ epsilon)
 number UnitType::buffer_size() {
-	return 0.5 * norm(pt_2d(std::max(_size.x, _size.y))) + EPS_UNIT_TYPE_BUFFER_SIZE;
+	//return 0.5 * norm(pt_2d(std::max(_size.x, _size.y))) + EPS_UNIT_TYPE_BUFFER_SIZE;
+	//return 0.5 * norm(pt_2d(std::max(_size.x, _size.y)));
+	// sqrt(2) / 2
+	return 0.7071 * std::max(_size.x, _size.y);
 }
 
 

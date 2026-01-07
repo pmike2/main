@@ -43,7 +43,7 @@ double rand_double(double x0, double x1) {
 
 
 // renvoie un float aléatoire entre x0 et x1
-float rand_number(float x0, float x1) {
+float rand_float(float x0, float x1) {
 	if (x1> x0)
 		return x0+ (x1- x0)* (float)(rand()% 10000)/ 10000;
 	else
@@ -59,13 +59,13 @@ number rand_number(number x0, number x1) {
 }
 
 
-pt_2d rand_pt(number xmin, number xmax, number ymin, number ymax) {
+pt_2d rand_pt_2d(number xmin, number xmax, number ymin, number ymax) {
 	return pt_2d(rand_number(xmin, xmax), rand_number(ymin, ymax));
 }
 
 
-pt_2d rand_pt(pt_2d pt_min, pt_2d pt_max) {
-	return rand_pt(pt_min.x, pt_max.x, pt_min.y, pt_max.y);
+pt_2d rand_pt_2d(pt_2d pt_min, pt_2d pt_max) {
+	return rand_pt_2d(pt_min.x, pt_max.x, pt_min.y, pt_max.y);
 }
 
 
@@ -74,7 +74,7 @@ pt_3d rand_pt_3d(number xmin, number xmax, number ymin, number ymax, number zmin
 }
 
 
-pt_2d rand_pt_3d(pt_3d pt_min, pt_3d pt_max) {
+pt_3d rand_pt_3d(pt_3d pt_min, pt_3d pt_max) {
 	return rand_pt_3d(pt_min.x, pt_max.x, pt_min.y, pt_max.y, pt_min.z, pt_max.z);
 }
 
@@ -89,8 +89,9 @@ int rand_int(int x0, int x1) {
 
 
 bool rand_bool() {
-	if (rand()% 2)
+	if (rand() % 2) {
 		return true;
+	}
 	return false;
 }
 

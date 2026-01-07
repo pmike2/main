@@ -62,6 +62,10 @@ TreeSpecies::TreeSpecies(std::string json_path) {
 	_branch_color[1] = js["branch_color"][1];
 	_branch_color[2] = js["branch_color"][2];
 	_branch_color[3] = js["branch_color"][3];
+	_alti_min = js["alti_min"];
+	_alti_max = js["alti_max"];
+	_water_dist_min = js["water_dist_min"];
+	_water_dist_max = js["water_dist_max"];
 }
 
 
@@ -90,16 +94,14 @@ Branch::Branch(pt_3d pt_base, number radius_base, number radius_end, number r, n
 	pt_3d circle_base[BRANCH_N_POINTS_PER_CIRCLE];
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE; ++i) {
 		circle_base[i] = _pt_base + 
-			rot * pt_3d(_radius_base * cos(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), _radius_base * sin(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), 0.0);
-		//std::cout << "circle_base " << i << " : " << glm::to_string(circle_base[i]) << "\n";
+			rot * pt_3d(_radius_base * cos(2.0 * M_PI * number(i) / number(BRANCH_N_POINTS_PER_CIRCLE)), _radius_base * sin(2.0 * M_PI * number(i) / number(BRANCH_N_POINTS_PER_CIRCLE)), 0.0);
 	}
 
 	pt_3d circle_end[BRANCH_N_POINTS_PER_CIRCLE];
 	for (uint i=0; i<BRANCH_N_POINTS_PER_CIRCLE; ++i) {
 		circle_end[i] = _pt_base + 
-			rot * pt_3d(_radius_base * cos(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), _radius_base * sin(2.0 * M_PI * double(i) / double(BRANCH_N_POINTS_PER_CIRCLE)), 0.0) +
+			rot * pt_3d(_radius_base * cos(2.0 * M_PI * number(i) / number(BRANCH_N_POINTS_PER_CIRCLE)), _radius_base * sin(2.0 * M_PI * number(i) / number(BRANCH_N_POINTS_PER_CIRCLE)), 0.0) +
 			_r * direction;
-		//std::cout << "circle_end " << i << " : " << glm::to_string(circle_end[i]) << "\n";
 	}
 
 	_vertices_side = new pt_3d[BRANCH_N_POINTS_PER_CIRCLE * 6];
@@ -351,13 +353,41 @@ std::ostream & operator << (std::ostream & os, const Tree & t) {
 }
 
 
+// StoneSpecies ---------------------------------------------------------------------------------
+StoneSpecies::StoneSpecies() {
+
+}
+
+
+StoneSpecies::StoneSpecies(std::string json_path) {
+	std::ifstream ifs(json_path);
+	json js= json::parse(ifs);
+	ifs.close();
+
+	_name = js["name"];
+	_color[0] = js["color"][0];
+	_color[1] = js["color"][1];
+	_color[2] = js["color"][2];
+	_color[3] = js["color"][3];
+	_alti_min = js["alti_min"];
+	_alti_max = js["alti_max"];
+	_water_dist_min = js["water_dist_min"];
+	_water_dist_max = js["water_dist_max"];
+}
+
+
+StoneSpecies::~StoneSpecies() {
+
+}
+
+
 // Stone ----------------------------------------------------------------------------------------
 Stone::Stone() {
 
 }
 
 
-Stone::Stone(pt_3d pt_base, pt_3d size) : Element(pt_base, size) {
+Stone::Stone(StoneSpecies * species, pt_3d pt_base, pt_3d size) : Element(pt_base, size), _species(species) {
 	_hull = new ConvexHull();
 	_hull->randomize(STONE_N_POINTS_HULL, pt_3d(pt_base.x - 0.5 * size.x, pt_base.y - 0.5 * size.y, pt_base.z), pt_3d(pt_base.x + 0.5 * size.x, pt_base.y + 0.5 * size.y, pt_base.z + size.z));
 	_hull->compute();
@@ -378,17 +408,16 @@ Stone::~Stone() {
 
 void Stone::update_data() {
 	uint compt = 0;
-	glm::vec4 color(0.0f, 1.0f, 1.0f, 0.5f);
 	for (auto face : _hull->_faces) {
 		for (uint i=0; i<3; ++i) {
 			Pt * pt = _hull->_pts[face->_idx[i]];
 			_data[compt++] = float(pt->_coords.x);
 			_data[compt++] = float(pt->_coords.y);
 			_data[compt++] = float(pt->_coords.z);
-			_data[compt++] = color[0];
-			_data[compt++] = color[1];
-			_data[compt++] = color[2];
-			_data[compt++] = color[3];
+			_data[compt++] = _species->_color[0];
+			_data[compt++] = _species->_color[1];
+			_data[compt++] = _species->_color[2];
+			_data[compt++] = _species->_color[3];
 			_data[compt++] = float(face->_normal.x);
 			_data[compt++] = float(face->_normal.y);
 			_data[compt++] = float(face->_normal.z);
@@ -403,10 +432,14 @@ Elements::Elements() {
 }
 
 
-Elements::Elements(std::string dir_tree_jsons) {
-	std::vector<std::string> jsons = list_files(dir_tree_jsons, "json");
-	for (auto json_path : jsons) {
+Elements::Elements(std::string dir_tree_jsons, std::string dir_stone_jsons) {
+	std::vector<std::string> tree_jsons = list_files(dir_tree_jsons, "json");
+	for (auto json_path : tree_jsons) {
 		_tree_species[basename(json_path)] = new TreeSpecies(json_path);
+	}
+	std::vector<std::string> stone_jsons = list_files(dir_stone_jsons, "json");
+	for (auto json_path : stone_jsons) {
+		_stone_species[basename(json_path)] = new StoneSpecies(json_path);
 	}
 }
 
@@ -433,8 +466,13 @@ Tree * Elements::add_tree(std::string species_name, pt_3d pt_base, pt_3d size) {
 }
 
 
-Stone * Elements::add_stone(pt_3d pt_base, pt_3d size) {
-	Stone * stone = new Stone(pt_base, size);
+Stone * Elements::add_stone(std::string species_name, pt_3d pt_base, pt_3d size) {
+	if (_stone_species.count(species_name) == 0) {
+		std::cerr << species_name << " espece inconnue\n";
+		return NULL;
+	}
+
+	Stone * stone = new Stone(_stone_species[species_name], pt_base, size);
 	_elements.push_back(stone);
 	return stone;
 }

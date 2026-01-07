@@ -1,0 +1,8 @@
+{
+	"name" : "dark_stone",
+	"color" : [0.2, 0.2, 0.2, 1.0],
+	"alti_min" : 1.0,
+	"alti_max" : 2.0,
+	"water_dist_min" : 0.1,
+	"water_dist_max" : 5.0
+}

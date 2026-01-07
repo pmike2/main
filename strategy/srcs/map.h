@@ -46,25 +46,26 @@ struct Map {
 	Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t);
 	~Map();
 	void add_unit(std::string type_name, pt_2d pos, time_point t);
-	void add_static_element(std::string element_name, pt_3d pos, pt_3d size);
-	void add_river(pt_2d src);
-	void add_lake(pt_2d src);
-	
+	//void add_static_element(std::string element_name, pt_3d pos, pt_3d size);
+	River * add_river(pt_2d src);
+	Lake * add_lake(pt_2d src);
+
 	void update_alti_grid();
 	void update_alti_path(Unit * unit);
-	void update_elevation_grids();
+	void update_elevation_grid();
 	
-	void update_terrain_grids_with_elevation(BBox_2D * bbox = NULL);
+	void update_terrain_grid_with_elevation(BBox_2D * bbox = NULL);
+	void update_terrain_grid_with_element(Element * element);
 	
 	void sync2elevation();
 	
-	void clear_units_position_grids();
+	void clear_units_position_grid();
 	std::vector<std::pair<uint, uint> > waiting_unit_positions_edges(Unit * unit, UnitType * unit_type);
 	std::vector<std::pair<uint, uint> > moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all);
-	void add_waiting_unit_to_position_grids(Unit * unit);
-	void remove_waiting_unit_from_position_grids(Unit * unit);
-	void add_moving_unit_to_position_grids(Unit * unit);
-	void remove_moving_unit_from_position_grids(Unit * unit, bool all);
+	void add_waiting_unit_to_position_grid(Unit * unit);
+	void remove_waiting_unit_from_position_grid(Unit * unit);
+	void add_moving_unit_to_position_grid(Unit * unit);
+	void remove_moving_unit_from_position_grid(Unit * unit, bool all);
 
 	void path_find(Unit * unit, pt_2d goal);
 	void clear();

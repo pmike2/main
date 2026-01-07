@@ -13,7 +13,7 @@ Strategy::Strategy() {
 
 
 Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t) :
-	_mode(FREE), _view_system(view_system)
+	_mode(FREE), _view_system(view_system), _progs(progs)
 {
 	const uint n_buffers = 8;
 	GLuint buffers[n_buffers];
@@ -25,10 +25,6 @@ Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system
 	
 	_contexts["grid"]->_active = false;
 
-	/*_contexts["obstacle"]= new DrawContext(progs["repere"], buffers[1],
-		std::vector<std::string>{"position_in", "color_in"},
-		std::vector<std::string>{"world2clip_matrix"});*/
-
 	_contexts["unit"]= new DrawContext(progs["repere"], buffers[1],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
@@ -37,19 +33,19 @@ Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 
-	_contexts["elevation"]= new DrawContext(progs["light"], buffers[3],
+	_contexts["elevation"]= new DrawContext(progs["elevation_smooth"], buffers[3],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
-	_contexts["elements"]= new DrawContext(progs["light"], buffers[4],
+	_contexts["elements"]= new DrawContext(progs["elevation_smooth"], buffers[4],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
-	_contexts["river"]= new DrawContext(progs["light"], buffers[5],
+	_contexts["river"]= new DrawContext(progs["elevation_smooth"], buffers[5],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
-	_contexts["lake"]= new DrawContext(progs["light"], buffers[6],
+	_contexts["lake"]= new DrawContext(progs["elevation_smooth"], buffers[6],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
@@ -62,20 +58,15 @@ Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system
 
 	_view_system->_rect_select->_z = -1.0; // pour que l'affichage du rectangle de sélection se fassent par dessus le reste
 
-	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-50.0, -50.0), pt_2d(100.0, 100.0), pt_2d(1.0), pt_2d(0.25), t);
+	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-50.0, -50.0), pt_2d(100.0, 100.0), pt_2d(1.0), pt_2d(0.125), t);
 	//_map = new Map("../data/unit_types", pt_2d(0.0, 0.0), pt_2d(10.0, 10.0), pt_2d(2.0), pt_2d(2.0), t);
 	//std::cout << *_map << "\n";
 	_map->randomize();
 
-	_visible_grid_unit_type = "boat";
-	_visible_grid_type = "units_position";
+	_visible_grid_unit_type = "infantery";
+	_visible_grid_type = "terrain";
 
 	update_all();
-
-	/*std::vector<uint> v= _map->_elevation->get_neighbors(1000);
-	for (auto x : v) {
-		std::cout << x << " ; ";
-	}std::cout << "\n";*/
 }
 
 
@@ -154,8 +145,8 @@ void Strategy::draw_surface(std::string context_name) {
 
 
 void Strategy::draw() {
-	for (auto context_name : std::vector<std::string>{"grid", "unit", "path", "debug"}) {
-	//for (auto context_name : std::vector<std::string>{"grid", "unit", "path"}) {
+	//for (auto context_name : std::vector<std::string>{"grid", "unit", "path", "debug"}) {
+	for (auto context_name : std::vector<std::string>{"grid", "unit", "path"}) {
 		draw_linear(context_name);
 	}
 	for (auto context_name : std::vector<std::string>{"elevation", "elements", "river", "lake"}) {
@@ -232,25 +223,7 @@ void Strategy::anim(time_point t, InputState * input_state) {
 }
 
 
-/*GraphGrid * Strategy::get_visible_grid() {
-	if (_visible_grid_type == "elevation") {
-		return _map->_path_finders[_map->_unit_types[_visible_grid_unit_type]]->_elevation_grid;
-	}
-	if (_visible_grid_type == "units_position") {
-		return _map->_path_finders[_map->_unit_types[_visible_grid_unit_type]]->_units_position_grid;
-	}
-	if (_visible_grid_type == "terrain") {
-		return _map->_path_finders[_map->_unit_types[_visible_grid_unit_type]]->_terrain_grid;
-	}
-	std::cerr << "Strategy::get_visible_grid() error\n";
-	return NULL;
-}*/
-
-
 glm::vec4 Strategy::get_edge_color() {
-	//return glm::vec4(1.0, 0.0, 0.0, 1.0);
-	//GraphGrid * grid = get_visible_grid();
-
 	GraphEdge edge = _map->_path_finder->_it_e->second;
 	EdgeData * data = (EdgeData *)(edge._data);
 	UnitType * unit_type = _map->_unit_types[_visible_grid_unit_type];
@@ -578,17 +551,17 @@ void Strategy::update_debug() {
 		context->_n_pts += 8;
 	}*/
 
-	if (_map->_rivers.empty()) {
+	/*if (_map->_rivers.empty()) {
 		context->_active = false;
 		return;
 	}
-	context->_n_pts = 2 * _map->_rivers[0]->_id_nodes.size();
+	context->_n_pts = 2 * _map->_rivers[_map->_rivers.size() - 1]->_id_nodes.size();*/
 	
-	/*if (_map->_lakes.empty()) {
+	if (_map->_lakes.empty()) {
 		context->_active = false;
 		return;
 	}
-	context->_n_pts = 2 * _map->_lakes[0]->_id_nodes.size();*/
+	context->_n_pts = 2 * _map->_lakes[_map->_lakes.size() - 1]->_id_nodes.size();
 
 	context->_active = true;
 
@@ -625,16 +598,15 @@ void Strategy::update_debug() {
 		}
 	}*/
 
-	for (uint i=0; i<_map->_rivers[0]->_id_nodes.size(); ++i) {
-		pt_3d pt1 = _map->_elevation->id2pt_3d(_map->_rivers[0]->_id_nodes[i]) + pt_3d(0.0, 0.0, 0.2);
-		//pt_3d pt2 = _map->_elevation->id2pt_3d(_map->_rivers[0]->_id_nodes[i + 1]);
-		//pt_3d pt2 = pt1 + _map->_elevation->get_normal(_map->_rivers[0]->_id_nodes[i]);
-		pt_3d pt2 = pt1 + pt_3d(0.1, 0.1, 0.0);
+	/*River * river = _map->_rivers[_map->_rivers.size() - 1];
+	for (uint i=0; i<river->_id_nodes.size(); ++i) {
+		pt_3d pt1 = _map->_elevation->id2pt_3d(river->_id_nodes[i]) + pt_3d(0.0, 0.0, 0.2);
+		pt_3d pt2 = pt1 + pt_3d(0.1, 0.1, 0.0);*/
 	
-	//Lake * lake = _map->_lakes[_map->_lakes.size() - 1];
-	//for (uint i=0; i<lake->_id_nodes.size(); ++i) {
-		//pt_3d pt1 = _map->_elevation->id2pt_3d(lake->_id_nodes[i]) + pt_3d(0.0, 0.0, 0.2);
-		//pt_3d pt2 = pt1 + pt_3d(0.1, 0.1, 0.0);
+	Lake * lake = _map->_lakes[_map->_lakes.size() - 1];
+	for (uint i=0; i<lake->_id_nodes.size(); ++i) {
+		pt_3d pt1 = _map->_elevation->id2pt_3d(lake->_id_nodes[i]) + pt_3d(0.0, 0.0, 0.2);
+		pt_3d pt2 = pt1 + pt_3d(0.1, 0.1, 0.0);
 
 		ptr[0] = float(pt1.x);
 		ptr[1] = float(pt1.y);
@@ -683,23 +655,25 @@ void Strategy::update_elevation() {
 	for (uint col = 0; col<_map->_elevation->_n_cols - 1; ++col) {
 		for (uint lig = 0; lig<_map->_elevation->_n_ligs - 1; ++lig) {
 			pt_3d pts[4] = {
-				pt_3d(_map->_elevation->col_lig2pt(col, lig), _map->_elevation->get_alti(col, lig)),
-				pt_3d(_map->_elevation->col_lig2pt(col + 1, lig), _map->_elevation->get_alti(col + 1, lig)),
-				pt_3d(_map->_elevation->col_lig2pt(col + 1, lig + 1), _map->_elevation->get_alti(col + 1, lig + 1)),
-				pt_3d(_map->_elevation->col_lig2pt(col, lig + 1), _map->_elevation->get_alti(col, lig + 1))
+				_map->_elevation->col_lig2pt_3d(col, lig),
+				_map->_elevation->col_lig2pt_3d(col + 1, lig),
+				_map->_elevation->col_lig2pt_3d(col + 1, lig + 1),
+				_map->_elevation->col_lig2pt_3d(col, lig + 1)
 			};
 
-			std::vector<pt_3d> normals;
-			normals.push_back(glm::normalize(glm::cross(pts[1] - pts[0], pts[2] - pts[0])));
-			normals.push_back(glm::normalize(glm::cross(pts[2] - pts[0], pts[3] - pts[0])));
+			pt_3d normals[4] = {
+				_map->_elevation->get_normal(col, lig),
+				_map->_elevation->get_normal(col + 1, lig),
+				_map->_elevation->get_normal(col + 1, lig + 1),
+				_map->_elevation->get_normal(col, lig + 1)
+			};
 			
 			for (uint i=0; i<6; ++i) {
 				glm::vec4 color;
 				number alti = pts[idx_tris[i]].z;
-				uint idx_normal = i / 3;
 
 				if (alti < 0.01) {
-					color = glm::vec4(0.0f, 0.2f, 0.8f, 1.0f);
+					color = glm::vec4(0.4f, 0.5f, 1.0f, 1.0f);
 				}
 				else if (alti < 0.3) {
 					color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
@@ -708,19 +682,20 @@ void Strategy::update_elevation() {
 					color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 				}
 				else  {
-					color = glm::vec4(0.2f, 1.0f - float(alti) / 10.0f, 0.2f, 1.0f);
+					//color = glm::vec4(0.4f, 1.0f, 0.3f, 1.0f);
+					color = glm::vec4(0.1f + rand_float(0.0f, 0.3f), 0.7f + rand_float(0.0f, 0.3f), 0.0f + rand_float(0.0f, 0.3f), 1.0f);
 				}
 
 				ptr[0] = float(pts[idx_tris[i]].x);
 				ptr[1] = float(pts[idx_tris[i]].y);
-				ptr[2] = float(alti);
+				ptr[2] = float(pts[idx_tris[i]].z);
 				ptr[3] = color.r;
 				ptr[4] = color.g;
 				ptr[5] = color.b;
 				ptr[6] = color.a;
-				ptr[7] = float(normals[idx_normal].x);
-				ptr[8] = float(normals[idx_normal].y);
-				ptr[9] = float(normals[idx_normal].z);
+				ptr[7] = float(normals[idx_tris[i]].x);
+				ptr[8] = float(normals[idx_tris[i]].y);
+				ptr[9] = float(normals[idx_tris[i]].z);
 
 				ptr += 10;
 			}
@@ -1008,11 +983,14 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 			update_grid();
 		}
 		else if (input_state->_keys[SDLK_RSHIFT]) {
-			if (_visible_grid_unit_type == "boat") {
-				_visible_grid_unit_type = "infantery";
+			if (_visible_grid_unit_type == "infantery") {
+				_visible_grid_unit_type = "tank";
 			}
-			else {
+			else if (_visible_grid_unit_type == "tank") {
 				_visible_grid_unit_type = "boat";
+			}
+			else if (_visible_grid_unit_type == "boat") {
+				_visible_grid_unit_type = "infantery";
 			}
 			std::cout << "visible_grid_type = " << _visible_grid_type << " ; visible_grid_unit_type = " << _visible_grid_unit_type << "\n";
 			update_grid();
@@ -1051,9 +1029,15 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 		return true;
 	}
 	else if (key == SDLK_SPACE) {
-		//update_grid();
-		update_debug();
-		_contexts["river"]->_active = !_contexts["river"]->_active;
+		for (auto & context_name : std::vector<std::string> {"elevation", "elements", "river", "lake"}) {
+			if (_contexts[context_name]->_prog == _progs["elevation_flat"]) {
+				_contexts[context_name]->_prog = _progs["elevation_smooth"];
+			}
+			else {
+				_contexts[context_name]->_prog = _progs["elevation_flat"];
+			}
+		}
+
 		return true;
 	}
 	return false;

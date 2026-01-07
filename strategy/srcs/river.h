@@ -15,14 +15,15 @@ struct River {
 	River(Elevation * elevation, pt_2d src);
 	~River();
 	void update_data();
-	
+	pt_2d lowest_pt();
+
 
 	Elevation * _elevation;
 	std::vector<uint> _id_nodes;
-	std::vector<std::tuple<pt_3d, pt_3d, pt_3d, pt_3d> > _triangles;
+	std::vector<std::tuple<uint, uint, uint> > _triangles;
 	float * _data;
 	uint _n_pts;
-	Polygon2D * _polygon;
+	bool _valid;
 };
 
 

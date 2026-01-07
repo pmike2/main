@@ -1,6 +1,6 @@
 {
 	"name" : "infantery",
-	"size" : [0.3, 0.3, 0.5],
+	"size" : [0.1, 0.1, 0.2],
 	"max_velocity" : 0.005,
 	"weights" : {
 		"GROUND" : 0.0,

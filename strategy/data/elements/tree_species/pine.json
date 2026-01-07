@@ -1,9 +1,9 @@
 {
-	"name" : "test",
-	"root_r_min" : 3.0,
-	"root_r_max" : 5.0,
-	"root_radius_base_min" : 0.5,
-	"root_radius_base_max" : 1.0,
+	"name" : "pine",
+	"root_r_min" : 1.0,
+	"root_r_max" : 2.0,
+	"root_radius_base_min" : 1.5,
+	"root_radius_base_max" : 3.0,
 	"root_theta_min" : 0.0,
 	"root_theta_max" : 0.2,
 	"ratio_child_r_min" : 0.4,
@@ -17,5 +17,9 @@
 	"tree_depth" : 2,
 	"n_childrens_min" : 2,
 	"n_childrens_max" : 5,
-	"branch_color" : [0.5, 0.3, 0.2, 1.0]
+	"branch_color" : [0.7, 0.5, 0.4, 1.0],
+	"alti_min" : 4.0,
+	"alti_max" : 6.0,
+	"water_dist_min" : 0.5,
+	"water_dist_max" : 10.0
 }

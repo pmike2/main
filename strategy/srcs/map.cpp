@@ -67,7 +67,7 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 		_path_finder->add_unit_type(unit_type);
 	}
 
-	_elements = new Elements(elements_dir);
+	_elements = new Elements(elements_dir + "/tree_species", elements_dir + "/stone_species");
 
 	sync2elevation();
 }
@@ -100,11 +100,11 @@ void Map::add_unit(std::string type_name, pt_2d pos, time_point t) {
 	unit->_id = _next_unit_id++;
 	_units.push_back(unit);
 
-	add_waiting_unit_to_position_grids(unit);
+	add_waiting_unit_to_position_grid(unit);
 }
 
 
-void Map::add_static_element(std::string element_name, pt_3d pos, pt_3d size) {
+/*void Map::add_static_element(std::string element_name, pt_3d pos, pt_3d size) {
 	AABB * element_aabb;
 	if (element_name == "stone") {
 		Stone * stone = _elements->add_stone(pos, size);
@@ -128,19 +128,22 @@ void Map::add_static_element(std::string element_name, pt_3d pos, pt_3d size) {
 			data->_type[unit_type] = OBSTACLE;
 		}
 	}
-}
+}*/
 
 
-void Map::add_river(pt_2d src) {
+River * Map::add_river(pt_2d src) {
 	River * river = new River(_elevation, src);
-	_rivers.push_back(river);
-
-	/*for (auto & triangle : river->_triangles) {
-		std::vector<pt_3d> pts = {std::get<0>(triangle), std::get<1>(triangle), std::get<2>(triangle)};
-
-	}*/
+	if (!river->_valid) {
+		delete river;
+		return NULL;
+	}
 
 	Polygon2D * polygon = _elevation->ids2polygon(river->_id_nodes);
+	if (polygon == NULL) {
+		delete river;
+		std::cerr << "Map::add_river polygon NULL\n";
+		return NULL;
+	}
 
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
@@ -156,6 +159,10 @@ void Map::add_river(pt_2d src) {
 			}
 		}
 		Polygon2D * polygon_buffered = _elevation->ids2polygon(id_nodes_buffered);
+		if (polygon_buffered == NULL) {
+			std::cerr << "Map::add_river polygon_buffered NULL\n";
+			continue;
+		}
 
 		std::vector<std::pair<uint, uint> > edges = _path_finder->polygon_intersection(polygon_buffered);
 		for (auto & edge : edges) {
@@ -178,19 +185,30 @@ void Map::add_river(pt_2d src) {
 	}
 
 	delete polygon;
+
+	// ne sert à rien pour l'instant car alti non modifiée par River
+	sync2elevation();
+
+	_rivers.push_back(river);
+
+	return river;
 }
 
 
-void Map::add_lake(pt_2d src) {
+Lake * Map::add_lake(pt_2d src) {
 	Lake * lake = new Lake(_elevation, src);
 	if (!lake->_valid) {
 		delete lake;
-		return;
+		return NULL;
 	}
 
-	_lakes.push_back(lake);
 
 	Polygon2D * polygon = _elevation->ids2polygon(lake->_id_nodes);
+	if (polygon == NULL) {
+		delete lake;
+		std::cerr << "Map::add_lake polygon NULL\n";
+		return NULL;
+	}
 
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
@@ -209,6 +227,11 @@ void Map::add_lake(pt_2d src) {
 		}
 		else {
 			AABB_2D * aabb = polygon->_aabb->buffered(-1.0 * unit_type->buffer_size());
+			if (aabb->_size.x < 0.0 || aabb->_size.y < 0.0) {
+				delete aabb;
+				continue;
+			}
+
 			std::vector<uint> id_nodes_buffered_aabb = _elevation->vertices_in_aabb(aabb);
 			delete aabb;
 			for (auto & id : id_nodes_buffered_aabb) {
@@ -219,7 +242,12 @@ void Map::add_lake(pt_2d src) {
 				}
 			}
 		}
+
 		Polygon2D * polygon_buffered = _elevation->ids2polygon(id_nodes_buffered);
+		if (polygon_buffered == NULL) {
+			std::cerr << "Map::add_lake polygon_buffered NULL\n";
+			continue;
+		}
 
 		std::vector<std::pair<uint, uint> > edges = _path_finder->polygon_intersection(polygon_buffered);
 		for (auto & edge : edges) {
@@ -247,6 +275,10 @@ void Map::add_lake(pt_2d src) {
 	delete polygon;
 
 	sync2elevation();
+
+	_lakes.push_back(lake);
+
+	return lake;
 }
 
 
@@ -268,7 +300,7 @@ void Map::update_alti_path(Unit * unit) {
 }
 
 
-void Map::update_elevation_grids() {
+void Map::update_elevation_grid() {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
 
@@ -316,7 +348,7 @@ void Map::update_elevation_grids() {
 }
 
 
-void Map::update_terrain_grids_with_elevation(BBox_2D * bbox) {
+void Map::update_terrain_grid_with_elevation(BBox_2D * bbox) {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
 
@@ -356,14 +388,30 @@ void Map::update_terrain_grids_with_elevation(BBox_2D * bbox) {
 }
 
 
-void Map::sync2elevation() {
-	update_alti_grid();
-	update_elevation_grids();
-	update_terrain_grids_with_elevation();
+void Map::update_terrain_grid_with_element(Element * element) {
+	for (auto & ut : _unit_types) {
+		UnitType * unit_type = ut.second;
+		AABB_2D * aabb = new AABB_2D(pt_2d(element->_aabb->_vmin), pt_2d(element->_aabb->size()));
+		aabb->buffer(unit_type->buffer_size());
+
+		std::vector<std::pair<uint, uint> > edges = _path_finder->aabb_intersection(aabb);
+		for (auto & e : edges) {
+			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
+			EdgeData * data = (EdgeData *)(edge._data);
+			data->_type[unit_type] = OBSTACLE;
+		}
+	}
 }
 
 
-void Map::clear_units_position_grids() {
+void Map::sync2elevation() {
+	update_alti_grid();
+	update_elevation_grid();
+	update_terrain_grid_with_elevation();
+}
+
+
+void Map::clear_units_position_grid() {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
 
@@ -440,7 +488,7 @@ std::vector<std::pair<uint, uint> > Map::moving_unit_positions_edges(Unit * unit
 }
 
 
-void Map::add_waiting_unit_to_position_grids(Unit * unit) {
+void Map::add_waiting_unit_to_position_grid(Unit * unit) {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
 
@@ -455,7 +503,7 @@ void Map::add_waiting_unit_to_position_grids(Unit * unit) {
 }
 
 
-void Map::remove_waiting_unit_from_position_grids(Unit * unit) {
+void Map::remove_waiting_unit_from_position_grid(Unit * unit) {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
 
@@ -470,7 +518,7 @@ void Map::remove_waiting_unit_from_position_grids(Unit * unit) {
 }
 
 
-void Map::add_moving_unit_to_position_grids(Unit * unit) {
+void Map::add_moving_unit_to_position_grid(Unit * unit) {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
 
@@ -485,7 +533,7 @@ void Map::add_moving_unit_to_position_grids(Unit * unit) {
 }
 
 
-void Map::remove_moving_unit_from_position_grids(Unit * unit, bool all) {
+void Map::remove_moving_unit_from_position_grid(Unit * unit, bool all) {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
 		
@@ -517,7 +565,7 @@ void Map::clear() {
 		buffered_obstacle.second.clear();
 	}*/
 
-	clear_units_position_grids();
+	clear_units_position_grid();
 	
 	for (auto & unit : _units) {
 		delete unit;
@@ -577,8 +625,8 @@ void Map::anim(time_point t) {
 			_path_find_thr.join();
 			update_alti_path(unit);
 			unit->goto_next_checkpoint(t);
-			remove_waiting_unit_from_position_grids(unit);
-			add_moving_unit_to_position_grids(unit);
+			remove_waiting_unit_from_position_grid(unit);
+			add_moving_unit_to_position_grid(unit);
 		}
 		else if (unit->_status == COMPUTING_PATH_FAILED) {
 			_path_find_thr_active = false;
@@ -610,12 +658,12 @@ void Map::anim(time_point t) {
 
 			if (unit->checkpoint_checked()) {
 				if (unit->_path->_idx_path + 1 >= unit->_path->_pts.size()) {
-					remove_moving_unit_from_position_grids(unit, true);
-					add_waiting_unit_to_position_grids(unit);
+					remove_moving_unit_from_position_grid(unit, true);
+					add_waiting_unit_to_position_grid(unit);
 					unit->stop();
 				}
 				else {
-					remove_moving_unit_from_position_grids(unit, false);
+					remove_moving_unit_from_position_grid(unit, false);
 					unit->_path->_idx_path++;
 					unit->goto_next_checkpoint(t);
 					/*if (unit->_path->_weights[unit->_path->_idx_path] >= MAX_UNIT_MOVING_WEIGHT) {
@@ -679,32 +727,51 @@ void Map::selected_units_goto(pt_2d pt, time_point t) {
 
 
 void Map::randomize() {
-	std::cout << "random begin\n";
 	clear();
 	
 	_elevation->randomize();
-	std::cout << "random 1\n";
 	
 	sync2elevation();
 
-	std::cout << "random 2\n";
+	/*for (uint i=0; i<20; ++i) {
+		pt_2d src = rand_gaussian(_origin + 0.5 * _size, 0.2 * _size);
+		River * river = add_river(src);
+		if (river != NULL) {
+			add_lake(river->lowest_pt());
+		}
+	}*/
 
-	for (uint i=0; i<1000; ++i) {
-		std::string element_name = std::vector<std::string>{"tree_test", "stone"}[rand_int(0, 1)];
-		pt_3d size;
-		if (element_name == "stone") {
-			size = rand_pt_3d(0.2, 1.0, 0.2, 1.0, 0.1, 0.5);
-		}
-		else {
-			size = rand_pt_3d(0.2, 1.0, 0.2, 1.0, 1.0, 2.0);
-		}
-		pt_2d pt = rand_pt(_origin + 0.5 * pt_2d(size.x, size.y)+ 0.1, _origin + _size - 0.5 * pt_2d(size.x, size.y)- 0.1);
+	for (uint i=0; i<50; ++i) {
+		pt_2d pt = rand_gaussian(_origin + 0.5 * _size, 0.3 * _size);
 		number alti = _elevation->get_alti(pt);
-		if (alti > 0.01) {
-			//add_static_element(element_name, pt_3d(pt.x, pt.y, alti), size);
+		for (auto & tree_species : _elements->_tree_species) {
+			if (alti > tree_species.second->_alti_min && alti < tree_species.second->_alti_max) {
+				for (uint j=0; j<20; ++j) {
+					pt_3d size = rand_pt_3d(0.2, 0.5, 0.2, 0.5, 1.0, 2.0);
+					pt_2d pos = rand_gaussian(pt, pt_2d(1.0));
+					Tree * tree = _elements->add_tree(tree_species.first, pt_3d(pos.x, pos.y, _elevation->get_alti(pos)), size);
+					update_terrain_grid_with_element(tree);
+				}
+				break;
+			}
 		}
 	}
-	std::cout << "random end\n";
+
+	for (uint i=0; i<50; ++i) {
+		pt_2d pt = rand_gaussian(_origin + 0.5 * _size, 0.3 * _size);
+		number alti = _elevation->get_alti(pt);
+		for (auto & stone_species : _elements->_stone_species) {
+			if (alti > stone_species.second->_alti_min && alti < stone_species.second->_alti_max) {
+				for (uint j=0; j<20; ++j) {
+					pt_3d size = rand_pt_3d(0.7, 1.0, 0.7, 1.0, 0.5, 0.7);
+					pt_2d pos = rand_gaussian(pt, pt_2d(1.0));
+					Stone * stone = _elements->add_stone(stone_species.first, pt_3d(pos.x, pos.y, _elevation->get_alti(pos)), size);
+					update_terrain_grid_with_element(stone);
+				}
+				break;
+			}
+		}
+	}
 }
 
 

@@ -1,0 +1,8 @@
+{
+	"name" : "light_stone",
+	"color" : [0.8, 0.8, 0.8, 1.0],
+	"alti_min" : 4.0,
+	"alti_max" : 8.0,
+	"water_dist_min" : 0.1,
+	"water_dist_max" : 5.0
+}

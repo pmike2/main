@@ -56,6 +56,8 @@ public:
 	uint _tree_depth;
 	uint _n_childrens_min, _n_childrens_max;
 	glm::vec4 _branch_color;
+	number _alti_min, _alti_max;
+	number _water_dist_min, _water_dist_max;
 };
 
 
@@ -98,17 +100,34 @@ public:
 
 	TreeSpecies * _species;
 	std::vector<Branch *> _branches;
+	number _alti_min, _alti_max;
+	number _water_dist_min, _water_dist_max;
+};
+
+
+class StoneSpecies {
+public:
+	StoneSpecies();
+	StoneSpecies(std::string json_path);
+	~StoneSpecies();
+
+
+	std::string _name;
+	glm::vec4 _color;
+	number _alti_min, _alti_max;
+	number _water_dist_min, _water_dist_max;
 };
 
 
 class Stone : public Element {
 public:
 	Stone();
-	Stone(pt_3d pt_base, pt_3d size);
+	Stone(StoneSpecies * species, pt_3d pt_base, pt_3d size);
 	~Stone();
 	void update_data();
 
 
+	StoneSpecies * _species;
 	ConvexHull * _hull;
 };
 
@@ -116,15 +135,16 @@ public:
 class Elements {
 public:
 	Elements();
-	Elements(std::string dir_tree_jsons);
+	Elements(std::string dir_tree_jsons, std::string dir_stone_jsons);
 	~Elements();
 	Tree * add_tree(std::string species_name, pt_3d pt_base, pt_3d size);
-	Stone * add_stone(pt_3d pt_base, pt_3d size);
+	Stone * add_stone(std::string species_name, pt_3d pt_base, pt_3d size);
 	void clear();
 	void remove_in_aabb(AABB_2D * aabb);
 
 
 	std::map<std::string, TreeSpecies *> _tree_species;
+	std::map<std::string, StoneSpecies *> _stone_species;
 	std::vector<Element *> _elements;
 };
 

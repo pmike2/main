@@ -127,7 +127,8 @@ GraphGrid::GraphGrid(const pt_2d & origin, const pt_2d & size, uint n_ligs, uint
 	for (uint lig=0; lig<_n_ligs; ++lig) {
 		for (uint col=0; col<_n_cols; ++col) {
 			uint id= col_lig2id(col, lig);
-			pt_2d pt = col_lig2pt(col, lig);
+			// ici on fait use_vertices = false car le vertex n'existe pas encore
+			pt_2d pt = col_lig2pt_2d(col, lig, false);
 			add_vertex(id, pt_3d(pt.x, pt.y, 0.0));
 		}
 	}
@@ -186,6 +187,21 @@ GraphGrid::~GraphGrid() {
 }
 
 
+std::map<std::string, uint> GraphGrid::named_neighbors(uint id) {
+	std::map<std::string, uint> result;
+	std::pair<uint, uint> col_lig = id2col_lig(id);
+	result["right"] = col_lig2id(col_lig.first + 1, col_lig.second);
+	result["left"] = col_lig2id(col_lig.first - 1, col_lig.second);
+	result["top"] = col_lig2id(col_lig.first, col_lig.second + 1);
+	result["bottom"] = col_lig2id(col_lig.first, col_lig.second - 1);
+	result["top_right"] = col_lig2id(col_lig.first + 1, col_lig.second + 1);
+	result["bottom_right"] = col_lig2id(col_lig.first + 1, col_lig.second - 1);
+	result["top_left"] = col_lig2id(col_lig.first - 1, col_lig.second + 1);
+	result["bottom_left"] = col_lig2id(col_lig.first - 1, col_lig.second - 1);
+	return result;
+}
+
+
 bool GraphGrid::in_boundaries(uint id) {
 	if (id >= _n_ligs * _n_cols) {
 		return false;
@@ -210,9 +226,20 @@ bool GraphGrid::in_boundaries(pt_2d pt) {
 }
 
 
+bool GraphGrid::id_in_ids(uint id, const std::vector<uint> & ids) {
+	if (!in_boundaries(id)) {
+		return false;
+	}
+	if (std::find(ids.begin(), ids.end(), id) == ids.end()) {
+		return false;
+	}
+	return true;
+}
+
+
 std::pair<uint, uint> GraphGrid::id2col_lig(uint id) {
 	if (!in_boundaries(id)) {
-		std::cerr << "GraphGrid::id2col_lig : " << id << "hors grille\n";
+		std::cerr << "GraphGrid::id2col_lig : " << id << " hors grille\n";
 		return std::make_pair(0, 0);
 	}
 	return std::make_pair(id % _n_cols, id/ _n_cols);
@@ -228,11 +255,16 @@ uint GraphGrid::col_lig2id(uint col, uint lig) {
 }
 
 
-pt_2d GraphGrid::col_lig2pt(uint col, uint lig) {
+pt_2d GraphGrid::col_lig2pt_2d(uint col, uint lig, bool use_vertices) {
 	if (!in_boundaries(col, lig)) {
-		std::cerr << "GraphGrid::col_lig2pt : " << col << " ; " << lig << "hors grille\n";
+		std::cerr << "GraphGrid::col_lig2pt_2d : " << col << " ; " << lig << " hors grille\n";
 		return pt_2d(0.0);
 	}
+	
+	if (use_vertices) {
+		return id2pt_2d(col_lig2id(col, lig));
+	}
+	
 	return pt_2d(
 		_origin.x+ ((number)(col)/ (number)(_n_cols - 1))* _size.x,
 		_origin.y+ ((number)(lig)/ (number)(_n_ligs - 1))* _size.y
@@ -240,9 +272,18 @@ pt_2d GraphGrid::col_lig2pt(uint col, uint lig) {
 }
 
 
+pt_3d GraphGrid::col_lig2pt_3d(uint col, uint lig) {
+	if (!in_boundaries(col, lig)) {
+		std::cerr << "GraphGrid::col_lig2pt_3d : " << col << " ; " << lig << " hors grille\n";
+		return pt_3d(0.0);
+	}
+	return id2pt_3d(col_lig2id(col, lig));
+}
+
+
 pt_2d GraphGrid::id2pt_2d(uint id) {
 	if (!in_boundaries(id)) {
-		std::cerr << "GraphGrid::id2pt_2d : " << id << "hors grille\n";
+		std::cerr << "GraphGrid::id2pt_2d : " << id << " hors grille\n";
 		return pt_2d(0.0);
 	}
 	//std::pair<uint, uint> col_lig = id2col_lig(id);
@@ -253,7 +294,7 @@ pt_2d GraphGrid::id2pt_2d(uint id) {
 
 pt_3d GraphGrid::id2pt_3d(uint id) {
 	if (!in_boundaries(id)) {
-		std::cerr << "GraphGrid::id2pt_3d : " << id << "hors grille\n";
+		std::cerr << "GraphGrid::id2pt_3d : " << id << " hors grille\n";
 		return pt_3d(0.0);
 	}
 	return _vertices[id]._pos;
@@ -291,7 +332,7 @@ uint GraphGrid::pt2closest_id(pt_2d pt) {
 	number min_dist = 1e9;
 	for (int col_offset=0; col_offset<2; ++col_offset) {
 		for (int lig_offset=0; lig_offset<2; ++lig_offset) {
-			pt_2d pt_vertex = col_lig2pt(col_lig.first + col_offset, col_lig.second + lig_offset);
+			pt_2d pt_vertex = col_lig2pt_2d(col_lig.first + col_offset, col_lig.second + lig_offset);
 			number dist = glm::distance(pt, pt_vertex);
 			if (dist < min_dist) {
 				min_dist = dist;
@@ -322,10 +363,10 @@ std::vector<std::pair<uint, uint> > GraphGrid::segment_intersection(pt_2d pt1, p
 	uint lig_max = std::max(col_lig_1.second, col_lig_2.second);
 	for (uint col=col_min; col<col_max; ++col) {
 		for (uint lig=lig_min; lig<lig_max; ++lig) {
-			pt_2d v1 = col_lig2pt(col, lig);
-			pt_2d v2 = col_lig2pt(col + 1, lig);
-			pt_2d v3 = col_lig2pt(col + 1, lig + 1);
-			pt_2d v4 = col_lig2pt(col, lig + 1);
+			pt_2d v1 = col_lig2pt_2d(col, lig);
+			pt_2d v2 = col_lig2pt_2d(col + 1, lig);
+			pt_2d v3 = col_lig2pt_2d(col + 1, lig + 1);
+			pt_2d v4 = col_lig2pt_2d(col, lig + 1);
 			if (segment_intersects_segment(pt1, pt2, v1, v2, NULL)) {
 				result.push_back(std::make_pair(col_lig2id(col, lig), col_lig2id(col + 1, lig)));
 				result.push_back(std::make_pair(col_lig2id(col + 1, lig), col_lig2id(col, lig)));
@@ -401,7 +442,7 @@ std::vector<std::pair<uint, uint> > GraphGrid::bbox_intersection(BBox_2D * bbox)
 	uint lig_max = col_lig_max.second + 1;
 	for (uint col=col_min; col<col_max; ++col) {
 		for (uint lig=lig_min; lig<lig_max; ++lig) {
-			pt_2d pt = col_lig2pt(col, lig);
+			pt_2d pt = col_lig2pt_2d(col, lig);
 			if (pt_in_bbox2d(pt, bbox)) {
 				uint id = col_lig2id(col, lig);
 				GraphVertex v = _vertices[id];
@@ -564,7 +605,7 @@ std::pair<int, int> GraphGrid::next_direction(std::pair<int, int> u) {
 		return std::make_pair(1, 0);
 	}
 	
-	std::cerr << "GraphGrid::next_direction error\n";
+	std::cerr << "GraphGrid::next_direction error : u = (" << u.first << " ; " << u.second << ")\n";
 	return std::make_pair(0, 0);
 }
 
@@ -580,27 +621,55 @@ uint GraphGrid::angle(std::pair<int, int> u, std::pair<int, int> v) {
 }
 
 
+std::vector<uint> GraphGrid::prune(std::vector<uint> ids) {
+	std::vector<uint> result;
+	for (auto & id : ids) {
+		uint n_neighbors = 0;
+		for (auto & n : neighbors(id)) {
+			if (id_in_ids(n, ids)) {
+				n_neighbors++;
+			}
+		}
+		if (n_neighbors > 1) {
+			result.push_back(id);
+		}
+	}
+	return result;
+}
+
+
 Polygon2D * GraphGrid::ids2polygon(std::vector<uint> ids) {
 	Polygon2D * result = new Polygon2D();
 	std::vector<pt_2d> pts;
 
+	std::vector<uint> pruned_ids = prune(ids);
+
 	uint id_max_col = 0;
 	number max_col = -1e9;
-	for (auto & id : ids) {
+	for (auto & id : pruned_ids) {
 		std::pair<uint, uint> col_lig = id2col_lig(id);
 		if (col_lig.first > max_col) {
 			max_col = col_lig.first;
 			id_max_col = id;
 		}
 	}
-	//std::cout << "id_max_col = " << id_max_col << "\n";
-	//std::cout << "start\n";
+	
 	uint current_id = id_max_col;
 	uint last_id = 1e9;
 	std::pair<int, int> current_direction = std::make_pair(1, 0);
+	const uint max_iter = 10000;
+	uint iter = 0;
+	
 	while (true) {
+		iter++;
+		if (iter > max_iter) {
+			std::cerr << "GraphGrid::ids2polygon infinite loop\n";
+			std::cerr << ids2wkt(pruned_ids) << "\n";
+			delete result;
+			return NULL;
+		}
+
 		//std::cout << "current_id = " << current_id << "\n";
-		//std::cout << glm_to_string(id2pt_2d(current_id)) << "\n";
 
 		pts.push_back(id2pt_2d(current_id));
 		std::vector<uint> ids_neighbors = neighbors(current_id);
@@ -613,13 +682,11 @@ Polygon2D * GraphGrid::ids2polygon(std::vector<uint> ids) {
 			if (id_neighbor == last_id) {
 				continue;
 			}
-			if (std::find(ids.begin(), ids.end(), id_neighbor)!= ids.end()) {
+			//if (std::find(ids.begin(), ids.end(), id_neighbor)!= ids.end()) {
+			if (id_in_ids(id_neighbor, pruned_ids)) {
 				std::pair<uint, uint> neighbour_col_lig = id2col_lig(id_neighbor);
 				std::pair<int, int> direction = std::make_pair(neighbour_col_lig.first - current_col_lig.first, neighbour_col_lig.second - current_col_lig.second);
 				uint a = angle(current_direction, direction);
-				//std::cout << "id_neighbor = " << id_neighbor;
-				//std::cout << " ; current_direction = (" << current_direction.first << " ; " << current_direction.second << ")";
-				//std::cout << " ; direction = (" << direction.first << " , " << direction.second << ") ; angle = " << a << "\n";
 				if (a < min_angle) {
 					min_angle = a;
 					next_id = id_neighbor;
@@ -629,8 +696,6 @@ Polygon2D * GraphGrid::ids2polygon(std::vector<uint> ids) {
 			}
 		}
 
-		//std::cout << "next_id = " << next_id << "\n";
-
 		last_id = current_id;
 		current_id = next_id;
 		if (current_id == id_max_col) {
@@ -638,7 +703,6 @@ Polygon2D * GraphGrid::ids2polygon(std::vector<uint> ids) {
 		}
 		current_direction = next_direction;
 	}
-	//std::cout << "end\n";
 
 	result->set_points(pts);
 	result->update_all();
@@ -662,12 +726,127 @@ Polygon2D * GraphGrid::pts2polygon(std::vector<pt_2d> pts) {
 }
 
 
+std::vector<std::tuple<uint, uint, uint> > GraphGrid::ids2triangles(std::vector<uint> ids) {
+	std::vector<std::tuple<uint, uint, uint> > triangles;
+	
+	for (auto & id : ids) {
+		std::map<std::string, uint> ns = named_neighbors(id);
+		
+		if (id_in_ids(ns["right"], ids) && id_in_ids(ns["top_right"], ids) && id_in_ids(ns["top"], ids)) {
+			triangles.push_back(std::make_tuple(id, ns["right"], ns["top_right"]));
+			triangles.push_back(std::make_tuple(id, ns["top_right"], ns["top"]));
+		}
+		else if (id_in_ids(ns["right"], ids) && id_in_ids(ns["top_right"], ids) && !id_in_ids(ns["top"], ids)) {
+			triangles.push_back(std::make_tuple(id, ns["right"], ns["top_right"]));
+		}
+		else if (id_in_ids(ns["right"], ids) && !id_in_ids(ns["top_right"], ids) && id_in_ids(ns["top"], ids)) {
+			triangles.push_back(std::make_tuple(id, ns["right"], ns["top"]));
+		}
+		else if (!id_in_ids(ns["right"], ids) && id_in_ids(ns["top_right"], ids) && id_in_ids(ns["top"], ids)) {
+			triangles.push_back(std::make_tuple(id, ns["top_right"], ns["top"]));
+		}
+
+		if (id_in_ids(ns["bottom_right"], ids) && id_in_ids(ns["right"], ids) && !id_in_ids(ns["bottom"], ids)) {
+			triangles.push_back(std::make_tuple(id, ns["bottom_right"], ns["right"]));
+		}
+	}
+	
+	return triangles;
+}
+
+
+std::vector<uint> GraphGrid::triangles2ids(const std::vector<std::tuple<uint, uint, uint> > & triangles) {
+	std::vector<uint> result;
+	for (auto & triangle : triangles) {
+		std::vector<uint> ids = {std::get<0>(triangle), std::get<1>(triangle), std::get<2>(triangle)};
+		for (auto & id : ids) {
+			if (std::find(result.begin(), result.end(), id) == result.end()) {
+				result.push_back(id);
+			}
+		}
+	}
+	return result;
+}
+
+
+std::vector<uint> GraphGrid::neighbors_dist(uint id_root, uint distance) {
+	std::vector<uint> result;
+
+	std::queue<uint> frontier;
+	std::vector<uint> checked;
+	std::map<uint, uint> distances;
+	
+	frontier.push(id_root);
+	checked.push_back(id_root);
+	distances[id_root] = 0;
+	
+	while (!frontier.empty()) {
+		uint id = frontier.front();
+		frontier.pop();
+
+		result.push_back(id);
+
+		std::vector<uint> id_neighbors = neighbors(id);
+
+		for (auto & id_n : id_neighbors) {
+			if (std::find(checked.begin(), checked.end(), id_n) != checked.end()) {
+				continue;
+			}
+			checked.push_back(id_n);
+			distances[id_n] = distances[id] + 1;
+
+			if (distances[id_n] <= distance) {
+				frontier.push(id_n);
+			}
+		}
+	}
+
+	return result;
+}
+
+
+std::vector<uint> GraphGrid::buffered_ids(const std::vector<uint> & ids, uint distance) {
+	std::vector<uint> result;
+	for (auto & id : ids) {
+		std::vector<uint> ns = neighbors_dist(id, distance);
+		for (auto & n : ns) {
+			if (std::find(result.begin(), result.end(), n) == result.end()) {
+				result.push_back(n);
+			}
+		}
+	}
+	return result;
+}
+
+
 std::string GraphGrid::ids2wkt(std::vector<uint> ids) {
 	std::string result = "MULTIPOINT(";
 	for (auto & id : ids) {
 		pt_2d pt = id2pt_2d(id);
 		result += "(" + std::to_string(pt.x) + " " + std::to_string(pt.y) + ")";
 		if (id != ids[ids.size() - 1]) {
+			result += ", ";
+		}
+	}
+	result += ")";
+	return result;
+}
+
+
+std::string GraphGrid::triangles2wkt(std::vector<std::tuple<uint, uint, uint> > triangles) {
+	std::string result = "MULTIPOLYGON(";
+	for (auto & triangle : triangles) {
+		std::vector<uint> ids = {std::get<0>(triangle), std::get<1>(triangle), std::get<2>(triangle)};
+		result += "((";
+		for (auto & id : ids) {
+			pt_2d pt = id2pt_2d(id);
+			result += std::to_string(pt.x) + " " + std::to_string(pt.y);
+			if (id != ids[ids.size() - 1]) {
+				result += ", ";
+			}
+		}
+		result += "))";
+		if (triangle != triangles[triangles.size() - 1]) {
 			result += ", ";
 		}
 	}

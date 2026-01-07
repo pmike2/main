@@ -21,9 +21,22 @@ void test() {
 	uint n_ligs = 5;
 	uint n_cols = 5;
 	GraphGrid * grid = new GraphGrid(origin, size, n_ligs, n_cols);
-	std::vector<pt_2d> pts = {pt_2d(1.0, 1.0), pt_2d(1.0, 2.0), pt_2d(2.0, 1.0), pt_2d(2.0, 2.0), pt_2d(3.0, 1.0)};
+	
+	std::vector<pt_2d> pts = {
+		pt_2d(0.0, 1.0), pt_2d(1.0, 1.0), pt_2d(2.0, 1.0), pt_2d(2.0, 0.0), pt_2d(3.0, 1.0),
+		pt_2d(3.0, 0.0), pt_2d(3.0, 2.0)
+	};
 	Polygon2D * polygon = grid->pts2polygon(pts);
 	std::cout << *polygon << "\n";
+
+	/*uint id = 10;
+	uint distance = 2;
+	std::vector<uint> ids = grid->neighbors_dist(id, distance);
+	for (auto & i : ids) {
+		std::cout << i << " ; ";
+	}
+	std::cout << "\n";*/
+	
 	delete grid;
 }
 

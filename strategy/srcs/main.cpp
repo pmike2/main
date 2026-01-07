@@ -119,6 +119,9 @@ void init() {
 	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	// pour faire du multisampling (suppression aliasing)
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
 	
 	window= SDL_CreateWindow("sandbox", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
@@ -162,7 +165,8 @@ void init() {
 	progs["select"]= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
 	progs["font"]= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 	progs["font3d"]= create_prog("../../shaders/vertexshader_font_3d.txt", "../../shaders/fragmentshader_font.txt");
-	progs["light"]= create_prog("../../shaders/vertexshader_3d_light.txt", "../../shaders/fragmentshader_3d_light.txt");
+	progs["elevation_flat"]= create_prog("../shaders/vertexshader_elevation_flat.txt", "../shaders/fragmentshader_elevation_flat.txt");
+	progs["elevation_smooth"]= create_prog("../shaders/vertexshader_elevation_smooth.txt", "../shaders/fragmentshader_elevation_smooth.txt");
 
 	check_gl_error();
 

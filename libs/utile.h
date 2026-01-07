@@ -26,11 +26,11 @@ float rand_float(float x0, float x1);
 
 number rand_number(number x0, number x1);
 
-pt_2d rand_pt(number xmin, number xmax, number ymin, number ymax, number zmin, number zmax);
-pt_2d rand_pt(pt_2d pt_min, pt_2d pt_max);
+pt_2d rand_pt_2d(number xmin, number xmax, number ymin, number ymax);
+pt_2d rand_pt_2d(pt_2d pt_min, pt_2d pt_max);
 
 pt_3d rand_pt_3d(number xmin, number xmax, number ymin, number ymax, number zmin, number zmax);
-pt_3d rand_pt(pt_3d pt_min, pt_3d pt_max);
+pt_3d rand_pt_3d(pt_3d pt_min, pt_3d pt_max);
 
 // renvoie un int aléatoire entre x0 et x1 compris
 int rand_int(int x0, int x1);
@@ -40,7 +40,6 @@ bool rand_bool();
 
 number rand_gaussian(number mean, number deviation);
 pt_2d rand_gaussian(pt_2d mean, pt_2d deviation);
-;
 
 // perlin noise
 number * perlin_gradient(uint gradient_w, uint gradient_h);

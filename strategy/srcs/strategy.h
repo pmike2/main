@@ -91,6 +91,7 @@ public:
 	Map * _map;
 	std::string _visible_grid_type;
 	std::string _visible_grid_unit_type;
+	std::map<std::string, GLuint> _progs;
 };
 
 #endif
