@@ -58,7 +58,7 @@ Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system
 
 	_view_system->_rect_select->_z = -1.0; // pour que l'affichage du rectangle de sélection se fassent par dessus le reste
 
-	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-50.0, -50.0), pt_2d(100.0, 100.0), pt_2d(1.0), pt_2d(0.125), t);
+	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-50.0, -50.0), pt_2d(100.0, 100.0), pt_2d(1.0), pt_2d(0.25), t);
 	//_map = new Map("../data/unit_types", pt_2d(0.0, 0.0), pt_2d(10.0, 10.0), pt_2d(2.0), pt_2d(2.0), t);
 	//std::cout << *_map << "\n";
 	_map->randomize();
@@ -683,7 +683,8 @@ void Strategy::update_elevation() {
 				}
 				else  {
 					//color = glm::vec4(0.4f, 1.0f, 0.3f, 1.0f);
-					color = glm::vec4(0.1f + rand_float(0.0f, 0.3f), 0.7f + rand_float(0.0f, 0.3f), 0.0f + rand_float(0.0f, 0.3f), 1.0f);
+					//color = glm::vec4(0.1f + rand_float(0.0f, 0.3f), 0.7f + rand_float(0.0f, 0.3f), 0.0f + rand_float(0.0f, 0.3f), 1.0f);
+					color = glm::vec4(0.4f - float(alti) * 0.02f, 1.0f - float(alti) * 0.05f, 0.3f + float(alti) * 0.02f, 1.0f);
 				}
 
 				ptr[0] = float(pts[idx_tris[i]].x);

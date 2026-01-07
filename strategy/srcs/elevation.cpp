@@ -142,7 +142,7 @@ pt_3d Elevation::get_normal(int col, int lig) {
 
 pt_3d Elevation::get_normal(uint id) {
 	std::pair<uint, uint> col_lig = id2col_lig(id);
-	return get_normal(col_lig2id(col_lig.first, col_lig.second));
+	return get_normal(col_lig.first, col_lig.second);
 }
 
 
