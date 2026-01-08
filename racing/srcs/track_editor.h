@@ -43,12 +43,12 @@ const pt_2d TRACK_SIZE(10.0, 8.0);
 const pt_2d TILES_ORIGIN(1.5, -7.5);
 const pt_2d FLOATING_OBJECTS_ORIGIN(-9.5, 2.8);
 // dimensions par défaut des grilles de tile et d'objets flottants
-const unsigned int TILE_GRID_WIDTH= 8;
-const unsigned int FLOATING_GRID_HEIGHT= 4;
+const uint TILE_GRID_WIDTH= 8;
+const uint FLOATING_GRID_HEIGHT= 4;
 // dimensions défaut en tuiles d'une piste
-const unsigned int TRACK_DEFAULT_SIZE= 16;
+const uint TRACK_DEFAULT_SIZE= 16;
 // nombre de tours par défaut
-const unsigned int DEFAULT_N_LAPS= 3;
+const uint DEFAULT_N_LAPS= 3;
 
 // scale par défaut de la grille track
 const number DEFAULT_TRACK_EDITOR_SCALE= 0.3;
@@ -103,8 +103,8 @@ public:
 	TrackEditor();
 	TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, ScreenGL * screengl, number cell_size);
 	~TrackEditor();
-	void reinit(unsigned int width, unsigned int height);
-	void load_track(unsigned int track_idx);
+	void reinit(uint width, uint height);
+	void load_track(uint track_idx);
 	void draw_grid();
 	void draw_selection();
 	void draw_tiles();
@@ -144,7 +144,7 @@ public:
 	ScreenGL * _screengl;
 	Font * _font;	
 
-	unsigned int _current_track_idx; // indice piste courante
+	uint _current_track_idx; // indice piste courante
 	glm::ivec4 _screen_coords; // coordonnées écran afin de restreindre l'affichage
 };
 

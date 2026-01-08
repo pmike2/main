@@ -14,7 +14,7 @@ TestGeom2D::TestGeom2D(std::map<std::string, GLuint> progs, ScreenGL * screengl)
 	_camera2clip= glm::ortho(-1.0f* float(screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -1.0f* float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 	_font= new Font(progs, "../../fonts/Silom.ttf", 48, screengl);
 
-	unsigned int n_buffers= 1;
+	uint n_buffers= 1;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
@@ -36,13 +36,13 @@ TestGeom2D::~TestGeom2D() {
 
 void TestGeom2D::randomize() {
 	std::vector<pt_2d> pts1;
-	for (unsigned int i=0; i<3; ++i) {
+	for (uint i=0; i<3; ++i) {
 		pts1.push_back(pt_2d(0.5* rand_number(_pt_min.x, _pt_max.x), 0.5* rand_number(_pt_min.y, _pt_max.y)));
 	}
 	_poly1->set_points(pts1);
 
 	std::vector<pt_2d> pts2;
-	for (unsigned int i=0; i<3; ++i) {
+	for (uint i=0; i<3; ++i) {
 		pts2.push_back(pt_2d(0.5* rand_number(_pt_min.x, _pt_max.x), 0.5* rand_number(_pt_min.y, _pt_max.y)));
 	}
 	_poly2->set_points(pts2);

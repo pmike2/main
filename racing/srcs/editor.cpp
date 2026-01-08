@@ -25,8 +25,8 @@ ScreenGL * screengl;
 Editor * editor;
 
 bool done= false;
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+uint val_fps, compt_fps;
+uint tikfps1, tikfps2, tikanim1, tikanim2;
 
 
 void mouse_wheel(int x, int y) {
@@ -39,7 +39,7 @@ void mouse_wheel(int x, int y) {
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (editor->mouse_motion(input_state)) {
@@ -49,7 +49,7 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 
 
 void mouse_button_up(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (editor->mouse_button_up(input_state)) {
@@ -59,7 +59,7 @@ void mouse_button_up(int x, int y, unsigned short button) {
 
 
 void mouse_button_down(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (editor->mouse_button_down(input_state)) {

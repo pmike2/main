@@ -84,7 +84,7 @@ AudioMark::AudioMark() {
 }
 
 
-AudioMark::AudioMark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample) :
+AudioMark::AudioMark(unsigned long track_sample, uint idx_sample, unsigned long first_sample, unsigned long last_sample) :
 	_track_sample(track_sample), _idx_sample(idx_sample), _first_sample(first_sample), _last_sample(last_sample)
 {
 
@@ -118,7 +118,7 @@ StereoTrack::~StereoTrack() {
 }
 
 
-void StereoTrack::add_mark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample) {
+void StereoTrack::add_mark(unsigned long track_sample, uint idx_sample, unsigned long first_sample, unsigned long last_sample) {
 	if (idx_sample>= _sp->_samples.size()) {
 		cout << "Erreur add_mark : idx_sample=" << idx_sample << ">=" << "_sp->_samples.size()=" << _sp->_samples.size() << endl;
 		return;
@@ -203,7 +203,7 @@ TrackGL::TrackGL() {
 }
 
 
-TrackGL::TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, unsigned int x, unsigned int y, unsigned int w, unsigned int h) :
+TrackGL::TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, uint x, uint y, uint w, uint h) :
 	 _prog_draw(prog_draw_2d), _first_sample(0), _last_sample(0), _n_samples(0), _interval_sample(INIT_INTERVAL_SAMPLE), _st(st), _screengl(screengl), _mouse_down(false),
 	 _first_selection(0), _last_selection(0), _selection_mode(NO_SELECTION)
 {
@@ -237,7 +237,7 @@ TrackGL::TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, uns
 	data_background[6* 4]= _x+ _w;	data_background[6* 4+ 1]= _y+ _h;
 	data_background[6* 5]= _x;		data_background[6* 5+ 1]= _y+ _h;
 	
-	for (unsigned int i=0; i<6; ++i) {
+	for (uint i=0; i<6; ++i) {
 		data_background[6* i+ 2]= BACKGROUND_COLOR[0]; data_background[6* i+ 3]= BACKGROUND_COLOR[1]; data_background[6* i+ 4]= BACKGROUND_COLOR[2]; data_background[6* i+ 5]= BACKGROUND_COLOR[3];
 	}
 
@@ -254,7 +254,7 @@ TrackGL::TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, uns
 	data_lines[6* 4]= _x; 	  data_lines[6* 4+ 1]= _y+ 0.25f* _h;
 	data_lines[6* 5]= _x+ _w; data_lines[6* 5+ 1]= _y+ 0.25f* _h;
 	
-	for (unsigned int i=0; i<6; ++i) {
+	for (uint i=0; i<6; ++i) {
 		data_lines[6* i+ 2]= LINES_COLOR[0]; data_lines[6* i+ 3]= LINES_COLOR[1]; data_lines[6* i+ 4]= LINES_COLOR[2]; data_lines[6* i+ 5]= LINES_COLOR[3];
 	}
 
@@ -489,7 +489,7 @@ void TrackGL::update_selection() {
 	data_selection[6* 4+ 0]= x2; data_selection[6* 4+ 1]= _y+ _h;
 	data_selection[6* 5+ 0]= x1; data_selection[6* 5+ 1]= _y+ _h;
 
-	for (unsigned int i=0; i<6; ++i) {
+	for (uint i=0; i<6; ++i) {
 		data_selection[6* i+ 2]= SELECTION_COLOR[0]; data_selection[6* i+ 3]= SELECTION_COLOR[1]; data_selection[6* i+ 4]= SELECTION_COLOR[2]; data_selection[6* i+ 5]= SELECTION_COLOR[3];
 	}
 
@@ -501,7 +501,7 @@ void TrackGL::update_selection() {
 
 void TrackGL::update_marks() {
 	float data_marks[_st->_marks.size()* 6* 6];
-	for (unsigned int i=0; i<_st->_marks.size(); ++i) {
+	for (uint i=0; i<_st->_marks.size(); ++i) {
 		float x1= sampleidx2gl(_st->_marks[i]->_track_sample);
 		float x2= sampleidx2gl(_st->_marks[i]->_track_sample+ _st->_marks[i]->_last_sample- _st->_marks[i]->_first_sample);
 		data_marks[i* 36+ 6* 0+ 0]= x1; data_marks[i* 36+ 6* 0+ 1]= _y;
@@ -511,7 +511,7 @@ void TrackGL::update_marks() {
 		data_marks[i* 36+ 6* 4+ 0]= x2; data_marks[i* 36+ 6* 4+ 1]= _y+ _h;
 		data_marks[i* 36+ 6* 5+ 0]= x1; data_marks[i* 36+ 6* 5+ 1]= _y+ _h;
 
-		for (unsigned int j=0; j<6; ++j) {
+		for (uint j=0; j<6; ++j) {
 			data_marks[i* 36+ 6* j+ 2]= MARK_COLOR[0]; data_marks[i* 36+ 6* j+ 3]= MARK_COLOR[1]; data_marks[i* 36+ 6* j+ 4]= MARK_COLOR[2]; data_marks[i* 36+ 6* j+ 5]= MARK_COLOR[3];
 		}
 	}
@@ -569,7 +569,7 @@ bool TrackGL::mouse_button_down(InputState * input_state) {
 		return false;
 	}
 
-	unsigned int TRESH_CHANGE_SELECTION= 20;
+	uint TRESH_CHANGE_SELECTION= 20;
 	int x_first, x_last, y_tmp;
 	float x, y;
 	_screengl->gl2screen(sampleidx2gl(_first_selection), 0.0f, x_first, y_tmp);
@@ -712,7 +712,7 @@ bool TrackGL::is_inbox(int i, int j) {
 }
 
 
-void TrackGL::add_mark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample) {
+void TrackGL::add_mark(unsigned long track_sample, uint idx_sample, unsigned long first_sample, unsigned long last_sample) {
 	_st->add_mark(track_sample, idx_sample, first_sample, last_sample);
 	update_waveform();
 	update_marks();
@@ -799,7 +799,7 @@ bool AudioProjectGL::mouse_button_up(InputState * input_state) {
 
 bool AudioProjectGL::key_down(InputState * input_state, SDL_Keycode key) {
 	if (key== SDLK_c) {
-		for (unsigned int idx_track=0; idx_track<_tracks.size(); ++idx_track) {
+		for (uint idx_track=0; idx_track<_tracks.size(); ++idx_track) {
 			if ((_tracks[idx_track]->is_inbox(input_state->_x, input_state->_y)) && (_tracks[idx_track]->_selection_mode== SELECTION)) {
 				_copy_idx= idx_track;
 				return true;
@@ -808,7 +808,7 @@ bool AudioProjectGL::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 	else if (key== SDLK_p) {
 		if (_copy_idx>= 0) {
-			for (unsigned int idx_track=0; idx_track<_tracks.size(); ++idx_track) {
+			for (uint idx_track=0; idx_track<_tracks.size(); ++idx_track) {
 				if (_tracks[idx_track]->is_inbox(input_state->_x, input_state->_y)) {
 					_tracks[idx_track]->add_mark(_tracks[idx_track]->_st->_n_samples, _copy_idx, _tracks[_copy_idx]->_first_selection, _tracks[_copy_idx]->_last_selection);
 					return true;

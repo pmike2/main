@@ -104,33 +104,6 @@ void Map::add_unit(std::string type_name, pt_2d pos, time_point t) {
 }
 
 
-/*void Map::add_static_element(std::string element_name, pt_3d pos, pt_3d size) {
-	AABB * element_aabb;
-	if (element_name == "stone") {
-		Stone * stone = _elements->add_stone(pos, size);
-		element_aabb = stone->_aabb;
-	}
-	else {
-		Tree * tree = _elements->add_tree(element_name, pos, size);
-		element_aabb = tree->_aabb;
-	}
-
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-		//AABB_2D * aabb = new AABB_2D(pt_2d(element_aabb->_vmin - 0.5 * unit_type->_size), pt_2d(element_aabb->size() + unit_type->_size));
-		AABB_2D * aabb = new AABB_2D(pt_2d(element_aabb->_vmin), pt_2d(element_aabb->size()));
-		aabb->buffer(unit_type->buffer_size());
-
-		std::vector<std::pair<uint, uint> > edges = _path_finder->aabb_intersection(aabb);
-		for (auto & e : edges) {
-			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
-			EdgeData * data = (EdgeData *)(edge._data);
-			data->_type[unit_type] = OBSTACLE;
-		}
-	}
-}*/
-
-
 River * Map::add_river(pt_2d src) {
 	River * river = new River(_elevation, src);
 	if (!river->_valid) {
@@ -164,7 +137,7 @@ River * Map::add_river(pt_2d src) {
 			continue;
 		}
 
-		std::vector<std::pair<uint, uint> > edges = _path_finder->polygon_intersection(polygon_buffered);
+		std::vector<uint_pair> edges = _path_finder->edges_intersecting_polygon(polygon_buffered);
 		for (auto & edge : edges) {
 			uint n_vertices_in_polygon = 0;
 			if (is_pt_inside_poly(pt_2d(_path_finder->_vertices[edge.first]._pos), polygon_buffered)) {
@@ -249,7 +222,7 @@ Lake * Map::add_lake(pt_2d src) {
 			continue;
 		}
 
-		std::vector<std::pair<uint, uint> > edges = _path_finder->polygon_intersection(polygon_buffered);
+		std::vector<uint_pair> edges = _path_finder->edges_intersecting_polygon(polygon_buffered);
 		for (auto & edge : edges) {
 			uint n_vertices_in_polygon = 0;
 			if (is_pt_inside_poly(pt_2d(_path_finder->_vertices[edge.first]._pos), polygon_buffered)) {
@@ -352,9 +325,9 @@ void Map::update_terrain_grid_with_elevation(BBox_2D * bbox) {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
 
-		std::vector<std::pair<uint, uint> > edges;
+		std::vector<uint_pair> edges;
 		if (bbox != NULL) {
-			edges = _path_finder->bbox_intersection(bbox);
+			edges = _path_finder->edges_intersecting_bbox(bbox);
 		}
 
 		_path_finder->_it_v= _path_finder->_vertices.begin();
@@ -394,7 +367,7 @@ void Map::update_terrain_grid_with_element(Element * element) {
 		AABB_2D * aabb = new AABB_2D(pt_2d(element->_aabb->_vmin), pt_2d(element->_aabb->size()));
 		aabb->buffer(unit_type->buffer_size());
 
-		std::vector<std::pair<uint, uint> > edges = _path_finder->aabb_intersection(aabb);
+		std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb);
 		for (auto & e : edges) {
 			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
 			EdgeData * data = (EdgeData *)(edge._data);
@@ -429,19 +402,19 @@ void Map::clear_units_position_grid() {
 }
 
 
-std::vector<std::pair<uint, uint> > Map::waiting_unit_positions_edges(Unit * unit, UnitType * unit_type) {
+std::vector<uint_pair> Map::waiting_unit_positions_edges(Unit * unit, UnitType * unit_type) {
 	AABB_2D * aabb = new AABB_2D(pt_2d(unit->_aabb->_vmin - 0.5 * unit_type->_size), pt_2d(unit->_aabb->size() + unit_type->_size));
-	std::vector<std::pair<uint, uint> > edges = _path_finder->aabb_intersection(aabb);
+	std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb);
 	delete aabb;
 
 	return edges;
 }
 
 
-std::vector<std::pair<uint, uint> > Map::moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all) {
+std::vector<uint_pair> Map::moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all) {
 	AABB_2D * aabb_unit = unit->_aabb->aabb2d();
 
-	std::vector<std::pair<uint, uint> > edges;
+	std::vector<uint_pair> edges;
 	bool intersection_happened = false;
 
 	AABB_2D * aabb_start = new AABB_2D(unit->_path->_start - 0.5 * pt_2d(unit_type->_size), pt_2d(unit->_aabb->size() + unit_type->_size));
@@ -451,7 +424,7 @@ std::vector<std::pair<uint, uint> > Map::moving_unit_positions_edges(Unit * unit
 		}
 	}
 	if (all || !intersection_happened) {
-		std::vector<std::pair<uint, uint> > start_edges = _path_finder->aabb_intersection(aabb_start);
+		std::vector<uint_pair> start_edges = _path_finder->edges_intersecting_aabb(aabb_start);
 		edges.insert(edges.end(), start_edges.begin(), start_edges.end());
 	}
 	delete aabb_start;
@@ -464,7 +437,7 @@ std::vector<std::pair<uint, uint> > Map::moving_unit_positions_edges(Unit * unit
 			}
 		}
 		if (all || !intersection_happened) {
-			std::vector<std::pair<uint, uint> > path_edges = _path_finder->bbox_intersection(buffered_bbox);
+			std::vector<uint_pair> path_edges = _path_finder->edges_intersecting_bbox(buffered_bbox);
 			edges.insert(edges.end(), path_edges.begin(), path_edges.end());
 		}
 		delete buffered_bbox;
@@ -477,7 +450,7 @@ std::vector<std::pair<uint, uint> > Map::moving_unit_positions_edges(Unit * unit
 		}
 	}
 	if (all || !intersection_happened) {
-		std::vector<std::pair<uint, uint> > goal_edges = _path_finder->aabb_intersection(aabb_goal);
+		std::vector<uint_pair> goal_edges = _path_finder->edges_intersecting_aabb(aabb_goal);
 		edges.insert(edges.end(), goal_edges.begin(), goal_edges.end());
 	}
 	delete aabb_goal;
@@ -573,7 +546,7 @@ void Map::clear() {
 	_units.clear();
 
 	_elements->clear();
-	
+
 	_elevation->set_alti_all(0.0);
 	
 	sync2elevation();
@@ -743,12 +716,18 @@ void Map::randomize() {
 
 	for (uint i=0; i<50; ++i) {
 		pt_2d pt = rand_gaussian(_origin + 0.5 * _size, 0.3 * _size);
+		if (!_elevation->in_boundaries(pt)) {
+			continue;
+		}
 		number alti = _elevation->get_alti(pt);
 		for (auto & tree_species : _elements->_tree_species) {
 			if (alti > tree_species.second->_alti_min && alti < tree_species.second->_alti_max) {
 				for (uint j=0; j<20; ++j) {
 					pt_3d size = rand_pt_3d(0.2, 0.5, 0.2, 0.5, 1.0, 2.0);
 					pt_2d pos = rand_gaussian(pt, pt_2d(1.0));
+					if (!_elevation->in_boundaries(pos)) {
+						continue;
+					}
 					Tree * tree = _elements->add_tree(tree_species.first, pt_3d(pos.x, pos.y, _elevation->get_alti(pos)), size);
 					update_terrain_grid_with_element(tree);
 				}
@@ -759,12 +738,18 @@ void Map::randomize() {
 
 	for (uint i=0; i<50; ++i) {
 		pt_2d pt = rand_gaussian(_origin + 0.5 * _size, 0.3 * _size);
+		if (!_elevation->in_boundaries(pt)) {
+			continue;
+		}
 		number alti = _elevation->get_alti(pt);
 		for (auto & stone_species : _elements->_stone_species) {
 			if (alti > stone_species.second->_alti_min && alti < stone_species.second->_alti_max) {
 				for (uint j=0; j<20; ++j) {
 					pt_3d size = rand_pt_3d(0.7, 1.0, 0.7, 1.0, 0.5, 0.7);
 					pt_2d pos = rand_gaussian(pt, pt_2d(1.0));
+					if (!_elevation->in_boundaries(pos)) {
+						continue;
+					}
 					Stone * stone = _elements->add_stone(stone_species.first, pt_3d(pos.x, pos.y, _elevation->get_alti(pos)), size);
 					update_terrain_grid_with_element(stone);
 				}

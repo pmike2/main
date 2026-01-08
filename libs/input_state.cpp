@@ -63,7 +63,7 @@ bool InputState::get_key(SDL_Keycode key) {
 }
 
 
-void InputState::joystick_down(unsigned int button_idx) {
+void InputState::joystick_down(uint button_idx) {
 	if (!_is_joystick) {
 		return;
 	}
@@ -77,7 +77,7 @@ void InputState::joystick_down(unsigned int button_idx) {
 }
 
 
-void InputState::joystick_up(unsigned int button_idx) {
+void InputState::joystick_up(uint button_idx) {
 	if (!_is_joystick) {
 		return;
 	}
@@ -91,7 +91,7 @@ void InputState::joystick_up(unsigned int button_idx) {
 }
 
 
-void InputState::joystick_axis(unsigned int axis_idx, int value) {
+void InputState::joystick_axis(uint axis_idx, int value) {
 	if (!_is_joystick) {
 		return;
 	}

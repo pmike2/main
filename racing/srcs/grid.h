@@ -21,18 +21,18 @@ public:
 	void clear();
 	
 	// méthodes de chgmt de système de coord
-	unsigned int coord2idx(unsigned int col_idx, unsigned int row_idx);
-	std::pair<unsigned int, unsigned int> idx2coord(unsigned int idx);
-	std::pair<int, int> number2coord(pt_2d pos);
-	pt_2d coord2number(unsigned int col_idx, unsigned int row_idx);
-	pt_2d idx2number(unsigned int idx);
+	uint coord2idx(uint col_idx, uint row_idx);
+	int_pair idx2coord(uint idx);
+	int_pair number2coord(pt_2d pos);
+	pt_2d coord2number(uint col_idx, uint row_idx);
+	pt_2d idx2number(uint idx);
 	
 	// get / set / add / del
-	StaticObject * get_tile(unsigned int col_idx, unsigned int row_idx);
+	StaticObject * get_tile(uint col_idx, uint row_idx);
 	void push_tile(StaticObjectModel * model);
-	void set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx);
-	void set_tile(StaticObjectModel * model, unsigned int idx);
-	void set_all(StaticObjectModel * model, unsigned int width, unsigned int height);
+	void set_tile(StaticObjectModel * model, uint col_idx, uint row_idx);
+	void set_tile(StaticObjectModel * model, uint idx);
+	void set_all(StaticObjectModel * model, uint width, uint height);
 	// ajout / suppression ligne / colonne
 	void add_row(StaticObjectModel * model);
 	void add_col(StaticObjectModel * model);
@@ -41,8 +41,8 @@ public:
 
 
 	std::vector<StaticObject *> _objects;
-	unsigned int _width; // dimensions
-	unsigned int _height;
+	uint _width; // dimensions
+	uint _height;
 	number _cell_size; // taille cellule
 	GridType _type; // type
 };

@@ -22,7 +22,7 @@ using namespace std;
 using namespace std::chrono;
 
 vector<glm::vec2> pts;
-vector<pair<unsigned int, unsigned int> > constrained_edges;
+vector<pair<uint, uint> > constrained_edges;
 
 
 void test1() {
@@ -49,8 +49,8 @@ void test2() {
 	pts.push_back(glm::vec2(1.0f, 1.0f));
 	pts.push_back(glm::vec2(0.0f, 1.0f));
 
-	unsigned int n_obstacles= 8;
-	for (unsigned int i=0; i<n_obstacles; ++i) {
+	uint n_obstacles= 8;
+	for (uint i=0; i<n_obstacles; ++i) {
 		glm::vec2 vmin= glm::vec2(rand_float(0.1f, 0.8f), rand_float(0.1f, 0.8f));
 		glm::vec2 vmax= vmin+ glm::vec2(rand_float(0.05f, 0.1f), rand_float(0.05f, 0.1f));
 		
@@ -68,10 +68,10 @@ void test2() {
 
 
 void test3() {
-	for (unsigned int i=0; i<100; ++i) {
+	for (uint i=0; i<100; ++i) {
 		pts.push_back(glm::vec2(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
 	}
-	for (unsigned int i=0; i<10; ++i) {
+	for (uint i=0; i<10; ++i) {
 		constrained_edges.push_back(make_pair(rand_int(0, pts.size()- 1), rand_int(0, pts.size()- 1)));
 	}
 

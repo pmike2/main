@@ -17,7 +17,7 @@
 
 
 // en ms; temps entre 2 anims
-const unsigned int DELTA_ANIM= 1;
+const uint DELTA_ANIM= 1;
 
 // dimensions écran
 const int MAIN_WIN_WIDTH= 1280;
@@ -30,8 +30,8 @@ InputState * input_state;
 
 bool done= false;
 
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+uint val_fps, compt_fps;
+uint tikfps1, tikfps2, tikanim1, tikanim2;
 
 GLuint prog_repere, prog_select, prog_texture, prog_light, prog_normal, prog_parallax;
 GLuint g_vao;
@@ -43,7 +43,7 @@ VoroZ * voroz;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (view_system->mouse_motion(input_state)) {
@@ -53,7 +53,7 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 
 
 void mouse_button_up(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 	if (view_system->mouse_button_up(input_state)) {
 		return;
@@ -62,7 +62,7 @@ void mouse_button_up(int x, int y, unsigned short button) {
 
 
 void mouse_button_down(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 	if (view_system->mouse_button_down(input_state)) {
 		return;

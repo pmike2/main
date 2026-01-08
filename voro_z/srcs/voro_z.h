@@ -39,11 +39,11 @@ public:
 	glm::vec4 _color;
 	float _uv_factor;
 	std::string _diffuse_texture_path, _normal_texture_path, _parallax_texture_path;
-	unsigned int _diffuse_texture_idx_start, _diffuse_texture_idx_end;
+	uint _diffuse_texture_idx_start, _diffuse_texture_idx_end;
 	float _diffuse_texture_idx_current;
-	unsigned int _normal_texture_idx_start, _normal_texture_idx_end;
+	uint _normal_texture_idx_start, _normal_texture_idx_end;
 	float _normal_texture_idx_current;
-	unsigned int  _parallax_texture_idx;
+	uint  _parallax_texture_idx;
 	std::vector<std::string> _diffuse_pngs;
 	std::vector<std::string> _normal_pngs;
 	float _anim_speed;
@@ -136,7 +136,7 @@ public:
 	bool key_down(InputState * input_state, SDL_Keycode key);
 
 
-	unsigned int _n_pts;
+	uint _n_pts;
 	DCEL * _dcel;
 	std::map<BiomeType, Biome *> _biomes;
 	std::map<std::string, DrawContext *> _contexts;

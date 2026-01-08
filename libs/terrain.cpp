@@ -35,28 +35,28 @@ TerrainConfig::TerrainConfig() {
 }
 
 
-TerrainConfig::TerrainConfig(const glm::vec2 & origin, float width_sub, float height_sub, float width_step, float height_step, unsigned int n_subs_x, unsigned int n_subs_y) :
+TerrainConfig::TerrainConfig(const glm::vec2 & origin, float width_sub, float height_sub, float width_step, float height_step, uint n_subs_x, uint n_subs_y) :
 	_origin(origin), _width_sub(width_sub), _height_sub(height_sub), _width_step(width_step), _height_step(height_step), _n_subs_x(n_subs_x), _n_subs_y(n_subs_y)
 {
 	_width= _width_sub* (float)(_n_subs_x);
 	_height= _height_sub* (float)(_n_subs_y);
-	_width_n= (unsigned int)(_width/ _width_step);
-	_height_n= (unsigned int)(_height/ _height_step);
-	_width_sub_n= (unsigned int)(_width_sub/ _width_step);
-	_height_sub_n= (unsigned int)(_height_sub/ _height_step);
+	_width_n= (uint)(_width/ _width_step);
+	_height_n= (uint)(_height/ _height_step);
+	_width_sub_n= (uint)(_width_sub/ _width_step);
+	_height_sub_n= (uint)(_height_sub/ _height_step);
 	_n_subs= _n_subs_x* _n_subs_y;
 
 	// on divise la resolution du terrain par des puissances de 2 ; d'ou l'interet d'avoir des dimensions en puissance de 2 a la base
 	// le buffer des vertices est constant, ce qui change est le buffer des indices
-	for (unsigned int k=0; k<N_DEGRADATIONS; ++k) {
-		unsigned int step= pow(2, DEGRADATIONS[k]._step);
-		unsigned int width_n_sub= _width_sub_n/ step;
-		unsigned int height_n_sub= _height_sub_n/ step;
+	for (uint k=0; k<N_DEGRADATIONS; ++k) {
+		uint step= pow(2, DEGRADATIONS[k]._step);
+		uint width_n_sub= _width_sub_n/ step;
+		uint height_n_sub= _height_sub_n/ step;
 
-		unsigned int * idx= new unsigned int[width_n_sub* height_n_sub* 2* 3];
+		uint * idx= new uint[width_n_sub* height_n_sub* 2* 3];
 		for (unsigned i=0; i<width_n_sub; ++i) {
 			for (unsigned j=0; j<height_n_sub; ++j) {
-				unsigned int ii= 6* (i* height_n_sub+ j);
+				uint ii= 6* (i* height_n_sub+ j);
 				
 				idx[ii+ 0]= (i* (_height_sub_n+ 1)+ j)* step;
 				idx[ii+ 1]= ((i+ 1)* (_height_sub_n+ 1)+ j)* step;
@@ -75,7 +75,7 @@ TerrainConfig::TerrainConfig(const glm::vec2 & origin, float width_sub, float he
 
 
 TerrainConfig::~TerrainConfig() {
-	for (unsigned int k=0; k<N_DEGRADATIONS; ++k) {
+	for (uint k=0; k<N_DEGRADATIONS; ++k) {
 		delete _idxs[k];
 	}
 	delete _aabb;
@@ -194,7 +194,7 @@ SubTerrain::SubTerrain() {
 }
 
 
-SubTerrain::SubTerrain(GLuint prog_draw_3d, float * altis, const TerrainConfig * config, unsigned int idx_x, unsigned int idx_y) :
+SubTerrain::SubTerrain(GLuint prog_draw_3d, float * altis, const TerrainConfig * config, uint idx_x, uint idx_y) :
 	_draw_mesh(true), _active(true), _loaded(false), _buffers_filled(false), _idx_x(idx_x), _idx_y(idx_y)
 {
 	_config= (TerrainConfig * )(config);
@@ -218,7 +218,7 @@ void SubTerrain::load(float * altis) {
 	//cout << "loading " << idx_x << " ; " << idx_y << endl;
 	_vertices= new float[(3+ 3+ 3)* (_config->_width_sub_n+ 1)* (_config->_height_sub_n+ 1)];
 	
-	unsigned int idx_alti_origin= (_config->_width_n+ 1)* _config->_height_sub_n* _idx_y+ _config->_width_sub_n* _idx_x;
+	uint idx_alti_origin= (_config->_width_n+ 1)* _config->_height_sub_n* _idx_y+ _config->_width_sub_n* _idx_x;
 	glm::vec3 vmin= glm::vec3(_config->_origin.x+ _config->_width_sub* (float)(_idx_x), _config->_origin.y+ _config->_height_sub* (float)(_idx_y), 0.0f);
 	//glm::vec3 vmax= vmin+ glm::vec3(_config->_width_sub, _config->_height_sub, 0.0f);
 	for (int i=0; i<_config->_width_sub_n+ 1; ++i) {
@@ -265,7 +265,7 @@ void SubTerrain::load(float * altis) {
 			}
 			norm= normalize(norm);
 			
-			unsigned int ii= 9* (i* (_config->_height_sub_n+ 1)+ j);
+			uint ii= 9* (i* (_config->_height_sub_n+ 1)+ j);
 			_vertices[ii+ 0]= pos.x;
 			_vertices[ii+ 1]= pos.y;
 			_vertices[ii+ 2]= pos.z;
@@ -279,10 +279,10 @@ void SubTerrain::load(float * altis) {
 	}
 
 	// calcul du nombre de faces en fonction de la degradation
-	for (unsigned int k=0; k<N_DEGRADATIONS; ++k) {
-		unsigned int step= pow(2, DEGRADATIONS[k]._step);
-		unsigned int width_n_sub= _config->_width_sub_n/ step;
-		unsigned int height_n_sub= _config->_height_sub_n/ step;
+	for (uint k=0; k<N_DEGRADATIONS; ++k) {
+		uint step= pow(2, DEGRADATIONS[k]._step);
+		uint width_n_sub= _config->_width_sub_n/ step;
+		uint height_n_sub= _config->_height_sub_n/ step;
 
 		_mesh->_n_faces[k]= width_n_sub* height_n_sub* 2;
 	}
@@ -295,7 +295,7 @@ void SubTerrain::load(float * altis) {
 }
 
 
-void SubTerrain::set_degradation(unsigned int degradation) {
+void SubTerrain::set_degradation(uint degradation) {
 	if (degradation>= N_DEGRADATIONS) {
 		cout << "Terrain::set_degradation erreur : " << degradation << endl;
 		return;
@@ -328,9 +328,9 @@ void SubTerrain::anim(ViewSystem * view_system) {
 		glBufferData(GL_ARRAY_BUFFER, (3+ 3+ 3)* (_config->_width_sub_n+ 1)* (_config->_height_sub_n+ 1)* sizeof(float), _vertices, GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-		for (unsigned int i=0; i<N_DEGRADATIONS; ++i) {
+		for (uint i=0; i<N_DEGRADATIONS; ++i) {
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _mesh->_index_buffers[i]);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, _mesh->_n_faces[i]* 3* sizeof(unsigned int), _config->_idxs[i], GL_STATIC_DRAW);
+			glBufferData(GL_ELEMENT_ARRAY_BUFFER, _mesh->_n_faces[i]* 3* sizeof(uint), _config->_idxs[i], GL_STATIC_DRAW);
 			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 		}
 
@@ -385,7 +385,7 @@ Terrain::Terrain(GLuint prog_draw_3d, const TerrainConfig * config, const Terrai
 	//_config->print();
 
 	_altis= new float[(_config->_width_n+ 1)* (_config->_height_n+ 1)];
-	for (unsigned int i=0; i<(_config->_width_n+ 1)* (_config->_height_n+ 1); ++i) {
+	for (uint i=0; i<(_config->_width_n+ 1)* (_config->_height_n+ 1); ++i) {
 		_altis[i]= 0.0f;
 	}
 
@@ -402,9 +402,9 @@ Terrain::Terrain(GLuint prog_draw_3d, const TerrainConfig * config, const Terrai
 				_altis[i+ (_config->_width_n+ 1)* j]= random_config->_alti_offset;
 			}
 		
-		for (unsigned int level=0; level<random_config->_n_levels; ++level) {
-			unsigned int gradient_w= random_config->_gradient_base_size* (level+ 1);
-			unsigned int gradient_h= random_config->_gradient_base_size* (level+ 1);
+		for (uint level=0; level<random_config->_n_levels; ++level) {
+			uint gradient_w= random_config->_gradient_base_size* (level+ 1);
+			uint gradient_h= random_config->_gradient_base_size* (level+ 1);
 			float gradient[gradient_w* gradient_h* 2];
 			float factor= random_config->_max_factor* pow(2.0f, -float(level));
 		
@@ -438,7 +438,7 @@ Terrain::Terrain(GLuint prog_draw_3d, const TerrainConfig * config, const Terrai
 
 	// chargement a partir d'un TIF
 	else if (ch_alti_file!= "") {
-		unsigned int height, width;
+		uint height, width;
 
 		TIFFSetWarningHandler(NULL);
 		TIFF * alti_tif= TIFFOpen(ch_alti_file.c_str(), "r");
@@ -449,27 +449,27 @@ Terrain::Terrain(GLuint prog_draw_3d, const TerrainConfig * config, const Terrai
 			return;
 		}
 		
-		for (unsigned int row=0; row<height; ++row) {
+		for (uint row=0; row<height; ++row) {
 			TIFFReadScanline(alti_tif, _altis+ width* row, row, 0);
 		}
 		
 		TIFFClose(alti_tif);
 	}
 
-	for (unsigned int i=0; i<N_GROUPS; ++i) {
+	for (uint i=0; i<N_GROUPS; ++i) {
 		_group_terrains[i]= new GroupTerrain();
 	}
 
  	_subterrains= new SubTerrain * [_config->_n_subs];
-	for (unsigned int idx_x=0; idx_x<_config->_n_subs_x; ++idx_x) {
-		for (unsigned int idx_y=0; idx_y<_config->_n_subs_y; ++idx_y) {
+	for (uint idx_x=0; idx_x<_config->_n_subs_x; ++idx_x) {
+		for (uint idx_y=0; idx_y<_config->_n_subs_y; ++idx_y) {
 			_subterrains[idx_x* _config->_n_subs_y+ idx_y]= new SubTerrain(prog_draw_3d, _altis, config, idx_x, idx_y);
 			// a terme faire un ajout + intelligent de sorte qu'apparaisse a l'ecran les 1ers subterrains chargés
 			_group_terrains[(idx_x* _config->_n_subs_y+ idx_y) % N_GROUPS]->_subterrains.push_back(_subterrains[idx_x* _config->_n_subs_y+ idx_y]);
 		}
 	}
 
-	for (unsigned int i=0; i<N_GROUPS; ++i) {
+	for (uint i=0; i<N_GROUPS; ++i) {
 		_group_terrains[i]->load(_altis);
 	}
 
@@ -482,7 +482,7 @@ Terrain::Terrain(GLuint prog_draw_3d, const TerrainConfig * config, const Terrai
 Terrain::~Terrain() {
 	delete[] _altis;
 	delete[] _subterrains;
-	for (unsigned int i=0; i<N_GROUPS; ++i) {
+	for (uint i=0; i<N_GROUPS; ++i) {
 		//delete _group_terrains[i]; // je ne sais pas pourquoi genere une erreur !
 	}
 	//delete[] _horizons;
@@ -490,7 +490,7 @@ Terrain::~Terrain() {
 
 
 void Terrain::draw() {
-	for (unsigned int idx=0; idx<_config->_n_subs; ++idx) {
+	for (uint idx=0; idx<_config->_n_subs; ++idx) {
 		_subterrains[idx]->draw();
 	}
 }
@@ -498,7 +498,7 @@ void Terrain::draw() {
 
 void Terrain::anim(ViewSystem * view_system) {
 	// on fait le join des threads group_terrain quand tous les subterrains associés sont chargés
-	for (unsigned int i=0; i<N_GROUPS; ++i) {
+	for (uint i=0; i<N_GROUPS; ++i) {
 		if (_group_terrains[i]->_loaded) {
 			continue;
 		}
@@ -515,9 +515,9 @@ void Terrain::anim(ViewSystem * view_system) {
 		}
 	}
 
-	for (unsigned int idx_x=0; idx_x<_config->_n_subs_x; ++idx_x) {
-		for (unsigned int idx_y=0; idx_y<_config->_n_subs_y; ++idx_y) {
-			unsigned int idx= idx_x* _config->_n_subs_y+ idx_y;
+	for (uint idx_x=0; idx_x<_config->_n_subs_x; ++idx_x) {
+		for (uint idx_y=0; idx_y<_config->_n_subs_y; ++idx_y) {
+			uint idx= idx_x* _config->_n_subs_y+ idx_y;
 			
 			// est-ce que cela vaudrait le coup de faire du quadtree ?
 			if (!view_system->intersects_aabb(_subterrains[idx]->_aabb)) {
@@ -538,7 +538,7 @@ void Terrain::anim(ViewSystem * view_system) {
 
 			// choix de la degradation en fonction de la distance
 			_subterrains[idx]->set_degradation(DEGRADATIONS[N_DEGRADATIONS- 1]._idx);
-			for (unsigned int k=0; k<N_DEGRADATIONS; ++k) {
+			for (uint k=0; k<N_DEGRADATIONS; ++k) {
 				if (dist2< DEGRADATIONS[k]._dist* DEGRADATIONS[k]._dist) {
 					_subterrains[idx]->set_degradation(DEGRADATIONS[k]._idx);
 					break;
@@ -553,20 +553,20 @@ void Terrain::anim(ViewSystem * view_system) {
 	glm::vec2 eye= glm::vec2(view_system->_eye);
 	glm::vec2 dir= glm::vec2(view_system->_dir);
 	glm::vec2 right= glm::vec2(view_system->_right);
-	for (unsigned int j=0; j<_horizon_n_height+ 1; ++j) {
+	for (uint j=0; j<_horizon_n_height+ 1; ++j) {
 		float height= view_system->_frustum_near+ (float)(j)* horizon_step_height;
 		float halfsize= (height/ view_system->_frustum_near)* view_system->_frustum_halfsize;
 		float horizon_step_width= 2.0f* halfsize/ (float)(_horizon_n_width);
 		glm::vec2 center= eye+ height* dir;
 		glm::vec2 left= center- halfsize* right;
-		for (unsigned int i=0; i<_horizon_n_width+ 1; ++i) {
+		for (uint i=0; i<_horizon_n_width+ 1; ++i) {
 			glm::vec2 pt= left+ horizon_step_width* (float)(i);
 			_horizons[i+ (_horizon_n_width+ 1)* j]= get_alti(pt, false); // pas de msg si on sort du terrain, valeur 0.0f OK
 		}
 	}
 
-	for (unsigned int i=0; i<_horizon_n_width+ 1; ++i) {
-		for (unsigned int j=1; j<_horizon_n_height+ 1; ++j) {
+	for (uint i=0; i<_horizon_n_width+ 1; ++i) {
+		for (uint j=1; j<_horizon_n_height+ 1; ++j) {
 			if (_horizons[i+ (_horizon_n_width+ 1)* j]< _horizons[i+ (_horizon_n_width+ 1)* (j- 1)]) {
 				_horizons[i+ (_horizon_n_width+ 1)* j]= _horizons[i+ (_horizon_n_width+ 1)* (j- 1)];
 			}
@@ -620,8 +620,8 @@ float Terrain::get_alti(const glm::vec2 & pos, bool * alti_ok) {
 /*
 void Terrain::get_altis_segment(glm::vec2 & pt_begin, glm::vec2 & pt_end, float step, vector<float> & altis) {
 	float dist= glm::distance(pt_begin, pt_end);
-	unsigned int n_pts= dist/ step;
-	for (unsigned int i=0; i<n_pts; ++i) {
+	uint n_pts= dist/ step;
+	for (uint i=0; i<n_pts; ++i) {
 		glm::vec2 pt= pt_begin+ ((float)(i)/ (float)(n_pts))* (pt_end- pt_begin);
 		bool alti_ok;
 		float alti= get_alti(pt, &alti_ok);
@@ -636,8 +636,8 @@ bool Terrain::get_intersecting_point(glm::vec3 & pt_begin, glm::vec3 & pt_end, f
 	glm::vec2 pt_begin_2d= glm::vec2(pt_begin);
 	glm::vec2 pt_end_2d= glm::vec2(pt_end);
 	float dist= glm::distance(pt_begin_2d, pt_end_2d);
-	unsigned int n_pts= dist/ step;
-	for (unsigned int i=0; i<n_pts; ++i) {
+	uint n_pts= dist/ step;
+	for (uint i=0; i<n_pts; ++i) {
 		glm::vec2 pt= pt_begin_2d+ ((float)(i)/ (float)(n_pts))* (pt_end_2d- pt_begin_2d);
 		bool alti_ok;
 		float alti= get_alti(pt, &alti_ok);
@@ -699,8 +699,8 @@ bool Terrain::get_intersecting_point_BUG(glm::vec3 & origin, glm::vec3 & directi
 	//cout << lambda << " ; " << pt_begin_alti << " ; " << pt_end_alti << "\n";
 	
 	float dist= glm::distance(pt_begin_2d, pt_end_2d);
-	unsigned int n_pts= dist/ step;
-	for (unsigned int i=0; i<n_pts; ++i) {
+	uint n_pts= dist/ step;
+	for (uint i=0; i<n_pts; ++i) {
 		glm::vec2 pt= pt_begin_2d+ ((float)(i)/ (float)(n_pts))* (pt_end_2d- pt_begin_2d);
 		bool alti_ok;
 		float alti= get_alti(pt, &alti_ok);
@@ -719,7 +719,7 @@ bool Terrain::get_intersecting_point_BUG(glm::vec3 & origin, glm::vec3 & directi
 
 
 void Terrain::set_draw_mesh(bool b) {
-	for (unsigned int idx=0; idx<_config->_n_subs; ++idx) {
+	for (uint idx=0; idx<_config->_n_subs; ++idx) {
 		_subterrains[idx]->_draw_mesh= true;
 	}
 }
@@ -738,7 +738,7 @@ void Terrain::save(string ch_tif) {
 	//TIFFSetField(alti_tif, TIFFTAG_ROWSPERSTRIP, 1);
 	TIFFSetField(alti_tif, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(alti_tif, _config->_width_n+ 1));
 
-	for (unsigned int row=0; row<_config->_height_n+ 1; ++row) {
+	for (uint row=0; row<_config->_height_n+ 1; ++row) {
 		TIFFWriteScanline(alti_tif, (unsigned char *)(_altis+ (_config->_width_n+ 1)* row), row, 0);
 	}
 
@@ -747,7 +747,7 @@ void Terrain::save(string ch_tif) {
 
 /*
 bool Terrain::aabb_show_horizon(AABB * aabb) {
-	for (unsigned int i=0; i<8; ++i) {
+	for (uint i=0; i<8; ++i) {
 		aabb->_pts[i]
 	}
 }*/
@@ -805,14 +805,14 @@ bool Terrain::aabb_show_horizon(AABB * aabb) {
 void Terrain::read(string ch_alti_data) {
 	ifstream alti_data(ch_alti_data, ios::binary);
 	alti_data.seekg(0, ios::end);
-	unsigned int n_altis= alti_data.tellg()/ sizeof(float);
+	uint n_altis= alti_data.tellg()/ sizeof(float);
 	alti_data.seekg(0, ios::beg);
 
-	for (unsigned int i=0; i<(_width_n+ 1)* (_height_n+ 1); ++i) {
+	for (uint i=0; i<(_width_n+ 1)* (_height_n+ 1); ++i) {
 		_altis[i]= 0.0f;
 	}
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	while ((compt< (_width_n+ 1)* (_height_n+ 1)) && (alti_data.read(reinterpret_cast<char *>(_altis+ compt), sizeof(float)))) {
 		compt++;
 	}

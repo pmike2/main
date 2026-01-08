@@ -83,14 +83,14 @@ Track::Track(sharedata_type * track_data, bool infinite) :
 		_duration= DEFAULT_TRACK_DURATION;
 	}
 
-	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+	for (uint idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		_events[idx_event]= new Event();
 	}
 }
 
 
 Track::~Track() {
-	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+	for (uint idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		delete _events[idx_event];
 	}
 }
@@ -105,12 +105,12 @@ time_type Track::get_relative_t(time_type t) {
 }
 
 
-unsigned int Track::get_cycle(time_type t) {
+uint Track::get_cycle(time_type t) {
 	if (_infinite) {
 		return 0;
 	}
 
-	unsigned int cycle= t / _duration;
+	uint cycle= t / _duration;
 	return cycle;
 }
 
@@ -144,7 +144,7 @@ void Track::set_ratio_to_master_track(Track * master_track, ratio_type ratio) {
 
 void Track::update_duration_from_ratio_to_master_track(Track * master_track) {
 	float t_f= (float)(time_ms(master_track->_duration)* _ratio_to_master_track.first)/ (float)(_ratio_to_master_track.second);
-	time_type t= std::chrono::milliseconds((unsigned int)(t_f));
+	time_type t= std::chrono::milliseconds((uint)(t_f));
 	set_duration(t);
 }
 
@@ -153,7 +153,7 @@ Event * Track::get_first_null_event() {
 	/*if (VERBOSE) {
 		cout << "Track::get_first_null_event\n";
 	}*/
-	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+	for (uint idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		if (_events[idx_event]->is_null()) {
 			return _events[idx_event];
 		}
@@ -166,7 +166,7 @@ Event * Track::get_first_not_null_event() {
 	/*if (VERBOSE) {
 		cout << "Track::get_first_not_null_event\n";
 	}*/
-	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+	for (uint idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		if (!_events[idx_event]->is_null()) {
 			return _events[idx_event];
 		}
@@ -217,7 +217,7 @@ Event * Track::get_event_at(time_type t) {
 	if (VERBOSE) {
 		cout << "Track::get_event_at\n";
 	}
-	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+	for (uint idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		if (_events[idx_event]->_data._t_start== t) {
 			return _events[idx_event];
 		}
@@ -352,7 +352,7 @@ void Track::update(time_type t) {
 	/*if (VERBOSE) {
 		cout << "Track::update\n";
 	}*/
-	unsigned int cycle= get_cycle(t);
+	uint cycle= get_cycle(t);
 	if (cycle!= _current_cycle) {
 		_current_cycle= cycle;
 
@@ -412,7 +412,7 @@ void Track::update(time_type t) {
 }
 
 
-void Track::set_quantize(unsigned int quantize) {
+void Track::set_quantize(uint quantize) {
 	_quantize= quantize;
 	if (_quantize> 0) {
 		_quantize_step= _duration/ _quantize;
@@ -424,9 +424,9 @@ void Track::set_quantize(unsigned int quantize) {
 
 
 bool Track::update_current_quantize(time_type t) {
-	unsigned int _current_quantize_old= _current_quantize;
+	uint _current_quantize_old= _current_quantize;
 	if (_quantize) {
-		for (unsigned int i=0; i<_quantize; ++i) {
+		for (uint i=0; i<_quantize; ++i) {
 			if (_quantize_step* (i+ 1)> t) {
 				_current_quantize= i;
 				break;
@@ -465,14 +465,14 @@ void Track::clear() {
 	if (VERBOSE) {
 		cout << "Track::clear\n";
 	}
-	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+	for (uint idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		_events[idx_event]->set_null();
 	}
 }
 
 
 int Track::get_event_idx(Event * event) {
-	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+	for (uint idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		if (_events[idx_event]== event) {
 			return idx_event;
 		}
@@ -483,7 +483,7 @@ int Track::get_event_idx(Event * event) {
 
 // ----------------------------------------------------------------
 Sequence::Sequence() : _start_point(chrono::system_clock::now()), _mode(RECORDING) {
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		bool infinite= false;
 		if (idx_track== 0) {
 			infinite= true;
@@ -491,7 +491,7 @@ Sequence::Sequence() : _start_point(chrono::system_clock::now()), _mode(RECORDIN
 		_tracks[idx_track]= new Track(&_data[idx_track], infinite);
 	}
 
-	for (unsigned int idx_track=1; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=1; idx_track<N_TRACKS; ++idx_track) {
 		if (idx_track> 1) {
 			_tracks[idx_track]->_previous= _tracks[idx_track- 1];
 		}
@@ -505,7 +505,7 @@ Sequence::Sequence() : _start_point(chrono::system_clock::now()), _mode(RECORDIN
 
 
 Sequence::~Sequence() {
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		delete _tracks[idx_track];
 	}
 }
@@ -566,12 +566,12 @@ void Sequence::update() {
 	time_type now_time= now();
 
 	if (_mode== RUNNING) {
-		for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+		for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 			_tracks[idx_track]->update(now_time);
 		}
 	}
 	else if (_mode== RECORDING) {
-		for (unsigned int idx_track=1; idx_track<N_TRACKS; ++idx_track) {
+		for (uint idx_track=1; idx_track<N_TRACKS; ++idx_track) {
 			_tracks[idx_track]->update(now_time);
 		}
 	}
@@ -586,7 +586,7 @@ void Sequence::clear() {
 		cout << "Sequence::clear\n";
 	}
 
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		_tracks[idx_track]->clear();
 	}
 }
@@ -651,14 +651,14 @@ void Sequence::set_master_track_duration(time_type t) {
 	}
 
 	_tracks[1]->set_duration(t);
-	for (unsigned int idx_track=2; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=2; idx_track<N_TRACKS; ++idx_track) {
 		_tracks[idx_track]->update_duration_from_ratio_to_master_track(_tracks[1]);
 	}
 }
 
 
-unsigned int Sequence::get_current_track_index() {
-	for (unsigned int idx_track=1; idx_track<N_TRACKS; ++idx_track) {
+uint Sequence::get_current_track_index() {
+	for (uint idx_track=1; idx_track<N_TRACKS; ++idx_track) {
 		if (_tracks[idx_track]== _current_track) {
 			return idx_track;
 		}

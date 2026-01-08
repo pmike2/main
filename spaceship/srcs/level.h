@@ -42,7 +42,7 @@ public:
 	GLuint _buffer;
 	GLuint _prog;
 	GLint _position_loc, _world2camera_loc, _camera2clip_loc;
-	unsigned int _cubemap_texture;
+	uint _cubemap_texture;
 };
 
 
@@ -69,13 +69,13 @@ class Ship;
 class LevelMap {
 public:
 	LevelMap();
-	LevelMap(GLuint prog_draw, unsigned int n_ships);
+	LevelMap(GLuint prog_draw, uint n_ships);
 	~LevelMap();
 	void draw();
 	void anim(std::vector<Ship *> & ships);
 	
 	
-	unsigned int _n_ships;
+	uint _n_ships;
 	GLuint _prog_draw;
 	GLint _camera2clip_loc, _position_loc, _diffuse_color_loc;
 	GLuint _buffer;

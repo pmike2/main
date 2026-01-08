@@ -32,14 +32,14 @@
 #include "repere.h"
 
 
-const unsigned int N_JOINTS= 128; // == a celui dans le vertex shader !
+const uint N_JOINTS= 128; // == a celui dans le vertex shader !
 const std::string NULL_JOINT_SID= "NULL_JOINT_SID";
 const std::string ROOT_JOINT_SID= "ROOT_JOINT_SID";
 
 
 
 struct JointInfluence {
-	unsigned int _idx_joint;
+	uint _idx_joint;
 	float _weight;
 };
 
@@ -58,7 +58,7 @@ struct Vertex {
 	glm::vec3 _color;
 	glm::vec2 _texture;
 	std::vector<JointInfluence> _joints;
-	unsigned int _idx; // sert au moment de remplir JointInfluence
+	uint _idx; // sert au moment de remplir JointInfluence
 };
 
 
@@ -92,7 +92,7 @@ public:
 	InstanceJoint(ModelJoint * model_joint);
 	~InstanceJoint();
 	void print();
-	void anim(unsigned int delta_time_ms);
+	void anim(uint delta_time_ms);
 
 
 	ModelJoint * _model_joint;
@@ -111,7 +111,7 @@ public:
 	~ModelAnimation();
 	void parse_dae(std::string ch_dae_file);
 	void parse_joint(rapidxml::xml_node<> * node, ModelJoint * parent_joint);
-	//void compute_mat_joint(unsigned int idx_joint);
+	//void compute_mat_joint(uint idx_joint);
 	void compute_mats();
 	void print();
 	void clean();
@@ -130,7 +130,7 @@ public:
 	InstanceAnimation(ModelAnimation * model_animation);
 	~InstanceAnimation();
 	void compute_mats();
-	void anim(unsigned int delta_time_ms);
+	void anim(uint delta_time_ms);
 	void print();
 
 
@@ -147,9 +147,9 @@ public:
 		
 	
 	GLuint _prog_draw;
-	unsigned int _n_faces;
+	uint _n_faces;
 	float * _vertices;
-	unsigned int * _faces;
+	uint * _faces;
 	GLuint _buffers[2];
 	
 	GLint _model2clip_loc, _model2camera_loc, _normal_mat_loc;
@@ -192,7 +192,7 @@ public:
 	void anim(ViewSystem * view_system, std::vector<InstanceJoint *> & joints);
 	
 	
-	unsigned int _n_joints;
+	uint _n_joints;
 
 	GLuint _prog_draw;
 	GLint _model2clip_loc, _position_loc, _diffuse_color_loc;
@@ -227,7 +227,7 @@ public:
 	AnimatedInstance(AnimatedModel * model, const glm::vec3 & scale, GLuint prog_3d, GLuint prog_basic);
 	~AnimatedInstance();
 	void draw();
-	void anim(ViewSystem * view_system, unsigned int delta_time_ms);
+	void anim(ViewSystem * view_system, uint delta_time_ms);
 	void set_pos_rot_scale(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale);
 	void set_animated(bool b);
 	void randomize();
@@ -243,15 +243,15 @@ public:
 	Skeleton * _skeleton;
 	InstanceMesh * _mesh;
 	bool _draw_mesh, _draw_skeleton, _animated;
-	unsigned int _current_idx_anim;
+	uint _current_idx_anim;
 	InstancePosRot * _pos_rot;
 	
 	std::vector<glm::vec3> _path;
-	unsigned int _next_path_idx;
+	uint _next_path_idx;
 	glm::vec3 _next_position;
 	glm::quat _next_rotation;
 	AnimatedInstanceStatus _status;
-	unsigned int _waiting_n_ms;
+	uint _waiting_n_ms;
 };
 
 #endif

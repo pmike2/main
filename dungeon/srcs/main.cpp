@@ -37,8 +37,8 @@ InputState * input_state;
 bool done= false;
 float bck_factor= 1.0f;
 
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+uint val_fps, compt_fps;
+uint tikfps1, tikfps2, tikanim1, tikanim2;
 
 GLuint prog_basic, prog_repere, prog_select;
 GLuint g_vao;
@@ -50,7 +50,7 @@ Dungeon * dungeon;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (view_system->mouse_motion(input_state)) {
@@ -60,7 +60,7 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 
 
 void mouse_button_up(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (view_system->mouse_button_up(input_state)) {
@@ -70,7 +70,7 @@ void mouse_button_up(int x, int y, unsigned short button) {
 
 
 void mouse_button_down(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (view_system->mouse_button_down(input_state)) {
@@ -168,7 +168,7 @@ void init() {
 
 	/*float eye_direction[]= {0.0f, 0.0f, 1.0f};
 	GLuint progs_eye[]= {prog_3d_anim, prog_3d_terrain, prog_3d_obj};
-	for (unsigned int i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
+	for (uint i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
 		GLint eye_direction_loc= glGetUniformLocation(progs_eye[i], "eye_direction");
 		glUseProgram(progs_eye[i]);
 		glUniform3fv(eye_direction_loc, 1, eye_direction);
@@ -316,7 +316,7 @@ int main(int argc, char * argv[]) {
 	float x1, y1, z1, x2, y2, z2, x3, y3, z3;
 	float x4, y4, z4, x5, y5, z5, x6, y6, z6;
 	bool b;
-	unsigned int compt= 0;
+	uint compt= 0;
 	while (infile >> x1 >> y1 >> z1 >> x2 >> y2 >> z2 >> x3 >> y3 >> z3 >> x4 >> y4 >> z4 >> x5 >> y5 >> z5 >> x6 >> y6 >> z6 >> b) {
 		//if (compt!= 5) {compt++;continue;}
 		glm::vec3 v0(x1, y1, z1);
@@ -368,7 +368,7 @@ int main(int argc, char * argv[]) {
 	);
 	cout << glm::to_string(glm::vec3(posf1.x- posf0.x, glm::length(glm::vec3(0.0f, posf3.y- posf0.y, posf3.z- posf0.z)), hallway_depth)) << "\n";
 	cout << atan((posf3.z- posf0.z)/ (posf3.y- posf0.y)) << "\n";
-	for (unsigned int i=0; i<8; ++i) {
+	for (uint i=0; i<8; ++i) {
 		cout << glm::to_string(bbox->_pts[i]) << "\n";
 	}
 */

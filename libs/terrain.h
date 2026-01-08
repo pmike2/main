@@ -49,29 +49,29 @@ const int NEIGHBORS[6][3][2]= {
 };
 
 // nombre de GroupTerrain, ie de threads qui au demarrage vont tourner en parallele pour charger le terrain
-const unsigned int N_GROUPS= 8;
+const uint N_GROUPS= 8;
 
-//const unsigned int HORIZON_N_WIDTH= 8;
-//const unsigned int HORIZON_N_HEIGHT= 8;
+//const uint HORIZON_N_WIDTH= 8;
+//const uint HORIZON_N_HEIGHT= 8;
 
 
 glm::vec3 alti2color(float z);
 
 
 struct Degradation {
-	unsigned int _idx; // indice
-	unsigned int _step; // on divise la taille initiale du terrain par 2** _step
+	uint _idx; // indice
+	uint _step; // on divise la taille initiale du terrain par 2** _step
 	float _dist; // jusqu'a quelle distance utiliser cette degradation
 };
 
 // degradations
-const unsigned int N_DEGRADATIONS= 3;
+const uint N_DEGRADATIONS= 3;
 const Degradation DEGRADATIONS[N_DEGRADATIONS] = { {0, 0, 3000.0f}, {1, 3, 10000.0f}, {2, 5, 100000.0f}};
 
 
 struct TerrainConfig {
 	TerrainConfig();
-	TerrainConfig(const glm::vec2 & origin, float width_sub, float height_sub, float width_step, float height_step, unsigned int n_subs_x, unsigned int n_subs_y);
+	TerrainConfig(const glm::vec2 & origin, float width_sub, float height_sub, float width_step, float height_step, uint n_subs_x, uint n_subs_y);
 	~TerrainConfig();
 	void print();
 
@@ -79,12 +79,12 @@ struct TerrainConfig {
 	glm::vec2 _origin; // origine
 	float _width_step, _height_step; // taille pas
 	float _width, _height; // dimensions totales
-	unsigned int _width_n, _height_n; // nombre de pas total
+	uint _width_n, _height_n; // nombre de pas total
 	float _width_sub, _height_sub; // dimensions d'un subterrain
-	unsigned int _width_sub_n, _height_sub_n; // nombre de pas d'un subterrain
-	unsigned int _n_subs_x, _n_subs_y; // nombre de subterrains en x, y
-	unsigned int _n_subs; // nombre de subterrains
-	unsigned int * _idxs[N_DEGRADATIONS]; // indices des sommets en fonction de la degradation
+	uint _width_sub_n, _height_sub_n; // nombre de pas d'un subterrain
+	uint _n_subs_x, _n_subs_y; // nombre de subterrains en x, y
+	uint _n_subs; // nombre de subterrains
+	uint * _idxs[N_DEGRADATIONS]; // indices des sommets en fonction de la degradation
 	AABB_2D * _aabb;
 };
 
@@ -92,8 +92,8 @@ struct TerrainConfig {
 // ref : https://www.redblobgames.com/maps/terrain-from-noise
 struct TerrainRandomConfig {
 	float _alti_offset;
-	unsigned int _n_levels;
-	unsigned int _gradient_base_size;
+	uint _n_levels;
+	uint _gradient_base_size;
 	float _max_factor;
 	float _redistribution_power;
 };
@@ -127,8 +127,8 @@ public:
 
 	GLuint _vertex_buffer;
 	GLuint _index_buffers[N_DEGRADATIONS];
-	unsigned int _n_faces[N_DEGRADATIONS];
-	unsigned int _current_index_buffer_idx;
+	uint _n_faces[N_DEGRADATIONS];
+	uint _current_index_buffer_idx;
 };
 
 
@@ -136,15 +136,15 @@ public:
 class SubTerrain {
 public:
 	SubTerrain();
-	SubTerrain(GLuint prog_draw_3d, float * altis, const TerrainConfig * config, unsigned int idx_x, unsigned int idx_y);
+	SubTerrain(GLuint prog_draw_3d, float * altis, const TerrainConfig * config, uint idx_x, uint idx_y);
 	~SubTerrain();
 	void load(float * altis);
-	void set_degradation(unsigned int degradation);
+	void set_degradation(uint degradation);
 	void draw();
 	void anim(ViewSystem * view_system);
 
 
-	unsigned int _idx_x, _idx_y; // indices au sein du terrain
+	uint _idx_x, _idx_y; // indices au sein du terrain
 	float * _vertices; // sommets ; supprimé une fois que les buffers opengl sont remplis
 	TerrainMesh * _mesh;
 	bool _draw_mesh, _active;
@@ -194,7 +194,7 @@ public:
 	SubTerrain ** _subterrains;
 	GroupTerrain * _group_terrains[N_GROUPS];
 	//float * _horizons;
-	//unsigned int _horizon_n_width, _horizon_n_height;
+	//uint _horizon_n_width, _horizon_n_height;
 };
 
 

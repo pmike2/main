@@ -375,7 +375,7 @@ Voronoi::Voronoi(const std::vector<pt_2d> & sites, bool verbose, bool output_bea
 
 	// _bbox est la bounding box des sites, utilisée lors de l'ajout de la bbox englobante du DCEL _diagram
 	_bbox_min.x= 1e8; _bbox_min.y= 1e8; _bbox_max.x= -1e8; _bbox_max.y= -1e8;
-	for (unsigned int i=0; i<sites.size(); ++i) {
+	for (uint i=0; i<sites.size(); ++i) {
 		Event * e= new Event(SiteEvent);
 		e->_site= sites[i];
 		_queue.push(e);
@@ -872,8 +872,8 @@ void Voronoi::handle_circle_event(Event * e) {
 
 // export sous forme de HTML pour debug
 void Voronoi::export_debug_html(std::string html_path) {
-	const unsigned int SVG_WIDTH= 1000;
-	const unsigned int SVG_HEIGHT= 800;
+	const uint SVG_WIDTH= 1000;
+	const uint SVG_HEIGHT= 800;
 	
 	number max_size= std::max(_bbox_max.x- _bbox_min.x, _bbox_max.y- _bbox_min.y);
 	const number VIEW_XMIN= _bbox_min.x- BBOX_MARGIN_PERCENT* 5.0* max_size;

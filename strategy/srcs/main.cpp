@@ -27,8 +27,8 @@ ViewSystem * view_system;
 
 bool done= false;
 
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2;
+uint val_fps, compt_fps;
+uint tikfps1, tikfps2;
 
 GLuint g_vao;
 
@@ -36,7 +36,7 @@ Strategy * strategy;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (strategy->mouse_motion(input_state, t)) {
@@ -50,7 +50,7 @@ void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
 
 
 void mouse_button_up(int x, int y, unsigned short button, time_point t) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (strategy->mouse_button_up(input_state, t)) {
@@ -64,7 +64,7 @@ void mouse_button_up(int x, int y, unsigned short button, time_point t) {
 
 
 void mouse_button_down(int x, int y, unsigned short button, time_point t) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (strategy->mouse_button_down(input_state, t)) {
@@ -167,6 +167,7 @@ void init() {
 	progs["font3d"]= create_prog("../../shaders/vertexshader_font_3d.txt", "../../shaders/fragmentshader_font.txt");
 	progs["elevation_flat"]= create_prog("../shaders/vertexshader_elevation_flat.txt", "../shaders/fragmentshader_elevation_flat.txt");
 	progs["elevation_smooth"]= create_prog("../shaders/vertexshader_elevation_smooth.txt", "../shaders/fragmentshader_elevation_smooth.txt");
+	progs["dash"]= create_prog("../shaders/vertexshader_dash.txt", "../shaders/fragmentshader_dash.txt");
 
 	check_gl_error();
 

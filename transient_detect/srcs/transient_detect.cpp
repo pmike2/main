@@ -33,7 +33,7 @@ using namespace std;
 	bcl4 : pas mal: SILENT_TRESH= 0.01f; TRIGGERING_RATIO= 1.7f; DECAY_FACTOR= 1800.0f; MIN_MARKERS_DISTANCE= 0.03f;
 */
 
-unsigned int BLOCK_SIZE= 64;
+uint BLOCK_SIZE= 64;
 float SILENT_TRESH= 0.01f;
 float TRIGGERING_RATIO= 1.7f;
 float DECAY_FACTOR= 1800.0f;
@@ -67,25 +67,25 @@ int main(int argc, char* argv[]) {
 	
 	// -------------------------------------------------------------------------
 	if (info_in.channels== 1) {
-		for (unsigned int i=0; i<info_in.frames; ++i)
+		for (uint i=0; i<info_in.frames; ++i)
 			buf_in_mono[i]= buf_in[i];
 	}
 	else if (info_in.channels== 2) {
 		// on moyenne les 2 canaux
-		for (unsigned int i=0; i<info_in.frames; ++i)
+		for (uint i=0; i<info_in.frames; ++i)
 			buf_in_mono[i]= (buf_in[2* i]+ buf_in[2* i+ 1])* 0.5f;
 	}
 
 	// -------------------------------------------------------------------------
 	int nblocks= int(floor(info_in.frames/ BLOCK_SIZE));
-	unsigned int idx_sample_out= 0;
-	for (unsigned int idx_block=0; idx_block<nblocks; ++idx_block) {
+	uint idx_sample_out= 0;
+	for (uint idx_block=0; idx_block<nblocks; ++idx_block) {
 		float rms= 0.0f;
 		for (int idx_sample=0; idx_sample<BLOCK_SIZE; ++idx_sample) {
 			rms+= buf_in_mono[BLOCK_SIZE* idx_block+ idx_sample]* buf_in_mono[BLOCK_SIZE* idx_block+ idx_sample];
 		}
 		rms= sqrt(rms/ float(BLOCK_SIZE));
-		for (unsigned int idx_sample=0; idx_sample<BLOCK_SIZE; ++idx_sample) {
+		for (uint idx_sample=0; idx_sample<BLOCK_SIZE; ++idx_sample) {
 			buf_rms[idx_sample_out]= rms;
 			idx_sample_out++;
 		}
@@ -93,29 +93,29 @@ int main(int argc, char* argv[]) {
 	
 	float current_value= 0.0f;
 	idx_sample_out= 0;
-	for (unsigned int idx_block=0; idx_block<nblocks; ++idx_block) {
+	for (uint idx_block=0; idx_block<nblocks; ++idx_block) {
 		if (current_value* decay< buf_rms[idx_block* BLOCK_SIZE])
 			current_value= buf_rms[idx_block* BLOCK_SIZE];
 		else
 			current_value*= decay;
 		
-		for (unsigned int idx_sample=0; idx_sample<BLOCK_SIZE; ++idx_sample) {
+		for (uint idx_sample=0; idx_sample<BLOCK_SIZE; ++idx_sample) {
 			buf_exp_decay[idx_sample_out]= current_value;
 			idx_sample_out++;
 		}
 	}
 	
 	// -------------------------------------------------------------------------
-	vector<unsigned int> markers;
-	for (unsigned int idx_block=0; idx_block<nblocks- 1; ++idx_block) {
+	vector<uint> markers;
+	for (uint idx_block=0; idx_block<nblocks- 1; ++idx_block) {
 		float val_before= buf_exp_decay[idx_block* BLOCK_SIZE];
 		float val_after= buf_exp_decay[(idx_block+ 1)* BLOCK_SIZE];
 		
 		// test val_before pour ne pas diviser par 0
 		if ( (val_after> SILENT_TRESH) && ((val_before< 1e-6) || (val_after> val_before* TRIGGERING_RATIO)) ) {
-			unsigned int idx_marker= 0;
+			uint idx_marker= 0;
 			// on cherche du zero-crossing dans le mono; si le sample est stereo c'est un peu bidon; que faire ?
-			for (unsigned int idx_sample=(idx_block+ 1)* BLOCK_SIZE; idx_sample>idx_block* BLOCK_SIZE; --idx_sample) {
+			for (uint idx_sample=(idx_block+ 1)* BLOCK_SIZE; idx_sample>idx_block* BLOCK_SIZE; --idx_sample) {
 				if (buf_in_mono[idx_sample]* buf_in_mono[idx_sample- 1]< 0.0f) {
 					idx_marker= idx_sample;
 					break;
@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
 	cout << markers.size() << " markers trouvés" << endl;
 	for (auto& it_marker : markers) {
 		//cout << it_marker << endl;
-		for (unsigned int i=it_marker; i<it_marker+ 20; ++i)
+		for (uint i=it_marker; i<it_marker+ 20; ++i)
 			buf_markers[i]= 0.8f;
 	}
 	

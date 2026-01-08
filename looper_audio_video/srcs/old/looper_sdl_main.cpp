@@ -66,8 +66,8 @@ void init() {
 
 	looper= new LooperSDL(renderer, SCREEN_WIDTH, SCREEN_HEIGHT);
 
-	/*unsigned int n= 16;
-	for (unsigned int i=0; i<n; ++i) {
+	/*uint n= 16;
+	for (uint i=0; i<n; ++i) {
 		// 97 = 'a'
 		looper->_tracks[1]->insert_event(97, (DEFAULT_TRACK_DURATION* i)/ n, 0);
 	}*/

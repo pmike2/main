@@ -49,14 +49,14 @@ void Spark::anim() {
 // SparkSystem ------------------------------------
 SparkSystem::SparkSystem() {
 	_sparks= new Spark*[N_MAX_SPARKS];
-	for (unsigned int i=0; i<N_MAX_SPARKS; ++i) {
+	for (uint i=0; i<N_MAX_SPARKS; ++i) {
 		_sparks[i]= new Spark();
 	}
 }
 
 
 SparkSystem::~SparkSystem() {
-	for (unsigned int i=0; i<N_MAX_SPARKS; ++i) {
+	for (uint i=0; i<N_MAX_SPARKS; ++i) {
 		delete _sparks[i];
 	}
 	delete[] _sparks;
@@ -65,22 +65,22 @@ SparkSystem::~SparkSystem() {
 
 
 void SparkSystem::reinit() {
-	for (unsigned int i=0; i<N_MAX_SPARKS; ++i) {
+	for (uint i=0; i<N_MAX_SPARKS; ++i) {
 		_sparks[i]->_is_alive= false;
 	}
 }
 
 
 void SparkSystem::anim(time_point t, std::vector<pt_2d> positions) {
-	for (unsigned int i=0; i<N_MAX_SPARKS; ++i) {
+	for (uint i=0; i<N_MAX_SPARKS; ++i) {
 		_sparks[i]->anim();
 	}
 
 	for (auto position : positions) {
-		unsigned int n_sparks= rand_int(N_MIN_SPARKS_PER_COLLISION, N_MAX_SPARKS_PER_COLLISION);
-		for (unsigned int i=0; i<n_sparks; ++i) {
+		uint n_sparks= rand_int(N_MIN_SPARKS_PER_COLLISION, N_MAX_SPARKS_PER_COLLISION);
+		for (uint i=0; i<n_sparks; ++i) {
 			Spark * spark= NULL;
-			for (unsigned int i=0; i<N_MAX_SPARKS; ++i) {
+			for (uint i=0; i<N_MAX_SPARKS; ++i) {
 				if (!_sparks[i]->_is_alive) {
 					spark= _sparks[i];
 					break;

@@ -172,7 +172,7 @@ void init_program(string json_path) {
 	modifier_loc= glGetUniformLocation(prog_movie, "modifier");
 	position_loc= glGetAttribLocation(prog_movie, "position_in");
 
-	unsigned int base_index= 0;
+	uint base_index= 0;
 	video_sampler= new VideoSampler(base_index, movie_loc, alpha_loc, movie_time_loc, index_time_loc, index_movie_loc,
 		global_alpha_loc, modifier_loc, json_path);
 

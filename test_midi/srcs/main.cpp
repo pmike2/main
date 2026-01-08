@@ -10,9 +10,9 @@ RtMidiIn *midiin;
 
 
 // callback de lecture midi
-void mycallback(double deltatime, std::vector<unsigned char> * message, void *userData) {
-	unsigned int nBytes = message->size();
-	for (unsigned int i=0; i<nBytes; i++) {
+void mycallback(number deltatime, std::vector<unsigned char> * message, void *userData) {
+	uint nBytes = message->size();
+	for (uint i=0; i<nBytes; i++) {
 		std::cout << "Byte " << i << " = " << (int)message->at(i) << ", ";
 	}
 	if (nBytes > 0) {
@@ -30,7 +30,7 @@ int main() {
 	midiin= new RtMidiIn();
 	
 	// Check available ports.
-	unsigned int nPorts = midiin->getPortCount();
+	uint nPorts = midiin->getPortCount();
 	if ( nPorts == 0 ) {
 		std::cout << "No ports available!\n";
 		cleanup();

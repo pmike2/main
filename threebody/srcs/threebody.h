@@ -98,7 +98,7 @@ public:
 	void read_json(nlohmann::json js);
 	void read_json(std::string s);
 	void write_json(std::string filepath);
-	void add_random_bodies(BodyType * body_type, unsigned int n_bodies);
+	void add_random_bodies(BodyType * body_type, uint n_bodies);
 	void add_random_bodies(glm::vec2 n_bodies);
 	void randomize(int n_types, AABB limit, glm::vec2 friction, glm::vec2 max_force, 
 		glm::vec2 radius, glm::vec2 threshold, glm::vec2 attraction, glm::vec2 bias);
@@ -114,7 +114,7 @@ public:
 	GLuint _prog_draw;
 	GLint _world2clip_loc, _position_loc, _color_loc, _tex_loc;
 	GLuint _buffer;
-	unsigned int _n_bodies;
+	uint _n_bodies;
 	//sio::client _io;
 	//std::mutex _lock;
 };

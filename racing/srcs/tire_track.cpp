@@ -12,7 +12,7 @@ TireTrack::~TireTrack() {
 }
 
 
-void TireTrack::reinit(pt_2d position, number alpha, pt_2d scale, unsigned int idx_texture) {
+void TireTrack::reinit(pt_2d position, number alpha, pt_2d scale, uint idx_texture) {
 	_bbox->_center= position;
 	_bbox->_alpha= alpha;
 	_bbox->_half_size= scale;
@@ -40,14 +40,14 @@ void TireTrack::anim() {
 // TireTrackSystem ----------------------------------------------------------------------------
 TireTrackSystem::TireTrackSystem() {
 	_tracks= new TireTrack *[N_MAX_TIRE_TRACKS];
-	for (unsigned int i=0; i<N_MAX_TIRE_TRACKS; ++i) {
+	for (uint i=0; i<N_MAX_TIRE_TRACKS; ++i) {
 		_tracks[i]= new TireTrack();
 	}
 }
 
 
 TireTrackSystem::~TireTrackSystem() {
-	for (unsigned int i=0; i<N_MAX_TIRE_TRACKS; ++i) {
+	for (uint i=0; i<N_MAX_TIRE_TRACKS; ++i) {
 		delete _tracks[i];
 	}
 	delete[] _tracks;
@@ -55,14 +55,14 @@ TireTrackSystem::~TireTrackSystem() {
 
 
 void TireTrackSystem::reinit() {
-	for (unsigned int i=0; i<N_MAX_TIRE_TRACKS; ++i) {
+	for (uint i=0; i<N_MAX_TIRE_TRACKS; ++i) {
 		_tracks[i]->_is_alive= false;
 	}
 }
 
 
 void TireTrackSystem::anim(time_point t, std::vector<Car *> cars) {
-	for (unsigned int i=0; i<N_MAX_TIRE_TRACKS; ++i) {
+	for (uint i=0; i<N_MAX_TIRE_TRACKS; ++i) {
 		_tracks[i]->anim();
 	}
 
@@ -74,7 +74,7 @@ void TireTrackSystem::anim(time_point t, std::vector<Car *> cars) {
 		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- car->_last_drift_t).count();
 		if (dt> TIRE_TRACKS_DELTA_T) {
 			TireTrack * tire_track= NULL;
-			for (unsigned int i=0; i<N_MAX_TIRE_TRACKS; ++i) {
+			for (uint i=0; i<N_MAX_TIRE_TRACKS; ++i) {
 				if (!_tracks[i]->_is_alive) {
 					tire_track= _tracks[i];
 					break;

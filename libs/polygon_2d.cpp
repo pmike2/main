@@ -47,9 +47,9 @@ void Polygon2D::clear() {
 }
 
 
-void Polygon2D::set_points(const number * points, unsigned int n_points, bool convexhull) {
+void Polygon2D::set_points(const number * points, uint n_points, bool convexhull) {
 	_pts.clear();
-	for (unsigned int i=0; i<n_points; ++i) {
+	for (uint i=0; i<n_points; ++i) {
 		_pts.push_back(pt_2d(points[2* i], points[2* i+ 1]));
 	}
 	if (convexhull) {
@@ -71,16 +71,16 @@ void Polygon2D::set_points(const std::vector<pt_2d> pts, bool convexhull) {
 
 void Polygon2D::centroid2zero() {
 	// on met le centre du polygon sur le centre de gravité
-	for (unsigned int i=0; i<_pts.size(); ++i) {
+	for (uint i=0; i<_pts.size(); ++i) {
 		_pts[i]-= _centroid;
 	}
 	_centroid= pt_2d(0.0);
 }
 
 
-void Polygon2D::randomize(unsigned int n_points, number radius, pt_2d center, bool convexhull) {
+void Polygon2D::randomize(uint n_points, number radius, pt_2d center, bool convexhull) {
 	_pts.clear();
-	for (unsigned int i=0; i<n_points; ++i) {
+	for (uint i=0; i<n_points; ++i) {
 		number x= center.x+ rand_number(-radius, radius);
 		number y= center.y+ rand_number(-radius, radius);
 		_pts.push_back(pt_2d(x, y));
@@ -102,28 +102,28 @@ void Polygon2D::set_rectangle(const pt_2d origin, const pt_2d size) {
 
 void Polygon2D::set_bbox(const BBox_2D & bbox) {
 	_pts.clear();
-	for (unsigned int i=0; i<4; ++i) {
+	for (uint i=0; i<4; ++i) {
 		_pts.push_back(bbox._pts[i]);
 	}
 }
 
 
 void Polygon2D::translate(pt_2d v) {
-	for (unsigned int i=0; i<_pts.size(); ++i) {
+	for (uint i=0; i<_pts.size(); ++i) {
 		_pts[i]+= v;
 	}
 }
 
 
 void Polygon2D::rotate(pt_2d center, number alpha) {
-	for (unsigned int i=0; i<_pts.size(); ++i) {
+	for (uint i=0; i<_pts.size(); ++i) {
 		_pts[i]= center+ rot(_pts[i]- center, alpha);
 	}
 }
 
 
 void Polygon2D::scale(pt_2d scale) {
-	for (unsigned int i=0; i<_pts.size(); ++i) {
+	for (uint i=0; i<_pts.size(); ++i) {
 		_pts[i]*= scale;
 	}
 }
@@ -132,7 +132,7 @@ void Polygon2D::scale(pt_2d scale) {
 void Polygon2D::update_area() {
 	// calcul aire
 	_area= 0.0;
-	for (unsigned int i=0; i<_pts.size(); ++i) {
+	for (uint i=0; i<_pts.size(); ++i) {
 		pt_2d pt1= _pts[i];
 		pt_2d pt2= _pts[(i+ 1)% _pts.size()];
 		_area+= 0.5f* (pt1.x* pt2.y- pt1.y* pt2.x);
@@ -149,7 +149,7 @@ void Polygon2D::update_area() {
 void Polygon2D::update_centroid() {
 	// calcul centre de gravité
 	_centroid= pt_2d(0.0);
-	for (unsigned int i=0; i<_pts.size(); ++i) {
+	for (uint i=0; i<_pts.size(); ++i) {
 		pt_2d pt1= _pts[i];
 		pt_2d pt2= _pts[(i+ 1)% _pts.size()];
 		_centroid+= (0.5f* THIRD/ _area)* (pt1.x* pt2.y- pt1.y* pt2.x)* (pt1+ pt2);
@@ -162,7 +162,7 @@ void Polygon2D::update_normals() {
 	// on doit etre en anticlockwise a ce moment ; on fait une rotation de -90 ie (x,y)->(y,-x)
 	// pour que la normale pointe vers l'extérieur du polygone
 	_normals.clear();
-	for (unsigned int i=0; i<_pts.size(); ++i) {
+	for (uint i=0; i<_pts.size(); ++i) {
 		pt_2d pt1= _pts[i];
 		pt_2d pt2= _pts[(i+ 1)% _pts.size()];
 		_normals.push_back(glm::normalize(pt_2d(pt2.y- pt1.y, pt1.x- pt2.x)));
@@ -236,12 +236,12 @@ void Polygon2D::update_all() {
 
 
 // pt du polygon le + à droite le long d'une direction
-void Polygon2D::min_max_pt_along_dir(const pt_2d direction, unsigned int * idx_pt_min, number * dist_min, unsigned int * idx_pt_max, number * dist_max) const {
+void Polygon2D::min_max_pt_along_dir(const pt_2d direction, uint * idx_pt_min, number * dist_min, uint * idx_pt_max, number * dist_max) const {
 	*dist_min= 1e10;
 	*dist_max= -1e10;
 	*idx_pt_min= 0;
 	*idx_pt_max= 0;
-	for (unsigned int i=0; i<_pts.size(); ++i) {
+	for (uint i=0; i<_pts.size(); ++i) {
 		number dist= glm::dot(direction, _pts[i]);
 		if (dist> *dist_max) {
 			*dist_max= dist;

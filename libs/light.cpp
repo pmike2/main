@@ -162,7 +162,7 @@ void LightsUBO::reset_buff() {
 	float f0= 0.0f;
 	float t0[3]= {0.0f, 0.0f, 0.0f};
 	bool b0= false;
-	for (unsigned int i=0; i<N_MAX_LIGHTS; i++)	{
+	for (uint i=0; i<N_MAX_LIGHTS; i++)	{
 		memcpy(_lights_buff+ i* _light_size+ _offsets[0], t0, sizeof(float)* 3);
 		memcpy(_lights_buff+ i* _light_size+ _offsets[1], t0, sizeof(float)* 3);
 		memcpy(_lights_buff+ i* _light_size+ _offsets[2], t0, sizeof(float)* 3);
@@ -181,7 +181,7 @@ void LightsUBO::reset_buff() {
 void LightsUBO::update() {
 	reset_buff();
 
-	unsigned int i= 0;
+	uint i= 0;
 	for (auto light : _lights) {
 		memcpy(_lights_buff+ i* _light_size+ _offsets[0], glm::value_ptr(light->_color), sizeof(float)* 3);
 		memcpy(_lights_buff+ i* _light_size+ _offsets[1], glm::value_ptr(light->_position_camera), sizeof(float)* 3);

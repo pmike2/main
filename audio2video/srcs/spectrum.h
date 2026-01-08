@@ -39,13 +39,13 @@
 
 
 // renvoie la taille d'un bloc regroupant des fréquences parmi SAMPLES_PER_BUFFER
-unsigned int block_width(unsigned int idx_block);
+uint block_width(uint idx_block);
 
 
 // ------------------------------------------------------------------------------------------------------------
 // événement : à _time sera joué _idx_sample qui aura la signature _idx_signature
 struct AudioEvent {
-	double _time;
+	number _time;
 	long _idx_sample;
 	int _idx_signature;
 };
@@ -55,7 +55,7 @@ struct AudioEvent {
 class BlockFFT {
 public:
 	BlockFFT();
-	BlockFFT(unsigned int width);
+	BlockFFT(uint width);
 	~BlockFFT();
 
 
@@ -74,14 +74,14 @@ public:
 class SpectrumSignature {
 public:
 	SpectrumSignature();
-	SpectrumSignature(unsigned int n_blocks_fft, unsigned int n_blocks_record);
+	SpectrumSignature(uint n_blocks_fft, uint n_blocks_record);
 	~SpectrumSignature();
 	float mass_center(); // barycentre des fréquences pour tri
 
 
 	float * _values; // les BlockFFT._instant_energy sur _n_blocks_fft * _n_blocks_record
-	unsigned int _n_blocks_fft; // nombre de blocs sur une bande
-	unsigned int _n_blocks_record; // nombre de bandes
+	uint _n_blocks_fft; // nombre de blocs sur une bande
+	uint _n_blocks_record; // nombre de bandes
 	bool _active; // actif ou non
 };
 
@@ -94,18 +94,18 @@ class Audio {
 public:
 	Audio();
 	~Audio();
-	void push_event(double t); // callback écrit dans _audio_event_queue
-	void update_current_sample(double t); // main lit dans _audio_event_queue et écrit dans _signatures_event_queue
+	void push_event(number t); // callback écrit dans _audio_event_queue
+	void update_current_sample(number t); // main lit dans _audio_event_queue et écrit dans _signatures_event_queue
 	void record2file(std::string record_path);
 	void loadfromfile(std::string load_path);
 	void compute_spectrum(long sample);
-	void set_n_signatures(unsigned int n_signatures); // suppression et recréation des _signatures
+	void set_n_signatures(uint n_signatures); // suppression et recréation des _signatures
 	void reinit_signatures(); // passage à false des _signatures.active
-	int get_idx_signature(unsigned int idx_record); // renvoie l'indice de la signature la plus proche
+	int get_idx_signature(uint idx_record); // renvoie l'indice de la signature la plus proche
 	void sort_signatures(); // tri des signatures
 	float event_length(long idx_sample); // renvoie la taille en secondes d'un événement triggé (release)
-	void set_block_idx_signature(unsigned int idx_record, int idx_signature); // écrit l'idx signature d'un block
-	int get_block_idx_signature(unsigned int idx_record); // lit l'idx signature d'un block
+	void set_block_idx_signature(uint idx_record, int idx_signature); // écrit l'idx signature d'un block
+	int get_block_idx_signature(uint idx_record); // lit l'idx signature d'un block
 
 
 	long _n_samples; // nombre de samples
@@ -116,8 +116,8 @@ public:
 	long _last_sample; // sert à gérer les intervalles de samples traités dans le callback
 	long _current_sample_callback; // sample en cours de traitement dans le callback
 	BlockFFT ** _blocks; // _n_blocks_fft * _n_blocks_record blocks
-	unsigned int _n_blocks_fft; // nombre de blocs sur une bande
-	unsigned int _n_blocks_record; // nombre de bandes
+	uint _n_blocks_fft; // nombre de blocs sur une bande
+	uint _n_blocks_record; // nombre de bandes
 	SafeQueue<AudioEvent> _audio_event_queue; // callback écrit dans cette queue et update_current_sample y lit
 	float _playback_amplitude; // volume playback
 	std::vector<SpectrumSignature *> _signatures; // signatures
@@ -146,7 +146,7 @@ public:
 	GLint _camera2clip_loc, _position_loc, _diffuse_color_loc;
 	GLuint _buffer;
 	float * _data;
-	unsigned int _n_vertices;
+	uint _n_vertices;
 	float _camera2clip[16];
 
 	Audio * _audio;
@@ -173,9 +173,9 @@ public:
 	float _width_step;
 	float _height_step;
 	
-	unsigned int _n_faces;
+	uint _n_faces;
 	float * _data;
-	unsigned int * _faces;
+	uint * _faces;
 	GLuint _buffers[2];
 	
 	glm::mat4 _model2camera;
@@ -234,7 +234,7 @@ public:
 	GLuint _prog_draw;
 	GLint _camera2clip_loc, _position_loc, _diffuse_color_loc;
 	GLuint _buffer;
-	unsigned int _n_blocks;
+	uint _n_blocks;
 	float * _data;
 	float _camera2clip[16];
 	Audio * _audio;
@@ -299,12 +299,12 @@ public:
 class Connexion {
 public:
 	Connexion();
-	Connexion(unsigned int width, unsigned int height);
+	Connexion(uint width, uint height);
 	~Connexion();
 	void reinit();
-	bool get(unsigned int x, unsigned int y);
-	void set(unsigned int x, unsigned int y, bool b);
-	void randomize(unsigned int chance);
+	bool get(uint x, uint y);
+	void set(uint x, uint y, bool b);
+	void randomize(uint chance);
 	void load(nlohmann::json js);
 	void load(std::string ch_json);
 	nlohmann::json get_json();
@@ -312,8 +312,8 @@ public:
 	void print();
 
 
-	unsigned int _width;
-	unsigned int _height;
+	uint _width;
+	uint _height;
 	bool * _values;
 };
 

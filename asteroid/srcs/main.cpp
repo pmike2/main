@@ -17,7 +17,7 @@
 
 
 // en ms; temps entre 2 anims
-//const unsigned int DELTA_ANIM= 1;
+//const uint DELTA_ANIM= 1;
 
 // dimensions écran
 const int MAIN_WIN_WIDTH= 1280;
@@ -34,8 +34,8 @@ ScreenGL * screengl;
 Asteroid * asteroid;
 
 bool done= false;
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+uint val_fps, compt_fps;
+uint tikfps1, tikfps2, tikanim1, tikanim2;
 
 
 
@@ -61,21 +61,21 @@ void key_up(SDL_Keycode key, std::chrono::system_clock::time_point t) {
 }
 
 
-void joystick_down(unsigned int button_idx, std::chrono::system_clock::time_point t) {
+void joystick_down(uint button_idx, std::chrono::system_clock::time_point t) {
 	if (asteroid->joystick_down(button_idx, t)) {
 		return;
 	}
 }
 
 
-void joystick_up(unsigned int button_idx, std::chrono::system_clock::time_point t) {
+void joystick_up(uint button_idx, std::chrono::system_clock::time_point t) {
 	if (asteroid->joystick_up(button_idx, t)) {
 		return;
 	}
 }
 
 
-void joystick_axis(unsigned int axis_idx, int value, std::chrono::system_clock::time_point t) {
+void joystick_axis(uint axis_idx, int value, std::chrono::system_clock::time_point t) {
 	if (asteroid->joystick_axis(axis_idx, value, t)) {
 		return;
 	}

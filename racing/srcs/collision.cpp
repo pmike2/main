@@ -28,7 +28,7 @@ bool collision(StaticObject * obj1, StaticObject * obj2, pt_2d & position, time_
 	// is_inter vaudra true s'il y a intersection
 	pt_2d axis(0.0, 0.0);
 	number overlap= 0.0;
-	unsigned int idx_pt= 0;
+	uint idx_pt= 0;
 	bool is_pt_in_poly1= false;
 	bool is_inter= poly_intersects_poly(obj1->_footprint, obj2->_footprint, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
 

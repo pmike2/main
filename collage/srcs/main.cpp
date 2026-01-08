@@ -61,8 +61,8 @@ ScreenGL * screengl;
 
 int done= 0;
 
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+uint val_fps, compt_fps;
+uint tikfps1, tikfps2, tikanim1, tikanim2;
 
 GLuint prog_2d, prog_font;
 GLuint g_vao;
@@ -90,7 +90,7 @@ int pa_callback(const void * input, void * output, unsigned long sample_count, c
 	*/
 
 	// pour ne pas avoir de glitchs
-	for (unsigned int i=0; i<sample_count; ++i) {
+	for (uint i=0; i<sample_count; ++i) {
 		out[2* i+ 0]= 0.0f;
 		out[2* i+ 1]= 0.0f;
 	}
@@ -101,7 +101,7 @@ int pa_callback(const void * input, void * output, unsigned long sample_count, c
 
 // ---------------------------------------------------------------------------------------
 void mouse_motion(int x, int y, int xrel, int yrel) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
  	if (audio_project->mouse_motion(input_state)) {
@@ -110,8 +110,8 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 }
 
 
-void mouse_button_up(unsigned int x, unsigned int y) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+void mouse_button_up(uint x, uint y) {
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
  	if (audio_project->mouse_button_up(input_state)) {
@@ -120,8 +120,8 @@ void mouse_button_up(unsigned int x, unsigned int y) {
 }
 
 
-void mouse_button_down(unsigned int x, unsigned int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+void mouse_button_down(uint x, uint y, unsigned short button) {
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 

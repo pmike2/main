@@ -7,7 +7,7 @@
 
 
 // en ms; temps entre 2 anims
-const unsigned int DELTA_ANIM= 1;
+const uint DELTA_ANIM= 1;
 
 // dimensions écran
 const int MAIN_WIN_WIDTH= 1280;

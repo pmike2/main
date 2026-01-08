@@ -48,7 +48,7 @@ public:
 	void anim(const glm::mat4 & world2camera, const glm::mat4 & camera2clip);
 	void sync2appliedforces(std::vector<AppliedForce> & applied_forces);
 	
-	unsigned int _n_forces;
+	uint _n_forces;
 	glm::mat4 _model2world;
 	glm::mat4 _model2clip;
 	GLuint _buffer;
@@ -155,9 +155,9 @@ public:
 	ExplosionParams _ep;
 	glm::vec3 _position;
 
-	unsigned int _n_faces;
+	uint _n_faces;
 	float * _vertices;
-	unsigned int * _faces;
+	uint * _faces;
 	GLuint _buffers[3];
 	
 	float _world2camera[16];
@@ -215,7 +215,7 @@ public:
 	FollowCamera _follow_camera;
 	std::vector<Bullet*> _bullets;
 	bool _is_shooting;
-	unsigned int _tik_shooting_1, _tik_shooting_2;
+	uint _tik_shooting_1, _tik_shooting_2;
 	
 	std::map<std::string, bool> _keypresseds;
 	std::map<std::string, std::vector<std::string> > _key2forces;
@@ -233,7 +233,7 @@ public:
 	
 	Ship* _ship;
 	glm::vec3 _target_direction;
-	unsigned int _tik1, _tik2;
+	uint _tik1, _tik2;
 };
 
 

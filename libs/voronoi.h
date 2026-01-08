@@ -144,14 +144,14 @@ public:
 	pt_2d _bbox_max;
 
 	// pour debug, optimisation
-	unsigned int _debug_count= 0;
+	uint _debug_count= 0;
 	std::string _debug_path;
 	std::vector<number> _site_times;
 	std::vector<number> _circle_times;
-	unsigned int _max_height;
-	unsigned int _max_height_n_nodes;
+	uint _max_height;
+	uint _max_height_n_nodes;
 	int _max_imbalance;
-	unsigned int _max_imbalance_n_nodes;
+	uint _max_imbalance_n_nodes;
 };
 
 #endif

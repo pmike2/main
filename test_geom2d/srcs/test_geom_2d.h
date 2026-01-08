@@ -40,7 +40,7 @@ public:
 	bool _inter;
 	pt_2d _axis;
 	number _overlap;
-	unsigned int _idx_pt;
+	uint _idx_pt;
 	bool _is_pt_in_poly1;
 };
 

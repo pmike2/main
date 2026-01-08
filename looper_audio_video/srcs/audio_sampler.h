@@ -21,10 +21,10 @@ public:
 	AudioSample(std::string sample_path);
 	~AudioSample();
 
-	unsigned int _n_frames;
-	unsigned int _fps;
+	uint _n_frames;
+	uint _fps;
 	float * _data;
-	unsigned int _n_channels;
+	uint _n_channels;
 };
 
 
@@ -58,7 +58,7 @@ public:
 	~AudioTrackSample();
 
 	sharedata_type _info;
-	unsigned int _frame_idx;
+	uint _frame_idx;
 	bool _playing;
 };
 
@@ -70,8 +70,8 @@ public:
 	~AudioSampler();
 	void load_json(std::string json_path);
 	void load_json(nlohmann::json js);
-	void note_on(unsigned int idx_track);
-	void note_off(unsigned int idx_track);
+	void note_on(uint idx_track);
+	void note_off(uint idx_track);
 	AudioSubSample * get_subsample(key_type key);
 
 	AudioSamplePool * _sample_pool;

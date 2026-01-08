@@ -30,12 +30,12 @@
 
 
 // nombre de matériaux max pour 1 objet ; doit etre == celui du shader !!!
-const unsigned int N_MAX_MATERIALS= 8;
+const uint N_MAX_MATERIALS= 8;
 // nombre max de précisions pour 1 objet
-const unsigned int N_MAX_PRECISIONS= 4;
+const uint N_MAX_PRECISIONS= 4;
 
 // a partir de ch_config_file, remplissage des variables suivantes
-void parse_static_config_file(std::string ch_config_file, GLuint * vertex_buffers, GLuint * index_buffers, unsigned int * n_faces, unsigned int & n_precisions, glm::mat4 * materials_array, AABB * aabb);
+void parse_static_config_file(std::string ch_config_file, GLuint * vertex_buffers, GLuint * index_buffers, uint * n_faces, uint & n_precisions, glm::mat4 * materials_array, AABB * aabb);
 
 
 // classe matériau ; utilisé temporairement pour renseigner _materials_array
@@ -67,8 +67,8 @@ public:
 	
 	GLuint _vertex_buffers[N_MAX_PRECISIONS];
 	GLuint _index_buffers[N_MAX_PRECISIONS];
-	unsigned int _n_faces[N_MAX_PRECISIONS];
-	unsigned int _n_precisions;
+	uint _n_faces[N_MAX_PRECISIONS];
+	uint _n_precisions;
 
 	glm::mat4 _materials_array[N_MAX_MATERIALS];
 	
@@ -94,7 +94,7 @@ public:
 	void set_pos_rot_scale(const glm::vec3 & position, const glm::quat & rotation, const glm::vec3 & scale);
 	// lent, mieux vaut utiliser l'autre
 	void set_pos_rot_scale(const glm::mat4 & mat);
-	void set_precision(unsigned int precision);
+	void set_precision(uint precision);
 	void print();
 	
 	
@@ -106,7 +106,7 @@ public:
 	
 	StaticModel * _model;
 	bool _draw_mesh;
-	unsigned int _precision;
+	uint _precision;
 };
 
 
@@ -129,8 +129,8 @@ public:
 	GLuint _vertex_buffers[N_MAX_PRECISIONS];
 	GLuint _index_buffers[N_MAX_PRECISIONS];
 	GLuint _instance_buffers[N_MAX_PRECISIONS];
-	unsigned int _n_faces[N_MAX_PRECISIONS];
-	unsigned int _n_precisions;
+	uint _n_faces[N_MAX_PRECISIONS];
+	uint _n_precisions;
 
 	glm::mat4 _materials_array[N_MAX_MATERIALS];
 	
@@ -142,7 +142,7 @@ public:
 
 	std::vector<InstancePosRot *> _pos_rots;
 	glm::mat4 * _mats[N_MAX_PRECISIONS];
-	unsigned int _mats_sizes[N_MAX_PRECISIONS];
+	uint _mats_sizes[N_MAX_PRECISIONS];
 
 	std::vector<float> _distances;
 };

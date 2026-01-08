@@ -45,12 +45,12 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	}
 
 	// buffers
-	unsigned int n_buffers= 13;
+	uint n_buffers= 13;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
 	// textures
-	unsigned int n_textures= 8;
+	uint n_textures= 8;
 	_textures= new GLuint[n_textures];
 	glGenTextures(n_textures, _textures);
 	_texture_idx_model= 0;
@@ -158,12 +158,12 @@ Racing::~Racing() {
 }
 
 
-/*void Racing::choose_driver(unsigned int idx_driver) {
+/*void Racing::choose_driver(uint idx_driver) {
 	_mode= CHOOSE_TRACK;
 }*/
 
 
-void Racing::choose_track(unsigned int idx_track, time_point t) {
+void Racing::choose_track(uint idx_track, time_point t) {
 	// chargement json
 	_track->load_json("../data/tracks/track"+ std::to_string(idx_track)+ ".json");
 
@@ -207,7 +207,7 @@ void Racing::choose_track(unsigned int idx_track, time_point t) {
 
 void Racing::fill_texture_driver() {
 	std::vector<std::string> pngs;
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto driver : _track->_drivers) {
 		for (auto expression : driver->_expressions) {
 			for (auto expression_texture : expression.second->_textures) {
@@ -230,7 +230,7 @@ void Racing::fill_texture_choose_track() {
 void Racing::fill_texture_array_models() {
 	std::vector<std::string> pngs;
 	std::vector<std::string> pngs_bump;
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto m : _track->_models) {
 		StaticObjectModel * model= m.second;
 		std::vector<Action *> actions= model->get_unduplicated_actions();
@@ -257,7 +257,7 @@ void Racing::fill_texture_array_smoke() {
 void Racing::fill_texture_array_tire_track() {
 	std::vector<std::string> pngs= list_files("../data/tire_track", "png");
 	fill_texture_array(0, _textures[_texture_idx_tire_track], 1024, pngs);
-	for (unsigned int i=0; i<pngs.size(); ++i) {
+	for (uint i=0; i<pngs.size(); ++i) {
 		_track->_materials[basename(pngs[i])]->_tire_track_texture_idx= float(i);
 	}
 }
@@ -721,7 +721,7 @@ void Racing::show_info() {
 	std::vector<Text> texts;
 
 	if (_help) {
-		for (unsigned int idx_line=0; idx_line<_help_data.size(); ++idx_line) {
+		for (uint idx_line=0; idx_line<_help_data.size(); ++idx_line) {
 			texts.push_back(Text(_help_data[idx_line], glm::vec2(-7.0f, 5.0f- float(idx_line)* 0.4), 0.006, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 		}
 	}
@@ -736,14 +736,14 @@ void Racing::show_info() {
 		texts.push_back(Text("NLAPS = "+ std::to_string(_track_info->_n_laps), glm::vec2(4.0f, 4.0f), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 		
 		texts.push_back(Text("BEST LAP", glm::vec2(-7.0f, 4.5f), 0.005, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
-		for (unsigned int idx_best_lap=0; idx_best_lap<_track_info->_best_lap.size(); ++idx_best_lap) {
+		for (uint idx_best_lap=0; idx_best_lap<_track_info->_best_lap.size(); ++idx_best_lap) {
 			std::ostringstream oss;
 			oss << std::fixed << std::setprecision(2) << _track_info->_best_lap[idx_best_lap].second;
 			texts.push_back(Text(_track_info->_best_lap[idx_best_lap].first+ " : "+ oss.str(), glm::vec2(-7.0f, 4.0f- float(idx_best_lap)* 0.5f), 0.005, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 		}
 		
 		texts.push_back(Text("BEST OVERALL", glm::vec2(-4.0f, 4.5f), 0.005, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
-		for (unsigned int idx_best_overall=0; idx_best_overall<_track_info->_best_overall.size(); ++idx_best_overall) {
+		for (uint idx_best_overall=0; idx_best_overall<_track_info->_best_overall.size(); ++idx_best_overall) {
 			std::ostringstream oss;
 			oss << std::fixed << std::setprecision(2) << _track_info->_best_overall[idx_best_overall].second;
 			texts.push_back(Text(_track_info->_best_overall[idx_best_overall].first+ " : "+ oss.str(), glm::vec2(-4.0f, 4.0f- float(idx_best_overall)* 0.5f), 0.005, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
@@ -808,7 +808,7 @@ void Racing::show_info() {
 
 			// adversaires
 			if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_PRECOUNT) {
-				for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
+				for (uint idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
 					Car * car= _track->_sorted_cars[idx_car];
 					glm::vec4 position= _world2camera* glm::vec4(float(car->_com.x), float(car->_com.y), float(car->_z), 1.0f);
 					glm::vec4 color= RANKING_ENNEMY_COLOR;
@@ -831,7 +831,7 @@ void Racing::show_info() {
 				float x0= RANKING_ORIGIN.x;
 				float y0= RANKING_ORIGIN.y- RANKING_FACE_TEXT_MARGIN;
 
-				for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
+				for (uint idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
 					float face_size, x_inc, scale;
 					if (idx_car< RANKING_FACE_SIZE.size()) {
 						face_size= RANKING_FACE_SIZE[idx_car];
@@ -862,7 +862,7 @@ void Racing::show_info() {
 
 			// temps tours joueur
 			if (_track->_mode== TRACK_LIVE || _track->_mode== TRACK_FINISHED) {
-				for (unsigned int idx_time=0; idx_time<_track->_hero->_lap_times.size(); ++idx_time) {
+				for (uint idx_time=0; idx_time<_track->_hero->_lap_times.size(); ++idx_time) {
 					glm::vec4 lap_time_color(PAST_LAP_TIME_COLOR);
 					if (idx_time== _track->_hero->_lap_times.size()- 1) {
 						lap_time_color= CURRENT_LAP_TIME_COLOR;
@@ -966,7 +966,7 @@ void Racing::draw() {
 
 
 void Racing::update_choose_driver() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 	const float MARGIN= 1.0;
 
 	DrawContext * context= _contexts["choose_driver"];
@@ -976,9 +976,9 @@ void Racing::update_choose_driver() {
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
 	float size= (_screengl->_gl_width- float(_track->_drivers.size()+ 1)* MARGIN)/ float(_track->_drivers.size());
-	unsigned int compt= 0;
+	uint compt= 0;
 	float selection, texture_idx;
-	for (unsigned int idx_driver=0; idx_driver<_track->_drivers.size(); ++idx_driver) {
+	for (uint idx_driver=0; idx_driver<_track->_drivers.size(); ++idx_driver) {
 		if (idx_driver== _idx_chosen_driver) {
 			selection= 0.2f;
 		}
@@ -1009,7 +1009,7 @@ void Racing::update_choose_driver() {
 
 
 void Racing::update_choose_track() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 	const float MARGIN= 1.0;
 
 	DrawContext * context= _contexts["choose_track"];
@@ -1019,9 +1019,9 @@ void Racing::update_choose_track() {
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
 	float size= (_screengl->_gl_width- float(_n_available_tracks+ 1)* MARGIN)/ float(_n_available_tracks);
-	unsigned int compt= 0;
+	uint compt= 0;
 	float selection;
-	for (unsigned int i=0; i<_n_available_tracks; ++i) {
+	for (uint i=0; i<_n_available_tracks; ++i) {
 		if (i== _idx_chosen_track- 1) {
 			selection= 0.2f;
 		}
@@ -1050,7 +1050,7 @@ void Racing::update_choose_track() {
 
 
 void Racing::update_bbox() {
-	const unsigned int n_pts_per_obj= 8;
+	const uint n_pts_per_obj= 8;
 
 	DrawContext * context= _contexts["bbox"];
 	context->_n_pts= n_pts_per_obj* (_track->_grid->_objects.size()+ _track->_floating_objects.size());
@@ -1089,7 +1089,7 @@ void Racing::update_footprint() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	
 	for (auto obj : _track->_floating_objects) {
 		for (auto tri : obj->_footprint->_triangles_idx) {
@@ -1114,8 +1114,8 @@ void Racing::update_footprint() {
 		}
 	}
 
-	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
-		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+	for (uint idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+		for (uint idx_color=0; idx_color<4; ++idx_color) {
 			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= FOOTPRINT_COLOR[idx_color];
 		}
 	}
@@ -1127,9 +1127,9 @@ void Racing::update_footprint() {
 
 
 void Racing::update_force() {
-	const unsigned int n_pts_per_cross= 4;
-	const unsigned int n_pts_per_arrow= 6;
-	const unsigned int n_pts_per_obj= 3* n_pts_per_cross+ 6* n_pts_per_arrow; // 3 croix ; 6 fleches
+	const uint n_pts_per_cross= 4;
+	const uint n_pts_per_arrow= 6;
+	const uint n_pts_per_obj= 3* n_pts_per_cross+ 6* n_pts_per_arrow; // 3 croix ; 6 fleches
 
 	DrawContext * context= _contexts["force"];
 	context->_n_pts= n_pts_per_obj* (_track->_floating_objects.size()+ _track->_grid->_objects.size());
@@ -1184,10 +1184,10 @@ void Racing::update_force() {
 
 
 void Racing::update_texture() {
-	const unsigned int n_pts_per_obj= 12;
+	const uint n_pts_per_obj= 12;
 
-	unsigned int n_grid_objects= _track->_grid->_objects.size();
-	unsigned int n_floating_objects= _track->_floating_objects.size();
+	uint n_grid_objects= _track->_grid->_objects.size();
+	uint n_floating_objects= _track->_floating_objects.size();
 
 	DrawContext * context= _contexts["texture"];
 	context->_n_pts= n_pts_per_obj* (n_grid_objects+ n_floating_objects);
@@ -1195,7 +1195,7 @@ void Racing::update_texture() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	for (unsigned int idx_obj=0; idx_obj<n_grid_objects+ n_floating_objects; ++idx_obj) {
+	for (uint idx_obj=0; idx_obj<n_grid_objects+ n_floating_objects; ++idx_obj) {
 		StaticObject * obj;
 
 		if (idx_obj< n_grid_objects) {
@@ -1242,8 +1242,8 @@ void Racing::update_texture() {
 			obj->_bbox->_center.x, obj->_bbox->_center.y, obj->_z, 0.5, 0.5, obj->_bumps[8]
 		};
 
-		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
-			for (unsigned int i=0; i<6; ++i) {
+		for (uint idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
+			for (uint i=0; i<6; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[6* idx_pt+ i]);
 			}
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6]= action->_textures[obj->_current_action_texture_idx]->_texture_idx;
@@ -1257,7 +1257,7 @@ void Racing::update_texture() {
 
 
 void Racing::update_smoke() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 
 	DrawContext * context= _contexts["smoke"];
 	context->_n_pts= n_pts_per_obj* _smoke_systems.size()* N_SMOKES_PER_CAR;
@@ -1265,9 +1265,9 @@ void Racing::update_smoke() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
-	for (unsigned int idx_smoke_system=0; idx_smoke_system<_smoke_systems.size(); ++idx_smoke_system) {
-		for (unsigned int idx_smoke=0; idx_smoke<N_SMOKES_PER_CAR; ++idx_smoke) {
+	uint compt= 0;
+	for (uint idx_smoke_system=0; idx_smoke_system<_smoke_systems.size(); ++idx_smoke_system) {
+		for (uint idx_smoke=0; idx_smoke<N_SMOKES_PER_CAR; ++idx_smoke) {
 			Smoke * smoke= _smoke_systems[idx_smoke_system]->_smokes[idx_smoke];
 		
 			// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
@@ -1293,7 +1293,7 @@ void Racing::update_smoke() {
 
 
 void Racing::update_tire_track() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 
 	DrawContext * context= _contexts["tire_track"];
 	context->_n_pts= n_pts_per_obj* N_MAX_TIRE_TRACKS;
@@ -1301,8 +1301,8 @@ void Racing::update_tire_track() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
-	for (unsigned int idx_tire_track=0; idx_tire_track<N_MAX_TIRE_TRACKS; ++idx_tire_track) {
+	uint compt= 0;
+	for (uint idx_tire_track=0; idx_tire_track<N_MAX_TIRE_TRACKS; ++idx_tire_track) {
 		TireTrack * tt= _tire_track_system->_tracks[idx_tire_track];
 		
 		if (!tt->_is_alive) {
@@ -1336,7 +1336,7 @@ void Racing::update_tire_track() {
 
 
 void Racing::update_spark() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 
 	DrawContext * context= _contexts["spark"];
 	context->_n_pts= n_pts_per_obj* N_MAX_SPARKS;
@@ -1344,8 +1344,8 @@ void Racing::update_spark() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
-	for (unsigned int idx_spark=0; idx_spark<N_MAX_SPARKS; ++idx_spark) {
+	uint compt= 0;
+	for (uint idx_spark=0; idx_spark<N_MAX_SPARKS; ++idx_spark) {
 		Spark * spark= _spark_system->_sparks[idx_spark];
 		
 		if (!spark->_is_alive) {
@@ -1372,7 +1372,7 @@ void Racing::update_spark() {
 
 
 void Racing::update_driver_face() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 
 	DrawContext * context= _contexts["driver_face"];
 	context->_n_pts= _track->_drivers.size()* 2* n_pts_per_obj; // * 2 : 1 pour le ranking, 1 pour dans la course
@@ -1380,12 +1380,12 @@ void Racing::update_driver_face() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
+	uint compt= 0;
 
 	// ranking ----------------------------
 	float x0= RANKING_ORIGIN.x;
 	float y0= RANKING_ORIGIN.y;
-	for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
+	for (uint idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
 		Car * car= _track->_sorted_cars[idx_car];
 		Driver * driver= car->_driver;
 
@@ -1421,7 +1421,7 @@ void Racing::update_driver_face() {
 	}
 
 	// dans la course
-	for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
+	for (uint idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
 		Car * car= _track->_sorted_cars[idx_car];
 		Driver * driver= car->_driver;
 		glm::vec4 position= _world2camera* glm::vec4(float(car->_com.x), float(car->_com.y), float(car->_z), 1.0f);
@@ -1456,10 +1456,10 @@ void Racing::update_driver_face() {
 
 
 void Racing::update_barrier() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 
 	DrawContext * context= _contexts["barrier"];
-	unsigned int n_barriers= 0;
+	uint n_barriers= 0;
 	for (auto poly : _track->_barriers) {
 		n_barriers+= poly.size();
 	}
@@ -1472,9 +1472,9 @@ void Racing::update_barrier() {
 	const glm::vec4 BARRIER_COLOR(1.0, 1.0, 1.0, 0.8);
 	const number BARRIER_WIDTH= 0.1;
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto poly : _track->_barriers) {
-		for (unsigned int idx_pt=0; idx_pt<poly.size(); ++idx_pt) {
+		for (uint idx_pt=0; idx_pt<poly.size(); ++idx_pt) {
 			pt_2d pt1(poly[idx_pt]);
 			pt_2d pt2;
 			if (idx_pt< poly.size()- 1) {
@@ -1512,7 +1512,7 @@ void Racing::update_barrier() {
 
 
 void Racing::update_map() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 
 	DrawContext * context= _contexts["map"];
 	context->_n_pts= (1+ _track->_drivers.size())* n_pts_per_obj;
@@ -1520,7 +1520,7 @@ void Racing::update_map() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
+	uint compt= 0;
 
 	float xmap0= MAP_ORIGIN.x; float ymap0= MAP_ORIGIN.y;
 	float xmap1= MAP_ORIGIN.x+ MAP_SIZE.x; float ymap1= MAP_ORIGIN.y;
@@ -1534,7 +1534,7 @@ void Racing::update_map() {
 	data[compt++]= xmap2; data[compt++]= ymap2; data[compt++]= Z_MAP; data[compt++]= 1.0; data[compt++]= 0.0; data[compt++]= MAP_OPACITY; data[compt++]= _idx_chosen_track- 1;
 	data[compt++]= xmap3; data[compt++]= ymap3; data[compt++]= Z_MAP; data[compt++]= 0.0; data[compt++]= 0.0; data[compt++]= MAP_OPACITY; data[compt++]= _idx_chosen_track- 1;
 	
-	for (unsigned int idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
+	for (uint idx_car=0; idx_car<_track->_sorted_cars.size(); ++idx_car) {
 		Car * car= _track->_sorted_cars[idx_car];
 		Driver * driver= car->_driver;
 
@@ -1566,7 +1566,7 @@ void Racing::update_map() {
 
 
 void Racing::update_water() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 
 	DrawContext * context= _contexts["water"];
 	context->_n_pts= _water_system->_tiles.size()* n_pts_per_obj;
@@ -1574,7 +1574,7 @@ void Racing::update_water() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto tile : _water_system->_tiles) {
 		data[compt++]= tile->_aabb->_pos.x; data[compt++]= tile->_aabb->_pos.y; data[compt++]= tile->_z; data[compt++]= 0.0; data[compt++]= 1.0; data[compt++]= float(tile->_idx_texture);
 		data[compt++]= tile->_aabb->_pos.x+ tile->_aabb->_size.x; data[compt++]= tile->_aabb->_pos.y; data[compt++]= tile->_z; data[compt++]= 1.0; data[compt++]= 1.0; data[compt++]= float(tile->_idx_texture);

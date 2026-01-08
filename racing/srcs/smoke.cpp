@@ -13,7 +13,7 @@ Smoke::~Smoke() {
 }
 
 
-void Smoke::reinit(const SmokeConfig & config, pt_2d position, number alpha, pt_2d scale, unsigned int idx_texture) {
+void Smoke::reinit(const SmokeConfig & config, pt_2d position, number alpha, pt_2d scale, uint idx_texture) {
 	_config= config;
 	_bbox->_center= position;
 	_bbox->_alpha= alpha;
@@ -50,18 +50,18 @@ SmokeSystem::SmokeSystem() {
 }
 
 
-SmokeSystem::SmokeSystem(Car * car, unsigned int n_pngs, time_point t) :
+SmokeSystem::SmokeSystem(Car * car, uint n_pngs, time_point t) :
 	 _car(car), _n_pngs(n_pngs), _last_exhaust_t(t), _last_bump_t(t)
 {
 	_smokes= new Smoke *[N_SMOKES_PER_CAR];
-	for (unsigned int i=0; i<N_SMOKES_PER_CAR; ++i) {
+	for (uint i=0; i<N_SMOKES_PER_CAR; ++i) {
 		_smokes[i]= new Smoke();
 	}
 }
 
 
 SmokeSystem::~SmokeSystem() {
-	for (unsigned int i=0; i<N_SMOKES_PER_CAR; ++i) {
+	for (uint i=0; i<N_SMOKES_PER_CAR; ++i) {
 		delete _smokes[i];
 	}
 	delete[] _smokes;
@@ -70,7 +70,7 @@ SmokeSystem::~SmokeSystem() {
 
 Smoke * SmokeSystem::get_free_smoke() {
 	Smoke * smoke= NULL;
-	for (unsigned int i=0; i<N_SMOKES_PER_CAR; ++i) {
+	for (uint i=0; i<N_SMOKES_PER_CAR; ++i) {
 		if (!_smokes[i]->_is_alive) {
 			smoke= _smokes[i];
 			break;
@@ -81,7 +81,7 @@ Smoke * SmokeSystem::get_free_smoke() {
 
 
 void SmokeSystem::anim(time_point t) {
-	for (unsigned int i=0; i<N_SMOKES_PER_CAR; ++i) {
+	for (uint i=0; i<N_SMOKES_PER_CAR; ++i) {
 		_smokes[i]->anim();
 	}
 

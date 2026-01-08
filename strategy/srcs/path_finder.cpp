@@ -127,13 +127,13 @@ number PathFinder::heuristic(uint i, uint j) {
 
 
 number PathFinder::line_of_sight_max_weight(Unit * unit, pt_2d pt1, pt_2d pt2) {
-	std::vector<std::pair<uint, uint> > edges = segment_intersection(pt_2d(pt1), pt_2d(pt2));
+	std::vector<uint_pair> edges = edges_intersecting_segment(pt_2d(pt1), pt_2d(pt2));
 	number result = 0.0;
 	for (auto edge : edges) {
 		pt_2d v1 = pt_2d(_vertices[edge.first]._pos);
 		pt_2d v2 = pt_2d(_vertices[edge.second]._pos);
 		number weight = cost(unit, edge.first, edge.second);
-		if (glm::dot(v2 - v1, pt_2d(pt2 - pt1)) >= 0.0 && weight > result) {
+		if (glm::dot(v2 - v1, pt2 - pt1) >= 0.0 && weight > result) {
 			result = weight;
 		}
 	}
@@ -209,7 +209,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 		return false;
 	}
 
-	/*std::vector<std::pair<uint, uint> > start_edges = units_position_grid->edges_in_cell_containing_pt(start, true);
+	/*std::vector<int_pair> start_edges = units_position_grid->edges_in_cell_containing_pt(start, true);
 	std::vector<uint> start_vertices = units_position_grid->vertices_in_cell_containing_pt(start);
 	int start_id = -1;
 	for (auto & id_vertex : start_vertices) {
@@ -274,7 +274,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	// start
 	/*number weight_start = 0.0;
 	
-	std::vector<std::pair<uint, uint> > static_start_edges = _elevation_grid->edges_in_cell_containing_pt(unit->_path->_start);
+	std::vector<int_pair> static_start_edges = _elevation_grid->edges_in_cell_containing_pt(unit->_path->_start);
 	number w_static_start = 1e9;
 	for (auto & edge : static_start_edges) {
 		number w = elevation_weight(edge.first, edge.second);
@@ -284,7 +284,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	}
 	weight_start += w_static_start;
 
-	std::vector<std::pair<uint, uint> > units_position_start_edges = _units_position_grid->edges_in_cell_containing_pt(unit->_path->_start);
+	std::vector<int_pair> units_position_start_edges = _units_position_grid->edges_in_cell_containing_pt(unit->_path->_start);
 	number w_units_position_start = 1e9;
 	for (auto & edge : units_position_start_edges) {
 		number w = units_position_weight(unit, edge.first, edge.second);
@@ -295,7 +295,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	weight_start += w_units_position_start;
 	weights.push_back(weight_start);*/
 
-	std::vector<std::pair<uint, uint> > start_edges = edges_in_cell_containing_pt(unit->_path->_start);
+	std::vector<uint_pair> start_edges = edges_in_cell_containing_pt(unit->_path->_start);
 	number weight_start = 1e9;
 	for (auto & edge : start_edges) {
 		number w = cost(unit, edge.first, edge.second);
@@ -314,7 +314,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	// goal
 	/*number weight_goal = 0.0;
 	
-	std::vector<std::pair<uint, uint> > static_goal_edges = _elevation_grid->edges_in_cell_containing_pt(unit->_path->_goal);
+	std::vector<int_pair> static_goal_edges = _elevation_grid->edges_in_cell_containing_pt(unit->_path->_goal);
 	number w_static_goal = 1e9;
 	for (auto & edge : static_goal_edges) {
 		number w = elevation_weight(edge.first, edge.second);
@@ -324,7 +324,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	}
 	weight_goal += w_static_goal;
 
-	std::vector<std::pair<uint, uint> > units_position_goal_edges = _units_position_grid->edges_in_cell_containing_pt(unit->_path->_goal);
+	std::vector<int_pair> units_position_goal_edges = _units_position_grid->edges_in_cell_containing_pt(unit->_path->_goal);
 	number w_units_position_goal = -1e9;
 	for (auto & edge : units_position_goal_edges) {
 		number w = units_position_weight(unit, edge.first, edge.second);
@@ -335,7 +335,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	weight_goal += w_units_position_goal;
 	weights.push_back(weight_goal);*/
 
-	std::vector<std::pair<uint, uint> > goal_edges = edges_in_cell_containing_pt(unit->_path->_goal);
+	std::vector<uint_pair> goal_edges = edges_in_cell_containing_pt(unit->_path->_goal);
 	number weight_goal = 1e9;
 	for (auto & edge : goal_edges) {
 		number w = cost(unit, edge.first, edge.second);
@@ -472,7 +472,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 		std::vector<pt_2d> pts = {p1 - r * u - r * v, p1 + r * u - r * v, p2 + r * u + r * v, p2 - r * u + r * v};
 		Polygon2D * polygon = new Polygon2D(pts);
 		polygon->update_all();
-		std::vector<std::pair<uint, uint> > path_edges = grid->polygon_intersection(polygon);
+		std::vector<int_pair> path_edges = grid->polygon_intersection(polygon);
 		delete polygon;*/
 		
 		pt_2d v = glm::normalize(p2 - p1);

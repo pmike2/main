@@ -38,9 +38,9 @@ const float INIT_INTERVAL_SAMPLE= 0.001f;
 const float MIN_INTERVAL_SAMPLE= 0.00001f;
 const float MAX_INTERVAL_SAMPLE= 0.01f;
 
-const unsigned int MAX_GL_N_SAMPLES= 16384;
+const uint MAX_GL_N_SAMPLES= 16384;
 
-const unsigned int N_BUFFERS= 6;
+const uint N_BUFFERS= 6;
 
 enum SAMPLE_SELECTION_MODE {NO_SELECTION, SELECTION, MOVING_FIRST, MOVING_LAST};
 
@@ -74,12 +74,12 @@ public:
 class AudioMark {
 public:
 	AudioMark();
-	AudioMark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample);
+	AudioMark(unsigned long track_sample, uint idx_sample, unsigned long first_sample, unsigned long last_sample);
 	~AudioMark();
 
 
 	unsigned long _track_sample;
-	unsigned int _idx_sample;
+	uint _idx_sample;
 	unsigned long _first_sample;
 	unsigned long _last_sample;
 };
@@ -90,7 +90,7 @@ public:
 	StereoTrack();
 	StereoTrack(SamplesPool * sp);
 	~StereoTrack();
-	void add_mark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample);
+	void add_mark(unsigned long track_sample, uint idx_sample, unsigned long first_sample, unsigned long last_sample);
 	void update_data();
 
 
@@ -119,7 +119,7 @@ public:
 class TrackGL {
 public:
 	TrackGL();
-	TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, unsigned int x, unsigned int y, unsigned int w, unsigned int h);
+	TrackGL(GLuint prog_draw_2d, StereoTrack * st, ScreenGL * screengl, uint x, uint y, uint w, uint h);
 	~TrackGL();
 	void draw();
 	void update_waveform();
@@ -133,7 +133,7 @@ public:
 	unsigned long gl2sampleidx(float x);
 	float sampleidx2gl(unsigned long idx);
 	bool is_inbox(int i, int j);
-	void add_mark(unsigned long track_sample, unsigned int idx_sample, unsigned long first_sample, unsigned long last_sample);
+	void add_mark(unsigned long track_sample, uint idx_sample, unsigned long first_sample, unsigned long last_sample);
 
 
 	GLuint _prog_draw;

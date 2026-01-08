@@ -14,7 +14,7 @@ typedef void (* sio_callback)(sio::event & e);
 class SocketIOUtil {
 public:
 	SocketIOUtil();
-	SocketIOUtil(std::string url, std::string msg_id, unsigned int sleep_duration);
+	SocketIOUtil(std::string url, std::string msg_id, uint sleep_duration);
 	~SocketIOUtil();
 	bool sleep_complete();
 	void on_msg(sio::event & e);
@@ -22,7 +22,7 @@ public:
 
 	std::string _url;
 	std::string _msg_id;
-	unsigned int _sleep_duration;
+	uint _sleep_duration;
 	std::mutex _mtx;
 	std::string _last_msg;
 	bool _reload;

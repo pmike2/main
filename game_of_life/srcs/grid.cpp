@@ -7,7 +7,7 @@ Cell::Cell() {
 }
 
 
-Cell::Cell(unsigned int col, unsigned int row) : _col(col), _row(row), _state(0) {
+Cell::Cell(uint col, uint row) : _col(col), _row(row), _state(0) {
 	_aabb= new AABB_2D();
 }
 
@@ -36,7 +36,7 @@ Grid::Grid(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState 
 	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
 
 	// buffers
-	unsigned int n_buffers= 2;
+	uint n_buffers= 2;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
@@ -62,18 +62,18 @@ Grid::~Grid() {
 }
 
 
-void Grid::set_cell_states(std::map<unsigned int, glm::vec4> cell_states) {
+void Grid::set_cell_states(std::map<uint, glm::vec4> cell_states) {
 	_cell_states= cell_states;
 }
 
 
-Cell * Grid::get_cell(unsigned int col, unsigned int row) {
-	unsigned int idx= _width* row+ col;
+Cell * Grid::get_cell(uint col, uint row) {
+	uint idx= _width* row+ col;
 	return _cells[idx];
 }
 
 
-pt_2d Grid::idx2pt(unsigned int col, unsigned int row) {
+pt_2d Grid::idx2pt(uint col, uint row) {
 	return pt_2d(col* _cell_size, row* _cell_size);
 }
 
@@ -156,12 +156,12 @@ void Grid::update_grid() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
-	for (unsigned int i=0; i<= _width; ++i) {
+	uint compt= 0;
+	for (uint i=0; i<= _width; ++i) {
 		data[compt++]= float(i)* _cell_size; data[compt++]= 0.0; data[compt++]= GRID_COLOR.r; data[compt++]= GRID_COLOR.g; data[compt++]= GRID_COLOR.b; data[compt++]= GRID_COLOR.a;
 		data[compt++]= float(i)* _cell_size; data[compt++]= float(_height)* _cell_size; data[compt++]= GRID_COLOR.r; data[compt++]= GRID_COLOR.g; data[compt++]= GRID_COLOR.b; data[compt++]= GRID_COLOR.a;
 	}
-	for (unsigned int i=0; i<= _height; ++i) {
+	for (uint i=0; i<= _height; ++i) {
 		data[compt++]= 0.0; data[compt++]= float(i)* _cell_size; data[compt++]= GRID_COLOR.r; data[compt++]= GRID_COLOR.g; data[compt++]= GRID_COLOR.b; data[compt++]= GRID_COLOR.a;
 		data[compt++]= float(_width)* _cell_size; data[compt++]= float(i)* _cell_size; data[compt++]= GRID_COLOR.r; data[compt++]= GRID_COLOR.g; data[compt++]= GRID_COLOR.b; data[compt++]= GRID_COLOR.a;
 	}
@@ -173,7 +173,7 @@ void Grid::update_grid() {
 
 
 void Grid::update_cell() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 
 	DrawContext * context= _contexts["cell"];
 	context->_n_pts= _cells.size()* n_pts_per_obj;
@@ -181,7 +181,7 @@ void Grid::update_cell() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto cell : _cells) {
 		glm::vec4 color= _cell_states[cell->_state];
 		data[compt++]= cell->_aabb->_pos.x; data[compt++]= cell->_aabb->_pos.y; data[compt++]= color.r; data[compt++]= color.g; data[compt++]= color.b; data[compt++]= color.a;

@@ -70,8 +70,8 @@ InputState * input_state;
 
 int done= 0;
 
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+uint val_fps, compt_fps;
+uint tikfps1, tikfps2, tikanim1, tikanim2;
 
 GLuint prog_3d, prog_3d_obj, prog_2d, prog_repere, prog_font, prog_select;
 GLuint g_vao;
@@ -105,7 +105,7 @@ int pa_callback(const void * input, void * output, unsigned long sample_count, c
 	*/
 
 	// pour ne pas avoir de glitchs
-	for (unsigned int i=0; i<sample_count; ++i) {
+	for (uint i=0; i<sample_count; ++i) {
 		out[2* i+ 0]= 0.0f;
 		out[2* i+ 1]= 0.0f;
 	}
@@ -119,7 +119,7 @@ int pa_callback(const void * input, void * output, unsigned long sample_count, c
 		data->push_event(time_info->outputBufferDacTime);
 
 		// ecriture sur le DAC
-		for (unsigned int i=0; i<sample_count; ++i) {
+		for (uint i=0; i<sample_count; ++i) {
 			out[2* i+ 0]= data->_amplitudes[2* data->_current_sample_callback+ 0]* data->_playback_amplitude;
 			out[2* i+ 1]= data->_amplitudes[2* data->_current_sample_callback+ 1]* data->_playback_amplitude;
 
@@ -137,7 +137,7 @@ int pa_callback(const void * input, void * output, unsigned long sample_count, c
 		//data->push_event(time_info->currentTime);
 
 		// lecture du ADC
-		for (unsigned int i=0; i<sample_count; i++) {
+		for (uint i=0; i<sample_count; i++) {
 			float input_left= *in++;
 			float input_right= *in++;
 			
@@ -163,7 +163,7 @@ int pa_callback(const void * input, void * output, unsigned long sample_count, c
 
 // ---------------------------------------------------------------------------------------
 void mouse_motion(int x, int y, int xrel, int yrel) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
  	if (visu_spectrum->mouse_motion(input_state)) {
@@ -184,8 +184,8 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 }
 
 
-void mouse_button_up(unsigned int x, unsigned int y) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+void mouse_button_up(uint x, uint y) {
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
  	if (visu_spectrum->mouse_button_up(input_state)) {
@@ -206,8 +206,8 @@ void mouse_button_up(unsigned int x, unsigned int y) {
 }
 
 
-void mouse_button_down(unsigned int x, unsigned int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+void mouse_button_down(uint x, uint y, unsigned short button) {
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
  	if (visu_spectrum->mouse_button_down(input_state)) {
@@ -323,7 +323,7 @@ void init() {
 
 	float eye_direction[]= {0.0f, 0.0f, 1.0f};
 	GLuint progs_eye[]= {prog_3d, prog_3d_obj};
-	for (unsigned int i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
+	for (uint i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
 		GLint eye_direction_loc= glGetUniformLocation(progs_eye[i], "eye_direction");
 		glUseProgram(progs_eye[i]);
 		glUniform3fv(eye_direction_loc, 1, eye_direction);
@@ -394,7 +394,7 @@ void show_infos() {
 	}
 
 	font_str.str("");	
-	for (unsigned int idx_freq=0; idx_freq<audio->_n_blocks_fft; ++idx_freq) {
+	for (uint idx_freq=0; idx_freq<audio->_n_blocks_fft; ++idx_freq) {
 		font_str << audio->_blocks[(audio->_current_sample/ SAMPLES_PER_BUFFER)* audio->_n_blocks_fft+ idx_freq]->_instant_energy << " ";
 	}
 	texts.push_back(Text(font_str.str(), glm::vec2(10.0f, float(MAIN_WIN_HEIGHT)- 75.0f), font_scale, font_color));

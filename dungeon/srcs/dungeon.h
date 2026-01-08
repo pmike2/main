@@ -20,8 +20,8 @@ struct Dungeon {
 	Dungeon();
 	Dungeon(glm::vec3 vmin, glm::vec3 vmax, glm::vec3 step, GLuint prog_draw_border, GLuint prog_draw_fill);
 	~Dungeon();
-	unsigned int pos2idx(glm::uvec3 pos);
-	glm::uvec3 idx2pos(unsigned int idx);
+	uint pos2idx(glm::uvec3 pos);
+	glm::uvec3 idx2pos(uint idx);
 	glm::vec3 pos2posf(glm::uvec3 pos);
 	glm::uvec3 posf2pos(glm::vec3 posf);
 	void randomize();
@@ -41,7 +41,7 @@ struct Dungeon {
 	GLuint _prog_draw_border, _prog_draw_fill;
 	GLint _world2clip_loc, _position_loc, _diffuse_color_loc;
 	GLuint _buffers[4];
-	unsigned int _n_pts;
+	uint _n_pts;
 	bool _draw[4];
 };
 

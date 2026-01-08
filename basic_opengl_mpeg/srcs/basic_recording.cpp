@@ -39,7 +39,7 @@ glm::mat4 camera2clip, model2world;
 GLuint vbo;
 
 float angle_rot;
-unsigned int rmask, gmask, bmask, amask;
+uint rmask, gmask, bmask, amask;
 chrono::system_clock::time_point t1, t2;
 
 MPEGWriterHelper * mpeg_writer_helper;

@@ -51,7 +51,7 @@ InstanceJoint::~InstanceJoint() {
 }
 
 
-void InstanceJoint::anim(unsigned int delta_time_ms) {
+void InstanceJoint::anim(uint delta_time_ms) {
 	if (_model_joint->_anims.size()== 0) {
 		return;
 	}
@@ -70,7 +70,7 @@ void InstanceJoint::anim(unsigned int delta_time_ms) {
 	int idx_anim_1= -1;
 	int idx_anim_2= -1;
 	float delta= 0.0f;
-	for (unsigned int idx_anim=0; idx_anim<_model_joint->_anims.size(); ++idx_anim) {
+	for (uint idx_anim=0; idx_anim<_model_joint->_anims.size(); ++idx_anim) {
 		if (_model_joint->_anims[idx_anim]._time> _anim_time) {
 			idx_anim_2= idx_anim;
 			idx_anim_1= idx_anim- 1;
@@ -145,7 +145,7 @@ void ModelAnimation::parse_joint(xml_node<> * node, ModelJoint * parent_joint) {
 	istringstream iss_matrix(str_matrix);
 	vector<float> split_matrix((istream_iterator<float>(iss_matrix)), istream_iterator<float>());
 	float mat[16];
-	for (unsigned int idx=0; idx<16; ++idx) {
+	for (uint idx=0; idx<16; ++idx) {
 		mat[idx]= split_matrix[idx];
 	}
 	xml_attribute<> * id_node= node->first_attribute("id");
@@ -179,14 +179,14 @@ void ModelAnimation::parse_joint(xml_node<> * node, ModelJoint * parent_joint) {
 }
 
 /*
-void ModelAnimation::compute_mat_joint(unsigned int idx_joint) {
+void ModelAnimation::compute_mat_joint(uint idx_joint) {
 	if (_joints[idx_joint]->_sid== ROOT_JOINT_SID) {
 		_joints[idx_joint]->_bind_mat= _joints[idx_joint]->_local_bind_mat;
 	}
 	else {
 		_joints[idx_joint]->_bind_mat= _joints[idx_joint]->_local_bind_mat* _joints[idx_joint]->_parent->_bind_mat;
 	}
-	for (unsigned int idx_joint_2=0; idx_joint_2<_joints.size(); ++idx_joint_2) {
+	for (uint idx_joint_2=0; idx_joint_2<_joints.size(); ++idx_joint_2) {
 		if (_joints[idx_joint_2]->_parent->_sid== _joints[idx_joint]->_sid) {
 			compute_mat_joint(idx_joint_2);
 		}
@@ -195,8 +195,8 @@ void ModelAnimation::compute_mat_joint(unsigned int idx_joint) {
 
 
 void ModelAnimation::compute_mats() {
-	unsigned int idx_joint_root= 0;
-	for (unsigned int idx_joint=0; idx_joint<_joints.size(); ++idx_joint) {
+	uint idx_joint_root= 0;
+	for (uint idx_joint=0; idx_joint<_joints.size(); ++idx_joint) {
 		if (_joints[idx_joint]->_sid== ROOT_JOINT_SID) {
 			idx_joint_root= idx_joint;
 			break;
@@ -249,7 +249,7 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 
 		// récup des noms et offsets des positions, normals, colors, textures
 		string position_tag, normal_tag, color_tag, texture_tag;
-		unsigned int position_offset, normal_offset, color_offset, texture_offset;
+		uint position_offset, normal_offset, color_offset, texture_offset;
 		for (xml_node<> * triangle_input_node=triangles_node->first_node("input"); triangle_input_node; triangle_input_node=triangle_input_node->next_sibling()) {
 			if (string(triangle_input_node->name())!= "input") {
 				continue;
@@ -257,7 +257,7 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 
 			string semantic= triangle_input_node->first_attribute("semantic")->value();
 			string source= triangle_input_node->first_attribute("source")->value();
-			unsigned int offset= stoi(triangle_input_node->first_attribute("offset")->value());
+			uint offset= stoi(triangle_input_node->first_attribute("offset")->value());
 			
 			if (semantic== "VERTEX") {
 				xml_node<> * vertices_node= mesh_node->first_node("vertices");
@@ -281,7 +281,7 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 		}
 
 		// nombre d'attributs récupérés ; au min 2 : position et normal
-		unsigned int n_attrs= 2;
+		uint n_attrs= 2;
 		if (!color_tag.empty()) {
 			n_attrs++;
 		}
@@ -292,9 +292,9 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 		// indices des vertices
 		string str_vertices_idx= triangles_node->first_node("p")->value();
 		istringstream iss_vertices_idx(str_vertices_idx);
-		vector<unsigned int> split_vertices_idx((istream_iterator<unsigned int>(iss_vertices_idx)), istream_iterator<unsigned int>());
-		unsigned int vertices_idx[count_triangles* 3* n_attrs];
- 		for (unsigned int idx=0; idx<split_vertices_idx.size(); ++idx) {
+		vector<uint> split_vertices_idx((istream_iterator<uint>(iss_vertices_idx)), istream_iterator<uint>());
+		uint vertices_idx[count_triangles* 3* n_attrs];
+ 		for (uint idx=0; idx<split_vertices_idx.size(); ++idx) {
 			vertices_idx[idx]= split_vertices_idx[idx];
 		}
 
@@ -303,10 +303,10 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 		string str_normals;
 		string str_colors;
 		string str_textures;
-		unsigned int n_positions= 0;
-		unsigned int n_normals= 0;
-		unsigned int n_colors= 0;
-		unsigned int n_textures= 0;
+		uint n_positions= 0;
+		uint n_normals= 0;
+		uint n_colors= 0;
+		uint n_textures= 0;
 		for (xml_node<> * source_node=mesh_node->first_node("source"); source_node; source_node=source_node->next_sibling()) {
 			if (string(source_node->name())!= "source") {
 				continue;
@@ -348,7 +348,7 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 		vector<float> textures((istream_iterator<float>(iss_textures)), istream_iterator<float>());
 
 		// remplissage de vertices
-		for (unsigned int i=0; i<count_triangles* 3; ++i) {
+		for (uint i=0; i<count_triangles* 3; ++i) {
 			Vertex v;
 
 			v._idx= vertices_idx[n_attrs* i+ position_offset];
@@ -419,8 +419,8 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 		string geom_id= skin_node->first_attribute("source")->value();
 		geom_id= geom_id.substr(1, string::npos); // on enleve le #
 		bool found= false;
-		unsigned int idx_geom_ok= 0;
-		for (unsigned int idx_geom=0; idx_geom<_geometries.size(); ++idx_geom) {
+		uint idx_geom_ok= 0;
+		for (uint idx_geom=0; idx_geom<_geometries.size(); ++idx_geom) {
 			if (_geometries[idx_geom]._id== geom_id) {
 				found= true;
 				idx_geom_ok= idx_geom;
@@ -437,7 +437,7 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 		istringstream iss_bsm(str_bsm);
 		vector<float> split_bsm((istream_iterator<float>(iss_bsm)), istream_iterator<float>());
 		float bsm_mat[16];
-			for (unsigned int idx=0; idx<16; ++idx) {
+			for (uint idx=0; idx<16; ++idx) {
 			bsm_mat[idx]= split_bsm[idx];
 		}
 		// il faut transposer toutes les matrices !!!
@@ -445,7 +445,7 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 
 		// tag et offset joint / weight
 		string joint_tag, weight_tag;
-		unsigned int joint_offset, weight_offset;
+		uint joint_offset, weight_offset;
 
 		xml_node<> * vertex_weights_node= skin_node->first_node("vertex_weights");
 		for (xml_node<> * vw_input_node=vertex_weights_node->first_node("input"); vw_input_node; vw_input_node=vw_input_node->next_sibling()) {
@@ -455,7 +455,7 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 
 			string semantic= vw_input_node->first_attribute("semantic")->value();
 			string source= vw_input_node->first_attribute("source")->value();
-			unsigned int offset= stoi(vw_input_node->first_attribute("offset")->value());
+			uint offset= stoi(vw_input_node->first_attribute("offset")->value());
 			
 			if (semantic== "JOINT") {
 				joint_tag= source.substr(1, string::npos); // on enleve le #
@@ -480,9 +480,9 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 		}
 
 		// nombre et sids des joints ; nombre et valeur des weights ; inv_bind_matrices : a appliquer aux vertices pour les ramener dans le repere du joint
-		unsigned int n_joints;
+		uint n_joints;
 		vector<string> joints_sids;
-		unsigned int n_weights;
+		uint n_weights;
 		vector<float> weights;
 		vector<glm::mat4> inv_bind_matrices;
 		
@@ -509,9 +509,9 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 				string str_ibm= source_node->first_node("float_array")->value();
 				istringstream iss_ibm(str_ibm);
 				vector<float> split_ibm((istream_iterator<float>(iss_ibm)), istream_iterator<float>());
-				for (unsigned int i=0; i<n_joints; ++i) {
+				for (uint i=0; i<n_joints; ++i) {
 					float ibm[16];
-					for (unsigned int j=0; j<16; ++j) {
+					for (uint j=0; j<16; ++j) {
 						ibm[j]= split_ibm[i* 16+ j];
 					}
 					// il faut transposer toutes les matrices !!!
@@ -524,24 +524,24 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 		// v : liste de couples (index joint , index weight) (ordre dépend de joint_offset, weight_offset) qui vont influer les vertices
 		string str_vcount= vertex_weights_node->first_node("vcount")->value();
 		istringstream iss_vcount(str_vcount);
-		vector<unsigned int> vcount;
-		copy(istream_iterator<unsigned int>(iss_vcount), istream_iterator<unsigned int>(), back_inserter(vcount));
+		vector<uint> vcount;
+		copy(istream_iterator<uint>(iss_vcount), istream_iterator<uint>(), back_inserter(vcount));
 
 		string str_v= vertex_weights_node->first_node("v")->value();
 		istringstream iss_v(str_v);
-		vector<unsigned int> v;
-		copy(istream_iterator<unsigned int>(iss_v), istream_iterator<unsigned int>(), back_inserter(v));
+		vector<uint> v;
+		copy(istream_iterator<uint>(iss_v), istream_iterator<uint>(), back_inserter(v));
 
 		// remplissage de vertex._joints
-		unsigned int current_v_idx= 0;
-		for (unsigned int idx_vertex=0; idx_vertex<vcount.size(); ++idx_vertex) {
-			for (unsigned int offset=0; offset<vcount[idx_vertex]; ++offset) {
+		uint current_v_idx= 0;
+		for (uint idx_vertex=0; idx_vertex<vcount.size(); ++idx_vertex) {
+			for (uint offset=0; offset<vcount[idx_vertex]; ++offset) {
 				// on récupère le SID du joint pour retrouver l'indice du joint dans joints
 				string joint_sid= joints_sids[v[2* (current_v_idx+ offset)+ joint_offset]];
 				float weight= weights[v[2* (current_v_idx+ offset)+ weight_offset]];
-				unsigned int idx_joint_ok= 0;
+				uint idx_joint_ok= 0;
 				bool found= false;
-				for (unsigned int idx_joint=0; idx_joint<_joints.size(); ++idx_joint) {
+				for (uint idx_joint=0; idx_joint<_joints.size(); ++idx_joint) {
 					if (_joints[idx_joint]->_sid== joint_sid) {
 						idx_joint_ok= idx_joint;
 						found= true;
@@ -570,10 +570,10 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 			it_joint->_inv_bind_mat= glm::mat4(1.0f);
 		}
 
-		for (unsigned int idx_joint=0; idx_joint<n_joints; ++idx_joint) {
-			unsigned int idx_joint_ok= 0;
+		for (uint idx_joint=0; idx_joint<n_joints; ++idx_joint) {
+			uint idx_joint_ok= 0;
 			bool found= false;
-			for (unsigned int idx_joint_2=0; idx_joint_2<_joints.size(); ++idx_joint_2) {
+			for (uint idx_joint_2=0; idx_joint_2<_joints.size(); ++idx_joint_2) {
 				if (_joints[idx_joint_2]->_sid== joints_sids[idx_joint]) {
 					idx_joint_ok= idx_joint_2;
 					found= true;
@@ -619,7 +619,7 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 		}
 
 		// nombre d'indices temporels et temps ; a chaque temps correspond une matrice d'animation
-		unsigned int n_times= 0;
+		uint n_times= 0;
 		vector<float> times;
 		vector<glm::mat4> anims_mats;
 		for (xml_node<> * anim_source_node=animation_node->first_node("source"); anim_source_node; anim_source_node=anim_source_node->next_sibling()) {
@@ -638,9 +638,9 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 				istringstream iss_mat(str_mat);
 				vector<float> mats;
 				copy(istream_iterator<float>(iss_mat), istream_iterator<float>(), back_inserter(mats));
-				for (unsigned int idx_time=0; idx_time<n_times; ++idx_time) {
+				for (uint idx_time=0; idx_time<n_times; ++idx_time) {
 					float mat[16];
-					for (unsigned int i=0; i<16; ++i) {
+					for (uint i=0; i<16; ++i) {
 						mat[i]= mats[idx_time* 16+ i];
 					}
 					// il faut transposer toutes les matrices !!!
@@ -650,9 +650,9 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 		}
 
 		// renseignement de joint->_anims
-		unsigned int idx_joint_ok= 0;
+		uint idx_joint_ok= 0;
 		bool found= false;
-		for (unsigned int idx_joint=0; idx_joint<_joints.size(); ++idx_joint) {
+		for (uint idx_joint=0; idx_joint<_joints.size(); ++idx_joint) {
 			// contrairement a auparavant le lien ici se fait avec l'id, PAS le sid !
 			if (_joints[idx_joint]->_id== joint_target_id) {
 				idx_joint_ok= idx_joint;
@@ -665,7 +665,7 @@ void ModelAnimation::parse_dae(string ch_dae_file) {
 			continue;
 		}
 		
-		for (unsigned int idx_time=0; idx_time<n_times; ++idx_time) {
+		for (uint idx_time=0; idx_time<n_times; ++idx_time) {
 			TimedMatrix tm{times[idx_time], anims_mats[idx_time]};
 			_joints[idx_joint_ok]->_anims.push_back(tm);
 		}
@@ -756,7 +756,7 @@ void InstanceAnimation::compute_mats() {
 }
 
 
-void InstanceAnimation::anim(unsigned int delta_time_ms) {
+void InstanceAnimation::anim(uint delta_time_ms) {
 	for (auto it_joint : _joints) {
 		if (it_joint->_model_joint->_sid== ROOT_JOINT_SID)
 			continue;
@@ -787,26 +787,26 @@ ModelMesh::ModelMesh() {
 ModelMesh::ModelMesh(GLuint prog_draw, vector<Geometry> & geometries) : _prog_draw(prog_draw) {
 
 	_n_faces= 0;
-	for (unsigned int idx_geom=0; idx_geom<geometries.size(); ++idx_geom) {
+	for (uint idx_geom=0; idx_geom<geometries.size(); ++idx_geom) {
 		_n_faces+= geometries[idx_geom]._vertices.size()/ 3;
 	}
 	
 	_vertices= new float[(3+ 3+ 3+ 4+ 4)* 3* _n_faces];
-	for (unsigned int i=0; i<(3+ 3+ 3+ 4+ 4)* 3* _n_faces; ++i) {
+	for (uint i=0; i<(3+ 3+ 3+ 4+ 4)* 3* _n_faces; ++i) {
 		_vertices[i]= 0.0f;
 	}
 
-	_faces= new unsigned int[3* _n_faces];
-	for (unsigned int i=0; i<3* _n_faces; ++i) {
+	_faces= new uint[3* _n_faces];
+	for (uint i=0; i<3* _n_faces; ++i) {
 		_faces[i]= 0;
 	}
 	
-	unsigned int idx_vertex_total= 0;
-	for (unsigned int idx_geom=0; idx_geom<geometries.size(); ++idx_geom) {
-		for (unsigned int idx_vertex=0; idx_vertex<geometries[idx_geom]._vertices.size(); ++idx_vertex) {
+	uint idx_vertex_total= 0;
+	for (uint idx_geom=0; idx_geom<geometries.size(); ++idx_geom) {
+		for (uint idx_vertex=0; idx_vertex<geometries[idx_geom]._vertices.size(); ++idx_vertex) {
 
 				float joints_indices[4];
-				for (unsigned int idx_joint=0; idx_joint<4; ++idx_joint) {
+				for (uint idx_joint=0; idx_joint<4; ++idx_joint) {
 					if (idx_joint< geometries[idx_geom]._vertices[idx_vertex]._joints.size()) {
 						joints_indices[idx_joint]= (float)(geometries[idx_geom]._vertices[idx_vertex]._joints[idx_joint]._idx_joint);
 					}
@@ -816,7 +816,7 @@ ModelMesh::ModelMesh(GLuint prog_draw, vector<Geometry> & geometries) : _prog_dr
 				}
 				
 				float weights[4];
-				for (unsigned int idx_joint=0; idx_joint<4; ++idx_joint) {
+				for (uint idx_joint=0; idx_joint<4; ++idx_joint) {
 					if (idx_joint< geometries[idx_geom]._vertices[idx_vertex]._joints.size()) {
 						weights[idx_joint]= geometries[idx_geom]._vertices[idx_vertex]._joints[idx_joint]._weight;
 					}
@@ -851,7 +851,7 @@ ModelMesh::ModelMesh(GLuint prog_draw, vector<Geometry> & geometries) : _prog_dr
 	// ----------------------------------------------------------------------------------------------
 	// Buffer d'indices : puisque l'on duplique tous les sommets pour ne pas avoir de normale partag�e, 
 	// faces = { 0,1,2,3,4,5,6,7,8,9,10,... }
-	for (unsigned int i=0; i<3* _n_faces; ++i) {
+	for (uint i=0; i<3* _n_faces; ++i) {
 		_faces[i]= i;
 	}
 	
@@ -864,7 +864,7 @@ ModelMesh::ModelMesh(GLuint prog_draw, vector<Geometry> & geometries) : _prog_dr
 	glBufferData(GL_ARRAY_BUFFER, (3+ 3+ 3+ 4+ 4)* 3* _n_faces* sizeof(float), _vertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _buffers[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3* _n_faces* sizeof(unsigned int), _faces, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3* _n_faces* sizeof(uint), _faces, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	glUseProgram(_prog_draw);
@@ -890,7 +890,7 @@ ModelMesh::ModelMesh(GLuint prog_draw, vector<Geometry> & geometries) : _prog_dr
 	// AABB
 	glm::vec3 vmin= glm::vec3(1e8, 1e8, 1e8);
 	glm::vec3 vmax= glm::vec3(-1e8, -1e8, -1e8);
-	for (unsigned int i=0; i< 3*_n_faces; ++i) {
+	for (uint i=0; i< 3*_n_faces; ++i) {
 		if (_vertices[17* i+ 0]< vmin.x) vmin.x= _vertices[17* i+ 0];
 		if (_vertices[17* i+ 0]> vmax.x) vmax.x= _vertices[17* i+ 0];
 		if (_vertices[17* i+ 1]< vmin.y) vmin.y= _vertices[17* i+ 1];
@@ -988,10 +988,10 @@ void InstanceMesh::draw() {
 
 void InstanceMesh::anim(ViewSystem * view_system, vector<InstanceJoint *> & joints) {
 	// on remplit _joint_mats avec les _skinning_mats
-	for (unsigned int idx_joint=0; idx_joint<N_JOINTS; ++idx_joint) {
+	for (uint idx_joint=0; idx_joint<N_JOINTS; ++idx_joint) {
 		_joints_mats[idx_joint]= glm::mat4(1.0f);
 	}
-	for (unsigned int idx_joint=0; idx_joint<joints.size(); ++idx_joint) {
+	for (uint idx_joint=0; idx_joint<joints.size(); ++idx_joint) {
 		if (idx_joint< N_JOINTS) {
 			_joints_mats[idx_joint]= joints[idx_joint]->_skinning_mat;
 		}
@@ -1018,7 +1018,7 @@ Skeleton::Skeleton(GLuint prog_draw, vector<InstanceJoint *> & joints) :
 	_n_joints= joints.size();
 
 	_data= new float[_n_joints* 2* 6];
-	for (unsigned int i=0; i<_n_joints* 2* 6; ++i)
+	for (uint i=0; i<_n_joints* 2* 6; ++i)
 		_data[i]= 0.0f;
 	
 	glGenBuffers(1, &_buffer);
@@ -1060,7 +1060,7 @@ void Skeleton::draw() {
 void Skeleton::anim(ViewSystem * view_system, vector<InstanceJoint *> & joints) {
 	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
 	glBufferData(GL_ARRAY_BUFFER, _n_joints* 2* 6* sizeof(float), _data, GL_STATIC_DRAW);
-	for (unsigned int idx_joint=0; idx_joint<joints.size(); ++idx_joint) {
+	for (uint idx_joint=0; idx_joint<joints.size(); ++idx_joint) {
 		glm::vec3 translation_1, translation_2;
 		translation_1= glm::vec3(joints[idx_joint]->_current_mat[3]);
 
@@ -1176,7 +1176,7 @@ AnimatedInstance::AnimatedInstance(AnimatedModel * model, const glm::vec3 & scal
 	set_pos_rot_scale(glm::vec3(0.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), scale);
 
 	// init des matrices et tout le tintouin
-	for (unsigned int idx_anim=0; idx_anim<_model->_animations.size(); ++idx_anim) {
+	for (uint idx_anim=0; idx_anim<_model->_animations.size(); ++idx_anim) {
 		_animations[idx_anim]->anim(0);
 	}
 
@@ -1210,7 +1210,7 @@ void AnimatedInstance::draw() {
 }
 
 
-void AnimatedInstance::anim(ViewSystem * view_system, unsigned int delta_time_ms) {
+void AnimatedInstance::anim(ViewSystem * view_system, uint delta_time_ms) {
 	if (!_pos_rot->_active) {
 		return;
 	}

@@ -10,12 +10,23 @@ Elevation::Elevation() {
 
 Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : GraphGrid(origin, size, n_ligs, n_cols)
 {
+	_it_v= _vertices.begin();
+	while (_it_v!= _vertices.end()) {
+		ElevationVertexData * data = new ElevationVertexData();
+		data->_normal = pt_3d(0.0);
+		_it_v->second._data = data;
+		_it_v++;
+	}
 
+	_n_pts = 6 * (_n_ligs - 1) * (_n_cols - 1);
+	_n_attrs_per_pts = 10;
+	_data = new float[_n_pts * _n_attrs_per_pts];
+	//std::cout << _n_pts * _n_attrs_per_pts << "\n";
 }
 
 
 Elevation::~Elevation() {
-	
+	delete[] _data;
 }
 
 
@@ -83,8 +94,8 @@ number Elevation::get_alti(pt_2d pt) {
 number Elevation::get_alti_over_polygon(Polygon2D * polygon) {
 	number result = 0.0;
 	uint n_pts = 0;
-	for (uint col=0; col< _n_cols; ++col) {
-		for (uint lig=0; lig< _n_ligs; ++lig) {
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
 			pt_2d pt = col_lig2pt_2d(col, lig);
 			if (is_pt_inside_poly(pt, polygon)) {
 				n_pts++;
@@ -103,8 +114,11 @@ number Elevation::get_alti_over_polygon(Polygon2D * polygon) {
 }
 
 
-pt_3d Elevation::get_normal(int col, int lig) {
-	std::vector<std::pair<uint, uint> > ids;
+pt_3d Elevation::compute_normal(uint id) {
+	std::vector<int_pair > ids;
+	int_pair col_lig = id2col_lig(id);
+	int col = col_lig.first;
+	int lig = col_lig.second;
 
 	if (col > 0) {
 		if (lig > 0) {
@@ -141,8 +155,52 @@ pt_3d Elevation::get_normal(int col, int lig) {
 
 
 pt_3d Elevation::get_normal(uint id) {
-	std::pair<uint, uint> col_lig = id2col_lig(id);
-	return get_normal(col_lig.first, col_lig.second);
+	ElevationVertexData * data = (ElevationVertexData *)(_vertices[id]._data);
+	return data->_normal;
+}
+
+
+pt_3d Elevation::get_normal(int col, int lig) {
+	return get_normal(col_lig2id(col, lig));
+}
+
+
+void Elevation::update_normal(uint id) {
+	ElevationVertexData * data = (ElevationVertexData *)(_vertices[id]._data);
+	data->_normal = compute_normal(id);
+}
+
+
+void Elevation::update_normal(int col, int lig) {
+	update_normal(col_lig2id(col, lig));
+}
+
+
+void Elevation::update_normals() {
+	_it_v= _vertices.begin();
+	while (_it_v!= _vertices.end()) {
+		update_normal(_it_v->first);
+		_it_v++;
+	}
+}
+
+
+void Elevation::update_normals(int col_min, int col_max, int lig_min, int lig_max) {
+	for (int col=col_min; col<=col_max; ++col) {
+		for (int lig=lig_min; lig<=lig_max; ++lig) {
+			update_normal(col_lig2id(col, lig));
+		}
+	}
+}
+
+
+void Elevation::update_normals(AABB_2D * aabb) {
+	std::pair<int_pair, int_pair> col_lig_min_max = aabb2col_lig_min_max(aabb);
+	uint col_min = col_lig_min_max.first.first;
+	uint lig_min = col_lig_min_max.first.second;
+	uint col_max = col_lig_min_max.second.first;
+	uint lig_max = col_lig_min_max.second.second;
+	update_normals(col_min, col_max, lig_min, lig_max);
 }
 
 
@@ -186,18 +244,18 @@ std::vector<uint> Elevation::lowest_gradient(uint id_src) {
 
 void Elevation::set_alti(uint id, number alti) {
 	_vertices[id]._pos.z = alti;
+	//update_normal(id);
 }
 
 
 void Elevation::set_alti(int col, int lig, number alti) {
-	//_altis[col_lig2id(col, lig)] = alti;
 	set_alti(col_lig2id(col, lig), alti);
 }
 
 
 void Elevation::set_alti_over_polygon(Polygon2D * polygon, number alti) {
-	for (uint col=0; col< _n_cols; ++col) {
-		for (uint lig=0; lig< _n_ligs; ++lig) {
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
 			pt_2d pt = col_lig2pt_2d(col, lig);
 			if (is_pt_inside_poly(pt, polygon)) {
 				set_alti(col, lig, alti);
@@ -208,8 +266,8 @@ void Elevation::set_alti_over_polygon(Polygon2D * polygon, number alti) {
 
 
 void Elevation::set_alti_all(number alti) {
-	for (uint col=0; col< _n_cols; ++col) {
-		for (uint lig=0; lig< _n_ligs; ++lig) {
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
 			set_alti(col, lig, alti);
 		}
 	}
@@ -217,8 +275,8 @@ void Elevation::set_alti_all(number alti) {
 
 
 void Elevation::set_negative_alti_2zero() {
-	for (uint col=0; col< _n_cols; ++col) {
-		for (uint lig=0; lig< _n_ligs; ++lig) {
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
 			//uint id = col_lig2id(col, lig);
 			/*if (_altis[id]< 0.0) {
 				_altis[id] = 0.0;
@@ -257,8 +315,8 @@ void Elevation::randomize() {
 		amp_sum += a;
 	}
 
-	for (uint col=0; col< _n_cols; ++col) {
-		for (uint lig=0; lig< _n_ligs; ++lig) {
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
 			//_altis[col_lig2id(col, lig)] = rand_number(0.0, 1000.0);
 			//pt_2d pt = col_lig2pt(col, lig);
 			//_altis[col_lig2id(col, lig)] = rand_number(0.0, 100.0) * exp(-1.0 * pow(glm::distance(pt, _origin + 0.5 * _size) / (0.5 * _size.x), 2.0));
@@ -280,8 +338,8 @@ void Elevation::randomize() {
 		//number factor= max_factor* pow(2.0, -1.0 * number(level)) / amp_sum;
 		number factor = max_factor* amplitudes[level] / amp_sum;
 	
-		for (uint col=0; col< _n_cols; ++col) {
-			for (uint lig=0; lig< _n_ligs; ++lig) {
+		for (int col=0; col< _n_cols; ++col) {
+			for (int lig=0; lig< _n_ligs; ++lig) {
 				number ii= number(col)* (gradient_w- 1)/ _n_cols;
 				number jj= number(lig)* (gradient_h- 1)/ _n_ligs;
 				//_altis[col_lig2id(col, lig)] += factor* perlin(ii, jj, gradient, gradient_w, gradient_h);
@@ -290,8 +348,8 @@ void Elevation::randomize() {
 		}
 	}
 
-	for (uint col=0; col< _n_cols; ++col) {
-		for (uint lig=0; lig< _n_ligs; ++lig) {
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
 			//uint id = col_lig2id(col, lig);
 			/*if (_altis[id]> 0.0) {
 				_altis[id] = pow(_altis[id] * fudge_factor, redistribution_power);
@@ -303,8 +361,8 @@ void Elevation::randomize() {
 	}
 	
 
-	for (uint col=0; col< _n_cols; ++col) {
-		for (uint lig=0; lig< _n_ligs; ++lig) {
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
 			//uint id = col_lig2id(col, lig);
 			number nx = 2.0 * number(col) / _n_cols - 1.0;
 			number ny = 2.0 * number(lig) / _n_ligs - 1.0;
@@ -316,8 +374,8 @@ void Elevation::randomize() {
 
 	number * gradient = perlin_gradient(terrace_gradient_w, terrace_gradient_h);
 	//number damp = 0.9;
-	for (uint col=0; col< _n_cols; ++col) {
-		for (uint lig=0; lig< _n_ligs; ++lig) {
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
 			//uint id = col_lig2id(col, lig);
 			number ii= number(col)* (terrace_gradient_w- 1)/ _n_cols;
 			number jj= number(lig)* (terrace_gradient_h- 1)/ _n_ligs;
@@ -350,7 +408,88 @@ void Elevation::randomize() {
 
 	set_negative_alti_2zero();
 
+	update_normals();
+	update_data();
+
 	//alti2pbm("../data/test.pgm");
+}
+
+
+glm::vec4 Elevation::alti2color(number alti) {
+	if (alti < 0.01) {
+		return glm::vec4(0.4f, 0.5f, 1.0f, 1.0f);
+	}
+	else if (alti < 0.3) {
+		return glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	}
+	else if (alti > 7.0) {
+		return glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+	else  {
+		//return glm::vec4(0.4f, 1.0f, 0.3f, 1.0f);
+		//return glm::vec4(0.1f + rand_float(0.0f, 0.3f), 0.7f + rand_float(0.0f, 0.3f), 0.0f + rand_float(0.0f, 0.3f), 1.0f);
+		return glm::vec4(0.4f - float(alti) * 0.02f, 1.0f - float(alti) * 0.05f, 0.3f + float(alti) * 0.02f, 1.0f);
+	}
+}
+
+
+void Elevation::update_data() {
+	update_data(0, int(_n_cols - 1), 0, int(_n_ligs - 1));
+}
+
+
+void Elevation::update_data(int col_min, int col_max, int lig_min, int lig_max) {
+	uint idx_tris[6] = {0, 1, 2, 0, 2, 3};
+	
+	for (int lig = lig_min; lig < lig_max; ++lig) {
+		for (int col = col_min; col < col_max; ++col) {
+			// attention on ne peut pas utiliser col_lig2id ici
+			float * ptr = _data + 60 * ((_n_cols - 1) * lig + col);
+			
+			pt_3d pts[4] = {
+				col_lig2pt_3d(col, lig),
+				col_lig2pt_3d(col + 1, lig),
+				col_lig2pt_3d(col + 1, lig + 1),
+				col_lig2pt_3d(col, lig + 1)
+			};
+
+			pt_3d normals[4] = {
+				get_normal(col, lig),
+				get_normal(col + 1, lig),
+				get_normal(col + 1, lig + 1),
+				get_normal(col, lig + 1)
+			};
+			
+
+			for (uint i=0; i<6; ++i) {
+				number alti = pts[idx_tris[i]].z;
+				glm::vec4 color = alti2color(alti);
+
+				ptr[0] = float(pts[idx_tris[i]].x);
+				ptr[1] = float(pts[idx_tris[i]].y);
+				ptr[2] = float(pts[idx_tris[i]].z);
+				ptr[3] = color.r;
+				ptr[4] = color.g;
+				ptr[5] = color.b;
+				ptr[6] = color.a;
+				ptr[7] = float(normals[idx_tris[i]].x);
+				ptr[8] = float(normals[idx_tris[i]].y);
+				ptr[9] = float(normals[idx_tris[i]].z);
+
+				ptr += 10;
+			}
+		}
+	}
+}
+
+
+void Elevation::update_data(AABB_2D * aabb) {
+	std::pair<int_pair, int_pair> col_lig_min_max = aabb2col_lig_min_max(aabb);
+	uint col_min = col_lig_min_max.first.first;
+	uint lig_min = col_lig_min_max.first.second;
+	uint col_max = col_lig_min_max.second.first;
+	uint lig_max = col_lig_min_max.second.second;
+	update_data(col_min, col_max, lig_min, lig_max);
 }
 
 
@@ -359,8 +498,8 @@ void Elevation::alti2pbm(std::string pbm_path) {
 	f= fopen(pbm_path.c_str(), "wb");
 	//fprintf(f, "P1\n%d %d\n", _n_cols, _n_ligs);
 	fprintf(f, "P2\n%d %d\n1\n", _n_cols, _n_ligs);
-	for (uint lig=0; lig<_n_ligs; ++lig) {
-		for (uint col=0; col<_n_cols; ++col) {
+	for (int lig=0; lig<_n_ligs; ++lig) {
+		for (int col=0; col<_n_cols; ++col) {
 			int v = 0;
 			if (get_alti(col, lig) < 0.1) {
 				v = 1;

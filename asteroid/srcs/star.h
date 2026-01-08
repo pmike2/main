@@ -15,7 +15,7 @@
 class Star {
 public:
 	Star();
-	Star(pt_2d pos, pt_2d size, float z, glm::vec2 velocity, glm::vec4 color, unsigned int idx_texture);
+	Star(pt_2d pos, pt_2d size, float z, glm::vec2 velocity, glm::vec4 color, uint idx_texture);
 	~Star();
 	void anim(std::chrono::system_clock::time_point t);
 
@@ -24,7 +24,7 @@ public:
 	float _z;
 	glm::vec2 _velocity;
 	glm::vec4 _color;
-	unsigned int _idx_texture;
+	uint _idx_texture;
 };
 
 

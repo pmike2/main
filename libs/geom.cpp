@@ -126,7 +126,7 @@ bool aabb_intersects_aabb(AABB * aabb_1, AABB * aabb_2) {
 
 
 bool aabb_intersects_bbox(AABB * aabb, BBox * bbox) {
-	for (unsigned int i=0; i<8; ++i) {
+	for (uint i=0; i<8; ++i) {
 		if ((bbox->_pts[i].x> aabb->_vmin.x) && (bbox->_pts[i].x< aabb->_vmax.x) &&
 			(bbox->_pts[i].y> aabb->_vmin.y) && (bbox->_pts[i].y< aabb->_vmax.y) &&
 			(bbox->_pts[i].z> aabb->_vmin.z) && (bbox->_pts[i].z< aabb->_vmax.z)) {

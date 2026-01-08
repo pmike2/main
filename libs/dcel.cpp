@@ -929,8 +929,8 @@ void DCEL::add_bbox(const pt_2d & bbox_min, const pt_2d & bbox_max) {
 	// recherche des hedges qui n'ont pas l'origine dans la bbox
 	// on ne fait pas auto he car il y a des insertions dans _half_edges dans la boucle
 	//for (auto he : _half_edges) {
-	unsigned int nhe= _half_edges.size();
-	for (unsigned int i=0; i<nhe; ++i) {
+	uint nhe= _half_edges.size();
+	for (uint i=0; i<nhe; ++i) {
 		DCEL_HalfEdge * he= _half_edges[i];
 
 		// ignore contient les twin des hedges qu'on a déjà traités
@@ -1508,7 +1508,7 @@ void DCEL::get_bbox(pt_2d * bbox_min, pt_2d * bbox_max) {
 // renvoie la taille du plus petit edge
 number DCEL::smallest_edge() {
 	number smallest= 1e8;
-	for (unsigned int i=0; i<_half_edges.size()- 1; ++i) {
+	for (uint i=0; i<_half_edges.size()- 1; ++i) {
 		number x1= _half_edges[i]->_origin->_coords.x;
 		number y1= _half_edges[i]->_origin->_coords.y;
 		number x2= _half_edges[i]->destination()->_coords.x;
@@ -1550,8 +1550,8 @@ DCEL_Face * DCEL::get_unbounded_face() {
 void DCEL::export_html(std::string html_path, bool simple, const pt_2d & bbox_min, const pt_2d & bbox_max, const std::vector<pt_2d> & sites) {
 	bool verbose= false;
 
-	const unsigned int SVG_WIDTH= 1200;
-	const unsigned int SVG_HEIGHT= 700;
+	const uint SVG_WIDTH= 1200;
+	const uint SVG_HEIGHT= 700;
 	const number MARGIN_FACTOR= 1.5;
 	const pt_2d VIEW_MIN= (bbox_min- (number)(0.5)* (bbox_min+ bbox_max))* MARGIN_FACTOR+ (number)(0.5)* (bbox_min+ bbox_max);
 	const pt_2d VIEW_MAX= (bbox_max- (number)(0.5)* (bbox_min+ bbox_max))* MARGIN_FACTOR+ (number)(0.5)* (bbox_min+ bbox_max);

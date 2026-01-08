@@ -5,14 +5,14 @@ using namespace std;
 using json = nlohmann::json;
 
 
-unsigned int block_width(unsigned int idx_block) {
+uint block_width(uint idx_block) {
 	// calcul de 2 coeffs utilisés par _width, de sorte que le 1er bloc (le + basse fréquence) regroupe N_COEFFS_IN_FIRST_BLOCK coeffs fft et que la somme des 
 	// _width s'approche sans dépasser (!) FFT_OUTPUT_SIZE
 	float a, b;
 	a= ((float)(FFT_OUTPUT_SIZE)- (float)(N_COEFFS_IN_FIRST_BLOCK)* (float)(N_BLOCKS_FFT))/ ((float)(N_BLOCKS_FFT)* ((float)(N_BLOCKS_FFT)- 1.0f)* 0.5f);
 	b= N_COEFFS_IN_FIRST_BLOCK- a;
 
-	return (unsigned int)(a* ((float)(idx_block)+ 1.0f)+ b);
+	return (uint)(a* ((float)(idx_block)+ 1.0f)+ b);
 }
 
 
@@ -27,7 +27,7 @@ BlockFFT::BlockFFT() {
 }
 
 
-BlockFFT::BlockFFT(unsigned int width) : _instant_energy(0.0f), _history_energy_average(0.0f),
+BlockFFT::BlockFFT(uint width) : _instant_energy(0.0f), _history_energy_average(0.0f),
 	_cmp_ratio(CMP_RATIO), _variance_tresh(VARIANCE_TRESH), _energy_variance(0.0f), _is_triggered(false), _width(width), _idx_signature(-1) {
 }
 
@@ -41,9 +41,9 @@ SpectrumSignature::SpectrumSignature() {
 	
 }
 
-SpectrumSignature::SpectrumSignature(unsigned int n_blocks_fft, unsigned int n_blocks_record) : _n_blocks_fft(n_blocks_fft), _n_blocks_record(n_blocks_record) {
+SpectrumSignature::SpectrumSignature(uint n_blocks_fft, uint n_blocks_record) : _n_blocks_fft(n_blocks_fft), _n_blocks_record(n_blocks_record) {
 	_values= new float[_n_blocks_fft* _n_blocks_record];
-	for (unsigned int i=0; i<_n_blocks_fft* _n_blocks_record; ++i) {
+	for (uint i=0; i<_n_blocks_fft* _n_blocks_record; ++i) {
 		_values[i]= 0.0f;
 	}
 	_active= false;
@@ -57,16 +57,16 @@ SpectrumSignature::~SpectrumSignature() {
 
 float SpectrumSignature::mass_center() {
 	// on calcule la somme pondérée des fréquences
-	unsigned int idx_fft_current= 0;
+	uint idx_fft_current= 0;
 	float mc= 0.0f;
-	for (unsigned int idx_block=0; idx_block<_n_blocks_fft; ++idx_block) {
-		unsigned int width= block_width(idx_block);
-		unsigned int idx_fft_min= idx_fft_current;
-		unsigned int idx_fft_max= idx_fft_current+ width;
+	for (uint idx_block=0; idx_block<_n_blocks_fft; ++idx_block) {
+		uint width= block_width(idx_block);
+		uint idx_fft_min= idx_fft_current;
+		uint idx_fft_max= idx_fft_current+ width;
 		float freq_min= (float)(idx_fft_min* SAMPLE_RATE)/ float(FFT_INPUT_SIZE);
 		float freq_max= (float)(idx_fft_max* SAMPLE_RATE)/ float(FFT_INPUT_SIZE);
 		float freq_moy= (freq_min+ freq_max)* 0.5f;
-		for (unsigned int idx_record=0; idx_record<_n_blocks_record; ++idx_record) {
+		for (uint idx_record=0; idx_record<_n_blocks_record; ++idx_record) {
 			mc+= _values[idx_record* _n_blocks_fft+ idx_block]* freq_moy;
 		}
 		idx_fft_current+= width;
@@ -83,13 +83,13 @@ Audio::Audio() :
 	_mode(AUDIO_RECORD)
 {
 	_amplitudes= new float[_n_samples* 2]; // stereo
-	for (unsigned int i=0; i<_n_samples* 2; ++i)
+	for (uint i=0; i<_n_samples* 2; ++i)
 		_amplitudes[i]= 0.0f;
 	
 	_blocks= new BlockFFT*[_n_blocks_fft* _n_blocks_record];
-	for (unsigned int idx_record=0; idx_record<_n_blocks_record; ++idx_record)
-		for (unsigned int idx_block=0; idx_block<_n_blocks_fft; ++idx_block) {
-			unsigned int width= block_width(idx_block);
+	for (uint idx_record=0; idx_record<_n_blocks_record; ++idx_record)
+		for (uint idx_block=0; idx_block<_n_blocks_fft; ++idx_block) {
+			uint width= block_width(idx_block);
 
 			// les blocks n'ont pas tous la meme taille ; cf http://archive.gamedev.net/archive/reference/programming/features/beatdetection/index.html
 			//if (idx_record== 0) { cout << idx_block << " : " << width << endl; }
@@ -101,20 +101,20 @@ Audio::Audio() :
 Audio::~Audio() {
 	delete[] _amplitudes;
 	delete[] _blocks;
-	for (unsigned int i=0; i<_signatures.size(); ++i) {
+	for (uint i=0; i<_signatures.size(); ++i) {
 		delete _signatures[i];
 	}
 }
 
 
-void Audio::push_event(double t) {
+void Audio::push_event(number t) {
 	// _idx_signature à -1 pour l'instant
 	AudioEvent audio_event= {t, _current_sample_callback, -1};
 	_audio_event_queue.push(audio_event);
 }
 
 
-void Audio::update_current_sample(double t) {
+void Audio::update_current_sample(number t) {
 	AudioEvent audio_event;
 	_last_sample= _current_sample;
 	// on met à jour _current_sample avec celui le + proche du présent
@@ -128,8 +128,8 @@ void Audio::update_current_sample(double t) {
 	// on cherche si entre _last_sample et _current_sample il y a eu un trig
 	if (_signatures.size()> 0) {
 		bool found= false;
-		for (unsigned int idx_time=_last_sample/ SAMPLES_PER_BUFFER; idx_time<_current_sample/ SAMPLES_PER_BUFFER; ++idx_time) {
-			for (unsigned int idx_freq=0; idx_freq<_n_blocks_fft; ++idx_freq) {
+		for (uint idx_time=_last_sample/ SAMPLES_PER_BUFFER; idx_time<_current_sample/ SAMPLES_PER_BUFFER; ++idx_time) {
+			for (uint idx_freq=0; idx_freq<_n_blocks_fft; ++idx_freq) {
 				// on ignore si trig a eu lieu trop récemment
 				if ((_blocks[idx_time* _n_blocks_fft+ idx_freq]->_is_triggered) && (t- _last_trig_time> TRIG_MIN_DIST)) {
 					_last_trig_time= t;
@@ -198,8 +198,8 @@ void Audio::loadfromfile(std::string load_path) {
 
 
 void Audio::compute_spectrum(long sample) {
-	double in_fft[FFT_INPUT_SIZE];
-	double fft_energies[FFT_OUTPUT_SIZE];
+	number in_fft[FFT_INPUT_SIZE];
+	number fft_energies[FFT_OUTPUT_SIZE];
 	fftw_complex *out_fft;
 	fftw_plan p_fft;
 
@@ -208,17 +208,17 @@ void Audio::compute_spectrum(long sample) {
 	p_fft= fftw_plan_dft_r2c_1d(FFT_INPUT_SIZE, in_fft, out_fft, FFTW_ESTIMATE);
 	
 	// fenetrage pour gérer effets de bord FFT
-	for (unsigned int i=0; i<FFT_INPUT_SIZE; i++) {
-		double hanning= 0.5* (1.0- cos(2.0* M_PI* (double)(i)/ (double)(FFT_INPUT_SIZE- 1)));
+	for (uint i=0; i<FFT_INPUT_SIZE; i++) {
+		number hanning= 0.5* (1.0- cos(2.0* M_PI* (number)(i)/ (number)(FFT_INPUT_SIZE- 1)));
 		// * sqrt(2)/ 2 pour conserver une energie constante
-		double mix= (double)(_amplitudes[2* (sample+ i)+ 0]+ _amplitudes[2* (sample+ i)+ 1])* 0.71;
+		number mix= (number)(_amplitudes[2* (sample+ i)+ 0]+ _amplitudes[2* (sample+ i)+ 1])* 0.71;
 		in_fft[i]= mix* hanning;
 	}
 
 	fftw_execute(p_fft);
 
 	// calcul des énergies a partir des coeffs fft + passage en décibels ; facteur multiplicatif normalement = 20 ?
-	for (unsigned int i=0; i<FFT_OUTPUT_SIZE; i++) {
+	for (uint i=0; i<FFT_OUTPUT_SIZE; i++) {
 		fft_energies[i]= 20.0* log(out_fft[i][0]* out_fft[i][0]+ out_fft[i][1]* out_fft[i][1])/ log(10.0);
 		if (fft_energies[i]< 0.0)
 			fft_energies[i]= 0.0;
@@ -229,20 +229,20 @@ void Audio::compute_spectrum(long sample) {
 	fftw_destroy_plan(p_fft);
 	fftw_free(out_fft);
 
-	unsigned int idx_fft= 0;
-	for (unsigned int i=0; i<N_BLOCKS_FFT; ++i) {
+	uint idx_fft= 0;
+	for (uint i=0; i<N_BLOCKS_FFT; ++i) {
 		long idx_record= sample/ SAMPLES_PER_BUFFER;
 		BlockFFT* block_fft= _blocks[idx_record* N_BLOCKS_FFT+ i];
 
 		// calcul de _instant_energy
 		block_fft->_instant_energy= 0.0f;
-		for (unsigned int j=idx_fft; j<idx_fft+ block_fft->_width; ++j)
+		for (uint j=idx_fft; j<idx_fft+ block_fft->_width; ++j)
 			block_fft->_instant_energy+= (float)(fft_energies[j]);
 		idx_fft+= block_fft->_width;
 		
 		// calcul de _history_energy_average
 		block_fft->_history_energy_average= 0.0f;
-		for (unsigned int j=1; j<=HISTORY_SIZE; ++j) {
+		for (uint j=1; j<=HISTORY_SIZE; ++j) {
 			long idx_history= idx_record- j;
 			if (idx_history< 0)
 				idx_history+= _n_blocks_record;
@@ -252,7 +252,7 @@ void Audio::compute_spectrum(long sample) {
 
 		// calcul de _energy_variance
 		block_fft->_energy_variance= 0.0f;
-		for (unsigned int j=0; j<=HISTORY_SIZE; ++j) {
+		for (uint j=0; j<=HISTORY_SIZE; ++j) {
 			long idx_history= idx_record- j;
 			if (idx_history< 0)
 				idx_history+= _n_blocks_record;
@@ -273,14 +273,14 @@ void Audio::compute_spectrum(long sample) {
 }
 
 
-void Audio::set_n_signatures(unsigned int n_signatures) {
-	for (unsigned int idx_signature=0; idx_signature<_signatures.size(); ++idx_signature) {
+void Audio::set_n_signatures(uint n_signatures) {
+	for (uint idx_signature=0; idx_signature<_signatures.size(); ++idx_signature) {
 		delete _signatures[idx_signature];
 	}
 	_signatures.clear();
 
-	unsigned int n_blocks_record_signature= SIGNATURE_TIME* (float)(SAMPLE_RATE)/ (float)(SAMPLES_PER_BUFFER);
-	for (unsigned int idx_signature=0; idx_signature<n_signatures; ++idx_signature) {
+	uint n_blocks_record_signature= SIGNATURE_TIME* (float)(SAMPLE_RATE)/ (float)(SAMPLES_PER_BUFFER);
+	for (uint idx_signature=0; idx_signature<n_signatures; ++idx_signature) {
 		SpectrumSignature * ss= new SpectrumSignature(_n_blocks_fft, n_blocks_record_signature);
 		_signatures.push_back(ss);
 	}
@@ -288,14 +288,14 @@ void Audio::set_n_signatures(unsigned int n_signatures) {
 
 
 void Audio::reinit_signatures() {
-	for (unsigned int idx_signature=0; idx_signature<_signatures.size(); ++idx_signature) {
+	for (uint idx_signature=0; idx_signature<_signatures.size(); ++idx_signature) {
 		_signatures[idx_signature]->_active= false;
 	}
 }
 
 
-int Audio::get_idx_signature(unsigned int idx_record) {
-	unsigned int n_blocks_record_signature= 0;
+int Audio::get_idx_signature(uint idx_record) {
+	uint n_blocks_record_signature= 0;
 	// en mode record on ne connait pas le futur...
 	if (_mode== AUDIO_RECORD) {
 		n_blocks_record_signature= 1;
@@ -305,11 +305,11 @@ int Audio::get_idx_signature(unsigned int idx_record) {
 	}
 
 	// si on en trouve une inactive on la prend
-	for (unsigned int idx_signature=0; idx_signature<_signatures.size(); ++idx_signature) {
+	for (uint idx_signature=0; idx_signature<_signatures.size(); ++idx_signature) {
 		if (!_signatures[idx_signature]->_active) {
-			for (unsigned int idx_fft=0; idx_fft<_n_blocks_fft; ++idx_fft) {
-				for (unsigned int idx_record_offset=0; idx_record_offset<n_blocks_record_signature; ++idx_record_offset) {
-					unsigned int idx_block= ((idx_record+ idx_record_offset)* _n_blocks_fft+ idx_fft) % (_n_blocks_fft* _n_blocks_record);
+			for (uint idx_fft=0; idx_fft<_n_blocks_fft; ++idx_fft) {
+				for (uint idx_record_offset=0; idx_record_offset<n_blocks_record_signature; ++idx_record_offset) {
+					uint idx_block= ((idx_record+ idx_record_offset)* _n_blocks_fft+ idx_fft) % (_n_blocks_fft* _n_blocks_record);
 					_signatures[idx_signature]->_values[idx_record_offset* _n_blocks_fft+ idx_fft]= _blocks[idx_block]->_instant_energy;
 				}
 			}
@@ -325,13 +325,13 @@ int Audio::get_idx_signature(unsigned int idx_record) {
 	float min_dist_new= 1e9;
 	int closest2new= -1;
 	float dists2new[_signatures.size()];
-	for (unsigned int idx_signature=0; idx_signature<_signatures.size(); ++idx_signature) {
+	for (uint idx_signature=0; idx_signature<_signatures.size(); ++idx_signature) {
 		dists2new[idx_signature]= 0.0f;
 		// on moyenne sur le temps pour une bande FFT donnée, et on somme par bande FFT
-		for (unsigned int idx_fft=0; idx_fft<_n_blocks_fft; ++idx_fft) {
+		for (uint idx_fft=0; idx_fft<_n_blocks_fft; ++idx_fft) {
 			float d= 0.0f;
-			for (unsigned int idx_record_offset=0; idx_record_offset<n_blocks_record_signature; ++idx_record_offset) {
-				unsigned int idx_block= ((idx_record+ idx_record_offset)* _n_blocks_fft+ idx_fft) % (_n_blocks_fft* _n_blocks_record);
+			for (uint idx_record_offset=0; idx_record_offset<n_blocks_record_signature; ++idx_record_offset) {
+				uint idx_block= ((idx_record+ idx_record_offset)* _n_blocks_fft+ idx_fft) % (_n_blocks_fft* _n_blocks_record);
 				d+= pow(_signatures[idx_signature]->_values[idx_record_offset* _n_blocks_fft+ idx_fft]- _blocks[idx_block]->_instant_energy, 2);
 			}
 			d/= n_blocks_record_signature;
@@ -348,12 +348,12 @@ int Audio::get_idx_signature(unsigned int idx_record) {
 	float min_dist_current= 1e9;
 	int closest1= -1;
 	int closest2= -1;
-	for (unsigned int i1=0; i1<_signatures.size()- 1; ++i1) {
-		for (unsigned int i2=i1+ 1; i2<_signatures.size(); ++i2) {
+	for (uint i1=0; i1<_signatures.size()- 1; ++i1) {
+		for (uint i2=i1+ 1; i2<_signatures.size(); ++i2) {
 			float dist= 0.0f;
-			for (unsigned int idx_fft=0; idx_fft<_n_blocks_fft; ++idx_fft) {
+			for (uint idx_fft=0; idx_fft<_n_blocks_fft; ++idx_fft) {
 				float d= 0.0f;
-				for (unsigned int idx_record_offset=0; idx_record_offset<n_blocks_record_signature; ++idx_record_offset) {
+				for (uint idx_record_offset=0; idx_record_offset<n_blocks_record_signature; ++idx_record_offset) {
 					d+= pow(_signatures[i1]->_values[idx_record_offset* _n_blocks_fft+ idx_fft]- _signatures[i2]->_values[idx_record_offset* _n_blocks_fft+ idx_fft], 2);
 				}
 				d/= n_blocks_record_signature;
@@ -383,9 +383,9 @@ int Audio::get_idx_signature(unsigned int idx_record) {
 		else {
 			idx2modify= closest2;
 		}
-		for (unsigned int idx_fft=0; idx_fft<_n_blocks_fft; ++idx_fft) {
-			for (unsigned int idx_record_offset=0; idx_record_offset<n_blocks_record_signature; ++idx_record_offset) {
-				unsigned int idx_block= ((idx_record+ idx_record_offset)* _n_blocks_fft+ idx_fft) % (_n_blocks_fft* _n_blocks_record);
+		for (uint idx_fft=0; idx_fft<_n_blocks_fft; ++idx_fft) {
+			for (uint idx_record_offset=0; idx_record_offset<n_blocks_record_signature; ++idx_record_offset) {
+				uint idx_block= ((idx_record+ idx_record_offset)* _n_blocks_fft+ idx_fft) % (_n_blocks_fft* _n_blocks_record);
 				_signatures[idx2modify]->_values[idx_record_offset* _n_blocks_fft+ idx_fft]= _blocks[idx_block]->_instant_energy;
 			}
 		}
@@ -404,20 +404,20 @@ void Audio::sort_signatures() {
 
 float Audio::event_length(long idx_sample) {
 	// recherche de la longueur en secondes d'un son triggé
-	unsigned int min_offset= (unsigned int)(TRIG_MIN_LENGTH* (float)(SAMPLE_RATE)/ (float)(SAMPLES_PER_BUFFER));
-	unsigned int max_offset= (unsigned int)(TRIG_MAX_LENGTH* (float)(SAMPLE_RATE)/ (float)(SAMPLES_PER_BUFFER));
-	unsigned int idx_record_start= idx_sample/ SAMPLES_PER_BUFFER;
-	unsigned int idx_record_end= idx_record_start+ max_offset;
+	uint min_offset= (uint)(TRIG_MIN_LENGTH* (float)(SAMPLE_RATE)/ (float)(SAMPLES_PER_BUFFER));
+	uint max_offset= (uint)(TRIG_MAX_LENGTH* (float)(SAMPLE_RATE)/ (float)(SAMPLES_PER_BUFFER));
+	uint idx_record_start= idx_sample/ SAMPLES_PER_BUFFER;
+	uint idx_record_end= idx_record_start+ max_offset;
 	bool triggered= false;
 
 	// si l'energie devient trop faible ou si un son de meme signature est triggé, stop
-	for (unsigned int idx_record_offset=min_offset; idx_record_offset<max_offset; ++idx_record_offset) {
+	for (uint idx_record_offset=min_offset; idx_record_offset<max_offset; ++idx_record_offset) {
 		if (idx_record_start+ idx_record_offset>= _n_blocks_record)
 			break;
 
 		float mean_energy= 0.0f;
-		for (unsigned int idx_fft=0; idx_fft<_n_blocks_fft; ++idx_fft) {
-			unsigned int idx_block= (idx_record_start+ idx_record_offset)* _n_blocks_fft+ idx_fft;
+		for (uint idx_fft=0; idx_fft<_n_blocks_fft; ++idx_fft) {
+			uint idx_block= (idx_record_start+ idx_record_offset)* _n_blocks_fft+ idx_fft;
 			mean_energy+= _blocks[idx_block]->_instant_energy;
 
 			if ((_blocks[idx_block]->_is_triggered) && (get_block_idx_signature(idx_record_start+ idx_record_offset)== get_block_idx_signature(idx_record_start))) {
@@ -437,12 +437,12 @@ float Audio::event_length(long idx_sample) {
 
 
 // seul le block d'indice fft = 0 de la bande a son _idx_signature écrit et lu. un peu moche mais bon...
-void Audio::set_block_idx_signature(unsigned int idx_record, int idx_signature) {
+void Audio::set_block_idx_signature(uint idx_record, int idx_signature) {
 	_blocks[idx_record* _n_blocks_fft+ 0]->_idx_signature= idx_signature;
 }
 
 
-int Audio::get_block_idx_signature(unsigned int idx_record) {
+int Audio::get_block_idx_signature(uint idx_record) {
 	return _blocks[idx_record* _n_blocks_fft+ 0]->_idx_signature;
 }
 
@@ -504,8 +504,8 @@ void VisuWave::draw() {
 
 void VisuWave::update_data() {
 	// stereo
-	for (unsigned int j=0; j<2; ++j)
-		for (unsigned int i=0; i<_n_vertices; ++i) {
+	for (uint j=0; j<2; ++j)
+		for (uint i=0; i<_n_vertices; ++i) {
 			int idx= 5* (i+ j* _n_vertices);
 			float x= -WAVE_WIDTH* 0.5f+ (float)(i)* WAVE_WIDTH/ (float)(_n_vertices);
 			long idx_sample= _sample_center+ (long)(x* (float)(_sample_width)/ (WAVE_WIDTH* 0.5f));
@@ -641,12 +641,12 @@ GLSpectrum::GLSpectrum(GLuint prog_draw_3d, Audio * audio) :
 	_height= (_audio->_n_blocks_record- 1)* _height_step;
 
 	_n_faces= (_audio->_n_blocks_fft- 1)* (_audio->_n_blocks_record- 1)* 2;
-	_faces= new unsigned int[3* _n_faces];
+	_faces= new uint[3* _n_faces];
 	_data= new float[(3+ 3+ 3)* 3* _n_faces];
 
 	// Buffer d'indices : puisque l'on duplique tous les sommets pour ne pas avoir de normale partagée, 
 	// faces = { 0,1,2,3,4,5,6,7,8,9,10,... }
-	for (unsigned int i=0; i<3* _n_faces; i++) {
+	for (uint i=0; i<3* _n_faces; i++) {
 		_faces[i]= i;
 	}
 	
@@ -655,7 +655,7 @@ GLSpectrum::GLSpectrum(GLuint prog_draw_3d, Audio * audio) :
 	glGenBuffers(2, _buffers);
 	
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _buffers[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3* _n_faces* sizeof(unsigned int), _faces, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3* _n_faces* sizeof(uint), _faces, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 	glUseProgram(_prog_draw);
@@ -731,8 +731,8 @@ void GLSpectrum::anim(glm::mat4 world2camera, glm::mat4 camera2clip) {
 
 
 void GLSpectrum::update_data() {
-	for (unsigned int idx_record=0; idx_record<_audio->_n_blocks_record- 1; ++idx_record)
-		for (unsigned int idx_fft=0; idx_fft<_audio->_n_blocks_fft- 1; ++idx_fft) {
+	for (uint idx_record=0; idx_record<_audio->_n_blocks_record- 1; ++idx_record)
+		for (uint idx_fft=0; idx_fft<_audio->_n_blocks_fft- 1; ++idx_fft) {
 			
 			float xmin= -_width * 0.5f+ (float)(idx_fft)* _width_step;
 			//float ymin= -_audio->_current_sample* _height_step/ SAMPLES_PER_BUFFER+ (float)(idx_record)* _height_step;
@@ -744,7 +744,7 @@ void GLSpectrum::update_data() {
 			float z2= _audio->_blocks[(idx_fft+ 1)+ _audio->_n_blocks_fft* (idx_record+ 1)]->_instant_energy* SPECTRUM_Z_FACTOR;
 			float z3= _audio->_blocks[(idx_fft+ 0)+ _audio->_n_blocks_fft* (idx_record+ 1)]->_instant_energy* SPECTRUM_Z_FACTOR;
 
-			unsigned int idx_face= idx_fft+ (_audio->_n_blocks_fft- 1)* idx_record;
+			uint idx_face= idx_fft+ (_audio->_n_blocks_fft- 1)* idx_record;
 			
 			float coord[4][3]= { {xmin, ymin, z0}, {xmax, ymin, z1}, {xmax, ymax, z2}, {xmin, ymax, z3} };
 			//cout << xmin << " ; " << ymin << " ; " << z0 << " ; " << xmax << " ; " << ymin << " ; " << z1 << " ; " << xmax << " ; " << ymax << " ; " << z2 << " ; " << xmin << " ; " << ymax << " ; " << z3 << endl;
@@ -970,7 +970,7 @@ VisuSimu::VisuSimu(GLuint prog_draw_2d, Audio * audio) : _prog_draw(prog_draw_2d
 	memcpy(_camera2clip, glm::value_ptr(glm_ortho), sizeof(float)* 16);
 
 	float width_step= SIMU_WIDTH/ (float)(_audio->_n_blocks_fft)- 2.0f* SIMU_WIDTH_MARGIN;
-	for (unsigned int i=0; i<_audio->_n_blocks_fft; ++i) {
+	for (uint i=0; i<_audio->_n_blocks_fft; ++i) {
 		float xmin= -0.5f* SIMU_WIDTH+ SIMU_WIDTH_MARGIN+ (float)(i)* (width_step+ 2.0f* SIMU_WIDTH_MARGIN);
 		float xmax= xmin+ width_step;
 		float ymin= -0.5f* SIMU_HEIGHT+ SIMU_HEIGHT_MARGIN;
@@ -1047,17 +1047,17 @@ void VisuSimu::draw() {
 
 
 void VisuSimu::update_data() {
-	for (unsigned int idx_time=_audio->_last_sample/ SAMPLES_PER_BUFFER; idx_time<_audio->_current_sample/ SAMPLES_PER_BUFFER; ++idx_time) {
-		for (unsigned int idx_freq=0; idx_freq<_audio->_n_blocks_fft; ++idx_freq) {
+	for (uint idx_time=_audio->_last_sample/ SAMPLES_PER_BUFFER; idx_time<_audio->_current_sample/ SAMPLES_PER_BUFFER; ++idx_time) {
+		for (uint idx_freq=0; idx_freq<_audio->_n_blocks_fft; ++idx_freq) {
 			BlockFFT* block= _audio->_blocks[idx_freq+ _audio->_n_blocks_fft* idx_time];
 			if (block->_is_triggered) {
-				for (unsigned int j=0; j<6; ++j) {
+				for (uint j=0; j<6; ++j) {
 					_data[30* idx_freq+ 2+ j* 5]= 1.0f;
 				}
 			}
 			else {
 				// les couleurs tendent vers le noir a la vitesse VISU_SIMU_DECREASING_AMOUNT
-				for (unsigned int j=0; j<6; ++j) {
+				for (uint j=0; j<6; ++j) {
 					_data[30* idx_freq+ 2+ j* 5]-= VISU_SIMU_DECREASING_AMOUNT;
 					if (_data[30* idx_freq+ 2+ j* 5]< 0.0f)
 						_data[30* idx_freq+ 2+ j* 5]= 0.0f;
@@ -1409,7 +1409,7 @@ Connexion::Connexion() {
 }
 
 
-Connexion::Connexion(unsigned int width, unsigned int height) : _width(width), _height(height) {
+Connexion::Connexion(uint width, uint height) : _width(width), _height(height) {
 	_values= new bool[_width* _height];
 	reinit();
 }
@@ -1421,20 +1421,20 @@ Connexion::~Connexion() {
 
 
 void Connexion::reinit() {
-	for (unsigned int i=0; i<_width* _height; ++i) {
+	for (uint i=0; i<_width* _height; ++i) {
 		_values[i]= false;
 	}
 }
 
 
-bool Connexion::get(unsigned int x, unsigned int y) {
+bool Connexion::get(uint x, uint y) {
 	if ((x>= _width) || (y>= _height))
 		return false;
 	return _values[_width* y+ x];
 }
 
 
-void Connexion::set(unsigned int x, unsigned int y, bool b) {
+void Connexion::set(uint x, uint y, bool b) {
 	if ((x>= _width) || (y>= _height))
 		return;
 	_values[_width* y+ x]= b;
@@ -1442,8 +1442,8 @@ void Connexion::set(unsigned int x, unsigned int y, bool b) {
 
 
 // proba 1 / chance que la connexion soit faite
-void Connexion::randomize(unsigned int chance) {
-	for (unsigned int i=0; i<_width* _height; ++i) {
+void Connexion::randomize(uint chance) {
+	for (uint i=0; i<_width* _height; ++i) {
 		if (rand_int(0, chance)) {
 			_values[i]= false;
 		}
@@ -1468,8 +1468,8 @@ void Connexion::load(json js) {
 		else if (key== "true_indices") {
 			json true_indices= it.value();
 			for (json::iterator it2= true_indices.begin(); it2!= true_indices.end(); ++it2) {
-				unsigned int i= it2->at(0);
-				unsigned int j= it2->at(1);
+				uint i= it2->at(0);
+				uint j= it2->at(1);
 				set(i, j, true);
 			}
 		}
@@ -1491,8 +1491,8 @@ json Connexion::get_json() {
 	js["width"]= _width;
 	js["height"]= _height;
 	auto true_indices= json::array();
-	for (unsigned int i=0; i<_width; ++i)
-		for (unsigned int j=0; j<_height; ++j)
+	for (uint i=0; i<_width; ++i)
+		for (uint j=0; j<_height; ++j)
 			if (get(i, j)) {
 				auto idx= json::array();
 				idx.push_back(i);
@@ -1589,8 +1589,8 @@ void VisuArt::anim(PaTime current_time, AudioMode audio_mode) {
 			return;
 		}
 		
-		for (unsigned int idx_morph=0; idx_morph<_morphing_objs.size(); ++idx_morph) {
-			for (unsigned int idx_obj=0; idx_obj<_static_instances.size(); ++idx_obj) {
+		for (uint idx_morph=0; idx_morph<_morphing_objs.size(); ++idx_morph) {
+			for (uint idx_obj=0; idx_obj<_static_instances.size(); ++idx_obj) {
 				if (_connexions[audio_event._idx_signature]->get(idx_obj, idx_morph)) {
 					// si morph est connecté à au moins 1 obj pour cette signature, on set le release et on trig
 					if (audio_mode== AUDIO_PLAYBACK) {
@@ -1612,13 +1612,13 @@ void VisuArt::anim(PaTime current_time, AudioMode audio_mode) {
 	}
 
 	// pour chaque _static_instance , on cumule l'effet de tous les morphs de toutes les connexions
-	for (unsigned int idx_obj=0; idx_obj<_static_instances.size(); ++idx_obj) {
-		unsigned int n_morph= 0;
+	for (uint idx_obj=0; idx_obj<_static_instances.size(); ++idx_obj) {
+		uint n_morph= 0;
 
 		MorphingObj * m= new MorphingObj();
 
-		for (unsigned int idx_conn=0; idx_conn<_connexions.size(); ++idx_conn) {
-			for (unsigned int idx_morph=0; idx_morph<_morphing_objs.size(); ++idx_morph) {
+		for (uint idx_conn=0; idx_conn<_connexions.size(); ++idx_conn) {
+			for (uint idx_morph=0; idx_morph<_morphing_objs.size(); ++idx_morph) {
 				if (!_connexions[idx_conn]->get(idx_obj, idx_morph)) {
 					continue;
 				}
@@ -1661,23 +1661,23 @@ void VisuArt::anim(PaTime current_time, AudioMode audio_mode) {
 void VisuArt::randomize() {
 	reinit();
 
-	unsigned int n_objs= rand_int(MINMAX_N_OBJS._min, MINMAX_N_OBJS._max);
-	for (unsigned int i=0; i<n_objs; ++i) {
-		unsigned int idx_model= rand_int(0, _static_models.size()- 1);
+	uint n_objs= rand_int(MINMAX_N_OBJS._min, MINMAX_N_OBJS._max);
+	for (uint i=0; i<n_objs; ++i) {
+		uint idx_model= rand_int(0, _static_models.size()- 1);
 		StaticInstance * model_obj= new StaticInstance(_static_models[idx_model], glm::vec3(1.0f));
 		model_obj->_pos_rot->_active= true;
 		_static_instances.push_back(model_obj);
 	}
 
-	unsigned int n_morphs= rand_int(MINMAX_N_MORPHS._min, MINMAX_N_MORPHS._max);
-	for (unsigned int i=0; i<n_morphs; ++i) {
+	uint n_morphs= rand_int(MINMAX_N_MORPHS._min, MINMAX_N_MORPHS._max);
+	for (uint i=0; i<n_morphs; ++i) {
 		MorphingObj * morphing_obj= new MorphingObj();
 		morphing_obj->randomize();
 		_morphing_objs.push_back(morphing_obj);
 	}
 
-	unsigned int n_conns= rand_int(MINMAX_N_CONNS._min, MINMAX_N_CONNS._max);
-	for (unsigned int i=0; i<n_conns; ++i) {
+	uint n_conns= rand_int(MINMAX_N_CONNS._min, MINMAX_N_CONNS._max);
+	for (uint i=0; i<n_conns; ++i) {
 		Connexion * connexion= new Connexion(_static_instances.size(), _morphing_objs.size());
 		connexion->randomize(CONN_CHANCE);
 		_connexions.push_back(connexion);
@@ -1749,8 +1749,8 @@ void VisuArt::load(string ch_json) {
 					js2= it2.value();
 				}
 
-				unsigned int width= js2["width"];
-				unsigned int height= js2["height"];
+				uint width= js2["width"];
+				uint height= js2["height"];
 				Connexion * connexion= new Connexion(width, height);
 				connexion->load(js2);
 				_connexions.push_back(connexion);

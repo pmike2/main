@@ -64,12 +64,12 @@ struct Opposition {
 
 struct ConstrainedEdge {
 	ConstrainedEdge();
-	ConstrainedEdge(std::pair<unsigned int, unsigned int> idx_init, std::pair<unsigned int, unsigned int> idx);
+	ConstrainedEdge(int_pair idx_init, int_pair idx);
 	~ConstrainedEdge();
 
 
-	std::pair<unsigned int, unsigned int> _idx_init;
-	std::pair<unsigned int, unsigned int> _idx;
+	int_pair _idx_init;
+	int_pair _idx;
 };
 
 
@@ -77,7 +77,7 @@ struct Triangulation {
 	Triangulation();
 	Triangulation(
 		const std::vector<pt_2d> & pts,
-		const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges=std::vector<std::pair<unsigned int, unsigned int> >(),
+		const std::vector<int_pair > & constrained_edges=std::vector<int_pair >(),
 		bool clean_in_constrained_polygon=false,
 		bool sort_by_bin=true,
 		bool verbose=false
@@ -85,16 +85,16 @@ struct Triangulation {
 	~Triangulation();
 	
 	// méthodes utiles
-	void init(const std::vector<pt_2d> & pts, const std::vector<std::pair<unsigned int, unsigned int> > & constrained_edges);
+	void init(const std::vector<pt_2d> & pts, const std::vector<int_pair > & constrained_edges);
 	void add_large_triangle();
-	Triangle * get_containing_triangle(unsigned int idx_pt);
+	Triangle * get_containing_triangle(uint idx_pt);
 	void delete_triangle(Triangle * triangle, bool update_point_bin=false);
 	void insert_triangle(Triangle * triangle, bool update_point_bin=false);
 	void swap_triangle(Opposition * opposition, Triangle * new_triangle_1, Triangle * new_triangle_2);
-	void add_pt(unsigned int idx_pt);
+	void add_pt(uint idx_pt);
 	void set_idx_triangles();
-	Opposition * opposition_from_edge(std::pair<unsigned int, unsigned int> edge);
-	void add_constrained_edge(unsigned int idx_edge);
+	Opposition * opposition_from_edge(int_pair edge);
+	void add_constrained_edge(uint idx_edge);
 	void clean_in_constrained_poly();
 	void remove_large_triangle();
 	void finish();

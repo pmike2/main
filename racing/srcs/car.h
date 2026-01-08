@@ -79,8 +79,8 @@ public:
 	bool _braking; // en train de freiner ?
 
 	CheckPoint * _next_checkpoint; // prochain chkpt objectif
-	unsigned int _n_laps; // combien de tours déjà faits
-	unsigned int _rank; // classement
+	uint _n_laps; // combien de tours déjà faits
+	uint _rank; // classement
 	bool _finished; // a t'il fini la course
 	bool _just_finished; // _just_finished et _overlap_finish servent à départager 2 cars qui auraient fini lors du même cycle d'animation
 	number _overlap_finish;

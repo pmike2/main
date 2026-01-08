@@ -36,9 +36,9 @@ InputState * input_state;
 ScreenGL * screengl;
 
 bool done;
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2, tikphysics1, tikphysics2;
-unsigned int accumulator;
+uint val_fps, compt_fps;
+uint tikfps1, tikfps2, tikanim1, tikanim2, tikphysics1, tikphysics2;
+uint accumulator;
 bool verbose;
 
 GLuint prog_2d, prog_font;
@@ -55,14 +55,14 @@ glm::vec2 user_force_end;
 
 // ---------------------------------------------------------------------------------------
 void mouse_motion(int x, int y, int xrel, int yrel) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 }
 
 
-void mouse_button_up(unsigned int x, unsigned int y) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+void mouse_button_up(uint x, uint y) {
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	float xf, yf;
@@ -73,8 +73,8 @@ void mouse_button_up(unsigned int x, unsigned int y) {
 }
 
 
-void mouse_button_down(unsigned int x, unsigned int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+void mouse_button_down(uint x, uint y, unsigned short button) {
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	float xf, yf;
@@ -362,7 +362,7 @@ void anim() {
 void physics() {
 	// fixed time step cf https://gafferongames.com/post/fix_your_timestep/
 	tikphysics2= SDL_GetTicks();
-	unsigned int delta_tik= tikphysics2- tikphysics1;
+	uint delta_tik= tikphysics2- tikphysics1;
 	// pour éviter spiral of death
 	if (delta_tik> 250) {
 		delta_tik= 250;

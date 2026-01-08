@@ -9,7 +9,7 @@ InterfaceObject::InterfaceObject() {
 }
 
 
-InterfaceObject::InterfaceObject(GLuint prog_draw, string id, unsigned int i, unsigned int j, unsigned int width, unsigned int height, unsigned int screen_width, unsigned int screen_height) :
+InterfaceObject::InterfaceObject(GLuint prog_draw, string id, uint i, uint j, uint width, uint height, uint screen_width, uint screen_height) :
 	_prog_draw(prog_draw), _id(id), _i(i), _j(j), _width(width), _height(height), _screen_width(screen_width), _screen_height(screen_height), _clicked(false), _visible(true), _type(OBJECT_TYPE_NULL)
 {
 	glGenBuffers(1, &_buffer);
@@ -62,7 +62,7 @@ glm::vec2 InterfaceObject::screen2gl(glm::uvec2 v) {
 }
 
 
-bool InterfaceObject::clicked(unsigned int i, unsigned int j) {
+bool InterfaceObject::clicked(uint i, uint j) {
 	if (!_visible) {
 		return false;
 	}
@@ -80,7 +80,7 @@ VerticalSlider::VerticalSlider() : InterfaceObject() {
 }
 
 
-VerticalSlider::VerticalSlider(GLuint prog_draw, string id, unsigned int i, unsigned int j, unsigned int width, unsigned int height, unsigned int screen_width, unsigned int screen_height, float value_min, float value_max, function<void(VerticalSlider * vs)> f) :
+VerticalSlider::VerticalSlider(GLuint prog_draw, string id, uint i, uint j, uint width, uint height, uint screen_width, uint screen_height, float value_min, float value_max, function<void(VerticalSlider * vs)> f) :
 	InterfaceObject(prog_draw, id, i, j, width, height, screen_width, screen_height), _value_min(value_min), _value_max(value_max), _f(f)
 {
 	_type= OBJECT_TYPE_VERTICAL_SLIDER;
@@ -125,12 +125,12 @@ void VerticalSlider::compute_data() {
 
 
 float VerticalSlider::value2gl() {
-	unsigned int j= (unsigned int)((float)(_j+ _height)- ((_value- _value_min)/ (_value_max- _value_min))* (float)(_height));
+	uint j= (uint)((float)(_j+ _height)- ((_value- _value_min)/ (_value_max- _value_min))* (float)(_height));
 	return screen2gl(glm::uvec2(0, j)).y;
 }
 
 
-void VerticalSlider::update_value(unsigned int j) {
+void VerticalSlider::update_value(uint j) {
 	if (j<_j) {
 		j= _j;
 	}
@@ -148,7 +148,7 @@ Button::Button() {
 }
 
 
-Button::Button(GLuint prog_draw, std::string id, unsigned int i, unsigned int j, unsigned int width, unsigned int height, unsigned int screen_width, unsigned int screen_height, function<void(Button * b)> f) :
+Button::Button(GLuint prog_draw, std::string id, uint i, uint j, uint width, uint height, uint screen_width, uint screen_height, function<void(Button * b)> f) :
 	InterfaceObject(prog_draw, id, i, j, width, height, screen_width, screen_height), _f(f)
 {
 	_type= OBJECT_TYPE_BUTTON;
@@ -197,7 +197,7 @@ Switch::Switch() {
 }
 
 
-Switch::Switch(GLuint prog_draw, std::string id, unsigned int i, unsigned int j, unsigned int width, unsigned int height, unsigned int screen_width, unsigned int screen_height, function<void(Switch * s)> f) :
+Switch::Switch(GLuint prog_draw, std::string id, uint i, uint j, uint width, uint height, uint screen_width, uint screen_height, function<void(Switch * s)> f) :
 	InterfaceObject(prog_draw, id, i, j, width, height, screen_width, screen_height), _active(false), _f(f)
 {
 	_type= OBJECT_TYPE_SWITCH;
@@ -246,7 +246,7 @@ IHM::IHM() {
 }
 
 
-IHM::IHM(GLuint prog_draw, unsigned int screen_width, unsigned int screen_height) : _prog_draw(prog_draw), _screen_width(screen_width), _screen_height(screen_height) {
+IHM::IHM(GLuint prog_draw, uint screen_width, uint screen_height) : _prog_draw(prog_draw), _screen_width(screen_width), _screen_height(screen_height) {
 
 
 }
@@ -281,17 +281,17 @@ void IHM::draw() {
 }
 
 
-void IHM::add_vslider(string id, unsigned int i, unsigned int j, float value_min, float value_max, function<void(VerticalSlider * vs)> f) {
+void IHM::add_vslider(string id, uint i, uint j, float value_min, float value_max, function<void(VerticalSlider * vs)> f) {
 	_vsliders.push_back(new VerticalSlider(_prog_draw, id, i, j, VSLIDER_DEFAULT_WIDTH, VSLIDER_DEFAULT_HEIGHT, _screen_width, _screen_height, value_min, value_max, f));
 }
 
 
-void IHM::add_button(std::string id, unsigned int i, unsigned int j, function<void(Button * b)> f) {
+void IHM::add_button(std::string id, uint i, uint j, function<void(Button * b)> f) {
 	_buttons.push_back(new Button(_prog_draw, id, i, j, BUTTON_DEFAULT_WIDTH, BUTTON_DEFAULT_HEIGHT, _screen_width, _screen_height, f));
 }
 
 
-void IHM::add_switch(std::string id, unsigned int i, unsigned int j, function<void(Switch * s)> f) {
+void IHM::add_switch(std::string id, uint i, uint j, function<void(Switch * s)> f) {
 	_switchs.push_back(new Switch(_prog_draw, id, i, j, BUTTON_DEFAULT_WIDTH, BUTTON_DEFAULT_HEIGHT, _screen_width, _screen_height, f));
 }
 

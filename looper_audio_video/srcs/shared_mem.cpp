@@ -55,7 +55,7 @@ bool sharedata_type::is_null() {
 
 
 // ------------------------------------------------------------------------
-unsigned int time_ms(time_type t) {
+uint time_ms(time_type t) {
 	return chrono::duration_cast<chrono::milliseconds>(t).count();
 }
 
@@ -114,7 +114,7 @@ Receiver::Receiver() {
 	}
 
 	if (DEBUG) {
-		for (unsigned int i=0; i<N_DEBUG; ++i) {
+		for (uint i=0; i<N_DEBUG; ++i) {
 			_debug[i]= time_type::zero();
 		}
 		_debug_start_point= chrono::system_clock::now();
@@ -135,7 +135,7 @@ Receiver::~Receiver() {
 		}
 		ofstream myfile;
 		myfile.open(_debug_path);
-		for (unsigned int i=0; i<N_DEBUG; ++i) {
+		for (uint i=0; i<N_DEBUG; ++i) {
 			if (_debug[i]!= time_type::zero()) {
 				myfile << time_ms(_debug[i]) << "\n";
 			}

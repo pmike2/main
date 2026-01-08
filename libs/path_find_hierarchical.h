@@ -24,7 +24,7 @@ struct HPAEdge {
 
 struct HPAVertex {
 	glm::vec2 _pos;
-	std::unordered_map<unsigned int, HPAEdge> _edges;
+	std::unordered_map<uint, HPAEdge> _edges;
 	bool _active;
 	HPAVertex * _child;
 
@@ -46,19 +46,19 @@ struct HPACluster {
 
 
 struct HPAGraph {
-	std::unordered_map<unsigned int, HPAVertex> _vertices;
-	std::unordered_map<unsigned int, HPAVertex>::iterator _it_v;
-	std::unordered_map<unsigned int, HPAEdge>::iterator _it_e;
+	std::unordered_map<uint, HPAVertex> _vertices;
+	std::unordered_map<uint, HPAVertex>::iterator _it_v;
+	std::unordered_map<uint, HPAEdge>::iterator _it_e;
 	std::vector<HPACluster *> _clusters;
 
 
 	HPAGraph();
 	~HPAGraph();
-	void add_vertex(unsigned int i, float weight=0.0f, glm::vec2 pos= glm::vec2(0.0f, 0.0f));
-	void add_edge(unsigned int i, unsigned int j, float weight=0.0f);
-	void remove_vertex(unsigned int i);
-	void remove_edge(unsigned int i, unsigned int j);
-	std::vector<unsigned int> neighbors(unsigned int i);
+	void add_vertex(uint i, float weight=0.0f, glm::vec2 pos= glm::vec2(0.0f, 0.0f));
+	void add_edge(uint i, uint j, float weight=0.0f);
+	void remove_vertex(uint i);
+	void remove_edge(uint i, uint j);
+	std::vector<uint> neighbors(uint i);
 };
 
 

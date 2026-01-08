@@ -18,7 +18,7 @@ Event::Event() {
 }
 
 
-Event::Event(EventType type, unsigned int t, glm::vec2 position, std::string enemy) :
+Event::Event(EventType type, uint t, glm::vec2 position, std::string enemy) :
 	_type(type), _t(t), _position(position), _enemy(enemy)
 {
 
@@ -70,7 +70,7 @@ Level::Level(std::string json_path, std::chrono::system_clock::time_point t) : _
 	//	auto & event_name= it.key();
 	//	auto & l_textures= it.value();
 	for (auto event : js["events"]) {
-		unsigned int t= event["t"];
+		uint t= event["t"];
 		if (event["type"]== "enemy") {
 			float x= event["position"][0];
 			float y= event["position"][1];

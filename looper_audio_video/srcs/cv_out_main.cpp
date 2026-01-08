@@ -22,13 +22,13 @@ using json = nlohmann::json;
 
 
 // nombre de frames dans 1s d'audio
-const unsigned int SAMPLE_RATE= 44100;
+const uint SAMPLE_RATE= 44100;
 
 // nombre de frames a traiter a chaque appel du callback
-const unsigned int FRAMES_PER_BUFFER= 64;
+const uint FRAMES_PER_BUFFER= 64;
 
 // nombre de frames mis à 1.0 pour déclencher le modulaire
-const unsigned int N_FRAMES_PULSE= 100;
+const uint N_FRAMES_PULSE= 100;
 
 
 
@@ -44,13 +44,13 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 	float * out= (float *)output;
 
 
-	for (unsigned int i=0; i<frame_count; ++i) {
+	for (uint i=0; i<frame_count; ++i) {
 		
-		for (unsigned int idx_channel=0; idx_channel<cvout->_n_output_channels; ++idx_channel) {
+		for (uint idx_channel=0; idx_channel<cvout->_n_output_channels; ++idx_channel) {
 			out[i* cvout->_n_output_channels+ idx_channel]= 0.0f;
 		}
 
-		for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+		for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 			if (cvout->_cv_tracks[idx_track]->_playing) {
 				
 				/*if (DEBUG) {
@@ -64,7 +64,7 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 				}*/
 
 				key_type key= cvout->_cv_tracks[idx_track]->_info._key;
-				unsigned int idx_channel= cvout->get_idx_channel(key);
+				uint idx_channel= cvout->get_idx_channel(key);
 				if (idx_channel== 0) {
 					continue;
 				}
@@ -98,7 +98,7 @@ void interruption_handler(sig_atomic_t s) {
 
 void init(int idx_device_output, string json_path) {
 	signal(SIGINT, interruption_handler);
-	unsigned int n_output_channels= get_n_output_channels(idx_device_output);
+	uint n_output_channels= get_n_output_channels(idx_device_output);
 	cv_out= new CVOut(json_path, n_output_channels);
 	stream= pa_init(-1, idx_device_output, SAMPLE_RATE, FRAMES_PER_BUFFER, pa_callback, cv_out);
 	sio_util= new SocketIOUtil("http://127.0.0.1:3002", "server2client_config_changed", 2000);

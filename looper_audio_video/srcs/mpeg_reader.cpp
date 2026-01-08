@@ -62,7 +62,7 @@ AlphaPolygon::AlphaPolygon() : _fadeout(0.0f), _curve(0.0f), _alpha_max(0.0f), _
 }
 
 
-AlphaPolygon::AlphaPolygon(number * points, unsigned int n_points, float fadeout, float curve, float alpha_max) :
+AlphaPolygon::AlphaPolygon(number * points, uint n_points, float fadeout, float curve, float alpha_max) :
 	_fadeout(fadeout), _curve(curve), _alpha_max(alpha_max), _polygon(Polygon2D())
 {
 	_polygon.set_points(points, n_points, false);
@@ -136,7 +136,7 @@ ReaderConfig::ReaderConfig() {
 }
 
 
-ReaderConfig::ReaderConfig(AlphaConfig alpha_config, TimeConfig time_config, string mpeg_path, unsigned int key) :
+ReaderConfig::ReaderConfig(AlphaConfig alpha_config, TimeConfig time_config, string mpeg_path, uint key) :
 	_alpha_config(alpha_config), _time_config(time_config), _mpeg_path(mpeg_path), _key(key)
 {
 
@@ -183,11 +183,11 @@ ModifierConfig::ModifierConfig(const ModifierConfig & modifier_config) :
 	_time_mult(modifier_config._time_mult), _time_add(modifier_config._time_add), _time_speed(modifier_config._time_speed),
 	_idx_track(modifier_config._idx_track), _key(modifier_config._key)
 {
-	for (unsigned int i=0; i<4; ++i) {
+	for (uint i=0; i<4; ++i) {
 		_movie_mult[i]= modifier_config._movie_mult[i];
 		_alpha_mult[i]= modifier_config._alpha_mult[i];
 	}
-	for (unsigned int i=0; i<2; ++i) {
+	for (uint i=0; i<2; ++i) {
 		_movie_add[i]= modifier_config._movie_add[i];
 		_alpha_add[i]= modifier_config._alpha_add[i];
 	}
@@ -220,10 +220,10 @@ GlobalConfig::GlobalConfig() :
 }
 
 
-GlobalConfig::GlobalConfig(unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_depth, unsigned int alpha_depth0,
-	unsigned int time_width, unsigned int time_height, unsigned int time_height0,
-	unsigned int index_time_width, unsigned int index_movie_width, unsigned int index_movie_width0,
-	unsigned int global_alpha_width, unsigned int modifier_width, unsigned int modifier_height,
+GlobalConfig::GlobalConfig(uint alpha_width, uint alpha_height, uint alpha_depth, uint alpha_depth0,
+	uint time_width, uint time_height, uint time_height0,
+	uint index_time_width, uint index_movie_width, uint index_movie_width0,
+	uint global_alpha_width, uint modifier_width, uint modifier_height,
 	vector<ReaderConfig> reader_configs, vector<ModifierConfig> modifier_configs) :
 	_alpha_width(alpha_width), _alpha_height(alpha_height), _alpha_depth(alpha_depth), _alpha_depth0(alpha_depth0),
 	_time_width(time_width), _time_height(time_height), _time_height0(time_height0),
@@ -321,7 +321,7 @@ MPEGReaders::MPEGReaders() {
 }
 
 
-MPEGReaders::MPEGReaders(unsigned int base_index, int movie_loc, int alpha_loc, int time_loc,
+MPEGReaders::MPEGReaders(uint base_index, int movie_loc, int alpha_loc, int time_loc,
 	int index_time_loc, int index_movie_loc, int global_alpha_loc, int modifier_loc) :
 	_movie_loc(movie_loc),
 	_alpha_data0(0), _alpha_data(0), _alpha_texture_index(base_index+ N_MAX_MOVIES), _alpha_loc(alpha_loc),
@@ -331,12 +331,12 @@ MPEGReaders::MPEGReaders(unsigned int base_index, int movie_loc, int alpha_loc, 
 	_global_alpha_data(0), _global_alpha_texture_index(base_index+ N_MAX_MOVIES+ 4), _global_alpha_loc(global_alpha_loc),
 	_modifier_data(0), _modifier_texture_index(base_index+ N_MAX_MOVIES+ 5), _modifier_loc(modifier_loc)
 {
-	for (unsigned int i=0; i<N_MAX_MOVIES; ++i) {
+	for (uint i=0; i<N_MAX_MOVIES; ++i) {
 		_movies_ids[i]= 0;
 		_movie_textures_indices[i]= base_index+ i;
 	}
 
-	for (unsigned int i=0; i<N_TRACKS; ++i) {
+	for (uint i=0; i<N_TRACKS; ++i) {
 		_index_reader[i]= -1;
 		_note_on[i]= false;
 	}
@@ -364,7 +364,7 @@ void MPEGReaders::set_config(GlobalConfig config) {
 		reload_mpegs= true;
 	}
 	else {
-		for (unsigned int i=0; i<old_mpegs_paths.size(); ++i) {
+		for (uint i=0; i<old_mpegs_paths.size(); ++i) {
 			if (old_mpegs_paths[i]!= new_mpegs_paths[i]) {
 				reload_mpegs= true;
 				break;
@@ -418,7 +418,7 @@ void MPEGReaders::load_json(json js) {
 	}
 
 	vector<ReaderConfig> reader_configs_availables;
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto & js_conf : js["readers"]) {
 
 		AlphaConfig alpha_config;
@@ -430,7 +430,7 @@ void MPEGReaders::load_json(json js) {
 			alpha_polygon._curve= js_poly["curve"].get<float>();
 			alpha_polygon._alpha_max= js_poly["alpha_max"].get<float>();
 			vector<pt_2d> points;
-			for (unsigned int i=0; i<js_poly["polygon"].size(); ++i) {
+			for (uint i=0; i<js_poly["polygon"].size(); ++i) {
 				points.push_back(pt_2d(js_poly["polygon"][i]["x"].get<float>(), js_poly["polygon"][i]["y"].get<float>()));
 			}
 			alpha_polygon._polygon.set_points(points);
@@ -449,10 +449,10 @@ void MPEGReaders::load_json(json js) {
 
 	vector<ReaderConfig> reader_configs;
 	for (auto & mapping : js["keymapping_reader"].items()) {
-		unsigned int key= mapping.key().c_str()[0];
+		uint key= mapping.key().c_str()[0];
 		json js_val= mapping.value();
-		unsigned int mpeg_idx= js_val["mpeg"].get<unsigned int>();
-		unsigned int config_idx= js_val["reader"].get<unsigned int>();
+		uint mpeg_idx= js_val["mpeg"].get<uint>();
+		uint config_idx= js_val["reader"].get<uint>();
 
 		if (mpeg_idx>= mpeg_paths.size()) {
 			cout << "mpeg_idx invalide\n";
@@ -497,10 +497,10 @@ void MPEGReaders::load_json(json js) {
 
 	vector<ModifierConfig> modifier_configs;
 	for (auto & mapping : js["keymapping_modifier"].items()) {
-		unsigned int key= mapping.key().c_str()[0];
+		uint key= mapping.key().c_str()[0];
 		json js_val= mapping.value();
-		unsigned int track_idx= js_val["track"].get<unsigned int>();
-		unsigned int modifier_idx= js_val["modifier"].get<unsigned int>();
+		uint track_idx= js_val["track"].get<uint>();
+		uint modifier_idx= js_val["modifier"].get<uint>();
 
 		if (track_idx>= N_TRACKS) {
 			cout << "track_idx invalide\n";
@@ -517,19 +517,19 @@ void MPEGReaders::load_json(json js) {
 		modifier_configs.push_back(ModifierConfig(modifier_config));
 	}
 
-	unsigned int alpha_width= js["alpha_width"].get<int>();
-	unsigned int alpha_height= js["alpha_height"].get<int>();
-	unsigned int alpha_depth= N_TRACKS;
-	unsigned int alpha_depth0= reader_configs.size();
-	unsigned int time_width= js["time_width"].get<int>();
-	unsigned int time_height= N_TRACKS;
-	unsigned int time_height0= reader_configs.size();
-	unsigned int index_time_width= N_TRACKS;
-	unsigned int index_movie_width= N_TRACKS;
-	unsigned int index_movie_width0= reader_configs.size();
-	unsigned int global_alpha_width= N_TRACKS;
-	unsigned int modifier_width= 32; // + petite puissance de 2 > 17 = (4+ 2+ 1)* 2+ 3
-	unsigned int modifier_height= N_TRACKS;
+	uint alpha_width= js["alpha_width"].get<int>();
+	uint alpha_height= js["alpha_height"].get<int>();
+	uint alpha_depth= N_TRACKS;
+	uint alpha_depth0= reader_configs.size();
+	uint time_width= js["time_width"].get<int>();
+	uint time_height= N_TRACKS;
+	uint time_height0= reader_configs.size();
+	uint index_time_width= N_TRACKS;
+	uint index_movie_width= N_TRACKS;
+	uint index_movie_width0= reader_configs.size();
+	uint global_alpha_width= N_TRACKS;
+	uint modifier_width= 32; // + petite puissance de 2 > 17 = (4+ 2+ 1)* 2+ 3
+	uint modifier_height= N_TRACKS;
 
 	GlobalConfig config(alpha_width, alpha_height, alpha_depth, alpha_depth0, time_width, time_height, time_height0,
 		index_time_width, index_movie_width, index_movie_width0, global_alpha_width, modifier_width, modifier_height,
@@ -543,12 +543,12 @@ void MPEGReaders::randomize() {
 
 	vector<string> mpeg_paths= list_files("../data/video_samples", "mov");
 
-	unsigned int n_reader_configs= 3;
+	uint n_reader_configs= 3;
 	vector<ReaderConfig> reader_configs;
-	for (unsigned int idx_reader=0; idx_reader<n_reader_configs; ++idx_reader) {
+	for (uint idx_reader=0; idx_reader<n_reader_configs; ++idx_reader) {
 		AlphaConfig alpha_config;
-		unsigned int n_polygons= rand_int(1, 10);
-		for (unsigned int i=0; i<n_polygons; ++i) {
+		uint n_polygons= rand_int(1, 10);
+		for (uint i=0; i<n_polygons; ++i) {
 			alpha_config._decrease_speed= rand_float(0.01f, 0.1f);
 
 			float xsize= rand_float(0.01f, 0.3f);
@@ -563,27 +563,27 @@ void MPEGReaders::randomize() {
 		}
 
 		TimeConfig time_config;
-		unsigned int n_checkpoints= rand_int(2, 10);
-		for (unsigned int j=0; j<n_checkpoints; ++j) {
+		uint n_checkpoints= rand_int(2, 10);
+		for (uint j=0; j<n_checkpoints; ++j) {
 			time_config._time_checkpoints.push_back(make_pair(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
 		}
 		time_config._speed= rand_float(0.01f, 0.05f);
 
 		string mpeg_path= mpeg_paths[rand_int(0, mpeg_paths.size()- 1)];
-		unsigned int key= 'a'+ idx_reader;
+		uint key= 'a'+ idx_reader;
 
 		reader_configs.push_back(ReaderConfig(alpha_config, time_config, mpeg_path, key));
 	}
 
-	unsigned int n_modifier_configs= 3;
+	uint n_modifier_configs= 3;
 	vector<ModifierConfig> modifier_configs;
-	for (unsigned int idx_modifier=0; idx_modifier<n_modifier_configs; ++idx_modifier) {
+	for (uint idx_modifier=0; idx_modifier<n_modifier_configs; ++idx_modifier) {
 		ModifierConfig modifier_config;
-		for (unsigned int i=0; i<4; i++) {
+		for (uint i=0; i<4; i++) {
 			modifier_config._movie_mult[i]= rand_float(-2.0f, 2.0f);
 			modifier_config._alpha_mult[i]= rand_float(-2.0f, 2.0f);
 		}
-		for (unsigned int i=0; i<2; i++) {
+		for (uint i=0; i<2; i++) {
 			modifier_config._movie_add[i]= rand_float(-1.0f, 1.0f);
 			modifier_config._alpha_add[i]= rand_float(-1.0f, 1.0f);
 		}
@@ -599,19 +599,19 @@ void MPEGReaders::randomize() {
 		modifier_configs.push_back(ModifierConfig(modifier_config));
 	}
 
-	unsigned int alpha_width= 256;
-	unsigned int alpha_height= 256;
-	unsigned int alpha_depth= N_TRACKS;
-	unsigned int alpha_depth0= n_reader_configs;
-	unsigned int time_width= 512;
-	unsigned int time_height= N_TRACKS;
-	unsigned int time_height0= n_reader_configs;
-	unsigned int index_time_width= N_TRACKS;
-	unsigned int index_movie_width= N_TRACKS;
-	unsigned int index_movie_width0= n_reader_configs;
-	unsigned int global_alpha_width= N_TRACKS;
-	unsigned int modifier_width= 32; // + petite puissance de 2 > 17 = (4+ 2+ 1)* 2+ 3
-	unsigned int modifier_height= N_TRACKS;
+	uint alpha_width= 256;
+	uint alpha_height= 256;
+	uint alpha_depth= N_TRACKS;
+	uint alpha_depth0= n_reader_configs;
+	uint time_width= 512;
+	uint time_height= N_TRACKS;
+	uint time_height0= n_reader_configs;
+	uint index_time_width= N_TRACKS;
+	uint index_movie_width= N_TRACKS;
+	uint index_movie_width0= n_reader_configs;
+	uint global_alpha_width= N_TRACKS;
+	uint modifier_width= 32; // + petite puissance de 2 > 17 = (4+ 2+ 1)* 2+ 3
+	uint modifier_height= N_TRACKS;
 
 	GlobalConfig config(alpha_width, alpha_height, alpha_depth, alpha_depth0, time_width, time_height, time_height0,
 		index_time_width, index_movie_width, index_movie_width0, global_alpha_width, modifier_width, modifier_height,
@@ -626,7 +626,7 @@ void MPEGReaders::load_mpegs() {
 	
 	glGenTextures(N_MAX_MOVIES, _movies_ids);
 	vector<string> mpegs_paths= _config.get_mpegs_paths();
-	for (unsigned int i=0; i<N_MAX_MOVIES; ++i) {
+	for (uint i=0; i<N_MAX_MOVIES; ++i) {
 		if (i>= mpegs_paths.size()) {
 			_movies_ids[i]= _movies_ids[i % mpegs_paths.size()];
 			continue;
@@ -666,7 +666,7 @@ void MPEGReaders::init_arrays() {
 		delete[] _alpha_data0;
 	}
 	_alpha_data0= new float[_config._alpha_width* _config._alpha_height* _config._alpha_depth0];
-	for (unsigned int i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth0; ++i) {
+	for (uint i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth0; ++i) {
 		_alpha_data0[i]= 0.0f;
 	}
 
@@ -674,7 +674,7 @@ void MPEGReaders::init_arrays() {
 		delete[] _alpha_data;
 	}
 	_alpha_data= new float[_config._alpha_width* _config._alpha_height* _config._alpha_depth];
-	for (unsigned int i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth; ++i) {
+	for (uint i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth; ++i) {
 		_alpha_data[i]= 0.0f;
 	}
 
@@ -682,7 +682,7 @@ void MPEGReaders::init_arrays() {
 		delete[] _time_data0;
 	}
 	_time_data0= new float[_config._time_width* _config._time_height0];
-	for (unsigned int i=0; i<_config._time_width* _config._time_height0; ++i) {
+	for (uint i=0; i<_config._time_width* _config._time_height0; ++i) {
 		_time_data0[i]= 0.0f;
 	}
 
@@ -690,7 +690,7 @@ void MPEGReaders::init_arrays() {
 		delete[] _time_data;
 	}
 	_time_data= new float[_config._time_width* _config._time_height];
-	for (unsigned int i=0; i<_config._time_width* _config._time_height; ++i) {
+	for (uint i=0; i<_config._time_width* _config._time_height; ++i) {
 		_time_data[i]= 0.0f;
 	}
 
@@ -698,23 +698,23 @@ void MPEGReaders::init_arrays() {
 		delete[] _index_time_data;
 	}
 	_index_time_data= new float[_config._index_time_width];
-	for (unsigned int i=0; i<_config._index_time_width; ++i) {
+	for (uint i=0; i<_config._index_time_width; ++i) {
 		_index_time_data[i]= 0.0f;
 	}
 
 	if (_index_movie_data0) {
 		delete[] _index_movie_data0;
 	}
-	_index_movie_data0= new unsigned int[_config._index_movie_width0];
-	for (unsigned int i=0; i<_config._index_movie_width0; ++i) {
+	_index_movie_data0= new uint[_config._index_movie_width0];
+	for (uint i=0; i<_config._index_movie_width0; ++i) {
 		_index_movie_data0[i]= 0;
 	}
 
 	if (_index_movie_data) {
 		delete[] _index_movie_data;
 	}
-	_index_movie_data= new unsigned int[_config._index_movie_width];
-	for (unsigned int i=0; i<_config._index_movie_width; ++i) {
+	_index_movie_data= new uint[_config._index_movie_width];
+	for (uint i=0; i<_config._index_movie_width; ++i) {
 		_index_movie_data[i]= 0;
 	}
 
@@ -722,7 +722,7 @@ void MPEGReaders::init_arrays() {
 		delete[] _global_alpha_data;
 	}
 	_global_alpha_data= new float[_config._global_alpha_width];
-	for (unsigned int i=0; i<_config._global_alpha_width; ++i) {
+	for (uint i=0; i<_config._global_alpha_width; ++i) {
 		_global_alpha_data[i]= 0.0f;
 	}
 
@@ -730,19 +730,19 @@ void MPEGReaders::init_arrays() {
 		delete[] _modifier_data;
 	}
 	_modifier_data= new float[_config._modifier_width* _config._modifier_height];
-	for (unsigned int i=0; i<_config._modifier_width* _config._modifier_height; ++i) {
+	for (uint i=0; i<_config._modifier_width* _config._modifier_height; ++i) {
 		_modifier_data[i]= 0.0f;
 	}
 }
 
 
 void MPEGReaders::compute_alpha_data0() {
-	for (unsigned int i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth0; ++i) {
+	for (uint i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth0; ++i) {
 		_alpha_data0[i]= 0.0f;
 	}
 
-	for (unsigned int idx_reader=0; idx_reader<_config._reader_configs.size(); ++idx_reader) {
-		for (unsigned int idx_poly=0; idx_poly<_config._reader_configs[idx_reader]._alpha_config._polygons.size(); ++idx_poly) {
+	for (uint idx_reader=0; idx_reader<_config._reader_configs.size(); ++idx_reader) {
+		for (uint idx_poly=0; idx_poly<_config._reader_configs[idx_reader]._alpha_config._polygons.size(); ++idx_poly) {
 			AlphaPolygon alpha_poly= _config._reader_configs[idx_reader]._alpha_config._polygons[idx_poly];
 
 			float xmin= alpha_poly._polygon._aabb->_pos.x;
@@ -767,11 +767,11 @@ void MPEGReaders::compute_alpha_data0() {
 				jmax=_config. _alpha_height- 1;
 			}
 
-			for (unsigned int i=imin; i<=imax; ++i) {
-				for (unsigned int j=jmin; j<=jmax; ++j) {
+			for (uint i=imin; i<=imax; ++i) {
+				for (uint j=jmin; j<=jmax; ++j) {
 					glm::vec2 pt((float)(i)/ (float)(_config._alpha_width)+ 0.5f/ _config._alpha_width, (float)(j)/ (float)(_config._alpha_height)+ 0.5f/ _config._alpha_height);
 					float d= distance_poly_pt(&alpha_poly._polygon, pt, 0);
-					unsigned int idx= _config._alpha_width* _config._alpha_height* idx_reader+ j* _config._alpha_width+ i;
+					uint idx= _config._alpha_width* _config._alpha_height* idx_reader+ j* _config._alpha_width+ i;
 					if ((alpha_poly._fadeout> 1e-5) && (d<= alpha_poly._fadeout)) {
 						_alpha_data0[idx]+= (1.0f- pow(d/ alpha_poly._fadeout, alpha_poly._curve))* alpha_poly._alpha_max;
 					}
@@ -783,13 +783,13 @@ void MPEGReaders::compute_alpha_data0() {
 		}
 	}
 
-	for (unsigned int i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth0; ++i) {
+	for (uint i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth0; ++i) {
 		if (_alpha_data0[i]> 1.0f) {
 			_alpha_data0[i]= 1.0f;
 		}
 	}
 
-	/*for (unsigned int i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth0; ++i) {
+	/*for (uint i=0; i<_config._alpha_width* _config._alpha_height* _config._alpha_depth0; ++i) {
 		if (_alpha_data0[i]> 0.0) {
 			cout << _alpha_data0[i] << " ; ";
 		}
@@ -799,18 +799,18 @@ void MPEGReaders::compute_alpha_data0() {
 
 
 void MPEGReaders::compute_time_data0() {
-	for (unsigned int i=0; i<_config._time_width* _config._time_height0; ++i) {
+	for (uint i=0; i<_config._time_width* _config._time_height0; ++i) {
 		_time_data0[i]= 0.0f;
 	}
-	for (unsigned int idx_reader=0; idx_reader<_config._reader_configs.size(); ++idx_reader) {
-		for (unsigned int k=0; k<_config._reader_configs[idx_reader]._time_config._time_checkpoints.size()- 1; ++k) {
+	for (uint idx_reader=0; idx_reader<_config._reader_configs.size(); ++idx_reader) {
+		for (uint k=0; k<_config._reader_configs[idx_reader]._time_config._time_checkpoints.size()- 1; ++k) {
 			float t0= _config._reader_configs[idx_reader]._time_config._time_checkpoints[k].first;
 			float t1= _config._reader_configs[idx_reader]._time_config._time_checkpoints[k+ 1].first;
 			float val0= _config._reader_configs[idx_reader]._time_config._time_checkpoints[k].second;
 			float val1= _config._reader_configs[idx_reader]._time_config._time_checkpoints[k+ 1].second;
-			unsigned int j0= (unsigned int)(t0* (float)(_config._time_width));
-			unsigned int j1= (unsigned int)(t1* (float)(_config._time_width));
-			for (unsigned int j=j0; j<j1; ++j) {
+			uint j0= (uint)(t0* (float)(_config._time_width));
+			uint j1= (uint)(t1* (float)(_config._time_width));
+			for (uint j=j0; j<j1; ++j) {
 				_time_data0[_config._time_width* idx_reader+ j]= val0+ ((float)(j)/ (float)(_config._time_width)- t0)* (val1- val0)/ (t1- t0);
 			}
 		}
@@ -820,15 +820,15 @@ void MPEGReaders::compute_time_data0() {
 
 void MPEGReaders::compute_index_movie_data0() {
 	vector<string> mpegs_paths= _config.get_mpegs_paths();
-	for (unsigned int idx_reader=0; idx_reader<_config._reader_configs.size(); ++idx_reader) {
-		unsigned int idx_mpeg= find(mpegs_paths.begin(), mpegs_paths.end(), _config._reader_configs[idx_reader]._mpeg_path)- mpegs_paths.begin();
+	for (uint idx_reader=0; idx_reader<_config._reader_configs.size(); ++idx_reader) {
+		uint idx_mpeg= find(mpegs_paths.begin(), mpegs_paths.end(), _config._reader_configs[idx_reader]._mpeg_path)- mpegs_paths.begin();
 		_index_movie_data0[idx_reader]= idx_mpeg;
 	}
 }
 
 
 void MPEGReaders::compute_modifier_data() {
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		int idx_modifier= get_idx_modifier(idx_track);
 
 		if (idx_modifier< 0) {
@@ -979,7 +979,7 @@ void MPEGReaders::init_modifier_texture() {
 
 void MPEGReaders::prepare2draw() {
 	glUniform1iv(_movie_loc, N_MAX_MOVIES, &_movie_textures_indices[0]);
-	for (unsigned int i=0; i<N_MAX_MOVIES; ++i) {
+	for (uint i=0; i<N_MAX_MOVIES; ++i) {
 		glActiveTexture(GL_TEXTURE0+ _movie_textures_indices[i]);
 		glBindTexture(GL_TEXTURE_3D, _movies_ids[i]);
 	}
@@ -1007,7 +1007,7 @@ void MPEGReaders::prepare2draw() {
 
 
 void MPEGReaders::update() {
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		next_index_modifier(idx_track);
 		if (_index_reader[idx_track]>= 0) {
 			next_index_time(idx_track);
@@ -1019,45 +1019,45 @@ void MPEGReaders::update() {
 }
 
 
-void MPEGReaders::update_alpha_texture(unsigned int idx_track) {
+void MPEGReaders::update_alpha_texture(uint idx_track) {
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _alpha_id);
 	glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, idx_track, _config._alpha_width, _config._alpha_height, 1, GL_RED, GL_FLOAT, _alpha_data+ _config._alpha_width* _config._alpha_height* idx_track);
 }
 
 
-void MPEGReaders::update_time_texture(unsigned int idx_track) {
+void MPEGReaders::update_time_texture(uint idx_track) {
 	glBindTexture(GL_TEXTURE_1D_ARRAY, _time_id);
 	glTexSubImage2D(GL_TEXTURE_1D_ARRAY, 0, 0, idx_track, _config._time_width, 1, GL_RED, GL_FLOAT, _time_data+ _config._time_width* idx_track);
 }
 
 
-void MPEGReaders::update_index_time_texture(unsigned int idx_track) {
+void MPEGReaders::update_index_time_texture(uint idx_track) {
 	glBindTexture(GL_TEXTURE_1D, _index_time_id);
 	glTexSubImage1D(GL_TEXTURE_1D, 0, idx_track, 1, GL_RED, GL_FLOAT, &_index_time_data[idx_track]);
 }
 
 
-void MPEGReaders::update_index_movie_texture(unsigned int idx_track) {
+void MPEGReaders::update_index_movie_texture(uint idx_track) {
 	glBindTexture(GL_TEXTURE_1D, _index_movie_id);
 	glTexSubImage1D(GL_TEXTURE_1D, 0, idx_track, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, &_index_movie_data[idx_track]);
 }
 
 
-void MPEGReaders::update_global_alpha_texture(unsigned int idx_track) {
+void MPEGReaders::update_global_alpha_texture(uint idx_track) {
 	glBindTexture(GL_TEXTURE_1D, _global_alpha_id);
 	glTexSubImage1D(GL_TEXTURE_1D, 0, idx_track, 1, GL_RED, GL_FLOAT, &_global_alpha_data[idx_track]);
 }
 
 
-void MPEGReaders::update_modifier_texture(unsigned int idx_track) {
+void MPEGReaders::update_modifier_texture(uint idx_track) {
 	glBindTexture(GL_TEXTURE_1D_ARRAY, _modifier_id);
 	glTexSubImage2D(GL_TEXTURE_1D_ARRAY, 0, 0, idx_track, _config._modifier_width, 1, GL_RED, GL_FLOAT, _modifier_data+ _config._modifier_width* idx_track);
 }
 
 
-void MPEGReaders::decrease_alpha(unsigned int idx_track) {
+void MPEGReaders::decrease_alpha(uint idx_track) {
 	bool active= false;
-	for (unsigned int i=0; i<_config._alpha_width* _config._alpha_height; ++i) {
+	for (uint i=0; i<_config._alpha_width* _config._alpha_height; ++i) {
 		_alpha_data[_config._alpha_width* _config._alpha_height* idx_track+ i]-= _config._reader_configs[_index_reader[idx_track]]._alpha_config._decrease_speed;
 		if (_alpha_data[_config._alpha_width* _config._alpha_height* idx_track+ i]> 0.0f) {
 			active= true;
@@ -1074,7 +1074,7 @@ void MPEGReaders::decrease_alpha(unsigned int idx_track) {
 }
 
 
-void MPEGReaders::next_index_time(unsigned int idx_track) {
+void MPEGReaders::next_index_time(uint idx_track) {
 	_index_time_data[idx_track]+= _config._reader_configs[_index_reader[idx_track]]._time_config._speed;
 	while (_index_time_data[idx_track]> 1.0f) {
 		_index_time_data[idx_track]-= 1.0f;
@@ -1083,7 +1083,7 @@ void MPEGReaders::next_index_time(unsigned int idx_track) {
 }
 
 
-void MPEGReaders::next_index_modifier(unsigned int idx_track) {
+void MPEGReaders::next_index_modifier(uint idx_track) {
 	int idx_modifier= get_idx_modifier(idx_track);
 	if (idx_modifier< 0) {
 		return;
@@ -1104,7 +1104,7 @@ void MPEGReaders::next_index_modifier(unsigned int idx_track) {
 }
 
 
-void MPEGReaders::note_on(unsigned int idx_track, unsigned int key, float amplitude) {
+void MPEGReaders::note_on(uint idx_track, uint key, float amplitude) {
 	int idx_reader= get_idx_reader(key);
 	if (idx_reader>= 0) {
 		_index_reader[idx_track]= idx_reader;
@@ -1129,7 +1129,7 @@ void MPEGReaders::note_on(unsigned int idx_track, unsigned int key, float amplit
 
 	int idx_modifier= get_idx_modifier_by_key(key);
 	if (idx_modifier>= 0) {
-		unsigned int idx_track_modified= _config._modifier_configs[idx_modifier]._idx_track;
+		uint idx_track_modified= _config._modifier_configs[idx_modifier]._idx_track;
 		_modifier_data[_config._modifier_width* idx_track_modified+ 6 ]= 0.0f;
 		_modifier_data[_config._modifier_width* idx_track_modified+ 13]= 0.0f;
 		_modifier_data[_config._modifier_width* idx_track_modified+ 16]= 0.0f;
@@ -1138,12 +1138,12 @@ void MPEGReaders::note_on(unsigned int idx_track, unsigned int key, float amplit
 }
 
 
-void MPEGReaders::note_off(unsigned int idx_track) {
+void MPEGReaders::note_off(uint idx_track) {
 	_note_on[idx_track]= false;
 }
 
 
-int MPEGReaders::get_idx_reader(unsigned int key) {
+int MPEGReaders::get_idx_reader(uint key) {
 	for (int idx_reader=0; idx_reader<_config._reader_configs.size(); ++idx_reader) {
 		if (_config._reader_configs[idx_reader]._key== key) {
 			return idx_reader;
@@ -1153,7 +1153,7 @@ int MPEGReaders::get_idx_reader(unsigned int key) {
 }
 
 
-int MPEGReaders::get_idx_modifier(unsigned int idx_track) {
+int MPEGReaders::get_idx_modifier(uint idx_track) {
 	for (int idx_modifier=0; idx_modifier<_config._modifier_configs.size(); ++idx_modifier) {
 		if (_config._modifier_configs[idx_modifier]._idx_track== idx_track) {
 			return idx_modifier;
@@ -1163,7 +1163,7 @@ int MPEGReaders::get_idx_modifier(unsigned int idx_track) {
 }
 
 
-int MPEGReaders::get_idx_modifier_by_key(unsigned int key) {
+int MPEGReaders::get_idx_modifier_by_key(uint key) {
 	for (int idx_modifier=0; idx_modifier<_config._modifier_configs.size(); ++idx_modifier) {
 		if (_config._modifier_configs[idx_modifier]._key== key) {
 			return idx_modifier;

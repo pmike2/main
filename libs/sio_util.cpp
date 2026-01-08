@@ -11,7 +11,7 @@ SocketIOUtil::SocketIOUtil() {
 }
 
 
-SocketIOUtil::SocketIOUtil(string url, string msg_id, unsigned int sleep_duration) :
+SocketIOUtil::SocketIOUtil(string url, string msg_id, uint sleep_duration) :
 	_url(url), _msg_id(msg_id), _sleep_duration(sleep_duration), _reload(false), _last_modified(chrono::system_clock::now()), _last_msg("")
 {
 	// a désactiver si on veux avoir des infos
@@ -32,7 +32,7 @@ SocketIOUtil::~SocketIOUtil() {
 bool SocketIOUtil::sleep_complete() {
 	chrono::system_clock::time_point now= chrono::system_clock::now();
 	chrono::system_clock::duration d= now- _last_modified;
-	unsigned int ms= chrono::duration_cast<chrono::milliseconds>(d).count();
+	uint ms= chrono::duration_cast<chrono::milliseconds>(d).count();
 	if (ms> _sleep_duration) {
 		return true;
 	}

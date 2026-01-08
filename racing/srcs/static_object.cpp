@@ -157,7 +157,7 @@ void StaticObject::reinit(pt_2d position, number alpha, pt_2d scale) {
 	_angular_acceleration= 0.0;
 	_torque= 0.0;
 
-	for (unsigned int i=0; i<N_BUMPS; ++i) {
+	for (uint i=0; i<N_BUMPS; ++i) {
 		_bumps[i]= 0.0;
 	}
 

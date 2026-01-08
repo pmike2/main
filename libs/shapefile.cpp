@@ -48,11 +48,11 @@ void read_shp(std::string shp_path, std::vector<ShpEntry *> & entries) {
 		if ((poGeometry!= NULL) && (wkbFlatten(poGeometry->getGeometryType())== wkbPolygon)) {
 			OGRPolygon * poPoly= (OGRPolygon *) poGeometry;
 			OGRLinearRing * ring= poPoly->getExteriorRing();
-			unsigned int n_pts= ring->getNumPoints();
+			uint n_pts= ring->getNumPoints();
 			OGRRawPoint * raw_points= new OGRRawPoint[n_pts];
 			ring->getPoints(raw_points);
 			number points[2* n_pts];
-			for (unsigned int i=0; i<n_pts; ++i) {
+			for (uint i=0; i<n_pts; ++i) {
 				points[2* i]= (number)(raw_points[i].x);
 				points[2* i+ 1]= (number)(raw_points[i].y);
 			}
@@ -61,7 +61,7 @@ void read_shp(std::string shp_path, std::vector<ShpEntry *> & entries) {
 			polygon->update_all();
 		}
 
-		unsigned int compt = 0;
+		uint compt = 0;
 		std::map<std::string, std::string> fields;
 		for (auto && oField: *poFeature) {
 			std::string field_value = oField.GetAsString();

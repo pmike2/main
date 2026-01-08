@@ -37,10 +37,10 @@ void WavIn::load_json(std::string json_path) {
 void WavIn::load_json(json js) {
 	_mapping.clear();
 	for (auto & mapping : js.items()) {
-		unsigned int idx_channel_in= (unsigned int)(stoi(mapping.key()));
+		uint idx_channel_in= (uint)(stoi(mapping.key()));
 		json val= mapping.value();
 		for (auto & event : val) {
-			unsigned int idx_track= event["track"].get<unsigned int>();
+			uint idx_track= event["track"].get<uint>();
 			key_type key= (key_type)(event["key"].get<std::string>().c_str()[0]);
 			float amplitude_factor= event["amplitude_factor"].get<float>();
 
@@ -63,25 +63,25 @@ void WavIn::new_envelope(std::string s) {
 		json js = json::parse(s_split);
 
 		if (js["delta_offset"]!= nullptr) {
-			double delta_offset = js["delta_offset"];
-			double samplerate = js["samplerate"];
+			number delta_offset = js["delta_offset"];
+			number samplerate = js["samplerate"];
 			_delta_event = delta_offset / samplerate;
 		}
 		else {
-			unsigned int idx_freq_group = js["idx_freq_group"];
+			uint idx_freq_group = js["idx_freq_group"];
 			if (!_mapping.count(idx_freq_group)) {
 				continue;
 			}
 			for (auto config : _mapping[idx_freq_group]) {
-				unsigned int idx_amplitude = 0;
+				uint idx_amplitude = 0;
 				for (auto amplitude : js["amplitudes"]) {
-					unsigned int ms = (unsigned int)((double)(idx_amplitude) * _delta_event* 1000.0);
+					uint ms = (uint)((number)(idx_amplitude) * _delta_event* 1000.0);
 					time_point t = now + std::chrono::milliseconds(ms);
 					//std::cout << t.time_since_epoch().count() << " ; ";
 					_events.insert({config._idx_track, config._key, (float)(amplitude) * config._amplitude_factor, t});
 					idx_amplitude++;
 				}
-				unsigned int ms = (unsigned int)((double)(idx_amplitude) * _delta_event* 1000.0);
+				uint ms = (uint)((number)(idx_amplitude) * _delta_event* 1000.0);
 				time_point t = now + std::chrono::milliseconds(ms);
 				//std::cout << t.time_since_epoch().count() << "\n";
 				_events.insert({config._idx_track, NULL_KEY, NULL_AMPLITUDE, t});

@@ -94,7 +94,7 @@ QuadNode::QuadNode() {
 }
 
 
-QuadNode::QuadNode(const glm::vec2 & vmin, const glm::vec2 & vmax, unsigned int depth) : _depth(depth) {
+QuadNode::QuadNode(const glm::vec2 & vmin, const glm::vec2 & vmax, uint depth) : _depth(depth) {
 	// valeurs min , max initiales du z du AABB du node ; la valeur max sera ensuite écrasée avec le z max des objets associés au noeud
 	// mais dans un 1er temps on a besoin d'une AABB assez haute pour le test d'intersection avec les objets qui determinera si 1 objet doit 
 	// etre associé au noeud. ATTENTION de ne pas mettre un zmin trop bas car sinon lors du set_active la caméra intersectera tout le temps l'AABB
@@ -115,7 +115,7 @@ QuadTree::QuadTree() {
 }
 
 
-QuadTree::QuadTree(const glm::vec2 & vmin, const glm::vec2 & vmax, unsigned int depth) : _depth(depth) {
+QuadTree::QuadTree(const glm::vec2 & vmin, const glm::vec2 & vmax, uint depth) : _depth(depth) {
 	_root= new QuadNode(vmin, vmax, 0);
 	recursive_init(_root);
 }
@@ -187,7 +187,7 @@ void QuadTree::recursive_add_position(QuadNode * node, InstancePosRot * pos_rot)
 
 
 // recherche du noeud qui comprend le point v
-QuadNode * QuadTree::find_node(unsigned int depth, const glm::vec2 & v) {
+QuadNode * QuadTree::find_node(uint depth, const glm::vec2 & v) {
 	if (depth> _depth) {
 		cout << "QuadTree::find_node depth " << depth << " non supporte" << endl;
 		return NULL;
@@ -198,7 +198,7 @@ QuadNode * QuadTree::find_node(unsigned int depth, const glm::vec2 & v) {
 }
 
 
-void QuadTree::recursive_find_node(QuadNode * node, unsigned int depth, const glm::vec2 & v, QuadNode ** node_result) {
+void QuadTree::recursive_find_node(QuadNode * node, uint depth, const glm::vec2 & v, QuadNode ** node_result) {
 	if (node->_depth== depth) {
 		*node_result= node;
 	}
@@ -227,8 +227,8 @@ void QuadTree::recursive_find_node(QuadNode * node, unsigned int depth, const gl
 
 
 // a faire une fois que les objets ont été ajoutés a l'arbre a travers add_position
-void QuadTree::set_z_max(float * altis, unsigned int width_n, unsigned int height_n) {
-	unsigned int k= pow(2, _depth);
+void QuadTree::set_z_max(float * altis, uint width_n, uint height_n) {
+	uint k= pow(2, _depth);
 	float step_x= (_root->_aabb->_vmax.x- _root->_aabb->_vmin.x)/ (float)(k);
 	float step_y= (_root->_aabb->_vmax.y- _root->_aabb->_vmin.y)/ (float)(k);
 	// on suppose que l'emprise du terrain est celle de _root
@@ -236,20 +236,20 @@ void QuadTree::set_z_max(float * altis, unsigned int width_n, unsigned int heigh
 	float step_y_level= (_root->_aabb->_vmax.y- _root->_aabb->_vmin.y)/ (float)(height_n);
 
 	// on commence par fixer le z max des feuilles a partir des altis et des objets associés a la feuille
-	for (unsigned int i=0; i<k; ++i) {
-		for (unsigned int j=0; j<k; ++j) {
+	for (uint i=0; i<k; ++i) {
+		for (uint j=0; j<k; ++j) {
 			float xmin= _root->_aabb->_vmin.x+ step_x* (float)(i);
 			float xmax= xmin+ step_x;
 			float ymin= _root->_aabb->_vmin.y+ step_y* (float)(j);
 			float ymax= ymin+ step_y;
-			unsigned int imin= (unsigned int)(floor(xmin/ step_x_level));
-			unsigned int imax= (unsigned int)(ceil(xmax/ step_x_level));
-			unsigned int jmin= (unsigned int)(floor(ymin/ step_y_level));
-			unsigned int jmax= (unsigned int)(ceil(ymax/ step_y_level));
+			uint imin= (uint)(floor(xmin/ step_x_level));
+			uint imax= (uint)(ceil(xmax/ step_x_level));
+			uint jmin= (uint)(floor(ymin/ step_y_level));
+			uint jmax= (uint)(ceil(ymax/ step_y_level));
 			
 			float alti_max= 0.0f;
-			for (unsigned int ii=imin; ii<imax; ++ii) {
-				for (unsigned int jj=jmin; jj<jmax; ++jj) {
+			for (uint ii=imin; ii<imax; ++ii) {
+				for (uint jj=jmin; jj<jmax; ++jj) {
 					if (alti_max< altis[ii+ (width_n+ 1)* jj]) {
 						alti_max= altis[ii+ (width_n+ 1)* jj];
 					}
@@ -276,7 +276,7 @@ void QuadTree::set_z_max(float * altis, unsigned int width_n, unsigned int heigh
 }
 
 
-void QuadTree::recursive_set_z_max(QuadNode * node, unsigned int depth) {
+void QuadTree::recursive_set_z_max(QuadNode * node, uint depth) {
 	if (node->_depth== depth) {
 		node->_aabb->_vmax.z= node->_child_so->_aabb->_vmax.z;
 		if (node->_aabb->_vmax.z< node->_child_se->_aabb->_vmax.z) {
@@ -349,7 +349,7 @@ void QuadTree::print() {
 
 void QuadTree::recursive_print(QuadNode * node) {
 	if (node->_depth== _depth) {
-		unsigned int n_actives= 0;
+		uint n_actives= 0;
 		for (auto pr : node->_pos_rots) {
 			if (pr->_active) {
 				n_actives++;
@@ -424,7 +424,7 @@ void SelectionDraw::update(vector<AnimatedInstance *> animated_instances) {
 	float data[_n_instances* 144];
 	glm::vec3 color(1.0f, 1.0f, 0.0f);
 	
-	unsigned int i=0;
+	uint i=0;
 	for (auto ai : animated_instances) {
 		if (!ai->_pos_rot->_selected) {
 			continue;
@@ -471,7 +471,7 @@ void SelectionDraw::update(vector<AnimatedInstance *> animated_instances) {
 		data[144* i+ 132]= vmax.x; data[144* i+ 133]= vmin.y; data[144* i+ 134]= vmax.z;
 		data[144* i+ 138]= vmin.x; data[144* i+ 139]= vmin.y; data[144* i+ 140]= vmax.z;
 
-		for (unsigned int j=0; j<24; j++) {
+		for (uint j=0; j<24; j++) {
 			data[144* i+ 6* j+ 3]= color.x;
 			data[144* i+ 6* j+ 4]= color.y;
 			data[144* i+ 6* j+ 5]= color.z;
@@ -549,10 +549,10 @@ World::World(GLuint prog_3d_anim, GLuint prog_3d_terrain, GLuint prog_3d_obj, GL
 	// TODO
 	/*_square_size_x= SQUARE_SIZE;
 	_square_size_y= SQUARE_SIZE;
-	_n_squares_x= (unsigned int)(WORLD_SIZE / _square_size_x);
-	_n_squares_y= (unsigned int)(WORLD_SIZE / _square_size_y);
-	for (unsigned int i=0; i<_n_squares_x; ++i) {
-		for (unsigned int j=0; j<_n_squares_y; ++j) {
+	_n_squares_x= (uint)(WORLD_SIZE / _square_size_x);
+	_n_squares_y= (uint)(WORLD_SIZE / _square_size_y);
+	for (uint i=0; i<_n_squares_x; ++i) {
+		for (uint j=0; j<_n_squares_y; ++j) {
 			glm::vec2 vmin= _terrain->_origin+ glm::vec2(i* _square_size_x, j* _square_size_y);
 			glm::vec2 vmax= vmin+ glm::vec2(_square_size_x, _square_size_y);
 			_squares.push_back(new Square(vmin, vmax));
@@ -565,7 +565,7 @@ World::World(GLuint prog_3d_anim, GLuint prog_3d_terrain, GLuint prog_3d_obj, GL
 	_path_finder_debug= new PathFinderDebug(_prog_bbox);
 
 
-	for (unsigned int i=0; i<100; ++i) {
+	for (uint i=0; i<100; ++i) {
 		AnimatedInstance * ai= new AnimatedInstance(_models_pool->get_animated_model("../data/gadjo.xml"), glm::vec3(1.0f, 1.0f, 1.0f), _prog_3d_anim, _prog_basic);
 		glm::quat q;
 		ai->set_pos_rot_scale(glm::vec3(rand_float(-200.0f, 200.0f), rand_float(-200.0f, 200.0f), 0.0f), q, glm::vec3(1.0f));
@@ -634,7 +634,7 @@ void World::draw() {
 }
 
 
-void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
+void World::anim(ViewSystem * view_system, uint tikanim_delta) {
 	if (view_system->_new_single_selection) {
 		//cout << "new_single_selection\n";
 		view_system->_new_single_selection= false;
@@ -678,7 +678,7 @@ void World::anim(ViewSystem * view_system, unsigned int tikanim_delta) {
 				}
 
 				vector<glm::vec2> path;
-				vector<unsigned int> visited;
+				vector<uint> visited;
 				if (_path_finder->path_find(glm::vec2(ai->_pos_rot->_position), glm::vec2(path_find_goal), path, visited)) {
 					_path_finder_debug->update(*_path_finder, path, visited);
 
@@ -805,7 +805,7 @@ void World::randomize(const WorldRandomConfig * world_random_config) {
 	// objets statiques
 	for (auto & si_rand_cfg : world_random_config->_si_random_configs) {
 		_models_pool->add_static_model(si_rand_cfg._path);
-		for (unsigned int i=0; i<si_rand_cfg._compt; ++i) {
+		for (uint i=0; i<si_rand_cfg._compt; ++i) {
 			size_factor_xy= rand_float(si_rand_cfg._size_factor_min_xy, si_rand_cfg._size_factor_max_xy);
 			if (si_rand_cfg._conserve_ratio) {
 				size_factor_z= size_factor_xy;
@@ -825,7 +825,7 @@ void World::randomize(const WorldRandomConfig * world_random_config) {
 	// objets animés
 	for (auto & ai_rand_cfg : world_random_config->_ai_random_configs) {
 		_models_pool->add_animated_model(ai_rand_cfg._path);
-		for (unsigned int i=0; i<ai_rand_cfg._compt; ++i) {
+		for (uint i=0; i<ai_rand_cfg._compt; ++i) {
 			size_factor_xy= rand_float(ai_rand_cfg._size_factor_min_xy, ai_rand_cfg._size_factor_max_xy);
 			if (ai_rand_cfg._conserve_ratio) {
 				size_factor_z= size_factor_xy;
@@ -1028,9 +1028,9 @@ void World::read(std::string ch_directory) {
 	float height_step= stof(height_step_node->value());
 
 	xml_node<> * n_subs_x_node= config_node->first_node("n_subs_x");
-	unsigned int n_subs_x= stoi(n_subs_x_node->value());
+	uint n_subs_x= stoi(n_subs_x_node->value());
 	xml_node<> * n_subs_y_node= config_node->first_node("n_subs_y");
-	unsigned int n_subs_y= stoi(n_subs_y_node->value());
+	uint n_subs_y= stoi(n_subs_y_node->value());
 
 	const TerrainConfig * config= new TerrainConfig(origin, width_sub, height_sub, width_step, height_step, n_subs_x, n_subs_y);
 	_terrain= new Terrain(_prog_3d_terrain, config, NULL, ch_alti_data);
@@ -1085,9 +1085,9 @@ void World::read(std::string ch_directory) {
 	// -----------------------------------------------------------------
 	xml_node<> * path_finder_node= root_node->first_node("path_finder");
 	xml_node<> * n_ligs_node= path_finder_node->first_node("n_ligs");
-	unsigned int n_ligs= stoi(n_ligs_node->value());
+	uint n_ligs= stoi(n_ligs_node->value());
 	xml_node<> * n_cols_node= path_finder_node->first_node("n_cols");
-	unsigned int n_cols= stoi(n_cols_node->value());
+	uint n_cols= stoi(n_cols_node->value());
 	xml_node<> * obstacles_node= path_finder_node->first_node("obstacles");
 	string shp_path= obstacles_node->value();
 	
@@ -1104,7 +1104,7 @@ void World::statics2obstacles() {
 
 		// a remplacer par emprise ?
 		float pts[16];
-		for (unsigned int i=0; i<8; ++i) {
+		for (uint i=0; i<8; ++i) {
 			pts[2* i+ 0]= si->_pos_rot->_bbox->_pts[i].x;
 			pts[2* i+ 1]= si->_pos_rot->_bbox->_pts[i].y;
 		}
@@ -1158,8 +1158,8 @@ void World::print() {
 	}
 	cout << "ai_actives=" << n_ai_actives << " / " << _animated_instances.size() << endl;
 
-	unsigned int n_si_actives= 0;
-	unsigned int n_total= 0;
+	uint n_si_actives= 0;
+	uint n_total= 0;
 	for (auto sg : _static_groups) {
 		for (auto pr : sg->_pos_rots) {
 			n_total++;
@@ -1211,7 +1211,7 @@ AnimatedInstance * World::get_hero() {
 		}
 	}
 
-	for (unsigned int idx=0; idx<_terrain->_config->_n_subs; ++idx) {
+	for (uint idx=0; idx<_terrain->_config->_n_subs; ++idx) {
 		BBoxDraw * bbd= new BBoxDraw(_prog_bbox, _terrain->_subterrains[idx]->_aabb, TERRAIN_BBOX_COLOR);
 		_static_bbox_draws.push_back(bbd);
 	}

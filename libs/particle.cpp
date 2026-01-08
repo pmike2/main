@@ -53,7 +53,7 @@ ParticleSystem::~ParticleSystem() {
 
 
 void ParticleSystem::fill_texture_array() {
-	unsigned int n_tex= 0;
+	uint n_tex= 0;
 	for (auto model : _models) {
 		for (auto texture : model.second->_textures) {
 			n_tex+= texture.second->_pngs.size();
@@ -67,7 +67,7 @@ void ParticleSystem::fill_texture_array() {
 	
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto model : _models) {
 		//std::cout << "\nmodel=" << model.first << "\n";
 		for (auto texture : model.second->_textures) {

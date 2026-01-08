@@ -43,10 +43,10 @@ void LooperSDL::key_down(SDL_Keycode key) {
 
 	SDL_Keymod key_mod= SDL_GetModState();
 	if (KMOD_LSHIFT & key_mod) {
-		for (unsigned int i=SDLK_KP_1; i<=SDLK_KP_9; ++i) {
+		for (uint i=SDLK_KP_1; i<=SDLK_KP_9; ++i) {
 			if (_input_state->get_key(i)) {
 				if (_ratio_numerator> 0) {
-					unsigned int ratio_denominator= i- SDLK_KP_1+ 1;
+					uint ratio_denominator= i- SDLK_KP_1+ 1;
 					if (_current_track!= _tracks[1]) {
 						_current_track->set_ratio_to_master_track(_tracks[1], ratio_type(_ratio_numerator, ratio_denominator));
 					}
@@ -103,7 +103,7 @@ void LooperSDL::key_down(SDL_Keycode key) {
 
 	if (event_key(key)) {
 		amplitude_type amplitude= 1.0f;
-		for (unsigned int i=SDLK_KP_1; i<=SDLK_KP_9; ++i) {
+		for (uint i=SDLK_KP_1; i<=SDLK_KP_9; ++i) {
 			if (_input_state->get_key(i)) {
 				amplitude= (amplitude_type)(i- SDLK_KP_1+ 1)/ 9.0f;
 				break;
@@ -139,9 +139,9 @@ void LooperSDL::draw() {
 	SDL_RenderClear(_renderer);
 
 	time_type now_time= now();
-	unsigned int track_height= _screen_height/ N_MAX_TRACKS;
+	uint track_height= _screen_height/ N_MAX_TRACKS;
 
-	for (unsigned int idx_track=1; idx_track<N_MAX_TRACKS; ++idx_track) {
+	for (uint idx_track=1; idx_track<N_MAX_TRACKS; ++idx_track) {
 		int y= (int)((float)(_screen_height* idx_track)/ (float)(N_MAX_TRACKS));
 
 		// rect track
@@ -152,7 +152,7 @@ void LooperSDL::draw() {
 		}
 
 		// events
-		for (unsigned int j=0; j<N_MAX_EVENTS; ++j) {
+		for (uint j=0; j<N_MAX_EVENTS; ++j) {
 			if (!_tracks[idx_track]->_events[j]->is_null()) {
 				int x= (int)((float)(_screen_width* time_ms(_tracks[idx_track]->_events[j]->_data._t_start))/ (float)(time_ms(_tracks[idx_track]->_duration)));
 				int w= (int)((float)(_screen_width* (time_ms(_tracks[idx_track]->_events[j]->_data._t_end)- time_ms(_tracks[idx_track]->_events[j]->_data._t_start)))/ (float)(time_ms(_tracks[idx_track]->_duration)));
@@ -179,7 +179,7 @@ void LooperSDL::draw() {
 
 		// repères quantize
 		if (_tracks[idx_track]->_quantize) {
-			for (unsigned int i=0; i<_tracks[idx_track]->_quantize; ++i) {
+			for (uint i=0; i<_tracks[idx_track]->_quantize; ++i) {
 				int x= (int)((float)(i* _screen_width)/ (float)(_tracks[idx_track]->_quantize));
 				SDL_Color c;
 				c.r= 150; c.g= 150; c.b= 150; c.a= 150;

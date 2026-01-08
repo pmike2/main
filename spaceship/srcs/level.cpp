@@ -162,7 +162,7 @@ LevelMap::LevelMap() {
 }
 
 
-LevelMap::LevelMap(GLuint prog_draw, unsigned int n_ships) : _prog_draw(prog_draw), _n_ships(n_ships) {
+LevelMap::LevelMap(GLuint prog_draw, uint n_ships) : _prog_draw(prog_draw), _n_ships(n_ships) {
 	_data= new float[_n_ships* 3* (2+ 3)];
 	
 	glGenBuffers(1, &_buffer);
@@ -212,7 +212,7 @@ void LevelMap::draw() {
 
 void LevelMap::anim(std::vector<Ship *> & ships) {
 	
-	for (unsigned int i=0; i<ships.size(); ++i) {
+	for (uint i=0; i<ships.size(); ++i) {
 		glm::vec2 center= glm::vec2(ships[i]->_rigid_body._position/ WORLD_SIZE); // entre -1 et 1
 		glm::vec2 fwd= glm::normalize(glm::vec2(ships[i]->_rigid_body._rotation_matrix* glm::vec3(0.0f, 1.0f, 0.0f)));
 		

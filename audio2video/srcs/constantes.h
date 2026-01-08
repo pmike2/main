@@ -12,7 +12,7 @@
 
 
 // en ms; temps entre 2 anims
-const unsigned int DELTA_ANIM= 1;
+const uint DELTA_ANIM= 1;
 
 // etat souris
 enum MouseDownState {MOUSE_DOWN_NULL, MOUSE_DOWN_SPECTRUM, MOUSE_DOWN_WAVE, MOUSE_DOWN_ART};
@@ -59,7 +59,7 @@ const float WAVE_UNSELECTED_COLOR[]= {0.0f, 1.0f, 1.0f};
 const float WAVE_SELECTED_STRENGTH= 1.0f;
 const float WAVE_UNSELECTED_STRENGTH= 0.5f;
 const float WAVE_MULT_FACTOR= 30.0f;
-const unsigned int WAVE_N_VERTICES= 100000;
+const uint WAVE_N_VERTICES= 100000;
 const long WAVE_SAMPLE_WIDTH_INIT= 10000;
 const long WAVE_SAMPLE_WIDTH_MAX= 200000;
 const long WAVE_SAMPLE_WIDTH_MIN= 1000;
@@ -115,7 +115,7 @@ const float VARIANCE_TRESH= 100.0f;
 // temps d'enregistrement en secondes
 const float RECORD_TIME= 5.0f;
 // nombre de samples d'enregistrement ; on tronque à un multiple de SAMPLES_PER_BUFFER
-const long N_SAMPLES_RECORD= ((SAMPLE_RATE* (unsigned int)(RECORD_TIME))/ SAMPLES_PER_BUFFER)* SAMPLES_PER_BUFFER;
+const long N_SAMPLES_RECORD= ((SAMPLE_RATE* (uint)(RECORD_TIME))/ SAMPLES_PER_BUFFER)* SAMPLES_PER_BUFFER;
 
 // mode audio
 enum AudioMode {AUDIO_STOP, AUDIO_PLAYBACK, AUDIO_RECORD};
@@ -166,6 +166,6 @@ const struct RandomIntMinMax MINMAX_N_OBJS= {8, 16};
 const struct RandomIntMinMax MINMAX_N_MORPHS= {4, 6};
 const struct RandomIntMinMax MINMAX_N_CONNS= {3, 8};
 // proba qu'un morph affecte un obj
-const unsigned int CONN_CHANCE= 5;
+const uint CONN_CHANCE= 5;
 
 #endif

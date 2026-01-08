@@ -125,7 +125,7 @@ AudioSampler::AudioSampler() {
 
 AudioSampler::AudioSampler(string json_path) {
 	_sample_pool= new AudioSamplePool();
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		_track_samples[idx_track]= new AudioTrackSample();
 	}
 
@@ -136,7 +136,7 @@ AudioSampler::AudioSampler(string json_path) {
 
 
 AudioSampler::~AudioSampler() {
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		delete _track_samples[idx_track];
 	}
 	for (const auto &x : _map) {
@@ -191,14 +191,14 @@ void AudioSampler::load_json(json js) {
 }
 
 
-void AudioSampler::note_on(unsigned int idx_track) {
+void AudioSampler::note_on(uint idx_track) {
 	_track_samples[idx_track]->_info= _data[idx_track];
 	_track_samples[idx_track]->_frame_idx= 0;
 	_track_samples[idx_track]->_playing= true;
 }
 
 
-void AudioSampler::note_off(unsigned int idx_track) {
+void AudioSampler::note_off(uint idx_track) {
 	_track_samples[idx_track]->_info.set_null();
 	_track_samples[idx_track]->_frame_idx= 0;
 	_track_samples[idx_track]->_playing= false;

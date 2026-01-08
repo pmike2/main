@@ -45,7 +45,7 @@ bool aabb2d_contains_aabb2d(const AABB_2D * big_aabb, const AABB_2D * small_aabb
 bool ray_intersects_aabb2d(const pt_2d & ray_origin, const pt_2d & ray_dir, const AABB_2D * aabb, pt_2d & contact_pt, pt_2d & contact_normal, number & t_hit_near);
 
 // tests BBOX
-bool bbox2d_intersects_bbox2d(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1);
+bool bbox2d_intersects_bbox2d(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * axis, number * overlap, uint * idx_pt, bool * is_pt_in_poly1);
 bool pt_in_bbox2d(const pt_2d & pt, const BBox_2D * bbox);
 std::pair<BBOX_SIDE, BBOX_CORNER> bbox2d_side_corner(const BBox_2D * bbox, const pt_2d & pt);
 
@@ -58,7 +58,7 @@ bool distance_segment_pt(const pt_2d & seg1, const pt_2d & seg2, const pt_2d & p
 // tests Polygon
 bool is_pt_inside_poly(const pt_2d & pt, const Polygon2D * poly);
 bool is_poly_inside_poly(const Polygon2D * small_poly, const Polygon2D * big_poly);
-bool poly_intersects_poly(const Polygon2D * poly1, const Polygon2D * poly2, pt_2d * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1);
+bool poly_intersects_poly(const Polygon2D * poly1, const Polygon2D * poly2, pt_2d * axis, number * overlap, uint * idx_pt, bool * is_pt_in_poly1);
 bool segment_intersects_poly(const pt_2d & pt_begin, const pt_2d & pt_end, const Polygon2D * poly, pt_2d * result);
 bool segment_intersects_poly_multi(const pt_2d & pt_begin, const pt_2d & pt_end, const Polygon2D * poly, std::vector<pt_2d> * result);
 number distance_poly_pt(const Polygon2D * poly, const pt_2d & pt, pt_2d * proj);

@@ -64,13 +64,13 @@ public:
 	// input
 	bool key_down(InputState * input_state, SDL_Keycode key, std::chrono::system_clock::time_point t);
 	bool key_up(InputState * input_state, SDL_Keycode key, std::chrono::system_clock::time_point t);
-	bool joystick_down(unsigned int button_idx, std::chrono::system_clock::time_point t);
-	bool joystick_up(unsigned int button_idx, std::chrono::system_clock::time_point t);
-	bool joystick_axis(unsigned int axis_idx, int value, std::chrono::system_clock::time_point t);
+	bool joystick_down(uint button_idx, std::chrono::system_clock::time_point t);
+	bool joystick_up(uint button_idx, std::chrono::system_clock::time_point t);
+	bool joystick_axis(uint axis_idx, int value, std::chrono::system_clock::time_point t);
 	
 	// événements
 	void add_level_events(std::chrono::system_clock::time_point t);
-	void set_level(unsigned int level_idx, std::chrono::system_clock::time_point t);
+	void set_level(uint level_idx, std::chrono::system_clock::time_point t);
 	void add_rand_enemy(std::chrono::system_clock::time_point t);
 	void reinit(std::chrono::system_clock::time_point t);
 	void gameover();
@@ -80,20 +80,20 @@ public:
 	void write_highest_scores();
 
 	// music; les static sont nécessaires à cause du callback géré par Mix_HookMusicFinished
-	static void set_music(std::string music_path, unsigned int music_fade_in_ms=MUSIC_FADE_IN_MS);
-	void set_music_with_fadeout(std::string music_path, unsigned int music_fade_out_ms=MUSIC_FADE_OUT_MS, unsigned int music_fade_in_ms=MUSIC_FADE_IN_MS);
+	static void set_music(std::string music_path, uint music_fade_in_ms=MUSIC_FADE_IN_MS);
+	void set_music_with_fadeout(std::string music_path, uint music_fade_out_ms=MUSIC_FADE_OUT_MS, uint music_fade_in_ms=MUSIC_FADE_IN_MS);
 	static void music_finished_callback();
 
 
 	std::map<std::string, ShipModel *> _models; // modèles
 	std::vector<Ship *> _ships; // vaisseaux
 	std::vector<Level *> _levels; // niveaux
-	unsigned int _current_level_idx; // indice niveau courant
+	uint _current_level_idx; // indice niveau courant
 	glm::vec2 _pt_min, _pt_max; // emprise niveaux
 	GameMode _mode; // mode de jeu
 
-	std::vector<std::pair<std::string, unsigned int> > _highest_scores; // meilleurs scores
-	unsigned int _score; // score du joueur
+	std::vector<std::pair<std::string, uint> > _highest_scores; // meilleurs scores
+	uint _score; // score du joueur
 	int _new_highest_idx; // indice dans la liste des meilleurs scores du nouveau score
 	int _new_highest_char_idx; // indice du char sur les 3 dispos du nouveau meilleur score
 

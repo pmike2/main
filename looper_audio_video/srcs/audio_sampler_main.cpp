@@ -24,10 +24,10 @@ using json = nlohmann::json;
 
 
 // nombre de frames dans 1s d'audio
-const unsigned int SAMPLE_RATE= 44100;
+const uint SAMPLE_RATE= 44100;
 
 // nombre de frames a traiter a chaque appel du callback
-const unsigned int FRAMES_PER_BUFFER= 64;
+const uint FRAMES_PER_BUFFER= 64;
 
 
 PaStream * stream;
@@ -41,11 +41,11 @@ int pa_callback(const void * input, void * output, unsigned long frame_count, co
 	//float * in= (float *)input;
 	float * out= (float *)output;
 
-	for (unsigned int i=0; i<frame_count; ++i) {
+	for (uint i=0; i<frame_count; ++i) {
 		out[2* i+ 0]= 0.0f;
 		out[2* i+ 1]= 0.0f;
 
-		for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+		for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 			if (s->_track_samples[idx_track]->_playing) {
 				
 				if (DEBUG) {

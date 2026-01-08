@@ -16,7 +16,7 @@ ExpressionTexture::ExpressionTexture() {
 }
 
 
-ExpressionTexture::ExpressionTexture(std::string texture_path, unsigned int n_ms) : _texture_path(texture_path), _n_ms(n_ms) {
+ExpressionTexture::ExpressionTexture(std::string texture_path, uint n_ms) : _texture_path(texture_path), _n_ms(n_ms) {
 	
 }
 
@@ -62,7 +62,7 @@ Driver::Driver(std::string json_path) : _current_expression_name(NORMAL_EXPRESSI
 		for (auto tex : l_tex) {
 			std::string texture_rel_path= tex["texture"];
 			std::string texture_path= dirname(_json_path)+ "/textures/"+ texture_rel_path;
-			unsigned int n_ms= 0;
+			uint n_ms= 0;
 			if (tex["n_ms"]!= nullptr) {
 				n_ms= tex["n_ms"];
 			}

@@ -27,8 +27,8 @@ CVOut::CVOut() {
 }
 
 
-CVOut::CVOut(string json_path, unsigned int n_output_channels) : _n_output_channels(n_output_channels) {
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+CVOut::CVOut(string json_path, uint n_output_channels) : _n_output_channels(n_output_channels) {
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		_cv_tracks[idx_track]= new CVTrack();
 	}
 
@@ -38,7 +38,7 @@ CVOut::CVOut(string json_path, unsigned int n_output_channels) : _n_output_chann
 
 
 CVOut::~CVOut() {
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		delete _cv_tracks[idx_track];
 	}
 }
@@ -58,26 +58,26 @@ void CVOut::load_json(json js) {
 		key_type key= (key_type)(mapping.key().c_str()[0]);
 		json val= mapping.value();
 
-		_map[key]= val["channel"].get<unsigned int>();
+		_map[key]= val["channel"].get<uint>();
 	}
 }
 
 
-void CVOut::note_on(unsigned int idx_track) {
+void CVOut::note_on(uint idx_track) {
 	_cv_tracks[idx_track]->_info= _data[idx_track];
 	_cv_tracks[idx_track]->_frame_idx= 0;
 	_cv_tracks[idx_track]->_playing= true;
 }
 
 
-void CVOut::note_off(unsigned int idx_track) {
+void CVOut::note_off(uint idx_track) {
 	_cv_tracks[idx_track]->_info.set_null();
 	_cv_tracks[idx_track]->_frame_idx= 0;
 	_cv_tracks[idx_track]->_playing= false;
 }
 
 
-unsigned int CVOut::get_idx_channel(key_type key) {
+uint CVOut::get_idx_channel(key_type key) {
 	if (!_map.count(key)) {
 		return 0;
 	}

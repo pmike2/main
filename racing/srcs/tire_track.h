@@ -9,9 +9,9 @@
 
 
 // nombre max de traces de pneus
-const unsigned int N_MAX_TIRE_TRACKS= 2000;
+const uint N_MAX_TIRE_TRACKS= 2000;
 // écart en ms entre 2 créations de trace de pneu
-const unsigned int TIRE_TRACKS_DELTA_T= 20;
+const uint TIRE_TRACKS_DELTA_T= 20;
 // opacité initiale d'une trace
 const number TIRE_TRACK_OPACITY_INIT= 0.9;
 // décrément d'opacité
@@ -27,13 +27,13 @@ class TireTrack {
 public:
 	TireTrack();
 	~TireTrack();
-	void reinit(pt_2d position, number alpha, pt_2d scale, unsigned int idx_texture);
+	void reinit(pt_2d position, number alpha, pt_2d scale, uint idx_texture);
 	void anim();
 
 
 	BBox_2D * _bbox; // BBox englobante
 	number _opacity; // opacité
-	unsigned int _idx_texture; // à quel idx de png se réfère t'elle
+	uint _idx_texture; // à quel idx de png se réfère t'elle
 	bool _is_alive; // active ?
 };
 

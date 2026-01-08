@@ -19,9 +19,9 @@ public:
 	void key_down(SDL_Keycode key);
 	void key_up(SDL_Keycode key);
 	bool get_key(SDL_Keycode key);
-	void joystick_down(unsigned int button_idx);
-	void joystick_up(unsigned int button_idx);
-	void joystick_axis(unsigned int axis_idx, int value);
+	void joystick_down(uint button_idx);
+	void joystick_up(uint button_idx);
+	void joystick_axis(uint axis_idx, int value);
 
 
 	bool _left_mouse;

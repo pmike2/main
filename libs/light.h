@@ -14,7 +14,7 @@
 
 // constantes --------------------------------------------------------------------------------
 // ATTENTION il faut que n_lights dans le shader soit = à N_MAX_LIGHTS !!!
-const unsigned int N_MAX_LIGHTS= 8;
+const uint N_MAX_LIGHTS= 8;
 
 const char * const LIGHT_NAMES[]= {
  "lights[0].light_color",
@@ -121,7 +121,7 @@ public:
 	GLint  _ubo_size;
 	GLuint _light_binding_point;
 	char * _lights_buff;
-	unsigned int _n_attrs;
+	uint _n_attrs;
 	GLuint * _indices;
 	GLint * _offsets;
 	GLint _light_size;

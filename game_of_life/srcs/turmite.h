@@ -30,9 +30,9 @@ Rotation rand_rotation();
 
 
 struct Rule {
-	unsigned int _write_color;
+	uint _write_color;
 	Rotation _rotation;
-	unsigned int _next_machine_state;
+	uint _next_machine_state;
 };
 
 
@@ -49,9 +49,9 @@ public:
 	bool mouse_motion();
 
 
-	unsigned int _n_machine_states;
-	unsigned int _n_cell_states;
-	unsigned int _current_machine_state;
+	uint _n_machine_states;
+	uint _n_cell_states;
+	uint _current_machine_state;
 	Cell * _current_cell;
 	Orientation _orientation;
 	Rule * _rules;

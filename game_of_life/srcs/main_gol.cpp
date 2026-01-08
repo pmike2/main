@@ -25,7 +25,7 @@ ScreenGL * screengl;
 
 bool done= false;
 
-unsigned int val_fps, compt_fps, tikfps1, tikfps2;
+uint val_fps, compt_fps, tikfps1, tikfps2;
 
 GLuint g_vao;
 
@@ -33,7 +33,7 @@ GOL * gol;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (gol->mouse_motion()) {
@@ -43,7 +43,7 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 
 
 void mouse_button_down(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (gol->mouse_button_down()) {

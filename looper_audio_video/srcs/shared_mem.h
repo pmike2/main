@@ -8,7 +8,7 @@
 
 
 typedef std::chrono::system_clock::duration time_type;
-typedef unsigned int key_type;
+typedef uint key_type;
 typedef float amplitude_type;
 
 struct sharedata_type {
@@ -27,14 +27,14 @@ struct sharedata_type {
 
 
 const bool DEBUG= false;
-const unsigned int N_DEBUG= 1000;
-const unsigned int DATA_SIZE= sizeof(sharedata_type)* N_TRACKS;
+const uint N_DEBUG= 1000;
+const uint DATA_SIZE= sizeof(sharedata_type)* N_TRACKS;
 const std::string SHARED_MEM_OBJ_NAME= "/shmem-looper";
 const key_type NULL_KEY= 0; 
 const amplitude_type NULL_AMPLITUDE= 0.0f;
 
 
-unsigned int time_ms(time_type t);
+uint time_ms(time_type t);
 std::string time_print(time_type t);
 
 
@@ -55,15 +55,15 @@ public:
 	void init_data();
 	void close_data();
 	void update();
-	virtual void note_on(unsigned int idx_track) = 0;
-	virtual void note_off(unsigned int idx_track) = 0;
+	virtual void note_on(uint idx_track) = 0;
+	virtual void note_off(uint idx_track) = 0;
 
 	sharedata_type * _data;
 	sharedata_type * _data_current;
 	int _fd;
 
 	time_type _debug[N_DEBUG];
-	unsigned int _compt_debug;
+	uint _compt_debug;
 	std::chrono::system_clock::time_point _debug_start_point;
 	std::string _debug_path;
 };

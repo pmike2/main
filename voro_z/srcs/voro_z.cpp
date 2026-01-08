@@ -286,13 +286,13 @@ void VoroZ::init_texture_diffuse() {
 	glActiveTexture(GL_TEXTURE0+ 0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id_diffuse);
 
-	unsigned int n_textures= 0;
+	uint n_textures= 0;
 	for (auto biome : _biomes) {
 		n_textures+= biome.second->_diffuse_pngs.size();
 	}
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, n_textures, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto biome : _biomes) {
 		biome.second->_diffuse_texture_idx_start= compt;
 		biome.second->_diffuse_texture_idx_current= float(compt);
@@ -336,14 +336,14 @@ void VoroZ::init_texture_normal() {
 	glActiveTexture(GL_TEXTURE0+ 1);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id_normal);
 
-	unsigned int n_textures= 0;
+	uint n_textures= 0;
 	for (auto biome : _biomes) {
 		n_textures+= biome.second->_normal_pngs.size();
 	}
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, n_textures, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glGenerateMipmap(GL_TEXTURE_2D_ARRAY); // allocation mipmaps
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto biome : _biomes) {
 		biome.second->_normal_texture_idx_start= compt;
 		biome.second->_normal_texture_idx_current= float(compt);
@@ -393,7 +393,7 @@ void VoroZ::init_texture_parallax() {
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEX_SIZE, TEX_SIZE, _biomes.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 	glGenerateMipmap(GL_TEXTURE_2D_ARRAY); // allocation mipmaps
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto biome : _biomes) {
 		biome.second->_parallax_texture_idx= compt;
 		SDL_Surface * surface= IMG_Load(biome.second->_parallax_texture_path.c_str());
@@ -437,7 +437,7 @@ void VoroZ::init_light() {
 
 
 void VoroZ::init_dcel() {
-	const unsigned int n_pts= 1000;
+	const uint n_pts= 1000;
 	const number xmin= -100.0;
 	const number xmax= 100.0;
 	const number ymin= -100.0;
@@ -445,10 +445,10 @@ void VoroZ::init_dcel() {
 	const number deviation= 20.0;
 	const number zmin= 0.0;
 	const number zmax= 50.0;
-	const unsigned int n_holes= 4;
+	const uint n_holes= 4;
 	const number hole_radius= 30.0;
 	const number lowfilter_cut= 0.7;
-	const unsigned int lowfilter_iter= 7;
+	const uint lowfilter_iter= 7;
 	const number water_threshold= 5.0;
 	const number amplification= 1.0;
 
@@ -459,14 +459,14 @@ void VoroZ::init_dcel() {
 	std::mt19937 gen{rd()};
 	std::normal_distribution<number> d{0.0, deviation};
 
-	for (unsigned int i=0; i<n_pts; ++i) {
+	for (uint i=0; i<n_pts; ++i) {
 		//pt_2d pt(rand_number(xmin, xmax), rand_number(ymin, ymax));
 		pt_2d pt(d(gen), d(gen));
 		pts.push_back(pt);
 	}
 	
 	// trous
-	for (unsigned int i=0; i<n_holes; ++i) {
+	for (uint i=0; i<n_holes; ++i) {
 		//pt_2d center(rand_number(xmin, xmax), rand_number(ymin, ymax));
 		pt_2d center(d(gen), d(gen));
 		pts.erase(std::remove_if(pts.begin(), pts.end(), [center, hole_radius](pt_2d pt){
@@ -488,7 +488,7 @@ void VoroZ::init_dcel() {
 	}
 
 	// filtre passe-bas
-	for (unsigned int i=0; i<lowfilter_iter; ++i) {
+	for (uint i=0; i<lowfilter_iter; ++i) {
 		for (auto face : _dcel->_faces) {
 			if (face->_outer_edge== NULL) {
 				continue;
@@ -791,10 +791,10 @@ void VoroZ::update_triangle_data() {
 		std::vector<DCEL_Vertex *> vertices= face->get_vertices();
 		pt_2d g= face->get_gravity_center();
 		DCEL_FaceData * face_data= (DCEL_FaceData *)(face->_data);
-		for (unsigned int idx_vertex=0; idx_vertex<vertices.size(); ++idx_vertex) {
+		for (uint idx_vertex=0; idx_vertex<vertices.size(); ++idx_vertex) {
 			_n_pts+= 3;
 			
-			unsigned int idx_vertex2= idx_vertex+ 1;
+			uint idx_vertex2= idx_vertex+ 1;
 			if (idx_vertex2== vertices.size()) {
 				idx_vertex2= 0;
 			}
@@ -931,12 +931,12 @@ void VoroZ::update_triangle_data() {
 
 
 void VoroZ::update_simple() {
-	unsigned int n_attrs= 7;
+	uint n_attrs= 7;
 
 	float data[_n_pts* n_attrs];
 
-	for (unsigned int idx_triangle=0; idx_triangle<_triangle_data.size(); ++idx_triangle) {
-		for (unsigned int idx_pt=0; idx_pt<3; ++idx_pt) {
+	for (uint idx_triangle=0; idx_triangle<_triangle_data.size(); ++idx_triangle) {
+		for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 0]= _triangle_data[idx_triangle]->_pts[idx_pt].x;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 1]= _triangle_data[idx_triangle]->_pts[idx_pt].y;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 2]= _triangle_data[idx_triangle]->_pts[idx_pt].z;
@@ -954,12 +954,12 @@ void VoroZ::update_simple() {
 
 
 void VoroZ::update_texture() {
-	unsigned int n_attrs= 6;
+	uint n_attrs= 6;
 
 	float data[_n_pts* n_attrs];
 
-	for (unsigned int idx_triangle=0; idx_triangle<_triangle_data.size(); ++idx_triangle) {
-		for (unsigned int idx_pt=0; idx_pt<3; ++idx_pt) {
+	for (uint idx_triangle=0; idx_triangle<_triangle_data.size(); ++idx_triangle) {
+		for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 0]= _triangle_data[idx_triangle]->_pts[idx_pt].x;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 1]= _triangle_data[idx_triangle]->_pts[idx_pt].y;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 2]= _triangle_data[idx_triangle]->_pts[idx_pt].z;
@@ -976,12 +976,12 @@ void VoroZ::update_texture() {
 
 
 void VoroZ::update_light() {
-	unsigned int n_attrs= 10;
+	uint n_attrs= 10;
 
 	float data[_n_pts* n_attrs];
 
-	for (unsigned int idx_triangle=0; idx_triangle<_triangle_data.size(); ++idx_triangle) {
-		for (unsigned int idx_pt=0; idx_pt<3; ++idx_pt) {
+	for (uint idx_triangle=0; idx_triangle<_triangle_data.size(); ++idx_triangle) {
+		for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 0]= _triangle_data[idx_triangle]->_pts[idx_pt].x;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 1]= _triangle_data[idx_triangle]->_pts[idx_pt].y;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 2]= _triangle_data[idx_triangle]->_pts[idx_pt].z;
@@ -1002,12 +1002,12 @@ void VoroZ::update_light() {
 
 
 void VoroZ::update_normal() {
-	unsigned int n_attrs= 13;
+	uint n_attrs= 13;
 
 	float data[_n_pts* n_attrs];
 
-	for (unsigned int idx_triangle=0; idx_triangle<_triangle_data.size(); ++idx_triangle) {
-		for (unsigned int idx_pt=0; idx_pt<3; ++idx_pt) {
+	for (uint idx_triangle=0; idx_triangle<_triangle_data.size(); ++idx_triangle) {
+		for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 0]= _triangle_data[idx_triangle]->_pts[idx_pt].x;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 1]= _triangle_data[idx_triangle]->_pts[idx_pt].y;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 2]= _triangle_data[idx_triangle]->_pts[idx_pt].z;
@@ -1031,12 +1031,12 @@ void VoroZ::update_normal() {
 
 
 void VoroZ::update_parallax() {
-	unsigned int n_attrs= 14;
+	uint n_attrs= 14;
 
 	float data[_n_pts* n_attrs];
 
-	for (unsigned int idx_triangle=0; idx_triangle<_triangle_data.size(); ++idx_triangle) {
-		for (unsigned int idx_pt=0; idx_pt<3; ++idx_pt) {
+	for (uint idx_triangle=0; idx_triangle<_triangle_data.size(); ++idx_triangle) {
+		for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 0]= _triangle_data[idx_triangle]->_pts[idx_pt].x;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 1]= _triangle_data[idx_triangle]->_pts[idx_pt].y;
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 2]= _triangle_data[idx_triangle]->_pts[idx_pt].z;

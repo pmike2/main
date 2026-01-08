@@ -19,16 +19,16 @@ public:
 	Polygon2D(const std::vector<pt_2d> pts, bool convexhull=false);
 	~Polygon2D();
 	void clear();
-	void set_points(const number * points, unsigned int n_points, bool convexhull=false);
+	void set_points(const number * points, uint n_points, bool convexhull=false);
 	void set_points(const std::vector<pt_2d> pts, bool convexhull=false);
 	void centroid2zero();
-	void randomize(unsigned int n_points, number radius=1.0, pt_2d center=pt_2d(0.0), bool convexhull=false);
+	void randomize(uint n_points, number radius=1.0, pt_2d center=pt_2d(0.0), bool convexhull=false);
 	void set_rectangle(const pt_2d origin, const pt_2d size);
 	void set_bbox(const BBox_2D & bbox);
 	void translate(pt_2d v);
 	void rotate(pt_2d center, number alpha);
 	void scale(pt_2d scale);
-	void min_max_pt_along_dir(const pt_2d direction, unsigned int * idx_pt_min, number * dist_min, unsigned int * idx_pt_max, number * dist_max) const;
+	void min_max_pt_along_dir(const pt_2d direction, uint * idx_pt_min, number * dist_min, uint * idx_pt_max, number * dist_max) const;
 	void triangulate();
 	Polygon2D * buffered(number buffer_size); // attention ne fonctionne que pour des polys convexes avec buffer_size > 0
 

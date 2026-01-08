@@ -1,9 +1,11 @@
 #ifndef TYPEDEFS_H
 #define TYPEDEFS_H
 
+#include <utility>
 #include <chrono>
 
 #include <glm/glm.hpp>
+
 
 using number = double;
 
@@ -20,6 +22,9 @@ using quat = glm::dquat;
 using time_point = std::chrono::system_clock::time_point;
 
 using uint = unsigned int;
+
+using int_pair = std::pair<int, int>;
+using uint_pair = std::pair<uint, uint>;
 
 
 #endif

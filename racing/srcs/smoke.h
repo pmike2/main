@@ -8,8 +8,8 @@
 #include "typedefs.h"
 
 
-const unsigned int N_SMOKES_PER_CAR= 200; // nombre de fumées par voiture
-const unsigned int NEW_SMOKE_DELTA_MS= 20; // intervalle en ms de création d'une fumée
+const uint N_SMOKES_PER_CAR= 200; // nombre de fumées par voiture
+const uint NEW_SMOKE_DELTA_MS= 20; // intervalle en ms de création d'une fumée
 const number BUMP_SMOKE_THRESHOLD= 0.8; // à partir de quel niveau de bump on crée de la fumée sur le moteur
 
 // config de fumée
@@ -35,13 +35,13 @@ class Smoke {
 public:
 	Smoke();
 	~Smoke();
-	void reinit(const SmokeConfig & config, pt_2d position, number alpha, pt_2d scale, unsigned int idx_texture);
+	void reinit(const SmokeConfig & config, pt_2d position, number alpha, pt_2d scale, uint idx_texture);
 	void anim();
 
 
 	BBox_2D * _bbox; // emprise
 	number _opacity; // opacité
-	unsigned int _idx_texture; // indice texture
+	uint _idx_texture; // indice texture
 	bool _is_alive; // est actif ?
 	number _z; // alti
 	SmokeConfig _config; // type de fumée
@@ -52,7 +52,7 @@ public:
 class SmokeSystem {
 public:
 	SmokeSystem();
-	SmokeSystem(Car * car, unsigned int n_pngs, time_point t);
+	SmokeSystem(Car * car, uint n_pngs, time_point t);
 	~SmokeSystem();
 	Smoke * get_free_smoke(); // renvoie la 1ère inactive
 	void anim(time_point t);
@@ -62,7 +62,7 @@ public:
 	Car * _car; // un système est lié à une voiture
 	time_point _last_exhaust_t; // dernier temps de création fumée échappement
 	time_point _last_bump_t; // dernier temps de création fumée liée aux dommages
-	unsigned int _n_pngs; // nombre de pngs de fumée
+	uint _n_pngs; // nombre de pngs de fumée
 };
 
 #endif

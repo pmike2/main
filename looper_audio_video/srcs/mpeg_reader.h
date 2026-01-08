@@ -14,7 +14,7 @@
 
 
 
-const unsigned int N_MAX_MOVIES= 8;
+const uint N_MAX_MOVIES= 8;
 
 
 class TimeConfig {
@@ -34,7 +34,7 @@ public:
 class AlphaPolygon {
 public:
 	AlphaPolygon();
-	AlphaPolygon(number * points, unsigned int n_points, float fadeout, float curve, float alpha_max);
+	AlphaPolygon(number * points, uint n_points, float fadeout, float curve, float alpha_max);
 	AlphaPolygon(const AlphaPolygon & alpha_polygon);
 	~AlphaPolygon();
 	friend std::ostream & operator << (std::ostream & os, const AlphaPolygon & a);
@@ -64,7 +64,7 @@ public:
 class ReaderConfig {
 public:
 	ReaderConfig();
-	ReaderConfig(AlphaConfig alpha_config, TimeConfig time_config, std::string mpeg_path= "", unsigned int key= 0);
+	ReaderConfig(AlphaConfig alpha_config, TimeConfig time_config, std::string mpeg_path= "", uint key= 0);
 	ReaderConfig(const ReaderConfig & reader_config);
 	~ReaderConfig();
 	friend std::ostream & operator << (std::ostream & os, const ReaderConfig & r);
@@ -73,7 +73,7 @@ public:
 	AlphaConfig _alpha_config;
 	TimeConfig _time_config;
 	std::string _mpeg_path;
-	unsigned int _key;
+	uint _key;
 };
 
 
@@ -93,8 +93,8 @@ public:
 	float _time_mult;
 	float _time_add;
 	float _time_speed;
-	unsigned int _idx_track;
-	unsigned int _key;
+	uint _idx_track;
+	uint _key;
 };
 
 
@@ -102,12 +102,12 @@ class GlobalConfig {
 public:
 	GlobalConfig();
 	GlobalConfig(
-		unsigned int alpha_width, unsigned int alpha_height, unsigned int alpha_depth, unsigned int alpha_depth0,
-		unsigned int time_width, unsigned int time_height, unsigned int time_height0,
-		unsigned int index_time_width, 
-		unsigned int index_movie_width, unsigned int index_movie_width0,
-		unsigned int global_alpha_width,
-		unsigned int modifier_width, unsigned int modifier_height,
+		uint alpha_width, uint alpha_height, uint alpha_depth, uint alpha_depth0,
+		uint time_width, uint time_height, uint time_height0,
+		uint index_time_width, 
+		uint index_movie_width, uint index_movie_width0,
+		uint global_alpha_width,
+		uint modifier_width, uint modifier_height,
 		std::vector<ReaderConfig> reader_configs,
 		std::vector<ModifierConfig> modifier_configs);
 	GlobalConfig(const GlobalConfig & config);
@@ -117,19 +117,19 @@ public:
 	friend std::ostream & operator << (std::ostream & os, const GlobalConfig & g);
 
 
-	unsigned int _alpha_width;
-	unsigned int _alpha_height;
-	unsigned int _alpha_depth;
-	unsigned int _alpha_depth0;
-	unsigned int _time_width;
-	unsigned int _time_height;
-	unsigned int _time_height0;
-	unsigned int _index_time_width;
-	unsigned int _index_movie_width;
-	unsigned int _index_movie_width0;
-	unsigned int _global_alpha_width;
-	unsigned int _modifier_width;
-	unsigned int _modifier_height;
+	uint _alpha_width;
+	uint _alpha_height;
+	uint _alpha_depth;
+	uint _alpha_depth0;
+	uint _time_width;
+	uint _time_height;
+	uint _time_height0;
+	uint _index_time_width;
+	uint _index_movie_width;
+	uint _index_movie_width0;
+	uint _global_alpha_width;
+	uint _modifier_width;
+	uint _modifier_height;
 	std::vector<ReaderConfig> _reader_configs;
 	std::vector<ModifierConfig> _modifier_configs;
 };
@@ -138,7 +138,7 @@ public:
 class MPEGReaders {
 public:
 	MPEGReaders();
-	MPEGReaders(unsigned int base_index, int movie_loc, int alpha_loc, int time_loc, int index_time_loc,
+	MPEGReaders(uint base_index, int movie_loc, int alpha_loc, int time_loc, int index_time_loc,
 		int index_movie_loc, int global_alpha_loc, int modifier_loc);
 	~MPEGReaders();
 	void set_config(GlobalConfig config);
@@ -159,62 +159,62 @@ public:
 	void init_modifier_texture();
 	void prepare2draw();
 	void update();
-	void update_alpha_texture(unsigned int idx_track);
-	void update_time_texture(unsigned int idx_track);
-	void update_index_time_texture(unsigned int idx_track);
-	void update_index_movie_texture(unsigned int idx_track);
-	void update_global_alpha_texture(unsigned int idx_track);
-	void update_modifier_texture(unsigned int idx_track);
-	void decrease_alpha(unsigned int idx_track);
-	void next_index_time(unsigned int idx_track);
-	void next_index_modifier(unsigned int idx_track);
-	void note_on(unsigned int idx_track, unsigned int key, float amplitude=1.0f);
-	void note_off(unsigned int idx_track);
-	int get_idx_reader(unsigned int key);
-	int get_idx_modifier(unsigned int idx_track);
-	int get_idx_modifier_by_key(unsigned int key);
+	void update_alpha_texture(uint idx_track);
+	void update_time_texture(uint idx_track);
+	void update_index_time_texture(uint idx_track);
+	void update_index_movie_texture(uint idx_track);
+	void update_global_alpha_texture(uint idx_track);
+	void update_modifier_texture(uint idx_track);
+	void decrease_alpha(uint idx_track);
+	void next_index_time(uint idx_track);
+	void next_index_modifier(uint idx_track);
+	void note_on(uint idx_track, uint key, float amplitude=1.0f);
+	void note_off(uint idx_track);
+	int get_idx_reader(uint key);
+	int get_idx_modifier(uint idx_track);
+	int get_idx_modifier_by_key(uint key);
 
 
 	GlobalConfig _config;
 	int _index_reader[N_TRACKS];
 	bool _note_on[N_TRACKS];
 
-	unsigned int _movies_ids[N_MAX_MOVIES];
+	uint _movies_ids[N_MAX_MOVIES];
 	int _movie_loc;
 	int _movie_textures_indices[N_MAX_MOVIES];
 
 	float * _alpha_data;
 	float * _alpha_data0;
-	unsigned int _alpha_id;
+	uint _alpha_id;
 	int _alpha_loc;
-	unsigned int _alpha_texture_index;
+	uint _alpha_texture_index;
 
 	float * _time_data;
 	float * _time_data0;
-	unsigned int _time_id;
+	uint _time_id;
 	int _time_loc;
-	unsigned int _time_texture_index;
+	uint _time_texture_index;
 
 	float * _index_time_data;
-	unsigned int _index_time_id;
+	uint _index_time_id;
 	int _index_time_loc;
-	unsigned int _index_time_texture_index;
+	uint _index_time_texture_index;
 
-	unsigned int * _index_movie_data;
-	unsigned int * _index_movie_data0;
-	unsigned int _index_movie_id;
+	uint * _index_movie_data;
+	uint * _index_movie_data0;
+	uint _index_movie_id;
 	int _index_movie_loc;
-	unsigned int _index_movie_texture_index;
+	uint _index_movie_texture_index;
 
 	float * _global_alpha_data;
-	unsigned int _global_alpha_id;
+	uint _global_alpha_id;
 	int _global_alpha_loc;
-	unsigned int _global_alpha_texture_index;
+	uint _global_alpha_texture_index;
 
 	float * _modifier_data;
-	unsigned int _modifier_id;
+	uint _modifier_id;
 	int _modifier_loc;
-	unsigned int _modifier_texture_index;
+	uint _modifier_texture_index;
 };
 
 #endif

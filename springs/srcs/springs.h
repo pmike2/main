@@ -60,13 +60,13 @@ public:
 class Spring {
 public:
 	Spring();
-	Spring(unsigned int idx1, unsigned int idx2, float stiffness, float damping, float relaxed_size);
-	Spring(unsigned int idx1, unsigned int idx2, float stiffness, float damping, float relaxed_size, float contract_amount, float contract_begin, float contract_end);
+	Spring(uint idx1, uint idx2, float stiffness, float damping, float relaxed_size);
+	Spring(uint idx1, uint idx2, float stiffness, float damping, float relaxed_size, float contract_amount, float contract_begin, float contract_end);
 	void rand_contract();
 
 
-	unsigned int _idx1;
-	unsigned int _idx2;
+	uint _idx1;
+	uint _idx2;
 	float _stiffness;
 	float _damping;
 	float _relaxed_size;
@@ -83,12 +83,12 @@ public:
 	void save(std::string ch);
 	void anim();
 	void add_vertex(glm::vec3 p_, float mass_, float air_resist_);
-	void add_spring(unsigned int idx1_, unsigned int idx2_, float stiffness_, float damping_, float relaxed_size_=-1.);
-	void delete_vertex(unsigned int idx);
-	void delete_spring(unsigned int idx);
+	void add_spring(uint idx1_, uint idx2_, float stiffness_, float damping_, float relaxed_size_=-1.);
+	void delete_vertex(uint idx);
+	void delete_spring(uint idx);
 	void delete_disconnected_vertices();
-	std::vector<unsigned int> get_ajdacents_vertices(unsigned int idx);
-	std::vector<unsigned int> get_ajdacents_springs(unsigned int idx);
+	std::vector<uint> get_ajdacents_vertices(uint idx);
+	std::vector<uint> get_ajdacents_springs(uint idx);
 	void print();
 	void rand_contracts();
 	glm::vec3 bary(bool is_init);
@@ -97,12 +97,12 @@ public:
 
 	// méthodes abstraites pas appelées dans la classe mère
 	virtual void init_vertices_springs();
-	virtual void rand_disposition(unsigned int n_cubes);
+	virtual void rand_disposition(uint n_cubes);
 
 
 	std::vector<Vertex> _vertices;
 	std::vector<Spring> _springs;
-	unsigned int _tik_init;
+	uint _tik_init;
 };
 
 
@@ -110,7 +110,7 @@ class CubeSystem : public SpringSystem {
 public:
 	CubeSystem();
 	void init_vertices_springs();
-	void rand_disposition(unsigned int n_cubes);
+	void rand_disposition(uint n_cubes);
 
 
 	std::vector< std::vector<int> > _cubes_idx;

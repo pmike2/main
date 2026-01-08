@@ -54,8 +54,8 @@ float zoom;
 bool is_paused;
 bool is_visu_global;
 
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+uint val_fps, compt_fps;
+uint tikfps1, tikfps2, tikanim1, tikanim2;
 
 GLuint prog_draw, prog_repere, prog_skybox, prog_draw_instanced, prog_basic, prog_map, prog_font;
 GLuint g_vao;
@@ -86,7 +86,7 @@ vector<string> firstnames;
 
 // ---------------------------------------------------------------------------------------
 void mouse_motion(int x, int y, int xrel, int yrel) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (view_system->mouse_motion(input_state)) {
@@ -100,14 +100,14 @@ void mouse_motion(int x, int y, int xrel, int yrel) {
 
 
 void mouse_button_up(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 }
 
 
 void mouse_button_down(int x, int y, unsigned short button) {
-	unsigned int mouse_state= SDL_GetMouseState(NULL, NULL);
+	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 }
@@ -210,7 +210,7 @@ void init() {
 
 	float eye_direction[]= {0.0f, 0.0f, 1.0f};
 	GLuint progs_eye[]= {prog_3d_color_instanced, prog_3d_mat_instanced, prog_fog, prog_3d_animprog_3d_terrain, prog_3d_mat};
-	for (unsigned int i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
+	for (uint i=0; i<sizeof(progs_eye)/ sizeof(progs_eye[0]); ++i) {
 		GLint eye_direction_loc= glGetUniformLocation(progs_eye[i], "eye_direction");
 		
 		glUseProgram(progs_eye[i]);
@@ -219,7 +219,7 @@ void init() {
 	}
 
 	GLuint progs_fog[]= {prog_fog, prog_3d_color_instanced};
-	for (unsigned int i=0; i<sizeof(progs_fog)/ sizeof(progs_fog[0]); ++i) {
+	for (uint i=0; i<sizeof(progs_fog)/ sizeof(progs_fog[0]); ++i) {
 		GLint fog_start_loc= glGetUniformLocation(progs_fog[i], "fog_start");
 		GLint fog_end_loc= glGetUniformLocation(progs_fog[i], "fog_end");
 		GLint fog_color_loc= glGetUniformLocation(progs_fog[i], "fog_color");
@@ -257,15 +257,15 @@ void init() {
 		firstnames.push_back(firstname);
 	}
 	
-	for (unsigned int i=0; i<N_ENEMIES; ++i) {
+	for (uint i=0; i<N_ENEMIES; ++i) {
 		//string enemy_name= "enemy_"+ to_string(i);
 		string enemy_name= firstnames[rand_int(0, firstnames.size()- 1)];
 		
 		IA* enemy= new IA(enemy_name, prog_draw, prog_basic, "modeles/plane2.obj", "modeles/plane2.mtl", false, SHIP_SIZE_FACTOR, glm::vec3(rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f), rand_float(0.0f, 1.0f)));
 		
-		unsigned int step= (unsigned int)(sqrt(float(N_ENEMIES)));
-		unsigned int ii= i% step;
-		unsigned int jj= i/ step;
+		uint step= (uint)(sqrt(float(N_ENEMIES)));
+		uint ii= i% step;
+		uint jj= i/ step;
 		
 		enemy->_ship->_rigid_body._position.x= -REPERE_BOX+ REPERE_BOX/ float(step)+ 2.0f* REPERE_BOX* float(ii)/ float(step);
 		enemy->_ship->_rigid_body._position.y= -REPERE_BOX+ REPERE_BOX/ float(step)+ 2.0f* REPERE_BOX* float(jj)/ float(step);
@@ -278,7 +278,7 @@ void init() {
 	world= new World(prog_3d_anim, prog_3d_terrain, prog_3d_mat, prog_3d_mat_instanced, prog_basic, prog_bbox, & WORLD_RAND_CONFIG_1, "");
 	skybox= new SkyBox(prog_skybox);
 	
-	for (unsigned int i=0; i<NCLOUDS; ++i)
+	for (uint i=0; i<NCLOUDS; ++i)
 		clouds.push_back(new Cloud(prog_mat, prog_basic, "modeles/cloud.obj", "modeles/cloud.mtl", glm::vec3(rand_float(-REPERE_BOX, REPERE_BOX), rand_float(-REPERE_BOX, REPERE_BOX), rand_float(CLOUD_MIN_ALTI, CLOUD_MAX_ALTI)), glm::mat3(1.0f), rand_float(CLOUD_MIN_SIZE, CLOUD_MAX_SIZE), rand_float(CLOUD_MIN_SPEED, CLOUD_MAX_SPEED)));
 	
 	lights_ubo= new LightsUBO(prog_3d_terrain); // heu ca va marcher ca ???
@@ -286,10 +286,10 @@ void init() {
 	// celle-ci suit le joueur
 	lights_ubo->add_light(LIGHT_PARAMS_2, prog_repere, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
 	
-	for (unsigned int i=0; i<N_MAX_LITTLE_EXPLOSIONS; ++i) {
+	for (uint i=0; i<N_MAX_LITTLE_EXPLOSIONS; ++i) {
 		little_explosions.push_back(new Explosion(prog_3d_color_instanced, prog_basic, "modeles/explosion.obj", "modeles/explosion.mtl", glm::vec3(0.0f), LITTLE_EXPLOSION_PARAMS));
 	}
-	for (unsigned int i=0; i<N_MAX_BIG_EXPLOSIONS; ++i) {
+	for (uint i=0; i<N_MAX_BIG_EXPLOSIONS; ++i) {
 		big_explosions.push_back(new Explosion(prog_3d_color_instanced, prog_basic, "modeles/explosion.obj", "modeles/explosion.mtl", glm::vec3(0.0f), BIG_EXPLOSION_PARAMS));
 	}
 	
@@ -302,7 +302,7 @@ void init() {
 	for (auto &it_enemy : enemies)
 		it_enemy->_ship->anim(view_system->_world2camera, view_system->_camera2clip);
 	level->anim(view_system->_world2camera, view_system->_camera2clip);
-	for (unsigned int i=0; i<lights.size(); i++)
+	for (uint i=0; i<lights.size(); i++)
 		lights[i].anim(view_system->_world2camera);
 	lights_ubo->update(lights);
 
@@ -334,7 +334,7 @@ void draw() {
 	if (is_visu_global) {
 		for (auto &it_ship : all_ships)
 			it_ship->draw(true, true);
-		for (unsigned int i=0; i<lights.size(); i++)
+		for (uint i=0; i<lights.size(); i++)
 			lights[i]._light_draw.draw(view_system->_world2clip);
 		view_system->draw();
 	}
@@ -372,7 +372,7 @@ void anim() {
 	glm::vec3 above= ship->_rigid_body._position+ DIST_SHIP_LIGHT* glm::vec3(0.0f, 0.0f, 1.0f);
 	lights[1].move(above);
 	
-	for (unsigned int i=0; i<lights.size(); i++)
+	for (uint i=0; i<lights.size(); i++)
 		lights[i].anim(view_system->_world2camera);
 	lights_ubo->update(lights);
 	
@@ -550,7 +550,7 @@ void main_loop() {
 void clean() {
 	delete view_system;
 	delete ship;
-	for (unsigned int i=0; i<N_ENEMIES; ++i) {
+	for (uint i=0; i<N_ENEMIES; ++i) {
 		delete enemies[i];
 	}
 	delete level;

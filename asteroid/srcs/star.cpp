@@ -9,7 +9,7 @@ Star::Star() {
 }
 
 
-Star::Star(pt_2d pos, pt_2d size, float z, glm::vec2 velocity, glm::vec4 color, unsigned int idx_texture) :
+Star::Star(pt_2d pos, pt_2d size, float z, glm::vec2 velocity, glm::vec4 color, uint idx_texture) :
 	_aabb(AABB_2D(pos, size)), _z(z), _velocity(velocity), _color(color), _idx_texture(idx_texture)
 {
 	
@@ -34,7 +34,7 @@ StarSystem::StarSystem() {
 
 StarSystem::StarSystem(glm::vec2 pt_min, glm::vec2 pt_max, std::string pngs_dir) : _pt_min(pt_min), _pt_max(pt_max) {
 	_pngs= list_files("../data/star", "png");
-	for (unsigned int i=0; i<N_STARS; ++i) {
+	for (uint i=0; i<N_STARS; ++i) {
 		add_random_star();
 	}
 	// il faut trier les étoiles par z si on veut que le blend alpha se passe bien

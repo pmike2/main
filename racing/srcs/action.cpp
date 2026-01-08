@@ -162,7 +162,7 @@ ActionRandom::ActionRandom() : _randomizable(false) {
 }
 
 
-ActionRandom::ActionRandom(int flip, unsigned int sequence_n_ms, number force, number torque, unsigned int force_n_ms) :
+ActionRandom::ActionRandom(int flip, uint sequence_n_ms, number force, number torque, uint force_n_ms) :
 	_randomizable(true), _flip(flip), _sequence_n_ms(sequence_n_ms), _force(force), _torque(torque), _force_n_ms(force_n_ms)
 {
 

@@ -137,7 +137,7 @@ void idle() {
 	if (!looper->_screen_save) {
 		looper->update_vbo_time();
 		if (looper->_current_track_changed) {
-			unsigned int idx_track= looper->get_current_track_index();
+			uint idx_track= looper->get_current_track_index();
 			looper->update_vbo_track_data(idx_track);
 		}
 		looper->draw();

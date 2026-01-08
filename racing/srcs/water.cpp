@@ -11,7 +11,7 @@ WaterTile::WaterTile() {
 }
 
 
-WaterTile::WaterTile(WaterTileType type, pt_2d pos, pt_2d size, unsigned int idx_texture) : _type(type), _idx_texture(idx_texture) {
+WaterTile::WaterTile(WaterTileType type, pt_2d pos, pt_2d size, uint idx_texture) : _type(type), _idx_texture(idx_texture) {
 	_aabb= new AABB_2D(pos, size);
 	if (_type== WATER_TILE) {
 		_z= Z_WATER;
@@ -44,7 +44,7 @@ WaterSystem::~WaterSystem() {
 
 
 void WaterSystem::set_pngs(std::vector<std::string> pngs) {
-	unsigned int compt= 0;
+	uint compt= 0;
 	_n_water_textures= 0;
 	_idx0_water_texture= 0;
 	bool first_water= true;
@@ -63,7 +63,7 @@ void WaterSystem::set_pngs(std::vector<std::string> pngs) {
 }
 
 
-std::pair<int, int> WaterSystem::number2coord(pt_2d pos) {
+int_pair WaterSystem::number2coord(pt_2d pos) {
 	int col_idx= int(floor(pos.x/ _tile_size));
 	int row_idx= int(floor(pos.y/ _tile_size));
 	return std::make_pair(col_idx, row_idx);
@@ -94,8 +94,8 @@ void WaterSystem::set_track_grid(StaticObjectGrid * grid) {
 	pt_2d inner_pos= pt_2d(0.0+ eps);
 	pt_2d inner_size= track_size- pt_2d(grid->_cell_size+ eps);
 
-	std::pair<int, int> p0_outer= number2coord(outer_pos);
-	std::pair<int, int> p1_outer= number2coord(outer_pos+ outer_size);
+	int_pair p0_outer= number2coord(outer_pos);
+	int_pair p1_outer= number2coord(outer_pos+ outer_size);
 	int col_min_outer= p0_outer.first;
 	int col_max_outer= p1_outer.first;
 	int row_min_outer= p0_outer.second;
@@ -113,8 +113,8 @@ void WaterSystem::set_track_grid(StaticObjectGrid * grid) {
 	}
 
 	// les bords de plage
-	std::pair<int, int> p0_inner= number2coord(inner_pos);
-	std::pair<int, int> p1_inner= number2coord(inner_pos+ inner_size);
+	int_pair p0_inner= number2coord(inner_pos);
+	int_pair p1_inner= number2coord(inner_pos+ inner_size);
 	int col_min_inner= p0_inner.first;
 	int col_max_inner= p1_inner.first;
 	int row_min_inner= p0_inner.second;

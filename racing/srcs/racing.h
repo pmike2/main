@@ -117,9 +117,9 @@ public:
 	Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, time_point t);
 	~Racing();
 
-	//void choose_driver(unsigned int idx_driver);
+	//void choose_driver(uint idx_driver);
 	// choix d'une piste
-	void choose_track(unsigned int idx_track, time_point t);
+	void choose_track(uint idx_track, time_point t);
 
 	// chargement des textures
 	void fill_texture_driver();
@@ -185,7 +185,7 @@ public:
 	racing_mode _mode; // mode
 	int _idx_chosen_driver;
 	int _idx_chosen_track; // indice piste choisie
-	unsigned int _n_available_tracks; // nombre total de pistes
+	uint _n_available_tracks; // nombre total de pistes
 	number _track_lap_record, _track_overall_record;
 
 	bool _draw_bbox, _draw_force, _draw_texture, _show_debug_info; // booléens d'affichage
@@ -193,7 +193,7 @@ public:
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs
 	// indices des textures
-	unsigned int _texture_idx_model, _texture_idx_bump, _texture_idx_smoke, _texture_idx_choose_track,
+	uint _texture_idx_model, _texture_idx_bump, _texture_idx_smoke, _texture_idx_choose_track,
 		_texture_idx_tire_track, _texture_idx_driver_face, _texture_idx_map, _texture_idx_water;
 	glm::mat4 _camera2clip; // glm::ortho
 	glm::mat4 _world2camera; // caméra

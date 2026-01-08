@@ -59,7 +59,7 @@ poly2=(-0.596 , -2.9872) , (-1.755 , -1.4152) , (-3.853 , -0.7144) */
 
 	pt_2d axis(0.0, 0.0);
 	number overlap= 0.0;
-	unsigned int idx_pt= 0;
+	uint idx_pt= 0;
 	bool is_pt_in_poly1= false;
 	bool inter= poly_intersects_poly(poly1, poly2, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
 	std::cout << "inter=" << inter << " ; axis=(" << axis.x << " , " << axis.y << ") ; overlap=" << overlap;

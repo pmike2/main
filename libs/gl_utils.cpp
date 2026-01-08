@@ -52,8 +52,8 @@ DrawContext::DrawContext() {
 }
 
 
-DrawContext::DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform) :
-	_prog(prog), _buffer(buffer), _n_pts(0), _n_attrs_per_pts(0), _active(true)
+DrawContext::DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage) :
+	_prog(prog), _buffer(buffer), _n_pts(0), _n_attrs_per_pts(0), _active(true), _usage(usage)
 {
 	for (auto loc : locs_attrib) {
 		_locs_attrib[loc]= glGetAttribLocation(_prog, loc.c_str());
@@ -321,7 +321,7 @@ void set_subwindow(const float bkgnd_color[4], int x, int y, int w, int h) {
 
 
 // export dans fichier .pgm d'une texture en niveaux de gris
-void export_texture2pgm(std::string pgm_path, unsigned int width, unsigned int height) {
+void export_texture2pgm(std::string pgm_path, uint width, uint height) {
 	unsigned char * pixels= new unsigned char[width* height];
 	glGetTexImage(GL_TEXTURE_2D, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
 	FILE *f;
@@ -335,10 +335,10 @@ void export_texture2pgm(std::string pgm_path, unsigned int width, unsigned int h
 }
 
 
-void export_texture_array2pgm(std::string pgm_dir_path, unsigned int width, unsigned int height, unsigned int depth) {
+void export_texture_array2pgm(std::string pgm_dir_path, uint width, uint height, uint depth) {
 	unsigned char * pixels= new unsigned char[width* height* depth];
 	glGetTexImage(GL_TEXTURE_2D_ARRAY, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
-	for (unsigned int d=0; d<depth; ++d) {
+	for (uint d=0; d<depth; ++d) {
 		std::string pgm_path= pgm_dir_path+ "/tex_array_"+ std::to_string(d)+ ".pgm";
 		FILE *f;
 		f= fopen(pgm_path.c_str(), "wb");
@@ -352,7 +352,7 @@ void export_texture_array2pgm(std::string pgm_dir_path, unsigned int width, unsi
 }
 
 
-void export_screen_to_ppm(std::string ppm_path, unsigned int x, unsigned int y, unsigned int width, unsigned int height) {
+void export_screen_to_ppm(std::string ppm_path, uint x, uint y, uint width, uint height) {
 	unsigned char * pixels= new unsigned char[width* height* 3];
 	// il faut spécifier 1 pour l'alignement sinon plantages divers lorsque width ou height ne sont
 	// pas des multiples de 4
@@ -382,8 +382,8 @@ float * draw_cross(float * data, pt_2d center, float size, glm::vec4 color) {
 	data[18]= float(center.x)- size;
 	data[19]= float(center.y)+ size;
 	
-	for (unsigned int i=0; i<4; ++i) {
-		for (unsigned int j=0; j<4; ++j) {
+	for (uint i=0; i<4; ++i) {
+		for (uint j=0; j<4; ++j) {
 			data[i* 6+ 2+ j]= color[j];
 		}
 	}
@@ -398,7 +398,7 @@ float * draw_arrow(float * data, pt_2d start, pt_2d end, float tip_size, float a
 	}
 	
 	if (start_is_end) {
-		for (unsigned int i=0; i<6; ++i) {
+		for (uint i=0; i<6; ++i) {
 			data[i* 6+ 0]= float(start.x);
 			data[i* 6+ 1]= float(start.y);
 		}
@@ -421,8 +421,8 @@ float * draw_arrow(float * data, pt_2d start, pt_2d end, float tip_size, float a
 		data[31]= float(end.y)+ tip_size* (-sin(angle)* float(norm.x)+ cos(angle)* float(norm.y));
 	}
 
-	for (unsigned int i=0; i<6; ++i) {
-		for (unsigned int j=0; j<4; ++j) {
+	for (uint i=0; i<6; ++i) {
+		for (uint j=0; j<4; ++j) {
 			data[i* 6+ 2+ j]= color[j];
 		}
 	}
@@ -431,7 +431,7 @@ float * draw_arrow(float * data, pt_2d start, pt_2d end, float tip_size, float a
 
 
 float * draw_polygon(float * data, std::vector<pt_2d> pts, glm::vec4 color) {
-	for (unsigned int idx_pt=0; idx_pt<pts.size(); ++idx_pt) {
+	for (uint idx_pt=0; idx_pt<pts.size(); ++idx_pt) {
 		data[idx_pt* 6* 2+ 0]= float(pts[idx_pt].x);
 		data[idx_pt* 6* 2+ 1]= float(pts[idx_pt].y);
 
@@ -445,8 +445,8 @@ float * draw_polygon(float * data, std::vector<pt_2d> pts, glm::vec4 color) {
 		}
 	}
 
-	for (unsigned int i=0; i<pts.size()* 2; ++i) {
-		for (unsigned int j=0; j<4; ++j) {
+	for (uint i=0; i<pts.size()* 2; ++i) {
+		for (uint j=0; j<4; ++j) {
 			data[i* 6+ 2+ j]= color[j];
 		}
 	}
@@ -455,10 +455,10 @@ float * draw_polygon(float * data, std::vector<pt_2d> pts, glm::vec4 color) {
 }
 
 
-float * draw_nothing(float * data, unsigned int n_attrs_per_pts, unsigned int n_pts) {
-	unsigned int compt= 0;
-	for (unsigned int idx_pt=0; idx_pt<n_pts; ++idx_pt) {
-		for (unsigned int idx_attr=0; idx_attr<n_attrs_per_pts; ++idx_attr) {
+float * draw_nothing(float * data, uint n_attrs_per_pts, uint n_pts) {
+	uint compt= 0;
+	for (uint idx_pt=0; idx_pt<n_pts; ++idx_pt) {
+		for (uint idx_attr=0; idx_attr<n_attrs_per_pts; ++idx_attr) {
 			data[compt++]= 0.0;
 		}
 	}
@@ -466,13 +466,13 @@ float * draw_nothing(float * data, unsigned int n_attrs_per_pts, unsigned int n_
 }
 
 
-void fill_texture_array(unsigned int texture_offset, unsigned int texture_idx, unsigned int texture_size, std::vector<std::string> pngs) {
+void fill_texture_array(uint texture_offset, uint texture_idx, uint texture_size, std::vector<std::string> pngs) {
 	glActiveTexture(GL_TEXTURE0+ texture_offset);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, texture_idx);
 	
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, texture_size, texture_size, pngs.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-	for (unsigned int idx_png=0; idx_png<pngs.size(); ++idx_png) {
+	for (uint idx_png=0; idx_png<pngs.size(); ++idx_png) {
 		// parfois on veut sauter des indices, auquel cas on spécifie NO_PNG
 		if (pngs[idx_png]== NO_PNG) {
 			continue;

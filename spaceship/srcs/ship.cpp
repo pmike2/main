@@ -65,7 +65,7 @@ void ForcesDraw::anim(const glm::mat4 & world2camera, const glm::mat4 & camera2c
 void ForcesDraw::sync2appliedforces(std::vector<AppliedForce> & applied_forces) {
 	_n_forces= 0; // voir + tard si je veux ajouter d'autres trucs à visualiser
 
-	for (unsigned int i=0; i<applied_forces.size(); ++i) {
+	for (uint i=0; i<applied_forces.size(); ++i) {
 		if (!applied_forces[i]._is_active)
 			continue;
 		
@@ -112,8 +112,8 @@ RigidBody::RigidBody(string model_path, float size_factor) :
 	cout << "_mass=" << _mass << endl;
 	cout << "_mass_center=" << _mass_center.x << ";"  << _mass_center.y << ";"  << _mass_center.z << endl;
 	cout << "_local_inertia_matrix=" << endl;
-	for (unsigned int i=0; i<3; ++i) {
-		for (unsigned int j=0; j<3; ++j)
+	for (uint i=0; i<3; ++i) {
+		for (uint j=0; j<3; ++j)
 			cout << _local_inertia_matrix[i][j] << " ; ";
 		cout << endl;
 	}
@@ -213,7 +213,7 @@ RigidBody::RigidBody(string model_path, float size_factor) :
 	}
 	
 	// calcul masse et barycentre --------------------------------------------------------
-	for (unsigned int i=0; i<masses.size(); ++i) {
+	for (uint i=0; i<masses.size(); ++i) {
 		_mass+= masses[i];
 		_mass_center.x+= masses[i]* barys[i].x;
 		_mass_center.y+= masses[i]* barys[i].y;
@@ -224,7 +224,7 @@ RigidBody::RigidBody(string model_path, float size_factor) :
 	
 	// calcul matrice d'inertie -------------------------------------------
 	// cf https://en.wikipedia.org/wiki/Parallel_axis_theorem
-	for (unsigned int i=0; i<masses.size(); ++i) {
+	for (uint i=0; i<masses.size(); ++i) {
 		float bary_norm2= barys[i].x* barys[i].x+ barys[i].y* barys[i].y+ barys[i].z* barys[i].z;
 		glm::mat3 mat1= glm::mat3(bary_norm2, 0.f, 0.f, 0.f, bary_norm2, 0.f, 0.f, 0.f, bary_norm2);
 		glm::mat3 mat2= glm::outerProduct(barys[i], barys[i]);
@@ -344,7 +344,7 @@ void RigidBody::anim(vector<AppliedForce> & applied_forces) {
 	
 	force+= _rotation_matrix* glm::vec3(0.0f, NOMINAL_SPEED, 0.0f);
 	
-	for (unsigned int i=0; i<applied_forces.size(); ++i) {
+	for (uint i=0; i<applied_forces.size(); ++i) {
 		if (!applied_forces[i]._is_active)
 			continue;
 		
@@ -417,7 +417,7 @@ FollowCamera::FollowCamera(GLuint prog_draw_basic) :
 		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
 		0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f
 	};
-	for (unsigned int i=0; i<36; i++)
+	for (uint i=0; i<36; i++)
 		_data[i]= data[i];
 	
 	glGenBuffers(1, &_buffer);
@@ -542,9 +542,9 @@ Explosion::Explosion(GLuint prog_draw, GLuint prog_draw_basic, std::string model
 	
 	_n_faces= model._n_faces;
 	_vertices= (float*) malloc((3+ 3+ 3)* 3* _n_faces* sizeof(float));
-	_faces= (unsigned int*) malloc(3* _n_faces* sizeof(unsigned int));
+	_faces= (uint*) malloc(3* _n_faces* sizeof(uint));
 	memcpy(_vertices, model._vertices, (3+ 3+ 3)* 3* _n_faces* sizeof(float));
-	memcpy(_faces, model._faces, 3* _n_faces* sizeof(unsigned int));
+	memcpy(_faces, model._faces, 3* _n_faces* sizeof(uint));
 	
 	_shininess= model._shininess;
 	memcpy(_ambient, model._ambient, 3* sizeof(float));
@@ -553,11 +553,11 @@ Explosion::Explosion(GLuint prog_draw, GLuint prog_draw_basic, std::string model
 	
 	_transfo= new ExplosionTransfo[_ep._n_particles];
 	
-	for (unsigned int i=0; i<_ep._n_particles; ++i) {
+	for (uint i=0; i<_ep._n_particles; ++i) {
 		_transfo[i].reinit(_ep._translation);
 	}
 
-	for (unsigned int i=0; i<_ep._n_particles; ++i) {
+	for (uint i=0; i<_ep._n_particles; ++i) {
 		_model_matrices[i]= glm::translate(glm::mat4(1.0f), _position);
 	}
     
@@ -565,7 +565,7 @@ Explosion::Explosion(GLuint prog_draw, GLuint prog_draw_basic, std::string model
 	glBindBuffer(GL_ARRAY_BUFFER, _buffers[0]);
 	glBufferData(GL_ARRAY_BUFFER, (3+ 3+ 3)* 3* _n_faces* sizeof(float), _vertices, GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _buffers[1]);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3* _n_faces* sizeof(unsigned int), _faces, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3* _n_faces* sizeof(uint), _faces, GL_STATIC_DRAW);
     glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
 	glBufferData(GL_ARRAY_BUFFER, _ep._n_particles * sizeof(glm::mat4), &_model_matrices[0], GL_STATIC_DRAW);
 
@@ -624,7 +624,7 @@ void Explosion::draw() {
 	
 	// _buffers[2] contient les matrices de chaque 'particule'
 	glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
-	for (unsigned int j=0; j<4 ; ++j) {
+	for (uint j=0; j<4 ; ++j) {
 		glEnableVertexAttribArray(_instanced_matrix_loc+ j);
 		glVertexAttribPointer(_instanced_matrix_loc+ j, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (const GLvoid*)(sizeof(glm::vec4)* j));
 		glVertexAttribDivisor(_instanced_matrix_loc+ j, 1); // pour faire de l'instanced
@@ -637,7 +637,7 @@ void Explosion::draw() {
 	glDisableVertexAttribArray(_position_loc);
 	glDisableVertexAttribArray(_normal_loc);
 	glDisableVertexAttribArray(_diffuse_color_loc);
-	for (unsigned int j=0; j<4 ; ++j) {
+	for (uint j=0; j<4 ; ++j) {
 		glVertexAttribDivisor(_instanced_matrix_loc+ j, 0);
 		glDisableVertexAttribArray(_instanced_matrix_loc+ j);
 	}
@@ -653,7 +653,7 @@ void Explosion::anim(float * world2camera, float * camera2clip){
 	if (!_is_active)
 		return;
 
-	for (unsigned int i=0; i<_ep._n_particles; ++i) {
+	for (uint i=0; i<_ep._n_particles; ++i) {
 		_transfo[i]._translation+= _transfo[i]._init_translation;
 		_transfo[i]._angle+= _ep._angle;
 		_transfo[i]._scale-= _ep._scale;
@@ -661,7 +661,7 @@ void Explosion::anim(float * world2camera, float * camera2clip){
 			_is_active= false;
 		}
 	}
-	for (unsigned int i=0; i<_ep._n_particles; ++i) {
+	for (uint i=0; i<_ep._n_particles; ++i) {
 		_model_matrices[i]= glm::translate(glm::mat4(1.0f), _position+ _transfo[i]._translation)* glm::rotate(glm::mat4(1.0f), _transfo[i]._angle, _transfo[i]._rotation)* glm::scale(glm::mat4(1.0f), glm::vec3(_transfo[i]._scale, _transfo[i]._scale, _transfo[i]._scale));
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, _buffers[2]);
@@ -678,7 +678,7 @@ void Explosion::anim(float * world2camera, float * camera2clip){
 
 
 void Explosion::reinit() {
-	for (unsigned int i=0; i<_ep._n_particles; ++i) {
+	for (uint i=0; i<_ep._n_particles; ++i) {
 		_transfo[i].reinit(_ep._translation);
 	}
 }
@@ -725,7 +725,7 @@ Ship::Ship(std::string id, GLuint prog_draw_3d, GLuint prog_draw_basic, StaticMo
 	_keypresseds.insert(pair<string, bool>(KEY_FWD, false));
 	_keypresseds.insert(pair<string, bool>(KEY_BWD, false));
 	
-	for (unsigned int i=0; i<MAX_BULLETS; ++i)
+	for (uint i=0; i<MAX_BULLETS; ++i)
 		_bullets.push_back(new Bullet(_model._prog_draw, _model._prog_bbox, model_bullet, glm::vec3(0.0f), glm::mat3(1.0f), BULLET_SIZE_FACTOR, color));
 }
 
@@ -1155,9 +1155,9 @@ void IA::think(RandTerrain * level, vector<Ship*> &ships) {
 	else {
 		// on repère le ship dans son champ de vision qui soit le plus proche de sa ligne de mire
 		float max_value= -1e6;
-		unsigned int idx_ok= 0;
+		uint idx_ok= 0;
 		glm::vec3 enemy_dir_ok= glm::vec3(0.0f);
-		for (unsigned int i=0; i<ships.size(); ++i) {
+		for (uint i=0; i<ships.size(); ++i) {
 			if (ships[i]->_id== _ship->_id)
 				continue;
 		
@@ -1217,7 +1217,7 @@ Ranking::Ranking(Font* font, std::vector<Ship*> &ships) : _font(font) {
 
 
 void Ranking::draw() {
-	for (unsigned int idx_sp=0; idx_sp<_ship_points.size(); ++idx_sp) {
+	for (uint idx_sp=0; idx_sp<_ship_points.size(); ++idx_sp) {
 		stringstream ss;
 		ss << idx_sp+ 1 << " " << _ship_points[idx_sp]._id << " +" << _ship_points[idx_sp]._n_win << " / -" << _ship_points[idx_sp]._n_loose;
 		_font->draw(ss.str(), RANKING_OFFX, SCREEN_HEIGHT- RANKING_OFFY- idx_sp* RANKING_SIZEY, RANKING_SCALE, _ship_points[idx_sp]._color);
@@ -1264,7 +1264,7 @@ bool Ranking::sort_ships() {
 
 
 void Ranking::print() {
-	for (unsigned int idx_sp=0; idx_sp<_ship_points.size(); ++idx_sp) {
+	for (uint idx_sp=0; idx_sp<_ship_points.size(); ++idx_sp) {
 		cout << idx_sp << " : " << _ship_points[idx_sp]._id << " ; " << _ship_points[idx_sp]._n_win << " ; " << _ship_points[idx_sp]._n_loose << endl;
 	}
 }

@@ -136,7 +136,7 @@ void Track::load_json(std::string json_path) {
 	// création grille et remplissage des tiles
 	_grid->_cell_size= js["cell_size"];
 	set_all("empty", js["width"], js["height"]);
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto tilename : js["tiles"]) {
 		set_tile(tilename, compt);
 		compt++;
@@ -155,7 +155,7 @@ void Track::load_json(std::string json_path) {
 	_floating_objects.clear();
 
 	// ajout des objets flottants
-	std::vector<std::pair<CheckPoint *, unsigned int> > checkpoints;
+	std::vector<std::pair<CheckPoint *, uint> > checkpoints;
 	for (auto object : js["floating_objects"]) {
 		std::string model_name= object["name"];
 		pt_2d position= pt_2d(object["position"][0], object["position"][1]);
@@ -176,12 +176,12 @@ void Track::load_json(std::string json_path) {
 	}
 
 	// tri des checkpoints en fonction de leurs indices
-	std::sort(checkpoints.begin(), checkpoints.end(), [](std::pair<CheckPoint *, unsigned int> a, std::pair<CheckPoint *, unsigned int> b) {
+	std::sort(checkpoints.begin(), checkpoints.end(), [](std::pair<CheckPoint *, uint> a, std::pair<CheckPoint *, uint> b) {
 		return a.second< b.second; 
 	});
 	
 	// liens entre checkpoints
-	for (unsigned int i=0; i<checkpoints.size(); ++i) {
+	for (uint i=0; i<checkpoints.size(); ++i) {
 		if (i< checkpoints.size()- 1) {
 			checkpoints[i].first->_next= checkpoints[i+ 1].first;
 			checkpoints[i+ 1].first->_previous= checkpoints[i].first;
@@ -271,7 +271,7 @@ void Track::save_json(std::string json_path) {
 }
 
 
-void Track::set_hero(unsigned int idx_driver) {
+void Track::set_hero(uint idx_driver) {
 	if (idx_driver>= _drivers.size()) {
 		std::cerr << "Track::set_hero : " << idx_driver << ">=" << _drivers.size() << "\n";
 		return;
@@ -318,7 +318,7 @@ void Track::place_cars() {
 	std::shuffle(positions.begin(), positions.end(), g);
 	
 	// création des voitures
-	for (unsigned int idx_driver=0; idx_driver<_drivers.size(); ++idx_driver) {
+	for (uint idx_driver=0; idx_driver<_drivers.size(); ++idx_driver) {
 		CarModel * model= (CarModel *)(_models[_drivers[idx_driver]->_name]);
 		Car * car= new Car(model, positions[idx_driver], _start->_alpha, pt_2d(1.0));
 		car->_driver= _drivers[idx_driver];
@@ -377,7 +377,7 @@ void Track::end() {
 	// record au tour
 	for (auto car : _sorted_cars) {
 		//for (auto t : car->_lap_times) {
-		for (unsigned int i=0; i<car->_lap_times.size(); ++i) {
+		for (uint i=0; i<car->_lap_times.size(); ++i) {
 			if (i< car->_lap_times.size()- 1 || car->_finished) {
 				_info->_best_lap.push_back(std::make_pair(car->_driver->_name, car->_lap_times[i]));
 			}
@@ -489,8 +489,8 @@ void Track::sort_cars() {
 
 		// à partir de là les 2 cars en sont au même tour
 		// sur le checkpoint courant
-		unsigned int idx_a= get_checkpoint_index(a->_next_checkpoint->_previous);
-		unsigned int idx_b= get_checkpoint_index(b->_next_checkpoint->_previous);
+		uint idx_a= get_checkpoint_index(a->_next_checkpoint->_previous);
+		uint idx_b= get_checkpoint_index(b->_next_checkpoint->_previous);
 		if (idx_a> idx_b) {
 			return A_WINS_OVER_B;
 		}
@@ -510,7 +510,7 @@ void Track::sort_cars() {
 	});
 
 	// on assigne le rank pour toutes les voitures encore en course
-	for (unsigned int idx_car=0; idx_car<_sorted_cars.size(); ++idx_car) {
+	for (uint idx_car=0; idx_car<_sorted_cars.size(); ++idx_car) {
 		Car * car= _sorted_cars[idx_car];
 		if (!car->_finished) {
 			car->_rank= idx_car+ 1;
@@ -525,8 +525,8 @@ void Track::sort_cars() {
 }
 
 
-unsigned int Track::get_checkpoint_index(CheckPoint * checkpoint) {
-	unsigned int idx= 0;
+uint Track::get_checkpoint_index(CheckPoint * checkpoint) {
+	uint idx= 0;
 	CheckPoint * start= _start;
 	while (checkpoint!= start) {
 		idx++;
@@ -579,8 +579,8 @@ void Track::collisions(time_point t) {
 	std::vector<Car *> collided_cars;
 
 	// collisions entre objets flottants
-	for (unsigned int idx_obj_1=0; idx_obj_1<_floating_objects.size()- 1; ++idx_obj_1) {
-		for (unsigned int idx_obj_2=idx_obj_1+ 1; idx_obj_2<_floating_objects.size(); ++idx_obj_2) {
+	for (uint idx_obj_1=0; idx_obj_1<_floating_objects.size()- 1; ++idx_obj_1) {
+		for (uint idx_obj_2=idx_obj_1+ 1; idx_obj_2<_floating_objects.size(); ++idx_obj_2) {
 			StaticObject * obj1= _floating_objects[idx_obj_1];
 			StaticObject * obj2= _floating_objects[idx_obj_2];
 			if (collision(obj1, obj2, position, t)) {
@@ -757,7 +757,7 @@ void Track::checkpoints(time_point t) {
 
 		pt_2d axis(0.0, 0.0);
 		number overlap= 0.0;
-		unsigned int idx_pt= 0;
+		uint idx_pt= 0;
 		bool is_pt_in_poly1= false;
 		bool is_inter= poly_intersects_poly(car->_footprint, car->_next_checkpoint->_footprint, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
 		
@@ -1019,17 +1019,17 @@ void Track::anim(time_point t, InputState * input_state, bool joystick_is_input)
 }
 
 
-void Track::set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx) {
+void Track::set_tile(std::string model_name, uint col_idx, uint row_idx) {
 	_grid->set_tile(_models[model_name], col_idx, row_idx);
 }
 
 
-void Track::set_tile(std::string model_name, unsigned int idx) {
+void Track::set_tile(std::string model_name, uint idx) {
 	_grid->set_tile(_models[model_name], idx);
 }
 
 
-void Track::set_all(std::string model_name, unsigned int width, unsigned int height) {
+void Track::set_all(std::string model_name, uint width, uint height) {
 	_grid->set_all(_models[model_name], width, height);
 }
 

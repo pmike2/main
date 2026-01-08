@@ -8,10 +8,10 @@
 
 
 // nombre max de sparks pour tout le circuit
-const unsigned int N_MAX_SPARKS= 4000;
+const uint N_MAX_SPARKS= 4000;
 // min, max du nombre de sparks créés lors d'une collision
-const unsigned int N_MIN_SPARKS_PER_COLLISION= 1;
-const unsigned int N_MAX_SPARKS_PER_COLLISION= 4;
+const uint N_MIN_SPARKS_PER_COLLISION= 1;
+const uint N_MAX_SPARKS_PER_COLLISION= 4;
 // opacité initiale - décrément d'opacité à chaque anim - seuil d'opacité -> suppression
 const number SPARKLE_OPACITY_INIT= 1.0;
 const number SPARKLE_OPACITY_DECREMENT= 0.1;

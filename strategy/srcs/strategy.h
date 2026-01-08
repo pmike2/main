@@ -59,6 +59,7 @@ public:
 	Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t);
 	~Strategy();
 	void draw_linear(std::string context_name);
+	void draw_dash(std::string context_name);
 	void draw_surface(std::string context_name);
 	void draw();
 	void anim(time_point t, InputState * input_state);

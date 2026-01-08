@@ -11,8 +11,8 @@
 
 
 void test() {
-	/*std::pair<int, int> p1(0, 1);
-	std::pair<int, int> p2(4, 8);
+	/*int_pair p1(0, 1);
+	int_pair p2(4, 8);
 	p1 = p2;
 	std::cout << p1.first << " ; " << p1.second << "\n";*/
 

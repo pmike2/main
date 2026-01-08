@@ -35,7 +35,7 @@ public:
 class DrawContext {
 public:
 	DrawContext();
-	DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform);
+	DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage = GL_STATIC_DRAW);
 	~DrawContext();
 	friend std::ostream & operator << (std::ostream & os, const DrawContext & dc);
 
@@ -43,9 +43,10 @@ public:
 	GLuint _prog;
 	std::map<std::string, GLint> _locs_attrib, _locs_uniform;
 	GLuint _buffer;
-	unsigned int _n_pts;
-	unsigned int _n_attrs_per_pts;
+	uint _n_pts;
+	uint _n_attrs_per_pts;
 	bool _active;
+	GLenum _usage;
 };
 
 
@@ -60,15 +61,15 @@ GLuint load_shader(GLenum type, const char * filename);
 GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path="", bool check_program=true);
 
 void set_subwindow(const float bkgnd_color[4], int x, int y, int w, int h);
-void export_texture2pgm(std::string pgm_path, unsigned int width, unsigned int height);
-void export_texture_array2pgm(std::string pgm_dir_path, unsigned int width, unsigned int height, unsigned int depth);
-void export_screen_to_ppm(std::string ppm_path, unsigned int x, unsigned int y, unsigned int width, unsigned int height);
+void export_texture2pgm(std::string pgm_path, uint width, uint height);
+void export_texture_array2pgm(std::string pgm_dir_path, uint width, uint height, uint depth);
+void export_screen_to_ppm(std::string ppm_path, uint x, uint y, uint width, uint height);
 
 float * draw_cross(float * data, pt_2d center, float size, glm::vec4 color);
 float * draw_arrow(float * data, pt_2d start, pt_2d end, float tip_size, float angle, glm::vec4 color);
 float * draw_polygon(float * data, std::vector<pt_2d> pts, glm::vec4 color);
-float * draw_nothing(float * data, unsigned int n_attrs_per_pts, unsigned int n_pts);
+float * draw_nothing(float * data, uint n_attrs_per_pts, uint n_pts);
 
-void fill_texture_array(unsigned int texture_offset, unsigned int texture_idx, unsigned int texture_size, std::vector<std::string> pngs);
+void fill_texture_array(uint texture_offset, uint texture_idx, uint texture_size, std::vector<std::string> pngs);
 
 #endif

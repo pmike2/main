@@ -38,12 +38,12 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_star, GLui
 	_star_system= new StarSystem(_pt_min, _pt_max, "../data/star");
 
 	// buffer 0 = border (pour debug) ; 1 = AABB ; 2 = footprint ; 3 = textures ; 4 = stars
-	unsigned int n_buffers= 5;
+	uint n_buffers= 5;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
 	// _textures[0] == ships ; _textures[1] == stars
-	unsigned int n_textures= 2;
+	uint n_textures= 2;
 	_textures= new GLuint(n_textures);
 	glGenTextures(n_textures, _textures);
 
@@ -146,7 +146,7 @@ void Asteroid::load_models() {
 
 
 void Asteroid::fill_texture_array_ship() {
-	unsigned int n_tex= 0;
+	uint n_tex= 0;
 	for (auto model : _models) {
 		for (auto texture : model.second->_textures) {
 			n_tex+= texture.second->_pngs.size();
@@ -158,7 +158,7 @@ void Asteroid::fill_texture_array_ship() {
 	
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, n_tex, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto model : _models) {
 		//std::cout << "\nmodel=" << model.first << "\n";
 		for (auto texture : model.second->_textures) {
@@ -205,7 +205,7 @@ void Asteroid::fill_texture_array_star() {
 	
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, TEXTURE_SIZE, TEXTURE_SIZE, _star_system->_pngs.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto png : _star_system->_pngs) {
 		// je ne sais pas pourquoi mais IMG_Load renvoie forcément 4 canaux même si le png a 1 seul canal
 		// je ne peux donc pas utiliser GL_RED comme format mais obligatoirement GL_RGBA
@@ -469,7 +469,7 @@ void Asteroid::show_inactive_info() {
 	std::vector<Text> texts;
 	texts.push_back(t1);
 	texts.push_back(t2);
-	for (unsigned int i=0; i<_highest_scores.size(); ++i) {
+	for (uint i=0; i<_highest_scores.size(); ++i) {
 		std::string s3= std::to_string(i+ 1)+ " "+ _highest_scores[i].first+ " " + std::to_string(_highest_scores[i].second);
 		glm::vec2 position3= glm::vec2(0.0f, 1.0f- float(i)* 1.0);
 		Text t3(s3, position3, font_scale, font_color);
@@ -491,7 +491,7 @@ void Asteroid::show_set_score_name_info() {
 	std::vector<Text> texts;
 	texts.push_back(t1);
 	//texts.push_back(t2);
-	for (unsigned int i=0; i<_highest_scores.size(); ++i) {
+	for (uint i=0; i<_highest_scores.size(); ++i) {
 		if (i== _new_highest_idx) {
 			font_color= glm::vec4(1.0f, 0.0f, 0.0f, 0.5f);
 		}
@@ -528,10 +528,10 @@ void Asteroid::update_border_aabb() {
 		_pt_min.x, _pt_max.y,
 		_pt_min.x, _pt_min.y
 	};
-	for (unsigned int idx_pt=0; idx_pt<8; ++idx_pt) {
+	for (uint idx_pt=0; idx_pt<8; ++idx_pt) {
 		data[context->_n_attrs_per_pts* idx_pt+ 0]= positions[2* idx_pt];
 		data[context->_n_attrs_per_pts* idx_pt+ 1]= positions[2* idx_pt+ 1];
-		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+		for (uint idx_color=0; idx_color<4; ++idx_color) {
 			data[context->_n_attrs_per_pts* idx_pt+ 2+ idx_color]= BORDER_COLOR[idx_color];
 		}
 	}
@@ -547,7 +547,7 @@ void Asteroid::update_ship_aabb() {
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
-	const unsigned int n_pts_per_ship= 8;
+	const uint n_pts_per_ship= 8;
 
 	for (auto ship : _ships) {
 		context->_n_pts+= n_pts_per_ship;
@@ -555,7 +555,7 @@ void Asteroid::update_ship_aabb() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
+	for (uint idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
 		Ship * ship= _ships[idx_ship];
 
 		glm::vec4 color;
@@ -579,7 +579,7 @@ void Asteroid::update_ship_aabb() {
 			ship->_aabb._pos.x, ship->_aabb._pos.y
 		};
 
-		for (unsigned int i=0; i<n_pts_per_ship; ++i) {
+		for (uint i=0; i<n_pts_per_ship; ++i) {
 			if (positions[2* i]> _pt_max.x) {
 				positions[2* i]= _pt_max.x;
 			}
@@ -594,10 +594,10 @@ void Asteroid::update_ship_aabb() {
 			}
 		}
 
-		for (unsigned int idx_pt=0; idx_pt<n_pts_per_ship; ++idx_pt) {
+		for (uint idx_pt=0; idx_pt<n_pts_per_ship; ++idx_pt) {
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 0]= float(positions[2* idx_pt]);
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 1]= float(positions[2* idx_pt+ 1]);
-			for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+			for (uint idx_color=0; idx_color<4; ++idx_color) {
 				data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= color[idx_color];
 			}
 		}
@@ -614,7 +614,7 @@ void Asteroid::update_ship_footprint() {
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
-	const unsigned int n_pts_per_ship= 8;
+	const uint n_pts_per_ship= 8;
 
 	for (auto ship : _ships) {
 		context->_n_pts+= n_pts_per_ship;
@@ -622,7 +622,7 @@ void Asteroid::update_ship_footprint() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
+	for (uint idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
 		Ship * ship= _ships[idx_ship];
 
 		glm::vec4 color;
@@ -646,7 +646,7 @@ void Asteroid::update_ship_footprint() {
 			ship->_footprint._pos.x, ship->_footprint._pos.y
 		};
 
-		for (unsigned int i=0; i<n_pts_per_ship; ++i) {
+		for (uint i=0; i<n_pts_per_ship; ++i) {
 			if (positions[2* i]> _pt_max.x) {
 				positions[2* i]= _pt_max.x;
 			}
@@ -661,10 +661,10 @@ void Asteroid::update_ship_footprint() {
 			}
 		}
 
-		for (unsigned int idx_pt=0; idx_pt<n_pts_per_ship; ++idx_pt) {
+		for (uint idx_pt=0; idx_pt<n_pts_per_ship; ++idx_pt) {
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 0]= float(positions[2* idx_pt]);
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 1]= float(positions[2* idx_pt+ 1]);
-			for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+			for (uint idx_color=0; idx_color<4; ++idx_color) {
 				data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= color[idx_color];
 			}
 		}
@@ -681,7 +681,7 @@ void Asteroid::update_ship_texture() {
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 11;
 
-	const unsigned int n_pts_per_ship= 6;
+	const uint n_pts_per_ship= 6;
 
 	for (auto ship : _ships) {
 		context->_n_pts+= n_pts_per_ship;
@@ -689,7 +689,7 @@ void Asteroid::update_ship_texture() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
+	for (uint idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
 		Ship * ship= _ships[idx_ship];
 		ActionTexture * texture= ship->get_current_texture();
 		glm::vec2 center= ship->_footprint.center();
@@ -705,8 +705,8 @@ void Asteroid::update_ship_texture() {
 			ship->_aabb._pos.x, ship->_aabb._pos.y+ ship->_aabb._size.y, 0.0, 0.0
 		};
 
-		for (unsigned int idx_pt=0; idx_pt<n_pts_per_ship; ++idx_pt) {
-			for (unsigned int i=0; i<4; ++i) {
+		for (uint idx_pt=0; idx_pt<n_pts_per_ship; ++idx_pt) {
+			for (uint i=0; i<4; ++i) {
 				data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[4* idx_pt+ i]);
 			}
 			data[idx_ship* n_pts_per_ship* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 4]= float(texture->_first_idx+ ship->_idx_anim); // current_layer_in
@@ -730,7 +730,7 @@ void Asteroid::update_star() {
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 10;
 
-	const unsigned int n_pts_per_star= 6;
+	const uint n_pts_per_star= 6;
 
 	for (auto star : _star_system->_stars) {
 		context->_n_pts+= n_pts_per_star;
@@ -738,7 +738,7 @@ void Asteroid::update_star() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	for (unsigned int idx_star=0; idx_star<_star_system->_stars.size(); ++idx_star) {
+	for (uint idx_star=0; idx_star<_star_system->_stars.size(); ++idx_star) {
 		Star * star= _star_system->_stars[idx_star];
 		
 		// à cause du système de reference opengl il faut inverser les 0 et les 1 des y des textures
@@ -752,12 +752,12 @@ void Asteroid::update_star() {
 			star->_aabb._pos.x, star->_aabb._pos.y+ star->_aabb._size.y, star->_z, 0.0, 0.0
 		};
 
-		for (unsigned int idx_pt=0; idx_pt<n_pts_per_star; ++idx_pt) {
-			for (unsigned int i=0; i<5; ++i) {
+		for (uint idx_pt=0; idx_pt<n_pts_per_star; ++idx_pt) {
+			for (uint i=0; i<5; ++i) {
 				data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
 			data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= float(star->_idx_texture); // current_layer_in
-			for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+			for (uint idx_color=0; idx_color<4; ++idx_color) {
 				data[idx_star* n_pts_per_star* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 6+ idx_color]= star->_color[idx_color];
 			}
 		}
@@ -826,7 +826,7 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 	// animation de chaque ship
 	// ne pas utiliser auto ici car les push_back dans le for modifie l'itérateur
 	//for (auto ship : _ships) {
-	for (unsigned int idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
+	for (uint idx_ship=0; idx_ship<_ships.size(); ++idx_ship) {
 		Ship * ship= _ships[idx_ship];
 		ship->anim(t, _play_sounds);
 
@@ -877,12 +877,12 @@ void Asteroid::anim_playing(std::chrono::system_clock::time_point t) {
 	}
 
 	// détection collisions
-	for (unsigned int idx_ship1=0; idx_ship1<_ships.size()- 1; ++idx_ship1) {
+	for (uint idx_ship1=0; idx_ship1<_ships.size()- 1; ++idx_ship1) {
 		Ship * ship1= _ships[idx_ship1];
 		if (ship1->_delete || ship1->_dead) {
 			continue;
 		}
-		for (unsigned int idx_ship2=idx_ship1+ 1; idx_ship2<_ships.size(); ++idx_ship2) {
+		for (uint idx_ship2=idx_ship1+ 1; idx_ship2<_ships.size(); ++idx_ship2) {
 			Ship * ship2= _ships[idx_ship2];
 			if (ship2->_delete || ship2->_dead) {
 				continue;
@@ -1106,7 +1106,7 @@ bool Asteroid::key_up(InputState * input_state, SDL_Keycode key, std::chrono::sy
 }
 
 
-bool Asteroid::joystick_down(unsigned int button_idx, std::chrono::system_clock::time_point t) {
+bool Asteroid::joystick_down(uint button_idx, std::chrono::system_clock::time_point t) {
 	if (!_is_joystick) {
 		return false;
 	}
@@ -1136,7 +1136,7 @@ bool Asteroid::joystick_down(unsigned int button_idx, std::chrono::system_clock:
 }
 
 
-bool Asteroid::joystick_up(unsigned int button_idx, std::chrono::system_clock::time_point t) {
+bool Asteroid::joystick_up(uint button_idx, std::chrono::system_clock::time_point t) {
 	if (!_is_joystick) {
 		return false;
 	}
@@ -1159,7 +1159,7 @@ bool Asteroid::joystick_up(unsigned int button_idx, std::chrono::system_clock::t
 }
 
 
-bool Asteroid::joystick_axis(unsigned int axis_idx, int value, std::chrono::system_clock::time_point t) {
+bool Asteroid::joystick_axis(uint axis_idx, int value, std::chrono::system_clock::time_point t) {
 	if (!_is_joystick) {
 		return false;
 	}
@@ -1242,7 +1242,7 @@ void Asteroid::add_level_events(std::chrono::system_clock::time_point t) {
 }
 
 
-void Asteroid::set_level(unsigned int level_idx, std::chrono::system_clock::time_point t) {
+void Asteroid::set_level(uint level_idx, std::chrono::system_clock::time_point t) {
 	_current_level_idx= level_idx;
 	
 	// on ajuste le start
@@ -1339,7 +1339,7 @@ void Asteroid::write_highest_scores() {
 
 
 // set_music arrête brutalement la musique en cours, puis fait un fade in de la musique à jouer
-void Asteroid::set_music(std::string music_path, unsigned int music_fade_in_ms) {
+void Asteroid::set_music(std::string music_path, uint music_fade_in_ms) {
 	if (Asteroid::_music!= NULL) {
 		Mix_FreeMusic(Asteroid::_music);
 	}
@@ -1350,7 +1350,7 @@ void Asteroid::set_music(std::string music_path, unsigned int music_fade_in_ms) 
 
 
 // set_music_with_fadeout arrête progressivement la musique en cours puis lorsque le callback est déclenché on fait un set_music
-void Asteroid::set_music_with_fadeout(std::string music_path, unsigned int music_fade_out_ms, unsigned int music_fade_in_ms) {
+void Asteroid::set_music_with_fadeout(std::string music_path, uint music_fade_out_ms, uint music_fade_in_ms) {
 	Mix_FadeOutMusic(music_fade_out_ms);
 	_next_music_path= music_path;
 }

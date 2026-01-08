@@ -11,8 +11,8 @@ class ReceiverTest : public Receiver {
 public:
 	ReceiverTest();
 	~ReceiverTest();
-	void note_on(unsigned int idx_track);
-	void note_off(unsigned int idx_track);
+	void note_on(uint idx_track);
+	void note_off(uint idx_track);
 };
 
 #endif

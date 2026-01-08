@@ -18,7 +18,7 @@ Action::Action() {
 }
 
 
-Action::Action(glm::vec2 direction, int t, std::string bullet_name, unsigned int t_shooting, std::string texture_name, Mix_Chunk * shoot_sound) :
+Action::Action(glm::vec2 direction, int t, std::string bullet_name, uint t_shooting, std::string texture_name, Mix_Chunk * shoot_sound) :
 	_direction(direction), _t(t), _bullet_name(bullet_name), _bullet_model(NULL), _t_shooting(t_shooting), _texture_name(texture_name),
 	_shoot_sound(shoot_sound)
 {
@@ -46,7 +46,7 @@ ActionTexture::ActionTexture() {
 }
 
 
-ActionTexture::ActionTexture(std::vector<std::string> & pngs, std::vector<unsigned int> & t_anims, AABB_2D & footprint) :
+ActionTexture::ActionTexture(std::vector<std::string> & pngs, std::vector<uint> & t_anims, AABB_2D & footprint) :
 	_first_idx(0), _footprint(footprint) {
 	for (auto png : pngs) {
 		_pngs.push_back(png);
@@ -139,11 +139,11 @@ ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 		auto & texture_name= it.key();
 		auto & l_textures= it.value();
 		std::vector<std::string> pngs;
-		std::vector<unsigned int> t_anims;
+		std::vector<uint> t_anims;
 		AABB_2D footprint(pt_2d(0.0, 0.0), pt_2d(1.0, 1.0));
 		for (auto texture : l_textures) {
 			std::string png= texture["png"];
-			unsigned int t= texture["t"];
+			uint t= texture["t"];
 			pngs.push_back(png);
 			t_anims.push_back(t);
 			pt_2d pos(texture["footprint"]["pos"][0], texture["footprint"]["pos"][1]);
@@ -184,7 +184,7 @@ ShipModel::ShipModel(std::string json_path) : _json_path(json_path) {
 			}
 			
 			std::string bullet_name= "";
-			unsigned int t_shooting= 0;
+			uint t_shooting= 0;
 			if (action["shooting"]!= nullptr) {
 				bullet_name= action["shooting"];
 				t_shooting= action["t_shooting"];

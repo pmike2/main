@@ -45,7 +45,7 @@ void TestGeom::test_simple() {
 
 void TestGeom::randomize() {
 	uint n_pts = 600;
-	double size = 10.0;
+	number size = 10.0;
 	_hull->randomize(n_pts, 0.0, size, 0.0, size, 0.0, size);
 
 	_hull->compute();

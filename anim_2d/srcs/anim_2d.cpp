@@ -371,7 +371,7 @@ void StaticTexture::draw() {
 void StaticTexture::update() {
 	_n_aabbs= _characters.size();
 	number vertices[30* _n_aabbs];
-	for (unsigned int idx=0; idx<_n_aabbs; ++idx) {
+	for (uint idx=0; idx<_n_aabbs; ++idx) {
 		vertices[30* idx+ 0]= _characters[idx]->_obj->_aabb->_pos.x;
 		vertices[30* idx+ 1]= _characters[idx]->_obj->_aabb->_pos.y+ _characters[idx]->_obj->_aabb->_size.y;
 		vertices[30* idx+ 2]= _characters[idx]->_z;
@@ -425,7 +425,7 @@ AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl, Obj
 {
 	string root_pngs= path+ "/pngs";
 	vector<string> l_dirs= list_files(root_pngs);
-	unsigned int compt= 0; // compteur courant permettant l'init de _first_idx
+	uint compt= 0; // compteur courant permettant l'init de _first_idx
 	for (auto dir : l_dirs) {
 		Action * action= new Action();
 		action->_name= basename(dir);
@@ -454,7 +454,7 @@ AnimTexture::AnimTexture(GLuint prog_draw, string path, ScreenGL * screengl, Obj
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, model_size.x, model_size.y, compt, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	for (auto action : _actions) {
-		for (unsigned int i=0; i<action->_n_idx; ++i) {
+		for (uint i=0; i<action->_n_idx; ++i) {
 			SDL_Surface * surface= IMG_Load(action->_pngs[i].c_str());
 			if (!surface) {
 				cout << "IMG_Load error :" << IMG_GetError() << endl;
@@ -544,7 +544,7 @@ void AnimTexture::draw() {
 void AnimTexture::update() {
 	_n_aabbs= _characters.size();
 	float vertices[36* _n_aabbs];
-	for (unsigned int idx=0; idx<_n_aabbs; ++idx) {
+	for (uint idx=0; idx<_n_aabbs; ++idx) {
 		// cast en AnimatedCharacter2D *
 		AnimatedCharacter2D * anim_character= dynamic_cast<AnimatedCharacter2D *>(_characters[idx]);
 		// on ajoute l'indice de la 1ere image liée à l'action courante + indice de l'anim courante au sein de cette action
@@ -647,7 +647,7 @@ void AnimatedCharacter2D::anim(number elapsed_time) {
 }
 
 
-void AnimatedCharacter2D::set_action(unsigned int idx_action) {
+void AnimatedCharacter2D::set_action(uint idx_action) {
 	if (idx_action>= _texture->_actions.size()) {
 		cout << "set_action " << idx_action << " trop grand\n";
 		return;
@@ -1312,13 +1312,13 @@ void Level::add_characters(SVGParser * svg_parser, bool verbose) {
 
 		if (checkpoints.size()) {
 			// conversion dans l'espace GL
-			for (unsigned int i=0; i<checkpoints.size(); ++i) {
+			for (uint i=0; i<checkpoints.size(); ++i) {
 				// aabb reduite a un pt -> size == 0
 				AABB_2D pt_gl= svg_parser->svg2screen(AABB_2D(checkpoints[i]._pos, pt_2d(0.0)));
 				checkpoints[i]._pos= pt_gl._pos;
 			}
 			pt_2d v= aabb_gl._pos- checkpoints[0]._pos;
-			for (unsigned int i=0; i<checkpoints.size(); ++i) {
+			for (uint i=0; i<checkpoints.size(); ++i) {
 				checkpoints[i]._pos+= v;
 			}
 		}
@@ -1752,16 +1752,16 @@ void LevelDebug::update() {
 	glm::vec3 aabb_color(1.0, 0.0, 0.0);
 	glm::vec3 footprint_color(0.0, 1.0, 0.0);
 
-	unsigned int n_chars= _level->_characters.size();
+	uint n_chars= _level->_characters.size();
 
 	_n_aabbs= n_chars* 2;
 	float vertices[_n_aabbs* 40];
-	for (unsigned int i=0; i<_n_aabbs* 40; ++i) {
+	for (uint i=0; i<_n_aabbs* 40; ++i) {
 		vertices[i]= 0.0;
 	}
 
 	if (_draw_aabb) {
-		for (unsigned int idx=0; idx<n_chars; ++idx) {
+		for (uint idx=0; idx<n_chars; ++idx) {
 			AABB_2D * aabb= _level->_characters[idx]->_obj->_aabb;
 			vertices[40* idx+ 0]= float(aabb->_pos.x);
 			vertices[40* idx+ 1]= float(aabb->_pos.y);
@@ -1783,7 +1783,7 @@ void LevelDebug::update() {
 			vertices[40* idx+ 35]= float(aabb->_pos.x);
 			vertices[40* idx+ 36]= float(aabb->_pos.y);
 
-			for (unsigned int i=0; i<8; ++i) {
+			for (uint i=0; i<8; ++i) {
 				vertices[40* idx+ 5* i+ 2]= aabb_color.x;
 				vertices[40* idx+ 5* i+ 3]= aabb_color.y;
 				vertices[40* idx+ 5* i+ 4]= aabb_color.z;
@@ -1792,7 +1792,7 @@ void LevelDebug::update() {
 	}
 	
 	if (_draw_footprint) {
-		for (unsigned int idx=0; idx<n_chars; ++idx) {
+		for (uint idx=0; idx<n_chars; ++idx) {
 			AABB_2D * footprint= _level->_characters[idx]->_obj->_footprint;
 			vertices[n_chars* 40+ 40* idx+ 0]= float(footprint->_pos.x);
 			vertices[n_chars* 40+ 40* idx+ 1]= float(footprint->_pos.y);
@@ -1814,7 +1814,7 @@ void LevelDebug::update() {
 			vertices[n_chars* 40+ 40* idx+ 35]= float(footprint->_pos.x);
 			vertices[n_chars* 40+ 40* idx+ 36]= float(footprint->_pos.y);
 
-			for (unsigned int i=0; i<8; ++i) {
+			for (uint i=0; i<8; ++i) {
 				vertices[n_chars* 40+ 40* idx+ 5* i+ 2]= footprint_color.x;
 				vertices[n_chars* 40+ 40* idx+ 5* i+ 3]= footprint_color.y;
 				vertices[n_chars* 40+ 40* idx+ 5* i+ 4]= footprint_color.z;

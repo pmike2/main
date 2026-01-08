@@ -14,18 +14,18 @@
 #include "grid.h"
 
 
-const std::map<unsigned int, glm::vec4> GOL_CELL_STATES {{0, glm::vec4(0.2, 0.0, 0.0, 1.0)}, {1, glm::vec4(0.0, 1.0, 0.0, 1.0)}};
+const std::map<uint, glm::vec4> GOL_CELL_STATES {{0, glm::vec4(0.2, 0.0, 0.0, 1.0)}, {1, glm::vec4(0.0, 1.0, 0.0, 1.0)}};
 
 
 class GolCell : public Cell {
 public:
 	GolCell();
-	GolCell(unsigned int col, unsigned int row);
+	GolCell(uint col, uint row);
 	~GolCell();
 	void next();
 
 
-	unsigned int _next_state;
+	uint _next_state;
 };
 
 

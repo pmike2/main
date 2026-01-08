@@ -5,7 +5,7 @@
 using namespace std;
 
 
-unsigned int add_rectangle(float * vertices, unsigned int idx, RectangleGL & rect) {
+uint add_rectangle(float * vertices, uint idx, RectangleGL & rect) {
 	vertices[idx+ 0]= rect._x;
 	vertices[idx+ 1]= rect._y;
 
@@ -24,7 +24,7 @@ unsigned int add_rectangle(float * vertices, unsigned int idx, RectangleGL & rec
 	vertices[idx+ 35]= rect._x;
 	vertices[idx+ 36]= rect._y+ rect._h;
 
-	for (unsigned int i=0; i<6; ++i) {
+	for (uint i=0; i<6; ++i) {
 		vertices[idx+ i* 7+ 2]= rect._z;
 		vertices[idx+ i* 7+ 3]= rect._r;
 		vertices[idx+ i* 7+ 4]= rect._g;
@@ -67,14 +67,14 @@ LooperGL::LooperGL(GLuint prog_2d, GLuint prog_font, ScreenGL * screengl) :
 
 	update_vbo_general();
 	update_vbo_time();
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		update_vbo_track_info(idx_track);
 		update_vbo_track_data(idx_track);
 	}
 
 	_font= new Font(_prog_font, "../../fonts/Arial.ttf", 96, _screengl);
 	update_text_general();
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		update_text_track_info(idx_track);
 		update_text_track_data(idx_track);
 	}
@@ -97,7 +97,7 @@ bool LooperGL::event_key(SDL_Keycode key) {
 void LooperGL::key_down(SDL_Keycode key) {
 	//cout << "key down : " << key << "\n";
 
-	unsigned int idx_track= get_current_track_index();
+	uint idx_track= get_current_track_index();
 
 	if (_input_state->get_key(key)) {
 		return;
@@ -107,10 +107,10 @@ void LooperGL::key_down(SDL_Keycode key) {
 
 	SDL_Keymod key_mod= SDL_GetModState();
 	if (KMOD_LSHIFT & key_mod) {
-		for (unsigned int i=SDLK_KP_1; i<=SDLK_KP_9; ++i) {
+		for (uint i=SDLK_KP_1; i<=SDLK_KP_9; ++i) {
 			if (_input_state->get_key(i)) {
 				if (_ratio_numerator> 0) {
-					unsigned int ratio_denominator= i- SDLK_KP_1+ 1;
+					uint ratio_denominator= i- SDLK_KP_1+ 1;
 					if (idx_track!= 1) {
 						_current_track->set_ratio_to_master_track(_tracks[1], ratio_type(_ratio_numerator, ratio_denominator));
 						update_text_track_info(idx_track);
@@ -179,7 +179,7 @@ void LooperGL::key_down(SDL_Keycode key) {
 
 	if (event_key(key)) {
 		amplitude_type amplitude= 1.0f;
-		for (unsigned int i=SDLK_KP_1; i<=SDLK_KP_9; ++i) {
+		for (uint i=SDLK_KP_1; i<=SDLK_KP_9; ++i) {
 			if (_input_state->get_key(i)) {
 				amplitude= (amplitude_type)(i- SDLK_KP_1+ 1)/ 9.0f;
 				break;
@@ -196,7 +196,7 @@ void LooperGL::key_down(SDL_Keycode key) {
 void LooperGL::key_up(SDL_Keycode key) {
 	//cout << "key up : " << key << "\n";
 
-	unsigned int idx_track= get_current_track_index();
+	uint idx_track= get_current_track_index();
 
 	_input_state->key_up(key);
 
@@ -226,7 +226,7 @@ void LooperGL::tap_tempo() {
 
 
 void LooperGL::update_vbo_general() {
-	unsigned int idx_vbo= 0;
+	uint idx_vbo= 0;
 
 	_n_rectangles[idx_vbo]= 1;
 	
@@ -242,13 +242,13 @@ void LooperGL::update_vbo_general() {
 
 
 void LooperGL::update_vbo_time() {
-	unsigned int idx_vbo= 1;
+	uint idx_vbo= 1;
 
 	_n_rectangles[idx_vbo]= N_TRACKS;
 	
 	float vertices[_n_rectangles[idx_vbo]* N_VERTICES_PER_RECTANGLE* N_FLOATS_PER_VERTEX];
-	unsigned int idx= 0;
-	for (unsigned int idx_track=0; idx_track<N_TRACKS; ++idx_track) {
+	uint idx= 0;
+	for (uint idx_track=0; idx_track<N_TRACKS; ++idx_track) {
 		RectangleGL rect_timeline;
 		get_timeline_rectangle(rect_timeline, idx_track);
 		idx= add_rectangle(vertices, idx, rect_timeline);
@@ -259,8 +259,8 @@ void LooperGL::update_vbo_time() {
 }
 
 
-void LooperGL::update_vbo_track_info(unsigned int idx_track) {
-	unsigned int idx_vbo= 2+ idx_track;
+void LooperGL::update_vbo_track_info(uint idx_track) {
+	uint idx_vbo= 2+ idx_track;
 
 	_n_rectangles[idx_vbo]= 1+ _tracks[idx_track]->_quantize;
 
@@ -269,11 +269,11 @@ void LooperGL::update_vbo_track_info(unsigned int idx_track) {
 	RectangleGL rect_track_info;
 	get_track_info_rectangle(rect_track_info, idx_track);
 
-	unsigned int idx= 0;
+	uint idx= 0;
 	idx= add_rectangle(vertices, idx, rect_track_info);
 
 	if (_tracks[idx_track]->_quantize> 0) {
-		for (unsigned int idx_quantize=0; idx_quantize<_tracks[idx_track]->_quantize; ++idx_quantize) {
+		for (uint idx_quantize=0; idx_quantize<_tracks[idx_track]->_quantize; ++idx_quantize) {
 			RectangleGL rect_quantize;
 			get_quantize_rectangle(rect_quantize, idx_track, idx_quantize);
 			idx= add_rectangle(vertices, idx, rect_quantize);
@@ -286,8 +286,8 @@ void LooperGL::update_vbo_track_info(unsigned int idx_track) {
 }
 
 
-void LooperGL::update_vbo_track_data(unsigned int idx_track) {
-	unsigned int idx_vbo= 2+ N_TRACKS+ idx_track;
+void LooperGL::update_vbo_track_data(uint idx_track) {
+	uint idx_vbo= 2+ N_TRACKS+ idx_track;
 
 	_n_rectangles[idx_vbo]= 1+ N_MAX_EVENTS;
 
@@ -296,9 +296,9 @@ void LooperGL::update_vbo_track_data(unsigned int idx_track) {
 	RectangleGL rect_track_data;
 	get_track_data_rectangle(rect_track_data, idx_track);
 
-	unsigned int idx= 0;
+	uint idx= 0;
 	idx= add_rectangle(vertices, idx, rect_track_data);
-	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+	for (uint idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		RectangleGL rect_event;
 		get_event_rectangle(rect_event, idx_track, idx_event, false);
 		idx= add_rectangle(vertices, idx, rect_event);
@@ -318,7 +318,7 @@ void LooperGL::update_text_general() {
 	texts.push_back(Text(to_string(int(get_bpm()))+ " BPM", glm::vec2(rect_general._x, rect_general._y+ rect_general._h- 1.0f), 0.005f, glm::vec4(1.0f, 0.1f, 0.1f, 0.7f)));
 	texts.push_back(Text("SHIFT+", glm::vec2(rect_general._x, rect_general._y+ rect_general._h- 2.0f), 0.004f, glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)));
 	vector<string> shift_cmds= {"up:prev trk", "down:nxt trk", "1a9x2:ratio", "space:play", "r:record", "t:taptempo", "y:yank", "h:hold", "c:clear", "q:quantize", "d:debug", "s:screensave"};
-	for (unsigned int i=0; i<shift_cmds.size(); ++i) {
+	for (uint i=0; i<shift_cmds.size(); ++i) {
 		texts.push_back(Text(shift_cmds[i], glm::vec2(rect_general._x, rect_general._y+ rect_general._h- 2.5f- 0.5f* (float)(i)), 0.004f, glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)));
 	}
 	texts.push_back(Text("NOSHIFT+", glm::vec2(rect_general._x, rect_general._y+ 0.5f), 0.004f, glm::vec4(1.0f, 1.0f, 1.0f, 0.7f)));
@@ -327,7 +327,7 @@ void LooperGL::update_text_general() {
 }
 
 
-void LooperGL::update_text_track_info(unsigned int idx_track) {
+void LooperGL::update_text_track_info(uint idx_track) {
 	RectangleGL rect_track_info;
 	get_track_info_rectangle(rect_track_info, idx_track);
 
@@ -342,9 +342,9 @@ void LooperGL::update_text_track_info(unsigned int idx_track) {
 }
 
 
-void LooperGL::update_text_track_data(unsigned int idx_track) {
+void LooperGL::update_text_track_data(uint idx_track) {
 	vector<Text> texts;
-	for (unsigned int idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
+	for (uint idx_event=0; idx_event<N_MAX_EVENTS; ++idx_event) {
 		if (_tracks[idx_track]->_events[idx_event]->is_null()) {
 			continue;
 		}
@@ -362,7 +362,7 @@ void LooperGL::draw() {
 	glViewport(0, 0, _screengl->_screen_width, _screengl->_screen_height);
 
 	glUseProgram(_prog_2d);
-	for (unsigned int idx_vbo=0; idx_vbo<2+ 2* N_TRACKS; ++idx_vbo) {
+	for (uint idx_vbo=0; idx_vbo<2+ 2* N_TRACKS; ++idx_vbo) {
 		glBindBuffer(GL_ARRAY_BUFFER, _vbos[idx_vbo]);
 
 		glUniformMatrix4fv(_camera2clip_loc, 1, GL_FALSE, glm::value_ptr(_camera2clip));
@@ -394,7 +394,7 @@ glm::vec3 LooperGL::get_color(SDL_Keycode key) {
 }
 
 
-float LooperGL::get_track_y(unsigned int idx_track) {
+float LooperGL::get_track_y(uint idx_track) {
 	return -0.5f* _screengl->_gl_height+ (N_TRACKS- 1- idx_track)* _screengl->_gl_height/ (float)(N_TRACKS);
 }
 
@@ -404,12 +404,12 @@ float LooperGL::get_track_h() {
 }
 
 
-float LooperGL::get_event_x(unsigned int idx_track, unsigned int idx_event) {
+float LooperGL::get_event_x(uint idx_track, uint idx_event) {
 	return (-0.5f+ GENERAL_INFO_WIDTH+ TRACK_INFO_WIDTH)* _screengl->_gl_width+ _screengl->_gl_width* (1.0f- GENERAL_INFO_WIDTH- TRACK_INFO_WIDTH)* (float)(time_ms(_tracks[idx_track]->_events[idx_event]->_data._t_start))/ (float)(time_ms(_tracks[idx_track]->_duration));
 }
 
 
-float LooperGL::get_event_w(unsigned int idx_track, unsigned int idx_event, bool until_now) {
+float LooperGL::get_event_w(uint idx_track, uint idx_event, bool until_now) {
 	if (until_now) {
 		time_type now_time= now();
 		return _screengl->_gl_width* (1.0f- GENERAL_INFO_WIDTH- TRACK_INFO_WIDTH)* (float)(time_ms(_tracks[idx_track]->get_relative_t(now_time))- time_ms(_tracks[idx_track]->_events[idx_event]->_data._t_start))/ (float)(time_ms(_tracks[idx_track]->_duration));
@@ -420,7 +420,7 @@ float LooperGL::get_event_w(unsigned int idx_track, unsigned int idx_event, bool
 }
 
 
-float LooperGL::get_track_now(unsigned int idx_track) {
+float LooperGL::get_track_now(uint idx_track) {
 	time_type now_time= now();
 	return (-0.5f+ GENERAL_INFO_WIDTH+ TRACK_INFO_WIDTH)* _screengl->_gl_width+ _screengl->_gl_width* (1.0f- GENERAL_INFO_WIDTH- TRACK_INFO_WIDTH)* (float)(time_ms(_tracks[idx_track]->get_relative_t(now_time)))/ (float)(time_ms(_tracks[idx_track]->_duration));
 }
@@ -439,7 +439,7 @@ void LooperGL::get_general_rectangle(RectangleGL & rect) {
 }
 
 
-void LooperGL::get_timeline_rectangle(RectangleGL & rect, unsigned int idx_track) {
+void LooperGL::get_timeline_rectangle(RectangleGL & rect, uint idx_track) {
 	rect._x= get_track_now(idx_track);
 	rect._y= get_track_y(idx_track)+ EPS;
 	rect._z= 0.0f;
@@ -452,8 +452,8 @@ void LooperGL::get_timeline_rectangle(RectangleGL & rect, unsigned int idx_track
 }
 
 
-void LooperGL::get_track_info_rectangle(RectangleGL & rect, unsigned int idx_track) {
-	unsigned int current_idx_track= get_current_track_index();
+void LooperGL::get_track_info_rectangle(RectangleGL & rect, uint idx_track) {
+	uint current_idx_track= get_current_track_index();
 
 	rect._x= (-0.5f+ GENERAL_INFO_WIDTH)* _screengl->_gl_width+ EPS;
 	rect._y= get_track_y(idx_track)+ EPS;
@@ -476,7 +476,7 @@ void LooperGL::get_track_info_rectangle(RectangleGL & rect, unsigned int idx_tra
 }
 
 
-void LooperGL::get_quantize_rectangle(RectangleGL & rect, unsigned int idx_track, unsigned int idx_quantize) {
+void LooperGL::get_quantize_rectangle(RectangleGL & rect, uint idx_track, uint idx_quantize) {
 	rect._x= (-0.5f+ GENERAL_INFO_WIDTH+ TRACK_INFO_WIDTH)* _screengl->_gl_width+ EPS+ (float)(idx_quantize)* _screengl->_gl_width* (1.0f- GENERAL_INFO_WIDTH- TRACK_INFO_WIDTH)/ (float)(_tracks[idx_track]->_quantize);
 	rect._y= get_track_y(idx_track)+ EPS;
 	rect._z= 0.0f;
@@ -489,7 +489,7 @@ void LooperGL::get_quantize_rectangle(RectangleGL & rect, unsigned int idx_track
 }
 
 
-void LooperGL::get_track_data_rectangle(RectangleGL & rect, unsigned int idx_track) {
+void LooperGL::get_track_data_rectangle(RectangleGL & rect, uint idx_track) {
 	rect._x= (-0.5f+ GENERAL_INFO_WIDTH+ TRACK_INFO_WIDTH)* _screengl->_gl_width+ EPS;
 	rect._y= get_track_y(idx_track)+ EPS;
 	rect._z= 0.0f;
@@ -502,7 +502,7 @@ void LooperGL::get_track_data_rectangle(RectangleGL & rect, unsigned int idx_tra
 }
 
 
-void LooperGL::get_event_rectangle(RectangleGL & rect, unsigned int idx_track, unsigned int idx_event, bool until_now) {
+void LooperGL::get_event_rectangle(RectangleGL & rect, uint idx_track, uint idx_event, bool until_now) {
 	glm::vec3 event_color= get_color(_tracks[idx_track]->_events[idx_event]->_data._key);
 	float a= _tracks[idx_track]->_events[idx_event]->_data._amplitude;
 

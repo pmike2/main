@@ -29,7 +29,7 @@ GridEditor::GridEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font
 	_world2camera= glm::mat4(1.0f);
 	_font= new Font(prog_font, "../../fonts/Silom.ttf", 48, screengl);
 
-	unsigned int n_buffers= 4;
+	uint n_buffers= 4;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
@@ -209,7 +209,7 @@ void GridEditor::update_grid() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
+	uint compt= 0;
 
 	for (int i=0; i<_grid->_width+ 1; ++i) {
 		data[compt++]= float(i)* float(_grid->_cell_size);
@@ -228,8 +228,8 @@ void GridEditor::update_grid() {
 		compt+= 4;
 	}
 
-	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
-		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+	for (uint idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+		for (uint idx_color=0; idx_color<4; ++idx_color) {
 			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= GRID_COLOR[idx_color];
 		}
 	}
@@ -258,10 +258,10 @@ void GridEditor::update_selection() {
 		_grid->_cell_size* number(_col_idx_select), _grid->_cell_size* number(_row_idx_select+ 1)
 	};
 
-	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+	for (uint idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
 		data[idx_pt* context->_n_attrs_per_pts+ 0]= positions[2* idx_pt+ 0];
 		data[idx_pt* context->_n_attrs_per_pts+ 1]= positions[2* idx_pt+ 1];
-		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+		for (uint idx_color=0; idx_color<4; ++idx_color) {
 			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= SELECTION_COLOR[idx_color];
 		}
 	}
@@ -284,7 +284,7 @@ void GridEditor::update_tiles() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto obj : _grid->_objects) {
 		for (auto tri : obj->_footprint->_triangles_idx) {
 			for (int i=0; i<3; ++i) {
@@ -296,8 +296,8 @@ void GridEditor::update_tiles() {
 		}
 	}
 
-	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
-		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+	for (uint idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+		for (uint idx_color=0; idx_color<4; ++idx_color) {
 			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= _tile_color[idx_color];
 		}
 	}
@@ -309,7 +309,7 @@ void GridEditor::update_tiles() {
 
 
 void GridEditor::update_texture() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 
 	DrawContext * context= _contexts["texture"];
 	context->_n_pts= n_pts_per_obj* _grid->_objects.size();
@@ -317,7 +317,7 @@ void GridEditor::update_texture() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	for (unsigned int idx_obj=0; idx_obj<_grid->_objects.size(); ++idx_obj) {
+	for (uint idx_obj=0; idx_obj<_grid->_objects.size(); ++idx_obj) {
 		StaticObject * obj;
 		obj= _grid->_objects[idx_obj];
 		Action * action= obj->get_current_action();
@@ -333,8 +333,8 @@ void GridEditor::update_texture() {
 			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, 0.0, 0.0
 		};
 		
-		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
-			for (unsigned int i=0; i<5; ++i) {
+		for (uint idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
+			for (uint i=0; i<5; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= action->_textures[obj->_current_action_texture_idx]->_texture_idx;
@@ -417,7 +417,7 @@ pt_2d GridEditor::screen2pt(int x, int y) {
 
 bool GridEditor::mouse_button_down(InputState * input_state) {
 	pt_2d pos= screen2pt(input_state->_x, input_state->_y);
-	std::pair<int, int> coord= _grid->number2coord(pos);
+	int_pair coord= _grid->number2coord(pos);
 	if (coord.first>= 0) {
 		_col_idx_select= coord.first;
 		_row_idx_select= coord.second;
@@ -448,7 +448,7 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 	_screengl->gl2screen(TRACK_ORIGIN.x, TRACK_ORIGIN.y, _screen_coords[0], _screen_coords[1]);
 	_screengl->gl2screen(TRACK_ORIGIN.x+ TRACK_SIZE.x, TRACK_ORIGIN.y+ TRACK_SIZE.y, _screen_coords[2], _screen_coords[3]);
 
-	unsigned int n_buffers= 6;
+	uint n_buffers= 6;
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
@@ -485,18 +485,18 @@ TrackEditor::~TrackEditor() {
 }
 
 
-void TrackEditor::reinit(unsigned int width, unsigned int height) {
+void TrackEditor::reinit(uint width, uint height) {
 	_track->set_all("full_obst", width, height);
 	_track->clear_floating_objects();
 	_track->_info->_n_laps= DEFAULT_N_LAPS;
-	for (unsigned int i=0; i<3; ++i) {
+	for (uint i=0; i<3; ++i) {
 		_track->_info->_best_lap.push_back(std::make_pair("XXX", 200.0+ number(i)* 100.0));
 		_track->_info->_best_overall.push_back(std::make_pair("XXX", 200.0+ number(i)* 100.0));
 	}
 }
 
 
-void TrackEditor::load_track(unsigned int track_idx) {
+void TrackEditor::load_track(uint track_idx) {
 	_current_track_idx= track_idx;
 	std::string current_track_path= "../data/tracks/track"+ std::to_string(_current_track_idx)+ ".json";
 	if (!file_exists(current_track_path)) {
@@ -746,7 +746,7 @@ void TrackEditor::update_grid() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
+	uint compt= 0;
 
 	for (int i=0; i<_track->_grid->_width+ 1; ++i) {
 		data[compt++]= float(i)* float(_track->_grid->_cell_size);
@@ -765,8 +765,8 @@ void TrackEditor::update_grid() {
 		compt+= 4;
 	}
 
-	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
-		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+	for (uint idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+		for (uint idx_color=0; idx_color<4; ++idx_color) {
 			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= GRID_COLOR[idx_color];
 		}
 	}
@@ -795,10 +795,10 @@ void TrackEditor::update_selection() {
 		_track->_grid->_cell_size* number(_col_idx_select), _track->_grid->_cell_size* number(_row_idx_select+ 1),
 	};
 
-	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+	for (uint idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
 		data[idx_pt* context->_n_attrs_per_pts+ 0]= positions[2* idx_pt+ 0];
 		data[idx_pt* context->_n_attrs_per_pts+ 1]= positions[2* idx_pt+ 1];
-		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+		for (uint idx_color=0; idx_color<4; ++idx_color) {
 			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= SELECTION_COLOR[idx_color];
 		}
 	}
@@ -820,7 +820,7 @@ void TrackEditor::update_tiles() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto obj : _track->_grid->_objects) {
 		for (auto tri : obj->_footprint->_triangles_idx) {
 			for (int i=0; i<3; ++i) {
@@ -831,8 +831,8 @@ void TrackEditor::update_tiles() {
 			}
 		}
 	}
-	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
-		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+	for (uint idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+		for (uint idx_color=0; idx_color<4; ++idx_color) {
 			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= OBSTACLE_SETTING_COLOR[idx_color];
 		}
 	}
@@ -854,7 +854,7 @@ void TrackEditor::update_floating_objects_footprint() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto obj : _track->_floating_objects) {
 		for (auto tri : obj->_footprint->_triangles_idx) {
 			for (int i=0; i<3; ++i) {
@@ -865,8 +865,8 @@ void TrackEditor::update_floating_objects_footprint() {
 			}
 		}
 	}
-	for (unsigned int idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
-		for (unsigned int idx_color=0; idx_color<4; ++idx_color) {
+	for (uint idx_pt=0; idx_pt<context->_n_pts; ++idx_pt) {
+		for (uint idx_color=0; idx_color<4; ++idx_color) {
 			data[idx_pt* context->_n_attrs_per_pts+ 2+ idx_color]= OBSTACLE_FLOATING_FOOTPRINT_COLOR[idx_color];
 		}
 	}
@@ -897,7 +897,7 @@ void TrackEditor::update_floating_objects_bbox() {
 
 
 void TrackEditor::update_texture() {
-	const unsigned int n_pts_per_obj= 6;
+	const uint n_pts_per_obj= 6;
 
 	DrawContext * context= _contexts["texture"];
 	context->_n_pts= n_pts_per_obj* (_track->_floating_objects.size()+ _track->_grid->_objects.size());
@@ -905,7 +905,7 @@ void TrackEditor::update_texture() {
 
 	float data[context->_n_pts* context->_n_attrs_per_pts];
 
-	for (unsigned int idx_obj=0; idx_obj<_track->_floating_objects.size()+ _track->_grid->_objects.size(); ++idx_obj) {
+	for (uint idx_obj=0; idx_obj<_track->_floating_objects.size()+ _track->_grid->_objects.size(); ++idx_obj) {
 		StaticObject * obj;
 		if (idx_obj< _track->_floating_objects.size()) {
 			obj= _track->_floating_objects[idx_obj];
@@ -927,8 +927,8 @@ void TrackEditor::update_texture() {
 			obj->_bbox->_pts[3].x, obj->_bbox->_pts[3].y, obj->_z, 0.0, 0.0
 		};
 		
-		for (unsigned int idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
-			for (unsigned int i=0; i<5; ++i) {
+		for (uint idx_pt=0; idx_pt<n_pts_per_obj; ++idx_pt) {
+			for (uint i=0; i<5; ++i) {
 				data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ i]= float(positions[5* idx_pt+ i]);
 			}
 			data[idx_obj* n_pts_per_obj* context->_n_attrs_per_pts+ idx_pt* context->_n_attrs_per_pts+ 5]= action->_textures[obj->_current_action_texture_idx]->_texture_idx;;
@@ -1136,7 +1136,7 @@ bool TrackEditor::mouse_button_down(InputState * input_state) {
 	// sinon sélection tuile
 	else {
 		pt_2d pos= screen2pt(input_state->_x, input_state->_y);
-		std::pair<int, int> coord= _track->_grid->number2coord(pos);
+		int_pair coord= _track->_grid->number2coord(pos);
 		if (coord.first>= 0) {
 			_col_idx_select= coord.first;
 			_row_idx_select= coord.second;
@@ -1228,7 +1228,7 @@ Editor::Editor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font, Screen
 		_help_data.push_back(line);
 	}
 
-	unsigned int n_textures= 1;
+	uint n_textures= 1;
 	_textures= new GLuint(n_textures);
 	glGenTextures(n_textures, _textures);
 
@@ -1286,7 +1286,7 @@ Editor::~Editor() {
 
 void Editor::fill_texture_array_models() {
 	std::vector<std::string> pngs;
-	unsigned int compt= 0;
+	uint compt= 0;
 	for (auto m : _track_editor->_track->_models) {
 		StaticObjectModel * model= m.second;
 		std::vector<Action *> actions= model->get_unduplicated_actions();
@@ -1307,7 +1307,7 @@ void Editor::draw() {
 
 	if (_help) {
 		std::vector<Text> texts;
-		for (unsigned int idx_line=0; idx_line<_help_data.size(); ++idx_line) {
+		for (uint idx_line=0; idx_line<_help_data.size(); ++idx_line) {
 			texts.push_back(Text(_help_data[idx_line], glm::vec2(-9.5f, 7.5f- float(idx_line)* 0.4), 0.006, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 		}
 		_font->set_text(texts);

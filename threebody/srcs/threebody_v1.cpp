@@ -194,9 +194,9 @@ void ThreeBody::anim() {
 		body->_force.x= 0.0f; body->_force.y= 0.0f; body->_force.z= 0.0f;
 	}
 
-	for (unsigned int idx_body_1=0; idx_body_1<_bodies.size()- 1; ++idx_body_1) {
+	for (uint idx_body_1=0; idx_body_1<_bodies.size()- 1; ++idx_body_1) {
 
-		for (unsigned int idx_body_2=idx_body_1+ 1; idx_body_2<_bodies.size(); ++idx_body_2) {
+		for (uint idx_body_2=idx_body_1+ 1; idx_body_2<_bodies.size(); ++idx_body_2) {
 
 			BodyInteraction * body_interaction= get_interaction(_bodies[idx_body_1]->_body_type, _bodies[idx_body_2]->_body_type);
 			if (body_interaction== NULL) {
@@ -251,7 +251,7 @@ void ThreeBody::anim() {
 
 
 void ThreeBody::print() {
-	for (unsigned int idx_body=0; idx_body<_bodies.size(); ++idx_body) {
+	for (uint idx_body=0; idx_body<_bodies.size(); ++idx_body) {
 		std::cout << idx_body << "\n";
 		_bodies[idx_body]->print();
 	}
@@ -259,8 +259,8 @@ void ThreeBody::print() {
 }
 
 
-void ThreeBody::add_random_bodies(BodyType * body_type, unsigned int n_bodies) {
-	for (unsigned int idx_body=0; idx_body<n_bodies; ++idx_body) {
+void ThreeBody::add_random_bodies(BodyType * body_type, uint n_bodies) {
+	for (uint idx_body=0; idx_body<n_bodies; ++idx_body) {
 		Body * body= add_body(body_type);
 		body->randomize();
 	}
@@ -322,11 +322,11 @@ void ThreeBody::update() {
 		return;
 	}
 
-	unsigned int histo_size= _bodies[0]->_histo_position.size();
+	uint histo_size= _bodies[0]->_histo_position.size();
 	_n_pts= _bodies.size()* histo_size;
 	float data[6* _n_pts];
-	for (unsigned int idx_body=0; idx_body<_bodies.size(); ++idx_body) {
-		for (unsigned int idx_position=0; idx_position<histo_size; ++idx_position) {
+	for (uint idx_body=0; idx_body<_bodies.size(); ++idx_body) {
+		for (uint idx_position=0; idx_position<histo_size; ++idx_position) {
 			data[(idx_body* histo_size+ idx_position)* 6+ 0]= _bodies[idx_body]->_histo_position[idx_position].x;
 			data[(idx_body* histo_size+ idx_position)* 6+ 1]= _bodies[idx_body]->_histo_position[idx_position].y;
 			data[(idx_body* histo_size+ idx_position)* 6+ 2]= _bodies[idx_body]->_histo_position[idx_position].z;

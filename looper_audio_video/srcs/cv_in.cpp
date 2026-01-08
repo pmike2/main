@@ -12,9 +12,9 @@ CVIn::CVIn() {
 }
 
 
-CVIn::CVIn(string json_path, unsigned int n_input_channels) : _n_input_channels(n_input_channels) {
+CVIn::CVIn(string json_path, uint n_input_channels) : _n_input_channels(n_input_channels) {
 	_input_channels= new CVChannel[_n_input_channels];
-	for (unsigned int i=0; i<_n_input_channels; ++i) {
+	for (uint i=0; i<_n_input_channels; ++i) {
 		_input_channels[i]._active= false;
 		_input_channels[i]._frame_idx= 0;
 	}
@@ -38,10 +38,10 @@ void CVIn::load_json(string json_path) {
 void CVIn::load_json(json js) {
 	_mapping.clear();
 	for (auto & mapping : js.items()) {
-		unsigned int idx_channel_in= (unsigned int)(stoi(mapping.key()));
+		uint idx_channel_in= (uint)(stoi(mapping.key()));
 		json val= mapping.value();
 		for (auto & event : val) {
-			unsigned int idx_track= event["track"].get<unsigned int>();
+			uint idx_track= event["track"].get<uint>();
 			key_type key= (key_type)(event["key"].get<string>().c_str()[0]);
 			float amplitude= event["amplitude"].get<float>();
 
@@ -52,12 +52,12 @@ void CVIn::load_json(json js) {
 }
 
 
-bool CVIn::is_active(unsigned int idx_channel) {
+bool CVIn::is_active(uint idx_channel) {
 	return _input_channels[idx_channel]._active;
 }
 
 
-void CVIn::set_active(unsigned int idx_channel) {
+void CVIn::set_active(uint idx_channel) {
 	_input_channels[idx_channel]._active= true;
 	_input_channels[idx_channel]._frame_idx= 0;
 
@@ -68,7 +68,7 @@ void CVIn::set_active(unsigned int idx_channel) {
 }
 
 
-void CVIn::set_inactive(unsigned int idx_channel) {
+void CVIn::set_inactive(uint idx_channel) {
 	_input_channels[idx_channel]._active= false;
 	_input_channels[idx_channel]._frame_idx= 0;
 

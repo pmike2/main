@@ -69,7 +69,7 @@ Polynomial::~Polynomial() {
 }
 
 
-float Polynomial::operator[](unsigned int idx) const {
+float Polynomial::operator[](uint idx) const {
 	if (idx>= _coeffs.size()) {
 		cerr << "Polynomial idx =" << idx << " >= coeffs.size = " << _coeffs.size() << "\n";
 	}
@@ -79,7 +79,7 @@ float Polynomial::operator[](unsigned int idx) const {
 
 float Polynomial::valueat(float x) {
 	float res= 0.0;
-	for (unsigned int idx=0; idx<_coeffs.size(); ++idx) {
+	for (uint idx=0; idx<_coeffs.size(); ++idx) {
 		res+= pow(x, idx)* _coeffs[idx];
 	}
 	return res;

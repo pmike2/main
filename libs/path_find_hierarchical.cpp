@@ -63,7 +63,7 @@ HPAGraph::~HPAGraph() {
 }
 
 
-void HPAGraph::add_vertex(unsigned int i, float weight, glm::vec2 pos) {
+void HPAGraph::add_vertex(uint i, float weight, glm::vec2 pos) {
 	if (!_vertices.count(i)) {
 		HPAVertex v(pos);
 		_vertices[i]= v;
@@ -71,7 +71,7 @@ void HPAGraph::add_vertex(unsigned int i, float weight, glm::vec2 pos) {
 }
 
 
-void HPAGraph::add_edge(unsigned int i, unsigned int j, float weight) {
+void HPAGraph::add_edge(uint i, uint j, float weight) {
 	if ((_vertices.count(i)) && (_vertices.count(j))) {
 		HPAEdge e(weight);
 		_vertices[i]._edges[j]= e;
@@ -79,7 +79,7 @@ void HPAGraph::add_edge(unsigned int i, unsigned int j, float weight) {
 }
 
 
-void HPAGraph::remove_vertex(unsigned int i) {
+void HPAGraph::remove_vertex(uint i) {
 	if (_vertices.count(i)) {
 		_vertices.erase(i);
 
@@ -94,15 +94,15 @@ void HPAGraph::remove_vertex(unsigned int i) {
 }
 
 
-void HPAGraph::remove_edge(unsigned int i, unsigned int j) {
+void HPAGraph::remove_edge(uint i, uint j) {
 	if ((_vertices.count(i)) && (_vertices.count(j))) {
 		_vertices[i]._edges.erase(j);
 	}
 }
 
 
-vector<unsigned int> HPAGraph::neighbors(unsigned int i) {
-	vector<unsigned int> result;
+vector<uint> HPAGraph::neighbors(uint i) {
+	vector<uint> result;
 	_it_e= _vertices[i]._edges.begin();
 	while (_it_e!= _vertices[i]._edges.end()) {
 		if (_vertices[_it_e->first]._active) {
@@ -123,9 +123,9 @@ HPA::HPA() {
 HPA::HPA(glm::vec2 step_size, glm::uvec2 level0_dimensions, std::vector<glm::uvec2> cluster_sizes) {
 	HPAGraph * graph= new HPAGraph();
 
-	for (unsigned int lig=0; lig<level0_dimensions.y; ++lig) {
-		for (unsigned int col=0; col<level0_dimensions.x; ++col) {
-			unsigned int id= col_lig2id(col, lig);
+	for (uint lig=0; lig<level0_dimensions.y; ++lig) {
+		for (uint col=0; col<level0_dimensions.x; ++col) {
+			uint id= col_lig2id(col, lig);
 			//float weight= rand_float(1.0f, 10.0f);
 			float weight= 1.0f;
 			/*if (rand_bool()) {
@@ -139,8 +139,8 @@ HPA::HPA(glm::vec2 step_size, glm::uvec2 level0_dimensions, std::vector<glm::uve
 	
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
-		unsigned int col= id2col_lig(_it_v->first).first;
-		unsigned int lig= id2col_lig(_it_v->first).second;
+		uint col= id2col_lig(_it_v->first).first;
+		uint lig= id2col_lig(_it_v->first).second;
 		if (col> 0) {
 			add_edge(_it_v->first, _it_v->first- 1);
 		}

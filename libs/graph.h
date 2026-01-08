@@ -30,6 +30,7 @@ struct GraphVertex {
 	pt_3d _pos;
 	//number _weight;
 	std::unordered_map<uint, GraphEdge> _edges;
+	void * _data = NULL;
 };
 
 
@@ -75,26 +76,29 @@ struct GraphGrid : public Graph {
 
 	bool id_in_ids(uint id, const std::vector<uint> & ids);
 
-	std::pair<uint, uint> id2col_lig(uint id);
-	uint col_lig2id(uint col, uint lig);
-	pt_2d col_lig2pt_2d(uint col, uint lig, bool use_vertices=true);
-	pt_3d col_lig2pt_3d(uint col, uint lig);
+	int_pair id2col_lig(uint id);
+	uint col_lig2id(int col, int lig);
+	pt_2d col_lig2pt_2d(int col, int lig, bool use_vertices=true);
+	pt_3d col_lig2pt_3d(int col, int lig);
 	pt_2d id2pt_2d(uint id);
 	pt_3d id2pt_3d(uint id);
-	std::pair<uint, uint> pt2col_lig(pt_2d pt);
+	int_pair pt2col_lig(pt_2d pt);
 	uint pt2id(pt_2d pt);
 	uint pt2closest_id(pt_2d pt);
-	std::vector<std::pair<uint, uint> > segment_intersection(pt_2d pt1, pt_2d pt2);
-	bool segment_intersects_edge(pt_2d pt1, pt_2d pt2, std::pair<uint, uint> edge);
-	std::vector<std::pair<uint, uint> > aabb_intersection(AABB_2D * aabb);
-	std::vector<std::pair<uint, uint> > bbox_intersection(BBox_2D * bbox);
-	std::vector<std::pair<uint, uint> > polygon_intersection(Polygon2D * polygon);
-	std::vector<std::pair<uint, uint> > edges_in_cell_containing_pt(pt_2d pt, bool only_diagonals=false);
+	std::pair<int_pair, int_pair> aabb2col_lig_min_max(AABB_2D * aabb);
+	
+	std::vector<uint_pair> edges_intersecting_segment(pt_2d pt1, pt_2d pt2);
+	bool is_edge_intersecting_segment(pt_2d pt1, pt_2d pt2, uint_pair edge);
+	std::vector<uint_pair> edges_intersecting_aabb(AABB_2D * aabb);
+	std::vector<uint_pair> edges_intersecting_bbox(BBox_2D * bbox);
+	std::vector<uint_pair> edges_intersecting_polygon(Polygon2D * polygon);
+	std::vector<uint_pair> edges_in_cell_containing_pt(pt_2d pt, bool only_diagonals=false);
+	
 	std::vector<uint> vertices_in_aabb(AABB_2D * aabb);
 	std::vector<uint> vertices_in_cell_containing_pt(pt_2d pt);
 	
-	std::pair<int, int> next_direction(std::pair<int, int> u);
-	uint angle(std::pair<int, int> u, std::pair<int, int> v);
+	int_pair next_direction(int_pair u);
+	uint angle(int_pair u, int_pair v);
 	std::vector<uint> prune(std::vector<uint> ids);
 	Polygon2D * ids2polygon(std::vector<uint> ids);
 	Polygon2D * pts2polygon(std::vector<pt_2d> pts);
@@ -121,7 +125,7 @@ struct GraphGrid : public Graph {
 
 /*
 struct Mesh {
-	std::vector<std::pair<uint, uint> > _edges;
+	std::vector<int_pair> _edges;
 	bool _debug= true;
 };
 */

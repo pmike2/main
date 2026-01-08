@@ -82,7 +82,7 @@ public:
 	pt_2d _velocity; // vitesse
 	ObjectPhysics _physics; // type physique objet
 	std::vector<CheckPoint *> _checkpoints; // chekpoints éventuels
-	unsigned int _idx_checkpoint; // indice chekpoint courant
+	uint _idx_checkpoint; // indice chekpoint courant
 	std::vector<Object2D *> _bottom; // liste des objs en contact dessous
 	std::vector<Object2D *> _top; // liste des objs en contact dessus
 	Object2D * _referential; // obj ref, nullptr si sol, sinon objet mouvant sur lequel se trouve l'objet
@@ -103,8 +103,8 @@ public:
 
 	std::string _name; // nom
 	std::vector<std::string> _pngs; // liste chemins images
-	unsigned int _first_idx; // indice de la 1ere image liée a cette action dans la liste d'actions stockées dans un GL_TEXTURE_2D_ARRAY
-	unsigned int _n_idx; // nombre d'images liées a cette action
+	uint _first_idx; // indice de la 1ere image liée a cette action dans la liste d'actions stockées dans un GL_TEXTURE_2D_ARRAY
+	uint _n_idx; // nombre d'images liées a cette action
 	number _anim_time; // temps à attendre pour passer d'une image à la suivante
 	AABB_2D * _footprint; // emprise physique ; pos et size entre 0 et 1
 };
@@ -130,7 +130,7 @@ public:
 	glm::mat4 _camera2clip;
 	glm::mat4 _model2world;
 	ScreenGL * _screengl;
-	unsigned int _n_aabbs; // nombre de characters liés à cette texture
+	uint _n_aabbs; // nombre de characters liés à cette texture
 	std::vector<Character2D *> _characters; // liste des characters
 	std::vector<Action *> _actions; // actions possibles ; pour une StaticTexture 1 action
 	std::string _name; // nom
@@ -189,13 +189,13 @@ public:
 	AnimatedCharacter2D(Object2D * obj, Texture2D * texture, number z);
 	~AnimatedCharacter2D();
 	void anim(number elapsed_time);
-	void set_action(unsigned int idx_action);
+	void set_action(uint idx_action);
 	void set_action(std::string action_name);
 	std::string current_action();
 
 
 	Action * _current_action; // action courante
-	unsigned int _current_anim; // indice d'animation au sein de l'action courante
+	uint _current_anim; // indice d'animation au sein de l'action courante
 	number _accumulated_time; // temps à comparer avec Action._anim_time
 };
 
@@ -270,7 +270,7 @@ public:
 	std::vector<Texture2D *> _textures;
 	std::vector<Character2D *> _characters;
 	
-	unsigned int _w, _h;
+	uint _w, _h;
 	number _block_w, _block_h;
 	ScreenGL * _screengl;
 	Person2D * _hero;
@@ -297,7 +297,7 @@ public:
 	glm::mat4 _model2world;
 	ScreenGL * _screengl;
 	Level * _level;
-	unsigned int _n_aabbs;
+	uint _n_aabbs;
 	bool _draw_aabb, _draw_footprint;
 };
 

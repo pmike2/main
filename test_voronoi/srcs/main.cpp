@@ -45,13 +45,13 @@ void test1() {
 	int n1= 5;
 	m["unit_root"]= std::vector<pt_2d> {};
 	for (int i=0; i<n1; ++i) {
-		m["unit_root"].push_back(pt_2d(cos(2.0* M_PI* (double)(i)/ (double)(n1)), sin(2.0* M_PI* (double)(i)/ (double)(n1))));
+		m["unit_root"].push_back(pt_2d(cos(2.0* M_PI* (number)(i)/ (number)(n1)), sin(2.0* M_PI* (number)(i)/ (number)(n1))));
 	}
 	// racine niemes de l'unité avec centre
 	int n2= 7;
 	m["unit_root_center"]= std::vector<pt_2d> {};
 	for (int i=0; i<n2; ++i) {
-		m["unit_root_center"].push_back(pt_2d(cos(2.0* M_PI* (double)(i)/ (double)(n2)), sin(2.0* M_PI* (double)(i)/ (double)(n2))));
+		m["unit_root_center"].push_back(pt_2d(cos(2.0* M_PI* (number)(i)/ (number)(n2)), sin(2.0* M_PI* (number)(i)/ (number)(n2))));
 	}
 	m["unit_root_center"].push_back(pt_2d(0.0, 0.0));
 	// grille
@@ -85,7 +85,7 @@ void test2() {
 	number ymax= 100.0;
 	number min_dist= 0.3;
 	
-	for (unsigned int i=0; i<n_pts; ++i) {
+	for (uint i=0; i<n_pts; ++i) {
 		pt_2d pt(rand_number(xmin, xmax), rand_number(ymin, ymax));
 		bool ok= true;
 		/*for (auto pt2 : pts) {
@@ -99,7 +99,7 @@ void test2() {
 		}
 	}
 	
-	/*for (unsigned int i=0; i<n_pts; ++i) {
+	/*for (uint i=0; i<n_pts; ++i) {
 		pt_2d pt(rand_number(xmin, xmax), number(i)* 0.1);
 		pts.push_back(pt);
 	}*/
@@ -143,7 +143,7 @@ void test3() {
 	while (true) {
 		std::cout << compt++ << "\n";
 		pts.clear();
-		for (unsigned int i=0; i<n_pts; ++i) {
+		for (uint i=0; i<n_pts; ++i) {
 			pts.push_back(pt_2d(rand_number(xmin, xmax), rand_number(ymin, ymax)));
 		}
 

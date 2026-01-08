@@ -22,7 +22,7 @@ public:
 
 
 	Shape * _shape;
-	unsigned int _idx_shape;
+	uint _idx_shape;
 	glm::ivec2 _offset;
 	glm::vec4 _color;
 };
@@ -34,8 +34,8 @@ public:
 	~Level();
 
 
-	unsigned int _idx;
-	unsigned int _new_object_ms;
+	uint _idx;
+	uint _new_object_ms;
 };
 
 
@@ -45,8 +45,8 @@ public:
 	~Grid();
 
 
-	unsigned int _width;
-	unsigned int _height;
+	uint _width;
+	uint _height;
 	std::vector<bool> _state;
 };
 
@@ -60,7 +60,7 @@ public:
 	Level * _current_level;
 	std::vector<Shape * > _shapes;
 	std::vector<InstancedShape *> _instanced_shapes;
-	unsigned int _score;
+	uint _score;
 	bool _game_over;
 };
 

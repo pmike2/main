@@ -29,7 +29,7 @@ s : scale ; x , y , z ensuite pour spécifier l'axe ; 0 ensuite pour aplatir
 alt + s : shrink / fatten
 ctrl + e : menu ; edge slide
 ctrl + left click : extrude
-w : ouvre un menu ;	remove double permet de supprimer les vertices surimposés
+w : ouvre un menu ;	remove number permet de supprimer les vertices surimposés
 ctrl + j : merge objects
 c : sélection par cercle avec rayon ajustable
 shift + d : duplicate selection

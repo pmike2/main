@@ -27,7 +27,7 @@ Orientation rotate(Orientation orientation, Rotation r) {
 
 
 Orientation rand_orientation() {
-	unsigned int orientation_idx= rand_int(0, 3);
+	uint orientation_idx= rand_int(0, 3);
 	Orientation orientation= NORTH;
 	if (orientation_idx== 1) {
 		orientation= SOUTH;
@@ -43,7 +43,7 @@ Orientation rand_orientation() {
 
 
 Rotation rand_rotation() {
-	unsigned int rotation_idx= rand_int(0, 3);
+	uint rotation_idx= rand_int(0, 3);
 	Rotation rotation= LEFT;
 	if (rotation_idx== 1) {
 		rotation= RIGHT;
@@ -67,8 +67,8 @@ Turmite::Turmite() {
 Turmite::Turmite(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * input_state, time_point t) :
 	Grid(progs, screengl, input_state, t)
 {
-	for (unsigned int row=0; row<_height; ++row) {
-		for (unsigned int col=0; col<_width; ++col) {
+	for (uint row=0; row<_height; ++row) {
+		for (uint col=0; col<_width; ++col) {
 			Cell * cell= new Cell(col, row);
 			cell->_aabb->_pos= idx2pt(col, row)+ pt_2d(_cell_margin);
 			cell->_aabb->_size= pt_2d(_cell_size- 2.0* _cell_margin);
@@ -135,15 +135,15 @@ void Turmite::randomize() {
 
 	for (int idx_machine_state=0; idx_machine_state<_n_machine_states; ++idx_machine_state) {
 		for (int idx_cell_state=0; idx_cell_state<_n_cell_states; ++idx_cell_state) {
-			unsigned int write_color= rand_int(0, _n_cell_states- 1);
+			uint write_color= rand_int(0, _n_cell_states- 1);
 			Rotation rotation= rand_rotation();
-			unsigned int next_state= rand_int(0, _n_machine_states- 1);
+			uint next_state= rand_int(0, _n_machine_states- 1);
 			Rule r{write_color, rotation, next_state};
 			_rules[idx_machine_state* _n_cell_states+ idx_cell_state]= r;
 		}
 	}
 
-	std::map<unsigned int, glm::vec4> cell_states;
+	std::map<uint, glm::vec4> cell_states;
 	for (int idx_cell_state=0; idx_cell_state<_n_cell_states; ++idx_cell_state) {
 		if (idx_cell_state== 0) {
 			cell_states[idx_cell_state]= glm::vec4(0.0, 0.0, 0.0, 1.0);

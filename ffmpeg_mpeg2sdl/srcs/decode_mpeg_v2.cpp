@@ -221,7 +221,7 @@ int init(const char * file_in) {
 	
 				// gestion canal alpha
 				for (int i= 0; i< width* height; i++) {
-					unsigned int alpha= (255* (i% width))/ width;
+					uint alpha= (255* (i% width))/ width;
 					buffer_rgb[4* i+ 3]= alpha;
 				}
 

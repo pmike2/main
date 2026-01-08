@@ -27,7 +27,7 @@ void StaticObjectGrid::clear() {
 }
 
 
-unsigned int StaticObjectGrid::coord2idx(unsigned int col_idx, unsigned int row_idx) {
+uint StaticObjectGrid::coord2idx(uint col_idx, uint row_idx) {
 	if (_type== VERTICAL_GRID) {
 		return col_idx+ row_idx* _width;
 	}
@@ -37,7 +37,7 @@ unsigned int StaticObjectGrid::coord2idx(unsigned int col_idx, unsigned int row_
 }
 
 
-std::pair<unsigned int, unsigned int> StaticObjectGrid::idx2coord(unsigned int idx) {
+int_pair StaticObjectGrid::idx2coord(uint idx) {
 	if (_type== VERTICAL_GRID) {
 		return std::make_pair(idx % _width, idx / _width);
 	}
@@ -47,7 +47,7 @@ std::pair<unsigned int, unsigned int> StaticObjectGrid::idx2coord(unsigned int i
 }
 
 
-std::pair<int, int> StaticObjectGrid::number2coord(pt_2d pos) {
+int_pair StaticObjectGrid::number2coord(pt_2d pos) {
 	int col_idx= int(floor(pos.x/ _cell_size));
 	int row_idx= int(floor(pos.y/ _cell_size));
 	if (col_idx>=0 && col_idx<_width && row_idx>=0 && row_idx< _height) {
@@ -58,18 +58,18 @@ std::pair<int, int> StaticObjectGrid::number2coord(pt_2d pos) {
 
 
 // renvoie le centre de la cellule
-pt_2d StaticObjectGrid::coord2number(unsigned int col_idx, unsigned int row_idx) {
+pt_2d StaticObjectGrid::coord2number(uint col_idx, uint row_idx) {
 	return pt_2d((number(col_idx)+ 0.5)* _cell_size, (number(row_idx)+ 0.5)* _cell_size);
 }
 
 
-pt_2d StaticObjectGrid::idx2number(unsigned int idx) {
-	std::pair<int, int> coord= idx2coord(idx);
+pt_2d StaticObjectGrid::idx2number(uint idx) {
+	int_pair coord= idx2coord(idx);
 	return coord2number(coord.first, coord.second);
 }
 
 
-StaticObject * StaticObjectGrid::get_tile(unsigned int col_idx, unsigned int row_idx) {
+StaticObject * StaticObjectGrid::get_tile(uint col_idx, uint row_idx) {
 	if (row_idx> _height- 1) {
 		std::cerr << "Track::get_tile : row_idx=" << row_idx << " >= _height=" << _height << "\n";
 		return NULL;
@@ -83,7 +83,7 @@ StaticObject * StaticObjectGrid::get_tile(unsigned int col_idx, unsigned int row
 
 
 void StaticObjectGrid::push_tile(StaticObjectModel * model) {
-	unsigned int new_size= _objects.size()+ 1;
+	uint new_size= _objects.size()+ 1;
 	if (_type== VERTICAL_GRID) {
 		_height= new_size/ _width;
 		if (new_size % _width!= 0) {
@@ -101,26 +101,26 @@ void StaticObjectGrid::push_tile(StaticObjectModel * model) {
 }
 
 
-void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int col_idx, unsigned int row_idx) {
-	unsigned int idx_tile= coord2idx(col_idx, row_idx);
+void StaticObjectGrid::set_tile(StaticObjectModel * model, uint col_idx, uint row_idx) {
+	uint idx_tile= coord2idx(col_idx, row_idx);
 	delete _objects[idx_tile];
 	_objects[idx_tile]= new StaticObject(model, idx2number(idx_tile), 0.0, pt_2d(_cell_size));
 }
 
 
-void StaticObjectGrid::set_tile(StaticObjectModel * model, unsigned int idx) {
-	std::pair<unsigned int, unsigned int> coord= idx2coord(idx);
+void StaticObjectGrid::set_tile(StaticObjectModel * model, uint idx) {
+	int_pair coord= idx2coord(idx);
 	set_tile(model, coord.first, coord.second);
 }
 
 
-void StaticObjectGrid::set_all(StaticObjectModel * model, unsigned int width, unsigned int height) {
+void StaticObjectGrid::set_all(StaticObjectModel * model, uint width, uint height) {
 	clear();
 
 	_width= width;
 	_height= height;
-	for (unsigned int row_idx=0; row_idx<height; ++row_idx) {
-		for (unsigned int col_idx=0; col_idx<width; ++col_idx) {
+	for (uint row_idx=0; row_idx<height; ++row_idx) {
+		for (uint col_idx=0; col_idx<width; ++col_idx) {
 			_objects.push_back(new StaticObject(model, coord2number(col_idx, row_idx), 0.0, pt_2d(_cell_size)));
 		}
 	}
@@ -128,7 +128,7 @@ void StaticObjectGrid::set_all(StaticObjectModel * model, unsigned int width, un
 
 
 void StaticObjectGrid::add_row(StaticObjectModel * model) {
-	for (unsigned int col_idx=0; col_idx<_width; ++col_idx) {
+	for (uint col_idx=0; col_idx<_width; ++col_idx) {
 		StaticObject * obj= new StaticObject(model, coord2number(col_idx, _height), 0.0, pt_2d(_cell_size));
 		_objects.push_back(obj);
 	}
@@ -158,7 +158,7 @@ void StaticObjectGrid::drop_col() {
 	if (_width== 0) {
 		return;
 	}
-	for (unsigned int row_idx=_height; row_idx>0; --row_idx) {
+	for (uint row_idx=_height; row_idx>0; --row_idx) {
 		_objects.erase(_objects.begin()+ row_idx* _width- 1);
 	}
 	_width--;

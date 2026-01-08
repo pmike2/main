@@ -35,9 +35,9 @@ public:
 	glm::vec2 _velocity; // vecteur vitesse
 	bool _shooting; // si vrai alors il faut créer une nouvelle munition
 	std::string _current_action_name; // nom action courante
-	unsigned int _idx_action; // indice dans la liste d'action
-	unsigned int _lives; // nombre de vies restantes
-	unsigned int _idx_anim; // indice dans la liste des PNG
+	uint _idx_action; // indice dans la liste d'action
+	uint _lives; // nombre de vies restantes
+	uint _idx_anim; // indice dans la liste des PNG
 	bool _hit; // vient t'il d'être touché
 	float _hit_value; // valeur flottante pour le fragment shader montrant l'aspect hit
 	bool _dead; // est t'il mort

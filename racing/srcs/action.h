@@ -96,7 +96,7 @@ public:
 class ActionRandom {
 public:
 	ActionRandom();
-	ActionRandom(int flip, unsigned int sequence_n_ms, number force, number torque, unsigned int force_n_ms);
+	ActionRandom(int flip, uint sequence_n_ms, number force, number torque, uint force_n_ms);
 	~ActionRandom();
 
 

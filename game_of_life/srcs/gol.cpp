@@ -7,7 +7,7 @@ GolCell::GolCell() {
 }
 
 
-GolCell::GolCell(unsigned int col, unsigned int row) : Cell(col, row), _next_state(0) {
+GolCell::GolCell(uint col, uint row) : Cell(col, row), _next_state(0) {
 }
 
 
@@ -17,7 +17,7 @@ GolCell::~GolCell() {
 
 
 void GolCell::next() {
-	unsigned int n_alive= 0;
+	uint n_alive= 0;
 	for (auto neighbour : _neighbours) {
 		if (neighbour->_state== 1) {
 			n_alive++;
@@ -48,8 +48,8 @@ GOL::GOL(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState * 
 	
 	set_cell_states(GOL_CELL_STATES);
 
-	for (unsigned int row=0; row<_height; ++row) {
-		for (unsigned int col=0; col<_width; ++col) {
+	for (uint row=0; row<_height; ++row) {
+		for (uint col=0; col<_width; ++col) {
 			GolCell * cell= new GolCell(col, row);
 			cell->_aabb->_pos= idx2pt(col, row)+ pt_2d(_cell_margin);
 			cell->_aabb->_size= pt_2d(_cell_size- 2.0* _cell_margin);

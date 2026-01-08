@@ -188,7 +188,7 @@ MPEGReader::~MPEGReader() {
 }
 
 
-unsigned char * MPEGReader::get_frame(unsigned int frame_idx) {
+unsigned char * MPEGReader::get_frame(uint frame_idx) {
 	return (unsigned char *)(_data+ frame_idx* _frame_size* sizeof(unsigned char));
 }
 
@@ -199,7 +199,7 @@ MPEGWriter::MPEGWriter() {
 }
 
 
-MPEGWriter::MPEGWriter(unsigned int width, unsigned int height, unsigned int fps, unsigned int bitrate, string output_path, bool vflip, bool use_global_fps) :
+MPEGWriter::MPEGWriter(uint width, uint height, uint fps, uint bitrate, string output_path, bool vflip, bool use_global_fps) :
 	_width(width), _height(height), _fps(fps), _bitrate(bitrate), _output_path(output_path), _frame_count(0), _vflip(vflip), _use_global_fps(use_global_fps)
 {	
 	int err;
@@ -401,7 +401,7 @@ void MPEGWriter::init_filters() {
 }
 
 
-void MPEGWriter::push_frame(unsigned char * data, unsigned int ms) {
+void MPEGWriter::push_frame(unsigned char * data, uint ms) {
 	int err;
 
 	err= av_frame_make_writable(_frame);
@@ -447,10 +447,10 @@ void MPEGWriter::push_frame(unsigned char * data, unsigned int ms) {
 	}
 	
 	if (_use_global_fps) {
-		_frame->pts= (1.0/ (double)(_fps))* _stream->time_base.den* (_frame_count++);
+		_frame->pts= (1.0/ (number)(_fps))* _stream->time_base.den* (_frame_count++);
 	}
 	else {
-		_frame->pts= (double)(ms)* _stream->time_base.den/ 1000.0;
+		_frame->pts= (number)(ms)* _stream->time_base.den/ 1000.0;
 	}
 	
 	// test filtre, à revoir. source : https://www.ffmpeg.org/doxygen/trunk/examples.html
@@ -551,7 +551,7 @@ J'ai essayé de mettre plusieurs threads en écriture mais cela fait foirer la t
 et ffmpeg utilise déjà plusieurs threads pour écrire un frame
 -> finalement un seul thread d'écriture
 */
-MPEGWriterHelper::MPEGWriterHelper(unsigned int width, unsigned int height, unsigned int fps, unsigned int bitrate, std::string output_path, bool vflip, bool use_global_fps) :
+MPEGWriterHelper::MPEGWriterHelper(uint width, uint height, uint fps, uint bitrate, std::string output_path, bool vflip, bool use_global_fps) :
 	MPEGWriter(width, height, fps, bitrate, output_path, vflip, use_global_fps), _stop_thr(false), _start_point(chrono::system_clock::now()),
 	_writing_thread(thread(&MPEGWriterHelper::read_queue, this))
 {
@@ -568,14 +568,14 @@ MPEGWriterHelper::~MPEGWriterHelper() {
 
 void MPEGWriterHelper::add2queue(unsigned char * data) {
 	chrono::system_clock::duration t= chrono::system_clock::now()- _start_point;
-	unsigned int ms= chrono::duration_cast<chrono::milliseconds>(t).count();
+	uint ms= chrono::duration_cast<chrono::milliseconds>(t).count();
 	
 	_safe_queue.push(make_pair(data, ms));
 }
 
 
 void MPEGWriterHelper::read_queue() {
-	pair<unsigned char *, unsigned int> p;
+	pair<unsigned char *, uint> p;
 	while (true) {
 		if (_stop_thr) {
 			break;

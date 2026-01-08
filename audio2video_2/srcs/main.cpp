@@ -17,9 +17,9 @@ using json = nlohmann::json;
 int main() {
 	srand(time(NULL));
 
-	const unsigned int BLOCK_SIZE = 1024;
-	const unsigned int DELTA_OFFSET = 512;
-	const unsigned int WAV_TXT_NSAMPLES = 10000;
+	const uint BLOCK_SIZE = 1024;
+	const uint DELTA_OFFSET = 512;
+	const uint WAV_TXT_NSAMPLES = 10000;
 
 	//std::filesystem::path wav_path = "../data/wav/sine_100.wav";
 	//std::filesystem::path wav_path = "../data/wav/sine_1000.wav";
@@ -62,25 +62,25 @@ int main() {
 	js["delta_offset"] = DELTA_OFFSET;
 
 	std::ofstream wav_txt(wav_txt_path.string());
-	double wav_txt_step = wav_info.frames / WAV_TXT_NSAMPLES;
+	number wav_txt_step = wav_info.frames / WAV_TXT_NSAMPLES;
 
 	fftw_complex *in, *out;
 	fftw_plan p;
 	in = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * BLOCK_SIZE);
 	out = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * BLOCK_SIZE);
 
-	unsigned int idx_offset = 0;
-	double buff[wav_info.channels* BLOCK_SIZE];
-	double wav_txt_pos = 0.0;
+	uint idx_offset = 0;
+	number buff[wav_info.channels* BLOCK_SIZE];
+	number wav_txt_pos = 0.0;
 	while (true) {
-		unsigned int n_frames_read = sf_read_double(wav_file, buff, wav_info.channels* BLOCK_SIZE);
+		uint n_frames_read = sf_read_double(wav_file, buff, wav_info.channels* BLOCK_SIZE);
 		if (n_frames_read < wav_info.channels * BLOCK_SIZE) {
 			break;
 		}
 
 		while (true) {
 			if (wav_txt_pos < idx_offset * DELTA_OFFSET + BLOCK_SIZE) {
-				unsigned int buff_idx = (unsigned int)(wav_txt_pos) - idx_offset * DELTA_OFFSET;
+				uint buff_idx = (uint)(wav_txt_pos) - idx_offset * DELTA_OFFSET;
 				if (wav_info.channels == 2) {
 					wav_txt << buff[2 * buff_idx] << "\n";
 				}
@@ -94,8 +94,8 @@ int main() {
 			}
 		}
 
-		for (unsigned int i=0; i<BLOCK_SIZE; ++i) {
-			double hanning= 0.5* (1.0- cos(2.0* M_PI* (double)(i)/ (double)(BLOCK_SIZE)));
+		for (uint i=0; i<BLOCK_SIZE; ++i) {
+			number hanning= 0.5* (1.0- cos(2.0* M_PI* (number)(i)/ (number)(BLOCK_SIZE)));
 
 			if (wav_info.channels == 2) {
 				in[i][0] = buff[2 * i] * hanning; // left
@@ -112,8 +112,8 @@ int main() {
 		
 		std::filesystem::path fft_file_path = ffts_path / (std::to_string(idx_offset) + ".txt");
 		std::ofstream fft_file(fft_file_path.string());
-		for (unsigned int i=0; i<BLOCK_SIZE / 2; ++i) {
-			double amplitude = sqrt(out[i][0] * out[i][0] + out[i][1] * out[i][1]);
+		for (uint i=0; i<BLOCK_SIZE / 2; ++i) {
+			number amplitude = sqrt(out[i][0] * out[i][0] + out[i][1] * out[i][1]);
 			fft_file << amplitude << "\n";
 		}
 		fft_file.close();

@@ -47,7 +47,7 @@ const float ANIMATED_DIST_ANIMATED= 500.0f;
 const float ANIMATED_DIST_VISIBLE= 2000.0f;
 
 // profondeur de l'arbre ; tester différentes valeurs
-const unsigned int QUAD_TREE_DEPTH= 5;
+const uint QUAD_TREE_DEPTH= 5;
 
 // pour dessins bboxs
 //const glm::vec3 STATIC_BBOX_COLOR= glm::vec3(0.4f, 0.8f, 0.5f);
@@ -90,7 +90,7 @@ public:
 // random d'un ensemble d'objets statiques
 struct SIRandomConfig {
 	std::string _path;
-	unsigned int _compt;
+	uint _compt;
 	float _size_factor_min_xy, _size_factor_max_xy;
 	float _size_factor_min_z, _size_factor_max_z;
 	bool _conserve_ratio;
@@ -101,7 +101,7 @@ struct SIRandomConfig {
 // pareil que SIRandomConfig ?
 struct AIRandomConfig {
 	std::string _path;
-	unsigned int _compt;
+	uint _compt;
 	float _size_factor_min_xy, _size_factor_max_xy;
 	float _size_factor_min_z, _size_factor_max_z;
 	bool _conserve_ratio;
@@ -122,7 +122,7 @@ struct WorldRandomConfig {
 class QuadNode {
 public:
 	QuadNode();
-	QuadNode(const glm::vec2 & vmin, const glm::vec2 & vmax, unsigned int depth);
+	QuadNode(const glm::vec2 & vmin, const glm::vec2 & vmax, uint depth);
 	~QuadNode();
 
 
@@ -132,7 +132,7 @@ public:
 	QuadNode * _child_no;
 	QuadNode * _child_ne;
 	std::vector<InstancePosRot *> _pos_rots;
-	unsigned int _depth; // profondeur du noeud dans l'arbre
+	uint _depth; // profondeur du noeud dans l'arbre
 };
 
 
@@ -141,16 +141,16 @@ public:
 class QuadTree {
 public:
 	QuadTree();
-	QuadTree(const glm::vec2 & vmin, const glm::vec2 & vmax, unsigned int depth);
+	QuadTree(const glm::vec2 & vmin, const glm::vec2 & vmax, uint depth);
 	~QuadTree();
 	void recursive_init(QuadNode * node);
 	void recursive_delete(QuadNode * node);
 	void add_position(InstancePosRot * position);
 	void recursive_add_position(QuadNode * node, InstancePosRot * position);
-	QuadNode * find_node(unsigned int depth, const glm::vec2 & v);
-	void recursive_find_node(QuadNode * node, unsigned int depth, const glm::vec2 & v, QuadNode ** node_result);
-	void set_z_max(float * altis, unsigned int width_n, unsigned int height_n);
-	void recursive_set_z_max(QuadNode * node, unsigned int depth);
+	QuadNode * find_node(uint depth, const glm::vec2 & v);
+	void recursive_find_node(QuadNode * node, uint depth, const glm::vec2 & v, QuadNode ** node_result);
+	void set_z_max(float * altis, uint width_n, uint height_n);
+	void recursive_set_z_max(QuadNode * node, uint depth);
 	void set_actives(ViewSystem * view_system, float dist_max);
 	void recursive_set_actives(QuadNode * node, ViewSystem * view_system, float dist_max);
 	void print();
@@ -158,8 +158,8 @@ public:
 
 
 	QuadNode * _root;
-	unsigned int _depth;
-	unsigned int _debug;
+	uint _depth;
+	uint _debug;
 };
 
 
@@ -176,7 +176,7 @@ public:
 	GLuint _prog_draw;
 	GLint _world2clip_loc, _position_loc, _color_loc;
 	GLuint _buffer;
-	unsigned int _n_instances;
+	uint _n_instances;
 	glm::mat4 _world2clip;
 };
 
@@ -192,7 +192,7 @@ public:
 	bool key_up(InputState * input_state, SDL_Keycode key);
 	bool mouse_motion(InputState * input_state);
 	void draw();
-	void anim(ViewSystem * view_system, unsigned int tikanim_delta);
+	void anim(ViewSystem * view_system, uint tikanim_delta);
 	void randomize(const WorldRandomConfig * world_random_config);
 	void write(std::string ch_directory);
 	void read(std::string ch_directory);
@@ -213,7 +213,7 @@ public:
 	Terrain * _terrain;
 	//std::vector<Square *> _squares;
 	//float _square_size_x, _square_size_y;
-	//unsigned int _n_squares_x, _n_squares_y;
+	//uint _n_squares_x, _n_squares_y;
 	QuadTree * _quad_tree;
 	/*std::vector<BBoxDraw *> _static_bbox_draws;
 	std::vector<BBoxDraw *> _animated_bbox_draws;

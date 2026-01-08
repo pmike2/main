@@ -46,7 +46,6 @@ struct Map {
 	Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t);
 	~Map();
 	void add_unit(std::string type_name, pt_2d pos, time_point t);
-	//void add_static_element(std::string element_name, pt_3d pos, pt_3d size);
 	River * add_river(pt_2d src);
 	Lake * add_lake(pt_2d src);
 
@@ -60,8 +59,8 @@ struct Map {
 	void sync2elevation();
 	
 	void clear_units_position_grid();
-	std::vector<std::pair<uint, uint> > waiting_unit_positions_edges(Unit * unit, UnitType * unit_type);
-	std::vector<std::pair<uint, uint> > moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all);
+	std::vector<uint_pair> waiting_unit_positions_edges(Unit * unit, UnitType * unit_type);
+	std::vector<uint_pair> moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all);
 	void add_waiting_unit_to_position_grid(Unit * unit);
 	void remove_waiting_unit_from_position_grid(Unit * unit);
 	void add_moving_unit_to_position_grid(Unit * unit);

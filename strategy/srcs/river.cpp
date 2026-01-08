@@ -66,7 +66,7 @@ River::River(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0
 		Polygon2D * polygon = new Polygon2D(pts_2d);
 		polygon->update_all();
 		
-		std::vector<std::pair<uint, uint> > edges = _elevation->polygon_intersection(polygon);
+		std::vector<int_pair > edges = _elevation->polygon_intersection(polygon);
 		for (auto & edge : edges) {
 			if (std::find(_id_nodes.begin(), _id_nodes.end(), edge.first) == _id_nodes.end()) {
 				_id_nodes.push_back(edge.first);

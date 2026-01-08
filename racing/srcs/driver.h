@@ -7,9 +7,9 @@
 #include <map>
 
 // temps en ms que prend un chgmt d'expression other -> normal
-const unsigned int EXPRESSION_CHANGE_TO_NORMAL_MS= 1000;
+const uint EXPRESSION_CHANGE_TO_NORMAL_MS= 1000;
 // temps en ms que prend un chgmt d'expression normal -> other
-const unsigned int EXPRESSION_CHANGE_TO_OTHERS_MS= 50;
+const uint EXPRESSION_CHANGE_TO_OTHERS_MS= 50;
 // seuil de bump à partir duquel le driver est fatigué
 const number BUMP_TIRED_THRESHOLD= 0.6;
 // noms des expressions
@@ -24,13 +24,13 @@ const std::string SAD_EXPRESSION= "sad";
 class ExpressionTexture {
 public:
 	ExpressionTexture();
-	ExpressionTexture(std::string texture_path, unsigned int n_ms);
+	ExpressionTexture(std::string texture_path, uint n_ms);
 	~ExpressionTexture();
 
 
 	std::string _texture_path; // chemin texture
 	float _texture_idx; // indice texture
-	unsigned int _n_ms; // nombre de ms d'affichage de la texture
+	uint _n_ms; // nombre de ms d'affichage de la texture
 };
 
 
@@ -61,7 +61,7 @@ public:
 	std::map<std::string, Expression *> _expressions; // ensemble d'expressions
 	std::string _current_expression_name; // nom expression courante
 	std::string _next_expression_name; // nom expression suivante
-	unsigned int _current_expression_texture_idx; // indice texture d'expression courante
+	uint _current_expression_texture_idx; // indice texture d'expression courante
 	time_point _last_anim_expression_t; // dernier temps de changement d'animation de texture
 	time_point _last_change_expression_t; // dernier temps de changement d'expression
 	bool _angry, _happy, _tired, _sad; // Driver peut ressentir plusieurs choses ; un tri par priorité est effectué

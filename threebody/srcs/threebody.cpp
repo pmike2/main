@@ -226,8 +226,8 @@ void ThreeBody::anim() {
 		int n1= bodies1.size();
 		int n2= bodies2.size();
 
-		for (unsigned int idx_body_1=0; idx_body_1<n1; ++idx_body_1) {
-			for (unsigned int idx_body_2=0; idx_body_2<n2; ++idx_body_2) {
+		for (uint idx_body_1=0; idx_body_1<n1; ++idx_body_1) {
+			for (uint idx_body_2=0; idx_body_2<n2; ++idx_body_2) {
 				if ((body_interaction->_body_type_1== body_interaction->_body_type_2) && (idx_body_1== idx_body_2)) {
 					continue;
 				}
@@ -321,8 +321,8 @@ void ThreeBody::anim() {
 		int n1= bodies1.size();
 		int n2= bodies2.size();
 
-		for (unsigned int idx_body_1=0; idx_body_1<n1; ++idx_body_1) {
-			for (unsigned int idx_body_2=0; idx_body_2<n2; ++idx_body_2) {
+		for (uint idx_body_1=0; idx_body_1<n1; ++idx_body_1) {
+			for (uint idx_body_2=0; idx_body_2<n2; ++idx_body_2) {
 				if ((body_interaction->_body_type_1== body_interaction->_body_type_2) && (idx_body_1== idx_body_2)) {
 					continue;
 				}
@@ -647,8 +647,8 @@ void ThreeBody::write_json(std::string filepath) {
 }
 
 
-void ThreeBody::add_random_bodies(BodyType * body_type, unsigned int n_bodies) {
-	for (unsigned int idx_body=0; idx_body<n_bodies; ++idx_body) {
+void ThreeBody::add_random_bodies(BodyType * body_type, uint n_bodies) {
+	for (uint idx_body=0; idx_body<n_bodies; ++idx_body) {
 		Body * body= add_body(body_type);
 		body->randomize();
 	}

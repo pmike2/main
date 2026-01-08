@@ -18,7 +18,7 @@
 #include "bbox.h"
 
 
-const unsigned int MAX_HISTO_SIZE= 1;
+const uint MAX_HISTO_SIZE= 1;
 
 
 class BodyType {
@@ -86,7 +86,7 @@ public:
 	int get_body_type_idx(BodyType * body_type);
 	void anim();
 	void print();
-	void add_random_bodies(BodyType * body_type, unsigned int n_bodies);
+	void add_random_bodies(BodyType * body_type, uint n_bodies);
 	void randomize(int n_types, AABB limit, glm::vec2 friction, glm::vec2 max_force_squared_norm, glm::vec2 threshold, glm::vec2 attraction, glm::vec2 bias, glm::ivec2 n_bodies);
 	void draw(const glm::mat4 & world2clip);
 	void update();
@@ -104,7 +104,7 @@ public:
 	GLuint _prog_draw;
 	GLint _world2clip_loc, _position_loc, _diffuse_color_loc;
 	GLuint _buffers[2];
-	unsigned int _n_pts;
+	uint _n_pts;
 };
 
 #endif

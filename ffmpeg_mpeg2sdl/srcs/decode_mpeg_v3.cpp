@@ -163,8 +163,8 @@ int init(const char * file_in) {
 	AVPixelFormat pixel_format= AV_PIX_FMT_RGBA;
 
 	// dans cette version on va transformer chaque frame dans la taille écran
-	unsigned int width_rgb= SCREEN_WIDTH;
-	unsigned int height_rgb= SCREEN_HEIGHT;
+	uint width_rgb= SCREEN_WIDTH;
+	uint height_rgb= SCREEN_HEIGHT;
 
 	// Determine required buffer size and allocate buffer
 	buffer_rgb_size= av_image_get_buffer_size(pixel_format, width_rgb, height_rgb, 32);
@@ -216,7 +216,7 @@ int init(const char * file_in) {
 	
 				// gestion canal alpha
 				for (int i= 0; i< width_rgb* height_rgb; i++) {
-					unsigned int alpha= (255* (i% width_rgb))/ width_rgb;
+					uint alpha= (255* (i% width_rgb))/ width_rgb;
 					buffer_rgb[4* i+ 3]= alpha;
 				}
 				memcpy(buffer_all+ (ctx_codec->frame_number- 1)* buffer_rgb_size* sizeof(unsigned char), buffer_rgb, buffer_rgb_size* sizeof(unsigned char));

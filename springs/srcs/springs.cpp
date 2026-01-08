@@ -73,14 +73,14 @@ Spring::Spring() {
 }
 
 
-Spring::Spring(unsigned int idx1, unsigned int idx2, float stiffness, float damping, float relaxed_size) :
+Spring::Spring(uint idx1, uint idx2, float stiffness, float damping, float relaxed_size) :
 	_idx1(idx1), _idx2(idx2), _stiffness(stiffness), _damping(damping), _relaxed_size(relaxed_size),
 	_contract_amount(-1.0f), _contract_begin(0.0f), _contract_end(0.0f) {
 
 }
 
 
-Spring::Spring(unsigned int idx1, unsigned int idx2, float stiffness, float damping, float relaxed_size,
+Spring::Spring(uint idx1, uint idx2, float stiffness, float damping, float relaxed_size,
 	float contract_amount, float contract_begin, float contract_end) :
 	_idx1(idx1), _idx2(idx2), _stiffness(stiffness), _damping(damping), _relaxed_size(relaxed_size),
 	_contract_amount(contract_amount), _contract_begin(contract_begin), _contract_end(contract_end) {
@@ -108,7 +108,7 @@ SpringSystem::SpringSystem() : _tik_init(SDL_GetTicks()) {
 
 
 ostream & operator << (ostream & out_stream, SpringSystem ss) {
-	unsigned int i;
+	uint i;
 	const char DELIM= ';';
 
 	out_stream << "SS" << DELIM;
@@ -133,7 +133,7 @@ istream & operator >> (istream & in_stream, SpringSystem & ss) {
 	char c;
 	bool ok= 1;
 	const char DELIM= ';';
-	unsigned int i, j, i1, i2;
+	uint i, j, i1, i2;
 	float t[6];
 	SpringSystem ss_tmp;
 
@@ -218,12 +218,12 @@ void SpringSystem::load(string ch) {
 
 
 void SpringSystem::anim() {
-	unsigned int i, j;
+	uint i, j;
 
 	for (i=0; i<_vertices.size(); i++)
 		_vertices[i]._forces.clear();
 
-	unsigned int tik= SDL_GetTicks();
+	uint tik= SDL_GetTicks();
 	tik-= _tik_init;
 
 	for (i=0; i<_springs.size(); i++) {
@@ -254,9 +254,9 @@ void SpringSystem::anim() {
 		}
 		_vertices[i]._forces.push_back(Force(friction, "friction"));
 
-		vector<unsigned int> adjs= get_ajdacents_springs(i);
+		vector<uint> adjs= get_ajdacents_springs(i);
 		for (j=0; j<adjs.size(); j++) {
-			unsigned int adj_vertex;
+			uint adj_vertex;
 			if (_springs[adjs[j]]._idx1== i)
 				adj_vertex= _springs[adjs[j]]._idx2;
 			else
@@ -316,7 +316,7 @@ void SpringSystem::add_vertex(glm::vec3 p, float mass, float air_resist) {
 }
 
 
-void SpringSystem::add_spring(unsigned int idx1, unsigned int idx2, float stiffness, float damping, float relaxed_size) {
+void SpringSystem::add_spring(uint idx1, uint idx2, float stiffness, float damping, float relaxed_size) {
 	if (_springs.size()>= MAX_SPRINGS) {
 		cout << "TOO MANY SPRINGS" << endl;
 		return;
@@ -333,7 +333,7 @@ void SpringSystem::add_spring(unsigned int idx1, unsigned int idx2, float stiffn
 }
 
 
-void SpringSystem::delete_vertex(unsigned int idx) {
+void SpringSystem::delete_vertex(uint idx) {
 	if (idx> _vertices.size()) {
 		cout << "NOT ENOUGH VERTICES" << endl;
 		return;
@@ -354,7 +354,7 @@ void SpringSystem::delete_vertex(unsigned int idx) {
 }
 
 
-void SpringSystem::delete_spring(unsigned int idx) {
+void SpringSystem::delete_spring(uint idx) {
 	if (idx> _springs.size()) {
 		cout << "NOT ENOUGH SPRINGS" << endl;
 		return;
@@ -386,14 +386,14 @@ void SpringSystem::print() {
 
 
 void SpringSystem::rand_contracts() {
-	for (unsigned int i=0; i<_springs.size(); i++)
+	for (uint i=0; i<_springs.size(); i++)
 		_springs[i].rand_contract();
 }
 
 
-vector<unsigned int> SpringSystem::get_ajdacents_vertices(unsigned int idx) {
-	vector<unsigned int> res;
-	unsigned int i;
+vector<uint> SpringSystem::get_ajdacents_vertices(uint idx) {
+	vector<uint> res;
+	uint i;
 	for (i=0; i<_springs.size(); i++) {
 		if (_springs[i]._idx1== idx)
 			res.push_back(_springs[i]._idx2);
@@ -404,9 +404,9 @@ vector<unsigned int> SpringSystem::get_ajdacents_vertices(unsigned int idx) {
 }
 
 
-vector<unsigned int> SpringSystem::get_ajdacents_springs(unsigned int idx) {
-	vector<unsigned int> res;
-	unsigned int i;
+vector<uint> SpringSystem::get_ajdacents_springs(uint idx) {
+	vector<uint> res;
+	uint i;
 	for (i=0; i<_springs.size(); i++) {
 		if ((_springs[i]._idx1== idx) || (_springs[i]._idx2== idx))
 			res.push_back(i);
@@ -435,7 +435,7 @@ float SpringSystem::fitness() {
 
 
 void SpringSystem::reinit_vertices() {
-	for (unsigned int idx_vertex=0; idx_vertex<_vertices.size(); ++idx_vertex) {
+	for (uint idx_vertex=0; idx_vertex<_vertices.size(); ++idx_vertex) {
 		_vertices[idx_vertex].reinit();
 	}
 	_tik_init= SDL_GetTicks();
@@ -448,7 +448,7 @@ void SpringSystem::init_vertices_springs() {
 }
 
 
-void SpringSystem::rand_disposition(unsigned int n_cubes) {
+void SpringSystem::rand_disposition(uint n_cubes) {
 	cout << "appel a rand_disposition non valide" << endl;
 }
 
@@ -481,14 +481,14 @@ void CubeSystem::init_vertices_springs() {
 	_vertices.clear();
 	_springs.clear();
 
-	for (unsigned int idx_cube=0; idx_cube<_cubes_idx.size(); ++idx_cube) {
+	for (uint idx_cube=0; idx_cube<_cubes_idx.size(); ++idx_cube) {
 		float x= float(_cubes_idx[idx_cube][0])* _spring_size;
 		float y= float(_cubes_idx[idx_cube][1])* _spring_size;
 		float z= float(_cubes_idx[idx_cube][2])* _spring_size;
 		vector<int> idxs_vertex;
-		for (unsigned int k=0; k<2; ++k)
-			for (unsigned int j=0; j<2; ++j)
-				for (unsigned int i=0; i<2; ++i) {
+		for (uint k=0; k<2; ++k)
+			for (uint j=0; j<2; ++j)
+				for (uint i=0; i<2; ++i) {
 					glm::vec3 vertex= glm::vec3(x+ _spring_size* float(i), y+ _spring_size* float(j), z+ _spring_size* float(k)+ z0);
 					int idx_vertex_ok= -1;
 					for (int idx_vertex=0; idx_vertex<_vertices.size(); ++idx_vertex)
@@ -503,11 +503,11 @@ void CubeSystem::init_vertices_springs() {
 					idxs_vertex.push_back(idx_vertex_ok);
 				}
 
-		for (unsigned int idx_spring=0; idx_spring<idxs_springs.size(); ++idx_spring) {
-			unsigned int idx1= idxs_vertex[idxs_springs[idx_spring][0]];
-			unsigned int idx2= idxs_vertex[idxs_springs[idx_spring][1]];
+		for (uint idx_spring=0; idx_spring<idxs_springs.size(); ++idx_spring) {
+			uint idx1= idxs_vertex[idxs_springs[idx_spring][0]];
+			uint idx2= idxs_vertex[idxs_springs[idx_spring][1]];
 			bool already= false;
-			for (unsigned int idx_spring=0; idx_spring<_springs.size(); ++idx_spring)
+			for (uint idx_spring=0; idx_spring<_springs.size(); ++idx_spring)
 				if ( ((_springs[idx_spring]._idx1== idx1) && (_springs[idx_spring]._idx2== idx2)) ||
 					 ((_springs[idx_spring]._idx1== idx2) && (_springs[idx_spring]._idx2== idx1)) ) {
 					already= true;
@@ -521,21 +521,21 @@ void CubeSystem::init_vertices_springs() {
 	//cout << _vertices.size() << ";" << _springs.size() << endl;
 	/*for (int idx_vertex=0; idx_vertex<_vertices.size(); ++idx_vertex)
 		cout << _vertices[idx_vertex]._p[0] << ";" << _vertices[idx_vertex]._p[1] << ";" << _vertices[idx_vertex]._p[2] << endl;
-	for (unsigned int idx_spring=0; idx_spring<_springs.size(); ++idx_spring)
+	for (uint idx_spring=0; idx_spring<_springs.size(); ++idx_spring)
 		cout << _springs[idx_spring]._idx1 << " ; " << _springs[idx_spring]._idx2 << endl;*/
 }
 
 
-void CubeSystem::rand_disposition(unsigned int n_cubes) {
+void CubeSystem::rand_disposition(uint n_cubes) {
 
 	_cubes_idx.clear();
 	vector<int> origin= {0, 0, 0};
 	_cubes_idx.push_back(origin);
 
-	for (unsigned int idx_iter=0; idx_iter<n_cubes- 1; ++idx_iter) {
+	for (uint idx_iter=0; idx_iter<n_cubes- 1; ++idx_iter) {
 		//cout << "idx_iter=" << idx_iter << endl;
 		vector< vector<int> > v;
-		for (unsigned int idx_cube=0; idx_cube<_cubes_idx.size(); ++idx_cube) {
+		for (uint idx_cube=0; idx_cube<_cubes_idx.size(); ++idx_cube) {
 			//cout << "idx_cube=" << idx_cube << endl;
 			for (int i=-1; i<2; ++i)
 				for (int j=-1; j<2; ++j)
@@ -549,7 +549,7 @@ void CubeSystem::rand_disposition(unsigned int n_cubes) {
 							continue;
 
 						bool already_in_cubes= false;
-						for (unsigned int idx_cube_2=0; idx_cube_2<_cubes_idx.size(); ++idx_cube_2) {
+						for (uint idx_cube_2=0; idx_cube_2<_cubes_idx.size(); ++idx_cube_2) {
 							if ((_cubes_idx[idx_cube_2][0]== _cubes_idx[idx_cube][0]+ i)
 								&& (_cubes_idx[idx_cube_2][1]== _cubes_idx[idx_cube][1]+ j)
 								&& (_cubes_idx[idx_cube_2][2]== _cubes_idx[idx_cube][2]+ k)) {
@@ -568,7 +568,7 @@ void CubeSystem::rand_disposition(unsigned int n_cubes) {
 		_cubes_idx.push_back(v[n]);
 	}
 
-	/*for (unsigned int idx_cube=0; idx_cube<_cubes_idx.size(); ++idx_cube) {
+	/*for (uint idx_cube=0; idx_cube<_cubes_idx.size(); ++idx_cube) {
 		cout << _cubes_idx[idx_cube][0] << " ; " << _cubes_idx[idx_cube][1] << " ; " << _cubes_idx[idx_cube][2] << endl;
 	}*/
 
@@ -578,7 +578,7 @@ void CubeSystem::rand_disposition(unsigned int n_cubes) {
 
 // ------------------------------------------------------------------------------------------
 SpringSystemGenetic::SpringSystemGenetic() {
-	for (unsigned int i=0; i<N_POPULATION; i++) {
+	for (uint i=0; i<N_POPULATION; i++) {
 		CubeSystem* cs= new CubeSystem();
 		cs->rand_disposition(N_CUBES);
 		cs->rand_contracts();
@@ -668,7 +668,7 @@ SpringSystemGL::SpringSystemGL() {
 
 SpringSystemGL::SpringSystemGL(GLuint prog_draw) :
 	_is_draw_springs(true), _is_draw_forces(false), _is_draw_accel_speed(false), _prog_draw(prog_draw), _is_paused(false) {
-	unsigned int i;
+	uint i;
 
 	for (i=0; i<MAX_DATA; i++)
 		_data[i]= 0.;
@@ -717,8 +717,8 @@ void SpringSystemGL::draw(glm::mat4 world2clip) {
 		glBindBuffer(GL_ARRAY_BUFFER, _buffer_forces);
 		glVertexAttribPointer(_position_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
 		glVertexAttribPointer(_diffuse_color_loc, 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
-		unsigned int n_forces= 0;
-		for (unsigned int i=0; i<_ss->_vertices.size(); i++)
+		uint n_forces= 0;
+		for (uint i=0; i<_ss->_vertices.size(); i++)
 			n_forces+= _ss->_vertices[i]._forces.size();
 		glDrawArrays(GL_LINES, 0, n_forces* 2);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -746,7 +746,7 @@ void SpringSystemGL::anim() {
 
 
 void SpringSystemGL::update_data() {
-	unsigned int i;
+	uint i;
 	for (i=0; i<MAX_DATA; i++)
 		_data[i]= 0.;
 
@@ -774,7 +774,7 @@ void SpringSystemGL::update_data() {
 
 
 void SpringSystemGL::update_data_forces() {
-	unsigned int i, j, k;
+	uint i, j, k;
 	for (i=0; i<MAX_DATA_FORCES; i++)
 		_data_forces[i]= 0.0f;
 
@@ -805,7 +805,7 @@ void SpringSystemGL::update_data_forces() {
 
 
 void SpringSystemGL::update_data_accel_speed() {
-	unsigned int i, j, k;
+	uint i, j, k;
 	for (i=0; i<MAX_DATA_ACCEL_SPEED; i++)
 		_data_accel_speed[i]= 0.;
 

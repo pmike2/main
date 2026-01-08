@@ -13,7 +13,7 @@
 #include "test_geom_2d.h"
 
 // en ms; temps entre 2 anims
-//const unsigned int DELTA_ANIM= 1;
+//const uint DELTA_ANIM= 1;
 
 // dimensions écran
 const int MAIN_WIN_WIDTH= 1280;
@@ -30,8 +30,8 @@ ScreenGL * screengl;
 TestGeom2D * test_geom_2d;
 
 bool done= false;
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2, tikanim1, tikanim2;
+uint val_fps, compt_fps;
+uint tikfps1, tikfps2, tikanim1, tikanim2;
 
 
 

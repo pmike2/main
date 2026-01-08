@@ -17,7 +17,7 @@ public:
 	Polynomial(std::vector<float> coeffs);
 	Polynomial(std::vector<glm::vec2> points);
 	~Polynomial();
-	float operator[](unsigned int idx) const;
+	float operator[](uint idx) const;
 	float valueat(float x);
 	friend std::ostream & operator << (std::ostream & os, Polynomial & p);
 

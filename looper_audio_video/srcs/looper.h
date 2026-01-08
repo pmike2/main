@@ -11,10 +11,10 @@
 
 enum SEQ_MODE {STOPPED, RUNNING, RECORDING};
 
-typedef std::pair<unsigned int, unsigned int> ratio_type;
+typedef int_pair ratio_type;
 
 const bool VERBOSE= false;
-const unsigned int N_MAX_EVENTS= 1024;
+const uint N_MAX_EVENTS= 1024;
 const std::chrono::duration<int,std::milli> DEFAULT_TRACK_DURATION= std::chrono::milliseconds(2048);
 const std::chrono::duration<int,std::milli> DEFAULT_EVENT_DURATION= std::chrono::milliseconds(50);
 const std::chrono::duration<int,std::milli> DEFAULT_EVENT_MARGIN= std::chrono::milliseconds(5);
@@ -43,7 +43,7 @@ public:
 	Track(sharedata_type * track_data, bool infinite=false);
 	~Track();
 	time_type get_relative_t(time_type t);
-	unsigned int get_cycle(time_type t);
+	uint get_cycle(time_type t);
 	void set_duration(time_type t);
 	void set_ratio_to_master_track(Track * master_track, ratio_type ratio);
 	void update_duration_from_ratio_to_master_track(Track * master_track);
@@ -58,7 +58,7 @@ public:
 	void set_inserted_event_end(time_type t);
 	void delete_event(Event * event);
 	void update(time_type t);
-	void set_quantize(unsigned int quantize);
+	void set_quantize(uint quantize);
 	bool update_current_quantize(time_type t);
 	void emit_current();
 	void emit_null();
@@ -70,14 +70,14 @@ public:
 	Event * _events[N_MAX_EVENTS];
 	Event * _current_event;
 	Event * _inserted_event;
-	unsigned int _current_cycle;
+	uint _current_cycle;
 	Track * _previous;
 	Track * _next;
 	sharedata_type * _data;
 	bool _infinite;
-	unsigned int _quantize;
+	uint _quantize;
 	time_type _quantize_step;
-	unsigned int _current_quantize;
+	uint _current_quantize;
 	bool _repeat;
 	bool _hold;
 };
@@ -97,7 +97,7 @@ public:
 	void set_next_track();
 	void set_previous_track();
 	void set_master_track_duration(time_type t);
-	unsigned int get_current_track_index();
+	uint get_current_track_index();
 	float get_bpm();
 	void debug();
 

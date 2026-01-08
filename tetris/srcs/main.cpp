@@ -16,7 +16,7 @@
 
 
 // en ms; temps entre 2 anims
-//const unsigned int DELTA_ANIM= 1;
+//const uint DELTA_ANIM= 1;
 
 // dimensions écran
 const int MAIN_WIN_WIDTH= 1400;
@@ -32,8 +32,8 @@ InputState * input_state;
 ScreenGL * screengl;
 
 bool done= false;
-unsigned int val_fps, compt_fps;
-unsigned int tikfps1, tikfps2;
+uint val_fps, compt_fps;
+uint tikfps1, tikfps2;
 
 
 
@@ -55,17 +55,17 @@ void key_up(SDL_Keycode key) {
 }
 
 
-void joystick_down(unsigned int button_idx) {
+void joystick_down(uint button_idx) {
 	input_state->joystick_down(button_idx);
 }
 
 
-void joystick_up(unsigned int button_idx) {
+void joystick_up(uint button_idx) {
 	input_state->joystick_up(button_idx);
 }
 
 
-void joystick_axis(unsigned int axis_idx, int value) {
+void joystick_axis(uint axis_idx, int value) {
 	input_state->joystick_axis(axis_idx, value);
 }
 

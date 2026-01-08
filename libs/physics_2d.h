@@ -34,7 +34,7 @@ https://gafferongames.com/post/integration_basics/
 const pt_2d GRAVITY(0.0f, -50.0f);
 
 // nombre d'itérations max lors de la résolution des collisions
-const unsigned int N_ITER_MAX= 100;
+const uint N_ITER_MAX= 100;
 const number IMPULSE_TRESH= 0.0001f;
 
 // cf biased_cmp()
@@ -61,7 +61,7 @@ class RigidBody2D;
 bool is_pt_inside_body(pt_2d pt, RigidBody2D * body);
 bool segment_intersects_body(pt_2d pt_begin, pt_2d pt_end, RigidBody2D * body, pt_2d * result);
 number distance_body_pt(RigidBody2D * body, pt_2d pt, pt_2d * proj);
-void axis_least_penetration(RigidBody2D * body_a, RigidBody2D * body_b, unsigned int * idx_pt_max, number * penetration_max);
+void axis_least_penetration(RigidBody2D * body_a, RigidBody2D * body_b, uint * idx_pt_max, number * penetration_max);
 bool biased_cmp(number a, number b);
 
 
@@ -167,7 +167,7 @@ public:
     Collision2D();
     Collision2D(RigidBody2D * body_a, RigidBody2D * body_b, bool verbose=false);
     ~Collision2D();
-	unsigned int incident_face_idx(unsigned int reference_face_idx);
+	uint incident_face_idx(uint reference_face_idx);
     void apply_impulse(number dt);
     void positional_correction();
     void print();
@@ -206,11 +206,11 @@ public:
     ~Physics2D();
 	// on peut générer plusieurs body avec le meme polygon et avec des matériaux différents par ex
 	void add_polygon(Polygon2D * polygon);
-    void add_body(unsigned int idx_polygon, unsigned int idx_material, pt_2d position, number orientation);
+    void add_body(uint idx_polygon, uint idx_material, pt_2d position, number orientation);
     void step(bool verbose=false);
     void new_external_force(pt_2d pt_begin, pt_2d pt_end);
     void new_explosion(pt_2d center, number radius);
-    void load_body(std::string ch_file, unsigned int idx_material);
+    void load_body(std::string ch_file, uint idx_material);
 
 
 	std::vector<Polygon2D *> _polygons;
@@ -241,7 +241,7 @@ public:
 	GLint _camera2clip_loc, _position_loc, _diffuse_color_loc;
 	GLuint _buffers[6];
 	float _camera2clip[16];
-    unsigned int _n_pts, _n_bodies, _n_collisions, _n_contacts;
+    uint _n_pts, _n_bodies, _n_collisions, _n_contacts;
 	bool _visible_pt, _visible_normal, _visible_center, _visible_vel_force, _visible_collision, _visible_contact;
 };
 

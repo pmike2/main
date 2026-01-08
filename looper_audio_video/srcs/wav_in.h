@@ -16,14 +16,14 @@
 
 
 struct WavEvent {
-	unsigned int _idx_track;
+	uint _idx_track;
 	key_type _key;
 	float _amplitude;
 	time_point _t;
 };
 
 struct WavEventConfig {
-	unsigned int _idx_track;
+	uint _idx_track;
 	key_type _key;
 	float _amplitude_factor;
 };
@@ -44,9 +44,9 @@ public:
 	void new_envelope(std::string s);
 	void main_loop();
 
-	std::map<unsigned int, std::vector<WavEventConfig> > _mapping;
+	std::map<uint, std::vector<WavEventConfig> > _mapping;
 	std::set<WavEvent, EventCmp> _events;
-	double _delta_event;
+	number _delta_event;
 };
 
 #endif

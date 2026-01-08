@@ -33,12 +33,12 @@ bool number_equals_epsilon(number x, number y, number threshold) {
 }
 
 
-// renvoie un double aléatoire entre x0 et x1
-double rand_double(double x0, double x1) {
+// renvoie un number aléatoire entre x0 et x1
+number rand_double(number x0, number x1) {
 	if (x1> x0)
-		return x0+ (x1- x0)* (double)(rand()% 10000)/ 10000;
+		return x0+ (x1- x0)* (number)(rand()% 10000)/ 10000;
 	else
-		return x1+ (x0- x1)* (double)(rand()% 10000)/ 10000;
+		return x1+ (x0- x1)* (number)(rand()% 10000)/ 10000;
 }
 
 

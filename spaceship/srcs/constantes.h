@@ -12,7 +12,7 @@
 
 // général -------------------------------------------------------------------------------
 // en ms; temps entre 2 anims
-const unsigned int DELTA_ANIM= 1;
+const uint DELTA_ANIM= 1;
 
 // dimensions écran
 const int SCREEN_WIDTH= 1024;
@@ -90,16 +90,16 @@ const float FOG_COLOR[3]= {0.3f, 0.6f, 0.9f};
 // vitesse balles
 const float BULLET_SPEED= 20.0f;
 // temps (en ms) entre 2 tirs
-const unsigned int BULLET_FREQUENCY= 120;
+const uint BULLET_FREQUENCY= 120;
 // scaling initial
 const float BULLET_SIZE_FACTOR= 3.5f;
 // nombre max de bullets actives pour un ship
-const unsigned int MAX_BULLETS= 100;
+const uint MAX_BULLETS= 100;
 
 // explosion -----------------------------------------------------------------------------
 struct ExplosionParams {
 	float _size_factor;
-	unsigned int _n_particles;
+	uint _n_particles;
 	float _translation;
 	float _angle;
 	float _scale;
@@ -107,11 +107,11 @@ struct ExplosionParams {
 
 const struct ExplosionParams LITTLE_EXPLOSION_PARAMS= {5.0f, 100, 1.2f, 0.03f, 0.03f};
 const struct ExplosionParams BIG_EXPLOSION_PARAMS= {12.0f, 100, 1.2f, 0.1f, 0.004f};
-const unsigned int N_MAX_LITTLE_EXPLOSIONS= 2000;
-const unsigned int N_MAX_BIG_EXPLOSIONS= 100;
+const uint N_MAX_LITTLE_EXPLOSIONS= 2000;
+const uint N_MAX_BIG_EXPLOSIONS= 100;
 
 // IA ------------------------------------------------------------------------------------
-const unsigned int N_ENEMIES= 9;
+const uint N_ENEMIES= 9;
 
 // considère que sa direction courante est ok si courant - target est < cette valeur
 const float IA_ORIENTATION_TOLERANCE= 0.1f;
@@ -120,14 +120,14 @@ const float IA_VISU_ANGLE= cos(glm::pi<float>()/ 0.3f);
 // profondeur de vue le repérage des autres
 const float IA_VISU_DEPTH= 400.0f;
 // en ms; temps entre 2 recalculs
-const unsigned int IA_THINKING_TIME= 500;
+const uint IA_THINKING_TIME= 500;
 // distance test pour crash level / box
 const float IA_DISTANCE_TEST= 200.0f;
 
 // map -----------------------------------------------------------------------------------
 // dimensions en pixels de la carte
-const unsigned int MAP_WIDTH = 256;
-const unsigned int MAP_HEIGHT= 256;
+const uint MAP_WIDTH = 256;
+const uint MAP_HEIGHT= 256;
 // taille icone ship
 const float MAP_SHIP_SIZE= 0.05f;
 
@@ -139,7 +139,7 @@ const float RANKING_SCALE= 0.4f;
 const float RANKING_ALPHA= 0.8f;
 
 // cloud ---------------------------------------------------------------------------------
-const unsigned int NCLOUDS= 300;
+const uint NCLOUDS= 300;
 const float CLOUD_MIN_SIZE= 40.0f;
 const float CLOUD_MAX_SIZE= 400.0f;
 const float CLOUD_MIN_SPEED= 0.3f;

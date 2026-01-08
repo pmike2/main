@@ -55,11 +55,11 @@ public:
 template <class T>
 class BST {
 	// méthodes privées
-	unsigned int n_nodes(Node<T> * node);
+	uint n_nodes(Node<T> * node);
 	void max_imbalance(Node<T> * node, int * maximb);
 	Node<T> * balance(std::vector<T> & sorted_array, int start, int end);
 	void traversal(Node<T> * node, TraversalType tt, std::function<void(Node<T> *)> f);
-	//void draw(bool * bits, Node<T> * node, int i, int j, unsigned int width, unsigned int height, unsigned int n);
+	//void draw(bool * bits, Node<T> * node, int i, int j, uint width, uint height, uint n);
 	void export_html(std::string html_path, Node<T> * node, float x, int y);
 	// cf https://stackoverflow.com/questions/4660123/overloading-friend-operator-for-class-template
 	template <class U>
@@ -70,9 +70,9 @@ public:
 	BST(std::function<int(T, T)> cmp);
 	~BST();
 	bool empty();
-	unsigned int height(Node<T> * node);
-	unsigned int height();
-	unsigned int n_nodes();
+	uint height(Node<T> * node);
+	uint height();
+	uint n_nodes();
 	int max_imbalance();
 	Node<T> * minimum(Node<T> * node);
 	Node<T> * minimum();
@@ -210,7 +210,7 @@ std::ostream & operator << (std::ostream & os, const Node<T> & node) {
 	//std::string NULL_STRING= "--------NULL--------";
 	std::string NULL_STRING= "NULL";
 	std::string SEPARATOR= " | ";
-	unsigned int str_width= 30;
+	uint str_width= 30;
 
 	//os << std::left;
 	//os << std::setw(str_width);
@@ -282,13 +282,13 @@ bool BST<T>::empty() {
 
 // nombre de noeuds sous node
 template <class T>
-unsigned int BST<T>::n_nodes(Node<T> * node) {
+uint BST<T>::n_nodes(Node<T> * node) {
 	if (node== NULL) {
 		return 0;
 	}
 
-	unsigned int n_nodes_left= n_nodes(node->_left);
-	unsigned int n_nodes_right= n_nodes(node->_right);
+	uint n_nodes_left= n_nodes(node->_left);
+	uint n_nodes_right= n_nodes(node->_right);
 	
 	return n_nodes_left+ n_nodes_right+ 1;
 }
@@ -296,7 +296,7 @@ unsigned int BST<T>::n_nodes(Node<T> * node) {
 
 // nombre de noeuds de l'arbre
 template <class T>
-unsigned int BST<T>::n_nodes() {
+uint BST<T>::n_nodes() {
 	return n_nodes(_root);
 }
 
@@ -307,8 +307,8 @@ void BST<T>::max_imbalance(Node<T> * node, int * maximb) {
 		return;
 	}
 
-	unsigned int n_nodes_left= n_nodes(node->_left);
-	unsigned int n_nodes_right= n_nodes(node->_right);
+	uint n_nodes_left= n_nodes(node->_left);
+	uint n_nodes_right= n_nodes(node->_right);
 	int imbalance= (int)(n_nodes_right)- (int)(n_nodes_left);
 	if (abs(imbalance)> abs(*maximb)) {
 		*maximb= imbalance;
@@ -328,13 +328,13 @@ int BST<T>::max_imbalance() {
 
 // hauteur du sous-arbre de root node
 template <class T>
-unsigned int BST<T>::height(Node<T> * node) {
+uint BST<T>::height(Node<T> * node) {
 	if (node== NULL) {
 		return 0;
 	}
 
-	unsigned int height_left= height(node->_left);
-	unsigned int height_right= height(node->_right);
+	uint height_left= height(node->_left);
+	uint height_right= height(node->_right);
 	
 	return std::max(height_left, height_right)+ 1;
 }
@@ -342,7 +342,7 @@ unsigned int BST<T>::height(Node<T> * node) {
 
 // hauteur de l'arbre
 template <class T>
-unsigned int BST<T>::height() {
+uint BST<T>::height() {
 	return height(_root);
 }
 
@@ -821,8 +821,8 @@ void BST<T>::export_html(std::string html_path, Node<T> * node, float x, int y) 
 // export html pour debug
 template <class T>
 void BST<T>::export_html(std::string html_path) {
-	unsigned int svg_width= 1400;
-	unsigned int svg_height= 1200;
+	uint svg_width= 1400;
+	uint svg_height= 1200;
 	float view_xmin= -2.0f;
 	float view_xmax= 2.0f;
 	float view_ymin= 0.0f;
@@ -851,7 +851,7 @@ void BST<T>::export_html(std::string html_path) {
 // gardé pour mémoire mais très inefficace; le fichier pbm résultat peut devenir énorme
 
 /*template <class T>
-void BST<T>::draw(bool * bits, Node<T> * node, int i, int j, unsigned int width, unsigned int height, unsigned int n) {
+void BST<T>::draw(bool * bits, Node<T> * node, int i, int j, uint width, uint height, uint n) {
 	if (node== NULL) {
 		return;
 	}
@@ -872,9 +872,9 @@ void BST<T>::draw(bool * bits, Node<T> * node, int i, int j, unsigned int width,
 
 template <class T>
 void BST<T>::draw(std::string output) {
-	unsigned int n= n_nodes();
-	unsigned int width= pow(2, n)- 1;
-	unsigned int height_= height();
+	uint n= n_nodes();
+	uint width= pow(2, n)- 1;
+	uint height_= height();
 	bool * bits= new bool[width* height_];
 	for (int i=0; i<width* height_; ++i) {
 		bits[i]= 0;

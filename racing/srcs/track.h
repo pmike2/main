@@ -26,7 +26,7 @@ enum TrackMode {TRACK_WAITING, TRACK_PRECOUNT, TRACK_LIVE, TRACK_FINISHED};
 const number DEFAULT_CELL_SIZE= 2.0;
 
 // temps entre 2 boosts en ms
-const unsigned int BOOST_DELTA_T_MS= 2000;
+const uint BOOST_DELTA_T_MS= 2000;
 // amplitude d'un boost
 const number BOOST_AMPLITUDE= 4.0;
 
@@ -67,7 +67,7 @@ public:
 	void parse_json(std::string json_path);
 
 
-	unsigned int _n_laps; // nombre de tours
+	uint _n_laps; // nombre de tours
 	std::vector<std::pair<std::string, number> > _best_lap; // les 3 meilleurs temps au tour
 	std::vector<std::pair<std::string, number> > _best_overall; // les 3 meilleurs en tout
 };
@@ -83,14 +83,14 @@ public:
 	void load_models(); // chgmt des modèles de tuiles, voitures et autres
 	void load_json(std::string json_path); // chgmt course
 	void save_json(std::string json_path); // sauvegarde course (utilisé dans track_editor.cpp)
-	void set_hero(unsigned int idx_driver); // choix du héros
+	void set_hero(uint idx_driver); // choix du héros
 	void place_cars(); // placement des voitures à la ligne de départ
 	void reinit_drivers(time_point t, bool set_normal_expression); // reinit des conducteurs
 	void start(time_point t); // départ course
 	void end(); // fin course
 	void write_records(); // enregistrement des meilleurs temps
 	void sort_cars(); // tri des voitures par position
-	unsigned int get_checkpoint_index(CheckPoint * checkpoint); // position du chkpt par rapport au start
+	uint get_checkpoint_index(CheckPoint * checkpoint); // position du chkpt par rapport au start
 	
 	void anim_objects(time_point t); // animation des objets
 	void reinit_car_contact(); // reinitialisation des contacts des objets avec les voitures
@@ -108,9 +108,9 @@ public:
 	void anim(time_point t, InputState * input_state, bool joystick_is_input); // animation
 
 	// get / set / add / del; utilisé dans track_editor.cpp
-	void set_tile(std::string model_name, unsigned int col_idx, unsigned int row_idx);
-	void set_tile(std::string model_name, unsigned int idx);
-	void set_all(std::string model_name, unsigned int width, unsigned int height);
+	void set_tile(std::string model_name, uint col_idx, uint row_idx);
+	void set_tile(std::string model_name, uint idx);
+	void set_all(std::string model_name, uint width, uint height);
 	void add_row(std::string model_name);
 	void add_col(std::string model_name);
 	void drop_row();
@@ -135,7 +135,7 @@ public:
 	bool _new_best_overall; // à la fin le héros a t'il fait le meilleur temps total
 
 	time_point _last_precount_t; // pour décompte avant début course
-	unsigned int _precount; // décompte avant début course
+	uint _precount; // décompte avant début course
 
 	std::vector<Car *> _sorted_cars; // les voitures triées par position
 	Car * _hero; // voiture héros

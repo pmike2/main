@@ -194,7 +194,7 @@ bool ray_intersects_aabb2d(const pt_2d & ray_origin, const pt_2d & ray_dir, cons
 
 
 // TODO : ne pas utiliser Polygon2D pour ce test
-bool bbox2d_intersects_bbox2d(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1) {
+bool bbox2d_intersects_bbox2d(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * axis, number * overlap, uint * idx_pt, bool * is_pt_in_poly1) {
 	Polygon2D * poly1= new Polygon2D();
 	poly1->set_bbox(*bbox1);
 	Polygon2D * poly2= new Polygon2D();
@@ -413,7 +413,7 @@ bool is_pt_inside_poly(const pt_2d & pt, const Polygon2D * poly) {
 	/*if (glm::distance(pt, poly->_centroid)> poly->_radius) {
 		return false;
 	}*/
-	/*for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+	/*for (uint i=0; i<poly->_pts.size(); ++i) {
 		pt_2d pt1= poly->_pts[i];
 		pt_2d pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
 		if (!is_left(pt1, pt2- pt1, pt)) {
@@ -454,7 +454,7 @@ bool is_poly_inside_poly(const Polygon2D * small_poly, const Polygon2D * big_pol
 
 // Separating Axis Theorem (SAT); ne fonctionne que pour poly convexe; il faudrait sinon décomposer les polys en polys convexes
 // https://dyn4j.org/2010/01/sat/
-bool poly_intersects_poly(const Polygon2D * poly1, const Polygon2D * poly2, pt_2d * axis, number * overlap, unsigned int * idx_pt, bool * is_pt_in_poly1) {
+bool poly_intersects_poly(const Polygon2D * poly1, const Polygon2D * poly2, pt_2d * axis, number * overlap, uint * idx_pt, bool * is_pt_in_poly1) {
 
 	std::vector<pt_2d> axis2check;
 	axis2check.insert(axis2check.end(), poly1->_normals.begin(), poly1->_normals.end());
@@ -464,17 +464,17 @@ bool poly_intersects_poly(const Polygon2D * poly1, const Polygon2D * poly2, pt_2
 	*idx_pt= 0;
 	*is_pt_in_poly1= false;
 	
-	unsigned int idx_pt_normal_min= 0;
-	unsigned int idx_pt_normal_max= 0;
-	unsigned int idx_pt_other_min= 0;
-	unsigned int idx_pt_other_max= 0;
+	uint idx_pt_normal_min= 0;
+	uint idx_pt_normal_max= 0;
+	uint idx_pt_other_min= 0;
+	uint idx_pt_other_max= 0;
 	number proj_normal_min, proj_normal_max;
 	number proj_other_min, proj_other_max;
 	number current_overlap;
-	unsigned int current_idx_pt;
+	uint current_idx_pt;
 	bool current_pt_in_poly1;
 
-	for (unsigned int idx_ax=0; idx_ax<axis2check.size(); ++idx_ax) {
+	for (uint idx_ax=0; idx_ax<axis2check.size(); ++idx_ax) {
 		pt_2d ax= axis2check[idx_ax];
 		
 		// poly1 a la normale sur laquelle on projette
@@ -561,7 +561,7 @@ bool segment_intersects_poly(const pt_2d & pt_begin, const pt_2d & pt_end, const
 	number min_dist= 1e10;
 	bool is_inter= false;
 	pt_2d inter(0.0);
-	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+	for (uint i=0; i<poly->_pts.size(); ++i) {
 		pt_2d pt1= poly->_pts[i];
 		pt_2d pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
 		
@@ -599,7 +599,7 @@ bool segment_intersects_poly_multi(const pt_2d & pt_begin, const pt_2d & pt_end,
 	number min_dist= 1e10;
 	bool is_inter= false;
 	pt_2d inter(0.0);
-	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+	for (uint i=0; i<poly->_pts.size(); ++i) {
 		pt_2d pt1= poly->_pts[i];
 		pt_2d pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
 		
@@ -655,7 +655,7 @@ number distance_poly_pt(const Polygon2D * poly, const pt_2d & pt, pt_2d * proj) 
 		return 0.0;
 	}
 
-	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+	for (uint i=0; i<poly->_pts.size(); ++i) {
 		pt_2d pt1= poly->_pts[i];
 		pt_2d pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
 
@@ -690,7 +690,7 @@ number distance_poly_segment(const Polygon2D * poly, const pt_2d & seg1, const p
 		return 0.0;
 	}
 
-	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+	for (uint i=0; i<poly->_pts.size(); ++i) {
 		pt_2d pt1= poly->_pts[i];
 		pt_2d pt2= poly->_pts[(i+ 1)% poly->_pts.size()];
 
@@ -713,7 +713,7 @@ number distance_poly_segment(const Polygon2D * poly, const pt_2d & seg1, const p
 		}
 	}
 
-	for (unsigned int i=0; i<poly->_pts.size(); ++i) {
+	for (uint i=0; i<poly->_pts.size(); ++i) {
 		bool x1= distance_segment_pt(seg1, seg2, poly->_pts[i], &dist, &proj2);
 		if (dist< dist_min) {
 			dist_min= dist;
@@ -795,7 +795,7 @@ void get_circle_center(const pt_2d & circle_pt1, const pt_2d & circle_pt2, const
 
 bool is_quad_convex(const pt_2d * pts) {
 	bool is_positive= false;
-	for (unsigned int i=0; i<4; ++i) {
+	for (uint i=0; i<4; ++i) {
 		pt_2d v1= pts[(i+ 1) % 4]- pts[i];
 		pt_2d v2= pts[(i+ 2) % 4]- pts[(i+ 1) % 4];
 		number crossprod= cross2d(v1, v2);
@@ -826,7 +826,7 @@ void convex_hull_2d(std::vector<pt_2d> & pts) {
 	std::vector<pt_2d> pts_upper;
 	pts_upper.push_back(pts[0]);
 	pts_upper.push_back(pts[1]);
-	for (unsigned int i=2; i<pts.size(); ++i) {
+	for (uint i=2; i<pts.size(); ++i) {
 		pts_upper.push_back(pts[i]);
 		while ((pts_upper.size()> 2) && (is_left(pts_upper[pts_upper.size()- 3], pts_upper[pts_upper.size()- 2]- pts_upper[pts_upper.size()- 3], pts_upper[pts_upper.size()- 1]))) {
 			pts_upper.erase(pts_upper.end()- 2);

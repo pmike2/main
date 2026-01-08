@@ -6,7 +6,7 @@ using namespace rapidxml;
 
 
 
-void parse_static_config_file(string ch_config_file, GLuint * vertex_buffers, GLuint * index_buffers, unsigned int * n_faces, unsigned int & n_precisions, glm::mat4 * materials_array, AABB * aabb) {
+void parse_static_config_file(string ch_config_file, GLuint * vertex_buffers, GLuint * index_buffers, uint * n_faces, uint & n_precisions, glm::mat4 * materials_array, AABB * aabb) {
 	string line;
 	glm::vec3 vmin= glm::vec3(1e8, 1e8, 1e8);
 	glm::vec3 vmax= glm::vec3(-1e8, -1e8, -1e8);
@@ -92,10 +92,10 @@ void parse_static_config_file(string ch_config_file, GLuint * vertex_buffers, GL
 
 	mat_file.close();
 
-	for (unsigned int i=0; i<N_MAX_MATERIALS; ++i) {
+	for (uint i=0; i<N_MAX_MATERIALS; ++i) {
 		materials_array[i]= glm::mat4(0.0f);
 	}
-	for (unsigned int i=0; i<materials.size(); ++i) {
+	for (uint i=0; i<materials.size(); ++i) {
 		if (i>= N_MAX_MATERIALS) {
 			cout << "Trop de materials" << endl;
 			return;
@@ -122,11 +122,11 @@ void parse_static_config_file(string ch_config_file, GLuint * vertex_buffers, GL
 
 	for (xml_node<> * obj_node=objs_node->first_node("obj"); obj_node; obj_node=obj_node->next_sibling()) {
 		float * vertices;
-		unsigned int * faces;
-		unsigned int vertices_compt= 0;
-		unsigned int faces_compt= 0;
-		unsigned int face_tmp[3]= {0, 0, 0};
-		unsigned int n_vertices_tmp= 0;
+		uint * faces;
+		uint vertices_compt= 0;
+		uint faces_compt= 0;
+		uint face_tmp[3]= {0, 0, 0};
+		uint n_vertices_tmp= 0;
 		float * vertices_tmp;
 
 		int precision= stoi(obj_node->first_attribute("precision")->value());
@@ -151,10 +151,10 @@ void parse_static_config_file(string ch_config_file, GLuint * vertex_buffers, GL
 		
 		// pour chaque face, 3 sommets, et chaque sommet est (x, y, z, nx, ny, nz, idx_material)
 		vertices= new float[(3+ 3+ 1)* 3* n_faces[precision]];
-		faces= new unsigned int[3* n_faces[precision]];
+		faces= new uint[3* n_faces[precision]];
 		vertices_tmp= new float[3* n_vertices_tmp];
 		
-		unsigned int current_idx_mat= 0;
+		uint current_idx_mat= 0;
 		obj_file.clear();
 		obj_file.seekg(0, ios::beg);
 		while (!obj_file.eof()) {		
@@ -216,7 +216,7 @@ void parse_static_config_file(string ch_config_file, GLuint * vertex_buffers, GL
 			else if (s== "usemtl") {
 				iss >> s;
 				bool ok= false;
-				for (unsigned int idx_mat=0; idx_mat<materials.size(); ++idx_mat) {
+				for (uint idx_mat=0; idx_mat<materials.size(); ++idx_mat) {
 					if (materials[idx_mat]->_id== s) {
 						current_idx_mat= idx_mat;
 						ok= true;
@@ -234,7 +234,7 @@ void parse_static_config_file(string ch_config_file, GLuint * vertex_buffers, GL
 		// ----------------------------------------------------------------------------------------------
 		// Buffer d'indices : puisque l'on duplique tous les sommets pour ne pas avoir de normale partag�e, 
 		// faces = { 0,1,2,3,4,5,6,7,8,9,10,... }
-		for (unsigned int i=0; i<3* n_faces[precision]; ++i) {
+		for (uint i=0; i<3* n_faces[precision]; ++i) {
 			faces[i]= i;
 		}
 		
@@ -242,11 +242,11 @@ void parse_static_config_file(string ch_config_file, GLuint * vertex_buffers, GL
 		glBufferData(GL_ARRAY_BUFFER, (3+ 3+ 1)* 3* n_faces[precision]* sizeof(float), vertices, GL_STATIC_DRAW);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffers[precision]);
-		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3* n_faces[precision]* sizeof(unsigned int), faces, GL_STATIC_DRAW);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, 3* n_faces[precision]* sizeof(uint), faces, GL_STATIC_DRAW);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
 		// pour AABB
-		for (unsigned int i=0; i<3* n_faces[precision]; ++i) {
+		for (uint i=0; i<3* n_faces[precision]; ++i) {
 			if (vertices[7* i+ 0]< vmin.x) vmin.x= vertices[7* i+ 0];
 			if (vertices[7* i+ 0]> vmax.x) vmax.x= vertices[7* i+ 0];
 			if (vertices[7* i+ 1]< vmin.y) vmin.y= vertices[7* i+ 1];
@@ -415,7 +415,7 @@ void StaticInstance::set_pos_rot_scale(const glm::mat4 & mat) {
 }
 
 
-void StaticInstance::set_precision(unsigned int precision) {
+void StaticInstance::set_precision(uint precision) {
 	if (precision< _model->_n_precisions) {
 		_precision= precision;
 	}
@@ -466,7 +466,7 @@ StaticGroup::StaticGroup(string ch_config_file, GLuint prog_draw, vector<Instanc
 		_pos_rots.push_back(new InstancePosRot(pos->_position, pos->_rotation, pos->_scale, aabb_model));
 	}
 
-	for (unsigned int i=0; i<_n_precisions; ++i) {
+	for (uint i=0; i<_n_precisions; ++i) {
 		// on prévoit que dans le cas extreme une classe de precision peut contenir tous les objets, et les autres classes aucun
 		_mats[i]= new glm::mat4[_pos_rots.size()]; 
 		_mats_sizes[i]= 0;
@@ -487,7 +487,7 @@ StaticGroup::~StaticGroup() {
 	}
 	_pos_rots.clear();
 
-	for (unsigned int i=0; i<_n_precisions; ++i) {
+	for (uint i=0; i<_n_precisions; ++i) {
 		delete[] _mats[i];
 	}
 }
@@ -496,7 +496,7 @@ StaticGroup::~StaticGroup() {
 void StaticGroup::draw() {
 	glUseProgram(_prog_draw);
 	
-	for (unsigned int precision=0; precision<_n_precisions; ++precision) {
+	for (uint precision=0; precision<_n_precisions; ++precision) {
 		glBindBuffer(GL_ARRAY_BUFFER, _vertex_buffers[precision]);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _index_buffers[precision]);
 		
@@ -516,7 +516,7 @@ void StaticGroup::draw() {
 		glVertexAttribPointer(_idx_material_loc, 1, GL_FLOAT, GL_FALSE, (3+ 3+ 1)* sizeof(float), (void *)((3+ 3)* sizeof(float)));
 
 		glBindBuffer(GL_ARRAY_BUFFER, _instance_buffers[precision]);
-		for (unsigned int j=0; j<4 ; ++j) {
+		for (uint j=0; j<4 ; ++j) {
 			glEnableVertexAttribArray(_instanced_matrix_loc+ j);
 			glVertexAttribPointer(_instanced_matrix_loc+ j, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (const GLvoid*)(sizeof(glm::vec4)* j));
 			glVertexAttribDivisor(_instanced_matrix_loc+ j, 1); // pour faire de l'instanced
@@ -529,7 +529,7 @@ void StaticGroup::draw() {
 		glDisableVertexAttribArray(_position_loc);
 		glDisableVertexAttribArray(_normal_loc);
 		glDisableVertexAttribArray(_idx_material_loc);
-		for (unsigned int j=0; j<4 ; ++j) {
+		for (uint j=0; j<4 ; ++j) {
 			glVertexAttribDivisor(_instanced_matrix_loc+ j, 0); // necessaire de reinit !
 			glDisableVertexAttribArray(_instanced_matrix_loc+ j);
 		}
@@ -546,7 +546,7 @@ void StaticGroup::anim(ViewSystem * view_system) {
 	_world2camera= view_system->_world2camera;
 	_world2clip= view_system->_world2clip;
 
-	for (unsigned int i=0; i<_n_precisions; ++i) {
+	for (uint i=0; i<_n_precisions; ++i) {
 		_mats_sizes[i]= 0;
 	}
 
@@ -557,7 +557,7 @@ void StaticGroup::anim(ViewSystem * view_system) {
 
 		// a quelle classe de precision va appartenir cet objet
 		// ATTENTION : _dist2 doit etre calculé dans le programme appelant cette classe ; cela n'est pas fait de facon systematique ici pour des raisons de performance
-		for (unsigned int i=0; i<_distances.size(); ++i) {
+		for (uint i=0; i<_distances.size(); ++i) {
 			// cout << i << " ; " << _n_precisions- 1 << " ; " << pr->_dist2 << " ; " << _distances[i]* _distances[i] << endl;
 			if ((i== _n_precisions- 1) || (pr->_dist2< _distances[i]* _distances[i])) {
 				_mats[i][_mats_sizes[i]]= pr->_model2world;
@@ -568,7 +568,7 @@ void StaticGroup::anim(ViewSystem * view_system) {
 	}
 
 	// on renseigne les _instance_buffers
-	for (unsigned int precision=0; precision<_n_precisions; ++precision) {
+	for (uint precision=0; precision<_n_precisions; ++precision) {
 		glBindBuffer(GL_ARRAY_BUFFER, _instance_buffers[precision]);
 		glBufferData(GL_ARRAY_BUFFER, _mats_sizes[precision]* sizeof(glm::mat4), glm::value_ptr(_mats[precision][0]), GL_STATIC_DRAW);
 	}
