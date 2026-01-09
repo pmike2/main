@@ -61,6 +61,9 @@ public:
 	void draw_linear(std::string context_name);
 	void draw_dash(std::string context_name);
 	void draw_surface(std::string context_name);
+	void draw_lake();
+	void draw_river();
+	void draw_sea();
 	void draw();
 	void anim(time_point t, InputState * input_state);
 	//GraphGrid * get_visible_grid();
@@ -74,6 +77,7 @@ public:
 	void update_elements();
 	void update_river();
 	void update_lake();
+	void update_sea();
 	void update_all();
 	void update_text(InputState * input_state);
 	bool mouse_button_down(InputState * input_state, time_point t);
@@ -86,13 +90,16 @@ public:
 	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
 	EDIT_MODE _mode;
 	//std::vector<pt_2d> _obstacle_pts;
-	//time_point _last_added_pt_t;
+	//time_point _last_anim_t;
 	Font * _font;
 	ViewSystem * _view_system;
 	Map * _map;
 	std::string _visible_grid_type;
 	std::string _visible_grid_unit_type;
 	std::map<std::string, GLuint> _progs;
+
+	number _angle;
+	//number _wave;
 };
 
 #endif

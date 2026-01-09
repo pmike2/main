@@ -5,7 +5,7 @@
 	"root_radius_base_min" : 1.5,
 	"root_radius_base_max" : 3.0,
 	"root_theta_min" : 0.0,
-	"root_theta_max" : 0.2,
+	"root_theta_max" : 0.7,
 	"ratio_child_r_min" : 0.4,
 	"ratio_child_r_max" : 0.8,
 	"ratio_child_radius_min" : 0.3,

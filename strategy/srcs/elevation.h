@@ -41,6 +41,7 @@ struct Elevation : public GraphGrid {
 	void update_normals(AABB_2D * aabb);
 	
 	std::vector<uint> lowest_gradient(uint id_src);
+	uint lowest_neighbor(uint id);
 	
 	void set_alti(uint id, number alti);
 	void set_alti(int col, int lig, number alti);

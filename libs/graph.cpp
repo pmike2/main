@@ -37,7 +37,9 @@ void Graph::add_vertex(uint i, pt_3d pos) {
 
 void Graph::add_edge(uint i, uint j) {
 	if ((_vertices.count(i)) && (_vertices.count(j))) {
-		GraphEdge e= {};
+		GraphEdge e;
+		e._start = &_vertices[i];
+		e._end = &_vertices[j];
 		_vertices[i]._edges[j]= e;
 	}
 }

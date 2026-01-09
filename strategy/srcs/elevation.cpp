@@ -242,6 +242,21 @@ std::vector<uint> Elevation::lowest_gradient(uint id_src) {
 }
 
 
+uint Elevation::lowest_neighbor(uint id) {
+	std::vector<uint> l_neighbors = neighbors(id);
+	number alti_min = 1e7;
+	uint result = 0;
+	for (auto & id_n : l_neighbors) {
+		number alti_n = get_alti(id_n);
+		if (alti_n < alti_min) {
+			alti_min = alti_n;
+			result = id_n;
+		}
+	}
+	return result;
+}
+
+
 void Elevation::set_alti(uint id, number alti) {
 	_vertices[id]._pos.z = alti;
 	//update_normal(id);
@@ -277,10 +292,6 @@ void Elevation::set_alti_all(number alti) {
 void Elevation::set_negative_alti_2zero() {
 	for (int col=0; col< _n_cols; ++col) {
 		for (int lig=0; lig< _n_ligs; ++lig) {
-			//uint id = col_lig2id(col, lig);
-			/*if (_altis[id]< 0.0) {
-				_altis[id] = 0.0;
-			}*/
 			if (get_alti(col, lig) < 0.0) {
 				set_alti(col, lig, 0.0);
 			}
@@ -406,7 +417,7 @@ void Elevation::randomize() {
 	}
 	delete gradient;
 
-	set_negative_alti_2zero();
+	//set_negative_alti_2zero();
 
 	update_normals();
 	update_data();
@@ -439,6 +450,7 @@ void Elevation::update_data() {
 
 
 void Elevation::update_data(int col_min, int col_max, int lig_min, int lig_max) {
+	std::cout << col_min << " ; " << col_max << " ; " << lig_min << " ; " << lig_max << "\n";
 	uint idx_tris[6] = {0, 1, 2, 0, 2, 3};
 	
 	for (int lig = lig_min; lig < lig_max; ++lig) {

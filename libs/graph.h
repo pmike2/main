@@ -20,9 +20,14 @@
 const number DEFAULT_EDGE_WEIGHT = 0.0;
 
 
+struct GraphVertex;
+
+
 struct GraphEdge {
 	//number _weight;
 	void * _data = NULL;
+	GraphVertex * _start; //inutilisé pour l'instant mais peut être utile
+	GraphVertex * _end; //inutilisé pour l'instant mais peut être utile
 };
 
 

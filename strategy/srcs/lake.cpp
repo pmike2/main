@@ -87,17 +87,21 @@ Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0),
 	// on ne conserve que les id_nodes qui appartiennent à un triangle
 	_id_nodes = _elevation->triangles2ids(_triangles);
 
-	number EPS = 0.1;
+	_polygon = _elevation->ids2polygon(_id_nodes);
+
+	/*number EPS = 1.1;
 	for (auto & id : _id_nodes) {
 		_elevation->set_alti(id, _alti_lake - EPS);
+		_elevation->update_normal(id);
 	}
+	_elevation->update_data(_polygon->_aabb);*/
 
 	//std::cout << _elevation->ids2wkt(_id_nodes) << "\n";
 	//std::cout << _elevation->triangles2wkt(_triangles) << "\n";
 
-	uint n_attrs_per_pts= 10;
+	_n_attrs_per_pts= 7;
 	_n_pts = 3 * _triangles.size();
-	_data = new float[_n_pts * n_attrs_per_pts];
+	_data = new float[_n_pts * _n_attrs_per_pts];
 
 	update_data();
 }
@@ -105,11 +109,12 @@ Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0),
 
 Lake::~Lake() {
 	delete _data;
+	delete _polygon;
 }
 
 
 void Lake::update_data() {
-	const glm::vec4 LAKE_COLOR(0.8, 0.7, 0.9, 1.0);
+	const glm::vec4 LAKE_COLOR(0.6, 0.8, 0.9, 0.6);
 	float * ptr = _data;
 	for (auto & triangle : _triangles) {
 		std::vector<uint> ids = {std::get<0>(triangle), std::get<1>(triangle), std::get<2>(triangle)};
@@ -123,11 +128,13 @@ void Lake::update_data() {
 			ptr[4] = LAKE_COLOR.g;
 			ptr[5] = LAKE_COLOR.b;
 			ptr[6] = LAKE_COLOR.a;
-			ptr[7] = 0.0f;
-			ptr[8] = 0.0f;
-			ptr[9] = 1.0f;
-			ptr += 10;
+			ptr += 7;
 		}
 	}
+
+	/*for (int i=0; i<_n_pts * _n_attrs_per_pts; ++i) {
+		std::cout << _data[i] << " ; ";
+	}
+	std::cout << "\n";*/
 }
 

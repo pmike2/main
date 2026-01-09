@@ -133,7 +133,6 @@ void init() {
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LESS);
-	//glDepthFunc(GL_LEQUAL); // ne fonctionne pas je ne sais pas pourquoi; mais necessaire pour bumpmapping et autres
 	glDepthRange(0.0f, 1.0f);
 
 	glPointSize(5.0f);
@@ -167,7 +166,9 @@ void init() {
 	progs["font3d"]= create_prog("../../shaders/vertexshader_font_3d.txt", "../../shaders/fragmentshader_font.txt");
 	progs["elevation_flat"]= create_prog("../shaders/vertexshader_elevation_flat.txt", "../shaders/fragmentshader_elevation_flat.txt");
 	progs["elevation_smooth"]= create_prog("../shaders/vertexshader_elevation_smooth.txt", "../shaders/fragmentshader_elevation_smooth.txt");
-	progs["dash"]= create_prog("../shaders/vertexshader_dash.txt", "../shaders/fragmentshader_dash.txt");
+	progs["dash"]= create_prog("../shaders/vertexshader_dash.txt", "../shaders/fragmentshader_dash.txt", "../shaders/geometryshader_dash.txt");
+	progs["lake"]= create_prog("../shaders/vertexshader_lake.txt", "../shaders/fragmentshader_lake.txt");
+	progs["river"]= create_prog("../shaders/vertexshader_river.txt", "../shaders/fragmentshader_river.txt");
 
 	check_gl_error();
 

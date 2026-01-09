@@ -22,7 +22,9 @@ struct Lake {
 	number _alti_lake;
 	float * _data;
 	uint _n_pts;
+	uint _n_attrs_per_pts;
 	bool _valid;
+	Polygon2D * _polygon;
 };
 
 

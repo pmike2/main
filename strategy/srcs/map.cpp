@@ -111,8 +111,7 @@ River * Map::add_river(pt_2d src) {
 		return NULL;
 	}
 
-	Polygon2D * polygon = _elevation->ids2polygon(river->_id_nodes);
-	if (polygon == NULL) {
+	if (river->_polygon == NULL) {
 		delete river;
 		std::cerr << "Map::add_river polygon NULL\n";
 		return NULL;
@@ -123,11 +122,11 @@ River * Map::add_river(pt_2d src) {
 
 		std::vector<uint> id_nodes_buffered;
 
-		AABB_2D * aabb = polygon->_aabb->buffered(unit_type->buffer_size());
+		AABB_2D * aabb = river->_polygon->_aabb->buffered(unit_type->buffer_size());
 		std::vector<uint> id_nodes_buffered_aabb = _elevation->vertices_in_aabb(aabb);
 		delete aabb;
 		for (auto & id : id_nodes_buffered_aabb) {
-			if (distance_poly_pt(polygon, _elevation->id2pt_2d(id), NULL) < unit_type->buffer_size()) {
+			if (distance_poly_pt(river->_polygon, _elevation->id2pt_2d(id), NULL) < unit_type->buffer_size()) {
 				id_nodes_buffered.push_back(id);
 			}
 		}
@@ -157,9 +156,6 @@ River * Map::add_river(pt_2d src) {
 		delete polygon_buffered;
 	}
 
-	delete polygon;
-
-	// ne sert à rien pour l'instant car alti non modifiée par River
 	sync2elevation();
 
 	_rivers.push_back(river);
@@ -175,9 +171,7 @@ Lake * Map::add_lake(pt_2d src) {
 		return NULL;
 	}
 
-
-	Polygon2D * polygon = _elevation->ids2polygon(lake->_id_nodes);
-	if (polygon == NULL) {
+	if (lake->_polygon == NULL) {
 		delete lake;
 		std::cerr << "Map::add_lake polygon NULL\n";
 		return NULL;
@@ -189,17 +183,17 @@ Lake * Map::add_lake(pt_2d src) {
 		std::vector<uint> id_nodes_buffered;
 
 		if (unit_type->_terrain_weights[LAKE] > MAX_UNIT_MOVING_WEIGHT) {
-			AABB_2D * aabb = polygon->_aabb->buffered(unit_type->buffer_size());
+			AABB_2D * aabb = lake->_polygon->_aabb->buffered(unit_type->buffer_size());
 			std::vector<uint> id_nodes_buffered_aabb = _elevation->vertices_in_aabb(aabb);
 			delete aabb;
 			for (auto & id : id_nodes_buffered_aabb) {
-				if (distance_poly_pt(polygon, _elevation->id2pt_2d(id), NULL) < unit_type->buffer_size()) {
+				if (distance_poly_pt(lake->_polygon, _elevation->id2pt_2d(id), NULL) < unit_type->buffer_size()) {
 					id_nodes_buffered.push_back(id);
 				}
 			}
 		}
 		else {
-			AABB_2D * aabb = polygon->_aabb->buffered(-1.0 * unit_type->buffer_size());
+			AABB_2D * aabb = lake->_polygon->_aabb->buffered(-1.0 * unit_type->buffer_size());
 			if (aabb->_size.x < 0.0 || aabb->_size.y < 0.0) {
 				delete aabb;
 				continue;
@@ -210,7 +204,7 @@ Lake * Map::add_lake(pt_2d src) {
 			for (auto & id : id_nodes_buffered_aabb) {
 				//if (distance_poly_pt(polygon, _elevation->id2pt_2d(id), NULL) < 0.01) {
 				// PAS GENIAL ...
-				if (is_pt_inside_poly(_elevation->id2pt_2d(id), polygon)) {
+				if (is_pt_inside_poly(_elevation->id2pt_2d(id), lake->_polygon)) {
 					id_nodes_buffered.push_back(id);
 				}
 			}
@@ -245,8 +239,6 @@ Lake * Map::add_lake(pt_2d src) {
 		delete polygon_buffered;
 	}
 
-	delete polygon;
-
 	sync2elevation();
 
 	_lakes.push_back(lake);
@@ -277,9 +269,6 @@ void Map::update_elevation_grid() {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
 
-		//number max_weight = -1e-5;
-		//number min_weight = 1e-5;
-
 		_path_finder->_it_v= _path_finder->_vertices.begin();
 		while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
 			_path_finder->_it_e= _path_finder->_it_v->second._edges.begin();
@@ -290,53 +279,30 @@ void Map::update_elevation_grid() {
 				EdgeData * data = (EdgeData *)(edge._data);
 				data->_delta_elevation[unit_type] = unit_type->elevation_coeff(pt_end.z - pt_begin.z);
 
-				/*if (pt_begin.z < 0.01 && pt_end.z < 0.01) {
-					edge._weight += type_grid.first->_weights[WATER];
-				}
-				else {
-					edge._weight += type_grid.first->_weights[GROUND];
-				}*/
-				
-				/*for (auto & obstacle : _buffered_obstacles[type_grid.first]) {
-					if (segment_intersects_poly(pt_begin, pt_end, obstacle->_polygon, NULL)) {
-						edge._weight += type_grid.first->_weights[obstacle->_type];
-						break;
-					}
-				}*/
-
-				/*if (edge._weight > max_weight) {
-					max_weight = edge._weight;
-				}
-				if (edge._weight < min_weight) {
-					min_weight = edge._weight;
-				}*/
-
 				_path_finder->_it_e++;
 			}
 			_path_finder->_it_v++;
 		}
-
-		//std::cout << type_grid.first->_name << " ; min_w=" << min_weight << " ; max_w=" << max_weight << "\n";
 	}
 }
 
 
-void Map::update_terrain_grid_with_elevation(BBox_2D * bbox) {
+void Map::update_terrain_grid_with_elevation() {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
 
-		std::vector<uint_pair> edges;
+		/*std::vector<uint_pair> edges;
 		if (bbox != NULL) {
 			edges = _path_finder->edges_intersecting_bbox(bbox);
-		}
+		}*/
 
 		_path_finder->_it_v= _path_finder->_vertices.begin();
 		while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
 			_path_finder->_it_e= _path_finder->_it_v->second._edges.begin();
 			while (_path_finder->_it_e!= _path_finder->_it_v->second._edges.end()) {
-				if (bbox != NULL && std::find(edges.begin(), edges.end(), std::make_pair(_path_finder->_it_v->first, _path_finder->_it_e->first)) == edges.end()) {
+				/*if (bbox != NULL && std::find(edges.begin(), edges.end(), std::make_pair(_path_finder->_it_v->first, _path_finder->_it_e->first)) == edges.end()) {
 					continue;
-				}
+				}*/
 
 				GraphEdge & edge = _path_finder->_vertices[_path_finder->_it_v->first]._edges[_path_finder->_it_e->first];
 				pt_3d & pt_begin = _path_finder->_it_v->second._pos;

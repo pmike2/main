@@ -53,7 +53,7 @@ struct Map {
 	void update_alti_path(Unit * unit);
 	void update_elevation_grid();
 	
-	void update_terrain_grid_with_elevation(BBox_2D * bbox = NULL);
+	void update_terrain_grid_with_elevation();
 	void update_terrain_grid_with_element(Element * element);
 	
 	void sync2elevation();
