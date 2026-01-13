@@ -21,7 +21,7 @@ void main(void) {
 	//float x = 1.0 * cos(angle);
 	//float x = 1.0 * cos(dist + cos(angle));
 	//float x = 1.0 * cos(dist) + 0.1 * cos(angle);
-	float x = 0.1 * cos(dist + angle);
+	float x = 0.2 * cos(dist + angle);
 	//vec3 vertex_normal= normalize(vec3(x, x, 1.0));
 	vec3 vertex_normal= normalize(vec3(0.0, 0.0, 1.0) + vec3(x * direction.xy, 0.0));
 

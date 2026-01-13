@@ -388,7 +388,7 @@ void Strategy::anim(time_point t, InputState * input_state) {
 			}
 		}
 
-		_map->_elevation->set_negative_alti_2zero();
+		//_map->_elevation->set_negative_alti_2zero();
 		_map->_elevation->update_normals(aabb);
 		_map->_elevation->update_data(aabb);
 		_map->sync2elevation();
