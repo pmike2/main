@@ -52,9 +52,10 @@ DrawContext::DrawContext() {
 }
 
 
-DrawContext::DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage) :
-	_prog(prog), _buffer(buffer), _n_pts(0), _n_attrs_per_pts(0), _active(true), _usage(usage)
+DrawContext::DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage) :
+	_prog(prog), _n_pts(0), _n_attrs_per_pts(0), _active(true), _usage(usage)
 {
+	glGenBuffers(1, &_buffer);
 	for (auto loc : locs_attrib) {
 		_locs_attrib[loc]= glGetAttribLocation(_prog, loc.c_str());
 	}

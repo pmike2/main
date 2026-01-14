@@ -64,13 +64,14 @@ public:
 	void draw_lake();
 	void draw_river();
 	void draw_sea();
+	void draw_unit(UnitType * unit_type);
 	void draw();
 	void anim(time_point t, InputState * input_state);
 	//GraphGrid * get_visible_grid();
 	glm::vec4 get_edge_color();
 	void update_grid();
 	//void update_obstacle();
-	void update_unit();
+	void update_unit_linear();
 	void update_path();
 	void update_debug();
 	void update_elevation();
@@ -78,6 +79,7 @@ public:
 	void update_river();
 	void update_lake();
 	void update_sea();
+	void update_unit(UnitType * unit_type);
 	void update_all();
 	void update_text(InputState * input_state);
 	bool mouse_button_down(InputState * input_state, time_point t);

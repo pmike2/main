@@ -13,5 +13,6 @@
 	},
 	"delta_elevation_coeffs" : [
 		{"min" : -1000.0, "max" : 1000.0, "coeff" : 0.0}
-	]
+	],
+	"obj" : "../data/objs/helicopter/Seahawk.obj"
 }

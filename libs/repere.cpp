@@ -50,20 +50,20 @@ Repere::Repere(std::map<std::string, GLuint> progs) {
 		float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2])
 	};
 
-	GLuint buffers[3];
-	glGenBuffers(3, buffers);
+	//GLuint buffers[3];
+	//glGenBuffers(3, buffers);
 
-	_contexts["repere"] = new DrawContext(progs["repere"], buffers[0],
+	_contexts["repere"] = new DrawContext(progs["repere"], 
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 	_contexts["repere"]->_n_pts = 6;
 
-	_contexts["ground"] = new DrawContext(progs["repere"], buffers[1],
+	_contexts["ground"] = new DrawContext(progs["repere"], 
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 	_contexts["ground"]->_n_pts = 6;
 
-	_contexts["box"] = new DrawContext(progs["repere"], buffers[2],
+	_contexts["box"] = new DrawContext(progs["repere"], 
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 	_contexts["box"]->_n_pts = 24;
@@ -133,10 +133,10 @@ RectSelect::RectSelect() {
 RectSelect::RectSelect(std::map<std::string, GLuint> progs) : 
 	_is_active(false), _gl_origin(pt_2d(0.0)), _gl_moving(pt_2d(0.0)),	_color(pt_3d(1.0, 1.0, 0.0)), _z(0.0)
 {
-	GLuint buffer;
-	glGenBuffers(1, &buffer);
+	/*GLuint buffer;
+	glGenBuffers(1, &buffer);*/
 
-	_context= new DrawContext(progs["select"], buffer,
+	_context= new DrawContext(progs["select"], 
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"z"});
 	_context->_n_pts = 8;

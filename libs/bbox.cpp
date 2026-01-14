@@ -224,8 +224,12 @@ std::ostream & operator << (std::ostream & os, const BBox & bbox) {
 
 
 // ---------------------------------------------------------------------------------------------------------------------
-InstancePosRot::InstancePosRot() {
-
+InstancePosRot::InstancePosRot() :
+	_position(pt_3d(0.0)), _rotation(quat(1.0, 0.0, 0.0, 0.0)), _scale(pt_3d(1.0)), _model2world(mat_4d(1.0)),
+	_active(false), _dist2(0.0), _selected(false)
+{
+	_bbox= new BBox();
+	_emprise= new AABB_2D();
 }
 
 

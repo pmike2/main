@@ -136,15 +136,15 @@ Font::Font(std::map<std::string, GLuint> progs, std::string font_path, uint font
 	FT_Done_Face(face);
 	FT_Done_FreeType(ft_lib);
 
-	GLuint buffers[2];
-	glGenBuffers(2, buffers);
+	/*GLuint buffers[2];
+	glGenBuffers(2, buffers);*/
 
-	_contexts["font"]= new DrawContext(progs["font"], buffers[0],
+	_contexts["font"]= new DrawContext(progs["font"], 
 		std::vector<std::string>{"vertex_in", "color_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "z", "texture_array"});
 	_contexts["font"]->_n_attrs_per_pts= 9;
 
-	_contexts["font3d"]= new DrawContext(progs["font3d"], buffers[1],
+	_contexts["font3d"]= new DrawContext(progs["font3d"], 
 		std::vector<std::string>{"vertex_in", "tex_in", "color_in", "current_layer_in"},
 		std::vector<std::string>{"world2clip_matrix", "texture_array"});
 	_contexts["font3d"]->_n_attrs_per_pts= 10;

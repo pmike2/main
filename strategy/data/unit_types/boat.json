@@ -15,5 +15,6 @@
 		{"min" : -1000.0, "max" : -0.01, "coeff" : 1000.0},
 		{"min" : -0.01, "max" : 0.01, "coeff" : 0.0},
 		{"min" : 0.01, "max" : 1000.0, "coeff" : 1000.0}
-	]
+	],
+	"obj" : "../data/objs/boat/12219_boat_v2_L2.obj"
 }

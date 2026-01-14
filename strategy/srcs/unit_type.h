@@ -7,6 +7,7 @@
 #include <map>
 
 #include "typedefs.h"
+#include "obj_parser.h"
 
 #include "const.h"
 
@@ -32,6 +33,7 @@ struct UnitType {
 	number _max_velocity;
 	std::map<TERRAIN_TYPE, number> _terrain_weights;
 	std::vector<UnitElevationCoeff> _delta_elevation_coeffs;
+	ObjData * _obj_data;
 };
 
 

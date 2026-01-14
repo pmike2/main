@@ -65,6 +65,7 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 		UnitType * unit_type = new UnitType(json_path);
 		_unit_types[basename(json_path)] = unit_type;
 		_path_finder->add_unit_type(unit_type);
+		_unit_groups[unit_type] = new UnitGroup();
 	}
 
 	_elements = new Elements(elements_dir + "/tree_species", elements_dir + "/stone_species");
@@ -101,6 +102,8 @@ void Map::add_unit(std::string type_name, pt_2d pos, time_point t) {
 	_units.push_back(unit);
 
 	add_waiting_unit_to_position_grid(unit);
+
+	_unit_groups[_unit_types[type_name]]->add_unit(unit);
 }
 
 

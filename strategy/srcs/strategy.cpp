@@ -15,54 +15,55 @@ Strategy::Strategy() {
 Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t) :
 	_mode(FREE), _view_system(view_system), _progs(progs), _angle(0.0)
 {
-	const uint n_buffers = 9;
+	/*const uint n_buffers = 10;
 	GLuint buffers[n_buffers];
-	glGenBuffers(n_buffers, buffers);
+	glGenBuffers(n_buffers, buffers);*/
 
-	_contexts["grid"]= new DrawContext(progs["repere"], buffers[0],
-		std::vector<std::string>{"position_in", "color_in"},
-		std::vector<std::string>{"world2clip_matrix"});
-	
-	_contexts["grid"]->_active = false;
-
-	_contexts["unit"]= new DrawContext(progs["repere"], buffers[1],
+	_contexts["debug"]= new DrawContext(progs["repere"], 
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"},
 		GL_STATIC_DRAW);
 
-	_contexts["path"]= new DrawContext(progs["dash"], buffers[2],
+	_contexts["grid"]= new DrawContext(progs["repere"], 
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"world2clip_matrix"},
+		GL_STATIC_DRAW);
+	
+	_contexts["grid"]->_active = false;
+
+	_contexts["unit_linear"]= new DrawContext(progs["repere"], 
+		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"world2clip_matrix"},
+		GL_STATIC_DRAW);
+
+	_contexts["path"]= new DrawContext(progs["dash"], 
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix", "gap_size", "dash_size", "viewport_size", "thickness"},
 		GL_STATIC_DRAW);
 
-	_contexts["elevation"]= new DrawContext(progs["elevation_smooth"], buffers[3],
+	_contexts["elevation"]= new DrawContext(progs["elevation_smooth"], 
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"},
 		GL_DYNAMIC_DRAW);
 
-	_contexts["elements"]= new DrawContext(progs["elevation_smooth"], buffers[4],
+	_contexts["elements"]= new DrawContext(progs["elevation_smooth"], 
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"},
 		GL_STATIC_DRAW);
 
-	_contexts["river"]= new DrawContext(progs["river"], buffers[5],
+	_contexts["river"]= new DrawContext(progs["river"], 
 		std::vector<std::string>{"position_in", "color_in", "normal_in", "direction_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "angle"},
 		GL_STATIC_DRAW);
 
-	_contexts["lake"]= new DrawContext(progs["lake"], buffers[6],
+	_contexts["lake"]= new DrawContext(progs["lake"], 
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "angle"},
 		GL_STATIC_DRAW);
 
-	_contexts["sea"]= new DrawContext(progs["lake"], buffers[7],
+	_contexts["sea"]= new DrawContext(progs["lake"], 
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "angle"},
-		GL_STATIC_DRAW);
-
-	_contexts["debug"]= new DrawContext(progs["repere"], buffers[8],
-		std::vector<std::string>{"position_in", "color_in"},
-		std::vector<std::string>{"world2clip_matrix"},
 		GL_STATIC_DRAW);
 
 	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
@@ -73,6 +74,13 @@ Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system
 	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-50.0, -50.0), pt_2d(100.0, 100.0), pt_2d(1.0), pt_2d(0.25), t);
 	//_map = new Map("../data/unit_types", pt_2d(0.0, 0.0), pt_2d(10.0, 10.0), pt_2d(2.0), pt_2d(2.0), t);
 	//std::cout << *_map << "\n";
+
+	for (auto & unit_type : _map->_unit_types) {
+		_contexts[unit_type.first]= new DrawContext(progs["unit"], 
+			std::vector<std::string>{"position_in", "normal_in", "ambient_in", "diffuse_in", "specular_in", "shininess_in"},
+			std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "model2world_matrices"},
+			GL_DYNAMIC_DRAW);
+	}
 
 	_map->randomize();
 
@@ -300,20 +308,67 @@ void Strategy::draw_sea() {
 }
 
 
+void Strategy::draw_unit(UnitType * unit_type) {
+	DrawContext * context= _contexts[unit_type->_name];
+	if (!context->_active) {
+		return;
+	}
+
+	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+
+	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
+	glm::vec3 light_color(1.0f);
+
+	glUniformMatrix4fv(context->_locs_uniform["model2world_matrices"], _map->_unit_groups[unit_type]->_units.size(), GL_FALSE, _map->_unit_groups[unit_type]->_matrices);
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
+	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
+	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
+	
+	for (auto attr : context->_locs_attrib) {
+		glEnableVertexAttribArray(attr.second);
+	}
+
+	glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)0);
+	glVertexAttribPointer(context->_locs_attrib["normal_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["ambient_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(6 * sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["diffuse_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(9 * sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["specular_in"], 3, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(12 * sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["shininess_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(15 * sizeof(float)));
+	glVertexAttribPointer(context->_locs_attrib["opacity_in"], 1, GL_FLOAT, GL_FALSE, context->_n_attrs_per_pts* sizeof(float), (void*)(16 * sizeof(float)));
+
+	glDrawArraysInstanced(GL_TRIANGLES, 0, context->_n_pts, _map->_unit_groups[unit_type]->_units.size());
+
+	for (auto attr : context->_locs_attrib) {
+		glDisableVertexAttribArray(attr.second);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glUseProgram(0);
+}
+
+
 void Strategy::draw() {
 	//for (auto context_name : std::vector<std::string>{"grid", "unit", "path", "debug"}) {
 	//for (auto context_name : std::vector<std::string>{"grid", "unit", "path"}) {
-	for (auto context_name : std::vector<std::string>{"grid", "unit"}) {
+	for (auto context_name : std::vector<std::string>{"grid", "unit_linear"}) {
 		draw_linear(context_name);
 	}
-	draw_dash("path");
+	
 	//for (auto context_name : std::vector<std::string>{"elevation", "elements", "river", "lake"}) {
 	for (auto context_name : std::vector<std::string>{"elevation", "elements"}) {
 		draw_surface(context_name);
 	}
+	
+	draw_dash("path");
 	draw_lake();
 	draw_river();
 	draw_sea();
+	for (auto & unit_type : _map->_unit_types) {
+		draw_unit(unit_type.second);
+	}
+	
 	_font->draw_3d(_view_system->_world2clip);
 	_font->draw();
 }
@@ -346,7 +401,7 @@ void Strategy::anim(time_point t, InputState * input_state) {
 
 	_map->anim(t);
 
-	update_unit();
+	update_unit_linear();
 	update_path();
 	//update_grid();
 	update_text(input_state);
@@ -599,8 +654,8 @@ void Strategy::update_grid() {
 }*/
 
 
-void Strategy::update_unit() {
-	DrawContext * context= _contexts["unit"];
+void Strategy::update_unit_linear() {
+	DrawContext * context= _contexts["unit_linear"];
 	
 	context->_n_attrs_per_pts= 7;
 	context->_n_pts = 0;
@@ -953,16 +1008,30 @@ void Strategy::update_sea() {
 }
 
 
+void Strategy::update_unit(UnitType * unit_type) {
+	DrawContext * context= _contexts[unit_type->_name];
+
+	context->_n_pts = unit_type->_obj_data->_n_pts;
+	context->_n_attrs_per_pts = unit_type->_obj_data->_n_attrs_per_pts;
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, unit_type->_obj_data->_data, context->_usage);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 void Strategy::update_all() {
 	update_grid();
-	//update_obstacle();
-	update_unit();
+	update_unit_linear();
 	update_path();
 	update_elevation();
 	update_elements();
 	update_river();
 	update_lake();
 	update_sea();
+	for (auto & unit_type : _map->_unit_types) {
+		update_unit(unit_type.second);
+	}
 }
 
 
@@ -1208,7 +1277,7 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 			}
 		}*/
 
-		AABB_2D * aabb = new AABB_2D(pt_2d(0.0, 0.0), pt_2d(10.0, 10.0));
+		/*AABB_2D * aabb = new AABB_2D(pt_2d(0.0, 0.0), pt_2d(10.0, 10.0));
 		std::vector<uint> ids = _map->_elevation->vertices_in_aabb(aabb);
 		for (auto id : ids) {
 			_map->_elevation->set_alti(id, _map->_elevation->get_alti(id) + 0.5);
@@ -1216,9 +1285,20 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 		}
 		_map->_elevation->update_normals(aabb);
 		_map->_elevation->update_data(aabb);
-		//_map->_elevation->update_data();
 		update_elevation();
-		delete aabb;
+		delete aabb;*/
+
+		/*ObjData * data = _map->_unit_types["tank"]->_obj_data;
+		for (int i=0; i<data->_n_pts * data->_n_attrs_per_pts; ++i) {
+			std::cout << data->_data[i] << " ; ";
+		}
+		std::cout << "\n";*/
+
+		float * data = _map->_unit_groups[_map->_unit_types["tank"]]->_matrices;
+		for (int i=0; i<N_MAX_UNITS * 16; ++i) {
+			std::cout << data[i] << " ; ";
+		}
+		std::cout << "\n";
 		return true;
 	}
 	return false;

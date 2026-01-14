@@ -1,3 +1,5 @@
+#include <glm/gtc/type_ptr.hpp>
+
 #include "utile.h"
 
 #include "unit.h"
@@ -59,14 +61,15 @@ Unit::Unit() {
 }
 
 
-Unit::Unit(UnitType * type, pt_3d pos, time_point t) :
-	_type(type), _selected(false), _status(WAITING), _velocity(pt_3d(0.0)), _last_anim_t(t)
+Unit::Unit(UnitType * type, pt_3d pos, time_point t) : InstancePosRot(),
+	_type(type), _status(WAITING), _velocity(pt_3d(0.0)), _last_anim_t(t)
 {
-	//_aabb = new AABB(pos - 0.5 * _type->_size, pos + 0.5 * _type->_size);
 	pt_3d vmin(pos.x - 0.5 * _type->_size.x, pos.y - 0.5 * _type->_size.y, pos.z);
 	pt_3d vmax(pos.x + 0.5 * _type->_size.x, pos.y + 0.5 * _type->_size.y, pos.z + _type->_size.z);
 	_aabb = new AABB(vmin, vmax);
 	_path = new Path();
+
+	set_pos_rot_scale(_aabb->bottom_center(), quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0));
 }
 
 
@@ -98,6 +101,7 @@ void Unit::anim(time_point t) {
 		}
 
 		_aabb->translate(v);
+		set_pos_rot_scale(_aabb->bottom_center(), quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0));
 	}
 }
 
@@ -140,8 +144,31 @@ void Unit::stop() {
 std::ostream & operator << (std::ostream & os, Unit & unit) {
 	os << "type = " << unit._type->_name;
 	os << " ; mode = " << unit_status2str(unit._status);
-	os << " ; aabb = " << *unit._aabb;
+	os << " ; emprise = " << *unit._emprise;
 	os << " ; velocity = " << glm_to_string(unit._velocity);
 	os << " ; path = " << *unit._path;
 	return os;
+}
+
+
+UnitGroup::UnitGroup() {
+	_matrices = new float[N_MAX_UNITS * 16];
+}
+
+
+UnitGroup::~UnitGroup() {
+	delete _matrices;
+}
+
+
+void UnitGroup::add_unit(Unit * unit) {
+	_units.push_back(unit);
+	float * ptr = _matrices;
+	for (auto & unit : _units) {
+		const float * unit_data = glm::value_ptr(glm::mat4(unit->_model2world));
+		for (uint i=0; i<16; ++i) {
+			ptr[i] = unit_data[i];
+		}
+		ptr += 16;
+	}
 }

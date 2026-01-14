@@ -87,6 +87,7 @@ struct Map {
 	Elements * _elements;
 	std::vector<River * > _rivers;
 	std::vector<Lake *> _lakes;
+	std::map<UnitType *, UnitGroup *> _unit_groups;
 
 	bool _paused;
 	std::thread _path_find_thr;

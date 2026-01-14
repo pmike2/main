@@ -35,7 +35,7 @@ public:
 class DrawContext {
 public:
 	DrawContext();
-	DrawContext(GLuint prog, GLuint buffer, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage = GL_STATIC_DRAW);
+	DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage = GL_STATIC_DRAW);
 	~DrawContext();
 	friend std::ostream & operator << (std::ostream & os, const DrawContext & dc);
 

@@ -38,11 +38,13 @@ UnitType::UnitType(std::string json_path) {
 		UnitElevationCoeff coeff = {ec_min, ec_max, ec_coeff};
 		_delta_elevation_coeffs.push_back(coeff);
 	}
+
+	_obj_data = new ObjData(js["obj"]);
 }
 
 
 UnitType::~UnitType() {
-
+	delete _obj_data;
 }
 
 

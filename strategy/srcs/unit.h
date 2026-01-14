@@ -15,6 +15,8 @@
 #include "unit_type.h"
 
 
+const uint N_MAX_UNITS = 128;
+
 struct Path {
 	Path();
 	~Path();
@@ -39,7 +41,7 @@ struct Instruction {
 };
 
 
-struct Unit {
+struct Unit : public InstancePosRot {
 	Unit();
 	Unit(UnitType * type, pt_3d pos, time_point t);
 	~Unit();
@@ -52,7 +54,7 @@ struct Unit {
 	
 	uint _id;
 	UnitType * _type;
-	bool _selected;
+	//bool _selected;
 	AABB * _aabb;
 	UNIT_STATUS _status;
 	Path * _path;
@@ -61,5 +63,15 @@ struct Unit {
 	time_point _last_anim_t;
 };
 
+
+struct UnitGroup {
+	UnitGroup();
+	~UnitGroup();
+	void add_unit(Unit * unit);
+
+
+	std::vector<Unit *> _units;
+	float * _matrices;
+};
 
 #endif
