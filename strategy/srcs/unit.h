@@ -15,7 +15,7 @@
 #include "unit_type.h"
 
 
-const uint N_MAX_UNITS = 128;
+const uint N_MAX_UNITS = 1000;
 
 struct Path {
 	Path();

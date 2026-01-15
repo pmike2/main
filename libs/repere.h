@@ -47,8 +47,10 @@ const number RIGHT_MOUSE_SENSIVITY= 0.01;
 enum ViewSystemType {FREE_VIEW, THIRD_PERSON_FREE, THIRD_PERSON_BEHIND};
 
 // couleurs
-const pt_3d GROUND_COLOR(0.3f, 0.3f, 0.3f);
-const pt_3d BOX_COLOR(0.5f, 0.5f, 0.5f);
+const glm::vec4 GROUND_COLOR(0.3f, 0.3f, 0.3f, 1.0f);
+const glm::vec4 BOX_COLOR(0.5f, 0.5f, 0.5f, 1.0f);
+const number EPS= 0.01;
+
 
 
 // affichage repère

@@ -32,19 +32,34 @@ public:
 };
 
 
+struct DrawContextAttrib {
+	GLint _loc;
+	uint _size;
+	uint _offset;
+	std::string _name;
+	bool _is_instanced;
+};
+
+
 class DrawContext {
 public:
 	DrawContext();
 	DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage = GL_STATIC_DRAW);
 	~DrawContext();
+	void activate();
+	void deactivate();
 	friend std::ostream & operator << (std::ostream & os, const DrawContext & dc);
 
 
 	GLuint _prog;
-	std::map<std::string, GLint> _locs_attrib, _locs_uniform;
+	GLuint _vao;
+	std::map<std::string, GLint> _locs_uniform;
+	std::vector<DrawContextAttrib> _attribs;
 	GLuint _buffer;
+	GLuint _buffer_instanced;
 	uint _n_pts;
 	uint _n_attrs_per_pts;
+	uint _n_attrs_instanced_per_pts;
 	bool _active;
 	GLenum _usage;
 };

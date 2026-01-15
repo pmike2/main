@@ -15,69 +15,78 @@ Repere::Repere() {
 Repere::Repere(std::map<std::string, GLuint> progs) {
 	
 	float data_repere[]= {
-		0.0, 0.0, 0.0, 1.0, 0.0, 0.0,
-		float(REPERE_AXIS), 0.0, 0.0, 1.0, 0.0, 0.0,
-		0.0, 0.0, 0.0, 0.0, 1.0, 0.0,
-		0.0, float(REPERE_AXIS), 0.0, 0.0, 1.0, 0.0,
-		0.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-		0.0, 0.0, float(REPERE_AXIS), 0.0, 0.0, 1.0
+		0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
+		float(REPERE_AXIS), 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
+		0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0,
+		0.0, float(REPERE_AXIS), 0.0, 0.0, 1.0, 0.0, 1.0,
+		0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0,
+		0.0, 0.0, float(REPERE_AXIS), 0.0, 0.0, 1.0, 1.0
 	};
 	
-	number EPS= 0.01;
 	float data_ground[]= {
-		-1.0f* float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2]),
-		float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2]),
-		float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2]),
-		-1.0f* float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2]),
-		float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2]),
-		-1.0f* float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS), float(GROUND_COLOR[0]), float(GROUND_COLOR[1]), float(GROUND_COLOR[2])
+		-1.0f* float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS), GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
+		float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS)       , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
+		float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS)              , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
+		-1.0f* float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS), GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
+		float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS)              , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
+		-1.0f* float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS)       , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
 	};
 
 	float data_box[]= {
-		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
-		float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
-		float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
-		-1.0f * float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
-
-		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
-		float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
-		float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
-		-1.0f * float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
-		
-		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
-		float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
-		-1.0f * float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), -1.0f * float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]),
-		float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2]), float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX) , float(BOX_COLOR[0]), float(BOX_COLOR[1]), float(BOX_COLOR[2])
+		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX)        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX)        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX)                , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX)                , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		-1.0f * float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX)        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		-1.0f * float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX)        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX)        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX)                , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX)                , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX)                        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX)                        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		-1.0f * float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX)                , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		-1.0f * float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX)                , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX)        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		-1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX)        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		float(REPERE_BOX), -1.0f * float(REPERE_BOX), -1.0f * float(REPERE_BOX)        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a, 
+		float(REPERE_BOX), -1.0f * float(REPERE_BOX), float(REPERE_BOX)                , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		-1.0f * float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX)        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		-1.0f * float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX)                , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a,
+		float(REPERE_BOX), float(REPERE_BOX), -1.0f * float(REPERE_BOX)                , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a, 
+		float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX)                        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a
 	};
 
 	//GLuint buffers[3];
 	//glGenBuffers(3, buffers);
 
 	_contexts["repere"] = new DrawContext(progs["repere"], 
-		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix"});
 	_contexts["repere"]->_n_pts = 6;
 
 	_contexts["ground"] = new DrawContext(progs["repere"], 
-		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix"});
 	_contexts["ground"]->_n_pts = 6;
 
 	_contexts["box"] = new DrawContext(progs["repere"], 
-		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix"});
 	_contexts["box"]->_n_pts = 24;
 	
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["repere"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(data_repere), data_repere, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(data_repere), data_repere, _contexts["repere"]->_usage);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["ground"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(data_ground), data_ground, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(data_ground), data_ground, _contexts["ground"]->_usage);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["box"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(data_box), data_box, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(data_box), data_box, _contexts["box"]->_usage);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -93,33 +102,45 @@ Repere::~Repere() {
 void Repere::draw(const mat_4d & world2clip) {
 	for (auto & context_name : std::vector<std::string>{"repere", "ground", "box"}) {
 		DrawContext * context = _contexts[context_name];
-		if (context->_active) {
-			glUseProgram(context->_prog);
-			glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
-			
-			glUniformMatrix4fv(context->_locs_uniform["world2clip"], 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
-
-			for (auto attr : context->_locs_attrib) {
-				glEnableVertexAttribArray(attr.second);
-			}
-
-			glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-			glVertexAttribPointer(context->_locs_attrib["color_in"], 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
-
-			if (context_name == "ground") {
-				glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
-			}
-			else {
-				glDrawArrays(GL_LINES, 0, context->_n_pts);
-			}
-
-			for (auto attr : context->_locs_attrib) {
-				glDisableVertexAttribArray(attr.second);
-			}
-
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-			glUseProgram(0);
+		if (!context->_active) {
+			continue;
 		}
+
+		/*glUseProgram(context->_prog);
+		glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+		
+		glUniformMatrix4fv(context->_locs_uniform["world2clip"], 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
+
+		for (auto attr : context->_locs_attrib) {
+			glEnableVertexAttribArray(attr.second);
+		}
+
+		glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
+		glVertexAttribPointer(context->_locs_attrib["color_in"], 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
+
+		if (context_name == "ground") {
+			glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+		}
+		else {
+			glDrawArrays(GL_LINES, 0, context->_n_pts);
+		}
+
+		for (auto attr : context->_locs_attrib) {
+			glDisableVertexAttribArray(attr.second);
+		}
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glUseProgram(0);*/
+
+		context->activate();
+		glUniformMatrix4fv(context->_locs_uniform["world2clip"], 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
+		if (context_name == "ground") {
+			glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+		}
+		else {
+			glDrawArrays(GL_LINES, 0, context->_n_pts);
+		}
+		context->deactivate();
 	}
 }
 
@@ -137,7 +158,7 @@ RectSelect::RectSelect(std::map<std::string, GLuint> progs) :
 	glGenBuffers(1, &buffer);*/
 
 	_context= new DrawContext(progs["select"], 
-		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"position_in:2", "color_in:3"},
 		std::vector<std::string>{"z"});
 	_context->_n_pts = 8;
 
@@ -159,7 +180,7 @@ void RectSelect::draw() {
 		return;
 	}
 
-	glUseProgram(_context->_prog);
+	/*glUseProgram(_context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, _context->_buffer);
 
 	glUniform1f(_context->_locs_uniform["z"], float(_z));
@@ -178,7 +199,12 @@ void RectSelect::draw() {
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);		
-	glUseProgram(0);
+	glUseProgram(0);*/
+
+	_context->activate();
+	glDrawArrays(GL_LINES, 0, _context->_n_pts);
+	_context->deactivate();
+
 }
 
 

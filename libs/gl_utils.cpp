@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdlib>
+#include <sstream>
 
 #include <SDL2/SDL_image.h>
 
@@ -53,15 +54,77 @@ DrawContext::DrawContext() {
 
 
 DrawContext::DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage) :
-	_prog(prog), _n_pts(0), _n_attrs_per_pts(0), _active(true), _usage(usage)
+	_prog(prog), _n_pts(0), _n_attrs_per_pts(0), _n_attrs_instanced_per_pts(0), _active(true), _usage(usage)
 {
-	glGenBuffers(1, &_buffer);
-	for (auto loc : locs_attrib) {
-		_locs_attrib[loc]= glGetAttribLocation(_prog, loc.c_str());
-	}
 	for (auto loc : locs_uniform) {
 		_locs_uniform[loc]= glGetUniformLocation(_prog, loc.c_str());
 	}
+
+	uint offset = 0;
+	uint offset_instanced = 0;
+	
+	for (auto loc : locs_attrib) {
+		DrawContextAttrib attrib;
+		std::stringstream ss(loc);
+		std::string s_size, s_instanced;
+		std::getline(ss, attrib._name, ':');
+		std::getline(ss, s_size, ':');
+		attrib._loc = glGetAttribLocation(_prog, attrib._name.c_str());
+		attrib._size = std::stoul(s_size);
+		std::getline(ss, s_instanced, ':');
+		
+		if (s_instanced == "instanced") {
+			attrib._is_instanced = true;
+			attrib._offset = offset_instanced;
+			offset_instanced += attrib._offset;
+			_n_attrs_instanced_per_pts += attrib._size;
+		}
+		else {
+			attrib._is_instanced = false;
+			attrib._offset = offset;
+			offset += attrib._offset;
+			_n_attrs_per_pts += attrib._size;
+		}
+		
+		_attribs.push_back(attrib);
+	}
+
+	glGenBuffers(1, &_buffer);
+	glGenBuffers(1, &_buffer_instanced);
+	glGenVertexArrays(1, &_vao);
+
+	glBindVertexArray(_vao);
+	
+	for (auto attr : _attribs) {
+		glEnableVertexAttribArray(attr._loc);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer);
+	for (auto attr : _attribs) {
+		if (attr._is_instanced) {
+			continue;
+		}
+		glVertexAttribPointer(attr._loc, attr._size, GL_FLOAT, GL_FALSE, _n_attrs_per_pts * sizeof(float), (void*)(attr._offset * sizeof(float)));
+	}
+	
+	glBindBuffer(GL_ARRAY_BUFFER, _buffer_instanced);
+	for (auto attr : _attribs) {
+		if (!attr._is_instanced) {
+			continue;
+		}
+		if (attr._size == 16) {
+			for (uint i=0; i<4; ++i) {
+				glVertexAttribPointer(attr._loc + i, 4, GL_FLOAT, GL_FALSE, _n_attrs_instanced_per_pts * sizeof(float), (void*)((attr._offset + i) * sizeof(float)));
+				glVertexAttribDivisor(attr._loc + i, 1);
+			}
+		}
+		else {
+			// TODO...
+		}
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 
@@ -70,17 +133,33 @@ DrawContext::~DrawContext() {
 }
 
 
+void DrawContext::activate() {
+	glUseProgram(_prog);
+	glBindVertexArray(_vao);
+}
+
+
+void DrawContext::deactivate() {
+	glBindVertexArray(0);
+	glUseProgram(0);
+}
+
+
 std::ostream & operator << (std::ostream & os, const DrawContext & dc) {
 	os << "prog = " << dc._prog;
 	os << " ; n_pts = " << dc._n_pts << " ; n_attrs_per_pts = " << dc._n_attrs_per_pts;
-	os << "\nlocs_attribs : ";
-	for (auto attrib : dc._locs_attrib) {
+	/*os << "\nlocs_attribs : ";
+	for (auto attrib : dc._attribs) {
 		os << attrib.first << " -> " << attrib.second << " ; ";
 	}
 	os << "\nlocs_uniform :";
 	for (auto unif : dc._locs_uniform) {
 		os << unif.first << " -> " << unif.second << " ; ";
 	}
+	os << "\nlocs_attribs_instanced : ";
+	for (auto attrib : dc._locs_attrib_instanced) {
+		os << attrib.first << " -> " << attrib.second << " ; ";
+	}*/
 	return os;
 }
 

@@ -140,14 +140,14 @@ Font::Font(std::map<std::string, GLuint> progs, std::string font_path, uint font
 	glGenBuffers(2, buffers);*/
 
 	_contexts["font"]= new DrawContext(progs["font"], 
-		std::vector<std::string>{"vertex_in", "color_in", "current_layer_in"},
+		std::vector<std::string>{"vertex_in:4", "color_in:4", "current_layer_in:1"},
 		std::vector<std::string>{"camera2clip_matrix", "z", "texture_array"});
-	_contexts["font"]->_n_attrs_per_pts= 9;
+	//_contexts["font"]->_n_attrs_per_pts= 9;
 
 	_contexts["font3d"]= new DrawContext(progs["font3d"], 
-		std::vector<std::string>{"vertex_in", "tex_in", "color_in", "current_layer_in"},
+		std::vector<std::string>{"vertex_in:3", "tex_in:2", "color_in:4", "current_layer_in:1"},
 		std::vector<std::string>{"world2clip_matrix", "texture_array"});
-	_contexts["font3d"]->_n_attrs_per_pts= 10;
+	//_contexts["font3d"]->_n_attrs_per_pts= 10;
 
 	_camera2clip = glm::ortho(-screengl->_gl_width* 0.5, screengl->_gl_width* 0.5, -screengl->_gl_height* 0.5, screengl->_gl_height* 0.5);
 }
@@ -216,7 +216,7 @@ void Font::set_text(std::vector<Text> & texts) {
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, context->_usage);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -293,7 +293,7 @@ void Font::set_text(std::vector<Text3D> & texts) {
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, data, context->_usage);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -308,18 +308,19 @@ void Font::set_text(Text3D & text) {
 
 void Font::clear() {
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["font"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 0, NULL, _contexts["font"]->_usage);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["font3d"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 0, NULL, _contexts["font3d"]->_usage);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
 void Font::draw() {
 	DrawContext * context = _contexts["font"];
-	glUseProgram(context->_prog);
+	
+	/*glUseProgram(context->_prog);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
@@ -347,13 +348,21 @@ void Font::draw() {
 	
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+	glUseProgram(0);*/
+
+	context->activate();
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniform1f(context->_locs_uniform["z"], _z);
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_camera2clip)));
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->deactivate();
 }
 
 
 void Font::draw_3d(const mat_4d & world2clip) {
 	DrawContext * context = _contexts["font3d"];
-	glUseProgram(context->_prog);
+	
+	/*glUseProgram(context->_prog);
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
@@ -381,5 +390,11 @@ void Font::draw_3d(const mat_4d & world2clip) {
 	
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+	glUseProgram(0);*/
+
+	context->activate();
+	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->deactivate();
 }

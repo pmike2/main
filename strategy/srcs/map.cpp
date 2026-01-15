@@ -67,6 +67,7 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 		_path_finder->add_unit_type(unit_type);
 		_unit_groups[unit_type] = new UnitGroup();
 	}
+	std::cout << *_unit_types["infantery"]->_obj_data << "\n";
 
 	_elements = new Elements(elements_dir + "/tree_species", elements_dir + "/stone_species");
 
@@ -75,7 +76,10 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 
 
 Map::~Map() {
+		std::cout << "ok1\n";
+
 	clear();
+	std::cout << "ok2\n";
 
 	delete _elements;
 	

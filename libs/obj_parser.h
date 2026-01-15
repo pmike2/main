@@ -14,6 +14,7 @@
 struct Material {
 	Material();
 	~Material();
+	friend std::ostream & operator << (std::ostream & os, Material & mat);
 
 
 	std::string _name;
@@ -48,6 +49,7 @@ struct ObjObject {
 	ObjObject();
 	~ObjObject();
 	pt_3d compute_normal(ObjFace * face);
+	friend std::ostream & operator << (std::ostream & os, ObjObject & obj);
 
 
 	std::string _name;
@@ -64,7 +66,8 @@ struct ObjData {
 	ObjData(std::string obj_path);
 	~ObjData();
 	void update_data();
-	ObjObject * add_generic_object();
+	ObjObject * new_generic_object();
+	friend std::ostream & operator << (std::ostream & os, ObjData & data);
 
 
 	std::map<std::string, Material *> _materials;

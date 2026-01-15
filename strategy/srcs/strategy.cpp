@@ -20,49 +20,50 @@ Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system
 	glGenBuffers(n_buffers, buffers);*/
 
 	_contexts["debug"]= new DrawContext(progs["repere"], 
-		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix"},
 		GL_STATIC_DRAW);
 
+
 	_contexts["grid"]= new DrawContext(progs["repere"], 
-		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix"},
 		GL_STATIC_DRAW);
 	
 	_contexts["grid"]->_active = false;
 
 	_contexts["unit_linear"]= new DrawContext(progs["repere"], 
-		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix"},
 		GL_STATIC_DRAW);
 
 	_contexts["path"]= new DrawContext(progs["dash"], 
-		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix", "gap_size", "dash_size", "viewport_size", "thickness"},
 		GL_STATIC_DRAW);
 
 	_contexts["elevation"]= new DrawContext(progs["elevation_smooth"], 
-		std::vector<std::string>{"position_in", "color_in", "normal_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4", "normal_in:3"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"},
 		GL_DYNAMIC_DRAW);
 
 	_contexts["elements"]= new DrawContext(progs["elevation_smooth"], 
-		std::vector<std::string>{"position_in", "color_in", "normal_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4", "normal_in:3"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"},
 		GL_STATIC_DRAW);
 
 	_contexts["river"]= new DrawContext(progs["river"], 
-		std::vector<std::string>{"position_in", "color_in", "normal_in", "direction_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4", "normal_in:3", "direction_in:3"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "angle"},
 		GL_STATIC_DRAW);
 
 	_contexts["lake"]= new DrawContext(progs["lake"], 
-		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "angle"},
 		GL_STATIC_DRAW);
 
 	_contexts["sea"]= new DrawContext(progs["lake"], 
-		std::vector<std::string>{"position_in", "color_in"},
+		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "angle"},
 		GL_STATIC_DRAW);
 
@@ -77,12 +78,18 @@ Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system
 
 	for (auto & unit_type : _map->_unit_types) {
 		_contexts[unit_type.first]= new DrawContext(progs["unit"], 
-			std::vector<std::string>{"position_in", "normal_in", "ambient_in", "diffuse_in", "specular_in", "shininess_in"},
-			std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "model2world_matrices"},
+			std::vector<std::string>{"position_in:3", "normal_in:3", "ambient_in:3", "diffuse_in:3", "specular_in:3", "shininess_in:1", "opacity_in:1", "model2world_matrix:16:instanced"},
+			std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"},
 			GL_DYNAMIC_DRAW);
+		std::cout << *_contexts[unit_type.first] << "\n";
 	}
 
 	_map->randomize();
+
+	for (uint i=0; i<1000; ++i) {
+		pt_2d pos = rand_pt_2d(-20.0, 20.0, -20.0, 20.0);
+		_map->add_unit("infantery", pos, t);
+	}
 
 	_visible_grid_unit_type = "infantery";
 	_visible_grid_type = "terrain";
@@ -107,7 +114,7 @@ void Strategy::draw_linear(std::string context_name) {
 		return;
 	}
 
-	glUseProgram(context->_prog);
+	/*glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	
@@ -125,7 +132,12 @@ void Strategy::draw_linear(std::string context_name) {
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+	glUseProgram(0);*/
+
+	context->activate();
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	glDrawArrays(GL_LINES, 0, context->_n_pts);
+	context->deactivate();
 }
 
 
@@ -135,13 +147,17 @@ void Strategy::draw_dash(std::string context_name) {
 		return;
 	}
 
-	glUseProgram(context->_prog);
-	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
+	context->activate();
 	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	glUniform1f(context->_locs_uniform["dash_size"], 8.0);
 	glUniform1f(context->_locs_uniform["gap_size"], 8.0);
 	glUniform1f(context->_locs_uniform["thickness"], 4.0);
 	glUniform2f(context->_locs_uniform["viewport_size"], _view_system->_screengl->_screen_width, _view_system->_screengl->_screen_height);
+	glDrawArrays(GL_LINES, 0, context->_n_pts);
+	context->deactivate();
+
+/*	glUseProgram(context->_prog);
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 
 	
 	for (auto attr : context->_locs_attrib) {
@@ -158,7 +174,7 @@ void Strategy::draw_dash(std::string context_name) {
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+	glUseProgram(0);*/
 }
 
 
@@ -168,7 +184,19 @@ void Strategy::draw_surface(std::string context_name) {
 		return;
 	}
 
-	glUseProgram(context->_prog);
+	context->activate();
+	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
+	glm::vec3 light_color(1.0f);
+
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
+	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
+	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->deactivate();
+
+	/*glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 
 	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
@@ -194,7 +222,7 @@ void Strategy::draw_surface(std::string context_name) {
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+	glUseProgram(0);*/
 }
 
 
@@ -204,7 +232,20 @@ void Strategy::draw_lake() {
 		return;
 	}
 
-	glUseProgram(context->_prog);
+	context->activate();
+	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
+	glm::vec3 light_color(1.0f);
+
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
+	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
+	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
+	glUniform1f(context->_locs_uniform["angle"], float(_angle));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->deactivate();
+
+	/*glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 
 	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
@@ -230,7 +271,7 @@ void Strategy::draw_lake() {
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+	glUseProgram(0);*/
 }
 
 
@@ -240,7 +281,19 @@ void Strategy::draw_river() {
 		return;
 	}
 
-	glUseProgram(context->_prog);
+	context->activate();
+	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
+	glm::vec3 light_color(1.0f);
+
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
+	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
+	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
+	glUniform1f(context->_locs_uniform["angle"], float(_angle));
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	context->deactivate();
+	/*glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 
 	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
@@ -268,7 +321,7 @@ void Strategy::draw_river() {
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+	glUseProgram(0);*/
 }
 
 
@@ -278,7 +331,19 @@ void Strategy::draw_sea() {
 		return;
 	}
 
-	glUseProgram(context->_prog);
+	context->activate();
+	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
+	glm::vec3 light_color(1.0f);
+
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
+	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
+	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
+	glUniform1f(context->_locs_uniform["angle"], float(_angle));
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->deactivate();
+
+	/*glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 
 	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
@@ -304,7 +369,7 @@ void Strategy::draw_sea() {
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+	glUseProgram(0);*/
 }
 
 
@@ -314,13 +379,34 @@ void Strategy::draw_unit(UnitType * unit_type) {
 		return;
 	}
 
-	glUseProgram(context->_prog);
+	/*glUseProgram(context->_prog);
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer_instanced);
+	std::size_t vec4Size = sizeof(glm::vec4);
+
+	glEnableVertexAttribArray(context->_locs_attrib_instanced["model2world_matrix"]);
+	glVertexAttribPointer(context->_locs_attrib_instanced["model2world_matrix"], 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)0);
+	glVertexAttribDivisor(context->_locs_attrib_instanced["model2world_matrix"], 1);
+
+	glEnableVertexAttribArray(context->_locs_attrib_instanced["model2world_matrix"] + 1);
+	glVertexAttribPointer(context->_locs_attrib_instanced["model2world_matrix"] + 1, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(sizeof(glm::vec4)));
+	glVertexAttribDivisor(context->_locs_attrib_instanced["model2world_matrix"] + 1, 1);
+
+	glEnableVertexAttribArray(context->_locs_attrib_instanced["model2world_matrix"] + 2);
+	glVertexAttribPointer(context->_locs_attrib_instanced["model2world_matrix"] + 2, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(2 * sizeof(glm::vec4)));
+	glVertexAttribDivisor(context->_locs_attrib_instanced["model2world_matrix"] + 2, 1);
+
+	glEnableVertexAttribArray(context->_locs_attrib_instanced["model2world_matrix"] + 3);
+	glVertexAttribPointer(context->_locs_attrib_instanced["model2world_matrix"] + 3, 4, GL_FLOAT, GL_FALSE, sizeof(glm::mat4), (void*)(3 * sizeof(glm::vec4)));
+	glVertexAttribDivisor(context->_locs_attrib_instanced["model2world_matrix"] + 3, 1);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 
 	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
 	glm::vec3 light_color(1.0f);
 
-	glUniformMatrix4fv(context->_locs_uniform["model2world_matrices"], _map->_unit_groups[unit_type]->_units.size(), GL_FALSE, _map->_unit_groups[unit_type]->_matrices);
 	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
 	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
@@ -345,7 +431,22 @@ void Strategy::draw_unit(UnitType * unit_type) {
 	}
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+
+	glUseProgram(0);*/
+
+	context->activate();
+	
+	glm::vec3 light_position(0.0f, 0.0f, 50.0f);
+	glm::vec3 light_color(1.0f);
+
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
+	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
+	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
+
+	glDrawArraysInstanced(GL_TRIANGLES, 0, context->_n_pts, _map->_unit_groups[unit_type]->_units.size());
+
+	context->deactivate();
 }
 
 
@@ -519,7 +620,7 @@ glm::vec4 Strategy::get_edge_color() {
 void Strategy::update_grid() {
 	DrawContext * context= _contexts["grid"];
 	
-	context->_n_attrs_per_pts= 7;
+	//context->_n_attrs_per_pts= 7;
 	context->_n_pts = 0;
 
 	_map->_path_finder->_it_v= _map->_path_finder->_vertices.begin();
@@ -657,7 +758,7 @@ void Strategy::update_grid() {
 void Strategy::update_unit_linear() {
 	DrawContext * context= _contexts["unit_linear"];
 	
-	context->_n_attrs_per_pts= 7;
+	//context->_n_attrs_per_pts= 7;
 	context->_n_pts = 0;
 
 	for (auto unit : _map->_units) {
@@ -713,7 +814,7 @@ void Strategy::update_unit_linear() {
 void Strategy::update_path() {
 	DrawContext * context= _contexts["path"];
 	
-	context->_n_attrs_per_pts= 7;
+	//context->_n_attrs_per_pts= 7;
 	context->_n_pts = 0;
 	
 	for (auto unit : _map->_units) {
@@ -767,7 +868,7 @@ void Strategy::update_path() {
 void Strategy::update_debug() {
 	DrawContext * context= _contexts["debug"];
 	
-	context->_n_attrs_per_pts= 7;
+	//context->_n_attrs_per_pts= 7;
 	context->_n_pts = 0;
 
 	/*if (_map->_units.empty()) {
@@ -880,7 +981,7 @@ void Strategy::update_elevation() {
 	DrawContext * context= _contexts["elevation"];
 
 	context->_n_pts = _map->_elevation->_n_pts;
-	context->_n_attrs_per_pts = _map->_elevation->_n_attrs_per_pts;
+	//context->_n_attrs_per_pts = _map->_elevation->_n_attrs_per_pts;
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, _map->_elevation->_data, context->_usage);
@@ -895,7 +996,7 @@ void Strategy::update_elements() {
 	for (auto & element : _map->_elements->_elements) {
 		context->_n_pts += element->_n_pts;
 	}
-	context->_n_attrs_per_pts= 10;
+	//context->_n_attrs_per_pts= 10;
 
 	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 
@@ -925,7 +1026,7 @@ void Strategy::update_river() {
 	for (auto & river : _map->_rivers) {
 		context->_n_pts += river->_n_pts;
 	}
-	context->_n_attrs_per_pts= _map->_rivers[0]->_n_attrs_per_pts;
+	//context->_n_attrs_per_pts= _map->_rivers[0]->_n_attrs_per_pts;
 
 	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 
@@ -955,7 +1056,7 @@ void Strategy::update_lake() {
 	for (auto & lake : _map->_lakes) {
 		context->_n_pts += lake->_n_pts;
 	}
-	context->_n_attrs_per_pts= _map->_lakes[0]->_n_attrs_per_pts;
+	//context->_n_attrs_per_pts= _map->_lakes[0]->_n_attrs_per_pts;
 
 	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 
@@ -977,7 +1078,7 @@ void Strategy::update_sea() {
 	DrawContext * context= _contexts["sea"];
 
 	context->_n_pts = 6;
-	context->_n_attrs_per_pts= 7;
+	//context->_n_attrs_per_pts= 7;
 
 	float * data = new float[context->_n_pts* context->_n_attrs_per_pts];
 
@@ -1012,10 +1113,14 @@ void Strategy::update_unit(UnitType * unit_type) {
 	DrawContext * context= _contexts[unit_type->_name];
 
 	context->_n_pts = unit_type->_obj_data->_n_pts;
-	context->_n_attrs_per_pts = unit_type->_obj_data->_n_attrs_per_pts;
+	//context->_n_attrs_per_pts = unit_type->_obj_data->_n_attrs_per_pts;
 
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* context->_n_pts* context->_n_attrs_per_pts, unit_type->_obj_data->_data, context->_usage);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer_instanced);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* 16 * _map->_unit_groups[unit_type]->_units.size(), _map->_unit_groups[unit_type]->_matrices, context->_usage);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 

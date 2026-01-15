@@ -17,6 +17,22 @@ Material::~Material() {
 }
 
 
+std::ostream & operator << (std::ostream & os, Material & mat) {
+	os << "name = " << mat._name;
+	os << " ; ambient = " << glm_to_string(mat._ambient);
+	os << " ; diffuse = " << glm_to_string(mat._diffuse);
+	os << " ; specular = " << glm_to_string(mat._specular);
+	os << " ; emissive = " << glm_to_string(mat._emissive);
+	os << " ; absorbance = " << mat._absorbance;
+	os << " ; shininess = " << mat._shininess;
+	os << " ; opacity = " << mat._opacity;
+	os << " ; ambient_tex_path = " << mat._ambient_tex_path;
+	os << " ; diffuse_tex_path = " << mat._diffuse_tex_path;
+	os << " ; specular_tex_path = " << mat._specular_tex_path;
+	return os;
+}
+
+
 // Face --------------------------------------------------------------
 ObjFace::ObjFace() : _texture_active(false), _normal_active(false) {
 	for (uint i=0; i<3; ++i) {
@@ -51,6 +67,17 @@ pt_3d ObjObject::compute_normal(ObjFace * face) {
 	pt_3d p2 = _vertices[face->_vertices_idx[1]];
 	pt_3d p3 = _vertices[face->_vertices_idx[2]];
 	return glm::normalize(glm::cross(p2 - p1, p3 - p1));
+}
+
+
+std::ostream & operator << (std::ostream & os, ObjObject & obj) {
+	os << "name = " << obj._name;
+	os << " ; n_vertices = " << obj._vertices.size();
+	os << " ; n_normals = " << obj._normals.size();
+	os << " ; n_texs = " << obj._texs.size();
+	os << " ; n_faces = " << obj._faces.size();
+	os << " ; smooth_shading = " << obj._smooth_shading;
+	return os;
 }
 
 
@@ -161,7 +188,7 @@ ObjData::ObjData(std::string obj_path) : _n_pts(0), _n_attrs_per_pts(0) {
 				vertex[i] = std::stod(s);
 			}
 			if (current_object == NULL) {
-				current_object = add_generic_object();
+				current_object = new_generic_object();
 			}
 			current_object->_vertices.push_back(vertex);
 		}
@@ -304,9 +331,24 @@ void ObjData::update_data() {
 }
 
 
-ObjObject * ObjData::add_generic_object() {
+ObjObject * ObjData::new_generic_object() {
 	ObjObject * object = new ObjObject();
 	object->_name = "GENERIC_OBJECT";
-	_objects.push_back(object);
+	//_objects.push_back(object);
 	return object;
 }
+
+
+std::ostream & operator << (std::ostream & os, ObjData & data) {
+	os << "n_pts = " << data._n_pts << " ; n_attrs_per_pts = " << data._n_attrs_per_pts << "\n";
+	os << "materials =\n";
+	for (auto & mat : data._materials) {
+		os << *mat.second << "\n";
+	}
+	os << "objects =\n";
+	for (auto & obj : data._objects) {
+		os << *obj << "\n";
+	}
+	return os;
+}
+
