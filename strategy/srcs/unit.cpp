@@ -1,4 +1,7 @@
+#define GLM_FORCE_RADIANS
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include "utile.h"
 
@@ -61,47 +64,48 @@ Unit::Unit() {
 }
 
 
-Unit::Unit(UnitType * type, pt_3d pos, time_point t) : InstancePosRot(),
-	_type(type), _status(WAITING), _velocity(pt_3d(0.0)), _last_anim_t(t)
+Unit::Unit(UnitType * type, pt_3d pos, time_point t) : InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
+	_type(type), _status(WAITING), _velocity(pt_3d(0.0))//, _last_anim_t(t)
 {
-	pt_3d vmin(pos.x - 0.5 * _type->_size.x, pos.y - 0.5 * _type->_size.y, pos.z);
-	pt_3d vmax(pos.x + 0.5 * _type->_size.x, pos.y + 0.5 * _type->_size.y, pos.z + _type->_size.z);
-	_aabb = new AABB(vmin, vmax);
 	_path = new Path();
-
-	set_pos_rot_scale(_aabb->bottom_center(), quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0));
 }
 
 
 Unit::~Unit() {
-	delete _aabb;
 	delete _path;
 }
 
 
-void Unit::anim(time_point t) {
+void Unit::anim(Elevation * elevation) {
 	if (_status == MOVING) {
-		auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
-		_last_anim_t = t;
-
-		//pt_3d v = number(d) * _velocity;
-		pt_3d v = 15.0 * _velocity;
-		//pt_3d v = 0.02 * glm::normalize(_velocity);
-
-		number dist = glm::distance(_aabb->bottom_center(), _path->_pts[_path->_idx_path]);
-		
-		number speed = glm::length(v);
-		if (speed < 0.001) {
-			std::cerr << "speed = 0\n";
+		if (checkpoint_checked()) {
+			if (_path->_idx_path == _path->_pts.size() - 1) {
+				set_status(LAST_CHECKPOINT_CHECKED);
+			}
+			else {
+				set_status(CHECKPOINT_CHECKED);
+			}
 			return;
 		}
+		//auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
+		//_last_anim_t = t;
 
-		if (dist < speed) {
-			v *= (dist / speed);
-		}
+		number velocity_amp = _type->_max_velocity * (1.0 - _path->_weights[_path->_idx_path] / MAX_UNIT_MOVING_WEIGHT);
+		pt_2d direction = glm::normalize(pt_2d(_path->_pts[_path->_idx_path]) - pt_2d(_position));
+		_velocity = velocity_amp * pt_3d(direction.x, direction.y, 0.0);
 
-		_aabb->translate(v);
-		set_pos_rot_scale(_aabb->bottom_center(), quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0));
+		//std::cout << glm_to_string(_position) << " ; " << glm_to_string(_path->_pts[_path->_idx_path])  << " ; " << glm_to_string(direction) << " ; " << velocity_amp << " ; " << glm_to_string(_velocity) << "\n";
+
+		pt_3d next_position = _position + _velocity;
+		next_position.z = elevation->get_alti(next_position);
+
+		number angle = atan2(_velocity.y, _velocity.x);
+		// https://en.wikipedia.org/wiki/Slerp
+		const number slerp_speed = 0.05;
+		quat next_quat = glm::angleAxis(float(angle), glm::vec3(0.0f, 0.0f, 1.0f));
+		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
+
+		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
 	}
 }
 
@@ -111,14 +115,14 @@ bool Unit::checkpoint_checked() {
 		std::cerr << "Unit::checkpoint_checked() : path vide ou dépassé\n";
 		return true;
 	}
-	if (glm::distance(_aabb->bottom_center(), _path->_pts[_path->_idx_path]) < UNIT_DIST_PATH_EPS) {
+	if (glm::distance(pt_2d(_position), pt_2d(_path->_pts[_path->_idx_path])) < UNIT_DIST_PATH_EPS) {
 		return true;
 	}
 	return false;
 }
 
 
-void Unit::goto_next_checkpoint(time_point t) {
+/*void Unit::goto_next_checkpoint(time_point t) {
 	_status = MOVING;
 
 	if (_path->empty()) {
@@ -128,23 +132,36 @@ void Unit::goto_next_checkpoint(time_point t) {
 	}
 
 	number velocity_amp = _type->_max_velocity * (1.0 - _path->_weights[_path->_idx_path] / MAX_UNIT_MOVING_WEIGHT);
-	pt_3d direction = glm::normalize(_path->_pts[_path->_idx_path] - _aabb->bottom_center());
-	//_velocity = velocity_amp * direction;
+	pt_3d direction = glm::normalize(_path->_pts[_path->_idx_path] - _bbox->_aabb->bottom_center());
 	_velocity = velocity_amp * pt_3d(direction.x, direction.y, 0.0);
-	_last_anim_t = t;
-}
+	//_last_anim_t = t;
+}*/
 
 
-void Unit::stop() {
+/*void Unit::stop() {
 	_status = WAITING;
 	_path->clear();
+}*/
+
+
+void Unit::set_status(UNIT_STATUS status) {
+	_status = status;
+	
+	if (_status == WAITING) {
+		_path->clear();
+	}
+	else if (_status == MOVING) {
+		if (_path->empty()) {
+			std::cerr << "Unit::follow_path : path empty\n";
+			set_status(WAITING);
+		}
+	}
 }
 
 
 std::ostream & operator << (std::ostream & os, Unit & unit) {
 	os << "type = " << unit._type->_name;
 	os << " ; mode = " << unit_status2str(unit._status);
-	os << " ; emprise = " << *unit._emprise;
 	os << " ; velocity = " << glm_to_string(unit._velocity);
 	os << " ; path = " << *unit._path;
 	return os;
@@ -152,7 +169,7 @@ std::ostream & operator << (std::ostream & os, Unit & unit) {
 
 
 UnitGroup::UnitGroup() {
-	_matrices = new float[N_MAX_UNITS * 16];
+	_matrices = new float[N_MAX_UNITS_PER_GROUP * 16];
 }
 
 
@@ -163,12 +180,24 @@ UnitGroup::~UnitGroup() {
 
 void UnitGroup::add_unit(Unit * unit) {
 	_units.push_back(unit);
-	float * ptr = _matrices;
-	for (auto & unit : _units) {
-		const float * unit_data = glm::value_ptr(glm::mat4(unit->_model2world));
-		for (uint i=0; i<16; ++i) {
-			ptr[i] = unit_data[i];
-		}
-		ptr += 16;
-	}
+	float * ptr = _matrices + (_units.size() - 1) * 16;
+	const float * unit_data = glm::value_ptr(glm::mat4(unit->_model2world));
+	std::memcpy(ptr, unit_data, 16 * sizeof(float));
 }
+
+
+void UnitGroup::update_unit(Unit * unit) {
+	uint unit_idx = 0;
+	uint compt = 0;
+	for (auto & u : _units) {
+		if (u == unit) {
+			unit_idx = compt;
+			break;
+		}
+		compt++;
+	}
+	float * ptr = _matrices + unit_idx * 16;
+	const float * unit_data = glm::value_ptr(glm::mat4(unit->_model2world));
+	std::memcpy(ptr, unit_data, 16 * sizeof(float));
+}
+

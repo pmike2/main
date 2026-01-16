@@ -99,9 +99,9 @@ Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0),
 	//std::cout << _elevation->ids2wkt(_id_nodes) << "\n";
 	//std::cout << _elevation->triangles2wkt(_triangles) << "\n";
 
-	_n_attrs_per_pts= 7;
 	_n_pts = 3 * _triangles.size();
-	_data = new float[_n_pts * _n_attrs_per_pts];
+	uint n_attrs_per_pts = 7;
+	_data = new float[_n_pts * n_attrs_per_pts];
 
 	update_data();
 }

@@ -5,6 +5,8 @@
 
 #include <SDL2/SDL.h>
 
+#define GLM_FORCE_RADIANS
+
 #include "repere.h"
 #include "utile.h"
 #include "gl_utils.h"

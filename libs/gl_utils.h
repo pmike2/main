@@ -33,35 +33,53 @@ public:
 
 
 struct DrawContextAttrib {
+	friend std::ostream & operator << (std::ostream & os, const DrawContextAttrib & dca);
+
+
+	std::string _name;
 	GLint _loc;
 	uint _size;
 	uint _offset;
-	std::string _name;
+};
+
+
+struct DrawContextBuffer {
+	friend std::ostream & operator << (std::ostream & os, const DrawContextBuffer & dcb);
+
+
+	GLuint _id;
+	std::vector<DrawContextAttrib> _attribs;
+	uint _n_attrs_per_pts;
 	bool _is_instanced;
+	GLenum _usage;
 };
 
 
 class DrawContext {
 public:
 	DrawContext();
-	DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage = GL_STATIC_DRAW);
+	DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage = GL_STATIC_DRAW, bool active = true);
 	~DrawContext();
+	void set_data(float * data, uint idx_buffer = 0);
+	void clear_data(uint idx_buffer = 0);
 	void activate();
 	void deactivate();
+	uint data_size(uint idx_buffer = 0);
+	void show_data(uint idx_buffer = 0);
 	friend std::ostream & operator << (std::ostream & os, const DrawContext & dc);
 
 
 	GLuint _prog;
 	GLuint _vao;
 	std::map<std::string, GLint> _locs_uniform;
-	std::vector<DrawContextAttrib> _attribs;
-	GLuint _buffer;
-	GLuint _buffer_instanced;
+	std::vector<DrawContextBuffer> _buffers;
+	//GLuint _buffer;
+	//GLuint _buffer_instanced;
 	uint _n_pts;
-	uint _n_attrs_per_pts;
-	uint _n_attrs_instanced_per_pts;
+	uint _n_instances;
+	//uint _n_attrs_per_pts;
+	//uint _n_attrs_instanced_per_pts;
 	bool _active;
-	GLenum _usage;
 };
 
 

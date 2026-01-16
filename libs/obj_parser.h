@@ -9,6 +9,7 @@
 #include <sstream>
 
 #include "typedefs.h"
+#include "bbox.h"
 
 
 struct Material {
@@ -75,6 +76,7 @@ struct ObjData {
 	float * _data;
 	uint _n_pts;
 	uint _n_attrs_per_pts;
+	AABB * _aabb;
 };
 
 

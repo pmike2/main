@@ -50,7 +50,10 @@ const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
 //const number Z_OFFSET_CROSS = 0.02;
 const number Z_OFFSET_EDGE = 0.05;
 const number Z_OFFSET_UNIT = 0.05;
-const number Z_OFFSET_PATH = 0.08;
+const number Z_OFFSET_PATH = 0.5;
+
+const glm::vec3 light_position(0.0f, 0.0f, 50.0f);
+const glm::vec3 light_color(1.0f);
 
 
 class Strategy {
@@ -79,7 +82,8 @@ public:
 	void update_river();
 	void update_lake();
 	void update_sea();
-	void update_unit(UnitType * unit_type);
+	void update_unit_obj(UnitType * unit_type);
+	void update_unit_matrices(UnitType * unit_type);
 	void update_all();
 	void update_text(InputState * input_state);
 	bool mouse_button_down(InputState * input_state, time_point t);

@@ -1,7 +1,7 @@
 {
 	"name" : "helicopter",
 	"size" : [1.0, 1.0, 0.5],
-	"max_velocity" : 0.01,
+	"max_velocity" : 0.08,
 	"weights" : {
 		"GROUND" : 0.0,
 		"OBSTACLE" : 0.0,
@@ -14,5 +14,5 @@
 	"delta_elevation_coeffs" : [
 		{"min" : -1000.0, "max" : 1000.0, "coeff" : 0.0}
 	],
-	"obj" : "../data/objs/helicopter/Seahawk.obj"
+	"obj" : "../data/objs/helicopter/test.obj"
 }

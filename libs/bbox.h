@@ -44,7 +44,7 @@ public:
 class BBox {
 public:
 	BBox();
-	BBox(const pt_3d & vmin, const pt_3d & vmax, const mat_4d & model2world);
+	BBox(const pt_3d & vmin, const pt_3d & vmax, const mat_4d & model2world = mat_4d(1.0));
 	BBox(AABB * aabb);
 	~BBox();
 	void set_model2world(const mat_4d & model2world);
@@ -78,7 +78,7 @@ public:
 	pt_3d _scale;
 	mat_4d _model2world;
 	BBox * _bbox;
-	AABB_2D * _emprise;
+	//AABB_2D * _emprise;
 	bool _active;
 	bool _selected;
 	number _dist2;

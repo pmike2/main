@@ -21,7 +21,7 @@ UnitType::UnitType(std::string json_path) {
 	ifs.close();
 
 	_name = js["name"];
-	_size = pt_3d(js["size"][0], js["size"][1], js["size"][2]);
+	//_size = pt_3d(js["size"][0], js["size"][1], js["size"][2]);
 	_max_velocity = js["max_velocity"];
 	for (json::iterator it = js["weights"].begin(); it != js["weights"].end(); ++it) {
 		TERRAIN_TYPE ot = str2terrain_type(it.key());
@@ -40,6 +40,7 @@ UnitType::UnitType(std::string json_path) {
 	}
 
 	_obj_data = new ObjData(js["obj"]);
+	//_size = _obj_data->_aabb->size();
 }
 
 
@@ -64,12 +65,12 @@ number UnitType::buffer_size() {
 	//return 0.5 * norm(pt_2d(std::max(_size.x, _size.y))) + EPS_UNIT_TYPE_BUFFER_SIZE;
 	//return 0.5 * norm(pt_2d(std::max(_size.x, _size.y)));
 	// sqrt(2) / 2
-	return 0.7071 * std::max(_size.x, _size.y);
+	return 0.7071 * std::max(_obj_data->_aabb->size().x, _obj_data->_aabb->size().y);
 }
 
 
 std::ostream & operator << (std::ostream & os, UnitType & ut) {
-	os << "name = " << ut._name << " ; size = " << glm_to_string(ut._size) << " ; velocity = " << ut._max_velocity;
+	os << "name = " << ut._name << " ; velocity = " << ut._max_velocity;
 	os << "\nterrain_weights = ";
 	for (auto & w : ut._terrain_weights) {
 		os << terrain_type2str(w.first) << " -> " << w.second << " ; ";

@@ -29,7 +29,7 @@ struct UnitType {
 	
 	
 	std::string _name;
-	pt_3d _size;
+	//pt_3d _size;
 	number _max_velocity;
 	std::map<TERRAIN_TYPE, number> _terrain_weights;
 	std::vector<UnitElevationCoeff> _delta_elevation_coeffs;

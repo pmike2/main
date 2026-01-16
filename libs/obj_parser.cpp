@@ -165,6 +165,8 @@ ObjData::ObjData(std::string obj_path) : _n_pts(0), _n_attrs_per_pts(0) {
 	// lecture .obj ------------------------------------
 	ObjObject * current_object = NULL;
 	current_material = NULL;
+	pt_3d vmin(1e-9);
+	pt_3d vmax(-1e-9);
 
 	std::ifstream obj_file(obj_path);
 	while (std::getline(obj_file, line)) {
@@ -191,6 +193,15 @@ ObjData::ObjData(std::string obj_path) : _n_pts(0), _n_attrs_per_pts(0) {
 				current_object = new_generic_object();
 			}
 			current_object->_vertices.push_back(vertex);
+
+			for (uint i=0; i<3; ++i) {
+				if (vertex[i] < vmin[i]) {
+					vmin[i] = vertex[i];
+				}
+				if (vertex[i] > vmax[i]) {
+					vmax[i] = vertex[i];
+				}
+			}
 		}
 		else if (s == "vn") {
 			pt_3d normal;
@@ -266,6 +277,8 @@ ObjData::ObjData(std::string obj_path) : _n_pts(0), _n_attrs_per_pts(0) {
 	_objects.push_back(current_object);
 
 	update_data();
+
+	_aabb = new AABB(vmin, vmax);
 }
 
 
@@ -279,6 +292,7 @@ ObjData::~ObjData() {
 	}
 	_objects.clear();
 	delete[] _data;
+	delete _aabb;
 }
 
 

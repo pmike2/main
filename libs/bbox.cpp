@@ -229,7 +229,7 @@ InstancePosRot::InstancePosRot() :
 	_active(false), _dist2(0.0), _selected(false)
 {
 	_bbox= new BBox();
-	_emprise= new AABB_2D();
+	//_emprise= new AABB_2D();
 }
 
 
@@ -238,7 +238,7 @@ InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, co
 {
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox= new BBox();
-	_emprise= new AABB_2D();
+	//_emprise= new AABB_2D();
 }
 
 
@@ -247,13 +247,13 @@ InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, co
 {
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox= new BBox(aabb->_vmin, aabb->_vmax, _model2world);
-	_emprise= new AABB_2D(pt_2d(_bbox->_aabb->_vmin), pt_2d(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin));
+	//_emprise= new AABB_2D(pt_2d(_bbox->_aabb->_vmin), pt_2d(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin));
 }
 
 
 InstancePosRot::~InstancePosRot() {
 	delete _bbox;
-	delete _emprise;
+	//delete _emprise;
 }
 
 
@@ -263,8 +263,8 @@ void InstancePosRot::set_pos_rot_scale(const pt_3d & position, const quat & rota
 	_scale= scale;
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox->set_model2world(_model2world);
-	_emprise->_pos= pt_2d(_bbox->_aabb->_vmin);
-	_emprise->_size= pt_2d(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin);
+	//_emprise->_pos= pt_2d(_bbox->_aabb->_vmin);
+	//_emprise->_size= pt_2d(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin);
 }
 
 

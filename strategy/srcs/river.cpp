@@ -38,9 +38,9 @@ River::River(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0
 	}
 	_elevation->update_data(_polygon->_aabb);*/
 
-	_n_attrs_per_pts= 12;
 	_n_pts = 3 * _triangles.size();
-	_data = new float[_n_pts * _n_attrs_per_pts];
+	uint n_attrs_per_pts = 12;
+	_data = new float[_n_pts * n_attrs_per_pts];
 	update_data();
 }
 

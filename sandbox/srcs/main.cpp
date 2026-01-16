@@ -3,6 +3,18 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
+
+
+struct Test {
+	int _x;
+	std::vector<int> _v;
+};
+
+
+struct List {
+	std::vector<Test> _tests;
+};
 
 
 int main() {
@@ -20,18 +32,27 @@ int main() {
 	}
 	std::cout << "\n";*/
 
-	std::string s2 = "aaa:45:instanced";
-	std::string s;
-	std::string s3;
-	std::stringstream ss(s2);
-	std::getline(ss, s, ':');
-	std::cout << s << "\n";
-	std::getline(ss, s, ':');
-	std::cout << s << "\n";
-	std::getline(ss, s3, ':');
-	std::cout << s3 << "\n";
-	if (s3 == "instanced") {
-		std::cout << "ok\n";
+	List l;
+
+	Test t;
+
+	t._x = 12;
+	t._v.push_back(100);
+	t._v.push_back(200);
+	l._tests.push_back(t);
+
+	t._x = 38;
+	t._v.clear();
+	t._v.push_back(1000);
+	t._v.push_back(2000);
+	l._tests.push_back(t);
+
+	for (auto &t : l._tests) {
+		std::cout << t._x << " / ";
+		for (auto &x : t._v) {
+			std::cout << x << " ; ";
+		}
+		std::cout << "\n";
 	}
 
 	return 0;

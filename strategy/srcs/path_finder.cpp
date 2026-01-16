@@ -6,7 +6,7 @@ PathFinder::PathFinder() {
 }
 
 PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : GraphGrid(origin, size, n_ligs, n_cols),
-	_use_line_of_sight(true), _verbose(false) {
+	_use_line_of_sight(true), _verbose(true) {
 
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
@@ -18,43 +18,6 @@ PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : Gra
 		}
 		_it_v++;
 	}
-
-	/*_elevation_grid = new GraphGrid(origin, size, n_ligs, n_cols);
-	_units_position_grid = new GraphGrid(origin, size, n_ligs, n_cols);
-	_terrain_grid = new GraphGrid(origin, size, n_ligs, n_cols);*/
-
-	/*_elevation_grid->_it_v= _elevation_grid->_vertices.begin();
-	while (_elevation_grid->_it_v!= _elevation_grid->_vertices.end()) {
-		_elevation_grid->_it_e= _elevation_grid->_it_v->second._edges.begin();
-		while (_elevation_grid->_it_e!= _elevation_grid->_it_v->second._edges.end()) {
-			GraphEdge & edge = _elevation_grid->_vertices[_elevation_grid->_it_v->first]._edges[_elevation_grid->_it_e->first];
-			edge._data = new ElevationEdgeData();
-			_elevation_grid->_it_e++;
-		}
-		_elevation_grid->_it_v++;
-	}
-
-	_units_position_grid->_it_v= _units_position_grid->_vertices.begin();
-	while (_units_position_grid->_it_v!= _units_position_grid->_vertices.end()) {
-		_units_position_grid->_it_e= _units_position_grid->_it_v->second._edges.begin();
-		while (_units_position_grid->_it_e!= _units_position_grid->_it_v->second._edges.end()) {
-			GraphEdge & edge = _units_position_grid->_vertices[_units_position_grid->_it_v->first]._edges[_units_position_grid->_it_e->first];
-			edge._data = new UnitsPositionEdgeData();
-			_units_position_grid->_it_e++;
-		}
-		_units_position_grid->_it_v++;
-	}
-
-	_terrain_grid->_it_v= _terrain_grid->_vertices.begin();
-	while (_terrain_grid->_it_v!= _terrain_grid->_vertices.end()) {
-		_terrain_grid->_it_e= _terrain_grid->_it_v->second._edges.begin();
-		while (_terrain_grid->_it_e!= _terrain_grid->_it_v->second._edges.end()) {
-			GraphEdge & edge = _terrain_grid->_vertices[_terrain_grid->_it_v->first]._edges[_terrain_grid->_it_e->first];
-			edge._data = new TerrainEdgeData();
-			_terrain_grid->_it_e++;
-		}
-		_terrain_grid->_it_v++;
-	}*/
 }
 
 
@@ -67,8 +30,6 @@ PathFinder::~PathFinder() {
 
 
 void PathFinder::add_unit_type(UnitType * unit_type) {
-	//_unit_types.push_back(unit_type);
-
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
 		_it_e= _it_v->second._edges.begin();
@@ -168,18 +129,15 @@ bool PathFinder::path_find_nodes(Unit * unit, uint start, uint goal) {
 				//number priority= new_cost; // dijkstra
 				//number priority= heuristic(next, goal, grid); // greedy best first search
 				number priority= new_cost + heuristic(next, goal); // A *
-				//std::cout << priority << "\n";
 				frontier.emplace(next, priority);
 			}
 		}
 	}
 
 	if (!came_from.count(goal)) {
-		//cout << "disconnected\n";
 		return false;
 	}
 
-	//unit->_path->_nodes.clear();
 	uint current = goal;
 	while (current != start) {
 		unit->_path->_nodes.push_back(current);
@@ -196,7 +154,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	std::mutex mtx;
 
 	unit->_path->clear();
-	unit->_path->_start = pt_2d(unit->_aabb->bottom_center());
+	unit->_path->_start = pt_2d(unit->_bbox->_aabb->bottom_center());
 	unit->_path->_goal = goal;
 
 	if ((!point_in_aabb2d(unit->_path->_start, _aabb)) || (!point_in_aabb2d(unit->_path->_goal, _aabb))) {
@@ -204,50 +162,12 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 			std::cerr << "unit id " << unit->_id << " : PathFinder::path_find : point hors grille\n";
 		}
 		mtx.lock();
-		unit->_status = COMPUTING_PATH_FAILED;
+		unit->set_status(COMPUTING_PATH_FAILED);
 		mtx.unlock();
 		return false;
 	}
 
-	/*std::vector<int_pair> start_edges = units_position_grid->edges_in_cell_containing_pt(start, true);
-	std::vector<uint> start_vertices = units_position_grid->vertices_in_cell_containing_pt(start);
-	int start_id = -1;
-	for (auto & id_vertex : start_vertices) {
-		bool vertex_ok = true;
-		GraphVertex vertex = units_position_grid->_vertices[id_vertex];
-		units_position_grid->_it_e = vertex._edges.begin();
-		while (units_position_grid->_it_e != vertex._edges.end()) {
-			GraphEdge edge = units_position_grid->_it_e->second;
-			for (auto & id_edge : start_edges) {
-				if (
-				(id_edge.first == units_position_grid->_it_e->first || id_edge.second == units_position_grid->_it_e->first)
-				&& units_position_weight(edge, unit) >= MAX_UNIT_MOVING_WEIGHT
-				&& units_position_grid->segment_intersects_edge(start, pt_2d(vertex._pos), id_edge)) {
-					vertex_ok = false;
-					break;
-				}
-			}
-			if (vertex_ok == false) {
-				break;
-			}
-			units_position_grid->_it_e++;
-		}
-		if (vertex_ok) {
-			start_id = id_vertex;
-		}
-	}
-
-	if (start_id < 0) {
-		std::cerr << "PathFinder::path_find : pas de noeud valide start trouvé\n";
-		mtx.lock();
-		unit->_status = COMPUTING_PATH_DONE;
-		mtx.unlock();
-		return false;
-	}*/
-
-	//uint start_id = static_grid->pt2id(start);
 	uint start_id = pt2closest_id(unit->_path->_start);
-	//uint goal_id = static_grid->pt2id(goal);
 	uint goal_id = pt2closest_id(unit->_path->_goal);
 
 	bool is_path_ok= path_find_nodes(unit, start_id, goal_id);
@@ -256,7 +176,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 			std::cerr << "unit id " << unit->_id << " PathFinder::path_find : pas de chemin trouvé\n";
 		}
 		mtx.lock();
-		unit->_status = COMPUTING_PATH_FAILED;
+		unit->set_status(COMPUTING_PATH_FAILED);
 		mtx.unlock();
 		return false;
 	}
@@ -271,30 +191,6 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 
 	std::vector<number> weights;
 	
-	// start
-	/*number weight_start = 0.0;
-	
-	std::vector<int_pair> static_start_edges = _elevation_grid->edges_in_cell_containing_pt(unit->_path->_start);
-	number w_static_start = 1e9;
-	for (auto & edge : static_start_edges) {
-		number w = elevation_weight(edge.first, edge.second);
-		if (w < w_static_start) {
-			w_static_start = w;
-		}
-	}
-	weight_start += w_static_start;
-
-	std::vector<int_pair> units_position_start_edges = _units_position_grid->edges_in_cell_containing_pt(unit->_path->_start);
-	number w_units_position_start = 1e9;
-	for (auto & edge : units_position_start_edges) {
-		number w = units_position_weight(unit, edge.first, edge.second);
-		if (w < w_units_position_start) {
-			w_units_position_start = w;
-		}
-	}
-	weight_start += w_units_position_start;
-	weights.push_back(weight_start);*/
-
 	std::vector<uint_pair> start_edges = edges_in_cell_containing_pt(unit->_path->_start);
 	number weight_start = 1e9;
 	for (auto & edge : start_edges) {
@@ -310,30 +206,6 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	for (uint i=0; i < n_nodes - 1; ++i) {
 		weights.push_back(cost(unit, unit->_path->_nodes[i], unit->_path->_nodes[i + 1]));
 	}
-
-	// goal
-	/*number weight_goal = 0.0;
-	
-	std::vector<int_pair> static_goal_edges = _elevation_grid->edges_in_cell_containing_pt(unit->_path->_goal);
-	number w_static_goal = 1e9;
-	for (auto & edge : static_goal_edges) {
-		number w = elevation_weight(edge.first, edge.second);
-		if (w < w_static_goal) {
-			w_static_goal = w;
-		}
-	}
-	weight_goal += w_static_goal;
-
-	std::vector<int_pair> units_position_goal_edges = _units_position_grid->edges_in_cell_containing_pt(unit->_path->_goal);
-	number w_units_position_goal = -1e9;
-	for (auto & edge : units_position_goal_edges) {
-		number w = units_position_weight(unit, edge.first, edge.second);
-		if (w > w_units_position_goal) {
-			w_units_position_goal = w;
-		}
-	}
-	weight_goal += w_units_position_goal;
-	weights.push_back(weight_goal);*/
 
 	std::vector<uint_pair> goal_edges = edges_in_cell_containing_pt(unit->_path->_goal);
 	number weight_goal = 1e9;
@@ -368,7 +240,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 			std::cerr << "unit id " << unit->_id << " raw_path.size() == 0\n";
 		}
 		mtx.lock();
-		unit->_status = COMPUTING_PATH_FAILED;
+		unit->set_status(COMPUTING_PATH_FAILED);
 		mtx.unlock();
 		return false;
 	}
@@ -376,8 +248,6 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	if (_use_line_of_sight) {
 		uint idx = 0;
 		uint last = 0;
-		//path->_pts.push_back(start);
-		//path->_weights.push_back(0.0); // inutilisé mais nécessaire ?
 		
 		if (_verbose) {
 			std::cout << "raw_path.size() = " << raw_path.size() << "\n\n";
@@ -444,11 +314,10 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 		}
 	}
 
-	//number r = unit->_aabb->_base_radius + 0.5 * std::max(unit_type->_size.x, unit_type->_size.y);
-	number r = unit->_aabb->_base_radius;
+	number r = unit->_bbox->_aabb->_base_radius;
 	
 	std::vector<pt_4d> segments;
-	pt_2d p1 = pt_2d(unit->_aabb->bottom_center());
+	pt_2d p1 = pt_2d(unit->_bbox->_aabb->bottom_center());
 
 	pt_2d p2 = pt_2d(unit->_path->_pts[0]);
 	segments.push_back(pt_4d(p1.x, p1.y, p2.x, p2.y));
@@ -462,28 +331,17 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	for (auto & segment : segments) {
 		pt_2d p1(segment.x, segment.y);
 		pt_2d p2(segment.z, segment.w);
-		//std::cout << glm_to_string(p1) << " ; "  << glm_to_string(p2) << "\n";
 		if (norm2(p1 - p2) < 1e-8) {
 			continue;
 		}
 
-		/*pt_2d v = glm::normalize(p2 - p1);
-		pt_2d u(v.y, -v.x);
-		std::vector<pt_2d> pts = {p1 - r * u - r * v, p1 + r * u - r * v, p2 + r * u + r * v, p2 - r * u + r * v};
-		Polygon2D * polygon = new Polygon2D(pts);
-		polygon->update_all();
-		std::vector<int_pair> path_edges = grid->polygon_intersection(polygon);
-		delete polygon;*/
-		
 		pt_2d v = glm::normalize(p2 - p1);
 		BBox_2D * bbox = new BBox_2D(2.0 * r, p1 - r * v, p2 + r * v);
-		//std::cout << *bbox << "\n";
 		unit->_path->_bboxs.push_back(bbox);
 	}
-	//std::cout << *path << "\n";
 
 	mtx.lock();
-	unit->_status = COMPUTING_PATH_DONE;
+	unit->set_status(COMPUTING_PATH_DONE);
 	mtx.unlock();
 
 	return true;

@@ -307,7 +307,7 @@ void Elevation::randomize() {
 	number alti_offset = -5.0;
 	uint n_levels = 5;
 	uint gradient_base_size = 10;
-	number max_factor = 20.0;
+	number max_factor = 40.0;
 	number redistribution_power = 0.8;
 	number fudge_factor = 1.5;
 	number mix_island = 0.4;
@@ -450,7 +450,7 @@ void Elevation::update_data() {
 
 
 void Elevation::update_data(int col_min, int col_max, int lig_min, int lig_max) {
-	std::cout << col_min << " ; " << col_max << " ; " << lig_min << " ; " << lig_max << "\n";
+	//std::cout << col_min << " ; " << col_max << " ; " << lig_min << " ; " << lig_max << "\n";
 	uint idx_tris[6] = {0, 1, 2, 0, 2, 3};
 	
 	for (int lig = lig_min; lig < lig_max; ++lig) {

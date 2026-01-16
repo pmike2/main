@@ -1,7 +1,7 @@
 {
 	"name" : "boat",
 	"size" : [1.0, 1.0, 0.5],
-	"max_velocity" : 0.002,
+	"max_velocity" : 0.02,
 	"weights" : {
 		"GROUND" : 1000.0,
 		"OBSTACLE" : 1000.0,
@@ -16,5 +16,5 @@
 		{"min" : -0.01, "max" : 0.01, "coeff" : 0.0},
 		{"min" : 0.01, "max" : 1000.0, "coeff" : 1000.0}
 	],
-	"obj" : "../data/objs/boat/12219_boat_v2_L2.obj"
+	"obj" : "../data/objs/boat/test.obj"
 }

@@ -67,7 +67,7 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 		_path_finder->add_unit_type(unit_type);
 		_unit_groups[unit_type] = new UnitGroup();
 	}
-	std::cout << *_unit_types["infantery"]->_obj_data << "\n";
+	//std::cout << *_unit_types["infantery"]->_obj_data << "\n";
 
 	_elements = new Elements(elements_dir + "/tree_species", elements_dir + "/stone_species");
 
@@ -76,10 +76,7 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 
 
 Map::~Map() {
-		std::cout << "ok1\n";
-
 	clear();
-	std::cout << "ok2\n";
 
 	delete _elements;
 	
@@ -376,7 +373,7 @@ void Map::clear_units_position_grid() {
 
 
 std::vector<uint_pair> Map::waiting_unit_positions_edges(Unit * unit, UnitType * unit_type) {
-	AABB_2D * aabb = new AABB_2D(pt_2d(unit->_aabb->_vmin - 0.5 * unit_type->_size), pt_2d(unit->_aabb->size() + unit_type->_size));
+	AABB_2D * aabb = new AABB_2D(pt_2d(unit->_bbox->_aabb->_vmin - 0.5 * unit_type->buffer_size()), pt_2d(unit->_bbox->_aabb->size() + unit_type->buffer_size()));
 	std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb);
 	delete aabb;
 
@@ -385,12 +382,12 @@ std::vector<uint_pair> Map::waiting_unit_positions_edges(Unit * unit, UnitType *
 
 
 std::vector<uint_pair> Map::moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all) {
-	AABB_2D * aabb_unit = unit->_aabb->aabb2d();
+	AABB_2D * aabb_unit = unit->_bbox->_aabb->aabb2d();
 
 	std::vector<uint_pair> edges;
 	bool intersection_happened = false;
 
-	AABB_2D * aabb_start = new AABB_2D(unit->_path->_start - 0.5 * pt_2d(unit_type->_size), pt_2d(unit->_aabb->size() + unit_type->_size));
+	AABB_2D * aabb_start = new AABB_2D(unit->_path->_start - 0.5 * pt_2d(unit_type->buffer_size()), pt_2d(unit->_bbox->_aabb->size() + unit_type->buffer_size()));
 	if (!all && !intersection_happened) {
 		if (aabb2d_intersects_aabb2d(aabb_unit, aabb_start)) {
 			intersection_happened = true;
@@ -416,7 +413,7 @@ std::vector<uint_pair> Map::moving_unit_positions_edges(Unit * unit, UnitType * 
 		delete buffered_bbox;
 	}
 
-	AABB_2D * aabb_goal = new AABB_2D(unit->_path->_goal - pt_2d(unit->_type->_size- 0.5 * unit_type->_size), pt_2d(unit->_type->_size + unit_type->_size));
+	AABB_2D * aabb_goal = new AABB_2D(unit->_path->_goal - pt_2d(unit->_type->buffer_size()- 0.5 * unit_type->buffer_size()), pt_2d(unit->_type->buffer_size() + unit_type->buffer_size()));
 	if (!all && !intersection_happened) {
 		if (aabb2d_intersects_aabb2d(aabb_unit, aabb_goal)) {
 			intersection_happened = true;
@@ -560,85 +557,50 @@ void Map::anim(time_point t) {
 
 		std::mutex mtx;
 		mtx.lock();
-		if (unit->_status == COMPUTING_PATH) {
-			continue;
-		}
+		UNIT_STATUS status = unit->_status;
 		mtx.unlock();
 
-		if (unit->_status == COMPUTING_PATH_DONE) {
+		if (status == COMPUTING_PATH) {
+			continue;
+		}
+
+		if (status == COMPUTING_PATH_DONE) {
 			_path_find_thr_active = false;
-			//unit->_thr.join();
 			_path_find_thr.join();
 			update_alti_path(unit);
-			unit->goto_next_checkpoint(t);
+			unit->set_status(MOVING);
 			remove_waiting_unit_from_position_grid(unit);
 			add_moving_unit_to_position_grid(unit);
 		}
-		else if (unit->_status == COMPUTING_PATH_FAILED) {
+		else if (status == COMPUTING_PATH_FAILED) {
 			_path_find_thr_active = false;
-			//unit->_thr.join();
 			_path_find_thr.join();
 			unit->_instructions.push({unit->_path->_goal, t + std::chrono::milliseconds(1000)});
-			unit->stop();
+			unit->set_status(WAITING);
 		}
-		else if (unit->_status == MOVING) {
-			/*AABB * aabb_next = new AABB(*unit->_aabb);
-			aabb_next->translate(unit->_velocity);
-			for (auto & unit2 : _units) {
-				if (unit2 == unit) {
-					continue;
-				}
-
-				AABB * aabb2_buffered = new AABB(*unit2->_aabb);
-				//aabb2_buffered->scale(1.0);
-				if (aabb_intersects_aabb(aabb_next, aabb2_buffered)) {
-					std::cout << "unit " << unit->_id << " : collision stop\n";
-					unit->_instructions.push({unit->_path->destination(), t + std::chrono::milliseconds(2000 + rand_int(0, 2000))});
-					unit->stop();
-					//add_unit_to_position_grids(unit);
-					break;
-				}
-			}*/
-
-			unit->anim(t);
-
-			if (unit->checkpoint_checked()) {
-				if (unit->_path->_idx_path + 1 >= unit->_path->_pts.size()) {
-					remove_moving_unit_from_position_grid(unit, true);
-					add_waiting_unit_to_position_grid(unit);
-					unit->stop();
-				}
-				else {
-					remove_moving_unit_from_position_grid(unit, false);
-					unit->_path->_idx_path++;
-					unit->goto_next_checkpoint(t);
-					/*if (unit->_path->_weights[unit->_path->_idx_path] >= MAX_UNIT_MOVING_WEIGHT) {
-						std::cout << "unit " << unit->_id << "stops : path weight\n";
-						unit->stop();
-					}*/
-				}
-			}
+		else if (status == CHECKPOINT_CHECKED) {
+			remove_moving_unit_from_position_grid(unit, false);
+			unit->_path->_idx_path++;
+			unit->set_status(MOVING);
+		}
+		else if (status == LAST_CHECKPOINT_CHECKED) {
+			remove_moving_unit_from_position_grid(unit, true);
+			add_waiting_unit_to_position_grid(unit);
+			unit->set_status(WAITING);
+		}
+		else if (status == MOVING) {
+			unit->anim(_elevation);
+			_unit_groups[unit->_type]->update_unit(unit);
 			
 			for (auto & unit2 : _units) {
 				if (unit2 == unit) {
 					continue;
 				}
 
-				if (aabb_intersects_aabb(unit->_aabb, unit2->_aabb)) {
+				if (aabb_intersects_aabb(unit->_bbox->_aabb, unit2->_bbox->_aabb)) {
 					std::cerr << "intersection unit " << unit->_id << " et " << unit2->_id << "\n";
 				}
 			}
-
-			pt_3d unit_center = unit->_aabb->bottom_center();
-			number alti = _elevation->get_alti(unit_center);
-			unit->_aabb->set_z(alti);
-
-			/*if (unit->_status == WAITING) {
-				std::cout << "unit " << unit->_id << " waiting\n";
-				remove_unit_from_position_grids(unit);
-				unit->_path->clear();
-				add_unit_to_position_grids(unit);
-			}*/
 		}
 
 		if (!_path_find_thr_active && !unit->_instructions.empty()) {
@@ -647,11 +609,8 @@ void Map::anim(time_point t) {
 				unit->_instructions.pop();
 
 				pt_2d pt = i._destination;
-				//std::cout << "unit " << unit->_id << " : goto " << glm_to_string(pt) << "\n";
 
-				unit->stop();
-				unit->_status = COMPUTING_PATH;
-				//unit->_thr= std::thread(&Map::path_find, this, unit, pt);
+				unit->set_status(COMPUTING_PATH);
 				_path_find_thr= std::thread(&Map::path_find, this, unit, pt);
 				_path_find_thr_active = true;
 			}
@@ -696,8 +655,8 @@ void Map::randomize() {
 		for (auto & tree_species : _elements->_tree_species) {
 			if (alti > tree_species.second->_alti_min && alti < tree_species.second->_alti_max) {
 				for (uint j=0; j<20; ++j) {
-					pt_3d size = rand_pt_3d(0.2, 0.5, 0.2, 0.5, 1.0, 2.0);
-					pt_2d pos = rand_gaussian(pt, pt_2d(1.0));
+					pt_3d size = rand_pt_3d(0.5, 1.0, 0.5, 1.0, 5.0, 10.0);
+					pt_2d pos = rand_gaussian(pt, pt_2d(3.0));
 					if (!_elevation->in_boundaries(pos)) {
 						continue;
 					}
@@ -718,8 +677,8 @@ void Map::randomize() {
 		for (auto & stone_species : _elements->_stone_species) {
 			if (alti > stone_species.second->_alti_min && alti < stone_species.second->_alti_max) {
 				for (uint j=0; j<20; ++j) {
-					pt_3d size = rand_pt_3d(0.7, 1.0, 0.7, 1.0, 0.5, 0.7);
-					pt_2d pos = rand_gaussian(pt, pt_2d(1.0));
+					pt_3d size = rand_pt_3d(0.5, 2.0, 0.5, 2.0, 1.0, 1.5);
+					pt_2d pos = rand_gaussian(pt, pt_2d(3.0));
 					if (!_elevation->in_boundaries(pos)) {
 						continue;
 					}
@@ -748,8 +707,8 @@ void Map::save(std::string json_path) {
 		json entry;
 		entry["type"] = unit->_type->_name;
 		json position = json::array();
-		position.push_back(unit->_aabb->center().x);
-		position.push_back(unit->_aabb->center().y);
+		position.push_back(unit->_bbox->_aabb->center().x);
+		position.push_back(unit->_bbox->_aabb->center().y);
 		//position.push_back(unit->_aabb->center().z);
 		entry["position"]= position;
 		js["units"].push_back(entry);

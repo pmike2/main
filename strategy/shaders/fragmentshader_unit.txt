@@ -18,7 +18,7 @@ out vec4 frag_color;
 
 void main(void) {
 	// ambient
-	float ambient_strength = 0.1;
+	float ambient_strength = 0.2;
 	vec3 ambient= ambient_strength * light_color;
 
 	// diffuse 
@@ -30,10 +30,12 @@ void main(void) {
 	float specular_strength = 0.5;
 	vec3 view_direction = normalize(view_position- vertex_position);
 	vec3 reflection_direction = reflect(-light_direction, vertex_normal);
-	float spec = pow(max(dot(view_direction, reflection_direction), 0.0), 32);
+	float spec = pow(max(dot(view_direction, reflection_direction), 0.0), vertex_shininess);
 	vec3 specular = specular_strength * spec * light_color;
 	
-	vec3 result= (ambient + diffuse + specular) * vec3(vertex_ambient_color);
+	//vec3 result= (ambient + diffuse + specular) * vertex_ambient_color;
+	vec3 result= ambient * vertex_ambient_color + diffuse * vertex_diffuse_color + specular * vertex_specular_color;
 	
-	frag_color= vec4(result, 1.0);
+	frag_color= vec4(result, vertex_opacity);
+	//frag_color= vec4(result, 1.0);
 }

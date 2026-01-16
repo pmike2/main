@@ -23,7 +23,6 @@ struct River {
 	std::vector<std::tuple<uint, uint, uint> > _triangles;
 	float * _data;
 	uint _n_pts;
-	uint _n_attrs_per_pts;
 	bool _valid;
 	Polygon2D * _polygon;
 };

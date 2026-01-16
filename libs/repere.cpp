@@ -15,11 +15,11 @@ Repere::Repere() {
 Repere::Repere(std::map<std::string, GLuint> progs) {
 	
 	float data_repere[]= {
-		0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
+		0.0, 0.0, 0.0               , 1.0, 0.0, 0.0, 1.0,
 		float(REPERE_AXIS), 0.0, 0.0, 1.0, 0.0, 0.0, 1.0,
-		0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0,
+		0.0, 0.0, 0.0               , 0.0, 1.0, 0.0, 1.0,
 		0.0, float(REPERE_AXIS), 0.0, 0.0, 1.0, 0.0, 1.0,
-		0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0,
+		0.0, 0.0, 0.0               , 0.0, 0.0, 1.0, 1.0,
 		0.0, 0.0, float(REPERE_AXIS), 0.0, 0.0, 1.0, 1.0
 	};
 	
@@ -66,18 +66,21 @@ Repere::Repere(std::map<std::string, GLuint> progs) {
 		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix"});
 	_contexts["repere"]->_n_pts = 6;
+	_contexts["repere"]->set_data(data_repere);
 
 	_contexts["ground"] = new DrawContext(progs["repere"], 
 		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix"});
 	_contexts["ground"]->_n_pts = 6;
+	_contexts["ground"]->set_data(data_ground);
 
 	_contexts["box"] = new DrawContext(progs["repere"], 
 		std::vector<std::string>{"position_in:3", "color_in:4"},
 		std::vector<std::string>{"world2clip_matrix"});
 	_contexts["box"]->_n_pts = 24;
+	_contexts["box"]->set_data(data_box);
 	
-	glBindBuffer(GL_ARRAY_BUFFER, _contexts["repere"]->_buffer);
+	/*glBindBuffer(GL_ARRAY_BUFFER, _contexts["repere"]->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(data_repere), data_repere, _contexts["repere"]->_usage);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -87,7 +90,7 @@ Repere::Repere(std::map<std::string, GLuint> progs) {
 	
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["box"]->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(data_box), data_box, _contexts["box"]->_usage);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);*/
 }
 
 
@@ -241,9 +244,10 @@ void RectSelect::update_draw() {
 		float(_gl_origin.x), float(_gl_origin.y), float(_color.x), float(_color.y), float(_color.z),
 	};
 
-	glBindBuffer(GL_ARRAY_BUFFER, _context->_buffer);
+	_context->set_data(data_selection);
+	/*glBindBuffer(GL_ARRAY_BUFFER, _context->_buffer);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(data_selection), data_selection, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);*/
 }
 
 

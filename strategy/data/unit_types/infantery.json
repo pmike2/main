@@ -1,7 +1,7 @@
 {
 	"name" : "infantery",
 	"size" : [0.1, 0.1, 0.2],
-	"max_velocity" : 0.005,
+	"max_velocity" : 0.03,
 	"weights" : {
 		"GROUND" : 0.0,
 		"OBSTACLE" : 1000.0,
