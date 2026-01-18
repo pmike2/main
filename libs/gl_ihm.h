@@ -23,6 +23,7 @@ const number TEXTURE_SIZE = 512;
 
 struct GLIHMElement {
 	GLIHMElement();
+	GLIHMElement(pt_2d position, pt_2d size);
 	~GLIHMElement();
 
 
@@ -63,12 +64,15 @@ struct GLIHMRadio : public GLIHMElement {
 struct GLIHMGroup {
 	GLIHMGroup();
 	~GLIHMGroup();
+	pt_2d next_element_position();
 
 
 	std::string _name;
 	std::map<std::string, GLIHMElement *> _elements;
 	GL_IHM_GROUP_ORIENTATION _orientation;
 	number _margin;
+	pt_2d _position;
+	pt_2d _element_size;
 };
 
 

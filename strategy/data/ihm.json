@@ -4,7 +4,7 @@
 		{
 			"name" : "units",
 			"position" : [10, 10],
-			"icon_size" : [20, 20],
+			"element_size" : [20, 20],
 			"margin" : 5,
 			"orientation" : "vertical",
 			"buttons" : [
@@ -17,7 +17,7 @@
 		{
 			"name" : "edit",
 			"position" : [100, 10],
-			"icon_size" : [20, 20],
+			"element_size" : [20, 20],
 			"margin" : 5,
 			"orientation" : "horizontal",
 			"buttons" : [
@@ -28,7 +28,7 @@
 		{
 			"name" : "visu",
 			"position" : [100, 10],
-			"icon_size" : [20, 20],
+			"element_size" : [20, 20],
 			"margin" : 5,
 			"orientation" : "horizontal",
 			"checkboxes" : [
@@ -40,7 +40,7 @@
 		{
 			"name" : "grid_type",
 			"position" : [100, 10],
-			"icon_size" : [20, 20],
+			"element_size" : [20, 20],
 			"margin" : 5,
 			"orientation" : "horizontal",
 			"radios" : [
@@ -52,7 +52,7 @@
 		{
 			"name" : "grid_unit_type",
 			"position" : [100, 10],
-			"icon_size" : [20, 20],
+			"element_size" : [20, 20],
 			"margin" : 5,
 			"orientation" : "horizontal",
 			"radios" : [
