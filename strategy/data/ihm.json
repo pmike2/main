@@ -1,0 +1,66 @@
+{
+	"textures_root" : "../data/textures_ihm",
+	"groups" : [
+		{
+			"name" : "units",
+			"position" : [10, 10],
+			"icon_size" : [20, 20],
+			"margin" : 5,
+			"orientation" : "vertical",
+			"buttons" : [
+				{"name" : "infantery", "texture" : "infantery.png"},
+				{"name" : "tank", "texture" : "tank.png"},
+				{"name" : "helicopter", "texture" : "helicopter.png"},
+				{"name" : "boat", "texture" : "boat.png"}
+			]
+		},
+		{
+			"name" : "edit",
+			"position" : [100, 10],
+			"icon_size" : [20, 20],
+			"margin" : 5,
+			"orientation" : "horizontal",
+			"buttons" : [
+				{"name" : "randomize", "texture" : "randomize.png"},
+				{"name" : "clear", "texture" : "clear.png"}
+			]
+		},
+		{
+			"name" : "visu",
+			"position" : [100, 10],
+			"icon_size" : [20, 20],
+			"margin" : 5,
+			"orientation" : "horizontal",
+			"checkboxes" : [
+				{"name" : "elevation", "texture" : "elevation.png"},
+				{"name" : "elements", "texture" : "elements.png"},
+				{"name" : "grid", "texture" : "grid.png"}
+			]
+		},
+		{
+			"name" : "grid_type",
+			"position" : [100, 10],
+			"icon_size" : [20, 20],
+			"margin" : 5,
+			"orientation" : "horizontal",
+			"radios" : [
+				{"name" : "terrain", "texture" : "terrain.png"},
+				{"name" : "elevation", "texture" : "elevation.png"},
+				{"name" : "units_position", "texture" : "units_position.png"}
+			]
+		},
+		{
+			"name" : "grid_unit_type",
+			"position" : [100, 10],
+			"icon_size" : [20, 20],
+			"margin" : 5,
+			"orientation" : "horizontal",
+			"radios" : [
+				{"name" : "infantery", "texture" : "infantery.png"},
+				{"name" : "tank", "texture" : "tank.png"},
+				{"name" : "helicopter", "texture" : "helicopter.png"},
+				{"name" : "boat", "texture" : "boat.png"}
+			]
+		},
+	]
+}
