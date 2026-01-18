@@ -3,8 +3,8 @@
 	"groups" : [
 		{
 			"name" : "units",
-			"position" : [10, 10],
-			"element_size" : [20, 20],
+			"position" : [-4.0, -4.0],
+			"element_size" : [1.0, 1.0],
 			"margin" : 5,
 			"orientation" : "vertical",
 			"buttons" : [
@@ -16,8 +16,8 @@
 		},
 		{
 			"name" : "edit",
-			"position" : [100, 10],
-			"element_size" : [20, 20],
+			"position" : [-4.0, -4.0],
+			"element_size" : [1.0, 1.0],
 			"margin" : 5,
 			"orientation" : "horizontal",
 			"buttons" : [
@@ -27,8 +27,8 @@
 		},
 		{
 			"name" : "visu",
-			"position" : [100, 10],
-			"element_size" : [20, 20],
+			"position" : [-3.0, -4.0],
+			"element_size" : [1.0, 1.0],
 			"margin" : 5,
 			"orientation" : "horizontal",
 			"checkboxes" : [
@@ -39,27 +39,27 @@
 		},
 		{
 			"name" : "grid_type",
-			"position" : [100, 10],
-			"element_size" : [20, 20],
+			"position" : [-2.0, -4.0],
+			"element_size" : [1.0, 1.0],
 			"margin" : 5,
 			"orientation" : "horizontal",
 			"radios" : [
-				{"name" : "terrain", "texture" : "terrain.png"},
-				{"name" : "elevation", "texture" : "elevation.png"},
-				{"name" : "units_position", "texture" : "units_position.png"}
+				{"name" : "terrain", "texture" : "grid_terrain.png"},
+				{"name" : "elevation", "texture" : "grid_elevation.png"},
+				{"name" : "units_position", "texture" : "grid_units_position.png"}
 			]
 		},
 		{
 			"name" : "grid_unit_type",
-			"position" : [100, 10],
-			"element_size" : [20, 20],
+			"position" : [-4.0, -4.0],
+			"element_size" : [1.0, 1.0],
 			"margin" : 5,
 			"orientation" : "horizontal",
 			"radios" : [
-				{"name" : "infantery", "texture" : "infantery.png"},
-				{"name" : "tank", "texture" : "tank.png"},
-				{"name" : "helicopter", "texture" : "helicopter.png"},
-				{"name" : "boat", "texture" : "boat.png"}
+				{"name" : "infantery", "texture" : "grid_infantery.png"},
+				{"name" : "tank", "texture" : "grid_tank.png"},
+				{"name" : "helicopter", "texture" : "grid_helicopter.png"},
+				{"name" : "boat", "texture" : "grid_boat.png"}
 			]
 		},
 	]

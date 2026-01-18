@@ -172,6 +172,7 @@ void init() {
 	progs["lake"]= create_prog("../shaders/vertexshader_lake.txt", "../shaders/fragmentshader_lake.txt");
 	progs["river"]= create_prog("../shaders/vertexshader_river.txt", "../shaders/fragmentshader_river.txt");
 	progs["unit"]= create_prog("../shaders/vertexshader_unit.txt", "../shaders/fragmentshader_unit.txt");
+	progs["gl_ihm"]= create_prog("../../shaders/gl_ihm.txt", "../../shaders/gl_ihm.txt");
 
 	check_gl_error();
 

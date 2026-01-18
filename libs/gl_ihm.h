@@ -6,11 +6,14 @@
 #include <iostream>
 #include <string>
 
+#include <OpenGL/gl3.h>
+
 #include "json.hpp"
 
 #include "bbox_2d.h"
 #include "typedefs.h"
 #include "input_state.h"
+#include "gl_utils.h"
 
 
 using json = nlohmann::json;
@@ -20,6 +23,9 @@ enum GL_IHM_GROUP_ORIENTATION {HORINZONTAL, VERTICAL};
 
 
 const number TEXTURE_SIZE = 512;
+const float Z_NEAR = 0.0f;
+const float Z_FAR = 1000.0f;
+const float Z_IHM = 100.0f;
 
 
 struct GLIHMElement {
@@ -33,6 +39,7 @@ struct GLIHMElement {
 	std::string _texture_path;
 	AABB_2D * _aabb;
 	uint _texture_layer;
+	number _alpha;
 };
 
 
@@ -80,7 +87,7 @@ struct GLIHMGroup {
 
 struct GLIHM {
 	GLIHM();
-	GLIHM(std::map<std::string, GLuint> progs, std::string json_path);
+	GLIHM(std::map<std::string, GLuint> progs, ScreenGL * screengl, std::string json_path);
 	~GLIHM();
 	void update();
 	void draw();
@@ -93,6 +100,7 @@ struct GLIHM {
 	std::map<std::string, DrawContext *> _contexts;
 	uint _texture_idx;
 	std::string _texture_root;
+	glm::mat4 _camera2clip;
 };
 
 

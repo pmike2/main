@@ -9,7 +9,7 @@ GLIHMElement::GLIHMElement() {
 }
 
 
-GLIHMElement::GLIHMElement(pt_2d position, pt_2d size) {
+GLIHMElement::GLIHMElement(pt_2d position, pt_2d size) : _alpha(1.0) {
 	_aabb = new AABB_2D(position, size);
 }
 
@@ -82,7 +82,28 @@ GLIHMGroup::~GLIHMGroup() {
 
 
 pt_2d GLIHMGroup::next_element_position() {
+	number n = _elements.size();
+	
+	pt_2d last_pos;
+	number margin;
+	if (n == 0) {
+		last_pos = _position;
+		margin = 0.0;
+	}
+	else {
+		last_pos = _elements[n - 1]->_aabb->_pos;
+		margin = _margin;
+	}
 
+	pt_2d next_pos;
+	if (_orientation == HORINZONTAL) {
+		next_pos = last_pos + pt_2d(margin + _element_size.x, 0.0);
+	}
+	else if (_orientation == VERTICAL) {
+		next_pos = last_pos + pt_2d(0.0, margin + _element_size.y);
+	}
+
+	return next_pos;
 }
 
 
@@ -92,10 +113,10 @@ GLIHM::GLIHM() {
 }
 
 
-GLIHM::GLIHM(std::map<std::string, GLuint> progs, std::string json_path) {
-		_contexts["icon"]= new DrawContext(progs["icon"], 
-		std::vector<std::string>{"position_in:2", "tex_coord_in:2", "current_layer_in:1"},
-		std::vector<std::string>{"camera2clip_matrix", "texture_array"},
+GLIHM::GLIHM(std::map<std::string, GLuint> progs, ScreenGL * screengl, std::string json_path) {
+		_contexts["gl_ihm"]= new DrawContext(progs["gl_ihm"], 
+		std::vector<std::string>{"position_in:2", "tex_coord_in:2", "alpha_in:1", "current_layer_in:1"},
+		std::vector<std::string>{"camera2clip_matrix", "texture_array", "z"},
 		GL_STATIC_DRAW, true);
 
 	std::ifstream ifs(json_path);
@@ -154,6 +175,8 @@ GLIHM::GLIHM(std::map<std::string, GLuint> progs, std::string json_path) {
 	}
 	glGenTextures(1, &_texture_idx);
 	fill_texture_array(0, _texture_idx, TEXTURE_SIZE, pngs);
+
+	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
 }
 
 
@@ -166,7 +189,7 @@ GLIHM::~GLIHM() {
 
 
 void GLIHM::update() {
-	DrawContext * context= _contexts["icon"];
+	DrawContext * context= _contexts["gl_ihm"];
 
 	context->_n_pts = 0;
 	for (auto & group : _groups) {
@@ -177,13 +200,24 @@ void GLIHM::update() {
 
 	float * data = new float[context->data_size()];
 	float * ptr = data;
+	const uint idxs[6] = {0, 1, 2, 0, 2, 3};
 	for (auto & group : _groups) {
 		for (auto & element : group->_elements) {
-			ptr[0] = element->_aabb->_pos.x;
-			ptr[1] = element->_aabb->_pos.y;
-			ptr[2] = 0.0;
-			ptr[3] = 0.0;
-			ptr[4] = float(element->_texture_layer);
+			pt_4d l_pts[4] = {
+				pt_4d(element->_aabb->_pos.x, element->_aabb->_pos.y, 0.0, 0.0),
+				pt_4d(element->_aabb->_pos.x + element->_aabb->_size.x, element->_aabb->_pos.y, 1.0, 0.0),
+				pt_4d(element->_aabb->_pos.x + element->_aabb->_size.x, element->_aabb->_pos.y + element->_aabb->_size.y, 1.0, 1.0),
+				pt_4d(element->_aabb->_pos.x, element->_aabb->_pos.y + element->_aabb->_size.y, 0.0, 1.0)
+			};
+			for (uint i=0; i<6; ++i) {
+				ptr[0] = float(l_pts[idxs[i]][0]);
+				ptr[1] = float(l_pts[idxs[i]][1]);
+				ptr[2] = float(l_pts[idxs[i]][2]);
+				ptr[3] = float(l_pts[idxs[i]][3]);
+				ptr[4] = float(element->_alpha);
+				ptr[5] = float(element->_texture_layer);
+				ptr += 6;
+			}
 		}
 	}
 	context->set_data(data);
@@ -192,13 +226,17 @@ void GLIHM::update() {
 
 
 void GLIHM::draw() {
-	DrawContext * context= _contexts["icon"];
+	DrawContext * context= _contexts["gl_ihm"];
 	if (!context->_active) {
 		return;
 	}
 
 	context->activate();
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_idx);
+	glActiveTexture(0);
 	glUniform1i(context->_locs_uniform["texture_array"], 0);
+	glUniform1f(context->_locs_uniform["z"], Z_IHM);
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 	context->deactivate();

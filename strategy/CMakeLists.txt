@@ -33,6 +33,7 @@ add_library(lib_graph STATIC ../libs/graph.cpp ../libs/graph.h)
 add_library(lib_triangulation STATIC ../libs/triangulation.cpp ../libs/triangulation.h)
 add_library(lib_convex_hull STATIC ../libs/convex_hull.cpp ../libs/convex_hull.h)
 add_library(lib_obj_parser STATIC ../libs/obj_parser.cpp ../libs/obj_parser.h)
+add_library(lib_gl_ihm STATIC ../libs/gl_ihm.cpp ../libs/gl_ihm.h)
 
 add_library(lib_const STATIC ./srcs/const.cpp ./srcs/const.h)
 add_library(lib_elements STATIC ./srcs/elements.cpp ./srcs/elements.h)
@@ -48,7 +49,7 @@ add_library(lib_unit STATIC ./srcs/unit.cpp ./srcs/unit.h)
 add_executable(main ./srcs/main.cpp)
 
 set(EXT_LIBS ${GDAL_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
-set(GENERIC_LIBS lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_repere lib_gl_utils lib_input_state lib_bbox lib_font lib_convex_hull lib_obj_parser)
+set(GENERIC_LIBS lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_repere lib_gl_utils lib_input_state lib_bbox lib_font lib_convex_hull lib_obj_parser lib_gl_ihm)
 set(SPECIFIC_LIBS lib_const lib_elements lib_elevation lib_lake lib_map lib_path_finder lib_river lib_strategy lib_unit_type lib_unit)
 
 target_link_libraries(main PUBLIC ${EXT_LIBS})

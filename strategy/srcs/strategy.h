@@ -12,6 +12,7 @@
 #include "font.h"
 #include "typedefs.h"
 #include "repere.h"
+#include "gl_ihm.h"
 
 #include "map.h"
 
@@ -106,6 +107,8 @@ public:
 
 	number _angle;
 	//number _wave;
+
+	GLIHM * _ihm;
 };
 
 #endif

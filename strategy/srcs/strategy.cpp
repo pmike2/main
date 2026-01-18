@@ -65,6 +65,8 @@ Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system
 
 	_view_system->_rect_select->_z = -1.0; // pour que l'affichage du rectangle de sélection se fassent par dessus le reste
 
+	_ihm = new GLIHM("../data/ihm.json");
+
 	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-100.0, -100.0), pt_2d(200.0, 200.0), pt_2d(2.0), pt_2d(0.5), t);
 	//_map = new Map("../data/unit_types", pt_2d(0.0, 0.0), pt_2d(10.0, 10.0), pt_2d(2.0), pt_2d(2.0), t);
 	//std::cout << *_map << "\n";
@@ -236,10 +238,14 @@ void Strategy::draw() {
 	
 	_font->draw_3d(_view_system->_world2clip);
 	_font->draw();
+
+	_ihm->draw();
 }
 
 
 void Strategy::anim(time_point t, InputState * input_state) {
+	_ihm->anim();
+
 	//pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 	pt_3d pt = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 
@@ -875,6 +881,8 @@ void Strategy::update_unit_matrices(UnitType * unit_type) {
 
 
 void Strategy::update_all() {
+	_ihm->update();
+
 	update_grid();
 	update_unit_linear();
 	update_path();
@@ -928,6 +936,10 @@ void Strategy::update_text(InputState * input_state) {
 
 
 bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
+	if (_ihm->mouse_button_down(input_state, t)) {
+		return;
+	}
+
 	pt_3d pt_3d = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 	pt_2d pt(pt_3d.x, pt_3d.y);
 
@@ -1025,6 +1037,10 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 
 
 bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
+	if (_ihm->key_down(input_state, key, t)) {
+		return;
+	}
+
 	if (key == SDLK_a) {
 		_contexts["debug"]->_active = !_contexts["debug"]->_active;
 		_contexts["unit"]->_active = !_contexts["unit"]->_active;
