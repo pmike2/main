@@ -213,6 +213,7 @@ void Strategy::draw_unit(UnitType * unit_type) {
 	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
 	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
 	glDrawArraysInstanced(GL_TRIANGLES, 0, context->_n_pts, _map->_unit_groups[unit_type]->_units.size());
+	context->deactivate();
 }
 
 

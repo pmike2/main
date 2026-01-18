@@ -30,6 +30,11 @@ GLIHMButton::~GLIHMButton() {
 }
 
 
+void GLIHMButton::click() {
+	std::cout << "GLIHMButton " << _name << " clicked\n";
+}
+
+
 // GLIHMCheckBox ------------------------------------------------------------------
 GLIHMCheckBox::GLIHMCheckBox() {
 
@@ -41,6 +46,11 @@ GLIHMCheckBox::~GLIHMCheckBox() {
 }
 
 
+void GLIHMCheckBox::click() {
+	std::cout << "GLIHMCheckBox " << _name << " clicked\n";
+}
+
+
 // GLIHMRadio --------------------------------------------------------------------
 GLIHMRadio::GLIHMRadio() {
 
@@ -49,6 +59,11 @@ GLIHMRadio::GLIHMRadio() {
 
 GLIHMRadio::~GLIHMRadio() {
 
+}
+
+
+void GLIHMRadio::click() {
+	std::cout << "GLIHMRadio " << _name << " clicked\n";
 }
 
 
@@ -79,7 +94,7 @@ GLIHM::GLIHM() {
 
 GLIHM::GLIHM(std::map<std::string, GLuint> progs, std::string json_path) {
 		_contexts["icon"]= new DrawContext(progs["icon"], 
-		std::vector<std::string>{"position_in:3", "tex_coord_in:2", "current_layer_in:1"},
+		std::vector<std::string>{"position_in:2", "tex_coord_in:2", "current_layer_in:1"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"},
 		GL_STATIC_DRAW, true);
 
@@ -151,15 +166,64 @@ GLIHM::~GLIHM() {
 
 
 void GLIHM::update() {
+	DrawContext * context= _contexts["icon"];
 
+	context->_n_pts = 0;
+	for (auto & group : _groups) {
+		for (auto & element : group->_elements) {
+			context->_n_pts += 6;
+		}
+	}
+
+	float * data = new float[context->data_size()];
+	float * ptr = data;
+	for (auto & group : _groups) {
+		for (auto & element : group->_elements) {
+			ptr[0] = element->_aabb->_pos.x;
+			ptr[1] = element->_aabb->_pos.y;
+			ptr[2] = 0.0;
+			ptr[3] = 0.0;
+			ptr[4] = float(element->_texture_layer);
+		}
+	}
+	context->set_data(data);
+	delete[] data;
 }
 
 
 void GLIHM::draw() {
+	DrawContext * context= _contexts["icon"];
+	if (!context->_active) {
+		return;
+	}
 
+	context->activate();
+	glUniform1i(context->_locs_uniform["texture_array"], 0);
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->deactivate();
 }
 
 
 void GLIHM::anim() {
 
+}
+
+
+bool GLIHM::mouse_button_down(InputState * input_state, time_point t) {
+	pt_2d pt = _view_system->_screengl->screen2gl(input_state->_x, input_state->_y);
+	for (auto & group : _groups) {
+		for (auto & element : group->_elements) {
+			if (point_in_aabb2d(pt, element->_aabb)) {
+				element->click();
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+
+bool GLIHM::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
+	return false;
 }

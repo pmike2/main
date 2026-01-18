@@ -10,6 +10,7 @@
 
 #include "bbox_2d.h"
 #include "typedefs.h"
+#include "input_state.h"
 
 
 using json = nlohmann::json;
@@ -25,6 +26,7 @@ struct GLIHMElement {
 	GLIHMElement();
 	GLIHMElement(pt_2d position, pt_2d size);
 	~GLIHMElement();
+	virtual void click() = 0;
 
 
 	std::string _name;
@@ -83,6 +85,8 @@ struct GLIHM {
 	void update();
 	void draw();
 	void anim();
+	bool mouse_button_down(InputState * input_state, time_point t);
+	bool key_down(InputState * input_state, SDL_Keycode key, time_point t);
 
 
 	std::map<std::string, GLIHMGroup *> _groups;
