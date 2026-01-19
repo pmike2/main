@@ -73,12 +73,8 @@ public:
 	GLuint _vao;
 	std::map<std::string, GLint> _locs_uniform;
 	std::vector<DrawContextBuffer> _buffers;
-	//GLuint _buffer;
-	//GLuint _buffer_instanced;
 	uint _n_pts;
 	uint _n_instances;
-	//uint _n_attrs_per_pts;
-	//uint _n_attrs_instanced_per_pts;
 	bool _active;
 };
 

@@ -13,7 +13,8 @@ Strategy::Strategy() {
 
 
 Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t) :
-	_mode(FREE), _view_system(view_system), _progs(progs), _angle(0.0)
+	_mode(PLAY), _view_system(view_system), _current_unit_type_name("infantery"), _visible_grid_unit_type("infantery"), 
+	_visible_grid_type("terrain"), _current_element_name("tree"), _current_elevation_mode("elevation_plus"), _angle(0.0)
 {
 	_contexts["debug"]= new DrawContext(progs["repere"], 
 		std::vector<std::string>{"position_in:3", "color_in:4"},
@@ -65,20 +66,17 @@ Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system
 
 	_view_system->_rect_select->_z = -1.0; // pour que l'affichage du rectangle de sélection se fassent par dessus le reste
 
-	_ihm = new GLIHM("../data/ihm.json");
+	_ihm = new GLIHM(progs, _view_system->_screengl, "../data/ihm.json");
 
 	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-100.0, -100.0), pt_2d(200.0, 200.0), pt_2d(2.0), pt_2d(0.5), t);
 	//_map = new Map("../data/unit_types", pt_2d(0.0, 0.0), pt_2d(10.0, 10.0), pt_2d(2.0), pt_2d(2.0), t);
 	//std::cout << *_map << "\n";
 
 	for (auto & unit_type : _map->_unit_types) {
-		
 		_contexts[unit_type.first]= new DrawContext(progs["unit"], 
 			std::vector<std::string>{"position_in:3", "normal_in:3", "ambient_in:3", "diffuse_in:3", "specular_in:3", "shininess_in:1", "opacity_in:1", "model2world_matrix:16:new_instanced_buffer"},
 			std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"},
 			GL_DYNAMIC_DRAW, true);
-
-		//std::cout << *_contexts[unit_type.first] << "\n";
 	}
 
 	_map->randomize();
@@ -88,10 +86,9 @@ Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system
 		_map->add_unit("helicopter", pos, t);
 	}*/
 
-	_visible_grid_unit_type = "infantery";
-	_visible_grid_type = "terrain";
-
 	update_all();
+
+	set_ihm();
 }
 
 
@@ -102,6 +99,65 @@ Strategy::~Strategy() {
 	}
 	_contexts.clear();
 	delete _font;
+}
+
+
+void Strategy::set_ihm() {
+	_ihm->get_element("mode", "play")->set_callback([this](){_mode = PLAY;});
+	_ihm->get_element("mode", "add_unit")->set_callback([this](){_mode = ADD_UNIT;});
+	_ihm->get_element("mode", "add_element")->set_callback([this](){_mode = ADD_ELEMENT;});
+	_ihm->get_element("mode", "edit_elevation")->set_callback([this](){_mode = EDIT_ELEVATION;});
+	
+	for (auto & unit_type_name : std::vector<std::string>{"infantery", "tank", "helicopter", "boat"}) {
+		_ihm->get_element("units", unit_type_name)->set_callback([this, unit_type_name](){_current_unit_type_name = unit_type_name;});
+	}
+	
+	for (auto & element_name : std::vector<std::string>{"tree", "stone", "river", "lake"}) {
+		_ihm->get_element("elements", element_name)->set_callback([this, element_name](){_current_element_name = element_name;});
+	}
+	for (auto & elevation_mode : std::vector<std::string>{"elevation_plus", "elevation_minus"}) {
+		_ihm->get_element("elevation", elevation_mode)->set_callback([this, elevation_mode](){_current_elevation_mode = elevation_mode;});
+	}
+
+	_ihm->get_element("global_edit", "randomize")->set_callback([this](){
+		_map->randomize();
+		update_all();
+	});
+	_ihm->get_element("global_edit", "clear")->set_callback([this](){
+		_map->clear();
+		update_all();
+	});
+	_ihm->get_element("global_edit", "load")->set_callback([this](){
+		_map->load("../data/map.json");
+	});
+	_ihm->get_element("global_edit", "save")->set_callback([this](){
+		_map->save("../data/map.json");
+	});
+	
+	for (auto & visu_type : std::vector<std::string>{"elevation", "elements", "grid"}) {
+		_ihm->get_element("visu", visu_type)->set_callback(
+			[this, visu_type](){_contexts[visu_type]->_active = true;}, 
+			[this, visu_type](){_contexts[visu_type]->_active = false;}
+		);
+	}
+	
+	for (auto & grid_type : std::vector<std::string>{"elevation", "terrain", "units_position"}) {
+		_ihm->get_element("grid_type", grid_type)->set_callback([this, grid_type](){
+			_visible_grid_type = grid_type;
+			update_grid();
+		});
+	}
+	
+	for (auto & unit_type_name : std::vector<std::string>{"infantery", "tank", "helicopter", "boat"}) {
+		_ihm->get_element("grid_unit_type", unit_type_name)->set_callback([this, unit_type_name](){
+			_visible_grid_unit_type = unit_type_name;
+			update_grid();
+		});
+	}
+
+	_ihm->all_callbacks();
+
+	std::cout << *_ihm << "\n";
 }
 
 
@@ -280,21 +336,14 @@ void Strategy::anim(time_point t, InputState * input_state) {
 		update_unit_matrices(unit_type.second);
 	}
 
-	/*_wave += 0.01;
-	if (_wave > 1.0) {
-		_wave -= 1.0;
-	}*/
-	//auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
-	//_last_anim_t =t;
 	_angle += 0.01;
 	if (_angle > 2.0 * M_PI) {
 		_angle -= 2.0 * M_PI;
 	}
-	//_wave = cos(_angle);
 
 	update_lake();
 
-	if (_mode == EDIT_ALTI && input_state->_left_mouse) {
+	if (_mode == EDIT_ELEVATION && input_state->_left_mouse) {
 		const number alti_aabb_size = 10.0;
 		const number alti_inc_max = 1.0;
 		AABB_2D * aabb = new AABB_2D(pt_2d(pt) - pt_2d(alti_aabb_size * 0.5), pt_2d(alti_aabb_size));
@@ -309,10 +358,10 @@ void Strategy::anim(time_point t, InputState * input_state) {
 			}
 			number alti_inc = alti_inc_max * (1.0 - dist * dist);
 
-			if (input_state->_keys[SDLK_LSHIFT]) {
+			if (_current_elevation_mode == "elevation_minus") {
 				_map->_elevation->set_alti(id, _map->_elevation->get_alti(id) - alti_inc);
 			}
-			else {
+			else if (_current_elevation_mode == "elevation_plus") {
 				_map->_elevation->set_alti(id, _map->_elevation->get_alti(id) + alti_inc);
 			}
 		}
@@ -576,10 +625,6 @@ void Strategy::update_unit_linear() {
 		}
 	}
 
-	/*for (uint i=0; i<context->data_size(); ++i) {
-		std::cout << data[i] << " ; ";
-	}*/
-
 	context->set_data(data);
 }
 
@@ -731,14 +776,6 @@ void Strategy::update_debug() {
 		ptr += 14;
 	}
 
-	/*for (int i=0; i<context->_n_pts* context->_n_attrs_per_pts; ++i) {
-		if (i % 7 == 0) {
-			std::cout << "\n\n";
-		}
-		std::cout << data[i] << " ; ";
-	}
-	std::cout << "\n";*/
-
 	context->set_data(data);
 	delete[] data;
 }
@@ -881,7 +918,7 @@ void Strategy::update_unit_matrices(UnitType * unit_type) {
 
 
 void Strategy::update_all() {
-	_ihm->update();
+	//_ihm->update();
 
 	update_grid();
 	update_unit_linear();
@@ -937,61 +974,43 @@ void Strategy::update_text(InputState * input_state) {
 
 bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 	if (_ihm->mouse_button_down(input_state, t)) {
-		return;
+		return true;
 	}
 
 	pt_3d pt_3d = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 	pt_2d pt(pt_3d.x, pt_3d.y);
 
-	if (_mode == FREE) {
-		if (input_state->_left_mouse) {
-			if (input_state->_keys[SDLK_i]) {
-				_map->add_unit("infantery", pt, t);
-				update_unit_matrices(_map->_unit_types["infantery"]);
-				//update_grid();
-				return true;
-			}
-			else if (input_state->_keys[SDLK_t]) {
-				_map->add_unit("tank", pt, t);
-				update_unit_matrices(_map->_unit_types["tank"]);
-				//update_grid();
-				return true;
-			}
-			else if (input_state->_keys[SDLK_b]) {
-				_map->add_unit("boat", pt, t);
-				update_unit_matrices(_map->_unit_types["boat"]);
-				//update_grid();
-				return true;
-			}
-			else if (input_state->_keys[SDLK_h]) {
-				_map->add_unit("helicopter", pt, t);
-				update_unit_matrices(_map->_unit_types["helicopter"]);
-				//update_grid();
-				return true;
-			}
-			else if (input_state->_keys[SDLK_p]) {
-				_map->selected_units_goto(pt, t);
-				return true;
-			}
-			else if (input_state->_keys[SDLK_w]) {
-				if (input_state->_keys[SDLK_LSHIFT]) {
-					_map->add_river(pt);
-					update_debug();
-					update_river();
-					update_elevation();
-					update_grid();
-				}
-				else {
-					_map->add_lake(pt);
-					update_debug();
-					update_lake();
-					update_elevation();
-					update_grid();
-				}
-				return true;
-			}
-		}
+	if (_mode == ADD_UNIT && input_state->_left_mouse) {
+		_map->add_unit(_current_unit_type_name, pt);
+		update_unit_matrices(_map->_unit_types[_current_unit_type_name]);
+		return true;
 	}
+	else if (_mode == ADD_ELEMENT && input_state->_left_mouse) {
+		// TODO ; utiliser _current_element_name
+		return true;
+	}
+	else if (_mode == PLAY && input_state->_left_mouse) {
+		_map->selected_units_goto(pt, t);
+		return true;
+	}
+	/*else if (input_state->_keys[SDLK_w]) {
+			if (input_state->_keys[SDLK_LSHIFT]) {
+				_map->add_river(pt);
+				update_debug();
+				update_river();
+				update_elevation();
+				update_grid();
+			}
+			else {
+				_map->add_lake(pt);
+				update_debug();
+				update_lake();
+				update_elevation();
+				update_grid();
+			}
+			return true;
+		}
+	}*/
 	return false;
 }
 
@@ -1020,34 +1039,22 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 
 
 bool Strategy::mouse_motion(InputState * input_state, time_point t) {
-	/*if ((_mode == ADDING_SOLID_OBSTACLE || _mode == ADDING_WATER_OBSTACLE) && input_state->_left_mouse) {
-		auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_added_pt_t).count();
-		if (dt> NEW_PT_IN_POLYGON_MS) {
-			pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
-			_obstacle_pts.push_back(pt);
-		}
-		return true;
-	}
-	else*/ if (_mode == EDIT_ALTI) {
-		// le code est dans anim
-		return true;
-	}
 	return false;
 }
 
 
 bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
 	if (_ihm->key_down(input_state, key, t)) {
-		return;
+		return true;
 	}
 
-	if (key == SDLK_a) {
+	/*if (key == SDLK_a) {
 		_contexts["debug"]->_active = !_contexts["debug"]->_active;
 		_contexts["unit"]->_active = !_contexts["unit"]->_active;
 		_contexts["path"]->_active = !_contexts["path"]->_active;
 	}
 	else if (key == SDLK_z) {
-		_mode = EDIT_ALTI;
+		_mode = EDIT_ELEVATION;
 		return true;
 	}
 	else if (key == SDLK_c) {
@@ -1087,28 +1094,8 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 		}
 		return true;
 	}
-	else if (key == SDLK_v) {
-		for (auto & context_name : std::vector<std::string> {"elevation", "lake", "river", "elements"}) {
-			_contexts[context_name]->_active = !_contexts[context_name]->_active;
-		}
-		return true;
-	}
-	else if (key == SDLK_r) {
-		_map->randomize();
-		update_all();
-		return true;
-	}
 	else if (key == SDLK_m) {
 		_map->_path_finder->_use_line_of_sight = !_map->_path_finder->_use_line_of_sight;
-		return true;
-	}
-	else if (key == SDLK_l) {
-		_map->load("../data/map.json", t);
-		update_all();
-		return true;
-	}
-	else if (key == SDLK_s) {
-		_map->save("../data/map.json");
 		return true;
 	}
 	else if (key == SDLK_q) {
@@ -1116,56 +1103,13 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 		return true;
 	}
 	else if (key == SDLK_SPACE) {
-		/*for (auto & context_name : std::vector<std::string> {"elevation", "elements", "river", "lake"}) {
-			if (_contexts[context_name]->_prog == _progs["elevation_flat"]) {
-				_contexts[context_name]->_prog = _progs["elevation_smooth"];
-			}
-			else {
-				_contexts[context_name]->_prog = _progs["elevation_flat"];
-			}
-		}*/
-
-		/*AABB_2D * aabb = new AABB_2D(pt_2d(0.0, 0.0), pt_2d(10.0, 10.0));
-		std::vector<uint> ids = _map->_elevation->vertices_in_aabb(aabb);
-		for (auto id : ids) {
-			_map->_elevation->set_alti(id, _map->_elevation->get_alti(id) + 0.5);
-			//_map->_elevation->set_alti(id, 0.0);
-		}
-		_map->_elevation->update_normals(aabb);
-		_map->_elevation->update_data(aabb);
-		update_elevation();
-		delete aabb;*/
-
-		/*ObjData * data = _map->_unit_types["tank"]->_obj_data;
-		for (int i=0; i<data->_n_pts * data->_n_attrs_per_pts; ++i) {
-			std::cout << data->_data[i] << " ; ";
-		}
-		std::cout << "\n";*/
-
-		/*float * data = _map->_unit_groups[_map->_unit_types["tank"]]->_matrices;
-		for (int i=0; i<N_MAX_UNITS_PER_GROUP * 16; ++i) {
-			std::cout << data[i] << " ; ";
-		}
-		std::cout << "\n";*/
-
-
-		//_contexts["unit_linear"]->show_data();
-
-		/*std::vector<pt_3d> segs = _map->_units[0]->_bbox->_aabb->segments();
-		for (auto & x : segs) {
-			std::cout << glm_to_string(x) << "\n";
-		}*/
-
-		std::cout << *_map->_units[0]->_bbox << "\n";
-
 		return true;
-	}
+	}*/
 	return false;
 }
 
 
 bool Strategy::key_up(InputState * input_state, SDL_Keycode key, time_point t) {
-	_mode = FREE;
 	return true;
 }
 

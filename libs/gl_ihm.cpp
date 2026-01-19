@@ -1,4 +1,10 @@
 #include <fstream>
+#include <sstream>
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "geom_2d.h"
 
 #include "gl_ihm.h"
 
@@ -9,13 +15,49 @@ GLIHMElement::GLIHMElement() {
 }
 
 
-GLIHMElement::GLIHMElement(pt_2d position, pt_2d size) : _alpha(1.0) {
+GLIHMElement::GLIHMElement(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size) :
+	_group(group), _name(name), _texture_path(texture_path), _alpha(ALPHA_INACTIVE), _active(false), _key(0) {
 	_aabb = new AABB_2D(position, size);
+	_active_callback = [](){};
+	_inactive_callback = [](){};
 }
 
 
 GLIHMElement::~GLIHMElement() {
 	delete _aabb;
+}
+
+
+void GLIHMElement::set_active() {
+	_active = true;
+	_alpha = ALPHA_ACTIVE;
+	for (auto & group : _groups_visible) {
+		group->_visible = true;
+	}
+	_active_callback();
+}
+
+
+void GLIHMElement::set_inactive() {
+	_active = false;
+	_alpha = ALPHA_INACTIVE;
+	for (auto & group : _groups_visible) {
+		group->_visible = false;
+	}
+	_inactive_callback();
+}
+
+
+void GLIHMElement::set_callback(std::function<void(void)> active_callback, std::function<void(void)> inactive_callback) {
+	_active_callback = active_callback;
+	_inactive_callback = inactive_callback;
+}
+
+
+std::ostream & operator << (std::ostream & os, const GLIHMElement & e) {
+	os << "name = " << e._name << " ; texture_path = " << e._texture_path << " ; texture_layer = " << e._texture_layer;
+	os << " ; alpha = " << e._alpha << " ; aabb = " << *e._aabb << " ; active = " << e._active;
+	return os;
 }
 
 
@@ -25,13 +67,24 @@ GLIHMButton::GLIHMButton() {
 }
 
 
+GLIHMButton::GLIHMButton(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size) :
+	GLIHMElement(group, name, texture_path, position, size), _available_percent(100.0) {
+
+}
+
+
 GLIHMButton::~GLIHMButton() {
 	
 }
 
 
-void GLIHMButton::click() {
-	std::cout << "GLIHMButton " << _name << " clicked\n";
+void GLIHMButton::click(bool verbose) {
+	if (verbose) {
+		std::cout << "GLIHMButton " << _name << " clicked\n";
+	}
+
+	set_active();
+	set_inactive();
 }
 
 
@@ -41,13 +94,28 @@ GLIHMCheckBox::GLIHMCheckBox() {
 }
 
 
+GLIHMCheckBox::GLIHMCheckBox(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size) :
+	GLIHMElement(group, name, texture_path, position, size) {
+
+}
+
+
 GLIHMCheckBox::~GLIHMCheckBox() {
 
 }
 
 
-void GLIHMCheckBox::click() {
-	std::cout << "GLIHMCheckBox " << _name << " clicked\n";
+void GLIHMCheckBox::click(bool verbose) {
+	if (verbose) {
+		std::cout << "GLIHMCheckBox " << _name << " clicked\n";
+	}
+
+	if (_active){
+		set_inactive();
+	}
+	else {
+		set_active();
+	}
 }
 
 
@@ -57,13 +125,28 @@ GLIHMRadio::GLIHMRadio() {
 }
 
 
+GLIHMRadio::GLIHMRadio(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size) :
+	GLIHMElement(group, name, texture_path, position, size) {
+
+}
+
+
 GLIHMRadio::~GLIHMRadio() {
 
 }
 
 
-void GLIHMRadio::click() {
-	std::cout << "GLIHMRadio " << _name << " clicked\n";
+void GLIHMRadio::click(bool verbose) {
+	if (verbose) {
+		std::cout << "GLIHMRadio " << _name << " clicked\n";
+	}
+
+	set_active();
+	for (auto & element : _group->_elements) {
+		if (element != this) {
+			element->set_inactive();
+		}
+	}
 }
 
 
@@ -73,9 +156,16 @@ GLIHMGroup::GLIHMGroup() {
 }
 
 
+GLIHMGroup::GLIHMGroup(std::string name, GL_IHM_GROUP_TYPE type, GL_IHM_GROUP_ORIENTATION orientation, pt_2d position, pt_2d element_size, number margin) : 
+	_name(name), _type(type), _orientation(orientation), _position(position), _element_size(element_size), _margin(margin), _visible(true)
+{
+
+}
+
+
 GLIHMGroup::~GLIHMGroup() {
 	for (auto & element : _elements) {
-		delete element.second;
+		delete element;
 	}
 	_elements.clear();
 }
@@ -96,14 +186,43 @@ pt_2d GLIHMGroup::next_element_position() {
 	}
 
 	pt_2d next_pos;
-	if (_orientation == HORINZONTAL) {
+	if (_orientation == GL_IHM_HORIZONTAL) {
 		next_pos = last_pos + pt_2d(margin + _element_size.x, 0.0);
 	}
-	else if (_orientation == VERTICAL) {
-		next_pos = last_pos + pt_2d(0.0, margin + _element_size.y);
+	else if (_orientation == GL_IHM_VERTICAL) {
+		next_pos = last_pos - pt_2d(0.0, margin + _element_size.y);
 	}
 
 	return next_pos;
+}
+
+
+GLIHMElement * GLIHMGroup::add_element(std::string name, std::string texture_path) {
+	if (_type == GL_IHM_BUTTON) {
+		GLIHMButton * button = new GLIHMButton(this, name, texture_path, next_element_position(), _element_size);
+		_elements.push_back(button);
+		return button;
+	}
+	else if (_type == GL_IHM_CHECKBOX) {
+		GLIHMCheckBox * checkbox = new GLIHMCheckBox(this, name, texture_path, next_element_position(), _element_size);
+		_elements.push_back(checkbox);
+		return checkbox;
+	}
+	else if (_type == GL_IHM_RADIO) {
+		GLIHMRadio * radio = new GLIHMRadio(this, name, texture_path, next_element_position(), _element_size);
+		_elements.push_back(radio);
+		return radio;
+	}
+	return NULL;
+}
+
+
+std::ostream & operator << (std::ostream & os, const GLIHMGroup & g) {
+	os << "name = " << g._name << " ; elements =\n";
+	for (auto & element : g._elements) {
+		os << "\t" << *element << "\n";
+	}
+	return os;
 }
 
 
@@ -113,78 +232,159 @@ GLIHM::GLIHM() {
 }
 
 
-GLIHM::GLIHM(std::map<std::string, GLuint> progs, ScreenGL * screengl, std::string json_path) {
+GLIHM::GLIHM(std::map<std::string, GLuint> progs, ScreenGL * screengl, std::string json_path) : _screengl(screengl), _verbose(true) {
 		_contexts["gl_ihm"]= new DrawContext(progs["gl_ihm"], 
 		std::vector<std::string>{"position_in:2", "tex_coord_in:2", "alpha_in:1", "current_layer_in:1"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array", "z"},
 		GL_STATIC_DRAW, true);
+
+	std::vector<std::pair<GLIHMElement *, std::string> > groups_visible;
 
 	std::ifstream ifs(json_path);
 	json js= json::parse(ifs);
 	ifs.close();
 	
 	_texture_root = js["textures_root"];
-	for (auto group : js["groups"]) {
-		GLIHMGroup * gl_group = new GLIHMGroup();
-		gl_group->_name = group["name"];
-		gl_group->_margin = group["margin"];
-		gl_group->_position = pt_2d(group["position"][0], group["position"][1]);
-		gl_group->_element_size = pt_2d(group["element_size"][0], group["element_size"][1]);
+	_default_element_size = pt_2d(js["default_element_size"][0], js["default_element_size"][1]);
+	_default_margin = js["default_margin"];
 
+	for (auto group : js["groups"]) {
+		GL_IHM_GROUP_ORIENTATION orientation;
 		if (group["orientation"] == "horizontal") {
-			gl_group->_orientation = HORIZONTAL;
+			orientation = GL_IHM_HORIZONTAL;
+		}
+		else if (group["orientation"] == "vertical") {
+			orientation = GL_IHM_VERTICAL;
 		}
 		else {
-			gl_group->_orientation = VERTICAL;
+			std::cerr << "GLIHM : orientation = " << group["orientation"] << " non supportée\n";
+			return;
 		}
 
-		for (auto & button : group["buttons"]) {
-			GLIHMButton * gl_button = new GLIHMButton(gl_group->next_element_position(), _element_size);
-			gl_button->_name = button["name"];
-			gl_button->_texture_path = button["texture"];
-			gl_button->_available_percent = 100.0;
-			gl_group->_elements.push_back(gl_button);
+		GL_IHM_GROUP_TYPE type;
+		if (group["type"] == "button") {
+			type = GL_IHM_BUTTON;
+		}
+		else if (group["type"] == "checkbox") {
+			type = GL_IHM_CHECKBOX;
+		}
+		else if (group["type"] == "radio") {
+			type = GL_IHM_RADIO;
+		}
+		else {
+			std::cerr << "GLIHM : type = " << group["type"] << " non supporté\n";
+			return;
 		}
 
-		for (auto & button : group["checkboxes"]) {
-			GLIHMCheckBox * gl_checkbox = new GLIHMCheckBox(gl_group->next_element_position(), _element_size);
-			gl_checkbox->_name = button["name"];
-			gl_checkbox->_texture_path = button["texture"];
-			gl_button->_active = false;
-			gl_group->_elements.push_back(gl_checkbox);
+		pt_2d position = pt_2d(group["position"][0], group["position"][1]);
+		pt_2d element_size = _default_element_size;
+		if (group["element_size"] != nullptr) {
+			element_size = pt_2d(group["element_size"][0], group["element_size"][1]);
+		}
+		number margin = _default_margin;
+		if (group["margin"] != nullptr) {
+			margin = group["margin"];
 		}
 
-		for (auto & button : group["radios"]) {
-			GLIHMRadio * gl_radio = new GLIHMRadio(gl_group->next_element_position(), _element_size);
-			gl_radio->_name = button["name"];
-			gl_radio->_texture_path = button["texture"];
-			gl_radio->_active = false;
-			gl_group->_elements.push_back(gl_radio);
+		GLIHMGroup * gl_group = add_group(group["name"], type, orientation, position, element_size, margin);
+
+		for (auto & element : group["elements"]) {
+			GLIHMElement * gl_element = gl_group->add_element(element["name"], element["texture"]);
+			if (element["groups_visible"] != nullptr) {
+				for (auto group_visible : element["groups_visible"]) {
+					groups_visible.push_back(std::make_pair(gl_element, group_visible));
+				}
+			}
+			if (element["key"] != nullptr) {
+				gl_element->_key = std::string(element["key"]).c_str()[0];
+			}
+			if (gl_group->_type == GL_IHM_CHECKBOX && element["checked"] != nullptr) {
+				gl_element->set_active();
+			}
 		}
-		
-		_groups.push_back(gl_group);
+	}
+
+	for (auto & group_visible : groups_visible) {
+		for (auto & group : _groups) {
+			if (group->_name == group_visible.second) {
+				group_visible.first->_groups_visible.push_back(group);
+				break;
+			}
+		}
+	}
+
+	for (auto & group : _groups) {
+		if (group->_type == GL_IHM_RADIO) {
+			group->_elements[0]->set_active();
+		}
+	}
+
+	for (auto & group : _groups) {
+		for (auto & element : group->_elements) {
+			if (!element->_active) {
+				element->set_inactive();
+			}
+		}
 	}
 
 	std::vector<std::string> pngs;
 	uint compt = 0;
 	for (auto & group : _groups) {
 		for (auto & element : group->_elements) {
-			pngs.push_back(_texture_root + "/" + element->_texture_path);
+			pngs.push_back(_texture_root + "/" + group->_name + "/" + element->_texture_path);
 			element->_texture_layer = compt++;
 		}
 	}
 	glGenTextures(1, &_texture_idx);
 	fill_texture_array(0, _texture_idx, TEXTURE_SIZE, pngs);
 
-	_camera2clip= glm::ortho(float(-screengl->_gl_width)* 0.5f, float(screengl->_gl_width)* 0.5f, -float(screengl->_gl_height)* 0.5f, float(screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
+	_camera2clip= glm::ortho(float(-_screengl->_gl_width)* 0.5f, float(_screengl->_gl_width)* 0.5f, -float(_screengl->_gl_height)* 0.5f, float(_screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
+
+	update();
 }
 
 
 GLIHM::~GLIHM() {
 	for (auto & group : _groups) {
-		delete group.second;
+		delete group;
 	}
 	_groups.clear();
+}
+
+
+GLIHMGroup * GLIHM::add_group(std::string name, GL_IHM_GROUP_TYPE type, GL_IHM_GROUP_ORIENTATION orientation, pt_2d position, pt_2d element_size, number margin) {
+	GLIHMGroup * group = new GLIHMGroup(name, type, orientation, position, element_size, margin);
+	_groups.push_back(group);
+	return group;
+}
+
+
+GLIHMElement * GLIHM::get_element(std::string group_name, std::string element_name) {
+	for (auto & group : _groups) {
+		if (group->_name == group_name) {
+			for (auto & element : group->_elements) {
+				if (element->_name == element_name) {
+					return element;
+				}
+			}
+		}
+	}
+	std::cerr << "GLIHM::get_element : group = " << group_name << " ; element = " << element_name << " inexistant\n";
+	return NULL;
+}
+
+
+void GLIHM::all_callbacks() {
+	for (auto & group : _groups) {
+		for (auto & element : group->_elements) {
+			if (element->_active) {
+				element->_active_callback();
+			}
+			else {
+				element->_inactive_callback();
+			}
+		}
+	}
 }
 
 
@@ -204,17 +404,23 @@ void GLIHM::update() {
 	for (auto & group : _groups) {
 		for (auto & element : group->_elements) {
 			pt_4d l_pts[4] = {
-				pt_4d(element->_aabb->_pos.x, element->_aabb->_pos.y, 0.0, 0.0),
-				pt_4d(element->_aabb->_pos.x + element->_aabb->_size.x, element->_aabb->_pos.y, 1.0, 0.0),
-				pt_4d(element->_aabb->_pos.x + element->_aabb->_size.x, element->_aabb->_pos.y + element->_aabb->_size.y, 1.0, 1.0),
-				pt_4d(element->_aabb->_pos.x, element->_aabb->_pos.y + element->_aabb->_size.y, 0.0, 1.0)
+				pt_4d(element->_aabb->_pos.x, element->_aabb->_pos.y, 0.0, 1.0),
+				pt_4d(element->_aabb->_pos.x + element->_aabb->_size.x, element->_aabb->_pos.y, 1.0, 1.0),
+				pt_4d(element->_aabb->_pos.x + element->_aabb->_size.x, element->_aabb->_pos.y + element->_aabb->_size.y, 1.0, 0.0),
+				pt_4d(element->_aabb->_pos.x, element->_aabb->_pos.y + element->_aabb->_size.y, 0.0, 0.0)
 			};
+
+			number alpha = element->_alpha;
+			if (!group->_visible) {
+				alpha = 0.0;
+			}
+
 			for (uint i=0; i<6; ++i) {
 				ptr[0] = float(l_pts[idxs[i]][0]);
 				ptr[1] = float(l_pts[idxs[i]][1]);
 				ptr[2] = float(l_pts[idxs[i]][2]);
 				ptr[3] = float(l_pts[idxs[i]][3]);
-				ptr[4] = float(element->_alpha);
+				ptr[4] = float(alpha);
 				ptr[5] = float(element->_texture_layer);
 				ptr += 6;
 			}
@@ -222,6 +428,7 @@ void GLIHM::update() {
 	}
 	context->set_data(data);
 	delete[] data;
+	//context->show_data();
 }
 
 
@@ -249,11 +456,15 @@ void GLIHM::anim() {
 
 
 bool GLIHM::mouse_button_down(InputState * input_state, time_point t) {
-	pt_2d pt = _view_system->_screengl->screen2gl(input_state->_x, input_state->_y);
+	pt_2d pt = _screengl->screen2gl(input_state->_x, input_state->_y);
 	for (auto & group : _groups) {
+		if (!group->_visible) {
+			continue;
+		}
 		for (auto & element : group->_elements) {
 			if (point_in_aabb2d(pt, element->_aabb)) {
-				element->click();
+				element->click(_verbose);
+				update();
 				return true;
 			}
 		}
@@ -263,5 +474,26 @@ bool GLIHM::mouse_button_down(InputState * input_state, time_point t) {
 
 
 bool GLIHM::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
+	for (auto & group : _groups) {
+		if (!group->_visible) {
+			continue;
+		}
+		for (auto & element : group->_elements) {
+			if (element->_key == key) {
+				element->click(_verbose);
+				update();
+				return true;
+			}
+		}
+	}
 	return false;
+}
+
+
+std::ostream & operator << (std::ostream & os, const GLIHM & ihm) {
+	os << "texture_idx = " << ihm._texture_idx << " ; texture_root = " << ihm._texture_root << " ; groups =\n";
+	for (auto & group : ihm._groups) {
+		os << *group;
+	}
+	return os;
 }

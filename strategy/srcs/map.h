@@ -45,7 +45,7 @@ struct Map {
 	Map();
 	Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t);
 	~Map();
-	void add_unit(std::string type_name, pt_2d pos, time_point t);
+	void add_unit(std::string type_name, pt_2d pos);
 	River * add_river(pt_2d src);
 	Lake * add_lake(pt_2d src);
 
@@ -73,7 +73,7 @@ struct Map {
 	void selected_units_goto(pt_2d pt, time_point t);
 	void randomize();
 	void save(std::string json_path);
-	void load(std::string json_path, time_point t);
+	void load(std::string json_path);
 	friend std::ostream & operator << (std::ostream & os, Map & map);
 
 

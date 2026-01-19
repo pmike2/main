@@ -91,14 +91,14 @@ Map::~Map() {
 }
 
 
-void Map::add_unit(std::string type_name, pt_2d pos, time_point t) {
+void Map::add_unit(std::string type_name, pt_2d pos) {
 	if (pos.x < _origin.x || pos.y < _origin.y || pos.x >= _origin.x + _size.x || pos.y >= _origin.y + _size.y) {
 		std::cerr << "Map::add_unit hors Elevation\n";
 		return;
 	}
 
 	pt_3d pt3d(pos.x, pos.y, _elevation->get_alti(pos));
-	Unit * unit = new Unit(_unit_types[type_name], pt3d, t);
+	Unit * unit = new Unit(_unit_types[type_name], pt3d);
 	unit->_id = _next_unit_id++;
 	_units.push_back(unit);
 
@@ -719,7 +719,7 @@ void Map::save(std::string json_path) {
 }
 
 
-void Map::load(std::string json_path, time_point t) {
+void Map::load(std::string json_path) {
 	clear();
 
 	std::ifstream ifs(json_path);
@@ -733,7 +733,7 @@ void Map::load(std::string json_path, time_point t) {
 	}
 
 	for (auto & unit : js["units"]) {
-		add_unit(unit["type"], pt_2d(unit["position"][0], unit["position"][1]), t);
+		add_unit(unit["type"], pt_2d(unit["position"][0], unit["position"][1]));
 	}
 
 	sync2elevation();

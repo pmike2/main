@@ -64,7 +64,7 @@ Unit::Unit() {
 }
 
 
-Unit::Unit(UnitType * type, pt_3d pos, time_point t) : InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
+Unit::Unit(UnitType * type, pt_3d pos) : InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
 	_type(type), _status(WAITING), _velocity(pt_3d(0.0))//, _last_anim_t(t)
 {
 	_path = new Path();

@@ -211,6 +211,9 @@ void DrawContext::show_data(uint idx_buffer) {
 	float * data = new float[ds];
 	glGetBufferSubData(GL_ARRAY_BUFFER, 0, ds * sizeof(float), data);
 	for (uint i=0; i<ds; ++i) {
+		if (i % _buffers[idx_buffer]._n_attrs_per_pts == 0) {
+			std::cout << "\n";
+		}
 		std::cout << data[i] << " ; ";
 	}
 	std::cout << "\n";
@@ -622,7 +625,6 @@ float * draw_nothing(float * data, uint n_attrs_per_pts, uint n_pts) {
 void fill_texture_array(uint texture_offset, uint texture_idx, uint texture_size, std::vector<std::string> pngs) {
 	glActiveTexture(GL_TEXTURE0+ texture_offset);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, texture_idx);
-	
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, texture_size, texture_size, pngs.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
 	for (uint idx_png=0; idx_png<pngs.size(); ++idx_png) {

@@ -45,7 +45,7 @@ struct Instruction {
 
 struct Unit : public InstancePosRot {
 	Unit();
-	Unit(UnitType * type, pt_3d pos, time_point t);
+	Unit(UnitType * type, pt_3d pos);
 	~Unit();
 	void anim(Elevation * elevation);
 	bool checkpoint_checked();

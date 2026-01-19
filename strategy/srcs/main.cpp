@@ -129,6 +129,10 @@ void init() {
 	main_context= SDL_GL_CreateContext(window);
 
 	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
+
+	/*GLint max_layers;
+	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &max_layers);
+	std::cout << max_layers << "\n";*/
 	
 	SDL_GL_SetSwapInterval(1);
 	glClearDepth(1.0f);
@@ -152,10 +156,7 @@ void init() {
 	SDL_GL_SwapWindow(window);
 	
 	// --------------------------------------------------------------------------
-	/* VAO = vertex array object : tableau d'objets, chaque appel à un objet rappelle un contexte de dessin
-	incluant tous les attribute array setup (glVertexAttribArray), buffer objects used for attribute arrays
-	et GL_ELEMENT_ARRAY_BUFFER eventuellement
-	ici je n'en utilise qu'un pour tout le prog ; à terme peut-être faire plusieurs VAOs
+	/* obligé d'avoir un vao ici ?
 	*/
 	
 	glGenVertexArrays(1, &g_vao);
@@ -172,7 +173,7 @@ void init() {
 	progs["lake"]= create_prog("../shaders/vertexshader_lake.txt", "../shaders/fragmentshader_lake.txt");
 	progs["river"]= create_prog("../shaders/vertexshader_river.txt", "../shaders/fragmentshader_river.txt");
 	progs["unit"]= create_prog("../shaders/vertexshader_unit.txt", "../shaders/fragmentshader_unit.txt");
-	progs["gl_ihm"]= create_prog("../../shaders/gl_ihm.txt", "../../shaders/gl_ihm.txt");
+	progs["gl_ihm"]= create_prog("../../shaders/vertexshader_gl_ihm.txt", "../../shaders/fragmentshader_gl_ihm.txt");
 
 	check_gl_error();
 

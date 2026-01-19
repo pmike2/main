@@ -1,66 +1,99 @@
 {
 	"textures_root" : "../data/textures_ihm",
+	"default_element_size" : [0.3, 0.3],
+	"default_margin" : 0.05,
 	"groups" : [
 		{
-			"name" : "units",
-			"position" : [-4.0, -4.0],
-			"element_size" : [1.0, 1.0],
-			"margin" : 5,
+			"type" : "radio",
+			"name" : "mode",
+			"position" : [-5.0, 1.0],
 			"orientation" : "vertical",
-			"buttons" : [
-				{"name" : "infantery", "texture" : "infantery.png"},
-				{"name" : "tank", "texture" : "tank.png"},
-				{"name" : "helicopter", "texture" : "helicopter.png"},
-				{"name" : "boat", "texture" : "boat.png"}
+			"elements" : [
+				{"name" : "play", "texture" : "play.png"},
+				{"name" : "add_unit", "texture" : "add_unit.png", "groups_visible" : ["units"]},
+				{"name" : "add_element", "texture" : "add_element.png", "groups_visible" : ["elements"]},
+				{"name" : "edit_elevation", "texture" : "edit_elevation.png", "groups_visible" : ["elevation"]}
 			]
 		},
 		{
-			"name" : "edit",
+			"type" : "radio",
+			"name" : "units",
+			"position" : [-4.5, 1.0],
+			"orientation" : "vertical",
+			"elements" : [
+				{"name" : "infantery", "texture" : "infantery.png", "key" : "i"},
+				{"name" : "tank", "texture" : "tank.png", "key" : "t"},
+				{"name" : "helicopter", "texture" : "helicopter.png", "key" : "h"},
+				{"name" : "boat", "texture" : "boat.png", "key" : "b"}
+			]
+		},
+		{
+			"type" : "radio",
+			"name" : "elements",
+			"position" : [-4.5, 1.0],
+			"orientation" : "vertical",
+			"elements" : [
+				{"name" : "tree", "texture" : "tree.png", "key" : "t"},
+				{"name" : "stone", "texture" : "stone.png", "key" : "s"},
+				{"name" : "river", "texture" : "river.png", "key" : "r"},
+				{"name" : "lake", "texture" : "lake.png", "key" : "l"}
+			]
+		},
+		{
+			"type" : "radio",
+			"name" : "elevation",
+			"position" : [-4.5, 1.0],
+			"orientation" : "vertical",
+			"elements" : [
+				{"name" : "elevation_plus", "texture" : "elevation_plus.png"},
+				{"name" : "elevation_minus", "texture" : "elevation_minus.png"}
+			]
+		},
+		{
+			"type" : "button",
+			"name" : "global_edit",
 			"position" : [-4.0, -4.0],
-			"element_size" : [1.0, 1.0],
-			"margin" : 5,
 			"orientation" : "horizontal",
-			"buttons" : [
-				{"name" : "randomize", "texture" : "randomize.png"},
-				{"name" : "clear", "texture" : "clear.png"}
+			"elements" : [
+				{"name" : "randomize", "texture" : "randomize.png", "key" : "r"},
+				{"name" : "clear", "texture" : "clear.png", "key" : "c"},
+				{"name" : "save", "texture" : "save.png", "key" : "s"},
+				{"name" : "load", "texture" : "load.png", "key" : "l"}
 			]
 		},
 		{
+			"type" : "checkbox",
 			"name" : "visu",
-			"position" : [-3.0, -4.0],
-			"element_size" : [1.0, 1.0],
-			"margin" : 5,
+			"position" : [0.0, -4.0],
 			"orientation" : "horizontal",
-			"checkboxes" : [
-				{"name" : "elevation", "texture" : "elevation.png"},
-				{"name" : "elements", "texture" : "elements.png"},
-				{"name" : "grid", "texture" : "grid.png"}
+			"elements" : [
+				{"name" : "elevation", "texture" : "elevation.png", "checked" : "true"},
+				{"name" : "elements", "texture" : "elements.png", "checked" : "true"},
+				{"name" : "grid", "texture" : "grid.png", "groups_visible" : ["grid_type", "grid_unit_type"]}
 			]
 		},
 		{
+			"type" : "radio",
 			"name" : "grid_type",
-			"position" : [-2.0, -4.0],
-			"element_size" : [1.0, 1.0],
-			"margin" : 5,
+			"position" : [2.0, -4.0],
 			"orientation" : "horizontal",
-			"radios" : [
+			"elements" : [
 				{"name" : "terrain", "texture" : "grid_terrain.png"},
 				{"name" : "elevation", "texture" : "grid_elevation.png"},
 				{"name" : "units_position", "texture" : "grid_units_position.png"}
 			]
 		},
 		{
+			"type" : "radio",
 			"name" : "grid_unit_type",
-			"position" : [-4.0, -4.0],
-			"element_size" : [1.0, 1.0],
-			"margin" : 5,
+			"position" : [2.0, -3.5],
 			"orientation" : "horizontal",
-			"radios" : [
+			"elements" : [
 				{"name" : "infantery", "texture" : "grid_infantery.png"},
 				{"name" : "tank", "texture" : "grid_tank.png"},
 				{"name" : "helicopter", "texture" : "grid_helicopter.png"},
 				{"name" : "boat", "texture" : "grid_boat.png"}
 			]
-		},
+		}
 	]
 }
