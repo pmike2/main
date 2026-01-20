@@ -7,21 +7,18 @@
 #include "typedefs.h"
 #include "bbox_2d.h"
 
-#include "elevation.h"
+#include "element.h"
 
 
-struct Lake {
+struct Lake : public Element {
 	Lake();
 	Lake(Elevation * elevation, pt_2d src);
 	~Lake();
 	void update_data();
 
-	Elevation * _elevation;
 	std::vector<uint> _id_nodes;
 	std::vector<std::tuple<uint, uint, uint> > _triangles;
 	number _alti_lake;
-	float * _data;
-	uint _n_pts;
 	bool _valid;
 	Polygon2D * _polygon;
 };

@@ -20,13 +20,15 @@
 #include "graph.h"
 
 #include "const.h"
-#include "elements.h"
 #include "path_finder.h"
-#include "lake.h"
-#include "river.h"
 #include "unit.h"
 #include "unit_type.h"
 #include "elevation.h"
+#include "elements/elements.h"
+#include "elements/lake.h"
+#include "elements/river.h"
+#include "elements/tree.h"
+#include "elements/stone.h"
 
 
 /*struct Obstacle {
@@ -45,16 +47,18 @@ struct Map {
 	Map();
 	Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t);
 	~Map();
-	void add_unit(std::string type_name, pt_2d pos);
-	River * add_river(pt_2d src);
-	Lake * add_lake(pt_2d src);
+	void add_unit(Team * team, std::string type_name, pt_2d pos);
+	void add_river(pt_2d pos);
+	void add_lake(pt_2d pos);
+	void add_trees(std::string species_name, pt_2d pos, uint n_trees, number dispersion);
+	void add_stones(std::string species_name, pt_2d pos, uint n_stones, number dispersion);
 
 	void update_alti_grid();
 	void update_alti_path(Unit * unit);
 	void update_elevation_grid();
 	
 	void update_terrain_grid_with_elevation();
-	void update_terrain_grid_with_element(Element * element);
+	void update_terrain_grid_with_aabb(AABB_2D * aabb);
 	
 	void sync2elevation();
 	
@@ -81,13 +85,14 @@ struct Map {
 	pt_2d _origin;
 	pt_2d _size;
 	std::map<std::string, UnitType *> _unit_types;
-	std::vector<Unit *> _units;
 	PathFinder * _path_finder;
 	Elevation * _elevation;
 	Elements * _elements;
-	std::vector<River * > _rivers;
-	std::vector<Lake *> _lakes;
-	std::map<UnitType *, UnitGroup *> _unit_groups;
+	//std::vector<River * > _rivers;
+	//std::vector<Lake *> _lakes;
+	//std::map<UnitType *, UnitGroup *> _unit_groups;
+	//std::vector<Unit *> _units;
+	std::vector<Team *> _teams;
 
 	bool _paused;
 	std::thread _path_find_thr;

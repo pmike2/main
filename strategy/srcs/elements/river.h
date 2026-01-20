@@ -7,22 +7,20 @@
 #include "typedefs.h"
 #include "polygon_2d.h"
 
-#include "elevation.h"
+#include "element.h"
 
 
-struct River {
+struct River : public Element {
 	River();
 	River(Elevation * elevation, pt_2d src);
 	~River();
 	void update_data();
-	pt_2d lowest_pt();
+	pt_3d lowest_pt();
+	pt_3d highest_pt();
 
 
-	Elevation * _elevation;
 	std::vector<uint> _id_nodes;
 	std::vector<std::tuple<uint, uint, uint> > _triangles;
-	float * _data;
-	uint _n_pts;
 	bool _valid;
 	Polygon2D * _polygon;
 };

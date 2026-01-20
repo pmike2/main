@@ -286,6 +286,8 @@ void Elevation::set_alti_all(number alti) {
 			set_alti(col, lig, alti);
 		}
 	}
+	update_normals();
+	update_data();
 }
 
 

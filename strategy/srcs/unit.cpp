@@ -168,7 +168,7 @@ std::ostream & operator << (std::ostream & os, Unit & unit) {
 }
 
 
-UnitGroup::UnitGroup() {
+/*UnitGroup::UnitGroup() {
 	_matrices = new float[N_MAX_UNITS_PER_GROUP * 16];
 }
 
@@ -199,5 +199,75 @@ void UnitGroup::update_unit(Unit * unit) {
 	float * ptr = _matrices + unit_idx * 16;
 	const float * unit_data = glm::value_ptr(glm::mat4(unit->_model2world));
 	std::memcpy(ptr, unit_data, 16 * sizeof(float));
+}
+*/
+
+// Team ------------------------------------------
+Team::Team() {
+
+}
+
+
+Team::Team(std::string name, Elevation * elevation) : _name(name), _elevation(elevation) {
+
+}
+
+
+Team::~Team() {
+	for (auto & unit : _units) {
+		delete unit;
+	}
+	_units.clear();
+}
+
+
+Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos) {
+	if (pos.x < _elevation->_origin.x || pos.y < _elevation->_origin.y || pos.x >= _elevation->_origin.x + _elevation->_size.x || pos.y >= _elevation->_origin.y + _elevation->_size.y) {
+		std::cerr << "Team::add_unit hors Elevation\n";
+		return NULL;
+	}
+	pt_3d pt3d(pos.x, pos.y, _elevation->get_alti(pos));
+	Unit * unit = new Unit(type, pt3d);
+	unit->_id = id;
+	_units.push_back(unit);
+	return unit;
+}
+
+
+void Team::remove_unit(Unit * unit) {
+	_units.erase(std::remove_if(_units.begin(), _units.end(), [unit](Unit * u) {
+		return u == unit;
+	}), _units.end());
+	delete unit;
+}
+
+
+void Team::remove_units_in_aabb(AABB_2D * aabb) {
+	std::vector<Unit *> units2remove;
+	for (auto & unit : _units) {
+		if (aabb2d_intersects_aabb2d(aabb, unit->_bbox->_aabb->aabb2d())) {
+			units2remove.push_back(unit);
+		}
+	}
+	for (auto & unit : units2remove) {
+		remove_unit(unit);
+	}
+}
+
+
+void Team::clear() {
+	for (auto & unit : _units) {
+		delete unit;
+	}
+	_units.clear();
+}
+
+
+std::ostream & operator << (std::ostream & os, Team & team) {
+	os << "team name = " << team._name << " ; units =\n";
+	for (auto & unit : team._units) {
+		os << *unit << "\n";
+	}
+	return os;
 }
 

@@ -47,6 +47,8 @@ public:
 	BBox(const pt_3d & vmin, const pt_3d & vmax, const mat_4d & model2world = mat_4d(1.0));
 	BBox(AABB * aabb);
 	~BBox();
+	void update_radius();
+	void set_aabb(AABB * aabb);
 	void set_model2world(const mat_4d & model2world);
 	static std::vector<std::vector<uint> > triangles_idxs();
 	friend std::ostream & operator << (std::ostream & os, const BBox & bbox);

@@ -67,7 +67,7 @@ struct Unit : public InstancePosRot {
 };
 
 
-struct UnitGroup {
+/*struct UnitGroup {
 	UnitGroup();
 	~UnitGroup();
 	void add_unit(Unit * unit);
@@ -76,6 +76,23 @@ struct UnitGroup {
 
 	std::vector<Unit *> _units;
 	float * _matrices;
+};*/
+
+
+struct Team {
+	Team();
+	Team(std::string name, Elevation * elevation);
+	~Team();
+	Unit * add_unit(UnitType * type, uint id, pt_2d pos);
+	void remove_unit(Unit * unit);
+	void remove_units_in_aabb(AABB_2D * aabb);
+	void clear();
+	friend std::ostream & operator << (std::ostream & os, Team & team);
+
+
+	Elevation * _elevation;
+	std::string _name;
+	std::vector<Unit *> _units;
 };
 
 #endif

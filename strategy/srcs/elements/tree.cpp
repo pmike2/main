@@ -1,32 +1,13 @@
 #include <fstream>
 #include <sstream>
-#include <math.h>
-
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/string_cast.hpp>
 
 #include "json.hpp"
 
-#include "utile.h"
+#include "tree.h"
 
-#include "elements.h"
+
 
 using json = nlohmann::json;
-
-
-
-// Element -------------------------------------------------------------------------------------------------
-Element::Element() {
-
-}
-
-
-Element::Element(pt_3d pt_base, pt_3d size) {
-	_aabb = new AABB(
-		pt_3d(pt_base.x - 0.5 * size.x, pt_base.y - 0.5 * size.y, pt_base.z),
-		pt_3d(pt_base.x + 0.5 * size.x, pt_base.y + 0.5 * size.y, pt_base.z + size.z)
-	);
-}
 
 
 // TreeSpecies ---------------------------------------------------------------------------------------------
@@ -66,6 +47,8 @@ TreeSpecies::TreeSpecies(std::string json_path) {
 	_alti_max = js["alti_max"];
 	_water_dist_min = js["water_dist_min"];
 	_water_dist_max = js["water_dist_max"];
+	_size_min = pt_3d(js["size_min"][0], js["size_min"][1], js["size_min"][2]);
+	_size_max = pt_3d(js["size_max"][0], js["size_max"][1], js["size_max"][2]);
 }
 
 
@@ -204,7 +187,7 @@ Branch::~Branch() {
 
 
 std::ostream & operator << (std::ostream & os, const Branch & b) {
-	os << "pt_base=" << glm::to_string(b._pt_base) << " ; radius_base=" << b._radius_base << " ; radius_end=" << b._radius_end;
+	os << "pt_base=" << glm_to_string(b._pt_base) << " ; radius_base=" << b._radius_base << " ; radius_end=" << b._radius_end;
 	os << " ; r=" << b._r << " ; theta=" << b._theta << " ; phi=" << b._phi;
 	os << " ; idx=" << b._idx << " ; n_childrens=" << b._n_childrens;
 	return os;
@@ -217,7 +200,8 @@ Tree::Tree() {
 }
 
 
-Tree::Tree(TreeSpecies * species, pt_3d pt_base, pt_3d size) : Element(pt_base, size), _species(species) {
+Tree::Tree(TreeSpecies * species, Elevation * elevation, pt_2d position) : Element(elevation, position), _species(species) {
+	_type = ELEMENT_TREE;
 	number radius_base = rand_number(_species->_root_radius_base_min, _species->_root_radius_base_max);
 	number radius_end = radius_base * rand_number(_species->_ratio_base_end_radius_min, _species->_ratio_base_end_radius_max);
 	number r = rand_number(_species->_root_r_min, _species->_root_r_max);
@@ -226,6 +210,14 @@ Tree::Tree(TreeSpecies * species, pt_3d pt_base, pt_3d size) : Element(pt_base, 
 	//number phi = 1.0;
 	uint n_childrens = rand_number(_species->_n_childrens_min, _species->_n_childrens_max);
 	uint idx = 0;
+
+	pt_3d pt_base(position.x, position.y, _elevation->get_alti(position));
+	pt_3d size = rand_pt_3d(_species->_size_min, _species->_size_max);
+	
+	AABB * aabb = new AABB(pt_base - 0.5 * size, pt_base + 0.5 * size);
+	_bbox->set_aabb(aabb);
+	delete aabb;
+
 	Branch * root = new Branch(pt_base, radius_base, radius_end, r, theta, phi, n_childrens, idx, _species->_branch_color);
 	//std::cout << *root << "\n";
 	_branches.push_back(root);
@@ -273,7 +265,6 @@ Tree::~Tree() {
 	}
 	_branches.clear();
 	delete _data;
-	delete _aabb;
 }
 
 
@@ -350,145 +341,4 @@ std::ostream & operator << (std::ostream & os, const Tree & t) {
 		os << *branch << "\n";
 	}
 	return os;
-}
-
-
-// StoneSpecies ---------------------------------------------------------------------------------
-StoneSpecies::StoneSpecies() {
-
-}
-
-
-StoneSpecies::StoneSpecies(std::string json_path) {
-	std::ifstream ifs(json_path);
-	json js= json::parse(ifs);
-	ifs.close();
-
-	_name = js["name"];
-	_color[0] = js["color"][0];
-	_color[1] = js["color"][1];
-	_color[2] = js["color"][2];
-	_color[3] = js["color"][3];
-	_alti_min = js["alti_min"];
-	_alti_max = js["alti_max"];
-	_water_dist_min = js["water_dist_min"];
-	_water_dist_max = js["water_dist_max"];
-}
-
-
-StoneSpecies::~StoneSpecies() {
-
-}
-
-
-// Stone ----------------------------------------------------------------------------------------
-Stone::Stone() {
-
-}
-
-
-Stone::Stone(StoneSpecies * species, pt_3d pt_base, pt_3d size) : Element(pt_base, size), _species(species) {
-	_hull = new ConvexHull();
-	_hull->randomize(STONE_N_POINTS_HULL, pt_3d(pt_base.x - 0.5 * size.x, pt_base.y - 0.5 * size.y, pt_base.z), pt_3d(pt_base.x + 0.5 * size.x, pt_base.y + 0.5 * size.y, pt_base.z + size.z));
-	_hull->compute();
-
-	uint n_attrs_per_pts= 10;
-	_n_pts = _hull->_faces.size() * 3;
-	_data = new float[_n_pts * n_attrs_per_pts];
-	update_data();
-}
-
-
-Stone::~Stone() {
-	delete _hull;
-	delete _data;
-	delete _aabb;
-}
-
-
-void Stone::update_data() {
-	uint compt = 0;
-	for (auto face : _hull->_faces) {
-		for (uint i=0; i<3; ++i) {
-			Pt * pt = _hull->_pts[face->_idx[i]];
-			_data[compt++] = float(pt->_coords.x);
-			_data[compt++] = float(pt->_coords.y);
-			_data[compt++] = float(pt->_coords.z);
-			_data[compt++] = _species->_color[0];
-			_data[compt++] = _species->_color[1];
-			_data[compt++] = _species->_color[2];
-			_data[compt++] = _species->_color[3];
-			_data[compt++] = float(face->_normal.x);
-			_data[compt++] = float(face->_normal.y);
-			_data[compt++] = float(face->_normal.z);
-		}
-	}
-}
-
-
-// Elements ---------------------------------------------------------------------------------------------------------
-Elements::Elements() {
-
-}
-
-
-Elements::Elements(std::string dir_tree_jsons, std::string dir_stone_jsons) {
-	std::vector<std::string> tree_jsons = list_files(dir_tree_jsons, "json");
-	for (auto json_path : tree_jsons) {
-		_tree_species[basename(json_path)] = new TreeSpecies(json_path);
-	}
-	std::vector<std::string> stone_jsons = list_files(dir_stone_jsons, "json");
-	for (auto json_path : stone_jsons) {
-		_stone_species[basename(json_path)] = new StoneSpecies(json_path);
-	}
-}
-
-
-Elements::~Elements() {
-	clear();
-
-	for (auto species : _tree_species) {
-		delete species.second;
-	}
-	_tree_species.clear();
-}
-
-
-Tree * Elements::add_tree(std::string species_name, pt_3d pt_base, pt_3d size) {
-	if (_tree_species.count(species_name) == 0) {
-		std::cerr << species_name << " espece inconnue\n";
-		return NULL;
-	}
-
-	Tree * tree = new Tree(_tree_species[species_name], pt_base, size);
-	_elements.push_back(tree);
-	return tree;
-}
-
-
-Stone * Elements::add_stone(std::string species_name, pt_3d pt_base, pt_3d size) {
-	if (_stone_species.count(species_name) == 0) {
-		std::cerr << species_name << " espece inconnue\n";
-		return NULL;
-	}
-
-	Stone * stone = new Stone(_stone_species[species_name], pt_base, size);
-	_elements.push_back(stone);
-	return stone;
-}
-
-
-void Elements::clear() {
-	for (auto element : _elements) {
-		delete element;
-	}
-	_elements.clear();
-}
-
-
-void Elements::remove_in_aabb(AABB_2D * aabb) {
-	_elements.erase(std::remove_if(_elements.begin(), _elements.end(), [aabb](Element * e){
-		return aabb2d_intersects_aabb2d(aabb, e->_aabb->aabb2d());
-	}), _elements.end());
-
 }

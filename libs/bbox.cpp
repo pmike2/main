@@ -135,33 +135,40 @@ BBox::BBox() : _vmin(pt_3d(0.0)), _vmax(pt_3d(0.0)), _radius(0.0) {
 
 
 BBox::BBox(const pt_3d & vmin, const pt_3d & vmax, const mat_4d & model2world) : _vmin(vmin), _vmax(vmax), _model2world(model2world) {
-	_radius= abs(_vmin.x);
-	if (abs(_vmax.x)> _radius) _radius= abs(_vmax.x);
-	if (abs(_vmin.y)> _radius) _radius= abs(_vmin.y);
-	if (abs(_vmax.y)> _radius) _radius= abs(_vmax.y);
-	if (abs(_vmin.z)> _radius) _radius= abs(_vmin.z);
-	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);
-	
 	_aabb= new AABB();
 	set_model2world(_model2world);
+	update_radius();
 }
 
 
 BBox::BBox(AABB * aabb) : _vmin(aabb->_vmin), _vmax(aabb->_vmax), _model2world(mat_4d(1.0)) {
-	_radius= abs(_vmin.x);
-	if (abs(_vmax.x)> _radius) _radius= abs(_vmax.x);
-	if (abs(_vmin.y)> _radius) _radius= abs(_vmin.y);
-	if (abs(_vmax.y)> _radius) _radius= abs(_vmax.y);
-	if (abs(_vmin.z)> _radius) _radius= abs(_vmin.z);
-	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);
-
 	_aabb= new AABB();
 	set_model2world(_model2world);
+	update_radius();
 }
 
 
 BBox::~BBox() {
 	delete _aabb;
+}
+
+
+void BBox::update_radius() {
+	_radius= abs(_vmin.x);
+	if (abs(_vmax.x)> _radius) _radius= abs(_vmax.x);
+	if (abs(_vmin.y)> _radius) _radius= abs(_vmin.y);
+	if (abs(_vmax.y)> _radius) _radius= abs(_vmax.y);
+	if (abs(_vmin.z)> _radius) _radius= abs(_vmin.z);
+	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);
+}
+
+
+void BBox::set_aabb(AABB * aabb) {
+	_vmin = aabb->_vmin;
+	_vmax = aabb->_vmax;
+	_model2world = mat_4d(1.0);
+	update_radius();
+	set_model2world(_model2world);
 }
 
 

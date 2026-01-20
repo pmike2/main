@@ -21,5 +21,7 @@
 	"alti_min" : 1.0,
 	"alti_max" : 2.0,
 	"water_dist_min" : 0.1,
-	"water_dist_max" : 5.0
+	"water_dist_max" : 5.0,
+	"size_min" : [1.0, 1.0, 2.0],
+	"size_max" : [2.0, 2.0, 4.0]
 }

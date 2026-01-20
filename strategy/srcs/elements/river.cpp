@@ -6,7 +6,9 @@ River::River() {
 }
 
 
-River::River(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0), _valid(true) {
+River::River(Elevation * elevation, pt_2d src) : Element(elevation, src), _valid(true) {
+	_type = ELEMENT_RIVER;
+	
 	if (!_elevation->in_boundaries(src)) {
 		std::cerr << "River impossible src hors grille\n";
 		_valid = false;
@@ -31,6 +33,13 @@ River::River(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0
 
 	_polygon = _elevation->ids2polygon(_id_nodes);
 
+	pt_3d lp = lowest_pt();
+	pt_3d hp = highest_pt();
+	AABB * aabb = new AABB(pt_3d(_polygon->_aabb->_pos.x, _polygon->_aabb->_pos.y, lp.z),
+		pt_3d(_polygon->_aabb->_pos.x + _polygon->_aabb->_size.x, _polygon->_aabb->_pos.y + _polygon->_aabb->_size.y, hp.z));
+	_bbox->set_aabb(aabb);
+	delete aabb;
+
 	/*number EPS = 0.5;
 	for (auto & id : _id_nodes) {
 		_elevation->set_alti(id, _elevation->get_alti(id) - EPS);
@@ -47,6 +56,7 @@ River::River(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0
 
 River::~River() {
 	delete _data;
+	delete _polygon;
 }
 
 
@@ -79,13 +89,26 @@ void River::update_data() {
 }
 
 
-pt_2d River::lowest_pt() {
+pt_3d River::lowest_pt() {
 	number lowest_alti = 1e9;
-	pt_2d result(0.0);
+	pt_3d result(0.0);
 	for (auto & id : _id_nodes) {
 		if (_elevation->get_alti(id) < lowest_alti) {
 			lowest_alti = _elevation->get_alti(id);
-			result = _elevation->id2pt_2d(id);
+			result = _elevation->id2pt_3d(id);
+		}
+	}
+	return result;
+}
+
+
+pt_3d River::highest_pt() {
+	number highest_alti = -1e9;
+	pt_3d result(0.0);
+	for (auto & id : _id_nodes) {
+		if (_elevation->get_alti(id) > highest_alti) {
+			highest_alti = _elevation->get_alti(id);
+			result = _elevation->id2pt_3d(id);
 		}
 	}
 	return result;

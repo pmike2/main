@@ -21,15 +21,17 @@ using json = nlohmann::json;
 
 
 enum GL_IHM_GROUP_ORIENTATION {GL_IHM_HORIZONTAL, GL_IHM_VERTICAL};
-enum GL_IHM_GROUP_TYPE {GL_IHM_BUTTON, GL_IHM_CHECKBOX, GL_IHM_RADIO};
+enum GL_IHM_GROUP_TYPE {GL_IHM_BUTTON, GL_IHM_CHECKBOX, GL_IHM_RADIO, GL_IHM_SLIDER};
 
 
-const number TEXTURE_SIZE = 512;
 const float Z_NEAR = 0.0f;
 const float Z_FAR = 1000.0f;
-const float Z_IHM = 100.0f;
+const float Z_IHM = 10.0f;
 const number ALPHA_ACTIVE = 1.0;
 const number ALPHA_INACTIVE = 0.5;
+
+
+void fill_aabb2d_data(AABB_2D * aabb, number alpha, uint texture_layer, float * data);
 
 
 struct GLIHMGroup;
@@ -38,7 +40,8 @@ struct GLIHMElement {
 	GLIHMElement();
 	GLIHMElement(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size);
 	virtual ~GLIHMElement();
-	virtual void click(bool verbose) = 0;
+	virtual void click(bool verbose, pt_2d pt) = 0;
+	virtual void update_data() = 0;
 	void set_active();
 	void set_inactive();
 	void set_callback(std::function<void(void)> active_callback, std::function<void(void)> inactive_callback = [](){});
@@ -55,6 +58,8 @@ struct GLIHMElement {
 	bool _active;
 	std::function<void(void)> _active_callback, _inactive_callback;
 	SDL_Keycode _key;
+	float * _data;
+	uint _n_pts;
 };
 
 
@@ -62,7 +67,8 @@ struct GLIHMButton : public GLIHMElement {
 	GLIHMButton();
 	GLIHMButton(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size);
 	~GLIHMButton();
-	void click(bool verbose);
+	void click(bool verbose, pt_2d pt);
+	void update_data();
 
 
 	number _available_percent;
@@ -73,7 +79,8 @@ struct GLIHMCheckBox : public GLIHMElement {
 	GLIHMCheckBox();
 	GLIHMCheckBox(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size);
 	~GLIHMCheckBox();
-	void click(bool verbose);
+	void click(bool verbose, pt_2d pt);
+	void update_data();
 
 
 };
@@ -83,9 +90,22 @@ struct GLIHMRadio : public GLIHMElement {
 	GLIHMRadio();
 	GLIHMRadio(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size);
 	~GLIHMRadio();
-	void click(bool verbose);
+	void click(bool verbose, pt_2d pt);
+	void update_data();
 
 
+};
+
+
+struct GLIHMSlider : public GLIHMElement {
+	GLIHMSlider();
+	GLIHMSlider(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size);
+	~GLIHMSlider();
+	void click(bool verbose, pt_2d pt);
+	void update_data();
+
+
+	number _value, _min_value, _max_value;
 };
 
 
@@ -133,6 +153,7 @@ struct GLIHM {
 	bool _verbose;
 	pt_2d _default_element_size;
 	number _default_margin;
+	uint _texture_size;
 };
 
 

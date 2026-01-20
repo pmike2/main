@@ -8,7 +8,9 @@ Lake::Lake() {
 }
 
 
-Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0), _valid(true) {
+Lake::Lake(Elevation * elevation, pt_2d src) : Element(elevation, src), _valid(true) {
+	_type = ELEMENT_LAKE;
+
 	if (!_elevation->in_boundaries(src)) {
 		std::cerr << "Lake impossible src hors grille\n";
 		_valid = false;
@@ -88,6 +90,11 @@ Lake::Lake(Elevation * elevation, pt_2d src) : _elevation(elevation), _n_pts(0),
 	_id_nodes = _elevation->triangles2ids(_triangles);
 
 	_polygon = _elevation->ids2polygon(_id_nodes);
+
+	AABB * aabb = new AABB(pt_3d(_polygon->_aabb->_pos.x, _polygon->_aabb->_pos.y, -0.1),
+		pt_3d(_polygon->_aabb->_pos.x + _polygon->_aabb->_size.x, _polygon->_aabb->_pos.y + _polygon->_aabb->_size.y, 0.1));
+	_bbox->set_aabb(aabb);
+	delete aabb;
 
 	/*number EPS = 1.1;
 	for (auto & id : _id_nodes) {

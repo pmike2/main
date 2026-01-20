@@ -1,5 +1,5 @@
-#ifndef ELEMENTS_H
-#define ELEMENTS_H
+#ifndef TREE_H
+#define TREE_H
 
 #include <iostream>
 #include <vector>
@@ -12,30 +12,15 @@
 #include "bbox.h"
 #include "geom_2d.h"
 #include "geom.h"
-#include "convex_hull.h"
-#include "graph.h"
+#include "utile.h"
+
+#include "element.h"
 
 
 const uint BRANCH_N_POINTS_PER_CIRCLE = 6;
 const uint N_PTS_PER_BRANCH_SIDE= BRANCH_N_POINTS_PER_CIRCLE * 6;
 const uint N_PTS_PER_BRANCH_BOTTOM = BRANCH_N_POINTS_PER_CIRCLE * 3;
 const uint N_PTS_PER_BRANCH_TOP = BRANCH_N_POINTS_PER_CIRCLE * 3;
-
-const uint STONE_N_POINTS_HULL = 30;
-
-
-class Element {
-public:
-	Element();
-	Element(pt_3d pt_base, pt_3d size);
-	virtual ~Element() = default;
-	virtual void update_data() = 0;
-	//friend std::ostream & operator << (std::ostream & os, const Element & t);
-
-	AABB * _aabb;
-	float * _data;
-	uint _n_pts;
-};
 
 
 class TreeSpecies {
@@ -58,6 +43,7 @@ public:
 	glm::vec4 _branch_color;
 	number _alti_min, _alti_max;
 	number _water_dist_min, _water_dist_max;
+	pt_3d _size_min, _size_max;
 };
 
 
@@ -90,7 +76,7 @@ public:
 
 class Tree : public Element {
 public:
-	Tree(TreeSpecies * species, pt_3d pt_base, pt_3d size);
+	Tree(TreeSpecies * species, Elevation * elevation, pt_2d position);
 	Tree();
 	~Tree();
 	void gen_branches(Tree * tree, Branch * branch);
@@ -100,52 +86,6 @@ public:
 
 	TreeSpecies * _species;
 	std::vector<Branch *> _branches;
-	number _alti_min, _alti_max;
-	number _water_dist_min, _water_dist_max;
-};
-
-
-class StoneSpecies {
-public:
-	StoneSpecies();
-	StoneSpecies(std::string json_path);
-	~StoneSpecies();
-
-
-	std::string _name;
-	glm::vec4 _color;
-	number _alti_min, _alti_max;
-	number _water_dist_min, _water_dist_max;
-};
-
-
-class Stone : public Element {
-public:
-	Stone();
-	Stone(StoneSpecies * species, pt_3d pt_base, pt_3d size);
-	~Stone();
-	void update_data();
-
-
-	StoneSpecies * _species;
-	ConvexHull * _hull;
-};
-
-
-class Elements {
-public:
-	Elements();
-	Elements(std::string dir_tree_jsons, std::string dir_stone_jsons);
-	~Elements();
-	Tree * add_tree(std::string species_name, pt_3d pt_base, pt_3d size);
-	Stone * add_stone(std::string species_name, pt_3d pt_base, pt_3d size);
-	void clear();
-	void remove_in_aabb(AABB_2D * aabb);
-
-
-	std::map<std::string, TreeSpecies *> _tree_species;
-	std::map<std::string, StoneSpecies *> _stone_species;
-	std::vector<Element *> _elements;
 };
 
 

@@ -59,7 +59,7 @@ public:
 	void update_path();
 	void update_debug();
 	void update_elevation();
-	void update_elements();
+	void update_tree_stone();
 	void update_river();
 	void update_lake();
 	void update_sea();
@@ -86,6 +86,8 @@ public:
 	std::string _current_unit_type_name;
 	std::string _current_element_name;
 	std::string _current_elevation_mode;
+	number _current_elevation_radius;
+	number _current_elevation_factor;
 
 	number _angle;
 

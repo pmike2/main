@@ -65,11 +65,14 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 		UnitType * unit_type = new UnitType(json_path);
 		_unit_types[basename(json_path)] = unit_type;
 		_path_finder->add_unit_type(unit_type);
-		_unit_groups[unit_type] = new UnitGroup();
+		//_unit_groups[unit_type] = new UnitGroup();
 	}
 	//std::cout << *_unit_types["infantery"]->_obj_data << "\n";
 
-	_elements = new Elements(elements_dir + "/tree_species", elements_dir + "/stone_species");
+	_elements = new Elements(elements_dir + "/tree_species", elements_dir + "/stone_species", _elevation);
+
+	_teams.push_back(new Team("Team 1", _elevation));
+	_teams.push_back(new Team("Team 2", _elevation));
 
 	sync2elevation();
 }
@@ -78,8 +81,12 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 Map::~Map() {
 	clear();
 
+	for (auto & team : _teams) {
+		delete team;
+	}
+
 	delete _elements;
-	
+
 	delete _path_finder;
 
 	for (auto & ut : _unit_types) {
@@ -91,34 +98,20 @@ Map::~Map() {
 }
 
 
-void Map::add_unit(std::string type_name, pt_2d pos) {
-	if (pos.x < _origin.x || pos.y < _origin.y || pos.x >= _origin.x + _size.x || pos.y >= _origin.y + _size.y) {
-		std::cerr << "Map::add_unit hors Elevation\n";
+void Map::add_unit(Team * team, std::string type_name, pt_2d pos) {
+	Unit * unit = team->add_unit(_unit_types[type_name], _next_unit_id, pos);
+	if (unit == NULL) {
 		return;
 	}
-
-	pt_3d pt3d(pos.x, pos.y, _elevation->get_alti(pos));
-	Unit * unit = new Unit(_unit_types[type_name], pt3d);
-	unit->_id = _next_unit_id++;
-	_units.push_back(unit);
-
+	_next_unit_id++;
 	add_waiting_unit_to_position_grid(unit);
-
-	_unit_groups[_unit_types[type_name]]->add_unit(unit);
 }
 
 
-River * Map::add_river(pt_2d src) {
-	River * river = new River(_elevation, src);
-	if (!river->_valid) {
-		delete river;
-		return NULL;
-	}
-
-	if (river->_polygon == NULL) {
-		delete river;
-		std::cerr << "Map::add_river polygon NULL\n";
-		return NULL;
+void Map::add_river(pt_2d pos) {
+	River * river = _elements->add_river(pos);
+	if (river == NULL) {
+		return;
 	}
 
 	for (auto & ut : _unit_types) {
@@ -161,24 +154,13 @@ River * Map::add_river(pt_2d src) {
 	}
 
 	sync2elevation();
-
-	_rivers.push_back(river);
-
-	return river;
 }
 
 
-Lake * Map::add_lake(pt_2d src) {
-	Lake * lake = new Lake(_elevation, src);
-	if (!lake->_valid) {
-		delete lake;
-		return NULL;
-	}
-
-	if (lake->_polygon == NULL) {
-		delete lake;
-		std::cerr << "Map::add_lake polygon NULL\n";
-		return NULL;
+void Map::add_lake(pt_2d pos) {
+	Lake * lake = _elements->add_lake(pos);
+	if (lake == NULL) {
+		return;
 	}
 
 	for (auto & ut : _unit_types) {
@@ -244,10 +226,30 @@ Lake * Map::add_lake(pt_2d src) {
 	}
 
 	sync2elevation();
+}
 
-	_lakes.push_back(lake);
 
-	return lake;
+void Map::add_trees(std::string species_name, pt_2d pos, uint n_trees, number dispersion) {
+	for (uint j=0; j<n_trees; ++j) {
+		pt_2d pos_tree = rand_gaussian(pos, pt_2d(dispersion));
+		if (!_elevation->in_boundaries(pos_tree)) {
+			continue;
+		}
+		Tree * tree = _elements->add_tree(species_name, pos_tree);
+		update_terrain_grid_with_aabb(tree->_bbox->_aabb->aabb2d());
+	}
+}
+
+
+void Map::add_stones(std::string species_name, pt_2d pos, uint n_stones, number dispersion) {
+	for (uint j=0; j<n_stones; ++j) {
+		pt_2d pos_stone = rand_gaussian(pos, pt_2d(dispersion));
+		if (!_elevation->in_boundaries(pos_stone)) {
+			continue;
+		}
+		Stone * stone = _elements->add_stone(species_name, pos_stone);
+		update_terrain_grid_with_aabb(stone->_bbox->_aabb->aabb2d());
+	}
 }
 
 
@@ -331,10 +333,9 @@ void Map::update_terrain_grid_with_elevation() {
 }
 
 
-void Map::update_terrain_grid_with_element(Element * element) {
+void Map::update_terrain_grid_with_aabb(AABB_2D * aabb) {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
-		AABB_2D * aabb = new AABB_2D(pt_2d(element->_aabb->_vmin), pt_2d(element->_aabb->size()));
 		aabb->buffer(unit_type->buffer_size());
 
 		std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb);
@@ -497,27 +498,15 @@ void Map::path_find(Unit * unit, pt_2d goal) {
 
 
 void Map::clear() {
-	/*for (auto & obstacle : _obstacles) {
-		delete obstacle;
-	}
-	_obstacles.clear();
-	for (auto & buffered_obstacle : _buffered_obstacles) {
-		for (auto & obst : buffered_obstacle.second) {
-			delete obst;
-		}
-		buffered_obstacle.second.clear();
-	}*/
-
 	clear_units_position_grid();
 	
-	for (auto & unit : _units) {
-		delete unit;
+	for (auto & team : _teams) {
+		team->clear();
 	}
-	_units.clear();
 
 	_elements->clear();
 
-	_elevation->set_alti_all(0.0);
+	_elevation->set_alti_all(-0.01);
 	
 	sync2elevation();
 }
@@ -553,66 +542,67 @@ void Map::anim(time_point t) {
 		return;
 	}
 
-	for (auto & unit : _units) {
+	for (auto & team : _teams) {
+		for (auto & unit : team->_units) {
+			std::mutex mtx;
+			mtx.lock();
+			UNIT_STATUS status = unit->_status;
+			mtx.unlock();
 
-		std::mutex mtx;
-		mtx.lock();
-		UNIT_STATUS status = unit->_status;
-		mtx.unlock();
-
-		if (status == COMPUTING_PATH) {
-			continue;
-		}
-
-		if (status == COMPUTING_PATH_DONE) {
-			_path_find_thr_active = false;
-			_path_find_thr.join();
-			update_alti_path(unit);
-			unit->set_status(MOVING);
-			remove_waiting_unit_from_position_grid(unit);
-			add_moving_unit_to_position_grid(unit);
-		}
-		else if (status == COMPUTING_PATH_FAILED) {
-			_path_find_thr_active = false;
-			_path_find_thr.join();
-			unit->_instructions.push({unit->_path->_goal, t + std::chrono::milliseconds(1000)});
-			unit->set_status(WAITING);
-		}
-		else if (status == CHECKPOINT_CHECKED) {
-			remove_moving_unit_from_position_grid(unit, false);
-			unit->_path->_idx_path++;
-			unit->set_status(MOVING);
-		}
-		else if (status == LAST_CHECKPOINT_CHECKED) {
-			remove_moving_unit_from_position_grid(unit, true);
-			add_waiting_unit_to_position_grid(unit);
-			unit->set_status(WAITING);
-		}
-		else if (status == MOVING) {
-			unit->anim(_elevation);
-			_unit_groups[unit->_type]->update_unit(unit);
-			
-			for (auto & unit2 : _units) {
-				if (unit2 == unit) {
-					continue;
-				}
-
-				if (aabb_intersects_aabb(unit->_bbox->_aabb, unit2->_bbox->_aabb)) {
-					std::cerr << "intersection unit " << unit->_id << " et " << unit2->_id << "\n";
-				}
+			if (status == COMPUTING_PATH) {
+				continue;
 			}
-		}
 
-		if (!_path_find_thr_active && !unit->_instructions.empty()) {
-			Instruction i = unit->_instructions.front();
-			if (i._t <= t) {
-				unit->_instructions.pop();
+			if (status == COMPUTING_PATH_DONE) {
+				_path_find_thr_active = false;
+				_path_find_thr.join();
+				update_alti_path(unit);
+				unit->set_status(MOVING);
+				remove_waiting_unit_from_position_grid(unit);
+				add_moving_unit_to_position_grid(unit);
+			}
+			else if (status == COMPUTING_PATH_FAILED) {
+				_path_find_thr_active = false;
+				_path_find_thr.join();
+				unit->_instructions.push({unit->_path->_goal, t + std::chrono::milliseconds(1000)});
+				unit->set_status(WAITING);
+			}
+			else if (status == CHECKPOINT_CHECKED) {
+				remove_moving_unit_from_position_grid(unit, false);
+				unit->_path->_idx_path++;
+				unit->set_status(MOVING);
+			}
+			else if (status == LAST_CHECKPOINT_CHECKED) {
+				remove_moving_unit_from_position_grid(unit, true);
+				add_waiting_unit_to_position_grid(unit);
+				unit->set_status(WAITING);
+			}
+			else if (status == MOVING) {
+				unit->anim(_elevation);
+				//_unit_groups[unit->_type]->update_unit(unit);
+				
+				/*for (auto & unit2 : _units) {
+					if (unit2 == unit) {
+						continue;
+					}
 
-				pt_2d pt = i._destination;
+					if (aabb_intersects_aabb(unit->_bbox->_aabb, unit2->_bbox->_aabb)) {
+						std::cerr << "intersection unit " << unit->_id << " et " << unit2->_id << "\n";
+					}
+				}*/
+			}
 
-				unit->set_status(COMPUTING_PATH);
-				_path_find_thr= std::thread(&Map::path_find, this, unit, pt);
-				_path_find_thr_active = true;
+			if (!_path_find_thr_active && !unit->_instructions.empty()) {
+				Instruction i = unit->_instructions.front();
+				if (i._t <= t) {
+					unit->_instructions.pop();
+
+					pt_2d pt = i._destination;
+
+					unit->set_status(COMPUTING_PATH);
+					_path_find_thr= std::thread(&Map::path_find, this, unit, pt);
+					_path_find_thr_active = true;
+				}
 			}
 		}
 	}
@@ -621,11 +611,13 @@ void Map::anim(time_point t) {
 
 void Map::selected_units_goto(pt_2d pt, time_point t) {
 	uint compt = 0;
-	for (auto & unit : _units) {
-		if (unit->_selected) {
-			//unit->_instructions.push({pt, t + std::chrono::milliseconds(500 * compt)});
-			unit->_instructions.push({pt, t});
-			compt++;
+	for (auto & team : _teams) {
+		for (auto & unit : team->_units) {
+			if (unit->_selected) {
+				//unit->_instructions.push({pt, t + std::chrono::milliseconds(500 * compt)});
+				unit->_instructions.push({pt, t});
+				compt++;
+			}
 		}
 	}
 }
@@ -654,15 +646,7 @@ void Map::randomize() {
 		number alti = _elevation->get_alti(pt);
 		for (auto & tree_species : _elements->_tree_species) {
 			if (alti > tree_species.second->_alti_min && alti < tree_species.second->_alti_max) {
-				for (uint j=0; j<20; ++j) {
-					pt_3d size = rand_pt_3d(0.5, 1.0, 0.5, 1.0, 5.0, 10.0);
-					pt_2d pos = rand_gaussian(pt, pt_2d(3.0));
-					if (!_elevation->in_boundaries(pos)) {
-						continue;
-					}
-					Tree * tree = _elements->add_tree(tree_species.first, pt_3d(pos.x, pos.y, _elevation->get_alti(pos)), size);
-					update_terrain_grid_with_element(tree);
-				}
+				add_trees(tree_species.first, pt, 20, 3.0);
 				break;
 			}
 		}
@@ -676,15 +660,7 @@ void Map::randomize() {
 		number alti = _elevation->get_alti(pt);
 		for (auto & stone_species : _elements->_stone_species) {
 			if (alti > stone_species.second->_alti_min && alti < stone_species.second->_alti_max) {
-				for (uint j=0; j<20; ++j) {
-					pt_3d size = rand_pt_3d(0.5, 2.0, 0.5, 2.0, 1.0, 1.5);
-					pt_2d pos = rand_gaussian(pt, pt_2d(3.0));
-					if (!_elevation->in_boundaries(pos)) {
-						continue;
-					}
-					Stone * stone = _elements->add_stone(stone_species.first, pt_3d(pos.x, pos.y, _elevation->get_alti(pos)), size);
-					update_terrain_grid_with_element(stone);
-				}
+				add_stones(stone_species.first, pt, 20, 3.0);
 				break;
 			}
 		}
@@ -695,7 +671,7 @@ void Map::randomize() {
 void Map::save(std::string json_path) {
 	json js;
 
-	js["Elevation"] = json::array();
+	/*js["Elevation"] = json::array();
 	for (uint lig = 0; lig<_elevation->_n_ligs; ++lig) {
 		for (uint col = 0; col<_elevation->_n_cols; ++col) {
 			js["Elevation"].push_back(_elevation->get_alti(col, lig));
@@ -712,7 +688,7 @@ void Map::save(std::string json_path) {
 		//position.push_back(unit->_aabb->center().z);
 		entry["position"]= position;
 		js["units"].push_back(entry);
-	}
+	}*/
 
 	std::ofstream ofs(json_path);
 	ofs << js << "\n";
@@ -720,7 +696,7 @@ void Map::save(std::string json_path) {
 
 
 void Map::load(std::string json_path) {
-	clear();
+	/*clear();
 
 	std::ifstream ifs(json_path);
 	json js= json::parse(ifs);
@@ -736,7 +712,7 @@ void Map::load(std::string json_path) {
 		add_unit(unit["type"], pt_2d(unit["position"][0], unit["position"][1]));
 	}
 
-	sync2elevation();
+	sync2elevation();*/
 }
 
 
@@ -745,9 +721,9 @@ std::ostream & operator << (std::ostream & os, Map & map) {
 	for (auto & ut : map._unit_types) {
 		os << *ut.second << "\n";
 	}
-	os << "units = ";
-	for (auto & unit : map._units) {
-		os << *unit << "\n";
+	os << "teams = ";
+	for (auto & team : map._teams) {
+		os << *team << "\n";
 	}
 	return os;
 }

@@ -623,7 +623,7 @@ float * draw_nothing(float * data, uint n_attrs_per_pts, uint n_pts) {
 
 
 void fill_texture_array(uint texture_offset, uint texture_idx, uint texture_size, std::vector<std::string> pngs) {
-	glActiveTexture(GL_TEXTURE0+ texture_offset);
+	glActiveTexture(GL_TEXTURE0 + texture_offset);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, texture_idx);
 	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RGBA, texture_size, texture_size, pngs.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
 
@@ -637,7 +637,7 @@ void fill_texture_array(uint texture_offset, uint texture_idx, uint texture_size
 			std::cout << "png=" << pngs[idx_png] << " n'existe pas\n";
 			return;
 		}
-		SDL_Surface * surface= IMG_Load(pngs[idx_png].c_str());
+		SDL_Surface * surface = IMG_Load(pngs[idx_png].c_str());
 		if (!surface) {
 			std::cout << "IMG_Load error :" << IMG_GetError() << "\n";
 			return;
