@@ -48,7 +48,7 @@ Map::Map() {
 
 
 Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t) :
-	_origin(origin), _size(size), _paused(false), _path_find_thr_active(false)
+	_origin(origin), _size(size), _paused(false)
 {
 	uint n_ligs_path = uint(_size.y / path_resolution.y) + 1;
 	uint n_cols_path = uint(_size.x / path_resolution.x) + 1;
@@ -235,8 +235,15 @@ void Map::add_trees(std::string species_name, pt_2d pos, uint n_trees, number di
 		if (!_elevation->in_boundaries(pos_tree)) {
 			continue;
 		}
+		
 		Tree * tree = _elements->add_tree(species_name, pos_tree);
-		update_terrain_grid_with_aabb(tree->_bbox->_aabb->aabb2d());
+		if (tree == NULL) {
+			continue;
+		}
+
+		AABB_2D * aabb = tree->_bbox->_aabb->aabb2d();
+		update_terrain_grid_with_aabb(aabb);
+		delete aabb;
 	}
 }
 
@@ -248,7 +255,13 @@ void Map::add_stones(std::string species_name, pt_2d pos, uint n_stones, number 
 			continue;
 		}
 		Stone * stone = _elements->add_stone(species_name, pos_stone);
+		if (stone == NULL) {
+			continue;
+		}
+
+		AABB_2D * aabb = stone->_bbox->_aabb->aabb2d();
 		update_terrain_grid_with_aabb(stone->_bbox->_aabb->aabb2d());
+		delete aabb;
 	}
 }
 
@@ -336,9 +349,9 @@ void Map::update_terrain_grid_with_elevation() {
 void Map::update_terrain_grid_with_aabb(AABB_2D * aabb) {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
-		aabb->buffer(unit_type->buffer_size());
+		AABB_2D * aabb_buffered = aabb->buffered(unit_type->buffer_size());
 
-		std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb);
+		std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb_buffered);
 		for (auto & e : edges) {
 			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
 			EdgeData * data = (EdgeData *)(edge._data);
@@ -538,6 +551,8 @@ void Map::clear() {
 
 
 void Map::anim(time_point t) {
+	bool path_find_thr_active = false;
+
 	if (_paused) {
 		return;
 	}
@@ -554,7 +569,7 @@ void Map::anim(time_point t) {
 			}
 
 			if (status == COMPUTING_PATH_DONE) {
-				_path_find_thr_active = false;
+				path_find_thr_active = false;
 				_path_find_thr.join();
 				update_alti_path(unit);
 				unit->set_status(MOVING);
@@ -562,7 +577,7 @@ void Map::anim(time_point t) {
 				add_moving_unit_to_position_grid(unit);
 			}
 			else if (status == COMPUTING_PATH_FAILED) {
-				_path_find_thr_active = false;
+				path_find_thr_active = false;
 				_path_find_thr.join();
 				unit->_instructions.push({unit->_path->_goal, t + std::chrono::milliseconds(1000)});
 				unit->set_status(WAITING);
@@ -592,7 +607,7 @@ void Map::anim(time_point t) {
 				}*/
 			}
 
-			if (!_path_find_thr_active && !unit->_instructions.empty()) {
+			if (!path_find_thr_active && !unit->_instructions.empty()) {
 				Instruction i = unit->_instructions.front();
 				if (i._t <= t) {
 					unit->_instructions.pop();
@@ -601,7 +616,7 @@ void Map::anim(time_point t) {
 
 					unit->set_status(COMPUTING_PATH);
 					_path_find_thr= std::thread(&Map::path_find, this, unit, pt);
-					_path_find_thr_active = true;
+					path_find_thr_active = true;
 				}
 			}
 		}
@@ -629,14 +644,6 @@ void Map::randomize() {
 	_elevation->randomize();
 	
 	sync2elevation();
-
-	/*for (uint i=0; i<20; ++i) {
-		pt_2d src = rand_gaussian(_origin + 0.5 * _size, 0.2 * _size);
-		River * river = add_river(src);
-		if (river != NULL) {
-			add_lake(river->lowest_pt());
-		}
-	}*/
 
 	for (uint i=0; i<50; ++i) {
 		pt_2d pt = rand_gaussian(_origin + 0.5 * _size, 0.3 * _size);

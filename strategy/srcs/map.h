@@ -88,15 +88,10 @@ struct Map {
 	PathFinder * _path_finder;
 	Elevation * _elevation;
 	Elements * _elements;
-	//std::vector<River * > _rivers;
-	//std::vector<Lake *> _lakes;
-	//std::map<UnitType *, UnitGroup *> _unit_groups;
-	//std::vector<Unit *> _units;
 	std::vector<Team *> _teams;
 
 	bool _paused;
 	std::thread _path_find_thr;
-	bool _path_find_thr_active;
 };
 
 

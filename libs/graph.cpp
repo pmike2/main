@@ -228,6 +228,14 @@ bool GraphGrid::in_boundaries(pt_2d pt) {
 }
 
 
+bool GraphGrid::in_boundaries(AABB_2D * aabb) {
+	if (in_boundaries(aabb->_pos) && in_boundaries(aabb->_pos + aabb->_size)) {
+		return true;
+	}
+	return false;
+}
+
+
 bool GraphGrid::id_in_ids(uint id, const std::vector<uint> & ids) {
 	if (!in_boundaries(id)) {
 		return false;
@@ -345,8 +353,28 @@ uint GraphGrid::pt2closest_id(pt_2d pt) {
 
 
 std::pair<int_pair, int_pair> GraphGrid::aabb2col_lig_min_max(AABB_2D * aabb) {
-	int_pair col_lig_min = pt2col_lig(aabb->_pos);
-	int_pair col_lig_max = pt2col_lig(aabb->_pos + aabb->_size);
+	if (!aabb2d_intersects_aabb2d(aabb, _aabb)) {
+		std::cerr << "GraphGrid::aabb2col_lig_min_max : pas d'intersection entre " << *_aabb << " et " << *aabb << "\n";
+		return std::make_pair(std::make_pair(0, 0), std::make_pair(0, 0));
+	}
+
+	pt_2d pt_min = aabb->_pos;
+	pt_2d pt_max = aabb->_pos + aabb->_size;
+	if (pt_min.x < _aabb->_pos.x) {
+		pt_min.x = _aabb->_pos.x;
+	}
+	if (pt_min.y < _aabb->_pos.y) {
+		pt_min.y = _aabb->_pos.y;
+	}
+	if (pt_max.x > _aabb->_pos.x + _aabb->_size.x) {
+		pt_max.x = _aabb->_pos.x + _aabb->_size.x;
+	}
+	if (pt_max.y > _aabb->_pos.y + _aabb->_size.y) {
+		pt_max.y = _aabb->_pos.y + _aabb->_size.y;
+	}
+
+	int_pair col_lig_min = pt2col_lig(pt_min);
+	int_pair col_lig_max = pt2col_lig(pt_max);
 
 	// car pt2col_lig renvoie le coin bas-gauche de la cellule contenant pt
 	if (col_lig_max.first < _n_cols - 1) {
@@ -544,10 +572,14 @@ std::vector<uint> GraphGrid::vertices_in_cell_containing_pt(pt_2d pt) {
 
 std::vector<uint> GraphGrid::vertices_in_aabb(AABB_2D * aabb) {
 	std::vector<uint> result;
-	int_pair col_lig_min = pt2col_lig(aabb->_pos);
-	int_pair col_lig_max = pt2col_lig(aabb->_pos + aabb->_size);
-	for (uint col = col_lig_min.first; col<= col_lig_max.first; ++col) {
-		for (uint lig = col_lig_min.second; lig<= col_lig_max.second; ++lig) {
+	std::pair<int_pair, int_pair> col_lig_min_max = aabb2col_lig_min_max(aabb);
+	uint col_min = col_lig_min_max.first.first;
+	uint lig_min = col_lig_min_max.first.second;
+	uint col_max = col_lig_min_max.second.first;
+	uint lig_max = col_lig_min_max.second.second;
+
+	for (uint col = col_min; col<=col_max; ++col) {
+		for (uint lig = lig_min; lig<=lig_max; ++lig) {
 			result.push_back(col_lig2id(col, lig));
 		}
 	}

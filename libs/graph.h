@@ -78,6 +78,7 @@ struct GraphGrid : public Graph {
 	bool in_boundaries(uint id);
 	bool in_boundaries(int col, int lig);
 	bool in_boundaries(pt_2d pt);
+	bool in_boundaries(AABB_2D * aabb);
 
 	bool id_in_ids(uint id, const std::vector<uint> & ids);
 

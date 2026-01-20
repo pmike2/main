@@ -37,6 +37,12 @@ Tree * Elements::add_tree(std::string species_name, pt_2d position) {
 	}
 
 	Tree * tree = new Tree(_tree_species[species_name], _elevation, position);
+
+	AABB_2D * aabb = tree->_bbox->_aabb->aabb2d();
+	if (!_elevation->in_boundaries(aabb)) {
+		return NULL;
+	}
+
 	_elements.push_back(tree);
 	return tree;
 }
@@ -49,6 +55,12 @@ Stone * Elements::add_stone(std::string species_name, pt_2d position) {
 	}
 
 	Stone * stone = new Stone(_stone_species[species_name], _elevation, position);
+
+	AABB_2D * aabb = stone->_bbox->_aabb->aabb2d();
+	if (!_elevation->in_boundaries(aabb)) {
+		return NULL;
+	}
+
 	_elements.push_back(stone);
 	return stone;
 }

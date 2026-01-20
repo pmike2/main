@@ -54,7 +54,7 @@
 		{
 			"type" : "slider",
 			"name" : "edit_elevation_params",
-			"position" : [-4.0, -3.0],
+			"position" : [-4.0, -1.0],
 			"element_size" : [0.2, 2.0],
 			"orientation" : "horizontal",
 			"elements" : [
