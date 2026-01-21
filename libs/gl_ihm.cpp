@@ -438,7 +438,13 @@ GLIHM::GLIHM(std::map<std::string, GLuint> progs, ScreenGL * screengl, std::stri
 		GLIHMGroup * gl_group = add_group(group["name"], type, orientation, position, element_size, margin);
 
 		for (auto & element : group["elements"]) {
-			GLIHMElement * gl_element = gl_group->add_element(element["name"], element["texture"]);
+			std::string name = element["name"];
+			// par défaut le chemin de la texture est le nom de l'element en minuscule
+			std::string texture = str_to_lower(name) + ".png";
+			if (element["texture"] != nullptr) {
+				texture = element["texture"];
+			}
+			GLIHMElement * gl_element = gl_group->add_element(name, texture);
 			if (element["groups_visible"] != nullptr) {
 				for (auto group_visible : element["groups_visible"]) {
 					groups_visible.push_back(std::make_pair(gl_element, group_visible));

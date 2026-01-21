@@ -1,7 +1,8 @@
 {
-	"name" : "boat",
-	"size" : [1.0, 1.0, 0.5],
+	"type" : "BOAT",
 	"max_velocity" : 0.02,
+	"floats" : true,
+	"flies" : false,
 	"weights" : {
 		"GROUND" : 1000.0,
 		"OBSTACLE" : 1000.0,

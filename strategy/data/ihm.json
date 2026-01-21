@@ -6,15 +6,34 @@
 	"default_margin" : 0.05,
 	"groups" : [
 		{
+			"type" : "checkbox",
+			"name" : "show_info",
+			"position" : [-5.0, 3.5],
+			"orientation" : "horizontal",
+			"elements" : [
+				{"name" : "show_info"}
+			]
+		},
+		{
 			"type" : "radio",
 			"name" : "mode",
 			"position" : [-5.0, 1.0],
 			"orientation" : "vertical",
 			"elements" : [
-				{"name" : "play", "texture" : "play.png"},
-				{"name" : "add_unit", "texture" : "add_unit.png", "groups_visible" : ["units"]},
-				{"name" : "add_element", "texture" : "add_element.png", "groups_visible" : ["elements"]},
-				{"name" : "edit_elevation", "texture" : "edit_elevation.png", "groups_visible" : ["elevation", "edit_elevation_params"]}
+				{"name" : "play", "groups_visible" : ["play_mode"]},
+				{"name" : "add_unit", "groups_visible" : ["units"]},
+				{"name" : "add_element", "groups_visible" : ["elements", "elements_params"]},
+				{"name" : "edit_elevation", "groups_visible" : ["elevation", "edit_elevation_params"]}
+			]
+		},
+		{
+			"type" : "radio",
+			"name" : "play_mode",
+			"position" : [-4.5, 1.0],
+			"orientation" : "vertical",
+			"elements" : [
+				{"name" : "select_unit"},
+				{"name" : "move_unit"}
 			]
 		},
 		{
@@ -23,10 +42,10 @@
 			"position" : [-4.5, 1.0],
 			"orientation" : "vertical",
 			"elements" : [
-				{"name" : "infantery", "texture" : "infantery.png", "key" : "i"},
-				{"name" : "tank", "texture" : "tank.png", "key" : "t"},
-				{"name" : "helicopter", "texture" : "helicopter.png", "key" : "h"},
-				{"name" : "boat", "texture" : "boat.png", "key" : "b"}
+				{"name" : "INFANTERY", "key" : "i"},
+				{"name" : "TANK", "key" : "t"},
+				{"name" : "HELICOPTER", "key" : "h"},
+				{"name" : "BOAT", "key" : "b"}
 			]
 		},
 		{
@@ -35,10 +54,21 @@
 			"position" : [-4.5, 1.0],
 			"orientation" : "vertical",
 			"elements" : [
-				{"name" : "tree", "texture" : "tree.png", "key" : "t"},
-				{"name" : "stone", "texture" : "stone.png", "key" : "s"},
-				{"name" : "river", "texture" : "river.png", "key" : "r"},
-				{"name" : "lake", "texture" : "lake.png", "key" : "l"}
+				{"name" : "TREE", "key" : "t"},
+				{"name" : "STONE", "key" : "s"},
+				{"name" : "RIVER", "key" : "r"},
+				{"name" : "LAKE", "key" : "l"}
+			]
+		},
+		{
+			"type" : "slider",
+			"name" : "elements_params",
+			"position" : [-4.0, -1.0],
+			"element_size" : [0.2, 2.0],
+			"orientation" : "horizontal",
+			"elements" : [
+				{"name" : "n_elements", "min_value" : 1.0, "max_value" : 100.0},
+				{"name" : "elements_dispersion", "min_value" : 0.5, "max_value" : 8.0}
 			]
 		},
 		{
@@ -47,8 +77,9 @@
 			"position" : [-4.5, 1.0],
 			"orientation" : "vertical",
 			"elements" : [
-				{"name" : "elevation_plus", "texture" : "elevation_plus.png"},
-				{"name" : "elevation_minus", "texture" : "elevation_minus.png"}
+				{"name" : "ELEVATION_ZERO"},
+				{"name" : "ELEVATION_PLUS"},
+				{"name" : "ELEVATION_MINUS"}
 			]
 		},
 		{
@@ -58,8 +89,9 @@
 			"element_size" : [0.2, 2.0],
 			"orientation" : "horizontal",
 			"elements" : [
-				{"name" : "elevation_radius", "texture" : "elevation_radius.png", "min_value" : 1.0, "max_value" : 50.0},
-				{"name" : "elevation_factor", "texture" : "elevation_factor.png", "min_value" : 1.0, "max_value" : 10.0}
+				{"name" : "elevation_radius", "min_value" : 1.0, "max_value" : 50.0},
+				{"name" : "elevation_factor", "min_value" : 1.0, "max_value" : 10.0},
+				{"name" : "elevation_exponent", "min_value" : 0.1, "max_value" : 10.0}
 			]
 		},
 		{
@@ -68,10 +100,10 @@
 			"position" : [-4.0, -4.0],
 			"orientation" : "horizontal",
 			"elements" : [
-				{"name" : "randomize", "texture" : "randomize.png", "key" : "r"},
-				{"name" : "clear", "texture" : "clear.png", "key" : "c"},
-				{"name" : "save", "texture" : "save.png", "key" : "s"},
-				{"name" : "load", "texture" : "load.png", "key" : "l"}
+				{"name" : "randomize", "key" : "r"},
+				{"name" : "clear", "key" : "c"},
+				{"name" : "save", "key" : "s"},
+				{"name" : "load", "key" : "l"}
 			]
 		},
 		{
@@ -80,13 +112,13 @@
 			"position" : [0.0, -4.0],
 			"orientation" : "horizontal",
 			"elements" : [
-				{"name" : "repere", "texture" : "repere.png"},
-				{"name" : "elevation", "texture" : "elevation.png", "checked" : "true"},
-				{"name" : "elements", "texture" : "elements.png", "checked" : "true"},
-				{"name" : "units", "texture" : "units.png", "checked" : "true"},
-				{"name" : "sea", "texture" : "sea.png", "checked" : "true"},
-				{"name" : "unit_linear", "texture" : "unit_linear.png"},
-				{"name" : "grid", "texture" : "grid.png", "groups_visible" : ["grid_type", "grid_unit_type"]}
+				{"name" : "repere"},
+				{"name" : "elevation", "checked" : "true"},
+				{"name" : "elements", "checked" : "true"},
+				{"name" : "units", "checked" : "true"},
+				{"name" : "sea", "checked" : "true"},
+				{"name" : "unit_linear"},
+				{"name" : "grid", "groups_visible" : ["grid_type", "grid_unit_type"]}
 			]
 		},
 		{
@@ -95,9 +127,9 @@
 			"position" : [0.0, -3.5],
 			"orientation" : "horizontal",
 			"elements" : [
-				{"name" : "terrain", "texture" : "grid_terrain.png"},
-				{"name" : "elevation", "texture" : "grid_elevation.png"},
-				{"name" : "units_position", "texture" : "grid_units_position.png"}
+				{"name" : "TERRAIN"},
+				{"name" : "ELEVATION"},
+				{"name" : "UNITS_POSITION"}
 			]
 		},
 		{
@@ -106,10 +138,10 @@
 			"position" : [0.0, -3.0],
 			"orientation" : "horizontal",
 			"elements" : [
-				{"name" : "infantery", "texture" : "grid_infantery.png"},
-				{"name" : "tank", "texture" : "grid_tank.png"},
-				{"name" : "helicopter", "texture" : "grid_helicopter.png"},
-				{"name" : "boat", "texture" : "grid_boat.png"}
+				{"name" : "INFANTERY"},
+				{"name" : "TANK"},
+				{"name" : "HELICOPTER"},
+				{"name" : "BOAT"}
 			]
 		}
 	]

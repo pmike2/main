@@ -39,9 +39,13 @@ struct GraphVertex {
 };
 
 
+// TODO : mettre en private et utiliser les getters dans les codes appelants
 struct Graph {
 	Graph();
 	~Graph();
+	GraphVertex get_vertex(uint i);
+	GraphEdge get_edge(uint i, uint j);
+	GraphEdge get_edge(uint_pair p);
 	void add_vertex(uint i, pt_3d pos=pt_3d(0.0));
 	void add_edge(uint i, uint j);
 	void remove_vertex(uint i);
@@ -66,15 +70,6 @@ struct GraphGrid : public Graph {
 
 	std::map<std::string, uint> named_neighbors(uint id);
 	
-	/*uint right(uint id);
-	uint left(uint id);
-	uint top(uint id);
-	uint bottom(uint id);
-	uint top_right(uint id);
-	uint bottom_right(uint id);
-	uint top_left(uint id);
-	uint bottom_left(uint id);*/
-
 	bool in_boundaries(uint id);
 	bool in_boundaries(int col, int lig);
 	bool in_boundaries(pt_2d pt);
@@ -91,6 +86,7 @@ struct GraphGrid : public Graph {
 	int_pair pt2col_lig(pt_2d pt);
 	uint pt2id(pt_2d pt);
 	uint pt2closest_id(pt_2d pt);
+	uint_pair pt2closest_edge(pt_2d pt);
 	std::pair<int_pair, int_pair> aabb2col_lig_min_max(AABB_2D * aabb);
 	
 	std::vector<uint_pair> edges_intersecting_segment(pt_2d pt1, pt_2d pt2);

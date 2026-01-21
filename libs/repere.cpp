@@ -155,58 +155,15 @@ RectSelect::RectSelect() {
 
 
 RectSelect::RectSelect(std::map<std::string, GLuint> progs) : 
-	_is_active(false), _gl_origin(pt_2d(0.0)), _gl_moving(pt_2d(0.0)),	_color(pt_3d(1.0, 1.0, 0.0)), _z(0.0)
+	_is_active(false), _gl_origin(pt_2d(0.0)), _gl_moving(pt_2d(0.0))
 {
-	/*GLuint buffer;
-	glGenBuffers(1, &buffer);*/
-
-	_context= new DrawContext(progs["select"], 
-		std::vector<std::string>{"position_in:2", "color_in:3"},
-		std::vector<std::string>{"z"});
-	_context->_n_pts = 8;
-
 	for (uint i=0; i<4; ++i) {
 		_norms[i]= pt_3d(0.0);
 	}
-
-	update_draw();
 }
 
 
 RectSelect::~RectSelect() {
-	delete _context;
-}
-
-
-void RectSelect::draw() {
-	if (!_is_active) {
-		return;
-	}
-
-	/*glUseProgram(_context->_prog);
-	glBindBuffer(GL_ARRAY_BUFFER, _context->_buffer);
-
-	glUniform1f(_context->_locs_uniform["z"], float(_z));
-
-	for (auto attr : _context->_locs_attrib) {
-		glEnableVertexAttribArray(attr.second);
-	}
-		
-	glVertexAttribPointer(_context->_locs_attrib["position_in"], 2, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)0);
-	glVertexAttribPointer(_context->_locs_attrib["color_in"], 3, GL_FLOAT, GL_FALSE, 5* sizeof(float), (void*)(2* sizeof(float)));
-
-	glDrawArrays(GL_LINES, 0, _context->_n_pts);
-
-	for (auto attr : _context->_locs_attrib) {
-		glDisableVertexAttribArray(attr.second);
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);		
-	glUseProgram(0);*/
-
-	_context->activate();
-	glDrawArrays(GL_LINES, 0, _context->_n_pts);
-	_context->deactivate();
 
 }
 
@@ -214,40 +171,16 @@ void RectSelect::draw() {
 void RectSelect::set_origin(pt_2d gl_v) {
 	_gl_origin= gl_v;
 	_gl_moving= _gl_origin;
-	update_draw();
 }
 
 
 void RectSelect::set_moving(pt_2d gl_v) {
 	_gl_moving= gl_v;
-	update_draw();
 }
 
 
 void RectSelect::set_active(bool is_active) {
 	_is_active= is_active;
-}
-
-
-void RectSelect::update_draw() {
-	float data_selection[]= {
-		float(_gl_origin.x), float(_gl_origin.y), float(_color.x), float(_color.y), float(_color.z),
-		float(_gl_moving.x), float(_gl_origin.y), float(_color.x), float(_color.y), float(_color.z),
-		
-		float(_gl_moving.x), float(_gl_origin.y), float(_color.x), float(_color.y), float(_color.z),
-		float(_gl_moving.x), float(_gl_moving.y), float(_color.x), float(_color.y), float(_color.z),
-		
-		float(_gl_moving.x), float(_gl_moving.y), float(_color.x), float(_color.y), float(_color.z),
-		float(_gl_origin.x), float(_gl_moving.y), float(_color.x), float(_color.y), float(_color.z),
-
-		float(_gl_origin.x), float(_gl_moving.y), float(_color.x), float(_color.y), float(_color.z),
-		float(_gl_origin.x), float(_gl_origin.y), float(_color.x), float(_color.y), float(_color.z),
-	};
-
-	_context->set_data(data_selection);
-	/*glBindBuffer(GL_ARRAY_BUFFER, _context->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(data_selection), data_selection, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);*/
 }
 
 
@@ -262,7 +195,7 @@ ViewSystem::ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl)
 	_target(pt_3d(0.0, 0.0, 0.0)), _eye(pt_3d(0.0, 0.0, 0.0)), _up(pt_3d(0.0, 0.0, 0.0)), 
 	_phi(0.0), _theta(0.0), _rho(1.0),
 	_type(FREE_VIEW), _frustum_halfsize(FRUSTUM_HALFSIZE), _frustum_near(FRUSTUM_NEAR), _frustum_far(FRUSTUM_FAR),
-	_new_single_selection(false), _new_rect_selection(false), _new_destination(false), _free_view_x(0.0), _free_view_y(0.0)
+	_new_single_selection(false), _new_rect_selection(false), _free_view_x(0.0), _free_view_y(0.0)
 {
 	_camera2clip= glm::frustum(-_frustum_halfsize* _screengl->_screen_width/ _screengl->_screen_height, _frustum_halfsize* _screengl->_screen_width/ _screengl->_screen_height, -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
 
@@ -270,9 +203,6 @@ ViewSystem::ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl)
 
 	_repere= new Repere(progs);
 	_rect_select= new RectSelect(progs);
-
-	//_font= new Font(progs, "../../fonts/Silom.ttf", 48, screengl);
-	//_font->_z= 100.0;
 }
 
 
@@ -289,16 +219,9 @@ bool ViewSystem::mouse_button_down(InputState * input_state) {
 	_free_view_y= 0.0;
 
 	if (input_state->_left_mouse) {
-		if (input_state->_keys[SDLK_m]) {
-			_new_destination= true;
-			_destination= pt_3d(screen2world(input_state->_x, input_state->_y, 0.0), 0.0);
-			return true;
-		}
-		else {
-			_rect_select->set_active(true);
-			_rect_select->set_origin(screen2gl(input_state->_x, input_state->_y));
-			return true;
-		}
+		_rect_select->set_active(true);
+		_rect_select->set_origin(screen2gl(input_state->_x, input_state->_y));
+		return true;
 	}
 	return false;
 }
@@ -423,7 +346,6 @@ bool ViewSystem::key_down(InputState * input_state, SDL_Keycode key) {
 
 
 bool ViewSystem::key_up(InputState * input_state, SDL_Keycode key) {
-
 	return false;
 }
 
@@ -534,7 +456,6 @@ void ViewSystem::move_rho(number x) {
 
 void ViewSystem::draw() {
 	_repere->draw(_world2clip);
-	_rect_select->draw();
 
 	// TODO : afficher des infos relatives à ViewSystem
 	/*std::vector<Text> texts;

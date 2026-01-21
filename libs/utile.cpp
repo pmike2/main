@@ -170,8 +170,7 @@ number perlin(number x, number y, number* gradient, uint gradient_w, uint gradie
 }
 
 
-void calculate_normal(number *coord1, number *coord2, number *coord3, number *norm) {
-	/* calculate Vector1 and Vector2 */
+/*void calculate_normal(number *coord1, number *coord2, number *coord3, number *norm) {
 	number va[3], vb[3], vr[3], val;
 	va[0]= coord1[0]- coord2[0];
 	va[1]= coord1[1]- coord2[1];
@@ -181,17 +180,25 @@ void calculate_normal(number *coord1, number *coord2, number *coord3, number *no
 	vb[1]= coord1[1]- coord3[1];
 	vb[2]= coord1[2]- coord3[2];
 	
-	/* cross product */
 	vr[0]= va[1]* vb[2]- vb[1]* va[2];
 	vr[1]= vb[0]* va[2]- va[0]* vb[2];
 	vr[2]= va[0]* vb[1]- vb[0]* va[1];
 	
-	/* normalization factor */
 	val= sqrt(vr[0]* vr[0]+ vr[1]* vr[1]+ vr[2]* vr[2]);
 	
 	norm[0]= vr[0]/ val;
 	norm[1]= vr[1]/ val;
 	norm[2]= vr[2]/ val;
+}*/
+
+
+std::vector<pt_2d> circle_vertices(pt_2d center, number radius, uint n_pts) {
+	std::vector<pt_2d> result;
+	for (uint i=0; i<n_pts; ++i) {
+		number angle = number(i) * M_PI * 2.0 / number(n_pts);
+		result.push_back(center + radius * pt_2d(cos(angle), sin(angle)));
+	}
+	return result;
 }
 
 
@@ -289,6 +296,24 @@ void rtrim(std::string &s) {
 void trim(std::string &s) {
 	rtrim(s);
 	ltrim(s);
+}
+
+
+std::string str_to_lower(std::string s) {
+	std::string result = s;
+	std::transform(result.begin(), result.end(), result.begin(),
+		[](unsigned char c){ return std::tolower(c); }
+	);
+	return result;
+}
+
+
+std::string str_to_upper(std::string s) {
+	std::string result = s;
+	std::transform(result.begin(), result.end(), result.begin(),
+		[](unsigned char c){ return std::toupper(c); }
+	);
+	return result;
 }
 
 

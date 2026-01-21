@@ -55,11 +55,10 @@ void mouse_button_up(int x, int y, unsigned short button, time_point t) {
 	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (strategy->mouse_button_up(input_state, t)) {
-		return;
-	}
-
 	if (view_system->mouse_button_up(input_state)) {
+		//return; // on veut récupérer le _rect de view_system dans strategy->mouse_button_up
+	}
+	if (strategy->mouse_button_up(input_state, t)) {
 		return;
 	}
 }
@@ -163,17 +162,19 @@ void init() {
 	glBindVertexArray(g_vao);
 
 	std::map<std::string, GLuint> progs;
+	
 	progs["repere"]= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
-	progs["select"]= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
 	progs["font"]= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
 	progs["font3d"]= create_prog("../../shaders/vertexshader_font_3d.txt", "../../shaders/fragmentshader_font.txt");
+	progs["gl_ihm"]= create_prog("../../shaders/vertexshader_gl_ihm.txt", "../../shaders/fragmentshader_gl_ihm.txt");
+
 	progs["elevation_flat"]= create_prog("../shaders/vertexshader_elevation_flat.txt", "../shaders/fragmentshader_elevation_flat.txt");
 	progs["elevation_smooth"]= create_prog("../shaders/vertexshader_elevation_smooth.txt", "../shaders/fragmentshader_elevation_smooth.txt");
 	progs["dash"]= create_prog("../shaders/vertexshader_dash.txt", "../shaders/fragmentshader_dash.txt", "../shaders/geometryshader_dash.txt");
 	progs["lake"]= create_prog("../shaders/vertexshader_lake.txt", "../shaders/fragmentshader_lake.txt");
 	progs["river"]= create_prog("../shaders/vertexshader_river.txt", "../shaders/fragmentshader_river.txt");
 	progs["unit"]= create_prog("../shaders/vertexshader_unit.txt", "../shaders/fragmentshader_unit.txt");
-	progs["gl_ihm"]= create_prog("../../shaders/vertexshader_gl_ihm.txt", "../../shaders/fragmentshader_gl_ihm.txt");
+	progs["select"]= create_prog("../shaders/vertexshader_select.txt", "../shaders/fragmentshader_select.txt", "../shaders/geometryshader_select.txt");
 
 	check_gl_error();
 
@@ -208,7 +209,7 @@ void draw() {
 
 
 void anim(time_point t) {
-	strategy->anim(t, input_state);
+	strategy->anim(t);
 }
 
 

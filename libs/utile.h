@@ -47,8 +47,9 @@ number perlin_lerp(number a0, number a1, number w);
 number perlin_dot_gradient(int ix, int iy, number x, number y, number * gradient, uint gradient_w, uint gradient_h);
 number perlin(number x, number y, number * gradient, uint gradient_w, uint gradient_h);
 
-// a terme remplacer ça par un appel à glm
-void calculate_normal(number * coord1, number * coord2, number * coord3, number * norm);
+//void calculate_normal(number * coord1, number * coord2, number * coord3, number * norm);
+
+std::vector<pt_2d> circle_vertices(pt_2d center, number radius, uint n_pts);
 
 uint diff_time_ms(struct timeval * after, struct timeval * before);
 uint diff_time_ms_from_now(struct timeval * begin);
@@ -63,6 +64,8 @@ std::pair<std::string, std::string> splitext(std::string s);
 void ltrim(std::string &s);
 void rtrim(std::string &s);
 void trim(std::string &s);
+std::string str_to_lower(std::string s);
+std::string str_to_upper(std::string s);
 
 std::vector<std::string> split(const std::string& s, const std::string& delimiter);
 

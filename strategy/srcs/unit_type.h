@@ -1,5 +1,5 @@
-#ifndef UNIT_TYPE
-#define UNIT_TYPE
+#ifndef UNIT_TYPE_H
+#define UNIT_TYPE_H
 
 #include <iostream>
 #include <string>
@@ -10,6 +10,9 @@
 #include "obj_parser.h"
 
 #include "const.h"
+
+
+const number EPS_UNIT_TYPE_BUFFER_SIZE = 0.1;
 
 
 struct UnitElevationCoeff {
@@ -28,9 +31,10 @@ struct UnitType {
 	friend std::ostream & operator << (std::ostream & os, UnitType & ut);
 	
 	
-	std::string _name;
-	//pt_3d _size;
+	UNIT_TYPE _type;
 	number _max_velocity;
+	bool _floats;
+	bool _flies;
 	std::map<TERRAIN_TYPE, number> _terrain_weights;
 	std::vector<UnitElevationCoeff> _delta_elevation_coeffs;
 	ObjData * _obj_data;

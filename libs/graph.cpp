@@ -11,18 +11,21 @@ Graph::Graph() {
 
 Graph::~Graph() {
 	// le nettoyage de edge._data ne peut pas se faire ici car void * ici
+}
 
-	/*_it_v= _vertices.begin();
-	while (_it_v!= _vertices.end()) {
-		_it_e= _it_v->second._edges.begin();
-		while (_it_e!= _it_v->second._edges.end()) {
-			if (_it_e->second._data != NULL) {
-				delete _it_e->second._data;
-			}
-			_it_e++;
-		}
-		_it_v++;
-	}*/
+
+GraphVertex Graph::get_vertex(uint i) {
+	return _vertices[i];
+}
+
+
+GraphEdge Graph::get_edge(uint i, uint j) {
+	return _vertices[i]._edges[j];
+}
+
+
+GraphEdge Graph::get_edge(uint_pair p) {
+	return _vertices[p.first]._edges[p.second];
 }
 
 
@@ -352,6 +355,26 @@ uint GraphGrid::pt2closest_id(pt_2d pt) {
 }
 
 
+uint_pair GraphGrid::pt2closest_edge(pt_2d pt) {
+	std::vector<uint_pair> edges = edges_in_cell_containing_pt(pt);
+	uint_pair result(0, 0);
+	number min_dist = 1e9;
+	for (auto & edge : edges) {
+		number dist = 0.0;
+		distance_segment_pt(pt_2d(_vertices[edge.first]._pos), pt_2d(_vertices[edge.second]._pos), pt, &dist, NULL);
+		if (dist < min_dist) {
+			min_dist = dist;
+			result = edge;
+		}
+	}
+	return result;
+}
+
+
+// ------------------------------------------------------------------------
+// TODO : cette méthode ENGLOBE le AABB ; faire une option qui empeche ça ?
+// -> serait utile à vertices_in_aabb
+// ------------------------------------------------------------------------
 std::pair<int_pair, int_pair> GraphGrid::aabb2col_lig_min_max(AABB_2D * aabb) {
 	if (!aabb2d_intersects_aabb2d(aabb, _aabb)) {
 		std::cerr << "GraphGrid::aabb2col_lig_min_max : pas d'intersection entre " << *_aabb << " et " << *aabb << "\n";

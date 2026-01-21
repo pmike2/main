@@ -94,11 +94,12 @@ void Unit::anim(Elevation * elevation) {
 		pt_2d direction = glm::normalize(pt_2d(_path->_pts[_path->_idx_path]) - pt_2d(_position));
 		_velocity = velocity_amp * pt_3d(direction.x, direction.y, 0.0);
 
-		//std::cout << glm_to_string(_position) << " ; " << glm_to_string(_path->_pts[_path->_idx_path])  << " ; " << glm_to_string(direction) << " ; " << velocity_amp << " ; " << glm_to_string(_velocity) << "\n";
-
 		pt_3d next_position = _position + _velocity;
 		next_position.z = elevation->get_alti(next_position);
-
+		if (_type->_floats && next_position.z < 0.0) {
+			next_position.z = 0.0;
+		}
+		
 		number angle = atan2(_velocity.y, _velocity.x);
 		// https://en.wikipedia.org/wiki/Slerp
 		const number slerp_speed = 0.05;
@@ -122,28 +123,6 @@ bool Unit::checkpoint_checked() {
 }
 
 
-/*void Unit::goto_next_checkpoint(time_point t) {
-	_status = MOVING;
-
-	if (_path->empty()) {
-		std::cerr << "Unit::follow_path : path empty\n";
-		stop();
-		return;
-	}
-
-	number velocity_amp = _type->_max_velocity * (1.0 - _path->_weights[_path->_idx_path] / MAX_UNIT_MOVING_WEIGHT);
-	pt_3d direction = glm::normalize(_path->_pts[_path->_idx_path] - _bbox->_aabb->bottom_center());
-	_velocity = velocity_amp * pt_3d(direction.x, direction.y, 0.0);
-	//_last_anim_t = t;
-}*/
-
-
-/*void Unit::stop() {
-	_status = WAITING;
-	_path->clear();
-}*/
-
-
 void Unit::set_status(UNIT_STATUS status) {
 	_status = status;
 	
@@ -160,47 +139,13 @@ void Unit::set_status(UNIT_STATUS status) {
 
 
 std::ostream & operator << (std::ostream & os, Unit & unit) {
-	os << "type = " << unit._type->_name;
+	os << "type = " << unit_type2str(unit._type->_type);
 	os << " ; mode = " << unit_status2str(unit._status);
 	os << " ; velocity = " << glm_to_string(unit._velocity);
 	os << " ; path = " << *unit._path;
 	return os;
 }
 
-
-/*UnitGroup::UnitGroup() {
-	_matrices = new float[N_MAX_UNITS_PER_GROUP * 16];
-}
-
-
-UnitGroup::~UnitGroup() {
-	delete _matrices;
-}
-
-
-void UnitGroup::add_unit(Unit * unit) {
-	_units.push_back(unit);
-	float * ptr = _matrices + (_units.size() - 1) * 16;
-	const float * unit_data = glm::value_ptr(glm::mat4(unit->_model2world));
-	std::memcpy(ptr, unit_data, 16 * sizeof(float));
-}
-
-
-void UnitGroup::update_unit(Unit * unit) {
-	uint unit_idx = 0;
-	uint compt = 0;
-	for (auto & u : _units) {
-		if (u == unit) {
-			unit_idx = compt;
-			break;
-		}
-		compt++;
-	}
-	float * ptr = _matrices + unit_idx * 16;
-	const float * unit_data = glm::value_ptr(glm::mat4(unit->_model2world));
-	std::memcpy(ptr, unit_data, 16 * sizeof(float));
-}
-*/
 
 // Team ------------------------------------------
 Team::Team() {
@@ -227,6 +172,9 @@ Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos) {
 		return NULL;
 	}
 	pt_3d pt3d(pos.x, pos.y, _elevation->get_alti(pos));
+	if (type->_floats && pt3d.z < 0.0) {
+		pt3d.z = 0.0;
+	}
 	Unit * unit = new Unit(type, pt3d);
 	unit->_id = id;
 	_units.push_back(unit);

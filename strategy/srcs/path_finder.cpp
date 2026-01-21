@@ -37,7 +37,7 @@ void PathFinder::add_unit_type(UnitType * unit_type) {
 			GraphEdge & edge = _vertices[_it_v->first]._edges[_it_e->first];
 			EdgeData * edge_data = (EdgeData *)(edge._data);
 			edge_data->_delta_elevation[unit_type] = 0.0;
-			edge_data->_type[unit_type] = UNKNOWN;
+			edge_data->_type[unit_type] = TERRAIN_UNKNOWN;
 			_it_e++;
 		}
 		_it_v++;
@@ -65,7 +65,7 @@ number PathFinder::units_position_weight(Unit * unit, uint i, uint j) {
 number PathFinder::terrain_weight(Unit * unit, uint i, uint j) {
 	GraphEdge edge = _vertices[i]._edges[j];
 	EdgeData * data = (EdgeData *)(edge._data);
-	if (data->_type[unit->_type] == UNKNOWN) {
+	if (data->_type[unit->_type] == TERRAIN_UNKNOWN) {
 		std::cerr << "PathFinder::terrain_weight UNKNOWN\n";
 		return 0.0;
 	}
@@ -75,7 +75,9 @@ number PathFinder::terrain_weight(Unit * unit, uint i, uint j) {
 
 number PathFinder::cost(Unit * unit, uint i, uint j) {
 	number result = 0.0;
-	result += elevation_weight(unit, i, j);
+	if (!unit->_type->_floats) {
+		result += elevation_weight(unit, i, j);
+	}
 	result += units_position_weight(unit, i, j);
 	result += terrain_weight(unit, i, j);
 	return result;

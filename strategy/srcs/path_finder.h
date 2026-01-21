@@ -25,16 +25,12 @@ struct PathFinder : public GraphGrid {
 	//void draw_svg(GraphGrid * grid, Path * path, std::string svg_path);
 
 
-	/*GraphGrid * _elevation_grid;
-	GraphGrid * _units_position_grid;
-	GraphGrid * _terrain_grid;*/
-
 	bool _use_line_of_sight;
 	bool _verbose;
-	//std::vector<UnitType *> _unit_types;
 };
 
 
+// TODO : remplacer UnitType * par UNIT_TYPE ?
 struct EdgeData {
 	std::map<UnitType *, number> _delta_elevation;
 	std::map<UnitType *, std::vector<uint> > _ids;

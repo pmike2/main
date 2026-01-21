@@ -71,19 +71,14 @@ public:
 	RectSelect();
 	RectSelect(std::map<std::string, GLuint> progs);
 	~RectSelect();
-	void draw();
 	void set_origin(pt_2d gl_v);
 	void set_moving(pt_2d gl_v);
 	void set_active(bool is_active);
-	void update_draw();
 
 
-	DrawContext * _context;
-	number _z;
 	bool _is_active;
 	pt_2d _gl_origin;
 	pt_2d _gl_moving;
-	pt_3d _color;
 	pt_3d _norms[4];
 };
 
@@ -150,14 +145,9 @@ public:
 	
 	Repere * _repere;
 
-	//Font * _font;
-	
 	RectSelect * _rect_select;
 	bool _new_single_selection;
 	bool _new_rect_selection;
-
-	bool _new_destination;
-	pt_3d _destination;
 };
 
 

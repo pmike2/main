@@ -1,7 +1,8 @@
 {
-	"name" : "infantery",
-	"size" : [0.1, 0.1, 0.2],
+	"type" : "INFANTERY",
 	"max_velocity" : 0.03,
+	"floats" : false,
+	"flies" : false,
 	"weights" : {
 		"GROUND" : 0.0,
 		"OBSTACLE" : 1000.0,

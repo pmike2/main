@@ -17,6 +17,7 @@
 
 
 const uint N_MAX_UNITS_PER_GROUP = 1024;
+const number UNIT_DIST_PATH_EPS = 0.5;
 
 
 struct Path {

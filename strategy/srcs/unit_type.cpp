@@ -20,12 +20,14 @@ UnitType::UnitType(std::string json_path) {
 	json js= json::parse(ifs);
 	ifs.close();
 
-	_name = js["name"];
-	//_size = pt_3d(js["size"][0], js["size"][1], js["size"][2]);
+	_type = str2unit_type(js["type"]);
 	_max_velocity = js["max_velocity"];
+	_floats = js["floats"];
+	_flies = js["flies"];
+
 	for (json::iterator it = js["weights"].begin(); it != js["weights"].end(); ++it) {
 		TERRAIN_TYPE ot = str2terrain_type(it.key());
-		if (ot == UNKNOWN) {
+		if (ot == TERRAIN_UNKNOWN) {
 			continue;
 		}
 		_terrain_weights[ot] = it.value();
@@ -40,7 +42,6 @@ UnitType::UnitType(std::string json_path) {
 	}
 
 	_obj_data = new ObjData(js["obj"]);
-	//_size = _obj_data->_aabb->size();
 }
 
 
@@ -55,7 +56,7 @@ number UnitType::elevation_coeff(number delta_elevation) {
 			return ec._coeff;
 		}
 	}
-	std::cerr << "UnitType " << _name << " ::elevation_coeff : " << delta_elevation << " non gérée\n";
+	std::cerr << "UnitType " << unit_type2str(_type) << " ::elevation_coeff : " << delta_elevation << " non gérée\n";
 	return 0.0;
 }
 
@@ -70,7 +71,7 @@ number UnitType::buffer_size() {
 
 
 std::ostream & operator << (std::ostream & os, UnitType & ut) {
-	os << "name = " << ut._name << " ; velocity = " << ut._max_velocity;
+	os << "type = " << unit_type2str(ut._type) << " ; velocity = " << ut._max_velocity;
 	os << "\nterrain_weights = ";
 	for (auto & w : ut._terrain_weights) {
 		os << terrain_type2str(w.first) << " -> " << w.second << " ; ";

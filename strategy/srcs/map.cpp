@@ -20,27 +20,6 @@ using json = nlohmann::json;
 
 uint Map::_next_unit_id = 1;
 
-// ----------------------------------------------------------------------------------------
-/*Obstacle::Obstacle() {
-
-}
-
-
-Obstacle::Obstacle(OBSTACLE_TYPE type, const std::vector<pt_2d> & pts) : _type(type) {
-	_polygon = new Polygon2D(pts);
-	_polygon->update_all();
-}
-
-
-Obstacle::Obstacle(OBSTACLE_TYPE type, Polygon2D * polygon) : _type(type), _polygon(polygon) {
-	_polygon->update_all();
-}
-
-
-Obstacle::~Obstacle() {
-	delete _polygon;
-}*/
-
 
 Map::Map() {
 
@@ -63,7 +42,7 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 	std::vector<std::string> jsons_paths = list_files(unit_types_dir, "json");
 	for (auto & json_path : jsons_paths) {
 		UnitType * unit_type = new UnitType(json_path);
-		_unit_types[basename(json_path)] = unit_type;
+		_unit_types[str2unit_type(str_to_upper(basename(json_path)))] = unit_type;
 		_path_finder->add_unit_type(unit_type);
 		//_unit_groups[unit_type] = new UnitGroup();
 	}
@@ -98,8 +77,8 @@ Map::~Map() {
 }
 
 
-void Map::add_unit(Team * team, std::string type_name, pt_2d pos) {
-	Unit * unit = team->add_unit(_unit_types[type_name], _next_unit_id, pos);
+void Map::add_unit(Team * team, UNIT_TYPE type, pt_2d pos) {
+	Unit * unit = team->add_unit(_unit_types[type], _next_unit_id, pos);
 	if (unit == NULL) {
 		return;
 	}
@@ -146,7 +125,7 @@ void Map::add_river(pt_2d pos) {
 			GraphEdge & e = _path_finder->_vertices[edge.first]._edges[edge.second];
 			EdgeData * data = (EdgeData *)(e._data);
 			if (n_vertices_in_polygon > 0) {
-				data->_type[unit_type] = RIVER;
+				data->_type[unit_type] = TERRAIN_RIVER;
 			}
 		}
 
@@ -168,7 +147,7 @@ void Map::add_lake(pt_2d pos) {
 
 		std::vector<uint> id_nodes_buffered;
 
-		if (unit_type->_terrain_weights[LAKE] > MAX_UNIT_MOVING_WEIGHT) {
+		if (unit_type->_terrain_weights[TERRAIN_LAKE] > MAX_UNIT_MOVING_WEIGHT) {
 			AABB_2D * aabb = lake->_polygon->_aabb->buffered(unit_type->buffer_size());
 			std::vector<uint> id_nodes_buffered_aabb = _elevation->vertices_in_aabb(aabb);
 			delete aabb;
@@ -215,10 +194,10 @@ void Map::add_lake(pt_2d pos) {
 			GraphEdge & e = _path_finder->_vertices[edge.first]._edges[edge.second];
 			EdgeData * data = (EdgeData *)(e._data);
 			if (n_vertices_in_polygon == 2) {
-				data->_type[unit_type] = LAKE;
+				data->_type[unit_type] = TERRAIN_LAKE;
 			}
 			else if (n_vertices_in_polygon == 1) {
-				data->_type[unit_type] = LAKE_COAST;
+				data->_type[unit_type] = TERRAIN_LAKE_COAST;
 			}
 		}
 
@@ -277,9 +256,13 @@ void Map::update_alti_grid() {
 }
 
 
+// TODO : ne fonctionne pas on ne voit pas le path ...
 void Map::update_alti_path(Unit * unit) {
 	for (auto & pt : unit->_path->_pts) {
 		pt.z = _elevation->get_alti(pt);
+		if (pt.z < 0.0 && unit->_type->_floats) {
+			pt.z = 0.0;
+		}
 	}
 }
 
@@ -329,13 +312,13 @@ void Map::update_terrain_grid_with_elevation() {
 				EdgeData * data = (EdgeData *)(edge._data);
 
 				if (pt_begin.z < 0.01 && pt_end.z < 0.01) {
-					data->_type[unit_type] = SEA;
+					data->_type[unit_type] = TERRAIN_SEA;
 				}
 				else if ((pt_begin.z < 0.01 && pt_end.z > 0.01) || (pt_begin.z > 0.01 && pt_end.z < 0.01)) {
-					data->_type[unit_type] = SEA_COAST;
+					data->_type[unit_type] = TERRAIN_SEA_COAST;
 				}
-				else if (data->_type[unit_type] == UNKNOWN || data->_type[unit_type] == SEA || data->_type[unit_type] == SEA_COAST) {
-					data->_type[unit_type] = GROUND;
+				else if (data->_type[unit_type] == TERRAIN_UNKNOWN || data->_type[unit_type] == TERRAIN_SEA || data->_type[unit_type] == TERRAIN_SEA_COAST) {
+					data->_type[unit_type] = TERRAIN_GROUND;
 				}
 
 				_path_finder->_it_e++;
@@ -355,7 +338,7 @@ void Map::update_terrain_grid_with_aabb(AABB_2D * aabb) {
 		for (auto & e : edges) {
 			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
 			EdgeData * data = (EdgeData *)(edge._data);
-			data->_type[unit_type] = OBSTACLE;
+			data->_type[unit_type] = TERRAIN_OBSTACLE;
 		}
 	}
 }

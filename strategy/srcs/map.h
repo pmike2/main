@@ -31,23 +31,11 @@
 #include "elements/stone.h"
 
 
-/*struct Obstacle {
-	Obstacle();
-	Obstacle(OBSTACLE_TYPE type, const std::vector<pt_2d> & pts);
-	Obstacle(OBSTACLE_TYPE type, Polygon2D * polygon);
-	~Obstacle();
-
-
-	OBSTACLE_TYPE _type;
-	Polygon2D * _polygon;
-};*/
-
-
 struct Map {
 	Map();
 	Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t);
 	~Map();
-	void add_unit(Team * team, std::string type_name, pt_2d pos);
+	void add_unit(Team * team, UNIT_TYPE type, pt_2d pos);
 	void add_river(pt_2d pos);
 	void add_lake(pt_2d pos);
 	void add_trees(std::string species_name, pt_2d pos, uint n_trees, number dispersion);
@@ -84,7 +72,7 @@ struct Map {
 	static uint _next_unit_id;
 	pt_2d _origin;
 	pt_2d _size;
-	std::map<std::string, UnitType *> _unit_types;
+	std::map<UNIT_TYPE, UnitType *> _unit_types;
 	PathFinder * _path_finder;
 	Elevation * _elevation;
 	Elements * _elements;

@@ -4,10 +4,9 @@
 #include "typedefs.h"
 #include "bbox.h"
 
+#include "../const.h"
 #include "../elevation.h"
 
-
-enum ELEMENT_TYPE {ELEMENT_TREE, ELEMENT_STONE, ELEMENT_RIVER, ELEMENT_LAKE};
 
 
 class Element : public InstancePosRot {

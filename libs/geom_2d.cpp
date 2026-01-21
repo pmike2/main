@@ -622,22 +622,32 @@ bool distance_segment_pt(const pt_2d & seg1, const pt_2d & seg2, const pt_2d & p
 	number seg_norm2= glm::distance2(seg1, seg2);
 	
 	if (seg_norm2< EPSILON) {
-		proj->x= seg1.x;
-		proj->y= seg1.y;
-		*dist= glm::distance(seg1, pt);
+		if (proj != NULL) {
+			proj->x= seg1.x;
+			proj->y= seg1.y;
+		}
+		*dist = glm::distance(seg1, pt);
 		return true;
 	}
 	
 	number t= glm::dot(pt- seg1, seg2- seg1)/ seg_norm2;
 	bool proj_in_segment= true;
+	
 	if ((t< 0.0) || (t> 1.0)) {
 		t= std::max((number)(0.0), std::min((number)(1.0), t));
 		proj_in_segment= false;
 	}
 	
-	proj->x= seg1.x+ t* (seg2.x- seg1.x);
-	proj->y= seg1.y+ t* (seg2.y- seg1.y);
-	*dist= glm::distance(pt, *proj);
+	if (proj != NULL) {
+		proj->x = seg1.x+ t* (seg2.x- seg1.x);
+		proj->y = seg1.y+ t* (seg2.y- seg1.y);
+		*dist = glm::distance(pt, *proj);
+	}
+	else {
+		pt_2d proj_tmp(seg1.x+ t* (seg2.x- seg1.x), seg1.y+ t* (seg2.y- seg1.y));
+		*dist = glm::distance(pt, proj_tmp);
+	}
+	
 	return proj_in_segment;
 }
 

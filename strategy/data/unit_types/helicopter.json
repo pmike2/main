@@ -1,7 +1,8 @@
 {
-	"name" : "helicopter",
-	"size" : [1.0, 1.0, 0.5],
+	"type" : "HELICOPTER",
 	"max_velocity" : 0.08,
+	"floats" : false,
+	"flies" : true,
 	"weights" : {
 		"GROUND" : 0.0,
 		"OBSTACLE" : 0.0,
