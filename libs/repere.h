@@ -57,19 +57,18 @@ const number EPS= 0.01;
 class Repere {
 public:
 	Repere();
-	Repere(std::map<std::string, GLuint> progs);
+	Repere(GLDrawManager * gl_draw_manager);
 	~Repere();
 	void draw(const mat_4d & world2clip);
 	
 	
-	std::map<std::string, DrawContext *> _contexts;
+	GLDrawManager * _gl_draw_manager;
 };
 
 
 class RectSelect {
 public:
 	RectSelect();
-	RectSelect(std::map<std::string, GLuint> progs);
 	~RectSelect();
 	void set_origin(pt_2d gl_v);
 	void set_moving(pt_2d gl_v);
@@ -87,7 +86,7 @@ public:
 class ViewSystem {
 public:
 	ViewSystem();
-	ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl);
+	ViewSystem(GLDrawManager * gl_draw_manager, ScreenGL * screengl);
 	~ViewSystem();
 	bool mouse_button_down(InputState * input_state);
 	bool mouse_button_up(InputState * input_state);
@@ -143,6 +142,7 @@ public:
 
 	ViewSystemType _type;
 	
+	GLDrawManager * _gl_draw_manager;
 	Repere * _repere;
 
 	RectSelect * _rect_select;

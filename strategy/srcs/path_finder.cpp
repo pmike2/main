@@ -161,7 +161,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 
 	if ((!point_in_aabb2d(unit->_path->_start, _aabb)) || (!point_in_aabb2d(unit->_path->_goal, _aabb))) {
 		if (_verbose) {
-			std::cerr << "unit id " << unit->_id << " : PathFinder::path_find : point hors grille\n";
+			std::cout << "unit id " << unit->_id << " : PathFinder::path_find : point hors grille.\n";
 		}
 		mtx.lock();
 		unit->set_status(COMPUTING_PATH_FAILED);
@@ -175,21 +175,27 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	bool is_path_ok= path_find_nodes(unit, start_id, goal_id);
 	if (!is_path_ok) {
 		if (_verbose) {
-			std::cerr << "unit id " << unit->_id << " PathFinder::path_find : pas de chemin trouvé\n";
+			std::cout << "unit id " << unit->_id << " : PathFinder::path_find : pas de chemin trouvé.\n";
 		}
 		mtx.lock();
 		unit->set_status(COMPUTING_PATH_FAILED);
 		mtx.unlock();
 		return false;
 	}
-	//std::cout << unit->_path->_nodes.size() << "\n";
+
+	if (_verbose) {
+		std::cout << "unit id " << unit->_id << " : nodes size = " << unit->_path->_nodes.size() << "\n";
+	}
 
 	std::vector<pt_2d> raw_path;
 	for (uint i=0; i<unit->_path->_nodes.size(); ++i) {
 		raw_path.push_back(_vertices[unit->_path->_nodes[i]]._pos);
 	}
 	raw_path.push_back(goal);
-	//std::cout << raw_path.size() << "\n";
+
+	if (_verbose) {
+		std::cout << "unit id " << unit->_id << " : raw_path size avant suppressions = " << raw_path.size() << "\n";
+	}
 
 	std::vector<number> weights;
 	
@@ -219,11 +225,13 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	}
 	weights.push_back(weight_goal);
 
-	/*for (auto & w : weights) {
-		std::cout << w << " ; ";
+	if (_verbose) {
+		std::cout << "unit id " << unit->_id << " : weights size = " << weights.size() << " ; weights = ";
+		for (auto & w : weights) {
+			std::cout << w << " ; ";
+		}
+		std::cout << "\n";
 	}
-	std::cout << "\n";*/
-	//std::cout << "weight_goal = " << weight_goal << "\n";
 
 	for (uint i=0; i<weights.size(); ++i) {
 		if (weights[i] >= MAX_UNIT_MOVING_WEIGHT) {
@@ -237,9 +245,14 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 			}
 		}
 	}
+
+	if (_verbose) {
+		std::cout << "unit id " << unit->_id << " raw_path size après suppressions =" << raw_path.size() << "\n";
+	}
+
 	if (raw_path.size() == 0) {
 		if (_verbose) {
-			std::cerr << "unit id " << unit->_id << " raw_path.size() == 0\n";
+			std::cout << "unit id " << unit->_id << " raw_path.size() == 0\n";
 		}
 		mtx.lock();
 		unit->set_status(COMPUTING_PATH_FAILED);
@@ -248,13 +261,13 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 	}
 
 	if (_use_line_of_sight) {
+		if (_verbose) {
+			std::cout << "unit id " << unit->_id << " début line of sight\n";
+		}
+		
 		uint idx = 0;
 		uint last = 0;
 		
-		if (_verbose) {
-			std::cout << "raw_path.size() = " << raw_path.size() << "\n\n";
-		}
-
 		while (idx < raw_path.size()) {
 			number raw_max_weight = weights[last];
 			number last_los_weight_ok = 0.0;
@@ -263,8 +276,6 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 				std::cout << "BEGIN while\n";
 				std::cout << "last = " << last << " ; idx = " << idx;
 				std::cout << " ; raw_max_weight=" << raw_max_weight;
-				//std::cout << " ; raw_path[last]=" << glm::to_string(raw_path[last]),
-				//std::cout << " ; raw_path[idx]=" << glm::to_string(raw_path[idx]);
 				std::cout << "\n";
 			}
 
@@ -303,17 +314,26 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 			if (_verbose) {
 				std::cout << "END while\n";
 				std::cout << "last = " << last << " ; idx = " << idx;
-				//std::cout << " ; raw_path[last]=" << glm::to_string(raw_path[last]) << " ; raw_path[idx]=" << glm::to_string(raw_path[idx]) << "\n";
 				std::cout << " ; raw_max_weight=" << raw_max_weight;
 				std::cout << "\n\n";
 			}
 		}
+
+		if (_verbose) {
+			std::cout << "unit id " << unit->_id << " fin line of sight\n";
+		}
 	}
+
 	else {
 		for (uint i=0; i<raw_path.size(); ++i) {
 			unit->_path->_pts.push_back(pt_3d(raw_path[i].x, raw_path[i].y, 0.0));
 			unit->_path->_weights.push_back(weights[i]);
 		}
+	}
+
+	if (_verbose) {
+		std::cout << "unit id " << unit->_id << " _path->_pts.size = " << unit->_path->_pts.size() << "\n";
+		std::cout << "unit id " << unit->_id << " _path->_weights.size = " << unit->_path->_weights.size() << "\n";
 	}
 
 	number r = unit->_bbox->_aabb->_base_radius;
@@ -350,7 +370,7 @@ bool PathFinder::path_find(Unit * unit, pt_2d goal) {
 }
 
 
-// a revoir
+// TODO : a revoir
 /*void PathFinder::draw_svg(GraphGrid * grid, Path * path, std::string svg_path) {
 	std::ofstream f;
 	f.open(svg_path);

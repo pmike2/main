@@ -1,12 +1,17 @@
 #include <iostream>
 #include <cstdlib>
 #include <sstream>
+#include <fstream>
 
 #include <SDL2/SDL_image.h>
+
+#include "json.hpp"
 
 #include "utile.h"
 #include "gl_utils.h"
 
+
+using json = nlohmann::json;
 
 
 // -------------------------------------------------------------------------------------------
@@ -42,7 +47,6 @@ pt_2d ScreenGL::screen2gl(int i, int j) {
 
 void ScreenGL::gl2screen(number x, number y, int & i, int & j) {
 	i= (int)((number)(_screen_width)* (x/ _gl_width+ 0.5));
-	//j= (int)((number)(_screen_width)* (0.5- y/ _gl_height));
 	j= (int)((number)(_screen_width)* (y/ _gl_height+ 0.5));
 }
 
@@ -76,7 +80,7 @@ DrawContext::DrawContext() {
 
 
 DrawContext::DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage, bool active) :
-	_prog(prog), _n_pts(0)/*, _n_attrs_per_pts(0), _n_attrs_instanced_per_pts(0)*/, _active(active), _n_instances(0)
+	_prog(prog), _n_pts(0), _active(active), _n_instances(0)
 {
 	for (auto loc : locs_uniform) {
 		_locs_uniform[loc]= glGetUniformLocation(_prog, loc.c_str());
@@ -88,7 +92,6 @@ DrawContext::DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std:
 	buffer._is_instanced = false;
 
 	uint offset = 0;
-	//uint offset_instanced = 0;
 	
 	for (auto loc : locs_attrib) {
 		DrawContextAttrib attrib;
@@ -114,9 +117,6 @@ DrawContext::DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std:
 			buffer._n_attrs_per_pts = 0;
 			buffer._is_instanced = true;
 			offset = 0;
-			//attrib._offset = offset_instanced;
-			//offset_instanced += attrib._size;
-			//_n_attrs_instanced_per_pts += attrib._size;
 		}
 
 		attrib._offset = offset;
@@ -130,7 +130,6 @@ DrawContext::DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std:
 	for (auto & buffer : _buffers) {
 		glGenBuffers(1, &buffer._id);
 	}
-	//glGenBuffers(1, &_buffer_instanced);
 	glGenVertexArrays(1, &_vao);
 
 	glBindVertexArray(_vao);
@@ -239,6 +238,190 @@ std::ostream & operator << (std::ostream & os, const DrawContext & dc) {
 	return os;
 }
 
+// -------------------------------------------------------------------------------------------
+GLDrawManager::GLDrawManager() {
+
+}
+
+
+GLDrawManager::GLDrawManager(std::string json_path) {
+	std::ifstream ifs(json_path);
+	json js= json::parse(ifs);
+	ifs.close();
+
+	std::vector<std::string> shaders;
+	if (js["add_dir_shaders"] != nullptr) {
+		for (auto & dir_shader : js["add_dir_shaders"]) {
+			std::vector<std::string> l = list_files(dir_shader, "vert");
+			for (auto & shader_path : l) {
+				std::pair<std::string, std::string> p = splitext(shader_path);
+				shaders.push_back(p.first);
+			}
+		}
+	}
+	if (js["add_shaders"] != nullptr) {
+		for (auto & shader : js["add_shaders"]) {
+			shaders.push_back(shader);
+		}
+	}
+
+	// obligé de faire ce vao temporaire pour valider les programmes
+	GLuint vao;
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	std::map<std::string, GLuint> progs;
+	for (auto & shader : shaders) {
+		std::string vert = shader + ".vert";
+		std::string frag = shader + ".frag";
+		std::string geom = shader + ".geom";
+		if (!file_exists(vert) || !file_exists(frag)) {
+			std::cerr << "GLDrawManager : " << vert << " et/ou " << frag << " n'existe pas.\n";
+			return;
+		}
+
+		if (file_exists(geom)) {
+			progs[basename(shader)]= create_prog(vert, frag, geom);
+		}
+		else {
+			progs[basename(shader)]= create_prog(vert, frag);
+		}
+	}
+
+	check_gl_error();
+
+	for (json::iterator it = js["contexts"].begin(); it != js["contexts"].end(); ++it) {
+		auto & context_name= it.key();
+		auto & context_dic= it.value();
+
+		bool found_shader = false;
+		for (json::iterator it2 = js["shaders"].begin(); it2 != js["shaders"].end(); ++it2) {
+			auto & shader_name= it2.key();
+			auto & shader_dic= it2.value();
+
+			if (progs.count(shader_name) == 0) {
+				std::cerr << "GLDrawManager : " << shader_name << " n'est pas un nom de shader existant.\n";
+				return;
+			}
+
+			if (shader_name == context_dic["shader"]) {
+				found_shader = true;
+
+				std::vector<std::string> locs_attrib;
+				for (auto & loc : shader_dic["locs"]) {
+					locs_attrib.push_back(loc);
+				}
+				
+				std::vector<std::string> locs_uniform;
+				for (auto & loc : shader_dic["uniforms"]) {
+					locs_uniform.push_back(loc);
+				}
+				
+				GLenum usage = GL_STATIC_DRAW;
+				if (context_dic["usage"] != nullptr) {
+					if (context_dic["usage"] == "GL_STATIC_DRAW") {
+						usage = GL_STATIC_DRAW;
+					}
+					else if (context_dic["usage"] == "GL_DYNAMIC_DRAW") {
+						usage = GL_DYNAMIC_DRAW;
+					}
+					else if (context_dic["usage"] == "GL_STREAM_DRAW") {
+						usage = GL_STREAM_DRAW;
+					}
+					else {
+						std::cerr << "GLDrawManager : usage = " << context_dic["usage"] << " non reconnu.\n";
+						return;
+					}
+				}
+
+				bool active = true;
+				if (context_dic["active"] != nullptr) {
+					active = context_dic["active"];
+				}
+
+				_contexts[context_name] = new DrawContext(progs[shader_name], locs_attrib, locs_uniform, usage, active);
+
+				break;
+			}
+		}
+		if (!found_shader) {
+			std::cerr << "GLDrawManager : " << context_name << " : shader " << context_dic["shader"] << " non trouvé.\n";
+			return;
+		}
+	}
+}
+
+
+GLDrawManager::~GLDrawManager() {
+	for (auto & context : _contexts) {
+		delete context.second;
+	}
+	_contexts.clear();
+}
+
+
+DrawContext * GLDrawManager::get_context(std::string context_name) {
+	if (_contexts.count(context_name) == 0) {
+		std::cerr << "GLDrawManager::get_context : " << context_name << " inconnu.\n";
+		return NULL;
+	}
+	return _contexts[context_name];
+}
+
+
+void GLDrawManager::set_data(std::string context_name, uint n_pts, float * data) {
+	DrawContext * context = get_context(context_name);
+	if (context == NULL) {
+		return;
+	}
+
+	context->_n_pts = n_pts;
+	context->set_data(data);
+}
+
+
+void GLDrawManager::set_active(std::string context_name){
+	DrawContext * context = get_context(context_name);
+	if (context == NULL) {
+		return;
+	}
+
+	context->_active = true;
+}
+
+
+void GLDrawManager::set_inactive(std::string context_name){
+	DrawContext * context = get_context(context_name);
+	if (context == NULL) {
+		return;
+	}
+
+	context->_active = false;
+}
+
+
+void GLDrawManager::switch_active(std::string context_name) {
+	DrawContext * context = get_context(context_name);
+	if (context == NULL) {
+		return;
+	}
+
+	if (context->_active) {
+		context->_active = false;
+	}
+	else {
+		context->_active = true;
+	}
+}
+
+
+std::ostream & operator << (std::ostream & os, const GLDrawManager & gdm) {
+	for (auto & context : gdm._contexts) {
+		std::cout << context.first << " : " << *context.second << "\n";
+	}
+	return os;
+}
+
 
 // -------------------------------------------------------------------------------------------
 void _check_gl_error(const char * file, int line){
@@ -340,10 +523,6 @@ char * load_source(const char * filename) {
 	long size;			/* taille du fichier */
 	long i;				/* compteur */
 	
-	//char filename_complet[512];
-	//absolute_path(filename, filename_complet);
-	//fp= fopen(filename_complet, "r");
-
 	fp= fopen(filename, "r");
 
 	/* on verifie si l'ouverture a echoue */

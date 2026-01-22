@@ -131,7 +131,7 @@ struct GLIHMGroup {
 
 struct GLIHM {
 	GLIHM();
-	GLIHM(std::map<std::string, GLuint> progs, ScreenGL * screengl, std::string json_path);
+	GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string json_path);
 	~GLIHM();
 	GLIHMGroup * add_group(std::string name, GL_IHM_GROUP_TYPE type, GL_IHM_GROUP_ORIENTATION orientation, pt_2d position, pt_2d element_size, number margin);
 	GLIHMElement * get_element(std::string group_name, std::string element_name);
@@ -144,12 +144,12 @@ struct GLIHM {
 	friend std::ostream & operator << (std::ostream & os, const GLIHM & ihm);
 
 
+	GLDrawManager * _gl_draw_manager;
+	ScreenGL * _screengl;
 	std::vector<GLIHMGroup *> _groups;
-	std::map<std::string, DrawContext *> _contexts;
 	uint _texture_idx;
 	std::string _texture_root;
 	glm::mat4 _camera2clip;
-	ScreenGL * _screengl;
 	bool _verbose;
 	pt_2d _default_element_size;
 	number _default_margin;

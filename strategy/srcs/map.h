@@ -59,6 +59,8 @@ struct Map {
 	void remove_moving_unit_from_position_grid(Unit * unit, bool all);
 
 	void path_find(Unit * unit, pt_2d goal);
+	void pause_all_units(bool pause);
+
 	void clear();
 	//void read_shapefile(std::string shp_path, pt_2d origin, pt_2d size, bool reverse_y=false);
 	void anim(time_point t);
@@ -70,15 +72,14 @@ struct Map {
 
 
 	static uint _next_unit_id;
-	pt_2d _origin;
-	pt_2d _size;
+	//pt_2d _origin;
+	//pt_2d _size;
 	std::map<UNIT_TYPE, UnitType *> _unit_types;
 	PathFinder * _path_finder;
 	Elevation * _elevation;
 	Elements * _elements;
 	std::vector<Team *> _teams;
 
-	bool _paused;
 	std::thread _path_find_thr;
 };
 

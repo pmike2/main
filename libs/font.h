@@ -69,7 +69,7 @@ public:
 class Font {
 public:
 	Font();
-	Font(std::map<std::string, GLuint> progs, std::string font_path, uint font_size, ScreenGL * screengl);
+	Font(GLDrawManager * gl_draw_manager, std::string font_path, uint font_size, ScreenGL * screengl);
 	void set_text(std::vector<Text> & texts);
 	void set_text(Text & text);
 	void set_text(std::vector<Text3D> & texts);
@@ -78,9 +78,10 @@ public:
 	void draw();
 	void draw_3d(const mat_4d & world2clip);
 	
+
+	GLDrawManager * _gl_draw_manager;
 	GLuint _texture_id;
 	uint _tex_size;
-	std::map<std::string, DrawContext *> _contexts;
 	std::map<char, Character> _characters;
 	mat_4d _camera2clip;
 	float _z;

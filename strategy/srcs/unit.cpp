@@ -65,7 +65,7 @@ Unit::Unit() {
 
 
 Unit::Unit(UnitType * type, pt_3d pos) : InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
-	_type(type), _status(WAITING), _velocity(pt_3d(0.0))//, _last_anim_t(t)
+	_type(type), _status(WAITING), _velocity(pt_3d(0.0)), _paused(false)
 {
 	_path = new Path();
 }
@@ -77,6 +77,10 @@ Unit::~Unit() {
 
 
 void Unit::anim(Elevation * elevation) {
+	if (_paused) {
+		return;
+	}
+
 	if (_status == MOVING) {
 		if (checkpoint_checked()) {
 			if (_path->_idx_path == _path->_pts.size() - 1) {

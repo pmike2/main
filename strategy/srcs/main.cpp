@@ -22,17 +22,17 @@ const int MAIN_WIN_HEIGHT= 1024;
 const float GL_WIDTH= 10.0f;
 const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDTH);
 
+
 SDL_Window * window= NULL;
 SDL_GLContext main_context;
 InputState * input_state;
 ViewSystem * view_system;
+GLDrawManager * gl_draw_manager;
 
 bool done= false;
 
 uint val_fps, compt_fps;
 uint tikfps1, tikfps2;
-
-GLuint g_vao;
 
 Strategy * strategy;
 
@@ -154,35 +154,13 @@ void init() {
 	
 	SDL_GL_SwapWindow(window);
 	
-	// --------------------------------------------------------------------------
-	/* obligé d'avoir un vao ici ?
-	*/
-	
-	glGenVertexArrays(1, &g_vao);
-	glBindVertexArray(g_vao);
-
-	std::map<std::string, GLuint> progs;
-	
-	progs["repere"]= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
-	progs["font"]= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
-	progs["font3d"]= create_prog("../../shaders/vertexshader_font_3d.txt", "../../shaders/fragmentshader_font.txt");
-	progs["gl_ihm"]= create_prog("../../shaders/vertexshader_gl_ihm.txt", "../../shaders/fragmentshader_gl_ihm.txt");
-
-	progs["elevation_flat"]= create_prog("../shaders/vertexshader_elevation_flat.txt", "../shaders/fragmentshader_elevation_flat.txt");
-	progs["elevation_smooth"]= create_prog("../shaders/vertexshader_elevation_smooth.txt", "../shaders/fragmentshader_elevation_smooth.txt");
-	progs["dash"]= create_prog("../shaders/vertexshader_dash.txt", "../shaders/fragmentshader_dash.txt", "../shaders/geometryshader_dash.txt");
-	progs["lake"]= create_prog("../shaders/vertexshader_lake.txt", "../shaders/fragmentshader_lake.txt");
-	progs["river"]= create_prog("../shaders/vertexshader_river.txt", "../shaders/fragmentshader_river.txt");
-	progs["unit"]= create_prog("../shaders/vertexshader_unit.txt", "../shaders/fragmentshader_unit.txt");
-	progs["select"]= create_prog("../shaders/vertexshader_select.txt", "../shaders/fragmentshader_select.txt", "../shaders/geometryshader_select.txt");
-
-	check_gl_error();
+	GLDrawManager * gl_draw_manager = new GLDrawManager("../data/strategy_draw_context.json");
+	//std::cout << *gl_draw_manager << "\n";
 
 	ScreenGL * screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	
 	// --------------------------------------------------------------------------
-	view_system= new ViewSystem(progs, screengl);
-	view_system->_repere->_contexts["ground"]->_active= false;
+	view_system= new ViewSystem(gl_draw_manager, screengl);
 	view_system->set_2d(30.0);
 
 	// --------------------------------------------------------------------------
@@ -190,7 +168,7 @@ void init() {
 
 	// --------------------------------------------------------------------------
 	time_point now= std::chrono::system_clock::now();
-	strategy = new Strategy(progs, view_system, now);
+	strategy = new Strategy(gl_draw_manager, view_system, now);
 }
 
 
@@ -280,6 +258,7 @@ void clean() {
 	delete strategy;
 	delete view_system;
 	delete input_state;
+	delete gl_draw_manager;
 
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);

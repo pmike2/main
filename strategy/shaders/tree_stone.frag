@@ -1,9 +1,9 @@
 #version 410
 
 
-flat in vec3 vertex_position;
-flat in vec4 vertex_color;
-flat in vec3 vertex_normal;
+in vec3 vertex_position;
+in vec4 vertex_color;
+in vec3 vertex_normal;
 
 out vec4 frag_color;
 

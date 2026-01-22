@@ -7,9 +7,9 @@ layout(location=0) in vec3 position_in;
 layout(location=1) in vec4 color_in;
 layout(location=2) in vec3 normal_in;
 
-flat out vec3 vertex_position;
-flat out vec4 vertex_color;
-flat out vec3 vertex_normal;
+out vec3 vertex_position;
+out vec4 vertex_color;
+out vec3 vertex_normal;
 
 
 void main(void) {

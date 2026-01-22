@@ -26,18 +26,16 @@ Map::Map() {
 }
 
 
-Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t) :
-	_origin(origin), _size(size), _paused(false)
-{
-	uint n_ligs_path = uint(_size.y / path_resolution.y) + 1;
-	uint n_cols_path = uint(_size.x / path_resolution.x) + 1;
+Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t) {
+	uint n_ligs_path = uint(size.y / path_resolution.y) + 1;
+	uint n_cols_path = uint(size.x / path_resolution.x) + 1;
 
-	uint n_ligs_elevation = uint(_size.y / elevation_resolution.y) + 1;
-	uint n_cols_elevation = uint(_size.x / elevation_resolution.x) + 1;
+	uint n_ligs_elevation = uint(size.y / elevation_resolution.y) + 1;
+	uint n_cols_elevation = uint(size.x / elevation_resolution.x) + 1;
 
-	_elevation = new Elevation(_origin, _size, n_ligs_elevation, n_cols_elevation);
+	_elevation = new Elevation(origin, size, n_ligs_elevation, n_cols_elevation);
 
-	_path_finder = new PathFinder(_origin, _size, n_ligs_path, n_cols_path);
+	_path_finder = new PathFinder(origin, size, n_ligs_path, n_cols_path);
 
 	std::vector<std::string> jsons_paths = list_files(unit_types_dir, "json");
 	for (auto & json_path : jsons_paths) {
@@ -261,7 +259,7 @@ void Map::update_alti_path(Unit * unit) {
 	for (auto & pt : unit->_path->_pts) {
 		pt.z = _elevation->get_alti(pt);
 		if (pt.z < 0.0 && unit->_type->_floats) {
-			pt.z = 0.0;
+			pt.z = 0.01;
 		}
 	}
 }
@@ -493,6 +491,15 @@ void Map::path_find(Unit * unit, pt_2d goal) {
 }
 
 
+void Map::pause_all_units(bool pause) {
+	for (auto & team : _teams) {
+		for (auto & unit : team->_units) {
+			unit->_paused = pause;
+		}
+	}
+}
+
+
 void Map::clear() {
 	clear_units_position_grid();
 	
@@ -535,10 +542,6 @@ void Map::clear() {
 
 void Map::anim(time_point t) {
 	bool path_find_thr_active = false;
-
-	if (_paused) {
-		return;
-	}
 
 	for (auto & team : _teams) {
 		for (auto & unit : team->_units) {
@@ -629,7 +632,7 @@ void Map::randomize() {
 	sync2elevation();
 
 	for (uint i=0; i<50; ++i) {
-		pt_2d pt = rand_gaussian(_origin + 0.5 * _size, 0.3 * _size);
+		pt_2d pt = rand_gaussian(_elevation->_origin + 0.5 * _elevation->_size, 0.3 * _elevation->_size);
 		if (!_elevation->in_boundaries(pt)) {
 			continue;
 		}
@@ -643,7 +646,7 @@ void Map::randomize() {
 	}
 
 	for (uint i=0; i<50; ++i) {
-		pt_2d pt = rand_gaussian(_origin + 0.5 * _size, 0.3 * _size);
+		pt_2d pt = rand_gaussian(_elevation->_origin + 0.5 * _elevation->_size, 0.3 * _elevation->_size);
 		if (!_elevation->in_boundaries(pt)) {
 			continue;
 		}

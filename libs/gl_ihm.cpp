@@ -376,11 +376,13 @@ GLIHM::GLIHM() {
 }
 
 
-GLIHM::GLIHM(std::map<std::string, GLuint> progs, ScreenGL * screengl, std::string json_path) : _screengl(screengl), _verbose(false) {
-		_contexts["gl_ihm"]= new DrawContext(progs["gl_ihm"], 
+GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string json_path) :
+	_gl_draw_manager(gl_draw_manager), _screengl(screengl), _verbose(false) 
+{
+		/*_contexts["gl_ihm"]= new DrawContext(progs["gl_ihm"], 
 		std::vector<std::string>{"position_in:2", "tex_coord_in:2", "alpha_in:1", "current_layer_in:1"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array", "z"},
-		GL_STATIC_DRAW, true);
+		GL_STATIC_DRAW, true);*/
 
 	std::vector<std::pair<GLIHMElement *, std::string> > groups_visible;
 
@@ -558,7 +560,7 @@ void GLIHM::all_callbacks() {
 
 
 void GLIHM::update() {
-	DrawContext * context= _contexts["gl_ihm"];
+	DrawContext * context= _gl_draw_manager->get_context("gl_ihm");
 
 	context->_n_pts = 0;
 	for (auto & group : _groups) {
@@ -569,30 +571,8 @@ void GLIHM::update() {
 
 	float * data = new float[context->data_size()];
 	float * ptr = data;
-	//const uint idxs[6] = {0, 1, 2, 0, 2, 3};
 	for (auto & group : _groups) {
 		for (auto & element : group->_elements) {
-			/*pt_4d l_pts[4] = {
-				pt_4d(element->_aabb->_pos.x, element->_aabb->_pos.y, 0.0, 1.0),
-				pt_4d(element->_aabb->_pos.x + element->_aabb->_size.x, element->_aabb->_pos.y, 1.0, 1.0),
-				pt_4d(element->_aabb->_pos.x + element->_aabb->_size.x, element->_aabb->_pos.y + element->_aabb->_size.y, 1.0, 0.0),
-				pt_4d(element->_aabb->_pos.x, element->_aabb->_pos.y + element->_aabb->_size.y, 0.0, 0.0)
-			};
-
-			number alpha = element->_alpha;
-			if (!group->_visible) {
-				alpha = 0.0;
-			}
-
-			for (uint i=0; i<6; ++i) {
-				ptr[0] = float(l_pts[idxs[i]][0]);
-				ptr[1] = float(l_pts[idxs[i]][1]);
-				ptr[2] = float(l_pts[idxs[i]][2]);
-				ptr[3] = float(l_pts[idxs[i]][3]);
-				ptr[4] = float(alpha);
-				ptr[5] = float(element->_texture_layer);
-				ptr += 6;
-			}*/
 			element->update_data();
 			for (uint i=0; i<element->_n_pts * 6; ++i) {
 				ptr[i] = element->_data[i];
@@ -607,7 +587,7 @@ void GLIHM::update() {
 
 
 void GLIHM::draw() {
-	DrawContext * context= _contexts["gl_ihm"];
+	DrawContext * context= _gl_draw_manager->get_context("gl_ihm");
 	if (!context->_active) {
 		return;
 	}

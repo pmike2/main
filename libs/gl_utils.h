@@ -79,6 +79,23 @@ public:
 };
 
 
+class GLDrawManager {
+public:
+	GLDrawManager();
+	GLDrawManager(std::string json_path);
+	~GLDrawManager();
+	DrawContext * get_context(std::string context_name);
+	void set_data(std::string context_name, uint n_pts, float * data);
+	void set_active(std::string context_name);
+	void set_inactive(std::string context_name);
+	void switch_active(std::string context_name);
+	friend std::ostream & operator << (std::ostream & os, const GLDrawManager & gdm);
+
+
+	std::map<std::string, DrawContext *> _contexts;
+};
+
+
 void _check_gl_error(const char * file, int line);
 #define check_gl_error() _check_gl_error(__FILE__,__LINE__)
 void check_gl_program(GLuint prog);

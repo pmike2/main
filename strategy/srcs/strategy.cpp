@@ -35,81 +35,17 @@ Strategy::Strategy() {
 }
 
 
-Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t) :
-	_view_system(view_system), _angle(0.0)
+Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
+	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _angle(0.0)
 {
 	_config = new StrategyConfig();
 
-	_contexts["debug"]= new DrawContext(progs["repere"],
-		std::vector<std::string>{"position_in:3", "color_in:4"},
-		std::vector<std::string>{"world2clip_matrix"},
-		GL_STATIC_DRAW, false);
-
-	_contexts["select"]= new DrawContext(progs["select"],
-		std::vector<std::string>{"position_in:2", "color_in:4"},
-		std::vector<std::string>{"z", "viewport_size", "thickness"},
-		GL_STATIC_DRAW, true);
-
-	_contexts["grid"]= new DrawContext(progs["repere"], 
-		std::vector<std::string>{"position_in:3", "color_in:4"},
-		std::vector<std::string>{"world2clip_matrix"},
-		GL_STATIC_DRAW, false);
-
-	_contexts["unit_linear"]= new DrawContext(progs["repere"], 
-		std::vector<std::string>{"position_in:3", "color_in:4"},
-		std::vector<std::string>{"world2clip_matrix"},
-		GL_DYNAMIC_DRAW, true);
-
-	_contexts["path"]= new DrawContext(progs["dash"],
-		std::vector<std::string>{"position_in:3", "color_in:4"},
-		std::vector<std::string>{"world2clip_matrix", "gap_size", "dash_size", "viewport_size", "thickness"},
-		GL_STATIC_DRAW, true);
-
-	_contexts["edit_map"]= new DrawContext(progs["dash"],
-		std::vector<std::string>{"position_in:3", "color_in:4"},
-		std::vector<std::string>{"world2clip_matrix", "gap_size", "dash_size", "viewport_size", "thickness"},
-		GL_STATIC_DRAW, true);
-
-	_contexts["elevation"]= new DrawContext(progs["elevation_smooth"], 
-		std::vector<std::string>{"position_in:3", "color_in:4", "normal_in:3"},
-		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"},
-		GL_DYNAMIC_DRAW, true);
-
-	_contexts["tree_stone"]= new DrawContext(progs["elevation_smooth"], 
-		std::vector<std::string>{"position_in:3", "color_in:4", "normal_in:3"},
-		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"},
-		GL_STATIC_DRAW, true);
-
-	_contexts["river"]= new DrawContext(progs["river"], 
-		std::vector<std::string>{"position_in:3", "color_in:4", "normal_in:3", "direction_in:2"},
-		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "angle"},
-		GL_STATIC_DRAW, true);
-
-	_contexts["lake"]= new DrawContext(progs["lake"], 
-		std::vector<std::string>{"position_in:3", "color_in:4"},
-		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "angle"},
-		GL_STATIC_DRAW, true);
-
-	_contexts["sea"]= new DrawContext(progs["lake"], 
-		std::vector<std::string>{"position_in:3", "color_in:4"},
-		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "angle"},
-		GL_STATIC_DRAW, true);
-
-	_font = new Font(progs, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
+	_font = new Font(_gl_draw_manager, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
 	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
 
-	_ihm = new GLIHM(progs, _view_system->_screengl, "../data/ihm.json");
+	_ihm = new GLIHM(_gl_draw_manager, _view_system->_screengl, "../data/ihm.json");
 
 	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-100.0, -100.0), pt_2d(200.0, 200.0), pt_2d(2.0), pt_2d(0.5), t);
-	//_map = new Map("../data/unit_types", pt_2d(0.0, 0.0), pt_2d(10.0, 10.0), pt_2d(2.0), pt_2d(2.0), t);
-	//std::cout << *_map << "\n";
-
-	for (auto & unit_type : _map->_unit_types) {
-		_contexts[unit_type2str(unit_type.first)]= new DrawContext(progs["unit"], 
-			std::vector<std::string>{"position_in:3", "normal_in:3", "ambient_in:3", "diffuse_in:3", "specular_in:3", "shininess_in:1", "opacity_in:1", "model2world_matrix:16:new_instanced_buffer"},
-			std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"},
-			GL_DYNAMIC_DRAW, true);
-	}
 
 	_map->randomize();
 
@@ -121,10 +57,6 @@ Strategy::Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system
 
 Strategy::~Strategy() {
 	delete _map;
-	for (auto context : _contexts) {
-		delete context.second;
-	}
-	_contexts.clear();
 	delete _font;
 	delete _config;
 	delete _ihm;
@@ -132,7 +64,8 @@ Strategy::~Strategy() {
 
 
 void Strategy::set_ihm() {
-	_ihm->get_element("show_info", "show_info")->set_callback([this](){_config->_show_info = true;}, [this](){_config->_show_info = false;});
+	_ihm->get_element("general", "show_info")->set_callback([this](){_config->_show_info = true;}, [this](){_config->_show_info = false;});
+	_ihm->get_element("general", "units_paused")->set_callback([this](){_map->pause_all_units(true);}, [this](){_map->pause_all_units(false);});
 
 	_ihm->get_element("mode", "play")->set_callback([this](){_config->_mode = PLAY;});
 	_ihm->get_element("mode", "add_unit")->set_callback([this](){_config->_mode = ADD_UNIT;});
@@ -204,46 +137,46 @@ void Strategy::set_ihm() {
 	
 	for (auto & visu_type : std::vector<std::string>{"elevation", "grid", "unit_linear", "sea"}) {
 		_ihm->get_element("visu", visu_type)->set_callback(
-			[this, visu_type](){_contexts[visu_type]->_active = true;}, 
-			[this, visu_type](){_contexts[visu_type]->_active = false;}
+			[this, visu_type](){_gl_draw_manager->set_active(visu_type);}, 
+			[this, visu_type](){_gl_draw_manager->set_inactive(visu_type);}
 		);
 	}
 	
 	_ihm->get_element("visu", "elements")->set_callback(
 		[this](){
-			_contexts["tree_stone"]->_active = true;
-			_contexts["river"]->_active = true;
-			_contexts["lake"]->_active = true;
+			_gl_draw_manager->set_active("tree_stone");
+			_gl_draw_manager->set_active("river");
+			_gl_draw_manager->set_active("lake");
 		},
 		[this](){
-			_contexts["tree_stone"]->_active = false;
-			_contexts["river"]->_active = false;
-			_contexts["lake"]->_active = false;
+			_gl_draw_manager->set_inactive("tree_stone");
+			_gl_draw_manager->set_inactive("river");
+			_gl_draw_manager->set_inactive("lake");
 		}
 	);
 	
 	_ihm->get_element("visu", "repere")->set_callback(
 		[this](){
-			_view_system->_repere->_contexts["repere"]->_active= true;
-			_view_system->_repere->_contexts["ground"]->_active= false;
-			_view_system->_repere->_contexts["box"]->_active= true;
+			_gl_draw_manager->set_active("repere");
+			_gl_draw_manager->set_inactive("ground");
+			_gl_draw_manager->set_active("box");
 		},
 		[this](){
-			_view_system->_repere->_contexts["repere"]->_active= false;
-			_view_system->_repere->_contexts["ground"]->_active= false;
-			_view_system->_repere->_contexts["box"]->_active= false;
+			_gl_draw_manager->set_inactive("repere");
+			_gl_draw_manager->set_inactive("ground");
+			_gl_draw_manager->set_inactive("box");
 		}
 	);
 	
 	_ihm->get_element("visu", "units")->set_callback(
 		[this](){
 			for (auto & unit_type : _map->_unit_types) {
-				_contexts[unit_type2str(unit_type.first)]->_active = true;
+				_gl_draw_manager->set_active(unit_type2str(unit_type.first));
 			}
 		},
 		[this](){
 			for (auto & unit_type : _map->_unit_types) {
-				_contexts[unit_type2str(unit_type.first)]->_active = false;
+				_gl_draw_manager->set_inactive(unit_type2str(unit_type.first));
 			}
 		}
 	);
@@ -269,7 +202,7 @@ void Strategy::set_ihm() {
 
 
 void Strategy::draw_select() {
-	DrawContext * context= _contexts["select"];
+	DrawContext * context= _gl_draw_manager->get_context("select");
 	if (!context->_active) {
 		return;
 	}
@@ -285,7 +218,7 @@ void Strategy::draw_select() {
 
 
 void Strategy::draw_linear(std::string context_name) {
-	DrawContext * context= _contexts[context_name];
+	DrawContext * context= _gl_draw_manager->get_context(context_name);
 	if (!context->_active) {
 		return;
 	}
@@ -298,7 +231,7 @@ void Strategy::draw_linear(std::string context_name) {
 
 
 void Strategy::draw_dash(std::string context_name) {
-	DrawContext * context= _contexts[context_name];
+	DrawContext * context= _gl_draw_manager->get_context(context_name);
 	if (!context->_active) {
 		return;
 	}
@@ -316,7 +249,7 @@ void Strategy::draw_dash(std::string context_name) {
 
 
 void Strategy::draw_surface(std::string context_name) {
-	DrawContext * context= _contexts[context_name];
+	DrawContext * context= _gl_draw_manager->get_context(context_name);
 	if (!context->_active) {
 		return;
 	}
@@ -332,7 +265,7 @@ void Strategy::draw_surface(std::string context_name) {
 
 
 void Strategy::draw_lake() {
-	DrawContext * context= _contexts["lake"];
+	DrawContext * context= _gl_draw_manager->get_context("lake");
 	if (!context->_active) {
 		return;
 	}
@@ -349,7 +282,7 @@ void Strategy::draw_lake() {
 
 
 void Strategy::draw_river() {
-	DrawContext * context= _contexts["river"];
+	DrawContext * context= _gl_draw_manager->get_context("river");
 	if (!context->_active) {
 		return;
 	}
@@ -366,7 +299,7 @@ void Strategy::draw_river() {
 
 
 void Strategy::draw_sea() {
-	DrawContext * context= _contexts["sea"];
+	DrawContext * context= _gl_draw_manager->get_context("sea");
 	if (!context->_active) {
 		return;
 	}
@@ -383,7 +316,7 @@ void Strategy::draw_sea() {
 
 
 void Strategy::draw_unit(UnitType * unit_type) {
-	DrawContext * context= _contexts[unit_type2str(unit_type->_type)];
+	DrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
 	if (!context->_active) {
 		return;
 	}
@@ -452,7 +385,7 @@ void Strategy::anim(time_point t) {
 }
 
 
-glm::vec4 Strategy::get_edge_color() {
+glm::vec4 Strategy::get_grid_edge_color() {
 	GraphEdge edge = _map->_path_finder->_it_e->second;
 	EdgeData * data = (EdgeData *)(edge._data);
 	UnitType * unit_type = _map->_unit_types[_config->_visible_grid_unit_type];
@@ -511,8 +444,25 @@ glm::vec4 Strategy::get_edge_color() {
 }
 
 
+glm::vec4 Strategy::get_path_color(number weight) {
+	if (weight >= MAX_UNIT_MOVING_WEIGHT) {
+		return glm::vec4(1.0, 0.0, 0.0, 1.0);
+	}
+	else if (weight > 100.0) {
+		return glm::vec4(1.0, 1.0, 0.0, 1.0);
+	}
+	else if (weight > 50.0) {
+		return glm::vec4(0.0, 1.0, 1.0, 1.0);
+	}
+	else {
+		return glm::vec4(0.0, 1.0, 0.0, 1.0);
+	}
+}
+
+
 void Strategy::update_select() {
-	DrawContext * context= _contexts["select"];
+	DrawContext * context= _gl_draw_manager->get_context("select");
+
 	if (!_view_system->_rect_select->_is_active) {
 		context->_active = false;
 		return;
@@ -548,7 +498,7 @@ void Strategy::update_select() {
 
 
 void Strategy::update_grid() {
-	DrawContext * context= _contexts["grid"];
+	DrawContext * context= _gl_draw_manager->get_context("grid");
 	
 	context->_n_pts = 0;
 
@@ -569,7 +519,7 @@ void Strategy::update_grid() {
 	while (_map->_path_finder->_it_v!= _map->_path_finder->_vertices.end()) {
 		_map->_path_finder->_it_e= _map->_path_finder->_it_v->second._edges.begin();
 		while (_map->_path_finder->_it_e!= _map->_path_finder->_it_v->second._edges.end()) {
-			glm::vec4 edge_color = get_edge_color();
+			glm::vec4 edge_color = get_grid_edge_color();
 
 			pt_3d & p1 = _map->_path_finder->_it_v->second._pos;
 			pt_3d & p2 = _map->_path_finder->_vertices[_map->_path_finder->_it_e->first]._pos;
@@ -578,7 +528,6 @@ void Strategy::update_grid() {
 			
 			ptr[0] = float(p1b.x);
 			ptr[1] = float(p1b.y);
-			//ptr[2] = float(ALTI_EDGE);
 			ptr[2] = float(p1b.z + Z_OFFSET_EDGE);
 			ptr[3] = edge_color.r;
 			ptr[4] = edge_color.g;
@@ -587,7 +536,6 @@ void Strategy::update_grid() {
 
 			ptr[7] = float(p_middle.x);
 			ptr[8] = float(p_middle.y);
-			//ptr[9] = float(ALTI_EDGE);
 			ptr[9] = float(p_middle.z + Z_OFFSET_EDGE);
 			ptr[10] = edge_color.r;
 			ptr[11] = edge_color.g;
@@ -608,10 +556,9 @@ void Strategy::update_grid() {
 
 
 void Strategy::update_unit_linear() {
-	DrawContext * context= _contexts["unit_linear"];
-	
-	context->_n_pts = 0;
+	DrawContext * context= _gl_draw_manager->get_context("unit_linear");
 
+	context->_n_pts = 0;
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
 			context->_n_pts += 48; // dessin AABB
@@ -689,13 +636,13 @@ void Strategy::update_unit_linear() {
 
 
 void Strategy::update_path() {
-	DrawContext * context= _contexts["path"];
+	DrawContext * context= _gl_draw_manager->get_context("path");
 	
 	context->_n_pts = 0;
 	
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			context->_n_pts += unit->_path->_pts.size() * 2;
+			context->_n_pts += (unit->_path->_pts.size() - 1) * 2 + 2 + 4;
 		}
 	}
 
@@ -708,15 +655,34 @@ void Strategy::update_path() {
 				continue;
 			}
 
-			for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
-				glm::vec4 path_color;
-				if (unit->_path->_weights[i + 1] >= MAX_UNIT_MOVING_WEIGHT) {
-					path_color = glm::vec4(1.0, 0.0, 0.0, 1.0);
-				}
-				else {
-					path_color = glm::vec4(0.0, 1.0, 0.0, 1.0);
-				}
+			// du départ au 1er checkpoint
+			glm::vec4 path_color_init(0.0, 0.0, 1.0, 1.0);
 
+			//ptr[0] = float(unit->_position.x);
+			//ptr[1] = float(unit->_position.y);
+			//ptr[2] = float(unit->_position.z + Z_OFFSET_PATH);
+			ptr[0] = float(unit->_path->_start.x);
+			ptr[1] = float(unit->_path->_start.y);
+			ptr[2] = float(_map->_elevation->get_alti(unit->_path->_start));
+			ptr[3] = path_color_init.r;
+			ptr[4] = path_color_init.g;
+			ptr[5] = path_color_init.b;
+			ptr[6] = path_color_init.a;
+
+			ptr[7] = float(unit->_path->_pts[0].x);
+			ptr[8] = float(unit->_path->_pts[0].y);
+			ptr[9] = float(unit->_path->_pts[0].z + Z_OFFSET_PATH);
+			ptr[10] = path_color_init.r;
+			ptr[11] = path_color_init.g;
+			ptr[12] = path_color_init.b;
+			ptr[13] = path_color_init.a;
+
+			ptr += 14;
+
+			// entre les checkpoints
+			for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
+				glm::vec4 path_color = get_path_color(unit->_path->_weights[i]);
+				
 				ptr[0] = float(unit->_path->_pts[i].x);
 				ptr[1] = float(unit->_path->_pts[i].y);
 				ptr[2] = float(unit->_path->_pts[i].z + Z_OFFSET_PATH);
@@ -735,6 +701,28 @@ void Strategy::update_path() {
 
 				ptr += 14;
 			}
+
+			// croix d'arrivée
+			const number PATH_GOAL_CROSS_SIZE = 1.0;
+			const glm::vec4 PATH_GOAL_CROSS_COLOR(1.0, 0.0, 1.0, 1.0);
+			number z_goal = unit->_path->_pts[unit->_path->_pts.size() - 1].z + Z_OFFSET_PATH;
+			pt_2d cross_pts[4] = {
+				unit->_path->_goal - pt_2d(PATH_GOAL_CROSS_SIZE, 0.0),
+				unit->_path->_goal + pt_2d(PATH_GOAL_CROSS_SIZE, 0.0),
+				unit->_path->_goal - pt_2d(0.0, PATH_GOAL_CROSS_SIZE),
+				unit->_path->_goal + pt_2d(0.0, PATH_GOAL_CROSS_SIZE)
+			};
+			for (uint i=0; i<4; ++i) {
+				ptr[0] = float(cross_pts[i].x);
+				ptr[1] = float(cross_pts[i].y);
+				ptr[2] = z_goal;
+				ptr[3] = PATH_GOAL_CROSS_COLOR.r;
+				ptr[4] = PATH_GOAL_CROSS_COLOR.g;
+				ptr[5] = PATH_GOAL_CROSS_COLOR.b;
+				ptr[6] = PATH_GOAL_CROSS_COLOR.a;
+
+				ptr += 7;
+			}
 		}
 	}
 
@@ -744,7 +732,7 @@ void Strategy::update_path() {
 
 
 void Strategy::update_edit_map() {
-	DrawContext * context= _contexts["edit_map"];
+	DrawContext * context= _gl_draw_manager->get_context("edit_map");
 	
 	if (_config->_mode == EDIT_ELEVATION || _config->_mode == ADD_ELEMENT) {
 		context->_n_pts = EDIT_MAP_N_VERTICES_PER_CIRCLE * 2;
@@ -797,7 +785,7 @@ void Strategy::update_edit_map() {
 
 
 void Strategy::update_debug() {
-	DrawContext * context= _contexts["debug"];
+	DrawContext * context= _gl_draw_manager->get_context("debug");
 	
 	context->_n_pts = 0;
 
@@ -807,7 +795,7 @@ void Strategy::update_debug() {
 
 
 void Strategy::update_elevation() {
-	DrawContext * context= _contexts["elevation"];
+	DrawContext * context= _gl_draw_manager->get_context("elevation");
 
 	context->_n_pts = _map->_elevation->_n_pts;
 
@@ -816,7 +804,7 @@ void Strategy::update_elevation() {
 
 
 void Strategy::update_tree_stone() {
-	DrawContext * context= _contexts["tree_stone"];
+	DrawContext * context= _gl_draw_manager->get_context("tree_stone");
 
 	context->_n_pts = 0;
 	for (auto & element : _map->_elements->_elements) {
@@ -843,7 +831,7 @@ void Strategy::update_tree_stone() {
 
 
 void Strategy::update_river() {
-	DrawContext * context= _contexts["river"];
+	DrawContext * context= _gl_draw_manager->get_context("river");
 
 	context->_n_pts = 0;
 	for (auto & element : _map->_elements->_elements) {
@@ -870,7 +858,7 @@ void Strategy::update_river() {
 
 
 void Strategy::update_lake() {
-	DrawContext * context= _contexts["lake"];
+	DrawContext * context= _gl_draw_manager->get_context("lake");
 
 	context->_n_pts = 0;
 	for (auto & element : _map->_elements->_elements) {
@@ -897,7 +885,7 @@ void Strategy::update_lake() {
 
 
 void Strategy::update_sea() {
-	DrawContext * context= _contexts["sea"];
+	DrawContext * context= _gl_draw_manager->get_context("sea");
 
 	context->_n_pts = 6;
 
@@ -905,10 +893,10 @@ void Strategy::update_sea() {
 
 	const glm::vec4 SEA_COLOR(0.6, 0.8, 0.9, 0.6);
 	std::vector<pt_3d> pts = {
-		pt_3d(_map->_origin.x, _map->_origin.y, 0.0),
-		pt_3d(_map->_origin.x + _map->_size.x, _map->_origin.y, 0.0),
-		pt_3d(_map->_origin.x + _map->_size.x, _map->_origin.y + _map->_size.y, 0.0),
-		pt_3d(_map->_origin.x, _map->_origin.y + _map->_size.y, 0.0)
+		pt_3d(_map->_elevation->_origin.x, _map->_elevation->_origin.y, 0.0),
+		pt_3d(_map->_elevation->_origin.x + _map->_elevation->_size.x, _map->_elevation->_origin.y, 0.0),
+		pt_3d(_map->_elevation->_origin.x + _map->_elevation->_size.x, _map->_elevation->_origin.y + _map->_elevation->_size.y, 0.0),
+		pt_3d(_map->_elevation->_origin.x, _map->_elevation->_origin.y + _map->_elevation->_size.y, 0.0)
 	};
 	std::vector<uint> idxs = {0, 1, 2, 0, 2, 3};
 	float * ptr = data;
@@ -929,7 +917,7 @@ void Strategy::update_sea() {
 
 
 void Strategy::update_unit_obj(UnitType * unit_type) {
-	DrawContext * context= _contexts[unit_type2str(unit_type->_type)];
+	DrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
 
 	context->_n_pts = unit_type->_obj_data->_n_pts;
 	context->set_data(unit_type->_obj_data->_data, 0);
@@ -937,7 +925,7 @@ void Strategy::update_unit_obj(UnitType * unit_type) {
 
 
 void Strategy::update_unit_matrices(UnitType * unit_type) {
-	DrawContext * context= _contexts[unit_type2str(unit_type->_type)];
+	DrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
 
 	context->_n_instances = 0;
 	for (auto & team : _map->_teams) {

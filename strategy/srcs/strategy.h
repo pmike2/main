@@ -59,7 +59,7 @@ struct StrategyConfig {
 class Strategy {
 public:
 	Strategy();
-	Strategy(std::map<std::string, GLuint> progs, ViewSystem * view_system, time_point t);
+	Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t);
 	~Strategy();
 	
 	void set_ihm();
@@ -76,7 +76,8 @@ public:
 	
 	void anim(time_point t);
 	
-	glm::vec4 get_edge_color();
+	glm::vec4 get_grid_edge_color();
+	glm::vec4 get_path_color(number weight);
 	
 	void update_select();
 	void update_grid();
@@ -101,7 +102,7 @@ public:
 	bool key_up(InputState * input_state, SDL_Keycode key, time_point t);
 
 	
-	std::map<std::string, DrawContext *> _contexts;
+	GLDrawManager * _gl_draw_manager;
 	Font * _font;
 	ViewSystem * _view_system;
 	GLIHM * _ihm;

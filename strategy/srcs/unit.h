@@ -50,34 +50,18 @@ struct Unit : public InstancePosRot {
 	~Unit();
 	void anim(Elevation * elevation);
 	bool checkpoint_checked();
-	//void goto_next_checkpoint(time_point t);
-	//void stop();
 	void set_status(UNIT_STATUS status);
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
 	
 	
 	uint _id;
 	UnitType * _type;
-	//bool _selected;
-	//AABB * _aabb;
 	UNIT_STATUS _status;
 	Path * _path;
 	pt_3d _velocity;
 	std::queue<Instruction> _instructions;
-	//time_point _last_anim_t;
+	bool _paused;
 };
-
-
-/*struct UnitGroup {
-	UnitGroup();
-	~UnitGroup();
-	void add_unit(Unit * unit);
-	void update_unit(Unit * unit);
-
-
-	std::vector<Unit *> _units;
-	float * _matrices;
-};*/
 
 
 struct Team {

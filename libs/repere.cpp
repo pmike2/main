@@ -12,7 +12,7 @@ Repere::Repere() {
 }
 
 
-Repere::Repere(std::map<std::string, GLuint> progs) {
+Repere::Repere(GLDrawManager * gl_draw_manager) : _gl_draw_manager(gl_draw_manager) {
 	
 	float data_repere[]= {
 		0.0, 0.0, 0.0               , 1.0, 0.0, 0.0, 1.0,
@@ -59,81 +59,22 @@ Repere::Repere(std::map<std::string, GLuint> progs) {
 		float(REPERE_BOX), float(REPERE_BOX), float(REPERE_BOX)                        , BOX_COLOR.r, BOX_COLOR.g, BOX_COLOR.b, BOX_COLOR.a
 	};
 
-	//GLuint buffers[3];
-	//glGenBuffers(3, buffers);
-
-	_contexts["repere"] = new DrawContext(progs["repere"], 
-		std::vector<std::string>{"position_in:3", "color_in:4"},
-		std::vector<std::string>{"world2clip_matrix"});
-	_contexts["repere"]->_n_pts = 6;
-	_contexts["repere"]->set_data(data_repere);
-
-	_contexts["ground"] = new DrawContext(progs["repere"], 
-		std::vector<std::string>{"position_in:3", "color_in:4"},
-		std::vector<std::string>{"world2clip_matrix"});
-	_contexts["ground"]->_n_pts = 6;
-	_contexts["ground"]->set_data(data_ground);
-
-	_contexts["box"] = new DrawContext(progs["repere"], 
-		std::vector<std::string>{"position_in:3", "color_in:4"},
-		std::vector<std::string>{"world2clip_matrix"});
-	_contexts["box"]->_n_pts = 24;
-	_contexts["box"]->set_data(data_box);
-	
-	/*glBindBuffer(GL_ARRAY_BUFFER, _contexts["repere"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(data_repere), data_repere, _contexts["repere"]->_usage);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, _contexts["ground"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(data_ground), data_ground, _contexts["ground"]->_usage);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	
-	glBindBuffer(GL_ARRAY_BUFFER, _contexts["box"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(data_box), data_box, _contexts["box"]->_usage);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);*/
+	_gl_draw_manager->set_data("repere", 6, data_repere);
+	_gl_draw_manager->set_data("ground", 6, data_ground);
+	_gl_draw_manager->set_data("box", 24, data_box);
 }
 
 
 Repere::~Repere() {
-	for (auto & context : _contexts) {
-		delete context.second;
-	}
-	_contexts.clear();
 }
 
 
 void Repere::draw(const mat_4d & world2clip) {
 	for (auto & context_name : std::vector<std::string>{"repere", "ground", "box"}) {
-		DrawContext * context = _contexts[context_name];
+		DrawContext * context = _gl_draw_manager->get_context(context_name);
 		if (!context->_active) {
 			continue;
 		}
-
-		/*glUseProgram(context->_prog);
-		glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
-		
-		glUniformMatrix4fv(context->_locs_uniform["world2clip"], 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
-
-		for (auto attr : context->_locs_attrib) {
-			glEnableVertexAttribArray(attr.second);
-		}
-
-		glVertexAttribPointer(context->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)0);
-		glVertexAttribPointer(context->_locs_attrib["color_in"], 3, GL_FLOAT, GL_FALSE, 6* sizeof(float), (void*)(3* sizeof(float)));
-
-		if (context_name == "ground") {
-			glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
-		}
-		else {
-			glDrawArrays(GL_LINES, 0, context->_n_pts);
-		}
-
-		for (auto attr : context->_locs_attrib) {
-			glDisableVertexAttribArray(attr.second);
-		}
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glUseProgram(0);*/
 
 		context->activate();
 		glUniformMatrix4fv(context->_locs_uniform["world2clip"], 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
@@ -149,12 +90,7 @@ void Repere::draw(const mat_4d & world2clip) {
 
 
 // ------------------------------------------------------------------------------------------------------------------------
-RectSelect::RectSelect() {
-
-}
-
-
-RectSelect::RectSelect(std::map<std::string, GLuint> progs) : 
+RectSelect::RectSelect() : 
 	_is_active(false), _gl_origin(pt_2d(0.0)), _gl_moving(pt_2d(0.0))
 {
 	for (uint i=0; i<4; ++i) {
@@ -190,7 +126,8 @@ ViewSystem::ViewSystem() {
 }
 
 
-ViewSystem::ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl) :
+ViewSystem::ViewSystem(GLDrawManager * gl_draw_manager, ScreenGL * screengl) :
+	_gl_draw_manager(gl_draw_manager),
 	_screengl(screengl),
 	_target(pt_3d(0.0, 0.0, 0.0)), _eye(pt_3d(0.0, 0.0, 0.0)), _up(pt_3d(0.0, 0.0, 0.0)), 
 	_phi(0.0), _theta(0.0), _rho(1.0),
@@ -201,15 +138,14 @@ ViewSystem::ViewSystem(std::map<std::string, GLuint> progs, ScreenGL * screengl)
 
 	update();
 
-	_repere= new Repere(progs);
-	_rect_select= new RectSelect(progs);
+	_repere= new Repere(_gl_draw_manager);
+	_rect_select= new RectSelect();
 }
 
 
 ViewSystem::~ViewSystem() {
 	delete _repere;
 	delete _rect_select;
-	//delete _font;
 	delete _screengl;
 }
 
@@ -329,9 +265,9 @@ bool ViewSystem::key_down(InputState * input_state, SDL_Keycode key) {
 	if (_type== FREE_VIEW) {
 		// affichage repere
 		if (key== SDLK_r) {
-			_repere->_contexts["repere"]->_active = !_repere->_contexts["repere"]->_active;
-			_repere->_contexts["box"]->_active = !_repere->_contexts["box"]->_active;
-			_repere->_contexts["ground"]->_active = !_repere->_contexts["ground"]->_active;
+			_gl_draw_manager->switch_active("repere");
+			_gl_draw_manager->switch_active("box");
+			_gl_draw_manager->switch_active("ground");
 			return true;
 		}
 	}
@@ -456,12 +392,6 @@ void ViewSystem::move_rho(number x) {
 
 void ViewSystem::draw() {
 	_repere->draw(_world2clip);
-
-	// TODO : afficher des infos relatives à ViewSystem
-	/*std::vector<Text> texts;
-	texts.push_back(Text("hello", pt_2d(0.0, 0.0), 0.01, pt_4d(0.7f, 0.6f, 0.5f, 1.0)));
-	_font->set_text(texts);
-	_font->draw();*/
 }
 
 
@@ -526,18 +456,9 @@ pt_3d ViewSystem::screen2world_depthbuffer(pt_2d gl_coords) {
 	// attention au height- y
 	glReadPixels(screen_coords.x, _screengl->_screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
 	number world_depth= depthbuffer2world(number(buffer_depth));
-	//number lambda= world_depth + _frustum_near;
-	//number lambda= world_depth;
-	//pt_2d v(gl_coords.x * _frustum_halfsize, gl_coords.y * _frustum_halfsize);
-	//number lambda= sqrt(world_depth * world_depth + glm::length2(v));
 	number lambda= world_depth / glm::dot(ray_world, _dir);
 	
 	pt_3d result = _eye + lambda * ray_world;
-
-	/*std::cout << glm::to_string(ray_world);
-	std::cout << " ; " << buffer_depth << " ; " << world_depth;
-	std::cout << " ; " << glm::to_string(result);
-	std::cout << "\n";*/
 
 	return _eye + lambda * ray_world;
 }
@@ -598,12 +519,6 @@ bool ViewSystem::intersects_aabb(AABB * aabb, bool selection) {
 }
 
 
-/*bool ViewSystem::intersects_aabb_2d(AABB_2D * aabb, bool selection=false) {
-	std::vector<pt_3d> pts;
-	return intersects_pts(pts, 8, selection);
-}*/
-
-
 bool ViewSystem::intersects_aabb(AABB * aabb, const mat_4d & model2world_matrix, bool selection) {
 	std::vector<pt_3d> pts;
 	for (uint i=0; i<8; ++i) {
@@ -636,19 +551,10 @@ bool ViewSystem::intersects_pts(pt_3d * pts, uint n_pts, bool selection) {
 		norms[2]= _norm_top;
 		norms[3]= _norm_bottom;
 	}
-	/*for (uint i=0; i<n_pts; ++i) {
-		std::cout << glm::to_string(pts[i]) << " ; ";
-	}
-	std::cout << "\n";
-	for (uint i=0; i<4; ++i) {
-		std::cout << glm::to_string(norms[i]) << " ; ";
-	}
-	std::cout << "\n";*/
 
 	for (uint i=0; i<4; ++i) {
 		b= false;
 		for (uint j=0; j<n_pts; ++j) {
-			//std::cout << "i=" << i << " ; j=" << j << " ; pts[j]=" << glm::to_string(pts[j]) << " ; center_near" << glm::to_string(_center_near) << " ; norms[i]" << glm::to_string(norms[i]) << " ; dot=" << glm::dot(pts[j]- _center_near, norms[i]) << "\n";
 			if (glm::dot(pts[j]- _eye, norms[i])> 0.0) {
 				b= true;
 				break;
@@ -661,47 +567,6 @@ bool ViewSystem::intersects_pts(pt_3d * pts, uint n_pts, bool selection) {
 	return true;
 }
 
-/*
-bool ViewSystem::selection_contains_point(const pt_3d & pt) {
-	float xmin= min(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
-	float ymin= min(_rect_select->_gl_origin.y, _rect_select->_gl_moving.y);
-	float xmax= max(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
-	float ymax= max(_rect_select->_gl_origin.y, _rect_select->_gl_moving.y);
-	
-	pt_2d v1= screen2world(pt_2d(xmin, ymin), 0.0);
-	pt_2d v2= screen2world(pt_2d(xmax, ymin), 0.0);
-	pt_2d v3= screen2world(pt_2d(xmax, ymax), 0.0);
-	pt_2d v4= screen2world(pt_2d(xmin, ymax), 0.0);
-
-	pt_3d dir1= pt_3d(v1, 0.0)- _eye;
-	pt_3d dir2= pt_3d(v2, 0.0)- _eye;
-	pt_3d dir3= pt_3d(v3, 0.0)- _eye;
-	pt_3d dir4= pt_3d(v4, 0.0)- _eye;
-
-	pt_3d n1= glm::cross(dir2, dir1);
-	pt_3d n2= glm::cross(dir3, dir2);
-	pt_3d n3= glm::cross(dir4, dir3);
-	pt_3d n4= glm::cross(dir1, dir4);
-
-	pt_3d dir_pt= pt- _eye;
-
-	cout << "-----------------\n";
-	cout << "xmin=" << xmin << " ; " << " ; xmax=" << xmax << " ; " << "ymin=" << ymin << " ; " << " ; ymax=" << ymax << "\n";
-	cout << "v1=" << glm::to_string(v1) << " ; v2=" << glm::to_string(v2) << " ; v3=" << glm::to_string(v3) << " ; v4=" << glm::to_string(v4) << "\n";
-	cout << "dir1=" << glm::to_string(dir1) << " ; dir2=" << glm::to_string(dir2) << " ; dir3=" << glm::to_string(dir3) << " ; dir4=" << glm::to_string(dir4) << "\n";
-	cout << "n1=" << glm::to_string(n1) << " ; n2=" << glm::to_string(n2) << " ; n3=" << glm::to_string(n3) << " ; n4=" << glm::to_string(n4) << "\n";
-	cout << "pt=" << glm::to_string(pt) << " ; " << "eye=" << glm::to_string(_eye) << "\n";
-	cout << glm::dot(n1, pt- _eye) << " ; " << glm::dot(n2, pt- _eye) << " ; " << glm::dot(n3, pt- _eye) << " ; " << glm::dot(n4, pt- _eye) << "\n";
-	cout << "-----------------\n";
-
-	if ((glm::dot(n1, dir_pt)< 0.0) || (glm::dot(n2, dir_pt)< 0.0) || (glm::dot(n3, dir_pt)< 0.0) || (glm::dot(n4, dir_pt)< 0.0)) {
-		return false;
-	}
-
-	return true;
-}
-*/
-
 
 void ViewSystem::update_selection_norms() {
 	number xmin= min(_rect_select->_gl_origin.x, _rect_select->_gl_moving.x);
@@ -713,8 +578,6 @@ void ViewSystem::update_selection_norms() {
 	pt_2d v2= screen2world(pt_2d(xmax, ymin), 0.0);
 	pt_2d v3= screen2world(pt_2d(xmax, ymax), 0.0);
 	pt_2d v4= screen2world(pt_2d(xmin, ymax), 0.0);
-	//std::cout << "v1=" << glm::to_string(v1) << " ; v2=" << glm::to_string(v2) << " ; v3=" << glm::to_string(v3) << " ; v4=" << glm::to_string(v4) << "\n";
-	//std::cout << "center_near=" << glm::to_string(_center_near) << " ; eye=" << glm::to_string(_eye) << "\n";
 
 	pt_3d dir1= pt_3d(v1, 0.0)- _eye;
 	pt_3d dir2= pt_3d(v2, 0.0)- _eye;
@@ -731,7 +594,6 @@ void ViewSystem::update_selection_norms() {
 bool ViewSystem::single_selection_intersects_aabb(AABB * aabb, bool check_depth) {
 	pt_2d click_world= screen2world(_rect_select->_gl_origin, 0.0);
 	number t_hit;
-	//std::cout << glm::to_string(_eye) << " ; " << glm::to_string(click_world) << " ; " << *aabb << "\n";
 	bool intersect= ray_intersects_aabb(_eye, pt_3d(click_world, 0.0)- _eye, aabb, t_hit);
 	if (!intersect) {
 		return false;
