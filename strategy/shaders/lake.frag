@@ -5,6 +5,8 @@ uniform vec3 light_position;
 uniform vec3 light_color;
 uniform vec3 view_position;
 uniform float angle;
+uniform float amplitude;
+uniform float freq;
 
 in vec3 vertex_position;
 in vec4 vertex_color;
@@ -16,13 +18,7 @@ out vec4 frag_color;
 void main(void) {
 	vec2 direction = normalize(vertex_position.xy);
 	float dist = length(vertex_position);
-	//float x = 1.0 * cos(angle + fract(dist));
-	//float x = 1.0 * cos(angle + 0.1 * cos(dist));
-	//float x = 1.0 * cos(angle);
-	//float x = 1.0 * cos(dist + cos(angle));
-	//float x = 1.0 * cos(dist) + 0.1 * cos(angle);
-	float x = 0.2 * cos(dist + angle);
-	//vec3 vertex_normal= normalize(vec3(x, x, 1.0));
+	float x = amplitude * cos(freq * dist + angle);
 	vec3 vertex_normal= normalize(vec3(0.0, 0.0, 1.0) + vec3(x * direction.xy, 0.0));
 
 	// ambient
@@ -43,6 +39,5 @@ void main(void) {
 	
 	vec3 result= (ambient+ diffuse+ specular)* vec3(vertex_color);
 	
-	//frag_color= vec4(result, 1.0);
 	frag_color= vec4(result, vertex_color.a);
 }

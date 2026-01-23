@@ -1,6 +1,8 @@
 #ifndef PATH_FINDER_H
 #define PATH_FINDER_H
 
+#include <map>
+
 #include "graph.h"
 #include "typedefs.h"
 
@@ -14,19 +16,21 @@ struct PathFinder : public GraphGrid {
 	PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols);
 	~PathFinder();
 	void add_unit_type(UnitType * unit_type);
-	number elevation_weight(Unit * unit, uint i, uint j);
-	number units_position_weight(Unit * unit, uint i, uint j);
-	number terrain_weight(Unit * unit, uint i, uint j);
-	number cost(Unit * unit, uint i, uint j);
+	number elevation_weight(UnitType * unit_type, uint i, uint j);
+	number units_position_weight(UnitType * unit_type, uint unit_id, uint i, uint j);
+	number terrain_weight(UnitType * unit_type, uint i, uint j);
+	number cost(UnitType * unit_type, uint unit_id, uint i, uint j);
 	number heuristic(uint i, uint j);
-	number line_of_sight_max_weight(Unit * unit, pt_2d pt1, pt_2d pt2);
-	bool path_find_nodes(Unit * unit, uint start, uint goal);
-	bool path_find(Unit * unit, pt_2d goal);
+	number line_of_sight_max_weight(UnitType * unit_type, uint unit_id, pt_2d pt1, pt_2d pt2);
+	bool path_find_nodes(UnitType * unit_type, uint unit_id, uint start, uint goal);
+	bool path_find(UnitType * unit_type, uint unit_id, pt_3d start, pt_3d goal, UNIT_STATUS & unit_status);
 	//void draw_svg(GraphGrid * grid, Path * path, std::string svg_path);
 
 
-	bool _use_line_of_sight;
 	bool _verbose;
+	UnitPath * _path;
+	std::mutex _mtx;
+	bool _computing;
 };
 
 

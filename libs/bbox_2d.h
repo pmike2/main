@@ -43,6 +43,7 @@ public:
 	BBox_2D();
 	BBox_2D(pt_2d center, pt_2d half_size, number alpha=0.0);
 	BBox_2D(number width, pt_2d pt1, pt_2d pt2);
+	BBox_2D(const BBox_2D & bbox);
 	~BBox_2D();
 	void set_aabb(AABB_2D & aabb);
 	void update();

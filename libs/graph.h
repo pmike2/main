@@ -46,6 +46,7 @@ struct Graph {
 	GraphVertex get_vertex(uint i);
 	GraphEdge get_edge(uint i, uint j);
 	GraphEdge get_edge(uint_pair p);
+	GraphEdge opposite_edge(GraphEdge e);
 	void add_vertex(uint i, pt_3d pos=pt_3d(0.0));
 	void add_edge(uint i, uint j);
 	void remove_vertex(uint i);

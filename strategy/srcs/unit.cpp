@@ -8,66 +8,17 @@
 #include "unit.h"
 
 
-Path::Path() : _idx_path(0) {
-
-}
-
-
-Path::~Path() {
-	clear();
-}
-
-
-void Path::clear() {
-	_idx_path = 0;
-	_pts.clear();
-	_nodes.clear();
-	_weights.clear();
-	for (auto & bbox : _bboxs) {
-		delete bbox;
-	}
-	_bboxs.clear();
-	_start = pt_3d(0.0);
-	_goal = pt_3d(0.0);
-}
-
-
-bool Path::empty() {
-	if (_pts.size() == 0) {
-		return true;
-	}
-	return false;
-}
-
-
-std::ostream & operator << (std::ostream & os, Path & p) {
-	os << "pts = ";
-	for (auto pt : p._pts) {
-		os << glm_to_string(pt, 1) << " ; ";
-	}
-	/*os << " | nodes = ";
-	for (auto node : p._nodes) {
-		os << node << " ; ";
-	}*/
-	os << " | weights = ";
-	for (auto w : p._weights) {
-		os << w << " ; ";
-	}
-	os << " | idx_path = " << p._idx_path;
-	return os;
-}
-
-
 // -------------------------------------------------
 Unit::Unit() {
 
 }
 
 
-Unit::Unit(UnitType * type, pt_3d pos) : InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
-	_type(type), _status(WAITING), _velocity(pt_3d(0.0)), _paused(false)
+Unit::Unit(UnitType * type, pt_3d pos, Elevation * elevation) : 
+	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
+	_type(type), _status(WAITING), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation)
 {
-	_path = new Path();
+	_path = new UnitPath();
 }
 
 
@@ -76,14 +27,26 @@ Unit::~Unit() {
 }
 
 
-void Unit::anim(Elevation * elevation) {
+/*pt_3d Unit::pt2dto3d(pt_2d pt) {
+	pt_3d result(pt.x, pt.y, 0.0);
+	if (_type->_floats) {
+		result.z = 0.0;
+	}
+	else {
+		result.z = _elevation->get_alti(pt);
+	}
+	return result;
+}*/
+
+
+void Unit::anim() {
 	if (_paused) {
 		return;
 	}
 
 	if (_status == MOVING) {
 		if (checkpoint_checked()) {
-			if (_path->_idx_path == _path->_pts.size() - 1) {
+			if (_path->is_last_checkpoint()) {
 				set_status(LAST_CHECKPOINT_CHECKED);
 			}
 			else {
@@ -94,12 +57,12 @@ void Unit::anim(Elevation * elevation) {
 		//auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
 		//_last_anim_t = t;
 
-		number velocity_amp = _type->_max_velocity * (1.0 - _path->_weights[_path->_idx_path] / MAX_UNIT_MOVING_WEIGHT);
-		pt_2d direction = glm::normalize(pt_2d(_path->_pts[_path->_idx_path]) - pt_2d(_position));
+		number velocity_amp = _type->_max_velocity * (1.0 - _path->get_weight() / MAX_UNIT_MOVING_WEIGHT);
+		pt_2d direction = glm::normalize(pt_2d(_path->get_pt()) - pt_2d(_position));
 		_velocity = velocity_amp * pt_3d(direction.x, direction.y, 0.0);
 
 		pt_3d next_position = _position + _velocity;
-		next_position.z = elevation->get_alti(next_position);
+		next_position.z = _elevation->get_alti(next_position);
 		if (_type->_floats && next_position.z < 0.0) {
 			next_position.z = 0.0;
 		}
@@ -116,11 +79,7 @@ void Unit::anim(Elevation * elevation) {
 
 
 bool Unit::checkpoint_checked() {
-	if (_path->_pts.size() == 0 || _path->_idx_path > _path->_pts.size() - 1) {
-		std::cerr << "Unit::checkpoint_checked() : path vide ou dépassé\n";
-		return true;
-	}
-	if (glm::distance(pt_2d(_position), pt_2d(_path->_pts[_path->_idx_path])) < UNIT_DIST_PATH_EPS) {
+	if (glm::distance(pt_2d(_position), pt_2d(_path->get_pt())) < UNIT_DIST_PATH_EPS) {
 		return true;
 	}
 	return false;
@@ -137,6 +96,26 @@ void Unit::set_status(UNIT_STATUS status) {
 		if (_path->empty()) {
 			std::cerr << "Unit::follow_path : path empty\n";
 			set_status(WAITING);
+		}
+	}
+}
+
+
+void Unit::update_alti_path() {
+	for (auto & pt : _path->_pts) {
+		if (_type->_floats) {
+			pt.z = 0.0;
+		}
+		else {
+			pt.z = _elevation->get_alti(pt_2d(pt.x, pt.y));
+		}
+	}
+	for (auto & pt : _path->_pts_los) {
+		if (_type->_floats) {
+			pt.z = 0.0;
+		}
+		else {
+			pt.z = _elevation->get_alti(pt_2d(pt.x, pt.y));
 		}
 	}
 }
@@ -179,7 +158,7 @@ Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos) {
 	if (type->_floats && pt3d.z < 0.0) {
 		pt3d.z = 0.0;
 	}
-	Unit * unit = new Unit(type, pt3d);
+	Unit * unit = new Unit(type, pt3d, _elevation);
 	unit->_id = id;
 	_units.push_back(unit);
 	return unit;

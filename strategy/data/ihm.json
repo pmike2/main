@@ -21,6 +21,7 @@
 			"position" : [-5.0, 1.0],
 			"orientation" : "vertical",
 			"elements" : [
+				{"name" : "view"},
 				{"name" : "play", "groups_visible" : ["play_mode"]},
 				{"name" : "add_unit", "groups_visible" : ["units"]},
 				{"name" : "add_element", "groups_visible" : ["elements", "elements_params"]},

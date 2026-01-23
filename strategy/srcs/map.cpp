@@ -75,13 +75,15 @@ Map::~Map() {
 }
 
 
-void Map::add_unit(Team * team, UNIT_TYPE type, pt_2d pos) {
+Unit * Map::add_unit(Team * team, UNIT_TYPE type, pt_2d pos) {
 	Unit * unit = team->add_unit(_unit_types[type], _next_unit_id, pos);
 	if (unit == NULL) {
-		return;
+		return NULL;
 	}
 	_next_unit_id++;
 	add_waiting_unit_to_position_grid(unit);
+
+	return unit;
 }
 
 
@@ -255,14 +257,14 @@ void Map::update_alti_grid() {
 
 
 // TODO : ne fonctionne pas on ne voit pas le path ...
-void Map::update_alti_path(Unit * unit) {
+/*void Map::update_alti_path(Unit * unit) {
 	for (auto & pt : unit->_path->_pts) {
 		pt.z = _elevation->get_alti(pt);
 		if (pt.z < 0.0 && unit->_type->_floats) {
 			pt.z = 0.01;
 		}
 	}
-}
+}*/
 
 
 void Map::update_elevation_grid() {
@@ -382,7 +384,7 @@ std::vector<uint_pair> Map::moving_unit_positions_edges(Unit * unit, UnitType * 
 	std::vector<uint_pair> edges;
 	bool intersection_happened = false;
 
-	AABB_2D * aabb_start = new AABB_2D(unit->_path->_start - 0.5 * pt_2d(unit_type->buffer_size()), pt_2d(unit->_bbox->_aabb->size() + unit_type->buffer_size()));
+	AABB_2D * aabb_start = new AABB_2D(pt_2d(unit->_path->_start) - 0.5 * pt_2d(unit_type->buffer_size()), pt_2d(unit->_bbox->_aabb->size() + unit_type->buffer_size()));
 	if (!all && !intersection_happened) {
 		if (aabb2d_intersects_aabb2d(aabb_unit, aabb_start)) {
 			intersection_happened = true;
@@ -408,7 +410,7 @@ std::vector<uint_pair> Map::moving_unit_positions_edges(Unit * unit, UnitType * 
 		delete buffered_bbox;
 	}
 
-	AABB_2D * aabb_goal = new AABB_2D(unit->_path->_goal - pt_2d(unit->_type->buffer_size()- 0.5 * unit_type->buffer_size()), pt_2d(unit->_type->buffer_size() + unit_type->buffer_size()));
+	AABB_2D * aabb_goal = new AABB_2D(pt_2d(unit->_path->_goal) - pt_2d(unit->_type->buffer_size()- 0.5 * unit_type->buffer_size()), pt_2d(unit->_type->buffer_size() + unit_type->buffer_size()));
 	if (!all && !intersection_happened) {
 		if (aabb2d_intersects_aabb2d(aabb_unit, aabb_goal)) {
 			intersection_happened = true;
@@ -486,8 +488,8 @@ void Map::remove_moving_unit_from_position_grid(Unit * unit, bool all) {
 }
 
 
-void Map::path_find(Unit * unit, pt_2d goal) {
-	_path_finder->path_find(unit, goal);
+void Map::path_find(Unit * unit, pt_3d goal) {
+	_path_finder->path_find(unit->_type, unit->_id, unit->_bbox->_aabb->bottom_center(), goal, unit->_status);
 }
 
 
@@ -541,29 +543,28 @@ void Map::clear() {
 
 
 void Map::anim(time_point t) {
-	bool path_find_thr_active = false;
-
 	for (auto & team : _teams) {
 		for (auto & unit : team->_units) {
-			std::mutex mtx;
-			mtx.lock();
+			_path_finder->_mtx.lock();
 			UNIT_STATUS status = unit->_status;
-			mtx.unlock();
+			_path_finder->_mtx.unlock();
 
 			if (status == COMPUTING_PATH) {
 				continue;
 			}
 
 			if (status == COMPUTING_PATH_DONE) {
-				path_find_thr_active = false;
+				_path_finder->_computing = false;
 				_path_find_thr.join();
-				update_alti_path(unit);
+				unit->_path->copy_path(_path_finder->_path);
+				unit->update_alti_path();
+				//update_alti_path(unit);
 				unit->set_status(MOVING);
 				remove_waiting_unit_from_position_grid(unit);
 				add_moving_unit_to_position_grid(unit);
 			}
 			else if (status == COMPUTING_PATH_FAILED) {
-				path_find_thr_active = false;
+				_path_finder->_computing = false;
 				_path_find_thr.join();
 				unit->_instructions.push({unit->_path->_goal, t + std::chrono::milliseconds(1000)});
 				unit->set_status(WAITING);
@@ -579,7 +580,7 @@ void Map::anim(time_point t) {
 				unit->set_status(WAITING);
 			}
 			else if (status == MOVING) {
-				unit->anim(_elevation);
+				unit->anim();
 				//_unit_groups[unit->_type]->update_unit(unit);
 				
 				/*for (auto & unit2 : _units) {
@@ -593,16 +594,16 @@ void Map::anim(time_point t) {
 				}*/
 			}
 
-			if (!path_find_thr_active && !unit->_instructions.empty()) {
+			if (!_path_finder->_computing && !unit->_instructions.empty()) {
 				Instruction i = unit->_instructions.front();
 				if (i._t <= t) {
 					unit->_instructions.pop();
 
-					pt_2d pt = i._destination;
+					pt_3d pt = i._destination;
 
 					unit->set_status(COMPUTING_PATH);
 					_path_find_thr= std::thread(&Map::path_find, this, unit, pt);
-					path_find_thr_active = true;
+					_path_finder->_computing = true;
 				}
 			}
 		}
@@ -610,7 +611,7 @@ void Map::anim(time_point t) {
 }
 
 
-void Map::selected_units_goto(pt_2d pt, time_point t) {
+void Map::selected_units_goto(pt_3d pt, time_point t) {
 	uint compt = 0;
 	for (auto & team : _teams) {
 		for (auto & unit : team->_units) {

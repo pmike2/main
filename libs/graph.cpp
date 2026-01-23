@@ -29,6 +29,17 @@ GraphEdge Graph::get_edge(uint_pair p) {
 }
 
 
+GraphEdge Graph::opposite_edge(GraphEdge e) {
+	for (auto & edge : e._end->_edges) {
+		if (edge.second._end == e._start) {
+			return edge.second;
+		}
+	}
+	std::cerr << "Graph::opposite_edge : non trouvé.\n";
+	return GraphEdge{};
+}
+
+
 void Graph::add_vertex(uint i, pt_3d pos) {
 	if (!_vertices.count(i)) {
 		GraphVertex v= {};
@@ -356,6 +367,11 @@ uint GraphGrid::pt2closest_id(pt_2d pt) {
 
 
 uint_pair GraphGrid::pt2closest_edge(pt_2d pt) {
+	if (!in_boundaries(pt)) {
+		std::cerr << "GraphGrid::pt2closest_edge : " << glm_to_string(pt) << " hors grille.\n";
+		return uint_pair{0, 0};
+	}
+
 	std::vector<uint_pair> edges = edges_in_cell_containing_pt(pt);
 	uint_pair result(0, 0);
 	number min_dist = 1e9;
@@ -541,6 +557,10 @@ std::vector<uint_pair> GraphGrid::edges_intersecting_polygon(Polygon2D * polygon
 
 
 std::vector<uint_pair> GraphGrid::edges_in_cell_containing_pt(pt_2d pt, bool only_diagonals) {
+	if (!in_boundaries(pt)) {
+		std::cerr << "GraphGrid::edges_in_cell_containing_pt : " << glm_to_string(pt) << " hors grille.\n";
+		return std::vector<uint_pair>{};
+	}
 	int_pair col_lig = pt2col_lig(pt);
 	std::vector<glm::uvec4> offsets = {
 		glm::uvec4(0, 0, 1, 1), glm::uvec4(1, 1, 0, 0), glm::uvec4(0, 1, 1, 0), glm::uvec4(1, 0, 0, 1)
@@ -558,26 +578,9 @@ std::vector<uint_pair> GraphGrid::edges_in_cell_containing_pt(pt_2d pt, bool onl
 	for (auto & offset : offsets) {
 		uint id1 = col_lig2id(col_lig.first + offset[0], col_lig.second + offset[1]);
 		uint id2 = col_lig2id(col_lig.first + offset[2], col_lig.second + offset[3]);
-		//result.push_back(_vertices[id1]._edges[id2]);
 		result.push_back(std::make_pair(id1, id2));
 	}
 
-	/*uint id_left_bottom = col_lig2id(col_lig.first, col_lig.second);
-	uint id_right_bottom = col_lig2id(col_lig.first + 1, col_lig.second);
-	uint id_left_top = col_lig2id(col_lig.first, col_lig.second + 1);
-	uint id_right_top = col_lig2id(col_lig.first + 1, col_lig.second + 1);
-	std::vector<GraphEdge> result;
-	result.push_back(_vertices[id_left_bottom]._edges[id_right_top]);
-	result.push_back(_vertices[id_right_top]._edges[id_left_bottom]);
-	result.push_back(_vertices[id_right_bottom]._edges[id_left_top]);
-	result.push_back(_vertices[id_left_top]._edges[id_right_bottom]);
-	if (!only_diagonals) {
-		result.push_back(_vertices[id_left_bottom]._edges[id_right_bottom]);
-		result.push_back(_vertices[id_right_bottom]._edges[id_left_bottom]);
-
-		result.push_back(_vertices[id_left_bottom]._edges[id_left_top]);
-		result.push_back(_vertices[id_left_bottom]._edges[id_right_bottom]);
-	}*/
 	return result;
 }
 

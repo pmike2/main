@@ -4,56 +4,30 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <thread>
 
 
-struct Test {
-	int _x;
-	std::vector<int> _v;
-};
+int number = 0;
 
 
-struct List {
-	std::vector<Test> _tests;
-};
+void increment(){
+	std::mutex mtx;
+	mtx.lock();
+	for(int i=0; i<1000000; i++){
+		number++;
+	}
+	mtx.unlock();
+}
 
 
 int main() {
-	/*std::string s = "12";
-	std::stringstream ss(s);
-	std::string s2;
-	std::vector<std::string> v;
-	while(std::getline(ss, s2, '/')) {
-		v.push_back(s2);
-	}
+	std::thread t1(increment);
+	std::thread t2(increment);
 
-	std::cout << v.size() << "\n";
-	for (auto & x : v) {
-		std::cout << x << " ; ";
-	}
-	std::cout << "\n";*/
+	t1.join();
+	t2.join();
 
-	List l;
-
-	Test t;
-
-	t._x = 12;
-	t._v.push_back(100);
-	t._v.push_back(200);
-	l._tests.push_back(t);
-
-	t._x = 38;
-	t._v.clear();
-	t._v.push_back(1000);
-	t._v.push_back(2000);
-	l._tests.push_back(t);
-
-	for (auto &t : l._tests) {
-		std::cout << t._x << " / ";
-		for (auto &x : t._v) {
-			std::cout << x << " ; ";
-		}
-		std::cout << "\n";
-	}
+	std::cout << "Number after execution of t1 and t2 is " << number << "\n";
 
 	return 0;
 }

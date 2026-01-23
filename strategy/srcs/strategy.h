@@ -18,7 +18,7 @@
 #include "map.h"
 
 
-enum STRATEGY_MODE {PLAY, ADD_UNIT, ADD_ELEMENT, EDIT_ELEVATION};
+enum STRATEGY_MODE {VIEW, PLAY, ADD_UNIT, ADD_ELEMENT, EDIT_ELEVATION};
 enum PLAY_MODE {SELECT_UNIT, MOVE_UNIT};
 
 const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
@@ -53,6 +53,7 @@ struct StrategyConfig {
 	number _elevation_exponent;
 	uint _n_elements;
 	number _elements_dispersion;
+	bool _units_paused;
 };
 
 

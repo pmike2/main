@@ -288,6 +288,12 @@ bool ViewSystem::key_up(InputState * input_state, SDL_Keycode key) {
 
 // a appeler des qu'un param est modifie
 void ViewSystem::update() {
+	// _rho == 0.0 crée des problèmes avec du nan dans les attributs
+	const number MIN_RHO = 0.01;
+	if (_rho < MIN_RHO) {
+		_rho = MIN_RHO;
+	}
+
 	// https://en.wikipedia.org/wiki/Spherical_coordinate_system
 	_dir= -pt_3d(cos(_phi)* sin(_theta), sin(_phi)* sin(_theta), cos(_theta));
 	_eye= _target- _rho* _dir;
@@ -295,11 +301,13 @@ void ViewSystem::update() {
 	_right= glm::cross(_dir, _up);
 	_world2camera= glm::lookAt(_eye, _target, _up);
 
-	/*cout << "-------------------" << endl;
-	cout << "target=" << glm::to_string(_target) << endl;
-	cout << "eye=" << glm::to_string(_eye) << endl;
-	cout << "up=" << glm::to_string(_up) << endl;
-	cout << "world2camera=" << glm::to_string(_world2camera) << endl;*/
+	/*std::cout << "-------------------\n";
+	std::cout << "target=" << glm::to_string(_target) << "\n";
+	std::cout << "rho=" << _rho << "\n";
+	std::cout << "dir=" << glm::to_string(_dir) << "\n";
+	std::cout << "eye=" << glm::to_string(_eye) << "\n";
+	std::cout << "up=" << glm::to_string(_up) << "\n";
+	std::cout << "world2camera=" << glm::to_string(_world2camera) << "\n";*/
 
 	_world2clip= _camera2clip* _world2camera;
 
@@ -381,10 +389,7 @@ void ViewSystem::move_theta(number x) {
 
 
 void ViewSystem::move_rho(number x) {
-	_rho+= x;
-	if (_rho< 0.0) {
-		_rho= 0.0;
-	}
+	_rho += x;
 	
 	update();
 }

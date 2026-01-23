@@ -47,7 +47,8 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 
 	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-100.0, -100.0), pt_2d(200.0, 200.0), pt_2d(2.0), pt_2d(0.5), t);
 
-	_map->randomize();
+	//_map->randomize();
+	_map->clear();
 
 	update_all();
 
@@ -65,8 +66,12 @@ Strategy::~Strategy() {
 
 void Strategy::set_ihm() {
 	_ihm->get_element("general", "show_info")->set_callback([this](){_config->_show_info = true;}, [this](){_config->_show_info = false;});
-	_ihm->get_element("general", "units_paused")->set_callback([this](){_map->pause_all_units(true);}, [this](){_map->pause_all_units(false);});
+	_ihm->get_element("general", "units_paused")->set_callback(
+		[this](){_config->_units_paused = true; _map->pause_all_units(true);},
+		[this](){_config->_units_paused = false; _map->pause_all_units(false);}
+	);
 
+	_ihm->get_element("mode", "view")->set_callback([this](){_config->_mode = VIEW;});
 	_ihm->get_element("mode", "play")->set_callback([this](){_config->_mode = PLAY;});
 	_ihm->get_element("mode", "add_unit")->set_callback([this](){_config->_mode = ADD_UNIT;});
 	_ihm->get_element("mode", "add_element")->set_callback([this](){_config->_mode = ADD_ELEMENT;});
@@ -238,9 +243,9 @@ void Strategy::draw_dash(std::string context_name) {
 
 	context->activate();
 	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glUniform1f(context->_locs_uniform["dash_size"], 8.0);
-	glUniform1f(context->_locs_uniform["gap_size"], 8.0);
-	glUniform1f(context->_locs_uniform["thickness"], 4.0);
+	glUniform1f(context->_locs_uniform["dash_size"], 4.0);
+	glUniform1f(context->_locs_uniform["gap_size"], 2.0);
+	glUniform1f(context->_locs_uniform["thickness"], 2.0);
 	glUniform2f(context->_locs_uniform["viewport_size"], _view_system->_screengl->_screen_width, _view_system->_screengl->_screen_height);
 	glDrawArrays(GL_LINES, 0, context->_n_pts);
 	context->deactivate();
@@ -276,6 +281,8 @@ void Strategy::draw_lake() {
 	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
 	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
 	glUniform1f(context->_locs_uniform["angle"], float(_angle));
+	glUniform1f(context->_locs_uniform["amplitude"], 0.2f);
+	glUniform1f(context->_locs_uniform["freq"], 2.0f);
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 	context->deactivate();
 }
@@ -310,6 +317,8 @@ void Strategy::draw_sea() {
 	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
 	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
 	glUniform1f(context->_locs_uniform["angle"], float(_angle));
+	glUniform1f(context->_locs_uniform["amplitude"], 0.2f);
+	glUniform1f(context->_locs_uniform["freq"], 0.2f);
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 	context->deactivate();
 }
@@ -446,16 +455,16 @@ glm::vec4 Strategy::get_grid_edge_color() {
 
 glm::vec4 Strategy::get_path_color(number weight) {
 	if (weight >= MAX_UNIT_MOVING_WEIGHT) {
-		return glm::vec4(1.0, 0.0, 0.0, 1.0);
+		return glm::vec4(1.0, 0.0, 1.0, 1.0);
 	}
 	else if (weight > 100.0) {
-		return glm::vec4(1.0, 1.0, 0.0, 1.0);
+		return glm::vec4(1.0, 0.0, 0.0, 1.0);
 	}
 	else if (weight > 50.0) {
-		return glm::vec4(0.0, 1.0, 1.0, 1.0);
+		return glm::vec4(1.0, 1.0, 0.0, 1.0);
 	}
 	else {
-		return glm::vec4(0.0, 1.0, 0.0, 1.0);
+		return glm::vec4(0.0, 1.0 - float(weight) / 50.0, 0.5, 1.0);
 	}
 }
 
@@ -642,7 +651,10 @@ void Strategy::update_path() {
 	
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			context->_n_pts += (unit->_path->_pts.size() - 1) * 2 + 2 + 4;
+			context->_n_pts += (unit->_path->_pts.size() - 1) * 2;
+			context->_n_pts += (unit->_path->_pts_los.size() - 1) * 2;
+			context->_n_pts += 4; // croix de départ
+			context->_n_pts += 4; // croix d'arrivée
 		}
 	}
 
@@ -655,15 +667,14 @@ void Strategy::update_path() {
 				continue;
 			}
 
+			// sans LOS -----------------------------------------------------------------------
 			// du départ au 1er checkpoint
-			glm::vec4 path_color_init(0.0, 0.0, 1.0, 1.0);
+			//glm::vec4 path_color_init(0.0, 0.0, 1.0, 1.0);
+			/*glm::vec4 path_color_init = get_path_color(unit->_path->_weights[0]);
 
-			//ptr[0] = float(unit->_position.x);
-			//ptr[1] = float(unit->_position.y);
-			//ptr[2] = float(unit->_position.z + Z_OFFSET_PATH);
 			ptr[0] = float(unit->_path->_start.x);
 			ptr[1] = float(unit->_path->_start.y);
-			ptr[2] = float(_map->_elevation->get_alti(unit->_path->_start));
+			ptr[2] = float(unit->_path->_start.z + Z_OFFSET_PATH);
 			ptr[3] = path_color_init.r;
 			ptr[4] = path_color_init.g;
 			ptr[5] = path_color_init.b;
@@ -677,45 +688,116 @@ void Strategy::update_path() {
 			ptr[12] = path_color_init.b;
 			ptr[13] = path_color_init.a;
 
-			ptr += 14;
+			ptr += 14;*/
 
 			// entre les checkpoints
-			for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
-				glm::vec4 path_color = get_path_color(unit->_path->_weights[i]);
-				
-				ptr[0] = float(unit->_path->_pts[i].x);
-				ptr[1] = float(unit->_path->_pts[i].y);
-				ptr[2] = float(unit->_path->_pts[i].z + Z_OFFSET_PATH);
-				ptr[3] = path_color.r;
-				ptr[4] = path_color.g;
-				ptr[5] = path_color.b;
-				ptr[6] = path_color.a;
+			//if (unit->_path->_pts.size() > 1) {
+				for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
+					glm::vec4 path_color = get_path_color(unit->_path->_weights[i]);
+					
+					ptr[0] = float(unit->_path->_pts[i].x);
+					ptr[1] = float(unit->_path->_pts[i].y);
+					ptr[2] = float(unit->_path->_pts[i].z + Z_OFFSET_PATH);
+					ptr[3] = path_color.r;
+					ptr[4] = path_color.g;
+					ptr[5] = path_color.b;
+					ptr[6] = path_color.a;
 
-				ptr[7] = float(unit->_path->_pts[i + 1].x);
-				ptr[8] = float(unit->_path->_pts[i + 1].y);
-				ptr[9] = float(unit->_path->_pts[i + 1].z + Z_OFFSET_PATH);
-				ptr[10] = path_color.r;
-				ptr[11] = path_color.g;
-				ptr[12] = path_color.b;
-				ptr[13] = path_color.a;
+					ptr[7] = float(unit->_path->_pts[i + 1].x);
+					ptr[8] = float(unit->_path->_pts[i + 1].y);
+					ptr[9] = float(unit->_path->_pts[i + 1].z + Z_OFFSET_PATH);
+					ptr[10] = path_color.r;
+					ptr[11] = path_color.g;
+					ptr[12] = path_color.b;
+					ptr[13] = path_color.a;
 
-				ptr += 14;
-			}
+					ptr += 14;
+				}
+			//}
 
-			// croix d'arrivée
-			const number PATH_GOAL_CROSS_SIZE = 1.0;
-			const glm::vec4 PATH_GOAL_CROSS_COLOR(1.0, 0.0, 1.0, 1.0);
-			number z_goal = unit->_path->_pts[unit->_path->_pts.size() - 1].z + Z_OFFSET_PATH;
-			pt_2d cross_pts[4] = {
-				unit->_path->_goal - pt_2d(PATH_GOAL_CROSS_SIZE, 0.0),
-				unit->_path->_goal + pt_2d(PATH_GOAL_CROSS_SIZE, 0.0),
-				unit->_path->_goal - pt_2d(0.0, PATH_GOAL_CROSS_SIZE),
-				unit->_path->_goal + pt_2d(0.0, PATH_GOAL_CROSS_SIZE)
+			// avec LOS -----------------------------------------------------------------------
+			// du départ au 1er checkpoint
+			//glm::vec4 path_color_init(0.0, 0.0, 1.0, 1.0);
+
+			const number Z_OFFSET_LOS = 1.0;
+
+			/*ptr[0] = float(unit->_path->_start.x);
+			ptr[1] = float(unit->_path->_start.y);
+			ptr[2] = float(unit->_path->_start.z + Z_OFFSET_PATH + Z_OFFSET_LOS);
+			ptr[3] = path_color_init.r;
+			ptr[4] = path_color_init.g;
+			ptr[5] = path_color_init.b;
+			ptr[6] = path_color_init.a;
+
+			ptr[7] = float(unit->_path->_pts_los[0].x);
+			ptr[8] = float(unit->_path->_pts_los[0].y);
+			ptr[9] = float(unit->_path->_pts_los[0].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
+			ptr[10] = path_color_init.r;
+			ptr[11] = path_color_init.g;
+			ptr[12] = path_color_init.b;
+			ptr[13] = path_color_init.a;
+
+			ptr += 14;*/
+
+			// entre les checkpoints
+			//if (unit->_path->_pts_los.size() > 1) {
+				for (uint i=0; i<unit->_path->_pts_los.size() - 1; ++i) {
+					glm::vec4 path_color = get_path_color(unit->_path->_weights_los[i]);
+					
+					ptr[0] = float(unit->_path->_pts_los[i].x);
+					ptr[1] = float(unit->_path->_pts_los[i].y);
+					ptr[2] = float(unit->_path->_pts_los[i].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
+					ptr[3] = path_color.r;
+					ptr[4] = path_color.g;
+					ptr[5] = path_color.b;
+					ptr[6] = path_color.a;
+
+					ptr[7] = float(unit->_path->_pts_los[i + 1].x);
+					ptr[8] = float(unit->_path->_pts_los[i + 1].y);
+					ptr[9] = float(unit->_path->_pts_los[i + 1].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
+					ptr[10] = path_color.r;
+					ptr[11] = path_color.g;
+					ptr[12] = path_color.b;
+					ptr[13] = path_color.a;
+
+					ptr += 14;
+				}
+			//}
+
+			// croix de départ ---------------------------------------------------------------
+			const number PATH_START_CROSS_SIZE = 1.0;
+			const glm::vec4 PATH_START_CROSS_COLOR(1.0, 0.0, 1.0, 1.0);
+			pt_3d start_cross_pts[4] = {
+				unit->_path->_start - pt_3d(PATH_START_CROSS_SIZE, 0.0, 0.0),
+				unit->_path->_start + pt_3d(PATH_START_CROSS_SIZE, 0.0, 0.0),
+				unit->_path->_start - pt_3d(0.0, PATH_START_CROSS_SIZE, 0.0),
+				unit->_path->_start + pt_3d(0.0, PATH_START_CROSS_SIZE, 0.0)
 			};
 			for (uint i=0; i<4; ++i) {
-				ptr[0] = float(cross_pts[i].x);
-				ptr[1] = float(cross_pts[i].y);
-				ptr[2] = z_goal;
+				ptr[0] = float(start_cross_pts[i].x);
+				ptr[1] = float(start_cross_pts[i].y);
+				ptr[2] = float(start_cross_pts[i].z + Z_OFFSET_PATH);
+				ptr[3] = PATH_START_CROSS_COLOR.r;
+				ptr[4] = PATH_START_CROSS_COLOR.g;
+				ptr[5] = PATH_START_CROSS_COLOR.b;
+				ptr[6] = PATH_START_CROSS_COLOR.a;
+
+				ptr += 7;
+			}
+
+			// croix d'arrivée ---------------------------------------------------------------
+			const number PATH_GOAL_CROSS_SIZE = 1.0;
+			const glm::vec4 PATH_GOAL_CROSS_COLOR(1.0, 0.0, 1.0, 1.0);
+			pt_3d goal_cross_pts[4] = {
+				unit->_path->_goal - pt_3d(PATH_GOAL_CROSS_SIZE, 0.0, 0.0),
+				unit->_path->_goal + pt_3d(PATH_GOAL_CROSS_SIZE, 0.0, 0.0),
+				unit->_path->_goal - pt_3d(0.0, PATH_GOAL_CROSS_SIZE, 0.0),
+				unit->_path->_goal + pt_3d(0.0, PATH_GOAL_CROSS_SIZE, 0.0)
+			};
+			for (uint i=0; i<4; ++i) {
+				ptr[0] = float(goal_cross_pts[i].x);
+				ptr[1] = float(goal_cross_pts[i].y);
+				ptr[2] = float(goal_cross_pts[i].z + Z_OFFSET_PATH);
 				ptr[3] = PATH_GOAL_CROSS_COLOR.r;
 				ptr[4] = PATH_GOAL_CROSS_COLOR.g;
 				ptr[5] = PATH_GOAL_CROSS_COLOR.b;
@@ -734,19 +816,24 @@ void Strategy::update_path() {
 void Strategy::update_edit_map() {
 	DrawContext * context= _gl_draw_manager->get_context("edit_map");
 	
-	if (_config->_mode == EDIT_ELEVATION || _config->_mode == ADD_ELEMENT) {
-		context->_n_pts = EDIT_MAP_N_VERTICES_PER_CIRCLE * 2;
-		context->_active = true;
-	}
-	else {
+	if (_config->_mode != EDIT_ELEVATION && _config->_mode != ADD_ELEMENT) {
 		context->_n_pts = 0;
 		context->_active = false;
 		return;
 	}
 
-	float data[context->data_size()];
-	float * ptr = data;
-	
+	AABB_2D * aabb = new AABB_2D(pt_2d(_cursor_world_position) - pt_2d(_config->_elevation_radius), 2.0 * pt_2d(_config->_elevation_radius));
+	if (!_map->_elevation->in_boundaries(aabb)) {
+		context->_n_pts = 0;
+		context->_active = false;
+		delete aabb;
+		return;
+	}
+	delete aabb;
+
+	context->_n_pts = EDIT_MAP_N_VERTICES_PER_CIRCLE * 2;
+	context->_active = true;
+
 	std::vector<pt_2d> circle_pts;
 	if (_config->_mode == EDIT_ELEVATION) {
 		circle_pts = circle_vertices(pt_2d(_cursor_world_position), _config->_elevation_radius, EDIT_MAP_N_VERTICES_PER_CIRCLE);
@@ -755,6 +842,9 @@ void Strategy::update_edit_map() {
 		circle_pts = circle_vertices(pt_2d(_cursor_world_position), _config->_elements_dispersion * 2.0, EDIT_MAP_N_VERTICES_PER_CIRCLE);
 	}
 
+	float data[context->data_size()];
+	float * ptr = data;
+	
 	for (uint i=0; i<EDIT_MAP_N_VERTICES_PER_CIRCLE; ++i) {
 		uint j = i + 1;
 		if (j == EDIT_MAP_N_VERTICES_PER_CIRCLE) {
@@ -985,10 +1075,18 @@ void Strategy::update_text() {
 	std::string s_pos = glm_to_string(_cursor_world_position);
 	texts_2d.push_back(Text(s_pos, glm::vec2(-4.8, 3.8), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	
-	GraphEdge edge = _map->_path_finder->get_edge(_map->_path_finder->pt2closest_edge(pt_2d(_cursor_world_position)));
-	EdgeData * data = (EdgeData *)(edge._data);
-	std::string str_terrain = terrain_type2str(data->_type[_map->_unit_types[_config->_visible_grid_unit_type]]);
-	texts_2d.push_back(Text(str_terrain, glm::vec2(-1.5, 3.8), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	if (_map->_path_finder->in_boundaries(pt_2d(_cursor_world_position))) {
+		GraphEdge edge = _map->_path_finder->get_edge(_map->_path_finder->pt2closest_edge(pt_2d(_cursor_world_position)));
+		GraphEdge opposite_edge = _map->_path_finder->opposite_edge(edge);
+		EdgeData * data = (EdgeData *)(edge._data);
+		EdgeData * opposite_data = (EdgeData *)(opposite_edge._data);
+
+		std::string str_terrain = terrain_type2str(data->_type[_map->_unit_types[_config->_visible_grid_unit_type]]);
+		str_terrain += " ; " + std::to_string(data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
+		str_terrain += " ; " + std::to_string(opposite_data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
+		
+		texts_2d.push_back(Text(str_terrain, glm::vec2(-1.5, 3.8), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	}
 
 	_font->set_text(texts_2d);
 }
@@ -1003,12 +1101,22 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 		return false;
 	}
 
+	if (_config->_mode == VIEW) {
+		return false;
+	}
+
 	if (_config->_mode == PLAY && _config->_play_mode == MOVE_UNIT) {
-		_map->selected_units_goto(pt_2d(_cursor_world_position), t);
+		_map->selected_units_goto(_cursor_world_position, t);
 		return true;
 	}
 	else if (_config->_mode == ADD_UNIT) {
-		_map->add_unit(_map->_teams[0], _config->_unit_type, pt_2d(_cursor_world_position));
+		Unit * unit = _map->add_unit(_map->_teams[0], _config->_unit_type, pt_2d(_cursor_world_position));
+		if (_config->_units_paused) {
+			unit->_paused = true;
+		}
+		else {
+			unit->_paused = false;
+		}
 		update_unit_matrices(_map->_unit_types[_config->_unit_type]);
 		return true;
 	}
@@ -1052,16 +1160,23 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 				continue;
 			}
 			number alti_inc = _config->_elevation_factor * (1.0 - pow(dist, _config->_elevation_exponent));
+			number new_alti;
 
 			if (_config->_elevation_mode == ELEVATION_MINUS) {
-				_map->_elevation->set_alti(id, _map->_elevation->get_alti(id) - alti_inc);
+				new_alti = _map->_elevation->get_alti(id) - alti_inc;
 			}
 			else if (_config->_elevation_mode == ELEVATION_PLUS) {
-				_map->_elevation->set_alti(id, _map->_elevation->get_alti(id) + alti_inc);
+				new_alti = _map->_elevation->get_alti(id) + alti_inc;
 			}
 			else if (_config->_elevation_mode == ELEVATION_ZERO) {
-				_map->_elevation->set_alti(id, -0.01);
+				new_alti = -0.01;
 			}
+
+			if (abs(new_alti) < 0.01) {
+				new_alti = -0.01;
+			}
+
+			_map->_elevation->set_alti(id, new_alti);
 		}
 
 		//_map->_elevation->set_negative_alti_2zero();

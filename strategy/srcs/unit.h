@@ -13,6 +13,7 @@
 #include "bbox.h"
 
 #include "unit_type.h"
+#include "unit_path.h"
 #include "elevation.h"
 
 
@@ -20,47 +21,32 @@ const uint N_MAX_UNITS_PER_GROUP = 1024;
 const number UNIT_DIST_PATH_EPS = 0.5;
 
 
-struct Path {
-	Path();
-	~Path();
-	void clear();
-	bool empty();
-	friend std::ostream & operator << (std::ostream & os, Path & p);
-
-
-	pt_2d _start;
-	pt_2d _goal;
-	std::vector<pt_3d> _pts;
-	std::vector<uint> _nodes;
-	std::vector<number> _weights;
-	std::vector<BBox_2D *> _bboxs;
-	uint _idx_path;
-};
-
-
 struct Instruction {
-	pt_2d _destination;
+	pt_3d _destination;
 	time_point _t;
 };
 
 
 struct Unit : public InstancePosRot {
 	Unit();
-	Unit(UnitType * type, pt_3d pos);
+	Unit(UnitType * type, pt_3d pos, Elevation * elevation);
 	~Unit();
-	void anim(Elevation * elevation);
+	//pt_3d pt2dto3d(pt_2d pt);
+	void anim();
 	bool checkpoint_checked();
 	void set_status(UNIT_STATUS status);
+	void update_alti_path();
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
 	
 	
 	uint _id;
 	UnitType * _type;
 	UNIT_STATUS _status;
-	Path * _path;
+	UnitPath * _path;
 	pt_3d _velocity;
 	std::queue<Instruction> _instructions;
 	bool _paused;
+	Elevation * _elevation;
 };
 
 

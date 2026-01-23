@@ -92,6 +92,15 @@ BBox_2D::BBox_2D(pt_2d center, pt_2d half_size, number alpha) : _center(center),
 }
 
 
+BBox_2D::BBox_2D(const BBox_2D & bbox) {
+	_center = bbox._center;
+	_half_size = bbox._half_size;
+	_alpha = bbox._alpha;
+	_aabb= new AABB_2D(*bbox._aabb);
+	update();
+}
+
+
 BBox_2D::BBox_2D(number width, pt_2d pt1, pt_2d pt2) {
 	_center = (pt1 + pt2) * 0.5;
 	_half_size.x = 0.5 * glm::length(pt2 - pt1);

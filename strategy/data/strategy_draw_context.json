@@ -47,7 +47,7 @@
 		},
 		"lake" : {
 			"locs" : ["position_in:3", "color_in:4"],
-			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position", "angle"]
+			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position", "angle", "amplitude", "freq"]
 		},
 		"unit" : {
 			"locs" : ["position_in:3", "normal_in:3", "ambient_in:3", "diffuse_in:3", "specular_in:3", "shininess_in:1", "opacity_in:1", "model2world_matrix:16:new_instanced_buffer"],
