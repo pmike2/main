@@ -66,7 +66,7 @@
 			"type" : "slider",
 			"name" : "elements_params",
 			"position" : [-4.0, -1.0],
-			"element_size" : [0.2, 2.0],
+			"element_size" : [0.4, 2.0],
 			"orientation" : "horizontal",
 			"elements" : [
 				{"name" : "n_elements", "min_value" : 1.0, "max_value" : 100.0},
@@ -88,7 +88,7 @@
 			"type" : "slider",
 			"name" : "edit_elevation_params",
 			"position" : [-4.0, -1.0],
-			"element_size" : [0.2, 2.0],
+			"element_size" : [0.4, 2.0],
 			"orientation" : "horizontal",
 			"elements" : [
 				{"name" : "elevation_radius", "min_value" : 1.0, "max_value" : 50.0},
