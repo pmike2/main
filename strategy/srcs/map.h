@@ -52,11 +52,12 @@ struct Map {
 	
 	void clear_units_position_grid();
 	std::vector<uint_pair> waiting_unit_positions_edges(Unit * unit, UnitType * unit_type);
-	std::vector<uint_pair> moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all);
-	void add_waiting_unit_to_position_grid(Unit * unit);
-	void remove_waiting_unit_from_position_grid(Unit * unit);
-	void add_moving_unit_to_position_grid(Unit * unit);
-	void remove_moving_unit_from_position_grid(Unit * unit, bool all);
+	//std::vector<uint_pair> moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all);
+	void fill_unit_path_edges(Unit * unit);
+	void add_unit_to_position_grid(Unit * unit);
+	void remove_unit_from_position_grid(Unit * unit);
+	//void add_moving_unit_to_position_grid(Unit * unit);
+	//void remove_moving_unit_from_position_grid(Unit * unit, bool all);
 
 	void path_find(Unit * unit, pt_3d goal);
 	void pause_all_units(bool pause);

@@ -67,7 +67,7 @@
 		"debug" : {"shader" : "linear", "active" : false},
 		"select" : {"shader" : "select"},
 		"grid" : {"shader" : "linear", "active" : false},
-		"unit_linear" : {"shader" : "linear"},
+		"bbox" : {"shader" : "linear"},
 		"path" : {"shader" : "dash"},
 		"edit_map" : {"shader" : "dash"},
 		"elevation" : {"shader" : "elevation", "usage" : "GL_DYNAMIC_DRAW"},

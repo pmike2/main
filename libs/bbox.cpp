@@ -12,6 +12,7 @@
 #include <glm/gtx/string_cast.hpp>
 
 #include "bbox.h"
+#include "utile.h"
 
 
 
@@ -220,6 +221,29 @@ std::vector<std::vector<uint> > BBox::triangles_idxs() {
 		{5, 7, 6}, {5, 6, 4} // z+
 	};
 	return idx;
+}
+
+
+std::vector<pt_3d> BBox::segments() {
+	return std::vector<pt_3d> {
+		_pts[0], _pts[1], _pts[1], _pts[3], _pts[3], _pts[2], _pts[2], _pts[0], // bottom
+		_pts[4], _pts[5], _pts[5], _pts[7], _pts[7], _pts[6], _pts[6], _pts[4], // top
+		_pts[0], _pts[1], _pts[1], _pts[5], _pts[5], _pts[4], _pts[4], _pts[0], // left
+		_pts[2], _pts[6], _pts[6], _pts[7], _pts[7], _pts[3], _pts[3], _pts[2], // right
+		_pts[1], _pts[3], _pts[3], _pts[7], _pts[7], _pts[5], _pts[5], _pts[1], // front
+		_pts[0], _pts[2], _pts[2], _pts[6], _pts[6], _pts[4], _pts[4], _pts[0], // back
+	};
+}
+
+
+BBox_2D * BBox::bbox2d() {
+	number width = _vmax.y - _vmin.y;
+	pt_2d pt1 = 0.5 * (pt_2d(_pts[0]) + pt_2d(_pts[2]));
+	pt_2d pt2 = 0.5 * (pt_2d(_pts[1]) + pt_2d(_pts[3]));
+	//std::cout << width << "\n";
+	//std::cout << glm_to_string(_pts[0]) << " ; " << glm_to_string(_pts[1]) << " ; " << glm_to_string(_pts[2]) << " ; " << glm_to_string(_pts[3]) << "\n";
+	//std::cout << glm_to_string(pt1) << " ; " << glm_to_string(pt2) << "\n";
+	return new BBox_2D(width, pt1, pt2);
 }
 
 

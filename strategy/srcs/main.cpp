@@ -161,7 +161,8 @@ void init() {
 	
 	// --------------------------------------------------------------------------
 	view_system= new ViewSystem(gl_draw_manager, screengl);
-	view_system->set_2d(30.0);
+	view_system->set(pt_3d(10.0, 10.0, 0.0), M_PI * 0.25, M_PI * 0.25, 70.0);
+	//view_system->set_2d(30.0);
 
 	// --------------------------------------------------------------------------
 	input_state= new InputState();

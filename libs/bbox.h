@@ -51,6 +51,8 @@ public:
 	void set_aabb(AABB * aabb);
 	void set_model2world(const mat_4d & model2world);
 	static std::vector<std::vector<uint> > triangles_idxs();
+	std::vector<pt_3d> segments();
+	BBox_2D * bbox2d();
 	friend std::ostream & operator << (std::ostream & os, const BBox & bbox);
 
 

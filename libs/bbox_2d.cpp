@@ -101,18 +101,32 @@ BBox_2D::BBox_2D(const BBox_2D & bbox) {
 }
 
 
-BBox_2D::BBox_2D(number width, pt_2d pt1, pt_2d pt2) {
-	_center = (pt1 + pt2) * 0.5;
-	_half_size.x = 0.5 * glm::length(pt2 - pt1);
-	_half_size.y = 0.5 * width;
-	_alpha = atan2(pt2.y - pt1.y, pt2.x - pt1.x);
-	_aabb= new AABB_2D();
+void BBox_2D::set(pt_2d center, pt_2d half_size, number alpha) {
+	_center = center;
+	_half_size = half_size;
+	_alpha = alpha;
 	update();
+}
+
+
+BBox_2D::BBox_2D(number width, pt_2d pt1, pt_2d pt2) {
+	_aabb= new AABB_2D();
+	set(width, pt1, pt2);
 }
 
 
 BBox_2D::~BBox_2D() {
 	delete _aabb;
+}
+
+
+void BBox_2D::set(number width, pt_2d pt1, pt_2d pt2) {
+	_center = (pt1 + pt2) * 0.5;
+	_half_size.x = 0.5 * glm::length(pt2 - pt1);
+	_half_size.y = 0.5 * width;
+	_alpha = atan2(pt2.y - pt1.y, pt2.x - pt1.x);
+
+	update();
 }
 
 
@@ -168,8 +182,19 @@ BBox_2D * BBox_2D::buffered(number size) {
 }
 
 
+std::vector<pt_2d> BBox_2D::segments() {
+	return std::vector<pt_2d> {
+		_pts[0], _pts[1], _pts[1], _pts[2], _pts[2], _pts[3], _pts[3], _pts[0]
+	};
+}
+
+
 std::ostream & operator << (std::ostream & os, const BBox_2D & bbox) {
-	os << "center=" << glm::to_string(bbox._center) << " ; half-size=" << glm::to_string(bbox._half_size) << " ; alpha=" << bbox._alpha;
+	os << "center=" << glm_to_string(bbox._center) << " ; half-size=" << glm_to_string(bbox._half_size) << " ; alpha=" << bbox._alpha;
+	os << " ; pts =";
+	for (auto &pt : bbox._pts) {
+		os << glm_to_string(pt) << " ; ";
+	}
 	return os;
 }
 

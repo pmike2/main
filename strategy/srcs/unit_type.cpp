@@ -61,12 +61,22 @@ number UnitType::elevation_coeff(number delta_elevation) {
 }
 
 
-// demi-taille de la diagonale du + petit carré contenant unit_type->_size (+ epsilon)
+pt_2d UnitType::get_size() {
+	number size_x = _obj_data->_aabb->_vmax.x - _obj_data->_aabb->_vmin.x;
+	number size_y = _obj_data->_aabb->_vmax.y - _obj_data->_aabb->_vmin.y;
+	return pt_2d(size_x, size_y);
+}
+
+
 number UnitType::buffer_size() {
 	//return 0.5 * norm(pt_2d(std::max(_size.x, _size.y))) + EPS_UNIT_TYPE_BUFFER_SIZE;
 	//return 0.5 * norm(pt_2d(std::max(_size.x, _size.y)));
 	// sqrt(2) / 2
-	return 0.7071 * std::max(_obj_data->_aabb->size().x, _obj_data->_aabb->size().y);
+	//return 0.7071 * std::max(_obj_data->_aabb->size().x, _obj_data->_aabb->size().y);
+
+	// TODO : si trop permissif mettre 0.7071
+	pt_2d size = get_size();
+	return 0.5 * std::max(size.x, size.y);
 }
 
 

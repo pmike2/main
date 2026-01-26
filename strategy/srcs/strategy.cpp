@@ -45,7 +45,7 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 
 	_ihm = new GLIHM(_gl_draw_manager, _view_system->_screengl, "../data/ihm.json");
 
-	_map = new Map("../data/unit_types", "../data/elements", pt_2d(-100.0, -100.0), pt_2d(200.0, 200.0), pt_2d(2.0), pt_2d(0.5), t);
+	_map = new Map("../data/unit_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, t);
 
 	//_map->randomize();
 	_map->clear();
@@ -140,7 +140,7 @@ void Strategy::set_ihm() {
 		_map->save("../data/map.json");
 	});
 	
-	for (auto & visu_type : std::vector<std::string>{"elevation", "grid", "unit_linear", "sea"}) {
+	for (auto & visu_type : std::vector<std::string>{"elevation", "grid", "bbox", "sea"}) {
 		_ihm->get_element("visu", visu_type)->set_callback(
 			[this, visu_type](){_gl_draw_manager->set_active(visu_type);}, 
 			[this, visu_type](){_gl_draw_manager->set_inactive(visu_type);}
@@ -341,7 +341,7 @@ void Strategy::draw_unit(UnitType * unit_type) {
 
 
 void Strategy::draw() {
-	for (auto context_name : std::vector<std::string>{"grid", "unit_linear"}) {
+	for (auto context_name : std::vector<std::string>{"grid", "bbox"}) {
 		draw_linear(context_name);
 	}
 
@@ -378,7 +378,7 @@ void Strategy::anim(time_point t) {
 	_map->anim(t);
 
 	update_select();
-	update_unit_linear();
+	update_bbox();
 	update_path();
 	update_edit_map();
 	update_text();
@@ -564,28 +564,34 @@ void Strategy::update_grid() {
 }
 
 
-void Strategy::update_unit_linear() {
-	DrawContext * context= _gl_draw_manager->get_context("unit_linear");
+void Strategy::update_bbox() {
+	DrawContext * context= _gl_draw_manager->get_context("bbox");
 
 	context->_n_pts = 0;
+
+	// BBox units + path
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			context->_n_pts += 48; // dessin AABB
+			context->_n_pts += 48;
+			if (!unit->_path->empty()) {
+				context->_n_pts += 8 * unit->_path->_intervals.size();
+				context->_n_pts += 8 * unit->_path->_intervals_los.size();
+			}
 		}
 	}
 
+	// BBox elements
 	for (auto & element : _map->_elements->_elements) {
-		context->_n_pts += 48; // dessin AABB
+		context->_n_pts += 48;
 	}
 
 	float data[context->data_size()];
 	float * ptr = data;
 
 	// units
-	uint x = 0;
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			std::vector<pt_3d> segs = unit->_bbox->_aabb->segments();
+			std::vector<pt_3d> segs = unit->_bbox->segments();
 
 			glm::vec4 unit_color;
 			if (unit->_status == MOVING) {
@@ -600,7 +606,7 @@ void Strategy::update_unit_linear() {
 				}
 			}
 
-			for (uint i=0; i < segs.size(); ++i) {
+			for (uint i=0; i<segs.size(); ++i) {
 				ptr[0] = float(segs[i].x);
 				ptr[1] = float(segs[i].y);
 				ptr[2] = float(segs[i].z + Z_OFFSET_UNIT);
@@ -617,11 +623,52 @@ void Strategy::update_unit_linear() {
 					ptr[6] = unit_color.a;
 				}
 				ptr += 7;
-				x++;
 			}
 		}
 	}
 
+	// units path
+	for (auto & team : _map->_teams) {
+		for (auto & unit : team->_units) {
+			if (unit->_path->empty()) {
+				continue;
+			}
+
+			glm::vec4 unit_path_color(1.0, 0.8, 0.7, 1.0);
+			for (auto & interval : unit->_path->_intervals) {
+				std::vector<pt_2d> segs = interval->_bbox->segments();
+				for (uint i=0; i<segs.size(); ++i) {
+					number alti = _map->_elevation->get_alti(interval->_bbox->_center);
+					ptr[0] = float(segs[i].x);
+					ptr[1] = float(segs[i].y);
+					ptr[2] = float(alti + Z_OFFSET_UNIT_PATH_BBOX);
+					ptr[3] = unit_path_color.r;
+					ptr[4] = unit_path_color.g;
+					ptr[5] = unit_path_color.b;
+					ptr[6] = unit_path_color.a;
+					ptr += 7;
+				}
+			}
+
+			glm::vec4 unit_path_color_los(0.8, 0.8, 1.0, 1.0);
+			for (auto & interval : unit->_path->_intervals_los) {
+				std::vector<pt_2d> segs = interval->_bbox->segments();
+				for (uint i=0; i<segs.size(); ++i) {
+					number alti = _map->_elevation->get_alti(interval->_bbox->_center);
+					ptr[0] = float(segs[i].x);
+					ptr[1] = float(segs[i].y);
+					ptr[2] = float(alti + Z_OFFSET_UNIT_PATH_BBOX);
+					ptr[3] = unit_path_color.r;
+					ptr[4] = unit_path_color.g;
+					ptr[5] = unit_path_color.b;
+					ptr[6] = unit_path_color.a;
+					ptr += 7;
+				}
+			}
+		}
+	}
+
+	// elements
 	for (auto & element : _map->_elements->_elements) {
 		std::vector<pt_3d> segs = element->_bbox->_aabb->segments();
 
@@ -636,7 +683,6 @@ void Strategy::update_unit_linear() {
 			ptr[5] = element_color.b;
 			ptr[6] = element_color.a;
 			ptr += 7;
-			x++;
 		}
 	}
 
@@ -651,10 +697,12 @@ void Strategy::update_path() {
 	
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			context->_n_pts += (unit->_path->_pts.size() - 1) * 2;
-			context->_n_pts += (unit->_path->_pts_los.size() - 1) * 2;
-			context->_n_pts += 4; // croix de départ
-			context->_n_pts += 4; // croix d'arrivée
+			if (!unit->_path->empty()) {
+				context->_n_pts += (unit->_path->_pts.size() - 1) * 2;
+				context->_n_pts += (unit->_path->_pts_los.size() - 1) * 2;
+				context->_n_pts += 4; // croix de départ
+				context->_n_pts += 4; // croix d'arrivée
+			}
 		}
 	}
 
@@ -667,102 +715,52 @@ void Strategy::update_path() {
 				continue;
 			}
 
-			// sans LOS -----------------------------------------------------------------------
-			// du départ au 1er checkpoint
-			//glm::vec4 path_color_init(0.0, 0.0, 1.0, 1.0);
-			/*glm::vec4 path_color_init = get_path_color(unit->_path->_weights[0]);
+			// sans LOS
+			for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
+				glm::vec4 path_color = get_path_color(unit->_path->_intervals[i]->_weight);
+				
+				ptr[0] = float(unit->_path->_pts[i].x);
+				ptr[1] = float(unit->_path->_pts[i].y);
+				ptr[2] = float(unit->_path->_pts[i].z + Z_OFFSET_PATH);
+				ptr[3] = path_color.r;
+				ptr[4] = path_color.g;
+				ptr[5] = path_color.b;
+				ptr[6] = path_color.a;
 
-			ptr[0] = float(unit->_path->_start.x);
-			ptr[1] = float(unit->_path->_start.y);
-			ptr[2] = float(unit->_path->_start.z + Z_OFFSET_PATH);
-			ptr[3] = path_color_init.r;
-			ptr[4] = path_color_init.g;
-			ptr[5] = path_color_init.b;
-			ptr[6] = path_color_init.a;
+				ptr[7] = float(unit->_path->_pts[i + 1].x);
+				ptr[8] = float(unit->_path->_pts[i + 1].y);
+				ptr[9] = float(unit->_path->_pts[i + 1].z + Z_OFFSET_PATH);
+				ptr[10] = path_color.r;
+				ptr[11] = path_color.g;
+				ptr[12] = path_color.b;
+				ptr[13] = path_color.a;
 
-			ptr[7] = float(unit->_path->_pts[0].x);
-			ptr[8] = float(unit->_path->_pts[0].y);
-			ptr[9] = float(unit->_path->_pts[0].z + Z_OFFSET_PATH);
-			ptr[10] = path_color_init.r;
-			ptr[11] = path_color_init.g;
-			ptr[12] = path_color_init.b;
-			ptr[13] = path_color_init.a;
+				ptr += 14;
+			}
 
-			ptr += 14;*/
-
-			// entre les checkpoints
-			//if (unit->_path->_pts.size() > 1) {
-				for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
-					glm::vec4 path_color = get_path_color(unit->_path->_weights[i]);
-					
-					ptr[0] = float(unit->_path->_pts[i].x);
-					ptr[1] = float(unit->_path->_pts[i].y);
-					ptr[2] = float(unit->_path->_pts[i].z + Z_OFFSET_PATH);
-					ptr[3] = path_color.r;
-					ptr[4] = path_color.g;
-					ptr[5] = path_color.b;
-					ptr[6] = path_color.a;
-
-					ptr[7] = float(unit->_path->_pts[i + 1].x);
-					ptr[8] = float(unit->_path->_pts[i + 1].y);
-					ptr[9] = float(unit->_path->_pts[i + 1].z + Z_OFFSET_PATH);
-					ptr[10] = path_color.r;
-					ptr[11] = path_color.g;
-					ptr[12] = path_color.b;
-					ptr[13] = path_color.a;
-
-					ptr += 14;
-				}
-			//}
-
-			// avec LOS -----------------------------------------------------------------------
-			// du départ au 1er checkpoint
-			//glm::vec4 path_color_init(0.0, 0.0, 1.0, 1.0);
-
+			// avec LOS 
 			const number Z_OFFSET_LOS = 1.0;
+			for (uint i=0; i<unit->_path->_pts_los.size() - 1; ++i) {
+				glm::vec4 path_color = get_path_color(unit->_path->_intervals_los[i]->_weight);
+				
+				ptr[0] = float(unit->_path->_pts_los[i].x);
+				ptr[1] = float(unit->_path->_pts_los[i].y);
+				ptr[2] = float(unit->_path->_pts_los[i].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
+				ptr[3] = path_color.r;
+				ptr[4] = path_color.g;
+				ptr[5] = path_color.b;
+				ptr[6] = path_color.a;
 
-			/*ptr[0] = float(unit->_path->_start.x);
-			ptr[1] = float(unit->_path->_start.y);
-			ptr[2] = float(unit->_path->_start.z + Z_OFFSET_PATH + Z_OFFSET_LOS);
-			ptr[3] = path_color_init.r;
-			ptr[4] = path_color_init.g;
-			ptr[5] = path_color_init.b;
-			ptr[6] = path_color_init.a;
+				ptr[7] = float(unit->_path->_pts_los[i + 1].x);
+				ptr[8] = float(unit->_path->_pts_los[i + 1].y);
+				ptr[9] = float(unit->_path->_pts_los[i + 1].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
+				ptr[10] = path_color.r;
+				ptr[11] = path_color.g;
+				ptr[12] = path_color.b;
+				ptr[13] = path_color.a;
 
-			ptr[7] = float(unit->_path->_pts_los[0].x);
-			ptr[8] = float(unit->_path->_pts_los[0].y);
-			ptr[9] = float(unit->_path->_pts_los[0].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
-			ptr[10] = path_color_init.r;
-			ptr[11] = path_color_init.g;
-			ptr[12] = path_color_init.b;
-			ptr[13] = path_color_init.a;
-
-			ptr += 14;*/
-
-			// entre les checkpoints
-			//if (unit->_path->_pts_los.size() > 1) {
-				for (uint i=0; i<unit->_path->_pts_los.size() - 1; ++i) {
-					glm::vec4 path_color = get_path_color(unit->_path->_weights_los[i]);
-					
-					ptr[0] = float(unit->_path->_pts_los[i].x);
-					ptr[1] = float(unit->_path->_pts_los[i].y);
-					ptr[2] = float(unit->_path->_pts_los[i].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
-					ptr[3] = path_color.r;
-					ptr[4] = path_color.g;
-					ptr[5] = path_color.b;
-					ptr[6] = path_color.a;
-
-					ptr[7] = float(unit->_path->_pts_los[i + 1].x);
-					ptr[8] = float(unit->_path->_pts_los[i + 1].y);
-					ptr[9] = float(unit->_path->_pts_los[i + 1].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
-					ptr[10] = path_color.r;
-					ptr[11] = path_color.g;
-					ptr[12] = path_color.b;
-					ptr[13] = path_color.a;
-
-					ptr += 14;
-				}
-			//}
+				ptr += 14;
+			}
 
 			// croix de départ ---------------------------------------------------------------
 			const number PATH_START_CROSS_SIZE = 1.0;
@@ -1045,7 +1043,7 @@ void Strategy::update_unit_matrices(UnitType * unit_type) {
 void Strategy::update_all() {
 	update_select();
 	update_grid();
-	update_unit_linear();
+	update_bbox();
 	update_path();
 	update_edit_map();
 	update_elevation();

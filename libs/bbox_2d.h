@@ -45,9 +45,12 @@ public:
 	BBox_2D(number width, pt_2d pt1, pt_2d pt2);
 	BBox_2D(const BBox_2D & bbox);
 	~BBox_2D();
+	void set(pt_2d center, pt_2d half_size, number alpha);
+	void set(number width, pt_2d pt1, pt_2d pt2);
 	void set_aabb(AABB_2D & aabb);
 	void update();
 	BBox_2D * buffered(number size);
+	std::vector<pt_2d> segments();
 	friend std::ostream & operator << (std::ostream & os, const BBox_2D & bbox);
 
 

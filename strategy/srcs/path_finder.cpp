@@ -6,7 +6,7 @@ PathFinder::PathFinder() {
 }
 
 PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : 
-	GraphGrid(origin, size, n_ligs, n_cols), _verbose(true), _computing(false)
+	GraphGrid(origin, size, n_ligs, n_cols), _verbose(false), _computing(false)
 {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
@@ -286,12 +286,13 @@ bool PathFinder::path_find(UnitType * unit_type, uint unit_id, pt_3d start, pt_3
 		_path->_pts.push_back(pt_3d(pt.x, pt.y, 0.0));
 	}
 	for (auto & w : weights) {
-		_path->_weights.push_back(w);
+		//_path->_weights.push_back(w);
+		_path->_intervals.push_back(new PathInterval(w));
 	}
 
 	if (_verbose) {
 		std::cout << "unit id " << unit_id << " _path->_pts.size = " << _path->_pts.size() << "\n";
-		std::cout << "unit id " << unit_id << " _path->_weights.size = " << _path->_weights.size() << "\n";
+		//std::cout << "unit id " << unit_id << " _path->_weights.size = " << _path->_weights.size() << "\n";
 	}
 
 	// avec line of sight ----------------------------------------------------------------------------
@@ -345,7 +346,8 @@ bool PathFinder::path_find(UnitType * unit_type, uint unit_id, pt_3d start, pt_3
 		last = idx - 1;
 		
 		_path->_pts_los.push_back(pt_3d(raw_path[last].x, raw_path[last].y, 0.0));
-		_path->_weights_los.push_back(last_los_weight_ok);
+		//_path->_weights_los.push_back(last_los_weight_ok);
+		_path->_intervals_los.push_back(new PathInterval(last_los_weight_ok));
 
 		if (_verbose) {
 			std::cout << "END while\n";
@@ -357,30 +359,38 @@ bool PathFinder::path_find(UnitType * unit_type, uint unit_id, pt_3d start, pt_3
 
 	if (_verbose) {
 		std::cout << "unit id " << unit_id << " _path->_pts_los.size = " << _path->_pts_los.size() << "\n";
-		std::cout << "unit id " << unit_id << " _path->_weights_los.size = " << _path->_weights_los.size() << "\n";
+		//std::cout << "unit id " << unit_id << " _path->_weights_los.size = " << _path->_weights_los.size() << "\n";
 	}
 
 	// construction des path->_bboxs -------------------------------------------------------------
-	number r = unit_type->_obj_data->_aabb->_base_radius;
-	
-	std::vector<pt_4d> segments;
+	//number r = unit_type->_obj_data->_aabb->_base_radius;
+	number size_x = unit_type->_obj_data->_aabb->_vmax.x - unit_type->_obj_data->_aabb->_vmin.x;
+	number size_y = unit_type->_obj_data->_aabb->_vmax.y - unit_type->_obj_data->_aabb->_vmin.y;
 	
 	for (int i=0; i<_path->_pts.size() - 1; ++i) {
 		pt_2d p1 = pt_2d(_path->_pts[i]);
 		pt_2d p2 = pt_2d(_path->_pts[i + 1]);
-		segments.push_back(pt_4d(p1.x, p1.y, p2.x, p2.y));
-	}
-
-	for (auto & segment : segments) {
-		pt_2d p1(segment.x, segment.y);
-		pt_2d p2(segment.z, segment.w);
 		if (norm2(p1 - p2) < 1e-8) {
 			continue;
 		}
 
 		pt_2d v = glm::normalize(p2 - p1);
-		BBox_2D * bbox = new BBox_2D(2.0 * r, p1 - r * v, p2 + r * v);
-		_path->_bboxs.push_back(bbox);
+		//BBox_2D * bbox = new BBox_2D(size_y, p1 - 0.5 * size_x * v, p2 + 0.5 * size_x * v);
+		//_path->_bboxs.push_back(bbox);
+		_path->_intervals[i]->_bbox->set(size_y, p1 - 0.5 * size_x * v, p2 + 0.5 * size_x * v);
+	}
+
+	for (int i=0; i<_path->_pts_los.size() - 1; ++i) {
+		pt_2d p1 = pt_2d(_path->_pts_los[i]);
+		pt_2d p2 = pt_2d(_path->_pts_los[i + 1]);
+		if (norm2(p1 - p2) < 1e-8) {
+			continue;
+		}
+
+		pt_2d v = glm::normalize(p2 - p1);
+		//BBox_2D * bbox = new BBox_2D(size_y, p1 - 0.5 * size_x * v, p2 + 0.5 * size_x * v);
+		//_path->_bboxs_los.push_back(bbox);
+		_path->_intervals_los[i]->_bbox->set(size_y, p1 - 0.5 * size_x * v, p2 + 0.5 * size_x * v);
 	}
 
 	// fin -----------------------------------------------------------------------------------

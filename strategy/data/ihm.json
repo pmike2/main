@@ -119,7 +119,7 @@
 				{"name" : "elements", "checked" : "true"},
 				{"name" : "units", "checked" : "true"},
 				{"name" : "sea", "checked" : "true"},
-				{"name" : "unit_linear"},
+				{"name" : "bbox"},
 				{"name" : "grid", "groups_visible" : ["grid_type", "grid_unit_type"]}
 			]
 		},

@@ -28,11 +28,17 @@ const number Z_OFFSET_EDGE = 0.05;
 const number Z_OFFSET_UNIT = 0.05;
 const number Z_OFFSET_PATH = 0.5;
 const number Z_OFFSET_EDIT_MAP = 0.5;
+const number Z_OFFSET_UNIT_PATH_BBOX = 0.5;
 
 const glm::vec3 light_position(0.0f, 0.0f, 50.0f);
 const glm::vec3 light_color(1.0f);
 
 const uint EDIT_MAP_N_VERTICES_PER_CIRCLE = 32;
+
+const pt_2d MAP_ORIGIN(-100.0, -100.0);
+const pt_2d MAP_SIZE(200.0, 200.0);
+const pt_2d PATH_RESOLUTION(1.0);
+const pt_2d ELEVATION_RESOLUTION(0.5);
 
 
 struct StrategyConfig {
@@ -82,7 +88,7 @@ public:
 	
 	void update_select();
 	void update_grid();
-	void update_unit_linear();
+	void update_bbox();
 	void update_path();
 	void update_edit_map();
 	void update_debug();

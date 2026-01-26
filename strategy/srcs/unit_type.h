@@ -27,6 +27,7 @@ struct UnitType {
 	UnitType(std::string json_path);
 	~UnitType();
 	number elevation_coeff(number delta_elevation);
+	pt_2d get_size();
 	number buffer_size();
 	friend std::ostream & operator << (std::ostream & os, UnitType & ut);
 	

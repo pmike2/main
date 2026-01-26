@@ -370,34 +370,35 @@ void Map::clear_units_position_grid() {
 
 
 std::vector<uint_pair> Map::waiting_unit_positions_edges(Unit * unit, UnitType * unit_type) {
-	AABB_2D * aabb = new AABB_2D(pt_2d(unit->_bbox->_aabb->_vmin - 0.5 * unit_type->buffer_size()), pt_2d(unit->_bbox->_aabb->size() + unit_type->buffer_size()));
-	std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb);
-	delete aabb;
+	BBox_2D * bbox = unit->_bbox->bbox2d();
+	BBox_2D * bbox_buffered = bbox->buffered(unit_type->buffer_size());
+	std::vector<uint_pair> edges = _path_finder->edges_intersecting_bbox(bbox_buffered);
+	delete bbox;
+	delete bbox_buffered;
+	//AABB_2D * aabb = new AABB_2D(pt_2d(unit->_bbox->_aabb->_vmin - 0.5 * unit_type->buffer_size()), pt_2d(unit->_bbox->_aabb->size() + unit_type->buffer_size()));
+	//std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb);
+	//delete aabb;
 
 	return edges;
 }
 
 
-std::vector<uint_pair> Map::moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all) {
+/*std::vector<uint_pair> Map::moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all) {
 	AABB_2D * aabb_unit = unit->_bbox->_aabb->aabb2d();
 
 	std::vector<uint_pair> edges;
 	bool intersection_happened = false;
 
-	AABB_2D * aabb_start = new AABB_2D(pt_2d(unit->_path->_start) - 0.5 * pt_2d(unit_type->buffer_size()), pt_2d(unit->_bbox->_aabb->size() + unit_type->buffer_size()));
-	if (!all && !intersection_happened) {
-		if (aabb2d_intersects_aabb2d(aabb_unit, aabb_start)) {
-			intersection_happened = true;
-		}
+	std::vector<BBox_2D *> * bboxs;
+	if (unit->_path->_use_line_of_sight) {
+		bboxs = &unit->_path->_bboxs_los;
 	}
-	if (all || !intersection_happened) {
-		std::vector<uint_pair> start_edges = _path_finder->edges_intersecting_aabb(aabb_start);
-		edges.insert(edges.end(), start_edges.begin(), start_edges.end());
+	else {
+		bboxs = &unit->_path->_bboxs;
 	}
-	delete aabb_start;
 	
-	for (uint i=0; i<unit->_path->_bboxs.size(); ++i) {
-		BBox_2D * buffered_bbox = unit->_path->_bboxs[i]->buffered(unit_type->buffer_size());
+	for (auto & bbox : *bboxs) {
+		BBox_2D * buffered_bbox = bbox->buffered(unit_type->buffer_size());
 		if (!all && !intersection_happened) {
 			if (aabb2d_intersects_aabb2d(aabb_unit, buffered_bbox->_aabb)) {
 				intersection_happened = true;
@@ -410,78 +411,76 @@ std::vector<uint_pair> Map::moving_unit_positions_edges(Unit * unit, UnitType * 
 		delete buffered_bbox;
 	}
 
-	AABB_2D * aabb_goal = new AABB_2D(pt_2d(unit->_path->_goal) - pt_2d(unit->_type->buffer_size()- 0.5 * unit_type->buffer_size()), pt_2d(unit->_type->buffer_size() + unit_type->buffer_size()));
-	if (!all && !intersection_happened) {
-		if (aabb2d_intersects_aabb2d(aabb_unit, aabb_goal)) {
-			intersection_happened = true;
-		}
-	}
-	if (all || !intersection_happened) {
-		std::vector<uint_pair> goal_edges = _path_finder->edges_intersecting_aabb(aabb_goal);
-		edges.insert(edges.end(), goal_edges.begin(), goal_edges.end());
-	}
-	delete aabb_goal;
-
 	delete aabb_unit;
 	
 	return edges;
-}
+}*/
 
 
-void Map::add_waiting_unit_to_position_grid(Unit * unit) {
+void Map::fill_unit_path_edges(Unit * unit) {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
-
-		for (auto & e : waiting_unit_positions_edges(unit, unit_type)) {
-			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
-			EdgeData * data = (EdgeData *)(edge._data);
-			if (std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id) == data->_ids[unit_type].end()) {
-				data->_ids[unit_type].push_back(unit->_id);
-			}
-		}
-	}
-}
-
-
-void Map::remove_waiting_unit_from_position_grid(Unit * unit) {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-
-		for (auto & e : waiting_unit_positions_edges(unit, unit_type)) {
-			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
-			EdgeData * data = (EdgeData *)(edge._data);
-			if (std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id) != data->_ids[unit_type].end()) {
-				data->_ids[unit_type].erase(std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id));
-			}
-		}
-	}
-}
-
-
-void Map::add_moving_unit_to_position_grid(Unit * unit) {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-
-		for (auto & e : moving_unit_positions_edges(unit, unit_type, true)) {
-			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
-			EdgeData * data = (EdgeData *)(edge._data);
-			if (std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id) == data->_ids[unit_type].end()) {
-				data->_ids[unit_type].push_back(unit->_id);
-			}
-		}
-	}
-}
-
-
-void Map::remove_moving_unit_from_position_grid(Unit * unit, bool all) {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
+		std::vector<PathInterval *> intervals = unit->_path->get_intervals();
 		
-		for (auto & e : moving_unit_positions_edges(unit, unit_type, all)) {
-			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
-			EdgeData * data = (EdgeData *)(edge._data);
-			if (std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id) != data->_ids[unit_type].end()) {
-				data->_ids[unit_type].erase(std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id));
+		for (auto & interval : intervals) {
+			BBox_2D * buffered_bbox = interval->_bbox->buffered(unit_type->buffer_size());
+			std::vector<uint_pair> path_edges = _path_finder->edges_intersecting_bbox(buffered_bbox);
+			interval->_edges[unit_type].insert(interval->_edges[unit_type].end(), path_edges.begin(), path_edges.end());
+			delete buffered_bbox;
+		}
+	}
+}
+
+
+void Map::add_unit_to_position_grid(Unit * unit) {
+	for (auto & ut : _unit_types) {
+		UnitType * unit_type = ut.second;
+		if (unit->_status == WAITING) { // TODO rajouter d'autres états ?
+			for (auto & e : waiting_unit_positions_edges(unit, unit_type)) {
+				GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
+				EdgeData * data = (EdgeData *)(edge._data);
+				if (std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id) == data->_ids[unit_type].end()) {
+					data->_ids[unit_type].push_back(unit->_id);
+				}
+			}
+		}
+		else if (unit->_status == MOVING || unit->_status == CHECKPOINT_CHECKED || unit->_status == LAST_CHECKPOINT_CHECKED) {
+			for (auto & interval : unit->_path->get_intervals()) {
+				for (auto e : interval->_edges[unit_type]) {
+					GraphEdge edge = _path_finder->get_edge(e);
+					EdgeData * data = (EdgeData *)(edge._data);
+					if (std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id) == data->_ids[unit_type].end()) {
+						data->_ids[unit_type].push_back(unit->_id);
+					}
+				}
+			}
+		}
+	}
+}
+
+
+void Map::remove_unit_from_position_grid(Unit * unit) {
+	for (auto & ut : _unit_types) {
+		UnitType * unit_type = ut.second;
+		if (unit->_status == WAITING) { // TODO rajouter d'autres états ?
+			for (auto & e : waiting_unit_positions_edges(unit, unit_type)) {
+				GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
+				EdgeData * data = (EdgeData *)(edge._data);
+				if (std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id) != data->_ids[unit_type].end()) {
+					data->_ids[unit_type].erase(std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id));
+				}
+			}
+		}
+		else if (unit->_status == MOVING || unit->_status == CHECKPOINT_CHECKED || unit->_status == LAST_CHECKPOINT_CHECKED) {
+			for (auto & interval : unit->_path->get_intervals()) {
+				for (auto e : interval->_edges[unit_type]) {
+					GraphEdge edge = _path_finder->get_edge(e);
+
+					EdgeData * data = (EdgeData *)(edge._data);
+					if (std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id) != data->_ids[unit_type].end()) {
+						data->_ids[unit_type].erase(std::find(data->_ids[unit_type].begin(), data->_ids[unit_type].end(), unit->_id));
+					}
+				}
 			}
 		}
 	}
@@ -511,7 +510,8 @@ void Map::clear() {
 
 	_elements->clear();
 
-	_elevation->set_alti_all(-0.01);
+	//_elevation->set_alti_all(-0.01);
+	_elevation->set_alti_all(1.0);
 	
 	sync2elevation();
 }
@@ -554,29 +554,30 @@ void Map::anim(time_point t) {
 			}
 
 			if (status == COMPUTING_PATH_DONE) {
-				_path_finder->_computing = false;
 				_path_find_thr.join();
+				_path_finder->_computing = false;
 				unit->_path->copy_path(_path_finder->_path);
+				fill_unit_path_edges(unit);
 				unit->update_alti_path();
 				//update_alti_path(unit);
 				unit->set_status(MOVING);
-				remove_waiting_unit_from_position_grid(unit);
-				add_moving_unit_to_position_grid(unit);
+				remove_unit_from_position_grid(unit);
+				add_unit_to_position_grid(unit);
 			}
 			else if (status == COMPUTING_PATH_FAILED) {
-				_path_finder->_computing = false;
 				_path_find_thr.join();
-				unit->_instructions.push({unit->_path->_goal, t + std::chrono::milliseconds(1000)});
+				_path_finder->_computing = false;
+				//unit->_instructions.push({unit->_path->_goal, t + std::chrono::milliseconds(1000)});
 				unit->set_status(WAITING);
 			}
 			else if (status == CHECKPOINT_CHECKED) {
-				remove_moving_unit_from_position_grid(unit, false);
+				remove_unit_from_position_grid(unit);
 				unit->_path->_idx_path++;
 				unit->set_status(MOVING);
 			}
 			else if (status == LAST_CHECKPOINT_CHECKED) {
-				remove_moving_unit_from_position_grid(unit, true);
-				add_waiting_unit_to_position_grid(unit);
+				remove_unit_from_position_grid(unit);
+				add_unit_to_position_grid(unit);
 				unit->set_status(WAITING);
 			}
 			else if (status == MOVING) {
@@ -602,8 +603,8 @@ void Map::anim(time_point t) {
 					pt_3d pt = i._destination;
 
 					unit->set_status(COMPUTING_PATH);
-					_path_find_thr= std::thread(&Map::path_find, this, unit, pt);
 					_path_finder->_computing = true;
+					_path_find_thr= std::thread(&Map::path_find, this, unit, pt);
 				}
 			}
 		}
