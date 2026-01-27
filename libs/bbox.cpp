@@ -236,6 +236,7 @@ std::vector<pt_3d> BBox::segments() {
 }
 
 
+// renvoie la face bottom de la BBox
 BBox_2D * BBox::bbox2d() {
 	number width = _vmax.y - _vmin.y;
 	pt_2d pt1 = 0.5 * (pt_2d(_pts[0]) + pt_2d(_pts[2]));

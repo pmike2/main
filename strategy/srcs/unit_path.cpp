@@ -8,12 +8,12 @@ PathInterval::PathInterval() {
 }
 
 
-PathInterval::PathInterval(number weight) : _weight(weight) {
+PathInterval::PathInterval(number weight) : _weight(weight), _active(false) {
 	_bbox = new BBox_2D();
 }
 
 
-PathInterval::PathInterval(const PathInterval & interval) : _weight(interval._weight) {
+PathInterval::PathInterval(const PathInterval & interval) : _weight(interval._weight), _active(false) {
 	_bbox = new BBox_2D(*interval._bbox);
 }
 
@@ -30,7 +30,7 @@ void PathInterval::clear() {
 
 
 // -------------------------
-UnitPath::UnitPath() : _idx_path(0), _use_line_of_sight(true), _start(pt_3d(0.0)), _goal(pt_3d(0.0)) {
+UnitPath::UnitPath() : _idx_path(0), _use_line_of_sight(false), _start(pt_3d(0.0)), _goal(pt_3d(0.0)) {
 
 }
 
@@ -100,40 +100,61 @@ bool UnitPath::is_last_checkpoint() {
 }
 
 
-number UnitPath::get_weight() {
+PathInterval * UnitPath::get_current_interval() {
 	if (_idx_path == 0) {
-		std::cerr << "Path::get_weight() : _idx_path == 0\n";
-		return 0.0;
+		std::cerr << "Path::get_current_interval() : _idx_path == 0\n";
+		return NULL;
 	}
 
 	if (_use_line_of_sight) {
 		if (_idx_path - 1 >= _intervals_los.size()) {
-			std::cerr << "Path::get_weight() : " << _idx_path  << ">=" << _intervals_los.size() << "\n";
-			return 0.0;
+			std::cerr << "Path::get_current_interval() : " << _idx_path  << ">=" << _intervals_los.size() << "\n";
+			return NULL;
 		}
-		return _intervals_los[_idx_path - 1]->_weight;
+		return _intervals_los[_idx_path - 1];
 	}
 	else {
 		if (_idx_path - 1 >= _intervals.size()) {
-			std::cerr << "Path::get_weight() : " << _idx_path  << ">=" << _intervals.size() << "\n";
-			return 0.0;
+			std::cerr << "Path::get_current_interval() : " << _idx_path  << ">=" << _intervals.size() << "\n";
+			return NULL;
 		}
-		return _intervals[_idx_path - 1]->_weight;
+		return _intervals[_idx_path - 1];
 	}
 }
 
 
-pt_3d UnitPath::get_pt() {
+PathInterval * UnitPath::get_last_active_interval() {
+	if (_use_line_of_sight) {
+		for (int i=_intervals_los.size() - 1; i>=0; --i) {
+			if (_intervals_los[i]->_active) {
+				return _intervals_los[i];
+			}
+		}
+	}
+	else {
+		for (int i=_intervals.size() - 1; i>=0; --i) {
+			if (_intervals[i]->_active) {
+				return _intervals[i];
+			}
+		}
+	}
+
+	std::cerr << "UnitPath::get_last_active_interval() : aucun intervalle actif.\n";
+	return NULL;
+}
+
+
+pt_3d UnitPath::get_current_pt() {
 	if (_use_line_of_sight) {
 		if (_idx_path >= _pts_los.size()) {
-			std::cerr << "Path::get_pt() : " << _idx_path  << ">=" << _pts_los.size() << "\n";
+			std::cerr << "Path::get_current_pt() : " << _idx_path  << ">=" << _pts_los.size() << "\n";
 			return pt_3d(0.0);
 		}
 		return _pts_los[_idx_path];
 	}
 	else {
 		if (_idx_path >= _pts.size()) {
-			std::cerr << "Path::get_pt() : " << _idx_path  << ">=" << _pts.size() << "\n";
+			std::cerr << "Path::get_current_pt() : " << _idx_path  << ">=" << _pts.size() << "\n";
 			return pt_3d(0.0);
 		}
 		return _pts[_idx_path];
@@ -174,6 +195,42 @@ void UnitPath::copy_path(UnitPath * path) {
 	}
 	for (auto & interval : path->_intervals_los) {
 		_intervals_los.push_back(new PathInterval(*interval));
+	}
+
+	update_active_intervals();
+}
+
+
+void UnitPath::next_checkpoint() {
+	if (is_last_checkpoint()) {
+		std::cerr << "UnitPath::next_checkpoint : is_last_checkpoint = true.\n";
+		return;
+	}
+	_idx_path++;
+	update_active_intervals();
+}
+
+
+void UnitPath::update_active_intervals() {
+	if (_use_line_of_sight) {
+		for (uint idx=0; idx<_intervals_los.size(); ++idx) {
+			if (idx >= _idx_path - 1 && idx < _idx_path - 1 + N_ACTIVE_INTERVALS) {
+				_intervals_los[idx]->_active = true;
+			}
+			else {
+				_intervals_los[idx]->_active = false;
+			}
+		}
+	}
+	else {
+		for (uint idx=0; idx<_intervals.size(); ++idx) {
+			if (idx >= _idx_path - 1 && idx < _idx_path - 1 + N_ACTIVE_INTERVALS) {
+				_intervals[idx]->_active = true;
+			}
+			else {
+				_intervals[idx]->_active = false;
+			}
+		}
 	}
 }
 

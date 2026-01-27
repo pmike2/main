@@ -2,6 +2,7 @@
 #define PATH_FINDER_H
 
 #include <map>
+#include <unordered_set>
 
 #include "graph.h"
 #include "typedefs.h"
@@ -37,7 +38,7 @@ struct PathFinder : public GraphGrid {
 // TODO : remplacer UnitType * par UNIT_TYPE ?
 struct EdgeData {
 	std::map<UnitType *, number> _delta_elevation;
-	std::map<UnitType *, std::vector<uint> > _ids;
+	std::map<UnitType *, std::unordered_set<uint> > _ids;
 	std::map<UnitType *, TERRAIN_TYPE> _type;
 };
 

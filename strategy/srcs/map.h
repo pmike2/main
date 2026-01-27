@@ -52,12 +52,10 @@ struct Map {
 	
 	void clear_units_position_grid();
 	std::vector<uint_pair> waiting_unit_positions_edges(Unit * unit, UnitType * unit_type);
-	//std::vector<uint_pair> moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all);
 	void fill_unit_path_edges(Unit * unit);
 	void add_unit_to_position_grid(Unit * unit);
 	void remove_unit_from_position_grid(Unit * unit);
-	//void add_moving_unit_to_position_grid(Unit * unit);
-	//void remove_moving_unit_from_position_grid(Unit * unit, bool all);
+	void advance_unit_in_position_grid(Unit * unit);
 
 	void path_find(Unit * unit, pt_3d goal);
 	void pause_all_units(bool pause);
@@ -65,6 +63,7 @@ struct Map {
 	void clear();
 	//void read_shapefile(std::string shp_path, pt_2d origin, pt_2d size, bool reverse_y=false);
 	void anim(time_point t);
+	void collisions(time_point t);
 	void selected_units_goto(pt_3d pt, time_point t);
 	void randomize();
 	void save(std::string json_path);

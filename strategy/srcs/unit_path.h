@@ -11,6 +11,9 @@
 #include "unit_type.h"
 
 
+const uint N_ACTIVE_INTERVALS = 3;
+
+
 struct PathInterval {
 	PathInterval();
 	PathInterval(number weight);
@@ -22,6 +25,7 @@ struct PathInterval {
 	number _weight;
 	BBox_2D * _bbox;
 	std::map<UnitType *, std::vector<uint_pair> > _edges;
+	bool _active;
 };
 
 
@@ -31,10 +35,13 @@ struct UnitPath {
 	void clear();
 	bool empty();
 	bool is_last_checkpoint();
-	number get_weight();
-	pt_3d get_pt();
+	PathInterval * get_current_interval();
+	PathInterval * get_last_active_interval();
+	pt_3d get_current_pt();
 	std::vector<PathInterval *> get_intervals();
 	void copy_path(UnitPath * path);
+	void next_checkpoint();
+	void update_active_intervals();
 	friend std::ostream & operator << (std::ostream & os, UnitPath & p);
 
 

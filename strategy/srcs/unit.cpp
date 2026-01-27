@@ -57,8 +57,8 @@ void Unit::anim() {
 		//auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
 		//_last_anim_t = t;
 
-		number velocity_amp = _type->_max_velocity * (1.0 - _path->get_weight() / MAX_UNIT_MOVING_WEIGHT);
-		pt_2d direction = glm::normalize(pt_2d(_path->get_pt()) - pt_2d(_position));
+		number velocity_amp = _type->_max_velocity * (1.0 - _path->get_current_interval()->_weight / MAX_UNIT_MOVING_WEIGHT);
+		pt_2d direction = glm::normalize(pt_2d(_path->get_current_pt()) - pt_2d(_position));
 		_velocity = velocity_amp * pt_3d(direction.x, direction.y, 0.0);
 
 		pt_3d next_position = _position + _velocity;
@@ -79,7 +79,7 @@ void Unit::anim() {
 
 
 bool Unit::checkpoint_checked() {
-	if (glm::distance(pt_2d(_position), pt_2d(_path->get_pt())) < UNIT_DIST_PATH_EPS) {
+	if (glm::distance(pt_2d(_position), pt_2d(_path->get_current_pt())) < UNIT_DIST_PATH_EPS) {
 		return true;
 	}
 	return false;
@@ -87,6 +87,12 @@ bool Unit::checkpoint_checked() {
 
 
 void Unit::set_status(UNIT_STATUS status) {
+	const bool verbose = true;
+
+	if (verbose) {
+		std::cout << "Unit id = " << _id << " : status " << unit_status2str(_status) << " -> " << unit_status2str(status) << "\n";
+	}
+	
 	_status = status;
 	
 	if (_status == WAITING) {

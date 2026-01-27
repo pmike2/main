@@ -634,7 +634,7 @@ void Strategy::update_bbox() {
 				continue;
 			}
 
-			glm::vec4 unit_path_color(1.0, 0.8, 0.7, 1.0);
+			glm::vec4 unit_path_color(1.0, 0.2, 0.7, 1.0);
 			for (auto & interval : unit->_path->_intervals) {
 				std::vector<pt_2d> segs = interval->_bbox->segments();
 				for (uint i=0; i<segs.size(); ++i) {
@@ -650,7 +650,7 @@ void Strategy::update_bbox() {
 				}
 			}
 
-			glm::vec4 unit_path_color_los(0.8, 0.8, 1.0, 1.0);
+			glm::vec4 unit_path_color_los(0.2, 0.8, 1.0, 1.0);
 			for (auto & interval : unit->_path->_intervals_los) {
 				std::vector<pt_2d> segs = interval->_bbox->segments();
 				for (uint i=0; i<segs.size(); ++i) {
@@ -658,10 +658,10 @@ void Strategy::update_bbox() {
 					ptr[0] = float(segs[i].x);
 					ptr[1] = float(segs[i].y);
 					ptr[2] = float(alti + Z_OFFSET_UNIT_PATH_BBOX);
-					ptr[3] = unit_path_color.r;
-					ptr[4] = unit_path_color.g;
-					ptr[5] = unit_path_color.b;
-					ptr[6] = unit_path_color.a;
+					ptr[3] = unit_path_color_los.r;
+					ptr[4] = unit_path_color_los.g;
+					ptr[5] = unit_path_color_los.b;
+					ptr[6] = unit_path_color_los.a;
 					ptr += 7;
 				}
 			}
@@ -1062,7 +1062,7 @@ void Strategy::update_text() {
 	std::vector<Text3D> texts_3d;
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			texts_3d.push_back(Text3D(unit_type2str(unit->_type->_type) + " " + std::to_string(unit->_id), glm::vec3(unit->_bbox->_aabb->_vmin)+ glm::vec3(0.1, 0.1, 0.5), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+			texts_3d.push_back(Text3D(unit_type2str(unit->_type->_type) + " " + std::to_string(unit->_id), glm::vec3(unit->_bbox->_aabb->_vmin)+ glm::vec3(0.0, 0.0, 3.0), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 		}
 	}
 

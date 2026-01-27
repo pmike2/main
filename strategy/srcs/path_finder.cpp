@@ -59,7 +59,7 @@ number PathFinder::elevation_weight(UnitType * unit_type, uint i, uint j) {
 number PathFinder::units_position_weight(UnitType * unit_type, uint unit_id, uint i, uint j) {
 	GraphEdge edge = _vertices[i]._edges[j];
 	EdgeData * data = (EdgeData *)(edge._data);
-	if (data->_ids[unit_type].empty() || (data->_ids[unit_type].size() == 1 && data->_ids[unit_type][0] == unit_id)) {
+	if (data->_ids[unit_type].empty() || (data->_ids[unit_type].size() == 1 && *data->_ids[unit_type].begin() == unit_id)) {
 		return DEFAULT_EDGE_WEIGHT;
 	}
 	return MAX_UNIT_MOVING_WEIGHT;
