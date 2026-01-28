@@ -18,11 +18,11 @@
 #include "map.h"
 
 
-enum STRATEGY_MODE {VIEW, PLAY, ADD_UNIT, ADD_ELEMENT, EDIT_ELEVATION};
+enum STRATEGY_MODE {VIEW, PLAY, ADD_UNIT, ADD_ELEMENT, EDIT_ELEVATION, ERASE};
 enum PLAY_MODE {SELECT_UNIT, MOVE_UNIT};
 
 const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
-const glm::vec4 EDIT_MAP_COLOR(0.0f, 1.0f, 1.0f, 0.5f);
+const glm::vec4 EDIT_MAP_COLOR(0.0f, 1.0f, 1.0f, 1.0f);
 
 const number Z_OFFSET_EDGE = 0.05;
 const number Z_OFFSET_UNIT = 0.05;
@@ -59,6 +59,7 @@ struct StrategyConfig {
 	number _elevation_exponent;
 	uint _n_elements;
 	number _elements_dispersion;
+	number _erase_radius;
 	bool _units_paused;
 };
 
@@ -91,6 +92,7 @@ public:
 	void update_bbox();
 	void update_path();
 	void update_edit_map();
+	void update_cursor();
 	void update_debug();
 	void update_elevation();
 	void update_tree_stone();

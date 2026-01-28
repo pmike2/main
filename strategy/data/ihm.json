@@ -25,7 +25,8 @@
 				{"name" : "play", "groups_visible" : ["play_mode"]},
 				{"name" : "add_unit", "groups_visible" : ["units"]},
 				{"name" : "add_element", "groups_visible" : ["elements", "elements_params"]},
-				{"name" : "edit_elevation", "groups_visible" : ["elevation", "edit_elevation_params"]}
+				{"name" : "edit_elevation", "groups_visible" : ["elevation", "edit_elevation_params"]},
+				{"name" : "erase", "groups_visible" : ["erase_params"]}
 			]
 		},
 		{
@@ -94,6 +95,16 @@
 				{"name" : "elevation_radius", "min_value" : 1.0, "max_value" : 50.0},
 				{"name" : "elevation_factor", "min_value" : 1.0, "max_value" : 10.0},
 				{"name" : "elevation_exponent", "min_value" : 0.1, "max_value" : 10.0}
+			]
+		},
+		{
+			"type" : "slider",
+			"name" : "erase_params",
+			"position" : [-4.0, -1.0],
+			"element_size" : [0.4, 2.0],
+			"orientation" : "horizontal",
+			"elements" : [
+				{"name" : "erase_radius", "min_value" : 1.0, "max_value" : 50.0}
 			]
 		},
 		{

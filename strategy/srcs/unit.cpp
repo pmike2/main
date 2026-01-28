@@ -16,7 +16,8 @@ Unit::Unit() {
 
 Unit::Unit(UnitType * type, pt_3d pos, Elevation * elevation) : 
 	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
-	_type(type), _status(WAITING), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation)
+	_type(type), _status(WAITING), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation),
+	_delete(false), _angle(0.0)
 {
 	_path = new UnitPath();
 }
@@ -39,25 +40,18 @@ Unit::~Unit() {
 }*/
 
 
-void Unit::anim() {
+void Unit::anim(time_point t) {
+	auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
+	_last_anim_t = t;
+
 	if (_paused) {
 		return;
 	}
 
 	if (_status == MOVING) {
-		if (checkpoint_checked()) {
-			if (_path->is_last_checkpoint()) {
-				set_status(LAST_CHECKPOINT_CHECKED);
-			}
-			else {
-				set_status(CHECKPOINT_CHECKED);
-			}
-			return;
-		}
-		//auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
-		//_last_anim_t = t;
-
 		number velocity_amp = _type->_max_velocity * (1.0 - _path->get_current_interval()->_weight / MAX_UNIT_MOVING_WEIGHT);
+		//std::cout << d << "\n";
+		velocity_amp *= number(d) * 0.0625; // 60fps -> 1 frame == 1000 / 60 ~= 16 ms et 1 / 16 == 0.0625
 		pt_2d direction = glm::normalize(pt_2d(_path->get_current_pt()) - pt_2d(_position));
 		_velocity = velocity_amp * pt_3d(direction.x, direction.y, 0.0);
 
@@ -67,10 +61,15 @@ void Unit::anim() {
 			next_position.z = 0.0;
 		}
 		
-		number angle = atan2(_velocity.y, _velocity.x);
+		// TODO : ne fonctionne pas
+		number next_angle = atan2(_velocity.y, _velocity.x);
+		if (abs(next_angle - _angle) > M_PI) {
+			next_angle -= 2.0 * M_PI;
+		}
+		_angle = next_angle;
 		// https://en.wikipedia.org/wiki/Slerp
 		const number slerp_speed = 0.05;
-		quat next_quat = glm::angleAxis(float(angle), glm::vec3(0.0f, 0.0f, 1.0f));
+		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
 
 		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
@@ -86,8 +85,16 @@ bool Unit::checkpoint_checked() {
 }
 
 
-void Unit::set_status(UNIT_STATUS status) {
-	const bool verbose = true;
+bool Unit::last_checkpoint_checked() {
+	if (_path->is_last_checkpoint() && checkpoint_checked()) {
+		return true;
+	}
+	return false;
+}
+
+
+void Unit::set_status(UNIT_STATUS status, time_point t) {
+	const bool verbose = false;
 
 	if (verbose) {
 		std::cout << "Unit id = " << _id << " : status " << unit_status2str(_status) << " -> " << unit_status2str(status) << "\n";
@@ -101,8 +108,9 @@ void Unit::set_status(UNIT_STATUS status) {
 	else if (_status == MOVING) {
 		if (_path->empty()) {
 			std::cerr << "Unit::follow_path : path empty\n";
-			set_status(WAITING);
+			set_status(WAITING, t);
 		}
+		_last_anim_t = t;
 	}
 }
 
@@ -156,10 +164,6 @@ Team::~Team() {
 
 
 Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos) {
-	if (pos.x < _elevation->_origin.x || pos.y < _elevation->_origin.y || pos.x >= _elevation->_origin.x + _elevation->_size.x || pos.y >= _elevation->_origin.y + _elevation->_size.y) {
-		std::cerr << "Team::add_unit hors Elevation\n";
-		return NULL;
-	}
 	pt_3d pt3d(pos.x, pos.y, _elevation->get_alti(pos));
 	if (type->_floats && pt3d.z < 0.0) {
 		pt3d.z = 0.0;
@@ -171,6 +175,17 @@ Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos) {
 }
 
 
+std::vector<Unit *> Team::get_units_in_aabb(AABB_2D * aabb) {
+	std::vector<Unit *> result;
+	for (auto & unit : _units) {
+		if (aabb2d_intersects_aabb2d(aabb, unit->_bbox->_aabb->aabb2d())) {
+			result.push_back(unit);
+		}
+	}
+	return result;
+}
+
+
 void Team::remove_unit(Unit * unit) {
 	_units.erase(std::remove_if(_units.begin(), _units.end(), [unit](Unit * u) {
 		return u == unit;
@@ -179,7 +194,7 @@ void Team::remove_unit(Unit * unit) {
 }
 
 
-void Team::remove_units_in_aabb(AABB_2D * aabb) {
+/*void Team::remove_units_in_aabb(AABB_2D * aabb) {
 	std::vector<Unit *> units2remove;
 	for (auto & unit : _units) {
 		if (aabb2d_intersects_aabb2d(aabb, unit->_bbox->_aabb->aabb2d())) {
@@ -188,6 +203,26 @@ void Team::remove_units_in_aabb(AABB_2D * aabb) {
 	}
 	for (auto & unit : units2remove) {
 		remove_unit(unit);
+	}
+}*/
+
+
+void Team::clear2delete() {
+	// TODO : faire mieux ?
+
+	std::vector<Unit * > tmp;
+	for (auto & unit : _units) {
+		if (unit->_delete) {
+			tmp.push_back(unit);
+		}
+	}
+
+	_units.erase(std::remove_if(_units.begin(), _units.end(), [](Unit * u) {
+		return u->_delete;
+	}), _units.end());
+
+	for (auto & unit : tmp) {
+		delete unit;
 	}
 }
 

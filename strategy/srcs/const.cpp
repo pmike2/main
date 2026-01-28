@@ -9,21 +9,12 @@ std::string unit_status2str(UNIT_STATUS mode) {
 	else if (mode == MOVING) {
 		return "MOVING";
 	}
-	else if (mode == COMPUTING_PATH) {
-		return "COMPUTING_PATH";
-	}
-	else if (mode == COMPUTING_PATH_DONE) {
-		return "COMPUTING_PATH_DONE";
-	}
-	else if (mode == COMPUTING_PATH_FAILED) {
-		return "COMPUTING_PATH_FAILED";
-	}
-	else if (mode == CHECKPOINT_CHECKED) {
+	/*else if (mode == CHECKPOINT_CHECKED) {
 		return "CHECKPOINT_CHECKED";
 	}
 	else if (mode == LAST_CHECKPOINT_CHECKED) {
 		return "LAST_CHECKPOINT_CHECKED";
-	}
+	}*/
 
 	std::cerr << mode << " : mode unit reconnu\n";
 	return "UNKNOWN";

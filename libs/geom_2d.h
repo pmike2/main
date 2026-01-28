@@ -46,6 +46,7 @@ bool ray_intersects_aabb2d(const pt_2d & ray_origin, const pt_2d & ray_dir, cons
 
 // tests BBOX
 bool bbox2d_intersects_bbox2d(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * axis, number * overlap, uint * idx_pt, bool * is_pt_in_poly1);
+bool bbox2d_intersects_bbox2d(const BBox_2D * bbox1, const BBox_2D * bbox2);
 bool pt_in_bbox2d(const pt_2d & pt, const BBox_2D * bbox);
 std::pair<BBOX_SIDE, BBOX_CORNER> bbox2d_side_corner(const BBox_2D * bbox, const pt_2d & pt);
 

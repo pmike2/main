@@ -197,12 +197,26 @@ bool ray_intersects_aabb2d(const pt_2d & ray_origin, const pt_2d & ray_dir, cons
 bool bbox2d_intersects_bbox2d(const BBox_2D * bbox1, const BBox_2D * bbox2, pt_2d * axis, number * overlap, uint * idx_pt, bool * is_pt_in_poly1) {
 	Polygon2D * poly1= new Polygon2D();
 	poly1->set_bbox(*bbox1);
+	poly1->update_normals();
 	Polygon2D * poly2= new Polygon2D();
 	poly2->set_bbox(*bbox2);
+	poly2->update_normals();
 	bool result= poly_intersects_poly(poly1, poly2, axis, overlap, idx_pt, is_pt_in_poly1);
+	/*std::cout << *bbox1 << " ; " << *bbox2 << "\n";
+	std::cout << *poly1 << " ; " << *poly2 << "\n";
+	std::cout << glm_to_string(*axis) << " ; " << *overlap << " ; " << *idx_pt << " ; " << *is_pt_in_poly1 << "\n";*/
 	delete poly1;
 	delete poly2;
 	return result;
+}
+
+
+bool bbox2d_intersects_bbox2d(const BBox_2D * bbox1, const BBox_2D * bbox2) {
+	pt_2d axis(0.0);
+	number overlap = 0.0;
+	uint idx_pt = 0;
+	bool is_pt_in_poly1 = false;
+	return bbox2d_intersects_bbox2d(bbox1, bbox2, &axis, &overlap, &idx_pt, &is_pt_in_poly1);
 }
 
 

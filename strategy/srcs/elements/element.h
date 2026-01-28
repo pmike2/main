@@ -21,6 +21,7 @@ public:
 	uint _n_pts;
 	Elevation * _elevation;
 	ELEMENT_TYPE _type;
+	bool _delete;
 };
 
 

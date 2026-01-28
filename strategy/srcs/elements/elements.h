@@ -30,9 +30,11 @@ public:
 	Stone * add_stone(std::string species_name, pt_2d position);
 	Lake * add_lake(pt_2d position);
 	River * add_river(pt_2d position);
+	std::vector<Element *> get_elements_in_aabb(AABB_2D * aabb);
+	void clear2delete();
 	void clear();
 	void remove_element(Element * element);
-	void remove_elements_in_aabb(AABB_2D * aabb);
+	//void remove_elements_in_aabb(AABB_2D * aabb);
 
 
 	std::map<std::string, TreeSpecies *> _tree_species;

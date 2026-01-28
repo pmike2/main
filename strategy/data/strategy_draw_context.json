@@ -6,7 +6,6 @@
 			"locs" : ["position_in:3", "color_in:4"],
 			"uniforms" : ["world2clip_matrix"]
 		},
-		
 		"font" : {
 			"locs" : ["vertex_in:4", "color_in:4", "current_layer_in:1"],
 			"uniforms" : ["camera2clip_matrix", "z", "texture_array"]
@@ -15,7 +14,6 @@
 			"locs" : ["vertex_in:3", "tex_in:2", "color_in:4", "current_layer_in:1"],
 			"uniforms" : ["camera2clip_matrix", "z", "texture_array"]
 		},
-
 		"gl_ihm" : {
 			"locs" : ["position_in:2", "tex_coord_in:2", "alpha_in:1", "current_layer_in:1"],
 			"uniforms" : ["camera2clip_matrix", "texture_array", "z"]
@@ -58,10 +56,8 @@
 		"repere" : {"shader" : "repere", "active" : false},
 		"ground" : {"shader" : "repere", "active" : false},
 		"box" : {"shader" : "repere", "active" : false},
-
 		"font" : {"shader" : "font", "usage" : "GL_STREAM_DRAW"},
 		"font3d" : {"shader" : "font3d", "usage" : "GL_STREAM_DRAW"},
-
 		"gl_ihm" : {"shader" : "gl_ihm"},
 
 		"debug" : {"shader" : "linear", "active" : false},
@@ -70,6 +66,7 @@
 		"bbox" : {"shader" : "linear"},
 		"path" : {"shader" : "dash"},
 		"edit_map" : {"shader" : "dash"},
+		"cursor" : {"shader" : "dash"},
 		"elevation" : {"shader" : "elevation", "usage" : "GL_DYNAMIC_DRAW"},
 		"tree_stone" : {"shader" : "tree_stone"},
 		"river" : {"shader" : "river"},

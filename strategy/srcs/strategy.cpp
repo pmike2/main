@@ -76,6 +76,7 @@ void Strategy::set_ihm() {
 	_ihm->get_element("mode", "add_unit")->set_callback([this](){_config->_mode = ADD_UNIT;});
 	_ihm->get_element("mode", "add_element")->set_callback([this](){_config->_mode = ADD_ELEMENT;});
 	_ihm->get_element("mode", "edit_elevation")->set_callback([this](){_config->_mode = EDIT_ELEVATION;});
+	_ihm->get_element("mode", "erase")->set_callback([this](){_config->_mode = ERASE;});
 
 	_ihm->get_element("play_mode", "select_unit")->set_callback([this](){_config->_play_mode = SELECT_UNIT;});
 	_ihm->get_element("play_mode", "move_unit")->set_callback([this](){_config->_play_mode = MOVE_UNIT;});
@@ -120,6 +121,12 @@ void Strategy::set_ihm() {
 		GLIHMElement * element = _ihm->get_element("edit_elevation_params", "elevation_exponent");
 		GLIHMSlider * slider = (GLIHMSlider *)(element);
 		_config->_elevation_exponent = slider->_value;
+	});
+
+	_ihm->get_element("erase_params", "erase_radius")->set_callback([this](){
+		GLIHMElement * element = _ihm->get_element("erase_params", "erase_radius");
+		GLIHMSlider * slider = (GLIHMSlider *)(element);
+		_config->_erase_radius = slider->_value;
 	});
 
 	_ihm->get_element("global_edit", "randomize")->set_callback([this](){
@@ -349,7 +356,7 @@ void Strategy::draw() {
 		draw_surface(context_name);
 	}
 	
-	for (auto context_name : std::vector<std::string>{"path", "edit_map"}) {
+	for (auto context_name : std::vector<std::string>{"path", "edit_map", "cursor"}) {
 		draw_dash(context_name);
 	}
 
@@ -381,6 +388,7 @@ void Strategy::anim(time_point t) {
 	update_bbox();
 	update_path();
 	update_edit_map();
+	update_cursor();
 	update_text();
 	for (auto & unit_type : _map->_unit_types) {
 		update_unit_matrices(unit_type.second);
@@ -670,7 +678,7 @@ void Strategy::update_bbox() {
 
 	// elements
 	for (auto & element : _map->_elements->_elements) {
-		std::vector<pt_3d> segs = element->_bbox->_aabb->segments();
+		std::vector<pt_3d> segs = element->_bbox->segments();
 
 		glm::vec4 element_color(0.5, 1.0, 0.5, 1.0);
 
@@ -814,7 +822,7 @@ void Strategy::update_path() {
 void Strategy::update_edit_map() {
 	DrawContext * context= _gl_draw_manager->get_context("edit_map");
 	
-	if (_config->_mode != EDIT_ELEVATION && _config->_mode != ADD_ELEMENT) {
+	if (_config->_mode != EDIT_ELEVATION && _config->_mode != ADD_ELEMENT && _config->_mode != ERASE) {
 		context->_n_pts = 0;
 		context->_active = false;
 		return;
@@ -838,6 +846,9 @@ void Strategy::update_edit_map() {
 	}
 	else if (_config->_mode == ADD_ELEMENT) {
 		circle_pts = circle_vertices(pt_2d(_cursor_world_position), _config->_elements_dispersion * 2.0, EDIT_MAP_N_VERTICES_PER_CIRCLE);
+	}
+	else if (_config->_mode == ERASE) {
+		circle_pts = circle_vertices(pt_2d(_cursor_world_position), _config->_erase_radius, EDIT_MAP_N_VERTICES_PER_CIRCLE);
 	}
 
 	float data[context->data_size()];
@@ -866,6 +877,58 @@ void Strategy::update_edit_map() {
 		ptr[13] = EDIT_MAP_COLOR.a;
 
 		ptr += 14;
+	}
+
+	context->set_data(data);
+}
+
+
+void Strategy::update_cursor() {
+	DrawContext * context= _gl_draw_manager->get_context("cursor");
+
+	if (_config->_mode != ADD_UNIT && _config->_mode != ADD_ELEMENT) {
+		context->_n_pts = 0;
+		context->_active = false;
+		return;
+	}
+
+	AABB * aabb = new AABB(*_map->_unit_types[_config->_unit_type]->_obj_data->_aabb);
+	aabb->translate(_cursor_world_position);
+	AABB_2D * aabb_2d = aabb->aabb2d();
+	if (!_map->_elevation->in_boundaries(aabb_2d)) {
+		context->_n_pts = 0;
+		context->_active = false;
+		delete aabb_2d;
+		return;
+	}
+	delete aabb_2d;
+
+	context->_n_pts = 48;
+	context->_active = true;
+
+	float data[context->data_size()];
+	float * ptr = data;
+	std::vector<pt_3d> segs = aabb->segments();
+
+	bool is_ok = _map->add_unit_check(_config->_unit_type, pt_2d(_cursor_world_position));
+	//std::cout << is_ok <<"\n";
+	glm::vec4 cursor_color;
+	if (is_ok) {
+		cursor_color = glm::vec4(0.0, 0.5, 0.2, 1.0);
+	}
+	else {
+		cursor_color = glm::vec4(1.0, 0.0, 0.5, 1.0);
+	}
+
+	for (uint i=0; i<segs.size(); ++i) {
+		ptr[0] = float(segs[i].x);
+		ptr[1] = float(segs[i].y);
+		ptr[2] = float(segs[i].z + Z_OFFSET_UNIT);
+		ptr[3] = cursor_color.r;
+		ptr[4] = cursor_color.g;
+		ptr[5] = cursor_color.b;
+		ptr[6] = cursor_color.a;
+		ptr += 7;
 	}
 
 	context->set_data(data);
@@ -1046,6 +1109,7 @@ void Strategy::update_all() {
 	update_bbox();
 	update_path();
 	update_edit_map();
+	update_cursor();
 	update_elevation();
 	update_tree_stone();
 	update_river();
@@ -1107,17 +1171,21 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 		_map->selected_units_goto(_cursor_world_position, t);
 		return true;
 	}
+	
 	else if (_config->_mode == ADD_UNIT) {
 		Unit * unit = _map->add_unit(_map->_teams[0], _config->_unit_type, pt_2d(_cursor_world_position));
-		if (_config->_units_paused) {
-			unit->_paused = true;
+		if (unit != NULL) {
+			if (_config->_units_paused) {
+				unit->_paused = true;
+			}
+			else {
+				unit->_paused = false;
+			}
+			update_unit_matrices(_map->_unit_types[_config->_unit_type]);
 		}
-		else {
-			unit->_paused = false;
-		}
-		update_unit_matrices(_map->_unit_types[_config->_unit_type]);
 		return true;
 	}
+	
 	else if (_config->_mode == ADD_ELEMENT) {
 		if (_config->_element_type == ELEMENT_TREE) {
 			_map->add_trees("oak", pt_2d(_cursor_world_position), _config->_n_elements, _config->_elements_dispersion);
@@ -1141,13 +1209,12 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 		}
 		return true;
 	}
+	
 	else if (_config->_mode == EDIT_ELEVATION) {
 		AABB_2D * aabb = new AABB_2D(pt_2d(_cursor_world_position) - pt_2d(_config->_elevation_radius), 2.0 * pt_2d(_config->_elevation_radius));
 		
-		_map->_elements->remove_elements_in_aabb(aabb);
-		for (auto & team : _map->_teams) {
-			team->remove_units_in_aabb(aabb);
-		}
+		_map->remove_elements_in_aabb(aabb);
+		_map->remove_units_in_aabb(aabb);
 		
 		std::vector<uint> ids = _map->_elevation->vertices_in_aabb(aabb);
 
@@ -1190,6 +1257,20 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 		update_tree_stone();
 
 		delete aabb;
+		return true;
+	}
+	
+	else if (_config->_mode == ERASE) {
+		AABB_2D * aabb = new AABB_2D(pt_2d(_cursor_world_position) - pt_2d(_config->_erase_radius), 2.0 * pt_2d(_config->_erase_radius));
+		
+		_map->remove_elements_in_aabb(aabb);
+		_map->remove_units_in_aabb(aabb);
+		
+		update_grid();
+		update_tree_stone();
+
+		delete aabb;
+
 		return true;
 	}
 

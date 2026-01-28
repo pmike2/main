@@ -12,6 +12,9 @@
 
 #include "typedefs.h"
 #include "bbox.h"
+#include "bbox_2d.h"
+#include "geom.h"
+#include "geom_2d.h"
 
 
 int main() {
@@ -22,14 +25,19 @@ int main() {
 	BBox_2D * bbox_2d = bbox->bbox2d();
 	std::cout << *bbox_2d << "\n";*/
 
-	std::unordered_set<uint> s;
+	/*std::unordered_set<uint> s;
 	s.insert(12);
 	s.insert(38);
 	s.erase(12);
 
 	for (auto & x : s) {
 		std::cout << x << "\n";
-	}
+	}*/
+
+	BBox_2D * bbox1 = new BBox_2D(pt_2d(0.0, 0.0), pt_2d(1.0, 1.0));
+	BBox_2D * bbox2 = new BBox_2D(pt_2d(2.0, 2.0), pt_2d(1.1, 1.0));
+	bool x = bbox2d_intersects_bbox2d(bbox1, bbox2);
+	std::cout << x << "\n";
 
 	return 0;
 }

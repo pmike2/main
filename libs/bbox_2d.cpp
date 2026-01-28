@@ -73,6 +73,11 @@ void AABB_2D::buffer(number size) {
 }
 
 
+void AABB_2D::translate(pt_2d v) {
+	_pos += v;
+}
+
+
 std::ostream & operator << (std::ostream & os, const AABB_2D & aabb) {
 	os << "pos=" << glm::to_string(aabb._pos) << " ; size=" << glm::to_string(aabb._size);
 	return os;

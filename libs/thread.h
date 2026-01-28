@@ -20,6 +20,8 @@ class SafeQueue {
 public:
 
 	SafeQueue() {}
+  // obligé de déclarer le copy constructor sinon make plante : https://stackoverflow.com/questions/19559503/call-to-implicitly-deleted-copy-constructor-in-llvm
+  //SafeQueue(const SafeQueue & q) {}
 
 	void push(T elem) {
 		std::lock_guard<std::mutex> lock(m);

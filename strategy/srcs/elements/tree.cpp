@@ -214,7 +214,7 @@ Tree::Tree(TreeSpecies * species, Elevation * elevation, pt_2d position) : Eleme
 	pt_3d pt_base(position.x, position.y, _elevation->get_alti(position));
 	pt_3d size = rand_pt_3d(_species->_size_min, _species->_size_max);
 	
-	AABB * aabb = new AABB(pt_base - 0.5 * size, pt_base + 0.5 * size);
+	AABB * aabb = new AABB(pt_3d(pt_base.x - 0.5 * size.x, pt_base.y - 0.5 * size.y, pt_base.z), pt_3d(pt_base.x + 0.5 * size.x, pt_base.y + 0.5 * size.y, pt_base.z + size.z));
 	_bbox->set_aabb(aabb);
 	delete aabb;
 

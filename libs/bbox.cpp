@@ -26,6 +26,11 @@ AABB::AABB(const pt_3d & vmin, const pt_3d & vmax) {
 }
 
 
+AABB::AABB(const AABB & aabb) {
+	set_vmin_vmax(aabb._vmin, aabb._vmax);
+}
+
+
 AABB::AABB(AABB_2D * aabb_2d) {
 	set_vmin_vmax(pt_3d(aabb_2d->_pos.x, aabb_2d->_pos.y, -0.01), pt_3d(aabb_2d->_pos.x + aabb_2d->_size.x, aabb_2d->_pos.y + aabb_2d->_size.y, 0.01));
 }

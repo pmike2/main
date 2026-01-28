@@ -45,11 +45,16 @@ struct UnitPath {
 	friend std::ostream & operator << (std::ostream & os, UnitPath & p);
 
 
+	uint _unit_id;
+	UnitType * _unit_type;
+	uint _start_id;
+	uint _goal_id;
 	pt_3d _start;
 	pt_3d _goal;
 	std::vector<uint> _nodes;
 	uint _idx_path;
 	bool _use_line_of_sight;
+	UNIT_PATH_STATUS _status;
 	
 	std::vector<pt_3d> _pts;
 	//std::vector<number> _weights;

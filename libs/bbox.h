@@ -18,6 +18,7 @@ class AABB {
 public:
 	AABB();
 	AABB(const pt_3d & vmin, const pt_3d & vmax);
+	AABB(const AABB & aabb);
 	AABB(AABB_2D * aabb_2d);
 	~AABB();
 	void set_vmin_vmax(const pt_3d & vmin, const pt_3d & vmax);

@@ -35,18 +35,29 @@ struct Map {
 	Map();
 	Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t);
 	~Map();
+	bool add_unit_check(UNIT_TYPE type, pt_2d pos);
 	Unit * add_unit(Team * team, UNIT_TYPE type, pt_2d pos);
 	void add_river(pt_2d pos);
 	void add_lake(pt_2d pos);
 	void add_trees(std::string species_name, pt_2d pos, uint n_trees, number dispersion);
 	void add_stones(std::string species_name, pt_2d pos, uint n_stones, number dispersion);
 
+	Unit * get_unit(uint unit_id);
+	std::vector<Unit *> get_units_in_aabb(AABB_2D * aabb);
+
+	void remove_units_in_aabb(AABB_2D * aabb);
+	void remove_elements_in_aabb(AABB_2D * aabb);
+
 	void update_alti_grid();
 	//void update_alti_path(Unit * unit);
 	void update_elevation_grid();
 	
 	void update_terrain_grid_with_elevation();
-	void update_terrain_grid_with_aabb(AABB_2D * aabb);
+	//void update_terrain_grid_with_aabb(AABB_2D * aabb);
+	//void clear_terrain_grid_with_aabb(AABB_2D * aabb);
+
+	void add_element_to_terrain_grid(Element * element);
+	void remove_element_from_terrain_grid(Element * element);
 	
 	void sync2elevation();
 	
@@ -57,7 +68,8 @@ struct Map {
 	void remove_unit_from_position_grid(Unit * unit);
 	void advance_unit_in_position_grid(Unit * unit);
 
-	void path_find(Unit * unit, pt_3d goal);
+	//void path_find(Unit * unit, pt_3d goal);
+	void path_find();
 	void pause_all_units(bool pause);
 
 	void clear();
@@ -81,6 +93,10 @@ struct Map {
 	std::vector<Team *> _teams;
 
 	std::thread _path_find_thr;
+	bool _path_find_thr_running;
+	SafeQueue<PathFinderInput *> _path_queue_thr_input;
+	SafeQueue<UnitPath *> _path_queue_thr_output;
+	bool _path_finder_computing;
 };
 
 

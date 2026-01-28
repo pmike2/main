@@ -102,6 +102,37 @@ River * Elements::add_river(pt_2d position) {
 }
 
 
+std::vector<Element *> Elements::get_elements_in_aabb(AABB_2D * aabb) {
+	std::vector<Element *> result;
+	for (auto & element : _elements) {
+		if (aabb2d_intersects_aabb2d(aabb, element->_bbox->_aabb->aabb2d())) {
+			result.push_back(element);
+		}
+	}
+	return result;
+}
+
+
+void Elements::clear2delete() {
+	// TODO : faire mieux ?
+	
+	std::vector<Element * > tmp;
+	for (auto & element : _elements) {
+		if (element->_delete) {
+			tmp.push_back(element);
+		}
+	}
+
+	_elements.erase(std::remove_if(_elements.begin(), _elements.end(), [](Element * e) {
+		return e->_delete;
+	}), _elements.end());
+
+	for (auto & element : tmp) {
+		delete element;
+	}
+}
+
+
 void Elements::clear() {
 	for (auto element : _elements) {
 		delete element;
@@ -118,7 +149,7 @@ void Elements::remove_element(Element * element) {
 }
 
 
-void Elements::remove_elements_in_aabb(AABB_2D * aabb) {
+/*void Elements::remove_elements_in_aabb(AABB_2D * aabb) {
 	std::vector<Element *> elements2remove;
 	for (auto & element : _elements) {
 		if (aabb2d_intersects_aabb2d(aabb, element->_bbox->_aabb->aabb2d())) {
@@ -129,3 +160,4 @@ void Elements::remove_elements_in_aabb(AABB_2D * aabb) {
 		remove_element(element);
 	}
 }
+*/
