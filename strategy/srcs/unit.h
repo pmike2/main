@@ -31,7 +31,7 @@ struct Unit : public InstancePosRot {
 	Unit();
 	Unit(UnitType * type, pt_3d pos, Elevation * elevation);
 	~Unit();
-	//pt_3d pt2dto3d(pt_2d pt);
+	quat orientation(pt_2d v);
 	void anim(time_point t);
 	bool checkpoint_checked();
 	bool last_checkpoint_checked();
@@ -49,9 +49,11 @@ struct Unit : public InstancePosRot {
 	bool _paused;
 	Elevation * _elevation;
 	time_point _last_anim_t;
+	time_point _last_shooting_t;
 	bool _delete;
 	number _angle;
 	number _life;
+	Unit * _target;
 };
 
 

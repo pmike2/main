@@ -52,8 +52,12 @@
 			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position"]
 		},
 		"unit_life" : {
-			"locs" : ["position_in:2", "color_in:4"],
-			"uniforms" : ["camera2clip_matrix", "z"]
+			"locs" : ["position_in:3", "color_in:4"],
+			"uniforms" : ["camera2clip_matrix"]
+		},
+		"shoot" : {
+			"locs" : ["position_in:3", "color_in:4"],
+			"uniforms" : ["camera2clip_matrix"]
 		}
 	},
 	"contexts" : {
@@ -77,6 +81,7 @@
 		"lake" : {"shader" : "lake"},
 		"sea" : {"shader" : "lake"},
 		"unit_life" : {"shader" : "unit_life"},
+		"shoot" : {"shader" : "shoot"},
 		"INFANTERY" : {"shader" : "unit", "usage" : "GL_DYNAMIC_DRAW"},
 		"TANK" : {"shader" : "unit", "usage" : "GL_DYNAMIC_DRAW"},
 		"HELICOPTER" : {"shader" : "unit", "usage" : "GL_DYNAMIC_DRAW"},

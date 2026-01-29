@@ -2,8 +2,8 @@
 	"type" : "TANK",
 	"max_velocity" : 0.02,
 	"life_init" : 200.0,
-	"damage" : 20.0,
-	"shooting_rate" : 8.0,
+	"damage" : 10.0,
+	"shooting_rate" : 3.0,
 	"floats" : false,
 	"flies" : false,
 	"weights" : {

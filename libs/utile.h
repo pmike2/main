@@ -71,6 +71,7 @@ std::vector<std::string> split(const std::string& s, const std::string& delimite
 
 std::string glm_to_string(pt_2d v, int n_decimals=-1);
 std::string glm_to_string(pt_3d v, int n_decimals=-1);
+std::string glm_to_string(pt_4d v, int n_decimals=-1);
 
 std::string get_cmd_output(std::string cmd);
 

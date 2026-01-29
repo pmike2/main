@@ -9,6 +9,15 @@ std::string unit_status2str(UNIT_STATUS mode) {
 	else if (mode == MOVING) {
 		return "MOVING";
 	}
+	else if (mode == ATTACKING) {
+		return "ATTACKING";
+	}
+	else if (mode == SHOOTING) {
+		return "SHOOTING";
+	}
+	else if (mode == DESTROYED) {
+		return "DESTROYED";
+	}
 	/*else if (mode == CHECKPOINT_CHECKED) {
 		return "CHECKPOINT_CHECKED";
 	}

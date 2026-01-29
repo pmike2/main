@@ -207,9 +207,14 @@ uint DrawContext::data_size(uint idx_buffer) {
 
 
 void DrawContext::show_data(uint idx_buffer) {
+	DrawContextBuffer buffer = _buffers[idx_buffer];
 	uint ds = data_size(idx_buffer);
 	float * data = new float[ds];
+
+	glBindBuffer(GL_ARRAY_BUFFER, buffer._id);
 	glGetBufferSubData(GL_ARRAY_BUFFER, 0, ds * sizeof(float), data);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 	for (uint i=0; i<ds; ++i) {
 		if (i % _buffers[idx_buffer]._n_attrs_per_pts == 0) {
 			std::cout << "\n";
@@ -217,6 +222,7 @@ void DrawContext::show_data(uint idx_buffer) {
 		std::cout << data[i] << " ; ";
 	}
 	std::cout << "\n";
+
 	delete[] data;
 }
 

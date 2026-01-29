@@ -19,7 +19,7 @@
 
 
 enum STRATEGY_MODE {VIEW, PLAY, ADD_UNIT, ADD_ELEMENT, EDIT_ELEVATION, ERASE};
-enum PLAY_MODE {SELECT_UNIT, MOVE_UNIT};
+enum PLAY_MODE {SELECT_UNIT, MOVE_UNIT, ATTACK_UNIT};
 
 const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
 const glm::vec4 EDIT_MAP_COLOR(0.0f, 1.0f, 1.0f, 1.0f);
@@ -82,6 +82,7 @@ public:
 	void draw_sea();
 	void draw_unit(UnitType * unit_type);
 	void draw_unit_life();
+	void draw_shoot();
 	void draw();
 	
 	void anim(time_point t);
@@ -104,6 +105,7 @@ public:
 	void update_unit_obj(UnitType * unit_type);
 	void update_unit_matrices(UnitType * unit_type);
 	void update_unit_life();
+	void update_shoot();
 	void update_all();
 	void update_text();
 	

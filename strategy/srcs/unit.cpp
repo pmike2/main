@@ -28,20 +28,8 @@ Unit::~Unit() {
 }
 
 
-/*pt_3d Unit::pt2dto3d(pt_2d pt) {
-	pt_3d result(pt.x, pt.y, 0.0);
-	if (_type->_floats) {
-		result.z = 0.0;
-	}
-	else {
-		result.z = _elevation->get_alti(pt);
-	}
-	return result;
-}*/
-
-
 void Unit::anim(time_point t) {
-	auto d= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
+	auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_anim_t).count();
 	_last_anim_t = t;
 
 	if (_paused) {
@@ -74,6 +62,35 @@ void Unit::anim(time_point t) {
 		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
 
 		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
+	}
+	else if (_status == ATTACKING) {
+		if (_target == NULL)  {
+			std::cerr << "Unit " << _id << " ATTACKING mais _target == NULL.\n";
+			return;
+		}
+
+		number next_angle = atan2(_target->_position.y - _position.y, _target->_position.x - _position.x);
+		// pour ne pas faire des 3/4 de tour quand les 2 angles sont de part et d'autre de l'axe x
+		if (next_angle - _angle > M_PI) {
+			next_angle -= 2.0 * M_PI;
+		}
+		_angle = next_angle;
+		
+		// https://en.wikipedia.org/wiki/Slerp
+		const number slerp_speed = 0.05;
+		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
+		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
+
+		set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
+
+		auto d_shooting = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_shooting_t).count();
+		//std::cout << number(d_shooting) << " ; " << _type->_shooting_rate * 1000.0 << "\n";
+		if (number(d_shooting) > _type->_shooting_rate * 1000.0) {
+			//std::cout << "Unit " << _id << " attacks Unit " << _target->_id << "\n";
+			_last_shooting_t = t;
+			
+			set_status(SHOOTING, t);
+		}
 	}
 }
 
@@ -112,6 +129,9 @@ void Unit::set_status(UNIT_STATUS status, time_point t) {
 			set_status(WAITING, t);
 		}
 		_last_anim_t = t;
+	}
+	else if (_status == ATTACKING) {
+		_last_shooting_t = t;
 	}
 }
 

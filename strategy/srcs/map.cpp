@@ -757,10 +757,54 @@ void Map::anim(time_point t) {
 					_path_queue_thr_input.push(pfi);
 				}
 			}
+			else if (unit->_status == SHOOTING) {
+				unit->set_status(ATTACKING, t);
+				_weapons.push_back(new Weapon(unit->_position, unit->_target->_position, unit->_type->_damage));
+			}
 		}
 	}
 
 	collisions(t);
+
+	for (auto & weapon : _weapons) {
+		weapon->anim();
+		if (weapon->_target_hit) {
+			for (auto & team : _teams) {
+				for (auto & unit : team->_units) {
+					if (pt_in_bbox2d(pt_2d(weapon->_target), unit->_bbox->bbox2d())) {
+						std::cout << "Unit " << unit->_id << " shot\n";
+						unit->_life -= weapon->_damage;
+						if (unit->_life <= 0.0) {
+							std::cout << "Unit " << unit->_id << " destroyed\n";
+							unit->set_status(DESTROYED, t);
+						}
+					}
+				}
+			}
+		}
+	}
+
+	_weapons.erase(std::remove_if(_weapons.begin(), _weapons.end(), [](Weapon * w) {
+		return w->_target_hit;
+	}), _weapons.end());
+
+
+	for (auto & team : _teams) {
+		for (auto & unit : team->_units) {
+			if (unit->_status == ATTACKING && unit->_target->_status == DESTROYED) {
+				unit->set_status(WAITING, t);
+			}
+		}
+	}
+
+	for (auto & team : _teams) {
+		for (auto & unit : team->_units) {
+			if (unit->_status == DESTROYED) {
+				unit->_delete = true;
+			}
+		}
+		team->clear2delete();
+	}
 }
 
 
@@ -845,6 +889,18 @@ void Map::selected_units_goto(pt_3d pt, time_point t) {
 				//unit->_instructions.push({pt, t + std::chrono::milliseconds(500 * compt)});
 				unit->_instructions.push({pt, t});
 				compt++;
+			}
+		}
+	}
+}
+
+
+void Map::selected_units_attack(Unit * target, time_point t) {
+	for (auto & team : _teams) {
+		for (auto & unit : team->_units) {
+			if (unit->_selected) {
+				unit->_target = target;
+				unit->set_status(ATTACKING, t);
 			}
 		}
 	}

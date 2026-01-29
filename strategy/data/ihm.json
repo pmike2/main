@@ -12,7 +12,7 @@
 			"orientation" : "horizontal",
 			"elements" : [
 				{"name" : "show_info"},
-				{"name" : "units_paused", "checked" : true}
+				{"name" : "units_paused"}
 			]
 		},
 		{
@@ -36,7 +36,8 @@
 			"orientation" : "vertical",
 			"elements" : [
 				{"name" : "select_unit"},
-				{"name" : "move_unit"}
+				{"name" : "move_unit"},
+				{"name" : "attack_unit"}
 			]
 		},
 		{

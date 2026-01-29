@@ -24,6 +24,7 @@
 #include "unit.h"
 #include "unit_type.h"
 #include "elevation.h"
+#include "weapon.h"
 #include "elements/elements.h"
 #include "elements/lake.h"
 #include "elements/river.h"
@@ -78,6 +79,8 @@ struct Map {
 	void anim(time_point t);
 	void collisions(time_point t);
 	void selected_units_goto(pt_3d pt, time_point t);
+	void selected_units_attack(Unit * target, time_point t);
+	
 	void randomize();
 	void save(std::string json_path);
 	void load(std::string json_path);
@@ -92,6 +95,7 @@ struct Map {
 	Elevation * _elevation;
 	Elements * _elements;
 	std::vector<Team *> _teams;
+	std::vector<Weapon *> _weapons;
 
 	std::thread _path_find_thr;
 	bool _path_find_thr_running;

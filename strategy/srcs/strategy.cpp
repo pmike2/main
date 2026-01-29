@@ -81,6 +81,7 @@ void Strategy::set_ihm() {
 
 	_ihm->get_element("play_mode", "select_unit")->set_callback([this](){_config->_play_mode = SELECT_UNIT;});
 	_ihm->get_element("play_mode", "move_unit")->set_callback([this](){_config->_play_mode = MOVE_UNIT;});
+	_ihm->get_element("play_mode", "attack_unit")->set_callback([this](){_config->_play_mode = ATTACK_UNIT;});
 	
 	for (auto & unit_type : std::vector<UNIT_TYPE>{INFANTERY, TANK, HELICOPTER, BOAT}) {
 		_ihm->get_element("units", unit_type2str(unit_type))->set_callback([this, unit_type](){_config->_unit_type = unit_type;});
@@ -360,7 +361,19 @@ void Strategy::draw_unit_life() {
 
 	context->activate();
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_camera2clip)));
-	glUniform1f(context->_locs_uniform["z"], 1.0f);
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->deactivate();
+}
+
+
+void Strategy::draw_shoot() {
+	DrawContext * context= _gl_draw_manager->get_context("shoot");
+	if (!context->_active) {
+		return;
+	}
+
+	context->activate();
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_camera2clip)));
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 	context->deactivate();
 }
@@ -395,13 +408,14 @@ void Strategy::draw() {
 		_font->draw();
 	}
 
-	draw_unit_life();
+	draw_shoot();
 
 	// pour afficher systématiquement l'IHM
 	// pour que le z du cursor ne soit pas influencé par lui-même
 	glDisable(GL_DEPTH_TEST);
 	draw_dash("cursor");
 	_ihm->draw();
+	draw_unit_life();
 	glEnable(GL_DEPTH_TEST);
 }
 
@@ -426,6 +440,9 @@ void Strategy::anim(time_point t) {
 		_angle -= 2.0 * M_PI;
 	}
 	update_lake();
+
+	update_unit_life();
+	update_shoot();
 }
 
 
@@ -1136,6 +1153,126 @@ void Strategy::update_unit_matrices(UnitType * unit_type) {
 
 void Strategy::update_unit_life() {
 	DrawContext * context= _gl_draw_manager->get_context("unit_life");
+
+	context->_n_pts = 0;
+	for (auto & team : _map->_teams) {
+		for (auto & unit : team->_units) {
+			context->_n_pts += 12;
+		}
+	}
+
+	const pt_3d offset(0.0, -1.0, 0.0);
+	const number life_init_factor = 0.05;
+	const number y_size = 0.5;
+	const glm::vec4 bwd_color(0.5, 0.5, 0.5, 0.5);
+
+	float * data = new float[context->data_size()];
+	float * ptr = data;
+	for (auto & team : _map->_teams) {
+		for (auto & unit : team->_units) {
+			pt_3d view_pos = pt_3d(_view_system->_world2camera * pt_4d(unit->_position, 1.0));
+			number x_size = unit->_type->_life_init * life_init_factor;
+			number unit_life_ratio = unit->_life / unit->_type->_life_init;
+			
+			pt_3d l_pts_bwd[4] = {
+				view_pos + offset + pt_3d((unit_life_ratio - 0.5) * x_size, 0.0, 0.0),
+				view_pos + offset + pt_3d(0.5 * x_size, 0.0, 0.0),
+				view_pos + offset + pt_3d(0.5 * x_size, 0.0, 0.0) + pt_3d(0.0, y_size, 0.0),
+				view_pos + offset + pt_3d((unit_life_ratio - 0.5) * x_size, 0.0, 0.0) + pt_3d(0.0, y_size, 0.0),
+			};
+
+			pt_3d l_pts_fwd[4] = {
+				view_pos + offset - pt_3d(0.5 * x_size, 0.0, 0.0),
+				view_pos + offset + pt_3d((unit_life_ratio - 0.5) * x_size, 0.0, 0.0),
+				view_pos + offset + pt_3d((unit_life_ratio - 0.5) * x_size, 0.0, 0.0) + pt_3d(0.0, y_size, 0.0),
+				view_pos + offset - pt_3d(0.5 * x_size, 0.0, 0.0) + pt_3d(0.0, y_size, 0.0)
+			};
+
+			uint idxs[6] = {0, 1, 2, 0, 2, 3};
+		
+			glm::vec4 fwd_color;
+			if (unit_life_ratio > 0.6) {
+				fwd_color = glm::vec4(0.2, 0.5, 0.5, 0.9);
+			}
+			else if (unit_life_ratio > 0.3) {
+				fwd_color = glm::vec4(0.8, 0.7, 0.2, 0.9);
+			}
+			else {
+				fwd_color = glm::vec4(1.0, 0.2, 0.2, 0.9);
+			}
+			
+			for (uint i = 0; i<6; ++i) {
+				ptr[0] = float(l_pts_bwd[idxs[i]].x);
+				ptr[1] = float(l_pts_bwd[idxs[i]].y);
+				ptr[2] = float(l_pts_bwd[idxs[i]].z);
+				ptr[3] = bwd_color.r;
+				ptr[4] = bwd_color.g;
+				ptr[5] = bwd_color.b;
+				ptr[6] = bwd_color.a;
+				ptr += 7;
+			}
+
+			for (uint i = 0; i<6; ++i) {
+				ptr[0] = float(l_pts_fwd[idxs[i]].x);
+				ptr[1] = float(l_pts_fwd[idxs[i]].y);
+				ptr[2] = float(l_pts_fwd[idxs[i]].z);
+				ptr[3] = fwd_color.r;
+				ptr[4] = fwd_color.g;
+				ptr[5] = fwd_color.b;
+				ptr[6] = fwd_color.a;
+				ptr += 7;
+			}
+		}
+	}
+
+	context->set_data(data);
+
+	delete[] data;
+	//context->show_data();
+}
+
+
+void Strategy::update_shoot() {
+	DrawContext * context= _gl_draw_manager->get_context("shoot");
+
+	context->_n_pts = 0;
+	for (auto & weapon : _map->_weapons) {
+		context->_n_pts += 6;
+	}
+
+	float * data = new float[context->data_size()];
+	float * ptr = data;
+
+	pt_2d size(0.3, 0.3);
+	glm::vec4 weapon_color(1.0, 1.0, 0.5, 1.0);
+
+
+	for (auto & weapon : _map->_weapons) {
+		pt_3d view_pos = pt_3d(_view_system->_world2camera * pt_4d(weapon->_position, 1.0));
+		pt_3d l_pts[4] = {
+			view_pos + pt_3d(-size.x, -size.y, 0.0),
+			view_pos + pt_3d(size.x, -size.y, 0.0),
+			view_pos + pt_3d(size.x, size.y, 0.0),
+			view_pos + pt_3d(-size.x, size.y, 0.0)
+		};
+
+		uint idxs[6] = {0, 1, 2, 0, 2, 3};
+
+		for (uint i = 0; i<6; ++i) {
+			ptr[0] = float(l_pts[idxs[i]].x);
+			ptr[1] = float(l_pts[idxs[i]].y);
+			ptr[2] = float(l_pts[idxs[i]].z);
+			ptr[3] = weapon_color.r;
+			ptr[4] = weapon_color.g;
+			ptr[5] = weapon_color.b;
+			ptr[6] = weapon_color.a;
+			ptr += 7;
+		}
+	}
+
+	context->set_data(data);
+
+	delete[] data;
 }
 
 
@@ -1156,6 +1293,7 @@ void Strategy::update_all() {
 		update_unit_matrices(unit_type.second);
 	}
 	update_unit_life();
+	update_shoot();
 }
 
 
@@ -1342,6 +1480,27 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 			}
 		}
 		
+		return true;
+	}
+	else if (_config->_mode == PLAY && _config->_play_mode == ATTACK_UNIT) {
+		if (_view_system->_new_single_selection) {
+			_view_system->_new_single_selection= false;
+			Unit * target = NULL;
+			for (auto & team : _map->_teams) {
+				for (auto & unit : team->_units) {
+					if (_view_system->single_selection_intersects_aabb(unit->_bbox->_aabb, false)) {
+						target = unit;
+						break;
+					}
+				}
+				if (target != NULL) {
+					break;
+				}
+			}
+			if (target != NULL) {
+				_map->selected_units_attack(target, t);
+			}
+		}
 		return true;
 	}
 	return false;
