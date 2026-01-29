@@ -627,6 +627,22 @@ bool GLIHM::mouse_button_down(InputState * input_state, time_point t) {
 }
 
 
+bool GLIHM::mouse_motion(InputState * input_state, time_point t) {
+	pt_2d pt = _screengl->screen2gl(input_state->_x, input_state->_y);
+	for (auto & group : _groups) {
+		if (!group->_visible) {
+			continue;
+		}
+		for (auto & element : group->_elements) {
+			if (point_in_aabb2d(pt, element->_aabb)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+
 bool GLIHM::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
 	for (auto & group : _groups) {
 		if (!group->_visible) {

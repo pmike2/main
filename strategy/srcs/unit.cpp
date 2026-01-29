@@ -17,7 +17,7 @@ Unit::Unit() {
 Unit::Unit(UnitType * type, pt_3d pos, Elevation * elevation) : 
 	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
 	_type(type), _status(WAITING), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation),
-	_delete(false), _angle(0.0)
+	_delete(false), _angle(0.0), _life(type->_life_init)
 {
 	_path = new UnitPath();
 }
@@ -61,12 +61,13 @@ void Unit::anim(time_point t) {
 			next_position.z = 0.0;
 		}
 		
-		// TODO : ne fonctionne pas
 		number next_angle = atan2(_velocity.y, _velocity.x);
-		if (abs(next_angle - _angle) > M_PI) {
+		// pour ne pas faire des 3/4 de tour quand les 2 angles sont de part et d'autre de l'axe x
+		if (next_angle - _angle > M_PI) {
 			next_angle -= 2.0 * M_PI;
 		}
 		_angle = next_angle;
+		
 		// https://en.wikipedia.org/wiki/Slerp
 		const number slerp_speed = 0.05;
 		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -150,7 +151,9 @@ Team::Team() {
 }
 
 
-Team::Team(std::string name, Elevation * elevation) : _name(name), _elevation(elevation) {
+Team::Team(std::string name, glm::vec3 color, Elevation * elevation) : 
+	_name(name), _color(color), _elevation(elevation)
+{
 
 }
 

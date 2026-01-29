@@ -21,6 +21,7 @@ StrategyConfig::StrategyConfig() {
 	_elevation_exponent = 2.0;
 	_n_elements = 1;
 	_elements_dispersion = 0.0;
+	_selected_team = NULL;
 }
 
 
@@ -83,6 +84,10 @@ void Strategy::set_ihm() {
 	
 	for (auto & unit_type : std::vector<UNIT_TYPE>{INFANTERY, TANK, HELICOPTER, BOAT}) {
 		_ihm->get_element("units", unit_type2str(unit_type))->set_callback([this, unit_type](){_config->_unit_type = unit_type;});
+	}
+
+	for (auto & team_name : std::vector<std::string>{"Team1", "Team2"}) {
+		_ihm->get_element("teams", team_name)->set_callback([this, team_name](){_config->_selected_team = _map->get_team(team_name);});
 	}
 	
 	for (auto & element_type : std::vector<ELEMENT_TYPE>{ELEMENT_TREE, ELEMENT_STONE, ELEMENT_RIVER, ELEMENT_LAKE}) {
@@ -347,6 +352,20 @@ void Strategy::draw_unit(UnitType * unit_type) {
 }
 
 
+void Strategy::draw_unit_life() {
+	DrawContext * context= _gl_draw_manager->get_context("unit_life");
+	if (!context->_active) {
+		return;
+	}
+
+	context->activate();
+	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_camera2clip)));
+	glUniform1f(context->_locs_uniform["z"], 1.0f);
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->deactivate();
+}
+
+
 void Strategy::draw() {
 	for (auto context_name : std::vector<std::string>{"grid", "bbox"}) {
 		draw_linear(context_name);
@@ -356,7 +375,8 @@ void Strategy::draw() {
 		draw_surface(context_name);
 	}
 	
-	for (auto context_name : std::vector<std::string>{"path", "edit_map", "cursor"}) {
+	//for (auto context_name : std::vector<std::string>{"path", "edit_map", "cursor"}) {
+	for (auto context_name : std::vector<std::string>{"path", "edit_map"}) {
 		draw_dash(context_name);
 	}
 
@@ -375,7 +395,14 @@ void Strategy::draw() {
 		_font->draw();
 	}
 
+	draw_unit_life();
+
+	// pour afficher systématiquement l'IHM
+	// pour que le z du cursor ne soit pas influencé par lui-même
+	glDisable(GL_DEPTH_TEST);
+	draw_dash("cursor");
 	_ihm->draw();
+	glEnable(GL_DEPTH_TEST);
 }
 
 
@@ -822,7 +849,7 @@ void Strategy::update_path() {
 void Strategy::update_edit_map() {
 	DrawContext * context= _gl_draw_manager->get_context("edit_map");
 	
-	if (_config->_mode != EDIT_ELEVATION && _config->_mode != ADD_ELEMENT && _config->_mode != ERASE) {
+	if ((_config->_mode != EDIT_ELEVATION && _config->_mode != ADD_ELEMENT && _config->_mode != ERASE) || _cursor_hover_ihm) {
 		context->_n_pts = 0;
 		context->_active = false;
 		return;
@@ -886,7 +913,7 @@ void Strategy::update_edit_map() {
 void Strategy::update_cursor() {
 	DrawContext * context= _gl_draw_manager->get_context("cursor");
 
-	if (_config->_mode != ADD_UNIT && _config->_mode != ADD_ELEMENT) {
+	if (_config->_mode != ADD_UNIT || _cursor_hover_ihm) {
 		context->_n_pts = 0;
 		context->_active = false;
 		return;
@@ -911,7 +938,6 @@ void Strategy::update_cursor() {
 	std::vector<pt_3d> segs = aabb->segments();
 
 	bool is_ok = _map->add_unit_check(_config->_unit_type, pt_2d(_cursor_world_position));
-	//std::cout << is_ok <<"\n";
 	glm::vec4 cursor_color;
 	if (is_ok) {
 		cursor_color = glm::vec4(0.0, 0.5, 0.2, 1.0);
@@ -1086,7 +1112,8 @@ void Strategy::update_unit_matrices(UnitType * unit_type) {
 			}
 		}
 	}
-	float * data = new float[context->_n_instances * 16];
+
+	float * data = new float[context->_n_instances * (16 + 3)];
 	float * ptr = data;
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
@@ -1094,12 +1121,21 @@ void Strategy::update_unit_matrices(UnitType * unit_type) {
 				const float * unit_data = glm::value_ptr(glm::mat4(unit->_model2world));
 				std::memcpy(ptr, unit_data, 16 * sizeof(float));
 				ptr += 16;
+				ptr[0] = team->_color.r;
+				ptr[1] = team->_color.g;
+				ptr[2] = team->_color.b;
+				ptr += 3;
 			}
 		}
 	}
 
 	context->set_data(data, 1);
 	delete[] data;
+}
+
+
+void Strategy::update_unit_life() {
+	DrawContext * context= _gl_draw_manager->get_context("unit_life");
 }
 
 
@@ -1119,6 +1155,7 @@ void Strategy::update_all() {
 		update_unit_obj(unit_type.second);
 		update_unit_matrices(unit_type.second);
 	}
+	update_unit_life();
 }
 
 
@@ -1173,7 +1210,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 	}
 	
 	else if (_config->_mode == ADD_UNIT) {
-		Unit * unit = _map->add_unit(_map->_teams[0], _config->_unit_type, pt_2d(_cursor_world_position));
+		Unit * unit = _map->add_unit(_config->_selected_team, _config->_unit_type, pt_2d(_cursor_world_position));
 		if (unit != NULL) {
 			if (_config->_units_paused) {
 				unit->_paused = true;
@@ -1312,6 +1349,12 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 
 
 bool Strategy::mouse_motion(InputState * input_state, time_point t) {
+	if (_ihm->mouse_motion(input_state, t)) {
+		_cursor_hover_ihm = true;
+	}
+	else {
+		_cursor_hover_ihm = false;
+	}
 	_cursor_world_position = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
 	return false;
 }

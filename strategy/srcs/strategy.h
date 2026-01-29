@@ -61,6 +61,7 @@ struct StrategyConfig {
 	number _elements_dispersion;
 	number _erase_radius;
 	bool _units_paused;
+	Team * _selected_team;
 };
 
 
@@ -80,6 +81,7 @@ public:
 	void draw_river();
 	void draw_sea();
 	void draw_unit(UnitType * unit_type);
+	void draw_unit_life();
 	void draw();
 	
 	void anim(time_point t);
@@ -101,6 +103,7 @@ public:
 	void update_sea();
 	void update_unit_obj(UnitType * unit_type);
 	void update_unit_matrices(UnitType * unit_type);
+	void update_unit_life();
 	void update_all();
 	void update_text();
 	
@@ -119,6 +122,7 @@ public:
 	StrategyConfig * _config;
 
 	pt_3d _cursor_world_position;
+	bool _cursor_hover_ihm;
 
 	number _angle;
 };

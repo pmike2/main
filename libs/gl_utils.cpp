@@ -146,8 +146,9 @@ DrawContext::DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std:
 					}
 				}
 				else {
-					// TODO...
-					std::cerr << "instanced != 16 à implémenter !\n";
+					glEnableVertexAttribArray(attr._loc);
+					glVertexAttribPointer(attr._loc, attr._size, GL_FLOAT, GL_FALSE, buffer._n_attrs_per_pts * sizeof(float), (void*)((attr._offset) * sizeof(float)));
+					glVertexAttribDivisor(attr._loc, 1);
 				}
 			}
 			else {

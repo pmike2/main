@@ -51,12 +51,13 @@ struct Unit : public InstancePosRot {
 	time_point _last_anim_t;
 	bool _delete;
 	number _angle;
+	number _life;
 };
 
 
 struct Team {
 	Team();
-	Team(std::string name, Elevation * elevation);
+	Team(std::string name, glm::vec3 color, Elevation * elevation);
 	~Team();
 	Unit * add_unit(UnitType * type, uint id, pt_2d pos);
 	std::vector<Unit *> get_units_in_aabb(AABB_2D * aabb);
@@ -70,6 +71,7 @@ struct Team {
 	Elevation * _elevation;
 	std::string _name;
 	std::vector<Unit *> _units;
+	glm::vec3 _color;
 };
 
 #endif

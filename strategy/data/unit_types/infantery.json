@@ -1,6 +1,9 @@
 {
 	"type" : "INFANTERY",
 	"max_velocity" : 0.03,
+	"life_init" : 30.0,
+	"damage" : 5.0,
+	"shooting_rate" : 1.0,
 	"floats" : false,
 	"flies" : false,
 	"weights" : {

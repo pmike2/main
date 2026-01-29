@@ -140,6 +140,7 @@ struct GLIHM {
 	void draw();
 	void anim();
 	bool mouse_button_down(InputState * input_state, time_point t);
+	bool mouse_motion(InputState * input_state, time_point t);
 	bool key_down(InputState * input_state, SDL_Keycode key, time_point t);
 	friend std::ostream & operator << (std::ostream & os, const GLIHM & ihm);
 

@@ -43,14 +43,12 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 		UnitType * unit_type = new UnitType(json_path);
 		_unit_types[str2unit_type(str_to_upper(basename(json_path)))] = unit_type;
 		_path_finder->add_unit_type(unit_type);
-		//_unit_groups[unit_type] = new UnitGroup();
 	}
-	//std::cout << *_unit_types["infantery"]->_obj_data << "\n";
 
 	_elements = new Elements(elements_dir + "/tree_species", elements_dir + "/stone_species", _elevation);
 
-	_teams.push_back(new Team("Team 1", _elevation));
-	_teams.push_back(new Team("Team 2", _elevation));
+	_teams.push_back(new Team("Team1", glm::vec3(1.0f, 0.0f, 0.0f), _elevation));
+	_teams.push_back(new Team("Team2", glm::vec3(0.0f, 0.0f, 1.0f), _elevation));
 
 	sync2elevation();
 
@@ -88,11 +86,13 @@ bool Map::add_unit_check(UNIT_TYPE type, pt_2d pos) {
 		return false;
 	}
 
-	AABB_2D * aabb = _unit_types[type]->_obj_data->_aabb->aabb2d();
+	/*AABB_2D * aabb = _unit_types[type]->_obj_data->_aabb->aabb2d();
 	aabb->translate(pos);
 	std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb);
-	delete aabb;
-	
+	delete aabb;*/
+
+	std::vector<uint_pair> edges = _path_finder->edges_in_cell_containing_pt(pos, true);
+
 	for (auto & e : edges) {
 		GraphEdge edge = _path_finder->get_edge(e);
 		EdgeData * data = (EdgeData *)(edge._data);
@@ -100,9 +100,12 @@ bool Map::add_unit_check(UNIT_TYPE type, pt_2d pos) {
 			return false;
 		}
 		TERRAIN_TYPE terrain = data->_type[_unit_types[type]];
+		//std::cout << terrain_type2str(terrain) << "\n";
 		if (_unit_types[type]->_terrain_weights[terrain] > MAX_UNIT_MOVING_WEIGHT) {
 			return false;
 		}
+
+		// TODO : ajouter une contrainte d'élévation ?
 	}
 	
 	return true;
@@ -302,6 +305,17 @@ std::vector<Unit *> Map::get_units_in_aabb(AABB_2D * aabb) {
 		result.insert(result.begin(), l_units.begin(), l_units.end());
 	}
 	return result;
+}
+
+
+Team * Map::get_team(std::string team_name) {
+	for (auto & team : _teams) {
+		if (team->_name == team_name) {
+			return team;
+		}
+	}
+	std::cerr << "Map::get_team : pas de team " << team_name << "\n";
+	return NULL;
 }
 
 

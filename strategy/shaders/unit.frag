@@ -12,6 +12,7 @@ in vec3 vertex_diffuse_color;
 in vec3 vertex_specular_color;
 in float vertex_shininess;
 in float vertex_opacity;
+in vec3 team_color;
 
 out vec4 frag_color;
 
@@ -34,7 +35,12 @@ void main(void) {
 	vec3 specular = specular_strength * spec * light_color;
 	
 	//vec3 result= (ambient + diffuse + specular) * vertex_ambient_color;
-	vec3 result= ambient * vertex_ambient_color + diffuse * vertex_diffuse_color + specular * vertex_specular_color;
+	vec3 vertex_diffuse_color_modified = vertex_diffuse_color;
+	if (vertex_diffuse_color.r < 0.01 && vertex_diffuse_color.g < 0.01 && vertex_diffuse_color.b < 0.01) {
+		vertex_diffuse_color_modified = team_color;
+	}
+	vec3 result= ambient * vertex_ambient_color + diffuse * vertex_diffuse_color_modified + specular * vertex_specular_color;
+	//vec3 result= team_color;
 	
 	frag_color= vec4(result, vertex_opacity);
 	//frag_color= vec4(result, 1.0);

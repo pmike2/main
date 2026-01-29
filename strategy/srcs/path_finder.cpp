@@ -6,7 +6,7 @@ PathFinder::PathFinder() {
 }
 
 PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : 
-	GraphGrid(origin, size, n_ligs, n_cols), _verbose(true)//, _computing(false)
+	GraphGrid(origin, size, n_ligs, n_cols), _verbose(false)
 {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
@@ -18,8 +18,6 @@ PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) :
 		}
 		_it_v++;
 	}
-
-	//_path = new UnitPath();
 }
 
 

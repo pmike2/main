@@ -22,6 +22,9 @@ UnitType::UnitType(std::string json_path) {
 
 	_type = str2unit_type(js["type"]);
 	_max_velocity = js["max_velocity"];
+	_life_init = js["life_init"];
+	_damage = js["damage"];
+	_shooting_rate = js["shooting_rate"];
 	_floats = js["floats"];
 	_flies = js["flies"];
 
