@@ -14,10 +14,10 @@ Unit::Unit() {
 }
 
 
-Unit::Unit(UnitType * type, pt_3d pos, Elevation * elevation) : 
+Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation) : 
 	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
-	_type(type), _status(WAITING), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation),
-	_delete(false), _angle(0.0), _life(type->_life_init)
+	_team(team), _type(type), _status(WAITING), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation),
+	_delete(false), _angle(0.0), _life(type->_life_init), _hit_status(NO_HIT)
 {
 	_path = new UnitPath();
 }
@@ -29,17 +29,37 @@ Unit::~Unit() {
 
 
 void Unit::anim(time_point t) {
-	auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_anim_t).count();
-	_last_anim_t = t;
+	auto d_moving = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_moving_t).count();
+	_last_moving_t = t;
 
 	if (_paused) {
+		return;
+	}
+
+	if (_hit_status == HIT_ASCEND) {
+		_hit += 0.4;
+		if (_hit > 0.2 * _hit_ammo_type->_damage) {
+			set_hit_status(HIT_DESCEND, t);
+		}
+	}
+	else if (_hit_status == HIT_DESCEND) {
+		_hit -= 0.3;
+		if (_hit < 0.0) {
+			set_hit_status(NO_HIT, t);
+		}
+	}
+	else if (_hit_status == FINAL_HIT) {
+		_hit += 0.5;
+		if (_hit > 50.0) {
+			set_status(DESTROYED, t);
+		}
 		return;
 	}
 
 	if (_status == MOVING) {
 		number velocity_amp = _type->_max_velocity * (1.0 - _path->get_current_interval()->_weight / MAX_UNIT_MOVING_WEIGHT);
 		//std::cout << d << "\n";
-		velocity_amp *= number(d) * 0.0625; // 60fps -> 1 frame == 1000 / 60 ~= 16 ms et 1 / 16 == 0.0625
+		velocity_amp *= number(d_moving) * 0.0625; // 60fps -> 1 frame == 1000 / 60 ~= 16 ms et 1 / 16 == 0.0625
 		pt_2d direction = glm::normalize(pt_2d(_path->get_current_pt()) - pt_2d(_position));
 		_velocity = velocity_amp * pt_3d(direction.x, direction.y, 0.0);
 
@@ -128,10 +148,42 @@ void Unit::set_status(UNIT_STATUS status, time_point t) {
 			std::cerr << "Unit::follow_path : path empty\n";
 			set_status(WAITING, t);
 		}
-		_last_anim_t = t;
+		_last_moving_t = t;
 	}
 	else if (_status == ATTACKING) {
 		_last_shooting_t = t;
+	}
+}
+
+
+void Unit::set_hit_status(UNIT_HIT_STATUS hit_status, time_point t) {
+	_hit_status = hit_status;
+	if (_hit_status == NO_HIT) {
+		_hit = 0.0;
+		_hit_ammo_type = NULL;
+	}
+	else if (_hit_status == HIT_ASCEND) {
+		//_last_hit_t = t;
+	}
+	else if (_hit_status == HIT_DESCEND) {
+
+	}
+	else if (_hit_status == FINAL_HIT) {
+		//_last_hit_t = t;
+	}
+}
+
+
+void Unit::hit(AmmoType * ammo_type, time_point t) {
+	_hit_ammo_type = ammo_type;
+	_life -= ammo_type->_damage;
+	if (_life <= 0.0) {
+		_life = 0.0;
+		//std::cout << "Unit " << _id << " destroyed\n";
+		set_hit_status(FINAL_HIT, t);
+	}
+	else {
+		set_hit_status(HIT_ASCEND, t);
 	}
 }
 
@@ -191,7 +243,7 @@ Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos) {
 	if (type->_floats && pt3d.z < 0.0) {
 		pt3d.z = 0.0;
 	}
-	Unit * unit = new Unit(type, pt3d, _elevation);
+	Unit * unit = new Unit(this, type, pt3d, _elevation);
 	unit->_id = id;
 	_units.push_back(unit);
 	return unit;
@@ -255,6 +307,43 @@ void Team::clear() {
 		delete unit;
 	}
 	_units.clear();
+}
+
+
+void Team::clear_selection() {
+	for (auto & unit : _units) {
+		unit->_selected = false;
+	}
+}
+
+
+void Team::selected_units_goto(pt_3d pt, time_point t) {
+	uint compt = 0;
+	for (auto & unit : _units) {
+		if (unit->_selected) {
+			//unit->_instructions.push({pt, t + std::chrono::milliseconds(500 * compt)});
+			unit->_instructions.push({pt, t});
+			compt++;
+		}
+	}
+}
+
+
+void Team::selected_units_attack(Unit * target, time_point t) {
+	const number offset_z = 0.5;
+
+	for (auto & unit : _units) {
+		if (unit->_selected) {
+			number dist = glm::length(unit->_position - target->_position);
+			if (dist < unit->_type->_ammo_type->_max_distance) {
+				number max_elevation_alti = _elevation->get_max_alti_along_segment(unit->_position, target->_position);
+				if (max_elevation_alti < std::max(unit->_position.z, target->_position.z) + offset_z) {
+					unit->_target = target;
+					unit->set_status(ATTACKING, t);
+				}
+			}
+		}
+	}
 }
 
 

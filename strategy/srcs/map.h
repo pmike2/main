@@ -24,7 +24,8 @@
 #include "unit.h"
 #include "unit_type.h"
 #include "elevation.h"
-#include "weapon.h"
+#include "ammo.h"
+#include "ammo_type.h"
 #include "elements/elements.h"
 #include "elements/lake.h"
 #include "elements/river.h"
@@ -34,7 +35,7 @@
 
 struct Map {
 	Map();
-	Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t);
+	Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t);
 	~Map();
 	bool add_unit_check(UNIT_TYPE type, pt_2d pos);
 	Unit * add_unit(Team * team, UNIT_TYPE type, pt_2d pos);
@@ -78,8 +79,6 @@ struct Map {
 	//void read_shapefile(std::string shp_path, pt_2d origin, pt_2d size, bool reverse_y=false);
 	void anim(time_point t);
 	void collisions(time_point t);
-	void selected_units_goto(pt_3d pt, time_point t);
-	void selected_units_attack(Unit * target, time_point t);
 	
 	void randomize();
 	void save(std::string json_path);
@@ -91,11 +90,12 @@ struct Map {
 	//pt_2d _origin;
 	//pt_2d _size;
 	std::map<UNIT_TYPE, UnitType *> _unit_types;
+	std::map<std::string, AmmoType * > _ammo_types;
 	PathFinder * _path_finder;
 	Elevation * _elevation;
 	Elements * _elements;
 	std::vector<Team *> _teams;
-	std::vector<Weapon *> _weapons;
+	std::vector<Ammo *> _ammos;
 
 	std::thread _path_find_thr;
 	bool _path_find_thr_running;

@@ -2,10 +2,10 @@
 	"type" : "HELICOPTER",
 	"max_velocity" : 0.08,
 	"life_init" : 50.0,
-	"damage" : 5.0,
 	"shooting_rate" : 2.0,
 	"floats" : false,
 	"flies" : true,
+	"ammo" : "bomb",
 	"weights" : {
 		"GROUND" : 0.0,
 		"OBSTACLE" : 0.0,
@@ -18,5 +18,5 @@
 	"delta_elevation_coeffs" : [
 		{"min" : -1000.0, "max" : 1000.0, "coeff" : 0.0}
 	],
-	"obj" : "../data/objs/helicopter/test.obj"
+	"obj" : "../data/objs/units/helicopter/test.obj"
 }

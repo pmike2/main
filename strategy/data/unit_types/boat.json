@@ -2,10 +2,10 @@
 	"type" : "BOAT",
 	"max_velocity" : 0.02,
 	"life_init" : 100.0,
-	"damage" : 10.0,
 	"shooting_rate" : 4.0,
 	"floats" : true,
 	"flies" : false,
+	"ammo" : "bomb",
 	"weights" : {
 		"GROUND" : 1000.0,
 		"OBSTACLE" : 1000.0,
@@ -20,5 +20,5 @@
 		{"min" : -0.01, "max" : 0.01, "coeff" : 0.0},
 		{"min" : 0.01, "max" : 1000.0, "coeff" : 1000.0}
 	],
-	"obj" : "../data/objs/boat/test.obj"
+	"obj" : "../data/objs/units/boat/test.obj"
 }

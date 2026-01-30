@@ -2,10 +2,10 @@
 	"type" : "INFANTERY",
 	"max_velocity" : 0.03,
 	"life_init" : 30.0,
-	"damage" : 5.0,
 	"shooting_rate" : 1.0,
 	"floats" : false,
 	"flies" : false,
+	"ammo" : "bullet",
 	"weights" : {
 		"GROUND" : 0.0,
 		"OBSTACLE" : 1000.0,
@@ -23,6 +23,5 @@
 		{"min" : 0.5, "max" : 1.0, "coeff" : 80.0},
 		{"min" : 1.0, "max" : 1000.0, "coeff" : 1000.0}
 	],
-	"obj_" : "../data/objs/infantery/14074_WWII_Soldier_with_Flamethrower_v1_l1.obj",
-	"obj" : "../data/objs/infantery/test2.obj"
+	"obj" : "../data/objs/units/infantery/test2.obj"
 }

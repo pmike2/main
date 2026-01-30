@@ -15,6 +15,7 @@
 #include "unit_type.h"
 #include "unit_path.h"
 #include "elevation.h"
+#include "ammo_type.h"
 
 
 const uint N_MAX_UNITS_PER_GROUP = 1024;
@@ -27,33 +28,42 @@ struct Instruction {
 };
 
 
+struct Team;
+
+
 struct Unit : public InstancePosRot {
 	Unit();
-	Unit(UnitType * type, pt_3d pos, Elevation * elevation);
+	Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation);
 	~Unit();
-	quat orientation(pt_2d v);
+	//quat orientation(pt_2d v);
 	void anim(time_point t);
 	bool checkpoint_checked();
 	bool last_checkpoint_checked();
 	void set_status(UNIT_STATUS status, time_point t);
+	void set_hit_status(UNIT_HIT_STATUS hit_status, time_point t);
+	void hit(AmmoType * ammo_type, time_point t);
 	void update_alti_path();
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
 	
 	
 	uint _id;
+	Team * _team;
 	UnitType * _type;
 	UNIT_STATUS _status;
+	UNIT_HIT_STATUS _hit_status;
 	UnitPath * _path;
 	pt_3d _velocity;
 	std::queue<Instruction> _instructions;
 	bool _paused;
 	Elevation * _elevation;
-	time_point _last_anim_t;
+	time_point _last_moving_t;
 	time_point _last_shooting_t;
 	bool _delete;
 	number _angle;
 	number _life;
+	number _hit;
 	Unit * _target;
+	AmmoType * _hit_ammo_type;
 };
 
 
@@ -67,6 +77,9 @@ struct Team {
 	//void remove_units_in_aabb(AABB_2D * aabb);
 	void clear2delete();
 	void clear();
+	void clear_selection();
+	void selected_units_goto(pt_3d pt, time_point t);
+	void selected_units_attack(Unit * target, time_point t);
 	friend std::ostream & operator << (std::ostream & os, Team & team);
 
 

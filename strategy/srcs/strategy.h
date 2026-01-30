@@ -29,11 +29,19 @@ const number Z_OFFSET_UNIT = 0.05;
 const number Z_OFFSET_PATH = 0.5;
 const number Z_OFFSET_EDIT_MAP = 0.5;
 const number Z_OFFSET_UNIT_PATH_BBOX = 0.5;
+const number Z_OFFSET_SELECTION = 0.2;
+const number Z_OFFSET_ATTACK_UNIT = 0.2;
+const number Z_OFFSET_MOVE_UNIT = 0.2;
 
 const glm::vec3 light_position(0.0f, 0.0f, 50.0f);
 const glm::vec3 light_color(1.0f);
 
 const uint EDIT_MAP_N_VERTICES_PER_CIRCLE = 32;
+const uint SELECTION_N_VERTICES_PER_CIRCLE = 8;
+const uint ATTACK_UNIT_N_VERTICES_PER_CIRCLE = 8;
+
+const number DEFAULT_ATTACK_UNIT_CIRCLE_RADIUS = 1.0;
+const number MOVE_UNIT_SEGMENT_SIZE = 1.5;
 
 const pt_2d MAP_ORIGIN(-100.0, -100.0);
 const pt_2d MAP_SIZE(200.0, 200.0);
@@ -75,14 +83,14 @@ public:
 	
 	void draw_select();
 	void draw_linear(std::string context_name);
-	void draw_dash(std::string context_name);
+	void draw_dash(std::string context_name, number dash_size, number gap_size, number thickness);
 	void draw_surface(std::string context_name);
 	void draw_lake();
 	void draw_river();
 	void draw_sea();
 	void draw_unit(UnitType * unit_type);
 	void draw_unit_life();
-	void draw_shoot();
+	void draw_ammo(AmmoType * ammo_type);
 	void draw();
 	
 	void anim(time_point t);
@@ -105,7 +113,9 @@ public:
 	void update_unit_obj(UnitType * unit_type);
 	void update_unit_matrices(UnitType * unit_type);
 	void update_unit_life();
-	void update_shoot();
+	void update_ammo_obj(AmmoType * ammo_type);
+	void update_ammo_matrices(AmmoType * ammo_type);
+	void update_selection();
 	void update_all();
 	void update_text();
 	
@@ -125,8 +135,8 @@ public:
 
 	pt_3d _cursor_world_position;
 	bool _cursor_hover_ihm;
-
 	number _angle;
+	Unit * _cursor_hover_unit;
 };
 
 #endif

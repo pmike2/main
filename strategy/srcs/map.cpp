@@ -27,7 +27,7 @@ Map::Map() {
 }
 
 
-Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t) {
+Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t) {
 	uint n_ligs_path = uint(size.y / path_resolution.y) + 1;
 	uint n_cols_path = uint(size.x / path_resolution.x) + 1;
 
@@ -38,11 +38,21 @@ Map::Map(std::string unit_types_dir, std::string elements_dir, pt_2d origin, pt_
 
 	_path_finder = new PathFinder(origin, size, n_ligs_path, n_cols_path);
 
-	std::vector<std::string> jsons_paths = list_files(unit_types_dir, "json");
-	for (auto & json_path : jsons_paths) {
+	std::vector<std::string> unit_type_json_paths = list_files(unit_types_dir, "json");
+	for (auto & json_path : unit_type_json_paths) {
 		UnitType * unit_type = new UnitType(json_path);
 		_unit_types[str2unit_type(str_to_upper(basename(json_path)))] = unit_type;
 		_path_finder->add_unit_type(unit_type);
+	}
+
+	std::vector<std::string> ammo_type_json_paths = list_files(ammo_types_dir, "json");
+	for (auto & json_path : ammo_type_json_paths) {
+		AmmoType * ammo_type = new AmmoType(json_path);
+		_ammo_types[ammo_type->_name] = ammo_type;
+	}
+
+	for (auto & unit_type : _unit_types) {
+		unit_type.second->_ammo_type = _ammo_types[unit_type.second->_ammo_type_str];
 	}
 
 	_elements = new Elements(elements_dir + "/tree_species", elements_dir + "/stone_species", _elevation);
@@ -73,6 +83,11 @@ Map::~Map() {
 		delete ut.second;
 	}
 	_unit_types.clear();
+
+	for (auto & at : _ammo_types) {
+		delete at.second;
+	}
+	_ammo_types.clear();
 
 	delete _elevation;
 
@@ -758,40 +773,36 @@ void Map::anim(time_point t) {
 				}
 			}
 			else if (unit->_status == SHOOTING) {
+				_ammos.push_back(new Ammo(unit->_type->_ammo_type, unit->_position, unit->_target->_position));
 				unit->set_status(ATTACKING, t);
-				_weapons.push_back(new Weapon(unit->_position, unit->_target->_position, unit->_type->_damage));
 			}
 		}
 	}
 
 	collisions(t);
 
-	for (auto & weapon : _weapons) {
-		weapon->anim();
-		if (weapon->_target_hit) {
+	for (auto & ammo : _ammos) {
+		ammo->anim();
+		if (ammo->_target_hit) {
 			for (auto & team : _teams) {
 				for (auto & unit : team->_units) {
-					if (pt_in_bbox2d(pt_2d(weapon->_target), unit->_bbox->bbox2d())) {
-						std::cout << "Unit " << unit->_id << " shot\n";
-						unit->_life -= weapon->_damage;
-						if (unit->_life <= 0.0) {
-							std::cout << "Unit " << unit->_id << " destroyed\n";
-							unit->set_status(DESTROYED, t);
-						}
+					if (pt_in_bbox2d(pt_2d(ammo->_target), unit->_bbox->bbox2d())) {
+						//std::cout << "Unit " << unit->_id << " shot\n";
+						unit->hit(ammo->_type, t);
 					}
 				}
 			}
 		}
 	}
 
-	_weapons.erase(std::remove_if(_weapons.begin(), _weapons.end(), [](Weapon * w) {
+	_ammos.erase(std::remove_if(_ammos.begin(), _ammos.end(), [](Ammo * w) {
 		return w->_target_hit;
-	}), _weapons.end());
+	}), _ammos.end());
 
 
 	for (auto & team : _teams) {
 		for (auto & unit : team->_units) {
-			if (unit->_status == ATTACKING && unit->_target->_status == DESTROYED) {
+			if (unit->_status == ATTACKING && (unit->_target->_status == DESTROYED || unit->_target->_hit_status == FINAL_HIT)) {
 				unit->set_status(WAITING, t);
 			}
 		}
@@ -875,32 +886,6 @@ void Map::collisions(time_point t) {
 				unit1->set_status(WAITING, t);
 				add_unit_to_position_grid(unit1);
 				break;
-			}
-		}
-	}
-}
-
-
-void Map::selected_units_goto(pt_3d pt, time_point t) {
-	uint compt = 0;
-	for (auto & team : _teams) {
-		for (auto & unit : team->_units) {
-			if (unit->_selected) {
-				//unit->_instructions.push({pt, t + std::chrono::milliseconds(500 * compt)});
-				unit->_instructions.push({pt, t});
-				compt++;
-			}
-		}
-	}
-}
-
-
-void Map::selected_units_attack(Unit * target, time_point t) {
-	for (auto & team : _teams) {
-		for (auto & unit : team->_units) {
-			if (unit->_selected) {
-				unit->_target = target;
-				unit->set_status(ATTACKING, t);
 			}
 		}
 	}

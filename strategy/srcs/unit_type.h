@@ -10,6 +10,7 @@
 #include "obj_parser.h"
 
 #include "const.h"
+#include "ammo_type.h"
 
 
 const number EPS_UNIT_TYPE_BUFFER_SIZE = 0.1;
@@ -35,13 +36,14 @@ struct UnitType {
 	UNIT_TYPE _type;
 	number _max_velocity;
 	number _life_init;
-	number _damage;
 	number _shooting_rate;
 	bool _floats;
 	bool _flies;
 	std::map<TERRAIN_TYPE, number> _terrain_weights;
 	std::vector<UnitElevationCoeff> _delta_elevation_coeffs;
 	ObjData * _obj_data;
+	AmmoType * _ammo_type;
+	std::string _ammo_type_str;
 };
 
 

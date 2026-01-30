@@ -2,10 +2,10 @@
 	"type" : "TANK",
 	"max_velocity" : 0.02,
 	"life_init" : 200.0,
-	"damage" : 10.0,
 	"shooting_rate" : 3.0,
 	"floats" : false,
 	"flies" : false,
+	"ammo" : "bomb",
 	"weights" : {
 		"GROUND" : 0.0,
 		"OBSTACLE" : 1000.0,
@@ -22,5 +22,5 @@
 		{"min" : 1.0, "max" : 100.0, "coeff" : 100.0},
 		{"min" : 100.0, "max" : 1000.0, "coeff" : 1000.0}
 	],
-	"obj" : "../data/objs/tank/test.obj"
+	"obj" : "../data/objs/units/tank/test.obj"
 }

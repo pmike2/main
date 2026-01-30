@@ -17,13 +17,23 @@
 		},
 		{
 			"type" : "radio",
+			"name" : "teams",
+			"position" : [-4.0, 3.5],
+			"orientation" : "horizontal",
+			"elements" : [
+				{"name" : "Team1"},
+				{"name" : "Team2"}
+			]
+		},
+		{
+			"type" : "radio",
 			"name" : "mode",
 			"position" : [-5.0, 1.0],
 			"orientation" : "vertical",
 			"elements" : [
 				{"name" : "view"},
 				{"name" : "play", "groups_visible" : ["play_mode"]},
-				{"name" : "add_unit", "groups_visible" : ["units", "teams"]},
+				{"name" : "add_unit", "groups_visible" : ["units"]},
 				{"name" : "add_element", "groups_visible" : ["elements", "elements_params"]},
 				{"name" : "edit_elevation", "groups_visible" : ["elevation", "edit_elevation_params"]},
 				{"name" : "erase", "groups_visible" : ["erase_params"]}
@@ -50,16 +60,6 @@
 				{"name" : "TANK", "key" : "t"},
 				{"name" : "HELICOPTER", "key" : "h"},
 				{"name" : "BOAT", "key" : "b"}
-			]
-		},
-		{
-			"type" : "radio",
-			"name" : "teams",
-			"position" : [-4.0, 1.0],
-			"orientation" : "vertical",
-			"elements" : [
-				{"name" : "Team1"},
-				{"name" : "Team2"}
 			]
 		},
 		{

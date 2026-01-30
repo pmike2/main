@@ -113,6 +113,8 @@ void init() {
 	
 	SDL_Init(SDL_INIT_EVERYTHING);
 	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
+
+	//SDL_ShowCursor(SDL_DISABLE);
 	
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault

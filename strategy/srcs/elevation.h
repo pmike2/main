@@ -29,6 +29,7 @@ struct Elevation : public GraphGrid {
 	number get_alti(int col, int lig);
 	number get_alti(pt_2d pt);
 	number get_alti_over_polygon(Polygon2D * polygon);
+	number get_max_alti_along_segment(pt_2d pt1, pt_2d pt2);
 	
 	pt_3d compute_normal(uint id);
 	pt_3d get_normal(uint id);

@@ -114,6 +114,25 @@ number Elevation::get_alti_over_polygon(Polygon2D * polygon) {
 }
 
 
+number Elevation::get_max_alti_along_segment(pt_2d pt1, pt_2d pt2) {
+	const number step = std::max(_resolution.x, _resolution.y);
+	number dist = glm::length(pt1 - pt2);
+	if (dist <= step) {
+		return get_alti(0.5 * (pt1 + pt2));
+	}
+	pt_2d direction = (pt2 - pt1) / dist;
+	uint n_steps = uint(dist / step) + 1;
+	number result = -1e9;
+	for (uint i = 0; i<n_steps; ++i) {
+		number alti = get_alti(pt1 + number(i) * step * direction);
+		if (alti > result) {
+			result = alti;
+		}
+	}
+	return result;
+}
+
+
 pt_3d Elevation::compute_normal(uint id) {
 	std::vector<int_pair > ids;
 	int_pair col_lig = id2col_lig(id);
