@@ -19,6 +19,7 @@ struct Ammo : public InstancePosRot {
 	pt_3d _velocity;
 	number _angle;
 	bool _target_hit;
+	number _damage;
 };
 
 

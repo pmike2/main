@@ -24,6 +24,27 @@ Ammo::Ammo(AmmoType * type, pt_3d pos, pt_3d target) :
 	_angle = atan2(_velocity.y, _velocity.x);
 	quat init_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 	set_pos_rot_scale(_position, init_quat, pt_3d(1.0));
+
+	const number delta_z_min = -2.0;
+	const number delta_z_max = 2.0;
+	const number damage_factor_min = 0.1;
+	const number damage_factor_max = 2.0;
+	const number a = (damage_factor_max - damage_factor_min) / (delta_z_max - delta_z_min);
+	const number b = damage_factor_min - a * delta_z_min;
+	const number distance_factor = 0.5;
+	
+	number delta_z = _position.z - _target.z;
+	if (delta_z < delta_z_min) {
+		_damage = _type->_damage * damage_factor_min;
+	}
+	else if (delta_z > delta_z_max) {
+		_damage = _type->_damage * damage_factor_max;
+	}
+	else {
+		_damage = _type->_damage * (a * delta_z + b);
+	}
+
+	_damage *= (1.0 - distance_factor * (d /_type->_max_distance));
 }
 
 

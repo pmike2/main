@@ -20,5 +20,5 @@
 		{"min" : -0.01, "max" : 0.01, "coeff" : 0.0},
 		{"min" : 0.01, "max" : 1000.0, "coeff" : 1000.0}
 	],
-	"obj" : "../data/objs/units/boat/test.obj"
+	"obj" : "../data/objs/units/boat/boat.obj"
 }

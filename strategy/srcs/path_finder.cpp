@@ -6,7 +6,7 @@ PathFinder::PathFinder() {
 }
 
 PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : 
-	GraphGrid(origin, size, n_ligs, n_cols), _verbose(false)
+	GraphGrid(origin, size, n_ligs, n_cols), _verbose(true)
 {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
@@ -221,7 +221,7 @@ bool PathFinder::path_find(PathFinderInput * pfi, SafeQueue<UnitPath *> * output
 	std::vector<number> weights;
 	
 	// poids de start au 1er node
-	std::vector<uint_pair> start_edges = edges_in_cell_containing_pt(unit_path->_start, true);
+	std::vector<uint_pair> start_edges = edges_in_cell_containing_pt(unit_path->_start, false);
 	number weight_start = 1e9;
 	for (auto & edge : start_edges) {
 		number w = cost(unit_path->_unit_type, unit_path->_unit_id, edge.first, edge.second);
@@ -238,7 +238,7 @@ bool PathFinder::path_find(PathFinderInput * pfi, SafeQueue<UnitPath *> * output
 	}
 
 	// poids du dernier node à goal
-	std::vector<uint_pair> goal_edges = edges_in_cell_containing_pt(unit_path->_goal, true);
+	std::vector<uint_pair> goal_edges = edges_in_cell_containing_pt(unit_path->_goal, false);
 	number weight_goal = 1e9;
 	for (auto & edge : goal_edges) {
 		number w = cost(unit_path->_unit_type, unit_path->_unit_id, edge.first, edge.second);
@@ -274,9 +274,9 @@ bool PathFinder::path_find(PathFinderInput * pfi, SafeQueue<UnitPath *> * output
 		std::cout << "unit id " << unit_path->_unit_id << " raw_path size après suppressions =" << raw_path.size() << "\n";
 	}
 
-	if (raw_path.size() == 0) {
+	if (raw_path.size() == 0 || raw_path.size() == 1) {
 		if (_verbose) {
-			std::cout << "unit id " << unit_path->_unit_id << " raw_path.size() == 0\n";
+			std::cout << "unit id " << unit_path->_unit_id << " raw_path.size() == " << raw_path.size() << "\n";
 		}
 		unit_path->_status = UNIT_PATH_COMPUTING_FAILED;
 		output_queue->push(unit_path);

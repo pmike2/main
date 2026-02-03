@@ -48,6 +48,15 @@ ObjFace::~ObjFace() {
 }
 
 
+std::ostream & operator << (std::ostream & os, ObjFace & face) {
+	os << "vertices_idx = (" << face._vertices_idx[0] << " ; " << face._vertices_idx[1] << " ; " << face._vertices_idx[2] << ") ; ";
+	os << "textures_idx = (" << face._textures_idx[0] << " ; " << face._textures_idx[1] << " ; " << face._textures_idx[2] << ") ; ";
+	os << "normals_idx = (" << face._normals_idx[0] << " ; " << face._normals_idx[1] << " ; " << face._normals_idx[2] << ") ; ";
+
+	return os;
+}
+
+
 // ObjObject ----------------------------------------------------------
 ObjObject::ObjObject() : _smooth_shading(false), _name("") {
 
@@ -167,6 +176,9 @@ ObjData::ObjData(std::string obj_path) : _n_pts(0), _n_attrs_per_pts(0) {
 	current_material = NULL;
 	pt_3d vmin(1e-9);
 	pt_3d vmax(-1e-9);
+	number n_vertices_total = 0;
+	number n_normals_total = 0;
+	number n_texs_total = 0;
 
 	std::ifstream obj_file(obj_path);
 	while (std::getline(obj_file, line)) {
@@ -178,6 +190,9 @@ ObjData::ObjData(std::string obj_path) : _n_pts(0), _n_attrs_per_pts(0) {
 		if (s == "o") {
 			if (current_object != NULL) {
 				_objects.push_back(current_object);
+				n_vertices_total += current_object->_vertices.size();
+				n_normals_total += current_object->_normals.size();
+				n_texs_total += current_object->_texs.size();
 			}
 			iss >> s;
 			current_object = new ObjObject();
@@ -248,30 +263,33 @@ ObjData::ObjData(std::string obj_path) : _n_pts(0), _n_attrs_per_pts(0) {
 					v.push_back(s2);
 				}
 				if (v.size() == 1) {
-					face->_vertices_idx[i] = std::stoul(v[0]) - 1;
+					face->_vertices_idx[i] = std::stoul(v[0]) - 1 - n_vertices_total;
 					face->_texture_active = false;
 					face->_normal_active = false;
 				}
 				else if (v.size() == 2) {
-					face->_vertices_idx[i] = std::stoul(v[0]) - 1;
-					face->_textures_idx[i] = std::stoul(v[1]) - 1;
+					face->_vertices_idx[i] = std::stoul(v[0]) - 1 - n_vertices_total;
+					face->_textures_idx[i] = std::stoul(v[1]) - 1 - n_texs_total;
 					face->_texture_active = true;
 					face->_normal_active = false;
 				}
 				else if (v.size() == 3) {
-					face->_vertices_idx[i] = std::stoul(v[0]) - 1;
+					face->_vertices_idx[i] = std::stoul(v[0]) - 1 - n_vertices_total;
 					if (v[1] != "") {
 						face->_texture_active = true;
-						face->_textures_idx[i] = std::stoul(v[1]) - 1;
+						face->_textures_idx[i] = std::stoul(v[1]) - 1 - n_texs_total;
 					}
 					else {
 						face->_texture_active = false;
 					}
-					face->_normals_idx[i] = std::stoul(v[2]) - 1;
+					face->_normals_idx[i] = std::stoul(v[2]) - 1 - n_normals_total;
 					face->_normal_active = true;
 				}
 			}
 			current_object->_faces.push_back(face);
+			/*if (obj_path == "../data/objs/units/tank/tank_.obj") {
+				std::cout << current_object->_name << " ; " << *face << "\n";
+			}*/
 		}
 	}
 	_objects.push_back(current_object);

@@ -44,6 +44,7 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 		_unit_types[str2unit_type(str_to_upper(basename(json_path)))] = unit_type;
 		_path_finder->add_unit_type(unit_type);
 	}
+	//std::cout << *_unit_types[TANK]->_obj_data << "\n";
 
 	std::vector<std::string> ammo_type_json_paths = list_files(ammo_types_dir, "json");
 	for (auto & json_path : ammo_type_json_paths) {
@@ -652,11 +653,6 @@ void Map::advance_unit_in_position_grid(Unit * unit) {
 }
 
 
-/*void Map::path_find(Unit * unit, pt_3d goal) {
-	_path_finder->path_find(unit->_type, unit->_id, unit->_bbox->_aabb->bottom_center(), goal, unit->_status);
-}*/
-
-
 void Map::path_find() {
 	PathFinderInput * pfi;
 	while (_path_find_thr_running) {
@@ -743,6 +739,35 @@ void Map::anim(time_point t) {
 	}
 
 	for (auto & team : _teams) {
+		if (!team->_ia) {
+			continue;
+		}
+
+		for (auto & unit : team->_units) {
+			if (unit->_status == WAITING) {
+				//std::cout << "ia : " << unit->_id << "\n";
+				
+				bool found_target = false;
+				for (auto & team2 : _teams) {
+					if (team2 == team) {
+						continue;
+					}
+					for (auto & unit2 : team2->_units) {
+						if (team->is_target_reachable(unit, unit2)) {
+							team->unit_attack(unit, unit2, t);
+							found_target = true;
+							break;
+						}
+					}
+					if (found_target) {
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	for (auto & team : _teams) {
 		for (auto & unit : team->_units) {
 			if (unit->_status == MOVING) {
 				if (unit->last_checkpoint_checked()) {
@@ -788,7 +813,7 @@ void Map::anim(time_point t) {
 				for (auto & unit : team->_units) {
 					if (pt_in_bbox2d(pt_2d(ammo->_target), unit->_bbox->bbox2d())) {
 						//std::cout << "Unit " << unit->_id << " shot\n";
-						unit->hit(ammo->_type, t);
+						unit->hit(ammo, t);
 					}
 				}
 			}
@@ -812,6 +837,7 @@ void Map::anim(time_point t) {
 		for (auto & unit : team->_units) {
 			if (unit->_status == DESTROYED) {
 				unit->_delete = true;
+				remove_unit_from_position_grid(unit);
 			}
 		}
 		team->clear2delete();

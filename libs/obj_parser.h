@@ -35,6 +35,7 @@ struct Material {
 struct ObjFace {
 	ObjFace();
 	~ObjFace();
+	friend std::ostream & operator << (std::ostream & os, ObjFace & face);
 
 
 	uint _vertices_idx[3];

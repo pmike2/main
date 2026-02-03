@@ -6,8 +6,8 @@
 	"default_margin" : 0.05,
 	"groups" : [
 		{
-			"type" : "checkbox",
 			"name" : "general",
+			"type" : "checkbox",
 			"position" : [-5.0, 3.5],
 			"orientation" : "horizontal",
 			"elements" : [
@@ -16,8 +16,8 @@
 			]
 		},
 		{
-			"type" : "radio",
 			"name" : "teams",
+			"type" : "radio",
 			"position" : [-4.0, 3.5],
 			"orientation" : "horizontal",
 			"elements" : [
@@ -26,8 +26,18 @@
 			]
 		},
 		{
-			"type" : "radio",
+			"name" : "ia",
+			"type" : "checkbox",
+			"position" : [-3.0, 3.5],
+			"orientation" : "horizontal",
+			"elements" : [
+				{"name" : "Team1"},
+				{"name" : "Team2"}
+			]
+		},
+		{
 			"name" : "mode",
+			"type" : "radio",
 			"position" : [-5.0, 1.0],
 			"orientation" : "vertical",
 			"elements" : [
@@ -40,8 +50,8 @@
 			]
 		},
 		{
-			"type" : "radio",
 			"name" : "play_mode",
+			"type" : "radio",
 			"position" : [-4.5, 1.0],
 			"orientation" : "vertical",
 			"elements" : [
@@ -51,8 +61,8 @@
 			]
 		},
 		{
-			"type" : "radio",
 			"name" : "units",
+			"type" : "radio",
 			"position" : [-4.5, 1.0],
 			"orientation" : "vertical",
 			"elements" : [
@@ -63,8 +73,8 @@
 			]
 		},
 		{
-			"type" : "radio",
 			"name" : "elements",
+			"type" : "radio",
 			"position" : [-4.5, 1.0],
 			"orientation" : "vertical",
 			"elements" : [
@@ -75,8 +85,8 @@
 			]
 		},
 		{
-			"type" : "slider",
 			"name" : "elements_params",
+			"type" : "slider",
 			"position" : [-4.0, -1.0],
 			"element_size" : [0.4, 2.0],
 			"orientation" : "horizontal",
@@ -86,8 +96,8 @@
 			]
 		},
 		{
-			"type" : "radio",
 			"name" : "elevation",
+			"type" : "radio",
 			"position" : [-4.5, 1.0],
 			"orientation" : "vertical",
 			"elements" : [
@@ -97,8 +107,8 @@
 			]
 		},
 		{
-			"type" : "slider",
 			"name" : "edit_elevation_params",
+			"type" : "slider",
 			"position" : [-4.0, -1.0],
 			"element_size" : [0.4, 2.0],
 			"orientation" : "horizontal",
@@ -109,8 +119,8 @@
 			]
 		},
 		{
-			"type" : "slider",
 			"name" : "erase_params",
+			"type" : "slider",
 			"position" : [-4.0, -1.0],
 			"element_size" : [0.4, 2.0],
 			"orientation" : "horizontal",
@@ -119,8 +129,8 @@
 			]
 		},
 		{
-			"type" : "button",
 			"name" : "global_edit",
+			"type" : "button",
 			"position" : [-4.0, -4.0],
 			"orientation" : "horizontal",
 			"elements" : [
@@ -131,8 +141,8 @@
 			]
 		},
 		{
-			"type" : "checkbox",
 			"name" : "visu",
+			"type" : "checkbox",
 			"position" : [0.0, -4.0],
 			"orientation" : "horizontal",
 			"elements" : [
@@ -142,12 +152,13 @@
 				{"name" : "units", "checked" : "true"},
 				{"name" : "sea", "checked" : "true"},
 				{"name" : "bbox"},
-				{"name" : "grid", "groups_visible" : ["grid_type", "grid_unit_type"]}
+				{"name" : "grid", "groups_visible" : ["grid_type", "grid_unit_type"]},
+				{"name" : "unit_life", "checked" : "true"}
 			]
 		},
 		{
-			"type" : "radio",
 			"name" : "grid_type",
+			"type" : "radio",
 			"position" : [0.0, -3.5],
 			"orientation" : "horizontal",
 			"elements" : [
@@ -157,8 +168,8 @@
 			]
 		},
 		{
-			"type" : "radio",
 			"name" : "grid_unit_type",
+			"type" : "radio",
 			"position" : [0.0, -3.0],
 			"orientation" : "horizontal",
 			"elements" : [

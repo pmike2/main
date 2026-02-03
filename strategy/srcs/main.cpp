@@ -126,10 +126,10 @@ void init() {
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
 	
-	window= SDL_CreateWindow("sandbox", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	window= SDL_CreateWindow("strategy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
 
-	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
+	//std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
 
 	/*GLint max_layers;
 	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &max_layers);
@@ -142,7 +142,7 @@ void init() {
 	glDepthFunc(GL_LESS);
 	glDepthRange(0.0f, 1.0f);
 
-	glPointSize(5.0f);
+	//glPointSize(5.0f);
 	
 	// frontfaces en counterclockwise
 	glFrontFace(GL_CCW);

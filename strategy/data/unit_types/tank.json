@@ -22,5 +22,5 @@
 		{"min" : 1.0, "max" : 100.0, "coeff" : 100.0},
 		{"min" : 100.0, "max" : 1000.0, "coeff" : 1000.0}
 	],
-	"obj" : "../data/objs/units/tank/test.obj"
+	"obj" : "../data/objs/units/tank/tank.obj"
 }

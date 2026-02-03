@@ -40,6 +40,11 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _angle(0.0), _cursor_world_position(pt_3d(0.0)),
 	_cursor_hover_unit(NULL), _cursor_hover_ihm(false)
 {
+	bool verbose = true;
+
+	if (verbose) {
+		std::cout << "loading config / font / ihm\n";
+	}
 	_config = new StrategyConfig();
 
 	_font = new Font(_gl_draw_manager, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
@@ -47,13 +52,25 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 
 	_ihm = new GLIHM(_gl_draw_manager, _view_system->_screengl, "../data/ihm.json");
 
+	if (verbose) {
+		std::cout << "loading map\n";
+	}
 	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, t);
 
+	if (verbose) {
+		std::cout << "loading map (2)\n";
+	}
 	//_map->randomize();
 	_map->clear();
 
+	if (verbose) {
+		std::cout << "set_ihm\n";
+	}
 	set_ihm();
 
+	if (verbose) {
+		std::cout << "update_all\n";
+	}
 	update_all();
 }
 
@@ -79,7 +96,14 @@ void Strategy::set_ihm() {
 			_config->_selected_team = _map->get_team(team_name);
 		});
 	}
-	
+
+	for (auto & team_name : std::vector<std::string>{"Team1", "Team2"}) {
+		_ihm->get_element("ia", team_name)->set_callback(
+			[this, team_name]() {_map->get_team(team_name)->_ia = true;},
+			[this, team_name]() {_map->get_team(team_name)->_ia = false;}
+		);
+	}
+
 	_ihm->get_element("mode", "view")->set_callback([this](){_config->_mode = VIEW;});
 	_ihm->get_element("mode", "play")->set_callback([this](){_config->_mode = PLAY;});
 	_ihm->get_element("mode", "add_unit")->set_callback([this](){_config->_mode = ADD_UNIT;});
@@ -157,7 +181,7 @@ void Strategy::set_ihm() {
 		_map->save("../data/map.json");
 	});
 	
-	for (auto & visu_type : std::vector<std::string>{"elevation", "grid", "bbox", "sea"}) {
+	for (auto & visu_type : std::vector<std::string>{"elevation", "grid", "bbox", "sea", "unit_life"}) {
 		_ihm->get_element("visu", visu_type)->set_callback(
 			[this, visu_type](){_gl_draw_manager->set_active(visu_type);}, 
 			[this, visu_type](){_gl_draw_manager->set_inactive(visu_type);}
@@ -1249,6 +1273,10 @@ void Strategy::update_unit_obj(UnitType * unit_type) {
 
 	context->_n_pts = unit_type->_obj_data->_n_pts;
 	context->set_data(unit_type->_obj_data->_data, 0);
+
+	/*if (unit_type->_type == TANK) {
+		context->show_data();
+	}*/
 }
 
 
@@ -1292,7 +1320,9 @@ void Strategy::update_unit_life() {
 	context->_n_pts = 0;
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			context->_n_pts += 12;
+			if (unit->_status != DESTROYED && unit->_hit_status != FINAL_HIT) {
+				context->_n_pts += 12;
+			}
 		}
 	}
 
@@ -1305,6 +1335,10 @@ void Strategy::update_unit_life() {
 	float * ptr = data;
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
+			if (unit->_status == DESTROYED || unit->_hit_status == FINAL_HIT) {
+				continue;
+			}
+
 			pt_3d view_pos = pt_3d(_view_system->_world2camera * pt_4d(unit->_position, 1.0));
 			number x_size = unit->_type->_life_init * life_init_factor;
 			number unit_life_ratio = unit->_life / unit->_type->_life_init;
@@ -1327,13 +1361,13 @@ void Strategy::update_unit_life() {
 		
 			glm::vec4 fwd_color;
 			if (unit_life_ratio > 0.6) {
-				fwd_color = glm::vec4(0.2, 0.5, 0.5, 0.9);
+				fwd_color = glm::vec4(0.2, 0.5, 0.5, 0.6);
 			}
 			else if (unit_life_ratio > 0.3) {
-				fwd_color = glm::vec4(0.8, 0.7, 0.2, 0.9);
+				fwd_color = glm::vec4(0.8, 0.7, 0.2, 0.6);
 			}
 			else {
-				fwd_color = glm::vec4(1.0, 0.2, 0.2, 0.9);
+				fwd_color = glm::vec4(1.0, 0.2, 0.2, 0.6);
 			}
 			
 			for (uint i = 0; i<6; ++i) {

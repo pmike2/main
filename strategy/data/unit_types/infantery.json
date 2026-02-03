@@ -2,7 +2,7 @@
 	"type" : "INFANTERY",
 	"max_velocity" : 0.03,
 	"life_init" : 30.0,
-	"shooting_rate" : 1.0,
+	"shooting_rate" : 0.2,
 	"floats" : false,
 	"flies" : false,
 	"ammo" : "bullet",
@@ -23,5 +23,5 @@
 		{"min" : 0.5, "max" : 1.0, "coeff" : 80.0},
 		{"min" : 1.0, "max" : 1000.0, "coeff" : 1000.0}
 	],
-	"obj" : "../data/objs/units/infantery/test2.obj"
+	"obj" : "../data/objs/units/infantery/infantery.obj"
 }

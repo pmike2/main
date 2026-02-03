@@ -38,7 +38,7 @@ void Unit::anim(time_point t) {
 
 	if (_hit_status == HIT_ASCEND) {
 		_hit += 0.4;
-		if (_hit > 0.2 * _hit_ammo_type->_damage) {
+		if (_hit > 0.2 * _hit_ammo->_damage) {
 			set_hit_status(HIT_DESCEND, t);
 		}
 	}
@@ -50,7 +50,7 @@ void Unit::anim(time_point t) {
 	}
 	else if (_hit_status == FINAL_HIT) {
 		_hit += 0.5;
-		if (_hit > 50.0) {
+		if (_hit > 100.0) {
 			set_status(DESTROYED, t);
 		}
 		return;
@@ -160,7 +160,7 @@ void Unit::set_hit_status(UNIT_HIT_STATUS hit_status, time_point t) {
 	_hit_status = hit_status;
 	if (_hit_status == NO_HIT) {
 		_hit = 0.0;
-		_hit_ammo_type = NULL;
+		_hit_ammo = NULL;
 	}
 	else if (_hit_status == HIT_ASCEND) {
 		//_last_hit_t = t;
@@ -174,9 +174,9 @@ void Unit::set_hit_status(UNIT_HIT_STATUS hit_status, time_point t) {
 }
 
 
-void Unit::hit(AmmoType * ammo_type, time_point t) {
-	_hit_ammo_type = ammo_type;
-	_life -= ammo_type->_damage;
+void Unit::hit(Ammo * ammo, time_point t) {
+	_hit_ammo = ammo;
+	_life -= ammo->_damage;
 	if (_life <= 0.0) {
 		_life = 0.0;
 		//std::cout << "Unit " << _id << " destroyed\n";
@@ -224,7 +224,7 @@ Team::Team() {
 
 
 Team::Team(std::string name, glm::vec3 color, Elevation * elevation) : 
-	_name(name), _color(color), _elevation(elevation)
+	_name(name), _color(color), _elevation(elevation), _ia(false)
 {
 
 }
@@ -317,31 +317,49 @@ void Team::clear_selection() {
 }
 
 
+void Team::unit_goto(Unit * unit, pt_3d pt, time_point t) {
+	unit->_instructions.push({pt, t});
+}
+
+
 void Team::selected_units_goto(pt_3d pt, time_point t) {
-	uint compt = 0;
+	//uint compt = 0;
 	for (auto & unit : _units) {
 		if (unit->_selected) {
 			//unit->_instructions.push({pt, t + std::chrono::milliseconds(500 * compt)});
-			unit->_instructions.push({pt, t});
-			compt++;
+			unit_goto(unit, pt, t);
+			//compt++;
 		}
 	}
 }
 
 
-void Team::selected_units_attack(Unit * target, time_point t) {
+bool Team::is_target_reachable(Unit * unit, Unit * target) {
 	const number offset_z = 0.5;
+	number dist = glm::length(unit->_position - target->_position);
+	if (dist > unit->_type->_ammo_type->_max_distance) {
+		return false;
+	}
+	number max_elevation_alti = _elevation->get_max_alti_along_segment(unit->_position, target->_position);
+	if (max_elevation_alti > std::max(unit->_position.z, target->_position.z) + offset_z) {
+		return false;
+	}
+	return true;
+}
 
+
+void Team::unit_attack(Unit * unit, Unit * target, time_point t) {
+	if (is_target_reachable(unit, target)) {
+		unit->_target = target;
+		unit->set_status(ATTACKING, t);
+	}
+}
+
+
+void Team::selected_units_attack(Unit * target, time_point t) {
 	for (auto & unit : _units) {
 		if (unit->_selected) {
-			number dist = glm::length(unit->_position - target->_position);
-			if (dist < unit->_type->_ammo_type->_max_distance) {
-				number max_elevation_alti = _elevation->get_max_alti_along_segment(unit->_position, target->_position);
-				if (max_elevation_alti < std::max(unit->_position.z, target->_position.z) + offset_z) {
-					unit->_target = target;
-					unit->set_status(ATTACKING, t);
-				}
-			}
+			unit_attack(unit, target, t);
 		}
 	}
 }

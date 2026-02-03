@@ -15,10 +15,9 @@
 #include "unit_type.h"
 #include "unit_path.h"
 #include "elevation.h"
-#include "ammo_type.h"
+#include "ammo.h"
 
 
-const uint N_MAX_UNITS_PER_GROUP = 1024;
 const number UNIT_DIST_PATH_EPS = 0.5;
 
 
@@ -41,7 +40,7 @@ struct Unit : public InstancePosRot {
 	bool last_checkpoint_checked();
 	void set_status(UNIT_STATUS status, time_point t);
 	void set_hit_status(UNIT_HIT_STATUS hit_status, time_point t);
-	void hit(AmmoType * ammo_type, time_point t);
+	void hit(Ammo * ammo, time_point t);
 	void update_alti_path();
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
 	
@@ -63,7 +62,7 @@ struct Unit : public InstancePosRot {
 	number _life;
 	number _hit;
 	Unit * _target;
-	AmmoType * _hit_ammo_type;
+	Ammo * _hit_ammo;
 };
 
 
@@ -78,7 +77,10 @@ struct Team {
 	void clear2delete();
 	void clear();
 	void clear_selection();
+	void unit_goto(Unit * unit, pt_3d pt, time_point t);
 	void selected_units_goto(pt_3d pt, time_point t);
+	bool is_target_reachable(Unit * unit, Unit * target);
+	void unit_attack(Unit * unit, Unit * target, time_point t);
 	void selected_units_attack(Unit * target, time_point t);
 	friend std::ostream & operator << (std::ostream & os, Team & team);
 
@@ -87,6 +89,7 @@ struct Team {
 	std::string _name;
 	std::vector<Unit *> _units;
 	glm::vec3 _color;
+	bool _ia;
 };
 
 #endif

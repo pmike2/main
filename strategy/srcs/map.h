@@ -47,7 +47,7 @@ struct Map {
 	Unit * get_unit(uint unit_id);
 	std::vector<Unit *> get_units_in_aabb(AABB_2D * aabb);
 	Team * get_team(std::string team_name);
-
+	
 	void remove_units_in_aabb(AABB_2D * aabb);
 	void remove_elements_in_aabb(AABB_2D * aabb);
 
