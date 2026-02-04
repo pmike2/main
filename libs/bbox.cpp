@@ -246,9 +246,6 @@ BBox_2D * BBox::bbox2d() {
 	number width = _vmax.y - _vmin.y;
 	pt_2d pt1 = 0.5 * (pt_2d(_pts[0]) + pt_2d(_pts[2]));
 	pt_2d pt2 = 0.5 * (pt_2d(_pts[1]) + pt_2d(_pts[3]));
-	//std::cout << width << "\n";
-	//std::cout << glm_to_string(_pts[0]) << " ; " << glm_to_string(_pts[1]) << " ; " << glm_to_string(_pts[2]) << " ; " << glm_to_string(_pts[3]) << "\n";
-	//std::cout << glm_to_string(pt1) << " ; " << glm_to_string(pt2) << "\n";
 	return new BBox_2D(width, pt1, pt2);
 }
 
@@ -263,34 +260,30 @@ std::ostream & operator << (std::ostream & os, const BBox & bbox) {
 // ---------------------------------------------------------------------------------------------------------------------
 InstancePosRot::InstancePosRot() :
 	_position(pt_3d(0.0)), _rotation(quat(1.0, 0.0, 0.0, 0.0)), _scale(pt_3d(1.0)), _model2world(mat_4d(1.0)),
-	_active(false), _dist2(0.0), _selected(false)
+	_selected(false)
 {
 	_bbox= new BBox();
-	//_emprise= new AABB_2D();
 }
 
 
 InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, const pt_3d & scale) :
-	_position(position), _rotation(rotation), _scale(scale), _active(false), _dist2(0.0), _selected(false)
+	_position(position), _rotation(rotation), _scale(scale), _selected(false)
 {
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox= new BBox();
-	//_emprise= new AABB_2D();
 }
 
 
 InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, const pt_3d & scale, AABB * aabb) : 
-	_position(position), _rotation(rotation), _scale(scale), _active(false), _dist2(0.0), _selected(false)
+	_position(position), _rotation(rotation), _scale(scale), _selected(false)
 {
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox= new BBox(aabb->_vmin, aabb->_vmax, _model2world);
-	//_emprise= new AABB_2D(pt_2d(_bbox->_aabb->_vmin), pt_2d(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin));
 }
 
 
 InstancePosRot::~InstancePosRot() {
 	delete _bbox;
-	//delete _emprise;
 }
 
 
@@ -315,10 +308,6 @@ void InstancePosRot::set_pos_rot_scale(const mat_4d & mat) {
 }
 
 
-void InstancePosRot::update_dist2(pt_3d view_eye) {
-	// glm::distance2 est lent !
-	//_dist2= glm::distance2(_position, view_eye);
+/*void InstancePosRot::update_dist2(pt_3d view_eye) {
 	_dist2= (_position.x- view_eye.x)* (_position.x- view_eye.x)+ (_position.y- view_eye.y)* (_position.y- view_eye.y)+ (_position.z- view_eye.z)* (_position.z- view_eye.z);
-}
-
-
+}*/

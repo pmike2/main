@@ -24,8 +24,10 @@ UnitType::UnitType(std::string json_path) {
 	_max_velocity = js["max_velocity"];
 	_life_init = js["life_init"];
 	_shooting_rate = js["shooting_rate"];
+	_vision = js["vision"];
 	_floats = js["floats"];
 	_flies = js["flies"];
+	_ammo_type_str = js["ammo"];
 
 	for (json::iterator it = js["weights"].begin(); it != js["weights"].end(); ++it) {
 		TERRAIN_TYPE ot = str2terrain_type(it.key());
@@ -44,8 +46,12 @@ UnitType::UnitType(std::string json_path) {
 	}
 
 	_obj_data = new ObjData(js["obj"]);
-
-	_ammo_type_str = js["ammo"];
+	_obj_data->_use_ambient = false;
+	_obj_data->_use_diffuse = true;
+	_obj_data->_use_specular = false;
+	_obj_data->_use_shininess = false;
+	_obj_data->_use_opacity = false;
+	_obj_data->update_data();
 }
 
 

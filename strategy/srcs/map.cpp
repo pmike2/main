@@ -842,6 +842,10 @@ void Map::anim(time_point t) {
 		}
 		team->clear2delete();
 	}
+
+	/*for(auto & team : _teams) {
+		team->update_fow();
+	}*/
 }
 
 

@@ -153,7 +153,8 @@
 				{"name" : "sea", "checked" : "true"},
 				{"name" : "bbox"},
 				{"name" : "grid", "groups_visible" : ["grid_type", "grid_unit_type"]},
-				{"name" : "unit_life", "checked" : "true"}
+				{"name" : "unit_life", "checked" : "true"},
+				{"name" : "fow", "checked" : "true"}
 			]
 		},
 		{

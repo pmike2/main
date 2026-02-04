@@ -67,6 +67,7 @@ struct ObjData {
 	ObjData();
 	ObjData(std::string obj_path);
 	~ObjData();
+	//void set_use(bool use_ambient, bool use_diffuse, bool use_specular, bool use_shininess, bool use_opacity);
 	void update_data();
 	ObjObject * new_generic_object();
 	friend std::ostream & operator << (std::ostream & os, ObjData & data);
@@ -78,6 +79,7 @@ struct ObjData {
 	uint _n_pts;
 	uint _n_attrs_per_pts;
 	AABB * _aabb;
+	bool _use_ambient, _use_diffuse, _use_specular, _use_shininess, _use_opacity;
 };
 
 

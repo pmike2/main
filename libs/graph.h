@@ -99,6 +99,7 @@ struct GraphGrid : public Graph {
 	
 	std::vector<uint> vertices_in_aabb(AABB_2D * aabb);
 	std::vector<uint> vertices_in_cell_containing_pt(pt_2d pt);
+	std::vector<uint> vertices_in_circle(pt_2d center, number radius);
 	
 	int_pair next_direction(int_pair u);
 	uint angle(int_pair u, int_pair v);

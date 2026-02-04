@@ -613,6 +613,21 @@ std::vector<uint> GraphGrid::vertices_in_aabb(AABB_2D * aabb) {
 }
 
 
+std::vector<uint> GraphGrid::vertices_in_circle(pt_2d center, number radius) {
+	AABB_2D * aabb = new AABB_2D(center - pt_2d(radius), pt_2d(2.0 * radius));
+	std::vector<uint> l = vertices_in_aabb(aabb);
+	delete aabb;
+	std::vector<uint> result;
+	for (auto v : l) {
+		pt_2d v_pos = pt_2d(get_vertex(v)._pos);
+		if (glm::length(v_pos - center) < radius) {
+			result.push_back(v);
+		}
+	}
+	return result;
+}
+
+
 int_pair GraphGrid::next_direction(int_pair u) {
 	if (u.first == 1 && u.second == 0) {
 		return std::make_pair(1, 1);

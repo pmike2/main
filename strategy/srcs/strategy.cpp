@@ -410,6 +410,20 @@ void Strategy::draw_ammo(AmmoType * ammo_type) {
 }
 
 
+/*void Strategy::draw_fow() {
+	DrawContext * context= _gl_draw_manager->get_context("fow");
+	if (!context->_active) {
+		return;
+	}
+
+	context->activate();
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	glUniform1f(context->_locs_uniform["z"], 1.0f);
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->deactivate();
+}*/
+
+
 void Strategy::draw() {
 	for (auto context_name : std::vector<std::string>{"grid", "bbox"}) {
 		draw_linear(context_name);
@@ -441,6 +455,8 @@ void Strategy::draw() {
 		_font->draw_3d(_view_system->_world2clip);
 		_font->draw();
 	}
+
+	//draw_fow();
 
 	// pour afficher systématiquement l'IHM
 	// pour que le z du cursor ne soit pas influencé par lui-même
@@ -478,6 +494,7 @@ void Strategy::anim(time_point t) {
 
 	update_unit_life();
 	update_selection();
+	//update_fow();
 }
 
 
@@ -1488,6 +1505,57 @@ void Strategy::update_selection() {
 }
 
 
+/*void Strategy::update_fow() {
+	DrawContext * context= _gl_draw_manager->get_context("fow");
+
+	GraphGrid * fow = _config->_selected_team->_fow;
+
+	context->_n_pts = (fow->_n_ligs - 1) * (fow->_n_cols - 1) * 6;
+
+	float * data = new float[context->data_size()];
+	float * ptr = data;
+
+	std::map<FOW_STATUS, glm::vec4> fow_color;
+	fow_color[WATCHED] = glm::vec4(0.0, 0.0, 0.0, 0.2);
+	fow_color[UNWATCHED] = glm::vec4(0.0, 0.0, 0.0, 0.6);
+	fow_color[UNDISCOVERED] = glm::vec4(0.0, 0.0, 0.0, 0.6);
+
+	for (uint lig = 0; lig < fow->_n_ligs - 1; ++lig) {
+		for (uint col = 0; col < fow->_n_cols - 1; ++col) {
+			pt_2d l_pts[4] = {
+				fow->col_lig2pt_2d(col, lig),
+				fow->col_lig2pt_2d(col + 1, lig),
+				fow->col_lig2pt_2d(col + 1, lig + 1),
+				fow->col_lig2pt_2d(col, lig + 1)
+			};
+			FOW_STATUS status[4];
+			FowVertexData * data0 = (FowVertexData *)(fow->get_vertex(fow->col_lig2id(col, lig))._data);
+			status[0] = data0->_status;
+			FowVertexData * data1 = (FowVertexData *)(fow->get_vertex(fow->col_lig2id(col + 1, lig))._data);
+			status[1] = data1->_status;
+			FowVertexData * data2 = (FowVertexData *)(fow->get_vertex(fow->col_lig2id(col + 1, lig + 1))._data);
+			status[2] = data2->_status;
+			FowVertexData * data3 = (FowVertexData *)(fow->get_vertex(fow->col_lig2id(col, lig + 1))._data);
+			status[3] = data3->_status;
+
+			uint idxs[6] = {0, 1, 2, 0, 2, 3};
+			for (uint i=0; i<6; ++i) {
+				ptr[0] = l_pts[idxs[i]].x;
+				ptr[1] = l_pts[idxs[i]].y;
+				ptr[2] = fow_color[status[idxs[i]]].r;
+				ptr[3] = fow_color[status[idxs[i]]].g;
+				ptr[4] = fow_color[status[idxs[i]]].b;
+				ptr[5] = fow_color[status[idxs[i]]].a;
+				ptr += 6;
+			}
+		}
+	}
+
+	context->set_data(data);
+	delete[] data;
+}*/
+
+
 void Strategy::update_all() {
 	update_select();
 	update_grid();
@@ -1510,6 +1578,7 @@ void Strategy::update_all() {
 		update_ammo_matrices(ammo_type.second);
 	}
 	update_selection();
+	//update_fow();
 }
 
 

@@ -19,7 +19,14 @@ AmmoType::AmmoType(std::string json_path) {
 	_damage = js["damage"];
 	_velocity = js["velocity"];
 	_max_distance = js["max_distance"];
+	
 	_obj_data = new ObjData(js["obj"]);
+	_obj_data->_use_ambient = false;
+	_obj_data->_use_diffuse = true;
+	_obj_data->_use_specular = false;
+	_obj_data->_use_shininess = false;
+	_obj_data->_use_opacity = false;
+	_obj_data->update_data();
 }
 
 

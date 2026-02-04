@@ -87,8 +87,6 @@ struct Map {
 
 
 	static uint _next_unit_id;
-	//pt_2d _origin;
-	//pt_2d _size;
 	std::map<UNIT_TYPE, UnitType *> _unit_types;
 	std::map<std::string, AmmoType * > _ammo_types;
 	PathFinder * _path_finder;

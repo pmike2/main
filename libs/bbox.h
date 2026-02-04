@@ -75,7 +75,7 @@ public:
 	void set_pos_rot_scale(const pt_3d & position, const quat & rotation, const pt_3d & scale);
 	// lent, mieux vaut utiliser l'autre
 	void set_pos_rot_scale(const mat_4d & mat);
-	void update_dist2(pt_3d view_eye);
+	//void update_dist2(pt_3d view_eye);
 
 
 	pt_3d _position;
@@ -83,10 +83,10 @@ public:
 	pt_3d _scale;
 	mat_4d _model2world;
 	BBox * _bbox;
-	//AABB_2D * _emprise;
-	bool _active;
 	bool _selected;
-	number _dist2;
+	//bool _visible;
+	//bool _active;
+	//number _dist2;
 };
 
 

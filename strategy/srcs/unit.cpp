@@ -226,7 +226,18 @@ Team::Team() {
 Team::Team(std::string name, glm::vec3 color, Elevation * elevation) : 
 	_name(name), _color(color), _elevation(elevation), _ia(false)
 {
+	pt_2d fow_resolution = _elevation->_resolution * 4.0;
+	uint n_ligs = uint(_elevation->_size.y / fow_resolution.y) + 1;
+	uint n_cols = uint(_elevation->_size.x / fow_resolution.x) + 1;
+	_fow = new GraphGrid(_elevation->_origin, _elevation->_size, n_ligs, n_cols);
 
+	_fow->_it_v= _fow->_vertices.begin();
+	while (_fow->_it_v!= _fow->_vertices.end()) {
+		FowVertexData * data = new FowVertexData();
+		data->_status = UNDISCOVERED;
+		_fow->_it_v->second._data = data;
+		_fow->_it_v++;
+	}
 }
 
 
@@ -235,6 +246,7 @@ Team::~Team() {
 		delete unit;
 	}
 	_units.clear();
+	delete _fow;
 }
 
 
@@ -363,6 +375,27 @@ void Team::selected_units_attack(Unit * target, time_point t) {
 		}
 	}
 }
+
+
+/*void Team::update_fow() {
+	_fow->_it_v= _fow->_vertices.begin();
+	while (_fow->_it_v!= _fow->_vertices.end()) {
+		FowVertexData * data = (FowVertexData *)(_fow->_it_v->second._data);
+		if (data->_status == WATCHED) {
+			data->_status = UNWATCHED;
+		}
+		_fow->_it_v++;
+	}
+
+	for (auto & unit : _units) {
+		std::vector<uint> l_vertices = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
+		for (auto & v : l_vertices) {
+			GraphVertex vertex = _fow->get_vertex(v);
+			FowVertexData * data = (FowVertexData *)(vertex._data);
+			data->_status = WATCHED;
+		}
+	}
+}*/
 
 
 std::ostream & operator << (std::ostream & os, Team & team) {

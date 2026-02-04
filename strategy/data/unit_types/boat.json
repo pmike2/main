@@ -3,6 +3,7 @@
 	"max_velocity" : 0.02,
 	"life_init" : 100.0,
 	"shooting_rate" : 4.0,
+	"vision" : 20.0,
 	"floats" : true,
 	"flies" : false,
 	"ammo" : "bomb",

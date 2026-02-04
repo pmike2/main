@@ -91,6 +91,7 @@ public:
 	void draw_unit(UnitType * unit_type);
 	void draw_unit_life();
 	void draw_ammo(AmmoType * ammo_type);
+	//void draw_fow();
 	void draw();
 	
 	void anim(time_point t);
@@ -116,6 +117,7 @@ public:
 	void update_ammo_obj(AmmoType * ammo_type);
 	void update_ammo_matrices(AmmoType * ammo_type);
 	void update_selection();
+	//void update_fow();
 	void update_all();
 	void update_text();
 	

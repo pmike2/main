@@ -11,11 +11,15 @@
 #include "typedefs.h"
 #include "bbox_2d.h"
 #include "bbox.h"
+#include "graph.h"
 
 #include "unit_type.h"
 #include "unit_path.h"
 #include "elevation.h"
 #include "ammo.h"
+
+
+enum FOW_STATUS {WATCHED, UNWATCHED, UNDISCOVERED};
 
 
 const number UNIT_DIST_PATH_EPS = 0.5;
@@ -66,6 +70,11 @@ struct Unit : public InstancePosRot {
 };
 
 
+struct FowVertexData {
+	FOW_STATUS _status;
+};
+
+
 struct Team {
 	Team();
 	Team(std::string name, glm::vec3 color, Elevation * elevation);
@@ -82,6 +91,7 @@ struct Team {
 	bool is_target_reachable(Unit * unit, Unit * target);
 	void unit_attack(Unit * unit, Unit * target, time_point t);
 	void selected_units_attack(Unit * target, time_point t);
+	//void update_fow();
 	friend std::ostream & operator << (std::ostream & os, Team & team);
 
 
@@ -90,6 +100,7 @@ struct Team {
 	std::vector<Unit *> _units;
 	glm::vec3 _color;
 	bool _ia;
+	GraphGrid * _fow;
 };
 
 #endif

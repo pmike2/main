@@ -48,7 +48,7 @@
 			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position", "angle", "amplitude", "freq"]
 		},
 		"unit" : {
-			"locs" : ["position_in:3", "normal_in:3", "ambient_in:3", "diffuse_in:3", "specular_in:3", "shininess_in:1", "opacity_in:1", "model2world_matrix:16:new_instanced_buffer", "team_color_in:3", "hit_in:1"],
+			"locs" : ["position_in:3", "normal_in:3", "diffuse_in:3", "model2world_matrix:16:new_instanced_buffer", "team_color_in:3", "hit_in:1"],
 			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position"]
 		},
 		"unit_life" : {
@@ -56,7 +56,7 @@
 			"uniforms" : ["camera2clip_matrix"]
 		},
 		"ammo" : {
-			"locs" : ["position_in:3", "normal_in:3", "ambient_in:3", "diffuse_in:3", "specular_in:3", "shininess_in:1", "opacity_in:1", "model2world_matrix:16:new_instanced_buffer"],
+			"locs" : ["position_in:3", "normal_in:3", "diffuse_in:3", "model2world_matrix:16:new_instanced_buffer"],
 			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position"]
 		}
 	},

@@ -96,7 +96,10 @@ ObjData::ObjData() : _n_pts(0), _n_attrs_per_pts(0) {
 }
 
 
-ObjData::ObjData(std::string obj_path) : _n_pts(0), _n_attrs_per_pts(0) {
+ObjData::ObjData(std::string obj_path) :
+	_n_pts(0), _n_attrs_per_pts(0),
+	_use_ambient(true), _use_diffuse(true), _use_specular(true), _use_shininess(true), _use_opacity(true)
+{
 	// lecture .mtl -----------------------------------------
 	std::string mat_path = splitext(obj_path).first + ".mtl";
 
@@ -294,7 +297,7 @@ ObjData::ObjData(std::string obj_path) : _n_pts(0), _n_attrs_per_pts(0) {
 	}
 	_objects.push_back(current_object);
 
-	update_data();
+	//update_data();
 
 	_aabb = new AABB(vmin, vmax);
 }
@@ -314,8 +317,29 @@ ObjData::~ObjData() {
 }
 
 
+/*void ObjData::set_use(bool use_ambient, bool use_diffuse, bool use_specular, bool use_shininess, bool use_opacity) {
+
+}*/
+
+
 void ObjData::update_data() {
-	_n_attrs_per_pts = 17;
+	_n_attrs_per_pts = 6;
+	if (_use_ambient) {
+		_n_attrs_per_pts += 3;
+	}
+	if (_use_diffuse) {
+		_n_attrs_per_pts += 3;
+	}
+	if (_use_specular) {
+		_n_attrs_per_pts += 3;
+	}
+	if (_use_shininess) {
+		_n_attrs_per_pts++;
+	}
+	if (_use_opacity) {
+		_n_attrs_per_pts++;
+	}
+
 	_n_pts = 0;
 	for (auto & object : _objects) {
 		for (auto & face : object->_faces) {
@@ -344,19 +368,35 @@ void ObjData::update_data() {
 				ptr[3] = float(normal.x);
 				ptr[4] = float(normal.y);
 				ptr[5] = float(normal.z);
-				ptr[6] = float(face->_material->_ambient.r);
-				ptr[7] = float(face->_material->_ambient.g);
-				ptr[8] = float(face->_material->_ambient.b);
-				ptr[9] = float(face->_material->_diffuse.r);
-				ptr[10] = float(face->_material->_diffuse.g);
-				ptr[11] = float(face->_material->_diffuse.b);
-				ptr[12] = float(face->_material->_specular.r);
-				ptr[13] = float(face->_material->_specular.g);
-				ptr[14] = float(face->_material->_specular.b);
-				ptr[15] = float(face->_material->_shininess);
-				ptr[16] = float(face->_material->_opacity);
+				
+				ptr += 6;
 
-				ptr += 17;
+				if (_use_ambient) {
+					ptr[0] = float(face->_material->_ambient.r);
+					ptr[1] = float(face->_material->_ambient.g);
+					ptr[2] = float(face->_material->_ambient.b);
+					ptr += 3;
+				}
+				if (_use_diffuse) {
+					ptr[0] = float(face->_material->_diffuse.r);
+					ptr[1] = float(face->_material->_diffuse.g);
+					ptr[2] = float(face->_material->_diffuse.b);
+					ptr += 3;
+				}
+				if (_use_specular) {
+					ptr[0] = float(face->_material->_specular.r);
+					ptr[1] = float(face->_material->_specular.g);
+					ptr[2] = float(face->_material->_specular.b);
+					ptr += 3;
+				}
+				if (_use_shininess) {
+					ptr[0] = float(face->_material->_shininess);
+					ptr++;
+				}
+				if (_use_opacity) {
+					ptr[0] = float(face->_material->_opacity);
+					ptr++;
+				}
 			}
 		}
 	}
