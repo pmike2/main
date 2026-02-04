@@ -99,7 +99,7 @@ GLIHMButton::GLIHMButton() {
 
 
 GLIHMButton::GLIHMButton(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size) :
-	GLIHMElement(group, name, texture_path, position, size), _available_percent(100.0) 
+	GLIHMElement(group, name, texture_path, position, size)//, _available_percent(100.0) 
 {
 
 }

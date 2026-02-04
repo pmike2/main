@@ -1818,6 +1818,13 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 	if (_ihm->key_down(input_state, key, t)) {
 		return true;
 	}
+
+	if (key == SDLK_SPACE) {
+		DrawContext * context= _gl_draw_manager->get_context(unit_type2str(TANK));
+		context->show_data(0);
+		std::cout << "--------------\n";
+		context->show_data(1);
+	}
 	return false;
 }
 

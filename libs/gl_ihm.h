@@ -71,7 +71,7 @@ struct GLIHMButton : public GLIHMElement {
 	void update_data();
 
 
-	number _available_percent;
+	//number _available_percent;
 };
 
 

@@ -202,7 +202,13 @@ void DrawContext::deactivate() {
 
 
 uint DrawContext::data_size(uint idx_buffer) {
-	return _buffers[idx_buffer]._n_attrs_per_pts * _n_pts;
+	DrawContextBuffer buffer = _buffers[idx_buffer];
+	if (buffer._is_instanced) {
+		return _buffers[idx_buffer]._n_attrs_per_pts * _n_instances;
+	}
+	else {
+		return _buffers[idx_buffer]._n_attrs_per_pts * _n_pts;
+	}
 }
 
 
