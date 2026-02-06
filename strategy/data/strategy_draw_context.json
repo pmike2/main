@@ -33,7 +33,7 @@
 		},
 		"elevation" : {
 			"locs" : ["position_in:3", "color_in:4", "normal_in:3"],
-			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position"]
+			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position", "fow_texture_array", "idx_team", "elevation_size", "elevation_origin", "z_fow"]
 		},
 		"tree_stone" : {
 			"locs" : ["position_in:3", "color_in:4", "normal_in:3"],

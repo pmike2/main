@@ -17,7 +17,7 @@ Unit::Unit() {
 Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation) : 
 	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
 	_team(team), _type(type), _status(WAITING), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation),
-	_delete(false), _angle(0.0), _life(type->_life_init), _hit_status(NO_HIT)
+	_delete(false), _angle(0.0), _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL)
 {
 	_path = new UnitPath();
 }
@@ -80,6 +80,9 @@ void Unit::anim(time_point t) {
 		const number slerp_speed = 0.05;
 		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
+
+		_old_visible_tiles.clear();
+		_old_visible_tiles.insert(_visible_tiles.begin(), _visible_tiles.end());
 
 		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
 	}
@@ -234,9 +237,16 @@ Team::Team(std::string name, glm::vec3 color, Elevation * elevation) :
 	_fow->_it_v= _fow->_vertices.begin();
 	while (_fow->_it_v!= _fow->_vertices.end()) {
 		FowVertexData * data = new FowVertexData();
-		data->_status = UNDISCOVERED;
+		//data->_status = UNDISCOVERED;
+		data->_n_units = 0;
+		data->_changed = false;
 		_fow->_it_v->second._data = data;
 		_fow->_it_v++;
+	}
+
+	_fow_data = new unsigned char[n_ligs * n_cols];
+	for (uint i=0; i<n_ligs * n_cols; ++i) {
+		_fow_data[i] = 0;
 	}
 }
 
@@ -247,6 +257,7 @@ Team::~Team() {
 	}
 	_units.clear();
 	delete _fow;
+	delete _fow_data;
 }
 
 
@@ -257,6 +268,9 @@ Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos) {
 	}
 	Unit * unit = new Unit(this, type, pt3d, _elevation);
 	unit->_id = id;
+	unit->_visible_tiles.clear();
+	std::vector<uint> v = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
+	unit->_visible_tiles.insert(v.begin(), v.end());
 	_units.push_back(unit);
 	return unit;
 }
@@ -377,25 +391,52 @@ void Team::selected_units_attack(Unit * target, time_point t) {
 }
 
 
-/*void Team::update_fow() {
+void Team::update_fow() {
+	for (auto & unit : _units) {
+		if (unit->_status == MOVING) {
+			unit->_visible_tiles.clear();
+			std::vector<uint> v = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
+			unit->_visible_tiles.insert(v.begin(), v.end());
+
+			std::unordered_set<uint> old_minus_new;
+			std::set_difference(unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), unit->_visible_tiles.begin(), unit->_visible_tiles.end(), std::inserter(old_minus_new, old_minus_new.begin()));
+			
+			for (auto & id_tile : old_minus_new) {
+				GraphVertex vertex = _fow->get_vertex(id_tile);
+				FowVertexData * data = (FowVertexData *)(vertex._data);
+				data->_changed = true;
+				data->_n_units--;
+			}
+
+			std::unordered_set<uint> new_minus_old;
+			std::set_difference(unit->_visible_tiles.begin(), unit->_visible_tiles.end(), unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), std::inserter(new_minus_old, new_minus_old.begin()));
+			
+			for (auto & id_tile : new_minus_old) {
+				GraphVertex vertex = _fow->get_vertex(id_tile);
+				FowVertexData * data = (FowVertexData *)(vertex._data);
+				data->_changed = true;
+				data->_n_units++;
+			}
+		}
+	}
+
 	_fow->_it_v= _fow->_vertices.begin();
 	while (_fow->_it_v!= _fow->_vertices.end()) {
-		FowVertexData * data = (FowVertexData *)(_fow->_it_v->second._data);
-		if (data->_status == WATCHED) {
-			data->_status = UNWATCHED;
+		FowVertexData * data = new FowVertexData();
+		if (data->_changed) {
+			//int_pair col_lig = _fow->id2col_lig(_fow->_it_v.first);
+			if (data->_n_units == 0) {
+				_fow_data[_fow->_it_v->first] = 1;
+			}
+			else {
+				_fow_data[_fow->_it_v->first] = 2;
+			}
+
+			data->_changed = false;
 		}
 		_fow->_it_v++;
 	}
-
-	for (auto & unit : _units) {
-		std::vector<uint> l_vertices = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
-		for (auto & v : l_vertices) {
-			GraphVertex vertex = _fow->get_vertex(v);
-			FowVertexData * data = (FowVertexData *)(vertex._data);
-			data->_status = WATCHED;
-		}
-	}
-}*/
+}
 
 
 std::ostream & operator << (std::ostream & os, Team & team) {

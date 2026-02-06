@@ -21,7 +21,7 @@ StrategyConfig::StrategyConfig() {
 	_elevation_exponent = 2.0;
 	_n_elements = 1;
 	_elements_dispersion = 0.0;
-	_selected_team = NULL;
+	_selected_team_idx = 0;
 }
 
 
@@ -68,6 +68,30 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	}
 	set_ihm();
 
+	glGenTextures(1, &_texture_fow);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
+
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+
+	Team * team = get_selected_team();
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8UI, team->_fow->_n_cols, team->_fow->_n_ligs, _map->_teams.size(), 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
+	uint compt = 0;
+	for (auto & t : _map->_teams) {
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+			0,               // mipmap number
+			0, 0, compt,   // xoffset, yoffset, zoffset
+			t->_fow->_n_cols, t->_fow->_n_ligs, 1, // width, height, depth
+			GL_RED_INTEGER,                       // format
+			GL_UNSIGNED_BYTE,              // type
+			t->_fow_data);        // pointer to data
+		compt++;
+	}
+
+
 	if (verbose) {
 		std::cout << "update_all\n";
 	}
@@ -83,6 +107,11 @@ Strategy::~Strategy() {
 }
 
 
+Team * Strategy::get_selected_team() {
+	return _map->_teams[_config->_selected_team_idx];
+}
+
+
 void Strategy::set_ihm() {
 	_ihm->get_element("general", "show_info")->set_callback([this](){_config->_show_info = true;}, [this](){_config->_show_info = false;});
 	_ihm->get_element("general", "units_paused")->set_callback(
@@ -92,8 +121,7 @@ void Strategy::set_ihm() {
 
 	for (auto & team_name : std::vector<std::string>{"Team1", "Team2"}) {
 		_ihm->get_element("teams", team_name)->set_callback([this, team_name]() {
-			//_config->_selected_team->clear_selection();
-			_config->_selected_team = _map->get_team(team_name);
+			_config->_selected_team_idx = _map->get_team_idx(team_name);
 		});
 	}
 
@@ -310,6 +338,32 @@ void Strategy::draw_surface(std::string context_name) {
 }
 
 
+void Strategy::draw_elevation() {
+	DrawContext * context= _gl_draw_manager->get_context("elevation");
+	if (!context->_active) {
+		return;
+	}
+
+	context->activate();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
+	glActiveTexture(0);
+
+	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
+	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	glUniform1f(context->_locs_uniform["z_fow"], 1.0);
+	glUniform1ui(context->_locs_uniform["idx_team"], _config->_selected_team_idx);
+	
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	
+	context->deactivate();
+}
+
+
 void Strategy::draw_lake() {
 	DrawContext * context= _gl_draw_manager->get_context("lake");
 	if (!context->_active) {
@@ -425,11 +479,13 @@ void Strategy::draw_ammo(AmmoType * ammo_type) {
 
 
 void Strategy::draw() {
+	//draw_elevation();
+
 	for (auto context_name : std::vector<std::string>{"grid", "bbox"}) {
 		draw_linear(context_name);
 	}
 
-	for (auto context_name : std::vector<std::string>{"elevation", "tree_stone"}) {
+	for (auto context_name : std::vector<std::string>{"tree_stone"}) {
 		draw_surface(context_name);
 	}
 	
@@ -495,6 +551,8 @@ void Strategy::anim(time_point t) {
 	update_unit_life();
 	update_selection();
 	//update_fow();
+
+	update_fow_texture();
 }
 
 
@@ -1068,7 +1126,7 @@ void Strategy::update_cursor() {
 		number radius;
 		glm::vec4 attack_unit_color;
 		
-		if (_cursor_hover_unit != NULL && _cursor_hover_unit->_team != _config->_selected_team) {
+		if (_cursor_hover_unit != NULL && _cursor_hover_unit->_team != get_selected_team()) {
 			circle_center = pt_2d(_cursor_hover_unit->_position);
 			radius = _cursor_hover_unit->_type->_obj_data->_aabb->_base_radius * 1.5;
 			attack_unit_color = glm::vec4(1.0, 0.0, 0.0, 1.0);
@@ -1459,7 +1517,7 @@ void Strategy::update_selection() {
 	DrawContext * context= _gl_draw_manager->get_context("selection");
 
 	context->_n_pts = 0;
-	for (auto & unit : _config->_selected_team->_units) {
+	for (auto & unit : get_selected_team()->_units) {
 		if (unit->_selected) {
 			context->_n_pts += SELECTION_N_VERTICES_PER_CIRCLE * 2;
 		}
@@ -1468,7 +1526,7 @@ void Strategy::update_selection() {
 	float * data = new float[context->data_size()];
 	float * ptr = data;
 
-	for (auto & unit : _config->_selected_team->_units) {
+	for (auto & unit : get_selected_team()->_units) {
 		if (!unit->_selected) {
 			continue;
 		}
@@ -1556,6 +1614,21 @@ void Strategy::update_selection() {
 }*/
 
 
+void Strategy::update_fow_texture() {
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
+	glActiveTexture(0);
+	Team * team = get_selected_team();
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+		0,               // mipmap number
+		0, 0, _config->_selected_team_idx,   // xoffset, yoffset, zoffset
+		team->_fow->_n_cols, team->_fow->_n_ligs, 1, // width, height, depth
+		GL_RED_INTEGER,                       // format
+		GL_UNSIGNED_BYTE,              // type
+		team->_fow_data);        // pointer to data
+}
+
+
 void Strategy::update_all() {
 	update_select();
 	update_grid();
@@ -1579,6 +1652,7 @@ void Strategy::update_all() {
 	}
 	update_selection();
 	//update_fow();
+	update_fow_texture();
 }
 
 
@@ -1628,12 +1702,12 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 	}
 
 	if (_config->_mode == PLAY && _config->_play_mode == MOVE_UNIT) {
-		_config->_selected_team->selected_units_goto(_cursor_world_position, t);
+		get_selected_team()->selected_units_goto(_cursor_world_position, t);
 		return true;
 	}
 	
 	else if (_config->_mode == ADD_UNIT) {
-		Unit * unit = _map->add_unit(_config->_selected_team, _config->_unit_type, pt_2d(_cursor_world_position));
+		Unit * unit = _map->add_unit(get_selected_team(), _config->_unit_type, pt_2d(_cursor_world_position));
 		if (unit != NULL) {
 			if (_config->_units_paused) {
 				unit->_paused = true;
@@ -1742,7 +1816,7 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 	if (_config->_mode == PLAY && _config->_play_mode == SELECT_UNIT) {
 		if (_view_system->_new_single_selection) {
 			_view_system->_new_single_selection= false;
-			for (auto & unit : _config->_selected_team->_units) {
+			for (auto & unit : get_selected_team()->_units) {
 				unit->_selected = false;
 				if (_view_system->single_selection_intersects_aabb(unit->_bbox->_aabb, false)) {
 					unit->_selected = true;
@@ -1751,7 +1825,7 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 		}
 		else if (_view_system->_new_rect_selection) {
 			_view_system->_new_rect_selection= false;
-			for (auto & unit : _config->_selected_team->_units) {
+			for (auto & unit : get_selected_team()->_units) {
 				unit->_selected = false;
 				BBox * bbox = new BBox(unit->_bbox->_aabb);
 				if (_view_system->rect_selection_intersects_bbox(bbox, false)) {
@@ -1778,8 +1852,8 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 					break;
 				}
 			}
-			if (target != NULL && target->_team != _config->_selected_team) {
-				_config->_selected_team->selected_units_attack(target, t);
+			if (target != NULL && target->_team != get_selected_team()) {
+				get_selected_team()->selected_units_attack(target, t);
 			}
 		}
 		return true;

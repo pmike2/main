@@ -335,6 +335,19 @@ Team * Map::get_team(std::string team_name) {
 }
 
 
+uint Map::get_team_idx(std::string team_name) {
+	uint result = 0;
+	for (auto & team : _teams) {
+		if (team->_name == team_name) {
+			return result;
+		}
+		result++;
+	}
+	std::cerr << "Map::get_team : pas de team " << team_name << "\n";
+	return 0;
+}
+
+
 void Map::remove_units_in_aabb(AABB_2D * aabb) {
 	std::vector<Unit *> units = get_units_in_aabb(aabb);
 	for (auto & unit : units) {
@@ -843,9 +856,9 @@ void Map::anim(time_point t) {
 		team->clear2delete();
 	}
 
-	/*for(auto & team : _teams) {
+	for(auto & team : _teams) {
 		team->update_fow();
-	}*/
+	}
 }
 
 

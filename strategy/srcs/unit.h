@@ -7,6 +7,7 @@
 #include <map>
 #include <chrono>
 #include <queue>
+#include <unordered_set>
 
 #include "typedefs.h"
 #include "bbox_2d.h"
@@ -19,7 +20,7 @@
 #include "ammo.h"
 
 
-enum FOW_STATUS {WATCHED, UNWATCHED, UNDISCOVERED};
+//enum FOW_STATUS {WATCHED, UNWATCHED, UNDISCOVERED};
 
 
 const number UNIT_DIST_PATH_EPS = 0.5;
@@ -67,11 +68,15 @@ struct Unit : public InstancePosRot {
 	number _hit;
 	Unit * _target;
 	Ammo * _hit_ammo;
+	std::unordered_set<uint> _old_visible_tiles;
+	std::unordered_set<uint> _visible_tiles;
 };
 
 
 struct FowVertexData {
-	FOW_STATUS _status;
+	//FOW_STATUS _status;
+	uint _n_units;
+	bool _changed;
 };
 
 
@@ -91,7 +96,7 @@ struct Team {
 	bool is_target_reachable(Unit * unit, Unit * target);
 	void unit_attack(Unit * unit, Unit * target, time_point t);
 	void selected_units_attack(Unit * target, time_point t);
-	//void update_fow();
+	void update_fow();
 	friend std::ostream & operator << (std::ostream & os, Team & team);
 
 
@@ -101,6 +106,7 @@ struct Team {
 	glm::vec3 _color;
 	bool _ia;
 	GraphGrid * _fow;
+	unsigned char * _fow_data; 
 };
 
 #endif

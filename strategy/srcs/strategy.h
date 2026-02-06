@@ -69,7 +69,7 @@ struct StrategyConfig {
 	number _elements_dispersion;
 	number _erase_radius;
 	bool _units_paused;
-	Team * _selected_team;
+	uint _selected_team_idx;
 };
 
 
@@ -78,6 +78,8 @@ public:
 	Strategy();
 	Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t);
 	~Strategy();
+
+	Team * get_selected_team();
 	
 	void set_ihm();
 	
@@ -85,6 +87,7 @@ public:
 	void draw_linear(std::string context_name);
 	void draw_dash(std::string context_name, number dash_size, number gap_size, number thickness);
 	void draw_surface(std::string context_name);
+	void draw_elevation();
 	void draw_lake();
 	void draw_river();
 	void draw_sea();
@@ -117,7 +120,7 @@ public:
 	void update_ammo_obj(AmmoType * ammo_type);
 	void update_ammo_matrices(AmmoType * ammo_type);
 	void update_selection();
-	//void update_fow();
+	void update_fow_texture();
 	void update_all();
 	void update_text();
 	
@@ -139,6 +142,8 @@ public:
 	bool _cursor_hover_ihm;
 	number _angle;
 	Unit * _cursor_hover_unit;
+
+	uint _texture_fow;
 };
 
 #endif
