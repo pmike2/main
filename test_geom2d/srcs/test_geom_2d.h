@@ -30,7 +30,7 @@ public:
 	
 	
 	pt_2d _pt_min, _pt_max;
-	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
+	std::map<std::string, GLDrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers;
 	glm::mat4 _camera2clip; // glm::ortho
 	Font * _font; // font pour écriture textes

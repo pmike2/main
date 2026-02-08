@@ -45,8 +45,9 @@ const number MOVE_UNIT_SEGMENT_SIZE = 1.5;
 
 const pt_2d MAP_ORIGIN(-100.0, -100.0);
 const pt_2d MAP_SIZE(200.0, 200.0);
-const pt_2d PATH_RESOLUTION(1.0);
-const pt_2d ELEVATION_RESOLUTION(0.5);
+const pt_2d PATH_RESOLUTION(2.0);
+const pt_2d ELEVATION_RESOLUTION(1.0);
+const pt_2d FOW_RESOLUTION(2.0);
 
 
 struct StrategyConfig {
@@ -70,6 +71,7 @@ struct StrategyConfig {
 	number _erase_radius;
 	bool _units_paused;
 	uint _selected_team_idx;
+	bool _fow_active;
 };
 
 
@@ -86,7 +88,7 @@ public:
 	void draw_select();
 	void draw_linear(std::string context_name);
 	void draw_dash(std::string context_name, number dash_size, number gap_size, number thickness);
-	void draw_surface(std::string context_name);
+	void draw_tree_stone();
 	void draw_elevation();
 	void draw_lake();
 	void draw_river();

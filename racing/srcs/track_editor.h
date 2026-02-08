@@ -89,7 +89,7 @@ public:
 	pt_2d _translation; // position et agrandissement
 	number _scale;
 
-	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
+	std::map<std::string, GLDrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	glm::mat4 _camera2clip, _world2camera; // glm::ortho
 	ScreenGL * _screengl;
@@ -138,7 +138,7 @@ public:
 	pt_2d _scale;
 	CheckPoint * _last_checkpoint; // dernier chkpt mis
 
-	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
+	std::map<std::string, GLDrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	glm::mat4 _camera2clip, _world2camera; // glm::ortho
 	ScreenGL * _screengl;

@@ -258,23 +258,23 @@ void VoroZ::init_context(std::map<std::string, GLuint> progs) {
 	GLuint buffers[5];
 	glGenBuffers(5, buffers);
 
-	_contexts["simple"]= new DrawContext(progs["repere"], buffers[0],
+	_contexts["simple"]= new GLDrawContext(progs["repere"], buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 	
-	_contexts["texture"]= new DrawContext(progs["texture"], buffers[1],
+	_contexts["texture"]= new GLDrawContext(progs["texture"], buffers[1],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
 		std::vector<std::string>{"world2clip_matrix", "diffuse_texture_array"});
 	
-	_contexts["light"]= new DrawContext(progs["light"], buffers[2],
+	_contexts["light"]= new GLDrawContext(progs["light"], buffers[2],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
-	_contexts["normal"]= new DrawContext(progs["normal"], buffers[3],
+	_contexts["normal"]= new GLDrawContext(progs["normal"], buffers[3],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_diffuse_in", "current_layer_normal_in", "normal_in", "tangent_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "diffuse_texture_array", "normal_texture_array"});
 
-	_contexts["parallax"]= new DrawContext(progs["parallax"], buffers[4],
+	_contexts["parallax"]= new GLDrawContext(progs["parallax"], buffers[4],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_diffuse_in", "current_layer_normal_in", "current_layer_parallax_in", "normal_in", "tangent_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "diffuse_texture_array", "normal_texture_array", "parallax_texture_array", "height_scale"});
 }

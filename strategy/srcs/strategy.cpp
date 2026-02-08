@@ -55,10 +55,10 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	if (verbose) {
 		std::cout << "loading map\n";
 	}
-	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, t);
+	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION, t);
 
 	if (verbose) {
-		std::cout << "loading map (2)\n";
+		std::cout << "clearing / randomizing map\n";
 	}
 	//_map->randomize();
 	_map->clear();
@@ -78,19 +78,15 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
 
 	Team * team = get_selected_team();
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R8UI, team->_fow->_n_cols, team->_fow->_n_ligs, _map->_teams.size(), 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, NULL);
+	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RED, team->_fow->_n_cols, team->_fow->_n_ligs, _map->_teams.size(), 0, GL_RED, GL_FLOAT, NULL);
 	uint compt = 0;
 	for (auto & t : _map->_teams) {
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-			0,               // mipmap number
-			0, 0, compt,   // xoffset, yoffset, zoffset
-			t->_fow->_n_cols, t->_fow->_n_ligs, 1, // width, height, depth
-			GL_RED_INTEGER,                       // format
-			GL_UNSIGNED_BYTE,              // type
-			t->_fow_data);        // pointer to data
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, compt, t->_fow->_n_cols, t->_fow->_n_ligs, 1, GL_RED, GL_FLOAT, t->_fow_data);
 		compt++;
 	}
 
+	glActiveTexture(0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 
 	if (verbose) {
 		std::cout << "update_all\n";
@@ -254,6 +250,11 @@ void Strategy::set_ihm() {
 			}
 		}
 	);
+
+	_ihm->get_element("visu", "fow")->set_callback(
+		[this](){_config->_fow_active = true;},
+		[this](){_config->_fow_active = false;}
+	);
 	
 	for (auto & grid_type : std::vector<VISIBLE_GRID_TYPE>{ELEVATION, TERRAIN, UNITS_POSITION}) {
 		_ihm->get_element("grid_type", visible_grid2str(grid_type))->set_callback([this, grid_type](){
@@ -276,7 +277,7 @@ void Strategy::set_ihm() {
 
 
 void Strategy::draw_select() {
-	DrawContext * context= _gl_draw_manager->get_context("select");
+	GLDrawContext * context= _gl_draw_manager->get_context("select");
 	if (!context->_active) {
 		return;
 	}
@@ -292,7 +293,7 @@ void Strategy::draw_select() {
 
 
 void Strategy::draw_linear(std::string context_name) {
-	DrawContext * context= _gl_draw_manager->get_context(context_name);
+	GLDrawContext * context= _gl_draw_manager->get_context(context_name);
 	if (!context->_active) {
 		return;
 	}
@@ -305,7 +306,7 @@ void Strategy::draw_linear(std::string context_name) {
 
 
 void Strategy::draw_dash(std::string context_name, number dash_size, number gap_size, number thickness) {
-	DrawContext * context= _gl_draw_manager->get_context(context_name);
+	GLDrawContext * context= _gl_draw_manager->get_context(context_name);
 	if (!context->_active) {
 		return;
 	}
@@ -322,24 +323,8 @@ void Strategy::draw_dash(std::string context_name, number dash_size, number gap_
 }
 
 
-void Strategy::draw_surface(std::string context_name) {
-	DrawContext * context= _gl_draw_manager->get_context(context_name);
-	if (!context->_active) {
-		return;
-	}
-
-	context->activate();
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
-	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
-	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
-	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
-	context->deactivate();
-}
-
-
-void Strategy::draw_elevation() {
-	DrawContext * context= _gl_draw_manager->get_context("elevation");
+void Strategy::draw_tree_stone() {
+	GLDrawContext * context= _gl_draw_manager->get_context("tree_stone");
 	if (!context->_active) {
 		return;
 	}
@@ -348,24 +333,63 @@ void Strategy::draw_elevation() {
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
-	glActiveTexture(0);
+
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
+	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
+	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
 
 	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
 	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
 	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
 	glUniform1f(context->_locs_uniform["z_fow"], 1.0);
-	glUniform1ui(context->_locs_uniform["idx_team"], _config->_selected_team_idx);
+	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
+	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
+
+	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glActiveTexture(0);
+
+	context->deactivate();
+}
+
+
+void Strategy::draw_elevation() {
+	//std::cout << "start draw elevation\n";
+	GLDrawContext * context= _gl_draw_manager->get_context("elevation");
+	if (!context->_active) {
+		return;
+	}
+
+	context->activate();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
+
+	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
+	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
+	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
+
+	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
+	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	glUniform1f(context->_locs_uniform["z_fow"], 1.0);
+	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
+	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
 	
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
 	
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glActiveTexture(0);
 	
 	context->deactivate();
 }
 
 
 void Strategy::draw_lake() {
-	DrawContext * context= _gl_draw_manager->get_context("lake");
+	GLDrawContext * context= _gl_draw_manager->get_context("lake");
 	if (!context->_active) {
 		return;
 	}
@@ -384,7 +408,7 @@ void Strategy::draw_lake() {
 
 
 void Strategy::draw_river() {
-	DrawContext * context= _gl_draw_manager->get_context("river");
+	GLDrawContext * context= _gl_draw_manager->get_context("river");
 	if (!context->_active) {
 		return;
 	}
@@ -401,7 +425,7 @@ void Strategy::draw_river() {
 
 
 void Strategy::draw_sea() {
-	DrawContext * context= _gl_draw_manager->get_context("sea");
+	GLDrawContext * context= _gl_draw_manager->get_context("sea");
 	if (!context->_active) {
 		return;
 	}
@@ -420,23 +444,39 @@ void Strategy::draw_sea() {
 
 
 void Strategy::draw_unit(UnitType * unit_type) {
-	DrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
+	GLDrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
 	if (!context->_active) {
 		return;
 	}
 
 	context->activate();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
+
 	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
 	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
 	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
+
+	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
+	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	glUniform1f(context->_locs_uniform["z_fow"], 1.0);
+	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
+	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
+	
 	glDrawArraysInstanced(GL_TRIANGLES, 0, context->_n_pts, context->_n_instances);
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glActiveTexture(0);
+
 	context->deactivate();
 }
 
 
 void Strategy::draw_unit_life() {
-	DrawContext * context= _gl_draw_manager->get_context("unit_life");
+	GLDrawContext * context= _gl_draw_manager->get_context("unit_life");
 	if (!context->_active) {
 		return;
 	}
@@ -449,7 +489,7 @@ void Strategy::draw_unit_life() {
 
 
 void Strategy::draw_ammo(AmmoType * ammo_type) {
-	DrawContext * context= _gl_draw_manager->get_context(ammo_type->_name);
+	GLDrawContext * context= _gl_draw_manager->get_context(ammo_type->_name);
 	if (!context->_active) {
 		return;
 	}
@@ -465,7 +505,7 @@ void Strategy::draw_ammo(AmmoType * ammo_type) {
 
 
 /*void Strategy::draw_fow() {
-	DrawContext * context= _gl_draw_manager->get_context("fow");
+	GLDrawContext * context= _gl_draw_manager->get_context("fow");
 	if (!context->_active) {
 		return;
 	}
@@ -479,15 +519,15 @@ void Strategy::draw_ammo(AmmoType * ammo_type) {
 
 
 void Strategy::draw() {
-	//draw_elevation();
+	//std::cout << "start draw\n";
+
+	draw_elevation();
 
 	for (auto context_name : std::vector<std::string>{"grid", "bbox"}) {
 		draw_linear(context_name);
 	}
 
-	for (auto context_name : std::vector<std::string>{"tree_stone"}) {
-		draw_surface(context_name);
-	}
+	draw_tree_stone();
 	
 	draw_dash("path", 4.0, 2.0, 2.0);
 	draw_dash("edit_map", 4.0, 2.0, 2.0);
@@ -512,8 +552,6 @@ void Strategy::draw() {
 		_font->draw();
 	}
 
-	//draw_fow();
-
 	// pour afficher systématiquement l'IHM
 	// pour que le z du cursor ne soit pas influencé par lui-même
 	glDisable(GL_DEPTH_TEST);
@@ -525,6 +563,7 @@ void Strategy::draw() {
 
 
 void Strategy::anim(time_point t) {
+	//std::cout << "start anim\n";
 	_ihm->anim();
 
 	_map->anim(t);
@@ -550,7 +589,6 @@ void Strategy::anim(time_point t) {
 
 	update_unit_life();
 	update_selection();
-	//update_fow();
 
 	update_fow_texture();
 }
@@ -632,7 +670,7 @@ glm::vec4 Strategy::get_path_color(number weight) {
 
 
 void Strategy::update_select() {
-	DrawContext * context= _gl_draw_manager->get_context("select");
+	GLDrawContext * context= _gl_draw_manager->get_context("select");
 
 	if (!_view_system->_rect_select->_is_active) {
 		context->_active = false;
@@ -669,7 +707,7 @@ void Strategy::update_select() {
 
 
 void Strategy::update_grid() {
-	DrawContext * context= _gl_draw_manager->get_context("grid");
+	GLDrawContext * context= _gl_draw_manager->get_context("grid");
 	
 	context->_n_pts = 0;
 
@@ -727,7 +765,7 @@ void Strategy::update_grid() {
 
 
 void Strategy::update_bbox() {
-	DrawContext * context= _gl_draw_manager->get_context("bbox");
+	GLDrawContext * context= _gl_draw_manager->get_context("bbox");
 
 	context->_n_pts = 0;
 
@@ -853,7 +891,7 @@ void Strategy::update_bbox() {
 
 
 void Strategy::update_path() {
-	DrawContext * context= _gl_draw_manager->get_context("path");
+	GLDrawContext * context= _gl_draw_manager->get_context("path");
 	
 	context->_n_pts = 0;
 	
@@ -974,7 +1012,7 @@ void Strategy::update_path() {
 
 
 void Strategy::update_edit_map() {
-	DrawContext * context= _gl_draw_manager->get_context("edit_map");
+	GLDrawContext * context= _gl_draw_manager->get_context("edit_map");
 	
 	if ((_config->_mode != EDIT_ELEVATION && _config->_mode != ADD_ELEMENT && _config->_mode != ERASE) || _cursor_hover_ihm) {
 		context->_n_pts = 0;
@@ -1038,7 +1076,7 @@ void Strategy::update_edit_map() {
 
 
 void Strategy::update_cursor() {
-	DrawContext * context= _gl_draw_manager->get_context("cursor");
+	GLDrawContext * context= _gl_draw_manager->get_context("cursor");
 
 	bool mode_ok = false;
 	if (_config->_mode == ADD_UNIT) {
@@ -1212,7 +1250,7 @@ void Strategy::update_cursor() {
 
 
 void Strategy::update_debug() {
-	DrawContext * context= _gl_draw_manager->get_context("debug");
+	GLDrawContext * context= _gl_draw_manager->get_context("debug");
 	
 	context->_n_pts = 0;
 
@@ -1222,7 +1260,7 @@ void Strategy::update_debug() {
 
 
 void Strategy::update_elevation() {
-	DrawContext * context= _gl_draw_manager->get_context("elevation");
+	GLDrawContext * context= _gl_draw_manager->get_context("elevation");
 
 	context->_n_pts = _map->_elevation->_n_pts;
 
@@ -1231,7 +1269,7 @@ void Strategy::update_elevation() {
 
 
 void Strategy::update_tree_stone() {
-	DrawContext * context= _gl_draw_manager->get_context("tree_stone");
+	GLDrawContext * context= _gl_draw_manager->get_context("tree_stone");
 
 	context->_n_pts = 0;
 	for (auto & element : _map->_elements->_elements) {
@@ -1243,7 +1281,7 @@ void Strategy::update_tree_stone() {
 	float * data = new float[context->data_size()];
 
 	uint compt = 0;
-	uint n_attrs_per_pts = context->_buffers[0]._n_attrs_per_pts;
+	uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
 	for (auto & element : _map->_elements->_elements) {
 		if (element->_type == ELEMENT_TREE || element->_type == ELEMENT_STONE) {
 			for (uint i=0; i<element->_n_pts * n_attrs_per_pts; ++i) {
@@ -1258,7 +1296,7 @@ void Strategy::update_tree_stone() {
 
 
 void Strategy::update_river() {
-	DrawContext * context= _gl_draw_manager->get_context("river");
+	GLDrawContext * context= _gl_draw_manager->get_context("river");
 
 	context->_n_pts = 0;
 	for (auto & element : _map->_elements->_elements) {
@@ -1270,7 +1308,7 @@ void Strategy::update_river() {
 	float * data = new float[context->data_size()];
 
 	uint compt = 0;
-	uint n_attrs_per_pts = context->_buffers[0]._n_attrs_per_pts;
+	uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
 	for (auto & element : _map->_elements->_elements) {
 		if (element->_type == ELEMENT_RIVER) {
 			for (uint i=0; i<element->_n_pts * n_attrs_per_pts; ++i) {
@@ -1285,7 +1323,7 @@ void Strategy::update_river() {
 
 
 void Strategy::update_lake() {
-	DrawContext * context= _gl_draw_manager->get_context("lake");
+	GLDrawContext * context= _gl_draw_manager->get_context("lake");
 
 	context->_n_pts = 0;
 	for (auto & element : _map->_elements->_elements) {
@@ -1297,7 +1335,7 @@ void Strategy::update_lake() {
 	float * data = new float[context->data_size()];
 
 	uint compt = 0;
-	uint n_attrs_per_pts = context->_buffers[0]._n_attrs_per_pts;
+	uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
 	for (auto & element : _map->_elements->_elements) {
 		if (element->_type == ELEMENT_LAKE) {
 			for (uint i=0; i<element->_n_pts * n_attrs_per_pts; ++i) {
@@ -1312,7 +1350,7 @@ void Strategy::update_lake() {
 
 
 void Strategy::update_sea() {
-	DrawContext * context= _gl_draw_manager->get_context("sea");
+	GLDrawContext * context= _gl_draw_manager->get_context("sea");
 
 	context->_n_pts = 6;
 
@@ -1344,7 +1382,7 @@ void Strategy::update_sea() {
 
 
 void Strategy::update_unit_obj(UnitType * unit_type) {
-	DrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
+	GLDrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
 
 	context->_n_pts = unit_type->_obj_data->_n_pts;
 	context->set_data(unit_type->_obj_data->_data, 0);
@@ -1356,7 +1394,7 @@ void Strategy::update_unit_obj(UnitType * unit_type) {
 
 
 void Strategy::update_unit_matrices(UnitType * unit_type) {
-	DrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
+	GLDrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
 
 	context->_n_instances = 0;
 	for (auto & team : _map->_teams) {
@@ -1390,7 +1428,7 @@ void Strategy::update_unit_matrices(UnitType * unit_type) {
 
 
 void Strategy::update_unit_life() {
-	DrawContext * context= _gl_draw_manager->get_context("unit_life");
+	GLDrawContext * context= _gl_draw_manager->get_context("unit_life");
 
 	context->_n_pts = 0;
 	for (auto & team : _map->_teams) {
@@ -1477,7 +1515,7 @@ void Strategy::update_unit_life() {
 
 
 void Strategy::update_ammo_obj(AmmoType * ammo_type) {
-	DrawContext * context= _gl_draw_manager->get_context(ammo_type->_name);
+	GLDrawContext * context= _gl_draw_manager->get_context(ammo_type->_name);
 
 	context->_n_pts = ammo_type->_obj_data->_n_pts;
 	context->set_data(ammo_type->_obj_data->_data, 0);
@@ -1485,7 +1523,7 @@ void Strategy::update_ammo_obj(AmmoType * ammo_type) {
 
 
 void Strategy::update_ammo_matrices(AmmoType * ammo_type) {
-	DrawContext * context= _gl_draw_manager->get_context(ammo_type->_name);
+	GLDrawContext * context= _gl_draw_manager->get_context(ammo_type->_name);
 
 	context->_n_instances = 0;
 	for (auto & ammo : _map->_ammos) {
@@ -1514,7 +1552,7 @@ void Strategy::update_ammo_matrices(AmmoType * ammo_type) {
 
 
 void Strategy::update_selection() {
-	DrawContext * context= _gl_draw_manager->get_context("selection");
+	GLDrawContext * context= _gl_draw_manager->get_context("selection");
 
 	context->_n_pts = 0;
 	for (auto & unit : get_selected_team()->_units) {
@@ -1564,7 +1602,7 @@ void Strategy::update_selection() {
 
 
 /*void Strategy::update_fow() {
-	DrawContext * context= _gl_draw_manager->get_context("fow");
+	GLDrawContext * context= _gl_draw_manager->get_context("fow");
 
 	GraphGrid * fow = _config->_selected_team->_fow;
 
@@ -1617,15 +1655,15 @@ void Strategy::update_selection() {
 void Strategy::update_fow_texture() {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
+	//Team * team = get_selected_team();
+	//std::cout << _config->_selected_team_idx << "\n";
+	uint compt = 0;
+	for (auto & team : _map->_teams) {
+		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, compt, team->_fow->_n_cols, team->_fow->_n_ligs, 1, GL_RED, GL_FLOAT, team->_fow_data);
+		compt++;
+	}
 	glActiveTexture(0);
-	Team * team = get_selected_team();
-	glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-		0,               // mipmap number
-		0, 0, _config->_selected_team_idx,   // xoffset, yoffset, zoffset
-		team->_fow->_n_cols, team->_fow->_n_ligs, 1, // width, height, depth
-		GL_RED_INTEGER,                       // format
-		GL_UNSIGNED_BYTE,              // type
-		team->_fow_data);        // pointer to data
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
 
@@ -1894,10 +1932,18 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 	}
 
 	if (key == SDLK_SPACE) {
-		DrawContext * context= _gl_draw_manager->get_context(unit_type2str(TANK));
+		/*GLDrawContext * context= _gl_draw_manager->get_context(unit_type2str(TANK));
 		context->show_data(0);
 		std::cout << "--------------\n";
-		context->show_data(1);
+		context->show_data(1);*/
+
+		Team * team = get_selected_team();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
+		export_texture_array2pgm("../tmp", team->_fow->_n_cols, team->_fow->_n_ligs, 2);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+		glActiveTexture(0);
+		//std::cout << "ok\n";
 	}
 	return false;
 }

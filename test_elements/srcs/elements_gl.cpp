@@ -27,11 +27,11 @@ ElementsGL::ElementsGL(std::map<std::string, GLuint> progs) {
 	GLuint buffers[2];
 	glGenBuffers(2, buffers);
 
-	_contexts["bbox"]= new DrawContext(progs["repere"], buffers[0],
+	_contexts["bbox"]= new GLDrawContext(progs["repere"], buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 
-	_contexts["light"]= new DrawContext(progs["light"], buffers[1],
+	_contexts["light"]= new GLDrawContext(progs["light"], buffers[1],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 
@@ -46,7 +46,7 @@ ElementsGL::~ElementsGL() {
 
 
 void ElementsGL::draw_bbox(const glm::mat4 & world2clip) {
-	DrawContext * context= _contexts["bbox"];
+	GLDrawContext * context= _contexts["bbox"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -72,7 +72,7 @@ void ElementsGL::draw_bbox(const glm::mat4 & world2clip) {
 
 
 void ElementsGL::draw_light(const glm::mat4 & world2clip, const glm::vec3 & camera_position) {
-	DrawContext * context= _contexts["light"];
+	GLDrawContext * context= _contexts["light"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -105,7 +105,7 @@ void ElementsGL::draw_light(const glm::mat4 & world2clip, const glm::vec3 & came
 
 
 void ElementsGL::update_bbox() {
-	DrawContext * context= _contexts["bbox"];
+	GLDrawContext * context= _contexts["bbox"];
 	context->_n_pts= _elements->_elements.size() * 48;
 	context->_n_attrs_per_pts= 7;
 	
@@ -146,7 +146,7 @@ void ElementsGL::update_light() {
 		n_pts += element->_n_pts;
 	}
 
-	DrawContext * context= _contexts["light"];
+	GLDrawContext * context= _contexts["light"];
 	context->_n_pts= n_pts;
 	context->_n_attrs_per_pts= 10;
 

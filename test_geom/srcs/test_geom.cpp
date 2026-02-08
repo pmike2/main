@@ -12,11 +12,11 @@ TestGeom::TestGeom(std::map<std::string, GLuint> progs) : _draw_points(true), _d
 	GLuint buffers[2];
 	glGenBuffers(2, buffers);
 
-	_contexts["points"]= new DrawContext(progs["repere"], buffers[0],
+	_contexts["points"]= new GLDrawContext(progs["repere"], buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"world2clip_matrix"});
 
-	_contexts["hull"]= new DrawContext(progs["light"], buffers[1],
+	_contexts["hull"]= new GLDrawContext(progs["light"], buffers[1],
 		std::vector<std::string>{"position_in", "color_in", "normal_in"},
 		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
 	
@@ -55,7 +55,7 @@ void TestGeom::randomize() {
 
 
 void TestGeom::draw_points(const glm::mat4 & world2clip) {
-	DrawContext * context= _contexts["points"];
+	GLDrawContext * context= _contexts["points"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -80,7 +80,7 @@ void TestGeom::draw_points(const glm::mat4 & world2clip) {
 
 
 void TestGeom::draw_hull(const glm::mat4 & world2clip, const glm::vec3 & camera_position) {
-	DrawContext * context= _contexts["hull"];
+	GLDrawContext * context= _contexts["hull"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -123,7 +123,7 @@ void TestGeom::draw(const glm::mat4 & world2clip, const glm::vec3 & camera_posit
 
 
 void TestGeom::update_points() {
-	DrawContext * context= _contexts["points"];
+	GLDrawContext * context= _contexts["points"];
 	context->_n_pts= _hull->_pts.size();
 	context->_n_attrs_per_pts= 7;
 
@@ -148,7 +148,7 @@ void TestGeom::update_points() {
 
 
 void TestGeom::update_hull() {
-	DrawContext * context= _contexts["hull"];
+	GLDrawContext * context= _contexts["hull"];
 	context->_n_pts= _hull->_faces.size() * 3;
 	context->_n_attrs_per_pts= 10;
 	

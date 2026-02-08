@@ -1,6 +1,6 @@
 {
 	"type" : "BOAT",
-	"max_velocity" : 0.02,
+	"max_velocity" : 0.03,
 	"life_init" : 100.0,
 	"shooting_rate" : 4.0,
 	"vision" : 20.0,

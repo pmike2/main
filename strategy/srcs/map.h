@@ -35,7 +35,7 @@
 
 struct Map {
 	Map();
-	Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t);
+	Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t);
 	~Map();
 	bool add_unit_check(UNIT_TYPE type, pt_2d pos);
 	Unit * add_unit(Team * team, UNIT_TYPE type, pt_2d pos);

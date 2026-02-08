@@ -41,11 +41,11 @@ Grid::Grid(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputState 
 	glGenBuffers(n_buffers, _buffers);
 
 	// contextes de dessin
-	_contexts["grid"]= new DrawContext(progs["simple"], _buffers[0],
+	_contexts["grid"]= new GLDrawContext(progs["simple"], _buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["cell"]= new DrawContext(progs["simple"], _buffers[1],
+	_contexts["cell"]= new GLDrawContext(progs["simple"], _buffers[1],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
@@ -86,7 +86,7 @@ void Grid::clear() {
 
 
 void Grid::draw_grid() {
-	DrawContext * context= _contexts["grid"];
+	GLDrawContext * context= _contexts["grid"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -114,7 +114,7 @@ void Grid::draw_grid() {
 
 
 void Grid::draw_cell() {
-	DrawContext * context= _contexts["cell"];
+	GLDrawContext * context= _contexts["cell"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -150,7 +150,7 @@ void Grid::draw() {
 
 
 void Grid::update_grid() {
-	DrawContext * context= _contexts["grid"];
+	GLDrawContext * context= _contexts["grid"];
 	context->_n_pts= (_width+ 1)* 2+ (_height+ 1)* 2;
 	context->_n_attrs_per_pts= 6;
 
@@ -175,7 +175,7 @@ void Grid::update_grid() {
 void Grid::update_cell() {
 	const uint n_pts_per_obj= 6;
 
-	DrawContext * context= _contexts["cell"];
+	GLDrawContext * context= _contexts["cell"];
 	context->_n_pts= _cells.size()* n_pts_per_obj;
 	context->_n_attrs_per_pts= 6;
 

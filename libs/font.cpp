@@ -138,11 +138,11 @@ Font::Font(GLDrawManager * gl_draw_manager, std::string font_path, uint font_siz
 	FT_Done_Face(face);
 	FT_Done_FreeType(ft_lib);
 
-	/*_contexts["font"]= new DrawContext(progs["font"], 
+	/*_contexts["font"]= new GLDrawContext(progs["font"], 
 		std::vector<std::string>{"vertex_in:4", "color_in:4", "current_layer_in:1"},
 		std::vector<std::string>{"camera2clip_matrix", "z", "texture_array"});
 
-	_contexts["font3d"]= new DrawContext(progs["font3d"], 
+	_contexts["font3d"]= new GLDrawContext(progs["font3d"], 
 		std::vector<std::string>{"vertex_in:3", "tex_in:2", "color_in:4", "current_layer_in:1"},
 		std::vector<std::string>{"world2clip_matrix", "texture_array"});*/
 
@@ -151,7 +151,7 @@ Font::Font(GLDrawManager * gl_draw_manager, std::string font_path, uint font_siz
 
 
 void Font::set_text(std::vector<Text> & texts) {
-	DrawContext * context = _gl_draw_manager->get_context("font");
+	GLDrawContext * context = _gl_draw_manager->get_context("font");
 
 	const uint n_pts_per_char= 6;
 	context->_n_pts= 0;
@@ -159,7 +159,7 @@ void Font::set_text(std::vector<Text> & texts) {
 		context->_n_pts+= n_pts_per_char* text._text.size();
 	}
 
-	uint n_attrs_per_pts = context->_buffers[0]._n_attrs_per_pts;
+	uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
 	
 	float data[context->_n_pts * n_attrs_per_pts];
 
@@ -228,7 +228,7 @@ void Font::set_text(Text & text) {
 
 
 void Font::set_text(std::vector<Text3D> & texts) {
-	DrawContext * context = _gl_draw_manager->get_context("font3d");
+	GLDrawContext * context = _gl_draw_manager->get_context("font3d");
 
 	const uint n_pts_per_char= 6;
 	context->_n_pts= 0;
@@ -236,7 +236,7 @@ void Font::set_text(std::vector<Text3D> & texts) {
 		context->_n_pts+= n_pts_per_char* text._text.size();
 	}
 
-	uint n_attrs_per_pts = context->_buffers[0]._n_attrs_per_pts;
+	uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
 
 	float data[context->_n_pts* n_attrs_per_pts];
 
@@ -312,7 +312,7 @@ void Font::clear() {
 
 
 void Font::draw() {
-	DrawContext * context = _gl_draw_manager->get_context("font");
+	GLDrawContext * context = _gl_draw_manager->get_context("font");
 	
 	context->activate();
 
@@ -331,7 +331,7 @@ void Font::draw() {
 
 
 void Font::draw_3d(const mat_4d & world2clip) {
-	DrawContext * context = _gl_draw_manager->get_context("font3d");
+	GLDrawContext * context = _gl_draw_manager->get_context("font3d");
 
 	context->activate();
 

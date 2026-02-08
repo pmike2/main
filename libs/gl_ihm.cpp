@@ -379,7 +379,7 @@ GLIHM::GLIHM() {
 GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string json_path) :
 	_gl_draw_manager(gl_draw_manager), _screengl(screengl), _verbose(false) 
 {
-		/*_contexts["gl_ihm"]= new DrawContext(progs["gl_ihm"], 
+		/*_contexts["gl_ihm"]= new GLDrawContext(progs["gl_ihm"], 
 		std::vector<std::string>{"position_in:2", "tex_coord_in:2", "alpha_in:1", "current_layer_in:1"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array", "z"},
 		GL_STATIC_DRAW, true);*/
@@ -560,7 +560,7 @@ void GLIHM::all_callbacks() {
 
 
 void GLIHM::update() {
-	DrawContext * context= _gl_draw_manager->get_context("gl_ihm");
+	GLDrawContext * context= _gl_draw_manager->get_context("gl_ihm");
 
 	context->_n_pts = 0;
 	for (auto & group : _groups) {
@@ -587,7 +587,7 @@ void GLIHM::update() {
 
 
 void GLIHM::draw() {
-	DrawContext * context= _gl_draw_manager->get_context("gl_ihm");
+	GLDrawContext * context= _gl_draw_manager->get_context("gl_ihm");
 	if (!context->_active) {
 		return;
 	}

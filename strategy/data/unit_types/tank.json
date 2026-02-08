@@ -1,9 +1,9 @@
 {
 	"type" : "TANK",
-	"max_velocity" : 0.02,
+	"max_velocity" : 0.05,
 	"life_init" : 200.0,
 	"shooting_rate" : 3.0,
-	"vision" : 10.0,
+	"vision" : 15.0,
 	"floats" : false,
 	"flies" : false,
 	"ammo" : "bomb",

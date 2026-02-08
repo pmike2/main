@@ -34,4 +34,5 @@ void main(void) {
 	//vec3 result= (specular)* vec3(vertex_color);
 	
 	frag_color= vec4(result, 1.0);
+	//frag_color= vec4(1.0, 0.0, 0.0, 1.0);
 }

@@ -27,7 +27,7 @@ Map::Map() {
 }
 
 
-Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, time_point t) {
+Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t) {
 	uint n_ligs_path = uint(size.y / path_resolution.y) + 1;
 	uint n_cols_path = uint(size.x / path_resolution.x) + 1;
 
@@ -58,8 +58,8 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 
 	_elements = new Elements(elements_dir + "/tree_species", elements_dir + "/stone_species", _elevation);
 
-	_teams.push_back(new Team("Team1", glm::vec3(1.0f, 0.0f, 0.0f), _elevation));
-	_teams.push_back(new Team("Team2", glm::vec3(0.0f, 0.0f, 1.0f), _elevation));
+	_teams.push_back(new Team("Team1", glm::vec3(1.0f, 0.0f, 0.0f), _elevation, fow_resolution));
+	_teams.push_back(new Team("Team2", glm::vec3(0.0f, 0.0f, 1.0f), _elevation, fow_resolution));
 
 	sync2elevation();
 

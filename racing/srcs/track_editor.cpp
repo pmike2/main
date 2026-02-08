@@ -33,19 +33,19 @@ GridEditor::GridEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_font
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
-	_contexts["grid"]= new DrawContext(prog_simple, _buffers[0],
+	_contexts["grid"]= new GLDrawContext(prog_simple, _buffers[0],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["selection"]= new DrawContext(prog_simple, _buffers[1],
+	_contexts["selection"]= new GLDrawContext(prog_simple, _buffers[1],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["tiles"]= new DrawContext(prog_simple, _buffers[2],
+	_contexts["tiles"]= new GLDrawContext(prog_simple, _buffers[2],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["texture"]= new DrawContext(prog_texture, _buffers[3],
+	_contexts["texture"]= new GLDrawContext(prog_texture, _buffers[3],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
@@ -59,7 +59,7 @@ GridEditor::~GridEditor() {
 
 
 void GridEditor::draw_grid() {
-	DrawContext * context= _contexts["grid"];
+	GLDrawContext * context= _contexts["grid"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -87,7 +87,7 @@ void GridEditor::draw_grid() {
 
 
 void GridEditor::draw_selection() {
-	DrawContext * context= _contexts["selection"];
+	GLDrawContext * context= _contexts["selection"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -115,7 +115,7 @@ void GridEditor::draw_selection() {
 
 
 void GridEditor::draw_tiles() {
-	DrawContext * context= _contexts["tiles"];
+	GLDrawContext * context= _contexts["tiles"];
 	if (context->_n_pts== 0) {
 		return;
 	}
@@ -146,7 +146,7 @@ void GridEditor::draw_tiles() {
 
 
 void GridEditor::draw_texture(GLuint texture) {
-	DrawContext * context= _contexts["texture"];
+	GLDrawContext * context= _contexts["texture"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
@@ -203,7 +203,7 @@ void GridEditor::show_info() {
 
 
 void GridEditor::update_grid() {
-	DrawContext * context= _contexts["grid"];
+	GLDrawContext * context= _contexts["grid"];
 	context->_n_pts= 2* (_grid->_width+ 1)+ 2* (_grid->_height+ 1);
 	context->_n_attrs_per_pts= 6;
 
@@ -242,7 +242,7 @@ void GridEditor::update_grid() {
 
 void GridEditor::update_selection() {
 
-	DrawContext * context= _contexts["selection"];
+	GLDrawContext * context= _contexts["selection"];
 	context->_n_pts= 6;
 	context->_n_attrs_per_pts= 6;
 
@@ -274,7 +274,7 @@ void GridEditor::update_selection() {
 
 
 void GridEditor::update_tiles() {
-	DrawContext * context= _contexts["tiles"];
+	GLDrawContext * context= _contexts["tiles"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
@@ -311,7 +311,7 @@ void GridEditor::update_tiles() {
 void GridEditor::update_texture() {
 	const uint n_pts_per_obj= 6;
 
-	DrawContext * context= _contexts["texture"];
+	GLDrawContext * context= _contexts["texture"];
 	context->_n_pts= n_pts_per_obj* _grid->_objects.size();
 	context->_n_attrs_per_pts= 6;
 
@@ -452,27 +452,27 @@ TrackEditor::TrackEditor(GLuint prog_simple, GLuint prog_texture, GLuint prog_fo
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
-	_contexts["grid"]= new DrawContext(prog_simple, _buffers[0],
+	_contexts["grid"]= new GLDrawContext(prog_simple, _buffers[0],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["selection"]= new DrawContext(prog_simple, _buffers[1],
+	_contexts["selection"]= new GLDrawContext(prog_simple, _buffers[1],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["tiles"]= new DrawContext(prog_simple, _buffers[2],
+	_contexts["tiles"]= new GLDrawContext(prog_simple, _buffers[2],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["floating_objects_footprint"]= new DrawContext(prog_simple, _buffers[3],
+	_contexts["floating_objects_footprint"]= new GLDrawContext(prog_simple, _buffers[3],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["floating_objects_bbox"]= new DrawContext(prog_simple, _buffers[4],
+	_contexts["floating_objects_bbox"]= new GLDrawContext(prog_simple, _buffers[4],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["texture"]= new DrawContext(prog_texture, _buffers[5],
+	_contexts["texture"]= new GLDrawContext(prog_texture, _buffers[5],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
@@ -523,7 +523,7 @@ void TrackEditor::load_track(uint track_idx) {
 
 
 void TrackEditor::draw_grid() {
-	DrawContext * context= _contexts["grid"];
+	GLDrawContext * context= _contexts["grid"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -551,7 +551,7 @@ void TrackEditor::draw_grid() {
 
 
 void TrackEditor::draw_selection() {
-	DrawContext * context= _contexts["selection"];
+	GLDrawContext * context= _contexts["selection"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -579,7 +579,7 @@ void TrackEditor::draw_selection() {
 
 
 void TrackEditor::draw_tiles() {
-	DrawContext * context= _contexts["tiles"];
+	GLDrawContext * context= _contexts["tiles"];
 	if (context->_n_pts== 0) {
 		return;
 	}
@@ -610,7 +610,7 @@ void TrackEditor::draw_tiles() {
 
 
 void TrackEditor::draw_floating_objects_footprint() {
-	DrawContext * context= _contexts["floating_objects_footprint"];
+	GLDrawContext * context= _contexts["floating_objects_footprint"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -638,7 +638,7 @@ void TrackEditor::draw_floating_objects_footprint() {
 
 
 void TrackEditor::draw_floating_objects_bbox() {
-	DrawContext * context= _contexts["floating_objects_bbox"];
+	GLDrawContext * context= _contexts["floating_objects_bbox"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -666,7 +666,7 @@ void TrackEditor::draw_floating_objects_bbox() {
 
 
 void TrackEditor::draw_texture(GLuint texture) {
-	DrawContext * context= _contexts["texture"];
+	GLDrawContext * context= _contexts["texture"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, texture);
@@ -740,7 +740,7 @@ void TrackEditor::show_info() {
 
 
 void TrackEditor::update_grid() {
-	DrawContext * context= _contexts["grid"];
+	GLDrawContext * context= _contexts["grid"];
 	context->_n_pts= 2* (_track->_grid->_width+ 1)+ 2* (_track->_grid->_height+ 1);
 	context->_n_attrs_per_pts= 6;
 
@@ -779,7 +779,7 @@ void TrackEditor::update_grid() {
 
 void TrackEditor::update_selection() {
 
-	DrawContext * context= _contexts["selection"];
+	GLDrawContext * context= _contexts["selection"];
 	context->_n_pts= 6;
 	context->_n_attrs_per_pts= 6;
 
@@ -810,7 +810,7 @@ void TrackEditor::update_selection() {
 
 
 void TrackEditor::update_tiles() {
-	DrawContext * context= _contexts["tiles"];
+	GLDrawContext * context= _contexts["tiles"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
@@ -844,7 +844,7 @@ void TrackEditor::update_tiles() {
 
 
 void TrackEditor::update_floating_objects_footprint() {
-	DrawContext * context= _contexts["floating_objects_footprint"];
+	GLDrawContext * context= _contexts["floating_objects_footprint"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
@@ -878,7 +878,7 @@ void TrackEditor::update_floating_objects_footprint() {
 
 
 void TrackEditor::update_floating_objects_bbox() {
-	DrawContext * context= _contexts["floating_objects_bbox"];
+	GLDrawContext * context= _contexts["floating_objects_bbox"];
 	context->_n_pts= 8* _track->_floating_objects.size();
 	context->_n_attrs_per_pts= 6;
 
@@ -899,7 +899,7 @@ void TrackEditor::update_floating_objects_bbox() {
 void TrackEditor::update_texture() {
 	const uint n_pts_per_obj= 6;
 
-	DrawContext * context= _contexts["texture"];
+	GLDrawContext * context= _contexts["texture"];
 	context->_n_pts= n_pts_per_obj* (_track->_floating_objects.size()+ _track->_grid->_objects.size());
 	context->_n_attrs_per_pts= 6;
 

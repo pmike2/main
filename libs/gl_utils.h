@@ -32,47 +32,54 @@ public:
 };
 
 
-struct DrawContextAttrib {
-	friend std::ostream & operator << (std::ostream & os, const DrawContextAttrib & dca);
+struct GLDrawContextAttrib {
+	GLDrawContextAttrib();
+	GLDrawContextAttrib(std::string name, GLint loc, uint size, GLenum type);
+	~GLDrawContextAttrib();
+	friend std::ostream & operator << (std::ostream & os, const GLDrawContextAttrib & dca);
 
 
 	std::string _name;
 	GLint _loc;
 	uint _size;
 	uint _offset;
+	bool _in_default_buffer;
 };
 
 
-struct DrawContextBuffer {
-	friend std::ostream & operator << (std::ostream & os, const DrawContextBuffer & dcb);
+struct GLDrawContextBuffer {
+	GLDrawContextBuffer();
+	GLDrawContextBuffer(bool is_instanced, GLenum usage);
+	~GLDrawContextBuffer();
+	friend std::ostream & operator << (std::ostream & os, const GLDrawContextBuffer & dcb);
 
 
 	GLuint _id;
-	std::vector<DrawContextAttrib> _attribs;
+	std::vector<GLDrawContextAttrib *> _attribs;
 	uint _n_attrs_per_pts;
 	bool _is_instanced;
 	GLenum _usage;
 };
 
 
-class DrawContext {
+class GLDrawContext {
 public:
-	DrawContext();
-	DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage = GL_STATIC_DRAW, bool active = true);
-	~DrawContext();
+	GLDrawContext();
+	GLDrawContext(GLuint prog, std::vector<GLDrawContextBuffer *> buffers, bool active = true);
+	~GLDrawContext();
 	void set_data(float * data, uint idx_buffer = 0);
 	void clear_data(uint idx_buffer = 0);
 	void activate();
 	void deactivate();
 	uint data_size(uint idx_buffer = 0);
 	void show_data(uint idx_buffer = 0);
-	friend std::ostream & operator << (std::ostream & os, const DrawContext & dc);
+	friend std::ostream & operator << (std::ostream & os, const GLDrawContext & dc);
 
 
 	GLuint _prog;
 	GLuint _vao;
 	std::map<std::string, GLint> _locs_uniform;
-	std::vector<DrawContextBuffer> _buffers;
+	std::vector<GLDrawContextBuffer *> _buffers;
 	uint _n_pts;
 	uint _n_instances;
 	bool _active;
@@ -84,7 +91,7 @@ public:
 	GLDrawManager();
 	GLDrawManager(std::string json_path);
 	~GLDrawManager();
-	DrawContext * get_context(std::string context_name);
+	GLDrawContext * get_context(std::string context_name);
 	void set_data(std::string context_name, uint n_pts, float * data);
 	void set_active(std::string context_name);
 	void set_inactive(std::string context_name);
@@ -92,7 +99,7 @@ public:
 	friend std::ostream & operator << (std::ostream & os, const GLDrawManager & gdm);
 
 
-	std::map<std::string, DrawContext *> _contexts;
+	std::map<std::string, GLDrawContext *> _contexts;
 };
 
 
@@ -100,8 +107,8 @@ void _check_gl_error(const char * file, int line);
 #define check_gl_error() _check_gl_error(__FILE__,__LINE__)
 void check_gl_program(GLuint prog);
 void gl_versions();
-void active_uniforms(GLuint prog);
-void active_attribs(GLuint prog);
+std::map<std::string, GLint> active_uniforms(GLuint prog);
+std::vector<GLDrawContextAttrib *> active_attribs(GLuint prog);
 char * load_source(const char * filename);
 GLuint load_shader(GLenum type, const char * filename);
 GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path="", bool check_program=true);

@@ -71,7 +71,7 @@ Repere::~Repere() {
 
 void Repere::draw(const mat_4d & world2clip) {
 	for (auto & context_name : std::vector<std::string>{"repere", "ground", "box"}) {
-		DrawContext * context = _gl_draw_manager->get_context(context_name);
+		GLDrawContext * context = _gl_draw_manager->get_context(context_name);
 		if (!context->_active) {
 			continue;
 		}

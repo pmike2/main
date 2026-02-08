@@ -98,7 +98,7 @@ public:
 	int _new_highest_char_idx; // indice du char sur les 3 dispos du nouveau meilleur score
 
 	bool _draw_aabb, _draw_footprint, _draw_texture, _draw_star; // faut-il afficher les AABB, footprints, textures, étoiles
-	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
+	std::map<std::string, GLDrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs
 	glm::mat4 _camera2clip; // glm::ortho

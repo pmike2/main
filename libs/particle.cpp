@@ -36,7 +36,7 @@ ParticleSystem::ParticleSystem(GLuint prog, ScreenGL * screengl) {
 	
 	GLuint buffer;
 	glGenBuffers(1, &buffer);
-	_context= new DrawContext(prog, buffer,
+	_context= new GLDrawContext(prog, buffer,
 		std::vector<std::string>{"vertex_in", "color_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix"});
 

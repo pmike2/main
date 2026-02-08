@@ -63,55 +63,55 @@ Racing::Racing(std::map<std::string, GLuint> progs, ScreenGL * screengl, InputSt
 	_texture_idx_water= 7;
 
 	// contextes de dessin
-	_contexts["bbox"]= new DrawContext(progs["simple"], _buffers[0],
+	_contexts["bbox"]= new GLDrawContext(progs["simple"], _buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["footprint"]= new DrawContext(progs["simple"], _buffers[1],
+	_contexts["footprint"]= new GLDrawContext(progs["simple"], _buffers[1],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["force"]= new DrawContext(progs["simple"], _buffers[2],
+	_contexts["force"]= new GLDrawContext(progs["simple"], _buffers[2],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["texture"]= new DrawContext(progs["texture"], _buffers[3],
+	_contexts["texture"]= new GLDrawContext(progs["texture"], _buffers[3],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "bump_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array", "texture_array_bump", "gray_blend"});
 
-	_contexts["smoke"]= new DrawContext(progs["smoke"], _buffers[4],
+	_contexts["smoke"]= new GLDrawContext(progs["smoke"], _buffers[4],
 		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array"});
 
-	_contexts["choose_driver"]= new DrawContext(progs["choose_track"], _buffers[5],
+	_contexts["choose_driver"]= new GLDrawContext(progs["choose_track"], _buffers[5],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "selection_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
-	_contexts["choose_track"]= new DrawContext(progs["choose_track"], _buffers[6],
+	_contexts["choose_track"]= new GLDrawContext(progs["choose_track"], _buffers[6],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "selection_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
-	_contexts["tire_track"]= new DrawContext(progs["tire_track"], _buffers[7],
+	_contexts["tire_track"]= new GLDrawContext(progs["tire_track"], _buffers[7],
 		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array", "z"});
 
-	_contexts["spark"]= new DrawContext(progs["spark"], _buffers[8],
+	_contexts["spark"]= new GLDrawContext(progs["spark"], _buffers[8],
 		std::vector<std::string>{"position_in", "alpha_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["driver_face"]= new DrawContext(progs["driver_face"], _buffers[9],
+	_contexts["driver_face"]= new GLDrawContext(progs["driver_face"], _buffers[9],
 		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array", "z"});
 
-	_contexts["barrier"]= new DrawContext(progs["barrier"], _buffers[10],
+	_contexts["barrier"]= new GLDrawContext(progs["barrier"], _buffers[10],
 		std::vector<std::string>{"position_in", "color_in", "lambda_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "z"});
 
-	_contexts["map"]= new DrawContext(progs["map"], _buffers[11],
+	_contexts["map"]= new GLDrawContext(progs["map"], _buffers[11],
 		std::vector<std::string>{"position_in", "tex_coord_in", "alpha_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
-	_contexts["water"]= new DrawContext(progs["water"], _buffers[12],
+	_contexts["water"]= new GLDrawContext(progs["water"], _buffers[12],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
 		std::vector<std::string>{"camera2clip_matrix", "world2camera_matrix", "texture_array", "gray_blend"});
 
@@ -285,7 +285,7 @@ void Racing::fill_texture_water() {
 
 
 void Racing::draw_choose_driver() {
-	DrawContext * context= _contexts["choose_driver"];
+	GLDrawContext * context= _contexts["choose_driver"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_driver_face]);
@@ -318,7 +318,7 @@ void Racing::draw_choose_driver() {
 
 
 void Racing::draw_choose_track() {
-	DrawContext * context= _contexts["choose_track"];
+	GLDrawContext * context= _contexts["choose_track"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_choose_track]);
@@ -351,7 +351,7 @@ void Racing::draw_choose_track() {
 
 
 void Racing::draw_bbox() {
-	DrawContext * context= _contexts["bbox"];
+	GLDrawContext * context= _contexts["bbox"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -379,7 +379,7 @@ void Racing::draw_bbox() {
 
 
 void Racing::draw_footprint() {
-	DrawContext * context= _contexts["footprint"];
+	GLDrawContext * context= _contexts["footprint"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -407,7 +407,7 @@ void Racing::draw_footprint() {
 
 
 void Racing::draw_force() {
-	DrawContext * context= _contexts["force"];
+	GLDrawContext * context= _contexts["force"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -435,7 +435,7 @@ void Racing::draw_force() {
 
 
 void Racing::draw_texture() {
-	DrawContext * context= _contexts["texture"];
+	GLDrawContext * context= _contexts["texture"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_model]);
@@ -482,7 +482,7 @@ void Racing::draw_texture() {
 
 
 void Racing::draw_smoke() {
-	DrawContext * context= _contexts["smoke"];
+	GLDrawContext * context= _contexts["smoke"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_smoke]);
@@ -517,7 +517,7 @@ void Racing::draw_smoke() {
 
 
 void Racing::draw_tire_track() {
-	DrawContext * context= _contexts["tire_track"];
+	GLDrawContext * context= _contexts["tire_track"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_tire_track]);
@@ -553,7 +553,7 @@ void Racing::draw_tire_track() {
 
 
 void Racing::draw_spark() {
-	DrawContext * context= _contexts["spark"];
+	GLDrawContext * context= _contexts["spark"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -581,7 +581,7 @@ void Racing::draw_spark() {
 
 
 void Racing::draw_driver_face() {
-	DrawContext * context= _contexts["driver_face"];
+	GLDrawContext * context= _contexts["driver_face"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_driver_face]);
@@ -616,7 +616,7 @@ void Racing::draw_driver_face() {
 
 
 void Racing::draw_barrier() {
-	DrawContext * context= _contexts["barrier"];
+	GLDrawContext * context= _contexts["barrier"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -645,7 +645,7 @@ void Racing::draw_barrier() {
 
 
 void Racing::draw_map() {
-	DrawContext * context= _contexts["map"];
+	GLDrawContext * context= _contexts["map"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_map]);
@@ -678,7 +678,7 @@ void Racing::draw_map() {
 
 
 void Racing::draw_water() {
-	DrawContext * context= _contexts["water"];
+	GLDrawContext * context= _contexts["water"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[_texture_idx_water]);
@@ -969,7 +969,7 @@ void Racing::update_choose_driver() {
 	const uint n_pts_per_obj= 6;
 	const float MARGIN= 1.0;
 
-	DrawContext * context= _contexts["choose_driver"];
+	GLDrawContext * context= _contexts["choose_driver"];
 	context->_n_pts= _track->_drivers.size()* n_pts_per_obj;
 	context->_n_attrs_per_pts= 6;
 
@@ -1012,7 +1012,7 @@ void Racing::update_choose_track() {
 	const uint n_pts_per_obj= 6;
 	const float MARGIN= 1.0;
 
-	DrawContext * context= _contexts["choose_track"];
+	GLDrawContext * context= _contexts["choose_track"];
 	context->_n_pts= _n_available_tracks* n_pts_per_obj;
 	context->_n_attrs_per_pts= 6;
 
@@ -1052,7 +1052,7 @@ void Racing::update_choose_track() {
 void Racing::update_bbox() {
 	const uint n_pts_per_obj= 8;
 
-	DrawContext * context= _contexts["bbox"];
+	GLDrawContext * context= _contexts["bbox"];
 	context->_n_pts= n_pts_per_obj* (_track->_grid->_objects.size()+ _track->_floating_objects.size());
 	context->_n_attrs_per_pts= 6;
 
@@ -1075,7 +1075,7 @@ void Racing::update_bbox() {
 
 
 void Racing::update_footprint() {
-	DrawContext * context= _contexts["footprint"];
+	GLDrawContext * context= _contexts["footprint"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
@@ -1131,7 +1131,7 @@ void Racing::update_force() {
 	const uint n_pts_per_arrow= 6;
 	const uint n_pts_per_obj= 3* n_pts_per_cross+ 6* n_pts_per_arrow; // 3 croix ; 6 fleches
 
-	DrawContext * context= _contexts["force"];
+	GLDrawContext * context= _contexts["force"];
 	context->_n_pts= n_pts_per_obj* (_track->_floating_objects.size()+ _track->_grid->_objects.size());
 	context->_n_attrs_per_pts= 6;
 
@@ -1189,7 +1189,7 @@ void Racing::update_texture() {
 	uint n_grid_objects= _track->_grid->_objects.size();
 	uint n_floating_objects= _track->_floating_objects.size();
 
-	DrawContext * context= _contexts["texture"];
+	GLDrawContext * context= _contexts["texture"];
 	context->_n_pts= n_pts_per_obj* (n_grid_objects+ n_floating_objects);
 	context->_n_attrs_per_pts= 7;
 
@@ -1259,7 +1259,7 @@ void Racing::update_texture() {
 void Racing::update_smoke() {
 	const uint n_pts_per_obj= 6;
 
-	DrawContext * context= _contexts["smoke"];
+	GLDrawContext * context= _contexts["smoke"];
 	context->_n_pts= n_pts_per_obj* _smoke_systems.size()* N_SMOKES_PER_CAR;
 	context->_n_attrs_per_pts= 7;
 
@@ -1295,7 +1295,7 @@ void Racing::update_smoke() {
 void Racing::update_tire_track() {
 	const uint n_pts_per_obj= 6;
 
-	DrawContext * context= _contexts["tire_track"];
+	GLDrawContext * context= _contexts["tire_track"];
 	context->_n_pts= n_pts_per_obj* N_MAX_TIRE_TRACKS;
 	context->_n_attrs_per_pts= 6;
 
@@ -1338,7 +1338,7 @@ void Racing::update_tire_track() {
 void Racing::update_spark() {
 	const uint n_pts_per_obj= 6;
 
-	DrawContext * context= _contexts["spark"];
+	GLDrawContext * context= _contexts["spark"];
 	context->_n_pts= n_pts_per_obj* N_MAX_SPARKS;
 	context->_n_attrs_per_pts= 3;
 
@@ -1374,7 +1374,7 @@ void Racing::update_spark() {
 void Racing::update_driver_face() {
 	const uint n_pts_per_obj= 6;
 
-	DrawContext * context= _contexts["driver_face"];
+	GLDrawContext * context= _contexts["driver_face"];
 	context->_n_pts= _track->_drivers.size()* 2* n_pts_per_obj; // * 2 : 1 pour le ranking, 1 pour dans la course
 	context->_n_attrs_per_pts= 6;
 
@@ -1458,7 +1458,7 @@ void Racing::update_driver_face() {
 void Racing::update_barrier() {
 	const uint n_pts_per_obj= 6;
 
-	DrawContext * context= _contexts["barrier"];
+	GLDrawContext * context= _contexts["barrier"];
 	uint n_barriers= 0;
 	for (auto poly : _track->_barriers) {
 		n_barriers+= poly.size();
@@ -1514,7 +1514,7 @@ void Racing::update_barrier() {
 void Racing::update_map() {
 	const uint n_pts_per_obj= 6;
 
-	DrawContext * context= _contexts["map"];
+	GLDrawContext * context= _contexts["map"];
 	context->_n_pts= (1+ _track->_drivers.size())* n_pts_per_obj;
 	context->_n_attrs_per_pts= 7;
 
@@ -1568,7 +1568,7 @@ void Racing::update_map() {
 void Racing::update_water() {
 	const uint n_pts_per_obj= 6;
 
-	DrawContext * context= _contexts["water"];
+	GLDrawContext * context= _contexts["water"];
 	context->_n_pts= _water_system->_tiles.size()* n_pts_per_obj;
 	context->_n_attrs_per_pts= 6;
 

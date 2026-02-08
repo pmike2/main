@@ -18,7 +18,7 @@ TestGeom2D::TestGeom2D(std::map<std::string, GLuint> progs, ScreenGL * screengl)
 	_buffers= new GLuint[n_buffers];
 	glGenBuffers(n_buffers, _buffers);
 
-	_contexts["bbox"]= new DrawContext(progs["bbox"], _buffers[0],
+	_contexts["bbox"]= new GLDrawContext(progs["bbox"], _buffers[0],
 	std::vector<std::string>{"position_in", "color_in"},
 	std::vector<std::string>{"camera2clip_matrix"});
 
@@ -71,7 +71,7 @@ void TestGeom2D::randomize() {
 
 
 void TestGeom2D::draw() {
-	DrawContext * context= _contexts["bbox"];
+	GLDrawContext * context= _contexts["bbox"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -103,7 +103,7 @@ void TestGeom2D::update() {
 	const float ARROW_ANGLE= M_PI* 0.1;
 	const float ARROW_TIP_SIZE= 0.2;
 
-	DrawContext * context= _contexts["bbox"];
+	GLDrawContext * context= _contexts["bbox"];
 	context->_n_pts= _poly1->_pts.size()* 2+ _poly2->_pts.size()* 2+ 6;
 	context->_n_attrs_per_pts= 6;
 

@@ -82,7 +82,7 @@ struct FowVertexData {
 
 struct Team {
 	Team();
-	Team(std::string name, glm::vec3 color, Elevation * elevation);
+	Team(std::string name, glm::vec3 color, Elevation * elevation, pt_2d fow_resolution);
 	~Team();
 	Unit * add_unit(UnitType * type, uint id, pt_2d pos);
 	std::vector<Unit *> get_units_in_aabb(AABB_2D * aabb);
@@ -96,6 +96,7 @@ struct Team {
 	bool is_target_reachable(Unit * unit, Unit * target);
 	void unit_attack(Unit * unit, Unit * target, time_point t);
 	void selected_units_attack(Unit * target, time_point t);
+	void update_fow_unit(Unit * unit);
 	void update_fow();
 	friend std::ostream & operator << (std::ostream & os, Team & team);
 
@@ -106,7 +107,7 @@ struct Team {
 	glm::vec3 _color;
 	bool _ia;
 	GraphGrid * _fow;
-	unsigned char * _fow_data; 
+	float * _fow_data; 
 };
 
 #endif

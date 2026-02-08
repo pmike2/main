@@ -35,7 +35,7 @@ class ParticleSystem {
 
 
 	std::vector<Particle *> _particles;
-	DrawContext * _context;
+	GLDrawContext * _context;
 	GLuint _texture_id;
 	glm::mat4 _camera2clip; // glm::ortho
 };

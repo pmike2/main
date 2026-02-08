@@ -77,7 +77,7 @@ public:
 	Font * _font;
 	ScreenGL * _screengl;
 	InputState * _input_state;
-	std::map<std::string, DrawContext *> _contexts;
+	std::map<std::string, GLDrawContext *> _contexts;
 	GLuint * _buffers;
 	bool _draw_grid;
 };

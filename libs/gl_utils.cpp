@@ -52,108 +52,137 @@ void ScreenGL::gl2screen(number x, number y, int & i, int & j) {
 
 
 // --------------------------------------------------------
-std::ostream & operator << (std::ostream & os, const DrawContextAttrib & dca) {
+GLDrawContextAttrib::GLDrawContextAttrib() {
+
+}
+
+
+GLDrawContextAttrib::GLDrawContextAttrib(std::string name, GLint loc, uint size, GLenum type) : _name(name), _loc(loc), _offset(0), _in_default_buffer(true) {
+	// attention size ici est la dimension du tableau de types donc 1 si ce n'est pas un tableau
+	if (type == GL_FLOAT) {
+		_size = 1;
+	}
+	else if (type == GL_FLOAT_VEC2) {
+		_size = 2;
+	}
+	else if (type == GL_FLOAT_VEC3) {
+		_size = 3;
+	}
+	else if (type == GL_FLOAT_VEC4) {
+		_size = 4;
+	}
+	else if (type == GL_FLOAT_MAT3) {
+		_size = 9;
+	}
+	else if (type == GL_FLOAT_MAT4) {
+		_size = 16;
+	}
+	else if (type == GL_INT) {
+		_size = 1;
+	}
+	else {
+		std::cerr << "GLDrawContextAttrib : type " << type << "non reconnu. compléter avec : https://registry.khronos.org/OpenGL-Refpages/gl4/html/glGetActiveAttrib.xhtml\n";
+		return;
+	}
+	_size *= size;
+}
+
+
+GLDrawContextAttrib::~GLDrawContextAttrib() {
+
+}
+
+
+std::ostream & operator << (std::ostream & os, const GLDrawContextAttrib & dca) {
 	os << "name = " << dca._name;
 	os << " ; loc = " << dca._loc << " ; size = " << dca._size << " ; offset = " << dca._offset;
+	os << " ; in_default_buffer = " << dca._in_default_buffer;
 
 	return os;
 }
 
 
 // --------------------------------------------------------
-std::ostream & operator << (std::ostream & os, const DrawContextBuffer & dcb) {
+GLDrawContextBuffer::GLDrawContextBuffer() {
+
+}
+
+
+GLDrawContextBuffer::GLDrawContextBuffer(bool is_instanced, GLenum usage) : _is_instanced(is_instanced), _usage(usage), _n_attrs_per_pts(0) {
+
+}
+
+
+GLDrawContextBuffer::~GLDrawContextBuffer() {
+	for (auto & attrib : _attribs) {
+		delete attrib;
+	}
+	_attribs.clear();
+}
+
+
+std::ostream & operator << (std::ostream & os, const GLDrawContextBuffer & dcb) {
 	os << "id = " << dcb._id << " ; n_attrs_per_pts = " << dcb._n_attrs_per_pts << " ; usage = " << dcb._usage;
 	os  << " ; is_instanced = " << dcb._is_instanced;
 	os << "\n\t";
 	os << "attribs :\n";
 	for (auto attrib : dcb._attribs) {
-		os << "\t\t" << attrib << "\n";
+		os << "\t\t" << *attrib << "\n";
 	}
 	return os;
 }
 
 
 // --------------------------------------------------------
-DrawContext::DrawContext() {
+GLDrawContext::GLDrawContext() {
 
 }
 
 
-DrawContext::DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std::vector<std::string> locs_uniform, GLenum usage, bool active) :
+GLDrawContext::GLDrawContext(GLuint prog, std::vector<GLDrawContextBuffer *> buffers, bool active) :
 	_prog(prog), _n_pts(0), _active(active), _n_instances(0)
 {
-	for (auto loc : locs_uniform) {
-		_locs_uniform[loc]= glGetUniformLocation(_prog, loc.c_str());
-	}
 
-	DrawContextBuffer buffer;
-	buffer._n_attrs_per_pts = 0;
-	buffer._usage = usage; // TODO : faire un usage différent pour chaque buffer ?
-	buffer._is_instanced = false;
+	_locs_uniform = active_uniforms(_prog);
 
-	uint offset = 0;
-	
-	for (auto loc : locs_attrib) {
-		DrawContextAttrib attrib;
-		std::stringstream ss(loc);
-		std::string s_size, s_option;
-		std::getline(ss, attrib._name, ':');
-		std::getline(ss, s_size, ':');
-		attrib._loc = glGetAttribLocation(_prog, attrib._name.c_str());
-		attrib._size = std::stoul(s_size);
-		std::getline(ss, s_option, ':');
+	for (auto & buffer : buffers) {
+		glGenBuffers(1, &buffer->_id);
 
-		if (s_option == "new_buffer") {
-			_buffers.push_back(buffer);
-			buffer._attribs.clear();
-			buffer._n_attrs_per_pts = 0;
-			buffer._is_instanced = false;
-			offset = 0;
+		// on trie les attributs par leurs location afin de correctement calculer l'offset
+		std::sort(buffer->_attribs.begin(), buffer->_attribs.end(), [](const GLDrawContextAttrib * a, const GLDrawContextAttrib * b) { return a->_loc < b->_loc; });
+		uint offset = 0;
+		for (auto attrib : buffer->_attribs) {
+			attrib->_offset = offset;
+			offset += attrib->_size;
+			buffer->_n_attrs_per_pts += attrib->_size;
 		}
-		
-		else if (s_option == "new_instanced_buffer") {
-			_buffers.push_back(buffer);
-			buffer._attribs.clear();
-			buffer._n_attrs_per_pts = 0;
-			buffer._is_instanced = true;
-			offset = 0;
-		}
-
-		attrib._offset = offset;
-		offset += attrib._size;
-		buffer._n_attrs_per_pts += attrib._size;
-		
-		buffer._attribs.push_back(attrib);
+		_buffers.push_back(buffer);
 	}
-	_buffers.push_back(buffer);
 
-	for (auto & buffer : _buffers) {
-		glGenBuffers(1, &buffer._id);
-	}
 	glGenVertexArrays(1, &_vao);
 
 	glBindVertexArray(_vao);
 	
 	for (auto & buffer : _buffers) {
-		glBindBuffer(GL_ARRAY_BUFFER, buffer._id);
-		for (auto attr : buffer._attribs) {
-			if (buffer._is_instanced) {
-				if (attr._size == 16) {
+		glBindBuffer(GL_ARRAY_BUFFER, buffer->_id);
+		for (auto attr : buffer->_attribs) {
+			if (buffer->_is_instanced) {
+				if (attr->_size == 16) {
 					for (uint i=0; i<4; ++i) {
-						glEnableVertexAttribArray(attr._loc + i);
-						glVertexAttribPointer(attr._loc + i, 4, GL_FLOAT, GL_FALSE, buffer._n_attrs_per_pts * sizeof(float), (void*)((attr._offset + i * 4) * sizeof(float)));
-						glVertexAttribDivisor(attr._loc + i, 1);
+						glEnableVertexAttribArray(attr->_loc + i);
+						glVertexAttribPointer(attr->_loc + i, 4, GL_FLOAT, GL_FALSE, buffer->_n_attrs_per_pts * sizeof(float), (void*)((attr->_offset + i * 4) * sizeof(float)));
+						glVertexAttribDivisor(attr->_loc + i, 1);
 					}
 				}
 				else {
-					glEnableVertexAttribArray(attr._loc);
-					glVertexAttribPointer(attr._loc, attr._size, GL_FLOAT, GL_FALSE, buffer._n_attrs_per_pts * sizeof(float), (void*)((attr._offset) * sizeof(float)));
-					glVertexAttribDivisor(attr._loc, 1);
+					glEnableVertexAttribArray(attr->_loc);
+					glVertexAttribPointer(attr->_loc, attr->_size, GL_FLOAT, GL_FALSE, buffer->_n_attrs_per_pts * sizeof(float), (void*)((attr->_offset) * sizeof(float)));
+					glVertexAttribDivisor(attr->_loc, 1);
 				}
 			}
 			else {
-				glEnableVertexAttribArray(attr._loc);
-				glVertexAttribPointer(attr._loc, attr._size, GL_FLOAT, GL_FALSE, buffer._n_attrs_per_pts * sizeof(float), (void*)(attr._offset * sizeof(float)));
+				glEnableVertexAttribArray(attr->_loc);
+				glVertexAttribPointer(attr->_loc, attr->_size, GL_FLOAT, GL_FALSE, buffer->_n_attrs_per_pts * sizeof(float), (void*)(attr->_offset * sizeof(float)));
 			}
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -163,66 +192,69 @@ DrawContext::DrawContext(GLuint prog, std::vector<std::string> locs_attrib, std:
 }
 
 
-DrawContext::~DrawContext() {
-
+GLDrawContext::~GLDrawContext() {
+	for (auto & buffer : _buffers) {
+		delete buffer;
+	}
+	_buffers.clear();
 }
 
 
-void DrawContext::set_data(float * data, uint idx_buffer) {
-	DrawContextBuffer buffer = _buffers[idx_buffer];
-	glBindBuffer(GL_ARRAY_BUFFER, buffer._id);
-	if (buffer._is_instanced) {
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * _n_instances * buffer._n_attrs_per_pts, data, buffer._usage);
+void GLDrawContext::set_data(float * data, uint idx_buffer) {
+	GLDrawContextBuffer * buffer = _buffers[idx_buffer];
+	glBindBuffer(GL_ARRAY_BUFFER, buffer->_id);
+	if (buffer->_is_instanced) {
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * _n_instances * buffer->_n_attrs_per_pts, data, buffer->_usage);
 	}
 	else {
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * _n_pts * buffer._n_attrs_per_pts, data, buffer._usage);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(float) * _n_pts * buffer->_n_attrs_per_pts, data, buffer->_usage);
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
-void DrawContext::clear_data(uint idx_buffer) {
-	DrawContextBuffer buffer = _buffers[idx_buffer];
-	glBindBuffer(GL_ARRAY_BUFFER, buffer._id);
-	glBufferData(GL_ARRAY_BUFFER, 0, NULL, buffer._usage);
+void GLDrawContext::clear_data(uint idx_buffer) {
+	GLDrawContextBuffer * buffer = _buffers[idx_buffer];
+	glBindBuffer(GL_ARRAY_BUFFER, buffer->_id);
+	glBufferData(GL_ARRAY_BUFFER, 0, NULL, buffer->_usage);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
-void DrawContext::activate() {
+void GLDrawContext::activate() {
 	glUseProgram(_prog);
 	glBindVertexArray(_vao);
 }
 
 
-void DrawContext::deactivate() {
+void GLDrawContext::deactivate() {
 	glBindVertexArray(0);
 	glUseProgram(0);
 }
 
 
-uint DrawContext::data_size(uint idx_buffer) {
-	DrawContextBuffer buffer = _buffers[idx_buffer];
-	if (buffer._is_instanced) {
-		return _buffers[idx_buffer]._n_attrs_per_pts * _n_instances;
+uint GLDrawContext::data_size(uint idx_buffer) {
+	GLDrawContextBuffer * buffer = _buffers[idx_buffer];
+	if (buffer->_is_instanced) {
+		return _buffers[idx_buffer]->_n_attrs_per_pts * _n_instances;
 	}
 	else {
-		return _buffers[idx_buffer]._n_attrs_per_pts * _n_pts;
+		return _buffers[idx_buffer]->_n_attrs_per_pts * _n_pts;
 	}
 }
 
 
-void DrawContext::show_data(uint idx_buffer) {
-	DrawContextBuffer buffer = _buffers[idx_buffer];
+void GLDrawContext::show_data(uint idx_buffer) {
+	GLDrawContextBuffer * buffer = _buffers[idx_buffer];
 	uint ds = data_size(idx_buffer);
 	float * data = new float[ds];
 
-	glBindBuffer(GL_ARRAY_BUFFER, buffer._id);
+	glBindBuffer(GL_ARRAY_BUFFER, buffer->_id);
 	glGetBufferSubData(GL_ARRAY_BUFFER, 0, ds * sizeof(float), data);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	for (uint i=0; i<ds; ++i) {
-		if (i % _buffers[idx_buffer]._n_attrs_per_pts == 0) {
+		if (i % _buffers[idx_buffer]->_n_attrs_per_pts == 0) {
 			std::cout << "\n";
 		}
 		std::cout << data[i] << " ; ";
@@ -233,7 +265,7 @@ void DrawContext::show_data(uint idx_buffer) {
 }
 
 
-std::ostream & operator << (std::ostream & os, const DrawContext & dc) {
+std::ostream & operator << (std::ostream & os, const GLDrawContext & dc) {
 	os << "prog = " << dc._prog << " ; vao = " << dc._vao;
 	os << " ; n_pts = " << dc._n_pts << " ; active = " << dc._active;
 	os << "\n";
@@ -245,7 +277,7 @@ std::ostream & operator << (std::ostream & os, const DrawContext & dc) {
 
 	os << "buffers\n";
 	for (auto & buffer : dc._buffers) {
-		os << "\t" << buffer << "\n";
+		os << "\t" << *buffer << "\n";
 	}
 
 	return os;
@@ -320,16 +352,6 @@ GLDrawManager::GLDrawManager(std::string json_path) {
 			if (shader_name == context_dic["shader"]) {
 				found_shader = true;
 
-				std::vector<std::string> locs_attrib;
-				for (auto & loc : shader_dic["locs"]) {
-					locs_attrib.push_back(loc);
-				}
-				
-				std::vector<std::string> locs_uniform;
-				for (auto & loc : shader_dic["uniforms"]) {
-					locs_uniform.push_back(loc);
-				}
-				
 				GLenum usage = GL_STATIC_DRAW;
 				if (context_dic["usage"] != nullptr) {
 					if (context_dic["usage"] == "GL_STATIC_DRAW") {
@@ -346,13 +368,50 @@ GLDrawManager::GLDrawManager(std::string json_path) {
 						return;
 					}
 				}
+				
+				std::vector<GLDrawContextAttrib *> attribs = active_attribs(progs[shader_name]);
+				
+				std::vector<GLDrawContextBuffer *> buffers;
 
+				GLDrawContextBuffer * default_buffer = new GLDrawContextBuffer(false, usage);
+				// TODO : faire un usage différent pour chaque buffer ?
+				buffers.push_back(default_buffer);
+
+				if (shader_dic["buffers"] != nullptr) {
+					for (auto & buff : shader_dic["buffers"]) {
+						bool is_instanced = buff["instanced"];
+						std::vector<std::string> attrs;
+						for (auto & attr : buff["attrs"]) {
+							attrs.push_back(attr);
+						}
+						
+						GLDrawContextBuffer * buffer = new GLDrawContextBuffer(is_instanced, usage);
+						for (auto & attr_name : attrs) {
+							for (auto & attrib : attribs) {
+								if (attrib->_name == attr_name) {
+									attrib->_in_default_buffer = false;
+									buffer->_attribs.push_back(attrib);
+									break;
+								}
+							}
+						}
+						buffers.push_back(buffer);
+					}
+				}
+
+				// tous les attributs qui n'ont pas été utilisé par un buffer sont attribués au buffer par défaut
+				for (auto & attrib : attribs) {
+					if (attrib->_in_default_buffer) {
+						default_buffer->_attribs.push_back(attrib);
+					}
+				}
+				
 				bool active = true;
 				if (context_dic["active"] != nullptr) {
 					active = context_dic["active"];
 				}
 
-				_contexts[context_name] = new DrawContext(progs[shader_name], locs_attrib, locs_uniform, usage, active);
+				_contexts[context_name] = new GLDrawContext(progs[shader_name], buffers, active);
 
 				break;
 			}
@@ -373,7 +432,7 @@ GLDrawManager::~GLDrawManager() {
 }
 
 
-DrawContext * GLDrawManager::get_context(std::string context_name) {
+GLDrawContext * GLDrawManager::get_context(std::string context_name) {
 	if (_contexts.count(context_name) == 0) {
 		std::cerr << "GLDrawManager::get_context : " << context_name << " inconnu.\n";
 		return NULL;
@@ -383,7 +442,7 @@ DrawContext * GLDrawManager::get_context(std::string context_name) {
 
 
 void GLDrawManager::set_data(std::string context_name, uint n_pts, float * data) {
-	DrawContext * context = get_context(context_name);
+	GLDrawContext * context = get_context(context_name);
 	if (context == NULL) {
 		return;
 	}
@@ -394,7 +453,7 @@ void GLDrawManager::set_data(std::string context_name, uint n_pts, float * data)
 
 
 void GLDrawManager::set_active(std::string context_name){
-	DrawContext * context = get_context(context_name);
+	GLDrawContext * context = get_context(context_name);
 	if (context == NULL) {
 		return;
 	}
@@ -404,7 +463,7 @@ void GLDrawManager::set_active(std::string context_name){
 
 
 void GLDrawManager::set_inactive(std::string context_name){
-	DrawContext * context = get_context(context_name);
+	GLDrawContext * context = get_context(context_name);
 	if (context == NULL) {
 		return;
 	}
@@ -414,7 +473,7 @@ void GLDrawManager::set_inactive(std::string context_name){
 
 
 void GLDrawManager::switch_active(std::string context_name) {
-	DrawContext * context = get_context(context_name);
+	GLDrawContext * context = get_context(context_name);
 	if (context == NULL) {
 		return;
 	}
@@ -496,7 +555,9 @@ void gl_versions() {
 }
 
 
-void active_uniforms(GLuint prog) {
+std::map<std::string, GLint> active_uniforms(GLuint prog) {
+	std::map<std::string, GLint> result;
+
 	GLint nUniforms, size, location, maxLen;
 	GLchar * name;
 	GLsizei written;
@@ -506,26 +567,35 @@ void active_uniforms(GLuint prog) {
 	name= (GLchar *) malloc(maxLen);
 	for( int i=0; i<nUniforms; ++i ) {
 		glGetActiveUniform(prog, i, maxLen, &written, &size, &type, name);
-		location= glGetUniformLocation(prog, name);
-		std::cout << location << " ; " << name << "\n";
+		location = glGetUniformLocation(prog, name);
+		result[std::string(name)] = location;
 	}
 	free(name);
+
+	return result;
 }
 
 
-void active_attribs(GLuint prog) {
-	GLint written, size, location, maxLength, nAttribs;
+std::vector<GLDrawContextAttrib *> active_attribs(GLuint prog) {
+	std::vector<GLDrawContextAttrib *> result;
+
+	GLint written, size, location, max_length, n_attribs;
 	GLenum type;
 	GLchar * name;
-	glGetProgramiv(prog, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &maxLength);
-	glGetProgramiv(prog, GL_ACTIVE_ATTRIBUTES, &nAttribs);
-	name= (GLchar *) malloc(maxLength);
-	for( int i = 0; i < nAttribs; i++ ) {
-		glGetActiveAttrib( prog, i, maxLength, &written, &size, &type, name );
+	glGetProgramiv(prog, GL_ACTIVE_ATTRIBUTE_MAX_LENGTH, &max_length);
+	glGetProgramiv(prog, GL_ACTIVE_ATTRIBUTES, &n_attribs);
+	name= (GLchar *) malloc(max_length);
+	
+	for (int i=0; i<n_attribs; ++i) {
+		glGetActiveAttrib(prog, i, max_length, &written, &size, &type, name);
 		location = glGetAttribLocation(prog, name);
-		std::cout << location << " ; " << name << "\n";
+		GLDrawContextAttrib * attrib = new GLDrawContextAttrib(std::string(name), location, size, type);
+		result.push_back(attrib);
 	}
+
 	free(name);
+
+	return result;
 }
 
 
@@ -684,8 +754,11 @@ void export_texture2pgm(std::string pgm_path, uint width, uint height) {
 
 
 void export_texture_array2pgm(std::string pgm_dir_path, uint width, uint height, uint depth) {
-	unsigned char * pixels= new unsigned char[width* height* depth];
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1); 
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+	unsigned char * pixels= new unsigned char[width * height * depth];
 	glGetTexImage(GL_TEXTURE_2D_ARRAY, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
+
 	for (uint d=0; d<depth; ++d) {
 		std::string pgm_path= pgm_dir_path+ "/tex_array_"+ std::to_string(d)+ ".pgm";
 		FILE *f;
@@ -696,6 +769,7 @@ void export_texture_array2pgm(std::string pgm_dir_path, uint width, uint height,
 		}
 		fclose(f);
 	}
+
 	delete[] pixels;
 }
 

@@ -27,7 +27,7 @@ public:
 
 	Elements * _elements;
 
-	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
+	std::map<std::string, GLDrawContext *> _contexts; // contextes de dessin
 };
 
 #endif

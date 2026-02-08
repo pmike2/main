@@ -620,6 +620,7 @@ std::vector<uint> GraphGrid::vertices_in_circle(pt_2d center, number radius) {
 	std::vector<uint> result;
 	for (auto v : l) {
 		pt_2d v_pos = pt_2d(get_vertex(v)._pos);
+		//std::cout << glm_to_string(v_pos) << "\n";
 		if (glm::length(v_pos - center) < radius) {
 			result.push_back(v);
 		}

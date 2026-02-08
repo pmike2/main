@@ -4,10 +4,10 @@
 uniform mat4 camera2clip_matrix;
 uniform float z;
 
-in vec2 position_in;
-in vec2 tex_coord_in;
-in float alpha_in;
-in float current_layer_in;
+layout(location=0) in vec2 position_in;
+layout(location=1) in vec2 tex_coord_in;
+layout(location=2) in float alpha_in;
+layout(location=3) in float current_layer_in;
 
 out vec2 tex_coord;
 out float alpha;

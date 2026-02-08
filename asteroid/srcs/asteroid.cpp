@@ -54,24 +54,24 @@ Asteroid::Asteroid(GLuint prog_aabb, GLuint prog_texture, GLuint prog_star, GLui
 	read_highest_scores();
 	reinit(t);
 
-	_contexts["border_aabb"]= new DrawContext(prog_aabb, _buffers[0],
+	_contexts["border_aabb"]= new GLDrawContext(prog_aabb, _buffers[0],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"camera2clip_matrix"});
 
-	_contexts["ship_aabb"]= new DrawContext(prog_aabb, _buffers[1],
+	_contexts["ship_aabb"]= new GLDrawContext(prog_aabb, _buffers[1],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"camera2clip_matrix"});
 
-	_contexts["ship_footprint"]= new DrawContext(prog_aabb, _buffers[2],
+	_contexts["ship_footprint"]= new GLDrawContext(prog_aabb, _buffers[2],
 		std::vector<std::string>{"position_in", "color_in"},
 		std::vector<std::string>{"camera2clip_matrix"});
 
-	_contexts["ship_texture"]= new DrawContext(prog_texture, _buffers[3],
+	_contexts["ship_texture"]= new GLDrawContext(prog_texture, _buffers[3],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "hit_in", "alpha_in",
 		"rotation_in", "scale_in", "center_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array"});
 
-	_contexts["star"]= new DrawContext(prog_star, _buffers[4],
+	_contexts["star"]= new GLDrawContext(prog_star, _buffers[4],
 		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in", "color_in"},
 		std::vector<std::string>{"camera2clip_matrix", "texture_array", "max_alpha"});
 
@@ -251,7 +251,7 @@ void Asteroid::load_levels(std::chrono::system_clock::time_point t) {
 
 
 void Asteroid::draw_border_aabb() {
-	DrawContext * context= _contexts["border_aabb"];
+	GLDrawContext * context= _contexts["border_aabb"];
 
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -277,7 +277,7 @@ void Asteroid::draw_border_aabb() {
 
 
 void Asteroid::draw_ship_aabb() {
-	DrawContext * context= _contexts["ship_aabb"];
+	GLDrawContext * context= _contexts["ship_aabb"];
 	
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -303,7 +303,7 @@ void Asteroid::draw_ship_aabb() {
 
 
 void Asteroid::draw_ship_footprint() {
-	DrawContext * context= _contexts["ship_footprint"];
+	GLDrawContext * context= _contexts["ship_footprint"];
 	
 	glUseProgram(context->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, context->_buffer);
@@ -329,7 +329,7 @@ void Asteroid::draw_ship_footprint() {
 
 
 void Asteroid::draw_ship_texture() {
-	DrawContext * context= _contexts["ship_texture"];
+	GLDrawContext * context= _contexts["ship_texture"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[0]);
@@ -367,7 +367,7 @@ void Asteroid::draw_ship_texture() {
 
 
 void Asteroid::draw_star() {
-	DrawContext * context= _contexts["star"];
+	GLDrawContext * context= _contexts["star"];
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _textures[1]);
@@ -510,7 +510,7 @@ void Asteroid::show_set_score_name_info() {
 
 
 void Asteroid::update_border_aabb() {
-	DrawContext * context= _contexts["border_aabb"];
+	GLDrawContext * context= _contexts["border_aabb"];
 	context->_n_pts= 8;
 	context->_n_attrs_per_pts= 6;
 
@@ -543,7 +543,7 @@ void Asteroid::update_border_aabb() {
 
 
 void Asteroid::update_ship_aabb() {
-	DrawContext * context= _contexts["ship_aabb"];
+	GLDrawContext * context= _contexts["ship_aabb"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
@@ -610,7 +610,7 @@ void Asteroid::update_ship_aabb() {
 
 
 void Asteroid::update_ship_footprint() {
-	DrawContext * context= _contexts["ship_footprint"];
+	GLDrawContext * context= _contexts["ship_footprint"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 6;
 
@@ -677,7 +677,7 @@ void Asteroid::update_ship_footprint() {
 
 
 void Asteroid::update_ship_texture() {
-	DrawContext * context= _contexts["ship_texture"];
+	GLDrawContext * context= _contexts["ship_texture"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 11;
 
@@ -726,7 +726,7 @@ void Asteroid::update_ship_texture() {
 
 
 void Asteroid::update_star() {
-	DrawContext * context= _contexts["star"];
+	GLDrawContext * context= _contexts["star"];
 	context->_n_pts= 0;
 	context->_n_attrs_per_pts= 10;
 

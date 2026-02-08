@@ -2,62 +2,28 @@
 	"add_dir_shaders" : ["../shaders"],
 	"add_shaders" : ["../../shaders/repere", "../../shaders/font", "../../shaders/font3d", "../../shaders/gl_ihm"],
 	"shaders" : {
-		"repere" : {
-			"locs" : ["position_in:3", "color_in:4"],
-			"uniforms" : ["world2clip_matrix"]
-		},
-		"font" : {
-			"locs" : ["vertex_in:4", "color_in:4", "current_layer_in:1"],
-			"uniforms" : ["camera2clip_matrix", "z", "texture_array"]
-		},
-		"font3d" : {
-			"locs" : ["vertex_in:3", "tex_in:2", "color_in:4", "current_layer_in:1"],
-			"uniforms" : ["camera2clip_matrix", "z", "texture_array"]
-		},
-		"gl_ihm" : {
-			"locs" : ["position_in:2", "tex_coord_in:2", "alpha_in:1", "current_layer_in:1"],
-			"uniforms" : ["camera2clip_matrix", "texture_array", "z"]
-		},
+		"repere" : {},
+		"font" : {},
+		"font3d" : {},
+		"gl_ihm" : {},
 		
-		"select" : {
-			"locs" : ["position_in:2", "color_in:4"],
-			"uniforms" : ["z", "viewport_size", "thickness"]
-		},
-		"linear" : {
-			"locs" : ["position_in:3", "color_in:4"],
-			"uniforms" : ["world2clip_matrix"]
-		},
-		"dash" : {
-			"locs" : ["position_in:3", "color_in:4"],
-			"uniforms" : ["world2clip_matrix", "gap_size", "dash_size", "viewport_size", "thickness"]
-		},
-		"elevation" : {
-			"locs" : ["position_in:3", "color_in:4", "normal_in:3"],
-			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position", "fow_texture_array", "idx_team", "elevation_size", "elevation_origin", "z_fow"]
-		},
-		"tree_stone" : {
-			"locs" : ["position_in:3", "color_in:4", "normal_in:3"],
-			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position"]
-		},
-		"river" : {
-			"locs" : ["position_in:3", "color_in:4", "normal_in:3", "direction_in:2"],
-			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position", "angle"]
-		},
-		"lake" : {
-			"locs" : ["position_in:3", "color_in:4"],
-			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position", "angle", "amplitude", "freq"]
-		},
+		"select" : {},
+		"linear" : {},
+		"dash" : {},
+		"elevation" : {},
+		"tree_stone" : {},
+		"river" : {},
+		"lake" : {},
 		"unit" : {
-			"locs" : ["position_in:3", "normal_in:3", "diffuse_in:3", "model2world_matrix:16:new_instanced_buffer", "team_color_in:3", "hit_in:1"],
-			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position"]
+			"buffers" : [
+				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in"]}
+			]
 		},
-		"unit_life" : {
-			"locs" : ["position_in:3", "color_in:4"],
-			"uniforms" : ["camera2clip_matrix"]
-		},
+		"unit_life" : {},
 		"ammo" : {
-			"locs" : ["position_in:3", "normal_in:3", "diffuse_in:3", "model2world_matrix:16:new_instanced_buffer"],
-			"uniforms" : ["world2clip_matrix", "light_position", "light_color", "view_position"]
+			"buffers" : [
+				{"instanced" : true, "attrs" : ["model2world_matrix"]}
+			]
 		}
 	},
 	"contexts" : {

@@ -139,7 +139,7 @@ public:
 	uint _n_pts;
 	DCEL * _dcel;
 	std::map<BiomeType, Biome *> _biomes;
-	std::map<std::string, DrawContext *> _contexts;
+	std::map<std::string, GLDrawContext *> _contexts;
 	GLuint _texture_id_diffuse, _texture_id_normal, _texture_id_parallax;
 	Light * _light;
 	std::vector<TriangleData *> _triangle_data;

@@ -81,8 +81,8 @@ void Unit::anim(time_point t) {
 		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
 
-		_old_visible_tiles.clear();
-		_old_visible_tiles.insert(_visible_tiles.begin(), _visible_tiles.end());
+		//_old_visible_tiles.clear();
+		//_old_visible_tiles.insert(_visible_tiles.begin(), _visible_tiles.end());
 
 		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
 	}
@@ -226,10 +226,9 @@ Team::Team() {
 }
 
 
-Team::Team(std::string name, glm::vec3 color, Elevation * elevation) : 
+Team::Team(std::string name, glm::vec3 color, Elevation * elevation, pt_2d fow_resolution) : 
 	_name(name), _color(color), _elevation(elevation), _ia(false)
 {
-	pt_2d fow_resolution = _elevation->_resolution * 4.0;
 	uint n_ligs = uint(_elevation->_size.y / fow_resolution.y) + 1;
 	uint n_cols = uint(_elevation->_size.x / fow_resolution.x) + 1;
 	_fow = new GraphGrid(_elevation->_origin, _elevation->_size, n_ligs, n_cols);
@@ -244,9 +243,9 @@ Team::Team(std::string name, glm::vec3 color, Elevation * elevation) :
 		_fow->_it_v++;
 	}
 
-	_fow_data = new unsigned char[n_ligs * n_cols];
+	_fow_data = new float[n_ligs * n_cols];
 	for (uint i=0; i<n_ligs * n_cols; ++i) {
-		_fow_data[i] = 0;
+		_fow_data[i] = 0.0;
 	}
 }
 
@@ -268,10 +267,11 @@ Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos) {
 	}
 	Unit * unit = new Unit(this, type, pt3d, _elevation);
 	unit->_id = id;
-	unit->_visible_tiles.clear();
+	/*unit->_visible_tiles.clear();
 	std::vector<uint> v = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
-	unit->_visible_tiles.insert(v.begin(), v.end());
+	unit->_visible_tiles.insert(v.begin(), v.end());*/
 	_units.push_back(unit);
+	update_fow_unit(unit);
 	return unit;
 }
 
@@ -391,45 +391,61 @@ void Team::selected_units_attack(Unit * target, time_point t) {
 }
 
 
+void Team::update_fow_unit(Unit * unit) {
+	unit->_visible_tiles.clear();
+	std::vector<uint> v = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
+	unit->_visible_tiles.insert(v.begin(), v.end());
+
+	//std::cout << "_visible_tiles = \n";
+	//for (auto & x : unit->_visible_tiles) { std::cout << x << "\n";}
+
+	std::unordered_set<uint> old_minus_new;
+	std::set_difference(unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), unit->_visible_tiles.begin(), unit->_visible_tiles.end(), std::inserter(old_minus_new, old_minus_new.begin()));
+	
+	for (auto & id_tile : old_minus_new) {
+		GraphVertex vertex = _fow->get_vertex(id_tile);
+		FowVertexData * data = (FowVertexData *)(vertex._data);
+		data->_changed = true;
+		data->_n_units--;
+	}
+
+	std::unordered_set<uint> new_minus_old;
+	std::set_difference(unit->_visible_tiles.begin(), unit->_visible_tiles.end(), unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), std::inserter(new_minus_old, new_minus_old.begin()));
+	//std::cout << "new_minus_old = \n";
+	//for (auto & x : new_minus_old) { std::cout << x << "\n";}
+	for (auto & id_tile : new_minus_old) {
+		GraphVertex vertex = _fow->get_vertex(id_tile);
+		FowVertexData * data = (FowVertexData *)(vertex._data);
+		data->_changed = true;
+		//std::cout << "changed : " << id_tile << "\n";
+		data->_n_units++;
+	}
+
+	unit->_old_visible_tiles.clear();
+	unit->_old_visible_tiles.insert(unit->_visible_tiles.begin(), unit->_visible_tiles.end());
+}
+
+
 void Team::update_fow() {
 	for (auto & unit : _units) {
 		if (unit->_status == MOVING) {
-			unit->_visible_tiles.clear();
-			std::vector<uint> v = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
-			unit->_visible_tiles.insert(v.begin(), v.end());
-
-			std::unordered_set<uint> old_minus_new;
-			std::set_difference(unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), unit->_visible_tiles.begin(), unit->_visible_tiles.end(), std::inserter(old_minus_new, old_minus_new.begin()));
-			
-			for (auto & id_tile : old_minus_new) {
-				GraphVertex vertex = _fow->get_vertex(id_tile);
-				FowVertexData * data = (FowVertexData *)(vertex._data);
-				data->_changed = true;
-				data->_n_units--;
-			}
-
-			std::unordered_set<uint> new_minus_old;
-			std::set_difference(unit->_visible_tiles.begin(), unit->_visible_tiles.end(), unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), std::inserter(new_minus_old, new_minus_old.begin()));
-			
-			for (auto & id_tile : new_minus_old) {
-				GraphVertex vertex = _fow->get_vertex(id_tile);
-				FowVertexData * data = (FowVertexData *)(vertex._data);
-				data->_changed = true;
-				data->_n_units++;
-			}
+			update_fow_unit(unit);
 		}
 	}
 
 	_fow->_it_v= _fow->_vertices.begin();
 	while (_fow->_it_v!= _fow->_vertices.end()) {
-		FowVertexData * data = new FowVertexData();
+		FowVertexData * data = (FowVertexData *)(_fow->_it_v->second._data);
+		//std::cout << "update_fow : " << _fow->_it_v->first << " ; " << data->_changed << " ; " << data->_n_units << "\n";
 		if (data->_changed) {
+			//std::cout << "changed\n";
 			//int_pair col_lig = _fow->id2col_lig(_fow->_it_v.first);
 			if (data->_n_units == 0) {
-				_fow_data[_fow->_it_v->first] = 1;
+				_fow_data[_fow->_it_v->first] = 0.5;
 			}
 			else {
-				_fow_data[_fow->_it_v->first] = 2;
+				_fow_data[_fow->_it_v->first] = 1.0;
+				//std::cout << "ok\n";
 			}
 
 			data->_changed = false;

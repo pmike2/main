@@ -189,7 +189,7 @@ public:
 	number _track_lap_record, _track_overall_record;
 
 	bool _draw_bbox, _draw_force, _draw_texture, _show_debug_info; // booléens d'affichage
-	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
+	std::map<std::string, GLDrawContext *> _contexts; // contextes de dessin
 	GLuint * _buffers; // buffers OpenGL
 	GLuint * _textures; // texture arrays pour tous les PNGs
 	// indices des textures

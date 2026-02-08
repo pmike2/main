@@ -32,7 +32,7 @@ public:
 	void update_hull();
 	
 	
-	std::map<std::string, DrawContext *> _contexts; // contextes de dessin
+	std::map<std::string, GLDrawContext *> _contexts; // contextes de dessin
 	bool _draw_points, _draw_hull;
 
 	ConvexHull * _hull;
