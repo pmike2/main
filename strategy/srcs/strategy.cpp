@@ -462,7 +462,6 @@ void Strategy::draw_unit(UnitType * unit_type) {
 	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
 	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
 	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
-	glUniform1f(context->_locs_uniform["z_fow"], 1.0);
 	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
 	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
 	
@@ -481,9 +480,24 @@ void Strategy::draw_unit_life() {
 		return;
 	}
 
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
+
 	context->activate();
+
 	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_camera2clip)));
+
+	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
+	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
+	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
+
 	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glActiveTexture(0);
+
 	context->deactivate();
 }
 
@@ -495,11 +509,26 @@ void Strategy::draw_ammo(AmmoType * ammo_type) {
 	}
 
 	context->activate();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
+
 	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
 	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
 	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
+
+	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
+	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
+	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
+	
 	glDrawArraysInstanced(GL_TRIANGLES, 0, context->_n_pts, context->_n_instances);
+
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glActiveTexture(0);
+
 	context->deactivate();
 }
 
@@ -895,114 +924,110 @@ void Strategy::update_path() {
 	
 	context->_n_pts = 0;
 	
-	for (auto & team : _map->_teams) {
-		for (auto & unit : team->_units) {
-			if (!unit->_path->empty()) {
-				context->_n_pts += (unit->_path->_pts.size() - 1) * 2;
-				context->_n_pts += (unit->_path->_pts_los.size() - 1) * 2;
-				context->_n_pts += 4; // croix de départ
-				context->_n_pts += 4; // croix d'arrivée
-			}
+	for (auto & unit : get_selected_team()->_units) {
+		if (!unit->_path->empty()) {
+			context->_n_pts += (unit->_path->_pts.size() - 1) * 2;
+			context->_n_pts += (unit->_path->_pts_los.size() - 1) * 2;
+			context->_n_pts += 4; // croix de départ
+			context->_n_pts += 4; // croix d'arrivée
 		}
 	}
 
 	float * data = new float[context->data_size()];
 	float * ptr = data;
 
-	for (auto & team : _map->_teams) {
-		for (auto & unit : team->_units) {
-			if (unit->_path->_pts.empty()) {
-				continue;
-			}
+	for (auto & unit : get_selected_team()->_units) {
+		if (unit->_path->_pts.empty()) {
+			continue;
+		}
 
-			// sans LOS
-			for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
-				glm::vec4 path_color = get_path_color(unit->_path->_intervals[i]->_weight);
-				
-				ptr[0] = float(unit->_path->_pts[i].x);
-				ptr[1] = float(unit->_path->_pts[i].y);
-				ptr[2] = float(unit->_path->_pts[i].z + Z_OFFSET_PATH);
-				ptr[3] = path_color.r;
-				ptr[4] = path_color.g;
-				ptr[5] = path_color.b;
-				ptr[6] = path_color.a;
+		// sans LOS
+		for (uint i=0; i<unit->_path->_pts.size() - 1; ++i) {
+			glm::vec4 path_color = get_path_color(unit->_path->_intervals[i]->_weight);
+			
+			ptr[0] = float(unit->_path->_pts[i].x);
+			ptr[1] = float(unit->_path->_pts[i].y);
+			ptr[2] = float(unit->_path->_pts[i].z + Z_OFFSET_PATH);
+			ptr[3] = path_color.r;
+			ptr[4] = path_color.g;
+			ptr[5] = path_color.b;
+			ptr[6] = path_color.a;
 
-				ptr[7] = float(unit->_path->_pts[i + 1].x);
-				ptr[8] = float(unit->_path->_pts[i + 1].y);
-				ptr[9] = float(unit->_path->_pts[i + 1].z + Z_OFFSET_PATH);
-				ptr[10] = path_color.r;
-				ptr[11] = path_color.g;
-				ptr[12] = path_color.b;
-				ptr[13] = path_color.a;
+			ptr[7] = float(unit->_path->_pts[i + 1].x);
+			ptr[8] = float(unit->_path->_pts[i + 1].y);
+			ptr[9] = float(unit->_path->_pts[i + 1].z + Z_OFFSET_PATH);
+			ptr[10] = path_color.r;
+			ptr[11] = path_color.g;
+			ptr[12] = path_color.b;
+			ptr[13] = path_color.a;
 
-				ptr += 14;
-			}
+			ptr += 14;
+		}
 
-			// avec LOS 
-			const number Z_OFFSET_LOS = 1.0;
-			for (uint i=0; i<unit->_path->_pts_los.size() - 1; ++i) {
-				glm::vec4 path_color = get_path_color(unit->_path->_intervals_los[i]->_weight);
-				
-				ptr[0] = float(unit->_path->_pts_los[i].x);
-				ptr[1] = float(unit->_path->_pts_los[i].y);
-				ptr[2] = float(unit->_path->_pts_los[i].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
-				ptr[3] = path_color.r;
-				ptr[4] = path_color.g;
-				ptr[5] = path_color.b;
-				ptr[6] = path_color.a;
+		// avec LOS 
+		const number Z_OFFSET_LOS = 1.0;
+		for (uint i=0; i<unit->_path->_pts_los.size() - 1; ++i) {
+			glm::vec4 path_color = get_path_color(unit->_path->_intervals_los[i]->_weight);
+			
+			ptr[0] = float(unit->_path->_pts_los[i].x);
+			ptr[1] = float(unit->_path->_pts_los[i].y);
+			ptr[2] = float(unit->_path->_pts_los[i].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
+			ptr[3] = path_color.r;
+			ptr[4] = path_color.g;
+			ptr[5] = path_color.b;
+			ptr[6] = path_color.a;
 
-				ptr[7] = float(unit->_path->_pts_los[i + 1].x);
-				ptr[8] = float(unit->_path->_pts_los[i + 1].y);
-				ptr[9] = float(unit->_path->_pts_los[i + 1].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
-				ptr[10] = path_color.r;
-				ptr[11] = path_color.g;
-				ptr[12] = path_color.b;
-				ptr[13] = path_color.a;
+			ptr[7] = float(unit->_path->_pts_los[i + 1].x);
+			ptr[8] = float(unit->_path->_pts_los[i + 1].y);
+			ptr[9] = float(unit->_path->_pts_los[i + 1].z + Z_OFFSET_PATH + Z_OFFSET_LOS);
+			ptr[10] = path_color.r;
+			ptr[11] = path_color.g;
+			ptr[12] = path_color.b;
+			ptr[13] = path_color.a;
 
-				ptr += 14;
-			}
+			ptr += 14;
+		}
 
-			// croix de départ ---------------------------------------------------------------
-			const number PATH_START_CROSS_SIZE = 1.0;
-			const glm::vec4 PATH_START_CROSS_COLOR(1.0, 0.0, 1.0, 1.0);
-			pt_3d start_cross_pts[4] = {
-				unit->_path->_start - pt_3d(PATH_START_CROSS_SIZE, 0.0, 0.0),
-				unit->_path->_start + pt_3d(PATH_START_CROSS_SIZE, 0.0, 0.0),
-				unit->_path->_start - pt_3d(0.0, PATH_START_CROSS_SIZE, 0.0),
-				unit->_path->_start + pt_3d(0.0, PATH_START_CROSS_SIZE, 0.0)
-			};
-			for (uint i=0; i<4; ++i) {
-				ptr[0] = float(start_cross_pts[i].x);
-				ptr[1] = float(start_cross_pts[i].y);
-				ptr[2] = float(start_cross_pts[i].z + Z_OFFSET_PATH);
-				ptr[3] = PATH_START_CROSS_COLOR.r;
-				ptr[4] = PATH_START_CROSS_COLOR.g;
-				ptr[5] = PATH_START_CROSS_COLOR.b;
-				ptr[6] = PATH_START_CROSS_COLOR.a;
+		// croix de départ ---------------------------------------------------------------
+		const number PATH_START_CROSS_SIZE = 1.0;
+		const glm::vec4 PATH_START_CROSS_COLOR(1.0, 0.0, 1.0, 1.0);
+		pt_3d start_cross_pts[4] = {
+			unit->_path->_start - pt_3d(PATH_START_CROSS_SIZE, 0.0, 0.0),
+			unit->_path->_start + pt_3d(PATH_START_CROSS_SIZE, 0.0, 0.0),
+			unit->_path->_start - pt_3d(0.0, PATH_START_CROSS_SIZE, 0.0),
+			unit->_path->_start + pt_3d(0.0, PATH_START_CROSS_SIZE, 0.0)
+		};
+		for (uint i=0; i<4; ++i) {
+			ptr[0] = float(start_cross_pts[i].x);
+			ptr[1] = float(start_cross_pts[i].y);
+			ptr[2] = float(start_cross_pts[i].z + Z_OFFSET_PATH);
+			ptr[3] = PATH_START_CROSS_COLOR.r;
+			ptr[4] = PATH_START_CROSS_COLOR.g;
+			ptr[5] = PATH_START_CROSS_COLOR.b;
+			ptr[6] = PATH_START_CROSS_COLOR.a;
 
-				ptr += 7;
-			}
+			ptr += 7;
+		}
 
-			// croix d'arrivée ---------------------------------------------------------------
-			const number PATH_GOAL_CROSS_SIZE = 1.0;
-			const glm::vec4 PATH_GOAL_CROSS_COLOR(1.0, 0.0, 1.0, 1.0);
-			pt_3d goal_cross_pts[4] = {
-				unit->_path->_goal - pt_3d(PATH_GOAL_CROSS_SIZE, 0.0, 0.0),
-				unit->_path->_goal + pt_3d(PATH_GOAL_CROSS_SIZE, 0.0, 0.0),
-				unit->_path->_goal - pt_3d(0.0, PATH_GOAL_CROSS_SIZE, 0.0),
-				unit->_path->_goal + pt_3d(0.0, PATH_GOAL_CROSS_SIZE, 0.0)
-			};
-			for (uint i=0; i<4; ++i) {
-				ptr[0] = float(goal_cross_pts[i].x);
-				ptr[1] = float(goal_cross_pts[i].y);
-				ptr[2] = float(goal_cross_pts[i].z + Z_OFFSET_PATH);
-				ptr[3] = PATH_GOAL_CROSS_COLOR.r;
-				ptr[4] = PATH_GOAL_CROSS_COLOR.g;
-				ptr[5] = PATH_GOAL_CROSS_COLOR.b;
-				ptr[6] = PATH_GOAL_CROSS_COLOR.a;
+		// croix d'arrivée ---------------------------------------------------------------
+		const number PATH_GOAL_CROSS_SIZE = 1.0;
+		const glm::vec4 PATH_GOAL_CROSS_COLOR(1.0, 0.0, 1.0, 1.0);
+		pt_3d goal_cross_pts[4] = {
+			unit->_path->_goal - pt_3d(PATH_GOAL_CROSS_SIZE, 0.0, 0.0),
+			unit->_path->_goal + pt_3d(PATH_GOAL_CROSS_SIZE, 0.0, 0.0),
+			unit->_path->_goal - pt_3d(0.0, PATH_GOAL_CROSS_SIZE, 0.0),
+			unit->_path->_goal + pt_3d(0.0, PATH_GOAL_CROSS_SIZE, 0.0)
+		};
+		for (uint i=0; i<4; ++i) {
+			ptr[0] = float(goal_cross_pts[i].x);
+			ptr[1] = float(goal_cross_pts[i].y);
+			ptr[2] = float(goal_cross_pts[i].z + Z_OFFSET_PATH);
+			ptr[3] = PATH_GOAL_CROSS_COLOR.r;
+			ptr[4] = PATH_GOAL_CROSS_COLOR.g;
+			ptr[5] = PATH_GOAL_CROSS_COLOR.b;
+			ptr[6] = PATH_GOAL_CROSS_COLOR.a;
 
-				ptr += 7;
-			}
+			ptr += 7;
 		}
 	}
 
@@ -1487,22 +1512,26 @@ void Strategy::update_unit_life() {
 				ptr[0] = float(l_pts_bwd[idxs[i]].x);
 				ptr[1] = float(l_pts_bwd[idxs[i]].y);
 				ptr[2] = float(l_pts_bwd[idxs[i]].z);
-				ptr[3] = bwd_color.r;
-				ptr[4] = bwd_color.g;
-				ptr[5] = bwd_color.b;
-				ptr[6] = bwd_color.a;
-				ptr += 7;
+				ptr[3] = float(unit->_position.x);
+				ptr[4] = float(unit->_position.y);
+				ptr[5] = bwd_color.r;
+				ptr[6] = bwd_color.g;
+				ptr[7] = bwd_color.b;
+				ptr[8] = bwd_color.a;
+				ptr += 9;
 			}
 
 			for (uint i = 0; i<6; ++i) {
 				ptr[0] = float(l_pts_fwd[idxs[i]].x);
 				ptr[1] = float(l_pts_fwd[idxs[i]].y);
 				ptr[2] = float(l_pts_fwd[idxs[i]].z);
-				ptr[3] = fwd_color.r;
-				ptr[4] = fwd_color.g;
-				ptr[5] = fwd_color.b;
-				ptr[6] = fwd_color.a;
-				ptr += 7;
+				ptr[3] = float(unit->_position.x);
+				ptr[4] = float(unit->_position.y);
+				ptr[5] = fwd_color.r;
+				ptr[6] = fwd_color.g;
+				ptr[7] = fwd_color.b;
+				ptr[8] = fwd_color.a;
+				ptr += 9;
 			}
 		}
 	}
