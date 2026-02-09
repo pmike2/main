@@ -342,7 +342,6 @@ void Strategy::draw_tree_stone() {
 	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
 	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
 	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
-	glUniform1f(context->_locs_uniform["z_fow"], 1.0);
 	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
 	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
 
