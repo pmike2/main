@@ -252,7 +252,7 @@ Tree::Tree(TreeSpecies * species, Elevation * elevation, pt_2d position) : Eleme
 		}
 	}
 
-	uint n_attrs_per_pts= 10;
+	uint n_attrs_per_pts= 9;
 	_n_pts = _branches.size() * (N_PTS_PER_BRANCH_SIDE + N_PTS_PER_BRANCH_TOP + N_PTS_PER_BRANCH_BOTTOM);
 	_data = new float[_n_pts * n_attrs_per_pts];
 	update_data();
@@ -296,40 +296,37 @@ void Tree::update_data() {
 			ptr[0] = float(branch->_vertices_side[i].x);
 			ptr[1] = float(branch->_vertices_side[i].y);
 			ptr[2] = float(branch->_vertices_side[i].z);
-			ptr[3] = float(branch->_color[0]);
-			ptr[4] = float(branch->_color[1]);
-			ptr[5] = float(branch->_color[2]);
-			ptr[6] = float(branch->_color[3]);
-			ptr[7] = float(branch->_normals_side[i].x);
-			ptr[8] = float(branch->_normals_side[i].y);
-			ptr[9] = float(branch->_normals_side[i].z);
-			ptr += 10;
+			ptr[3] = float(branch->_normals_side[i].x);
+			ptr[4] = float(branch->_normals_side[i].y);
+			ptr[5] = float(branch->_normals_side[i].z);
+			ptr[6] = float(branch->_color[0]);
+			ptr[7] = float(branch->_color[1]);
+			ptr[8] = float(branch->_color[2]);
+			ptr += 9;
 		}
 		for (uint i=0; i<N_PTS_PER_BRANCH_BOTTOM; ++i) {
 			ptr[0] = float(branch->_vertices_bottom[i].x);
 			ptr[1] = float(branch->_vertices_bottom[i].y);
 			ptr[2] = float(branch->_vertices_bottom[i].z);
-			ptr[3] = float(branch->_color[0]);
-			ptr[4] = float(branch->_color[1]);
-			ptr[5] = float(branch->_color[2]);
-			ptr[6] = float(branch->_color[3]);
-			ptr[7] = float(branch->_normals_bottom[i].x);
-			ptr[8] = float(branch->_normals_bottom[i].y);
-			ptr[9] = float(branch->_normals_bottom[i].z);
-			ptr += 10;
+			ptr[3] = float(branch->_normals_bottom[i].x);
+			ptr[4] = float(branch->_normals_bottom[i].y);
+			ptr[5] = float(branch->_normals_bottom[i].z);
+			ptr[6] = float(branch->_color[0]);
+			ptr[7] = float(branch->_color[1]);
+			ptr[8] = float(branch->_color[2]);
+			ptr += 9;
 		}
 		for (uint i=0; i<N_PTS_PER_BRANCH_TOP; ++i) {
 			ptr[0] = float(branch->_vertices_top[i].x);
 			ptr[1] = float(branch->_vertices_top[i].y);
 			ptr[2] = float(branch->_vertices_top[i].z);
-			ptr[3] = float(branch->_color[0]);
-			ptr[4] = float(branch->_color[1]);
-			ptr[5] = float(branch->_color[2]);
-			ptr[6] = float(branch->_color[3]);
-			ptr[7] = float(branch->_normals_top[i].x);
-			ptr[8] = float(branch->_normals_top[i].y);
-			ptr[9] = float(branch->_normals_top[i].z);
-			ptr += 10;
+			ptr[3] = float(branch->_normals_top[i].x);
+			ptr[4] = float(branch->_normals_top[i].y);
+			ptr[5] = float(branch->_normals_top[i].z);
+			ptr[6] = float(branch->_color[0]);
+			ptr[7] = float(branch->_color[1]);
+			ptr[8] = float(branch->_color[2]);
+			ptr += 9;
 		}
 	}
 

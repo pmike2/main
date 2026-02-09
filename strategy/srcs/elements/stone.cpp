@@ -66,7 +66,7 @@ Stone::Stone(StoneSpecies * species, Elevation * elevation, pt_2d position) : El
 	_hull->randomize(STONE_N_POINTS_HULL, vmin, vmax);
 	_hull->compute();
 
-	uint n_attrs_per_pts= 10;
+	uint n_attrs_per_pts= 9;
 	_n_pts = _hull->_faces.size() * 3;
 	_data = new float[_n_pts * n_attrs_per_pts];
 	update_data();
@@ -87,13 +87,12 @@ void Stone::update_data() {
 			_data[compt++] = float(pt->_coords.x);
 			_data[compt++] = float(pt->_coords.y);
 			_data[compt++] = float(pt->_coords.z);
-			_data[compt++] = _species->_color[0];
-			_data[compt++] = _species->_color[1];
-			_data[compt++] = _species->_color[2];
-			_data[compt++] = _species->_color[3];
 			_data[compt++] = float(face->_normal.x);
 			_data[compt++] = float(face->_normal.y);
 			_data[compt++] = float(face->_normal.z);
+			_data[compt++] = _species->_color[0];
+			_data[compt++] = _species->_color[1];
+			_data[compt++] = _species->_color[2];
 		}
 	}
 }

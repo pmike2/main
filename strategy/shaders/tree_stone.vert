@@ -4,8 +4,8 @@
 uniform mat4 world2clip_matrix;
 
 layout(location=0) in vec3 position_in;
-layout(location=1) in vec4 color_in;
-layout(location=2) in vec3 normal_in;
+layout(location=1) in vec3 normal_in;
+layout(location=2) in vec3 diffuse_in;
 
 out VS_OUT {
 	vec3 vertex_position;
@@ -31,5 +31,5 @@ void main(void) {
 	
 	vertex_normal = (1.0 - step(0.3, fow)) * vec3(0.0, 0.0, 1.0) + step(0.3, fow) * normal_in;*/
 
-	gl_Position= world2clip_matrix * vec4(vertex_position, 1.0);
+	gl_Position= world2clip_matrix * vec4(position_in, 1.0);
 }

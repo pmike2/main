@@ -31,7 +31,7 @@ void main(void) {
 	float spec= pow(max(dot(view_direction, reflection_direction), 0.0), 32);
 	vec3 specular= specular_strength* spec* light_color;
 	
-	vec3 result= (ambient + diffuse + specular)* vec3(fs_in.vertex_color);
+	vec3 result= (ambient + diffuse + specular)* fs_in.vertex_diffuse_color;
 	
 	frag_color= vec4(result, 1.0);
 }
