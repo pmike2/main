@@ -3,9 +3,9 @@
 uniform mat4 camera2clip_matrix;
 uniform float z;
 
-in vec4 vertex_in; // <vec2 pos, vec2 tex>
-in vec4 color_in;
-in float current_layer_in;
+layout(location=0) in vec4 vertex_in; // <vec2 pos, vec2 tex>
+layout(location=1) in vec4 color_in;
+layout(location=2) in float current_layer_in;
 
 out vec2 tex_coords;
 out vec4 color;

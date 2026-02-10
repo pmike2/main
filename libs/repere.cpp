@@ -77,13 +77,8 @@ void Repere::draw(const mat_4d & world2clip) {
 		}
 
 		context->activate();
-		glUniformMatrix4fv(context->_locs_uniform["world2clip"], 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
-		if (context_name == "ground") {
-			glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
-		}
-		else {
-			glDrawArrays(GL_LINES, 0, context->_n_pts);
-		}
+		context->set_uniform("world2clip", glm::value_ptr(glm::mat4(world2clip)));
+		context->draw();
 		context->deactivate();
 	}
 }
@@ -288,6 +283,34 @@ bool ViewSystem::key_up(InputState * input_state, SDL_Keycode key) {
 
 // a appeler des qu'un param est modifie
 void ViewSystem::update() {
+	// contraintes
+	if (_phi_constrained) {
+		if (_phi < _phi_min) {
+			_phi = _phi_min;
+		}
+		if (_phi > _phi_max) {
+			_phi = _phi_max;
+		}
+	}
+
+	if (_theta_constrained) {
+		if (_theta < _theta_min) {
+			_theta = _theta_min;
+		}
+		if (_theta > _theta_max) {
+			_theta = _theta_max;
+		}
+	}
+
+	if (_rho_constrained) {
+		if (_rho < _rho_min) {
+			_rho = _rho_min;
+		}
+		if (_rho > _rho_max) {
+			_rho = _rho_max;
+		}
+	}
+
 	// _rho == 0.0 crée des problèmes avec du nan dans les attributs
 	const number MIN_RHO = 0.01;
 	if (_rho < MIN_RHO) {

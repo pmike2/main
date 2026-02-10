@@ -13,10 +13,6 @@
 #include "typedefs.h"
 
 
-// utilisé dans fill_texture_array lorsque l'on veut sauter des indices
-const std::string NO_PNG= "NO_PNG";
-
-
 class ScreenGL {
 public:
 	ScreenGL();
@@ -32,97 +28,14 @@ public:
 };
 
 
-struct GLDrawContextAttrib {
-	GLDrawContextAttrib();
-	GLDrawContextAttrib(std::string name, GLint loc, uint size, GLenum type);
-	~GLDrawContextAttrib();
-	friend std::ostream & operator << (std::ostream & os, const GLDrawContextAttrib & dca);
-
-
-	std::string _name;
-	GLint _loc;
-	uint _size;
-	uint _offset;
-	bool _in_default_buffer;
-};
-
-
-struct GLDrawContextBuffer {
-	GLDrawContextBuffer();
-	GLDrawContextBuffer(bool is_instanced, GLenum usage);
-	~GLDrawContextBuffer();
-	friend std::ostream & operator << (std::ostream & os, const GLDrawContextBuffer & dcb);
-
-
-	GLuint _id;
-	std::vector<GLDrawContextAttrib *> _attribs;
-	uint _n_attrs_per_pts;
-	bool _is_instanced;
-	GLenum _usage;
-};
-
-
-class GLDrawContext {
-public:
-	GLDrawContext();
-	GLDrawContext(GLuint prog, std::vector<GLDrawContextBuffer *> buffers, bool active = true);
-	~GLDrawContext();
-	void set_data(float * data, uint idx_buffer = 0);
-	void clear_data(uint idx_buffer = 0);
-	void activate();
-	void deactivate();
-	uint data_size(uint idx_buffer = 0);
-	void show_data(uint idx_buffer = 0);
-	friend std::ostream & operator << (std::ostream & os, const GLDrawContext & dc);
-
-
-	GLuint _prog;
-	GLuint _vao;
-	std::map<std::string, GLint> _locs_uniform;
-	std::vector<GLDrawContextBuffer *> _buffers;
-	uint _n_pts;
-	uint _n_instances;
-	bool _active;
-};
-
-
-class GLDrawManager {
-public:
-	GLDrawManager();
-	GLDrawManager(std::string json_path);
-	~GLDrawManager();
-	GLDrawContext * get_context(std::string context_name);
-	void set_data(std::string context_name, uint n_pts, float * data);
-	void set_active(std::string context_name);
-	void set_inactive(std::string context_name);
-	void switch_active(std::string context_name);
-	friend std::ostream & operator << (std::ostream & os, const GLDrawManager & gdm);
-
-
-	std::map<std::string, GLDrawContext *> _contexts;
-};
-
-
-void _check_gl_error(const char * file, int line);
-#define check_gl_error() _check_gl_error(__FILE__,__LINE__)
-void check_gl_program(GLuint prog);
 void gl_versions();
-std::map<std::string, GLint> active_uniforms(GLuint prog);
-std::vector<GLDrawContextAttrib *> active_attribs(GLuint prog);
-char * load_source(const char * filename);
-GLuint load_shader(GLenum type, const char * filename);
-GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path="", bool check_program=true);
 
 void set_subwindow(const float bkgnd_color[4], int x, int y, int w, int h);
-void export_texture2pgm(std::string pgm_path, uint width, uint height);
-void export_texture_array2pgm(std::string pgm_dir_path, uint width, uint height, uint depth);
 void export_screen_to_ppm(std::string ppm_path, uint x, uint y, uint width, uint height);
 
 float * draw_cross(float * data, pt_2d center, float size, glm::vec4 color);
 float * draw_arrow(float * data, pt_2d start, pt_2d end, float tip_size, float angle, glm::vec4 color);
 float * draw_polygon(float * data, std::vector<pt_2d> pts, glm::vec4 color);
 float * draw_nothing(float * data, uint n_attrs_per_pts, uint n_pts);
-
-void fill_texture_array(uint texture_offset, uint texture_idx, uint texture_size, std::vector<std::string> pngs);
 
 #endif

@@ -90,19 +90,12 @@ Font::Font(GLDrawManager * gl_draw_manager, std::string font_path, uint font_siz
 	}
 	_tex_size= pow(2, int(ceil(log2(std::max(max_width, max_height)))));
 
-	/*std::cout << "max_width = " << max_width << " ; max_height = " << max_height << "\n";
-	std::cout << "tex_size=" << tex_size << "\n";*/
-
-	glGenTextures(1, &_texture_id);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RED, _tex_size, _tex_size, 128, 0, GL_RED, GL_UNSIGNED_BYTE, NULL);
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
+	_gl_draw_manager->add_texture("font_texture_array", GL_TEXTURE_2D_ARRAY, 0,
+		std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
+			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
+		},
+		GL_RED, glm::uvec3(_tex_size, _tex_size, 128), GL_RED, GL_UNSIGNED_BYTE);
 
 	uint compt= 0;
 	for (unsigned char c=0; c<128; ++c) {
@@ -118,33 +111,17 @@ Font::Font(GLDrawManager * gl_draw_manager, std::string font_path, uint font_siz
 			static_cast<GLuint>(face->glyph->advance.x)
 		};
 		_characters.insert(std::pair<GLchar, Character>(c, character));
-
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
-						0,                           // mipmap number
-						0, 0, compt,                 // xoffset, yoffset, zoffset
-						_characters[c]._size.x, _characters[c]._size.y, 1, // width, height, depth
-						GL_RED,                      // format
-						GL_UNSIGNED_BYTE,            // type
-						face->glyph->bitmap.buffer); // pointer to data
+	
+		_gl_draw_manager->set_texture_data("font_texture_array", face->glyph->bitmap.buffer, compt, _characters[c]._size.x, _characters[c]._size.y);
+		
 		compt++;
 	}
 
 	// à réactiver pour visualiser les textures
-	//export_texture_array2pgm("/Volumes/Data/tmp/test", tex_size, tex_size, 128);
+	//_gl_draw_manager->_texture_pool->get_texture("font_texture_array")->export2pgm("/Volumes/Data/tmp/test");
 	
-	glActiveTexture(0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-
 	FT_Done_Face(face);
 	FT_Done_FreeType(ft_lib);
-
-	/*_contexts["font"]= new GLDrawContext(progs["font"], 
-		std::vector<std::string>{"vertex_in:4", "color_in:4", "current_layer_in:1"},
-		std::vector<std::string>{"camera2clip_matrix", "z", "texture_array"});
-
-	_contexts["font3d"]= new GLDrawContext(progs["font3d"], 
-		std::vector<std::string>{"vertex_in:3", "tex_in:2", "color_in:4", "current_layer_in:1"},
-		std::vector<std::string>{"world2clip_matrix", "texture_array"});*/
 
 	_camera2clip = glm::ortho(-screengl->_gl_width* 0.5, screengl->_gl_width* 0.5, -screengl->_gl_height* 0.5, screengl->_gl_height* 0.5);
 }
@@ -233,7 +210,7 @@ void Font::set_text(std::vector<Text3D> & texts) {
 	const uint n_pts_per_char= 6;
 	context->_n_pts= 0;
 	for (auto text : texts) {
-		context->_n_pts+= n_pts_per_char* text._text.size();
+		context->_n_pts+= n_pts_per_char * text._text.size();
 	}
 
 	uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
@@ -315,17 +292,9 @@ void Font::draw() {
 	GLDrawContext * context = _gl_draw_manager->get_context("font");
 	
 	context->activate();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
-	glActiveTexture(0);
-
-	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
-	glUniform1f(context->_locs_uniform["z"], _z);
-	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_camera2clip)));
-
-	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
-
+	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(_camera2clip)));
+	context->set_uniform("z", _z);
+	context->draw();
 	context->deactivate();
 }
 
@@ -334,15 +303,7 @@ void Font::draw_3d(const mat_4d & world2clip) {
 	GLDrawContext * context = _gl_draw_manager->get_context("font3d");
 
 	context->activate();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id);
-	glActiveTexture(0);
-
-	glUniform1i(context->_locs_uniform["texture_array"], 0); //Sampler refers to texture unit 0
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(world2clip)));
-
-	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
-
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(world2clip)));
+	context->draw();
 	context->deactivate();
 }

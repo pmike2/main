@@ -2,10 +2,10 @@
 
 uniform mat4 world2clip_matrix;
 
-in vec3 vertex_in;
-in vec2 tex_in;
-in vec4 color_in;
-in float current_layer_in;
+layout(location=0) in vec3 vertex_in;
+layout(location=1) in vec2 tex_in;
+layout(location=2) in vec4 color_in;
+layout(location=3) in float current_layer_in;
 
 out vec2 tex_coords;
 out vec4 color;

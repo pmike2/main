@@ -130,20 +130,14 @@ void init() {
 	window= SDL_CreateWindow("strategy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
 	main_context= SDL_GL_CreateContext(window);
 
-	//std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
+	//gl_versions();
 
-	/*GLint max_layers;
-	glGetIntegerv(GL_MAX_ARRAY_TEXTURE_LAYERS, &max_layers);
-	std::cout << max_layers << "\n";*/
-	
 	SDL_GL_SetSwapInterval(1);
 	glClearDepth(1.0f);
 	glEnable(GL_DEPTH_TEST);
 	glDepthMask(GL_TRUE);
 	glDepthFunc(GL_LESS);
 	glDepthRange(0.0f, 1.0f);
-
-	//glPointSize(5.0f);
 	
 	// frontfaces en counterclockwise
 	glFrontFace(GL_CCW);
@@ -157,20 +151,17 @@ void init() {
 	
 	SDL_GL_SwapWindow(window);
 	
+	// --------------------------------------------------------------------------
 	GLDrawManager * gl_draw_manager = new GLDrawManager("../data/strategy_draw_context.json");
-	//std::cout << *gl_draw_manager << "\n";
 
 	ScreenGL * screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	
-	// --------------------------------------------------------------------------
 	view_system= new ViewSystem(gl_draw_manager, screengl);
 	view_system->set(pt_3d(10.0, 10.0, 0.0), M_PI * 0.25, M_PI * 0.25, 70.0);
 	//view_system->set_2d(30.0);
 
-	// --------------------------------------------------------------------------
 	input_state= new InputState();
 
-	// --------------------------------------------------------------------------
 	time_point now= std::chrono::system_clock::now();
 	strategy = new Strategy(gl_draw_manager, view_system, now);
 }

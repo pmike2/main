@@ -1,7 +1,7 @@
 #version 410 core
 
 
-uniform sampler2DArray texture_array;
+uniform sampler2DArray ihm_texture_array;
 
 in vec2 tex_coord;
 in float alpha;
@@ -11,7 +11,7 @@ out vec4 color;
 
 
 void main() {
-	vec4 current_color = texture(texture_array, vec3(tex_coord.x, tex_coord.y, current_layer));
+	vec4 current_color = texture(ihm_texture_array, vec3(tex_coord.x, tex_coord.y, current_layer));
 	if (current_color.a < 0.01) {
 		discard;
 	}

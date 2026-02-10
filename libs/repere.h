@@ -23,6 +23,7 @@
 #include "font.h"
 #include "gl_utils.h"
 #include "geom.h"
+#include "gl_draw.h"
 
 
 // dimensions repere
@@ -88,21 +89,26 @@ public:
 	ViewSystem();
 	ViewSystem(GLDrawManager * gl_draw_manager, ScreenGL * screengl);
 	~ViewSystem();
+	
 	bool mouse_button_down(InputState * input_state);
 	bool mouse_button_up(InputState * input_state);
 	bool mouse_motion(InputState * input_state);
 	bool key_down(InputState * input_state, SDL_Keycode key);
 	bool key_up(InputState * input_state, SDL_Keycode key);
+	
 	void update();
 	void draw();
 	void anim(const pt_3d & target, const quat & rotation);
+	
 	void set(const pt_3d & target, number phi, number theta, number rho);
 	void set_2d(number rho);
+	
 	//void move_target(const pt_3d & v);
 	void move_target(int screen_delta_x, int screen_delta_y, number z);
 	void move_phi(number x);
 	void move_theta(number x);
 	void move_rho(number x);
+	
 	pt_2d screen2world(pt_2d gl_coords, number z);
 	pt_2d screen2world(uint x, uint y, number z);
 	pt_3d screen2world_depthbuffer(pt_2d gl_coords);
@@ -110,6 +116,7 @@ public:
 	pt_2d screen2gl(uint x, uint y);
 	glm::uvec2 gl2screen(pt_2d gl_coords);
 	number depthbuffer2world(number depth);
+	
 	//bool contains_point(const pt_3d & pos);
 	bool intersects_bbox(BBox * bbox, bool selection=false);
 	bool intersects_aabb(AABB * aabb, bool selection=false);
@@ -141,11 +148,22 @@ public:
 	pt_3d _center_near, _center_far;
 	pt_3d _norm_near, _norm_far, _norm_left, _norm_right, _norm_top, _norm_bottom;
 
+	// contraintes
+	bool _phi_constrained;
+	number _phi_min, _phi_max;
+	bool _theta_constrained;
+	number _theta_min, _theta_max;
+	bool _rho_constrained;
+	number _rho_min, _rho_max;
+
+	// type de vue
 	ViewSystemType _type;
 	
+	// dessin
 	GLDrawManager * _gl_draw_manager;
 	Repere * _repere;
 
+	// sélection
 	RectSelect * _rect_select;
 	bool _new_single_selection;
 	bool _new_rect_selection;

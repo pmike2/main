@@ -1,58 +1,63 @@
 {
 	"add_dir_shaders" : ["../shaders"],
 	"add_shaders" : ["../../shaders/repere", "../../shaders/font", "../../shaders/font3d", "../../shaders/gl_ihm"],
-	"shaders" : {
-		"repere" : {},
-		"font" : {},
-		"font3d" : {},
-		"gl_ihm" : {},
+	"contexts" : {
+		"repere" : {"shader" : "repere", "mode" : "GL_LINES", "active" : false},
+		"ground" : {"shader" : "repere", "mode" : "GL_TRIANGLES", "active" : false},
+		"box" : {"shader" : "repere", "mode" : "GL_LINES", "active" : false},
+		"font" : {"shader" : "font", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
+		"font3d" : {"shader" : "font3d", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
+		"gl_ihm" : {"shader" : "gl_ihm", "mode" : "GL_TRIANGLES"},
+
+		"debug" : {"shader" : "linear", "mode" : "GL_LINES", "active" : false},
+		"select" : {"shader" : "select", "mode" : "GL_LINES"},
+		"grid" : {"shader" : "linear", "mode" : "GL_LINES", "active" : false},
+		"bbox" : {"shader" : "linear", "mode" : "GL_LINES"},
+		"path" : {"shader" : "dash", "mode" : "GL_LINES"},
+		"selection" : {"shader" : "dash", "mode" : "GL_LINES"},
+		"edit_map" : {"shader" : "dash", "mode" : "GL_LINES"},
+		"cursor" : {"shader" : "dash", "mode" : "GL_LINES"},
+		"elevation" : {"shader" : "elevation", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW"},
+		"tree_stone" : {"shader" : "tree_stone", "mode" : "GL_TRIANGLES"},
+		"river" : {"shader" : "river", "mode" : "GL_TRIANGLES"},
+		"lake" : {"shader" : "lake", "mode" : "GL_TRIANGLES"},
+		"sea" : {"shader" : "lake", "mode" : "GL_TRIANGLES"},
+		"unit_life" : {"shader" : "unit_life", "mode" : "GL_TRIANGLES"},
+
+		"bomb" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
+			"buffers" : [
+				{"instanced" : true, "attrs" : ["model2world_matrix"]}
+			]
+		},
+		"bullet" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
+			"buffers" : [
+				{"instanced" : true, "attrs" : ["model2world_matrix"]}
+			]
+		},
 		
-		"select" : {},
-		"linear" : {},
-		"dash" : {},
-		"elevation" : {},
-		"tree_stone" : {},
-		"river" : {},
-		"lake" : {},
-		"unit" : {
+		"INFANTERY" : {
+			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in"]}
 			]
 		},
-		"unit_life" : {},
-		"ammo" : {
+		"TANK" : {
+			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
 			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix"]}
+				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in"]}
+			]
+		},
+		"HELICOPTER" : {
+			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
+			"buffers" : [
+				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in"]}
+			]
+		},
+		"BOAT" : {
+			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
+			"buffers" : [
+				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in"]}
 			]
 		}
-	},
-	"contexts" : {
-		"repere" : {"shader" : "repere", "active" : false},
-		"ground" : {"shader" : "repere", "active" : false},
-		"box" : {"shader" : "repere", "active" : false},
-		"font" : {"shader" : "font", "usage" : "GL_STREAM_DRAW"},
-		"font3d" : {"shader" : "font3d", "usage" : "GL_STREAM_DRAW"},
-		"gl_ihm" : {"shader" : "gl_ihm"},
-
-		"debug" : {"shader" : "linear", "active" : false},
-		"select" : {"shader" : "select"},
-		"grid" : {"shader" : "linear", "active" : false},
-		"bbox" : {"shader" : "linear"},
-		"path" : {"shader" : "dash"},
-		"selection" : {"shader" : "dash"},
-		"edit_map" : {"shader" : "dash"},
-		"cursor" : {"shader" : "dash"},
-		"elevation" : {"shader" : "elevation", "usage" : "GL_DYNAMIC_DRAW"},
-		"tree_stone" : {"shader" : "tree_stone"},
-		"river" : {"shader" : "river"},
-		"lake" : {"shader" : "lake"},
-		"sea" : {"shader" : "lake"},
-		"unit_life" : {"shader" : "unit_life"},
-		"bomb" : {"shader" : "ammo"},
-		"bullet" : {"shader" : "ammo"},
-		"INFANTERY" : {"shader" : "unit", "usage" : "GL_DYNAMIC_DRAW"},
-		"TANK" : {"shader" : "unit", "usage" : "GL_DYNAMIC_DRAW"},
-		"HELICOPTER" : {"shader" : "unit", "usage" : "GL_DYNAMIC_DRAW"},
-		"BOAT" : {"shader" : "unit", "usage" : "GL_DYNAMIC_DRAW"}
 	}
 }

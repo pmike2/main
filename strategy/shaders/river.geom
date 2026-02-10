@@ -13,15 +13,17 @@ layout (triangle_strip, max_vertices = 3) out;
 
 in VS_OUT {
 	vec3 vertex_position;
-	vec3 vertex_normal;
-	vec3 vertex_diffuse_color;
+	vec4 vertex_diffuse_color;
+	vec3 vertex_normal_init;
+	vec2 direction;
 } gs_in[];
 
 
 out GS_OUT {
 	vec3 vertex_position;
-	vec3 vertex_normal;
-	vec3 vertex_diffuse_color;
+	vec4 vertex_diffuse_color;
+	vec3 vertex_normal_init;
+	vec2 direction;
 } gs_out;
 
 
@@ -31,20 +33,23 @@ void main() {
 
 	gl_Position = (1.0 - step(0.3, fow)) * vec4(0.0) + step(0.3, fow) * gl_in[0].gl_Position;
 	gs_out.vertex_position = gs_in[0].vertex_position;
-	gs_out.vertex_normal = gs_in[0].vertex_normal;
-	gs_out.vertex_diffuse_color = (1.0 - step(0.7, fow)) * mix(gs_in[0].vertex_diffuse_color, vec3(0.5, 0.5, 0.5), 0.7) + step(0.7, fow) * gs_in[0].vertex_diffuse_color;
+	gs_out.vertex_normal_init = gs_in[0].vertex_normal_init;
+	gs_out.direction = gs_in[0].direction;
+	gs_out.vertex_diffuse_color = (1.0 - step(0.7, fow)) * mix(gs_in[0].vertex_diffuse_color, vec4(0.5, 0.5, 0.5, gs_in[0].vertex_diffuse_color.a), 0.7) + step(0.7, fow) * gs_in[0].vertex_diffuse_color;
 	EmitVertex();
 	
 	gl_Position = (1.0 - step(0.3, fow)) * vec4(0.0) + step(0.3, fow) * gl_in[1].gl_Position;
 	gs_out.vertex_position = gs_in[1].vertex_position;
-	gs_out.vertex_normal = gs_in[1].vertex_normal;
-	gs_out.vertex_diffuse_color = (1.0 - step(0.7, fow)) * mix(gs_in[1].vertex_diffuse_color, vec3(0.5, 0.5, 0.5), 0.7) + step(0.7, fow) * gs_in[1].vertex_diffuse_color;
+	gs_out.vertex_normal_init = gs_in[1].vertex_normal_init;
+	gs_out.direction = gs_in[1].direction;
+	gs_out.vertex_diffuse_color = (1.0 - step(0.7, fow)) * mix(gs_in[1].vertex_diffuse_color, vec4(0.5, 0.5, 0.5, gs_in[1].vertex_diffuse_color.a), 0.7) + step(0.7, fow) * gs_in[1].vertex_diffuse_color;
 	EmitVertex();
 	
 	gl_Position = (1.0 - step(0.3, fow)) * vec4(0.0) + step(0.3, fow) * gl_in[2].gl_Position;
 	gs_out.vertex_position = gs_in[2].vertex_position;
-	gs_out.vertex_normal = gs_in[2].vertex_normal;
-	gs_out.vertex_diffuse_color = (1.0 - step(0.7, fow)) * mix(gs_in[2].vertex_diffuse_color, vec3(0.5, 0.5, 0.5), 0.7) + step(0.7, fow) * gs_in[2].vertex_diffuse_color;
+	gs_out.vertex_normal_init = gs_in[1].vertex_normal_init;
+	gs_out.direction = gs_in[1].direction;
+	gs_out.vertex_diffuse_color = (1.0 - step(0.7, fow)) * mix(gs_in[2].vertex_diffuse_color, vec4(0.5, 0.5, 0.5, gs_in[2].vertex_diffuse_color.a), 0.7) + step(0.7, fow) * gs_in[2].vertex_diffuse_color;
 	EmitVertex();
 	
 	EndPrimitive();

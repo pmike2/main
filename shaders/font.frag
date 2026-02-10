@@ -1,6 +1,6 @@
 #version 410 core
 
-uniform sampler2DArray texture_array;
+uniform sampler2DArray font_texture_array;
 
 in vec2 tex_coords;
 in vec4 color;
@@ -10,7 +10,7 @@ out vec4 color_out;
 
 
 void main() {
-	vec4 sampled= vec4(1.0, 1.0, 1.0, texture(texture_array, vec3(tex_coords.rg, current_layer)).r);
+	vec4 sampled= vec4(1.0, 1.0, 1.0, texture(font_texture_array, vec3(tex_coords.rg, current_layer)).r);
 	
 	color_out= color* sampled;
 

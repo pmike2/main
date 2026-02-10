@@ -14,6 +14,7 @@
 
 #include "gl_utils.h"
 #include "typedefs.h"
+#include "gl_draw.h"
 
 
 // classe d'affichage de texte ; utilise la lib freetype
@@ -80,7 +81,6 @@ public:
 	
 
 	GLDrawManager * _gl_draw_manager;
-	GLuint _texture_id;
 	uint _tex_size;
 	std::map<char, Character> _characters;
 	mat_4d _camera2clip;

@@ -68,25 +68,16 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	}
 	set_ihm();
 
-	glGenTextures(1, &_texture_fow);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
-
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_S    , GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_CLAMP_TO_EDGE);
-
 	Team * team = get_selected_team();
-	glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_RED, team->_fow->_n_cols, team->_fow->_n_ligs, _map->_teams.size(), 0, GL_RED, GL_FLOAT, NULL);
-	uint compt = 0;
-	for (auto & t : _map->_teams) {
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, compt, t->_fow->_n_cols, t->_fow->_n_ligs, 1, GL_RED, GL_FLOAT, t->_fow_data);
-		compt++;
-	}
 
-	glActiveTexture(0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	_gl_draw_manager->add_texture("fow_texture_array", GL_TEXTURE_2D_ARRAY, 0,
+		std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
+			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
+		},
+		GL_RED, glm::uvec3(team->_fow->_n_cols, team->_fow->_n_ligs, _map->_teams.size()), GL_RED, GL_FLOAT);
+	
+	//std::cout << *_gl_draw_manager << "\n";
 
 	if (verbose) {
 		std::cout << "update_all\n";
@@ -284,10 +275,10 @@ void Strategy::draw_select() {
 
 	context->activate();
 	// pour que l'affichage du rectangle de sélection se fassent par dessus le reste
-	glUniform1f(context->_locs_uniform["z"], -1.0);
-	glUniform1f(context->_locs_uniform["thickness"], 7.0);
-	glUniform2f(context->_locs_uniform["viewport_size"], _view_system->_screengl->_screen_width, _view_system->_screengl->_screen_height);
-	glDrawArrays(GL_LINES, 0, context->_n_pts);
+	context->set_uniform("z", -1.0f);
+	context->set_uniform("thickness", 7.0f);
+	context->set_uniform("viewport_size", glm::value_ptr(glm::vec2(float(_view_system->_screengl->_screen_width), float(_view_system->_screengl->_screen_height))));
+	context->draw();
 	context->deactivate();
 }
 
@@ -299,8 +290,8 @@ void Strategy::draw_linear(std::string context_name) {
 	}
 
 	context->activate();
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glDrawArrays(GL_LINES, 0, context->_n_pts);
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->draw();
 	context->deactivate();
 }
 
@@ -312,12 +303,12 @@ void Strategy::draw_dash(std::string context_name, number dash_size, number gap_
 	}
 
 	context->activate();
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glUniform1f(context->_locs_uniform["dash_size"], dash_size);
-	glUniform1f(context->_locs_uniform["gap_size"], gap_size);
-	glUniform1f(context->_locs_uniform["thickness"], thickness);
-	glUniform2f(context->_locs_uniform["viewport_size"], _view_system->_screengl->_screen_width, _view_system->_screengl->_screen_height);
-	glDrawArrays(GL_LINES, 0, context->_n_pts);
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("dash_size", float(dash_size));
+	context->set_uniform("gap_size", float(gap_size));
+	context->set_uniform("thickness", float(thickness));
+	context->set_uniform("viewport_size", glm::value_ptr(glm::vec2(float(_view_system->_screengl->_screen_width), float(_view_system->_screengl->_screen_height))));
+	context->draw();
 	context->deactivate();
 
 }
@@ -330,59 +321,36 @@ void Strategy::draw_tree_stone() {
 	}
 
 	context->activate();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
-
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
-	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
-	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
-
-	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
-	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
-	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
-	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
-	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
-
-	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
-
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-	glActiveTexture(0);
-
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(light_position));
+	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	context->set_uniform("idx_team", float(_config->_selected_team_idx));
+	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->draw();
 	context->deactivate();
 }
 
 
 void Strategy::draw_elevation() {
-	//std::cout << "start draw elevation\n";
 	GLDrawContext * context= _gl_draw_manager->get_context("elevation");
 	if (!context->_active) {
 		return;
 	}
 
 	context->activate();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
-
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
-	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
-	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
-
-	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
-	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
-	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
-	glUniform1f(context->_locs_uniform["z_fow"], 1.0);
-	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
-	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
-	
-	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
-	
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-	glActiveTexture(0);
-	
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(light_position));
+	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	context->set_uniform("z_fow", 1.0f);
+	context->set_uniform("idx_team", float(_config->_selected_team_idx));
+	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->draw();	
 	context->deactivate();
 }
 
@@ -394,14 +362,18 @@ void Strategy::draw_lake() {
 	}
 
 	context->activate();
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
-	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
-	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
-	glUniform1f(context->_locs_uniform["angle"], float(_angle));
-	glUniform1f(context->_locs_uniform["amplitude"], 0.2f);
-	glUniform1f(context->_locs_uniform["freq"], 2.0f);
-	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(light_position));
+	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	context->set_uniform("idx_team", float(_config->_selected_team_idx));
+	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->set_uniform("angle", float(_angle));
+	context->set_uniform("amplitude", float(LAKE_WAVE_AMPLITUDE));
+	context->set_uniform("freq", float(LAKE_WAVE_FREQ));
+	context->draw();
 	context->deactivate();
 }
 
@@ -413,12 +385,16 @@ void Strategy::draw_river() {
 	}
 
 	context->activate();
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
-	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
-	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
-	glUniform1f(context->_locs_uniform["angle"], float(_angle));
-	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(light_position));
+	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	context->set_uniform("idx_team", float(_config->_selected_team_idx));
+	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->set_uniform("angle", float(_angle));
+	context->draw();
 	context->deactivate();
 }
 
@@ -430,14 +406,18 @@ void Strategy::draw_sea() {
 	}
 
 	context->activate();
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
-	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
-	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
-	glUniform1f(context->_locs_uniform["angle"], float(_angle));
-	glUniform1f(context->_locs_uniform["amplitude"], 0.2f);
-	glUniform1f(context->_locs_uniform["freq"], 0.2f);
-	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(light_position));
+	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	context->set_uniform("idx_team", float(_config->_selected_team_idx));
+	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->set_uniform("angle", float(_angle));
+	context->set_uniform("amplitude", float(SEA_WAVE_AMPLITUDE));
+	context->set_uniform("freq", float(SEA_WAVE_FREQ));
+	context->draw();
 	context->deactivate();
 }
 
@@ -449,26 +429,15 @@ void Strategy::draw_unit(UnitType * unit_type) {
 	}
 
 	context->activate();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
-
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
-	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
-	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
-
-	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
-	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
-	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
-	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
-	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
-	
-	glDrawArraysInstanced(GL_TRIANGLES, 0, context->_n_pts, context->_n_instances);
-
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-	glActiveTexture(0);
-
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(light_position));
+	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	context->set_uniform("idx_team", float(_config->_selected_team_idx));
+	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->draw();
 	context->deactivate();
 }
 
@@ -479,24 +448,13 @@ void Strategy::draw_unit_life() {
 		return;
 	}
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
-
 	context->activate();
-
-	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_camera2clip)));
-
-	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
-	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
-	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
-	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
-	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
-
-	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
-
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-	glActiveTexture(0);
-
+	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_camera2clip)));
+	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	context->set_uniform("idx_team", float(_config->_selected_team_idx));
+	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->draw();
 	context->deactivate();
 }
 
@@ -508,47 +466,20 @@ void Strategy::draw_ammo(AmmoType * ammo_type) {
 	}
 
 	context->activate();
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
-
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glUniform3fv(context->_locs_uniform["light_position"], 1, glm::value_ptr(light_position));
-	glUniform3fv(context->_locs_uniform["light_color"], 1, glm::value_ptr(light_color));
-	glUniform3fv(context->_locs_uniform["view_position"], 1, glm::value_ptr(glm::vec3(_view_system->_eye)));
-
-	glUniform1i(context->_locs_uniform["fow_texture_array"], 0);
-	glUniform2fv(context->_locs_uniform["elevation_size"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_size)));
-	glUniform2fv(context->_locs_uniform["elevation_origin"], 1, glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
-	glUniform1f(context->_locs_uniform["idx_team"], float(_config->_selected_team_idx));
-	glUniform1f(context->_locs_uniform["fow_active"], float(_config->_fow_active));
-	
-	glDrawArraysInstanced(GL_TRIANGLES, 0, context->_n_pts, context->_n_instances);
-
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-	glActiveTexture(0);
-
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(light_position));
+	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
+	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
+	context->set_uniform("idx_team", float(_config->_selected_team_idx));
+	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->draw();
 	context->deactivate();
 }
 
 
-/*void Strategy::draw_fow() {
-	GLDrawContext * context= _gl_draw_manager->get_context("fow");
-	if (!context->_active) {
-		return;
-	}
-
-	context->activate();
-	glUniformMatrix4fv(context->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	glUniform1f(context->_locs_uniform["z"], 1.0f);
-	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
-	context->deactivate();
-}*/
-
-
 void Strategy::draw() {
-	//std::cout << "start draw\n";
-
 	draw_elevation();
 
 	for (auto context_name : std::vector<std::string>{"grid", "bbox"}) {
@@ -1681,17 +1612,16 @@ void Strategy::update_selection() {
 
 
 void Strategy::update_fow_texture() {
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
-	//Team * team = get_selected_team();
-	//std::cout << _config->_selected_team_idx << "\n";
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
 	uint compt = 0;
 	for (auto & team : _map->_teams) {
-		glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, compt, team->_fow->_n_cols, team->_fow->_n_ligs, 1, GL_RED, GL_FLOAT, team->_fow_data);
+		//glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, compt, team->_fow->_n_cols, team->_fow->_n_ligs, 1, GL_RED, GL_FLOAT, team->_fow_data);
+		_gl_draw_manager->set_texture_data("fow_texture_array", team->_fow_data, compt);
 		compt++;
 	}
-	glActiveTexture(0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	//glActiveTexture(0);
+	//glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
 
@@ -1724,6 +1654,9 @@ void Strategy::update_all() {
 
 void Strategy::update_text() {
 	std::vector<Text3D> texts_3d;
+
+	//texts_3d.push_back(Text3D("hohoho", glm::vec3(0.0), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
 			texts_3d.push_back(Text3D(unit_type2str(unit->_type->_type) + " " + std::to_string(unit->_id), glm::vec3(unit->_bbox->_aabb->_vmin)+ glm::vec3(0.0, 0.0, 3.0), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
@@ -1735,7 +1668,9 @@ void Strategy::update_text() {
 	std::vector<Text> texts_2d;
 	
 	std::string s_pos = glm_to_string(_cursor_world_position);
-	texts_2d.push_back(Text(s_pos, glm::vec2(-4.8, 3.8), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	texts_2d.push_back(Text(s_pos, glm::vec2(-4.8, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+
+	//texts_2d.push_back(Text("HAAA", glm::vec2(0.0, 0.0), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	
 	if (_map->_path_finder->in_boundaries(pt_2d(_cursor_world_position))) {
 		GraphEdge edge = _map->_path_finder->get_edge(_map->_path_finder->pt2closest_edge(pt_2d(_cursor_world_position)));
@@ -1747,7 +1682,7 @@ void Strategy::update_text() {
 		str_terrain += " ; " + std::to_string(data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
 		str_terrain += " ; " + std::to_string(opposite_data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
 		
-		texts_2d.push_back(Text(str_terrain, glm::vec2(-1.5, 3.8), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		texts_2d.push_back(Text(str_terrain, glm::vec2(-1.5, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 
 	_font->set_text(texts_2d);
@@ -1965,12 +1900,6 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 		std::cout << "--------------\n";
 		context->show_data(1);*/
 
-		Team * team = get_selected_team();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
-		export_texture_array2pgm("../tmp", team->_fow->_n_cols, team->_fow->_n_ligs, 2);
-		glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-		glActiveTexture(0);
 		//std::cout << "ok\n";
 	}
 	return false;

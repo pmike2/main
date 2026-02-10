@@ -13,6 +13,7 @@
 #include "typedefs.h"
 #include "repere.h"
 #include "gl_ihm.h"
+#include "gl_draw.h"
 
 #include "const.h"
 #include "map.h"
@@ -48,6 +49,11 @@ const pt_2d MAP_SIZE(200.0, 200.0);
 const pt_2d PATH_RESOLUTION(2.0);
 const pt_2d ELEVATION_RESOLUTION(1.0);
 const pt_2d FOW_RESOLUTION(2.0);
+
+const number LAKE_WAVE_AMPLITUDE = 0.2;
+const number LAKE_WAVE_FREQ = 2.0;
+const number SEA_WAVE_AMPLITUDE = 0.2;
+const number SEA_WAVE_FREQ = 0.2;
 
 
 struct StrategyConfig {
@@ -145,7 +151,7 @@ public:
 	number _angle;
 	Unit * _cursor_hover_unit;
 
-	uint _texture_fow;
+	//uint _texture_fow;
 };
 
 #endif

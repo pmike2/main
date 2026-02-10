@@ -1,7 +1,9 @@
 #include <fstream>
 #include <sstream>
 
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "geom_2d.h"
@@ -379,11 +381,6 @@ GLIHM::GLIHM() {
 GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string json_path) :
 	_gl_draw_manager(gl_draw_manager), _screengl(screengl), _verbose(false) 
 {
-		/*_contexts["gl_ihm"]= new GLDrawContext(progs["gl_ihm"], 
-		std::vector<std::string>{"position_in:2", "tex_coord_in:2", "alpha_in:1", "current_layer_in:1"},
-		std::vector<std::string>{"camera2clip_matrix", "texture_array", "z"},
-		GL_STATIC_DRAW, true);*/
-
 	std::vector<std::pair<GLIHMElement *, std::string> > groups_visible;
 
 	std::ifstream ifs(json_path);
@@ -499,10 +496,18 @@ GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string j
 			element->_texture_layer = compt++;
 		}
 	}
-	glGenTextures(1, &_texture_idx);
-	fill_texture_array(0, _texture_idx, _texture_size, pngs);
 
-	_camera2clip= glm::ortho(float(-_screengl->_gl_width)* 0.5f, float(_screengl->_gl_width)* 0.5f, -float(_screengl->_gl_height)* 0.5f, float(_screengl->_gl_height)* 0.5f, Z_NEAR, Z_FAR);
+	// il faut mettre GL_BGRA ici bizarrement
+	_gl_draw_manager->add_texture("ihm_texture_array", GL_TEXTURE_2D_ARRAY, 0,
+		std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
+			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
+		},
+		GL_RGBA, glm::uvec3(_texture_size, _texture_size, pngs.size()), GL_BGRA, GL_UNSIGNED_BYTE);
+	
+	_gl_draw_manager->set_texture_data("ihm_texture_array", pngs);
+
+	_camera2clip = glm::ortho(-screengl->_gl_width* 0.5, screengl->_gl_width* 0.5, -screengl->_gl_height* 0.5, screengl->_gl_height* 0.5);
 
 	update();
 }
@@ -582,7 +587,6 @@ void GLIHM::update() {
 	}
 	context->set_data(data);
 	delete[] data;
-	//context->show_data();
 }
 
 
@@ -593,13 +597,9 @@ void GLIHM::draw() {
 	}
 
 	context->activate();
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_idx);
-	glActiveTexture(0);
-	glUniform1i(context->_locs_uniform["texture_array"], 0);
-	glUniform1f(context->_locs_uniform["z"], Z_IHM);
-	glUniformMatrix4fv(context->_locs_uniform["camera2clip_matrix"], 1, GL_FALSE, glm::value_ptr(_camera2clip));
-	glDrawArrays(GL_TRIANGLES, 0, context->_n_pts);
+	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(_camera2clip)));
+	context->set_uniform("z", float(Z_IHM));
+	context->draw();
 	context->deactivate();
 }
 
@@ -661,7 +661,7 @@ bool GLIHM::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
 
 
 std::ostream & operator << (std::ostream & os, const GLIHM & ihm) {
-	os << "texture_idx = " << ihm._texture_idx << " ; texture_root = " << ihm._texture_root << " ; groups =\n";
+	os << "texture_root = " << ihm._texture_root << " ; groups =\n";
 	for (auto & group : ihm._groups) {
 		os << *group;
 	}

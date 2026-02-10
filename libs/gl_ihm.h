@@ -15,6 +15,7 @@
 #include "typedefs.h"
 #include "input_state.h"
 #include "gl_utils.h"
+#include "gl_draw.h"
 
 
 using json = nlohmann::json;
@@ -24,9 +25,7 @@ enum GL_IHM_GROUP_ORIENTATION {GL_IHM_HORIZONTAL, GL_IHM_VERTICAL};
 enum GL_IHM_GROUP_TYPE {GL_IHM_BUTTON, GL_IHM_CHECKBOX, GL_IHM_RADIO, GL_IHM_SLIDER};
 
 
-const float Z_NEAR = 0.0f;
-const float Z_FAR = 1000.0f;
-const float Z_IHM = 10.0f;
+const number Z_IHM = 10.0;
 const number ALPHA_ACTIVE = 1.0;
 const number ALPHA_INACTIVE = 0.5;
 
@@ -148,9 +147,8 @@ struct GLIHM {
 	GLDrawManager * _gl_draw_manager;
 	ScreenGL * _screengl;
 	std::vector<GLIHMGroup *> _groups;
-	uint _texture_idx;
 	std::string _texture_root;
-	glm::mat4 _camera2clip;
+	mat_4d _camera2clip;
 	bool _verbose;
 	pt_2d _default_element_size;
 	number _default_margin;
