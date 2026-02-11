@@ -17,12 +17,6 @@
 #include "element.h"
 
 
-const uint BRANCH_N_POINTS_PER_CIRCLE = 6;
-const uint N_PTS_PER_BRANCH_SIDE= BRANCH_N_POINTS_PER_CIRCLE * 6;
-const uint N_PTS_PER_BRANCH_BOTTOM = BRANCH_N_POINTS_PER_CIRCLE * 3;
-const uint N_PTS_PER_BRANCH_TOP = BRANCH_N_POINTS_PER_CIRCLE * 3;
-
-
 class TreeSpecies {
 public:
 	TreeSpecies();

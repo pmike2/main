@@ -24,12 +24,12 @@ Repere::Repere(GLDrawManager * gl_draw_manager) : _gl_draw_manager(gl_draw_manag
 	};
 	
 	float data_ground[]= {
-		-1.0f* float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS), GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
-		float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS)       , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
-		float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS)              , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
-		-1.0f* float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(EPS), GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
-		float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS)              , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
-		-1.0f* float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(EPS)       , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
+		-1.0f* float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(GROUND_EPS), GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
+		float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(GROUND_EPS)       , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
+		float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(GROUND_EPS)              , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
+		-1.0f* float(REPERE_GROUND), -1.0f* float(REPERE_GROUND), -1.0f* float(GROUND_EPS), GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
+		float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(GROUND_EPS)              , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
+		-1.0f* float(REPERE_GROUND), float(REPERE_GROUND), -1.0f* float(GROUND_EPS)       , GROUND_COLOR.r, GROUND_COLOR.g, GROUND_COLOR.b, GROUND_COLOR.a,
 	};
 
 	float data_box[]= {
@@ -124,12 +124,16 @@ ViewSystem::ViewSystem() {
 ViewSystem::ViewSystem(GLDrawManager * gl_draw_manager, ScreenGL * screengl) :
 	_gl_draw_manager(gl_draw_manager),
 	_screengl(screengl),
-	_target(pt_3d(0.0, 0.0, 0.0)), _eye(pt_3d(0.0, 0.0, 0.0)), _up(pt_3d(0.0, 0.0, 0.0)), 
-	_phi(0.0), _theta(0.0), _rho(1.0),
-	_type(FREE_VIEW), _frustum_halfsize(FRUSTUM_HALFSIZE), _frustum_near(FRUSTUM_NEAR), _frustum_far(FRUSTUM_FAR),
-	_new_single_selection(false), _new_rect_selection(false), _free_view_x(0.0), _free_view_y(0.0)
+	_frustum_halfsize(FRUSTUM_HALFSIZE), _frustum_near(FRUSTUM_NEAR), _frustum_far(FRUSTUM_FAR),
+	_target(pt_3d(0.0, 0.0, 0.0)), _phi(0.0), _theta(0.0), _rho(1.0),
+	_target_constrained(false), _phi_constrained(false), _theta_constrained(false), _rho_constrained(false),
+	_target_sensitivity(DEFAULT_TARGET_SENSIVITY), _phi_sensitivity(DEFAULT_PHI_SENSIVITY), _theta_sensitivity(DEFAULT_THETA_SENSIVITY), _rho_sensitivity(DEFAULT_RHO_SENSIVITY),
+	_type(FREE_VIEW),
+	_new_single_selection(false), _new_rect_selection(false),
+	_target_anim(false)
+	//_free_view_x(0.0), _free_view_y(0.0)
 {
-	_camera2clip= glm::frustum(-_frustum_halfsize* _screengl->_screen_width/ _screengl->_screen_height, _frustum_halfsize* _screengl->_screen_width/ _screengl->_screen_height, -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
+	_camera2clip= glm::frustum(-_frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, _frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
 
 	update();
 
@@ -145,10 +149,7 @@ ViewSystem::~ViewSystem() {
 }
 
 
-bool ViewSystem::mouse_button_down(InputState * input_state) {
-	_free_view_x= 0.0;
-	_free_view_y= 0.0;
-
+bool ViewSystem::mouse_button_down(InputState * input_state, time_point t) {
 	if (input_state->_left_mouse) {
 		_rect_select->set_active(true);
 		_rect_select->set_origin(screen2gl(input_state->_x, input_state->_y));
@@ -158,10 +159,7 @@ bool ViewSystem::mouse_button_down(InputState * input_state) {
 }
 
 
-bool ViewSystem::mouse_button_up(InputState * input_state) {
-	_free_view_x= number(input_state->_xrel);
-	_free_view_y= number(input_state->_yrel);
-
+bool ViewSystem::mouse_button_up(InputState * input_state, time_point t) {
 	if (_rect_select->_is_active) {
 		_rect_select->set_active(false);
 		if (glm::distance2(_rect_select->_gl_origin, _rect_select->_gl_moving)< 0.0001) {
@@ -177,35 +175,42 @@ bool ViewSystem::mouse_button_up(InputState * input_state) {
 }
 
 
-bool ViewSystem::mouse_motion(InputState * input_state) {
+bool ViewSystem::mouse_motion(InputState * input_state, time_point t) {
 	if (_type== FREE_VIEW) {
 		
+		// sélection
 		if (input_state->_left_mouse) {
-			// translation
-			if (input_state->_keys[SDLK_LSHIFT]) {
-				move_target(input_state->_xrel, input_state->_yrel, 0.0);
-				return true;
-			}
-			// selection rectangulaire
-			else if (_rect_select->_is_active) {
+			if (_rect_select->_is_active) {
 				_rect_select->set_moving(screen2gl(input_state->_x, input_state->_y));
 				return true;
 			}
 		}
+
+		// comme dans Blender !
+
 		// zoom
-		else if ((input_state->_middle_mouse) || (input_state->_keys[SDLK_LCTRL])) {
-			move_rho(-(number)(input_state->_yrel)* MIDDLE_MOUSE_SENSIVITY);
+		else if (input_state->_middle_mouse && (input_state->_keys[SDLK_LCTRL] || input_state->_keys[SDLK_LGUI])) {
+			move_rho(input_state->_yrel);
 			return true;
 		}
-		// rotations
-		else if (input_state->_right_mouse) {
-			move_theta((number)(-input_state->_yrel)* RIGHT_MOUSE_SENSIVITY);
-			move_phi((number)(-input_state->_xrel)* RIGHT_MOUSE_SENSIVITY);
+
+		// translation
+		else if (input_state->_middle_mouse && input_state->_keys[SDLK_LSHIFT]) {
+			move_target(input_state->_xrel, input_state->_yrel);
+			return true;
+		}
+
+		// rotation
+		else if (input_state->_middle_mouse) {
+			move_theta(input_state->_yrel);
+			move_phi(input_state->_xrel);
 			return true;
 		}
 	}
 
-	else if (_type== THIRD_PERSON_FREE) {
+	// TODO : à revoir
+
+	/*else if (_type== THIRD_PERSON_FREE) {
 		if (input_state->_left_mouse) {
 		}
 		// zoom
@@ -237,14 +242,17 @@ bool ViewSystem::mouse_motion(InputState * input_state) {
 			move_theta((number)(-input_state->_yrel)* RIGHT_MOUSE_SENSIVITY);
 			return true;
 		}
-	}
+	}*/
+
 	return false;
 }
 
 
-bool ViewSystem::key_down(InputState * input_state, SDL_Keycode key) {
+bool ViewSystem::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
+	
+	// TODO : à revoir
 	// changement de type de vue
-	if (key== SDLK_v) {
+	/*if (key== SDLK_v) {
 		if (_type== FREE_VIEW) {
 			_type= THIRD_PERSON_FREE;
 		}
@@ -255,7 +263,7 @@ bool ViewSystem::key_down(InputState * input_state, SDL_Keycode key) {
 			_type= FREE_VIEW;
 		}
 		return true;
-	}
+	}*/
 
 	if (_type== FREE_VIEW) {
 		// affichage repere
@@ -265,18 +273,109 @@ bool ViewSystem::key_down(InputState * input_state, SDL_Keycode key) {
 			_gl_draw_manager->switch_active("ground");
 			return true;
 		}
+
+		// déplacement
+		else if (input_state->_keys[SDLK_RSHIFT]) {
+			if (key == SDLK_LEFT) {
+				_target_t = t;
+				_target_start = pt_2d(_target);
+				_target_goal = _target_start + get_target_direction(KEY_TARGET_MOVE, 0);
+				_target_length = glm::length(_target_goal - _target_start);
+				_target_direction = (_target_goal - _target_start) / _target_length;
+				_target_anim = true;
+				return true;
+			}
+			else if (key == SDLK_RIGHT) {
+				_target_t = t;
+				_target_start = pt_2d(_target);
+				_target_goal = _target_start + get_target_direction(-KEY_TARGET_MOVE, 0);
+				_target_length = glm::length(_target_goal - _target_start);
+				_target_direction = (_target_goal - _target_start) / _target_length;
+				_target_anim = true;
+				return true;
+			}
+			else if (key == SDLK_UP) {
+				_target_t = t;
+				_target_start = pt_2d(_target);
+				_target_goal = _target_start + get_target_direction(0, KEY_TARGET_MOVE);
+				_target_length = glm::length(_target_goal - _target_start);
+				_target_direction = (_target_goal - _target_start) / _target_length;
+				_target_anim = true;
+				return true;
+			}
+			else if (key == SDLK_DOWN) {
+				_target_t = t;
+				_target_start = pt_2d(_target);
+				_target_goal = _target_start + get_target_direction(0, -KEY_TARGET_MOVE);
+				_target_length = glm::length(_target_goal - _target_start);
+				_target_direction = (_target_goal - _target_start) / _target_length;
+				_target_anim = true;
+				return true;
+			}
+		}
+
+		// zoom
+		else if (input_state->_keys[SDLK_RCTRL] || input_state->_keys[SDLK_RGUI]) {
+			if (key == SDLK_UP) {
+				_rho_t = t;
+				_rho_start = _rho;
+				_rho_goal = _rho_start + get_delta_rho(KEY_RHO_MOVE);
+				_rho_anim = true;
+			}
+			else if (key == SDLK_DOWN) {
+				_rho_t = t;
+				_rho_start = _rho;
+				_rho_goal = _rho_start + get_delta_rho(-KEY_RHO_MOVE);
+				_rho_anim = true;
+			}
+		}
+
+		// rotation
+		else {
+			if (key == SDLK_LEFT) {
+				_phi_t = t;
+				_phi_start = _phi;
+				_phi_goal = _phi_start + get_delta_phi(KEY_PHI_MOVE);
+				_phi_anim = true;
+			}
+			else if (key == SDLK_RIGHT) {
+				_phi_t = t;
+				_phi_start = _phi;
+				_phi_goal = _phi_start + get_delta_phi(-KEY_PHI_MOVE);
+				_phi_anim = true;
+			}
+			else if (key == SDLK_UP) {
+				_theta_t = t;
+				_theta_start = _theta;
+				_theta_goal = _theta_start + get_delta_theta(KEY_THETA_MOVE);
+				if (_theta_goal > M_PI) {
+					_theta_goal = M_PI;
+				}
+				_theta_anim = true;
+			}
+			else if (key == SDLK_DOWN) {
+				_theta_t = t;
+				_theta_start = _theta;
+				_theta_goal = _theta_start + get_delta_theta(-KEY_THETA_MOVE);
+				if (_theta_goal < 0.0) {
+					_theta_goal = 0.0;
+				}
+				_theta_anim = true;
+			}
+		}
 	}
-	else if (_type== THIRD_PERSON_FREE) {
+
+	/*else if (_type== THIRD_PERSON_FREE) {
 
 	}
 	else if (_type== THIRD_PERSON_BEHIND) {
 
-	}
+	}*/
 	return false;
 }
 
 
-bool ViewSystem::key_up(InputState * input_state, SDL_Keycode key) {
+bool ViewSystem::key_up(InputState * input_state, SDL_Keycode key, time_point t) {
 	return false;
 }
 
@@ -284,6 +383,18 @@ bool ViewSystem::key_up(InputState * input_state, SDL_Keycode key) {
 // a appeler des qu'un param est modifie
 void ViewSystem::update() {
 	// contraintes
+	if (_target_constrained) {
+		// on ne contraint pas _target.z
+		for (uint i=0; i<2; ++i) {
+			if (_target[i] < _target_min[i]) {
+				_target[i] = _target_min[i];
+			}
+			if (_target[i] > _target_max[i]) {
+				_target[i] = _target_max[i];
+			}
+		}
+	}
+
 	if (_phi_constrained) {
 		if (_phi < _phi_min) {
 			_phi = _phi_min;
@@ -309,6 +420,22 @@ void ViewSystem::update() {
 		if (_rho > _rho_max) {
 			_rho = _rho_max;
 		}
+	}
+
+	// phi doit être entre 0 et 2pi
+	while (_phi< 0.0) {
+		_phi+= M_PI* 2.0;
+	}
+	while (_phi> M_PI* 2.0) {
+		_phi-= M_PI* 2.0;
+	}
+
+	// theta doit être entre 0 et pi
+	if (_theta< 0.0) {
+		_theta= 0.0;
+	}
+	if (_theta> M_PI) {
+		_theta= M_PI;
 	}
 
 	// _rho == 0.0 crée des problèmes avec du nan dans les attributs
@@ -364,6 +491,83 @@ void ViewSystem::set_2d(number rho) {
 	update();
 }
 
+
+void ViewSystem::constraint_target(const pt_2d & target_min, const pt_2d & target_max) {
+	_target_constrained = true;
+	_target_min = target_min;
+	_target_max = target_max;
+}
+
+
+void ViewSystem::constraint_target(const pt_2d & target) {
+	_target_constrained = true;
+	_target_min = target;
+	_target_max = target;
+}
+
+
+void ViewSystem::unconstraint_target() {
+	_target_constrained = false;
+}
+
+
+void ViewSystem::constraint_phi(number phi_min, number phi_max) {
+	_phi_constrained = true;
+	_phi_min = phi_min;
+	_phi_max = phi_max;
+}
+
+
+void ViewSystem::constraint_phi(number phi) {
+	_phi_constrained = true;
+	_phi_min = phi;
+	_phi_max = phi;
+}
+
+
+void ViewSystem::unconstraint_phi() {
+	_phi_constrained = false;
+}
+
+
+void ViewSystem::constraint_theta(number theta_min, number theta_max) {
+	_theta_constrained = true;
+	_theta_min = theta_min;
+	_theta_max = theta_max;
+}
+
+
+void ViewSystem::constraint_theta(number theta) {
+	_theta_constrained = true;
+	_theta_min = theta;
+	_theta_max = theta;
+}
+
+
+void ViewSystem::unconstraint_theta() {
+	_theta_constrained = false;
+}
+
+
+void ViewSystem::constraint_rho(number rho_min, number rho_max) {
+	_rho_constrained = true;
+	_rho_min = rho_min;
+	_rho_max = rho_max;
+}
+
+
+void ViewSystem::constraint_rho(number rho) {
+	_rho_constrained = true;
+	_rho_min = rho;
+	_rho_max = rho;
+}
+
+
+void ViewSystem::unconstraint_rho() {
+	_rho_constrained = false;
+}
+
+
 // les move sont des modif delta, contrairement a set ou anim qui font des modifs absolues
 /*void ViewSystem::move_target(const pt_3d & v) {
 	_target.x+= v.x* sin(_phi)- v.y* cos(_phi);
@@ -373,47 +577,64 @@ void ViewSystem::set_2d(number rho) {
 	update();
 }*/
 
-void ViewSystem::move_target(int screen_delta_x, int screen_delta_y, number z) {
+
+pt_2d ViewSystem::get_target_direction(int screen_delta_x, int screen_delta_y) {
+	pt_2d v= screen2world(_screengl->_screen_width* 0.5- screen_delta_x, _screengl->_screen_height* 0.5- screen_delta_y, 0.0);
+	return v - pt_2d(_target);
+}
+
+
+void ViewSystem::move_target(int screen_delta_x, int screen_delta_y) {
 	/*
 	Avant j'utilisais move_target(pt_3d) avec LEFT_MOUSE_SENSIVITY mais du coup la translation ne dépendait pas de l'altitude
 	et du coup à basse alti ça bougeait vite, haute alti lentement.
 	Ici il y a une meilleure corrélation entre mouvement curseur et translation terrain
 	A terme fournir en argument optionnel un Terrain afin de s'ajuster à un relief plus complexe que z = 0
 	*/
-	pt_2d v= screen2world(_screengl->_screen_width* 0.5- screen_delta_x, _screengl->_screen_height* 0.5- screen_delta_y, z);
-	_target.x= v.x;
-	_target.y= v.y;
+	pt_2d diff = get_target_direction(screen_delta_x, screen_delta_y);
+	_target.x += _target_sensitivity * diff.x;
+	_target.y += _target_sensitivity * diff.y;
 	update();
 }
 
 
-// phi est l'angle horizontal compris entre 0 et 2PI
-void ViewSystem::move_phi(number x) {
-	_phi+= x;
-	while (_phi< 0.0) {
-		_phi+= M_PI* 2.0;
-	}
-	while (_phi> M_PI* 2.0) {
-		_phi-= M_PI* 2.0;
-	}
-	
+number ViewSystem::get_delta_phi(int screen_delta_x) {
+	return atan(number(screen_delta_x) / _rho);
+}
+
+
+// pareil que move_target, on s'adapte au niveau de zoom
+void ViewSystem::move_phi(int screen_delta_x) {
+	number delta_phi = get_delta_phi(screen_delta_x);
+	_phi -= delta_phi * _phi_sensitivity;
 	update();
 }
 
 
-// theta est l'angle vertical, compris entre 0 et PI
-void ViewSystem::move_theta(number x) {
-	if ((_theta+ x> 0.0) && (_theta+ x< M_PI)) {
-		_theta+= x;
-	}
-	
+number ViewSystem::get_delta_theta(int screen_delta_y) {
+	return atan(number(screen_delta_y) / _rho);
+}
+
+
+// pareil que move_target, on s'adapte au niveau de zoom
+void ViewSystem::move_theta(int screen_delta_y) {
+	number delta_theta = get_delta_theta(screen_delta_y);
+	_theta -= delta_theta * _theta_sensitivity;
 	update();
 }
 
 
-void ViewSystem::move_rho(number x) {
-	_rho += x;
-	
+number ViewSystem::get_delta_rho(int screen_delta_y) {
+	number sign = copysign(1.0, number(screen_delta_y));
+	pt_2d v= screen2world(_screengl->_screen_width* 0.5, _screengl->_screen_height* 0.5- screen_delta_y, 0.0);
+	return sign * glm::length(v - pt_2d(_target));
+}
+
+
+// pareil que move_target, on s'adapte au niveau de zoom
+void ViewSystem::move_rho(int screen_delta_y) {
+	number dist = get_delta_rho(screen_delta_y);
+	_rho -= dist * _rho_sensitivity;
 	update();
 }
 
@@ -423,18 +644,103 @@ void ViewSystem::draw() {
 }
 
 
-void ViewSystem::anim(const pt_3d & target, const quat & rotation) {
+//void ViewSystem::anim(const pt_3d & target, const quat & rotation) {
+void ViewSystem::anim(time_point t) {
 	if (_type== FREE_VIEW) {
-		// legère inertie aux translations
-		number tresh= 1e-9;
-		number decay_factor= 0.95;
-		if (abs(_free_view_x)> tresh) { _free_view_x*= decay_factor; }
-		if (abs(_free_view_y)> tresh) { _free_view_y*= decay_factor; }
-		if ((abs(_free_view_x)> tresh) || (abs(_free_view_y)> tresh)) {
-			move_target(int(_free_view_x), int(_free_view_y), 0.0);
+		if (_target_anim) {
+			auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t - _target_t).count();
+			if (d > KEY_TARGET_N_MS) {
+				_target_anim = false;
+			}
+			else {
+				number factor = pow(glm::length(_target_goal - pt_2d(_target)) / _target_length, KEY_TARGET_EXP);
+				_target.x += factor * _target_direction.x;
+				_target.y += factor * _target_direction.y;
+				update();
+			}
+		}
+
+		if (_phi_anim) {
+			auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t - _phi_t).count();
+			if (d > KEY_PHI_N_MS) {
+				_phi_anim = false;
+			}
+			else {
+				if (_phi_goal > _phi_start) {
+					number factor = pow((_phi_goal - _phi) / (_phi_goal - _phi_start), KEY_PHI_EXP);
+					_phi += factor * KEY_PHI_FACTOR;
+
+					if (_phi > 2.0 * M_PI) {
+						_phi -= 2.0 * M_PI;
+						_phi_start -= 2.0 * M_PI;
+						_phi_goal -= 2.0 * M_PI;
+					}
+				}
+				else {
+					number factor = pow((_phi - _phi_goal) / (_phi_start - _phi_goal), KEY_PHI_EXP);
+					_phi -= factor * KEY_PHI_FACTOR;
+
+					if (_phi < 0.0) {
+						_phi += 2.0 * M_PI;
+						_phi_start += 2.0 * M_PI;
+						_phi_goal += 2.0 * M_PI;
+					}
+				}
+				update();
+			}
+		}
+
+		if (_theta_anim) {
+			auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t - _theta_t).count();
+			if (d > KEY_THETA_N_MS) {
+				_theta_anim = false;
+			}
+			else {
+				if (_theta_goal > _theta_start) {
+					number factor = pow((_theta_goal - _theta) / (_theta_goal - _theta_start), KEY_THETA_EXP);
+					_theta += factor * KEY_THETA_FACTOR;
+
+					/*if (_theta > M_PI) {
+						_theta -= M_PI;
+						_theta_start -= 2.0 * M_PI;
+						_theta_goal -= 2.0 * M_PI;
+					}*/
+				}
+				else {
+					number factor = pow((_theta - _theta_goal) / (_theta_start - _theta_goal), KEY_THETA_EXP);
+					_theta -= factor * KEY_THETA_FACTOR;
+
+					/*if (_theta < 0.0) {
+						_theta += 2.0 * M_PI;
+						_theta_start += 2.0 * M_PI;
+						_theta_goal += 2.0 * M_PI;
+					}*/
+				}
+				update();
+			}
+		}
+
+		if (_rho_anim) {
+			auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t - _rho_t).count();
+			if (d > KEY_RHO_N_MS) {
+				_rho_anim = false;
+			}
+			else {
+				if (_rho_goal > _rho_start) {
+					number factor = pow((_rho_goal - _rho) / (_rho_goal - _rho_start), KEY_RHO_EXP);
+					_rho += factor * KEY_RHO_FACTOR;
+				}
+				else {
+					number factor = pow((_rho - _rho_goal) / (_rho_start - _rho_goal), KEY_RHO_EXP);
+					_rho -= factor * KEY_RHO_FACTOR;
+				}
+				update();
+			}
 		}
 	}
-	else if (_type== THIRD_PERSON_FREE) {
+
+	// TODO : à revoir
+	/*else if (_type== THIRD_PERSON_FREE) {
 		// ajuste les params de ViewSystem en fonction d'un but
 		_target= target;
 		update();
@@ -444,7 +750,7 @@ void ViewSystem::anim(const pt_3d & target, const quat & rotation) {
 		_target= target;
 		_phi= glm::roll(rotation);
 		update();
-	}
+	}*/
 }
 
 

@@ -19,43 +19,6 @@
 #include "map.h"
 
 
-enum STRATEGY_MODE {VIEW, PLAY, ADD_UNIT, ADD_ELEMENT, EDIT_ELEVATION, ERASE};
-enum PLAY_MODE {SELECT_UNIT, MOVE_UNIT, ATTACK_UNIT};
-
-const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
-const glm::vec4 EDIT_MAP_COLOR(0.0f, 1.0f, 1.0f, 1.0f);
-
-const number Z_OFFSET_EDGE = 0.05;
-const number Z_OFFSET_UNIT = 0.05;
-const number Z_OFFSET_PATH = 0.5;
-const number Z_OFFSET_EDIT_MAP = 0.5;
-const number Z_OFFSET_UNIT_PATH_BBOX = 0.5;
-const number Z_OFFSET_SELECTION = 0.2;
-const number Z_OFFSET_ATTACK_UNIT = 0.2;
-const number Z_OFFSET_MOVE_UNIT = 0.2;
-
-const glm::vec3 light_position(0.0f, 0.0f, 50.0f);
-const glm::vec3 light_color(1.0f);
-
-const uint EDIT_MAP_N_VERTICES_PER_CIRCLE = 32;
-const uint SELECTION_N_VERTICES_PER_CIRCLE = 8;
-const uint ATTACK_UNIT_N_VERTICES_PER_CIRCLE = 8;
-
-const number DEFAULT_ATTACK_UNIT_CIRCLE_RADIUS = 1.0;
-const number MOVE_UNIT_SEGMENT_SIZE = 1.5;
-
-const pt_2d MAP_ORIGIN(-100.0, -100.0);
-const pt_2d MAP_SIZE(200.0, 200.0);
-const pt_2d PATH_RESOLUTION(2.0);
-const pt_2d ELEVATION_RESOLUTION(1.0);
-const pt_2d FOW_RESOLUTION(2.0);
-
-const number LAKE_WAVE_AMPLITUDE = 0.2;
-const number LAKE_WAVE_FREQ = 2.0;
-const number SEA_WAVE_AMPLITUDE = 0.2;
-const number SEA_WAVE_FREQ = 0.2;
-
-
 struct StrategyConfig {
 	StrategyConfig();
 	~StrategyConfig();

@@ -20,11 +20,6 @@
 #include "ammo.h"
 
 
-//enum FOW_STATUS {WATCHED, UNWATCHED, UNDISCOVERED};
-
-
-const number UNIT_DIST_PATH_EPS = 0.5;
-
 
 struct Instruction {
 	pt_3d _destination;

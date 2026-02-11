@@ -11,8 +11,6 @@
 #include "unit_type.h"
 
 
-const uint N_ACTIVE_INTERVALS = 3;
-
 
 struct PathInterval {
 	PathInterval();

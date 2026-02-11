@@ -13,6 +13,7 @@
 #include "input_state.h"
 #include "typedefs.h"
 
+#include "const.h"
 #include "strategy.h"
 
 
@@ -45,10 +46,6 @@ void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
 	if (strategy->mouse_motion(input_state, t)) {
 		return;
 	}
-
-	if (view_system->mouse_motion(input_state)) {
-		return;
-	}
 }
 
 
@@ -56,9 +53,6 @@ void mouse_button_up(int x, int y, unsigned short button, time_point t) {
 	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (view_system->mouse_button_up(input_state)) {
-		//return; // on veut récupérer le _rect de view_system dans strategy->mouse_button_up
-	}
 	if (strategy->mouse_button_up(input_state, t)) {
 		return;
 	}
@@ -70,10 +64,6 @@ void mouse_button_down(int x, int y, unsigned short button, time_point t) {
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
 	if (strategy->mouse_button_down(input_state, t)) {
-		return;
-	}
-
-	if (view_system->mouse_button_down(input_state)) {
 		return;
 	}
 }
@@ -89,10 +79,6 @@ void key_down(SDL_Keycode key, time_point t) {
 	if (strategy->key_down(input_state, key, t)) {
 		return;
 	}
-
-	if (view_system->key_down(input_state, key)) {
-		return;
-	}
 }
 
 
@@ -102,14 +88,10 @@ void key_up(SDL_Keycode key, time_point t) {
 	if (strategy->key_up(input_state, key, t)) {
 		return;
 	}
-
-	if (view_system->key_up(input_state, key)) {
-		return;
-	}
 }
 
 
-void init() {
+void init_gl() {
 	srand(time(NULL));
 	
 	SDL_Init(SDL_INIT_EVERYTHING);
@@ -150,8 +132,10 @@ void init() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	SDL_GL_SwapWindow(window);
-	
-	// --------------------------------------------------------------------------
+}
+
+
+void init_data() {
 	GLDrawManager * gl_draw_manager = new GLDrawManager("../data/strategy_draw_context.json");
 
 	ScreenGL * screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
@@ -159,6 +143,9 @@ void init() {
 	view_system= new ViewSystem(gl_draw_manager, screengl);
 	view_system->set(pt_3d(10.0, 10.0, 0.0), M_PI * 0.25, M_PI * 0.25, 70.0);
 	//view_system->set_2d(30.0);
+	view_system->constraint_theta(M_PI * 0.1, M_PI * 0.4);
+	view_system->constraint_rho(30.0, 100.0);
+	view_system->constraint_target(MAP_ORIGIN, MAP_ORIGIN + MAP_SIZE);
 
 	input_state= new InputState();
 
@@ -262,10 +249,9 @@ void clean() {
 
 
 int main() {
-
-	init();
+	init_gl();
+	init_data();
 	main_loop();
 	clean();
-
 	return 0;
 }

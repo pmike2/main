@@ -17,9 +17,6 @@
 #include "element.h"
 
 
-const uint STONE_N_POINTS_HULL = 30;
-
-
 class StoneSpecies {
 public:
 	StoneSpecies();

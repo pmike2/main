@@ -13,8 +13,6 @@
 #include "ammo_type.h"
 
 
-const number EPS_UNIT_TYPE_BUFFER_SIZE = 0.1;
-
 
 struct UnitElevationCoeff {
 	number _elevation_min;

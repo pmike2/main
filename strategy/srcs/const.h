@@ -8,8 +8,56 @@
 #include "utile.h"
 
 
+const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
+const glm::vec4 EDIT_MAP_COLOR(0.0f, 1.0f, 1.0f, 1.0f);
+
+const number Z_OFFSET_EDGE = 0.05;
+const number Z_OFFSET_UNIT = 0.05;
+const number Z_OFFSET_PATH = 0.5;
+const number Z_OFFSET_EDIT_MAP = 0.5;
+const number Z_OFFSET_UNIT_PATH_BBOX = 0.5;
+const number Z_OFFSET_SELECTION = 0.2;
+const number Z_OFFSET_ATTACK_UNIT = 0.2;
+const number Z_OFFSET_MOVE_UNIT = 0.2;
+
+const glm::vec3 LIGHT_POSITION(0.0f, 0.0f, 50.0f);
+const glm::vec3 LIGHT_COLOR(1.0f);
+
+const uint EDIT_MAP_N_VERTICES_PER_CIRCLE = 32;
+const uint SELECTION_N_VERTICES_PER_CIRCLE = 8;
+const uint ATTACK_UNIT_N_VERTICES_PER_CIRCLE = 8;
+
+const number DEFAULT_ATTACK_UNIT_CIRCLE_RADIUS = 1.0;
+const number MOVE_UNIT_SEGMENT_SIZE = 1.5;
+
+const pt_2d MAP_ORIGIN(-100.0, -100.0);
+const pt_2d MAP_SIZE(200.0, 200.0);
+const pt_2d PATH_RESOLUTION(2.0);
+const pt_2d ELEVATION_RESOLUTION(1.0);
+const pt_2d FOW_RESOLUTION(2.0);
+
+const number LAKE_WAVE_AMPLITUDE = 0.2;
+const number LAKE_WAVE_FREQ = 2.0;
+const number SEA_WAVE_AMPLITUDE = 0.2;
+const number SEA_WAVE_FREQ = 0.2;
+
+const uint STONE_N_POINTS_HULL = 30;
+
+const uint BRANCH_N_POINTS_PER_CIRCLE = 6;
+const uint N_PTS_PER_BRANCH_SIDE= BRANCH_N_POINTS_PER_CIRCLE * 6;
+const uint N_PTS_PER_BRANCH_BOTTOM = BRANCH_N_POINTS_PER_CIRCLE * 3;
+const uint N_PTS_PER_BRANCH_TOP = BRANCH_N_POINTS_PER_CIRCLE * 3;
+
+const uint N_ACTIVE_INTERVALS = 3;
+
+const number EPS_UNIT_TYPE_BUFFER_SIZE = 0.1;
+
+const number UNIT_DIST_PATH_EPS = 0.5;
 const number MAX_UNIT_MOVING_WEIGHT = 100.0;
 
+
+enum STRATEGY_MODE {VIEW, PLAY, ADD_UNIT, ADD_ELEMENT, EDIT_ELEVATION, ERASE};
+enum PLAY_MODE {SELECT_UNIT, MOVE_UNIT, ATTACK_UNIT};
 
 enum UNIT_STATUS {WAITING, MOVING, ATTACKING, SHOOTING, DESTROYED};
 std::string unit_status2str(UNIT_STATUS mode);

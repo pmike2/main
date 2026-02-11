@@ -322,8 +322,8 @@ void Strategy::draw_tree_stone() {
 
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	context->set_uniform("light_position", glm::value_ptr(light_position));
-	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
+	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
 	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
 	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
 	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
@@ -342,8 +342,8 @@ void Strategy::draw_elevation() {
 
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	context->set_uniform("light_position", glm::value_ptr(light_position));
-	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
+	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
 	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
 	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
 	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
@@ -363,8 +363,8 @@ void Strategy::draw_lake() {
 
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	context->set_uniform("light_position", glm::value_ptr(light_position));
-	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
+	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
 	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
 	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
 	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
@@ -386,8 +386,8 @@ void Strategy::draw_river() {
 
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	context->set_uniform("light_position", glm::value_ptr(light_position));
-	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
+	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
 	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
 	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
 	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
@@ -407,8 +407,8 @@ void Strategy::draw_sea() {
 
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	context->set_uniform("light_position", glm::value_ptr(light_position));
-	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
+	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
 	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
 	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
 	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
@@ -430,8 +430,8 @@ void Strategy::draw_unit(UnitType * unit_type) {
 
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	context->set_uniform("light_position", glm::value_ptr(light_position));
-	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
+	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
 	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
 	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
 	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
@@ -467,8 +467,8 @@ void Strategy::draw_ammo(AmmoType * ammo_type) {
 
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	context->set_uniform("light_position", glm::value_ptr(light_position));
-	context->set_uniform("light_color", glm::value_ptr(light_color));
+	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
+	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
 	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
 	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
 	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
@@ -522,7 +522,8 @@ void Strategy::draw() {
 
 
 void Strategy::anim(time_point t) {
-	//std::cout << "start anim\n";
+	_view_system->anim(t);
+	
 	_ihm->anim();
 
 	_map->anim(t);
@@ -1694,6 +1695,10 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 		return true;
 	}
 
+	if (_view_system->mouse_button_down(input_state, t)) {
+		return true;
+	}
+
 	if (!input_state->_left_mouse) {
 		return false;
 	}
@@ -1814,6 +1819,10 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 
 
 bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
+	if (_view_system->mouse_button_up(input_state, t)) {
+		//return true; // on veut récupérer le _rect de view_system dans strategy->mouse_button_up
+	}
+
 	if (_config->_mode == PLAY && _config->_play_mode == SELECT_UNIT) {
 		if (_view_system->_new_single_selection) {
 			_view_system->_new_single_selection= false;
@@ -1864,6 +1873,10 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 
 
 bool Strategy::mouse_motion(InputState * input_state, time_point t) {
+	if (_view_system->mouse_motion(input_state, t)) {
+		return true;
+	}
+
 	if (_ihm->mouse_motion(input_state, t)) {
 		_cursor_hover_ihm = true;
 	}
@@ -1890,6 +1903,10 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 
 
 bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
+	if (_view_system->key_down(input_state, key, t)) {
+		return true;
+	}
+
 	if (_ihm->key_down(input_state, key, t)) {
 		return true;
 	}
@@ -1907,6 +1924,10 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 
 
 bool Strategy::key_up(InputState * input_state, SDL_Keycode key, time_point t) {
+	if (_view_system->key_up(input_state, key, t)) {
+		return true;
+	}
+
 	return true;
 }
 
