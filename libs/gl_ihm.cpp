@@ -453,7 +453,10 @@ GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string j
 				gl_element->_key = std::string(element["key"]).c_str()[0];
 			}
 			if (gl_group->_type == GL_IHM_CHECKBOX && element["checked"] != nullptr) {
-				gl_element->set_active();
+				bool checked = element["checked"];
+				if (checked) {
+					gl_element->set_active();
+				}
 			}
 			if (element["min_value"] != nullptr) {
 				GLIHMSlider * slider = (GLIHMSlider *)(gl_element);
@@ -592,10 +595,6 @@ void GLIHM::update() {
 
 void GLIHM::draw() {
 	GLDrawContext * context= _gl_draw_manager->get_context("gl_ihm");
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(_camera2clip)));
 	context->set_uniform("z", float(Z_IHM));

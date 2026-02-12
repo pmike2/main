@@ -36,10 +36,20 @@ const pt_2d PATH_RESOLUTION(2.0);
 const pt_2d ELEVATION_RESOLUTION(1.0);
 const pt_2d FOW_RESOLUTION(2.0);
 
+const number RIVER_ANGLE_SPEED = 0.1;
+
 const number LAKE_WAVE_AMPLITUDE = 0.2;
 const number LAKE_WAVE_FREQ = 2.0;
-const number SEA_WAVE_AMPLITUDE = 0.2;
-const number SEA_WAVE_FREQ = 0.2;
+const number LAKE_ANGLE_SPEED = 0.1;
+
+const pt_2d SEA_ORIGIN(-200.0, -200.0);
+const pt_2d SEA_SIZE(400.0, 400.0);
+const number SEA_WAVE_AMPLITUDE = 0.4;
+const number SEA_WAVE_FREQ = 0.05;
+const number SEA_LEVEL = 0.0;
+const glm::vec4 SEA_COLOR(0.4, 0.8, 0.9, 0.4);
+const number SEA_SHININESS = 10.0;
+const number SEA_ANGLE_SPEED = 0.02;
 
 const uint STONE_N_POINTS_HULL = 30;
 

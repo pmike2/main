@@ -41,34 +41,29 @@ const number FRUSTUM_HALFSIZE= 5.0;
 //const number CONTAINS_POINT_TOLERANCE= 20.0;
 
 // sensibilités par défaut
-const number DEFAULT_TARGET_SENSIVITY= 0.7;
-const number DEFAULT_PHI_SENSIVITY= 0.3;
-const number DEFAULT_THETA_SENSIVITY= 0.3;
-const number DEFAULT_RHO_SENSIVITY= 2.0;
+const number DEFAULT_TARGET_MOUSE_SENSIVITY= 0.7;
+const number DEFAULT_PHI_MOUSE_SENSIVITY= 0.3;
+const number DEFAULT_THETA_MOUSE_SENSIVITY= 0.3;
+const number DEFAULT_RHO_MOUSE_SENSIVITY= 2.0;
+
+const number DEFAULT_TARGET_KEY_SENSIVITY= 300.0;
+const number DEFAULT_PHI_KEY_SENSIVITY= 100.0;
+const number DEFAULT_THETA_KEY_SENSIVITY= 50.0;
+const number DEFAULT_RHO_KEY_SENSIVITY= 200.0;
 
 
 // animation par touche --------------------
-// quantité de mouvement appliqué lorsque l'on déplace _target avec les touches
-const int KEY_TARGET_MOVE = 500;
-// temps en ms d'anim du mouvement de target
-const uint KEY_TARGET_N_MS = 1000;
-// exposant appliqué au calcul de déplacement de target
+// temps max de l'animation
+const uint KEY_N_MS = 2000;
+
+// exposants et vitesses d'animation
 const number KEY_TARGET_EXP = 5.0;
-
-const int KEY_PHI_MOVE = 1000;
-const uint KEY_PHI_N_MS = 1000;
-const number KEY_PHI_EXP = 3.0;
-const number KEY_PHI_FACTOR = 0.02;
-
-const int KEY_THETA_MOVE = 1000;
-const uint KEY_THETA_N_MS = 500;
-const number KEY_THETA_EXP = 3.0;
-const number KEY_THETA_FACTOR = 0.01;
-
-const int KEY_RHO_MOVE = 1000;
-const uint KEY_RHO_N_MS = 500;
-const number KEY_RHO_EXP = 3.0;
-const number KEY_RHO_FACTOR = 1.0;
+const number KEY_PHI_EXP = 5.0;
+const number KEY_PHI_SPEED = 0.05;
+const number KEY_THETA_EXP = 5.0;
+const number KEY_THETA_SPEED = 0.01;
+const number KEY_RHO_EXP = 5.0;
+const number KEY_RHO_SPEED = 2.0;
 
 // couleurs
 const glm::vec4 GROUND_COLOR(0.3f, 0.3f, 0.3f, 1.0f);
@@ -204,12 +199,6 @@ public:
 	bool _rho_constrained;
 	number _rho_min, _rho_max;
 
-	// sensitivités
-	number _target_sensitivity;
-	number _theta_sensitivity;
-	number _phi_sensitivity;
-	number _rho_sensitivity;
-
 	// type de vue
 	ViewSystemType _type;
 	
@@ -222,23 +211,27 @@ public:
 	bool _new_single_selection;
 	bool _new_rect_selection;
 
+	// sensitivités
+	number _target_mouse_sensitivity, _target_key_sensitivity;
+	number _theta_mouse_sensitivity, _theta_key_sensitivity;
+	number _phi_mouse_sensitivity, _phi_key_sensitivity;
+	number _rho_mouse_sensitivity, _rho_key_sensitivity;
+
 	// anim
-	time_point _target_t;
 	bool _target_anim;
 	pt_2d _target_start, _target_goal, _target_direction;
 	number _target_length;
 
-	time_point _phi_t;
 	bool _phi_anim;
 	number _phi_start, _phi_goal;
 
-	time_point _theta_t;
 	bool _theta_anim;
 	number _theta_start, _theta_goal;
 
-	time_point _rho_t;
 	bool _rho_anim;
 	number _rho_start, _rho_goal;
+
+	time_point _last_key_t;
 };
 
 

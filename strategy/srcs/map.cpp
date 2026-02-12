@@ -66,6 +66,17 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	_path_find_thr_running = true;
 	_path_find_thr= std::thread(&Map::path_find, this);
 	_path_finder_computing = false;
+
+	for (auto & team : _teams) {
+		while (true) {
+			pt_2d position = rand_pt_2d(origin, origin + size);
+			std::cout << glm_to_string(position) << "\n";
+			if (add_unit_check(INFANTERY, position)) {
+				add_unit(team, INFANTERY, position);
+				break;
+			}
+		}
+	}
 }
 
 
@@ -371,6 +382,48 @@ void Map::remove_elements_in_aabb(AABB_2D * aabb) {
 }
 
 
+void Map::clear_units() {
+	for (auto & team : _teams) {
+		team->clear(true);
+	}
+
+	for (auto & ut : _unit_types) {
+		UnitType * unit_type = ut.second;
+
+		_path_finder->_it_v= _path_finder->_vertices.begin();
+		while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
+			_path_finder->_it_e = _path_finder->_vertices[_path_finder->_it_v->first]._edges.begin();
+			while (_path_finder->_it_e != _path_finder->_vertices[_path_finder->_it_v->first]._edges.end()) {
+				EdgeData * data = (EdgeData * )(_path_finder->_vertices[_path_finder->_it_v->first]._edges[_path_finder->_it_e->first]._data);
+				data->_ids[unit_type].clear();
+				_path_finder->_it_e++;
+			}
+			_path_finder->_it_v++;
+		}
+	}
+}
+
+
+void Map::clear_elements() {
+	_elements->clear();
+
+	for (auto & ut : _unit_types) {
+		UnitType * unit_type = ut.second;
+
+		_path_finder->_it_v= _path_finder->_vertices.begin();
+		while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
+			_path_finder->_it_e = _path_finder->_vertices[_path_finder->_it_v->first]._edges.begin();
+			while (_path_finder->_it_e != _path_finder->_vertices[_path_finder->_it_v->first]._edges.end()) {
+				EdgeData * data = (EdgeData * )(_path_finder->_vertices[_path_finder->_it_v->first]._edges[_path_finder->_it_e->first]._data);
+				data->_type[unit_type] = TERRAIN_UNKNOWN;
+				_path_finder->_it_e++;
+			}
+			_path_finder->_it_v++;
+		}
+	}
+}
+
+
 // maj des altis des vertices de la grille
 void Map::update_alti_grid() {
 	_path_finder->_it_v= _path_finder->_vertices.begin();
@@ -408,19 +461,10 @@ void Map::update_terrain_grid_with_elevation() {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
 
-		/*std::vector<uint_pair> edges;
-		if (bbox != NULL) {
-			edges = _path_finder->edges_intersecting_bbox(bbox);
-		}*/
-
 		_path_finder->_it_v= _path_finder->_vertices.begin();
 		while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
 			_path_finder->_it_e= _path_finder->_it_v->second._edges.begin();
 			while (_path_finder->_it_e!= _path_finder->_it_v->second._edges.end()) {
-				/*if (bbox != NULL && std::find(edges.begin(), edges.end(), std::make_pair(_path_finder->_it_v->first, _path_finder->_it_e->first)) == edges.end()) {
-					continue;
-				}*/
-
 				GraphEdge & edge = _path_finder->_vertices[_path_finder->_it_v->first]._edges[_path_finder->_it_e->first];
 				pt_3d & pt_begin = _path_finder->_it_v->second._pos;
 				pt_3d & pt_end = _path_finder->_vertices[_path_finder->_it_e->first]._pos;
@@ -474,58 +518,10 @@ void Map::remove_element_from_terrain_grid(Element * element) {
 }
 
 
-/*void Map::update_terrain_grid_with_aabb(AABB_2D * aabb) {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-		AABB_2D * aabb_buffered = aabb->buffered(unit_type->buffer_size());
-
-		std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb_buffered);
-		for (auto & e : edges) {
-			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
-			EdgeData * data = (EdgeData *)(edge._data);
-			data->_type[unit_type] = TERRAIN_OBSTACLE;
-		}
-	}
-}
-
-
-void Map::clear_terrain_grid_with_aabb(AABB_2D * aabb) {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-		AABB_2D * aabb_buffered = aabb->buffered(unit_type->buffer_size());
-
-		std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb_buffered);
-		for (auto & e : edges) {
-			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
-			EdgeData * data = (EdgeData *)(edge._data);
-			data->_type[unit_type] = TERRAIN_GROUND;
-		}
-	}
-}*/
-
-
 void Map::sync2elevation() {
 	update_alti_grid();
 	update_elevation_grid();
 	update_terrain_grid_with_elevation();
-}
-
-
-void Map::clear_units_position_grid() {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-
-		_path_finder->_it_v= _path_finder->_vertices.begin();
-		while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
-			_path_finder->_it_e = _path_finder->_vertices[_path_finder->_it_v->first]._edges.begin();
-			while (_path_finder->_it_e != _path_finder->_vertices[_path_finder->_it_v->first]._edges.end()) {
-				EdgeData * data = (EdgeData * )(_path_finder->_vertices[_path_finder->_it_v->first]._edges[_path_finder->_it_e->first]._data);
-				data->_ids[unit_type].clear();
-				_path_finder->_it_e++;
-			}
-			_path_finder->_it_v++;
-		}
-	}
 }
 
 
@@ -538,40 +534,6 @@ std::vector<uint_pair> Map::waiting_unit_positions_edges(Unit * unit, UnitType *
 
 	return edges;
 }
-
-
-/*std::vector<uint_pair> Map::moving_unit_positions_edges(Unit * unit, UnitType * unit_type, bool all) {
-	AABB_2D * aabb_unit = unit->_bbox->_aabb->aabb2d();
-
-	std::vector<uint_pair> edges;
-	bool intersection_happened = false;
-
-	std::vector<BBox_2D *> * bboxs;
-	if (unit->_path->_use_line_of_sight) {
-		bboxs = &unit->_path->_bboxs_los;
-	}
-	else {
-		bboxs = &unit->_path->_bboxs;
-	}
-	
-	for (auto & bbox : *bboxs) {
-		BBox_2D * buffered_bbox = bbox->buffered(unit_type->buffer_size());
-		if (!all && !intersection_happened) {
-			if (aabb2d_intersects_aabb2d(aabb_unit, buffered_bbox->_aabb)) {
-				intersection_happened = true;
-			}
-		}
-		if (all || !intersection_happened) {
-			std::vector<uint_pair> path_edges = _path_finder->edges_intersecting_bbox(buffered_bbox);
-			edges.insert(edges.end(), path_edges.begin(), path_edges.end());
-		}
-		delete buffered_bbox;
-	}
-
-	delete aabb_unit;
-	
-	return edges;
-}*/
 
 
 void Map::fill_unit_path_edges(Unit * unit) {
@@ -689,47 +651,6 @@ void Map::pause_all_units(bool pause) {
 }
 
 
-void Map::clear() {
-	clear_units_position_grid();
-	
-	for (auto & team : _teams) {
-		team->clear();
-	}
-
-	_elements->clear();
-
-	//_elevation->set_alti_all(-0.01);
-	_elevation->set_alti_all(1.0);
-	
-	sync2elevation();
-}
-
-
-/*void Map::read_shapefile(std::string shp_path, pt_2d origin, pt_2d size, bool reverse_y) {
-	std::vector<ShpEntry *> entries;
-	read_shp(shp_path, entries);
-	for (auto & entry : entries) {
-		std::vector<pt_2d> pts;
-		for (auto & pt : entry->_polygon->_pts) {
-			number x= ((pt.x- origin.x)/ size.x)* _size.x+ _origin.x;
-			number y;
-			if (reverse_y) {
-				y= ((origin.y- pt.y)/ size.y)* _size.y+ _origin.y;
-			}
-			else {
-				y= ((pt.y- origin.y)/ size.y)* _size.y+ _origin.y;
-			}
-			pts.push_back(pt_2d(x, y));
-		}
-		OBSTACLE_TYPE obst_type = str2type(entry->_fields["type"]);
-		if (obst_type != UNKNOWN) {
-			add_obstacle(obst_type, pts);
-		}
-		delete entry;
-	}
-}*/
-
-
 void Map::anim(time_point t) {
 	UnitPath * unit_path;
 	// TODO : ou doit se faire la destruction de unit_path ?
@@ -825,7 +746,6 @@ void Map::anim(time_point t) {
 			for (auto & team : _teams) {
 				for (auto & unit : team->_units) {
 					if (pt_in_bbox2d(pt_2d(ammo->_target), unit->_bbox->bbox2d())) {
-						//std::cout << "Unit " << unit->_id << " shot\n";
 						unit->hit(ammo, t);
 					}
 				}
@@ -933,6 +853,17 @@ void Map::collisions(time_point t) {
 		}
 	}
 }
+
+
+void Map::clear() {
+	clear_units();
+	clear_elements();
+
+	_elevation->set_alti_all(1.0);
+	
+	sync2elevation();
+}
+
 
 
 void Map::randomize() {

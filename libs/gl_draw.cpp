@@ -630,6 +630,10 @@ void GLDrawContext::clear_data(uint idx_buffer) {
 
 
 void GLDrawContext::activate() {
+	if (!_active) {
+		return;
+	}
+
 	glUseProgram(_prog);
 	glBindVertexArray(_vao);
 
@@ -644,6 +648,10 @@ void GLDrawContext::activate() {
 
 
 void GLDrawContext::deactivate() {
+	if (!_active) {
+		return;
+	}
+
 	glBindVertexArray(0);
 	glUseProgram(0);
 
@@ -656,6 +664,10 @@ void GLDrawContext::deactivate() {
 
 
 void GLDrawContext::draw() {
+	if (!_active) {
+		return;
+	}
+
 	bool is_instanced = false;
 	for (auto & buffer : _buffers) {
 		if (buffer->_is_instanced) {
@@ -684,6 +696,10 @@ GLDrawContextUniform * GLDrawContext::get_uniform(std::string uniform_name) {
 
 
 void GLDrawContext::set_uniform(std::string uniform_name, float data) {
+	if (!_active) {
+		return;
+	}
+
 	GLDrawContextUniform * uniform = get_uniform(uniform_name);
 	if (uniform->_type == GL_FLOAT) {
 		glUniform1f(uniform->_loc, data);
@@ -695,6 +711,10 @@ void GLDrawContext::set_uniform(std::string uniform_name, float data) {
 
 
 void GLDrawContext::set_uniform(std::string uniform_name, const float * data) {
+	if (!_active) {
+		return;
+	}
+
 	GLDrawContextUniform * uniform = get_uniform(uniform_name);
 	if (uniform->_type == GL_FLOAT_VEC2) {
 		glUniform2fv(uniform->_loc, 1, data);
@@ -718,6 +738,10 @@ void GLDrawContext::set_uniform(std::string uniform_name, const float * data) {
 
 
 void GLDrawContext::set_uniform(std::string uniform_name, int data) {
+	if (!_active) {
+		return;
+	}
+
 	GLDrawContextUniform * uniform = get_uniform(uniform_name);
 	if (uniform->_type == GL_INT) {
 		glUniform1i(uniform->_loc, data);
@@ -729,6 +753,10 @@ void GLDrawContext::set_uniform(std::string uniform_name, int data) {
 
 
 void GLDrawContext::set_uniform(std::string uniform_name, const int * data) {
+	if (!_active) {
+		return;
+	}
+
 	GLDrawContextUniform * uniform = get_uniform(uniform_name);
 	if (uniform->_type == GL_INT_VEC2) {
 		glUniform2iv(uniform->_loc, 1, data);
@@ -746,6 +774,10 @@ void GLDrawContext::set_uniform(std::string uniform_name, const int * data) {
 
 
 void GLDrawContext::set_uniform(std::string uniform_name, uint data) {
+	if (!_active) {
+		return;
+	}
+
 	GLDrawContextUniform * uniform = get_uniform(uniform_name);
 	if (uniform->_type == GL_UNSIGNED_INT) {
 		glUniform1ui(uniform->_loc, data);
@@ -757,6 +789,10 @@ void GLDrawContext::set_uniform(std::string uniform_name, uint data) {
 
 
 void GLDrawContext::set_uniform(std::string uniform_name, const uint * data) {
+	if (!_active) {
+		return;
+	}
+
 	GLDrawContextUniform * uniform = get_uniform(uniform_name);
 	if (uniform->_type == GL_UNSIGNED_INT_VEC2) {
 		glUniform2uiv(uniform->_loc, 1, data);

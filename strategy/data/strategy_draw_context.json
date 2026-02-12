@@ -21,7 +21,7 @@
 		"tree_stone" : {"shader" : "tree_stone", "mode" : "GL_TRIANGLES"},
 		"river" : {"shader" : "river", "mode" : "GL_TRIANGLES"},
 		"lake" : {"shader" : "lake", "mode" : "GL_TRIANGLES"},
-		"sea" : {"shader" : "lake", "mode" : "GL_TRIANGLES"},
+		"sea" : {"shader" : "sea", "mode" : "GL_TRIANGLES"},
 		"unit_life" : {"shader" : "unit_life", "mode" : "GL_TRIANGLES"},
 
 		"bomb" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",

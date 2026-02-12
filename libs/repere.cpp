@@ -72,10 +72,6 @@ Repere::~Repere() {
 void Repere::draw(const mat_4d & world2clip) {
 	for (auto & context_name : std::vector<std::string>{"repere", "ground", "box"}) {
 		GLDrawContext * context = _gl_draw_manager->get_context(context_name);
-		if (!context->_active) {
-			continue;
-		}
-
 		context->activate();
 		context->set_uniform("world2clip", glm::value_ptr(glm::mat4(world2clip)));
 		context->draw();
@@ -127,11 +123,11 @@ ViewSystem::ViewSystem(GLDrawManager * gl_draw_manager, ScreenGL * screengl) :
 	_frustum_halfsize(FRUSTUM_HALFSIZE), _frustum_near(FRUSTUM_NEAR), _frustum_far(FRUSTUM_FAR),
 	_target(pt_3d(0.0, 0.0, 0.0)), _phi(0.0), _theta(0.0), _rho(1.0),
 	_target_constrained(false), _phi_constrained(false), _theta_constrained(false), _rho_constrained(false),
-	_target_sensitivity(DEFAULT_TARGET_SENSIVITY), _phi_sensitivity(DEFAULT_PHI_SENSIVITY), _theta_sensitivity(DEFAULT_THETA_SENSIVITY), _rho_sensitivity(DEFAULT_RHO_SENSIVITY),
+	_target_mouse_sensitivity(DEFAULT_TARGET_MOUSE_SENSIVITY), _phi_mouse_sensitivity(DEFAULT_PHI_MOUSE_SENSIVITY), _theta_mouse_sensitivity(DEFAULT_THETA_MOUSE_SENSIVITY), _rho_mouse_sensitivity(DEFAULT_RHO_MOUSE_SENSIVITY),
+	_target_key_sensitivity(DEFAULT_TARGET_KEY_SENSIVITY), _phi_key_sensitivity(DEFAULT_PHI_KEY_SENSIVITY), _theta_key_sensitivity(DEFAULT_THETA_KEY_SENSIVITY), _rho_key_sensitivity(DEFAULT_RHO_KEY_SENSIVITY),
 	_type(FREE_VIEW),
 	_new_single_selection(false), _new_rect_selection(false),
-	_target_anim(false)
-	//_free_view_x(0.0), _free_view_y(0.0)
+	_target_anim(false), _phi_anim(false), _theta_anim(false), _rho_anim(false)
 {
 	_camera2clip= glm::frustum(-_frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, _frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
 
@@ -176,6 +172,10 @@ bool ViewSystem::mouse_button_up(InputState * input_state, time_point t) {
 
 
 bool ViewSystem::mouse_motion(InputState * input_state, time_point t) {
+	if (input_state->_xrel == 0 && input_state->_yrel == 0) {
+		return false;
+	}
+
 	if (_type== FREE_VIEW) {
 		
 		// sélection
@@ -189,13 +189,13 @@ bool ViewSystem::mouse_motion(InputState * input_state, time_point t) {
 		// comme dans Blender !
 
 		// zoom
-		else if (input_state->_middle_mouse && (input_state->_keys[SDLK_LCTRL] || input_state->_keys[SDLK_LGUI])) {
+		else if (input_state->_middle_mouse && (input_state->_keys[SDLK_LCTRL] || input_state->_keys[SDLK_RCTRL] || input_state->_keys[SDLK_LGUI] || input_state->_keys[SDLK_RGUI])) {
 			move_rho(input_state->_yrel);
 			return true;
 		}
 
 		// translation
-		else if (input_state->_middle_mouse && input_state->_keys[SDLK_LSHIFT]) {
+		else if (input_state->_middle_mouse && (input_state->_keys[SDLK_LSHIFT] || input_state->_keys[SDLK_RSHIFT])) {
 			move_target(input_state->_xrel, input_state->_yrel);
 			return true;
 		}
@@ -265,9 +265,9 @@ bool ViewSystem::key_down(InputState * input_state, SDL_Keycode key, time_point 
 		return true;
 	}*/
 
-	if (_type== FREE_VIEW) {
+	if (_type == FREE_VIEW) {
 		// affichage repere
-		if (key== SDLK_r) {
+		if (key == SDLK_r) {
 			_gl_draw_manager->switch_active("repere");
 			_gl_draw_manager->switch_active("box");
 			_gl_draw_manager->switch_active("ground");
@@ -275,38 +275,22 @@ bool ViewSystem::key_down(InputState * input_state, SDL_Keycode key, time_point 
 		}
 
 		// déplacement
-		else if (input_state->_keys[SDLK_RSHIFT]) {
+		else if (input_state->_keys[SDLK_LSHIFT] || input_state->_keys[SDLK_RSHIFT]) {
 			if (key == SDLK_LEFT) {
-				_target_t = t;
-				_target_start = pt_2d(_target);
-				_target_goal = _target_start + get_target_direction(KEY_TARGET_MOVE, 0);
-				_target_length = glm::length(_target_goal - _target_start);
-				_target_direction = (_target_goal - _target_start) / _target_length;
-				_target_anim = true;
-				return true;
+				_target_goal = pt_2d(_target) + _target_key_sensitivity * get_target_direction(1, 0);
 			}
 			else if (key == SDLK_RIGHT) {
-				_target_t = t;
-				_target_start = pt_2d(_target);
-				_target_goal = _target_start + get_target_direction(-KEY_TARGET_MOVE, 0);
-				_target_length = glm::length(_target_goal - _target_start);
-				_target_direction = (_target_goal - _target_start) / _target_length;
-				_target_anim = true;
-				return true;
+				_target_goal = pt_2d(_target) + _target_key_sensitivity * get_target_direction(-1, 0);
 			}
 			else if (key == SDLK_UP) {
-				_target_t = t;
-				_target_start = pt_2d(_target);
-				_target_goal = _target_start + get_target_direction(0, KEY_TARGET_MOVE);
-				_target_length = glm::length(_target_goal - _target_start);
-				_target_direction = (_target_goal - _target_start) / _target_length;
-				_target_anim = true;
-				return true;
+				_target_goal = pt_2d(_target) + _target_key_sensitivity * get_target_direction(0, 1);
 			}
 			else if (key == SDLK_DOWN) {
-				_target_t = t;
+				_target_goal = pt_2d(_target) + _target_key_sensitivity * get_target_direction(0, -1);
+			}
+			if (key == SDLK_LEFT || key == SDLK_RIGHT || key == SDLK_UP || key == SDLK_DOWN) {
+				_last_key_t = t;
 				_target_start = pt_2d(_target);
-				_target_goal = _target_start + get_target_direction(0, -KEY_TARGET_MOVE);
 				_target_length = glm::length(_target_goal - _target_start);
 				_target_direction = (_target_goal - _target_start) / _target_length;
 				_target_anim = true;
@@ -315,52 +299,53 @@ bool ViewSystem::key_down(InputState * input_state, SDL_Keycode key, time_point 
 		}
 
 		// zoom
-		else if (input_state->_keys[SDLK_RCTRL] || input_state->_keys[SDLK_RGUI]) {
+		else if (input_state->_keys[SDLK_LCTRL] || input_state->_keys[SDLK_LGUI] || input_state->_keys[SDLK_RCTRL] || input_state->_keys[SDLK_RGUI]) {
 			if (key == SDLK_UP) {
-				_rho_t = t;
-				_rho_start = _rho;
-				_rho_goal = _rho_start + get_delta_rho(KEY_RHO_MOVE);
-				_rho_anim = true;
+				_rho_goal = _rho + _rho_key_sensitivity * get_delta_rho(1);
 			}
 			else if (key == SDLK_DOWN) {
-				_rho_t = t;
+				_rho_goal = _rho + _rho_key_sensitivity * get_delta_rho(-1);
+			}
+			if (key == SDLK_UP || key == SDLK_DOWN) {
+				_last_key_t = t;
 				_rho_start = _rho;
-				_rho_goal = _rho_start + get_delta_rho(-KEY_RHO_MOVE);
 				_rho_anim = true;
+				return true;
 			}
 		}
 
 		// rotation
 		else {
 			if (key == SDLK_LEFT) {
-				_phi_t = t;
-				_phi_start = _phi;
-				_phi_goal = _phi_start + get_delta_phi(KEY_PHI_MOVE);
-				_phi_anim = true;
+				_phi_goal = _phi + _phi_key_sensitivity * get_delta_phi(1);
 			}
 			else if (key == SDLK_RIGHT) {
-				_phi_t = t;
-				_phi_start = _phi;
-				_phi_goal = _phi_start + get_delta_phi(-KEY_PHI_MOVE);
-				_phi_anim = true;
+				_phi_goal = _phi + _phi_key_sensitivity * get_delta_phi(-1);
 			}
-			else if (key == SDLK_UP) {
-				_theta_t = t;
-				_theta_start = _theta;
-				_theta_goal = _theta_start + get_delta_theta(KEY_THETA_MOVE);
+			if (key == SDLK_LEFT || key == SDLK_RIGHT) {
+				_last_key_t = t;
+				_phi_start = _phi;
+				_phi_anim = true;
+				return true;
+			}
+			
+			if (key == SDLK_UP) {
+				_theta_goal = _theta + _theta_key_sensitivity * get_delta_theta(1);
 				if (_theta_goal > M_PI) {
 					_theta_goal = M_PI;
 				}
-				_theta_anim = true;
 			}
 			else if (key == SDLK_DOWN) {
-				_theta_t = t;
-				_theta_start = _theta;
-				_theta_goal = _theta_start + get_delta_theta(-KEY_THETA_MOVE);
+				_theta_goal = _theta + _theta_key_sensitivity * get_delta_theta(-1);
 				if (_theta_goal < 0.0) {
 					_theta_goal = 0.0;
 				}
+			}
+			if (key == SDLK_UP || key == SDLK_DOWN) {
+				_last_key_t = t;
+				_theta_start = _theta;
 				_theta_anim = true;
+				return true;
 			}
 		}
 	}
@@ -591,9 +576,9 @@ void ViewSystem::move_target(int screen_delta_x, int screen_delta_y) {
 	Ici il y a une meilleure corrélation entre mouvement curseur et translation terrain
 	A terme fournir en argument optionnel un Terrain afin de s'ajuster à un relief plus complexe que z = 0
 	*/
-	pt_2d diff = get_target_direction(screen_delta_x, screen_delta_y);
-	_target.x += _target_sensitivity * diff.x;
-	_target.y += _target_sensitivity * diff.y;
+	pt_2d target_dir = get_target_direction(screen_delta_x, screen_delta_y);
+	_target.x += _target_mouse_sensitivity * target_dir.x;
+	_target.y += _target_mouse_sensitivity * target_dir.y;
 	update();
 }
 
@@ -606,7 +591,7 @@ number ViewSystem::get_delta_phi(int screen_delta_x) {
 // pareil que move_target, on s'adapte au niveau de zoom
 void ViewSystem::move_phi(int screen_delta_x) {
 	number delta_phi = get_delta_phi(screen_delta_x);
-	_phi -= delta_phi * _phi_sensitivity;
+	_phi -= delta_phi * _phi_mouse_sensitivity;
 	update();
 }
 
@@ -619,7 +604,7 @@ number ViewSystem::get_delta_theta(int screen_delta_y) {
 // pareil que move_target, on s'adapte au niveau de zoom
 void ViewSystem::move_theta(int screen_delta_y) {
 	number delta_theta = get_delta_theta(screen_delta_y);
-	_theta -= delta_theta * _theta_sensitivity;
+	_theta -= delta_theta * _theta_mouse_sensitivity;
 	update();
 }
 
@@ -634,7 +619,7 @@ number ViewSystem::get_delta_rho(int screen_delta_y) {
 // pareil que move_target, on s'adapte au niveau de zoom
 void ViewSystem::move_rho(int screen_delta_y) {
 	number dist = get_delta_rho(screen_delta_y);
-	_rho -= dist * _rho_sensitivity;
+	_rho -= dist * _rho_mouse_sensitivity;
 	update();
 }
 
@@ -644,98 +629,98 @@ void ViewSystem::draw() {
 }
 
 
-//void ViewSystem::anim(const pt_3d & target, const quat & rotation) {
 void ViewSystem::anim(time_point t) {
 	if (_type== FREE_VIEW) {
+		if (_target_anim || _phi_anim || _theta_anim || _rho_anim) {
+			auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_key_t).count();
+			if (d > KEY_N_MS) {
+				_target_anim = _phi_anim = _theta_anim = _rho_anim = false;
+			}
+		}
+
 		if (_target_anim) {
-			auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t - _target_t).count();
-			if (d > KEY_TARGET_N_MS) {
+			number dist = glm::length(_target_goal - pt_2d(_target));
+			number factor = pow(dist / _target_length, KEY_TARGET_EXP);
+			_target.x += factor * _target_direction.x;
+			_target.y += factor * _target_direction.y;
+			if (glm::dot(pt_2d(_target) - _target_start, pt_2d(_target) - _target_goal) > 0) {
+				_target.x = _target_goal.x;
+				_target.y = _target_goal.y;
 				_target_anim = false;
 			}
-			else {
-				number factor = pow(glm::length(_target_goal - pt_2d(_target)) / _target_length, KEY_TARGET_EXP);
-				_target.x += factor * _target_direction.x;
-				_target.y += factor * _target_direction.y;
-				update();
-			}
+			update();
 		}
 
 		if (_phi_anim) {
-			auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t - _phi_t).count();
-			if (d > KEY_PHI_N_MS) {
-				_phi_anim = false;
+			if (_phi_goal > _phi_start) {
+				number factor = pow((_phi_goal - _phi) / (_phi_goal - _phi_start), KEY_PHI_EXP);
+				_phi += factor * KEY_PHI_SPEED;
+				if (_phi > _phi_goal) {
+					_phi = _phi_goal;
+					_phi_anim = false;
+				}
+
+				if (_phi > 2.0 * M_PI) {
+					_phi -= 2.0 * M_PI;
+					_phi_start -= 2.0 * M_PI;
+					_phi_goal -= 2.0 * M_PI;
+				}
 			}
 			else {
-				if (_phi_goal > _phi_start) {
-					number factor = pow((_phi_goal - _phi) / (_phi_goal - _phi_start), KEY_PHI_EXP);
-					_phi += factor * KEY_PHI_FACTOR;
-
-					if (_phi > 2.0 * M_PI) {
-						_phi -= 2.0 * M_PI;
-						_phi_start -= 2.0 * M_PI;
-						_phi_goal -= 2.0 * M_PI;
-					}
+				number factor = pow((_phi - _phi_goal) / (_phi_start - _phi_goal), KEY_PHI_EXP);
+				_phi -= factor * KEY_PHI_SPEED;
+				if (_phi < _phi_goal) {
+					_phi = _phi_goal;
+					_phi_anim = false;
 				}
-				else {
-					number factor = pow((_phi - _phi_goal) / (_phi_start - _phi_goal), KEY_PHI_EXP);
-					_phi -= factor * KEY_PHI_FACTOR;
 
-					if (_phi < 0.0) {
-						_phi += 2.0 * M_PI;
-						_phi_start += 2.0 * M_PI;
-						_phi_goal += 2.0 * M_PI;
-					}
+				if (_phi < 0.0) {
+					_phi += 2.0 * M_PI;
+					_phi_start += 2.0 * M_PI;
+					_phi_goal += 2.0 * M_PI;
 				}
-				update();
 			}
+			update();
 		}
 
 		if (_theta_anim) {
-			auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t - _theta_t).count();
-			if (d > KEY_THETA_N_MS) {
-				_theta_anim = false;
+			if (_theta_goal > _theta_start) {
+				number factor = pow((_theta_goal - _theta) / (_theta_goal - _theta_start), KEY_THETA_EXP);
+				_theta += factor * KEY_THETA_SPEED;
+				if (_theta > _theta_goal) {
+					_theta = _theta_goal;
+					_theta_anim = false;
+				}
 			}
 			else {
-				if (_theta_goal > _theta_start) {
-					number factor = pow((_theta_goal - _theta) / (_theta_goal - _theta_start), KEY_THETA_EXP);
-					_theta += factor * KEY_THETA_FACTOR;
-
-					/*if (_theta > M_PI) {
-						_theta -= M_PI;
-						_theta_start -= 2.0 * M_PI;
-						_theta_goal -= 2.0 * M_PI;
-					}*/
+				number factor = pow((_theta - _theta_goal) / (_theta_start - _theta_goal), KEY_THETA_EXP);
+				_theta -= factor * KEY_THETA_SPEED;
+				if (_theta < _theta_goal) {
+					_theta = _theta_goal;
+					_theta_anim = false;
 				}
-				else {
-					number factor = pow((_theta - _theta_goal) / (_theta_start - _theta_goal), KEY_THETA_EXP);
-					_theta -= factor * KEY_THETA_FACTOR;
-
-					/*if (_theta < 0.0) {
-						_theta += 2.0 * M_PI;
-						_theta_start += 2.0 * M_PI;
-						_theta_goal += 2.0 * M_PI;
-					}*/
-				}
-				update();
 			}
+			update();
 		}
 
 		if (_rho_anim) {
-			auto d = std::chrono::duration_cast<std::chrono::milliseconds>(t - _rho_t).count();
-			if (d > KEY_RHO_N_MS) {
-				_rho_anim = false;
+			if (_rho_goal > _rho_start) {
+				number factor = pow((_rho_goal - _rho) / (_rho_goal - _rho_start), KEY_RHO_EXP);
+				_rho += factor * KEY_RHO_SPEED;
+				if (_rho > _rho_goal) {
+					_rho = _rho_goal;
+					_rho_anim = false;
+				}
 			}
 			else {
-				if (_rho_goal > _rho_start) {
-					number factor = pow((_rho_goal - _rho) / (_rho_goal - _rho_start), KEY_RHO_EXP);
-					_rho += factor * KEY_RHO_FACTOR;
+				number factor = pow((_rho - _rho_goal) / (_rho_start - _rho_goal), KEY_RHO_EXP);
+				_rho -= factor * KEY_RHO_SPEED;
+				if (_rho < _rho_goal) {
+					_rho = _rho_goal;
+					_rho_anim = false;
 				}
-				else {
-					number factor = pow((_rho - _rho_goal) / (_rho_start - _rho_goal), KEY_RHO_EXP);
-					_rho -= factor * KEY_RHO_FACTOR;
-				}
-				update();
 			}
+			update();
 		}
 	}
 
@@ -768,6 +753,12 @@ pt_2d ViewSystem::screen2world(pt_2d gl_coords, number z) {
 	number lambda= (z- _eye.z)/ ray_world.z;
 	
 	pt_3d v= _eye+ lambda* ray_world;
+
+	/*std::cout << "ray_clip = " << glm_to_string(ray_clip) << "\n";
+	std::cout << "ray_eye = " << glm_to_string(ray_eye) << "\n";
+	std::cout << "ray_world = " << glm_to_string(ray_world) << "\n";
+	std::cout << "lambda = " << lambda << "\n";
+	std::cout << "v = " << glm_to_string(v) << "\n";*/
 
 	return pt_2d(v.x, v.y);
 }

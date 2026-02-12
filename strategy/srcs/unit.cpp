@@ -236,7 +236,6 @@ Team::Team(std::string name, glm::vec3 color, Elevation * elevation, pt_2d fow_r
 	_fow->_it_v= _fow->_vertices.begin();
 	while (_fow->_it_v!= _fow->_vertices.end()) {
 		FowVertexData * data = new FowVertexData();
-		//data->_status = UNDISCOVERED;
 		data->_n_units = 0;
 		data->_changed = false;
 		_fow->_it_v->second._data = data;
@@ -267,9 +266,6 @@ Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos) {
 	}
 	Unit * unit = new Unit(this, type, pt3d, _elevation);
 	unit->_id = id;
-	/*unit->_visible_tiles.clear();
-	std::vector<uint> v = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
-	unit->_visible_tiles.insert(v.begin(), v.end());*/
 	_units.push_back(unit);
 	update_fow_unit(unit);
 	return unit;
@@ -295,26 +291,18 @@ void Team::remove_unit(Unit * unit) {
 }
 
 
-/*void Team::remove_units_in_aabb(AABB_2D * aabb) {
-	std::vector<Unit *> units2remove;
-	for (auto & unit : _units) {
-		if (aabb2d_intersects_aabb2d(aabb, unit->_bbox->_aabb->aabb2d())) {
-			units2remove.push_back(unit);
-		}
-	}
-	for (auto & unit : units2remove) {
-		remove_unit(unit);
-	}
-}*/
-
-
 void Team::clear2delete() {
-	// TODO : faire mieux ?
-
 	std::vector<Unit * > tmp;
 	for (auto & unit : _units) {
 		if (unit->_delete) {
 			tmp.push_back(unit);
+
+			for (auto & id_tile : unit->_visible_tiles) {
+				GraphVertex vertex = _fow->get_vertex(id_tile);
+				FowVertexData * data = (FowVertexData *)(vertex._data);
+				data->_changed = true;
+				data->_n_units--;
+			}
 		}
 	}
 
@@ -328,11 +316,25 @@ void Team::clear2delete() {
 }
 
 
-void Team::clear() {
+void Team::clear(bool reinit_fow) {
 	for (auto & unit : _units) {
-		delete unit;
+		unit->_delete = true;
 	}
-	_units.clear();
+	clear2delete();
+
+	if (reinit_fow) {
+		_fow->_it_v= _fow->_vertices.begin();
+		while (_fow->_it_v!= _fow->_vertices.end()) {
+			FowVertexData * data = (FowVertexData *)(_fow->_it_v->second._data);
+			data->_n_units = 0;
+			data->_changed = false;
+			_fow->_it_v++;
+		}
+
+		for (uint i=0; i<_fow->_n_ligs * _fow->_n_cols; ++i) {
+			_fow_data[i] = 0.0;
+		}
+	}
 }
 
 
@@ -396,9 +398,6 @@ void Team::update_fow_unit(Unit * unit) {
 	std::vector<uint> v = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
 	unit->_visible_tiles.insert(v.begin(), v.end());
 
-	//std::cout << "_visible_tiles = \n";
-	//for (auto & x : unit->_visible_tiles) { std::cout << x << "\n";}
-
 	std::unordered_set<uint> old_minus_new;
 	std::set_difference(unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), unit->_visible_tiles.begin(), unit->_visible_tiles.end(), std::inserter(old_minus_new, old_minus_new.begin()));
 	
@@ -411,13 +410,10 @@ void Team::update_fow_unit(Unit * unit) {
 
 	std::unordered_set<uint> new_minus_old;
 	std::set_difference(unit->_visible_tiles.begin(), unit->_visible_tiles.end(), unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), std::inserter(new_minus_old, new_minus_old.begin()));
-	//std::cout << "new_minus_old = \n";
-	//for (auto & x : new_minus_old) { std::cout << x << "\n";}
 	for (auto & id_tile : new_minus_old) {
 		GraphVertex vertex = _fow->get_vertex(id_tile);
 		FowVertexData * data = (FowVertexData *)(vertex._data);
 		data->_changed = true;
-		//std::cout << "changed : " << id_tile << "\n";
 		data->_n_units++;
 	}
 
@@ -436,16 +432,12 @@ void Team::update_fow() {
 	_fow->_it_v= _fow->_vertices.begin();
 	while (_fow->_it_v!= _fow->_vertices.end()) {
 		FowVertexData * data = (FowVertexData *)(_fow->_it_v->second._data);
-		//std::cout << "update_fow : " << _fow->_it_v->first << " ; " << data->_changed << " ; " << data->_n_units << "\n";
 		if (data->_changed) {
-			//std::cout << "changed\n";
-			//int_pair col_lig = _fow->id2col_lig(_fow->_it_v.first);
 			if (data->_n_units == 0) {
 				_fow_data[_fow->_it_v->first] = 0.5;
 			}
 			else {
 				_fow_data[_fow->_it_v->first] = 1.0;
-				//std::cout << "ok\n";
 			}
 
 			data->_changed = false;

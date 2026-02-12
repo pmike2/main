@@ -37,7 +37,9 @@ Strategy::Strategy() {
 
 
 Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
-	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _angle(0.0), _cursor_world_position(pt_3d(0.0)),
+	_gl_draw_manager(gl_draw_manager), _view_system(view_system), 
+	_angle_lake(0.0), _angle_river(0.0), _angle_sea(0.0),
+	_cursor_world_position(pt_3d(0.0)),
 	_cursor_hover_unit(NULL), _cursor_hover_ihm(false)
 {
 	bool verbose = true;
@@ -52,24 +54,6 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 
 	_ihm = new GLIHM(_gl_draw_manager, _view_system->_screengl, "../data/ihm.json");
 
-	if (verbose) {
-		std::cout << "loading map\n";
-	}
-	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION, t);
-
-	if (verbose) {
-		std::cout << "clearing / randomizing map\n";
-	}
-	//_map->randomize();
-	_map->clear();
-
-	if (verbose) {
-		std::cout << "set_ihm\n";
-	}
-	set_ihm();
-
-	Team * team = get_selected_team();
-
 	_gl_draw_manager->add_texture("fow_texture_array", GL_TEXTURE_2D_ARRAY, 0,
 		std::map<GLenum, int>{
 			{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
@@ -78,6 +62,24 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 		GL_RED, glm::uvec3(team->_fow->_n_cols, team->_fow->_n_ligs, _map->_teams.size()), GL_RED, GL_FLOAT);
 	
 	//std::cout << *_gl_draw_manager << "\n";
+
+	if (verbose) {
+		std::cout << "loading map\n";
+	}
+	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION, t);
+
+	if (verbose) {
+		std::cout << "clearing / randomizing map\n";
+	}
+	_map->randomize();
+	//_map->clear();
+
+	if (verbose) {
+		std::cout << "set_ihm\n";
+	}
+	set_ihm();
+
+	Team * team = get_selected_team();
 
 	if (verbose) {
 		std::cout << "update_all\n";
@@ -269,10 +271,6 @@ void Strategy::set_ihm() {
 
 void Strategy::draw_select() {
 	GLDrawContext * context= _gl_draw_manager->get_context("select");
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	// pour que l'affichage du rectangle de sélection se fassent par dessus le reste
 	context->set_uniform("z", -1.0f);
@@ -285,10 +283,6 @@ void Strategy::draw_select() {
 
 void Strategy::draw_linear(std::string context_name) {
 	GLDrawContext * context= _gl_draw_manager->get_context(context_name);
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	context->draw();
@@ -298,10 +292,6 @@ void Strategy::draw_linear(std::string context_name) {
 
 void Strategy::draw_dash(std::string context_name, number dash_size, number gap_size, number thickness) {
 	GLDrawContext * context= _gl_draw_manager->get_context(context_name);
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	context->set_uniform("dash_size", float(dash_size));
@@ -316,10 +306,6 @@ void Strategy::draw_dash(std::string context_name, number dash_size, number gap_
 
 void Strategy::draw_tree_stone() {
 	GLDrawContext * context= _gl_draw_manager->get_context("tree_stone");
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -336,10 +322,6 @@ void Strategy::draw_tree_stone() {
 
 void Strategy::draw_elevation() {
 	GLDrawContext * context= _gl_draw_manager->get_context("elevation");
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -357,10 +339,6 @@ void Strategy::draw_elevation() {
 
 void Strategy::draw_lake() {
 	GLDrawContext * context= _gl_draw_manager->get_context("lake");
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -370,7 +348,7 @@ void Strategy::draw_lake() {
 	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
 	context->set_uniform("fow_active", float(_config->_fow_active));
-	context->set_uniform("angle", float(_angle));
+	context->set_uniform("angle", float(_angle_lake));
 	context->set_uniform("amplitude", float(LAKE_WAVE_AMPLITUDE));
 	context->set_uniform("freq", float(LAKE_WAVE_FREQ));
 	context->draw();
@@ -380,10 +358,6 @@ void Strategy::draw_lake() {
 
 void Strategy::draw_river() {
 	GLDrawContext * context= _gl_draw_manager->get_context("river");
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -393,7 +367,7 @@ void Strategy::draw_river() {
 	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
 	context->set_uniform("fow_active", float(_config->_fow_active));
-	context->set_uniform("angle", float(_angle));
+	context->set_uniform("angle", float(_angle_river));
 	context->draw();
 	context->deactivate();
 }
@@ -401,10 +375,6 @@ void Strategy::draw_river() {
 
 void Strategy::draw_sea() {
 	GLDrawContext * context= _gl_draw_manager->get_context("sea");
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -414,9 +384,11 @@ void Strategy::draw_sea() {
 	context->set_uniform("elevation_origin", glm::value_ptr(glm::vec2(_map->_elevation->_origin)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
 	context->set_uniform("fow_active", float(_config->_fow_active));
-	context->set_uniform("angle", float(_angle));
+	context->set_uniform("angle", float(_angle_sea));
 	context->set_uniform("amplitude", float(SEA_WAVE_AMPLITUDE));
 	context->set_uniform("freq", float(SEA_WAVE_FREQ));
+	context->set_uniform("sea_level", float(SEA_LEVEL));
+	context->set_uniform("shininess", float(SEA_SHININESS));
 	context->draw();
 	context->deactivate();
 }
@@ -424,10 +396,6 @@ void Strategy::draw_sea() {
 
 void Strategy::draw_unit(UnitType * unit_type) {
 	GLDrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -444,10 +412,6 @@ void Strategy::draw_unit(UnitType * unit_type) {
 
 void Strategy::draw_unit_life() {
 	GLDrawContext * context= _gl_draw_manager->get_context("unit_life");
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_camera2clip)));
 	context->set_uniform("elevation_size", glm::value_ptr(glm::vec2(_map->_elevation->_size)));
@@ -461,10 +425,6 @@ void Strategy::draw_unit_life() {
 
 void Strategy::draw_ammo(AmmoType * ammo_type) {
 	GLDrawContext * context= _gl_draw_manager->get_context(ammo_type->_name);
-	if (!context->_active) {
-		return;
-	}
-
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -534,6 +494,7 @@ void Strategy::anim(time_point t) {
 	update_edit_map();
 	update_cursor();
 	update_text();
+
 	for (auto & unit_type : _map->_unit_types) {
 		update_unit_matrices(unit_type.second);
 	}
@@ -541,11 +502,7 @@ void Strategy::anim(time_point t) {
 		update_ammo_matrices(ammo_type.second);
 	}
 
-	_angle += 0.01;
-	if (_angle > 2.0 * M_PI) {
-		_angle -= 2.0 * M_PI;
-	}
-	update_lake();
+	update_angles();
 
 	update_unit_life();
 	update_selection();
@@ -1312,24 +1269,22 @@ void Strategy::update_sea() {
 
 	float * data = new float[context->data_size()];
 
-	const glm::vec4 SEA_COLOR(0.6, 0.8, 0.9, 0.6);
-	std::vector<pt_3d> pts = {
-		pt_3d(_map->_elevation->_origin.x, _map->_elevation->_origin.y, 0.0),
-		pt_3d(_map->_elevation->_origin.x + _map->_elevation->_size.x, _map->_elevation->_origin.y, 0.0),
-		pt_3d(_map->_elevation->_origin.x + _map->_elevation->_size.x, _map->_elevation->_origin.y + _map->_elevation->_size.y, 0.0),
-		pt_3d(_map->_elevation->_origin.x, _map->_elevation->_origin.y + _map->_elevation->_size.y, 0.0)
+	std::vector<pt_2d> pts = {
+		pt_2d(SEA_ORIGIN.x, SEA_ORIGIN.y),
+		pt_2d(SEA_ORIGIN.x + SEA_SIZE.x, SEA_ORIGIN.y),
+		pt_2d(SEA_ORIGIN.x + SEA_SIZE.x, SEA_ORIGIN.y + SEA_SIZE.y),
+		pt_2d(SEA_ORIGIN.x, SEA_ORIGIN.y + SEA_SIZE.y)
 	};
 	std::vector<uint> idxs = {0, 1, 2, 0, 2, 3};
 	float * ptr = data;
 	for (uint i=0; i<6; ++i) {
 		ptr[0] = float(pts[idxs[i]].x);
 		ptr[1] = float(pts[idxs[i]].y);
-		ptr[2] = float(pts[idxs[i]].z);
-		ptr[3] = SEA_COLOR.r;
-		ptr[4] = SEA_COLOR.g;
-		ptr[5] = SEA_COLOR.b;
-		ptr[6] = SEA_COLOR.a;
-		ptr += 7;
+		ptr[2] = SEA_COLOR.r;
+		ptr[3] = SEA_COLOR.g;
+		ptr[4] = SEA_COLOR.b;
+		ptr[5] = SEA_COLOR.a;
+		ptr += 6;
 	}
 
 	context->set_data(data);
@@ -1470,7 +1425,6 @@ void Strategy::update_unit_life() {
 	context->set_data(data);
 
 	delete[] data;
-	//context->show_data();
 }
 
 
@@ -1499,10 +1453,6 @@ void Strategy::update_ammo_matrices(AmmoType * ammo_type) {
 			const float * unit_data = glm::value_ptr(glm::mat4(ammo->_model2world));
 			std::memcpy(ptr, unit_data, 16 * sizeof(float));
 			ptr += 16;
-			/*ptr[0] = team->_color.r;
-			ptr[1] = team->_color.g;
-			ptr[2] = team->_color.b;
-			ptr += 3;*/
 		}
 	}
 
@@ -1561,68 +1511,12 @@ void Strategy::update_selection() {
 }
 
 
-/*void Strategy::update_fow() {
-	GLDrawContext * context= _gl_draw_manager->get_context("fow");
-
-	GraphGrid * fow = _config->_selected_team->_fow;
-
-	context->_n_pts = (fow->_n_ligs - 1) * (fow->_n_cols - 1) * 6;
-
-	float * data = new float[context->data_size()];
-	float * ptr = data;
-
-	std::map<FOW_STATUS, glm::vec4> fow_color;
-	fow_color[WATCHED] = glm::vec4(0.0, 0.0, 0.0, 0.2);
-	fow_color[UNWATCHED] = glm::vec4(0.0, 0.0, 0.0, 0.6);
-	fow_color[UNDISCOVERED] = glm::vec4(0.0, 0.0, 0.0, 0.6);
-
-	for (uint lig = 0; lig < fow->_n_ligs - 1; ++lig) {
-		for (uint col = 0; col < fow->_n_cols - 1; ++col) {
-			pt_2d l_pts[4] = {
-				fow->col_lig2pt_2d(col, lig),
-				fow->col_lig2pt_2d(col + 1, lig),
-				fow->col_lig2pt_2d(col + 1, lig + 1),
-				fow->col_lig2pt_2d(col, lig + 1)
-			};
-			FOW_STATUS status[4];
-			FowVertexData * data0 = (FowVertexData *)(fow->get_vertex(fow->col_lig2id(col, lig))._data);
-			status[0] = data0->_status;
-			FowVertexData * data1 = (FowVertexData *)(fow->get_vertex(fow->col_lig2id(col + 1, lig))._data);
-			status[1] = data1->_status;
-			FowVertexData * data2 = (FowVertexData *)(fow->get_vertex(fow->col_lig2id(col + 1, lig + 1))._data);
-			status[2] = data2->_status;
-			FowVertexData * data3 = (FowVertexData *)(fow->get_vertex(fow->col_lig2id(col, lig + 1))._data);
-			status[3] = data3->_status;
-
-			uint idxs[6] = {0, 1, 2, 0, 2, 3};
-			for (uint i=0; i<6; ++i) {
-				ptr[0] = l_pts[idxs[i]].x;
-				ptr[1] = l_pts[idxs[i]].y;
-				ptr[2] = fow_color[status[idxs[i]]].r;
-				ptr[3] = fow_color[status[idxs[i]]].g;
-				ptr[4] = fow_color[status[idxs[i]]].b;
-				ptr[5] = fow_color[status[idxs[i]]].a;
-				ptr += 6;
-			}
-		}
-	}
-
-	context->set_data(data);
-	delete[] data;
-}*/
-
-
 void Strategy::update_fow_texture() {
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_fow);
 	uint compt = 0;
 	for (auto & team : _map->_teams) {
-		//glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, 0, 0, compt, team->_fow->_n_cols, team->_fow->_n_ligs, 1, GL_RED, GL_FLOAT, team->_fow_data);
 		_gl_draw_manager->set_texture_data("fow_texture_array", team->_fow_data, compt);
 		compt++;
 	}
-	//glActiveTexture(0);
-	//glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 }
 
 
@@ -1648,15 +1542,12 @@ void Strategy::update_all() {
 		update_ammo_matrices(ammo_type.second);
 	}
 	update_selection();
-	//update_fow();
 	update_fow_texture();
 }
 
 
 void Strategy::update_text() {
 	std::vector<Text3D> texts_3d;
-
-	//texts_3d.push_back(Text3D("hohoho", glm::vec3(0.0), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
@@ -1670,8 +1561,6 @@ void Strategy::update_text() {
 	
 	std::string s_pos = glm_to_string(_cursor_world_position);
 	texts_2d.push_back(Text(s_pos, glm::vec2(-4.8, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
-
-	//texts_2d.push_back(Text("HAAA", glm::vec2(0.0, 0.0), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	
 	if (_map->_path_finder->in_boundaries(pt_2d(_cursor_world_position))) {
 		GraphEdge edge = _map->_path_finder->get_edge(_map->_path_finder->pt2closest_edge(pt_2d(_cursor_world_position)));
@@ -1690,127 +1579,140 @@ void Strategy::update_text() {
 }
 
 
+void Strategy::update_angles() {
+	_angle_river += RIVER_ANGLE_SPEED;
+	while (_angle_river > 2.0 * M_PI) {
+		_angle_river -= 2.0 * M_PI;
+	}
+
+	_angle_lake += LAKE_ANGLE_SPEED;
+	while (_angle_lake > 2.0 * M_PI) {
+		_angle_lake -= 2.0 * M_PI;
+	}
+
+	_angle_sea += SEA_ANGLE_SPEED;
+	while (_angle_sea > 2.0 * M_PI) {
+		_angle_sea -= 2.0 * M_PI;
+	}
+
+}
+
+
 bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 	if (_ihm->mouse_button_down(input_state, t)) {
 		return true;
 	}
 
+	if (input_state->_left_mouse) {
+		if (_config->_mode == PLAY && _config->_play_mode == MOVE_UNIT) {
+			get_selected_team()->selected_units_goto(_cursor_world_position, t);
+			return true;
+		}
+		
+		else if (_config->_mode == ADD_UNIT) {
+			Unit * unit = _map->add_unit(get_selected_team(), _config->_unit_type, pt_2d(_cursor_world_position));
+			if (unit != NULL) {
+				if (_config->_units_paused) {
+					unit->_paused = true;
+				}
+				else {
+					unit->_paused = false;
+				}
+				update_unit_matrices(_map->_unit_types[_config->_unit_type]);
+			}
+			return true;
+		}
+		
+		else if (_config->_mode == ADD_ELEMENT) {
+			if (_config->_element_type == ELEMENT_TREE) {
+				_map->add_trees("oak", pt_2d(_cursor_world_position), _config->_n_elements, _config->_elements_dispersion);
+				update_tree_stone();
+				update_grid();
+			}
+			else if (_config->_element_type == ELEMENT_STONE) {
+				_map->add_stones("dark_stone", pt_2d(_cursor_world_position), _config->_n_elements, _config->_elements_dispersion);
+				update_tree_stone();
+				update_grid();
+			}
+			else if (_config->_element_type == ELEMENT_RIVER) {
+				_map->add_river(pt_2d(_cursor_world_position));
+				update_river();
+				update_grid();
+			}
+			else if (_config->_element_type == ELEMENT_LAKE) {
+				_map->add_lake(pt_2d(_cursor_world_position));
+				update_lake();
+				update_grid();
+			}
+			return true;
+		}
+		
+		else if (_config->_mode == EDIT_ELEVATION) {
+			AABB_2D * aabb = new AABB_2D(pt_2d(_cursor_world_position) - pt_2d(_config->_elevation_radius), 2.0 * pt_2d(_config->_elevation_radius));
+			
+			_map->remove_elements_in_aabb(aabb);
+			_map->remove_units_in_aabb(aabb);
+			
+			std::vector<uint> ids = _map->_elevation->vertices_in_aabb(aabb);
+
+			for (auto id : ids) {
+				pt_2d pt2 = _map->_elevation->id2pt_2d(id);
+				number dist = glm::distance(pt_2d(_cursor_world_position), pt2) / (_config->_elevation_radius);
+				if (dist > 1.0) {
+					continue;
+				}
+				number alti_inc = _config->_elevation_factor * (1.0 - pow(dist, _config->_elevation_exponent));
+				number new_alti;
+
+				if (_config->_elevation_mode == ELEVATION_MINUS) {
+					new_alti = _map->_elevation->get_alti(id) - alti_inc;
+				}
+				else if (_config->_elevation_mode == ELEVATION_PLUS) {
+					new_alti = _map->_elevation->get_alti(id) + alti_inc;
+				}
+				else if (_config->_elevation_mode == ELEVATION_ZERO) {
+					new_alti = -0.01;
+				}
+
+				if (abs(new_alti) < 0.01) {
+					new_alti = -0.01;
+				}
+
+				_map->_elevation->set_alti(id, new_alti);
+			}
+
+			//_map->_elevation->set_negative_alti_2zero();
+
+			// buffer pour mettre à jour un peu autour du AABB modifié (voir note TODO dans graph.h / aabb2col_lig_min_max)
+			aabb->buffer(_map->_elevation->_resolution.x + 0.01);
+			_map->_elevation->update_normals(aabb);
+			_map->_elevation->update_data(aabb);
+			_map->sync2elevation();
+
+			update_elevation();
+			update_grid();
+			update_tree_stone();
+
+			delete aabb;
+			return true;
+		}
+		
+		else if (_config->_mode == ERASE) {
+			AABB_2D * aabb = new AABB_2D(pt_2d(_cursor_world_position) - pt_2d(_config->_erase_radius), 2.0 * pt_2d(_config->_erase_radius));
+			
+			_map->remove_elements_in_aabb(aabb);
+			_map->remove_units_in_aabb(aabb);
+			
+			update_grid();
+			update_tree_stone();
+
+			delete aabb;
+
+			return true;
+		}
+	}
+
 	if (_view_system->mouse_button_down(input_state, t)) {
-		return true;
-	}
-
-	if (!input_state->_left_mouse) {
-		return false;
-	}
-
-	if (_config->_mode == VIEW) {
-		return false;
-	}
-
-	if (_config->_mode == PLAY && _config->_play_mode == MOVE_UNIT) {
-		get_selected_team()->selected_units_goto(_cursor_world_position, t);
-		return true;
-	}
-	
-	else if (_config->_mode == ADD_UNIT) {
-		Unit * unit = _map->add_unit(get_selected_team(), _config->_unit_type, pt_2d(_cursor_world_position));
-		if (unit != NULL) {
-			if (_config->_units_paused) {
-				unit->_paused = true;
-			}
-			else {
-				unit->_paused = false;
-			}
-			update_unit_matrices(_map->_unit_types[_config->_unit_type]);
-		}
-		return true;
-	}
-	
-	else if (_config->_mode == ADD_ELEMENT) {
-		if (_config->_element_type == ELEMENT_TREE) {
-			_map->add_trees("oak", pt_2d(_cursor_world_position), _config->_n_elements, _config->_elements_dispersion);
-			update_tree_stone();
-			update_grid();
-		}
-		else if (_config->_element_type == ELEMENT_STONE) {
-			_map->add_stones("dark_stone", pt_2d(_cursor_world_position), _config->_n_elements, _config->_elements_dispersion);
-			update_tree_stone();
-			update_grid();
-		}
-		else if (_config->_element_type == ELEMENT_RIVER) {
-			_map->add_river(pt_2d(_cursor_world_position));
-			update_river();
-			update_grid();
-		}
-		else if (_config->_element_type == ELEMENT_LAKE) {
-			_map->add_lake(pt_2d(_cursor_world_position));
-			update_lake();
-			update_grid();
-		}
-		return true;
-	}
-	
-	else if (_config->_mode == EDIT_ELEVATION) {
-		AABB_2D * aabb = new AABB_2D(pt_2d(_cursor_world_position) - pt_2d(_config->_elevation_radius), 2.0 * pt_2d(_config->_elevation_radius));
-		
-		_map->remove_elements_in_aabb(aabb);
-		_map->remove_units_in_aabb(aabb);
-		
-		std::vector<uint> ids = _map->_elevation->vertices_in_aabb(aabb);
-
-		for (auto id : ids) {
-			pt_2d pt2 = _map->_elevation->id2pt_2d(id);
-			number dist = glm::distance(pt_2d(_cursor_world_position), pt2) / (_config->_elevation_radius);
-			if (dist > 1.0) {
-				continue;
-			}
-			number alti_inc = _config->_elevation_factor * (1.0 - pow(dist, _config->_elevation_exponent));
-			number new_alti;
-
-			if (_config->_elevation_mode == ELEVATION_MINUS) {
-				new_alti = _map->_elevation->get_alti(id) - alti_inc;
-			}
-			else if (_config->_elevation_mode == ELEVATION_PLUS) {
-				new_alti = _map->_elevation->get_alti(id) + alti_inc;
-			}
-			else if (_config->_elevation_mode == ELEVATION_ZERO) {
-				new_alti = -0.01;
-			}
-
-			if (abs(new_alti) < 0.01) {
-				new_alti = -0.01;
-			}
-
-			_map->_elevation->set_alti(id, new_alti);
-		}
-
-		//_map->_elevation->set_negative_alti_2zero();
-
-		// buffer pour mettre à jour un peu autour du AABB modifié (voir note TODO dans graph.h / aabb2col_lig_min_max)
-		aabb->buffer(_map->_elevation->_resolution.x + 0.01);
-		_map->_elevation->update_normals(aabb);
-		_map->_elevation->update_data(aabb);
-		_map->sync2elevation();
-
-		update_elevation();
-		update_grid();
-		update_tree_stone();
-
-		delete aabb;
-		return true;
-	}
-	
-	else if (_config->_mode == ERASE) {
-		AABB_2D * aabb = new AABB_2D(pt_2d(_cursor_world_position) - pt_2d(_config->_erase_radius), 2.0 * pt_2d(_config->_erase_radius));
-		
-		_map->remove_elements_in_aabb(aabb);
-		_map->remove_units_in_aabb(aabb);
-		
-		update_grid();
-		update_tree_stone();
-
-		delete aabb;
-
 		return true;
 	}
 
@@ -1889,7 +1791,6 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
 			if (_view_system->pt_2d_intersects_aabb(_view_system->screen2gl(input_state->_x, input_state->_y), unit->_bbox->_aabb)) {
-				//std::cout << unit->_id << "\n";
 				_cursor_hover_unit = unit;
 				break;
 			}

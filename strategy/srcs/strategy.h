@@ -65,7 +65,6 @@ public:
 	void draw_unit(UnitType * unit_type);
 	void draw_unit_life();
 	void draw_ammo(AmmoType * ammo_type);
-	//void draw_fow();
 	void draw();
 	
 	void anim(time_point t);
@@ -94,6 +93,7 @@ public:
 	void update_fow_texture();
 	void update_all();
 	void update_text();
+	void update_angles();
 	
 	bool mouse_button_down(InputState * input_state, time_point t);
 	bool mouse_button_up(InputState * input_state, time_point t);
@@ -111,10 +111,8 @@ public:
 
 	pt_3d _cursor_world_position;
 	bool _cursor_hover_ihm;
-	number _angle;
+	number _angle_lake, _angle_river, _angle_sea;
 	Unit * _cursor_hover_unit;
-
-	//uint _texture_fow;
 };
 
 #endif

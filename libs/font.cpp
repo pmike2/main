@@ -290,7 +290,6 @@ void Font::clear() {
 
 void Font::draw() {
 	GLDrawContext * context = _gl_draw_manager->get_context("font");
-	
 	context->activate();
 	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(_camera2clip)));
 	context->set_uniform("z", _z);
@@ -301,7 +300,6 @@ void Font::draw() {
 
 void Font::draw_3d(const mat_4d & world2clip) {
 	GLDrawContext * context = _gl_draw_manager->get_context("font3d");
-
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(world2clip)));
 	context->draw();

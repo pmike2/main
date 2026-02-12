@@ -84,7 +84,7 @@ struct Team {
 	void remove_unit(Unit * unit);
 	//void remove_units_in_aabb(AABB_2D * aabb);
 	void clear2delete();
-	void clear();
+	void clear(bool reinit_fow);
 	void clear_selection();
 	void unit_goto(Unit * unit, pt_3d pt, time_point t);
 	void selected_units_goto(pt_3d pt, time_point t);
