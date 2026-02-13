@@ -6,7 +6,7 @@ PathFinder::PathFinder() {
 }
 
 PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : 
-	GraphGrid(origin, size, n_ligs, n_cols), _verbose(true)
+	GraphGrid(origin, size, n_ligs, n_cols), _verbose(false)
 {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
@@ -23,11 +23,6 @@ PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) :
 
 PathFinder::~PathFinder() {
 	// TODO : détruire les edge._data ici
-	/*delete _elevation_grid;
-	delete _units_position_grid;
-	delete _terrain_grid;*/
-
-	//delete _path;
 }
 
 

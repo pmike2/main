@@ -56,9 +56,25 @@ void Unit::anim(time_point t) {
 		return;
 	}
 
-	if (_status == MOVING) {
+	if (_status == WATCHING) {
+		number next_angle = _angle + 0.01;
+		/*if (next_angle > 2.0 * M_PI) {
+			next_angle -= 2.0 * M_PI;
+		}*/
+		if (next_angle - _angle > M_PI) {
+			next_angle -= 2.0 * M_PI;
+		}
+		_angle = next_angle;
+
+		const number slerp_speed = 0.05;
+		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
+		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
+
+		set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
+	}
+	
+	else if (_status == MOVING) {
 		number velocity_amp = _type->_max_velocity * (1.0 - _path->get_current_interval()->_weight / MAX_UNIT_MOVING_WEIGHT);
-		//std::cout << d << "\n";
 		velocity_amp *= number(d_moving) * 0.0625; // 60fps -> 1 frame == 1000 / 60 ~= 16 ms et 1 / 16 == 0.0625
 		pt_2d direction = glm::normalize(pt_2d(_path->get_current_pt()) - pt_2d(_position));
 		_velocity = velocity_amp * pt_3d(direction.x, direction.y, 0.0);
@@ -81,11 +97,9 @@ void Unit::anim(time_point t) {
 		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
 
-		//_old_visible_tiles.clear();
-		//_old_visible_tiles.insert(_visible_tiles.begin(), _visible_tiles.end());
-
 		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
 	}
+	
 	else if (_status == ATTACKING) {
 		if (_target == NULL)  {
 			std::cerr << "Unit " << _id << " ATTACKING mais _target == NULL.\n";
@@ -236,6 +250,7 @@ Team::Team(std::string name, glm::vec3 color, Elevation * elevation, pt_2d fow_r
 	_fow->_it_v= _fow->_vertices.begin();
 	while (_fow->_it_v!= _fow->_vertices.end()) {
 		FowVertexData * data = new FowVertexData();
+		data->_status = UNDISCOVERED;
 		data->_n_units = 0;
 		data->_changed = false;
 		_fow->_it_v->second._data = data;
@@ -276,6 +291,17 @@ std::vector<Unit *> Team::get_units_in_aabb(AABB_2D * aabb) {
 	std::vector<Unit *> result;
 	for (auto & unit : _units) {
 		if (aabb2d_intersects_aabb2d(aabb, unit->_bbox->_aabb->aabb2d())) {
+			result.push_back(unit);
+		}
+	}
+	return result;
+}
+
+
+std::vector<Unit *> Team::get_selected_units() {
+	std::vector<Unit *> result;
+	for (auto & unit : _units) {
+		if (unit->_selected) {
 			result.push_back(unit);
 		}
 	}
@@ -395,8 +421,11 @@ void Team::selected_units_attack(Unit * target, time_point t) {
 
 void Team::update_fow_unit(Unit * unit) {
 	unit->_visible_tiles.clear();
-	std::vector<uint> v = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
-	unit->_visible_tiles.insert(v.begin(), v.end());
+	//std::vector<uint> v = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
+	std::vector<uint> vertices_in_front_of_unit = _fow->vertices_in_circle_section(pt_2d(unit->_position), unit->_type->_vision_distance, unit->_angle, unit->_type->_vision_angle);
+	unit->_visible_tiles.insert(vertices_in_front_of_unit.begin(), vertices_in_front_of_unit.end());
+	std::vector<uint> vertices_covering_unit = _fow->vertices_in_aabb(unit->_bbox->_aabb->aabb2d());
+	unit->_visible_tiles.insert(vertices_covering_unit.begin(), vertices_covering_unit.end());
 
 	std::unordered_set<uint> old_minus_new;
 	std::set_difference(unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), unit->_visible_tiles.begin(), unit->_visible_tiles.end(), std::inserter(old_minus_new, old_minus_new.begin()));
@@ -424,9 +453,9 @@ void Team::update_fow_unit(Unit * unit) {
 
 void Team::update_fow() {
 	for (auto & unit : _units) {
-		if (unit->_status == MOVING) {
+		//if (unit->_status == MOVING) {
 			update_fow_unit(unit);
-		}
+		//}
 	}
 
 	_fow->_it_v= _fow->_vertices.begin();
@@ -434,9 +463,11 @@ void Team::update_fow() {
 		FowVertexData * data = (FowVertexData *)(_fow->_it_v->second._data);
 		if (data->_changed) {
 			if (data->_n_units == 0) {
+				data->_status = DISCOVERED;
 				_fow_data[_fow->_it_v->first] = 0.5;
 			}
 			else {
+				data->_status = WATCHED;
 				_fow_data[_fow->_it_v->first] = 1.0;
 			}
 

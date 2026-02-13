@@ -123,6 +123,11 @@ public:
 	void anim(time_point t);
 	
 	void set(const pt_3d & target, number phi, number theta, number rho);
+	void set_target(const pt_3d & target);
+	void set_target(const pt_2d & target);
+	void set_phi(number phi);
+	void set_theta(number theta);
+	void set_rho(number rho);
 	void set_2d(number rho);
 
 	void constraint_target(const pt_2d & target_min, const pt_2d & target_max);

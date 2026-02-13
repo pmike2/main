@@ -467,6 +467,36 @@ void ViewSystem::set(const pt_3d & target, number phi, number theta, number rho)
 }
 
 
+void ViewSystem::set_target(const pt_3d & target) {
+	_target = target;
+	update();
+}
+
+
+void ViewSystem::set_target(const pt_2d & target) {
+	_target = pt_3d(target.x, target.y, 0.0);
+	update();
+}
+
+
+void ViewSystem::set_phi(number phi) {
+	_phi = phi;
+	update();
+}
+
+
+void ViewSystem::set_theta(number theta) {
+	_theta = theta;
+	update();
+}
+
+
+void ViewSystem::set_rho(number rho) {
+	_rho = rho;
+	update();
+}
+
+
 void ViewSystem::set_2d(number rho) {
 	_target= pt_3d(0.0);
 	_phi= -1.0 * M_PI_2;

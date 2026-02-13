@@ -65,7 +65,10 @@ void GLIHMElement::set_active() {
 	_active = true;
 	_alpha = ALPHA_ACTIVE;
 	for (auto & group : _groups_visible) {
-		group->_visible = true;
+		group->set_visible();
+	}
+	for (auto & group : _groups_invisible) {
+		group->set_invisible();
 	}
 	_active_callback();
 }
@@ -75,7 +78,10 @@ void GLIHMElement::set_inactive() {
 	_active = false;
 	_alpha = ALPHA_INACTIVE;
 	for (auto & group : _groups_visible) {
-		group->_visible = false;
+		group->set_invisible();
+	}
+	for (auto & group : _groups_invisible) {
+		group->set_visible();
 	}
 	_inactive_callback();
 }
@@ -313,25 +319,18 @@ GLIHMGroup::~GLIHMGroup() {
 
 
 pt_2d GLIHMGroup::next_element_position() {
-	number n = _elements.size();
-	
-	pt_2d last_pos;
-	number margin;
-	if (n == 0) {
-		last_pos = _position;
-		margin = 0.0;
+	if (_elements.empty()) {
+		return _position;
 	}
-	else {
-		last_pos = _elements[n - 1]->_aabb->_pos;
-		margin = _margin;
-	}
+
+	pt_2d last_pos = _elements[_elements.size() - 1]->_aabb->_pos;
 
 	pt_2d next_pos;
 	if (_orientation == GL_IHM_HORIZONTAL) {
-		next_pos = last_pos + pt_2d(margin + _element_size.x, 0.0);
+		next_pos = last_pos + pt_2d(_margin + _element_size.x, 0.0);
 	}
 	else if (_orientation == GL_IHM_VERTICAL) {
-		next_pos = last_pos - pt_2d(0.0, margin + _element_size.y);
+		next_pos = last_pos - pt_2d(0.0, _margin + _element_size.y);
 	}
 
 	return next_pos;
@@ -363,6 +362,35 @@ GLIHMElement * GLIHMGroup::add_element(std::string name, std::string texture_pat
 }
 
 
+
+void GLIHMGroup::set_visible() {
+	_visible = true;
+	for (auto & element : _elements) {
+		if (element->_active) {
+			for (auto & group : element->_groups_visible) {
+				group->set_visible();
+			}
+			for (auto & group : element->_groups_invisible) {
+				group->set_invisible();
+			}
+		}
+	}
+}
+
+
+void GLIHMGroup::set_invisible() {
+	_visible = false;
+	for (auto & element : _elements) {
+		for (auto & group : element->_groups_visible) {
+			group->set_invisible();
+		}
+		for (auto & group : element->_groups_invisible) {
+			group->set_visible();
+		}
+	}
+}
+
+
 std::ostream & operator << (std::ostream & os, const GLIHMGroup & g) {
 	os << "name = " << g._name << " ; elements =\n";
 	for (auto & element : g._elements) {
@@ -382,16 +410,18 @@ GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string j
 	_gl_draw_manager(gl_draw_manager), _screengl(screengl), _verbose(false) 
 {
 	std::vector<std::pair<GLIHMElement *, std::string> > groups_visible;
+	std::vector<std::pair<GLIHMElement *, std::string> > groups_invisible;
 
 	std::ifstream ifs(json_path);
 	json js= json::parse(ifs);
 	ifs.close();
 	
-	_texture_root = js["texture_root"];
-	_texture_size = js["texture_size"];
+	std::string texture_root = js["texture_root"];
+	uint texture_size = js["texture_size"];
 	std::string texture_slider_background = js["texture_slider_background"];
-	_default_element_size = pt_2d(js["default_element_size"][0], js["default_element_size"][1]);
-	_default_margin = js["default_margin"];
+	pt_2d default_element_size = pt_2d(js["default_element_size"][0], js["default_element_size"][1]);
+	number default_group_margin = js["default_group_margin"];
+	number default_element_margin = js["default_element_margin"];
 
 	for (auto group : js["groups"]) {
 		GL_IHM_GROUP_ORIENTATION orientation;
@@ -424,17 +454,19 @@ GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string j
 			return;
 		}
 
-		pt_2d position = pt_2d(group["position"][0], group["position"][1]);
-		pt_2d element_size = _default_element_size;
+		pt_2d element_size = default_element_size;
 		if (group["element_size"] != nullptr) {
 			element_size = pt_2d(group["element_size"][0], group["element_size"][1]);
 		}
-		number margin = _default_margin;
+
+		number element_margin = default_element_margin;
 		if (group["margin"] != nullptr) {
-			margin = group["margin"];
+			element_margin = group["margin"];
 		}
 
-		GLIHMGroup * gl_group = add_group(group["name"], type, orientation, position, element_size, margin);
+		pt_2d position = parse_json_position(group["position"], default_group_margin, element_size);
+
+		GLIHMGroup * gl_group = add_group(group["name"], type, orientation, position, element_size, element_margin);
 
 		for (auto & element : group["elements"]) {
 			std::string name = element["name"];
@@ -447,6 +479,11 @@ GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string j
 			if (element["groups_visible"] != nullptr) {
 				for (auto group_visible : element["groups_visible"]) {
 					groups_visible.push_back(std::make_pair(gl_element, group_visible));
+				}
+			}
+			if (element["groups_invisible"] != nullptr) {
+				for (auto group_invisible : element["groups_invisible"]) {
+					groups_invisible.push_back(std::make_pair(gl_element, group_invisible));
 				}
 			}
 			if (element["key"] != nullptr) {
@@ -476,6 +513,15 @@ GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string j
 		}
 	}
 
+	for (auto & group_invisible : groups_invisible) {
+		for (auto & group : _groups) {
+			if (group->_name == group_invisible.second) {
+				group_invisible.first->_groups_invisible.push_back(group);
+				break;
+			}
+		}
+	}
+
 	for (auto & group : _groups) {
 		if (group->_type == GL_IHM_RADIO) {
 			group->_elements[0]->set_active();
@@ -491,11 +537,11 @@ GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string j
 	}
 
 	std::vector<std::string> pngs;
-	pngs.push_back(_texture_root + "/" + texture_slider_background);
+	pngs.push_back(texture_root + "/" + texture_slider_background);
 	uint compt = 1;
 	for (auto & group : _groups) {
 		for (auto & element : group->_elements) {
-			pngs.push_back(_texture_root + "/" + group->_name + "/" + element->_texture_path);
+			pngs.push_back(texture_root + "/" + group->_name + "/" + element->_texture_path);
 			element->_texture_layer = compt++;
 		}
 	}
@@ -506,7 +552,7 @@ GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string j
 			{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
 			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
 		},
-		GL_RGBA, glm::uvec3(_texture_size, _texture_size, pngs.size()), GL_BGRA, GL_UNSIGNED_BYTE);
+		GL_RGBA, glm::uvec3(texture_size, texture_size, pngs.size()), GL_BGRA, GL_UNSIGNED_BYTE);
 	
 	_gl_draw_manager->set_texture_data("ihm_texture_array", pngs);
 
@@ -524,10 +570,95 @@ GLIHM::~GLIHM() {
 }
 
 
+pt_2d GLIHM::parse_json_position(json json_position, number default_group_margin, pt_2d element_size) {
+	try {
+		std::string position_str = json_position;
+		int delimiter_pos = position_str.find(":");
+		if (delimiter_pos < 0) {
+			std::cerr << "GLIHM::parse_json_position : " << position_str << " invalide\n";
+			return pt_2d(0.0);
+		}
+		std::string before_or_after = position_str.substr(0, delimiter_pos);
+		std::string group_name = position_str.substr(delimiter_pos + 1);
+		GLIHMGroup * group = get_group(group_name);
+		if (before_or_after == "before") {
+			if (group->_orientation == GL_IHM_HORIZONTAL) {
+				return group->_position - pt_2d(0.0, group->_element_size.y) - pt_2d(0.0, default_group_margin);
+			}
+			else if (group->_orientation == GL_IHM_VERTICAL) {
+				return group->_position - pt_2d(group->_element_size.x, 0.0) - pt_2d(default_group_margin, 0.0);
+			}
+		}
+		else if (before_or_after == "after") {
+			if (group->_orientation == GL_IHM_HORIZONTAL) {
+				return group->_position + pt_2d(0.0, group->_element_size.y) + pt_2d(0.0, default_group_margin);
+			}
+			else if (group->_orientation == GL_IHM_VERTICAL) {
+				return group->_position + pt_2d(group->_element_size.x, 0.0) + pt_2d(default_group_margin, 0.0);
+			}
+		}
+		else {
+			std::cerr << "GLIHM::parse_json_position : before_or_after = " << before_or_after << " non reconnu\n";
+			return pt_2d(0.0);
+		}
+	}
+	catch (...) {
+
+	}
+	
+	pt_2d position(0.0);
+	try {
+		position.x = json_position[0];
+	}
+	catch (...) {
+		std::string position_x_str = json_position[0];
+		if (position_x_str == "left") {
+			position.x = -0.5 * _screengl->_gl_width + SCREEN_LIMITS_MARGIN;
+		}
+		else if (position_x_str == "right") {
+			position.x = 0.5 * _screengl->_gl_width - element_size.x - SCREEN_LIMITS_MARGIN;
+		}
+		else {
+			std::cerr << "GLIHM::parse_json_position : " << position_x_str << " non reconnu\n";
+			return pt_2d(0.0);
+		}
+	}
+	try {
+		position.y = json_position[1];
+	}
+	catch (...) {
+		std::string position_y_str = json_position[1];
+		if (position_y_str == "bottom") {
+			position.y = -0.5 * _screengl->_gl_height + SCREEN_LIMITS_MARGIN;
+		}
+		else if (position_y_str == "top") {
+			position.y = 0.5 * _screengl->_gl_height - element_size.y - SCREEN_LIMITS_MARGIN;
+		}
+		else {
+			std::cerr << "GLIHM::parse_json_position : " << position_y_str << " non reconnu\n";
+			return pt_2d(0.0);
+		}
+	}
+
+	return position;
+}
+
+
 GLIHMGroup * GLIHM::add_group(std::string name, GL_IHM_GROUP_TYPE type, GL_IHM_GROUP_ORIENTATION orientation, pt_2d position, pt_2d element_size, number margin) {
 	GLIHMGroup * group = new GLIHMGroup(name, type, orientation, position, element_size, margin);
 	_groups.push_back(group);
 	return group;
+}
+
+
+GLIHMGroup * GLIHM::get_group(std::string name) {
+	for (auto & group : _groups) {
+		if (group->_name == name) {
+			return group;
+		}
+	}
+	std::cerr << "GLIHM::get_group : " << name << " non reconnu\n";
+	return NULL;
 }
 
 
@@ -660,7 +791,6 @@ bool GLIHM::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
 
 
 std::ostream & operator << (std::ostream & os, const GLIHM & ihm) {
-	os << "texture_root = " << ihm._texture_root << " ; groups =\n";
 	for (auto & group : ihm._groups) {
 		os << *group;
 	}

@@ -46,6 +46,14 @@ void ScreenGL::gl2screen(number x, number y, int & i, int & j) {
 }
 
 
+std::ostream & operator << (std::ostream & os, const ScreenGL & screengl) {
+	os << "screen_width = " << screengl._screen_width << " ; screen_height = " << screengl._screen_height;
+	os << " ; gl_width = " << screengl._gl_width << " ; gl_height = " << screengl._gl_height;
+	return os;
+}
+
+
+// -------------------------------------------------------------------------------------------------
 void gl_versions() {
 	const GLubyte * renderer= glGetString(GL_RENDERER);
 	const GLubyte * vendor= glGetString(GL_VENDOR);

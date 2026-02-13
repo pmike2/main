@@ -2,8 +2,8 @@
 
 uniform sampler2DArray fow_texture_array;
 uniform float idx_team;
-uniform vec2 elevation_size;
-uniform vec2 elevation_origin;
+uniform vec2 size;
+uniform vec2 origin;
 uniform float fow_active;
 
 
@@ -38,7 +38,7 @@ void main() {
 	vec3 v1 = p2 - p1;
 	vec3 n = normalize(cross(v0, v1));
 
-	float fow = texture(fow_texture_array, vec3((gs_in[0].vertex_position.x - elevation_origin.x) / elevation_size.x, (gs_in[0].vertex_position.y - elevation_origin.y) / elevation_size.y, idx_team)).r;
+	float fow = texture(fow_texture_array, vec3((gs_in[0].vertex_position.x - origin.x) / size.x, (gs_in[0].vertex_position.y - origin.y) / size.y, idx_team)).r;
 	fow = (1.0 - step(0.5, fow_active)) * 1.0 + step(0.5, fow_active) * fow;
 
 	gl_Position = (1.0 - step(0.7, fow)) * vec4(0.0) + step(0.7, fow) * (gl_in[0].gl_Position + vec4(gs_in[0].hit * n, 0.0));

@@ -38,8 +38,13 @@ struct Map {
 	Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t);
 	~Map();
 	
-	bool add_unit_check(UNIT_TYPE type, pt_2d pos);
+	bool add_unit_check(Team * team, UNIT_TYPE type, pt_2d pos);
+	bool add_unit_fow_check(Team * team, pt_2d pos);
+	bool move_unit_check(Unit * unit, pt_2d pos);
+	bool attack_unit_check(Unit * attacking_unit, Unit * attacked_unit);
+
 	Unit * add_unit(Team * team, UNIT_TYPE type, pt_2d pos);
+	void add_first_units2teams();
 	void add_river(pt_2d pos);
 	void add_lake(pt_2d pos);
 	void add_trees(std::string species_name, pt_2d pos, uint n_trees, number dispersion);
@@ -58,13 +63,11 @@ struct Map {
 
 	void update_alti_grid();
 	void update_elevation_grid();
-	
 	void update_terrain_grid_with_elevation();
+	void sync2elevation();
 
 	void add_element_to_terrain_grid(Element * element);
 	void remove_element_from_terrain_grid(Element * element);
-	
-	void sync2elevation();
 	
 	std::vector<uint_pair> waiting_unit_positions_edges(Unit * unit, UnitType * unit_type);
 	void fill_unit_path_edges(Unit * unit);
@@ -85,15 +88,16 @@ struct Map {
 	friend std::ostream & operator << (std::ostream & os, Map & map);
 
 
+	AABB_2D * _aabb;
 	static uint _next_unit_id;
 	std::map<UNIT_TYPE, UnitType *> _unit_types;
 	std::map<std::string, AmmoType * > _ammo_types;
-	PathFinder * _path_finder;
 	Elevation * _elevation;
 	Elements * _elements;
 	std::vector<Team *> _teams;
 	std::vector<Ammo *> _ammos;
 
+	PathFinder * _path_finder;
 	std::thread _path_find_thr;
 	bool _path_find_thr_running;
 	SafeQueue<PathFinderInput *> _path_queue_thr_input;

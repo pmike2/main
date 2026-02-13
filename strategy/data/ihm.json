@@ -3,67 +3,35 @@
 	"texture_size" : 512,
 	"texture_slider_background" : "slider_background.png",
 	"default_element_size" : [0.3, 0.3],
-	"default_margin" : 0.05,
+	"default_group_margin" : 0.1,
+	"default_element_margin" : 0.05,
 	"groups" : [
-		{
-			"name" : "general",
-			"type" : "checkbox",
-			"position" : [-5.0, 2.5],
-			"orientation" : "horizontal",
-			"elements" : [
-				{"name" : "show_info"},
-				{"name" : "units_paused"}
-			]
-		},
-		{
-			"name" : "teams",
-			"type" : "radio",
-			"position" : [-4.0, 2.5],
-			"orientation" : "horizontal",
-			"elements" : [
-				{"name" : "Team1"},
-				{"name" : "Team2"}
-			]
-		},
-		{
-			"name" : "ia",
-			"type" : "checkbox",
-			"position" : [-3.0, 2.5],
-			"orientation" : "horizontal",
-			"elements" : [
-				{"name" : "Team1"},
-				{"name" : "Team2"}
-			]
-		},
-		{
-			"name" : "mode",
-			"type" : "radio",
-			"position" : [-5.0, 1.0],
-			"orientation" : "vertical",
-			"elements" : [
-				{"name" : "view"},
-				{"name" : "play", "groups_visible" : ["play_mode"]},
-				{"name" : "add_unit", "groups_visible" : ["units"]},
-				{"name" : "add_element", "groups_visible" : ["elements", "elements_params"]},
-				{"name" : "edit_elevation", "groups_visible" : ["elevation", "edit_elevation_params"]},
-				{"name" : "erase", "groups_visible" : ["erase_params"]}
-			]
-		},
 		{
 			"name" : "play_mode",
 			"type" : "radio",
-			"position" : [-4.5, 1.0],
+			"position" : ["left", 1.0],
 			"orientation" : "vertical",
 			"elements" : [
 				{"name" : "select_unit"},
-				{"name" : "move_unit"},
-				{"name" : "attack_unit"}
+				{"name" : "action_unit", "groups_visible" : ["unit_action"]},
+				{"name" : "add_unit", "groups_visible" : ["units"]}
+			]
+		},
+		{
+			"name" : "unit_action",
+			"type" : "radio",
+			"position" : "after:play_mode",
+			"orientation" : "vertical",
+			"elements" : [
+				{"name" : "watch"},
+				{"name" : "move"},
+				{"name" : "attack"}
 			]
 		},
 		{
 			"name" : "units",
 			"type" : "radio",
-			"position" : [-4.5, 1.0],
+			"position" : "after:play_mode",
 			"orientation" : "vertical",
 			"elements" : [
 				{"name" : "INFANTERY", "key" : "i"},
@@ -73,32 +41,97 @@
 			]
 		},
 		{
-			"name" : "elements",
+			"name" : "edit",
+			"type" : "checkbox",
+			"position" : ["left", "top"],
+			"orientation" : "horizontal",
+			"elements" : [
+				{
+					"name" : "edit",
+					"groups_visible" : ["general_info", "teams", "ia", "edit_mode", "global_edit", "visu"],
+					"groups_invisible" : ["play_mode"]
+				}
+			]
+		},
+		{
+			"name" : "general_info",
+			"type" : "checkbox",
+			"position" : "after:edit",
+			"orientation" : "horizontal",
+			"elements" : [
+				{"name" : "show_info"},
+				{"name" : "units_paused"}
+			]
+		},
+		{
+			"name" : "teams",
 			"type" : "radio",
-			"position" : [-4.5, 1.0],
+			"position" : ["right", "top"],
 			"orientation" : "vertical",
 			"elements" : [
-				{"name" : "TREE", "key" : "t"},
-				{"name" : "STONE", "key" : "s"},
+				{"name" : "Team1"},
+				{"name" : "Team2"}
+			]
+		},
+		{
+			"name" : "ia",
+			"type" : "checkbox",
+			"position" : "before:teams",
+			"orientation" : "vertical",
+			"elements" : [
+				{"name" : "Team1"},
+				{"name" : "Team2", "checked" : true}
+			]
+		},
+		{
+			"name" : "edit_mode",
+			"type" : "radio",
+			"position" : ["left", 0.0],
+			"orientation" : "vertical",
+			"elements" : [
+				{"name" : "add_element", "groups_visible" : ["elements"]},
+				{"name" : "edit_elevation", "groups_visible" : ["elevation", "edit_elevation_params"]},
+				{"name" : "erase", "groups_visible" : ["erase_params"]}
+			]
+		},
+		{
+			"name" : "elements",
+			"type" : "radio",
+			"position" : "after:edit_mode",
+			"orientation" : "vertical",
+			"elements" : [
+				{"name" : "TREE", "key" : "t", "groups_visible" : ["tree_params"]},
+				{"name" : "STONE", "key" : "s", "groups_visible" : ["stone_params"]},
 				{"name" : "RIVER", "key" : "r"},
 				{"name" : "LAKE", "key" : "l"}
 			]
 		},
 		{
-			"name" : "elements_params",
+			"name" : "tree_params",
 			"type" : "slider",
-			"position" : [-4.0, -1.0],
-			"element_size" : [0.4, 2.0],
+			"position" : "after:elements",
+			"element_size" : [0.2, 2.0],
 			"orientation" : "horizontal",
 			"elements" : [
-				{"name" : "n_elements", "min_value" : 1.0, "max_value" : 100.0},
-				{"name" : "elements_dispersion", "min_value" : 0.5, "max_value" : 8.0}
+				{"name" : "n_trees", "min_value" : 1.0, "max_value" : 100.0},
+				{"name" : "trees_dispersion", "min_value" : 0.5, "max_value" : 8.0}
+			]
+		},
+		{
+			"name" : "stone_params",
+			"type" : "slider",
+			"position" : "after:elements",
+			"element_size" : [0.2, 2.0],
+			"orientation" : "horizontal",
+			"elements" : [
+				{"name" : "n_stones", "min_value" : 1.0, "max_value" : 100.0},
+				{"name" : "stones_dispersion", "min_value" : 0.5, "max_value" : 8.0}
 			]
 		},
 		{
 			"name" : "elevation",
 			"type" : "radio",
-			"position" : [-4.5, 1.0],
+			"position" : "after:edit_mode",
 			"orientation" : "vertical",
 			"elements" : [
 				{"name" : "ELEVATION_ZERO"},
@@ -109,8 +142,8 @@
 		{
 			"name" : "edit_elevation_params",
 			"type" : "slider",
-			"position" : [-4.0, -1.0],
-			"element_size" : [0.4, 2.0],
+			"position" : "after:elevation",
+			"element_size" : [0.2, 2.0],
 			"orientation" : "horizontal",
 			"elements" : [
 				{"name" : "elevation_radius", "min_value" : 1.0, "max_value" : 50.0},
@@ -121,8 +154,8 @@
 		{
 			"name" : "erase_params",
 			"type" : "slider",
-			"position" : [-4.0, -1.0],
-			"element_size" : [0.4, 2.0],
+			"position" : "after:edit_mode",
+			"element_size" : [0.2, 2.0],
 			"orientation" : "horizontal",
 			"elements" : [
 				{"name" : "erase_radius", "min_value" : 1.0, "max_value" : 50.0}
@@ -131,7 +164,7 @@
 		{
 			"name" : "global_edit",
 			"type" : "button",
-			"position" : [-4.0, -3.0],
+			"position" : ["left", "bottom"],
 			"orientation" : "horizontal",
 			"elements" : [
 				{"name" : "randomize", "key" : "r"},
@@ -143,8 +176,8 @@
 		{
 			"name" : "visu",
 			"type" : "checkbox",
-			"position" : [0.0, -3.0],
-			"orientation" : "horizontal",
+			"position" : ["right", 0.0],
+			"orientation" : "vertical",
 			"elements" : [
 				{"name" : "repere"},
 				{"name" : "elevation", "checked" : true},
@@ -154,14 +187,14 @@
 				{"name" : "bbox"},
 				{"name" : "grid", "groups_visible" : ["grid_type", "grid_unit_type"]},
 				{"name" : "unit_life", "checked" : true},
-				{"name" : "fow", "checked" : false}
+				{"name" : "fow", "checked" : true}
 			]
 		},
 		{
 			"name" : "grid_type",
 			"type" : "radio",
-			"position" : [0.0, -2.5],
-			"orientation" : "horizontal",
+			"position" : "before:visu",
+			"orientation" : "vertical",
 			"elements" : [
 				{"name" : "TERRAIN"},
 				{"name" : "ELEVATION"},
@@ -171,8 +204,8 @@
 		{
 			"name" : "grid_unit_type",
 			"type" : "radio",
-			"position" : [0.0, -2.0],
-			"orientation" : "horizontal",
+			"position" : "before:grid_type",
+			"orientation" : "vertical",
 			"elements" : [
 				{"name" : "INFANTERY"},
 				{"name" : "TANK"},

@@ -321,27 +321,64 @@ void Elevation::set_negative_alti_2zero() {
 }
 
 
+void Elevation::set_alti_disk(pt_2d center, number radius, ELEVATION_MODE mode, number factor, number exponent) {
+	AABB_2D * aabb = new AABB_2D(pt_2d(center) - pt_2d(radius), 2.0 * pt_2d(radius));
+	std::vector<uint> ids = vertices_in_aabb(aabb);
+
+	for (auto id : ids) {
+		number dist = glm::distance(pt_2d(center), id2pt_2d(id)) / radius;
+		if (dist > 1.0) {
+			continue;
+		}
+		number alti_inc = factor * (1.0 - pow(dist, exponent));
+		number new_alti;
+
+		if (mode == ELEVATION_MINUS) {
+			new_alti = get_alti(id) - alti_inc;
+		}
+		else if (mode == ELEVATION_PLUS) {
+			new_alti = get_alti(id) + alti_inc;
+		}
+		else if (mode == ELEVATION_ZERO) {
+			new_alti = DEFAULT_ELEVATION;
+		}
+
+		if (abs(new_alti) < 0.01) {
+			new_alti = DEFAULT_ELEVATION;
+		}
+
+		set_alti(id, new_alti);
+	}
+
+	// buffer pour mettre à jour un peu autour du AABB modifié (voir note TODO dans graph.h / aabb2col_lig_min_max)
+	aabb->buffer(_resolution.x + 0.01);
+	update_normals(aabb);
+	update_data(aabb);
+	delete aabb;
+}
+
+
 void Elevation::randomize() {
 	// https://www.redblobgames.com/maps/Elevation-from-noise/
 	// https://gamedev.stackexchange.com/questions/116205/terracing-mountain-features/188513
 
-	number alti_offset = -5.0;
-	uint n_levels = 5;
-	uint gradient_base_size = 10;
-	number max_factor = 40.0;
-	number redistribution_power = 0.8;
-	number fudge_factor = 1.5;
-	number mix_island = 0.4;
-	number island_max_alti = 20.0;
-	number terrace_factor = 0.5;
-	number terrace_hmin = 1.0;
-	number terrace_hmax = 4.0;
-	number terrace_perlin_factor = 20.0;
-	uint terrace_gradient_w= 4;
-	uint terrace_gradient_h= 4;
-
-	std::vector<number> amplitudes {1.0, 0.5, 0.25, 0.12, 0.06};
-	//std::vector<number> amplitudes {1.0, 0.5, 0.33, 0.25, 0.2};
+	const number alti_offset = -5.0;
+	const uint n_levels = 5;
+	const uint gradient_base_size = 10;
+	const number max_factor = 40.0;
+	const number redistribution_power = 0.8;
+	const number fudge_factor = 1.5;
+	const number mix_island = 0.4;
+	const number island_max_alti = 20.0;
+	const number terrace_factor = 0.5;
+	const number terrace_hmin = 1.0;
+	const number terrace_hmax = 4.0;
+	const number terrace_perlin_factor = 20.0;
+	const uint terrace_gradient_w= 4;
+	const uint terrace_gradient_h= 4;
+	const std::vector<number> amplitudes {1.0, 0.5, 0.25, 0.12, 0.06};
+	//const std::vector<number> amplitudes {1.0, 0.5, 0.33, 0.25, 0.2};
+	
 	number amp_sum = 0.0;
 	for (auto & a : amplitudes) {
 		amp_sum += a;
@@ -442,6 +479,25 @@ void Elevation::randomize() {
 
 	update_normals();
 	update_data();
+
+	for (uint i=0; i<10; ++i) {
+		pt_2d center = rand_pt_2d(_origin, _origin + _size);
+		number radius = rand_number(20.0, 100.0);
+		ELEVATION_MODE mode;
+		number x = rand_number(0.0, 1.0);
+		if (x < 0.1) {
+			mode = ELEVATION_ZERO;
+		}
+		else if (x < 0.6) {
+			mode = ELEVATION_PLUS;
+		}
+		else {
+			mode = ELEVATION_MINUS;
+		}
+		number factor = rand_number(1.0, 8.0);
+		number exponent = rand_number(2.0, 8.0);
+		set_alti_disk(center, radius, mode, factor, exponent);
+	}
 
 	//alti2pbm("../data/test.pgm");
 }

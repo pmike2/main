@@ -4,8 +4,8 @@
 uniform mat4 world2clip_matrix;
 uniform sampler2DArray fow_texture_array;
 uniform float idx_team;
-uniform vec2 elevation_size;
-uniform vec2 elevation_origin;
+uniform vec2 size;
+uniform vec2 origin;
 uniform float z_fow;
 uniform float fow_active;
 
@@ -23,7 +23,7 @@ void main(void) {
 	vertex_color = color_in;
 	vertex_normal= normalize(normal_in);
 
-	float fow = texture(fow_texture_array, vec3((vertex_position.x - elevation_origin.x) / elevation_size.x, (vertex_position.y - elevation_origin.y) / elevation_size.y, idx_team)).r;
+	float fow = texture(fow_texture_array, vec3((vertex_position.x - origin.x) / size.x, (vertex_position.y - origin.y) / size.y, idx_team)).r;
 	fow = (1.0 - step(0.5, fow_active)) * 1.0 + step(0.5, fow_active) * fow;
 
 	vertex_position = position_in;

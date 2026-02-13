@@ -10,6 +10,7 @@
 
 const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
 const glm::vec4 EDIT_MAP_COLOR(0.0f, 1.0f, 1.0f, 1.0f);
+const glm::vec4 SELECT_COLOR(1.0f, 1.0f, 0.0f, 0.5f);
 
 const number Z_OFFSET_EDGE = 0.05;
 const number Z_OFFSET_UNIT = 0.05;
@@ -19,6 +20,7 @@ const number Z_OFFSET_UNIT_PATH_BBOX = 0.5;
 const number Z_OFFSET_SELECTION = 0.2;
 const number Z_OFFSET_ATTACK_UNIT = 0.2;
 const number Z_OFFSET_MOVE_UNIT = 0.2;
+const number Z_FOW = 1.0;
 
 const glm::vec3 LIGHT_POSITION(0.0f, 0.0f, 50.0f);
 const glm::vec3 LIGHT_COLOR(1.0f);
@@ -65,11 +67,15 @@ const number EPS_UNIT_TYPE_BUFFER_SIZE = 0.1;
 const number UNIT_DIST_PATH_EPS = 0.5;
 const number MAX_UNIT_MOVING_WEIGHT = 100.0;
 
+// pas 0.0 pour qu'il n'y ait pas de z-fight avec SEA_LEVEL = 0.0
+const number DEFAULT_ELEVATION = -0.01;
 
-enum STRATEGY_MODE {VIEW, PLAY, ADD_UNIT, ADD_ELEMENT, EDIT_ELEVATION, ERASE};
-enum PLAY_MODE {SELECT_UNIT, MOVE_UNIT, ATTACK_UNIT};
 
-enum UNIT_STATUS {WAITING, MOVING, ATTACKING, SHOOTING, DESTROYED};
+enum PLAY_MODE {SELECT_UNIT, ADD_UNIT, ACTION_UNIT};
+enum EDIT_MODE {ADD_ELEMENT, EDIT_ELEVATION, ERASE};
+enum UNIT_ACTION_MODE {WATCH, MOVE, ATTACK};
+
+enum UNIT_STATUS {WAITING, WATCHING, MOVING, ATTACKING, SHOOTING, DESTROYED};
 std::string unit_status2str(UNIT_STATUS mode);
 
 enum UNIT_PATH_STATUS {UNIT_PATH_COMPUTING_SUCCESS, UNIT_PATH_COMPUTING_FAILED};
@@ -94,5 +100,7 @@ std::string elevation_mode2str(ELEVATION_MODE e);
 
 enum VISIBLE_GRID_TYPE {ELEVATION, TERRAIN, UNITS_POSITION};
 std::string visible_grid2str(VISIBLE_GRID_TYPE v);
+
+enum FOW_STATUS {UNDISCOVERED, DISCOVERED, WATCHED};
 
 #endif

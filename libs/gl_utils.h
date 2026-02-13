@@ -21,6 +21,7 @@ public:
 	void screen2gl(int i, int j, number & x, number & y);
 	pt_2d screen2gl(int i, int j);
 	void gl2screen(number x, number y, int & i, int & j);
+	friend std::ostream & operator << (std::ostream & os, const ScreenGL & screengl);
 
 
 	int _screen_width, _screen_height;

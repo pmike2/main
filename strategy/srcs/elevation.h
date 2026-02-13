@@ -14,6 +14,8 @@
 #include "geom_2d.h"
 #include "graph.h"
 
+#include "const.h"
+
 
 struct ElevationVertexData {
 	pt_3d _normal;
@@ -49,6 +51,7 @@ struct Elevation : public GraphGrid {
 	void set_alti_over_polygon(Polygon2D * polygon, number alti);
 	void set_alti_all(number alti);
 	void set_negative_alti_2zero();
+	void set_alti_disk(pt_2d center, number radius, ELEVATION_MODE mode, number factor, number exponent);
 	
 	void randomize();
 

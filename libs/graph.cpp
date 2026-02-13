@@ -620,8 +620,20 @@ std::vector<uint> GraphGrid::vertices_in_circle(pt_2d center, number radius) {
 	std::vector<uint> result;
 	for (auto v : l) {
 		pt_2d v_pos = pt_2d(get_vertex(v)._pos);
-		//std::cout << glm_to_string(v_pos) << "\n";
 		if (glm::length(v_pos - center) < radius) {
+			result.push_back(v);
+		}
+	}
+	return result;
+}
+
+
+std::vector<uint> GraphGrid::vertices_in_circle_section(pt_2d center, number radius, number direction_angle, number max_angle) {
+	std::vector<uint> result;
+	std::vector<uint> l = vertices_in_circle(center, radius);
+	for (auto v : l) {
+		pt_2d v_pos = pt_2d(get_vertex(v)._pos);
+		if (glm::dot(glm::normalize(v_pos - center), pt_2d(cos(direction_angle), sin(direction_angle))) > max_angle) {
 			result.push_back(v);
 		}
 	}

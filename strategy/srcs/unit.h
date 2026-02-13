@@ -69,7 +69,7 @@ struct Unit : public InstancePosRot {
 
 
 struct FowVertexData {
-	//FOW_STATUS _status;
+	FOW_STATUS _status;
 	uint _n_units;
 	bool _changed;
 };
@@ -81,6 +81,7 @@ struct Team {
 	~Team();
 	Unit * add_unit(UnitType * type, uint id, pt_2d pos);
 	std::vector<Unit *> get_units_in_aabb(AABB_2D * aabb);
+	std::vector<Unit *> get_selected_units();
 	void remove_unit(Unit * unit);
 	//void remove_units_in_aabb(AABB_2D * aabb);
 	void clear2delete();

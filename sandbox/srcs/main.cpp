@@ -18,26 +18,13 @@
 
 
 int main() {
-	/*pt_3d vmin(0.0, 0.0, 0.0);
-	pt_3d vmax(2.0, 1.0, 100.0);
-	mat_4d model2world = glm::rotate(M_PI * 0.25, pt_3d(0.0, 0.0, 1.0));
-	BBox * bbox = new BBox(vmin, vmax, model2world);
-	BBox_2D * bbox_2d = bbox->bbox2d();
-	std::cout << *bbox_2d << "\n";*/
-
-	/*std::unordered_set<uint> s;
-	s.insert(12);
-	s.insert(38);
-	s.erase(12);
-
-	for (auto & x : s) {
-		std::cout << x << "\n";
-	}*/
-
-	BBox_2D * bbox1 = new BBox_2D(pt_2d(0.0, 0.0), pt_2d(1.0, 1.0));
-	BBox_2D * bbox2 = new BBox_2D(pt_2d(2.0, 2.0), pt_2d(1.1, 1.0));
-	bool x = bbox2d_intersects_bbox2d(bbox1, bbox2);
-	std::cout << x << "\n";
+	std::string position_str = "after:play_mode";
+	int delimiter_pos = position_str.find(":");
+	//std::cout << delimiter_pos << "\n";
+	std::string s = position_str.substr(0, delimiter_pos);
+	std::string group_name = position_str.substr(delimiter_pos + 1);
+	std::cout << s << "\n";
+	std::cout << group_name << "\n";
 
 	return 0;
 }

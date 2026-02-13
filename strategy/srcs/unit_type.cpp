@@ -24,7 +24,8 @@ UnitType::UnitType(std::string json_path) {
 	_max_velocity = js["max_velocity"];
 	_life_init = js["life_init"];
 	_shooting_rate = js["shooting_rate"];
-	_vision = js["vision"];
+	_vision_distance = js["vision_distance"];
+	_vision_angle = js["vision_angle"];
 	_floats = js["floats"];
 	_flies = js["flies"];
 	_ammo_type_str = js["ammo"];

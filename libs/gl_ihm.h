@@ -28,6 +28,7 @@ enum GL_IHM_GROUP_TYPE {GL_IHM_BUTTON, GL_IHM_CHECKBOX, GL_IHM_RADIO, GL_IHM_SLI
 const number Z_IHM = 10.0;
 const number ALPHA_ACTIVE = 1.0;
 const number ALPHA_INACTIVE = 0.5;
+const number SCREEN_LIMITS_MARGIN = 0.1;
 
 
 void fill_aabb2d_data(AABB_2D * aabb, number alpha, uint texture_layer, float * data);
@@ -54,6 +55,7 @@ struct GLIHMElement {
 	number _alpha;
 	AABB_2D * _aabb;
 	std::vector<GLIHMGroup *> _groups_visible;
+	std::vector<GLIHMGroup *> _groups_invisible;
 	bool _active;
 	std::function<void(void)> _active_callback, _inactive_callback;
 	SDL_Keycode _key;
@@ -114,6 +116,8 @@ struct GLIHMGroup {
 	~GLIHMGroup();
 	pt_2d next_element_position();
 	GLIHMElement * add_element(std::string name, std::string texture_path);
+	void set_visible();
+	void set_invisible();
 	friend std::ostream & operator << (std::ostream & os, const GLIHMGroup & g);
 
 
@@ -132,7 +136,9 @@ struct GLIHM {
 	GLIHM();
 	GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string json_path);
 	~GLIHM();
+	pt_2d parse_json_position(json json_position, number default_group_margin, pt_2d element_size);
 	GLIHMGroup * add_group(std::string name, GL_IHM_GROUP_TYPE type, GL_IHM_GROUP_ORIENTATION orientation, pt_2d position, pt_2d element_size, number margin);
+	GLIHMGroup * get_group(std::string name);
 	GLIHMElement * get_element(std::string group_name, std::string element_name);
 	void all_callbacks();
 	void update();
@@ -147,12 +153,8 @@ struct GLIHM {
 	GLDrawManager * _gl_draw_manager;
 	ScreenGL * _screengl;
 	std::vector<GLIHMGroup *> _groups;
-	std::string _texture_root;
 	mat_4d _camera2clip;
 	bool _verbose;
-	pt_2d _default_element_size;
-	number _default_margin;
-	uint _texture_size;
 };
 
 

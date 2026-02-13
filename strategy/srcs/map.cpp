@@ -28,24 +28,40 @@ Map::Map() {
 
 
 Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t) {
+	bool verbose = true;
+
+	_aabb = new AABB_2D(origin, size);
+
+	// ------------------------------------------------
+	if (verbose) {
+		std::cout << "init PathFinder\n";
+	}
 	uint n_ligs_path = uint(size.y / path_resolution.y) + 1;
 	uint n_cols_path = uint(size.x / path_resolution.x) + 1;
+	_path_finder = new PathFinder(origin, size, n_ligs_path, n_cols_path);
+	_path_find_thr_running = true;
+	_path_find_thr= std::thread(&Map::path_find, this);
+	_path_finder_computing = false;
 
+	// ------------------------------------------------
+	if (verbose) {
+		std::cout << "init Elevation\n";
+	}
 	uint n_ligs_elevation = uint(size.y / elevation_resolution.y) + 1;
 	uint n_cols_elevation = uint(size.x / elevation_resolution.x) + 1;
-
 	_elevation = new Elevation(origin, size, n_ligs_elevation, n_cols_elevation);
 
-	_path_finder = new PathFinder(origin, size, n_ligs_path, n_cols_path);
-
+	// ------------------------------------------------
+	if (verbose) {
+		std::cout << "init UnitTypes / AmmoTypes\n";
+	}
 	std::vector<std::string> unit_type_json_paths = list_files(unit_types_dir, "json");
 	for (auto & json_path : unit_type_json_paths) {
 		UnitType * unit_type = new UnitType(json_path);
 		_unit_types[str2unit_type(str_to_upper(basename(json_path)))] = unit_type;
 		_path_finder->add_unit_type(unit_type);
 	}
-	//std::cout << *_unit_types[TANK]->_obj_data << "\n";
-
+	
 	std::vector<std::string> ammo_type_json_paths = list_files(ammo_types_dir, "json");
 	for (auto & json_path : ammo_type_json_paths) {
 		AmmoType * ammo_type = new AmmoType(json_path);
@@ -56,27 +72,18 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 		unit_type.second->_ammo_type = _ammo_types[unit_type.second->_ammo_type_str];
 	}
 
+	// ------------------------------------------------
+	if (verbose) {
+		std::cout << "init Elements\n";
+	}
 	_elements = new Elements(elements_dir + "/tree_species", elements_dir + "/stone_species", _elevation);
 
+	// ------------------------------------------------
+	if (verbose) {
+		std::cout << "init Teams\n";
+	}
 	_teams.push_back(new Team("Team1", glm::vec3(1.0f, 0.0f, 0.0f), _elevation, fow_resolution));
 	_teams.push_back(new Team("Team2", glm::vec3(0.0f, 0.0f, 1.0f), _elevation, fow_resolution));
-
-	sync2elevation();
-
-	_path_find_thr_running = true;
-	_path_find_thr= std::thread(&Map::path_find, this);
-	_path_finder_computing = false;
-
-	for (auto & team : _teams) {
-		while (true) {
-			pt_2d position = rand_pt_2d(origin, origin + size);
-			std::cout << glm_to_string(position) << "\n";
-			if (add_unit_check(INFANTERY, position)) {
-				add_unit(team, INFANTERY, position);
-				break;
-			}
-		}
-	}
 }
 
 
@@ -105,20 +112,17 @@ Map::~Map() {
 
 	_path_find_thr_running = false;
 	_path_find_thr.join();
+
+	delete _aabb;
 }
 
 
-bool Map::add_unit_check(UNIT_TYPE type, pt_2d pos) {
-	if (pos.x < _elevation->_origin.x || pos.y < _elevation->_origin.y || pos.x >= _elevation->_origin.x + _elevation->_size.x || pos.y >= _elevation->_origin.y + _elevation->_size.y) {
+bool Map::add_unit_check(Team * team, UNIT_TYPE type, pt_2d pos) {
+	if (pos.x < _aabb->_pos.x || pos.y < _aabb->_pos.y || pos.x >= _aabb->_pos.x + _aabb->_size.x || pos.y >= _aabb->_pos.y + _aabb->_size.y) {
 		return false;
 	}
 
-	/*AABB_2D * aabb = _unit_types[type]->_obj_data->_aabb->aabb2d();
-	aabb->translate(pos);
-	std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb);
-	delete aabb;*/
-
-	std::vector<uint_pair> edges = _path_finder->edges_in_cell_containing_pt(pos, true);
+	std::vector<uint_pair> edges = _path_finder->edges_in_cell_containing_pt(pos, false);
 
 	for (auto & e : edges) {
 		GraphEdge edge = _path_finder->get_edge(e);
@@ -127,28 +131,81 @@ bool Map::add_unit_check(UNIT_TYPE type, pt_2d pos) {
 			return false;
 		}
 		TERRAIN_TYPE terrain = data->_type[_unit_types[type]];
-		//std::cout << terrain_type2str(terrain) << "\n";
 		if (_unit_types[type]->_terrain_weights[terrain] > MAX_UNIT_MOVING_WEIGHT) {
 			return false;
 		}
 
 		// TODO : ajouter une contrainte d'élévation ?
 	}
-	
+
+	return true;
+}
+
+
+bool Map::add_unit_fow_check(Team * team, pt_2d pos) {
+	std::vector<uint> vertices = team->_fow->vertices_in_cell_containing_pt(pos);
+	for (auto & v : vertices) {
+		GraphVertex vertex = team->_fow->get_vertex(v);
+		FowVertexData * data = (FowVertexData *)(vertex._data);
+		if (data->_status == UNDISCOVERED) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+bool Map::move_unit_check(Unit * unit, pt_2d pos) {
+	std::vector<uint> vertices = unit->_team->_fow->vertices_in_cell_containing_pt(pos);
+	for (auto & v : vertices) {
+		GraphVertex vertex = unit->_team->_fow->get_vertex(v);
+		FowVertexData * data = (FowVertexData *)(vertex._data);
+		if (data->_status == UNDISCOVERED) {
+			return false;
+		}
+	}
+	return true;
+}
+
+
+bool Map::attack_unit_check(Unit * attacking_unit, Unit * attacked_unit) {
+	std::vector<uint> vertices = attacking_unit->_team->_fow->vertices_in_cell_containing_pt(pt_2d(attacked_unit->_position));
+	for (auto & v : vertices) {
+		GraphVertex vertex = attacking_unit->_team->_fow->get_vertex(v);
+		FowVertexData * data = (FowVertexData *)(vertex._data);
+		if (data->_status == UNDISCOVERED) {
+			return false;
+		}
+	}
 	return true;
 }
 
 
 Unit * Map::add_unit(Team * team, UNIT_TYPE type, pt_2d pos) {
-	if (!add_unit_check(type, pos)) {
-		return NULL;
-	}
-
 	Unit * unit = team->add_unit(_unit_types[type], _next_unit_id, pos);
 	_next_unit_id++;
 	add_unit_to_position_grid(unit);
 
 	return unit;
+}
+
+
+void Map::add_first_units2teams() {
+	for (auto & team : _teams) {
+		uint compt = 0;
+		while (true) {
+			compt++;
+			if (compt > 100) {
+				std::cerr << "Map::add_first_units2teams : impossible de trouver un endroit\n";
+				break;
+			}
+			pt_2d position = rand_pt_2d(_aabb->_pos, _aabb->_pos + _aabb->_size);
+			if (add_unit_check(team, INFANTERY, position)) {
+				add_unit(team, INFANTERY, position);
+				break;
+			}
+		}
+	}
 }
 
 
@@ -196,8 +253,6 @@ void Map::add_river(pt_2d pos) {
 
 		delete polygon_buffered;
 	}
-
-	sync2elevation();
 }
 
 
@@ -268,8 +323,6 @@ void Map::add_lake(pt_2d pos) {
 
 		delete polygon_buffered;
 	}
-
-	sync2elevation();
 }
 
 
@@ -285,9 +338,6 @@ void Map::add_trees(std::string species_name, pt_2d pos, uint n_trees, number di
 			continue;
 		}
 
-		//AABB_2D * aabb = tree->_bbox->_aabb->aabb2d();
-		//update_terrain_grid_with_aabb(aabb);
-		//delete aabb;
 		add_element_to_terrain_grid(tree);
 	}
 }
@@ -304,10 +354,7 @@ void Map::add_stones(std::string species_name, pt_2d pos, uint n_stones, number 
 			continue;
 		}
 
-		//AABB_2D * aabb = stone->_bbox->_aabb->aabb2d();
-		//update_terrain_grid_with_aabb(stone->_bbox->_aabb->aabb2d());
 		add_element_to_terrain_grid(stone);
-		//delete aabb;
 	}
 }
 
@@ -488,6 +535,13 @@ void Map::update_terrain_grid_with_elevation() {
 }
 
 
+void Map::sync2elevation() {
+	update_alti_grid();
+	update_elevation_grid();
+	update_terrain_grid_with_elevation();
+}
+
+
 void Map::add_element_to_terrain_grid(Element * element) {
 	for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
@@ -515,13 +569,6 @@ void Map::remove_element_from_terrain_grid(Element * element) {
 			data->_type[unit_type] = TERRAIN_GROUND;
 		}
 	}
-}
-
-
-void Map::sync2elevation() {
-	update_alti_grid();
-	update_elevation_grid();
-	update_terrain_grid_with_elevation();
 }
 
 
@@ -860,21 +907,20 @@ void Map::clear() {
 	clear_elements();
 
 	_elevation->set_alti_all(1.0);
-	
 	sync2elevation();
 }
 
 
 
 void Map::randomize() {
-	clear();
+	clear_units();
+	clear_elements();
 	
 	_elevation->randomize();
-	
 	sync2elevation();
 
 	for (uint i=0; i<50; ++i) {
-		pt_2d pt = rand_gaussian(_elevation->_origin + 0.5 * _elevation->_size, 0.3 * _elevation->_size);
+		pt_2d pt = rand_gaussian(_aabb->_pos + 0.5 * _aabb->_size, 0.3 * _aabb->_size);
 		if (!_elevation->in_boundaries(pt)) {
 			continue;
 		}
@@ -888,7 +934,7 @@ void Map::randomize() {
 	}
 
 	for (uint i=0; i<50; ++i) {
-		pt_2d pt = rand_gaussian(_elevation->_origin + 0.5 * _elevation->_size, 0.3 * _elevation->_size);
+		pt_2d pt = rand_gaussian(_aabb->_pos + 0.5 * _aabb->_size, 0.3 * _aabb->_size);
 		if (!_elevation->in_boundaries(pt)) {
 			continue;
 		}
