@@ -235,6 +235,69 @@ void UnitPath::update_active_intervals() {
 }
 
 
+json UnitPath::get_json() {
+	json result;
+
+	//result["start_id"] = _start_id;
+	//result["goal_id"] = _goal_id;
+	result["start"] = json::array();
+	result["start"].push_back(_start.x);
+	result["start"].push_back(_start.y);
+	result["start"].push_back(_start.z);
+	result["goal"].push_back(_goal.x);
+	result["goal"].push_back(_goal.y);
+	result["goal"].push_back(_goal.z);
+	result["nodes"] = json::array();
+	for (auto & node : _nodes) {
+		result["nodes"].push_back(node);
+	}
+	result["idx_path"] = _idx_path;
+	result["use_line_of_sight"] = _use_line_of_sight;
+	
+	result["pts"] = json::array();
+	for (auto & pt : _pts) {
+		json js_pt = json::array();
+		js_pt.push_back(pt.x);
+		js_pt.push_back(pt.y);
+		js_pt.push_back(pt.z);
+		result["pts"].push_back(js_pt);
+	}
+	
+	result["pts_los"] = json::array();
+	for (auto & pt : _pts_los) {
+		json js_pt = json::array();
+		js_pt.push_back(pt.x);
+		js_pt.push_back(pt.y);
+		js_pt.push_back(pt.z);
+		result["pts_los"].push_back(js_pt);
+	}
+	
+	result["intervals"] = json::array();
+	for (auto & interval : _intervals) {
+		json js_interval;
+		js_interval["weight"] = interval->_weight;
+		js_interval["bbox"] = json::object();
+		js_interval["bbox"]["center"] = json::array({interval->_bbox->_center.x, interval->_bbox->_center.y});
+		js_interval["bbox"]["half_size"] = json::array({interval->_bbox->_half_size.x, interval->_bbox->_half_size.y});
+		js_interval["bbox"]["alpha"] = interval->_bbox->_alpha;
+		result["intervals"].push_back(js_interval);
+	}
+
+	result["intervals_los"] = json::array();
+	for (auto & interval : _intervals_los) {
+		json js_interval;
+		js_interval["weight"] = interval->_weight;
+		js_interval["bbox"] = json::object();
+		js_interval["bbox"]["center"] = json::array({interval->_bbox->_center.x, interval->_bbox->_center.y});
+		js_interval["bbox"]["half_size"] = json::array({interval->_bbox->_half_size.x, interval->_bbox->_half_size.y});
+		js_interval["bbox"]["alpha"] = interval->_bbox->_alpha;
+		result["intervals_los"].push_back(js_interval);
+	}
+
+	return result;
+}
+
+
 std::ostream & operator << (std::ostream & os, UnitPath & p) {
 	os << "pts = ";
 	for (auto pt : p._pts) {

@@ -75,6 +75,7 @@ public:
 	~Tree();
 	void gen_branches(Tree * tree, Branch * branch);
 	void update_data();
+	json get_json();
 	friend std::ostream & operator << (std::ostream & os, const Tree & t);
 
 

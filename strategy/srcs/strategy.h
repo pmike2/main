@@ -26,25 +26,25 @@ struct StrategyConfig {
 
 	bool _edit;
 	bool _show_info;
+	bool _units_paused;
+	bool _fow_active;
 	PLAY_MODE _play_mode;
 	EDIT_MODE _edit_mode;
 	UNIT_ACTION_MODE _unit_action_mode;
 	VISIBLE_GRID_TYPE _visible_grid_type;
 	UNIT_TYPE _visible_grid_unit_type;
-	UNIT_TYPE _unit_type;
+	UNIT_TYPE _add_unit_type;
 	ELEMENT_TYPE _element_type;
 	ELEVATION_MODE _elevation_mode;
 	number _elevation_radius;
 	number _elevation_factor;
 	number _elevation_exponent;
-	uint _n_trees;
 	number _trees_dispersion;
-	uint _n_stones;
 	number _stones_dispersion;
 	number _erase_radius;
-	bool _units_paused;
+	uint _n_trees;
+	uint _n_stones;
 	uint _selected_team_idx;
-	bool _fow_active;
 };
 
 
@@ -114,6 +114,7 @@ public:
 	StrategyConfig * _config;
 
 	pt_3d _cursor_world_position;
+	bool _cursor_in_world;
 	bool _cursor_hover_ihm;
 	Unit * _cursor_hover_unit;
 

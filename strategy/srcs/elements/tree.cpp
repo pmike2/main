@@ -333,6 +333,20 @@ void Tree::update_data() {
 }
 
 
+json Tree::get_json() {
+	json result;
+	
+	result["type"] = element_type2str(_type);
+	result["position"] = json::array();
+	result["position"].push_back(_position.x);
+	result["position"].push_back(_position.y);
+	//result["position"].push_back(_position.z);
+	result["species"] = _species->_name;
+
+	return result;
+}
+
+
 std::ostream & operator << (std::ostream & os, const Tree & t) {
 	for (auto branch : t._branches) {
 		os << *branch << "\n";

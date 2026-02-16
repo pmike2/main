@@ -8,7 +8,7 @@
 #include "utile.h"
 
 
-const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 1.0f);
+const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 0.7f);
 const glm::vec4 EDIT_MAP_COLOR(0.0f, 1.0f, 1.0f, 1.0f);
 const glm::vec4 SELECT_COLOR(1.0f, 1.0f, 0.0f, 0.5f);
 
@@ -73,10 +73,11 @@ const number DEFAULT_ELEVATION = -0.01;
 
 enum PLAY_MODE {SELECT_UNIT, ADD_UNIT, ACTION_UNIT};
 enum EDIT_MODE {ADD_ELEMENT, EDIT_ELEVATION, ERASE};
-enum UNIT_ACTION_MODE {WATCH, MOVE, ATTACK};
+enum UNIT_ACTION_MODE {WAIT, WATCH, MOVE, ATTACK};
 
 enum UNIT_STATUS {WAITING, WATCHING, MOVING, ATTACKING, SHOOTING, DESTROYED};
 std::string unit_status2str(UNIT_STATUS mode);
+UNIT_STATUS str2unit_status(std::string s);
 
 enum UNIT_PATH_STATUS {UNIT_PATH_COMPUTING_SUCCESS, UNIT_PATH_COMPUTING_FAILED};
 

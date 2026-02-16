@@ -1,0 +1,82 @@
+{
+    "teams": [
+        {
+            "color": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "name": "Team1",
+            "units": [
+                {
+                    "id": 1,
+                    "life": 30.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        -77.48,
+                        -52.46
+                    ],
+                    "status": "WAITING",
+                    "type": "INFANTERY"
+                }
+            ]
+        },
+        {
+            "color": [
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "Team2",
+            "units": [
+                {
+                    "id": 2,
+                    "life": 30.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        69.68,
+                        25.739999999999995
+                    ],
+                    "status": "WAITING",
+                    "type": "INFANTERY"
+                }
+            ]
+        }
+    ]
+}

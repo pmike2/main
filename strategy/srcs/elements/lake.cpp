@@ -138,10 +138,17 @@ void Lake::update_data() {
 			ptr += 7;
 		}
 	}
-
-	/*for (int i=0; i<_n_pts * _n_attrs_per_pts; ++i) {
-		std::cout << _data[i] << " ; ";
-	}
-	std::cout << "\n";*/
 }
 
+
+json Lake::get_json() {
+	json result;
+	
+	result["type"] = element_type2str(_type);
+	result["position"] = json::array();
+	result["position"].push_back(_position.x);
+	result["position"].push_back(_position.y);
+	//result["position"].push_back(_position.z);
+
+	return result;
+}

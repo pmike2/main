@@ -61,7 +61,8 @@ struct Elevation : public GraphGrid {
 	void update_data(int col_min, int col_max, int lig_min, int lig_max);
 	void update_data(AABB_2D * aabb);
 	
-	void alti2pbm(std::string pbm_path);
+	void write(std::string path);
+	void read(std::string path);
 
 
 	float * _data;

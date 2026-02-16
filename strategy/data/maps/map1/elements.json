@@ -1,0 +1,1444 @@
+{
+    "elements": [
+        {
+            "position": [
+                8.276908814481178,
+                -44.39413022328856
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                9.937515082166483,
+                -41.29459072744773
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                9.616688650629904,
+                -37.10708134804124
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                12.3404150409451,
+                -45.30027666842784
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                16.504893410607487,
+                -46.70725375819683
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                12.832926642171447,
+                -38.01413150887224
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                14.308586671039745,
+                -40.90272734432699
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                12.301178238767973,
+                -40.37625434868013
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                16.96500642492555,
+                -38.87414068230265
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                13.329523138255368,
+                -40.7769990040985
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                10.733821792354643,
+                -42.625336198101266
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                11.373778942218294,
+                -43.23874154700481
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                17.563347514336556,
+                -42.585482823803744
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                10.911783032124621,
+                -47.45391433277816
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                16.08743130997602,
+                -40.16303003788667
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                15.751486056324882,
+                -42.630887523674964
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                12.900554383013114,
+                -43.50292724408411
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                6.907445344236713,
+                -46.242292540037994
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                13.561608414763082,
+                -38.065999854423325
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                9.474702495893451,
+                -37.19599942450188
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -16.218433922510005,
+                16.98239537282641
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -18.18588018098826,
+                24.15400630486813
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -16.729587594140778,
+                19.839719101376854
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -11.775405770887817,
+                23.64994077304332
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -18.593801242654667,
+                18.246662029313523
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -9.697677889138198,
+                20.990373982783524
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -17.392343209866198,
+                15.049690175515796
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -17.968620335387968,
+                17.86005000231669
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -15.960862062205818,
+                20.867305123689526
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -18.208549807058233,
+                20.954335707192577
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -16.260809669808218,
+                23.888936014222125
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -14.935252532107151,
+                18.792887727223054
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -17.806385235533423,
+                20.52463238375535
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -11.605764904475992,
+                18.50598893358828
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -13.03035043380627,
+                18.51208714181746
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -18.36508901537725,
+                18.41286482740684
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -19.58581805596524,
+                21.325800684372354
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -9.786622700760441,
+                24.12991536987505
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -15.418152793004715,
+                11.631226667585423
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -12.743256170973712,
+                21.04031426338457
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                28.62874026488912,
+                -75.1919760951743
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                26.195775030399172,
+                -85.27397656768564
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                26.151549944436567,
+                -83.3071605340463
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                26.025211135209915,
+                -81.1273062833139
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                31.96091558019733,
+                -84.76828068983836
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                29.854629328059637,
+                -80.74018969445787
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                31.917224547916113,
+                -74.59117704728976
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                27.16380913351619,
+                -85.35651386088544
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                31.87942734095249,
+                -82.55933884508359
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                34.597283642771885,
+                -80.07359344099204
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                30.964471747564065,
+                -82.04658949358414
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                33.88084202069096,
+                -83.44373256839744
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                32.0248462739771,
+                -83.68380337335662
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                31.357773293145694,
+                -78.74955982001651
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                32.325533766490665,
+                -78.84648965716133
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                31.389229689371177,
+                -87.20372158806882
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                27.521489409045607,
+                -81.07572259721778
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                33.82012540829749,
+                -84.04645148603085
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                33.20698519138006,
+                -78.20693065455815
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                26.97739644870633,
+                -85.92950066316688
+            ],
+            "species": "oak",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -23.117098252867116,
+                20.017276452934247
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -21.47965739815565,
+                22.317662138927975
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -26.785853626859538,
+                13.383355705340506
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -22.25529992991757,
+                16.91899040730133
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -26.604643723143653,
+                26.300626559770723
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -28.200654265088776,
+                18.276480006993395
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -26.38638381115458,
+                17.683597864479026
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -23.9690203912338,
+                20.578397523019436
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -21.346314849451556,
+                21.439453230879995
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -24.33853160498228,
+                15.988830301644374
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -24.11407520096231,
+                20.582301330967248
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -29.655177485829263,
+                16.930506444315107
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -21.842943507570034,
+                19.92328686578867
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -26.774161721120336,
+                19.170448425725468
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -27.076755678068068,
+                19.140389694447055
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -22.943640317678813,
+                17.004516449558846
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -21.354450813588983,
+                13.597321192657834
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -28.526177430855434,
+                13.97470793741846
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -24.053967504288565,
+                19.27184719783757
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -22.31580994637359,
+                15.476819327842087
+            ],
+            "species": "pine",
+            "type": "TREE"
+        },
+        {
+            "position": [
+                -11.701162102043845,
+                14.438286658175494
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -14.257174384424413,
+                18.813569589824528
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -17.118586572808326,
+                15.776802371897862
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -15.440071069212552,
+                20.199617413786818
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -14.436965309353656,
+                13.584440965131574
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -13.737717456123915,
+                16.136136760642728
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -10.968129867064007,
+                13.932618250916558
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -10.911344252361555,
+                19.734371576150544
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -14.689430424374496,
+                17.3932894706285
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -11.805651903337587,
+                15.394476812461981
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -7.806321337588502,
+                14.08611258416722
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -7.38848112292535,
+                14.581980442055766
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -14.648038981602376,
+                17.51810152475225
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -9.340210256321543,
+                19.220532121010027
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -18.719989867577226,
+                19.593135388293845
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -10.69580582007972,
+                24.056961598591258
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -11.136873862866786,
+                18.043811362326178
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -9.000827059691991,
+                21.42205872495389
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -15.505351241877126,
+                17.172211011441036
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                -14.089144371946684,
+                11.365842245285336
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                68.49946480204639,
+                12.74758426736816
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                71.1243939345449,
+                19.558623519618983
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                62.28633220789254,
+                12.635548427472909
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                69.30140141242354,
+                14.679570568498049
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                64.53523437966373,
+                14.412545280733266
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                65.36316248535913,
+                14.889085271852254
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                67.60212947014317,
+                16.055194395502554
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                69.89160641829302,
+                17.315832987240643
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                66.65418635655622,
+                15.679529212867424
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                65.08209957260364,
+                17.450890675002537
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                68.37833942376713,
+                16.231062317412317
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                65.36853502467058,
+                10.909812791804475
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                63.17849730550931,
+                8.426157127421845
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                63.956524716388785,
+                15.769823038136035
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                74.54446028623354,
+                9.727796404354807
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                69.11374233088908,
+                14.002096012564769
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                63.445040773186086,
+                19.245913838225857
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                65.86506714688187,
+                14.5277432760637
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                67.06354107635477,
+                18.110390437036223
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                70.87718422628552,
+                13.090600609346213
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                29.448914038582537,
+                -63.23655885980423
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                27.94775977680861,
+                -58.95676953133886
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                25.677115243125254,
+                -48.633340571364705
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                30.12230737057872,
+                -51.70855470248668
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                27.46122906931766,
+                -54.52352637892238
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                27.43782228181916,
+                -55.097210118104186
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                29.599070460449877,
+                -53.197828760481876
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                27.630364567565135,
+                -52.9482407673965
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                29.70293829229736,
+                -51.10479883823236
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                35.732675568259225,
+                -54.85594550552968
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                25.20321820116697,
+                -51.82967239956983
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                32.22242386735588,
+                -56.96071299155351
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                35.214661408770965,
+                -53.48481882085687
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                26.119994516243842,
+                -49.57709364238835
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                27.92302320647686,
+                -52.23181660801141
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                28.467541992690663,
+                -56.05079045349243
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                25.998551749064724,
+                -54.99817945185044
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                32.40520227103273,
+                -57.912733408718225
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                25.621535226173926,
+                -54.38534758062994
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                24.1821567945898,
+                -49.08469414114824
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                89.1227973883845,
+                -47.53227378285352
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                88.20459315163019,
+                -39.75570250925592
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                89.1058323704732,
+                -41.86526101136972
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                88.80462070802547,
+                -47.31906836889885
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                86.74959626541725,
+                -48.224742858691144
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                88.63166799588916,
+                -37.2788903345921
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                85.1212300049999,
+                -47.22456499981405
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                92.84102306456717,
+                -45.358293299972516
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                87.33821334671428,
+                -42.07725278045345
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                86.02820243911017,
+                -43.60903113576371
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                88.26216516479293,
+                -43.283064510638766
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                82.69240635466726,
+                -41.36882760767754
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                84.6260683921568,
+                -46.59684968866264
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                89.51612021538078,
+                -39.626330415108185
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                83.04533417256148,
+                -40.990884768479894
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                86.79252834851948,
+                -41.3936390392836
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                89.26192335624016,
+                -39.92710614576021
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                85.1817330396568,
+                -41.97119898549627
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                89.34548908159093,
+                -43.10998179774549
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                91.24556811573369,
+                -40.409953635206605
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                25.664369770559905,
+                -3.8440273844237836
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                25.550584598440818,
+                -5.544648575526642
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                22.643605877078443,
+                -5.81384494736056
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                25.356550991795114,
+                -1.6384562904507318
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                24.939376609717733,
+                0.4674957615537678
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                23.809597047217355,
+                -8.209286320735982
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                27.410642524367532,
+                -1.9110647094095274
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                27.49304428561794,
+                1.1312006184877037
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                21.73625142489408,
+                -5.902842729267645
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                24.262656542199256,
+                -8.646612802517216
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                23.634748461040438,
+                -2.0644536547179384
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                18.25965254379816,
+                -4.652181521322431
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                24.91116865842309,
+                -5.627902970379304
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                23.001252339459132,
+                -4.37739080245412
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                23.025263247046105,
+                -1.8615831896873027
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                26.331924774496695,
+                -1.356894609898793
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                25.407493461288848,
+                -0.8307723190030935
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                20.100997762439235,
+                0.5175240718024183
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                22.334028037510777,
+                -0.9733514148840513
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        },
+        {
+            "position": [
+                28.704518905800903,
+                -2.4229032036570777
+            ],
+            "species": "light_stone",
+            "type": "STONE"
+        }
+    ]
+}

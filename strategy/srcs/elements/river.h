@@ -15,6 +15,7 @@ struct River : public Element {
 	River(Elevation * elevation, pt_2d src);
 	~River();
 	void update_data();
+	json get_json();
 	pt_3d lowest_pt();
 	pt_3d highest_pt();
 

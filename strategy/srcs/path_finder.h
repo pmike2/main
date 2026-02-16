@@ -47,37 +47,6 @@ struct PathFinder : public GraphGrid {
 
 
 	bool _verbose;
-	//UnitPath * _path;
-	//std::mutex _mtx;
-	//bool _computing;
 };
-
-
-/*struct UnitTypeEdgeData {
-	number _delta_elevation;
-	std::vector<uint> _ids;
-	TERRAIN_TYPE _type;
-};*/
-
-
-/*struct EdgeData {
-	std::map<UnitType *, UnitTypeEdgeData> _data;
-};*/
-
-
-/*struct ElevationEdgeData {
-	number _delta_elevation = 0.0;
-};
-
-
-struct UnitsPositionEdgeData {
-	std::vector<uint> _ids;
-};
-
-
-struct TerrainEdgeData {
-	TERRAIN_TYPE _type = UNKNOWN;
-};
-*/
 
 #endif

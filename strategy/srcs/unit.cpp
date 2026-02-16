@@ -56,7 +56,13 @@ void Unit::anim(time_point t) {
 		return;
 	}
 
-	if (_status == WATCHING) {
+	if (_status == WAITING) {
+		_life += _type->_regen;
+		if (_life > _type->_life_init) {
+			_life = _type->_life_init;
+		}
+	}
+	else if (_status == WATCHING) {
 		number next_angle = _angle + 0.01;
 		/*if (next_angle > 2.0 * M_PI) {
 			next_angle -= 2.0 * M_PI;
@@ -225,9 +231,26 @@ void Unit::update_alti_path() {
 }
 
 
+json Unit::get_json() {
+	json result;
+	result["type"] = unit_type2str(_type->_type);
+	result["id"] = _id;
+	result["position"] = json::array();
+	result["position"].push_back(_position.x);
+	result["position"].push_back(_position.y);
+	//result["position"].push_back(_position.z);
+	result["status"] = unit_status2str(_status);
+	result["life"] = _life;
+	result["path"] = _path->get_json();
+	return result;
+}
+
+
 std::ostream & operator << (std::ostream & os, Unit & unit) {
-	os << "type = " << unit_type2str(unit._type->_type);
-	os << " ; mode = " << unit_status2str(unit._status);
+	os << "id = " << unit._id;
+	os << " ; type = " << unit_type2str(unit._type->_type);
+	os << " ; status = " << unit_status2str(unit._status);
+	os << " ; position = " << glm_to_string(unit._position);
 	os << " ; velocity = " << glm_to_string(unit._velocity);
 	os << " ; path = " << *unit._path;
 	return os;
@@ -475,6 +498,21 @@ void Team::update_fow() {
 		}
 		_fow->_it_v++;
 	}
+}
+
+
+json Team::get_json() {
+	json result;
+	result["name"] = _name;
+	result["color"] = json::array();
+	result["color"].push_back(_color.r);
+	result["color"].push_back(_color.g);
+	result["color"].push_back(_color.b);
+	result["units"] = json::array();
+	for (auto & unit : _units) {
+		result["units"].push_back(unit->get_json());
+	}
+	return result;
 }
 
 

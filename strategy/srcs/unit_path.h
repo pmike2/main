@@ -5,11 +5,15 @@
 #include <vector>
 #include <map>
 
+#include "json.hpp"
+
 #include "typedefs.h"
 #include "bbox_2d.h"
 
 #include "unit_type.h"
 
+
+using json = nlohmann::json;
 
 
 struct PathInterval {
@@ -40,6 +44,7 @@ struct UnitPath {
 	void copy_path(UnitPath * path);
 	void next_checkpoint();
 	void update_active_intervals();
+	json get_json();
 	friend std::ostream & operator << (std::ostream & os, UnitPath & p);
 
 
@@ -55,13 +60,9 @@ struct UnitPath {
 	UNIT_PATH_STATUS _status;
 	
 	std::vector<pt_3d> _pts;
-	//std::vector<number> _weights;
-	//std::vector<BBox_2D *> _bboxs;
 	std::vector<PathInterval *> _intervals;
 	
 	std::vector<pt_3d> _pts_los;
-	//std::vector<number> _weights_los;
-	//std::vector<BBox_2D *> _bboxs_los;
 	std::vector<PathInterval *> _intervals_los;
 };
 

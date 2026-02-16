@@ -97,3 +97,16 @@ void Stone::update_data() {
 	}
 }
 
+
+json Stone::get_json() {
+	json result;
+	
+	result["type"] = element_type2str(_type);
+	result["position"] = json::array();
+	result["position"].push_back(_position.x);
+	result["position"].push_back(_position.y);
+	//result["position"].push_back(_position.z);
+	result["species"] = _species->_name;
+
+	return result;
+}

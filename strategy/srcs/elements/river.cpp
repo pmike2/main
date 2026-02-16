@@ -113,3 +113,16 @@ pt_3d River::highest_pt() {
 	}
 	return result;
 }
+
+
+json River::get_json() {
+	json result;
+	
+	result["type"] = element_type2str(_type);
+	result["position"] = json::array();
+	result["position"].push_back(_position.x);
+	result["position"].push_back(_position.y);
+	//result["position"].push_back(_position.z);
+
+	return result;
+}

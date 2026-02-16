@@ -9,6 +9,8 @@
 #include <queue>
 #include <unordered_set>
 
+#include "json.hpp"
+
 #include "typedefs.h"
 #include "bbox_2d.h"
 #include "bbox.h"
@@ -19,6 +21,8 @@
 #include "elevation.h"
 #include "ammo.h"
 
+
+using json = nlohmann::json;
 
 
 struct Instruction {
@@ -42,6 +46,7 @@ struct Unit : public InstancePosRot {
 	void set_hit_status(UNIT_HIT_STATUS hit_status, time_point t);
 	void hit(Ammo * ammo, time_point t);
 	void update_alti_path();
+	json get_json();
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
 	
 	
@@ -94,6 +99,7 @@ struct Team {
 	void selected_units_attack(Unit * target, time_point t);
 	void update_fow_unit(Unit * unit);
 	void update_fow();
+	json get_json();
 	friend std::ostream & operator << (std::ostream & os, Team & team);
 
 

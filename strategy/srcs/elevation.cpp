@@ -1,3 +1,6 @@
+#include <fstream>
+#include <sstream>
+
 #include "utile.h"
 
 #include "elevation.h"
@@ -582,21 +585,27 @@ void Elevation::update_data(AABB_2D * aabb) {
 }
 
 
-void Elevation::alti2pbm(std::string pbm_path) {
-	FILE *f;
-	f= fopen(pbm_path.c_str(), "wb");
-	//fprintf(f, "P1\n%d %d\n", _n_cols, _n_ligs);
-	fprintf(f, "P2\n%d %d\n1\n", _n_cols, _n_ligs);
-	for (int lig=0; lig<_n_ligs; ++lig) {
-		for (int col=0; col<_n_cols; ++col) {
-			int v = 0;
-			if (get_alti(col, lig) < 0.1) {
-				v = 1;
-			}
-			fprintf(f, "%d ", v);
-		}
-		fprintf(f, "\n");
+void Elevation::write(std::string path) {
+	std::ofstream ofs(path);
+
+	_it_v= _vertices.begin();
+	while (_it_v!= _vertices.end()) {
+		ofs << _it_v->first << " " << _it_v->second._pos.z << "\n";
+		_it_v++;
 	}
-	fclose(f);
 }
 
+
+void Elevation::read(std::string path) {
+	std::ifstream ifs(path);
+	std::string line;
+	while (std::getline(ifs, line)) {
+		std::istringstream iss(line);
+		std::string s1, s2;
+		iss >> s1 >> s2;
+
+		_vertices[std::stoi(s1)]._pos.z = std::stof(s2);
+	}
+	update_data();
+	update_normals();
+}

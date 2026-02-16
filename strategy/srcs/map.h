@@ -83,12 +83,16 @@ struct Map {
 	
 	void clear();
 	void randomize();
-	void save(std::string json_path);
-	void load(std::string json_path);
+	void save_teams(std::string teams_json_path);
+	void save(std::string dir_map);
+	void load(std::string dir_map);
 	friend std::ostream & operator << (std::ostream & os, Map & map);
 
 
+	std::string _unit_types_dir, _ammo_types_dir, _elements_dir;
+	pt_2d _path_resolution, _elevation_resolution, _fow_resolution;
 	AABB_2D * _aabb;
+	
 	static uint _next_unit_id;
 	std::map<UNIT_TYPE, UnitType *> _unit_types;
 	std::map<std::string, AmmoType * > _ammo_types;

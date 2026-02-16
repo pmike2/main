@@ -7,8 +7,29 @@
 
 
 
+// j'initialise pour faire propre mais normalement la plupart de ces valeurs seront écrasées lors de l'appel à ihm->callbacks
 StrategyConfig::StrategyConfig() {
-	// valeurs initiales fixées par les callback ihm
+	_edit = false;
+	_show_info = false;
+	_units_paused = false;
+	_fow_active = true;
+	_play_mode = SELECT_UNIT;
+	_edit_mode = ADD_ELEMENT;
+	_unit_action_mode = WAIT;
+	_visible_grid_type = ELEVATION;
+	_visible_grid_unit_type = INFANTERY;
+	_add_unit_type = INFANTERY;
+	_element_type = ELEMENT_TREE;
+	_elevation_mode = ELEVATION_ZERO;
+	_elevation_radius = 0.0;
+	_elevation_factor = 0.0;
+	_elevation_exponent = 0.0;
+	_trees_dispersion = 0.0;
+	_stones_dispersion = 0.0;
+	_erase_radius = 0.0;
+	_n_trees = 0;
+	_n_stones = 0;
+	_selected_team_idx = 0;
 }
 
 
@@ -26,7 +47,7 @@ Strategy::Strategy() {
 Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system), 
 	_angle_lake(0.0), _angle_river(0.0), _angle_sea(0.0),
-	_cursor_world_position(pt_3d(0.0)), _cursor_hover_unit(NULL), _cursor_hover_ihm(false),
+	_cursor_world_position(pt_3d(0.0)), _cursor_in_world(false), _cursor_hover_unit(NULL), _cursor_hover_ihm(false),
 	_add_unit_ok(false), _add_unit_fow_ok(false), _move_unit_ok(false), _attack_unit_ok(false)
 {
 	bool verbose = true;
@@ -45,6 +66,8 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	_map->randomize();
 	//_map->clear();
 	_map->add_first_units2teams();
+	//_map->save("../data/maps/map1");
+
 	_view_system->set_target(pt_2d(get_selected_team()->_units[0]->_position));
 
 	// --------------------------------------------------
@@ -119,8 +142,12 @@ void Strategy::set_ihm() {
 	_ihm->get_element("play_mode", "select_unit")->set_callback([this](){_config->_play_mode = SELECT_UNIT;});
 	_ihm->get_element("play_mode", "action_unit")->set_callback([this](){_config->_play_mode = ACTION_UNIT;});
 	
+	_ihm->get_element("unit_action", "wait")->set_callback([this](){
+		for (auto & unit : get_selected_team()->get_selected_units()) {
+			unit->_status = WAITING;
+		}
+	});
 	_ihm->get_element("unit_action", "watch")->set_callback([this](){
-		//_config->_unit_action_mode = WATCH;
 		for (auto & unit : get_selected_team()->get_selected_units()) {
 			unit->_status = WATCHING;
 		}
@@ -133,7 +160,7 @@ void Strategy::set_ihm() {
 	_ihm->get_element("edit_mode", "erase")->set_callback([this](){_config->_edit_mode = ERASE;});
 
 	for (auto & unit_type : std::vector<UNIT_TYPE>{INFANTERY, TANK, HELICOPTER, BOAT}) {
-		_ihm->get_element("units", unit_type2str(unit_type))->set_callback([this, unit_type](){_config->_unit_type = unit_type;});
+		_ihm->get_element("units", unit_type2str(unit_type))->set_callback([this, unit_type](){_config->_add_unit_type = unit_type;});
 	}
 
 	for (auto & element_type : std::vector<ELEMENT_TYPE>{ELEMENT_TREE, ELEMENT_STONE, ELEMENT_RIVER, ELEMENT_LAKE}) {
@@ -206,17 +233,20 @@ void Strategy::set_ihm() {
 		update_all();
 	});
 	
-	_ihm->get_element("global_edit", "load")->set_callback([this](){
-		_map->load("../data/map.json");
-	});
+	for (auto & map_name : std::vector<std::string>{"map1", "map2", "map3", "map4", "map5"}) {
+		_ihm->get_element("load_map", map_name)->set_callback([this, map_name](){
+			_map->load("../data/maps/" + map_name);
+			update_all();
+		});
 	
-	_ihm->get_element("global_edit", "save")->set_callback([this](){
-		_map->save("../data/map.json");
-	});
+		_ihm->get_element("save_map", map_name)->set_callback([this, map_name](){
+			_map->save("../data/maps/" + map_name);
+		});
+	}
 	
 	for (auto & visu_type : std::vector<std::string>{"elevation", "grid", "bbox", "sea", "unit_life"}) {
 		_ihm->get_element("visu", visu_type)->set_callback(
-			[this, visu_type](){_gl_draw_manager->set_active(visu_type);}, 
+			[this, visu_type](){_gl_draw_manager->set_active(visu_type);},
 			[this, visu_type](){_gl_draw_manager->set_inactive(visu_type);}
 		);
 	}
@@ -940,7 +970,7 @@ void Strategy::update_path() {
 void Strategy::update_edit_map() {
 	GLDrawContext * context= _gl_draw_manager->get_context("edit_map");
 	
-	if (!_config->_edit || _cursor_hover_ihm) {
+	if (!_config->_edit || _cursor_hover_ihm || !_cursor_in_world) {
 		context->_n_pts = 0;
 		context->_active = false;
 		return;
@@ -1013,7 +1043,7 @@ void Strategy::update_edit_map() {
 void Strategy::update_cursor() {
 	GLDrawContext * context= _gl_draw_manager->get_context("cursor");
 
-	if (_config->_edit || _cursor_hover_ihm || _config->_play_mode == SELECT_UNIT) {
+	if (_config->_edit || _cursor_hover_ihm || !_cursor_in_world || _config->_play_mode == SELECT_UNIT || _config->_unit_action_mode == WAIT  || _config->_unit_action_mode == WATCH ) {
 		context->_n_pts = 0;
 		context->_active = false;
 		return;
@@ -1021,7 +1051,7 @@ void Strategy::update_cursor() {
 
 	AABB * aabb;
 	if (_config->_play_mode == ADD_UNIT) {
-		aabb = new AABB(*_map->_unit_types[_config->_unit_type]->_obj_data->_aabb);
+		aabb = new AABB(*_map->_unit_types[_config->_add_unit_type]->_obj_data->_aabb);
 		if (_add_unit_fow_ok) {
 			aabb->translate(_cursor_world_position);
 		}
@@ -1605,7 +1635,7 @@ void Strategy::update_text() {
 	std::string s_pos = glm_to_string(_cursor_world_position);
 	texts_2d.push_back(Text(s_pos, glm::vec2(-4.8, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	
-	if (_map->_path_finder->in_boundaries(pt_2d(_cursor_world_position))) {
+	if (_cursor_in_world) {
 		GraphEdge edge = _map->_path_finder->get_edge(_map->_path_finder->pt2closest_edge(pt_2d(_cursor_world_position)));
 		GraphEdge opposite_edge = _map->_path_finder->opposite_edge(edge);
 		EdgeData * data = (EdgeData *)(edge._data);
@@ -1646,7 +1676,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 		return true;
 	}
 
-	if (input_state->_left_mouse) {
+	if (input_state->_left_mouse && _cursor_in_world) {
 		if (_config->_edit) {
 			if (_config->_edit_mode == ADD_ELEMENT) {
 				if (_config->_element_type == ELEMENT_TREE) {
@@ -1717,14 +1747,14 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 			
 			else if (_config->_play_mode == ADD_UNIT) {
 				if (_add_unit_ok && _add_unit_fow_ok) {
-					Unit * unit = _map->add_unit(get_selected_team(), _config->_unit_type, pt_2d(_cursor_world_position));
+					Unit * unit = _map->add_unit(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position));
 					if (_config->_units_paused) {
 						unit->_paused = true;
 					}
 					else {
 						unit->_paused = false;
 					}
-					update_unit_matrices(_map->_unit_types[_config->_unit_type]);
+					update_unit_matrices(_map->_unit_types[_config->_add_unit_type]);
 					return true;
 				}
 			}
@@ -1791,52 +1821,67 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 	}
 
 	_cursor_world_position = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
+	if (_map->_elevation->in_boundaries(pt_2d(_cursor_world_position))) {
+		_cursor_in_world = true;
+	}
+	else {
+		_cursor_in_world = false;
+	}
 
 	std::vector<Unit *> selected_units = get_selected_team()->get_selected_units();
 
-	_add_unit_ok = _map->add_unit_check(get_selected_team(), _config->_unit_type, pt_2d(_cursor_world_position));
-	_add_unit_fow_ok = _map->add_unit_fow_check(get_selected_team(), pt_2d(_cursor_world_position));
+	if (_cursor_in_world) {
+		_add_unit_ok = _map->add_unit_check(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position));
+		_add_unit_fow_ok = _map->add_unit_fow_check(get_selected_team(), pt_2d(_cursor_world_position));
 
-	_move_unit_ok = true;
-	if (selected_units.empty()) {
-		_move_unit_ok = false;
-	}
-	for (auto & unit : selected_units) {
-		if (!_map->move_unit_check(unit, pt_2d(_cursor_world_position))) {
+		_move_unit_ok = true;
+		if (selected_units.empty()) {
 			_move_unit_ok = false;
-			break;
 		}
-	}
+		else {
+			for (auto & unit : selected_units) {
+				if (!_map->move_unit_check(unit, pt_2d(_cursor_world_position))) {
+					_move_unit_ok = false;
+					break;
+				}
+			}
+		}
 
-	_cursor_hover_unit = NULL;
-	for (auto & team : _map->_teams) {
-		for (auto & unit : team->_units) {
-			if (_view_system->pt_2d_intersects_aabb(_view_system->screen2gl(input_state->_x, input_state->_y), unit->_bbox->_aabb)) {
-				_cursor_hover_unit = unit;
+		_cursor_hover_unit = NULL;
+		for (auto & team : _map->_teams) {
+			for (auto & unit : team->_units) {
+				if (_view_system->pt_2d_intersects_aabb(_view_system->screen2gl(input_state->_x, input_state->_y), unit->_bbox->_aabb)) {
+					_cursor_hover_unit = unit;
+					break;
+				}
+			}
+			if (_cursor_hover_unit != NULL) {
 				break;
 			}
 		}
-		if (_cursor_hover_unit != NULL) {
-			break;
-		}
-	}
-	_attack_unit_ok = true;
-	if (_cursor_hover_unit == NULL) {
-		_attack_unit_ok = false;
-	}
-	else if (_cursor_hover_unit->_team == get_selected_team()) {
-		_attack_unit_ok = false;
-	}
-	else {
-		if (selected_units.empty()) {
+		_attack_unit_ok = true;
+		if (_cursor_hover_unit == NULL) {
 			_attack_unit_ok = false;
 		}
-		for (auto & unit : selected_units) {
-			if (!_map->attack_unit_check(unit, _cursor_hover_unit)) {
+		else if (_cursor_hover_unit->_team == get_selected_team()) {
+			_attack_unit_ok = false;
+		}
+		else {
+			if (selected_units.empty()) {
 				_attack_unit_ok = false;
-				break;
+			}
+			for (auto & unit : selected_units) {
+				if (!_map->attack_unit_check(unit, _cursor_hover_unit)) {
+					_attack_unit_ok = false;
+					break;
+				}
 			}
 		}
+	}
+	
+	else {
+		_add_unit_ok = _add_unit_fow_ok = _move_unit_ok = _attack_unit_ok = false;
+		_cursor_hover_unit = NULL;
 	}
 
 	return false;

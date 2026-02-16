@@ -38,6 +38,7 @@ public:
 	Stone(StoneSpecies * species, Elevation * elevation, pt_2d position);
 	~Stone();
 	void update_data();
+	json get_json();
 
 
 	StoneSpecies * _species;

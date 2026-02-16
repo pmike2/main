@@ -23,9 +23,10 @@
 			"position" : "after:play_mode",
 			"orientation" : "vertical",
 			"elements" : [
-				{"name" : "watch"},
 				{"name" : "move"},
-				{"name" : "attack"}
+				{"name" : "attack"},
+				{"name" : "wait"},
+				{"name" : "watch"}
 			]
 		},
 		{
@@ -48,7 +49,7 @@
 			"elements" : [
 				{
 					"name" : "edit",
-					"groups_visible" : ["general_info", "teams", "ia", "edit_mode", "global_edit", "visu"],
+					"groups_visible" : ["general_info", "teams", "ia", "edit_mode", "global_edit", "save_load", "load_map", "save_map", "visu"],
 					"groups_invisible" : ["play_mode"]
 				}
 			]
@@ -56,7 +57,7 @@
 		{
 			"name" : "general_info",
 			"type" : "checkbox",
-			"position" : "after:edit",
+			"position" : "before:edit",
 			"orientation" : "horizontal",
 			"elements" : [
 				{"name" : "show_info"},
@@ -168,9 +169,43 @@
 			"orientation" : "horizontal",
 			"elements" : [
 				{"name" : "randomize", "key" : "r"},
-				{"name" : "clear", "key" : "c"},
-				{"name" : "save", "key" : "s"},
-				{"name" : "load", "key" : "l"}
+				{"name" : "clear", "key" : "c"}
+			]
+		},
+		{
+			"name" : "save_load",
+			"type" : "radio",
+			"position" : "after:global_edit",
+			"orientation" : "horizontal",
+			"elements" : [
+				{"name" : "save", "groups_visible" : ["save_map"], "groups_invisible" : ["load_map"]},
+				{"name" : "load", "groups_visible" : ["load_map"], "groups_invisible" : ["save_map"]}
+			]
+		},
+		{
+			"name" : "save_map",
+			"type" : "radio",
+			"position" : "after:save_load",
+			"orientation" : "horizontal",
+			"elements" : [
+				{"name" : "map1"},
+				{"name" : "map2"},
+				{"name" : "map3"},
+				{"name" : "map4"},
+				{"name" : "map5"}
+			]
+		},
+		{
+			"name" : "load_map",
+			"type" : "radio",
+			"position" : "after:save_load",
+			"orientation" : "horizontal",
+			"elements" : [
+				{"name" : "map1"},
+				{"name" : "map2"},
+				{"name" : "map3"},
+				{"name" : "map4"},
+				{"name" : "map5"}
 			]
 		},
 		{

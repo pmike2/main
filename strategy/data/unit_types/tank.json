@@ -2,6 +2,7 @@
 	"type" : "TANK",
 	"max_velocity" : 0.05,
 	"life_init" : 200.0,
+	"regen" : 0.5,
 	"shooting_rate" : 3.0,
 	"vision_distance" : 20.0,
 	"vision_angle" : 0.8,

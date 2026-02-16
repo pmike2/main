@@ -2,6 +2,7 @@
 #include <fstream>
 #include <tuple>
 #include <algorithm>
+#include <filesystem>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtc/type_ptr.hpp>
@@ -27,7 +28,10 @@ Map::Map() {
 }
 
 
-Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t) {
+Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t) :
+	_unit_types_dir(unit_types_dir), _ammo_types_dir(ammo_types_dir), _elements_dir(elements_dir), 
+	_path_resolution(path_resolution), _elevation_resolution(elevation_resolution), _fow_resolution(fow_resolution)
+{
 	bool verbose = true;
 
 	_aabb = new AABB_2D(origin, size);
@@ -36,8 +40,8 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	if (verbose) {
 		std::cout << "init PathFinder\n";
 	}
-	uint n_ligs_path = uint(size.y / path_resolution.y) + 1;
-	uint n_cols_path = uint(size.x / path_resolution.x) + 1;
+	uint n_ligs_path = uint(size.y / _path_resolution.y) + 1;
+	uint n_cols_path = uint(size.x / _path_resolution.x) + 1;
 	_path_finder = new PathFinder(origin, size, n_ligs_path, n_cols_path);
 	_path_find_thr_running = true;
 	_path_find_thr= std::thread(&Map::path_find, this);
@@ -47,22 +51,22 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	if (verbose) {
 		std::cout << "init Elevation\n";
 	}
-	uint n_ligs_elevation = uint(size.y / elevation_resolution.y) + 1;
-	uint n_cols_elevation = uint(size.x / elevation_resolution.x) + 1;
+	uint n_ligs_elevation = uint(size.y / _elevation_resolution.y) + 1;
+	uint n_cols_elevation = uint(size.x / _elevation_resolution.x) + 1;
 	_elevation = new Elevation(origin, size, n_ligs_elevation, n_cols_elevation);
 
 	// ------------------------------------------------
 	if (verbose) {
 		std::cout << "init UnitTypes / AmmoTypes\n";
 	}
-	std::vector<std::string> unit_type_json_paths = list_files(unit_types_dir, "json");
+	std::vector<std::string> unit_type_json_paths = list_files(_unit_types_dir, "json");
 	for (auto & json_path : unit_type_json_paths) {
 		UnitType * unit_type = new UnitType(json_path);
 		_unit_types[str2unit_type(str_to_upper(basename(json_path)))] = unit_type;
 		_path_finder->add_unit_type(unit_type);
 	}
 	
-	std::vector<std::string> ammo_type_json_paths = list_files(ammo_types_dir, "json");
+	std::vector<std::string> ammo_type_json_paths = list_files(_ammo_types_dir, "json");
 	for (auto & json_path : ammo_type_json_paths) {
 		AmmoType * ammo_type = new AmmoType(json_path);
 		_ammo_types[ammo_type->_name] = ammo_type;
@@ -76,14 +80,14 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	if (verbose) {
 		std::cout << "init Elements\n";
 	}
-	_elements = new Elements(elements_dir + "/tree_species", elements_dir + "/stone_species", _elevation);
+	_elements = new Elements(_elements_dir + "/tree_species", elements_dir + "/stone_species", _elevation);
 
 	// ------------------------------------------------
 	if (verbose) {
 		std::cout << "init Teams\n";
 	}
-	_teams.push_back(new Team("Team1", glm::vec3(1.0f, 0.0f, 0.0f), _elevation, fow_resolution));
-	_teams.push_back(new Team("Team2", glm::vec3(0.0f, 0.0f, 1.0f), _elevation, fow_resolution));
+	_teams.push_back(new Team("Team1", glm::vec3(1.0f, 0.0f, 0.0f), _elevation, _fow_resolution));
+	_teams.push_back(new Team("Team2", glm::vec3(0.0f, 0.0f, 1.0f), _elevation, _fow_resolution));
 }
 
 
@@ -699,6 +703,7 @@ void Map::pause_all_units(bool pause) {
 
 
 void Map::anim(time_point t) {
+	// Pathfinding ------------------------------------------------
 	UnitPath * unit_path;
 	// TODO : ou doit se faire la destruction de unit_path ?
 	if (_path_queue_thr_output.next(unit_path)) {
@@ -719,6 +724,9 @@ void Map::anim(time_point t) {
 		_path_finder_computing = false;
 	}
 
+	save_teams("../data/maps/debug/teams.json");
+
+	// IA -----------------------------------------------------------
 	for (auto & team : _teams) {
 		if (!team->_ia) {
 			continue;
@@ -726,8 +734,11 @@ void Map::anim(time_point t) {
 
 		for (auto & unit : team->_units) {
 			if (unit->_status == WAITING) {
-				//std::cout << "ia : " << unit->_id << "\n";
-				
+				if (unit->_life > 0.95 * unit->_type->_life_init) {
+					unit->set_status(WATCHING, t);
+				}
+			}
+			else if (unit->_status == WATCHING) {
 				bool found_target = false;
 				for (auto & team2 : _teams) {
 					if (team2 == team) {
@@ -744,10 +755,29 @@ void Map::anim(time_point t) {
 						break;
 					}
 				}
+				if (!found_target) {
+					uint compt = 0;
+					while (true) {
+						if (compt++ > 100) {
+							break;
+						}
+						pt_2d destination = rand_pt_2d(unit->_position - unit->_type->_vision_distance, unit->_position + unit->_type->_vision_distance);
+						if (move_unit_check(unit, destination)) {
+							team->unit_goto(unit, pt_3d(destination, _elevation->get_alti(destination)), t);
+							break;
+						}
+					}
+				}
+			}
+			else if (unit->_status == MOVING) {
+				if (unit->_hit_status != NO_HIT) {
+					unit->set_status(WATCHING, t);
+				}
 			}
 		}
 	}
 
+	// anim par unité -------------------------------------------------
 	for (auto & team : _teams) {
 		for (auto & unit : team->_units) {
 			if (unit->_status == MOVING) {
@@ -759,8 +789,19 @@ void Map::anim(time_point t) {
 				else if (unit->checkpoint_checked()) {
 					advance_unit_in_position_grid(unit);
 				}
-				else {
+			}
+			else if (unit->_status == ATTACKING) {
+				if (unit->_target->_status == DESTROYED || unit->_target->_hit_status == FINAL_HIT) {
+					unit->set_status(WAITING, t);
 				}
+			}
+			else if (unit->_status == DESTROYED) {
+				unit->_delete = true;
+				remove_unit_from_position_grid(unit);
+			}
+			else if (unit->_status == SHOOTING) {
+				_ammos.push_back(new Ammo(unit->_type->_ammo_type, unit->_position, unit->_target->_position));
+				unit->set_status(ATTACKING, t);
 			}
 
 			unit->anim(t);
@@ -778,15 +819,13 @@ void Map::anim(time_point t) {
 					_path_queue_thr_input.push(pfi);
 				}
 			}
-			else if (unit->_status == SHOOTING) {
-				_ammos.push_back(new Ammo(unit->_type->_ammo_type, unit->_position, unit->_target->_position));
-				unit->set_status(ATTACKING, t);
-			}
 		}
 	}
 
+	// collisions entre unités --------------------------------------
 	collisions(t);
 
+	// ammo ---------------------------------------------------------
 	for (auto & ammo : _ammos) {
 		ammo->anim();
 		if (ammo->_target_hit) {
@@ -804,26 +843,9 @@ void Map::anim(time_point t) {
 		return w->_target_hit;
 	}), _ammos.end());
 
-
+	// maj des teams --------------------------------------------------
 	for (auto & team : _teams) {
-		for (auto & unit : team->_units) {
-			if (unit->_status == ATTACKING && (unit->_target->_status == DESTROYED || unit->_target->_hit_status == FINAL_HIT)) {
-				unit->set_status(WAITING, t);
-			}
-		}
-	}
-
-	for (auto & team : _teams) {
-		for (auto & unit : team->_units) {
-			if (unit->_status == DESTROYED) {
-				unit->_delete = true;
-				remove_unit_from_position_grid(unit);
-			}
-		}
 		team->clear2delete();
-	}
-
-	for(auto & team : _teams) {
 		team->update_fow();
 	}
 }
@@ -949,51 +971,152 @@ void Map::randomize() {
 }
 
 
-void Map::save(std::string json_path) {
-	json js;
-
-	/*js["Elevation"] = json::array();
-	for (uint lig = 0; lig<_elevation->_n_ligs; ++lig) {
-		for (uint col = 0; col<_elevation->_n_cols; ++col) {
-			js["Elevation"].push_back(_elevation->get_alti(col, lig));
-		}
+void Map::save_teams(std::string teams_json_path) {
+	json teams_js;
+	teams_js["teams"] = json::array();
+	for (auto & team : _teams) {
+		teams_js["teams"].push_back(team->get_json());
 	}
 
-	js["units"] = json::array();
-	for (auto unit : _units) {
-		json entry;
-		entry["type"] = unit->_type->_name;
-		json position = json::array();
-		position.push_back(unit->_bbox->_aabb->center().x);
-		position.push_back(unit->_bbox->_aabb->center().y);
-		//position.push_back(unit->_aabb->center().z);
-		entry["position"]= position;
-		js["units"].push_back(entry);
-	}*/
-
-	std::ofstream ofs(json_path);
-	ofs << js << "\n";
+	std::ofstream teams_ofs(teams_json_path);
+	teams_ofs << std::setw(4) << teams_js << "\n";
 }
 
 
-void Map::load(std::string json_path) {
-	/*clear();
+void Map::save(std::string dir_map) {
+	std::filesystem::path map_path = dir_map;
+	std::filesystem::path general_json_path = map_path / "general.json";
+	std::filesystem::path elements_json_path = map_path / "elements.json";
+	std::filesystem::path teams_json_path = map_path / "teams.json";
+	std::filesystem::path path_finder_json_path = map_path / "path_finder.json";
+	std::filesystem::path elevation_path = map_path / "elevation.raw";
 
-	std::ifstream ifs(json_path);
-	json js= json::parse(ifs);
-	ifs.close();
-
-	uint idx = 0;
-	for (auto & alti : js["Elevation"]) {
-		_elevation->set_alti(idx, alti);
-		idx++;
+	if (!std::filesystem::is_directory(map_path)) {
+		std::filesystem::create_directory(map_path);
 	}
 
-	for (auto & unit : js["units"]) {
-		add_unit(unit["type"], pt_2d(unit["position"][0], unit["position"][1]));
+	// général ---------------------
+	json general_js;
+	
+	general_js["unit_types_dir"] = _unit_types_dir;
+	general_js["ammo_types_dir"] = _ammo_types_dir;
+	general_js["elements_dir"] = _elements_dir;
+	general_js["path_resolution"] = json::array();
+	general_js["path_resolution"].push_back(_path_resolution.x);
+	general_js["path_resolution"].push_back(_path_resolution.y);
+	general_js["elevation_resolution"] = json::array();
+	general_js["elevation_resolution"].push_back(_elevation_resolution.x);
+	general_js["elevation_resolution"].push_back(_elevation_resolution.y);
+	general_js["fow_resolution"] = json::array();
+	general_js["fow_resolution"].push_back(_fow_resolution.x);
+	general_js["fow_resolution"].push_back(_fow_resolution.y);
+	general_js["origin"] = json::array();
+	general_js["origin"].push_back(_aabb->_pos.x);
+	general_js["origin"].push_back(_aabb->_pos.y);
+
+	std::ofstream general_ofs(general_json_path.string());
+	general_ofs << std::setw(4) << general_js << "\n";
+
+	// elements -----------------------
+	json elements_js;
+
+	elements_js["elements"] = json::array();
+	for (auto & element : _elements->_elements) {
+		elements_js["elements"].push_back(element->get_json());
 	}
 
-	sync2elevation();*/
+	std::ofstream elements_ofs(elements_json_path.string());
+	elements_ofs << std::setw(4) << elements_js << "\n";
+
+	// teams ---------------------------
+	save_teams(teams_json_path.string());
+
+	// elevation --------------------------
+	_elevation->write(elevation_path.string());
+}
+
+
+void Map::load(std::string dir_map) {
+	std::filesystem::path map_path = dir_map;
+	std::filesystem::path general_json_path = map_path / "general.json";
+	std::filesystem::path elements_json_path = map_path / "elements.json";
+	std::filesystem::path teams_json_path = map_path / "teams.json";
+	std::filesystem::path path_finder_json_path = map_path / "path_finder.json";
+	std::filesystem::path elevation_path = map_path / "elevation.raw";
+
+	clear_units();
+	clear_elements();
+
+	_elevation->read(elevation_path.string());
+	sync2elevation();
+
+	std::ifstream elements_ifs(elements_json_path);
+	json elements_js = json::parse(elements_ifs);
+	elements_ifs.close();
+	for (auto & element_js : elements_js["elements"]) {
+		ELEMENT_TYPE type = str2element_type(element_js["type"]);
+		pt_2d position = pt_2d(element_js["position"][0], element_js["position"][1]);
+		if (type == ELEMENT_STONE) {
+			std::string species_name = element_js["species"];
+			_elements->add_stone(species_name, position);
+		}
+		else if (type == ELEMENT_TREE) {
+			std::string species_name = element_js["species"];
+			_elements->add_tree(species_name, position);
+		}
+		else if (type == ELEMENT_LAKE) {
+			_elements->add_lake(position);
+		}
+		else if (type == ELEMENT_RIVER) {
+			_elements->add_river(position);
+		}
+	}
+	for (auto & element : _elements->_elements) {
+		add_element_to_terrain_grid(element);
+	}
+
+	_teams.clear();
+	std::ifstream teams_ifs(teams_json_path);
+	json teams_js = json::parse(teams_ifs);
+	teams_ifs.close();
+	for (auto & team_js : teams_js["teams"]) {
+		std::string team_name = team_js["name"];
+		glm::vec3 team_color = glm::vec3(team_js["color"][0], team_js["color"][1], team_js["color"][2]);
+		Team * team = new Team(team_name, team_color, _elevation, _fow_resolution);
+		for (auto & unit_js : team_js["units"]) {
+			Unit * unit = team->add_unit(_unit_types[str2unit_type(unit_js["type"])], unit_js["id"], pt_2d(unit_js["position"][0], unit_js["position"][1]));
+			unit->_status = str2unit_status(unit_js["status"]);
+			unit->_life = unit_js["life"];
+
+			UnitPath * unit_path = new UnitPath();
+
+			json path_js = unit_js["path"];
+			unit_path->_start = pt_3d(path_js["start"][0], path_js["start"][1], path_js["start"][2]);
+			unit_path->_goal = pt_3d(path_js["goal"][0], path_js["goal"][1], path_js["goal"][2]);
+			unit_path->_idx_path = path_js["idx_path"];
+			unit_path->_use_line_of_sight = path_js["use_line_of_sight"];
+			for (auto & node : path_js["nodes"]) {
+				unit_path->_nodes.push_back(node);
+			}
+			for (auto & pt_js : path_js["pts"]) {
+				unit_path->_pts.push_back(pt_3d(pt_js[0], pt_js[1], pt_js[2]));
+			}
+			for (auto & pt_los_js : path_js["pts_los"]) {
+				unit_path->_pts_los.push_back(pt_3d(pt_los_js[0], pt_los_js[1], pt_los_js[2]));
+			}
+			for (auto & interval_js : path_js["intervals"]) {
+				PathInterval * interval = new PathInterval(interval_js["weight"]);
+				interval->_bbox->set(pt_2d(interval_js["bbox"]["center"][0], interval_js["bbox"]["center"][1]), pt_2d(interval_js["bbox"]["half_size"][0], interval_js["bbox"]["half_size"][1]), interval_js["bbox"]["alpha"]);
+				unit_path->_intervals.push_back(interval);
+			}
+			for (auto & interval_los_js : path_js["intervals_los"]) {
+				PathInterval * interval = new PathInterval(interval_los_js["weight"]);
+				interval->_bbox->set(pt_2d(interval_los_js["bbox"]["center"][0], interval_los_js["bbox"]["center"][1]), pt_2d(interval_los_js["bbox"]["half_size"][0], interval_los_js["bbox"]["half_size"][1]), interval_los_js["bbox"]["alpha"]);
+				unit_path->_intervals_los.push_back(interval);
+			}
+		}
+		_teams.push_back(team);
+	}
 }
 
 

@@ -6,6 +6,9 @@ std::string unit_status2str(UNIT_STATUS mode) {
 	if (mode == WAITING) {
 		return "WAITING";
 	}
+	else if (mode == WATCHING) {
+		return "WATCHING";
+	}
 	else if (mode == MOVING) {
 		return "MOVING";
 	}
@@ -18,15 +21,32 @@ std::string unit_status2str(UNIT_STATUS mode) {
 	else if (mode == DESTROYED) {
 		return "DESTROYED";
 	}
-	/*else if (mode == CHECKPOINT_CHECKED) {
-		return "CHECKPOINT_CHECKED";
-	}
-	else if (mode == LAST_CHECKPOINT_CHECKED) {
-		return "LAST_CHECKPOINT_CHECKED";
-	}*/
-
 	std::cerr << mode << " : mode unit reconnu\n";
 	return "UNKNOWN";
+}
+
+
+UNIT_STATUS str2unit_status(std::string s) {
+	if (s == "WAITING") {
+		return WAITING;
+	}
+	else if (s == "WATCHING") {
+		return WATCHING;
+	}
+	else if (s == "MOVING") {
+		return MOVING;
+	}
+	else if (s == "ATTACKING") {
+		return ATTACKING;
+	}
+	else if (s == "SHOOTING") {
+		return SHOOTING;
+	}
+	else if (s == "DESTROYED") {
+		return DESTROYED;
+	}
+	std::cerr << s << " : status d'unité non reconnu\n";
+	return WAITING;
 }
 
 
