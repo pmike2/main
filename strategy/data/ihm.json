@@ -173,19 +173,9 @@
 			]
 		},
 		{
-			"name" : "save_load",
-			"type" : "radio",
-			"position" : "after:global_edit",
-			"orientation" : "horizontal",
-			"elements" : [
-				{"name" : "save", "groups_visible" : ["save_map"], "groups_invisible" : ["load_map"]},
-				{"name" : "load", "groups_visible" : ["load_map"], "groups_invisible" : ["save_map"]}
-			]
-		},
-		{
 			"name" : "save_map",
-			"type" : "radio",
-			"position" : "after:save_load",
+			"type" : "button",
+			"position" : "after:global_edit",
 			"orientation" : "horizontal",
 			"elements" : [
 				{"name" : "map1"},
@@ -197,8 +187,8 @@
 		},
 		{
 			"name" : "load_map",
-			"type" : "radio",
-			"position" : "after:save_load",
+			"type" : "button",
+			"position" : "after:save_map",
 			"orientation" : "horizontal",
 			"elements" : [
 				{"name" : "map1"},

@@ -84,6 +84,7 @@ struct Map {
 	void clear();
 	void randomize();
 	void save_teams(std::string teams_json_path);
+	void save_fixed(std::string dir_map);
 	void save(std::string dir_map);
 	void load(std::string dir_map);
 	friend std::ostream & operator << (std::ostream & os, Map & map);

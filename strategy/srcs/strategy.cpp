@@ -66,7 +66,6 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	_map->randomize();
 	//_map->clear();
 	_map->add_first_units2teams();
-	//_map->save("../data/maps/map1");
 
 	_view_system->set_target(pt_2d(get_selected_team()->_units[0]->_position));
 
@@ -1832,7 +1831,12 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 
 	if (_cursor_in_world) {
 		_add_unit_ok = _map->add_unit_check(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position));
-		_add_unit_fow_ok = _map->add_unit_fow_check(get_selected_team(), pt_2d(_cursor_world_position));
+		if (_config->_fow_active) {
+			_add_unit_fow_ok = _map->add_unit_fow_check(get_selected_team(), pt_2d(_cursor_world_position));
+		}
+		else {
+			_add_unit_fow_ok = true;
+		}
 
 		_move_unit_ok = true;
 		if (selected_units.empty()) {

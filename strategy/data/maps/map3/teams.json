@@ -31,8 +31,8 @@
                         "use_line_of_sight": false
                     },
                     "position": [
-                        27.560000000000002,
-                        -15.680000000000007
+                        26.540000000000006,
+                        2.680000000000007
                     ],
                     "status": "WAITING",
                     "type": "INFANTERY"
@@ -70,8 +70,8 @@
                         "use_line_of_sight": false
                     },
                     "position": [
-                        -20.0,
-                        -30.08
+                        -12.700000000000003,
+                        -23.040000000000006
                     ],
                     "status": "WAITING",
                     "type": "INFANTERY"

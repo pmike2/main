@@ -1,0 +1,169 @@
+{
+    "teams": [
+        {
+            "color": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "name": "Team1",
+            "units": [
+                {
+                    "id": 1,
+                    "life": 30.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        48.08000000000001,
+                        -27.519999999999996
+                    ],
+                    "status": "WAITING",
+                    "type": "INFANTERY"
+                },
+                {
+                    "id": 14,
+                    "life": 50.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        -5.813932505463939,
+                        16.533993758081646
+                    ],
+                    "status": "WAITING",
+                    "type": "HELICOPTER"
+                },
+                {
+                    "id": 15,
+                    "life": 50.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        -7.096149411791899,
+                        22.230525083757968
+                    ],
+                    "status": "WAITING",
+                    "type": "HELICOPTER"
+                },
+                {
+                    "id": 16,
+                    "life": 50.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        -6.730695435262588,
+                        29.81837244450645
+                    ],
+                    "status": "WAITING",
+                    "type": "HELICOPTER"
+                }
+            ]
+        },
+        {
+            "color": [
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "Team2",
+            "units": [
+                {
+                    "id": 2,
+                    "life": 30.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        0.6200000000000045,
+                        43.06
+                    ],
+                    "status": "WAITING",
+                    "type": "INFANTERY"
+                }
+            ]
+        }
+    ]
+}

@@ -724,7 +724,7 @@ void Map::anim(time_point t) {
 		_path_finder_computing = false;
 	}
 
-	save_teams("../data/maps/debug/teams.json");
+	//save_teams("../data/maps/last_map/teams.json");
 
 	// IA -----------------------------------------------------------
 	for (auto & team : _teams) {
@@ -930,6 +930,8 @@ void Map::clear() {
 
 	_elevation->set_alti_all(1.0);
 	sync2elevation();
+
+	save_fixed("../data/maps/last_map");
 }
 
 
@@ -968,6 +970,8 @@ void Map::randomize() {
 			}
 		}
 	}
+
+	save_fixed("../data/maps/last_map");
 }
 
 
@@ -983,11 +987,10 @@ void Map::save_teams(std::string teams_json_path) {
 }
 
 
-void Map::save(std::string dir_map) {
+void Map::save_fixed(std::string dir_map) {
 	std::filesystem::path map_path = dir_map;
 	std::filesystem::path general_json_path = map_path / "general.json";
 	std::filesystem::path elements_json_path = map_path / "elements.json";
-	std::filesystem::path teams_json_path = map_path / "teams.json";
 	std::filesystem::path path_finder_json_path = map_path / "path_finder.json";
 	std::filesystem::path elevation_path = map_path / "elevation.raw";
 
@@ -1028,11 +1031,16 @@ void Map::save(std::string dir_map) {
 	std::ofstream elements_ofs(elements_json_path.string());
 	elements_ofs << std::setw(4) << elements_js << "\n";
 
-	// teams ---------------------------
-	save_teams(teams_json_path.string());
-
 	// elevation --------------------------
 	_elevation->write(elevation_path.string());
+}
+
+
+void Map::save(std::string dir_map) {
+	save_fixed(dir_map);
+	std::filesystem::path map_path = dir_map;
+	std::filesystem::path teams_json_path = map_path / "teams.json";
+	save_teams(teams_json_path.string());
 }
 
 
