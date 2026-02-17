@@ -604,8 +604,8 @@ void Elevation::read(std::string path) {
 		std::string s1, s2;
 		iss >> s1 >> s2;
 
-		_vertices[std::stoi(s1)]._pos.z = std::stof(s2);
+		_vertices[std::stoul(s1)]._pos.z = std::stod(s2);
 	}
-	update_data();
 	update_normals();
+	update_data();
 }

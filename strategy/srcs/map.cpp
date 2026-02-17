@@ -92,7 +92,8 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 
 
 Map::~Map() {
-	clear();
+	clear_units();
+	clear_elements();
 
 	for (auto & team : _teams) {
 		delete team;
@@ -118,6 +119,19 @@ Map::~Map() {
 	_path_find_thr.join();
 
 	delete _aabb;
+}
+
+
+bool Map::fow_check(Team * team, pt_2d pos) {
+	std::vector<uint> vertices = team->_fow->vertices_in_cell_containing_pt(pos);
+	for (auto & v : vertices) {
+		GraphVertex vertex = team->_fow->get_vertex(v);
+		FowVertexData * data = (FowVertexData *)(vertex._data);
+		if (data->_status == UNDISCOVERED) {
+			return false;
+		}
+	}
+	return true;
 }
 
 
@@ -147,41 +161,17 @@ bool Map::add_unit_check(Team * team, UNIT_TYPE type, pt_2d pos) {
 
 
 bool Map::add_unit_fow_check(Team * team, pt_2d pos) {
-	std::vector<uint> vertices = team->_fow->vertices_in_cell_containing_pt(pos);
-	for (auto & v : vertices) {
-		GraphVertex vertex = team->_fow->get_vertex(v);
-		FowVertexData * data = (FowVertexData *)(vertex._data);
-		if (data->_status == UNDISCOVERED) {
-			return false;
-		}
-	}
-	return true;
+	return fow_check(team, pos);
 }
 
 
 bool Map::move_unit_check(Unit * unit, pt_2d pos) {
-	std::vector<uint> vertices = unit->_team->_fow->vertices_in_cell_containing_pt(pos);
-	for (auto & v : vertices) {
-		GraphVertex vertex = unit->_team->_fow->get_vertex(v);
-		FowVertexData * data = (FowVertexData *)(vertex._data);
-		if (data->_status == UNDISCOVERED) {
-			return false;
-		}
-	}
-	return true;
+	return fow_check(unit->_team, pos);
 }
 
 
 bool Map::attack_unit_check(Unit * attacking_unit, Unit * attacked_unit) {
-	std::vector<uint> vertices = attacking_unit->_team->_fow->vertices_in_cell_containing_pt(pt_2d(attacked_unit->_position));
-	for (auto & v : vertices) {
-		GraphVertex vertex = attacking_unit->_team->_fow->get_vertex(v);
-		FowVertexData * data = (FowVertexData *)(vertex._data);
-		if (data->_status == UNDISCOVERED) {
-			return false;
-		}
-	}
-	return true;
+	return fow_check(attacking_unit->_team, pt_2d(attacked_unit->_position));
 }
 
 
@@ -724,7 +714,8 @@ void Map::anim(time_point t) {
 		_path_finder_computing = false;
 	}
 
-	//save_teams("../data/maps/last_map/teams.json");
+	// TODO : à desactiver quand les problèmes de path seront réglés
+	save_teams("../data/maps/last_map/teams.json");
 
 	// IA -----------------------------------------------------------
 	for (auto & team : _teams) {
@@ -739,23 +730,18 @@ void Map::anim(time_point t) {
 				}
 			}
 			else if (unit->_status == WATCHING) {
-				bool found_target = false;
-				for (auto & team2 : _teams) {
-					if (team2 == team) {
-						continue;
-					}
-					for (auto & unit2 : team2->_units) {
-						if (team->is_target_reachable(unit, unit2)) {
-							team->unit_attack(unit, unit2, t);
-							found_target = true;
-							break;
-						}
-					}
-					if (found_target) {
+				Unit * ennemy_unit = NULL;
+				for (auto & ennemy_team : _teams) {
+					ennemy_unit = team->search_target(unit, ennemy_team);
+					if (ennemy_unit != NULL) {
 						break;
 					}
 				}
-				if (!found_target) {
+				
+				if (ennemy_unit != NULL) {
+					team->unit_attack(unit, ennemy_unit, t);
+				}
+				else {
 					uint compt = 0;
 					while (true) {
 						if (compt++ > 100) {
@@ -772,6 +758,29 @@ void Map::anim(time_point t) {
 			else if (unit->_status == MOVING) {
 				if (unit->_hit_status != NO_HIT) {
 					unit->set_status(WATCHING, t);
+				}
+
+				Unit * ennemy_unit = NULL;
+				for (auto & ennemy_team : _teams) {
+					ennemy_unit = team->search_target(unit, ennemy_team);
+					if (ennemy_unit != NULL) {
+						break;
+					}
+				}
+				
+				if (ennemy_unit != NULL) {
+					team->unit_attack(unit, ennemy_unit, t);
+				}
+			}
+			else if (unit->_status == ATTACKING) {
+				if (!team->is_target_reachable(unit, unit->_target)) {
+					pt_2d destination = pt_2d(unit->_target->_position);
+					if (move_unit_check(unit, destination)) {
+						team->unit_goto(unit, pt_3d(destination, _elevation->get_alti(destination)), t);
+					}
+					else {
+						unit->set_status(WATCHING, t);
+					}
 				}
 			}
 		}
@@ -930,8 +939,6 @@ void Map::clear() {
 
 	_elevation->set_alti_all(1.0);
 	sync2elevation();
-
-	save_fixed("../data/maps/last_map");
 }
 
 
@@ -970,8 +977,6 @@ void Map::randomize() {
 			}
 		}
 	}
-
-	save_fixed("../data/maps/last_map");
 }
 
 
@@ -1122,6 +1127,9 @@ void Map::load(std::string dir_map) {
 				interval->_bbox->set(pt_2d(interval_los_js["bbox"]["center"][0], interval_los_js["bbox"]["center"][1]), pt_2d(interval_los_js["bbox"]["half_size"][0], interval_los_js["bbox"]["half_size"][1]), interval_los_js["bbox"]["alpha"]);
 				unit_path->_intervals_los.push_back(interval);
 			}
+
+			unit->_path->copy_path(unit_path);
+			delete unit_path;
 		}
 		_teams.push_back(team);
 	}

@@ -55,6 +55,7 @@ public:
 	~Strategy();
 
 	Team * get_selected_team();
+	void zoom2first_unit_of_selected_team();
 	
 	void set_ihm();
 	
@@ -118,7 +119,7 @@ public:
 	bool _cursor_hover_ihm;
 	Unit * _cursor_hover_unit;
 
-	bool _add_unit_ok, _add_unit_fow_ok, _move_unit_ok, _attack_unit_ok;
+	bool _fow_ok, _add_unit_ok, _add_unit_fow_ok, _move_unit_ok, _attack_unit_ok;
 
 	number _angle_lake, _angle_river, _angle_sea;
 };

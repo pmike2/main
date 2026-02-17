@@ -128,11 +128,4 @@ struct GraphGrid : public Graph {
 	AABB_2D * _aabb;
 };
 
-/*
-struct Mesh {
-	std::vector<int_pair> _edges;
-	bool _debug= true;
-};
-*/
-
 #endif

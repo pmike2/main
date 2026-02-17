@@ -442,16 +442,42 @@ void Team::selected_units_attack(Unit * target, time_point t) {
 }
 
 
-void Team::update_fow_unit(Unit * unit) {
-	unit->_visible_tiles.clear();
-	//std::vector<uint> v = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision);
-	std::vector<uint> vertices_in_front_of_unit = _fow->vertices_in_circle_section(pt_2d(unit->_position), unit->_type->_vision_distance, unit->_angle, unit->_type->_vision_angle);
-	unit->_visible_tiles.insert(vertices_in_front_of_unit.begin(), vertices_in_front_of_unit.end());
-	std::vector<uint> vertices_covering_unit = _fow->vertices_in_aabb(unit->_bbox->_aabb->aabb2d());
-	unit->_visible_tiles.insert(vertices_covering_unit.begin(), vertices_covering_unit.end());
+Unit * Team::search_target(Unit * unit, Team * ennemy_team) {
+	if (ennemy_team == this) {
+		return NULL;
+	}
 
-	std::unordered_set<uint> old_minus_new;
+	for (auto & ennemy_unit : ennemy_team->_units) {
+		if (is_target_reachable(unit, ennemy_unit)) {
+			return ennemy_unit;
+		}
+	}
+
+	return NULL;
+}
+
+
+void Team::update_fow_unit(Unit * unit) {
+	// vertices_in_circle_section et vertices_in_circle sont trop lents...
+
+	//std::vector<uint> vertices_in_front_of_unit = _fow->vertices_in_circle_section(pt_2d(unit->_position), unit->_type->_vision_distance, unit->_angle, unit->_type->_vision_angle);
+	
+	//std::vector<uint> vertices_in_front_of_unit = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision_distance);
+	
+	AABB_2D * aabb = new AABB_2D(pt_2d(unit->_position) - pt_2d(unit->_type->_vision_distance), pt_2d(2.0 *  unit->_type->_vision_distance));
+	std::vector<uint> vertices_in_front_of_unit = _fow->vertices_in_aabb(aabb);
+	delete aabb;
+
+	unit->_visible_tiles.clear();
+	unit->_visible_tiles.insert(unit->_visible_tiles.begin(), vertices_in_front_of_unit.begin(), vertices_in_front_of_unit.end());
+	//std::vector<uint> vertices_covering_unit = _fow->vertices_in_aabb(unit->_bbox->_aabb->aabb2d());
+	//unit->_visible_tiles.insert(vertices_covering_unit.begin(), vertices_covering_unit.end());
+
+	std::vector<uint> old_minus_new, new_minus_old;
+	std::sort(unit->_visible_tiles.begin(), unit->_visible_tiles.end());
+	std::sort(unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end());
 	std::set_difference(unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), unit->_visible_tiles.begin(), unit->_visible_tiles.end(), std::inserter(old_minus_new, old_minus_new.begin()));
+	std::set_difference(unit->_visible_tiles.begin(), unit->_visible_tiles.end(), unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), std::inserter(new_minus_old, new_minus_old.begin()));
 	
 	for (auto & id_tile : old_minus_new) {
 		GraphVertex vertex = _fow->get_vertex(id_tile);
@@ -460,8 +486,6 @@ void Team::update_fow_unit(Unit * unit) {
 		data->_n_units--;
 	}
 
-	std::unordered_set<uint> new_minus_old;
-	std::set_difference(unit->_visible_tiles.begin(), unit->_visible_tiles.end(), unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), std::inserter(new_minus_old, new_minus_old.begin()));
 	for (auto & id_tile : new_minus_old) {
 		GraphVertex vertex = _fow->get_vertex(id_tile);
 		FowVertexData * data = (FowVertexData *)(vertex._data);
@@ -470,15 +494,15 @@ void Team::update_fow_unit(Unit * unit) {
 	}
 
 	unit->_old_visible_tiles.clear();
-	unit->_old_visible_tiles.insert(unit->_visible_tiles.begin(), unit->_visible_tiles.end());
+	unit->_old_visible_tiles.insert(unit->_old_visible_tiles.begin(), unit->_visible_tiles.begin(), unit->_visible_tiles.end());
 }
 
 
 void Team::update_fow() {
 	for (auto & unit : _units) {
-		//if (unit->_status == MOVING) {
+		if (unit->_status == MOVING || unit->_status == WATCHING) {
 			update_fow_unit(unit);
-		//}
+		}
 	}
 
 	_fow->_it_v= _fow->_vertices.begin();

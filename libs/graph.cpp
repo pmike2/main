@@ -597,31 +597,19 @@ std::vector<uint> GraphGrid::vertices_in_cell_containing_pt(pt_2d pt) {
 
 
 std::vector<uint> GraphGrid::vertices_in_aabb(AABB_2D * aabb) {
-	std::vector<uint> result;
-	for (uint i=0; i<150; ++i) {
-		result.push_back(i);
-	}
 
-	/*std::pair<int_pair, int_pair> col_lig_min_max = aabb2col_lig_min_max(aabb);
+	std::pair<int_pair, int_pair> col_lig_min_max = aabb2col_lig_min_max(aabb);
 	uint col_min = col_lig_min_max.first.first;
 	uint lig_min = col_lig_min_max.first.second;
 	uint col_max = col_lig_min_max.second.first;
 	uint lig_max = col_lig_min_max.second.second;
-	std::vector<int> v = aabb2col_lig_min_max(aabb);*/
 
-	//std::cout << col_min << " ; " << col_max << " ; "  << lig_min << " ; " << lig_max << " ; " << "\n";
-
-	/*for (uint col = col_min; col<=col_max; ++col) {
+	std::vector<uint> result;
+	for (uint col = col_min; col<=col_max; ++col) {
 		for (uint lig = lig_min; lig<=lig_max; ++lig) {
 			result.push_back(col_lig2id(col, lig));
 		}
-	}*/
-
-	/*for (uint col = v[0]; col<=v[2]; ++col) {
-		for (uint lig = v[1]; lig<=v[3]; ++lig) {
-			result.push_back(col_lig2id(col, lig));
-		}
-	}*/
+	}
 
 	return result;
 }
@@ -634,7 +622,6 @@ std::vector<uint> GraphGrid::vertices_in_circle(pt_2d center, number radius) {
 	std::vector<uint> result;
 	for (auto v : l) {
 		pt_2d v_pos = pt_2d(get_vertex(v)._pos);
-		//if (glm::length(v_pos - center) < radius) {
 		if ((v_pos.x - center.x) * (v_pos.x - center.x) - (v_pos.y - center.y) * (v_pos.y - center.y) < radius * radius) {
 			result.push_back(v);
 		}

@@ -4,7 +4,7 @@
 	"life_init" : 30.0,
 	"regen" : 0.5,
 	"shooting_rate" : 0.2,
-	"vision_distance" : 15.0,
+	"vision_distance" : 10.0,
 	"vision_angle" : 0.8,
 	"floats" : false,
 	"flies" : false,

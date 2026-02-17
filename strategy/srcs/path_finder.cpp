@@ -156,8 +156,6 @@ bool PathFinder::path_find_nodes(UnitPath * unit_path) {
 
 
 bool PathFinder::path_find(PathFinderInput * pfi, SafeQueue<UnitPath *> * output_queue) {
-	//_computing = true;
-
 	UnitPath * unit_path = new UnitPath();
 
 	unit_path->_unit_type = pfi->_unit_type;

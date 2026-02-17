@@ -48,7 +48,7 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system), 
 	_angle_lake(0.0), _angle_river(0.0), _angle_sea(0.0),
 	_cursor_world_position(pt_3d(0.0)), _cursor_in_world(false), _cursor_hover_unit(NULL), _cursor_hover_ihm(false),
-	_add_unit_ok(false), _add_unit_fow_ok(false), _move_unit_ok(false), _attack_unit_ok(false)
+	_fow_ok(false), _add_unit_ok(false), _add_unit_fow_ok(false), _move_unit_ok(false), _attack_unit_ok(false)
 {
 	bool verbose = true;
 
@@ -56,18 +56,19 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 
 	// --------------------------------------------------
 	if (verbose) {
-		std::cout << "loading map\n";
+		std::cout << "creating map\n";
 	}
 	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION, t);
 
 	if (verbose) {
-		std::cout << "clearing / randomizing map\n";
+		std::cout << "loading map\n";
 	}
-	_map->randomize();
+	
+	//_map->randomize();
 	//_map->clear();
-	_map->add_first_units2teams();
+	_map->load("../data/maps/last_map");
 
-	_view_system->set_target(pt_2d(get_selected_team()->_units[0]->_position));
+	zoom2first_unit_of_selected_team();
 
 	// --------------------------------------------------
 	if (verbose) {
@@ -112,6 +113,13 @@ Strategy::~Strategy() {
 
 Team * Strategy::get_selected_team() {
 	return _map->_teams[_config->_selected_team_idx];
+}
+
+
+void Strategy::zoom2first_unit_of_selected_team() {
+	if (get_selected_team()->_units.size() > 0) {
+		_view_system->set_target(pt_2d(get_selected_team()->_units[0]->_position));
+	}
 }
 
 
@@ -221,20 +229,24 @@ void Strategy::set_ihm() {
 	_ihm->get_element("global_edit", "randomize")->set_callback([this](){
 		_map->randomize();
 		_map->add_first_units2teams();
-		_view_system->set_target(pt_2d(get_selected_team()->_units[0]->_position));
+		_map->save("../data/maps/last_map");
+		zoom2first_unit_of_selected_team();
 		update_all();
 	});
 	
 	_ihm->get_element("global_edit", "clear")->set_callback([this](){
 		_map->clear();
 		_map->add_first_units2teams();
-		_view_system->set_target(pt_2d(get_selected_team()->_units[0]->_position));
+		_map->save("../data/maps/last_map");
+		zoom2first_unit_of_selected_team();
 		update_all();
 	});
 	
 	for (auto & map_name : std::vector<std::string>{"map1", "map2", "map3", "map4", "map5"}) {
 		_ihm->get_element("load_map", map_name)->set_callback([this, map_name](){
 			_map->load("../data/maps/" + map_name);
+			_map->save("../data/maps/last_map");
+			zoom2first_unit_of_selected_team();
 			update_all();
 		});
 	
@@ -1070,20 +1082,20 @@ void Strategy::update_cursor() {
 		context->_n_pts = 48;
 	}
 	else if (_config->_play_mode == ACTION_UNIT && _config->_unit_action_mode == ATTACK) {
-		if (!_map->_elevation->in_boundaries(pt_2d(_cursor_world_position))) {
+		/*if (!_map->_elevation->in_boundaries(pt_2d(_cursor_world_position))) {
 			context->_n_pts = 0;
 			context->_active = false;
 			return;
-		}
+		}*/
 
 		context->_n_pts = ATTACK_UNIT_N_VERTICES_PER_CIRCLE * 2 + 8;
 	}
 	else if (_config->_play_mode == ACTION_UNIT && _config->_unit_action_mode == MOVE) {
-		if (!_map->_elevation->in_boundaries(pt_2d(_cursor_world_position))) {
+		/*if (!_map->_elevation->in_boundaries(pt_2d(_cursor_world_position))) {
 			context->_n_pts = 0;
 			context->_active = false;
 			return;
-		}
+		}*/
 
 		context->_n_pts = 4;
 	}
@@ -1143,7 +1155,7 @@ void Strategy::update_cursor() {
 
 			ptr[0] = float(circle_pts[i].x);
 			ptr[1] = float(circle_pts[i].y);
-			if (_attack_unit_ok) {
+			if (_fow_ok) {
 				ptr[2] = float(_map->_elevation->get_alti(circle_pts[i]) + Z_OFFSET_ATTACK_UNIT);
 			}
 			else {
@@ -1156,7 +1168,7 @@ void Strategy::update_cursor() {
 
 			ptr[7] = float(circle_pts[j].x);
 			ptr[8] = float(circle_pts[j].y);
-			if (_attack_unit_ok) {
+			if (_fow_ok) {
 				ptr[9] = float(_map->_elevation->get_alti(circle_pts[j]) + Z_OFFSET_ATTACK_UNIT);
 			}
 			else {
@@ -1184,7 +1196,7 @@ void Strategy::update_cursor() {
 		for (uint i=0; i<8; ++i) {
 			ptr[0] = float(l_pts[i].x);
 			ptr[1] = float(l_pts[i].y);
-			if (_attack_unit_ok) {
+			if (_fow_ok) {
 				ptr[2] = float(_map->_elevation->get_alti(l_pts[i]) + Z_OFFSET_ATTACK_UNIT);
 			}
 			else {
@@ -1830,6 +1842,8 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 	std::vector<Unit *> selected_units = get_selected_team()->get_selected_units();
 
 	if (_cursor_in_world) {
+		_fow_ok = _map->fow_check(get_selected_team(), pt_2d(_cursor_world_position));
+		
 		_add_unit_ok = _map->add_unit_check(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position));
 		if (_config->_fow_active) {
 			_add_unit_fow_ok = _map->add_unit_fow_check(get_selected_team(), pt_2d(_cursor_world_position));
@@ -1884,7 +1898,7 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 	}
 	
 	else {
-		_add_unit_ok = _add_unit_fow_ok = _move_unit_ok = _attack_unit_ok = false;
+		_fow_ok = _add_unit_ok = _add_unit_fow_ok = _move_unit_ok = _attack_unit_ok = false;
 		_cursor_hover_unit = NULL;
 	}
 

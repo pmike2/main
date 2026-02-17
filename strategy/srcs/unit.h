@@ -68,8 +68,7 @@ struct Unit : public InstancePosRot {
 	number _hit;
 	Unit * _target;
 	Ammo * _hit_ammo;
-	std::unordered_set<uint> _old_visible_tiles;
-	std::unordered_set<uint> _visible_tiles;
+	std::vector<uint> _old_visible_tiles, _visible_tiles;
 };
 
 
@@ -97,6 +96,7 @@ struct Team {
 	bool is_target_reachable(Unit * unit, Unit * target);
 	void unit_attack(Unit * unit, Unit * target, time_point t);
 	void selected_units_attack(Unit * target, time_point t);
+	Unit * search_target(Unit * unit, Team * ennemy_team);
 	void update_fow_unit(Unit * unit);
 	void update_fow();
 	json get_json();
