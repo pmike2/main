@@ -69,6 +69,13 @@ pt_2d rand_pt_2d(pt_2d pt_min, pt_2d pt_max) {
 }
 
 
+pt_2d rand_pt_2d(pt_2d circle_center, number radius_max, number radius_min) {
+	number radius = rand_number(radius_min, radius_max);
+	number angle = rand_number(0.0, 2.0 * M_PI);
+	return circle_center + radius * pt_2d(cos(angle), sin(angle));
+}
+
+
 pt_3d rand_pt_3d(number xmin, number xmax, number ymin, number ymax, number zmin, number zmax) {
 	return pt_3d(rand_number(xmin, xmax), rand_number(ymin, ymax), rand_number(zmin, zmax));
 }

@@ -143,7 +143,7 @@ struct GLIHM {
 	void all_callbacks();
 	void update();
 	void draw();
-	void anim();
+	void anim(time_point t);
 	bool mouse_button_down(InputState * input_state, time_point t);
 	bool mouse_motion(InputState * input_state, time_point t);
 	bool key_down(InputState * input_state, SDL_Keycode key, time_point t);
@@ -155,6 +155,7 @@ struct GLIHM {
 	std::vector<GLIHMGroup *> _groups;
 	mat_4d _camera2clip;
 	bool _verbose;
+	time_point _current_t;
 };
 
 

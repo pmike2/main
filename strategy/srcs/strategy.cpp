@@ -58,7 +58,7 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	if (verbose) {
 		std::cout << "creating map\n";
 	}
-	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION, t);
+	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION);
 
 	if (verbose) {
 		std::cout << "loading map\n";
@@ -66,7 +66,7 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	
 	//_map->randomize();
 	//_map->clear();
-	_map->load("../data/maps/last_map");
+	_map->load("../data/maps/last_map", t);
 
 	zoom2first_unit_of_selected_team();
 
@@ -89,6 +89,8 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	
 	//std::cout << *_gl_draw_manager << "\n";
 
+	_overview = new OverView(_gl_draw_manager);
+
 	// --------------------------------------------------
 	if (verbose) {
 		std::cout << "set_ihm\n";
@@ -100,6 +102,12 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 		std::cout << "update_all\n";
 	}
 	update_all();
+
+	// --------------------------------------------------
+	if (verbose) {
+		std::cout << "fin init\n";
+	}
+
 }
 
 
@@ -108,6 +116,7 @@ Strategy::~Strategy() {
 	delete _font;
 	delete _config;
 	delete _ihm;
+	delete _overview;
 }
 
 
@@ -244,7 +253,7 @@ void Strategy::set_ihm() {
 	
 	for (auto & map_name : std::vector<std::string>{"map1", "map2", "map3", "map4", "map5"}) {
 		_ihm->get_element("load_map", map_name)->set_callback([this, map_name](){
-			_map->load("../data/maps/" + map_name);
+			_map->load("../data/maps/" + map_name, _ihm->_current_t);
 			_map->save("../data/maps/last_map");
 			zoom2first_unit_of_selected_team();
 			update_all();
@@ -361,13 +370,13 @@ void Strategy::draw_dash(std::string context_name, number dash_size, number gap_
 }
 
 
-void Strategy::draw_tree_stone() {
+void Strategy::draw_tree_stone(ViewSystem * view_system) {
 	GLDrawContext * context= _gl_draw_manager->get_context("tree_stone");
 	context->activate();
-	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
 	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
-	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(view_system->_eye)));
 	context->set_uniform("size", glm::value_ptr(glm::vec2(_map->_aabb->_size)));
 	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
@@ -377,13 +386,13 @@ void Strategy::draw_tree_stone() {
 }
 
 
-void Strategy::draw_elevation() {
+void Strategy::draw_elevation(ViewSystem * view_system) {
 	GLDrawContext * context= _gl_draw_manager->get_context("elevation");
 	context->activate();
-	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
 	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
-	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(view_system->_eye)));
 	context->set_uniform("size", glm::value_ptr(glm::vec2(_map->_aabb->_size)));
 	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
 	context->set_uniform("z_fow", float(Z_FOW));
@@ -394,13 +403,13 @@ void Strategy::draw_elevation() {
 }
 
 
-void Strategy::draw_lake() {
+void Strategy::draw_lake(ViewSystem * view_system) {
 	GLDrawContext * context= _gl_draw_manager->get_context("lake");
 	context->activate();
-	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
 	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
-	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(view_system->_eye)));
 	context->set_uniform("size", glm::value_ptr(glm::vec2(_map->_aabb->_size)));
 	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
@@ -413,13 +422,13 @@ void Strategy::draw_lake() {
 }
 
 
-void Strategy::draw_river() {
+void Strategy::draw_river(ViewSystem * view_system) {
 	GLDrawContext * context= _gl_draw_manager->get_context("river");
 	context->activate();
-	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
 	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
-	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(view_system->_eye)));
 	context->set_uniform("size", glm::value_ptr(glm::vec2(_map->_aabb->_size)));
 	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
@@ -430,13 +439,13 @@ void Strategy::draw_river() {
 }
 
 
-void Strategy::draw_sea() {
+void Strategy::draw_sea(ViewSystem * view_system) {
 	GLDrawContext * context= _gl_draw_manager->get_context("sea");
 	context->activate();
-	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
 	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
-	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(view_system->_eye)));
 	context->set_uniform("size", glm::value_ptr(glm::vec2(_map->_aabb->_size)));
 	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
@@ -451,13 +460,13 @@ void Strategy::draw_sea() {
 }
 
 
-void Strategy::draw_unit(UnitType * unit_type) {
+void Strategy::draw_unit(UnitType * unit_type, ViewSystem * view_system) {
 	GLDrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
 	context->activate();
-	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
 	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
-	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(view_system->_eye)));
 	context->set_uniform("size", glm::value_ptr(glm::vec2(_map->_aabb->_size)));
 	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
@@ -480,13 +489,13 @@ void Strategy::draw_unit_life() {
 }
 
 
-void Strategy::draw_ammo(AmmoType * ammo_type) {
+void Strategy::draw_ammo(AmmoType * ammo_type, ViewSystem * view_system) {
 	GLDrawContext * context= _gl_draw_manager->get_context(ammo_type->_name);
 	context->activate();
-	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
 	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
-	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(view_system->_eye)));
 	context->set_uniform("size", glm::value_ptr(glm::vec2(_map->_aabb->_size)));
 	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
@@ -496,17 +505,60 @@ void Strategy::draw_ammo(AmmoType * ammo_type) {
 }
 
 
+/*void Strategy::draw_map() {
+	number map_frustum_halfsize = 5.0;
+	mat_4d map_camera2clip = glm::frustum(-map_frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, _frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
+	GLDrawContext * context= _gl_draw_manager->get_context("map");
+	context->activate();
+	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(map_camera2clip)));
+	context->set_uniform("z", -10.0f);
+	context->set_uniform("alpha", 1.0f);
+	context->draw();
+	context->deactivate();
+}*/
+
+
 void Strategy::draw() {
-	// environnement
-	draw_elevation();
-	draw_tree_stone();
+	/*ViewSystemState * vs_state = _view_system->get_state();
+	ViewSystemConstraints * vs_constraints = _view_system->get_constraints();
+	_view_system->unconstraint_all();
+	_view_system->set_2d(200.0);*/
+
+	_overview->start_draw_in_texture();
+	draw_elevation(_overview->_view_system);
+	draw_tree_stone(_overview->_view_system);
 
 	// éléments mobiles
 	for (auto & unit_type : _map->_unit_types) {
-		draw_unit(unit_type.second);
+		draw_unit(unit_type.second, _overview->_view_system);
 	}
 	for (auto & ammo_type : _map->_ammo_types) {
-		draw_ammo(ammo_type.second);
+		draw_ammo(ammo_type.second, _overview->_view_system);
+	}
+	draw_lake(_overview->_view_system);
+	draw_river(_overview->_view_system);
+	draw_sea(_overview->_view_system);
+	_overview->end_draw_in_texture();
+
+	// -----------------------------
+	glViewport(0, 0, _view_system->_screengl->_screen_width, _view_system->_screengl->_screen_height);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	/*_view_system->set_constraints(vs_constraints);
+	_view_system->set_state(vs_state);
+	delete vs_constraints;
+	delete vs_state;*/
+
+	// environnement
+	draw_elevation(_view_system);
+	draw_tree_stone(_view_system);
+
+	// éléments mobiles
+	for (auto & unit_type : _map->_unit_types) {
+		draw_unit(unit_type.second, _view_system);
+	}
+	for (auto & ammo_type : _map->_ammo_types) {
+		draw_ammo(ammo_type.second, _view_system);
 	}
 	
 	// linéaires
@@ -518,9 +570,9 @@ void Strategy::draw() {
 	draw_dash("selection", 8.0, 8.0, 6.0);
 
 	// éléments transparents
-	draw_lake();
-	draw_river();
-	draw_sea();
+	draw_lake(_view_system);
+	draw_river(_view_system);
+	draw_sea(_view_system);
 	draw_select();
 	
 	// texte
@@ -535,6 +587,8 @@ void Strategy::draw() {
 	draw_dash("cursor", 4.0, 2.0, 2.0);
 	_ihm->draw();
 	draw_unit_life();
+	_overview->draw(_view_system);
+	_view_system->draw();
 	glEnable(GL_DEPTH_TEST);
 }
 
@@ -542,7 +596,7 @@ void Strategy::draw() {
 void Strategy::anim(time_point t) {
 	_view_system->anim(t);
 	
-	_ihm->anim();
+	_ihm->anim(t);
 
 	_map->anim(t);
 
@@ -1604,6 +1658,37 @@ void Strategy::update_fow_texture() {
 }
 
 
+/*void Strategy::update_map() {
+	GLDrawContext * context= _gl_draw_manager->get_context("map");
+	context->_n_pts = 6;
+	
+	float * data = new float[context->data_size()];
+	float * ptr = data;
+	
+	pt_4d pos[4] = {
+		pt_4d(0.0, 0.0, 0.0, 1.0),
+		pt_4d(3.0, 0.0, 1.0, 1.0),
+		pt_4d(3.0, 3.0, 1.0, 0.0),
+		pt_4d(0.0, 3.0, 0.0, 0.0)
+	};
+	const uint idxs[6] = {0, 1, 2, 0, 2, 3};
+
+	for (uint i=0; i<6; ++i) {
+		ptr[0] = pos[idxs[i]].x;
+		ptr[1] = pos[idxs[i]].y;
+		ptr[2] = pos[idxs[i]].z;
+		ptr[3] = pos[idxs[i]].w;
+		ptr += 4;
+	}
+
+	context->set_data(data);
+	delete[] data;
+
+	//std::cout << *context << "\n";
+	//context->show_data();
+}*/
+
+
 void Strategy::update_all() {
 	update_select();
 	update_grid();
@@ -1627,6 +1712,7 @@ void Strategy::update_all() {
 	}
 	update_selection();
 	update_fow_texture();
+	//update_map();
 }
 
 
@@ -1657,6 +1743,11 @@ void Strategy::update_text() {
 		str_terrain += " ; " + std::to_string(opposite_data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
 		
 		texts_2d.push_back(Text(str_terrain, glm::vec2(-1.5, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+	}
+
+	if (_cursor_hover_unit != NULL) {
+		std::string str_unit = _cursor_hover_unit->_team->_name + " id = " + std::to_string(_cursor_hover_unit->_id) + " status = " + unit_status2str(_cursor_hover_unit->_status);
+		texts_2d.push_back(Text(str_unit, glm::vec2(0.0, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 
 	_font->set_text(texts_2d);

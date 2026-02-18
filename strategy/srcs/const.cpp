@@ -21,6 +21,9 @@ std::string unit_status2str(UNIT_STATUS mode) {
 	else if (mode == DESTROYED) {
 		return "DESTROYED";
 	}
+	else if (mode == COMPUTING_PATH) {
+		return "COMPUTING_PATH";
+	}
 	std::cerr << mode << " : mode unit reconnu\n";
 	return "UNKNOWN";
 }
@@ -44,6 +47,9 @@ UNIT_STATUS str2unit_status(std::string s) {
 	}
 	else if (s == "DESTROYED") {
 		return DESTROYED;
+	}
+	else if (s == "COMPUTING_PATH") {
+		return COMPUTING_PATH;
 	}
 	std::cerr << s << " : status d'unité non reconnu\n";
 	return WAITING;

@@ -2,7 +2,7 @@
 	"type" : "INFANTERY",
 	"max_velocity" : 0.06,
 	"life_init" : 30.0,
-	"regen" : 0.5,
+	"regen" : 0.05,
 	"shooting_rate" : 0.2,
 	"vision_distance" : 10.0,
 	"vision_angle" : 0.8,

@@ -129,7 +129,7 @@ ViewSystem::ViewSystem(GLDrawManager * gl_draw_manager, ScreenGL * screengl) :
 	_new_single_selection(false), _new_rect_selection(false),
 	_target_anim(false), _phi_anim(false), _theta_anim(false), _rho_anim(false)
 {
-	_camera2clip= glm::frustum(-_frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, _frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
+	_camera2clip = glm::frustum(-_frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, _frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
 
 	update();
 
@@ -457,6 +457,21 @@ void ViewSystem::update() {
 }
 
 
+ViewSystemState * ViewSystem::get_state() {
+	ViewSystemState * state = new ViewSystemState();
+	state->_target = _target;
+	state->_phi = _phi;
+	state->_theta = _theta;
+	state->_rho = _rho;
+	return state;
+}
+
+
+void ViewSystem::set_state(ViewSystemState * state) {
+	set(state->_target, state->_phi, state->_theta, state->_rho);
+}
+
+
 void ViewSystem::set(const pt_3d & target, number phi, number theta, number rho) {
 	_target= target;
 	_phi= phi;
@@ -580,6 +595,45 @@ void ViewSystem::constraint_rho(number rho) {
 
 void ViewSystem::unconstraint_rho() {
 	_rho_constrained = false;
+}
+
+
+void ViewSystem::unconstraint_all() {
+	_target_constrained = _phi_constrained = _theta_constrained = _rho_constrained = false;
+}
+
+
+ViewSystemConstraints * ViewSystem::get_constraints() {
+	ViewSystemConstraints * result = new ViewSystemConstraints();
+	result->_target_constrained = _target_constrained;
+	result->_target_min = _target_min;
+	result->_target_max = _target_max;
+	result->_phi_constrained = _phi_constrained;
+	result->_phi_min = _phi_min;
+	result->_phi_max = _phi_max;
+	result->_theta_constrained = _theta_constrained;
+	result->_theta_min = _theta_min;
+	result->_theta_max = _theta_max;
+	result->_rho_constrained = _rho_constrained;
+	result->_rho_min = _rho_min;
+	result->_rho_max = _rho_max;
+	return result;
+}
+
+
+void ViewSystem::set_constraints(ViewSystemConstraints * constraints) {
+	_target_constrained = constraints->_target_constrained;
+	_target_min = constraints->_target_min;
+	_target_max = constraints->_target_max;
+	_phi_constrained = constraints->_phi_constrained;
+	_phi_min = constraints->_phi_min;
+	_phi_max = constraints->_phi_max;
+	_theta_constrained = constraints->_theta_constrained;
+	_theta_min = constraints->_theta_min;
+	_theta_max = constraints->_theta_max;
+	_rho_constrained = constraints->_rho_constrained;
+	_rho_min = constraints->_rho_min;
+	_rho_max = constraints->_rho_max;
 }
 
 

@@ -28,7 +28,7 @@ Map::Map() {
 }
 
 
-Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t) :
+Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution) :
 	_unit_types_dir(unit_types_dir), _ammo_types_dir(ammo_types_dir), _elements_dir(elements_dir), 
 	_path_resolution(path_resolution), _elevation_resolution(elevation_resolution), _fow_resolution(fow_resolution)
 {
@@ -123,6 +123,10 @@ Map::~Map() {
 
 
 bool Map::fow_check(Team * team, pt_2d pos) {
+	if (!point_in_aabb2d(pos, _aabb)) {
+		return false;
+	}
+
 	std::vector<uint> vertices = team->_fow->vertices_in_cell_containing_pt(pos);
 	for (auto & v : vertices) {
 		GraphVertex vertex = team->_fow->get_vertex(v);
@@ -136,7 +140,7 @@ bool Map::fow_check(Team * team, pt_2d pos) {
 
 
 bool Map::add_unit_check(Team * team, UNIT_TYPE type, pt_2d pos) {
-	if (pos.x < _aabb->_pos.x || pos.y < _aabb->_pos.y || pos.x >= _aabb->_pos.x + _aabb->_size.x || pos.y >= _aabb->_pos.y + _aabb->_size.y) {
+	if (!point_in_aabb2d(pos, _aabb)) {
 		return false;
 	}
 
@@ -692,6 +696,104 @@ void Map::pause_all_units(bool pause) {
 }
 
 
+void Map::ia(time_point t) {
+	bool ia_verbose = true;
+	for (auto & team : _teams) {
+		if (!team->_ia) {
+			continue;
+		}
+
+		for (auto & unit : team->_units) {
+			if (unit->_status == COMPUTING_PATH) {
+				continue;
+			}
+			else if (unit->_status == WAITING) {
+				if (unit->_life > 0.95 * unit->_type->_life_init) {
+					unit->set_status(WATCHING, t);
+					if (ia_verbose) {
+						std::cout << "IA unit " << unit->_id << " life OK => WAITING -> WATCHING\n";
+					}
+				}
+			}
+			else if (unit->_status == WATCHING) {
+				Unit * ennemy_unit = NULL;
+				for (auto & ennemy_team : _teams) {
+					ennemy_unit = team->search_target(unit, ennemy_team);
+					if (ennemy_unit != NULL) {
+						break;
+					}
+				}
+				
+				if (ennemy_unit != NULL) {
+					team->unit_attack(unit, ennemy_unit, t);
+					if (ia_verbose) {
+						std::cout << "IA unit " << unit->_id << " target found => WATCHING -> ATTACKING\n";
+					}
+				}
+				else {
+					uint compt = 0;
+					while (true) {
+						if (compt++ > 100) {
+							break;
+						}
+
+						// recherche sur un disque troué
+						pt_2d destination = rand_pt_2d(unit->_position, unit->_type->_vision_distance, unit->_type->_vision_distance * 0.5);
+						if (move_unit_check(unit, destination)) {
+							team->unit_goto(unit, pt_3d(destination, _elevation->get_alti(destination)), t);
+							if (ia_verbose) {
+								std::cout << "IA unit " << unit->_id << " no target found => WATCHING -> MOVING\n";
+							}
+							break;
+						}
+					}
+				}
+			}
+			else if (unit->_status == MOVING) {
+				if (unit->_hit_status != NO_HIT) {
+					unit->set_status(WATCHING, t);
+					if (ia_verbose) {
+						std::cout << "IA unit " << unit->_id << " attacked => MOVING -> WATCHING\n";
+					}
+				}
+
+				Unit * ennemy_unit = NULL;
+				for (auto & ennemy_team : _teams) {
+					ennemy_unit = team->search_target(unit, ennemy_team);
+					if (ennemy_unit != NULL) {
+						break;
+					}
+				}
+				
+				if (ennemy_unit != NULL) {
+					team->unit_attack(unit, ennemy_unit, t);
+					if (ia_verbose) {
+						std::cout << "IA unit " << unit->_id << " target found => MOVING -> WATCHING\n";
+					}
+				}
+			}
+			else if (unit->_status == ATTACKING) {
+				if (!team->is_target_reachable(unit, unit->_target)) {
+					pt_2d destination = pt_2d(unit->_target->_position);
+					if (move_unit_check(unit, destination)) {
+						team->unit_goto(unit, pt_3d(destination, _elevation->get_alti(destination)), t);
+						if (ia_verbose) {
+							std::cout << "IA unit " << unit->_id << " target unreachable => ATTACKING -> MOVING\n";
+						}
+					}
+					else {
+						unit->set_status(WATCHING, t);
+						if (ia_verbose) {
+							std::cout << "IA unit " << unit->_id << " target lost => ATTACKING -> WATCHING\n";
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+
 void Map::anim(time_point t) {
 	// Pathfinding ------------------------------------------------
 	UnitPath * unit_path;
@@ -717,74 +819,7 @@ void Map::anim(time_point t) {
 	// TODO : à desactiver quand les problèmes de path seront réglés
 	save_teams("../data/maps/last_map/teams.json");
 
-	// IA -----------------------------------------------------------
-	for (auto & team : _teams) {
-		if (!team->_ia) {
-			continue;
-		}
-
-		for (auto & unit : team->_units) {
-			if (unit->_status == WAITING) {
-				if (unit->_life > 0.95 * unit->_type->_life_init) {
-					unit->set_status(WATCHING, t);
-				}
-			}
-			else if (unit->_status == WATCHING) {
-				Unit * ennemy_unit = NULL;
-				for (auto & ennemy_team : _teams) {
-					ennemy_unit = team->search_target(unit, ennemy_team);
-					if (ennemy_unit != NULL) {
-						break;
-					}
-				}
-				
-				if (ennemy_unit != NULL) {
-					team->unit_attack(unit, ennemy_unit, t);
-				}
-				else {
-					uint compt = 0;
-					while (true) {
-						if (compt++ > 100) {
-							break;
-						}
-						pt_2d destination = rand_pt_2d(unit->_position - unit->_type->_vision_distance, unit->_position + unit->_type->_vision_distance);
-						if (move_unit_check(unit, destination)) {
-							team->unit_goto(unit, pt_3d(destination, _elevation->get_alti(destination)), t);
-							break;
-						}
-					}
-				}
-			}
-			else if (unit->_status == MOVING) {
-				if (unit->_hit_status != NO_HIT) {
-					unit->set_status(WATCHING, t);
-				}
-
-				Unit * ennemy_unit = NULL;
-				for (auto & ennemy_team : _teams) {
-					ennemy_unit = team->search_target(unit, ennemy_team);
-					if (ennemy_unit != NULL) {
-						break;
-					}
-				}
-				
-				if (ennemy_unit != NULL) {
-					team->unit_attack(unit, ennemy_unit, t);
-				}
-			}
-			else if (unit->_status == ATTACKING) {
-				if (!team->is_target_reachable(unit, unit->_target)) {
-					pt_2d destination = pt_2d(unit->_target->_position);
-					if (move_unit_check(unit, destination)) {
-						team->unit_goto(unit, pt_3d(destination, _elevation->get_alti(destination)), t);
-					}
-					else {
-						unit->set_status(WATCHING, t);
-					}
-				}
-			}
-		}
-	}
+	ia(t);
 
 	// anim par unité -------------------------------------------------
 	for (auto & team : _teams) {
@@ -1049,7 +1084,7 @@ void Map::save(std::string dir_map) {
 }
 
 
-void Map::load(std::string dir_map) {
+void Map::load(std::string dir_map, time_point t) {
 	std::filesystem::path map_path = dir_map;
 	std::filesystem::path general_json_path = map_path / "general.json";
 	std::filesystem::path elements_json_path = map_path / "elements.json";
@@ -1098,7 +1133,7 @@ void Map::load(std::string dir_map) {
 		Team * team = new Team(team_name, team_color, _elevation, _fow_resolution);
 		for (auto & unit_js : team_js["units"]) {
 			Unit * unit = team->add_unit(_unit_types[str2unit_type(unit_js["type"])], unit_js["id"], pt_2d(unit_js["position"][0], unit_js["position"][1]));
-			unit->_status = str2unit_status(unit_js["status"]);
+			unit->set_status(str2unit_status(unit_js["status"]), t);
 			unit->_life = unit_js["life"];
 
 			UnitPath * unit_path = new UnitPath();

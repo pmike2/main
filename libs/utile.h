@@ -28,6 +28,7 @@ number rand_number(number x0, number x1);
 
 pt_2d rand_pt_2d(number xmin, number xmax, number ymin, number ymax);
 pt_2d rand_pt_2d(pt_2d pt_min, pt_2d pt_max);
+pt_2d rand_pt_2d(pt_2d circle_center, number radius_max, number radius_min = 0.0);
 
 pt_3d rand_pt_3d(number xmin, number xmax, number ymin, number ymax, number zmin, number zmax);
 pt_3d rand_pt_3d(pt_3d pt_min, pt_3d pt_max);

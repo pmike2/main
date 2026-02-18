@@ -62,12 +62,13 @@ add_library(lib_lake STATIC ./srcs/elements/lake.cpp ./srcs/elements/lake.h)
 add_library(lib_river STATIC ./srcs/elements/river.cpp ./srcs/elements/river.h)
 add_library(lib_ammo STATIC ./srcs/ammo.cpp ./srcs/ammo.h)
 add_library(lib_ammo_type STATIC ./srcs/ammo_type.cpp ./srcs/ammo_type.h)
+add_library(lib_overview STATIC ./srcs/overview.cpp ./srcs/overview.h)
 
 add_executable(main ./srcs/main.cpp)
 
 set(EXT_LIBS ${GDAL_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
 set(GENERIC_LIBS lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_repere lib_gl_utils lib_input_state lib_bbox lib_font lib_convex_hull lib_obj_parser lib_gl_ihm lib_gl_draw)
-set(SPECIFIC_LIBS lib_const lib_elevation lib_map lib_path_finder lib_strategy lib_unit_type lib_unit lib_unit_path lib_elements lib_element lib_tree lib_stone lib_lake lib_river lib_ammo lib_ammo_type)
+set(SPECIFIC_LIBS lib_const lib_elevation lib_map lib_path_finder lib_strategy lib_unit_type lib_unit lib_unit_path lib_elements lib_element lib_tree lib_stone lib_lake lib_river lib_ammo lib_ammo_type lib_overview)
 
 target_link_libraries(main PUBLIC ${EXT_LIBS})
 target_link_libraries(main PUBLIC ${GENERIC_LIBS})

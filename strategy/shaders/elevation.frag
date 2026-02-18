@@ -1,15 +1,17 @@
 #version 410
 
 
+uniform vec3 light_position;
+uniform vec3 light_color;
+uniform vec3 view_position;
+
+
 in vec3 vertex_position;
 in vec4 vertex_color;
 in vec3 vertex_normal;
 
-out vec4 frag_color;
 
-uniform vec3 light_position;
-uniform vec3 light_color;
-uniform vec3 view_position;
+out vec4 frag_color;
 
 
 void main(void) {

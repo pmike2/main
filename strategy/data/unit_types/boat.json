@@ -2,7 +2,7 @@
 	"type" : "BOAT",
 	"max_velocity" : 0.03,
 	"life_init" : 100.0,
-	"regen" : 0.5,
+	"regen" : 0.05,
 	"shooting_rate" : 4.0,
 	"vision_distance" : 25.0,
 	"vision_angle" : 0.8,

@@ -104,6 +104,24 @@ public:
 };
 
 
+struct ViewSystemState {
+	pt_3d _target;
+	number _phi, _theta, _rho;
+};
+
+
+struct ViewSystemConstraints {
+	bool _target_constrained;
+	pt_2d _target_min, _target_max;
+	bool _phi_constrained;
+	number _phi_min, _phi_max;
+	bool _theta_constrained;
+	number _theta_min, _theta_max;
+	bool _rho_constrained;
+	number _rho_min, _rho_max;
+};
+
+
 // systeme de vue 3D
 class ViewSystem {
 public:
@@ -121,7 +139,9 @@ public:
 	void draw();
 	//void anim(const pt_3d & target, const quat & rotation);
 	void anim(time_point t);
-	
+
+	ViewSystemState * get_state();
+	void set_state(ViewSystemState * state);
 	void set(const pt_3d & target, number phi, number theta, number rho);
 	void set_target(const pt_3d & target);
 	void set_target(const pt_2d & target);
@@ -142,6 +162,9 @@ public:
 	void constraint_rho(number rho_min, number rho_max);
 	void constraint_rho(number rho);
 	void unconstraint_rho();
+	void unconstraint_all();
+	ViewSystemConstraints * get_constraints();
+	void set_constraints(ViewSystemConstraints * constraints);
 	
 	pt_2d get_target_direction(int screen_delta_x, int screen_delta_y);
 	void move_target(int screen_delta_x, int screen_delta_y);

@@ -17,6 +17,7 @@
 
 #include "const.h"
 #include "map.h"
+#include "overview.h"
 
 
 struct StrategyConfig {
@@ -62,14 +63,15 @@ public:
 	void draw_select();
 	void draw_linear(std::string context_name);
 	void draw_dash(std::string context_name, number dash_size, number gap_size, number thickness);
-	void draw_tree_stone();
-	void draw_elevation();
-	void draw_lake();
-	void draw_river();
-	void draw_sea();
-	void draw_unit(UnitType * unit_type);
+	void draw_tree_stone(ViewSystem * view_system);
+	void draw_elevation(ViewSystem * view_system);
+	void draw_lake(ViewSystem * view_system);
+	void draw_river(ViewSystem * view_system);
+	void draw_sea(ViewSystem * view_system);
+	void draw_unit(UnitType * unit_type, ViewSystem * view_system);
 	void draw_unit_life();
-	void draw_ammo(AmmoType * ammo_type);
+	void draw_ammo(AmmoType * ammo_type, ViewSystem * view_system);
+	//void draw_map();
 	void draw();
 	
 	void anim(time_point t);
@@ -96,7 +98,9 @@ public:
 	void update_ammo_matrices(AmmoType * ammo_type);
 	void update_selection();
 	void update_fow_texture();
+	//void update_map();
 	void update_all();
+	
 	void update_text();
 	void update_angles();
 	
@@ -113,6 +117,7 @@ public:
 	GLIHM * _ihm;
 	Map * _map;
 	StrategyConfig * _config;
+	OverView * _overview;
 
 	pt_3d _cursor_world_position;
 	bool _cursor_in_world;

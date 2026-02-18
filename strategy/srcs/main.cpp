@@ -115,6 +115,8 @@ void init_gl() {
 
 	//gl_versions();
 
+	glClearColor(0.1, 0.1, 0.1, 1.0);
+
 	SDL_GL_SetSwapInterval(1);
 	glClearDepth(1.0f);
 	glEnable(GL_DEPTH_TEST);
@@ -157,14 +159,7 @@ void init_data() {
 
 void draw() {
 	compt_fps++;
-
-	glClearColor(0.1, 0.1, 0.1, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-
-	view_system->draw();
 	strategy->draw();
-
 	SDL_GL_SwapWindow(window);
 }
 

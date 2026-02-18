@@ -35,7 +35,7 @@
 
 struct Map {
 	Map();
-	Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t);
+	Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution);
 	~Map();
 	
 	bool fow_check(Team * team, pt_2d pos);
@@ -79,6 +79,7 @@ struct Map {
 	void path_find();
 	void pause_all_units(bool pause);
 
+	void ia(time_point t);
 	void anim(time_point t);
 	void collisions(time_point t);
 	
@@ -87,7 +88,7 @@ struct Map {
 	void save_teams(std::string teams_json_path);
 	void save_fixed(std::string dir_map);
 	void save(std::string dir_map);
-	void load(std::string dir_map);
+	void load(std::string dir_map, time_point t);
 	friend std::ostream & operator << (std::ostream & os, Map & map);
 
 

@@ -162,11 +162,11 @@ void Unit::set_status(UNIT_STATUS status, time_point t) {
 	}
 	
 	_status = status;
-	
-	if (_status == WAITING) {
+	if (_status != MOVING) {
 		_path->clear();
 	}
-	else if (_status == MOVING) {
+	
+	if (_status == MOVING) {
 		if (_path->empty()) {
 			std::cerr << "Unit::follow_path : path empty\n";
 			set_status(WAITING, t);
@@ -396,6 +396,7 @@ void Team::clear_selection() {
 
 void Team::unit_goto(Unit * unit, pt_3d pt, time_point t) {
 	unit->_instructions.push({pt, t});
+	unit->set_status(COMPUTING_PATH, t);
 }
 
 

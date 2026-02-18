@@ -734,8 +734,8 @@ void GLIHM::draw() {
 }
 
 
-void GLIHM::anim() {
-
+void GLIHM::anim(time_point t) {
+	_current_t = t;
 }
 
 

@@ -23,6 +23,7 @@
 		"lake" : {"shader" : "lake", "mode" : "GL_TRIANGLES"},
 		"sea" : {"shader" : "sea", "mode" : "GL_TRIANGLES"},
 		"unit_life" : {"shader" : "unit_life", "mode" : "GL_TRIANGLES"},
+		"map" : {"shader" : "map", "mode" : "GL_TRIANGLES"},
 
 		"bomb" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
 			"buffers" : [
