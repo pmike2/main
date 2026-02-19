@@ -9,13 +9,10 @@ uniform vec3 view_position;
 in GS_OUT {
 	vec3 vertex_position;
 	vec3 vertex_normal;
-	//vec3 vertex_ambient_color;
 	vec3 vertex_diffuse_color;
-	//vec3 vertex_specular_color;
-	//float vertex_shininess;
-	//float vertex_opacity;
 	vec3 team_color;
 	float hit;
+	float alpha;
 } fs_in;
 
 
@@ -33,11 +30,11 @@ void main(void) {
 	vec3 diffuse= diff * light_color;
 
 	// specular
+	// TODO : mettre en uniform ?
 	const float specular_strength = 0.5;
 	const float shininess = 10.0;
 	vec3 view_direction = normalize(view_position- fs_in.vertex_position);
 	vec3 reflection_direction = reflect(-light_direction, fs_in.vertex_normal);
-	//float spec = pow(max(dot(view_direction, reflection_direction), 0.0), fs_in.vertex_shininess);
 	float spec = pow(max(dot(view_direction, reflection_direction), 0.0), shininess);
 	vec3 specular = specular_strength * spec * light_color;
 	
@@ -51,6 +48,5 @@ void main(void) {
 	
 	result = mix(result, vec3(1.0, 0.0, 0.0), fs_in.hit);
 	
-	//frag_color= vec4(result, fs_in.vertex_opacity);
-	frag_color= vec4(result, 1.0);
+	frag_color= vec4(result, fs_in.alpha);
 }

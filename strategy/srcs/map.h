@@ -44,8 +44,8 @@ struct Map {
 	bool move_unit_check(Unit * unit, pt_2d pos);
 	bool attack_unit_check(Unit * attacking_unit, Unit * attacked_unit);
 
-	Unit * add_unit(Team * team, UNIT_TYPE type, pt_2d pos);
-	void add_first_units2teams();
+	Unit * add_unit(Team * team, UNIT_TYPE type, pt_2d pos, time_point t);
+	void add_first_units2teams(time_point t);
 	void add_river(pt_2d pos);
 	void add_lake(pt_2d pos);
 	void add_trees(std::string species_name, pt_2d pos, uint n_trees, number dispersion);

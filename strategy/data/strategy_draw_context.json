@@ -23,7 +23,8 @@
 		"lake" : {"shader" : "lake", "mode" : "GL_TRIANGLES"},
 		"sea" : {"shader" : "sea", "mode" : "GL_TRIANGLES"},
 		"unit_life" : {"shader" : "unit_life", "mode" : "GL_TRIANGLES"},
-		"map" : {"shader" : "map", "mode" : "GL_TRIANGLES"},
+		"overview" : {"shader" : "overview", "mode" : "GL_TRIANGLES"},
+		"construction" : {"shader" : "construction", "mode" : "GL_TRIANGLES"},
 
 		"bomb" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
 			"buffers" : [
@@ -39,25 +40,25 @@
 		"INFANTERY" : {
 			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
 			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in"]}
+				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in", "alpha_in"]}
 			]
 		},
 		"TANK" : {
 			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
 			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in"]}
+				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in", "alpha_in"]}
 			]
 		},
 		"HELICOPTER" : {
 			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
 			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in"]}
+				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in", "alpha_in"]}
 			]
 		},
 		"BOAT" : {
 			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
 			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in"]}
+				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in", "alpha_in"]}
 			]
 		}
 	}

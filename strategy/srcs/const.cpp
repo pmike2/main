@@ -24,6 +24,9 @@ std::string unit_status2str(UNIT_STATUS mode) {
 	else if (mode == COMPUTING_PATH) {
 		return "COMPUTING_PATH";
 	}
+	else if (mode == UNDER_CONSTRUCTION) {
+		return "UNDER_CONSTRUCTION";
+	}
 	std::cerr << mode << " : mode unit reconnu\n";
 	return "UNKNOWN";
 }
@@ -50,6 +53,9 @@ UNIT_STATUS str2unit_status(std::string s) {
 	}
 	else if (s == "COMPUTING_PATH") {
 		return COMPUTING_PATH;
+	}
+	else if (s == "UNDER_CONSTRUCTION") {
+		return UNDER_CONSTRUCTION;
 	}
 	std::cerr << s << " : status d'unité non reconnu\n";
 	return WAITING;

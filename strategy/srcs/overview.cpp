@@ -6,15 +6,16 @@ OverView::OverView() {
 }
 
 
-OverView::OverView(GLDrawManager * gl_draw_manager) : _gl_draw_manager(gl_draw_manager), _tex_width(1024), _tex_height(1024) {
-	_gl_draw_manager->add_texture("map_texture", GL_TEXTURE_2D, 0,
+OverView::OverView(GLDrawManager * gl_draw_manager) : _gl_draw_manager(gl_draw_manager), _tex_width(OVERVIEW_TEXTURE_SIZE), _tex_height(OVERVIEW_TEXTURE_SIZE) {
+	_gl_draw_manager->add_texture("overview_texture", GL_TEXTURE_2D, 0,
 		std::map<GLenum, int>{
 			{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
 			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
 		},
-		GL_RGB, glm::uvec3(1024, 1024, 0), GL_RGB, GL_UNSIGNED_BYTE);
+		GL_RGB, glm::uvec3(_tex_width, _tex_height, 0), GL_RGB, GL_UNSIGNED_BYTE);
 
 	// ----------------------------------------
+	// TODO : mettre tout ça dans gl_draw.h ?
 	GLuint depthrenderbuffer;
 	glGenRenderbuffers(1, &depthrenderbuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthrenderbuffer);
@@ -23,7 +24,7 @@ OverView::OverView(GLDrawManager * gl_draw_manager) : _gl_draw_manager(gl_draw_m
 	
 	glGenFramebuffers(1, &_framebuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, _framebuffer);
-	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _gl_draw_manager->_texture_pool->get_texture("map_texture")->_id, 0);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _gl_draw_manager->_texture_pool->get_texture("overview_texture")->_id, 0);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthrenderbuffer);
 	
 	GLenum DrawBuffers[1] = {GL_COLOR_ATTACHMENT0};
@@ -36,7 +37,7 @@ OverView::OverView(GLDrawManager * gl_draw_manager) : _gl_draw_manager(gl_draw_m
 	// ----------------------------------------
 	_aabb = new AABB_2D(DEFAULT_OVERVIEW_POSITION, DEFAULT_OVERVIEW_SIZE);
 
-	GLDrawContext * context= _gl_draw_manager->get_context("map");
+	GLDrawContext * context= _gl_draw_manager->get_context("overview");
 	context->_n_pts = 6;
 	
 	float * data = new float[context->data_size()];
@@ -62,14 +63,13 @@ OverView::OverView(GLDrawManager * gl_draw_manager) : _gl_draw_manager(gl_draw_m
 	delete[] data;
 
 	// -------------------------------------------
-	//number frustum_halfsize = 5.0;
-	//_camera2clip = glm::frustum(-frustum_halfsize, frustum_halfsize, -frustum_halfsize, frustum_halfsize, _frustum_near, _frustum_far);
-	//_camera2clip = glm::ortho(-frustum_halfsize, frustum_halfsize, -frustum_halfsize, frustum_halfsize);
+	// on fait un screen2gl carré ; les valeurs ont été calculées de façon empirique mais on doit pouvoir trouver une formule
 	const float GL_WIDTH= 10.0f;
 	const float GL_HEIGHT= 10.0f;
+	const number RHO = 200.0;
 	_screengl= new ScreenGL(_tex_width, _tex_height, GL_WIDTH, GL_HEIGHT);
 	_view_system= new ViewSystem(_gl_draw_manager, _screengl);
-	_view_system->set_2d(210.0);
+	_view_system->set_2d(RHO);
 
 }
 
@@ -92,7 +92,7 @@ void OverView::end_draw_in_texture() {
 
 
 void OverView::draw(ViewSystem * view_system) {
-	GLDrawContext * context= _gl_draw_manager->get_context("map");
+	GLDrawContext * context= _gl_draw_manager->get_context("overview");
 	context->activate();
 	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(view_system->_camera2clip)));
 	context->set_uniform("z", float(Z_OVERVIEW));

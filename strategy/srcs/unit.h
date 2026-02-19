@@ -36,7 +36,7 @@ struct Team;
 
 struct Unit : public InstancePosRot {
 	Unit();
-	Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation);
+	Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_point t);
 	~Unit();
 	//quat orientation(pt_2d v);
 	void anim(time_point t);
@@ -62,6 +62,7 @@ struct Unit : public InstancePosRot {
 	Elevation * _elevation;
 	time_point _last_moving_t;
 	time_point _last_shooting_t;
+	time_point _creation_t;
 	bool _delete;
 	number _angle;
 	number _life;
@@ -83,7 +84,7 @@ struct Team {
 	Team();
 	Team(std::string name, glm::vec3 color, Elevation * elevation, pt_2d fow_resolution);
 	~Team();
-	Unit * add_unit(UnitType * type, uint id, pt_2d pos);
+	Unit * add_unit(UnitType * type, uint id, pt_2d pos, time_point t);
 	std::vector<Unit *> get_units_in_aabb(AABB_2D * aabb);
 	std::vector<Unit *> get_selected_units();
 	void remove_unit(Unit * unit);
@@ -100,6 +101,8 @@ struct Team {
 	void update_fow_unit(Unit * unit);
 	void update_fow();
 	json get_json();
+	Unit * get_unit_under_construction(UnitType * unit_type);
+	number get_construction_progress(UnitType * unit_type, time_point t);
 	friend std::ostream & operator << (std::ostream & os, Team & team);
 
 

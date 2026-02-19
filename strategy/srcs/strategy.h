@@ -71,7 +71,7 @@ public:
 	void draw_unit(UnitType * unit_type, ViewSystem * view_system);
 	void draw_unit_life();
 	void draw_ammo(AmmoType * ammo_type, ViewSystem * view_system);
-	//void draw_map();
+	void draw_construction();
 	void draw();
 	
 	void anim(time_point t);
@@ -98,8 +98,8 @@ public:
 	void update_ammo_matrices(AmmoType * ammo_type);
 	void update_selection();
 	void update_fow_texture();
-	//void update_map();
-	void update_all();
+	void update_construction(time_point t);
+	void update_all(time_point t);
 	
 	void update_text();
 	void update_angles();

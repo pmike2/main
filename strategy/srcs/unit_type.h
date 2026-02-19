@@ -38,6 +38,7 @@ struct UnitType {
 	number _shooting_rate;
 	number _vision_distance;
 	number _vision_angle;
+	uint _creation_duration;
 	bool _floats;
 	bool _flies;
 	std::map<TERRAIN_TYPE, number> _terrain_weights;

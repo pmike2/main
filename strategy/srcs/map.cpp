@@ -179,8 +179,8 @@ bool Map::attack_unit_check(Unit * attacking_unit, Unit * attacked_unit) {
 }
 
 
-Unit * Map::add_unit(Team * team, UNIT_TYPE type, pt_2d pos) {
-	Unit * unit = team->add_unit(_unit_types[type], _next_unit_id, pos);
+Unit * Map::add_unit(Team * team, UNIT_TYPE type, pt_2d pos, time_point t) {
+	Unit * unit = team->add_unit(_unit_types[type], _next_unit_id, pos, t);
 	_next_unit_id++;
 	add_unit_to_position_grid(unit);
 
@@ -188,7 +188,7 @@ Unit * Map::add_unit(Team * team, UNIT_TYPE type, pt_2d pos) {
 }
 
 
-void Map::add_first_units2teams() {
+void Map::add_first_units2teams(time_point t) {
 	for (auto & team : _teams) {
 		uint compt = 0;
 		while (true) {
@@ -199,7 +199,7 @@ void Map::add_first_units2teams() {
 			}
 			pt_2d position = rand_pt_2d(_aabb->_pos, _aabb->_pos + _aabb->_size);
 			if (add_unit_check(team, INFANTERY, position)) {
-				add_unit(team, INFANTERY, position);
+				add_unit(team, INFANTERY, position, t);
 				break;
 			}
 		}
@@ -1132,7 +1132,8 @@ void Map::load(std::string dir_map, time_point t) {
 		glm::vec3 team_color = glm::vec3(team_js["color"][0], team_js["color"][1], team_js["color"][2]);
 		Team * team = new Team(team_name, team_color, _elevation, _fow_resolution);
 		for (auto & unit_js : team_js["units"]) {
-			Unit * unit = team->add_unit(_unit_types[str2unit_type(unit_js["type"])], unit_js["id"], pt_2d(unit_js["position"][0], unit_js["position"][1]));
+			Unit * unit = team->add_unit(_unit_types[str2unit_type(unit_js["type"])], unit_js["id"], pt_2d(unit_js["position"][0], unit_js["position"][1]), t);
+			add_unit_to_position_grid(unit);
 			unit->set_status(str2unit_status(unit_js["status"]), t);
 			unit->_life = unit_js["life"];
 

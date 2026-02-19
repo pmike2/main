@@ -6,6 +6,7 @@
 	"shooting_rate" : 3.0,
 	"vision_distance" : 20.0,
 	"vision_angle" : 0.8,
+	"creation_duration" : 15000,
 	"floats" : false,
 	"flies" : false,
 	"ammo" : "bomb",

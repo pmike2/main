@@ -26,7 +26,8 @@
 				{"name" : "move"},
 				{"name" : "attack"},
 				{"name" : "wait"},
-				{"name" : "watch"}
+				{"name" : "watch"},
+				{"name" : "destroy"}
 			]
 		},
 		{

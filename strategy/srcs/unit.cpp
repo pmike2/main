@@ -14,10 +14,11 @@ Unit::Unit() {
 }
 
 
-Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation) : 
+Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_point t) : 
 	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
-	_team(team), _type(type), _status(WAITING), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation),
-	_delete(false), _angle(0.0), _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL)
+	_team(team), _type(type), _status(UNDER_CONSTRUCTION), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation),
+	_delete(false), _angle(0.0), _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
+	_creation_t(t)
 {
 	_path = new UnitPath();
 }
@@ -55,8 +56,15 @@ void Unit::anim(time_point t) {
 		}
 		return;
 	}
+	
+	if (_status == UNDER_CONSTRUCTION) {
+		auto d_creation = std::chrono::duration_cast<std::chrono::milliseconds>(t - _creation_t).count();
+		if (d_creation > _type->_creation_duration) {
+			set_status(WAITING, t);
+		}
 
-	if (_status == WAITING) {
+	}
+	else if (_status == WAITING) {
 		_life += _type->_regen;
 		if (_life > _type->_life_init) {
 			_life = _type->_life_init;
@@ -64,9 +72,6 @@ void Unit::anim(time_point t) {
 	}
 	else if (_status == WATCHING) {
 		number next_angle = _angle + 0.01;
-		/*if (next_angle > 2.0 * M_PI) {
-			next_angle -= 2.0 * M_PI;
-		}*/
 		if (next_angle - _angle > M_PI) {
 			next_angle -= 2.0 * M_PI;
 		}
@@ -297,12 +302,12 @@ Team::~Team() {
 }
 
 
-Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos) {
+Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos, time_point t) {
 	pt_3d pt3d(pos.x, pos.y, _elevation->get_alti(pos));
 	if (type->_floats && pt3d.z < 0.0) {
 		pt3d.z = 0.0;
 	}
-	Unit * unit = new Unit(this, type, pt3d, _elevation);
+	Unit * unit = new Unit(this, type, pt3d, _elevation, t);
 	unit->_id = id;
 	_units.push_back(unit);
 	update_fow_unit(unit);
@@ -538,6 +543,26 @@ json Team::get_json() {
 		result["units"].push_back(unit->get_json());
 	}
 	return result;
+}
+
+
+Unit * Team::get_unit_under_construction(UnitType * unit_type) {
+	for (auto & unit : _units) {
+		if (unit->_type == unit_type && unit->_status == UNDER_CONSTRUCTION) {
+			return unit;
+		}
+	}
+	return NULL;
+}
+
+
+number Team::get_construction_progress(UnitType * unit_type, time_point t) {
+	Unit * unit = get_unit_under_construction(unit_type);
+	if (unit != NULL) {
+		auto d_creation = std::chrono::duration_cast<std::chrono::milliseconds>(t - unit->_creation_t).count();
+		return number(d_creation) / number(unit_type->_creation_duration);
+	}
+	return 1.0;
 }
 
 

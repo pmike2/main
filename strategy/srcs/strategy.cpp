@@ -101,7 +101,7 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	if (verbose) {
 		std::cout << "update_all\n";
 	}
-	update_all();
+	update_all(t);
 
 	// --------------------------------------------------
 	if (verbose) {
@@ -159,13 +159,21 @@ void Strategy::set_ihm() {
 	_ihm->get_element("play_mode", "action_unit")->set_callback([this](){_config->_play_mode = ACTION_UNIT;});
 	
 	_ihm->get_element("unit_action", "wait")->set_callback([this](){
+		_config->_unit_action_mode = WAIT;
 		for (auto & unit : get_selected_team()->get_selected_units()) {
-			unit->_status = WAITING;
+			unit->set_status(WAITING, _ihm->_current_t);
 		}
 	});
 	_ihm->get_element("unit_action", "watch")->set_callback([this](){
+		_config->_unit_action_mode = WATCH;
 		for (auto & unit : get_selected_team()->get_selected_units()) {
-			unit->_status = WATCHING;
+			unit->set_status(WATCHING, _ihm->_current_t);
+		}
+	});
+	_ihm->get_element("unit_action", "destroy")->set_callback([this](){
+		_config->_unit_action_mode = DESTROY;
+		for (auto & unit : get_selected_team()->get_selected_units()) {
+			unit->set_hit_status(FINAL_HIT, _ihm->_current_t);
 		}
 	});
 	_ihm->get_element("unit_action", "move")->set_callback([this](){_config->_unit_action_mode = MOVE;});
@@ -237,18 +245,18 @@ void Strategy::set_ihm() {
 
 	_ihm->get_element("global_edit", "randomize")->set_callback([this](){
 		_map->randomize();
-		_map->add_first_units2teams();
+		_map->add_first_units2teams(_ihm->_current_t);
 		_map->save("../data/maps/last_map");
 		zoom2first_unit_of_selected_team();
-		update_all();
+		update_all(_ihm->_current_t);
 	});
 	
 	_ihm->get_element("global_edit", "clear")->set_callback([this](){
 		_map->clear();
-		_map->add_first_units2teams();
+		_map->add_first_units2teams(_ihm->_current_t);
 		_map->save("../data/maps/last_map");
 		zoom2first_unit_of_selected_team();
-		update_all();
+		update_all(_ihm->_current_t);
 	});
 	
 	for (auto & map_name : std::vector<std::string>{"map1", "map2", "map3", "map4", "map5"}) {
@@ -256,7 +264,7 @@ void Strategy::set_ihm() {
 			_map->load("../data/maps/" + map_name, _ihm->_current_t);
 			_map->save("../data/maps/last_map");
 			zoom2first_unit_of_selected_team();
-			update_all();
+			update_all(_ihm->_current_t);
 		});
 	
 		_ihm->get_element("save_map", map_name)->set_callback([this, map_name](){
@@ -505,25 +513,18 @@ void Strategy::draw_ammo(AmmoType * ammo_type, ViewSystem * view_system) {
 }
 
 
-/*void Strategy::draw_map() {
-	number map_frustum_halfsize = 5.0;
-	mat_4d map_camera2clip = glm::frustum(-map_frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, _frustum_halfsize * _screengl->_screen_width / _screengl->_screen_height, -_frustum_halfsize, _frustum_halfsize, _frustum_near, _frustum_far);
-	GLDrawContext * context= _gl_draw_manager->get_context("map");
+void Strategy::draw_construction() {
+	GLDrawContext * context= _gl_draw_manager->get_context("construction");
 	context->activate();
-	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(map_camera2clip)));
-	context->set_uniform("z", -10.0f);
-	context->set_uniform("alpha", 1.0f);
+	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(_ihm->_camera2clip)));
+	context->set_uniform("z", float(Z_IHM));
 	context->draw();
 	context->deactivate();
-}*/
+}
 
 
 void Strategy::draw() {
-	/*ViewSystemState * vs_state = _view_system->get_state();
-	ViewSystemConstraints * vs_constraints = _view_system->get_constraints();
-	_view_system->unconstraint_all();
-	_view_system->set_2d(200.0);*/
-
+	// dessin dans texture overview
 	_overview->start_draw_in_texture();
 	draw_elevation(_overview->_view_system);
 	draw_tree_stone(_overview->_view_system);
@@ -543,11 +544,6 @@ void Strategy::draw() {
 	// -----------------------------
 	glViewport(0, 0, _view_system->_screengl->_screen_width, _view_system->_screengl->_screen_height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	/*_view_system->set_constraints(vs_constraints);
-	_view_system->set_state(vs_state);
-	delete vs_constraints;
-	delete vs_state;*/
 
 	// environnement
 	draw_elevation(_view_system);
@@ -586,6 +582,7 @@ void Strategy::draw() {
 	glDisable(GL_DEPTH_TEST);
 	draw_dash("cursor", 4.0, 2.0, 2.0);
 	_ihm->draw();
+	draw_construction();
 	draw_unit_life();
 	_overview->draw(_view_system);
 	_view_system->draw();
@@ -610,6 +607,7 @@ void Strategy::anim(time_point t) {
 	update_unit_life();
 	update_selection();
 	update_fow_texture();
+	update_construction(t);
 
 	for (auto & unit_type : _map->_unit_types) {
 		update_unit_matrices(unit_type.second);
@@ -1454,19 +1452,25 @@ void Strategy::update_unit_matrices(UnitType * unit_type) {
 		}
 	}
 
-	float * data = new float[context->_n_instances * (16 + 4)];
+	float * data = new float[context->_n_instances * (16 + 5)];
 	float * ptr = data;
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
 			if (unit->_type == unit_type) {
-				const float * unit_data = glm::value_ptr(glm::mat4(unit->_model2world));
-				std::memcpy(ptr, unit_data, 16 * sizeof(float));
+				float unit_alpha = 1.0f;
+				if (unit->_status == UNDER_CONSTRUCTION) {
+					unit_alpha = 0.3f;
+				}
+
+				const float * unit_mat = glm::value_ptr(glm::mat4(unit->_model2world));
+				std::memcpy(ptr, unit_mat, 16 * sizeof(float));
 				ptr += 16;
 				ptr[0] = team->_color.r;
 				ptr[1] = team->_color.g;
 				ptr[2] = team->_color.b;
-				ptr[3] = unit->_hit;
-				ptr += 4;
+				ptr[3] = float(unit->_hit);
+				ptr[4] = unit_alpha;
+				ptr += 5;
 			}
 		}
 	}
@@ -1658,27 +1662,65 @@ void Strategy::update_fow_texture() {
 }
 
 
-/*void Strategy::update_map() {
-	GLDrawContext * context= _gl_draw_manager->get_context("map");
-	context->_n_pts = 6;
+void Strategy::update_construction(time_point t) {
+	GLDrawContext * context= _gl_draw_manager->get_context("construction");
+
+	if (_config->_edit || _config->_play_mode != ADD_UNIT) {
+		context->_n_pts = 0;
+		context->_active = false;
+		return;
+	}
+
+	context->_active = true;
+	context->_n_pts = 24 * _map->_unit_types.size();
 	
 	float * data = new float[context->data_size()];
 	float * ptr = data;
-	
-	pt_4d pos[4] = {
-		pt_4d(0.0, 0.0, 0.0, 1.0),
-		pt_4d(3.0, 0.0, 1.0, 1.0),
-		pt_4d(3.0, 3.0, 1.0, 0.0),
-		pt_4d(0.0, 3.0, 0.0, 0.0)
-	};
-	const uint idxs[6] = {0, 1, 2, 0, 2, 3};
 
-	for (uint i=0; i<6; ++i) {
-		ptr[0] = pos[idxs[i]].x;
-		ptr[1] = pos[idxs[i]].y;
-		ptr[2] = pos[idxs[i]].z;
-		ptr[3] = pos[idxs[i]].w;
-		ptr += 4;
+	for (auto & unit_type : _map->_unit_types) {
+		AABB_2D * aabb = _ihm->get_element("units", unit_type2str(unit_type.first))->_aabb;
+		number progress = get_selected_team()->get_construction_progress(unit_type.second, t);
+	
+		pt_2d pos[9] = {
+			aabb->_pos + pt_2d(0.5 * aabb->_size.x, aabb->_size.y),
+			aabb->_pos + pt_2d(aabb->_size.x, aabb->_size.y),
+			aabb->_pos + pt_2d(aabb->_size.x, 0.5 * aabb->_size.y),
+			aabb->_pos + pt_2d(aabb->_size.x, 0.0),
+			aabb->_pos + pt_2d(0.5 * aabb->_size.x, 0.0),
+			aabb->_pos,
+			aabb->_pos + pt_2d(0.0, 0.5 * aabb->_size.y),
+			aabb->_pos + pt_2d(0.0, aabb->_size.y),
+			aabb->_pos + pt_2d(0.5 * aabb->_size.x, 0.5 * aabb->_size.y)
+		};
+		const uint idxs[24] = {
+			1, 0, 8,
+			2, 1, 8,
+			3, 2, 8,
+			4, 3, 8,
+			5, 4, 8,
+			6, 5, 8,
+			7, 6, 8,
+			0, 7, 8
+		};
+
+		for (uint i=0; i<24; ++i) {
+			uint triangle_idx = i / 3;
+			glm::vec4 color;
+			if (number(triangle_idx + 1) * 0.125 > progress) {
+				color = glm::vec4(1.0, 1.0, 1.0, 0.8);
+			}
+			else {
+				color = glm::vec4(1.0, 1.0, 0.0, 0.1);
+			}
+
+			ptr[0] = pos[idxs[i]].x;
+			ptr[1] = pos[idxs[i]].y;
+			ptr[2] = color.r;
+			ptr[3] = color.g;
+			ptr[4] = color.b;
+			ptr[5] = color.a;
+			ptr += 6;
+		}
 	}
 
 	context->set_data(data);
@@ -1686,10 +1728,10 @@ void Strategy::update_fow_texture() {
 
 	//std::cout << *context << "\n";
 	//context->show_data();
-}*/
+}
 
 
-void Strategy::update_all() {
+void Strategy::update_all(time_point t) {
 	update_select();
 	update_grid();
 	update_bbox();
@@ -1712,7 +1754,7 @@ void Strategy::update_all() {
 	}
 	update_selection();
 	update_fow_texture();
-	//update_map();
+	update_construction(t);
 }
 
 
@@ -1849,7 +1891,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 			
 			else if (_config->_play_mode == ADD_UNIT) {
 				if (_add_unit_ok && _add_unit_fow_ok) {
-					Unit * unit = _map->add_unit(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position));
+					Unit * unit = _map->add_unit(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position), t);
 					if (_config->_units_paused) {
 						unit->_paused = true;
 					}
@@ -1884,6 +1926,9 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 			if (_view_system->_new_single_selection) {
 				_view_system->_new_single_selection= false;
 				for (auto & unit : get_selected_team()->_units) {
+					if (unit->_status == UNDER_CONSTRUCTION) {
+						continue;
+					}
 					unit->_selected = false;
 					if (_view_system->single_selection_intersects_aabb(unit->_bbox->_aabb, false)) {
 						unit->_selected = true;
@@ -1893,6 +1938,9 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 			else if (_view_system->_new_rect_selection) {
 				_view_system->_new_rect_selection= false;
 				for (auto & unit : get_selected_team()->_units) {
+					if (unit->_status == UNDER_CONSTRUCTION) {
+						continue;
+					}
 					unit->_selected = false;
 					BBox * bbox = new BBox(unit->_bbox->_aabb);
 					if (_view_system->rect_selection_intersects_bbox(bbox, false)) {
@@ -1936,6 +1984,10 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 		_fow_ok = _map->fow_check(get_selected_team(), pt_2d(_cursor_world_position));
 		
 		_add_unit_ok = _map->add_unit_check(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position));
+		if (get_selected_team()->get_unit_under_construction(_map->_unit_types[_config->_add_unit_type]) != NULL) {
+			_add_unit_ok = false;
+		}
+		
 		if (_config->_fow_active) {
 			_add_unit_fow_ok = _map->add_unit_fow_check(get_selected_team(), pt_2d(_cursor_world_position));
 		}
