@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.13)
 project(strategy)
 
 # glm a besoin d'un c++ >= 14
+set(CMAKE_CXX_COMPILER "/opt/local/bin/g++-mp-12")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
@@ -22,7 +23,7 @@ include_directories(/Volumes/Data/usr_local/include)
 include_directories(/Volumes/Data/usr_local/include/freetype2)
 include_directories(/Volumes/Data/usr_local/include/nlohmann)
 include_directories(/usr/local/include)
-#include_directories(/usr/local/include/freetype2)
+include_directories(/usr/local/include/freetype2)
 include_directories(../libs)
 include_directories(${GDAL_INCLUDE_DIRS} ${SDL2_INCLUDE_DIRS} ${SDL2IMAGE_INCLUDE_DIRS})
 
