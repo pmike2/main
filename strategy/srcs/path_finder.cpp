@@ -72,11 +72,16 @@ number PathFinder::terrain_weight(UnitType * unit_type, uint i, uint j) {
 
 number PathFinder::cost(UnitType * unit_type, uint unit_id, uint i, uint j) {
 	number result = 0.0;
-	if (!unit_type->_floats) {
+	
+	if (!unit_type->_floats && !unit_type->_flies) {
 		result += elevation_weight(unit_type, i, j);
 	}
-	result += units_position_weight(unit_type, unit_id, i, j);
-	result += terrain_weight(unit_type, i, j);
+
+	if (!unit_type->_flies) {
+		result += units_position_weight(unit_type, unit_id, i, j);
+		result += terrain_weight(unit_type, i, j);
+	}
+	
 	return result;
 }
 

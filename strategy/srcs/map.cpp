@@ -807,7 +807,12 @@ void Map::anim(time_point t) {
 				fill_unit_path_edges(unit);
 				add_unit_to_position_grid(unit);
 				unit->update_alti_path();
-				unit->set_status(MOVING, t);
+				if (unit->_type->_flies) {
+					unit->set_status(TAKEOFF, t);
+				}
+				else {
+					unit->set_status(MOVING, t);
+				}
 			}
 		}
 		else if (unit_path->_status == UNIT_PATH_COMPUTING_FAILED) {
@@ -827,7 +832,12 @@ void Map::anim(time_point t) {
 			if (unit->_status == MOVING) {
 				if (unit->last_checkpoint_checked()) {
 					remove_unit_from_position_grid(unit);
-					unit->set_status(WAITING, t);
+					if (unit->_type->_flies) {
+						unit->set_status(LANDING, t);
+					}
+					else {
+						unit->set_status(WAITING, t);
+					}
 					add_unit_to_position_grid(unit);
 				}
 				else if (unit->checkpoint_checked()) {

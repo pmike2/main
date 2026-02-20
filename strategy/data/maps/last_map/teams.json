@@ -9,46 +9,7 @@
             "name": "Team1",
             "units": [
                 {
-                    "id": 2,
-                    "life": 100.0,
-                    "path": {
-                        "goal": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "idx_path": 0,
-                        "intervals": [],
-                        "intervals_los": [],
-                        "nodes": [],
-                        "pts": [],
-                        "pts_los": [],
-                        "start": [
-                            0.0,
-                            0.0,
-                            0.0
-                        ],
-                        "use_line_of_sight": false
-                    },
-                    "position": [
-                        -49.6156228066936,
-                        26.53167014486127
-                    ],
-                    "status": "WAITING",
-                    "type": "BOAT"
-                }
-            ]
-        },
-        {
-            "color": [
-                0.0,
-                0.0,
-                1.0
-            ],
-            "name": "Team2",
-            "units": [
-                {
-                    "id": 4,
+                    "id": 5,
                     "life": 30.0,
                     "path": {
                         "goal": [
@@ -70,13 +31,22 @@
                         "use_line_of_sight": false
                     },
                     "position": [
-                        9.6927889157401,
-                        84.32637262460966
+                        -24.02437303238842,
+                        -66.45117145866514
                     ],
-                    "status": "COMPUTING_PATH",
+                    "status": "WAITING",
                     "type": "INFANTERY"
                 }
             ]
+        },
+        {
+            "color": [
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "Team2",
+            "units": []
         }
     ]
 }

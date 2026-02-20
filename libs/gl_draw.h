@@ -139,6 +139,7 @@ public:
 	uint _n_instances;
 	bool _active;
 	GLenum _draw_mode;
+	bool _verbose;
 };
 
 
@@ -155,11 +156,13 @@ public:
 	void add_texture(std::string name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
 	void set_texture_data(std::string name, void * data, uint depth, int width = -1, int height = -1);
 	void set_texture_data(std::string name, std::vector<std::string> pngs);
+	void set_verbose(bool verbose);
 	friend std::ostream & operator << (std::ostream & os, const GLDrawManager & gdm);
 
 
 	std::vector<GLDrawContext *> _contexts;
 	GLDrawTexturePool * _texture_pool;
+	bool _verbose;
 };
 
 

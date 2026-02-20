@@ -65,8 +65,8 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	}
 	
 	//_map->randomize();
-	//_map->clear();
-	_map->load("../data/maps/last_map", t);
+	_map->clear();
+	//_map->load("../data/maps/last_map", t);
 
 	zoom2first_unit_of_selected_team();
 
@@ -108,6 +108,7 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 		std::cout << "fin init\n";
 	}
 
+	//_gl_draw_manager->set_verbose(true);
 }
 
 
@@ -591,12 +592,26 @@ void Strategy::draw() {
 
 
 void Strategy::anim(time_point t) {
-	_view_system->anim(t);
+	bool verbose = false;
 	
+	if (verbose) {
+		std::cout << "anim : start\n";
+	}
+
+	if (verbose) {
+		std::cout << "anim : view_system / ihm\n";
+	}
+	_view_system->anim(t);
 	_ihm->anim(t);
 
+	if (verbose) {
+		std::cout << "anim : map\n";
+	}
 	_map->anim(t);
 
+	if (verbose) {
+		std::cout << "anim : updates\n";
+	}
 	update_select();
 	update_bbox();
 	update_path();
@@ -614,6 +629,10 @@ void Strategy::anim(time_point t) {
 	}
 	for (auto & ammo_type : _map->_ammo_types) {
 		update_ammo_matrices(ammo_type.second);
+	}
+
+	if (verbose) {
+		std::cout << "anim : end\n";
 	}
 }
 
@@ -1281,7 +1300,12 @@ void Strategy::update_cursor() {
 			ptr[0] = float(l_pts[i].x);
 			ptr[1] = float(l_pts[i].y);
 			if (_move_unit_ok) {
-				ptr[2] = float(_map->_elevation->get_alti(l_pts[i]) + Z_OFFSET_MOVE_UNIT);
+				if (!get_selected_team()->get_selected_units().empty() && get_selected_team()->get_selected_units()[0]->_type->_floats) {
+					ptr[2] = SEA_LEVEL;
+				}
+				else {
+					ptr[2] = float(_map->_elevation->get_alti(l_pts[i]) + Z_OFFSET_MOVE_UNIT);
+				}
 			}
 			else {
 				ptr[2] = float(Z_FOW);
@@ -1869,7 +1893,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 				
 				update_grid();
 				update_tree_stone();
-
+				_cursor_hover_unit = NULL;
 				return true;
 			}
 		}
@@ -1926,10 +1950,10 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 			if (_view_system->_new_single_selection) {
 				_view_system->_new_single_selection= false;
 				for (auto & unit : get_selected_team()->_units) {
+					unit->_selected = false;
 					if (unit->_status == UNDER_CONSTRUCTION) {
 						continue;
 					}
-					unit->_selected = false;
 					if (_view_system->single_selection_intersects_aabb(unit->_bbox->_aabb, false)) {
 						unit->_selected = true;
 					}
@@ -1938,10 +1962,14 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 			else if (_view_system->_new_rect_selection) {
 				_view_system->_new_rect_selection= false;
 				for (auto & unit : get_selected_team()->_units) {
+					unit->_selected = false;
 					if (unit->_status == UNDER_CONSTRUCTION) {
 						continue;
 					}
-					unit->_selected = false;
+					std::vector<Unit *> selected_units = get_selected_team()->get_selected_units();
+					if (!selected_units.empty() && selected_units[0]->_type != unit->_type) {
+						continue;
+					}
 					BBox * bbox = new BBox(unit->_bbox->_aabb);
 					if (_view_system->rect_selection_intersects_bbox(bbox, false)) {
 						unit->_selected = true;

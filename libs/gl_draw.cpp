@@ -544,7 +544,7 @@ GLDrawContext::GLDrawContext() {
 
 
 GLDrawContext::GLDrawContext(std::string name, GLuint prog, GLenum draw_mode, std::vector<GLDrawContextBuffer *> buffers, bool active) :
-	_name(name), _prog(prog), _n_pts(0), _active(active), _n_instances(0), _draw_mode(draw_mode)
+	_name(name), _prog(prog), _n_pts(0), _active(active), _n_instances(0), _draw_mode(draw_mode), _verbose(false)
 {
 
 	_uniforms = active_uniforms(_prog);
@@ -609,6 +609,9 @@ GLDrawContext::~GLDrawContext() {
 
 
 void GLDrawContext::set_data(float * data, uint idx_buffer) {
+	if (_verbose) {
+		std::cout << "GLDrawContext " << _name << " : set_data for buffer " << idx_buffer << "\n";
+	}
 	GLDrawContextBuffer * buffer = _buffers[idx_buffer];
 	glBindBuffer(GL_ARRAY_BUFFER, buffer->_id);
 	if (buffer->_is_instanced) {
@@ -622,6 +625,9 @@ void GLDrawContext::set_data(float * data, uint idx_buffer) {
 
 
 void GLDrawContext::clear_data(uint idx_buffer) {
+	if (_verbose) {
+		std::cout << "GLDrawContext " << _name << " : clear_data for buffer " << idx_buffer << "\n";
+	}
 	GLDrawContextBuffer * buffer = _buffers[idx_buffer];
 	glBindBuffer(GL_ARRAY_BUFFER, buffer->_id);
 	glBufferData(GL_ARRAY_BUFFER, 0, NULL, buffer->_usage);
@@ -632,6 +638,10 @@ void GLDrawContext::clear_data(uint idx_buffer) {
 void GLDrawContext::activate() {
 	if (!_active) {
 		return;
+	}
+
+	if (_verbose) {
+		std::cout << "GLDrawContext " << _name << " : activate\n";
 	}
 
 	glUseProgram(_prog);
@@ -652,6 +662,10 @@ void GLDrawContext::deactivate() {
 		return;
 	}
 
+	if (_verbose) {
+		std::cout << "GLDrawContext " << _name << " : deactivate\n";
+	}
+
 	glBindVertexArray(0);
 	glUseProgram(0);
 
@@ -666,6 +680,10 @@ void GLDrawContext::deactivate() {
 void GLDrawContext::draw() {
 	if (!_active) {
 		return;
+	}
+
+	if (_verbose) {
+		std::cout << "GLDrawContext " << _name << " : draw\n";
 	}
 
 	bool is_instanced = false;
@@ -866,7 +884,7 @@ GLDrawManager::GLDrawManager() {
 }
 
 
-GLDrawManager::GLDrawManager(std::string json_path) {
+GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 	std::ifstream ifs(json_path);
 	json js= json::parse(ifs);
 	ifs.close();
@@ -1027,6 +1045,10 @@ void GLDrawManager::set_data(std::string context_name, uint n_pts, float * data)
 		return;
 	}
 
+	if (_verbose) {
+		std::cout << "GLDrawManager : set_data for " << context_name << "\n";
+	}
+
 	context->_n_pts = n_pts;
 	context->set_data(data);
 }
@@ -1036,6 +1058,10 @@ void GLDrawManager::set_active(std::string context_name){
 	GLDrawContext * context = get_context(context_name);
 	if (context == NULL) {
 		return;
+	}
+
+	if (_verbose) {
+		std::cout << "GLDrawManager : set_active for " << context_name << "\n";
 	}
 
 	context->_active = true;
@@ -1048,6 +1074,10 @@ void GLDrawManager::set_inactive(std::string context_name){
 		return;
 	}
 
+	if (_verbose) {
+		std::cout << "GLDrawManager : set_inactive for " << context_name << "\n";
+	}
+
 	context->_active = false;
 }
 
@@ -1056,6 +1086,10 @@ void GLDrawManager::switch_active(std::string context_name) {
 	GLDrawContext * context = get_context(context_name);
 	if (context == NULL) {
 		return;
+	}
+
+	if (_verbose) {
+		std::cout << "GLDrawManager : switch_active for " << context_name << "\n";
 	}
 
 	if (context->_active) {
@@ -1090,6 +1124,14 @@ void GLDrawManager::set_texture_data(std::string name, void * data, uint depth, 
 void GLDrawManager::set_texture_data(std::string name, std::vector<std::string> pngs) {
 	GLDrawTexture * texture = _texture_pool->get_texture(name);
 	texture->set_data(pngs);
+}
+
+
+void GLDrawManager::set_verbose(bool verbose) {
+	_verbose = verbose;
+	for (auto & context : _contexts) {
+		context->_verbose = verbose;
+	}
 }
 
 

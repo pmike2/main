@@ -83,7 +83,23 @@ void Unit::anim(time_point t) {
 
 		set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
 	}
-	
+	else if (_status == TAKEOFF) {
+		pt_3d next_position = _position + pt_3d(0.0, 0.0, TAKEOFF_SPEED);
+		if (next_position.z > FLY_ALTI) {
+			next_position.z = FLY_ALTI;
+			set_status(MOVING, t);
+		}
+		set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
+	}
+	else if (_status == LANDING) {
+		pt_3d next_position = _position - pt_3d(0.0, 0.0, LANDING_SPEED);
+		number alti = _elevation->get_alti(pt_2d(_position.x, _position.y));
+		if (next_position.z < alti) {
+			next_position.z = alti;
+			set_status(WAITING, t);
+		}
+		set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
+	}
 	else if (_status == MOVING) {
 		number velocity_amp = _type->_max_velocity * (1.0 - _path->get_current_interval()->_weight / MAX_UNIT_MOVING_WEIGHT);
 		velocity_amp *= number(d_moving) * 0.0625; // 60fps -> 1 frame == 1000 / 60 ~= 16 ms et 1 / 16 == 0.0625
@@ -92,8 +108,13 @@ void Unit::anim(time_point t) {
 
 		pt_3d next_position = _position + _velocity;
 		next_position.z = _elevation->get_alti(next_position);
+		
 		if (_type->_floats && next_position.z < 0.0) {
 			next_position.z = 0.0;
+		}
+
+		if (_type->_flies) {
+			next_position.z = FLY_ALTI;
 		}
 		
 		number next_angle = atan2(_velocity.y, _velocity.x);
@@ -110,7 +131,6 @@ void Unit::anim(time_point t) {
 
 		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
 	}
-	
 	else if (_status == ATTACKING) {
 		if (_target == NULL)  {
 			std::cerr << "Unit " << _id << " ATTACKING mais _target == NULL.\n";
@@ -153,7 +173,14 @@ bool Unit::checkpoint_checked() {
 
 bool Unit::last_checkpoint_checked() {
 	if (_path->is_last_checkpoint() && checkpoint_checked()) {
-		return true;
+		/*if (_type->_flies) {
+			if (abs(_position.z - _path->_goal.z) < UNIT_DIST_PATH_EPS) {
+				return true;
+			}
+		}
+		else {*/
+			return true;
+		//}
 	}
 	return false;
 }
@@ -167,13 +194,13 @@ void Unit::set_status(UNIT_STATUS status, time_point t) {
 	}
 	
 	_status = status;
-	if (_status != MOVING) {
+	if (_status != MOVING && _status != TAKEOFF) {
 		_path->clear();
 	}
 	
 	if (_status == MOVING) {
 		if (_path->empty()) {
-			std::cerr << "Unit::follow_path : path empty\n";
+			std::cerr << "Unit::set_status MOVING : path empty\n";
 			set_status(WAITING, t);
 		}
 		_last_moving_t = t;
@@ -217,9 +244,15 @@ void Unit::hit(Ammo * ammo, time_point t) {
 
 
 void Unit::update_alti_path() {
+	_path->_start.z = _elevation->get_alti(pt_2d(_path->_start.x, _path->_start.y));
+	_path->_goal.z = _elevation->get_alti(pt_2d(_path->_goal.x, _path->_goal.y));
+
 	for (auto & pt : _path->_pts) {
 		if (_type->_floats) {
 			pt.z = 0.0;
+		}
+		else if (_type->_flies) {
+			pt.z = FLY_ALTI;
 		}
 		else {
 			pt.z = _elevation->get_alti(pt_2d(pt.x, pt.y));
@@ -228,6 +261,9 @@ void Unit::update_alti_path() {
 	for (auto & pt : _path->_pts_los) {
 		if (_type->_floats) {
 			pt.z = 0.0;
+		}
+		else if (_type->_flies) {
+			pt.z = FLY_ALTI;
 		}
 		else {
 			pt.z = _elevation->get_alti(pt_2d(pt.x, pt.y));

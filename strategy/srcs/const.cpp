@@ -27,6 +27,12 @@ std::string unit_status2str(UNIT_STATUS mode) {
 	else if (mode == UNDER_CONSTRUCTION) {
 		return "UNDER_CONSTRUCTION";
 	}
+	else if (mode == TAKEOFF) {
+		return "TAKEOFF";
+	}
+	else if (mode == LANDING) {
+		return "LANDING";
+	}
 	std::cerr << mode << " : mode unit reconnu\n";
 	return "UNKNOWN";
 }
@@ -56,6 +62,12 @@ UNIT_STATUS str2unit_status(std::string s) {
 	}
 	else if (s == "UNDER_CONSTRUCTION") {
 		return UNDER_CONSTRUCTION;
+	}
+	else if (s == "TAKEOFF") {
+		return TAKEOFF;
+	}
+	else if (s == "LANDING") {
+		return LANDING;
 	}
 	std::cerr << s << " : status d'unité non reconnu\n";
 	return WAITING;
