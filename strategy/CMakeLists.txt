@@ -2,8 +2,12 @@ cmake_minimum_required(VERSION 3.13)
 
 project(strategy)
 
+if (CMAKE_HOST_SYSTEM_VERSION VERSION_LESS 19)
+	message("Mojave")
+	set(CMAKE_CXX_COMPILER "/opt/local/bin/g++-mp-12")
+endif()
+
 # glm a besoin d'un c++ >= 14
-set(CMAKE_CXX_COMPILER "/opt/local/bin/g++-mp-12")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
