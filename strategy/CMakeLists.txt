@@ -5,6 +5,13 @@ project(strategy)
 if (CMAKE_HOST_SYSTEM_VERSION VERSION_LESS 19)
 	message("Mojave")
 	set(CMAKE_CXX_COMPILER "/opt/local/bin/g++-mp-12")
+	include_directories(/usr/local/include/freetype2)
+else()
+	message("Sonoma")
+	list(APPEND CMAKE_PREFIX_PATH "/Volumes/Data/usr_local/lib/cmake/SDL2")
+	include_directories(/Volumes/Data/usr_local/include)
+	include_directories(/Volumes/Data/usr_local/include/freetype2)
+	include_directories(/Volumes/Data/usr_local/include/nlohmann)
 endif()
 
 # glm a besoin d'un c++ >= 14
@@ -13,7 +20,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/../cmake_files")
-list(APPEND CMAKE_PREFIX_PATH "/Volumes/Data/usr_local/lib/cmake/SDL2")
 # celui-ci ne fonctionne pas correctement
 #list(APPEND CMAKE_PREFIX_PATH "/Volumes/Data/usr_local/lib/cmake/SDL2_image")
 
@@ -23,11 +29,7 @@ find_package(SDL2_image REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(Freetype REQUIRED)
 
-include_directories(/Volumes/Data/usr_local/include)
-include_directories(/Volumes/Data/usr_local/include/freetype2)
-include_directories(/Volumes/Data/usr_local/include/nlohmann)
 include_directories(/usr/local/include)
-include_directories(/usr/local/include/freetype2)
 include_directories(../libs)
 include_directories(${GDAL_INCLUDE_DIRS} ${SDL2_INCLUDE_DIRS} ${SDL2IMAGE_INCLUDE_DIRS})
 
