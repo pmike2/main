@@ -65,8 +65,8 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	}
 	
 	//_map->randomize();
-	_map->clear();
-	//_map->load("../data/maps/last_map", t);
+	//_map->clear();
+	_map->load("../data/maps/last_map", t);
 
 	zoom2first_unit_of_selected_team();
 

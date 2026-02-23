@@ -366,13 +366,12 @@ void Elevation::randomize() {
 	// https://gamedev.stackexchange.com/questions/116205/terracing-mountain-features/188513
 
 	const number alti_offset = -5.0;
-	const uint n_levels = 5;
 	const uint gradient_base_size = 10;
-	const number max_factor = 40.0;
-	const number redistribution_power = 0.8;
-	const number fudge_factor = 1.5;
-	const number mix_island = 0.4;
-	const number island_max_alti = 20.0;
+	const number max_factor = 120.0;
+	const number redistribution_power = 0.4;
+	const number fudge_factor = 3.5;
+	const number mix_island = 0.8;
+	const number island_max_alti = 10.0;
 	const number terrace_factor = 0.5;
 	const number terrace_hmin = 1.0;
 	const number terrace_hmax = 4.0;
@@ -381,109 +380,20 @@ void Elevation::randomize() {
 	const uint terrace_gradient_h= 4;
 	const std::vector<number> amplitudes {1.0, 0.5, 0.25, 0.12, 0.06};
 	//const std::vector<number> amplitudes {1.0, 0.5, 0.33, 0.25, 0.2};
+	const uint n_levels = amplitudes.size();
 	
 	number amp_sum = 0.0;
 	for (auto & a : amplitudes) {
 		amp_sum += a;
 	}
 
-	for (int col=0; col< _n_cols; ++col) {
+	/*for (int col=0; col< _n_cols; ++col) {
 		for (int lig=0; lig< _n_ligs; ++lig) {
-			//_altis[col_lig2id(col, lig)] = rand_number(0.0, 1000.0);
-			//pt_2d pt = col_lig2pt(col, lig);
-			//_altis[col_lig2id(col, lig)] = rand_number(0.0, 100.0) * exp(-1.0 * pow(glm::distance(pt, _origin + 0.5 * _size) / (0.5 * _size.x), 2.0));
-			//_altis[col_lig2id(col, lig)] = perlin(col, lig, gradient, gradient_w, gradient_h);
-			//number p = perlin(col, lig, gradient, gradient_w, gradient_h);
-			//std::cout << col << " ; " << lig << " ; " << p << "\n";
-
-			//_altis[col_lig2id(col, lig)] = alti_offset;
 			set_alti(col, lig, alti_offset);
 		}
-	}
+	}*/
 
-	for (uint level=0; level<n_levels; ++level) {
-		srand(time(NULL));
-
-		uint gradient_w= gradient_base_size* (level+ 1);
-		uint gradient_h= gradient_base_size* (level+ 1);
-		number * gradient = perlin_gradient(gradient_w, gradient_h);
-		//number factor= max_factor* pow(2.0, -1.0 * number(level)) / amp_sum;
-		number factor = max_factor* amplitudes[level] / amp_sum;
-	
-		for (int col=0; col< _n_cols; ++col) {
-			for (int lig=0; lig< _n_ligs; ++lig) {
-				number ii= number(col)* (gradient_w- 1)/ _n_cols;
-				number jj= number(lig)* (gradient_h- 1)/ _n_ligs;
-				//_altis[col_lig2id(col, lig)] += factor* perlin(ii, jj, gradient, gradient_w, gradient_h);
-				set_alti(col, lig, get_alti(col, lig) + factor* perlin(ii, jj, gradient, gradient_w, gradient_h));
-			}
-		}
-	}
-
-	for (int col=0; col< _n_cols; ++col) {
-		for (int lig=0; lig< _n_ligs; ++lig) {
-			//uint id = col_lig2id(col, lig);
-			/*if (_altis[id]> 0.0) {
-				_altis[id] = pow(_altis[id] * fudge_factor, redistribution_power);
-			}*/
-			if (get_alti(col, lig) > 0.0) {
-				set_alti(col, lig, pow(get_alti(col, lig) * fudge_factor, redistribution_power));
-			}
-		}
-	}
-	
-
-	for (int col=0; col< _n_cols; ++col) {
-		for (int lig=0; lig< _n_ligs; ++lig) {
-			//uint id = col_lig2id(col, lig);
-			number nx = 2.0 * number(col) / _n_cols - 1.0;
-			number ny = 2.0 * number(lig) / _n_ligs - 1.0;
-			number d = 1.0 - (1.0 - nx * nx) * (1.0 - ny * ny);
-			//_altis[id] = (1.0 - mix_island) * _altis[id] + mix_island * (1.0 - d) * island_max_alti;
-			set_alti(col, lig, (1.0 - mix_island) * get_alti(col, lig) + mix_island * (1.0 - d) * island_max_alti);
-		}
-	}
-
-	number * gradient = perlin_gradient(terrace_gradient_w, terrace_gradient_h);
-	//number damp = 0.9;
-	for (int col=0; col< _n_cols; ++col) {
-		for (int lig=0; lig< _n_ligs; ++lig) {
-			//uint id = col_lig2id(col, lig);
-			number ii= number(col)* (terrace_gradient_w- 1)/ _n_cols;
-			number jj= number(lig)* (terrace_gradient_h- 1)/ _n_ligs;
-			number hm = terrace_perlin_factor * perlin(ii, jj, gradient, terrace_gradient_w, terrace_gradient_h);
-			
-			/*if (h1 + hm < _altis[id] && h2 + hm > _altis[id]) {
-				_altis[id] *= damp;
-			}
-			else if (h2 + hm < _altis[id]) {
-				_altis[id] -= (h2 - h1) * damp;
-			}*/
-
-			/*number k = floor(_altis[id] / terrace_factor);
-			number f = (_altis[id] - k * terrace_factor) / terrace_factor;
-			number s = std::min(2.0 * f, 1.0);
-			if (terrace_hmin + hm < _altis[id] && terrace_hmax + hm > _altis[id]) {
-				_altis[id] = (k + s) * terrace_factor;
-			}*/
-			
-			/*if (terrace_hmin + hm < _altis[id] && terrace_hmax + hm > _altis[id]) {
-				_altis[id] = round(_altis[id] * 2.0) / 2.0;
-			}*/
-			
-			/*if (terrace_hmin + hm < get_alti(col, lig) && terrace_hmax + hm > get_alti(col, lig)) {
-				set_alti(col, lig, round(get_alti(col, lig) * 2.0) / 2.0);
-			}*/
-		}
-	}
-	delete gradient;
-
-	//set_negative_alti_2zero();
-
-	update_normals();
-	update_data();
-
-	for (uint i=0; i<10; ++i) {
+	for (uint i=0; i<20; ++i) {
 		pt_2d center = rand_pt_2d(_origin, _origin + _size);
 		number radius = rand_number(20.0, 100.0);
 		ELEVATION_MODE mode;
@@ -502,7 +412,57 @@ void Elevation::randomize() {
 		set_alti_disk(center, radius, mode, factor, exponent);
 	}
 
-	//alti2pbm("../data/test.pgm");
+	for (uint level=0; level<n_levels; ++level) {
+		srand(time(NULL));
+
+		uint gradient_w= gradient_base_size* (level+ 1);
+		uint gradient_h= gradient_base_size* (level+ 1);
+		number * gradient = perlin_gradient(gradient_w, gradient_h);
+		number factor = max_factor* amplitudes[level] / amp_sum;
+	
+		for (int col=0; col< _n_cols; ++col) {
+			for (int lig=0; lig< _n_ligs; ++lig) {
+				number ii= number(col)* (gradient_w- 1)/ _n_cols;
+				number jj= number(lig)* (gradient_h- 1)/ _n_ligs;
+				set_alti(col, lig, get_alti(col, lig) + factor* perlin(ii, jj, gradient, gradient_w, gradient_h));
+			}
+		}
+		delete gradient;
+	}
+
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
+			if (get_alti(col, lig) > 0.0) {
+				set_alti(col, lig, pow(get_alti(col, lig) * fudge_factor, redistribution_power));
+			}
+		}
+	}
+	
+
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
+			number nx = 2.0 * number(col) / _n_cols - 1.0;
+			number ny = 2.0 * number(lig) / _n_ligs - 1.0;
+			number d = 1.0 - (1.0 - nx * nx) * (1.0 - ny * ny);
+			set_alti(col, lig, (1.0 - mix_island) * get_alti(col, lig) + mix_island * (1.0 - d) * island_max_alti);
+		}
+	}
+
+	/*number * gradient = perlin_gradient(terrace_gradient_w, terrace_gradient_h);
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
+			number ii= number(col)* (terrace_gradient_w- 1)/ _n_cols;
+			number jj= number(lig)* (terrace_gradient_h- 1)/ _n_ligs;
+			number hm = terrace_perlin_factor * perlin(ii, jj, gradient, terrace_gradient_w, terrace_gradient_h);
+			if (terrace_hmin + hm < get_alti(col, lig) && terrace_hmax + hm > get_alti(col, lig)) {
+				set_alti(col, lig, round(get_alti(col, lig) * 2.0) / 2.0);
+			}
+		}
+	}
+	delete gradient;*/
+
+	update_normals();
+	update_data();
 }
 
 
