@@ -22,6 +22,42 @@ struct ElevationVertexData {
 };
 
 
+struct ElevationRandConfig {
+	ElevationRandConfig();
+	ElevationRandConfig(std::string json_path);
+	~ElevationRandConfig();
+	void reload();
+
+
+	std::string _json_path;
+	number _alti_offset;
+	uint _gradient_base_size;
+	number _max_factor;
+	number _redistribution_power;
+	number _fudge_factor;
+	number _mix_island;
+	number _island_max_alti;
+	number _terrace_factor;
+	number _terrace_hmin;
+	number _terrace_hmax;
+	number _terrace_perlin_factor;
+	uint _terrace_gradient_w;
+	uint _terrace_gradient_h;
+	std::vector<number> _amplitudes;
+	
+	uint _n_disks;
+	pt_2d _disk_radius, _disk_factor, _disk_exponent;
+	number _disk_zero_proba, _disk_plus_proba;
+
+	bool _alti_offset_active;
+	bool _disk_active;
+	bool _perlin_active;
+	bool _redistribution_active;
+	bool _island_active;
+	bool _terrace_active;
+};
+
+
 struct Elevation : public GraphGrid {
 	Elevation();
 	Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols);
@@ -53,7 +89,7 @@ struct Elevation : public GraphGrid {
 	void set_negative_alti_2zero();
 	void set_alti_disk(pt_2d center, number radius, ELEVATION_MODE mode, number factor, number exponent);
 	
-	void randomize();
+	void randomize(ElevationRandConfig * rand_config);
 
 	glm::vec4 alti2color(number alti);
 	

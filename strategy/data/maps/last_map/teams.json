@@ -1,0 +1,227 @@
+{
+    "teams": [
+        {
+            "color": [
+                1.0,
+                0.0,
+                0.0
+            ],
+            "name": "Team1",
+            "units": [
+                {
+                    "id": 31,
+                    "life": 30.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        23.97507140159131,
+                        48.43269232810981
+                    ],
+                    "status": "WAITING",
+                    "type": "INFANTERY"
+                },
+                {
+                    "id": 33,
+                    "life": 30.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        21.65398121305735,
+                        29.640687287278972
+                    ],
+                    "status": "WAITING",
+                    "type": "INFANTERY"
+                },
+                {
+                    "id": 34,
+                    "life": 200.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        18.115754569929166,
+                        13.573021822490244
+                    ],
+                    "status": "WAITING",
+                    "type": "TANK"
+                },
+                {
+                    "id": 35,
+                    "life": 100.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        18.313563090640198,
+                        -24.313590306205597
+                    ],
+                    "status": "ATTACKING",
+                    "type": "BOAT"
+                },
+                {
+                    "id": 36,
+                    "life": 49.97023840319166,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        -8.033194216905056,
+                        -45.739032101070585
+                    ],
+                    "status": "WAITING",
+                    "type": "HELICOPTER"
+                },
+                {
+                    "id": 37,
+                    "life": 30.0,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        21.999914618190232,
+                        54.410776523351764
+                    ],
+                    "status": "WAITING",
+                    "type": "INFANTERY"
+                }
+            ]
+        },
+        {
+            "color": [
+                0.0,
+                0.0,
+                1.0
+            ],
+            "name": "Team2",
+            "units": [
+                {
+                    "id": 32,
+                    "life": 27.647752718472216,
+                    "path": {
+                        "goal": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "idx_path": 0,
+                        "intervals": [],
+                        "intervals_los": [],
+                        "nodes": [],
+                        "pts": [],
+                        "pts_los": [],
+                        "start": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "use_line_of_sight": false
+                    },
+                    "position": [
+                        -2.027657958634172,
+                        -30.861489785242384
+                    ],
+                    "status": "ATTACKING",
+                    "type": "INFANTERY"
+                }
+            ]
+        }
+    ]
+}

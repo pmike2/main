@@ -84,7 +84,7 @@ struct Map {
 	void collisions(time_point t);
 	
 	void clear();
-	void randomize();
+	void randomize(ElevationRandConfig * rand_config);
 	void save_teams(std::string teams_json_path);
 	void save_fixed(std::string dir_map);
 	void save(std::string dir_map);
@@ -106,6 +106,7 @@ struct Map {
 
 	PathFinder * _path_finder;
 	std::thread _path_find_thr;
+	std::mutex _path_find_mtx;
 	bool _path_find_thr_running;
 	SafeQueue<PathFinderInput *> _path_queue_thr_input;
 	SafeQueue<UnitPath *> _path_queue_thr_output;

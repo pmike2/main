@@ -11,6 +11,12 @@
 
 #include "thread.h"
 
+/*
+
+ébauche à revoir, en remplacement de sio_util
+
+*/
+
 
 const int MAXDATASIZE = 3000;
 

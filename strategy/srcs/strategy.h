@@ -22,6 +22,8 @@
 
 struct StrategyConfig {
 	StrategyConfig();
+	StrategyConfig(std::string elevation_rand_dir);
+	void set_rand_config(std::string config_name);
 	~StrategyConfig();
 
 
@@ -46,6 +48,8 @@ struct StrategyConfig {
 	uint _n_trees;
 	uint _n_stones;
 	uint _selected_team_idx;
+	std::map<std::string, ElevationRandConfig *> _rand_configs;
+	ElevationRandConfig * _current_rand_config;
 };
 
 

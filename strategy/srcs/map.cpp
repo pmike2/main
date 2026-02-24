@@ -190,6 +190,10 @@ Unit * Map::add_unit(Team * team, UNIT_TYPE type, pt_2d pos, time_point t) {
 
 void Map::add_first_units2teams(time_point t) {
 	for (auto & team : _teams) {
+		if (!team->_units.empty()) {
+			continue;
+		}
+
 		uint compt = 0;
 		while (true) {
 			compt++;
@@ -199,7 +203,8 @@ void Map::add_first_units2teams(time_point t) {
 			}
 			pt_2d position = rand_pt_2d(_aabb->_pos, _aabb->_pos + _aabb->_size);
 			if (add_unit_check(team, INFANTERY, position)) {
-				add_unit(team, INFANTERY, position, t);
+				Unit * unit = add_unit(team, INFANTERY, position, t);
+				unit->set_status(WAITING, t);
 				break;
 			}
 		}
@@ -676,11 +681,18 @@ void Map::advance_unit_in_position_grid(Unit * unit) {
 void Map::path_find() {
 	PathFinderInput * pfi;
 	while (_path_find_thr_running) {
+		_path_find_mtx.lock();
 		if (_path_finder_computing) {
+			_path_find_mtx.unlock();
 			continue;
 		}
+		_path_find_mtx.unlock();
+
 		if (_path_queue_thr_input.next(pfi)) {
+			_path_find_mtx.lock();
 			_path_finder_computing = true;
+			_path_find_mtx.unlock();
+
 			_path_finder->path_find(pfi, &_path_queue_thr_output);
 		}
 	}
@@ -798,6 +810,7 @@ void Map::anim(time_point t) {
 	// Pathfinding ------------------------------------------------
 	UnitPath * unit_path;
 	// TODO : ou doit se faire la destruction de unit_path ?
+
 	if (_path_queue_thr_output.next(unit_path)) {
 		if (unit_path->_status == UNIT_PATH_COMPUTING_SUCCESS) {
 			Unit * unit = get_unit(unit_path->_unit_id);
@@ -818,7 +831,10 @@ void Map::anim(time_point t) {
 		else if (unit_path->_status == UNIT_PATH_COMPUTING_FAILED) {
 			
 		}
+
+		_path_find_mtx.lock();
 		_path_finder_computing = false;
+		_path_find_mtx.unlock();
 	}
 
 	// TODO : à desactiver quand les problèmes de path seront réglés
@@ -988,11 +1004,11 @@ void Map::clear() {
 
 
 
-void Map::randomize() {
+void Map::randomize(ElevationRandConfig * rand_config) {
 	clear_units();
 	clear_elements();
 	
-	_elevation->randomize();
+	_elevation->randomize(rand_config);
 	sync2elevation();
 
 	for (uint i=0; i<50; ++i) {

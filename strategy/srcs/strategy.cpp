@@ -7,8 +7,13 @@
 
 
 
-// j'initialise pour faire propre mais normalement la plupart de ces valeurs seront écrasées lors de l'appel à ihm->callbacks
 StrategyConfig::StrategyConfig() {
+
+}
+
+
+// j'initialise pour faire propre mais normalement la plupart de ces valeurs seront écrasées lors de l'appel à ihm->callbacks
+StrategyConfig::StrategyConfig(std::string elevation_rand_dir) {
 	_edit = false;
 	_show_info = false;
 	_units_paused = false;
@@ -30,11 +35,31 @@ StrategyConfig::StrategyConfig() {
 	_n_trees = 0;
 	_n_stones = 0;
 	_selected_team_idx = 0;
+
+	std::vector<std::string> jsons = list_files(elevation_rand_dir, "json");
+	for (auto & json_path : jsons) {
+		_rand_configs[basename(json_path)] = new ElevationRandConfig(json_path);
+	}
+
+	set_rand_config("default");
 }
 
 
 StrategyConfig::~StrategyConfig() {
-	
+	for (auto & cfg : _rand_configs) {
+		delete cfg.second;
+	}
+	_rand_configs.clear();
+}
+
+
+void StrategyConfig::set_rand_config(std::string config_name) {
+	if (_rand_configs.count(config_name)) {
+		_current_rand_config = _rand_configs[config_name];
+	}
+	else {
+		std::cerr << "StrategyConfig::set_rand_config : " << config_name << " non trouvé\n";
+	}
 }
 
 
@@ -52,7 +77,7 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 {
 	bool verbose = true;
 
-	_config = new StrategyConfig();
+	_config = new StrategyConfig("../data/elevation_rand_config");
 
 	// --------------------------------------------------
 	if (verbose) {
@@ -65,8 +90,9 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	}
 	
 	//_map->randomize();
-	//_map->clear();
-	_map->load("../data/maps/last_map", t);
+	_map->clear();
+	_map->add_first_units2teams(t);
+	//_map->load("../data/maps/last_map", t);
 
 	zoom2first_unit_of_selected_team();
 
@@ -245,7 +271,8 @@ void Strategy::set_ihm() {
 	});
 
 	_ihm->get_element("global_edit", "randomize")->set_callback([this](){
-		_map->randomize();
+		_config->_current_rand_config->reload();
+		_map->randomize(_config->_current_rand_config);
 		_map->add_first_units2teams(_ihm->_current_t);
 		_map->save("../data/maps/last_map");
 		zoom2first_unit_of_selected_team();
