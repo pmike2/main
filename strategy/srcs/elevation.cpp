@@ -523,6 +523,15 @@ void Elevation::randomize(ElevationRandConfig * rand_config) {
 		delete gradient;
 	}
 
+	// pour qu'il n'y ait pas de z-fight avec sea
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
+			if (abs(get_alti(col, lig)) < 0.01) {
+				set_alti(col, lig, DEFAULT_ELEVATION);
+			}
+		}
+	}
+
 	update_normals();
 	update_data();
 }

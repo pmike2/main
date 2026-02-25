@@ -33,7 +33,7 @@ public:
 		if (q.empty()) {
 			return false;
 		}
-		elem= q.front();
+		elem = q.front();
 		q.pop();
 		return true;
 	}

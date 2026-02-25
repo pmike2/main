@@ -437,7 +437,6 @@ void Team::clear_selection() {
 
 void Team::unit_goto(Unit * unit, pt_3d pt, time_point t) {
 	unit->_instructions.push({pt, t});
-	unit->set_status(COMPUTING_PATH, t);
 }
 
 

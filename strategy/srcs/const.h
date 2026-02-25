@@ -8,6 +8,12 @@
 #include "utile.h"
 
 
+// dimensions écran
+const int MAIN_WIN_WIDTH= 1280;
+const int MAIN_WIN_HEIGHT= 1024;
+const float GL_WIDTH= 10.0f;
+const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDTH);
+
 const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 0.7f);
 const glm::vec4 EDIT_MAP_COLOR(0.0f, 1.0f, 1.0f, 1.0f);
 const glm::vec4 SELECT_COLOR(1.0f, 1.0f, 0.0f, 0.5f);
@@ -79,6 +85,9 @@ const number OVERVIEW_TEXTURE_SIZE = 1024;
 const number FLY_ALTI = 12.0;
 const number TAKEOFF_SPEED = 0.1;
 const number LANDING_SPEED = 0.05;
+
+const uint IA_MAX_MOVING_TRY = 100;
+const uint IA_MAX_CONSTRUCTION_TRY = 100;
 
 
 enum PLAY_MODE {SELECT_UNIT, ADD_UNIT, ACTION_UNIT};

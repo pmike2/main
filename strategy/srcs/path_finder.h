@@ -3,11 +3,11 @@
 
 #include <map>
 #include <unordered_set>
+#include <thread>
 
 #include "graph.h"
 #include "typedefs.h"
 #include "thread.h"
-
 
 #include "const.h"
 #include "unit.h"
@@ -32,9 +32,20 @@ struct PathFinderInput {
 
 struct PathFinder : public GraphGrid {
 	PathFinder();
-	PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols);
+	PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols, std::mutex * mtx);
 	~PathFinder();
+	
 	void add_unit_type(UnitType * unit_type);
+	
+	std::unordered_set<uint> get_ids(uint i, uint j, UnitType * unit_type);
+	TERRAIN_TYPE get_terrain_type(uint i, uint j, UnitType * unit_type);
+	void set_terrain_type(uint i, uint j, UnitType * unit_type, TERRAIN_TYPE terrain_type);
+	void set_delta_elevation(uint i, uint j, UnitType * unit_type, number delta_elevation);
+	void insert_id(uint i, uint j, UnitType * unit_type, uint id);
+	void erase_id(uint i, uint j, UnitType * unit_type, uint id);
+	void clear_ids(UnitType * unit_type);
+	void clear_terrain(UnitType * unit_type);
+
 	number elevation_weight(UnitType * unit_type, uint i, uint j);
 	number units_position_weight(UnitType * unit_type, uint unit_id, uint i, uint j);
 	number terrain_weight(UnitType * unit_type, uint i, uint j);
@@ -46,6 +57,7 @@ struct PathFinder : public GraphGrid {
 	//void draw_svg(GraphGrid * grid, Path * path, std::string svg_path);
 
 
+	std::mutex * _mtx;
 	bool _verbose;
 };
 

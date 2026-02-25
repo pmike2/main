@@ -42,9 +42,10 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	}
 	uint n_ligs_path = uint(size.y / _path_resolution.y) + 1;
 	uint n_cols_path = uint(size.x / _path_resolution.x) + 1;
-	_path_finder = new PathFinder(origin, size, n_ligs_path, n_cols_path);
+	_path_finder = new PathFinder(origin, size, n_ligs_path, n_cols_path, &_path_find_mtx);
+	_path_finder->_verbose = true;
 	_path_find_thr_running = true;
-	_path_find_thr= std::thread(&Map::path_find, this);
+	_path_find_thr= std::thread(&Map::path_find_search, this);
 	_path_finder_computing = false;
 
 	// ------------------------------------------------
@@ -139,20 +140,39 @@ bool Map::fow_check(Team * team, pt_2d pos) {
 }
 
 
-bool Map::add_unit_check(Team * team, UNIT_TYPE type, pt_2d pos) {
+bool Map::construction_check(Team * team, UNIT_TYPE type) {
+	if (team->get_unit_under_construction(_unit_types[type]) != NULL) {
+		return false;
+	}
+	return true;
+}
+
+
+bool Map::add_unit_check(Team * team, UNIT_TYPE type, pt_2d pos, bool fow_active, bool construction_active) {
 	if (!point_in_aabb2d(pos, _aabb)) {
+		return false;
+	}
+
+	if (fow_active && !fow_check(team, pos)) {
+		return false;
+	}
+
+	if (construction_active && !construction_check(team, type)) {
 		return false;
 	}
 
 	std::vector<uint_pair> edges = _path_finder->edges_in_cell_containing_pt(pos, false);
 
 	for (auto & e : edges) {
-		GraphEdge edge = _path_finder->get_edge(e);
-		EdgeData * data = (EdgeData *)(edge._data);
-		if (!data->_ids[_unit_types[type]].empty()) {
+		std::unordered_set<uint> ids = _path_finder->get_ids(e.first, e.second, _unit_types[type]);
+		//GraphEdge edge = _path_finder->get_edge(e);
+		//EdgeData * data = (EdgeData *)(edge._data);
+		//if (!data->_ids[_unit_types[type]].empty()) {
+		if (!ids.empty()) {
 			return false;
 		}
-		TERRAIN_TYPE terrain = data->_type[_unit_types[type]];
+		//TERRAIN_TYPE terrain = data->_type[_unit_types[type]];
+		TERRAIN_TYPE terrain = _path_finder->get_terrain_type(e.first, e.second, _unit_types[type]);
 		if (_unit_types[type]->_terrain_weights[terrain] > MAX_UNIT_MOVING_WEIGHT) {
 			return false;
 		}
@@ -161,11 +181,6 @@ bool Map::add_unit_check(Team * team, UNIT_TYPE type, pt_2d pos) {
 	}
 
 	return true;
-}
-
-
-bool Map::add_unit_fow_check(Team * team, pt_2d pos) {
-	return fow_check(team, pos);
 }
 
 
@@ -202,7 +217,7 @@ void Map::add_first_units2teams(time_point t) {
 				break;
 			}
 			pt_2d position = rand_pt_2d(_aabb->_pos, _aabb->_pos + _aabb->_size);
-			if (add_unit_check(team, INFANTERY, position)) {
+			if (add_unit_check(team, INFANTERY, position, false, false)) {
 				Unit * unit = add_unit(team, INFANTERY, position, t);
 				unit->set_status(WAITING, t);
 				break;
@@ -247,10 +262,11 @@ void Map::add_river(pt_2d pos) {
 				n_vertices_in_polygon++;
 			}
 			
-			GraphEdge & e = _path_finder->_vertices[edge.first]._edges[edge.second];
-			EdgeData * data = (EdgeData *)(e._data);
 			if (n_vertices_in_polygon > 0) {
-				data->_type[unit_type] = TERRAIN_RIVER;
+				/*GraphEdge & e = _path_finder->_vertices[edge.first]._edges[edge.second];
+				EdgeData * data = (EdgeData *)(e._data);
+				data->_type[unit_type] = TERRAIN_RIVER;*/
+				_path_finder->set_terrain_type(edge.first, edge.second, unit_type, TERRAIN_RIVER);
 			}
 		}
 
@@ -314,13 +330,15 @@ void Map::add_lake(pt_2d pos) {
 				n_vertices_in_polygon++;
 			}
 			
-			GraphEdge & e = _path_finder->_vertices[edge.first]._edges[edge.second];
-			EdgeData * data = (EdgeData *)(e._data);
+			//GraphEdge & e = _path_finder->_vertices[edge.first]._edges[edge.second];
+			//EdgeData * data = (EdgeData *)(e._data);
 			if (n_vertices_in_polygon == 2) {
-				data->_type[unit_type] = TERRAIN_LAKE;
+				//data->_type[unit_type] = TERRAIN_LAKE;
+				_path_finder->set_terrain_type(edge.first, edge.second, unit_type, TERRAIN_LAKE);
 			}
 			else if (n_vertices_in_polygon == 1) {
-				data->_type[unit_type] = TERRAIN_LAKE_COAST;
+				//data->_type[unit_type] = TERRAIN_LAKE_COAST;
+				_path_finder->set_terrain_type(edge.first, edge.second, unit_type, TERRAIN_LAKE_COAST);
 			}
 		}
 
@@ -438,18 +456,7 @@ void Map::clear_units() {
 	}
 
 	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-
-		_path_finder->_it_v= _path_finder->_vertices.begin();
-		while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
-			_path_finder->_it_e = _path_finder->_vertices[_path_finder->_it_v->first]._edges.begin();
-			while (_path_finder->_it_e != _path_finder->_vertices[_path_finder->_it_v->first]._edges.end()) {
-				EdgeData * data = (EdgeData * )(_path_finder->_vertices[_path_finder->_it_v->first]._edges[_path_finder->_it_e->first]._data);
-				data->_ids[unit_type].clear();
-				_path_finder->_it_e++;
-			}
-			_path_finder->_it_v++;
-		}
+		_path_finder->clear_ids(ut.second);
 	}
 }
 
@@ -458,17 +465,15 @@ void Map::clear_elements() {
 	_elements->clear();
 
 	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
+		_path_finder->clear_terrain(ut.second);
+	}
+}
 
-		_path_finder->_it_v= _path_finder->_vertices.begin();
-		while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
-			_path_finder->_it_e = _path_finder->_vertices[_path_finder->_it_v->first]._edges.begin();
-			while (_path_finder->_it_e != _path_finder->_vertices[_path_finder->_it_v->first]._edges.end()) {
-				EdgeData * data = (EdgeData * )(_path_finder->_vertices[_path_finder->_it_v->first]._edges[_path_finder->_it_e->first]._data);
-				data->_type[unit_type] = TERRAIN_UNKNOWN;
-				_path_finder->_it_e++;
-			}
-			_path_finder->_it_v++;
+
+void Map::pause_all_units(bool pause) {
+	for (auto & team : _teams) {
+		for (auto & unit : team->_units) {
+			unit->_paused = pause;
 		}
 	}
 }
@@ -493,11 +498,12 @@ void Map::update_elevation_grid() {
 		while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
 			_path_finder->_it_e= _path_finder->_it_v->second._edges.begin();
 			while (_path_finder->_it_e!= _path_finder->_it_v->second._edges.end()) {
-				GraphEdge & edge = _path_finder->_vertices[_path_finder->_it_v->first]._edges[_path_finder->_it_e->first];
+				//GraphEdge & edge = _path_finder->_vertices[_path_finder->_it_v->first]._edges[_path_finder->_it_e->first];
 				pt_3d & pt_begin= _path_finder->_it_v->second._pos;
 				pt_3d & pt_end= _path_finder->_vertices[_path_finder->_it_e->first]._pos;
-				EdgeData * data = (EdgeData *)(edge._data);
-				data->_delta_elevation[unit_type] = unit_type->elevation_coeff(pt_end.z - pt_begin.z);
+				//EdgeData * data = (EdgeData *)(edge._data);
+				//data->_delta_elevation[unit_type] = unit_type->elevation_coeff(pt_end.z - pt_begin.z);
+				_path_finder->set_delta_elevation(_path_finder->_it_v->first, _path_finder->_it_e->first, unit_type, unit_type->elevation_coeff(pt_end.z - pt_begin.z));
 
 				_path_finder->_it_e++;
 			}
@@ -515,19 +521,23 @@ void Map::update_terrain_grid_with_elevation() {
 		while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
 			_path_finder->_it_e= _path_finder->_it_v->second._edges.begin();
 			while (_path_finder->_it_e!= _path_finder->_it_v->second._edges.end()) {
-				GraphEdge & edge = _path_finder->_vertices[_path_finder->_it_v->first]._edges[_path_finder->_it_e->first];
+				//GraphEdge & edge = _path_finder->_vertices[_path_finder->_it_v->first]._edges[_path_finder->_it_e->first];
 				pt_3d & pt_begin = _path_finder->_it_v->second._pos;
 				pt_3d & pt_end = _path_finder->_vertices[_path_finder->_it_e->first]._pos;
-				EdgeData * data = (EdgeData *)(edge._data);
+				//EdgeData * data = (EdgeData *)(edge._data);
+				TERRAIN_TYPE terrain_type = _path_finder->get_terrain_type(_path_finder->_it_v->first, _path_finder->_it_e->first, unit_type);
 
 				if (pt_begin.z < 0.01 && pt_end.z < 0.01) {
-					data->_type[unit_type] = TERRAIN_SEA;
+					//data->_type[unit_type] = TERRAIN_SEA;
+					_path_finder->set_terrain_type(_path_finder->_it_v->first, _path_finder->_it_e->first, unit_type, TERRAIN_SEA);
 				}
 				else if ((pt_begin.z < 0.01 && pt_end.z > 0.01) || (pt_begin.z > 0.01 && pt_end.z < 0.01)) {
-					data->_type[unit_type] = TERRAIN_SEA_COAST;
+					//data->_type[unit_type] = TERRAIN_SEA_COAST;
+					_path_finder->set_terrain_type(_path_finder->_it_v->first, _path_finder->_it_e->first, unit_type, TERRAIN_SEA_COAST);
 				}
-				else if (data->_type[unit_type] == TERRAIN_UNKNOWN || data->_type[unit_type] == TERRAIN_SEA || data->_type[unit_type] == TERRAIN_SEA_COAST) {
-					data->_type[unit_type] = TERRAIN_GROUND;
+				else if (terrain_type == TERRAIN_UNKNOWN || terrain_type == TERRAIN_SEA || terrain_type == TERRAIN_SEA_COAST) {
+					//data->_type[unit_type] = TERRAIN_GROUND;
+					_path_finder->set_terrain_type(_path_finder->_it_v->first, _path_finder->_it_e->first, unit_type, TERRAIN_GROUND);
 				}
 
 				_path_finder->_it_e++;
@@ -552,9 +562,10 @@ void Map::add_element_to_terrain_grid(Element * element) {
 
 		std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb_buffered);
 		for (auto & e : edges) {
-			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
-			EdgeData * data = (EdgeData *)(edge._data);
-			data->_type[unit_type] = TERRAIN_OBSTACLE;
+			//GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
+			//EdgeData * data = (EdgeData *)(edge._data);
+			//data->_type[unit_type] = TERRAIN_OBSTACLE;
+			_path_finder->set_terrain_type(e.first, e.second, unit_type, TERRAIN_OBSTACLE);
 		}
 	}
 }
@@ -567,9 +578,10 @@ void Map::remove_element_from_terrain_grid(Element * element) {
 
 		std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb_buffered);
 		for (auto & e : edges) {
-			GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
-			EdgeData * data = (EdgeData *)(edge._data);
-			data->_type[unit_type] = TERRAIN_GROUND;
+			//GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
+			//EdgeData * data = (EdgeData *)(edge._data);
+			//data->_type[unit_type] = TERRAIN_GROUND;
+			_path_finder->set_terrain_type(e.first, e.second, unit_type, TERRAIN_GROUND);
 		}
 	}
 }
@@ -606,9 +618,10 @@ void Map::add_unit_to_position_grid(Unit * unit) {
 		UnitType * unit_type = ut.second;
 		if (unit->_path->empty()) {
 			for (auto & e : waiting_unit_positions_edges(unit, unit_type)) {
-				GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
-				EdgeData * data = (EdgeData *)(edge._data);
-				data->_ids[unit_type].insert(unit->_id);
+				//GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
+				//EdgeData * data = (EdgeData *)(edge._data);
+				//data->_ids[unit_type].insert(unit->_id);
+				_path_finder->insert_id(e.first, e.second, unit_type, unit->_id);
 			}
 		}
 		else {
@@ -617,9 +630,10 @@ void Map::add_unit_to_position_grid(Unit * unit) {
 					continue;
 				}
 				for (auto e : interval->_edges[unit_type]) {
-					GraphEdge edge = _path_finder->get_edge(e);
-					EdgeData * data = (EdgeData *)(edge._data);
-					data->_ids[unit_type].insert(unit->_id);
+					//GraphEdge edge = _path_finder->get_edge(e);
+					//EdgeData * data = (EdgeData *)(edge._data);
+					//data->_ids[unit_type].insert(unit->_id);
+					_path_finder->insert_id(e.first, e.second, unit_type, unit->_id);
 				}
 			}
 		}
@@ -632,9 +646,10 @@ void Map::remove_unit_from_position_grid(Unit * unit) {
 		UnitType * unit_type = ut.second;
 		if (unit->_path->empty()) {
 			for (auto & e : waiting_unit_positions_edges(unit, unit_type)) {
-				GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
-				EdgeData * data = (EdgeData *)(edge._data);
-				data->_ids[unit_type].erase(unit->_id);
+				//GraphEdge & edge = _path_finder->_vertices[e.first]._edges[e.second];
+				//EdgeData * data = (EdgeData *)(edge._data);
+				//data->_ids[unit_type].erase(unit->_id);
+				_path_finder->erase_id(e.first, e.second, unit_type, unit->_id);
 			}
 		}
 		else {
@@ -643,9 +658,10 @@ void Map::remove_unit_from_position_grid(Unit * unit) {
 					continue;
 				}
 				for (auto e : interval->_edges[unit_type]) {
-					GraphEdge edge = _path_finder->get_edge(e);
-					EdgeData * data = (EdgeData *)(edge._data);
-					data->_ids[unit_type].erase(unit->_id);
+					//GraphEdge edge = _path_finder->get_edge(e);
+					//EdgeData * data = (EdgeData *)(edge._data);
+					//data->_ids[unit_type].erase(unit->_id);
+					_path_finder->erase_id(e.first, e.second, unit_type, unit->_id);
 				}
 			}
 		}
@@ -658,9 +674,10 @@ void Map::advance_unit_in_position_grid(Unit * unit) {
 		UnitType * unit_type = ut.second;
 
 		for (auto e : unit->_path->get_current_interval()->_edges[unit_type]) {
-			GraphEdge edge = _path_finder->get_edge(e);
-			EdgeData * data = (EdgeData *)(edge._data);
-			data->_ids[unit_type].erase(unit->_id);
+			//GraphEdge edge = _path_finder->get_edge(e);
+			//EdgeData * data = (EdgeData *)(edge._data);
+			//data->_ids[unit_type].erase(unit->_id);
+			_path_finder->erase_id(e.first, e.second, unit_type, unit->_id);
 		}
 	}
 	
@@ -670,16 +687,20 @@ void Map::advance_unit_in_position_grid(Unit * unit) {
 		UnitType * unit_type = ut.second;
 	
 		for (auto e : unit->_path->get_last_active_interval()->_edges[unit_type]) {
-			GraphEdge edge = _path_finder->get_edge(e);
-			EdgeData * data = (EdgeData *)(edge._data);
-			data->_ids[unit_type].insert(unit->_id);
+			//GraphEdge edge = _path_finder->get_edge(e);
+			//EdgeData * data = (EdgeData *)(edge._data);
+			//data->_ids[unit_type].insert(unit->_id);
+			_path_finder->insert_id(e.first, e.second, unit_type, unit->_id);
 		}
 	}
 }
 
 
-void Map::path_find() {
+void Map::path_find_search() {
+	bool verbose = true;
+
 	PathFinderInput * pfi;
+
 	while (_path_find_thr_running) {
 		_path_find_mtx.lock();
 		if (_path_finder_computing) {
@@ -689,6 +710,10 @@ void Map::path_find() {
 		_path_find_mtx.unlock();
 
 		if (_path_queue_thr_input.next(pfi)) {
+			if (verbose) {
+				std::cout << "Map::path_find_search : new pfi unit id = " << pfi->_unit_id << "\n";
+			}
+
 			_path_find_mtx.lock();
 			_path_finder_computing = true;
 			_path_find_mtx.unlock();
@@ -699,12 +724,104 @@ void Map::path_find() {
 }
 
 
-void Map::pause_all_units(bool pause) {
-	for (auto & team : _teams) {
-		for (auto & unit : team->_units) {
-			unit->_paused = pause;
+void Map::path_find_use_result(time_point t) {
+	const bool verbose = true;
+
+	UnitPath * unit_path;
+	// TODO : ou doit se faire la destruction de unit_path ?
+
+	if (_path_queue_thr_output.next(unit_path)) {
+		if (unit_path->_status == UNIT_PATH_COMPUTING_SUCCESS) {
+			if (verbose) {
+				std::cout << "Map::path_find_use_result : UNIT_PATH_COMPUTING_SUCCESS unit id = " << unit_path->_unit_id << "\n";
+			}
+			Unit * unit = get_unit(unit_path->_unit_id);
+			if (unit != NULL) {
+				remove_unit_from_position_grid(unit);
+				unit->_path->copy_path(unit_path);
+				fill_unit_path_edges(unit);
+				add_unit_to_position_grid(unit);
+				unit->update_alti_path();
+				if (unit->_type->_flies) {
+					unit->set_status(TAKEOFF, t);
+				}
+				else {
+					unit->set_status(MOVING, t);
+				}
+			}
+		}
+		else if (unit_path->_status == UNIT_PATH_COMPUTING_FAILED) {
+			if (verbose) {
+				std::cout << "Map::path_find_use_result : UNIT_PATH_COMPUTING_FAILED unit id = " << unit_path->_unit_id << "\n";
+			}
+			Unit * unit = get_unit(unit_path->_unit_id);
+			if (unit != NULL) {
+				unit->set_status(WAITING, t);
+			}
+		}
+
+		_path_find_mtx.lock();
+		_path_finder_computing = false;
+		_path_find_mtx.unlock();
+	}
+}
+
+
+void Map::anim_unit(Unit * unit, time_point t) {
+	bool verbose = true;
+
+	if (unit->_status == MOVING) {
+		if (unit->last_checkpoint_checked()) {
+			remove_unit_from_position_grid(unit);
+			if (unit->_type->_flies) {
+				unit->set_status(LANDING, t);
+			}
+			else {
+				unit->set_status(WAITING, t);
+			}
+			add_unit_to_position_grid(unit);
+		}
+		else if (unit->checkpoint_checked()) {
+			advance_unit_in_position_grid(unit);
 		}
 	}
+	else if (unit->_status == ATTACKING) {
+		if (unit->_target->_status == DESTROYED || unit->_target->_hit_status == FINAL_HIT) {
+			unit->set_status(WAITING, t);
+		}
+	}
+	else if (unit->_status == DESTROYED) {
+		unit->_delete = true;
+		remove_unit_from_position_grid(unit);
+	}
+	else if (unit->_status == SHOOTING) {
+		_ammos.push_back(new Ammo(unit->_type->_ammo_type, unit->_position, unit->_target->_position));
+		unit->set_status(ATTACKING, t);
+	}
+
+	unit->anim(t);
+
+	if (!unit->_instructions.empty()) {
+		Instruction i = unit->_instructions.front();
+		if (i._t <= t) {
+			unit->set_status(COMPUTING_PATH, t);
+			unit->_instructions.pop();
+			// TODO : ou doit se faire la destruction de pfi ?
+			PathFinderInput * pfi = new PathFinderInput();
+			pfi->_unit_type = unit->_type;
+			pfi->_unit_id = unit->_id;
+			pfi->_start = unit->_position;
+			pfi->_goal = i._destination;
+			_path_queue_thr_input.push(pfi);
+
+			if (verbose) {
+				std::cout << "Map::anim_unit : COMPUTING_PATH unit id " << unit->_id << "\n";
+			}
+		}
+	}
+
+	// TODO : à desactiver quand les problèmes de path seront réglés
+	save_teams("../data/maps/last_map/teams.json");
 }
 
 
@@ -715,10 +832,25 @@ void Map::ia(time_point t) {
 			continue;
 		}
 
+		// construction
+		for (auto & unit_type : std::vector<UNIT_TYPE>{INFANTERY, TANK, HELICOPTER, BOAT}) {
+			for (uint compt = 0; compt < IA_MAX_CONSTRUCTION_TRY; compt++) {
+				pt_2d pos = rand_pt_2d(_aabb->_pos, _aabb->_pos + _aabb->_size);
+				if (add_unit_check(team, unit_type, pos, true, true)) {
+					if (ia_verbose) {
+						std::cout << "IA construction " << unit_type2str(unit_type) << "\n";
+					}
+					add_unit(team, unit_type, pos, t);
+					break;
+				}
+			}
+		}
+
 		for (auto & unit : team->_units) {
 			if (unit->_status == COMPUTING_PATH) {
 				continue;
 			}
+
 			else if (unit->_status == WAITING) {
 				if (unit->_life > 0.95 * unit->_type->_life_init) {
 					unit->set_status(WATCHING, t);
@@ -743,12 +875,7 @@ void Map::ia(time_point t) {
 					}
 				}
 				else {
-					uint compt = 0;
-					while (true) {
-						if (compt++ > 100) {
-							break;
-						}
-
+					for (uint compt = 0; compt < IA_MAX_MOVING_TRY; compt++) {
 						// recherche sur un disque troué
 						pt_2d destination = rand_pt_2d(unit->_position, unit->_type->_vision_distance, unit->_type->_vision_distance * 0.5);
 						if (move_unit_check(unit, destination)) {
@@ -807,88 +934,15 @@ void Map::ia(time_point t) {
 
 
 void Map::anim(time_point t) {
-	// Pathfinding ------------------------------------------------
-	UnitPath * unit_path;
-	// TODO : ou doit se faire la destruction de unit_path ?
 
-	if (_path_queue_thr_output.next(unit_path)) {
-		if (unit_path->_status == UNIT_PATH_COMPUTING_SUCCESS) {
-			Unit * unit = get_unit(unit_path->_unit_id);
-			if (unit != NULL) {
-				remove_unit_from_position_grid(unit);
-				unit->_path->copy_path(unit_path);
-				fill_unit_path_edges(unit);
-				add_unit_to_position_grid(unit);
-				unit->update_alti_path();
-				if (unit->_type->_flies) {
-					unit->set_status(TAKEOFF, t);
-				}
-				else {
-					unit->set_status(MOVING, t);
-				}
-			}
-		}
-		else if (unit_path->_status == UNIT_PATH_COMPUTING_FAILED) {
-			
-		}
-
-		_path_find_mtx.lock();
-		_path_finder_computing = false;
-		_path_find_mtx.unlock();
-	}
-
-	// TODO : à desactiver quand les problèmes de path seront réglés
-	save_teams("../data/maps/last_map/teams.json");
+	path_find_use_result(t);
 
 	ia(t);
 
 	// anim par unité -------------------------------------------------
 	for (auto & team : _teams) {
 		for (auto & unit : team->_units) {
-			if (unit->_status == MOVING) {
-				if (unit->last_checkpoint_checked()) {
-					remove_unit_from_position_grid(unit);
-					if (unit->_type->_flies) {
-						unit->set_status(LANDING, t);
-					}
-					else {
-						unit->set_status(WAITING, t);
-					}
-					add_unit_to_position_grid(unit);
-				}
-				else if (unit->checkpoint_checked()) {
-					advance_unit_in_position_grid(unit);
-				}
-			}
-			else if (unit->_status == ATTACKING) {
-				if (unit->_target->_status == DESTROYED || unit->_target->_hit_status == FINAL_HIT) {
-					unit->set_status(WAITING, t);
-				}
-			}
-			else if (unit->_status == DESTROYED) {
-				unit->_delete = true;
-				remove_unit_from_position_grid(unit);
-			}
-			else if (unit->_status == SHOOTING) {
-				_ammos.push_back(new Ammo(unit->_type->_ammo_type, unit->_position, unit->_target->_position));
-				unit->set_status(ATTACKING, t);
-			}
-
-			unit->anim(t);
-
-			if (!unit->_instructions.empty()) {
-				Instruction i = unit->_instructions.front();
-				if (i._t <= t) {
-					unit->_instructions.pop();
-					// TODO : ou doit se faire la destruction de pfi ?
-					PathFinderInput * pfi = new PathFinderInput();
-					pfi->_unit_type = unit->_type;
-					pfi->_unit_id = unit->_id;
-					pfi->_start = unit->_position;
-					pfi->_goal = i._destination;
-					_path_queue_thr_input.push(pfi);
-				}
-			}
+			anim_unit(unit, t);
 		}
 	}
 

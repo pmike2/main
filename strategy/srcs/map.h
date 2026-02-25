@@ -39,8 +39,8 @@ struct Map {
 	~Map();
 	
 	bool fow_check(Team * team, pt_2d pos);
-	bool add_unit_check(Team * team, UNIT_TYPE type, pt_2d pos);
-	bool add_unit_fow_check(Team * team, pt_2d pos);
+	bool construction_check(Team * team, UNIT_TYPE type);
+	bool add_unit_check(Team * team, UNIT_TYPE type, pt_2d pos, bool fow_active, bool construction_active);
 	bool move_unit_check(Unit * unit, pt_2d pos);
 	bool attack_unit_check(Unit * attacking_unit, Unit * attacked_unit);
 
@@ -61,6 +61,7 @@ struct Map {
 
 	void clear_units();
 	void clear_elements();
+	void pause_all_units(bool pause);
 
 	void update_alti_grid();
 	void update_elevation_grid();
@@ -76,9 +77,9 @@ struct Map {
 	void remove_unit_from_position_grid(Unit * unit);
 	void advance_unit_in_position_grid(Unit * unit);
 
-	void path_find();
-	void pause_all_units(bool pause);
-
+	void path_find_search();
+	void path_find_use_result(time_point t);
+	void anim_unit(Unit * unit, time_point t);
 	void ia(time_point t);
 	void anim(time_point t);
 	void collisions(time_point t);

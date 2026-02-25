@@ -1,5 +1,5 @@
 {
-	"texture_root" : "../data/textures_ihm",
+	"texture_root" : "../data/ihm",
 	"texture_size" : 512,
 	"texture_slider_background" : "slider_background.png",
 	"default_element_size" : [0.3, 0.3],
@@ -211,6 +211,7 @@
 				{"name" : "units", "checked" : true},
 				{"name" : "sea", "checked" : true},
 				{"name" : "bbox"},
+				{"name" : "path"},
 				{"name" : "grid", "groups_visible" : ["grid_type", "grid_unit_type"]},
 				{"name" : "unit_life", "checked" : true},
 				{"name" : "fow", "checked" : true}

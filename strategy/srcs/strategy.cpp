@@ -300,7 +300,7 @@ void Strategy::set_ihm() {
 		});
 	}
 	
-	for (auto & visu_type : std::vector<std::string>{"elevation", "grid", "bbox", "sea", "unit_life"}) {
+	for (auto & visu_type : std::vector<std::string>{"elevation", "grid", "bbox", "sea", "unit_life", "path"}) {
 		_ihm->get_element("visu", visu_type)->set_callback(
 			[this, visu_type](){_gl_draw_manager->set_active(visu_type);},
 			[this, visu_type](){_gl_draw_manager->set_inactive(visu_type);}
@@ -1152,14 +1152,20 @@ void Strategy::update_edit_map() {
 void Strategy::update_cursor() {
 	GLDrawContext * context= _gl_draw_manager->get_context("cursor");
 
-	if (_config->_edit || _cursor_hover_ihm || !_cursor_in_world || _config->_play_mode == SELECT_UNIT || _config->_unit_action_mode == WAIT  || _config->_unit_action_mode == WATCH ) {
+	if (_config->_edit || _cursor_hover_ihm || !_cursor_in_world 
+		|| (_config->_play_mode == ACTION_UNIT && (_config->_unit_action_mode == WAIT || _config->_unit_action_mode == WATCH || _config->_unit_action_mode == DESTROY))
+		|| (_config->_play_mode == SELECT_UNIT && _cursor_hover_unit == NULL)
+	) {
 		context->_n_pts = 0;
 		context->_active = false;
 		return;
 	}
 
 	AABB * aabb;
-	if (_config->_play_mode == ADD_UNIT) {
+	if (_config->_play_mode == SELECT_UNIT && _cursor_hover_unit != NULL) {
+		context->_n_pts = 48;
+	}
+	else if (_config->_play_mode == ADD_UNIT) {
 		aabb = new AABB(*_map->_unit_types[_config->_add_unit_type]->_obj_data->_aabb);
 		if (_add_unit_fow_ok) {
 			aabb->translate(_cursor_world_position);
@@ -1180,22 +1186,14 @@ void Strategy::update_cursor() {
 		context->_n_pts = 48;
 	}
 	else if (_config->_play_mode == ACTION_UNIT && _config->_unit_action_mode == ATTACK) {
-		/*if (!_map->_elevation->in_boundaries(pt_2d(_cursor_world_position))) {
-			context->_n_pts = 0;
-			context->_active = false;
-			return;
-		}*/
-
 		context->_n_pts = ATTACK_UNIT_N_VERTICES_PER_CIRCLE * 2 + 8;
 	}
 	else if (_config->_play_mode == ACTION_UNIT && _config->_unit_action_mode == MOVE) {
-		/*if (!_map->_elevation->in_boundaries(pt_2d(_cursor_world_position))) {
-			context->_n_pts = 0;
-			context->_active = false;
-			return;
-		}*/
-
 		context->_n_pts = 4;
+	}
+	else {
+		std::cerr << "Strategy::update_cursor : cas non prévu\n";
+		return;
 	}
 
 	context->_active = true;
@@ -1203,7 +1201,22 @@ void Strategy::update_cursor() {
 	float data[context->data_size()];
 	float * ptr = data;
 
-	if (_config->_play_mode == ADD_UNIT) {
+	if (_config->_play_mode == SELECT_UNIT && _cursor_hover_unit != NULL) {
+		std::vector<pt_3d> segs = _cursor_hover_unit->_bbox->segments();
+
+		for (uint i=0; i<segs.size(); ++i) {
+			ptr[0] = float(segs[i].x);
+			ptr[1] = float(segs[i].y);
+			ptr[2] = float(segs[i].z + Z_OFFSET_UNIT);
+			ptr[3] = SELECT_COLOR.r;
+			ptr[4] = SELECT_COLOR.g;
+			ptr[5] = SELECT_COLOR.b;
+			ptr[6] = SELECT_COLOR.a;
+			ptr += 7;
+		}
+	}
+	
+	else if (_config->_play_mode == ADD_UNIT) {
 		std::vector<pt_3d> segs = aabb->segments();
 		delete aabb;
 
@@ -1949,7 +1962,6 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 					else {
 						unit->_paused = false;
 					}
-					update_unit_matrices(_map->_unit_types[_config->_add_unit_type]);
 					return true;
 				}
 			}
@@ -2038,13 +2050,10 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 	if (_cursor_in_world) {
 		_fow_ok = _map->fow_check(get_selected_team(), pt_2d(_cursor_world_position));
 		
-		_add_unit_ok = _map->add_unit_check(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position));
-		if (get_selected_team()->get_unit_under_construction(_map->_unit_types[_config->_add_unit_type]) != NULL) {
-			_add_unit_ok = false;
-		}
+		_add_unit_ok = _map->add_unit_check(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position), false, true);
 		
 		if (_config->_fow_active) {
-			_add_unit_fow_ok = _map->add_unit_fow_check(get_selected_team(), pt_2d(_cursor_world_position));
+			_add_unit_fow_ok = _map->fow_check(get_selected_team(), pt_2d(_cursor_world_position));
 		}
 		else {
 			_add_unit_fow_ok = true;

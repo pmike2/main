@@ -299,20 +299,19 @@ json UnitPath::get_json() {
 
 
 std::ostream & operator << (std::ostream & os, UnitPath & p) {
-	os << "pts = ";
-	for (auto pt : p._pts) {
-		os << glm_to_string(pt, 1) << " ; ";
-	}
-	/*os << " | nodes = ";
-	for (auto node : p._nodes) {
-		os << node << " ; ";
-	}*/
-	
-	/*os << " | weights = ";
-	for (auto w : p._weights) {
-		os << w << " ; ";
-	}*/
-	os << " | idx_path = " << p._idx_path;
+	os << "unit_id = " << p._unit_id;
+	os << " ; unit_type = " << unit_type2str(p._unit_type->_type);
+	os << " ; start_id = " << p._start_id << " ; start = " << glm_to_string(p._start);
+	os << " ; goal_id = " << p._goal_id << " ; goal = " << glm_to_string(p._goal);
+	os << " ; idx_path = " << p._idx_path;
+	os << " ; use_line_of_sight = " << p._use_line_of_sight;
+	os << " ; status = " << p._status;
+
+	os << " ; n pts = " << p._pts.size();
+	os << " ; n intervals = " << p._intervals.size();
+	os << " ; n pts_los = " << p._pts_los.size();
+	os << " ; n intervals_los = " << p._intervals_los.size();
+
 	return os;
 }
 

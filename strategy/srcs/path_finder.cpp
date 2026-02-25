@@ -5,8 +5,8 @@ PathFinder::PathFinder() {
 	
 }
 
-PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : 
-	GraphGrid(origin, size, n_ligs, n_cols), _verbose(false)
+PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols, std::mutex * mtx) : 
+	GraphGrid(origin, size, n_ligs, n_cols), _verbose(false), _mtx(mtx)
 {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
@@ -35,6 +35,89 @@ void PathFinder::add_unit_type(UnitType * unit_type) {
 			EdgeData * edge_data = (EdgeData *)(edge._data);
 			edge_data->_delta_elevation[unit_type] = 0.0;
 			edge_data->_type[unit_type] = TERRAIN_UNKNOWN;
+			edge_data->_ids[unit_type] = {};
+			_it_e++;
+		}
+		_it_v++;
+	}
+}
+
+
+std::unordered_set<uint> PathFinder::get_ids(uint i, uint j, UnitType * unit_type) {
+	GraphEdge edge = get_edge(i, j);
+	EdgeData * edge_data = (EdgeData *)(edge._data);
+	return edge_data->_ids[unit_type];
+}
+
+
+TERRAIN_TYPE PathFinder::get_terrain_type(uint i, uint j, UnitType * unit_type) {
+	GraphEdge edge = get_edge(i, j);
+	EdgeData * edge_data = (EdgeData *)(edge._data);
+	return edge_data->_type[unit_type];
+}
+
+
+void PathFinder::set_terrain_type(uint i, uint j, UnitType * unit_type, TERRAIN_TYPE terrain_type) {
+	GraphEdge edge = get_edge(i, j);
+	EdgeData * edge_data = (EdgeData *)(edge._data);
+	_mtx->lock();
+	edge_data->_type[unit_type] = terrain_type;
+	_mtx->unlock();
+}
+
+
+void PathFinder::set_delta_elevation(uint i, uint j, UnitType * unit_type, number delta_elevation) {
+	GraphEdge edge = get_edge(i, j);
+	EdgeData * edge_data = (EdgeData *)(edge._data);
+	_mtx->lock();
+	edge_data->_delta_elevation[unit_type] = delta_elevation;
+	_mtx->unlock();
+}
+
+
+void PathFinder::insert_id(uint i, uint j, UnitType * unit_type, uint id) {
+	GraphEdge edge = get_edge(i, j);
+	EdgeData * edge_data = (EdgeData *)(edge._data);
+	_mtx->lock();
+	edge_data->_ids[unit_type].insert(id);
+	_mtx->unlock();
+}
+
+
+void PathFinder::erase_id(uint i, uint j, UnitType * unit_type, uint id) {
+	GraphEdge edge = get_edge(i, j);
+	EdgeData * edge_data = (EdgeData *)(edge._data);
+	_mtx->lock();
+	edge_data->_ids[unit_type].erase(id);
+	_mtx->unlock();
+}
+
+
+void PathFinder::clear_ids(UnitType * unit_type) {
+	_it_v= _vertices.begin();
+	while (_it_v!= _vertices.end()) {
+		_it_e = _vertices[_it_v->first]._edges.begin();
+		while (_it_e != _vertices[_it_v->first]._edges.end()) {
+			EdgeData * data = (EdgeData * )(_vertices[_it_v->first]._edges[_it_e->first]._data);
+			_mtx->lock();
+			data->_ids[unit_type].clear();
+			_mtx->unlock();
+			_it_e++;
+		}
+		_it_v++;
+	}
+}
+
+
+void PathFinder::clear_terrain(UnitType * unit_type) {
+	_it_v= _vertices.begin();
+	while (_it_v!= _vertices.end()) {
+		_it_e = _vertices[_it_v->first]._edges.begin();
+		while (_it_e != _vertices[_it_v->first]._edges.end()) {
+			EdgeData * data = (EdgeData * )(_vertices[_it_v->first]._edges[_it_e->first]._data);
+			_mtx->lock();
+			data->_type[unit_type] = TERRAIN_UNKNOWN;
+			_mtx->unlock();
 			_it_e++;
 		}
 		_it_v++;
@@ -43,14 +126,14 @@ void PathFinder::add_unit_type(UnitType * unit_type) {
 
 
 number PathFinder::elevation_weight(UnitType * unit_type, uint i, uint j) {
-	GraphEdge edge = _vertices[i]._edges[j];
+	GraphEdge edge = get_edge(i, j);
 	EdgeData * data = (EdgeData *)(edge._data);
 	return data->_delta_elevation[unit_type];
 }
 
 
 number PathFinder::units_position_weight(UnitType * unit_type, uint unit_id, uint i, uint j) {
-	GraphEdge edge = _vertices[i]._edges[j];
+	GraphEdge edge = get_edge(i, j);
 	EdgeData * data = (EdgeData *)(edge._data);
 	if (data->_ids[unit_type].empty() || (data->_ids[unit_type].size() == 1 && *data->_ids[unit_type].begin() == unit_id)) {
 		return DEFAULT_EDGE_WEIGHT;
@@ -60,7 +143,7 @@ number PathFinder::units_position_weight(UnitType * unit_type, uint unit_id, uin
 
 
 number PathFinder::terrain_weight(UnitType * unit_type, uint i, uint j) {
-	GraphEdge edge = _vertices[i]._edges[j];
+	GraphEdge edge = get_edge(i, j);
 	EdgeData * data = (EdgeData *)(edge._data);
 	if (data->_type[unit_type] == TERRAIN_UNKNOWN) {
 		std::cerr << "PathFinder::terrain_weight UNKNOWN\n";
@@ -72,14 +155,32 @@ number PathFinder::terrain_weight(UnitType * unit_type, uint i, uint j) {
 
 number PathFinder::cost(UnitType * unit_type, uint unit_id, uint i, uint j) {
 	number result = 0.0;
+
+	if (_verbose) {
+		std::cout << "cost : unit_type = " << unit_type2str(unit_type->_type) << " ; unit id = " << unit_id << " ; i = " << i  << " ; j = " << j << "\n";
+	}
 	
 	if (!unit_type->_floats && !unit_type->_flies) {
+		if (_verbose) {
+			std::cout << "cost : elevation_weight\n";
+		}
 		result += elevation_weight(unit_type, i, j);
 	}
 
 	if (!unit_type->_flies) {
+		if (_verbose) {
+			std::cout << "cost : units_position_weight\n";
+		}
 		result += units_position_weight(unit_type, unit_id, i, j);
+
+		if (_verbose) {
+			std::cout << "cost : terrain_weight\n";
+		}
 		result += terrain_weight(unit_type, i, j);
+	}
+
+	if (_verbose) {
+		std::cout << "cost = " << result << "\n";
 	}
 	
 	return result;
@@ -92,12 +193,19 @@ number PathFinder::heuristic(uint i, uint j) {
 
 
 number PathFinder::line_of_sight_max_weight(UnitType * unit_type, uint unit_id, pt_2d pt1, pt_2d pt2) {
-	//std::vector<uint_pair> edges = edges_intersecting_segment(pt_2d(pt1), pt_2d(pt2));
+	
+	if (_verbose) {
+		std::cout << "line_of_sight_max_weight : " << glm_to_string(pt1) << " -> " << glm_to_string(pt2) << "\n";
+	}
 
 	const number LOS_SEGMENT_WIDTH = 0.5;
 	BBox_2D * bbox = new BBox_2D(LOS_SEGMENT_WIDTH, pt1, pt2);
 	std::vector<uint_pair> edges = edges_intersecting_bbox(bbox);
 	delete bbox;
+
+	if (_verbose) {
+		std::cout << "line_of_sight_max_weight : n edges = " << edges.size() << "\n";
+	}
 
 	number result = 0.0;
 	for (auto edge : edges) {
@@ -108,40 +216,65 @@ number PathFinder::line_of_sight_max_weight(UnitType * unit_type, uint unit_id, 
 			result = weight;
 		}
 	}
+
 	return result;
 }
 
 
 bool PathFinder::path_find_nodes(UnitPath * unit_path) {
+	if (_verbose) {
+		std::cout << "unit id " << unit_path->_unit_id << " : path_find_nodes start\n";
+	}
+
 	auto frontier_cmp = [](std::pair<uint, number> x, std::pair<uint, number> y) { return x.second > y.second; };
 	std::priority_queue< std::pair<uint, number>, std::vector<std::pair<uint, number> >, decltype(frontier_cmp) > frontier(frontier_cmp);
 	std::unordered_map<uint, uint> came_from;
 	std::unordered_map<uint, number> cost_so_far;
 
+	std::cout << "debug unit_path ---\n";
+	std::cout << *unit_path << "\n";
+	std::cout << "-------------------\n";
+
 	frontier.emplace(unit_path->_start_id, 0.0);
 	came_from[unit_path->_start_id]= unit_path->_start_id;
 	cost_so_far[unit_path->_start_id]= 0.0;
 
+	if (_verbose) {
+		std::cout << "unit id " << unit_path->_unit_id << " : path_find_nodes start loop\n";
+	}
+
 	while (!frontier.empty()) {
-		uint current= frontier.top().first;
+		uint current = frontier.top().first;
 		frontier.pop();
-		
+
+		if (_verbose) {
+			std::cout << "unit id " << unit_path->_unit_id << " : path_find_nodes loop current = " << current << "\n";
+		}
+
 		if (current == unit_path->_goal_id) {
 			break;
 		}
 
-		std::vector<uint> nexts= neighbors(current);
+		std::vector<uint> nexts = neighbors(current);
+		if (_verbose) {
+			std::cout << "n nexts = " << nexts.size() << "\n";
+		}
+
 		for (auto & next : nexts) {
-			number new_cost= cost_so_far[current]+ cost(unit_path->_unit_type, unit_path->_unit_id, current, next);
+			number new_cost= cost_so_far[current] + cost(unit_path->_unit_type, unit_path->_unit_id, current, next);
 			if ((!cost_so_far.count(next)) || (new_cost< cost_so_far[next])) {
-				cost_so_far[next]= new_cost;
-				came_from[next]= current;
+				cost_so_far[next] = new_cost;
+				came_from[next] = current;
 				//number priority= new_cost; // dijkstra
 				//number priority= heuristic(next, goal, grid); // greedy best first search
-				number priority= new_cost + heuristic(next, unit_path->_goal_id); // A *
+				number priority = new_cost + heuristic(next, unit_path->_goal_id); // A *
 				frontier.emplace(next, priority);
 			}
 		}
+	}
+
+	if (_verbose) {
+		std::cout << "unit id " << unit_path->_unit_id << " : path_find_nodes end loop\n";
 	}
 
 	if (!came_from.count(unit_path->_goal_id)) {
@@ -155,6 +288,10 @@ bool PathFinder::path_find_nodes(UnitPath * unit_path) {
 	}
 	unit_path->_nodes.push_back(unit_path->_start_id);
 	std::reverse(unit_path->_nodes.begin(), unit_path->_nodes.end());
+
+	if (_verbose) {
+		std::cout << "unit id " << unit_path->_unit_id << " : path_find_nodes end\n";
+	}
 
 	return true;
 }
@@ -173,7 +310,6 @@ bool PathFinder::path_find(PathFinderInput * pfi, SafeQueue<UnitPath *> * output
 	if (_verbose) {
 		std::cout << "unit id " << unit_path->_unit_id << " ---- DEBUT path_find --------------------------------------\n";
 	}
-	//_path->clear();
 
 	if ((!point_in_aabb2d(unit_path->_start, _aabb)) || (!point_in_aabb2d(unit_path->_goal, _aabb))) {
 		if (_verbose) {
@@ -188,7 +324,8 @@ bool PathFinder::path_find(PathFinderInput * pfi, SafeQueue<UnitPath *> * output
 	unit_path->_start_id = pt2closest_id(unit_path->_start);
 	unit_path->_goal_id = pt2closest_id(unit_path->_goal);
 
-	bool is_path_ok= path_find_nodes(unit_path);
+	bool is_path_ok = path_find_nodes(unit_path);
+	
 	if (!is_path_ok) {
 		if (_verbose) {
 			std::cout << "unit id " << unit_path->_unit_id << " : PathFinder::path_find : pas de chemin trouvé.\n";
@@ -269,12 +406,12 @@ bool PathFinder::path_find(PathFinderInput * pfi, SafeQueue<UnitPath *> * output
 	}
 
 	if (_verbose) {
-		std::cout << "unit id " << unit_path->_unit_id << " raw_path size après suppressions =" << raw_path.size() << "\n";
+		std::cout << "unit id " << unit_path->_unit_id << " : raw_path size après suppressions = " << raw_path.size() << "\n";
 	}
 
 	if (raw_path.size() == 0 || raw_path.size() == 1) {
 		if (_verbose) {
-			std::cout << "unit id " << unit_path->_unit_id << " raw_path.size() == " << raw_path.size() << "\n";
+			std::cout << "unit id " << unit_path->_unit_id << " : raw_path.size() == " << raw_path.size() << "\n";
 		}
 		unit_path->_status = UNIT_PATH_COMPUTING_FAILED;
 		output_queue->push(unit_path);
@@ -290,13 +427,13 @@ bool PathFinder::path_find(PathFinderInput * pfi, SafeQueue<UnitPath *> * output
 	}
 
 	if (_verbose) {
-		std::cout << "unit id " << unit_path->_unit_id << " _path->_pts.size = " << unit_path->_pts.size() << "\n";
+		std::cout << "unit id " << unit_path->_unit_id << " : _path->_pts.size = " << unit_path->_pts.size() << "\n";
 		//std::cout << "unit id " << unit_id << " _path->_weights.size = " << _path->_weights.size() << "\n";
 	}
 
 	// avec line of sight ----------------------------------------------------------------------------
 	if (_verbose) {
-		std::cout << "unit id " << unit_path->_unit_id << " début line of sight\n";
+		std::cout << "unit id " << unit_path->_unit_id << " : début line of sight\n";
 	}
 
 	unit_path->_pts_los.push_back(pt_3d(raw_path[0].x, raw_path[0].y, 0.0));
@@ -342,13 +479,16 @@ bool PathFinder::path_find(PathFinderInput * pfi, SafeQueue<UnitPath *> * output
 			}
 		}
 
+		if (_verbose) {
+			std::cout << "END while\n";
+		}
+
 		last = idx - 1;
 		
 		unit_path->_pts_los.push_back(pt_3d(raw_path[last].x, raw_path[last].y, 0.0));
 		unit_path->_intervals_los.push_back(new PathInterval(last_los_weight_ok));
 
 		if (_verbose) {
-			std::cout << "END while\n";
 			std::cout << "last = " << last << " ; idx = " << idx;
 			std::cout << " ; raw_max_weight=" << raw_max_weight;
 			std::cout << "\n\n";

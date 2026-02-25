@@ -12,32 +12,19 @@
 #include "gl_utils.h"
 #include "input_state.h"
 #include "typedefs.h"
+#include "fps_count.h"
 
 #include "const.h"
 #include "strategy.h"
 
 
-// dimensions écran
-const int MAIN_WIN_WIDTH= 1280;
-//const int MAIN_WIN_WIDTH= 800;
-const int MAIN_WIN_HEIGHT= 1024;
-//const int MAIN_WIN_HEIGHT= 800;
-const float GL_WIDTH= 10.0f;
-const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDTH);
-
-
-SDL_Window * window= NULL;
+SDL_Window * window;
 SDL_GLContext main_context;
 InputState * input_state;
 ViewSystem * view_system;
 GLDrawManager * gl_draw_manager;
-
-bool done= false;
-
-uint val_fps, compt_fps;
-uint tikfps1, tikfps2;
-
 Strategy * strategy;
+FPSCount * fps_count;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
@@ -73,10 +60,6 @@ void mouse_button_down(int x, int y, unsigned short button, time_point t) {
 void key_down(SDL_Keycode key, time_point t) {
 	input_state->key_down(key);
 
-	if (key== SDLK_ESCAPE) {
-		done= true;
-	}
-
 	if (strategy->key_down(input_state, key, t)) {
 		return;
 	}
@@ -110,8 +93,8 @@ void init_gl() {
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
 	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
 	
-	window= SDL_CreateWindow("strategy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
-	main_context= SDL_GL_CreateContext(window);
+	window = SDL_CreateWindow("strategy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	main_context = SDL_GL_CreateContext(window);
 
 	//gl_versions();
 
@@ -139,28 +122,30 @@ void init_gl() {
 
 
 void init_data() {
-	GLDrawManager * gl_draw_manager = new GLDrawManager("../data/strategy_draw_context.json");
+	fps_count = new FPSCount(window);
 
-	ScreenGL * screengl= new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+	GLDrawManager * gl_draw_manager = new GLDrawManager("../data/draw_context.json");
+
+	ScreenGL * screengl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	
-	view_system= new ViewSystem(gl_draw_manager, screengl);
+	view_system = new ViewSystem(gl_draw_manager, screengl);
 	view_system->set(pt_3d(10.0, 10.0, 0.0), M_PI * 0.25, M_PI * 0.25, 70.0);
 	//view_system->set_2d(30.0);
 	view_system->constraint_theta(M_PI * 0.1, M_PI * 0.4);
 	view_system->constraint_rho(30.0, 100.0);
 	view_system->constraint_target(MAP_ORIGIN, MAP_ORIGIN + MAP_SIZE);
 
-	input_state= new InputState();
+	input_state = new InputState();
 
-	time_point now= std::chrono::system_clock::now();
+	time_point now = std::chrono::system_clock::now();
 	strategy = new Strategy(gl_draw_manager, view_system, now);
 }
 
 
 void draw() {
-	compt_fps++;
 	strategy->draw();
 	SDL_GL_SwapWindow(window);
+	fps_count->add_frame();
 }
 
 
@@ -169,32 +154,19 @@ void anim(time_point t) {
 }
 
 
-void compute_fps() {
-	tikfps2= SDL_GetTicks();
-	if (tikfps2- tikfps1> 1000) {
-		char s_fps[256];
-
-		tikfps1= SDL_GetTicks();
-		val_fps= compt_fps;
-		compt_fps= 0;
-		sprintf(s_fps, "%d", val_fps);
-		SDL_SetWindowTitle(window, s_fps);
-	}
-}
-
-
 void idle(time_point t) {
 	anim(t);
 	draw();
-	compute_fps();
+	fps_count->update();
 }
 
 
 void main_loop() {
 	SDL_Event event;
-	
+	bool done = false;
+
 	while (!done) {
-		time_point now= std::chrono::system_clock::now();
+		time_point now = std::chrono::system_clock::now();
 		
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
@@ -211,6 +183,10 @@ void main_loop() {
 					break;
 
 				case SDL_KEYDOWN:
+					if (event.key.keysym.sym == SDLK_ESCAPE) {
+						done = true;
+						break;
+					}
 					key_down(event.key.keysym.sym, now);
 					break;
 					
@@ -219,7 +195,7 @@ void main_loop() {
 					break;
 					
 				case SDL_QUIT:
-					done= 1;
+					done = true;
 					break;
 					
 				default:
@@ -237,6 +213,7 @@ void clean() {
 	delete view_system;
 	delete input_state;
 	delete gl_draw_manager;
+	delete fps_count;
 
 	SDL_GL_DeleteContext(main_context);
 	SDL_DestroyWindow(window);
@@ -249,5 +226,6 @@ int main() {
 	init_data();
 	main_loop();
 	clean();
+
 	return 0;
 }
