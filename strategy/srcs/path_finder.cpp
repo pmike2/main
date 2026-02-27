@@ -231,9 +231,9 @@ bool PathFinder::path_find_nodes(UnitPath * unit_path) {
 	std::unordered_map<uint, uint> came_from;
 	std::unordered_map<uint, number> cost_so_far;
 
-	std::cout << "debug unit_path ---\n";
+	/*std::cout << "debug unit_path ---\n";
 	std::cout << *unit_path << "\n";
-	std::cout << "-------------------\n";
+	std::cout << "-------------------\n";*/
 
 	frontier.emplace(unit_path->_start_id, 0.0);
 	came_from[unit_path->_start_id]= unit_path->_start_id;
