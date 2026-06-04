@@ -31,6 +31,7 @@ public:
 	AABB_2D * buffered(number size);
 	void buffer(number size);
 	void translate(pt_2d v);
+	void set_center(pt_2d pt);
 	friend std::ostream & operator << (std::ostream & os, const AABB_2D & aabb);
 
 

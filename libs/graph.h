@@ -43,10 +43,10 @@ struct GraphVertex {
 struct Graph {
 	Graph();
 	~Graph();
-	GraphVertex get_vertex(uint i);
-	GraphEdge get_edge(uint i, uint j);
-	GraphEdge get_edge(uint_pair p);
-	GraphEdge opposite_edge(GraphEdge e);
+	GraphVertex & get_vertex(uint i);
+	GraphEdge & get_edge(uint i, uint j);
+	GraphEdge & get_edge(uint_pair p);
+	GraphEdge & opposite_edge(GraphEdge & e);
 	void add_vertex(uint i, pt_3d pos=pt_3d(0.0));
 	void add_edge(uint i, uint j);
 	void remove_vertex(uint i);
@@ -89,6 +89,7 @@ struct GraphGrid : public Graph {
 	uint pt2closest_id(pt_2d pt);
 	uint_pair pt2closest_edge(pt_2d pt);
 	std::pair<int_pair, int_pair> aabb2col_lig_min_max(AABB_2D * aabb);
+	std::pair<int_pair, int_pair> aabb2col_lig_min_max_strict(AABB_2D * aabb);
 	
 	std::vector<uint_pair> edges_intersecting_segment(pt_2d pt1, pt_2d pt2);
 	bool is_edge_intersecting_segment(pt_2d pt1, pt_2d pt2, uint_pair edge);

@@ -186,14 +186,15 @@ public:
 	//bool contains_point(const pt_3d & pos);
 	bool intersects_bbox(BBox * bbox, bool selection=false);
 	bool intersects_aabb(AABB * aabb, bool selection=false);
-	//bool intersects_aabb_2d(AABB_2D * aabb, bool selection=false);
 	bool intersects_aabb(AABB * aabb, const mat_4d & model2world_matrix, bool selection=false);
+	bool intersects_aabb_2d(AABB_2D * aabb_2d, bool selection=false);
 	bool intersects_pts(std::vector<pt_3d> pts, bool selection=false);
 	bool intersects_pts(pt_3d * pts, uint n_pts, bool selection=false);
 	//bool selection_contains_point(const pt_3d & pt);
 	void update_selection_norms();
 	bool pt_2d_intersects_aabb(pt_2d pt, AABB * aabb, bool check_depth=true);
 	bool single_selection_intersects_aabb(AABB * aabb, bool check_depth=true);
+	bool single_selection_intersects_aabb_2d(AABB_2D * aabb_2d);
 	bool rect_selection_intersects_bbox(BBox * bbox, bool check_depth=true);
 
 	

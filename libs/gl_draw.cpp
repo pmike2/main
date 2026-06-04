@@ -912,6 +912,8 @@ GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 
 	std::map<std::string, GLuint> progs;
 	for (auto & shader : shaders) {
+		//std::cout << shader << "\n";
+
 		std::string vert = shader + ".vert";
 		std::string frag = shader + ".frag";
 		std::string geom = shader + ".geom";
@@ -921,18 +923,20 @@ GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 		}
 
 		if (file_exists(geom)) {
-			progs[basename(shader)]= create_prog(vert, frag, geom);
+			progs[basename(shader)] = create_prog(vert, frag, geom);
 		}
 		else {
-			progs[basename(shader)]= create_prog(vert, frag);
+			progs[basename(shader)] = create_prog(vert, frag);
 		}
+
+		check_gl_error();
 	}
 
-	check_gl_error();
+	//check_gl_error();
 
 	for (json::iterator it = js["contexts"].begin(); it != js["contexts"].end(); ++it) {
-		auto & context_name= it.key();
-		auto & context_dic= it.value();
+		auto & context_name = it.key();
+		auto & context_dic = it.value();
 
 		std::string shader_name = context_dic["shader"];
 

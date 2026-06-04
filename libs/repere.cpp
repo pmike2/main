@@ -938,6 +938,14 @@ bool ViewSystem::intersects_aabb(AABB * aabb, const mat_4d & model2world_matrix,
 }
 
 
+bool ViewSystem::intersects_aabb_2d(AABB_2D * aabb_2d, bool selection) {
+	AABB * aabb = new AABB(aabb_2d);
+	bool result = intersects_aabb(aabb, selection);
+	delete aabb;
+	return result;
+}
+
+
 bool ViewSystem::intersects_pts(std::vector<pt_3d> pts, bool selection) {
 	pt_3d * add = pts.data();
 	return intersects_pts(add, pts.size(), selection);
@@ -1048,6 +1056,14 @@ bool ViewSystem::single_selection_intersects_aabb(AABB * aabb, bool check_depth)
 
 	return false;*/
 	return pt_2d_intersects_aabb(_rect_select->_gl_origin, aabb, check_depth);
+}
+
+
+bool ViewSystem::single_selection_intersects_aabb_2d(AABB_2D * aabb_2d) {
+	AABB * aabb = new AABB(aabb_2d);
+	bool result = single_selection_intersects_aabb(aabb, false);
+	delete aabb;
+	return result;
 }
 
 

@@ -14,29 +14,29 @@ Graph::~Graph() {
 }
 
 
-GraphVertex Graph::get_vertex(uint i) {
+GraphVertex & Graph::get_vertex(uint i) {
 	return _vertices[i];
 }
 
 
-GraphEdge Graph::get_edge(uint i, uint j) {
+GraphEdge & Graph::get_edge(uint i, uint j) {
 	return _vertices[i]._edges[j];
 }
 
 
-GraphEdge Graph::get_edge(uint_pair p) {
+GraphEdge & Graph::get_edge(uint_pair p) {
 	return _vertices[p.first]._edges[p.second];
 }
 
 
-GraphEdge Graph::opposite_edge(GraphEdge e) {
+GraphEdge & Graph::opposite_edge(GraphEdge & e) {
 	for (auto & edge : e._end->_edges) {
 		if (edge.second._end == e._start) {
 			return edge.second;
 		}
 	}
 	std::cerr << "Graph::opposite_edge : non trouvé.\n";
-	return GraphEdge{};
+	//return GraphEdge{};
 }
 
 
@@ -387,10 +387,7 @@ uint_pair GraphGrid::pt2closest_edge(pt_2d pt) {
 }
 
 
-// ------------------------------------------------------------------------
-// TODO : cette méthode ENGLOBE le AABB ; faire une option qui empeche ça ?
-// -> serait utile à vertices_in_aabb
-// ------------------------------------------------------------------------
+// version englobant le AABB
 std::pair<int_pair, int_pair> GraphGrid::aabb2col_lig_min_max(AABB_2D * aabb) {
 	if (!aabb2d_intersects_aabb2d(aabb, _aabb)) {
 		std::cerr << "GraphGrid::aabb2col_lig_min_max : pas d'intersection entre " << *_aabb << " et " << *aabb << "\n";
@@ -423,6 +420,20 @@ std::pair<int_pair, int_pair> GraphGrid::aabb2col_lig_min_max(AABB_2D * aabb) {
 		col_lig_max.second++;
 	}
 	return std::make_pair(col_lig_min, col_lig_max);
+}
+
+
+// version stricte qui n'enblobe pas le AABB
+std::pair<int_pair, int_pair> GraphGrid::aabb2col_lig_min_max_strict(AABB_2D * aabb) {
+	std::pair<int_pair, int_pair> result = aabb2col_lig_min_max(aabb);
+	result.first.first++;
+	result.first.second++;
+	result.second.first--;
+	result.second.second--;
+	if (result.first.first > result.second.first || result.first.second > result.second.second) {
+		return std::make_pair(std::make_pair(-1, -1), std::make_pair(-1, -1));
+	}
+	return result;
 }
 
 
@@ -598,11 +609,19 @@ std::vector<uint> GraphGrid::vertices_in_cell_containing_pt(pt_2d pt) {
 
 std::vector<uint> GraphGrid::vertices_in_aabb(AABB_2D * aabb) {
 
-	std::pair<int_pair, int_pair> col_lig_min_max = aabb2col_lig_min_max(aabb);
-	uint col_min = col_lig_min_max.first.first;
-	uint lig_min = col_lig_min_max.first.second;
-	uint col_max = col_lig_min_max.second.first;
-	uint lig_max = col_lig_min_max.second.second;
+	// on prend la version stricte
+	//std::pair<int_pair, int_pair> col_lig_min_max = aabb2col_lig_min_max(aabb);
+	std::pair<int_pair, int_pair> col_lig_min_max = aabb2col_lig_min_max_strict(aabb);
+	
+	int col_min = col_lig_min_max.first.first;
+	int lig_min = col_lig_min_max.first.second;
+	int col_max = col_lig_min_max.second.first;
+	int lig_max = col_lig_min_max.second.second;
+
+	// cas où aabb2col_lig_min_max_strict renvoie du -1 car aabb ne contient aucun sommet
+	if (col_min == -1) {
+		return std::vector<uint>{};
+	}
 
 	std::vector<uint> result;
 	for (uint col = col_min; col<=col_max; ++col) {

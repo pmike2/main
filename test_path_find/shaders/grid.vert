@@ -1,0 +1,19 @@
+#version 410 core
+
+
+uniform mat4 world2clip_matrix;
+uniform float z;
+
+
+layout(location=0) in vec2 position_in;
+layout(location=1) in vec4 color_in;
+
+
+out vec4 vertex_color;
+
+
+void main(void) {
+	vertex_color = color_in;
+
+	gl_Position = world2clip_matrix * vec4(position_in, z, 1.0);
+}

@@ -58,23 +58,28 @@ AABB_2D::~AABB_2D() {
 
 
 pt_2d AABB_2D::center() {
-	return _pos+ (number)(0.5)* _size;
+	return _pos + 0.5 * _size;
 }
 
 
 AABB_2D * AABB_2D::buffered(number size) {
-	return new AABB_2D(_pos- pt_2d(size, size), _size+ (number)(2.0)* pt_2d(size, size));
+	return new AABB_2D(_pos - pt_2d(size, size), _size + 2.0 * pt_2d(size, size));
 }
 
 
 void AABB_2D::buffer(number size) {
-	_pos-= pt_2d(size, size);
-	_size+= 2.0* pt_2d(size, size);
+	_pos -= pt_2d(size, size);
+	_size += 2.0 * pt_2d(size, size);
 }
 
 
 void AABB_2D::translate(pt_2d v) {
 	_pos += v;
+}
+
+
+void AABB_2D::set_center(pt_2d pt) {
+	_pos = pt - 0.5 * _size;
 }
 
 
