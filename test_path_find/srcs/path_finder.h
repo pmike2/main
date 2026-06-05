@@ -34,9 +34,9 @@ const float Z_FONT = 0.04;
 
 const glm::vec4 SELECT_COLOR(1.0f, 1.0f, 0.0f, 0.5f);
 
-const number HARD_EDGE = 1000.0;
-const number SOFT_EDGE = 100.0;
-//const number OCCUPIED_EDGE = 1000.0;
+const number HARD_EDGE = 100.0;
+const number SOFT_EDGE = 10.0;
+const number OCCUPIED_EDGE = 1000.0;
 
 const uint N_VERTICES_CHECK = 4;
 
@@ -84,7 +84,7 @@ struct PathFinder : public GraphGrid {
 
 	VertexData * get_vertex_data(uint id_vertex);
 	EdgeData * get_edge_data(uint from , uint to);
-	number cost(uint from, uint to);
+	number cost(uint id_gmo, uint from, uint to);
 	number heuristic(uint i, uint j);
 	void path_find(uint id_gmo, uint start, uint goal, std::vector<uint> & path);
 };
@@ -95,7 +95,7 @@ struct PathFinderTest {
 	PathFinderTest(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t);
 	~PathFinderTest();
 	
-	void add_gmo(pt_2d pt);
+	void add_gmo(pt_2d pt, number size, number speed);
 	GridMovingObject * get_gmo(uint id);
 	void delete_selected_gmos();
 	void goto_gmo(GridMovingObject * gmo, uint id_vertex);

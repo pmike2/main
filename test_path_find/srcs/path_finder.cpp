@@ -67,15 +67,20 @@ EdgeData * PathFinder::get_edge_data(uint from , uint to) {
 }
 
 
-number PathFinder::cost(uint from, uint to) {
-	//VertexData * vfrom_data = get_vertex_data(from);
-	//VertexData * vto_data = get_vertex_data(to);
+number PathFinder::cost(uint id_gmo, uint from, uint to) {
+	VertexData * vfrom_data = get_vertex_data(from);
+	VertexData * vto_data = get_vertex_data(to);
 	EdgeData * edge_data = get_edge_data(from, to);
 	
 	number result = edge_data->_cost;
-	/*if (vfrom_data->_id_gmo > 0 || vto_data->_id_gmo > 0) {
+	if (
+		(vfrom_data->_id_gmo > 0 && vfrom_data->_id_gmo != id_gmo) ||
+		(vto_data->_id_gmo > 0 && vto_data->_id_gmo != id_gmo) ||
+		(vfrom_data->_obstacle == VERTEX_OBSTACLE) ||
+		(vto_data->_obstacle == VERTEX_OBSTACLE)
+	) {
 		result += OCCUPIED_EDGE;
-	}*/
+	}
 	return result;
 }
 
@@ -117,7 +122,7 @@ void PathFinder::path_find(uint id_gmo, uint start, uint goal, std::vector<uint>
 				continue;
 			}*/
 
-			number new_cost = cost_so_far[current] + cost(current, next);
+			number new_cost = cost_so_far[current] + cost(id_gmo, current, next);
 			if ((!cost_so_far.count(next)) || (new_cost< cost_so_far[next])) {
 				cost_so_far[next] = new_cost;
 				came_from[next] = current;
@@ -180,11 +185,9 @@ PathFinderTest::~PathFinderTest() {
 }
 
 
-void PathFinderTest::add_gmo(pt_2d pt) {
+void PathFinderTest::add_gmo(pt_2d pt, number size, number speed) {
 	uint id = _pfi->pt2closest_id(pt);
 	pt_2d center = _pfi->id2pt_2d(id);
-	number size = 1.5;
-	number speed = 0.04;
 	GridMovingObject * gmo = new GridMovingObject(center - 0.5 * pt_2d(size), pt_2d(size), speed);
 	gmo->_id = _next_gmo_id++;
 	_gmos.push_back(gmo);
@@ -290,16 +293,24 @@ void PathFinderTest::randomize_edges() {
 void PathFinderTest::update_gmo_grid(GridMovingObject * gmo) {
 	for (auto & v : gmo->_vertices) {
 		VertexData * vertex_data = _pfi->get_vertex_data(v);
+		if (vertex_data->_id_gmo != gmo->_id) {
+			std::cerr << "update_gmo_grid error\n";
+		}
 		vertex_data->_id_gmo = 0;
 	}
 
 	std::vector<uint> vertices = _pfi->vertices_in_aabb(gmo->_aabb);
+	//vertices.erase(std::remove_if(vertices.begin(), vertices.end(), [](uint v){return }), vertices.end());
+	gmo->_vertices.clear();
 	for (auto & v : vertices) {
 		VertexData * vertex_data = _pfi->get_vertex_data(v);
-		vertex_data->_id_gmo = gmo->_id;
+		if (vertex_data->_id_gmo == 0) {
+			vertex_data->_id_gmo = gmo->_id;
+			gmo->_vertices.push_back(v);
+		}
 	}
 
-	gmo->_vertices = vertices;
+	//gmo->_vertices = vertices;
 }
 
 
@@ -366,9 +377,17 @@ void PathFinderTest::anim(time_point t) {
 				
 				else if (vertex_data->_obstacle == VERTEX_OBSTACLE) {
 					VertexData * goal_data = _pfi->get_vertex_data(gmo->_path[gmo->_path.size() - 1]);
-					goto_gmo(gmo, gmo->_path[gmo->_path.size() - 1]);
-					if (verbose) {
-						std::cout << gmo->_id << " recalcule a cause d'un nouvel obstacle\n";
+					if (goal_data->_obstacle == VERTEX_OBSTACLE) {
+						stop_gmo(gmo);
+						if (verbose) {
+							std::cout << gmo->_id << " stop a cause d'un obstacle sur la destination\n";
+						}
+					}
+					else {
+						goto_gmo(gmo, gmo->_path[gmo->_path.size() - 1]);
+						if (verbose) {
+							std::cout << gmo->_id << " recalcule a cause d'un nouvel obstacle\n";
+						}
 					}
 					break;
 				}
@@ -678,17 +697,18 @@ void PathFinderTest::update_gmos() {
 		};
 		
 		glm::vec4 color;
+		float alpha = 0.3;
 		if (gmo->_selected) {
-			color = glm::vec4(1.0, 1.0, 0.0, 0.7);
+			color = glm::vec4(1.0, 1.0, 0.0, alpha);
 		}
 		else if (gmo->_status == GMO_IDLE) {
-			color = glm::vec4(0.0, 0.2, 1.0, 0.7);
+			color = glm::vec4(0.0, 0.2, 1.0, alpha);
 		}
 		else if (gmo->_status == GMO_MOVING) {
-			color = glm::vec4(0.0, 0.8, 1.0, 0.7);
+			color = glm::vec4(0.0, 0.8, 1.0, alpha);
 		}
 		else if (gmo->_status == GMO_WAITING) {
-			color = glm::vec4(0.8, 0.2, 0.3, 0.7);
+			color = glm::vec4(0.8, 0.2, 0.3, alpha);
 		}
 		
 		for (uint i=0; i<6; ++i) {
@@ -780,7 +800,17 @@ void PathFinderTest::update() {
 bool PathFinderTest::mouse_button_down(InputState * input_state, time_point t) {
 	if (input_state->_keys[SDLK_a]) {
 		pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
-		add_gmo(pt);
+		number size = 1.5;
+		number speed = 0.04;
+		add_gmo(pt, size, speed);
+		update_gmos();
+		return true;
+	}
+	else if (input_state->_keys[SDLK_z]) {
+		pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
+		number size = 5.0;
+		number speed = 0.02;
+		add_gmo(pt, size, speed);
 		update_gmos();
 		return true;
 	}
@@ -869,6 +899,13 @@ bool PathFinderTest::key_down(InputState * input_state, SDL_Keycode key, time_po
 	if (key == SDLK_SPACE) {
 		update_grid_edges();
 		update_grid_centers();
+		for (auto & gmo : _gmos) {
+			std::cout << gmo->_id << " vertices = ";
+			for (auto & v : gmo->_vertices) {
+				std::cout << v << " ; ";
+			}
+			std::cout << "\n";
+		}
 		return true;
 	}
 
