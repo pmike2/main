@@ -387,6 +387,36 @@ uint_pair GraphGrid::pt2closest_edge(pt_2d pt) {
 }
 
 
+std::pair<int_pair, int_pair> GraphGrid::col_lig_min_max(uint id_center, uint size) {
+	if (!in_boundaries(id_center)) {
+		std::cerr << "GraphGrid::col_lig_min_max : " << id_center << " hors grille\n";
+		return std::make_pair(std::make_pair(0, 0), std::make_pair(0, 0));
+	}
+
+	int_pair col_lig = id2col_lig(id_center);
+	int half_size = (int)(size / 2);
+	int col_min = (int)(col_lig.first) - half_size;
+	int col_max = (int)(col_lig.first) + half_size;
+	int lig_min = (int)(col_lig.second) - half_size;
+	int lig_max = (int)(col_lig.second) + half_size;
+
+	if (col_min < 0) {
+		col_min = 0;
+	}
+	if (col_max > _n_cols - 1) {
+		col_max = _n_cols - 1;
+	}
+	if (lig_min < 0) {
+		lig_min = 0;
+	}
+	if (lig_max > _n_ligs - 1) {
+		lig_max = _n_ligs - 1;
+	}
+
+	return std::make_pair(std::make_pair(col_min, lig_min), std::make_pair(col_max, lig_max));
+}
+
+
 // version englobant le AABB
 std::pair<int_pair, int_pair> GraphGrid::aabb2col_lig_min_max(AABB_2D * aabb) {
 	if (!aabb2d_intersects_aabb2d(aabb, _aabb)) {

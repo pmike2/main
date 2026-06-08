@@ -22,13 +22,29 @@ GridMovingObject::~GridMovingObject() {
 }
 
 
+// PathFinderInput -------------------------------------------------------------------------------------
+PathFinderInput::PathFinderInput() {
+
+}
+
+
+PathFinderInput::PathFinderInput(GridMovingObject * gmo, uint goal) : _gmo(gmo), _goal(goal) {
+
+}
+
+
+PathFinderInput::~PathFinderInput() {
+
+}
+
+
 // PathFinder -------------------------------------------------------------------------------------------
 PathFinder::PathFinder() {
 
 }
 
 
-PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : GraphGrid(origin, size, n_ligs, n_cols) {
+PathFinder::PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols, time_point t) : GraphGrid(origin, size, n_ligs, n_cols), _t_last_path_find(t) {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
 		GraphVertex & vertex = get_vertex(_it_v->first);
@@ -67,12 +83,33 @@ EdgeData * PathFinder::get_edge_data(uint from , uint to) {
 }
 
 
-number PathFinder::cost(uint id_gmo, uint from, uint to) {
-	VertexData * vfrom_data = get_vertex_data(from);
-	VertexData * vto_data = get_vertex_data(to);
+number PathFinder::cost(uint id_gmo, uint n_grid_size, uint from, uint to) {
 	EdgeData * edge_data = get_edge_data(from, to);
-	
 	number result = edge_data->_cost;
+
+	std::pair<int_pair, int_pair> clmm = col_lig_min_max(to, n_grid_size);
+	//std::cout << clmm.first.first << " -> " << clmm.second.first << " ; " << clmm.first.second << " ->" << clmm.second.second << "\n";
+	bool occupied = false;
+	for (int col=clmm.first.first; col<=clmm.second.first; ++col) {
+		for (int lig=clmm.first.second; lig<=clmm.second.second; ++lig) {
+			VertexData * data = get_vertex_data(col_lig2id(col, lig));
+			if ((data->_id_gmo > 0 && data->_id_gmo != id_gmo) || (data->_obstacle == VERTEX_OBSTACLE)) {
+				occupied = true;
+				break;
+			}
+		}
+		if (occupied) {
+			break;
+		}
+	}
+
+	if (occupied) {
+		result += OCCUPIED_EDGE;
+	}
+	
+	/*VertexData * vfrom_data = get_vertex_data(from);
+	VertexData * vto_data = get_vertex_data(to);
+	
 	if (
 		(vfrom_data->_id_gmo > 0 && vfrom_data->_id_gmo != id_gmo) ||
 		(vto_data->_id_gmo > 0 && vto_data->_id_gmo != id_gmo) ||
@@ -80,7 +117,8 @@ number PathFinder::cost(uint id_gmo, uint from, uint to) {
 		(vto_data->_obstacle == VERTEX_OBSTACLE)
 	) {
 		result += OCCUPIED_EDGE;
-	}
+	}*/
+
 	return result;
 }
 
@@ -90,7 +128,7 @@ number PathFinder::heuristic(uint i, uint j) {
 }
 
 
-void PathFinder::path_find(uint id_gmo, uint start, uint goal, std::vector<uint> & path) {
+void PathFinder::path_find(uint id_gmo, uint n_grid_size, uint start, uint goal, std::vector<uint> & path) {
 	bool verbose = true;
 
 	auto frontier_cmp = [](std::pair<uint, number> x, std::pair<uint, number> y) { return x.second > y.second; };
@@ -122,7 +160,7 @@ void PathFinder::path_find(uint id_gmo, uint start, uint goal, std::vector<uint>
 				continue;
 			}*/
 
-			number new_cost = cost_so_far[current] + cost(id_gmo, current, next);
+			number new_cost = cost_so_far[current] + cost(id_gmo, n_grid_size, current, next);
 			if ((!cost_so_far.count(next)) || (new_cost< cost_so_far[next])) {
 				cost_so_far[next] = new_cost;
 				came_from[next] = current;
@@ -138,18 +176,52 @@ void PathFinder::path_find(uint id_gmo, uint start, uint goal, std::vector<uint>
 		return false;
 	}*/
 
-	path.clear();
+	std::vector<uint> path_tmp;
+
 	uint current = goal;
 	while (current != start) {
-		path.push_back(current);
+		path_tmp.push_back(current);
 		current = came_from[current];
 	}
-	path.push_back(start);
-	std::reverse(path.begin(), path.end());
+	path_tmp.push_back(start);
+	std::reverse(path_tmp.begin(), path_tmp.end());
+
+	path.clear();
+	for (auto & i : path_tmp) {
+		if (cost_so_far[i] >= OCCUPIED_EDGE) {
+			break;
+		}
+		path.push_back(i);
+	}
+
+	/*for (auto i : path) {
+		std::cout << i << " ; " << cost_so_far[i] << "\n";
+	}*/
 
 	if (verbose) {
 		std::cout << "path_find end ; path size = " << path.size() << "\n";
 	}
+}
+
+
+void PathFinder::anim(time_point t) {
+	if (_inputs.empty()) {
+		return;
+	}
+	
+	auto d_last_path_find = std::chrono::duration_cast<std::chrono::milliseconds>(t - _t_last_path_find).count();
+	if (d_last_path_find < PATH_FIND_N_MS) {
+		return;
+	}
+	
+	_t_last_path_find = t;
+	PathFinderInput * input = _inputs.front();
+	_inputs.pop();
+	
+	uint start = pt2closest_id(input->_gmo->_aabb->center());
+	path_find(input->_gmo->_id, input->_gmo->_n_grid_size, start, input->_goal, input->_gmo->_path);
+	input->_gmo->_idx_path = 0;
+	input->_gmo->_status = GMO_MOVING;
 }
 
 
@@ -165,7 +237,7 @@ PathFinderTest::PathFinderTest(GLDrawManager * gl_draw_manager, ViewSystem * vie
 	uint n_ligs = uint(GRID_SIZE.y / GRID_RESOLUTION.y) + 1;
 	uint n_cols = uint(GRID_SIZE.x / GRID_RESOLUTION.x) + 1;
 
-	_pfi = new PathFinder(GRID_ORIGIN, GRID_SIZE, n_ligs, n_cols);
+	_pfi = new PathFinder(GRID_ORIGIN, GRID_SIZE, n_ligs, n_cols, t);
 
 	_font = new Font(_gl_draw_manager, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
 	_font->_z = 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
@@ -190,6 +262,7 @@ void PathFinderTest::add_gmo(pt_2d pt, number size, number speed) {
 	pt_2d center = _pfi->id2pt_2d(id);
 	GridMovingObject * gmo = new GridMovingObject(center - 0.5 * pt_2d(size), pt_2d(size), speed);
 	gmo->_id = _next_gmo_id++;
+	gmo->_n_grid_size = uint(size / _pfi->_resolution.x);
 	_gmos.push_back(gmo);
 	update_gmo_grid(gmo);
 }
@@ -212,10 +285,13 @@ void PathFinderTest::delete_selected_gmos() {
 
 
 void PathFinderTest::goto_gmo(GridMovingObject * gmo, uint id_vertex) {
-	uint start = _pfi->pt2closest_id(gmo->_aabb->center());
-	_pfi->path_find(gmo->_id, start, id_vertex, gmo->_path);
+	
+	/*uint start = _pfi->pt2closest_id(gmo->_aabb->center());
+	_pfi->path_find(gmo->_id, gmo->_n_grid_size, start, id_vertex, gmo->_path);
 	gmo->_idx_path = 0;
-	gmo->_status = GMO_MOVING;
+	gmo->_status = GMO_MOVING;*/
+
+	_pfi->_inputs.push(new PathFinderInput(gmo, id_vertex));
 
 	/*std::cout << "goto : id = " << gmo->_id;
 	std::cout << " ; start = " << start << " ; goal = " << goal;
@@ -338,6 +414,8 @@ void PathFinderTest::set_edges(pt_2d center, number size, number value) {
 
 void PathFinderTest::anim(time_point t) {
 	bool verbose = true;
+
+	_pfi->anim(t);
 
 	for (auto & gmo : _gmos) {
 		if (gmo->_status == GMO_IDLE) {
@@ -899,13 +977,13 @@ bool PathFinderTest::key_down(InputState * input_state, SDL_Keycode key, time_po
 	if (key == SDLK_SPACE) {
 		update_grid_edges();
 		update_grid_centers();
-		for (auto & gmo : _gmos) {
+		/*for (auto & gmo : _gmos) {
 			std::cout << gmo->_id << " vertices = ";
 			for (auto & v : gmo->_vertices) {
 				std::cout << v << " ; ";
 			}
 			std::cout << "\n";
-		}
+		}*/
 		return true;
 	}
 

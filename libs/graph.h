@@ -88,6 +88,7 @@ struct GraphGrid : public Graph {
 	uint pt2id(pt_2d pt);
 	uint pt2closest_id(pt_2d pt);
 	uint_pair pt2closest_edge(pt_2d pt);
+	std::pair<int_pair, int_pair> col_lig_min_max(uint id_center, uint size);
 	std::pair<int_pair, int_pair> aabb2col_lig_min_max(AABB_2D * aabb);
 	std::pair<int_pair, int_pair> aabb2col_lig_min_max_strict(AABB_2D * aabb);
 	

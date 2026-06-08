@@ -41,6 +41,7 @@ const number OCCUPIED_EDGE = 1000.0;
 const uint N_VERTICES_CHECK = 4;
 
 const uint WAIT_N_MS = 3000;
+const uint PATH_FIND_N_MS = 3000;
 
 
 enum GMO_STATUS {GMO_IDLE, GMO_MOVING, GMO_WAITING};
@@ -63,6 +64,7 @@ struct GridMovingObject {
 	std::vector<uint> _vertices;
 	GMO_STATUS _status;
 	time_point _t_wait;
+	uint _n_grid_size;
 };
 
 
@@ -77,16 +79,35 @@ struct EdgeData {
 };
 
 
+struct PathFinderInput {
+	PathFinderInput();
+	PathFinderInput(GridMovingObject * gmo, uint goal);
+	~PathFinderInput();
+
+	GridMovingObject * _gmo;
+	uint _goal;
+	/*uint _id_gmo;
+	uint _n_grid_size;
+	uint _start;
+	std::vector<uint> * _path;*/
+};
+
+
 struct PathFinder : public GraphGrid {
 	PathFinder();
-	PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols);
+	PathFinder(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols, time_point t);
 	~PathFinder();
-
 	VertexData * get_vertex_data(uint id_vertex);
 	EdgeData * get_edge_data(uint from , uint to);
-	number cost(uint id_gmo, uint from, uint to);
+	number cost(uint id_gmo, uint n_grid_size, uint from, uint to);
 	number heuristic(uint i, uint j);
-	void path_find(uint id_gmo, uint start, uint goal, std::vector<uint> & path);
+	void path_find(uint id_gmo, uint n_grid_size, uint start, uint goal, std::vector<uint> & path);
+	//void path_find(PathFinderInput * input);
+	void anim(time_point t);
+
+
+	std::queue<PathFinderInput *> _inputs;
+	time_point _t_last_path_find;
 };
 
 
