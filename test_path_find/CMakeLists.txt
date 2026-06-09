@@ -51,14 +51,15 @@ add_library(lib_convex_hull STATIC ../libs/convex_hull.cpp ../libs/convex_hull.h
 add_library(lib_gl_ihm STATIC ../libs/gl_ihm.cpp ../libs/gl_ihm.h)
 add_library(lib_gl_draw STATIC ../libs/gl_draw.cpp ../libs/gl_draw.h)
 add_library(lib_fps_count STATIC ../libs/fps_count.cpp ../libs/fps_count.h)
+add_library(lib_path_find STATIC ../libs/path_find.cpp ../libs/path_find.h)
 
-add_library(lib_path_finder STATIC ./srcs/path_finder.cpp ./srcs/path_finder.h)
+add_library(lib_path_finder_test STATIC ./srcs/path_finder_test.cpp ./srcs/path_finder_test.h)
 
 add_executable(main ./srcs/main.cpp)
 
 set(EXT_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
-set(GENERIC_LIBS lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_repere lib_gl_utils lib_input_state lib_bbox lib_font lib_convex_hull lib_gl_ihm lib_gl_draw lib_fps_count)
-set(SPECIFIC_LIBS lib_path_finder)
+set(GENERIC_LIBS lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_repere lib_gl_utils lib_input_state lib_bbox lib_font lib_convex_hull lib_gl_ihm lib_gl_draw lib_fps_count lib_path_find)
+set(SPECIFIC_LIBS lib_path_finder_test)
 
 target_link_libraries(main PUBLIC ${EXT_LIBS})
 target_link_libraries(main PUBLIC ${GENERIC_LIBS})

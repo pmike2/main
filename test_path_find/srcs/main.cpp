@@ -15,7 +15,7 @@
 #include "fps_count.h"
 
 #include "const.h"
-#include "path_finder.h"
+#include "path_finder_test.h"
 
 
 SDL_Window * window;
