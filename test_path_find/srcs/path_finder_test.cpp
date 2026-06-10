@@ -1,6 +1,25 @@
 #include "path_finder_test.h"
 
 
+// GMOTest -----------------------------------------------------------------------------------------------
+GMOTest::GMOTest() {
+
+}
+
+
+GMOTest::GMOTest(GridMovingObjectType * type, pt_2d pos, pt_2d size, number speed) :
+	GridMovingObject(type, pos, size), _speed(speed), _selected(false)
+{
+
+}
+
+
+GMOTest::~GMOTest() {
+	
+}
+
+
+// PathFinderTest ----------------------------------------------------------------------------------------
 PathFinderTest::PathFinderTest() {
 
 }
@@ -27,8 +46,34 @@ PathFinderTest::~PathFinderTest() {
 }
 
 
+void PathFinderTest::add_gmo(std::string type_name, pt_2d pos, pt_2d size, number speed) {
+	GridMovingObjectType * type = get_gmo_type(type_name);
+	uint id = pt2closest_id(pos);
+	pt_2d center = id2pt_2d(id);
+	GMOTest * gmo = new GMOTest(type, center - 0.5 * pt_2d(size), pt_2d(size), speed);
+	_pf->init_gmo(gmo);
+	_gmos.push_back(gmo);
+}
+
+
+void PathFinderTest::delete_selected_gmos() {
+	_gmos.erase(std::remove_if(_gmos.begin(), _gmos.end(), [](GridMovingObject * gmo) { return gmo->_selected; }), _gmos.end());
+}
+
+
+void PathFinderTest::goto_selected_gmos(pt_2d target) {
+	uint goal = pt2closest_id(target);
+
+	for (auto & gmo : _gmos) {
+		if (gmo->_selected) {
+			goto_gmo(gmo, target);
+		}
+	}
+}
+
+
 void PathFinderTest::anim(time_point t) {
-	_pf->anim(t);
+	_pf->anim_gmo(_gmos, t);
 
 	update_select();
 	update_gmos();
@@ -113,7 +158,7 @@ void PathFinderTest::draw() {
 void PathFinderTest::update_font() {
 	std::vector<Text3D> texts_3d;
 
-	for (auto & gmo : _pf->_gmos) {
+	for (auto & gmo : _gmos) {
 		texts_3d.push_back(Text3D(std::to_string(gmo->_id), glm::vec3(gmo->_aabb->_pos.x, gmo->_aabb->_pos.y, Z_FONT), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 
@@ -271,18 +316,18 @@ void PathFinderTest::update_grid_edges() {
 void PathFinderTest::update_gmos() {
 	GLDrawContext * context= _gl_draw_manager->get_context("gmos");
 
-	if (_pf->_gmos.size() == 0) {
+	if (_gmos.size() == 0) {
 		context->_active = false;
 		return;
 	}
 
 	context->_active = true;
-	context->_n_pts = _pf->_gmos.size() * 6;
+	context->_n_pts = _gmos.size() * 6;
 
 	float * data = new float[context->data_size()];
 	float * ptr = data;
 
-	for (auto & gmo : _pf->_gmos) {
+	for (auto & gmo : _gmos) {
 		pt_2d pts[6] = {
 			gmo->_aabb->_pos, gmo->_aabb->_pos + pt_2d(gmo->_aabb->_size.x, 0.0), gmo->_aabb->_pos + gmo->_aabb->_size,
 			gmo->_aabb->_pos, gmo->_aabb->_pos + gmo->_aabb->_size, gmo->_aabb->_pos + pt_2d(0.0, gmo->_aabb->_size.y)
@@ -322,13 +367,13 @@ void PathFinderTest::update_gmos() {
 void PathFinderTest::update_gmos_path() {
 	GLDrawContext * context= _gl_draw_manager->get_context("gmos_path");
 
-	if (_pf->_gmos.size() == 0) {
+	if (_gmos.size() == 0) {
 		context->_active = false;
 		return;
 	}
 
 	context->_n_pts = 0;
-	for (auto & gmo : _pf->_gmos) {
+	for (auto & gmo : _gmos) {
 		if (gmo->_path.empty()) {
 			continue;
 		}
@@ -346,7 +391,7 @@ void PathFinderTest::update_gmos_path() {
 	float * data = new float[context->data_size()];
 	float * ptr = data;
 
-	for (auto & gmo : _pf->_gmos) {
+	for (auto & gmo : _gmos) {
 		if (gmo->_path.empty()) {
 			continue;
 		}
@@ -394,7 +439,7 @@ bool PathFinderTest::mouse_button_down(InputState * input_state, time_point t) {
 		pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 		number size = 1.5;
 		number speed = 0.04;
-		_pf->add_gmo("infantery", pt, size, speed);
+		add_gmo("infantery", pt, size, speed);
 		update_gmos();
 		return true;
 	}
@@ -402,13 +447,13 @@ bool PathFinderTest::mouse_button_down(InputState * input_state, time_point t) {
 		pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 		number size = 5.0;
 		number speed = 0.02;
-		_pf->add_gmo("boat", pt, size, speed);
+		add_gmo("boat", pt, size, speed);
 		update_gmos();
 		return true;
 	}
 	else if (input_state->_keys[SDLK_g]) {
 		pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
-		_pf->goto_selected_gmos(pt);
+		goto_selected_gmos(pt);
 	}
 
 	if (_view_system->mouse_button_down(input_state, t)) {
@@ -426,7 +471,7 @@ bool PathFinderTest::mouse_button_up(InputState * input_state, time_point t) {
 
 	if (_view_system->_new_single_selection) {
 		_view_system->_new_single_selection= false;
-		for (auto & gmo : _pf->_gmos) {
+		for (auto & gmo : _gmos) {
 			gmo->_selected = false;
 			if (_view_system->single_selection_intersects_aabb_2d(gmo->_aabb)) {
 				gmo->_selected = true;
@@ -435,7 +480,7 @@ bool PathFinderTest::mouse_button_up(InputState * input_state, time_point t) {
 	}
 	else if (_view_system->_new_rect_selection) {
 		_view_system->_new_rect_selection= false;
-		for (auto & gmo : _pf->_gmos) {
+		for (auto & gmo : _gmos) {
 			gmo->_selected = false;
 			if (_view_system->intersects_aabb_2d(gmo->_aabb, true)) {
 				gmo->_selected = true;
@@ -477,7 +522,7 @@ bool PathFinderTest::mouse_motion(InputState * input_state, time_point t) {
 
 bool PathFinderTest::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
 	if (key == SDLK_d) {
-		_pf->delete_selected_gmos();
+		delete_selected_gmos();
 		return true;
 	}
 	if (key == SDLK_c) {

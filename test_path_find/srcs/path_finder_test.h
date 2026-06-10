@@ -24,10 +24,25 @@
 #include "const.h"
 
 
+struct GMOTest : public GridMovingObject {
+	GMOTest();
+	GMOTest(GridMovingObjectType * type, pt_2d pos, pt_2d size, number speed);
+	~GMOTest();
+
+
+	number _speed;
+	bool _selected;
+};
+
+
 struct PathFinderTest {
 	PathFinderTest();
 	PathFinderTest(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t);
 	~PathFinderTest();
+
+	void add_gmo(std::string type_name, pt_2d pos, pt_2d size, number speed);
+	void delete_selected_gmos();
+	void goto_selected_gmos(pt_2d target);
 	
 	void anim(time_point t);
 	
@@ -54,6 +69,7 @@ struct PathFinderTest {
 	bool key_up(InputState * input_state, SDL_Keycode key, time_point t);
 
 
+	std::vector<GMOTest *> _gmos;
 	PathFinder * _pf;
 	GLDrawManager * _gl_draw_manager;
 	Font * _font;
