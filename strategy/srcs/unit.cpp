@@ -16,22 +16,23 @@ Unit::Unit() {
 
 Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_point t) : 
 	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
-	_team(team), _type(type), _status(UNDER_CONSTRUCTION), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation),
+	GridMovingObject(type, pos, pt_2d(type->_obj_data->_aabb->_vmax.x - type->_obj_data->_aabb->_vmin.x, type->_obj_data->_aabb->_vmax.y - type->_obj_data->_aabb->_vmin.y)),
+	_team(team), _type(type), _unit_status(UNDER_CONSTRUCTION), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation),
 	_delete(false), _angle(0.0), _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
 	_creation_t(t)
 {
-	_path = new UnitPath();
+
 }
 
 
 Unit::~Unit() {
-	delete _path;
+	//delete _path;
 }
 
 
 void Unit::anim(time_point t) {
-	auto d_moving = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_moving_t).count();
-	_last_moving_t = t;
+	//auto d_moving = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_moving_t).count();
+	//_last_moving_t = t;
 
 	if (_paused) {
 		return;
@@ -52,25 +53,27 @@ void Unit::anim(time_point t) {
 	else if (_hit_status == FINAL_HIT) {
 		_hit += 0.5;
 		if (_hit > 100.0) {
-			set_status(DESTROYED, t);
+			//set_status(DESTROYED, t);
+			_unit_status = DESTROYED;
 		}
 		return;
 	}
 	
-	if (_status == UNDER_CONSTRUCTION) {
+	if (_unit_status == UNDER_CONSTRUCTION) {
 		auto d_creation = std::chrono::duration_cast<std::chrono::milliseconds>(t - _creation_t).count();
 		if (d_creation > _type->_creation_duration) {
-			set_status(WAITING, t);
+			//set_status(WAITING, t);
+			_gmo_status = GMO_IDLE;
 		}
 
 	}
-	else if (_status == WAITING) {
+	/*else if (_unit_status == WAITING) {
 		_life += _type->_regen;
 		if (_life > _type->_life_init) {
 			_life = _type->_life_init;
 		}
-	}
-	else if (_status == WATCHING) {
+	}*/
+	else if (_unit_status == WATCHING) {
 		number next_angle = _angle + 0.01;
 		if (next_angle - _angle > M_PI) {
 			next_angle -= 2.0 * M_PI;
@@ -83,25 +86,28 @@ void Unit::anim(time_point t) {
 
 		set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
 	}
-	else if (_status == TAKEOFF) {
+	else if (_unit_status == TAKEOFF) {
 		pt_3d next_position = _position + pt_3d(0.0, 0.0, TAKEOFF_SPEED);
 		if (next_position.z > FLY_ALTI) {
 			next_position.z = FLY_ALTI;
-			set_status(MOVING, t);
+			//set_status(MOVING, t);
+			_gmo_status = GMO_MOVING;
 		}
 		set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
 	}
-	else if (_status == LANDING) {
+	else if (_unit_status == LANDING) {
 		pt_3d next_position = _position - pt_3d(0.0, 0.0, LANDING_SPEED);
 		number alti = _elevation->get_alti(pt_2d(_position.x, _position.y));
 		if (next_position.z < alti) {
 			next_position.z = alti;
-			set_status(WAITING, t);
+			//set_status(WAITING, t);
+			_gmo_status = GMO_IDLE;
 		}
 		set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
 	}
-	else if (_status == MOVING) {
-		number velocity_amp = _type->_max_velocity * (1.0 - _path->get_current_interval()->_weight / MAX_UNIT_MOVING_WEIGHT);
+	else if (_gmo_status == GMO_MOVING) {
+		
+		/*number velocity_amp = _type->_max_velocity * (1.0 - _path->get_current_interval()->_weight / MAX_UNIT_MOVING_WEIGHT);
 		velocity_amp *= number(d_moving) * 0.0625; // 60fps -> 1 frame == 1000 / 60 ~= 16 ms et 1 / 16 == 0.0625
 		pt_2d direction = glm::normalize(pt_2d(_path->get_current_pt()) - pt_2d(_position));
 		_velocity = velocity_amp * pt_3d(direction.x, direction.y, 0.0);
@@ -129,9 +135,9 @@ void Unit::anim(time_point t) {
 		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
 
-		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
+		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));*/
 	}
-	else if (_status == ATTACKING) {
+	else if (_unit_status == ATTACKING) {
 		if (_target == NULL)  {
 			std::cerr << "Unit " << _id << " ATTACKING mais _target == NULL.\n";
 			return;
@@ -157,46 +163,15 @@ void Unit::anim(time_point t) {
 			//std::cout << "Unit " << _id << " attacks Unit " << _target->_id << "\n";
 			_last_shooting_t = t;
 			
-			set_status(SHOOTING, t);
+			//set_status(SHOOTING, t);
+			_unit_status = SHOOTING;
 		}
 	}
 }
 
 
-bool Unit::checkpoint_checked() {
-	if (glm::distance(pt_2d(_position), pt_2d(_path->get_current_pt())) < UNIT_DIST_PATH_EPS) {
-		return true;
-	}
-	return false;
-}
-
-
-bool Unit::last_checkpoint_checked() {
-	if (_path->is_last_checkpoint() && checkpoint_checked()) {
-		/*if (_type->_flies) {
-			if (abs(_position.z - _path->_goal.z) < UNIT_DIST_PATH_EPS) {
-				return true;
-			}
-		}
-		else {*/
-			return true;
-		//}
-	}
-	return false;
-}
-
-
-void Unit::set_status(UNIT_STATUS status, time_point t) {
-	const bool verbose = false;
-
-	if (verbose) {
-		std::cout << "Unit id = " << _id << " : status " << unit_status2str(_status) << " -> " << unit_status2str(status) << "\n";
-	}
-	
+/*void Unit::set_status(UNIT_STATUS status, time_point t) {
 	_status = status;
-	if (_status != MOVING && _status != TAKEOFF) {
-		_path->clear();
-	}
 	
 	if (_status == MOVING) {
 		if (_path->empty()) {
@@ -208,7 +183,7 @@ void Unit::set_status(UNIT_STATUS status, time_point t) {
 	else if (_status == ATTACKING) {
 		_last_shooting_t = t;
 	}
-}
+}*/
 
 
 void Unit::set_hit_status(UNIT_HIT_STATUS hit_status, time_point t) {
@@ -244,7 +219,7 @@ void Unit::hit(Ammo * ammo, time_point t) {
 
 
 void Unit::update_alti_path() {
-	_path->_start.z = _elevation->get_alti(pt_2d(_path->_start.x, _path->_start.y));
+	/*_path->_start.z = _elevation->get_alti(pt_2d(_path->_start.x, _path->_start.y));
 	_path->_goal.z = _elevation->get_alti(pt_2d(_path->_goal.x, _path->_goal.y));
 
 	for (auto & pt : _path->_pts) {
@@ -268,32 +243,34 @@ void Unit::update_alti_path() {
 		else {
 			pt.z = _elevation->get_alti(pt_2d(pt.x, pt.y));
 		}
-	}
+	}*/
+
+	// TODO
 }
 
 
 json Unit::get_json() {
 	json result;
-	result["type"] = unit_type2str(_type->_type);
+	result["type"] = _type->_name;
 	result["id"] = _id;
 	result["position"] = json::array();
 	result["position"].push_back(_position.x);
 	result["position"].push_back(_position.y);
 	//result["position"].push_back(_position.z);
-	result["status"] = unit_status2str(_status);
+	result["status"] = unit_status2str(_unit_status);
 	result["life"] = _life;
-	result["path"] = _path->get_json();
+	//result["path"] = _path->get_json();
 	return result;
 }
 
 
 std::ostream & operator << (std::ostream & os, Unit & unit) {
 	os << "id = " << unit._id;
-	os << " ; type = " << unit_type2str(unit._type->_type);
-	os << " ; status = " << unit_status2str(unit._status);
+	os << " ; type = " << unit._type->_name;
+	os << " ; status = " << unit_status2str(unit._unit_status);
 	os << " ; position = " << glm_to_string(unit._position);
 	os << " ; velocity = " << glm_to_string(unit._velocity);
-	os << " ; path = " << *unit._path;
+	//os << " ; path = " << *unit._path;
 	return os;
 }
 
@@ -338,13 +315,13 @@ Team::~Team() {
 }
 
 
-Unit * Team::add_unit(UnitType * type, uint id, pt_2d pos, time_point t) {
+Unit * Team::add_unit(UnitType * type, pt_2d pos, time_point t) {
 	pt_3d pt3d(pos.x, pos.y, _elevation->get_alti(pos));
 	if (type->_floats && pt3d.z < 0.0) {
 		pt3d.z = 0.0;
 	}
 	Unit * unit = new Unit(this, type, pt3d, _elevation, t);
-	unit->_id = id;
+	//unit->_id = id;
 	_units.push_back(unit);
 	update_fow_unit(unit);
 	return unit;
@@ -435,7 +412,7 @@ void Team::clear_selection() {
 }
 
 
-void Team::unit_goto(Unit * unit, pt_3d pt, time_point t) {
+/*void Team::unit_goto(Unit * unit, pt_3d pt, time_point t) {
 	unit->_instructions.push({pt, t});
 }
 
@@ -449,7 +426,7 @@ void Team::selected_units_goto(pt_3d pt, time_point t) {
 			//compt++;
 		}
 	}
-}
+}*/
 
 
 bool Team::is_target_reachable(Unit * unit, Unit * target) {
@@ -469,7 +446,8 @@ bool Team::is_target_reachable(Unit * unit, Unit * target) {
 void Team::unit_attack(Unit * unit, Unit * target, time_point t) {
 	if (is_target_reachable(unit, target)) {
 		unit->_target = target;
-		unit->set_status(ATTACKING, t);
+		//unit->set_status(ATTACKING, t);
+		unit->_unit_status = ATTACKING;
 	}
 }
 
@@ -541,7 +519,7 @@ void Team::update_fow_unit(Unit * unit) {
 
 void Team::update_fow() {
 	for (auto & unit : _units) {
-		if (unit->_status == MOVING || unit->_status == WATCHING) {
+		if (unit->_gmo_status == GMO_MOVING || unit->_unit_status == WATCHING) {
 			update_fow_unit(unit);
 		}
 	}
@@ -583,7 +561,7 @@ json Team::get_json() {
 
 Unit * Team::get_unit_under_construction(UnitType * unit_type) {
 	for (auto & unit : _units) {
-		if (unit->_type == unit_type && unit->_status == UNDER_CONSTRUCTION) {
+		if (unit->_type == unit_type && unit->_unit_status == UNDER_CONSTRUCTION) {
 			return unit;
 		}
 	}

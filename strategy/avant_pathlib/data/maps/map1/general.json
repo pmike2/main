@@ -1,0 +1,21 @@
+{
+    "ammo_types_dir": "../data/ammo_types",
+    "elements_dir": "../data/elements",
+    "elevation_resolution": [
+        1.0,
+        1.0
+    ],
+    "fow_resolution": [
+        2.0,
+        2.0
+    ],
+    "origin": [
+        -100.0,
+        -100.0
+    ],
+    "path_resolution": [
+        2.0,
+        2.0
+    ],
+    "unit_types_dir": "../data/unit_types"
+}

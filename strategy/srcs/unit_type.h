@@ -8,30 +8,22 @@
 
 #include "typedefs.h"
 #include "obj_parser.h"
+#include "path_find.h"
 
 #include "const.h"
 #include "ammo_type.h"
 
 
 
-struct UnitElevationCoeff {
-	number _elevation_min;
-	number _elevation_max;
-	number _coeff;
-};
-
-
-struct UnitType {
+struct UnitType : public GridMovingObjectType {
 	UnitType();
 	UnitType(std::string json_path);
 	~UnitType();
-	number elevation_coeff(number delta_elevation);
-	pt_2d get_size();
-	number buffer_size();
+	//pt_2d get_size();
+	//number buffer_size();
 	friend std::ostream & operator << (std::ostream & os, UnitType & ut);
 	
 	
-	UNIT_TYPE _type;
 	number _max_velocity;
 	number _life_init;
 	number _regen;
@@ -41,8 +33,6 @@ struct UnitType {
 	uint _creation_duration;
 	bool _floats;
 	bool _flies;
-	std::map<TERRAIN_TYPE, number> _terrain_weights;
-	std::vector<UnitElevationCoeff> _delta_elevation_coeffs;
 	ObjData * _obj_data;
 	AmmoType * _ammo_type;
 	std::string _ammo_type_str;

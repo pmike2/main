@@ -201,7 +201,7 @@ Tree::Tree() {
 
 
 Tree::Tree(TreeSpecies * species, Elevation * elevation, pt_2d position) : Element(elevation, position), _species(species) {
-	_type = ELEMENT_TREE;
+	_type = "tree";
 	number radius_base = rand_number(_species->_root_radius_base_min, _species->_root_radius_base_max);
 	number radius_end = radius_base * rand_number(_species->_ratio_base_end_radius_min, _species->_ratio_base_end_radius_max);
 	number r = rand_number(_species->_root_r_min, _species->_root_r_max);
@@ -336,7 +336,7 @@ void Tree::update_data() {
 json Tree::get_json() {
 	json result;
 	
-	result["type"] = element_type2str(_type);
+	result["type"] = _type;
 	result["position"] = json::array();
 	result["position"].push_back(_position.x);
 	result["position"].push_back(_position.y);

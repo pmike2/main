@@ -1,0 +1,7 @@
+{
+	"name" : "bomb",
+	"damage" : 10.0,
+	"velocity" : 0.5,
+	"max_distance" : 50.0,
+	"obj" : "../data/objs/ammos/bomb/bomb.obj"
+}

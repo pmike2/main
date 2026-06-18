@@ -22,9 +22,9 @@ StrategyConfig::StrategyConfig(std::string elevation_rand_dir) {
 	_edit_mode = ADD_ELEMENT;
 	_unit_action_mode = WAIT;
 	_visible_grid_type = ELEVATION;
-	_visible_grid_unit_type = INFANTERY;
-	_add_unit_type = INFANTERY;
-	_element_type = ELEMENT_TREE;
+	_visible_grid_unit_type = "infantery";
+	_add_unit_type = "infantery";
+	_element_type = "tree";
 	_elevation_mode = ELEVATION_ZERO;
 	_elevation_radius = 0.0;
 	_elevation_factor = 0.0;
@@ -83,7 +83,7 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	if (verbose) {
 		std::cout << "creating map\n";
 	}
-	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION);
+	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION, t);
 
 	if (verbose) {
 		std::cout << "loading map\n";
@@ -188,19 +188,22 @@ void Strategy::set_ihm() {
 	_ihm->get_element("unit_action", "wait")->set_callback([this](){
 		_config->_unit_action_mode = WAIT;
 		for (auto & unit : get_selected_team()->get_selected_units()) {
-			unit->set_status(WAITING, _ihm->_current_t);
+			//unit->set_status(WAITING, _ihm->_current_t);
+			unit->_gmo_status = GMO_IDLE;
 		}
 	});
 	_ihm->get_element("unit_action", "watch")->set_callback([this](){
 		_config->_unit_action_mode = WATCH;
 		for (auto & unit : get_selected_team()->get_selected_units()) {
-			unit->set_status(WATCHING, _ihm->_current_t);
+			//unit->set_status(WATCHING, _ihm->_current_t);
+			unit->_unit_status = WATCHING;
 		}
 	});
 	_ihm->get_element("unit_action", "destroy")->set_callback([this](){
 		_config->_unit_action_mode = DESTROY;
 		for (auto & unit : get_selected_team()->get_selected_units()) {
-			unit->set_hit_status(FINAL_HIT, _ihm->_current_t);
+			//unit->set_hit_status(FINAL_HIT, _ihm->_current_t);
+			unit->_hit_status = FINAL_HIT;
 		}
 	});
 	_ihm->get_element("unit_action", "move")->set_callback([this](){_config->_unit_action_mode = MOVE;});
@@ -210,12 +213,12 @@ void Strategy::set_ihm() {
 	_ihm->get_element("edit_mode", "edit_elevation")->set_callback([this](){_config->_edit_mode = EDIT_ELEVATION;});
 	_ihm->get_element("edit_mode", "erase")->set_callback([this](){_config->_edit_mode = ERASE;});
 
-	for (auto & unit_type : std::vector<UNIT_TYPE>{INFANTERY, TANK, HELICOPTER, BOAT}) {
-		_ihm->get_element("units", unit_type2str(unit_type))->set_callback([this, unit_type](){_config->_add_unit_type = unit_type;});
+	for (auto & unit_type : std::vector<std::string>{"infantery", "tank", "helicopter", "boat"}) {
+		_ihm->get_element("units", unit_type)->set_callback([this, unit_type](){_config->_add_unit_type = unit_type;});
 	}
 
-	for (auto & element_type : std::vector<ELEMENT_TYPE>{ELEMENT_TREE, ELEMENT_STONE, ELEMENT_RIVER, ELEMENT_LAKE}) {
-		_ihm->get_element("elements", element_type2str(element_type))->set_callback([this, element_type](){_config->_element_type = element_type;});
+	for (auto & element_type : std::vector<std::string>{"tree", "stone", "river", "lake"}) {
+		_ihm->get_element("elements", element_type)->set_callback([this, element_type](){_config->_element_type = element_type;});
 	}
 	
 	_ihm->get_element("tree_params", "n_trees")->set_callback([this](){
@@ -336,12 +339,12 @@ void Strategy::set_ihm() {
 	_ihm->get_element("visu", "units")->set_callback(
 		[this](){
 			for (auto & unit_type : _map->_unit_types) {
-				_gl_draw_manager->set_active(unit_type2str(unit_type.first));
+				_gl_draw_manager->set_active(unit_type.first);
 			}
 		},
 		[this](){
 			for (auto & unit_type : _map->_unit_types) {
-				_gl_draw_manager->set_inactive(unit_type2str(unit_type.first));
+				_gl_draw_manager->set_inactive(unit_type.first);
 			}
 		}
 	);
@@ -358,8 +361,8 @@ void Strategy::set_ihm() {
 		});
 	}
 	
-	for (auto & unit_type_name : std::vector<UNIT_TYPE>{INFANTERY, TANK, HELICOPTER, BOAT}) {
-		_ihm->get_element("grid_unit_type", unit_type2str(unit_type_name))->set_callback([this, unit_type_name](){
+	for (auto & unit_type_name : std::vector<std::string>{"infantery", "tank", "helicopter", "boat"}) {
+		_ihm->get_element("grid_unit_type", unit_type_name)->set_callback([this, unit_type_name](){
 			_config->_visible_grid_unit_type = unit_type_name;
 			update_grid();
 		});
@@ -497,7 +500,7 @@ void Strategy::draw_sea(ViewSystem * view_system) {
 
 
 void Strategy::draw_unit(UnitType * unit_type, ViewSystem * view_system) {
-	GLDrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
+	GLDrawContext * context= _gl_draw_manager->get_context(unit_type->_name);
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -665,7 +668,7 @@ void Strategy::anim(time_point t) {
 
 
 glm::vec4 Strategy::get_grid_edge_color() {
-	GraphEdge edge = _map->_path_finder->_it_e->second;
+	/*GraphEdge edge = _map->_path_finder->_it_e->second;
 	EdgeData * data = (EdgeData *)(edge._data);
 	UnitType * unit_type = _map->_unit_types[_config->_visible_grid_unit_type];
 	glm::vec4 edge_color;
@@ -719,7 +722,9 @@ glm::vec4 Strategy::get_grid_edge_color() {
 		}
 	}
 
-	return edge_color;
+	return edge_color;*/
+
+	return glm::vec4(0.5f, 0.0f, 1.0f, 1.0f);
 }
 
 
@@ -839,15 +844,15 @@ void Strategy::update_bbox() {
 	context->_n_pts = 0;
 
 	// BBox units + path
-	for (auto & team : _map->_teams) {
+	/*for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
 			context->_n_pts += 48;
-			if (!unit->_path->empty()) {
+			if (!unit->_path.empty()) {
 				context->_n_pts += 8 * unit->_path->_intervals.size();
 				context->_n_pts += 8 * unit->_path->_intervals_los.size();
 			}
 		}
-	}
+	}*/
 
 	// BBox elements
 	for (auto & element : _map->_elements->_elements) {
@@ -863,16 +868,11 @@ void Strategy::update_bbox() {
 			std::vector<pt_3d> segs = unit->_bbox->segments();
 
 			glm::vec4 unit_color;
-			if (unit->_status == MOVING) {
+			if (unit->_gmo_status == GMO_MOVING) {
 				unit_color = glm::vec4(0.5, 1.0, 0.5, 1.0);
 			}
-			else if (unit->_status == WAITING) {
-				if (unit->_instructions.empty()) {
-					unit_color = glm::vec4(1.0, 0.5, 0.5, 1.0);
-				}
-				else {
-					unit_color = glm::vec4(0.5, 0.5, 1.0, 1.0);
-				}
+			else if (unit->_gmo_status == GMO_IDLE) {
+				unit_color = glm::vec4(1.0, 0.5, 0.5, 1.0);
 			}
 
 			for (uint i=0; i<segs.size(); ++i) {
@@ -897,7 +897,7 @@ void Strategy::update_bbox() {
 	}
 
 	// units path
-	for (auto & team : _map->_teams) {
+	/*for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
 			if (unit->_path->empty()) {
 				continue;
@@ -935,7 +935,7 @@ void Strategy::update_bbox() {
 				}
 			}
 		}
-	}
+	}*/
 
 	// elements
 	for (auto & element : _map->_elements->_elements) {
@@ -964,8 +964,8 @@ void Strategy::update_path() {
 	
 	context->_n_pts = 0;
 	
-	for (auto & unit : get_selected_team()->_units) {
-		if (!unit->_path->empty()) {
+	/*for (auto & unit : get_selected_team()->_units) {
+		if (!unit->_path.empty()) {
 			context->_n_pts += (unit->_path->_pts.size() - 1) * 2;
 			context->_n_pts += (unit->_path->_pts_los.size() - 1) * 2;
 			context->_n_pts += 4; // croix de départ
@@ -1072,7 +1072,7 @@ void Strategy::update_path() {
 	}
 
 	context->set_data(data);
-	delete[] data;
+	delete[] data;*/
 }
 
 
@@ -1102,10 +1102,10 @@ void Strategy::update_edit_map() {
 		circle_pts = circle_vertices(pt_2d(_cursor_world_position), _config->_elevation_radius, EDIT_MAP_N_VERTICES_PER_CIRCLE);
 	}
 	else if (_config->_edit_mode == ADD_ELEMENT) {
-		if (_config->_element_type == ELEMENT_TREE) {
+		if (_config->_element_type == "tree") {
 			circle_pts = circle_vertices(pt_2d(_cursor_world_position), _config->_trees_dispersion * 2.0, EDIT_MAP_N_VERTICES_PER_CIRCLE);
 		}
-		else if (_config->_element_type == ELEMENT_STONE) {
+		else if (_config->_element_type == "stone") {
 			circle_pts = circle_vertices(pt_2d(_cursor_world_position), _config->_stones_dispersion * 2.0, EDIT_MAP_N_VERTICES_PER_CIRCLE);
 		}
 		else {
@@ -1386,7 +1386,7 @@ void Strategy::update_tree_stone() {
 
 	context->_n_pts = 0;
 	for (auto & element : _map->_elements->_elements) {
-		if (element->_type == ELEMENT_TREE || element->_type == ELEMENT_STONE) {
+		if (element->_type == "tree" || element->_type == "stone") {
 			context->_n_pts += element->_n_pts;
 		}
 	}
@@ -1396,7 +1396,7 @@ void Strategy::update_tree_stone() {
 	uint compt = 0;
 	uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
 	for (auto & element : _map->_elements->_elements) {
-		if (element->_type == ELEMENT_TREE || element->_type == ELEMENT_STONE) {
+		if (element->_type == "tree" || element->_type == "stone") {
 			for (uint i=0; i<element->_n_pts * n_attrs_per_pts; ++i) {
 				data[compt++] = element->_data[i];
 			}
@@ -1413,7 +1413,7 @@ void Strategy::update_river() {
 
 	context->_n_pts = 0;
 	for (auto & element : _map->_elements->_elements) {
-		if (element->_type == ELEMENT_RIVER) {
+		if (element->_type == "river") {
 			context->_n_pts += element->_n_pts;
 		}
 	}
@@ -1423,7 +1423,7 @@ void Strategy::update_river() {
 	uint compt = 0;
 	uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
 	for (auto & element : _map->_elements->_elements) {
-		if (element->_type == ELEMENT_RIVER) {
+		if (element->_type == "river") {
 			for (uint i=0; i<element->_n_pts * n_attrs_per_pts; ++i) {
 				data[compt++] = element->_data[i];
 			}
@@ -1440,7 +1440,7 @@ void Strategy::update_lake() {
 
 	context->_n_pts = 0;
 	for (auto & element : _map->_elements->_elements) {
-		if (element->_type == ELEMENT_LAKE) {
+		if (element->_type == "lake") {
 			context->_n_pts += element->_n_pts;
 		}
 	}
@@ -1450,7 +1450,7 @@ void Strategy::update_lake() {
 	uint compt = 0;
 	uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
 	for (auto & element : _map->_elements->_elements) {
-		if (element->_type == ELEMENT_LAKE) {
+		if (element->_type == "lake") {
 			for (uint i=0; i<element->_n_pts * n_attrs_per_pts; ++i) {
 				data[compt++] = element->_data[i];
 			}
@@ -1493,7 +1493,7 @@ void Strategy::update_sea() {
 
 
 void Strategy::update_unit_obj(UnitType * unit_type) {
-	GLDrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
+	GLDrawContext * context= _gl_draw_manager->get_context(unit_type->_name);
 
 	context->_n_pts = unit_type->_obj_data->_n_pts;
 	context->set_data(unit_type->_obj_data->_data, 0);
@@ -1505,7 +1505,7 @@ void Strategy::update_unit_obj(UnitType * unit_type) {
 
 
 void Strategy::update_unit_matrices(UnitType * unit_type) {
-	GLDrawContext * context= _gl_draw_manager->get_context(unit_type2str(unit_type->_type));
+	GLDrawContext * context= _gl_draw_manager->get_context(unit_type->_name);
 
 	context->_n_instances = 0;
 	for (auto & team : _map->_teams) {
@@ -1522,7 +1522,7 @@ void Strategy::update_unit_matrices(UnitType * unit_type) {
 		for (auto & unit : team->_units) {
 			if (unit->_type == unit_type) {
 				float unit_alpha = 1.0f;
-				if (unit->_status == UNDER_CONSTRUCTION) {
+				if (unit->_unit_status == UNDER_CONSTRUCTION) {
 					unit_alpha = 0.3f;
 				}
 
@@ -1550,7 +1550,7 @@ void Strategy::update_unit_life() {
 	context->_n_pts = 0;
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			if (unit->_status != DESTROYED && unit->_hit_status != FINAL_HIT) {
+			if (unit->_unit_status != DESTROYED && unit->_hit_status != FINAL_HIT) {
 				context->_n_pts += 12;
 			}
 		}
@@ -1565,7 +1565,7 @@ void Strategy::update_unit_life() {
 	float * ptr = data;
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			if (unit->_status == DESTROYED || unit->_hit_status == FINAL_HIT) {
+			if (unit->_unit_status == DESTROYED || unit->_hit_status == FINAL_HIT) {
 				continue;
 			}
 
@@ -1742,7 +1742,7 @@ void Strategy::update_construction(time_point t) {
 	float * ptr = data;
 
 	for (auto & unit_type : _map->_unit_types) {
-		AABB_2D * aabb = _ihm->get_element("units", unit_type2str(unit_type.first))->_aabb;
+		AABB_2D * aabb = _ihm->get_element("units", unit_type.first)->_aabb;
 		number progress = get_selected_team()->get_construction_progress(unit_type.second, t);
 	
 		pt_2d pos[9] = {
@@ -1827,7 +1827,7 @@ void Strategy::update_text() {
 
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			texts_3d.push_back(Text3D(unit_type2str(unit->_type->_type) + " " + std::to_string(unit->_id), glm::vec3(unit->_bbox->_aabb->_vmin)+ glm::vec3(0.0, 0.0, 3.0), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+			texts_3d.push_back(Text3D(unit->_type->_name + " " + std::to_string(unit->_id), glm::vec3(unit->_bbox->_aabb->_vmin)+ glm::vec3(0.0, 0.0, 3.0), 0.01, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 		}
 	}
 
@@ -1838,7 +1838,7 @@ void Strategy::update_text() {
 	std::string s_pos = glm_to_string(_cursor_world_position);
 	texts_2d.push_back(Text(s_pos, glm::vec2(-4.8, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	
-	if (_cursor_in_world) {
+	/*if (_cursor_in_world) {
 		GraphEdge edge = _map->_path_finder->get_edge(_map->_path_finder->pt2closest_edge(pt_2d(_cursor_world_position)));
 		GraphEdge opposite_edge = _map->_path_finder->opposite_edge(edge);
 		EdgeData * data = (EdgeData *)(edge._data);
@@ -1849,10 +1849,10 @@ void Strategy::update_text() {
 		str_terrain += " ; " + std::to_string(opposite_data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
 		
 		texts_2d.push_back(Text(str_terrain, glm::vec2(-1.5, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
-	}
+	}*/
 
 	if (_cursor_hover_unit != NULL) {
-		std::string str_unit = _cursor_hover_unit->_team->_name + " id = " + std::to_string(_cursor_hover_unit->_id) + " status = " + unit_status2str(_cursor_hover_unit->_status);
+		std::string str_unit = _cursor_hover_unit->_team->_name + " id = " + std::to_string(_cursor_hover_unit->_id);
 		texts_2d.push_back(Text(str_unit, glm::vec2(0.0, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 
@@ -1887,22 +1887,22 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 	if (input_state->_left_mouse && _cursor_in_world) {
 		if (_config->_edit) {
 			if (_config->_edit_mode == ADD_ELEMENT) {
-				if (_config->_element_type == ELEMENT_TREE) {
+				if (_config->_element_type == "tree") {
 					_map->add_trees("oak", pt_2d(_cursor_world_position), _config->_n_trees, _config->_trees_dispersion);
 					update_tree_stone();
 					update_grid();
 				}
-				else if (_config->_element_type == ELEMENT_STONE) {
+				else if (_config->_element_type == "stone") {
 					_map->add_stones("dark_stone", pt_2d(_cursor_world_position), _config->_n_stones, _config->_stones_dispersion);
 					update_tree_stone();
 					update_grid();
 				}
-				else if (_config->_element_type == ELEMENT_RIVER) {
+				else if (_config->_element_type == "river") {
 					_map->add_river(pt_2d(_cursor_world_position));
 					update_river();
 					update_grid();
 				}
-				else if (_config->_element_type == ELEMENT_LAKE) {
+				else if (_config->_element_type == "lake") {
 					_map->add_lake(pt_2d(_cursor_world_position));
 					update_lake();
 					update_grid();
@@ -1941,7 +1941,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 		else {
 			if (_config->_play_mode == ACTION_UNIT && _config->_unit_action_mode == MOVE) {
 				if (_move_unit_ok) {
-					get_selected_team()->selected_units_goto(_cursor_world_position, t);
+					//get_selected_team()->selected_units_goto(_cursor_world_position, t);
 					return true;
 				}
 			}
@@ -1990,7 +1990,7 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 				_view_system->_new_single_selection= false;
 				for (auto & unit : get_selected_team()->_units) {
 					unit->_selected = false;
-					if (unit->_status == UNDER_CONSTRUCTION) {
+					if (unit->_unit_status == UNDER_CONSTRUCTION) {
 						continue;
 					}
 					if (_view_system->single_selection_intersects_aabb(unit->_bbox->_aabb, false)) {
@@ -2002,7 +2002,7 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 				_view_system->_new_rect_selection= false;
 				for (auto & unit : get_selected_team()->_units) {
 					unit->_selected = false;
-					if (unit->_status == UNDER_CONSTRUCTION) {
+					if (unit->_unit_status == UNDER_CONSTRUCTION) {
 						continue;
 					}
 					std::vector<Unit *> selected_units = get_selected_team()->get_selected_units();

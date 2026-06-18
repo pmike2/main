@@ -35,9 +35,9 @@ struct StrategyConfig {
 	EDIT_MODE _edit_mode;
 	UNIT_ACTION_MODE _unit_action_mode;
 	VISIBLE_GRID_TYPE _visible_grid_type;
-	UNIT_TYPE _visible_grid_unit_type;
-	UNIT_TYPE _add_unit_type;
-	ELEMENT_TYPE _element_type;
+	std::string _visible_grid_unit_type;
+	std::string _add_unit_type;
+	std::string _element_type;
 	ELEVATION_MODE _elevation_mode;
 	number _elevation_radius;
 	number _elevation_factor;

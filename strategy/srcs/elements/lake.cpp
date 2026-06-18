@@ -9,7 +9,7 @@ Lake::Lake() {
 
 
 Lake::Lake(Elevation * elevation, pt_2d src) : Element(elevation, src), _valid(true) {
-	_type = ELEMENT_LAKE;
+	_type = "lake";
 
 	if (!_elevation->in_boundaries(src)) {
 		std::cerr << "Lake impossible src hors grille\n";
@@ -144,7 +144,7 @@ void Lake::update_data() {
 json Lake::get_json() {
 	json result;
 	
-	result["type"] = element_type2str(_type);
+	result["type"] = _type;
 	result["position"] = json::array();
 	result["position"].push_back(_position.x);
 	result["position"].push_back(_position.y);

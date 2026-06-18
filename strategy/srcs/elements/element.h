@@ -25,7 +25,7 @@ public:
 	float * _data;
 	uint _n_pts;
 	Elevation * _elevation;
-	ELEMENT_TYPE _type;
+	std::string _type;
 	bool _delete;
 };
 

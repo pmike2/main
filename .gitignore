@@ -3,7 +3,7 @@
 main
 *.o
 *.tif
-build
+build*
 build/
 *.pgm
 *.ppm

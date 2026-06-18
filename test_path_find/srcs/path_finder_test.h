@@ -30,7 +30,6 @@ struct GMOTest : public GridMovingObject {
 	~GMOTest();
 
 
-	number _speed;
 	bool _selected;
 };
 

@@ -46,7 +46,7 @@ Stone::Stone() {
 
 
 Stone::Stone(StoneSpecies * species, Elevation * elevation, pt_2d position) : Element(elevation, position), _species(species) {
-	_type = ELEMENT_STONE;
+	_type = "stone";
 	_hull = new ConvexHull();
 	
 	pt_3d vmin;
@@ -101,7 +101,7 @@ void Stone::update_data() {
 json Stone::get_json() {
 	json result;
 	
-	result["type"] = element_type2str(_type);
+	result["type"] = _type;
 	result["position"] = json::array();
 	result["position"].push_back(_position.x);
 	result["position"].push_back(_position.y);

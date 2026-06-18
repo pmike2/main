@@ -1,0 +1,33 @@
+{
+	"alti_offset_active" : true,
+	"alti_offset" : -2.0,
+	
+	"perlin_active" : true,
+	"gradient_base_size" : 10,
+	"max_factor" : 20.0,
+	"amplitudes" : [1.0, 0.5, 0.2, 0.1, 0.05],
+
+	"redistribution_active" : false,
+	"redistribution_power" : 0.5,
+	"fudge_factor" : 8.0,
+
+	"island_active" : true,
+	"mix_island" : 0.2,
+	"island_max_alti" : 5.0,
+	
+	"terrace_active" : true,
+	"terrace_factor" : 0.5,
+	"terrace_hmin" : 1.0,
+	"terrace_hmax" : 4.0,
+	"terrace_perlin_factor" : 20.0,
+	"terrace_gradient_w" : 4,
+	"terrace_gradient_h" : 4,
+	
+	"disk_active" : true,
+	"n_disks" : 10,
+	"disk_radius" : [20.0, 100.0],
+	"disk_factor" : [2.0, 10.0],
+	"disk_exponent" : [2.0, 10.0],
+	"disk_zero_proba" : 0.2,
+	"disk_plus_proba" : 0.7
+}

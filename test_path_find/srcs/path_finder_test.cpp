@@ -8,9 +8,9 @@ GMOTest::GMOTest() {
 
 
 GMOTest::GMOTest(GridMovingObjectType * type, pt_2d pos, pt_2d size, number speed) :
-	GridMovingObject(type, pos, size), _speed(speed), _selected(false)
+	GridMovingObject(type, pos, size), _selected(false)
 {
-
+	set_speed(speed);
 }
 
 
@@ -33,6 +33,19 @@ PathFinderTest::PathFinderTest(GLDrawManager * gl_draw_manager, ViewSystem * vie
 
 	_pf = new PathFinder(GRID_ORIGIN, GRID_SIZE, n_ligs, n_cols, t);
 
+	_pf->add_gmo_type("infantery",
+		std::map<std::string, number>{{"land", 0.0}, {"water", PATH_FIND_OBSTACLE_THRESH}, {"obstacle", PATH_FIND_OBSTACLE_THRESH}},
+		std::map<std::string, number>{{"flat", 10.0}, {"down", 5.0}, {"up", 20.0}}
+	);
+
+	_pf->add_gmo_type("boat",
+		std::map<std::string, number>{{"land", PATH_FIND_OBSTACLE_THRESH}, {"water", 0.0}, {"obstacle", PATH_FIND_OBSTACLE_THRESH}},
+		std::map<std::string, number>{{"flat", 5.0}, {"down", PATH_FIND_OBSTACLE_THRESH}, {"up", PATH_FIND_OBSTACLE_THRESH}}
+	);
+
+	_pf->set_all_vertex("land");
+	_pf->set_all_edges("flat");
+
 	_font = new Font(_gl_draw_manager, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
 	_font->_z = 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
 
@@ -47,9 +60,9 @@ PathFinderTest::~PathFinderTest() {
 
 
 void PathFinderTest::add_gmo(std::string type_name, pt_2d pos, pt_2d size, number speed) {
-	GridMovingObjectType * type = get_gmo_type(type_name);
-	uint id = pt2closest_id(pos);
-	pt_2d center = id2pt_2d(id);
+	GridMovingObjectType * type = _pf->get_gmo_type(type_name);
+	uint id = _pf->pt2closest_id(pos);
+	pt_2d center = _pf->id2pt_2d(id);
 	GMOTest * gmo = new GMOTest(type, center - 0.5 * pt_2d(size), pt_2d(size), speed);
 	_pf->init_gmo(gmo);
 	_gmos.push_back(gmo);
@@ -57,23 +70,27 @@ void PathFinderTest::add_gmo(std::string type_name, pt_2d pos, pt_2d size, numbe
 
 
 void PathFinderTest::delete_selected_gmos() {
-	_gmos.erase(std::remove_if(_gmos.begin(), _gmos.end(), [](GridMovingObject * gmo) { return gmo->_selected; }), _gmos.end());
+	_gmos.erase(std::remove_if(_gmos.begin(), _gmos.end(), [](GMOTest * gmo) { return gmo->_selected; }), _gmos.end());
 }
 
 
 void PathFinderTest::goto_selected_gmos(pt_2d target) {
-	uint goal = pt2closest_id(target);
+	uint goal = _pf->pt2closest_id(target);
 
 	for (auto & gmo : _gmos) {
 		if (gmo->_selected) {
-			goto_gmo(gmo, target);
+			_pf->goto_gmo(gmo, target);
 		}
 	}
 }
 
 
 void PathFinderTest::anim(time_point t) {
-	_pf->anim_gmo(_gmos, t);
+	std::vector<GridMovingObject *> base_gmos;
+	for (auto & gmo : _gmos) {
+		base_gmos.push_back((GridMovingObject *)(gmo));
+	}
+	_pf->anim_gmos(base_gmos, t);
 
 	update_select();
 	update_gmos();
@@ -224,13 +241,13 @@ void PathFinderTest::update_grid_centers() {
 			
 			PathFinderVertexData * vertex_data = _pf->get_vertex_data(_pf->col_lig2id(col, lig));
 			glm::vec4 vertex_color;
-			if (vertex_data->_type == GRID_VERTEX_LAND) {
+			if (vertex_data->_type == "land") {
 				vertex_color = glm::vec4(0.3, 0.9, 0.3, 1.0);
 			}
-			else if (vertex_data->_type == GRID_VERTEX_WATER) {
+			else if (vertex_data->_type == "water") {
 				vertex_color = glm::vec4(0.3, 0.3, 0.9, 1.0);
 			}
-			else if (vertex_data->_type == GRID_VERTEX_LAND_OBSTACLE) {
+			else if (vertex_data->_type == "obstacle") {
 				vertex_color = glm::vec4(0.7, 0.7, 0.7, 1.0);
 			}
 
@@ -275,7 +292,7 @@ void PathFinderTest::update_grid_edges() {
 		while (_pf->_it_e!= _pf->_it_v->second._edges.end()) {
 			glm::vec4 edge_color;
 			PathFinderEdgeData * edge_data = _pf->get_edge_data(_pf->_it_v->first, _pf->_it_e->first);
-			if (edge_data->_type == GRID_EDGE_FLAT) {
+			if (edge_data->_type == "flat") {
 				edge_color = glm::vec4(0.0, 1.0, 0.0, 1.0);
 			}
 			else {
@@ -338,13 +355,13 @@ void PathFinderTest::update_gmos() {
 		if (gmo->_selected) {
 			color = glm::vec4(1.0, 1.0, 0.0, alpha);
 		}
-		else if (gmo->_status == GMO_IDLE) {
+		else if (gmo->_gmo_status == GMO_IDLE) {
 			color = glm::vec4(0.0, 0.2, 1.0, alpha);
 		}
-		else if (gmo->_status == GMO_MOVING) {
+		else if (gmo->_gmo_status == GMO_MOVING) {
 			color = glm::vec4(0.0, 0.8, 1.0, alpha);
 		}
-		else if (gmo->_status == GMO_WAITING) {
+		else if (gmo->_gmo_status == GMO_WAITING) {
 			color = glm::vec4(0.8, 0.2, 0.3, alpha);
 		}
 		
@@ -437,7 +454,7 @@ void PathFinderTest::update() {
 bool PathFinderTest::mouse_button_down(InputState * input_state, time_point t) {
 	if (input_state->_keys[SDLK_a]) {
 		pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
-		number size = 1.5;
+		pt_2d size(1.5);
 		number speed = 0.04;
 		add_gmo("infantery", pt, size, speed);
 		update_gmos();
@@ -445,7 +462,7 @@ bool PathFinderTest::mouse_button_down(InputState * input_state, time_point t) {
 	}
 	else if (input_state->_keys[SDLK_z]) {
 		pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
-		number size = 5.0;
+		pt_2d size(5.0);
 		number speed = 0.02;
 		add_gmo("boat", pt, size, speed);
 		update_gmos();
@@ -496,19 +513,19 @@ bool PathFinderTest::mouse_motion(InputState * input_state, time_point t) {
 	pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 
 	if (input_state->_keys[SDLK_w]) {
-		_pf->set_edges(pt, 3.0, GRID_EDGE_FLAT);
+		_pf->set_edges(pt, 3.0, "flat");
 		return true;
 	}
 	if (input_state->_keys[SDLK_x]) {
-		_pf->set_edges(pt, 3.0, GRID_EDGE_HARD_UP);
+		_pf->set_edges(pt, 3.0, "up");
 		return true;
 	}
 	if (input_state->_keys[SDLK_b]) {
-		_pf->set_vertex(pt, 3.0, GRID_VERTEX_LAND);
+		_pf->set_vertex(pt, 3.0, "land");
 		return true;
 	}
 	if (input_state->_keys[SDLK_n]) {
-		_pf->set_vertex(pt, 3.0, GRID_VERTEX_WATER);
+		_pf->set_vertex(pt, 3.0, "water");
 		return true;
 	}
 
@@ -526,11 +543,11 @@ bool PathFinderTest::key_down(InputState * input_state, SDL_Keycode key, time_po
 		return true;
 	}
 	if (key == SDLK_c) {
-		_pf->clear_edges();
+		_pf->set_all_edges("");
 		return true;
 	}
 	if (key == SDLK_r) {
-		_pf->randomize_edges();
+		_pf->randomize_edges(std::vector<std::string>{"land", "water", "obstacle"});
 		return true;
 	}
 	if (key == SDLK_SPACE) {

@@ -694,6 +694,18 @@ std::vector<uint> GraphGrid::vertices_in_circle_section(pt_2d center, number rad
 }
 
 
+std::vector<uint> GraphGrid::vertices_in_polygon(Polygon2D * polygon) {
+	std::vector<uint> vertices = vertices_in_aabb(polygon->_aabb);
+	std::vector<uint> result;
+	for (auto & v : vertices) {
+		if (is_pt_inside_poly(id2pt_2d(v), polygon)) {
+			result.push_back(v);
+		}
+	}
+	return result;
+}
+
+
 int_pair GraphGrid::next_direction(int_pair u) {
 	if (u.first == 1 && u.second == 0) {
 		return std::make_pair(1, 1);

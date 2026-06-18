@@ -7,7 +7,7 @@ River::River() {
 
 
 River::River(Elevation * elevation, pt_2d src) : Element(elevation, src), _valid(true) {
-	_type = ELEMENT_RIVER;
+	_type = "river";
 	
 	if (!_elevation->in_boundaries(src)) {
 		std::cerr << "River impossible src hors grille\n";
@@ -118,7 +118,7 @@ pt_3d River::highest_pt() {
 json River::get_json() {
 	json result;
 	
-	result["type"] = element_type2str(_type);
+	result["type"] = _type;
 	result["position"] = json::array();
 	result["position"].push_back(_position.x);
 	result["position"].push_back(_position.y);
