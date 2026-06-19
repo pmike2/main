@@ -297,7 +297,7 @@ GridMovingObject * PathFinder::get_gmo(uint id) {
 void PathFinder::init_gmo(GridMovingObject * gmo) {
 	gmo->_id = _next_gmo_id++;
 	gmo->_n_grid_size = uint(gmo->_aabb->_size.x / _resolution.x);
-	std::cout << gmo->_gmo_type->_name << " ; " << gmo->_n_grid_size << "\n";
+	//std::cout << gmo->_gmo_type->_name << " ; " << gmo->_n_grid_size << "\n";
 	add_gmo_grid(gmo);
 }
 

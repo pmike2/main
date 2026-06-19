@@ -16,9 +16,9 @@
 		"stone" : 1000.0,
 		"sea" : 0.0,
 		"lake" : 0.0,
-		"river" : 0.0,
-		"sea_coast" : 0.0,
-		"lake_coast" : 0.0
+		"river" : 1000.0,
+		"sea_coast" : 1000.0,
+		"lake_coast" : 1000.0
 	},
 	"edge_cost" : {
 		"flat" : 0.0

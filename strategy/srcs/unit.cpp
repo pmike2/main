@@ -18,7 +18,12 @@ Unit::Unit() {
 
 Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_point t) : 
 	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
-	GridMovingObject(type, pt_2d(pos - 0.5 * (type->_obj_data->_aabb->_vmax - type->_obj_data->_aabb->_vmin)), pt_2d(type->_obj_data->_aabb->_vmax - type->_obj_data->_aabb->_vmin)),
+	GridMovingObject(
+		type, 
+		pt_2d(pos - 0.5 * (type->_obj_data->_aabb->_vmax - type->_obj_data->_aabb->_vmin)), 
+		//pt_2d(type->_obj_data->_aabb->_vmax - type->_obj_data->_aabb->_vmin)
+		pt_2d(std::max(type->_obj_data->_aabb->_vmax.x - type->_obj_data->_aabb->_vmin.x, type->_obj_data->_aabb->_vmax.y - type->_obj_data->_aabb->_vmin.y))
+	),
 	_team(team), _type(type), _unit_status(UNDER_CONSTRUCTION), _paused(false), _elevation(elevation),
 	_delete(false), _angle(0.0), _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
 	_creation_t(t)
