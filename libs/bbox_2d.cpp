@@ -83,6 +83,16 @@ void AABB_2D::set_center(pt_2d pt) {
 }
 
 
+std::vector<pt_2d> AABB_2D::segments() {
+	return std::vector<pt_2d>{
+		_pos, _pos + pt_2d(_size.x, 0.0), 
+		_pos + pt_2d(_size.x, 0.0), _pos + _size,
+		_pos + _size, _pos + pt_2d(0.0, _size.y),
+		_pos + pt_2d(0.0, _size.y), _pos
+	};
+}
+
+
 std::ostream & operator << (std::ostream & os, const AABB_2D & aabb) {
 	os << "pos=" << glm::to_string(aabb._pos) << " ; size=" << glm::to_string(aabb._size);
 	return os;

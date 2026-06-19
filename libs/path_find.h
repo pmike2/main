@@ -12,6 +12,7 @@
 #include "graph.h"
 #include "typedefs.h"
 #include "bbox_2d.h"
+#include "polygon_2d.h"
 
 
 const number PATH_FIND_OBSTACLE_THRESH = 1000.0;
@@ -26,8 +27,6 @@ enum GMO_STATUS {GMO_IDLE, GMO_MOVING, GMO_WAITING};
 
 //enum GRID_VERTEX_TYPE {GRID_VERTEX_LAND, GRID_VERTEX_WATER, GRID_VERTEX_LAND_OBSTACLE};
 //enum GRID_EDGE_TYPE {GRID_EDGE_FLAT, GRID_EDGE_SOFT_DOWN, GRID_EDGE_SOFT_UP, GRID_EDGE_HARD_DOWN, GRID_EDGE_HARD_UP};
-
-
 
 
 struct GridMovingObjectType {
@@ -59,6 +58,7 @@ struct GridMovingObject {
 	time_point _t_wait;
 	uint _n_grid_size;
 	number _speed;
+	pt_2d _direction;
 };
 
 
@@ -103,12 +103,18 @@ struct PathFinder : public GraphGrid {
 	void goto_gmo(GridMovingObject * gmo, uint id_vertex);
 	void goto_gmo(GridMovingObject * gmo, pt_2d target);
 	void stop_gmo(GridMovingObject * gmo);
+
 	void set_vertex(std::string type);
-	void set_edges(std::string type);
+	void set_vertex(uint v, std::string type);
 	void set_vertex(AABB_2D * aabb, std::string type);
+	void set_vertex(Polygon2D * polygon, std::string type);
 	void set_vertex(pt_2d center, number size, std::string type);
-	void set_edges(AABB_2D * aabb, std::string type);
-	void set_edges(pt_2d center, number size, std::string type);
+
+	void set_edge(uint from, uint to, std::string type);
+	void set_edge(std::string type);
+	void set_edge(AABB_2D * aabb, std::string type);
+	void set_edge(pt_2d center, number size, std::string type);
+
 	void randomize_edges(std::vector<std::string> types);
 	void parse_input_queue(time_point t);
 	void anim_gmos(std::vector<GridMovingObject *> & gmos, time_point t);

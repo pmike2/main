@@ -41,12 +41,11 @@ struct Unit : public InstancePosRot, public GridMovingObject {
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
 	
 	
-	uint _id;
 	Team * _team;
 	UnitType * _type;
 	UNIT_STATUS _unit_status;
 	UNIT_HIT_STATUS _hit_status;
-	pt_3d _velocity;
+	//pt_3d _velocity;
 	bool _paused;
 	Elevation * _elevation;
 	//time_point _last_moving_t;

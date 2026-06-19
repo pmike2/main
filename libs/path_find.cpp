@@ -244,6 +244,10 @@ void PathFinder::path_find(PathFinderInput * input) {
 		gmo->_path.push_back(i);
 	}
 
+	if (gmo->_path.size() == 1) {
+		gmo->_path.clear();
+	}
+
 	/*for (auto i : path) {
 		std::cout << i << " ; " << cost_so_far[i] << "\n";
 	}*/
@@ -293,6 +297,7 @@ GridMovingObject * PathFinder::get_gmo(uint id) {
 void PathFinder::init_gmo(GridMovingObject * gmo) {
 	gmo->_id = _next_gmo_id++;
 	gmo->_n_grid_size = uint(gmo->_aabb->_size.x / _resolution.x);
+	std::cout << gmo->_gmo_type->_name << " ; " << gmo->_n_grid_size << "\n";
 	add_gmo_grid(gmo);
 }
 
@@ -359,27 +364,16 @@ void PathFinder::stop_gmo(GridMovingObject * gmo) {
 }
 
 
-void PathFinder::set_vertex(std::string type) {
-	_it_v= _vertices.begin();
-	while (_it_v!= _vertices.end()) {
-		GraphVertex & vertex = get_vertex(_it_v->first);
-		PathFinderVertexData * vertex_data = (PathFinderVertexData *)(vertex._data);
-		vertex_data->_type = type;
-		_it_v++;
-	}
+void PathFinder::set_vertex(uint v, std::string type) {
+	PathFinderVertexData * vertex_data = get_vertex_data(v);
+	vertex_data->_type = type;
 }
 
 
-void PathFinder::set_edges(std::string type) {
+void PathFinder::set_vertex(std::string type) {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
-		_it_e= _it_v->second._edges.begin();
-		while (_it_e!= _it_v->second._edges.end()) {
-			GraphEdge & edge = get_edge(_it_v->first, _it_e->first);
-			PathFinderEdgeData * edge_data = (PathFinderEdgeData *)(edge._data);
-			edge_data->_type = type;
-			_it_e++;
-		}
+		set_vertex(_it_v->first, type);
 		_it_v++;
 	}
 }
@@ -388,8 +382,15 @@ void PathFinder::set_edges(std::string type) {
 void PathFinder::set_vertex(AABB_2D * aabb, std::string type) {
 	std::vector<uint> vertices = vertices_in_aabb(aabb);
 	for (auto & v : vertices) {
-		PathFinderVertexData * vertex_data = get_vertex_data(v);
-		vertex_data->_type = type;
+		set_vertex(v, type);
+	}
+}
+
+
+void PathFinder::set_vertex(Polygon2D * polygon, std::string type) {
+	std::vector<uint> vertices = vertices_in_polygon(polygon);
+	for (auto & v : vertices) {
+		set_vertex(v, type);
 	}
 }
 
@@ -401,18 +402,36 @@ void PathFinder::set_vertex(pt_2d center, number size, std::string type) {
 }
 
 
-void PathFinder::set_edges(AABB_2D * aabb, std::string type) {
-	std::vector<uint_pair> edges = edges_intersecting_aabb(aabb);
-	for (auto & e : edges) {
-		PathFinderEdgeData * edge_data = get_edge_data(e.first, e.second);
-		edge_data->_type = type;
+void PathFinder::set_edge(uint from, uint to, std::string type) {
+	PathFinderEdgeData * edge_data = get_edge_data(from, to);
+	edge_data->_type = type;
+}
+
+
+void PathFinder::set_edge(std::string type) {
+	_it_v= _vertices.begin();
+	while (_it_v!= _vertices.end()) {
+		_it_e= _it_v->second._edges.begin();
+		while (_it_e!= _it_v->second._edges.end()) {
+			set_edge(_it_v->first, _it_e->first, type);
+			_it_e++;
+		}
+		_it_v++;
 	}
 }
 
 
-void PathFinder::set_edges(pt_2d center, number size, std::string type) {
+void PathFinder::set_edge(AABB_2D * aabb, std::string type) {
+	std::vector<uint_pair> edges = edges_intersecting_aabb(aabb);
+	for (auto & e : edges) {
+		set_edge(e.first, e.second, type);
+	}
+}
+
+
+void PathFinder::set_edge(pt_2d center, number size, std::string type) {
 	AABB_2D * aabb = new AABB_2D(center - 0.5 * pt_2d(size), pt_2d(size));
-	set_edges(aabb, type);
+	set_edge(aabb, type);
 	delete aabb;
 }
 
@@ -448,7 +467,12 @@ void PathFinder::parse_input_queue(time_point t) {
 	
 	path_find(input);
 	input->_gmo->_idx_path = 0;
-	input->_gmo->_gmo_status = GMO_MOVING;
+	if (input->_gmo->_path.empty()) {
+		input->_gmo->_gmo_status = GMO_IDLE;
+	}
+	else {
+		input->_gmo->_gmo_status = GMO_MOVING;
+	}
 }
 
 
@@ -546,8 +570,9 @@ void PathFinder::anim_gmos(std::vector<GridMovingObject *> & gmos, time_point t)
 
 			//pt_2d last = id2pt_2d(gmo->_path[gmo->_idx_path]);
 			//pt_2d direction = glm::normalize(next - last);
-			pt_2d direction = glm::normalize(next - gmo->_aabb->center());
-			gmo->_aabb->translate(gmo->_speed * direction);
+			gmo->_direction = glm::normalize(next - gmo->_aabb->center());
+			gmo->_aabb->translate(gmo->_speed * gmo->_direction);
+			//std::cout << *gmo->_aabb << "\n";
 
 			update_gmo_grid(gmo);
 		}

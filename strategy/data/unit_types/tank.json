@@ -1,5 +1,5 @@
 {
-	"type" : "TANK",
+	"type" : "tank",
 	"max_velocity" : 0.05,
 	"life_init" : 200.0,
 	"regen" : 0.05,
@@ -10,21 +10,18 @@
 	"floats" : false,
 	"flies" : false,
 	"ammo" : "bomb",
-	"weights" : {
-		"GROUND" : 0.0,
-		"OBSTACLE" : 1000.0,
-		"SEA" : 1000.0,
-		"LAKE" : 1000.0,
-		"RIVER" : 1000.0,
-		"SEA_COAST" : 0.0,
-		"LAKE_COAST" : 0.0
+	"vertex_cost" : {
+		"land" : 0.0,
+		"tree" : 1000.0,
+		"stone" : 1000.0,
+		"sea" : 1000.0,
+		"lake" : 1000.0,
+		"river" : 1000.0,
+		"sea_coast" : 0.0,
+		"lake_coast" : 0.0
 	},
-	"delta_elevation_coeffs" : [
-		{"min" : -1000.0, "max" : -10.0, "coeff" : 1000.0},
-		{"min" : -10.0, "max" : -1.0, "coeff" : 0.0},
-		{"min" : -1.0, "max" : 1.0, "coeff" : 10.0},
-		{"min" : 1.0, "max" : 100.0, "coeff" : 100.0},
-		{"min" : 100.0, "max" : 1000.0, "coeff" : 1000.0}
-	],
+	"edge_cost" : {
+		"flat" : 0.0
+	},
 	"obj" : "../data/objs/units/tank/tank.obj"
 }

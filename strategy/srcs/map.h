@@ -55,6 +55,7 @@ struct Map {
 	std::vector<Unit *> get_units_in_aabb(AABB_2D * aabb);
 	Team * get_team(std::string team_name);
 	uint get_team_idx(std::string team_name);
+	void selected_units_goto(Team * team, pt_3d pt);
 	
 	void remove_units_in_aabb(AABB_2D * aabb);
 	void remove_elements_in_aabb(AABB_2D * aabb);

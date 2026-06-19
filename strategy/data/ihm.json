@@ -36,10 +36,10 @@
 			"position" : "after:play_mode",
 			"orientation" : "vertical",
 			"elements" : [
-				{"name" : "INFANTERY", "key" : "i"},
-				{"name" : "TANK", "key" : "t"},
-				{"name" : "HELICOPTER", "key" : "h"},
-				{"name" : "BOAT", "key" : "b"}
+				{"name" : "infantery", "key" : "i"},
+				{"name" : "tank", "key" : "t"},
+				{"name" : "helicopter", "key" : "h"},
+				{"name" : "boat", "key" : "b"}
 			]
 		},
 		{
@@ -82,7 +82,7 @@
 			"orientation" : "vertical",
 			"elements" : [
 				{"name" : "Team1"},
-				{"name" : "Team2", "checked" : true}
+				{"name" : "Team2", "checked" : false}
 			]
 		},
 		{
@@ -102,10 +102,10 @@
 			"position" : "after:edit_mode",
 			"orientation" : "vertical",
 			"elements" : [
-				{"name" : "TREE", "key" : "t", "groups_visible" : ["tree_params"]},
-				{"name" : "STONE", "key" : "s", "groups_visible" : ["stone_params"]},
-				{"name" : "RIVER", "key" : "r"},
-				{"name" : "LAKE", "key" : "l"}
+				{"name" : "tree", "key" : "t", "groups_visible" : ["tree_params"]},
+				{"name" : "stone", "key" : "s", "groups_visible" : ["stone_params"]},
+				{"name" : "river", "key" : "r"},
+				{"name" : "lake", "key" : "l"}
 			]
 		},
 		{
@@ -234,10 +234,10 @@
 			"position" : "before:grid_type",
 			"orientation" : "vertical",
 			"elements" : [
-				{"name" : "INFANTERY"},
-				{"name" : "TANK"},
-				{"name" : "HELICOPTER"},
-				{"name" : "BOAT"}
+				{"name" : "infantery"},
+				{"name" : "tank"},
+				{"name" : "helicopter"},
+				{"name" : "boat"}
 			]
 		}
 	]

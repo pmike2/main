@@ -80,7 +80,7 @@ public:
 	
 	void anim(time_point t);
 	
-	glm::vec4 get_grid_edge_color();
+	glm::vec4 get_grid_edge_color(uint from, uint to);
 	glm::vec4 get_path_color(number weight);
 	
 	void update_select();

@@ -60,7 +60,6 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	for (auto & json_path : unit_type_json_paths) {
 		UnitType * unit_type = new UnitType(json_path);
 		_unit_types[basename(json_path)] = unit_type;
-		//_path_finder->add_unit_type(unit_type);
 	}
 	
 	std::vector<std::string> ammo_type_json_paths = list_files(_ammo_types_dir, "json");
@@ -222,12 +221,7 @@ void Map::add_river(pt_2d pos) {
 		return;
 	}
 
-	std::vector<uint> vertices = _path_finder->vertices_in_polygon(river->_polygon);
-
-	for (auto & v : vertices) {
-		PathFinderVertexData * vertex_data = _path_finder->get_vertex_data(v);
-		vertex_data->_type = "river";
-	}
+	_path_finder->set_vertex(river->_polygon, "river");
 
 	/*for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
@@ -274,12 +268,7 @@ void Map::add_lake(pt_2d pos) {
 		return;
 	}
 
-	std::vector<uint> vertices = _path_finder->vertices_in_polygon(lake->_polygon);
-
-	for (auto & v : vertices) {
-		PathFinderVertexData * vertex_data = _path_finder->get_vertex_data(v);
-		vertex_data->_type = "lake";
-	}
+	_path_finder->set_vertex(lake->_polygon, "lake");
 
 	/*for (auto & ut : _unit_types) {
 		UnitType * unit_type = ut.second;
@@ -355,14 +344,9 @@ void Map::add_trees(std::string species_name, pt_2d pos, uint n_trees, number di
 			continue;
 		}
 
-		//add_element_to_terrain_grid(tree);
-
-		std::vector<uint> vertices = _path_finder->vertices_in_aabb(tree->_bbox->_aabb->aabb2d());
-
-		for (auto & v : vertices) {
-			PathFinderVertexData * vertex_data = _path_finder->get_vertex_data(v);
-			vertex_data->_type = "tree";
-		}
+		AABB_2D * aabb = tree->_bbox->_aabb->aabb2d();
+		_path_finder->set_vertex(aabb, "tree");
+		delete aabb;
 	}
 }
 
@@ -378,13 +362,9 @@ void Map::add_stones(std::string species_name, pt_2d pos, uint n_stones, number 
 			continue;
 		}
 
-		//add_element_to_terrain_grid(stone);
-		std::vector<uint> vertices = _path_finder->vertices_in_aabb(stone->_bbox->_aabb->aabb2d());
-
-		for (auto & v : vertices) {
-			PathFinderVertexData * vertex_data = _path_finder->get_vertex_data(v);
-			vertex_data->_type = "stone";
-		}
+		AABB_2D * aabb = stone->_bbox->_aabb->aabb2d();
+		_path_finder->set_vertex(aabb, "stone");
+		delete aabb;
 	}
 }
 
@@ -433,6 +413,15 @@ uint Map::get_team_idx(std::string team_name) {
 	}
 	std::cerr << "Map::get_team : pas de team " << team_name << "\n";
 	return 0;
+}
+
+
+void Map::selected_units_goto(Team * team, pt_3d pt) {
+	for (auto & unit : team->_units) {
+		if (unit->_selected) {
+			_path_finder->goto_gmo(unit, pt_2d(pt));
+		}
+	}
 }
 
 
@@ -502,8 +491,17 @@ void Map::update_elevation_grid() {
 			pt_3d & pt_begin= _path_finder->_it_v->second._pos;
 			pt_3d & pt_end= _path_finder->_vertices[_path_finder->_it_e->first]._pos;
 			number delta_elevation = pt_end.z - pt_begin.z;
+			PathFinderEdgeData * edge_data = _path_finder->get_edge_data(_path_finder->_it_v->first, _path_finder->_it_e->first);
 			
-			// TODO
+			if (delta_elevation < -1.0) {
+				edge_data->_type = "down";
+			}
+			else if (delta_elevation < 0.1) {
+				edge_data->_type = "flat";
+			}
+			else {
+				edge_data->_type = "up";
+			}
 
 			_path_finder->_it_e++;
 		}
@@ -515,12 +513,22 @@ void Map::update_elevation_grid() {
 void Map::update_terrain_grid_with_elevation() {
 	_path_finder->_it_v= _path_finder->_vertices.begin();
 	while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
-		_path_finder->_it_e= _path_finder->_it_v->second._edges.begin();
+		PathFinderVertexData * vertex_data = _path_finder->get_vertex_data(_path_finder->_it_v->first);
+		pt_3d & pt = _path_finder->_it_v->second._pos;
+		if (pt.z < 0.01) {
+			vertex_data->_type = "sea";
+		}
+		else if (vertex_data->_type == "sea") {
+			vertex_data->_type = "land";
+		}
+		
+		/*_path_finder->_it_e= _path_finder->_it_v->second._edges.begin();
 		while (_path_finder->_it_e!= _path_finder->_it_v->second._edges.end()) {
-			pt_3d & pt_begin = _path_finder->_it_v->second._pos;
-			pt_3d & pt_end = _path_finder->_vertices[_path_finder->_it_e->first]._pos;
+			PathFinderEdgeData * edge_data = _path_finder->get_edge_data(_path_finder->_it_v->first, _path_finder->_it_e->first);
+			pt_3d & pt_to = _path_finder->_vertices[_path_finder->_it_e->first]._pos;
+			number delta_alti = pt_to.z - pt_from.z;
 			
-			/*TERRAIN_TYPE terrain_type = _path_finder->get_terrain_type(_path_finder->_it_v->first, _path_finder->_it_e->first, unit_type);
+			TERRAIN_TYPE terrain_type = _path_finder->get_terrain_type(_path_finder->_it_v->first, _path_finder->_it_e->first, unit_type);
 
 			if (pt_begin.z < 0.01 && pt_end.z < 0.01) {
 				_path_finder->set_terrain_type(_path_finder->_it_v->first, _path_finder->_it_e->first, unit_type, TERRAIN_SEA);
@@ -530,10 +538,10 @@ void Map::update_terrain_grid_with_elevation() {
 			}
 			else if (terrain_type == TERRAIN_UNKNOWN || terrain_type == TERRAIN_SEA || terrain_type == TERRAIN_SEA_COAST) {
 				_path_finder->set_terrain_type(_path_finder->_it_v->first, _path_finder->_it_e->first, unit_type, TERRAIN_GROUND);
-			}*/
+			}
 
 			_path_finder->_it_e++;
-		}
+		}*/
 		_path_finder->_it_v++;
 	}
 }
@@ -755,7 +763,7 @@ void Map::anim_unit(Unit * unit, time_point t) {
 	else if (unit->_unit_status == ATTACKING) {
 		if (unit->_target->_unit_status == DESTROYED || unit->_target->_hit_status == FINAL_HIT) {
 			//unit->set_status(WAITING, t);
-			unit->_gmo_status = GMO_IDLE;
+			unit->_unit_status = WATCHING;
 		}
 	}
 	else if (unit->_unit_status == DESTROYED) {
@@ -907,6 +915,14 @@ void Map::anim(time_point t) {
 
 	//path_find_use_result(t);
 
+	std::vector<GridMovingObject *> base_gmos;
+	for (auto & team : _teams) {
+		for (auto & unit : team->_units) {
+			base_gmos.push_back((GridMovingObject *)(unit));
+		}
+	}
+	_path_finder->anim_gmos(base_gmos, t);
+
 	ia(t);
 
 	// anim par unité -------------------------------------------------
@@ -1024,6 +1040,9 @@ void Map::clear() {
 
 	_elevation->set_alti_all(1.0);
 	sync2elevation();
+
+	_path_finder->set_vertex("land");
+	_path_finder->set_edge("flat");
 }
 
 

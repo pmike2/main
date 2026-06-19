@@ -75,8 +75,6 @@ void PathFinderTest::delete_selected_gmos() {
 
 
 void PathFinderTest::goto_selected_gmos(pt_2d target) {
-	uint goal = _pf->pt2closest_id(target);
-
 	for (auto & gmo : _gmos) {
 		if (gmo->_selected) {
 			_pf->goto_gmo(gmo, target);
@@ -513,11 +511,11 @@ bool PathFinderTest::mouse_motion(InputState * input_state, time_point t) {
 	pt_2d pt = _view_system->screen2world(input_state->_x, input_state->_y, 0.0);
 
 	if (input_state->_keys[SDLK_w]) {
-		_pf->set_edges(pt, 3.0, "flat");
+		_pf->set_edge(pt, 3.0, "flat");
 		return true;
 	}
 	if (input_state->_keys[SDLK_x]) {
-		_pf->set_edges(pt, 3.0, "up");
+		_pf->set_edge(pt, 3.0, "up");
 		return true;
 	}
 	if (input_state->_keys[SDLK_b]) {

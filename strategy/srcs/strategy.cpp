@@ -667,64 +667,60 @@ void Strategy::anim(time_point t) {
 }
 
 
-glm::vec4 Strategy::get_grid_edge_color() {
-	/*GraphEdge edge = _map->_path_finder->_it_e->second;
-	EdgeData * data = (EdgeData *)(edge._data);
-	UnitType * unit_type = _map->_unit_types[_config->_visible_grid_unit_type];
+glm::vec4 Strategy::get_grid_edge_color(uint from, uint to) {
+	PathFinderEdgeData * edge_data = _map->_path_finder->get_edge_data(from, to);
+	PathFinderVertexData * from_data = _map->_path_finder->get_vertex_data(from);
+	PathFinderVertexData * to_data = _map->_path_finder->get_vertex_data(to);
+
 	glm::vec4 edge_color;
 
 	if (_config->_visible_grid_type == ELEVATION) {
-		if (data->_delta_elevation[unit_type] < 0.0) {
+		if (edge_data->_type == "flat") {
 			edge_color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
-		else if (data->_delta_elevation[unit_type] > 100.0) {
-			edge_color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
-		}
 		else {
-			edge_color = glm::vec4(float(data->_delta_elevation[unit_type]) / 100.0f, 1.0f - float(data->_delta_elevation[unit_type]) / 100.0f, 0.5f, 1.0f);
+			edge_color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
 		}
 	}
 	else if (_config->_visible_grid_type == TERRAIN) {
-		if (data->_type[unit_type] == TERRAIN_SEA ) {
+		if (from_data->_type == "sea" || to_data->_type == "sea" ) {
 			edge_color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
-		else if (data->_type[unit_type] == TERRAIN_GROUND ) {
-			edge_color = glm::vec4(0.0f, 1.0f, 1.0f, 1.0f);
-		}
-		else if (data->_type[unit_type] == TERRAIN_OBSTACLE ) {
+		else if (from_data->_type == "tree" || to_data->_type == "tree" ) {
 			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
-		else if (data->_type[unit_type] == TERRAIN_LAKE ) {
+		else if (from_data->_type == "stone" || to_data->_type == "stone" ) {
+			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		}
+		else if (from_data->_type == "lake" || to_data->_type == "lake" ) {
 			edge_color = glm::vec4(0.5f, 0.0f, 1.0f, 1.0f);
 		}
-		else if (data->_type[unit_type] == TERRAIN_RIVER ) {
+		else if (from_data->_type == "river" || to_data->_type == "river" ) {
 			edge_color = glm::vec4(0.0f, 0.5f, 1.0f, 1.0f);
 		}
-		else if (data->_type[unit_type] == TERRAIN_SEA_COAST ) {
+		else if (from_data->_type == "sea_coast" || to_data->_type == "sea_coast" ) {
 			edge_color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
 		}
-		else if (data->_type[unit_type] == TERRAIN_LAKE_COAST ) {
+		else if (from_data->_type == "lake_coast" || to_data->_type == "lake_coast" ) {
 			edge_color = glm::vec4(1.0f, 1.0f, 0.5f, 1.0f);
+		}
+		else if (from_data->_type == "land" || to_data->_type == "land" ) {
+			edge_color = glm::vec4(0.5f, 1.0f, 0.5f, 1.0f);
 		}
 		else {
 			edge_color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
 	else if (_config->_visible_grid_type == UNITS_POSITION) {
-		if (data->_ids[unit_type].size() == 0) {
-			edge_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
-		}
-		else if (data->_ids[unit_type].size() == 1) {
+		if (from_data->_gmo != NULL || to_data->_gmo != NULL) {
 			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
 		}
 		else {
-			edge_color = glm::vec4(0.5f, 0.0f, 1.0f, 1.0f);
+			edge_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
 		}
 	}
 
-	return edge_color;*/
-
-	return glm::vec4(0.5f, 0.0f, 1.0f, 1.0f);
+	return edge_color;
 }
 
 
@@ -802,7 +798,7 @@ void Strategy::update_grid() {
 	while (_map->_path_finder->_it_v!= _map->_path_finder->_vertices.end()) {
 		_map->_path_finder->_it_e= _map->_path_finder->_it_v->second._edges.begin();
 		while (_map->_path_finder->_it_e!= _map->_path_finder->_it_v->second._edges.end()) {
-			glm::vec4 edge_color = get_grid_edge_color();
+			glm::vec4 edge_color = get_grid_edge_color(_map->_path_finder->_it_v->first, _map->_path_finder->_it_e->first);
 
 			pt_3d & p1 = _map->_path_finder->_it_v->second._pos;
 			pt_3d & p2 = _map->_path_finder->_vertices[_map->_path_finder->_it_e->first]._pos;
@@ -844,15 +840,15 @@ void Strategy::update_bbox() {
 	context->_n_pts = 0;
 
 	// BBox units + path
-	/*for (auto & team : _map->_teams) {
+	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			context->_n_pts += 48;
-			if (!unit->_path.empty()) {
+			context->_n_pts += 48 + 8;
+			/*if (!unit->_path.empty()) {
 				context->_n_pts += 8 * unit->_path->_intervals.size();
 				context->_n_pts += 8 * unit->_path->_intervals_los.size();
-			}
+			}*/
 		}
-	}*/
+	}
 
 	// BBox elements
 	for (auto & element : _map->_elements->_elements) {
@@ -891,6 +887,19 @@ void Strategy::update_bbox() {
 					ptr[5] = unit_color.b;
 					ptr[6] = unit_color.a;
 				}
+				ptr += 7;
+			}
+
+			std::vector<pt_2d> aabb_segs = unit->_aabb->segments();
+			glm::vec4 aabb_color(0.0, 0.0, 1.0, 1.0);
+			for (uint i=0; i<aabb_segs.size(); ++i) {
+				ptr[0] = float(aabb_segs[i].x);
+				ptr[1] = float(aabb_segs[i].y);
+				ptr[2] = float(unit->_position.z + Z_OFFSET_UNIT);
+				ptr[3] = aabb_color.r;
+				ptr[4] = aabb_color.g;
+				ptr[5] = aabb_color.b;
+				ptr[6] = aabb_color.a;
 				ptr += 7;
 			}
 		}
@@ -1838,22 +1847,29 @@ void Strategy::update_text() {
 	std::string s_pos = glm_to_string(_cursor_world_position);
 	texts_2d.push_back(Text(s_pos, glm::vec2(-4.8, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	
-	/*if (_cursor_in_world) {
-		GraphEdge edge = _map->_path_finder->get_edge(_map->_path_finder->pt2closest_edge(pt_2d(_cursor_world_position)));
+	if (_cursor_in_world) {
+		PathFinderVertexData * vertex_data = _map->_path_finder->get_vertex_data(_map->_path_finder->pt2closest_id(pt_2d(_cursor_world_position)));
+		/*GraphEdge edge = _map->_path_finder->get_edge(_map->_path_finder->pt2closest_edge(pt_2d(_cursor_world_position)));
 		GraphEdge opposite_edge = _map->_path_finder->opposite_edge(edge);
 		EdgeData * data = (EdgeData *)(edge._data);
-		EdgeData * opposite_data = (EdgeData *)(opposite_edge._data);
+		EdgeData * opposite_data = (EdgeData *)(opposite_edge._data);*/
 
-		std::string str_terrain = terrain_type2str(data->_type[_map->_unit_types[_config->_visible_grid_unit_type]]);
-		str_terrain += " ; " + std::to_string(data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
-		str_terrain += " ; " + std::to_string(opposite_data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
+		std::string str_terrain = vertex_data->_type;
+		if (vertex_data->_gmo != NULL) {
+			str_terrain += " ; gmo id = " + std::to_string(vertex_data->_gmo->_id);
+		}
+		else {
+			str_terrain += " ; gmo id = NULL";
+		}
+		//str_terrain += " ; " + std::to_string(data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
+		//str_terrain += " ; " + std::to_string(opposite_data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
 		
 		texts_2d.push_back(Text(str_terrain, glm::vec2(-1.5, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
-	}*/
+	}
 
 	if (_cursor_hover_unit != NULL) {
 		std::string str_unit = _cursor_hover_unit->_team->_name + " id = " + std::to_string(_cursor_hover_unit->_id);
-		texts_2d.push_back(Text(str_unit, glm::vec2(0.0, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
+		texts_2d.push_back(Text(str_unit, glm::vec2(0.5, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}
 
 	_font->set_text(texts_2d);
@@ -1942,6 +1958,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 			if (_config->_play_mode == ACTION_UNIT && _config->_unit_action_mode == MOVE) {
 				if (_move_unit_ok) {
 					//get_selected_team()->selected_units_goto(_cursor_world_position, t);
+					_map->selected_units_goto(get_selected_team(), _cursor_world_position);
 					return true;
 				}
 			}

@@ -14,10 +14,12 @@ Unit::Unit() {
 }
 
 
+// pas trop compris pourquoi - 0.5 dans le constructeur de GridMovingObject...
+
 Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_point t) : 
 	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
-	GridMovingObject(type, pos, pt_2d(type->_obj_data->_aabb->_vmax.x - type->_obj_data->_aabb->_vmin.x, type->_obj_data->_aabb->_vmax.y - type->_obj_data->_aabb->_vmin.y)),
-	_team(team), _type(type), _unit_status(UNDER_CONSTRUCTION), _velocity(pt_3d(0.0)), _paused(false), _elevation(elevation),
+	GridMovingObject(type, pt_2d(pos - 0.5 * (type->_obj_data->_aabb->_vmax - type->_obj_data->_aabb->_vmin)), pt_2d(type->_obj_data->_aabb->_vmax - type->_obj_data->_aabb->_vmin)),
+	_team(team), _type(type), _unit_status(UNDER_CONSTRUCTION), _paused(false), _elevation(elevation),
 	_delete(false), _angle(0.0), _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
 	_creation_t(t)
 {
@@ -59,53 +61,100 @@ void Unit::anim(time_point t) {
 		return;
 	}
 	
-	if (_unit_status == UNDER_CONSTRUCTION) {
-		auto d_creation = std::chrono::duration_cast<std::chrono::milliseconds>(t - _creation_t).count();
-		if (d_creation > _type->_creation_duration) {
-			//set_status(WAITING, t);
-			_gmo_status = GMO_IDLE;
-		}
+	if (_gmo_status == GMO_IDLE) {
+		if (_unit_status == UNDER_CONSTRUCTION) {
+			auto d_creation = std::chrono::duration_cast<std::chrono::milliseconds>(t - _creation_t).count();
+			if (d_creation > _type->_creation_duration) {
+				//set_status(WAITING, t);
+				_gmo_status = GMO_IDLE;
+				_unit_status = WATCHING;
+			}
 
-	}
-	/*else if (_unit_status == WAITING) {
-		_life += _type->_regen;
-		if (_life > _type->_life_init) {
-			_life = _type->_life_init;
 		}
-	}*/
-	else if (_unit_status == WATCHING) {
-		number next_angle = _angle + 0.01;
-		if (next_angle - _angle > M_PI) {
-			next_angle -= 2.0 * M_PI;
-		}
-		_angle = next_angle;
+		/*else if (_unit_status == WAITING) {
+			_life += _type->_regen;
+			if (_life > _type->_life_init) {
+				_life = _type->_life_init;
+			}
+		}*/
+		else if (_unit_status == WATCHING) {
+			number next_angle = _angle + 0.01;
+			if (next_angle - _angle > M_PI) {
+				next_angle -= 2.0 * M_PI;
+			}
+			_angle = next_angle;
 
-		const number slerp_speed = 0.05;
-		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
-		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
+			const number slerp_speed = 0.05;
+			quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
+			quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
 
-		set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
-	}
-	else if (_unit_status == TAKEOFF) {
-		pt_3d next_position = _position + pt_3d(0.0, 0.0, TAKEOFF_SPEED);
-		if (next_position.z > FLY_ALTI) {
-			next_position.z = FLY_ALTI;
-			//set_status(MOVING, t);
-			_gmo_status = GMO_MOVING;
+			set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
 		}
-		set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
-	}
-	else if (_unit_status == LANDING) {
-		pt_3d next_position = _position - pt_3d(0.0, 0.0, LANDING_SPEED);
-		number alti = _elevation->get_alti(pt_2d(_position.x, _position.y));
-		if (next_position.z < alti) {
-			next_position.z = alti;
-			//set_status(WAITING, t);
-			_gmo_status = GMO_IDLE;
+		else if (_unit_status == TAKEOFF) {
+			pt_3d next_position = _position + pt_3d(0.0, 0.0, TAKEOFF_SPEED);
+			if (next_position.z > FLY_ALTI) {
+				next_position.z = FLY_ALTI;
+				//set_status(MOVING, t);
+				_gmo_status = GMO_MOVING;
+			}
+			set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
 		}
-		set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
+		else if (_unit_status == LANDING) {
+			pt_3d next_position = _position - pt_3d(0.0, 0.0, LANDING_SPEED);
+			number alti = _elevation->get_alti(pt_2d(_position.x, _position.y));
+			if (next_position.z < alti) {
+				next_position.z = alti;
+				//set_status(WAITING, t);
+				_gmo_status = GMO_IDLE;
+			}
+			set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
+		}
+		else if (_unit_status == ATTACKING) {
+			if (_target == NULL)  {
+				std::cerr << "Unit " << _id << " ATTACKING mais _target == NULL.\n";
+				return;
+			}
+
+			number next_angle = atan2(_target->_position.y - _position.y, _target->_position.x - _position.x);
+			// pour ne pas faire des 3/4 de tour quand les 2 angles sont de part et d'autre de l'axe x
+			if (next_angle - _angle > M_PI) {
+				next_angle -= 2.0 * M_PI;
+			}
+			_angle = next_angle;
+			
+			// https://en.wikipedia.org/wiki/Slerp
+			const number slerp_speed = 0.05;
+			quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
+			quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
+
+			set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
+
+			auto d_shooting = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_shooting_t).count();
+			//std::cout << number(d_shooting) << " ; " << _type->_shooting_rate * 1000.0 << "\n";
+			if (number(d_shooting) > _type->_shooting_rate * 1000.0) {
+				//std::cout << "Unit " << _id << " attacks Unit " << _target->_id << "\n";
+				_last_shooting_t = t;
+				
+				//set_status(SHOOTING, t);
+				_unit_status = SHOOTING;
+			}
+		}
 	}
 	else if (_gmo_status == GMO_MOVING) {
+
+		set_speed(_type->_max_velocity);
+
+		pt_3d next_position;
+		next_position.x = _aabb->center().x;
+		next_position.y = _aabb->center().y;
+		next_position.z = _elevation->get_alti(next_position);
+		if (_type->_floats && next_position.z < 0.0) {
+			next_position.z = 0.0;
+		}
+
+		if (_type->_flies) {
+			next_position.z = FLY_ALTI;
+		}
 		
 		/*number velocity_amp = _type->_max_velocity * (1.0 - _path->get_current_interval()->_weight / MAX_UNIT_MOVING_WEIGHT);
 		velocity_amp *= number(d_moving) * 0.0625; // 60fps -> 1 frame == 1000 / 60 ~= 16 ms et 1 / 16 == 0.0625
@@ -121,9 +170,10 @@ void Unit::anim(time_point t) {
 
 		if (_type->_flies) {
 			next_position.z = FLY_ALTI;
-		}
+		}*/
 		
-		number next_angle = atan2(_velocity.y, _velocity.x);
+		//number next_angle = atan2(_velocity.y, _velocity.x);
+		number next_angle = atan2(_direction.y, _direction.x);
 		// pour ne pas faire des 3/4 de tour quand les 2 angles sont de part et d'autre de l'axe x
 		if (next_angle - _angle > M_PI) {
 			next_angle -= 2.0 * M_PI;
@@ -135,37 +185,7 @@ void Unit::anim(time_point t) {
 		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
 
-		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));*/
-	}
-	else if (_unit_status == ATTACKING) {
-		if (_target == NULL)  {
-			std::cerr << "Unit " << _id << " ATTACKING mais _target == NULL.\n";
-			return;
-		}
-
-		number next_angle = atan2(_target->_position.y - _position.y, _target->_position.x - _position.x);
-		// pour ne pas faire des 3/4 de tour quand les 2 angles sont de part et d'autre de l'axe x
-		if (next_angle - _angle > M_PI) {
-			next_angle -= 2.0 * M_PI;
-		}
-		_angle = next_angle;
-		
-		// https://en.wikipedia.org/wiki/Slerp
-		const number slerp_speed = 0.05;
-		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
-		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
-
-		set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
-
-		auto d_shooting = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_shooting_t).count();
-		//std::cout << number(d_shooting) << " ; " << _type->_shooting_rate * 1000.0 << "\n";
-		if (number(d_shooting) > _type->_shooting_rate * 1000.0) {
-			//std::cout << "Unit " << _id << " attacks Unit " << _target->_id << "\n";
-			_last_shooting_t = t;
-			
-			//set_status(SHOOTING, t);
-			_unit_status = SHOOTING;
-		}
+		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
 	}
 }
 
@@ -269,7 +289,7 @@ std::ostream & operator << (std::ostream & os, Unit & unit) {
 	os << " ; type = " << unit._type->_name;
 	os << " ; status = " << unit_status2str(unit._unit_status);
 	os << " ; position = " << glm_to_string(unit._position);
-	os << " ; velocity = " << glm_to_string(unit._velocity);
+	//os << " ; velocity = " << glm_to_string(unit._velocity);
 	//os << " ; path = " << *unit._path;
 	return os;
 }

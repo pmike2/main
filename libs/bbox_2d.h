@@ -32,6 +32,7 @@ public:
 	void buffer(number size);
 	void translate(pt_2d v);
 	void set_center(pt_2d pt);
+	std::vector<pt_2d> segments();
 	friend std::ostream & operator << (std::ostream & os, const AABB_2D & aabb);
 
 

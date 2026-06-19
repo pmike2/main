@@ -12,7 +12,8 @@
 	"ammo" : "bomb",
 	"vertex_cost" : {
 		"land" : 1000.0,
-		"land_obstacle" : 1000.0,
+		"tree" : 1000.0,
+		"stone" : 1000.0,
 		"sea" : 0.0,
 		"lake" : 0.0,
 		"river" : 0.0,
