@@ -22,7 +22,7 @@ StrategyConfig::StrategyConfig(std::string elevation_rand_dir) {
 	_edit_mode = ADD_ELEMENT;
 	_unit_action_mode = WAIT;
 	_visible_grid_type = ELEVATION;
-	_visible_grid_unit_type = "infantery";
+	//_visible_grid_unit_type = "infantery";
 	_add_unit_type = "infantery";
 	_element_type = "tree";
 	_elevation_mode = ELEVATION_ZERO;
@@ -361,12 +361,12 @@ void Strategy::set_ihm() {
 		});
 	}
 	
-	for (auto & unit_type_name : std::vector<std::string>{"infantery", "tank", "helicopter", "boat"}) {
+	/*for (auto & unit_type_name : std::vector<std::string>{"infantery", "tank", "helicopter", "boat"}) {
 		_ihm->get_element("grid_unit_type", unit_type_name)->set_callback([this, unit_type_name](){
 			_config->_visible_grid_unit_type = unit_type_name;
 			update_grid();
 		});
-	}
+	}*/
 
 	_ihm->all_callbacks(); // synchro de l'état de l'ihm avec l'état de strategy
 
@@ -675,11 +675,24 @@ glm::vec4 Strategy::get_grid_edge_color(uint from, uint to) {
 	glm::vec4 edge_color;
 
 	if (_config->_visible_grid_type == ELEVATION) {
-		if (edge_data->_type == "flat") {
+		if (edge_data->_type == "hard_down") {
 			edge_color = glm::vec4(0.0f, 0.0f, 1.0f, 1.0f);
 		}
+		else if (edge_data->_type == "down") {
+			edge_color = glm::vec4(0.0f, 0.7f, 0.7f, 1.0f);
+		}
+		else if (edge_data->_type == "flat") {
+			edge_color = glm::vec4(0.0f, 1.0f, 0.0f, 1.0f);
+		}
+		else if (edge_data->_type == "up") {
+			edge_color = glm::vec4(0.7f, 0.7f, 0.0f, 1.0f);
+		}
+		else if (edge_data->_type == "hard_up") {
+			edge_color = glm::vec4(1.0f, 0.0f, 0.0f, 1.0f);
+		}
 		else {
-			edge_color = glm::vec4(1.0f, 0.0f, 1.0f, 1.0f);
+			std::cout << "get_grid_edge_color unknown edge type = " << edge_data->_type << "\n";
+			edge_color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
 	else if (_config->_visible_grid_type == TERRAIN) {
@@ -708,6 +721,7 @@ glm::vec4 Strategy::get_grid_edge_color(uint from, uint to) {
 			edge_color = glm::vec4(0.5f, 1.0f, 0.5f, 1.0f);
 		}
 		else {
+			std::cout << "get_grid_edge_color unknown vertex type = " << from_data->_type << " ; " << to_data->_type << "\n";
 			edge_color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 	}
@@ -724,7 +738,7 @@ glm::vec4 Strategy::get_grid_edge_color(uint from, uint to) {
 }
 
 
-glm::vec4 Strategy::get_path_color(number weight) {
+/*glm::vec4 Strategy::get_path_color(number weight) {
 	if (weight >= MAX_UNIT_MOVING_WEIGHT) {
 		return glm::vec4(1.0, 0.0, 1.0, 1.0);
 	}
@@ -737,7 +751,7 @@ glm::vec4 Strategy::get_path_color(number weight) {
 	else {
 		return glm::vec4(0.0, 1.0 - float(weight) / 50.0, 0.5, 1.0);
 	}
-}
+}*/
 
 
 void Strategy::update_select() {
@@ -2082,7 +2096,7 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 		}
 		else {
 			for (auto & unit : selected_units) {
-				if (!_map->move_unit_check(unit, pt_2d(_cursor_world_position))) {
+				if (!_map->move_unit_check(unit, pt_2d(_cursor_world_position), _config->_fow_active)) {
 					_move_unit_ok = false;
 					break;
 				}
@@ -2113,7 +2127,7 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 				_attack_unit_ok = false;
 			}
 			for (auto & unit : selected_units) {
-				if (!_map->attack_unit_check(unit, _cursor_hover_unit)) {
+				if (!_map->attack_unit_check(unit, _cursor_hover_unit, _config->_fow_active)) {
 					_attack_unit_ok = false;
 					break;
 				}
@@ -2139,8 +2153,10 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 		return true;
 	}
 
-	/*if (key == SDLK_SPACE) {
-	}*/
+	if (key == SDLK_SPACE) {
+		std::cout << _map->_path_finder->_inputs.size() << "\n";
+		return true;
+	}
 	return false;
 }
 

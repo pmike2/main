@@ -21,7 +21,11 @@
 		"lake_coast" : 0.0
 	},
 	"edge_cost" : {
-		"flat" : 0.0
+		"hard_down" : 1000.0,
+		"down" : 0.0,
+		"flat" : 0.0,
+		"up" : 100.0,
+		"hard_up" : 1000.0
 	},
 	"obj" : "../data/objs/units/tank/tank.obj"
 }

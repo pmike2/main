@@ -20,7 +20,7 @@ const number PATH_FIND_OBSTACLE_THRESH = 1000.0;
 const uint N_VERTICES_CHECK = 4;
 
 const uint WAIT_N_MS = 3000;
-const uint PATH_FIND_N_MS = 100;
+const uint PATH_FIND_N_MS = 500;
 
 
 enum GMO_STATUS {GMO_IDLE, GMO_MOVING, GMO_WAITING};
@@ -51,6 +51,7 @@ struct GridMovingObject {
 	GridMovingObjectType * _gmo_type;
 	AABB_2D * _aabb;
 	std::vector<uint> _path;
+	std::vector<number> _path_cost;
 	uint _idx_path;
 	uint _id;
 	std::vector<uint> _vertices;
@@ -80,6 +81,7 @@ struct PathFinderInput {
 
 	GridMovingObject * _gmo;
 	uint _goal;
+	bool _valid;
 };
 
 
@@ -115,14 +117,15 @@ struct PathFinder : public GraphGrid {
 	void set_edge(AABB_2D * aabb, std::string type);
 	void set_edge(pt_2d center, number size, std::string type);
 
+	bool is_vertex_obstacle(std::string type_name, uint id_vertex, GridMovingObject * gmo = NULL);
+
 	void randomize_edges(std::vector<std::string> types);
 	void parse_input_queue(time_point t);
 	void anim_gmos(std::vector<GridMovingObject *> & gmos, time_point t);
 
 
 	std::vector<GridMovingObjectType *> _gmo_types;
-	//std::vector<GridMovingObject *> _gmos;
-	std::queue<PathFinderInput *> _inputs;
+	std::deque<PathFinderInput *> _inputs;
 	time_point _t_last_path_find;
 
 	static uint _next_gmo_id;

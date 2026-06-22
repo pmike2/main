@@ -41,8 +41,8 @@ struct Map {
 	bool fow_check(Team * team, pt_2d pos);
 	bool construction_check(Team * team, std::string type);
 	bool add_unit_check(Team * team, std::string type, pt_2d pos, bool fow_active, bool construction_active);
-	bool move_unit_check(Unit * unit, pt_2d pos);
-	bool attack_unit_check(Unit * attacking_unit, Unit * attacked_unit);
+	bool move_unit_check(Unit * unit, pt_2d pos, bool fow_active);
+	bool attack_unit_check(Unit * attacking_unit, Unit * attacked_unit, bool fow_active);
 
 	Unit * add_unit(Team * team, std::string type, pt_2d pos, time_point t);
 	void add_first_units2teams(time_point t);

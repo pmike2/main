@@ -35,7 +35,7 @@ struct StrategyConfig {
 	EDIT_MODE _edit_mode;
 	UNIT_ACTION_MODE _unit_action_mode;
 	VISIBLE_GRID_TYPE _visible_grid_type;
-	std::string _visible_grid_unit_type;
+	//std::string _visible_grid_unit_type;
 	std::string _add_unit_type;
 	std::string _element_type;
 	ELEVATION_MODE _elevation_mode;
@@ -81,7 +81,7 @@ public:
 	void anim(time_point t);
 	
 	glm::vec4 get_grid_edge_color(uint from, uint to);
-	glm::vec4 get_path_color(number weight);
+	//glm::vec4 get_path_color(number weight);
 	
 	void update_select();
 	void update_grid();

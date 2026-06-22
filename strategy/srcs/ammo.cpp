@@ -25,7 +25,9 @@ Ammo::Ammo(AmmoType * type, pt_3d pos, pt_3d target) :
 	quat init_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 	set_pos_rot_scale(_position, init_quat, pt_3d(1.0));
 
-	const number delta_z_min = -2.0;
+	// A revoir
+	
+	/*const number delta_z_min = -2.0;
 	const number delta_z_max = 2.0;
 	const number damage_factor_min = 0.1;
 	const number damage_factor_max = 2.0;
@@ -44,7 +46,9 @@ Ammo::Ammo(AmmoType * type, pt_3d pos, pt_3d target) :
 		_damage = _type->_damage * (a * delta_z + b);
 	}
 
-	_damage *= (1.0 - distance_factor * (d /_type->_max_distance));
+	_damage *= (1.0 - distance_factor * (d / _type->_max_distance));*/
+
+	_damage = _type->_damage;
 }
 
 

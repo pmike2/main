@@ -60,6 +60,7 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	for (auto & json_path : unit_type_json_paths) {
 		UnitType * unit_type = new UnitType(json_path);
 		_unit_types[basename(json_path)] = unit_type;
+		_path_finder->_gmo_types.push_back((GridMovingObjectType *)(unit_type));
 	}
 	
 	std::vector<std::string> ammo_type_json_paths = list_files(_ammo_types_dir, "json");
@@ -141,6 +142,10 @@ bool Map::construction_check(Team * team, std::string type) {
 
 
 bool Map::add_unit_check(Team * team, std::string type, pt_2d pos, bool fow_active, bool construction_active) {
+	if (team->_units.size() >= N_MAX_UNITS_PER_TEAM) {
+		return false;
+	}
+
 	if (!point_in_aabb2d(pos, _aabb)) {
 		return false;
 	}
@@ -153,32 +158,45 @@ bool Map::add_unit_check(Team * team, std::string type, pt_2d pos, bool fow_acti
 		return false;
 	}
 
-	//std::vector<uint_pair> edges = _path_finder->edges_in_cell_containing_pt(pos, false);
-
-	/*for (auto & e : edges) {
-		std::unordered_set<uint> ids = _path_finder->get_ids(e.first, e.second, _unit_types[type]);
-		if (!ids.empty()) {
+	pt_2d unit_size = _unit_types[type]->get_max_square_size();
+	AABB_2D * aabb = new AABB_2D(pos - 0.5 * unit_size, unit_size);
+	// petit buffer
+	aabb->buffer(1.5);
+	std::vector<uint> vertices = _path_finder->vertices_in_aabb(aabb);
+	delete aabb;
+	for (auto & v : vertices) {
+		if (_path_finder->is_vertex_obstacle(_unit_types[type]->_name, v)) {
 			return false;
 		}
-		TERRAIN_TYPE terrain = _path_finder->get_terrain_type(e.first, e.second, _unit_types[type]);
-		if (_unit_types[type]->_terrain_weights[terrain] > MAX_UNIT_MOVING_WEIGHT) {
-			return false;
-		}
-
-		// TODO : ajouter une contrainte d'élévation ?
-	}*/
+	}
 
 	return true;
 }
 
 
-bool Map::move_unit_check(Unit * unit, pt_2d pos) {
-	return fow_check(unit->_team, pos);
+bool Map::move_unit_check(Unit * unit, pt_2d pos, bool fow_active) {
+	if (fow_active && !fow_check(unit->_team, pos)) {
+		return false;
+	}
+
+	pt_2d unit_size = unit->_type->get_max_square_size();
+	AABB_2D * aabb = new AABB_2D(pos - 0.5 * unit_size, unit_size);
+	std::vector<uint> vertices = _path_finder->vertices_in_aabb(aabb);
+	delete aabb;
+	for (auto & v : vertices) {
+		if (_path_finder->is_vertex_obstacle(unit->_type->_name, v, unit)) {
+			return false;
+		}
+	}
+	return true;
 }
 
 
-bool Map::attack_unit_check(Unit * attacking_unit, Unit * attacked_unit) {
-	return fow_check(attacking_unit->_team, pt_2d(attacked_unit->_position));
+bool Map::attack_unit_check(Unit * attacking_unit, Unit * attacked_unit, bool fow_active) {
+	if (fow_active && !fow_check(attacking_unit->_team, pt_2d(attacked_unit->_position))) {
+		return false;
+	}
+	return true;
 }
 
 
@@ -206,8 +224,7 @@ void Map::add_first_units2teams(time_point t) {
 			}
 			pt_2d position = rand_pt_2d(_aabb->_pos, _aabb->_pos + _aabb->_size);
 			if (add_unit_check(team, "infantery", position, false, false)) {
-				Unit * unit = add_unit(team, "infantery", position, t);
-				unit->_gmo_status = GMO_IDLE;
+				add_unit(team, "infantery", position, t);
 				break;
 			}
 		}
@@ -446,7 +463,16 @@ void Map::remove_elements_in_aabb(AABB_2D * aabb) {
 	}
 	_elements->clear2delete();
 
-	_path_finder->set_vertex(aabb, "");
+	std::vector<uint> vertices = _path_finder->vertices_in_aabb(aabb);
+	for (auto & v : vertices) {
+		pt_3d pt = _path_finder->id2pt_3d(v);
+		if (pt.z < 0.01) {
+			_path_finder->set_vertex(v, "sea");
+		}
+		else {
+			_path_finder->set_vertex(v, "land");
+		}
+	}
 }
 
 
@@ -459,7 +485,21 @@ void Map::clear_units() {
 
 void Map::clear_elements() {
 	_elements->clear();
-	_path_finder->set_vertex("");
+	
+	_path_finder->_it_v= _path_finder->_vertices.begin();
+	while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
+		PathFinderVertexData * vertex_data = _path_finder->get_vertex_data(_path_finder->_it_v->first);
+		pt_3d & pt = _path_finder->_it_v->second._pos;
+		if (vertex_data->_type == "tree" || vertex_data->_type == "stone" || vertex_data->_type == "river" || vertex_data->_type == "lake") {
+			if (pt.z < 0.01) {
+				vertex_data->_type = "sea";
+			}
+			else {
+				vertex_data->_type = "land";
+			}
+		}
+		_path_finder->_it_v++;
+	}
 }
 
 
@@ -493,14 +533,20 @@ void Map::update_elevation_grid() {
 			number delta_elevation = pt_end.z - pt_begin.z;
 			PathFinderEdgeData * edge_data = _path_finder->get_edge_data(_path_finder->_it_v->first, _path_finder->_it_e->first);
 			
-			if (delta_elevation < -1.0) {
+			if (delta_elevation < -2.0) {
+				edge_data->_type = "hard_down";
+			}
+			else if (delta_elevation < -1.0) {
 				edge_data->_type = "down";
 			}
 			else if (delta_elevation < 0.1) {
 				edge_data->_type = "flat";
 			}
-			else {
+			else if (delta_elevation < 2.0) {
 				edge_data->_type = "up";
+			}
+			else {
+				edge_data->_type = "hard_up";
 			}
 
 			_path_finder->_it_e++;
@@ -519,6 +565,7 @@ void Map::update_terrain_grid_with_elevation() {
 			vertex_data->_type = "sea";
 		}
 		else if (vertex_data->_type == "sea") {
+		//else {
 			vertex_data->_type = "land";
 		}
 		
@@ -804,6 +851,7 @@ void Map::anim_unit(Unit * unit, time_point t) {
 
 void Map::ia(time_point t) {
 	bool ia_verbose = false;
+
 	for (auto & team : _teams) {
 		if (!team->_ia) {
 			continue;
@@ -824,48 +872,13 @@ void Map::ia(time_point t) {
 		}
 
 		for (auto & unit : team->_units) {
-			if (unit->_gmo_status == GMO_IDLE) {
-				if (unit->_life > 0.95 * unit->_type->_life_init) {
-					//unit->set_status(WATCHING, t);
-					unit->_unit_status = WATCHING;
-					if (ia_verbose) {
-						std::cout << "IA unit " << unit->_id << " life OK => WAITING -> WATCHING\n";
-					}
-				}
+			if (unit->_unit_status == UNDER_CONSTRUCTION) {
+				continue;
 			}
-			else if (unit->_unit_status == WATCHING) {
-				Unit * ennemy_unit = NULL;
-				for (auto & ennemy_team : _teams) {
-					ennemy_unit = team->search_target(unit, ennemy_team);
-					if (ennemy_unit != NULL) {
-						break;
-					}
-				}
-				
-				if (ennemy_unit != NULL) {
-					team->unit_attack(unit, ennemy_unit, t);
-					if (ia_verbose) {
-						std::cout << "IA unit " << unit->_id << " target found => WATCHING -> ATTACKING\n";
-					}
-				}
-				else {
-					for (uint compt = 0; compt < IA_MAX_MOVING_TRY; compt++) {
-						// recherche sur un disque troué
-						pt_2d destination = rand_pt_2d(unit->_position, unit->_type->_vision_distance, unit->_type->_vision_distance * 0.5);
-						if (move_unit_check(unit, destination)) {
-							//team->unit_goto(unit, pt_3d(destination, _elevation->get_alti(destination)), t);
-							_path_finder->goto_gmo(unit, destination);
-							if (ia_verbose) {
-								std::cout << "IA unit " << unit->_id << " no target found => WATCHING -> MOVING\n";
-							}
-							break;
-						}
-					}
-				}
-			}
-			else if (unit->_gmo_status == GMO_MOVING) {
+
+			if (unit->_gmo_status == GMO_MOVING) {
 				if (unit->_hit_status != NO_HIT) {
-					//unit->set_status(WATCHING, t);
+					_path_finder->stop_gmo(unit);
 					unit->_unit_status = WATCHING;
 					if (ia_verbose) {
 						std::cout << "IA unit " << unit->_id << " attacked => MOVING -> WATCHING\n";
@@ -881,27 +894,66 @@ void Map::ia(time_point t) {
 				}
 				
 				if (ennemy_unit != NULL) {
+					_path_finder->stop_gmo(unit);
 					team->unit_attack(unit, ennemy_unit, t);
 					if (ia_verbose) {
-						std::cout << "IA unit " << unit->_id << " target found => MOVING -> WATCHING\n";
+						std::cout << "IA unit " << unit->_id << " target found => MOVING -> ATTACKING\n";
 					}
 				}
 			}
-			else if (unit->_unit_status == ATTACKING) {
-				if (!team->is_target_reachable(unit, unit->_target)) {
-					pt_2d destination = pt_2d(unit->_target->_position);
-					if (move_unit_check(unit, destination)) {
-						//team->unit_goto(unit, pt_3d(destination, _elevation->get_alti(destination)), t);
-						_path_finder->goto_gmo(unit, destination);
-						if (ia_verbose) {
-							std::cout << "IA unit " << unit->_id << " target unreachable => ATTACKING -> MOVING\n";
-						}
-					}
-					else {
+			else {
+				/*else if (unit->_gmo_status == ) {
+					if (unit->_life > 0.95 * unit->_type->_life_init) {
 						//unit->set_status(WATCHING, t);
 						unit->_unit_status = WATCHING;
 						if (ia_verbose) {
-							std::cout << "IA unit " << unit->_id << " target lost => ATTACKING -> WATCHING\n";
+							std::cout << "IA unit " << unit->_id << " life OK => WAITING -> WATCHING\n";
+						}
+					}
+				}*/
+				if (unit->_unit_status == WATCHING) {
+					Unit * ennemy_unit = NULL;
+					for (auto & ennemy_team : _teams) {
+						ennemy_unit = team->search_target(unit, ennemy_team);
+						if (ennemy_unit != NULL) {
+							break;
+						}
+					}
+					
+					if (ennemy_unit != NULL) {
+						team->unit_attack(unit, ennemy_unit, t);
+						if (ia_verbose) {
+							std::cout << "IA unit " << unit->_id << " target found => WATCHING -> ATTACKING\n";
+						}
+					}
+					else {
+						for (uint compt = 0; compt < IA_MAX_MOVING_TRY; compt++) {
+							// recherche sur un disque troué
+							pt_2d destination = rand_pt_2d(unit->_position, unit->_type->_vision_distance, unit->_type->_vision_distance * 0.75);
+							if (move_unit_check(unit, destination, true)) {
+								_path_finder->goto_gmo(unit, destination);
+								if (ia_verbose) {
+									std::cout << "IA unit " << unit->_id << " no target found => WATCHING -> MOVING\n";
+								}
+								break;
+							}
+						}
+					}
+				}
+				else if (unit->_unit_status == ATTACKING) {
+					if (!team->is_target_reachable(unit, unit->_target)) {
+						pt_2d destination = pt_2d(unit->_target->_position);
+						if (move_unit_check(unit, destination, true)) {
+							_path_finder->goto_gmo(unit, destination);
+							if (ia_verbose) {
+								std::cout << "IA unit " << unit->_id << " target unreachable => ATTACKING -> MOVING\n";
+							}
+						}
+						else {
+							unit->_unit_status = WATCHING;
+							if (ia_verbose) {
+								std::cout << "IA unit " << unit->_id << " target lost => ATTACKING -> WATCHING\n";
+							}
 						}
 					}
 				}
@@ -941,7 +993,8 @@ void Map::anim(time_point t) {
 		if (ammo->_target_hit) {
 			for (auto & team : _teams) {
 				for (auto & unit : team->_units) {
-					if (pt_in_bbox2d(pt_2d(ammo->_target), unit->_bbox->bbox2d())) {
+					//if (pt_in_bbox2d(pt_2d(ammo->_target), unit->_bbox->bbox2d())) {
+					if (glm::length(ammo->_target - unit->_bbox->_aabb->center()) < ammo->_type->_explosion_radius) {
 						unit->hit(ammo, t);
 					}
 				}
@@ -1039,10 +1092,8 @@ void Map::clear() {
 	clear_elements();
 
 	_elevation->set_alti_all(1.0);
-	sync2elevation();
-
 	_path_finder->set_vertex("land");
-	_path_finder->set_edge("flat");
+	sync2elevation();
 }
 
 

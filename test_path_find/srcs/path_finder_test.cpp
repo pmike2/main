@@ -63,7 +63,7 @@ void PathFinderTest::add_gmo(std::string type_name, pt_2d pos, pt_2d size, numbe
 	GridMovingObjectType * type = _pf->get_gmo_type(type_name);
 	uint id = _pf->pt2closest_id(pos);
 	pt_2d center = _pf->id2pt_2d(id);
-	GMOTest * gmo = new GMOTest(type, center - 0.5 * pt_2d(size), pt_2d(size), speed);
+	GMOTest * gmo = new GMOTest(type, center, pt_2d(size), speed);
 	_pf->init_gmo(gmo);
 	_gmos.push_back(gmo);
 }

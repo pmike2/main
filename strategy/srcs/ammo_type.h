@@ -17,6 +17,7 @@ struct AmmoType {
 	number _damage;
 	number _velocity;
 	number _max_distance;
+	number _explosion_radius;
 	ObjData * _obj_data;
 };
 

@@ -6,7 +6,7 @@
 	"shooting_rate" : 0.2,
 	"vision_distance" : 10.0,
 	"vision_angle" : 0.8,
-	"creation_duration" : 1000,
+	"creation_duration" : 5000,
 	"floats" : false,
 	"flies" : false,
 	"ammo" : "bullet",
@@ -21,7 +21,11 @@
 		"lake_coast" : 0.0
 	},
 	"edge_cost" : {
-		"flat" : 0.0
+		"hard_down" : 500.0,
+		"down" : 0.0,
+		"flat" : 100.0,
+		"up" : 500.0,
+		"hard_up" : 1000.0
 	},
 	"obj" : "../data/objs/units/infantery/infantery.obj"
 }

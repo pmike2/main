@@ -66,12 +66,12 @@ const uint N_PTS_PER_BRANCH_SIDE= BRANCH_N_POINTS_PER_CIRCLE * 6;
 const uint N_PTS_PER_BRANCH_BOTTOM = BRANCH_N_POINTS_PER_CIRCLE * 3;
 const uint N_PTS_PER_BRANCH_TOP = BRANCH_N_POINTS_PER_CIRCLE * 3;
 
-const uint N_ACTIVE_INTERVALS = 3;
+//const uint N_ACTIVE_INTERVALS = 3;
 
-const number EPS_UNIT_TYPE_BUFFER_SIZE = 0.1;
+//const number EPS_UNIT_TYPE_BUFFER_SIZE = 0.1;
 
-const number UNIT_DIST_PATH_EPS = 0.5;
-const number MAX_UNIT_MOVING_WEIGHT = 100.0;
+//const number UNIT_DIST_PATH_EPS = 0.5;
+//const number MAX_UNIT_MOVING_WEIGHT = 100.0;
 
 // pas 0.0 pour qu'il n'y ait pas de z-fight avec SEA_LEVEL = 0.0
 const number DEFAULT_ELEVATION = -0.01;
@@ -86,8 +86,10 @@ const number FLY_ALTI = 12.0;
 const number TAKEOFF_SPEED = 0.1;
 const number LANDING_SPEED = 0.05;
 
-const uint IA_MAX_MOVING_TRY = 100;
-const uint IA_MAX_CONSTRUCTION_TRY = 100;
+const uint IA_MAX_MOVING_TRY = 10;
+const uint IA_MAX_CONSTRUCTION_TRY = 10;
+
+const uint N_MAX_UNITS_PER_TEAM = 100;
 
 
 enum PLAY_MODE {SELECT_UNIT, ADD_UNIT, ACTION_UNIT};

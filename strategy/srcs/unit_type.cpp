@@ -60,6 +60,11 @@ UnitType::~UnitType() {
 }
 
 
+pt_2d UnitType::get_max_square_size() {
+	return pt_2d(std::max(_obj_data->_aabb->_vmax.x - _obj_data->_aabb->_vmin.x, _obj_data->_aabb->_vmax.y - _obj_data->_aabb->_vmin.y));
+}
+
+
 /*pt_2d UnitType::get_size() {
 	number size_x = _obj_data->_aabb->_vmax.x - _obj_data->_aabb->_vmin.x;
 	number size_y = _obj_data->_aabb->_vmax.y - _obj_data->_aabb->_vmin.y;
