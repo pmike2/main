@@ -23,10 +23,7 @@ const uint WAIT_N_MS = 3000;
 const uint PATH_FIND_N_MS = 500;
 
 
-enum GMO_STATUS {GMO_IDLE, GMO_MOVING, GMO_WAITING};
-
-//enum GRID_VERTEX_TYPE {GRID_VERTEX_LAND, GRID_VERTEX_WATER, GRID_VERTEX_LAND_OBSTACLE};
-//enum GRID_EDGE_TYPE {GRID_EDGE_FLAT, GRID_EDGE_SOFT_DOWN, GRID_EDGE_SOFT_UP, GRID_EDGE_HARD_DOWN, GRID_EDGE_HARD_UP};
+enum GMO_STATUS {GMO_IDLE, GMO_MOVING, GMO_WAITING/*, GMO_EXPECTING_PATH*/};
 
 
 struct GridMovingObjectType {
@@ -102,9 +99,11 @@ struct PathFinder : public GraphGrid {
 	void add_gmo_grid(GridMovingObject * gmo);
 	void remove_gmo_grid(GridMovingObject * gmo);
 	void update_gmo_grid(GridMovingObject * gmo);
-	void goto_gmo(GridMovingObject * gmo, uint id_vertex);
-	void goto_gmo(GridMovingObject * gmo, pt_2d target);
+	void goto_gmo(GridMovingObject * gmo, uint id_vertex, bool cancel_if_expecting_path);
+	void goto_gmo(GridMovingObject * gmo, pt_2d target, bool cancel_if_expecting_path);
 	void stop_gmo(GridMovingObject * gmo);
+	void remove_gmo(GridMovingObject * gmo);
+	void clear();
 
 	void set_vertex(std::string type);
 	void set_vertex(uint v, std::string type);

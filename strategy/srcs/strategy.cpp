@@ -624,6 +624,12 @@ void Strategy::draw() {
 void Strategy::anim(time_point t) {
 	bool verbose = false;
 	
+	uint n_units = 0;
+	for (auto & team : _map->_teams) {
+		n_units += team->_units.size();
+	}
+	std::cout << "n_units = " << n_units << " ; path_finder n inputs = " << _map->_path_finder->_inputs.size() << "\n";
+	
 	if (verbose) {
 		std::cout << "anim : start\n";
 	}

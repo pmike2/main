@@ -343,19 +343,23 @@ void PathFinder::update_gmo_grid(GridMovingObject * gmo) {
 }
 
 
-void PathFinder::goto_gmo(GridMovingObject * gmo, uint id_vertex) {
+void PathFinder::goto_gmo(GridMovingObject * gmo, uint id_vertex, bool cancel_if_expecting_path) {
 	for(auto it=_inputs.cbegin(); it!=_inputs.cend(); it++) {
 		if ((*it)->_gmo == gmo) {
+			if (cancel_if_expecting_path) {
+				return;
+			}
 			(*it)->_valid = false;
 		}
 	}
 	_inputs.push_back(new PathFinderInput(gmo, id_vertex));
+	//gmo->_gmo_status = GMO_EXPECTING_PATH;
 }
 
 
-void PathFinder::goto_gmo(GridMovingObject * gmo, pt_2d target) {
+void PathFinder::goto_gmo(GridMovingObject * gmo, pt_2d target, bool cancel_if_expecting_path) {
 	uint id_vertex = pt2closest_id(target);
-	goto_gmo(gmo, id_vertex);
+	goto_gmo(gmo, id_vertex, cancel_if_expecting_path);
 }
 
 
@@ -364,6 +368,24 @@ void PathFinder::stop_gmo(GridMovingObject * gmo) {
 	gmo->_path.clear();
 	gmo->_path_cost.clear();
 	gmo->_gmo_status = GMO_IDLE;
+}
+
+
+void PathFinder::remove_gmo(GridMovingObject * gmo) {
+	for (auto it=_inputs.cbegin(); it!=_inputs.cend(); it++) {
+		if ((*it)->_gmo == gmo) {
+			(*it)->_valid = false;
+		}
+	}
+	remove_gmo_grid(gmo);
+}
+
+
+void PathFinder::clear() {
+	for (auto it=_inputs.cbegin(); it!=_inputs.cend(); it++) {
+		delete *it;
+	}
+	_inputs.clear();
 }
 
 
@@ -486,6 +508,10 @@ void PathFinder::parse_input_queue(time_point t) {
 		if (input->_valid) {
 			break;
 		}
+		else {
+			delete input;
+			input = NULL;
+		}
 	}
 
 	if (input == NULL) {
@@ -500,6 +526,8 @@ void PathFinder::parse_input_queue(time_point t) {
 	else {
 		input->_gmo->_gmo_status = GMO_MOVING;
 	}
+	
+	delete input;
 }
 
 
@@ -530,7 +558,7 @@ void PathFinder::anim_gmos(std::vector<GridMovingObject *> & gmos, time_point t)
 							}
 						}
 						else {
-							goto_gmo(gmo, gmo->_path[gmo->_path.size() - 1]);
+							goto_gmo(gmo, gmo->_path[gmo->_path.size() - 1], false);
 							if (verbose) {
 								std::cout << gmo->_id << " contourne " << vertex_data->_gmo->_id << "\n";
 							}
@@ -555,7 +583,7 @@ void PathFinder::anim_gmos(std::vector<GridMovingObject *> & gmos, time_point t)
 						}
 					}
 					else {
-						goto_gmo(gmo, gmo->_path[gmo->_path.size() - 1]);
+						goto_gmo(gmo, gmo->_path[gmo->_path.size() - 1], false);
 						if (verbose) {
 							std::cout << gmo->_id << " recalcule a cause d'un nouvel obstacle\n";
 						}

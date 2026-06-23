@@ -436,7 +436,7 @@ uint Map::get_team_idx(std::string team_name) {
 void Map::selected_units_goto(Team * team, pt_3d pt) {
 	for (auto & unit : team->_units) {
 		if (unit->_selected) {
-			_path_finder->goto_gmo(unit, pt_2d(pt));
+			_path_finder->goto_gmo(unit, pt_2d(pt), false);
 		}
 	}
 }
@@ -446,7 +446,7 @@ void Map::remove_units_in_aabb(AABB_2D * aabb) {
 	std::vector<Unit *> units = get_units_in_aabb(aabb);
 	for (auto & unit : units) {
 		unit->_delete = true;
-		_path_finder->remove_gmo_grid(unit);
+		_path_finder->remove_gmo(unit);
 	}
 	for (auto & team : _teams) {
 		team->clear2delete();
@@ -477,6 +477,7 @@ void Map::remove_elements_in_aabb(AABB_2D * aabb) {
 
 
 void Map::clear_units() {
+	_path_finder->clear();
 	for (auto & team : _teams) {
 		team->clear(true);
 	}
@@ -815,6 +816,7 @@ void Map::anim_unit(Unit * unit, time_point t) {
 	}
 	else if (unit->_unit_status == DESTROYED) {
 		unit->_delete = true;
+		_path_finder->remove_gmo(unit);
 		//remove_unit_from_position_grid(unit);
 	}
 	else if (unit->_unit_status == SHOOTING) {
@@ -931,7 +933,7 @@ void Map::ia(time_point t) {
 							// recherche sur un disque troué
 							pt_2d destination = rand_pt_2d(unit->_position, unit->_type->_vision_distance, unit->_type->_vision_distance * 0.75);
 							if (move_unit_check(unit, destination, true)) {
-								_path_finder->goto_gmo(unit, destination);
+								_path_finder->goto_gmo(unit, destination, true);
 								if (ia_verbose) {
 									std::cout << "IA unit " << unit->_id << " no target found => WATCHING -> MOVING\n";
 								}
@@ -944,7 +946,7 @@ void Map::ia(time_point t) {
 					if (!team->is_target_reachable(unit, unit->_target)) {
 						pt_2d destination = pt_2d(unit->_target->_position);
 						if (move_unit_check(unit, destination, true)) {
-							_path_finder->goto_gmo(unit, destination);
+							_path_finder->goto_gmo(unit, destination, true);
 							if (ia_verbose) {
 								std::cout << "IA unit " << unit->_id << " target unreachable => ATTACKING -> MOVING\n";
 							}
