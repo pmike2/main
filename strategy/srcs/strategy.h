@@ -76,6 +76,7 @@ public:
 	void draw_unit_life();
 	void draw_ammo(AmmoType * ammo_type, ViewSystem * view_system);
 	void draw_construction();
+	void draw_explosion(ViewSystem * view_system);
 	void draw();
 	
 	void anim(time_point t);
@@ -103,6 +104,7 @@ public:
 	void update_selection();
 	void update_fow_texture();
 	void update_construction(time_point t);
+	void update_explosion();
 	void update_all(time_point t);
 	
 	void update_text();
@@ -122,6 +124,7 @@ public:
 	Map * _map;
 	StrategyConfig * _config;
 	OverView * _overview;
+	ExplosionSystem * _explosion_system;
 
 	pt_3d _cursor_world_position;
 	bool _cursor_in_world;

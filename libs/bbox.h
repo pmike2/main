@@ -62,6 +62,7 @@ public:
 	mat_4d _model2world;
 	pt_3d _pts[8]; // sommets du parallelepipede droit
 	AABB * _aabb;
+	pt_3d _normals[6];
 };
 
 

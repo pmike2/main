@@ -86,6 +86,32 @@ pt_3d rand_pt_3d(pt_3d pt_min, pt_3d pt_max) {
 }
 
 
+pt_3d rand_pt_3d(number rho_min, number rho_max, number theta_min, number theta_max, number phi_min, number phi_max) {
+	number rho = rand_number(rho_min, rho_max);
+	if (rho < 0.0) {
+		rho = 0.0;
+	}
+
+	number theta = rand_number(theta_min, theta_max);
+	if (theta < 0.0) {
+		theta = 0.0;
+	}
+	if (theta > M_PI) {
+		theta = M_PI;
+	}
+
+	number phi = rand_number(phi_min, phi_max);
+	if (phi < 0.0) {
+		phi = 0.0;
+	}
+	if (phi > M_PI * 2.0) {
+		phi = M_PI * 2.0;
+	}
+
+	return pt_3d(rho * sin(theta) * cos(phi), rho * sin(theta) * sin(phi), rho * cos(theta));
+}
+
+
 // renvoie un int aléatoire entre x0 et x1 compris
 int rand_int(int x0, int x1) {
 	if (x1> x0)

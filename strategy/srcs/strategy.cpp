@@ -117,6 +117,8 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 
 	_overview = new OverView(_gl_draw_manager);
 
+	_explosion_system = new ExplosionSystem();
+
 	// --------------------------------------------------
 	if (verbose) {
 		std::cout << "set_ihm\n";
@@ -562,6 +564,23 @@ void Strategy::draw_construction() {
 }
 
 
+void Strategy::draw_explosion(ViewSystem * view_system) {
+	GLDrawContext * context= _gl_draw_manager->get_context("explosion");
+	context->activate();
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
+	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(view_system->_eye)));
+	context->set_uniform("size", glm::value_ptr(glm::vec2(_map->_aabb->_size)));
+	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
+	context->set_uniform("z_fow", float(Z_FOW));
+	context->set_uniform("idx_team", float(_config->_selected_team_idx));
+	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->draw();	
+	context->deactivate();
+}
+
+
 void Strategy::draw() {
 	// dessin dans texture overview
 	_overview->start_draw_in_texture();
@@ -595,6 +614,9 @@ void Strategy::draw() {
 	for (auto & ammo_type : _map->_ammo_types) {
 		draw_ammo(ammo_type.second, _view_system);
 	}
+
+	// effets
+	draw_explosion(_view_system);
 	
 	// linéaires
 	for (auto context_name : std::vector<std::string>{"grid", "bbox"}) {
@@ -1824,6 +1846,53 @@ void Strategy::update_construction(time_point t) {
 }
 
 
+void Strategy::update_explosion() {
+	GLDrawContext * context= _gl_draw_manager->get_context("explosion");
+
+	context->_n_pts = 0;
+
+	for (auto & fragment : _explosion_system->_fragments) {
+		if (fragment->_is_alive) {
+			context->_n_pts += 36;
+		}
+	}
+
+	if (context->empty()) {
+		return;
+	}
+
+	float * data = new float[context->data_size()];
+	float * ptr = data;
+
+	for (auto & fragment : _explosion_system->_fragments) {
+		if (!fragment->_is_alive) {
+			continue;
+		}
+
+		std::vector<std::vector<uint> > indices = fragment->_bbox->triangles_idxs();
+		//for (auto & triangle : indices) {
+		for (uint i=0; i<12; ++i) {
+			for (auto & j : indices[i]) {
+				ptr[0] = float(fragment->_bbox->_pts[j].x);
+				ptr[1] = float(fragment->_bbox->_pts[j].y);
+				ptr[2] = float(fragment->_bbox->_pts[j].z);
+				ptr[3] = fragment->_color.r;
+				ptr[4] = fragment->_color.g;
+				ptr[5] = fragment->_color.b;
+				ptr[6] = fragment->_opacity;
+				ptr[7] = float(fragment->_bbox->_normals[i / 2].x);
+				ptr[8] = float(fragment->_bbox->_normals[i / 2].y);
+				ptr[9] = float(fragment->_bbox->_normals[i / 2].z);
+				ptr += 10;
+			}
+		}
+	}
+
+	context->set_data(data);
+	delete[] data;
+}
+
+
 void Strategy::update_all(time_point t) {
 	update_select();
 	update_grid();
@@ -1848,6 +1917,7 @@ void Strategy::update_all(time_point t) {
 	update_selection();
 	update_fow_texture();
 	update_construction(t);
+	update_explosion();
 }
 
 

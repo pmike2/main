@@ -25,6 +25,7 @@
 		"unit_life" : {"shader" : "unit_life", "mode" : "GL_TRIANGLES"},
 		"overview" : {"shader" : "overview", "mode" : "GL_TRIANGLES"},
 		"construction" : {"shader" : "construction", "mode" : "GL_TRIANGLES"},
+		"explosion" : {"shader" : "elevation", "mode" : "GL_TRIANGLES"},
 
 		"bomb" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
 			"buffers" : [

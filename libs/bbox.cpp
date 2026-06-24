@@ -213,17 +213,24 @@ void BBox::set_model2world(const mat_4d & model2world) {
 		}
 	}
 	_aabb->set_vmin_vmax(vmin, vmax);
+
+	_normals[0] = pt_3d(_model2world * pt_4d(0.0, 0.0, -1.0, 1.0)); // bottom
+	_normals[1] = pt_3d(_model2world * pt_4d(0.0, 0.0, 1.0, 1.0)); // top
+	_normals[2] = pt_3d(_model2world * pt_4d(0.0, -1.0, 0.0, 1.0)); // left
+	_normals[3] = pt_3d(_model2world * pt_4d(0.0, 1.0, 0.0, 1.0)); // right
+	_normals[4] = pt_3d(_model2world * pt_4d(-1.0, 0.0, -1.0, 1.0)); // back
+	_normals[5] = pt_3d(_model2world * pt_4d(1.0, 0.0, -1.0, 1.0)); // front
 }
 
 
 std::vector<std::vector<uint> > BBox::triangles_idxs() {
 	std::vector<std::vector<uint> > idx= {
-		{0, 4, 2}, {2, 4, 6}, // x-
-		{1, 3, 7}, {1, 7, 5}, // x+
-		{0, 1, 5}, {0, 5, 4}, // y-
-		{3, 2, 6}, {3, 6, 7}, // y+
-		{0, 2, 3}, {0, 3, 1}, // z-
-		{5, 7, 6}, {5, 6, 4} // z+
+		{0, 2, 3}, {0, 3, 1}, // bottom
+		{5, 7, 6}, {5, 6, 4}, // top
+		{0, 1, 5}, {0, 5, 4}, // left
+		{3, 2, 6}, {3, 6, 7}, // right
+		{0, 4, 2}, {2, 4, 6}, // back
+		{1, 3, 7}, {1, 7, 5} // front
 	};
 	return idx;
 }
@@ -235,8 +242,8 @@ std::vector<pt_3d> BBox::segments() {
 		_pts[4], _pts[5], _pts[5], _pts[7], _pts[7], _pts[6], _pts[6], _pts[4], // top
 		_pts[0], _pts[1], _pts[1], _pts[5], _pts[5], _pts[4], _pts[4], _pts[0], // left
 		_pts[2], _pts[6], _pts[6], _pts[7], _pts[7], _pts[3], _pts[3], _pts[2], // right
-		_pts[1], _pts[3], _pts[3], _pts[7], _pts[7], _pts[5], _pts[5], _pts[1], // front
 		_pts[0], _pts[2], _pts[2], _pts[6], _pts[6], _pts[4], _pts[4], _pts[0], // back
+		_pts[1], _pts[3], _pts[3], _pts[7], _pts[7], _pts[5], _pts[5], _pts[1], // front
 	};
 }
 
