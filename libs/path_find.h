@@ -20,7 +20,7 @@ const number PATH_FIND_OBSTACLE_THRESH = 1000.0;
 const uint N_VERTICES_CHECK = 4;
 
 const uint WAIT_N_MS = 3000;
-const uint PATH_FIND_N_MS = 500;
+const uint PATH_FIND_N_MS = 50;
 
 
 enum GMO_STATUS {GMO_IDLE, GMO_MOVING, GMO_WAITING/*, GMO_EXPECTING_PATH*/};

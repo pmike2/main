@@ -3,26 +3,29 @@
 
 
 std::string unit_status2str(UNIT_STATUS mode) {
-	if (mode == WATCHING) {
-		return "WATCHING";
+	if (mode == UNIT_WATCHING) {
+		return "UNIT_WATCHING";
 	}
-	else if (mode == ATTACKING) {
-		return "ATTACKING";
+	else if (mode == UNIT_ATTACKING) {
+		return "UNIT_ATTACKING";
 	}
-	else if (mode == SHOOTING) {
-		return "SHOOTING";
+	else if (mode == UNIT_SHOOTING) {
+		return "UNIT_SHOOTING";
 	}
-	else if (mode == DESTROYED) {
-		return "DESTROYED";
+	else if (mode == UNIT_DESTROYED) {
+		return "UNIT_DESTROYED";
 	}
-	else if (mode == UNDER_CONSTRUCTION) {
-		return "UNDER_CONSTRUCTION";
+	else if (mode == UNIT_UNDER_CONSTRUCTION) {
+		return "UNIT_UNDER_CONSTRUCTION";
 	}
-	else if (mode == TAKEOFF) {
-		return "TAKEOFF";
+	else if (mode == UNIT_TAKEOFF) {
+		return "UNIT_TAKEOFF";
 	}
-	else if (mode == LANDING) {
-		return "LANDING";
+	else if (mode == UNIT_LANDING) {
+		return "UNIT_LANDING";
+	}
+	else if (mode == UNIT_INACTIVE) {
+		return "UNIT_INACTIVE";
 	}
 	std::cerr << mode << " : mode unit reconnu\n";
 	return "UNKNOWN";
@@ -30,29 +33,32 @@ std::string unit_status2str(UNIT_STATUS mode) {
 
 
 UNIT_STATUS str2unit_status(std::string s) {
-	if (s == "WATCHING") {
-		return WATCHING;
+	if (s == "UNIT_WATCHING") {
+		return UNIT_WATCHING;
 	}
-	else if (s == "ATTACKING") {
-		return ATTACKING;
+	else if (s == "UNIT_ATTACKING") {
+		return UNIT_ATTACKING;
 	}
-	else if (s == "SHOOTING") {
-		return SHOOTING;
+	else if (s == "UNIT_SHOOTING") {
+		return UNIT_SHOOTING;
 	}
-	else if (s == "DESTROYED") {
-		return DESTROYED;
+	else if (s == "UNIT_DESTROYED") {
+		return UNIT_DESTROYED;
 	}
-	else if (s == "UNDER_CONSTRUCTION") {
-		return UNDER_CONSTRUCTION;
+	else if (s == "UNIT_UNDER_CONSTRUCTION") {
+		return UNIT_UNDER_CONSTRUCTION;
 	}
-	else if (s == "TAKEOFF") {
-		return TAKEOFF;
+	else if (s == "UNIT_TAKEOFF") {
+		return UNIT_TAKEOFF;
 	}
-	else if (s == "LANDING") {
-		return LANDING;
+	else if (s == "UNIT_LANDING") {
+		return UNIT_LANDING;
+	}
+	else if (s == "UNIT_INACTIVE") {
+		return UNIT_INACTIVE;
 	}
 	std::cerr << s << " : status d'unité non reconnu\n";
-	return WATCHING;
+	return UNIT_WATCHING;
 }
 
 

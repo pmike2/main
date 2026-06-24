@@ -59,10 +59,12 @@ struct Map {
 	
 	void remove_units_in_aabb(AABB_2D * aabb);
 	void remove_elements_in_aabb(AABB_2D * aabb);
-
 	void clear_units();
-	void clear_elements();
+	//void prune_destroyed_units();
+
 	void pause_all_units(bool pause);
+
+	void clear_elements();
 
 	void update_alti_grid();
 	void update_elevation_grid();

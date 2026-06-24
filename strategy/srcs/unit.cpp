@@ -15,18 +15,15 @@ Unit::Unit() {
 }
 
 
-// pas trop compris pourquoi - 0.5 dans le constructeur de GridMovingObject...
-
 Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_point t) : 
 	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
 	GridMovingObject(
 		type, 
-		//pt_2d(pos - 0.5 * (type->_obj_data->_aabb->_vmax - type->_obj_data->_aabb->_vmin)), 
 		pt_2d(pos),
 		type->get_max_square_size()
 	),
-	_team(team), _type(type), _unit_status(UNDER_CONSTRUCTION), _paused(false), _elevation(elevation),
-	_delete(false), _angle(0.0), _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
+	_team(team), _type(type), _unit_status(UNIT_UNDER_CONSTRUCTION), _paused(false), _elevation(elevation),
+	/*_delete(false),*/ _angle(0.0), _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
 	_creation_t(t)
 {
 
@@ -38,11 +35,31 @@ Unit::~Unit() {
 }
 
 
+void Unit::reinit(pt_3d pos, time_point t) {
+	set_pos(pos);
+	_aabb->set_center(pt_2d(pos));
+	_unit_status = UNIT_UNDER_CONSTRUCTION;
+	_angle = 0.0;
+	_life = _type->_life_init; 
+	_hit_status = NO_HIT;
+	_hit = 0.0;
+	_target = NULL;
+	_hit_ammo = NULL;
+	_creation_t = t;
+	_old_visible_tiles.clear();
+	_visible_tiles.clear();
+}
+
+
 void Unit::anim(time_point t) {
 	//auto d_moving = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_moving_t).count();
 	//_last_moving_t = t;
 
 	if (_paused) {
+		return;
+	}
+
+	if (_unit_status == UNIT_INACTIVE) {
 		return;
 	}
 
@@ -62,18 +79,18 @@ void Unit::anim(time_point t) {
 		_hit += 0.5;
 		if (_hit > 100.0) {
 			//set_status(DESTROYED, t);
-			_unit_status = DESTROYED;
+			_unit_status = UNIT_DESTROYED;
 		}
 		return;
 	}
 	
 	if (_gmo_status == GMO_IDLE) {
-		if (_unit_status == UNDER_CONSTRUCTION) {
+		if (_unit_status == UNIT_UNDER_CONSTRUCTION) {
 			auto d_creation = std::chrono::duration_cast<std::chrono::milliseconds>(t - _creation_t).count();
 			if (d_creation > _type->_creation_duration) {
 				//set_status(WAITING, t);
 				_gmo_status = GMO_IDLE;
-				_unit_status = WATCHING;
+				_unit_status = UNIT_WATCHING;
 			}
 
 		}
@@ -83,7 +100,7 @@ void Unit::anim(time_point t) {
 				_life = _type->_life_init;
 			}
 		}*/
-		else if (_unit_status == WATCHING) {
+		else if (_unit_status == UNIT_WATCHING) {
 			number next_angle = _angle + 0.01;
 			if (next_angle - _angle > M_PI) {
 				next_angle -= 2.0 * M_PI;
@@ -96,7 +113,7 @@ void Unit::anim(time_point t) {
 
 			set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
 		}
-		else if (_unit_status == TAKEOFF) {
+		else if (_unit_status == UNIT_TAKEOFF) {
 			pt_3d next_position = _position + pt_3d(0.0, 0.0, TAKEOFF_SPEED);
 			if (next_position.z > FLY_ALTI) {
 				next_position.z = FLY_ALTI;
@@ -105,7 +122,7 @@ void Unit::anim(time_point t) {
 			}
 			set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
 		}
-		else if (_unit_status == LANDING) {
+		else if (_unit_status == UNIT_LANDING) {
 			pt_3d next_position = _position - pt_3d(0.0, 0.0, LANDING_SPEED);
 			number alti = _elevation->get_alti(pt_2d(_position.x, _position.y));
 			if (next_position.z < alti) {
@@ -115,7 +132,7 @@ void Unit::anim(time_point t) {
 			}
 			set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
 		}
-		else if (_unit_status == ATTACKING) {
+		else if (_unit_status == UNIT_ATTACKING) {
 			if (_target == NULL)  {
 				std::cerr << "Unit " << _id << " ATTACKING mais _target == NULL.\n";
 				return;
@@ -142,7 +159,7 @@ void Unit::anim(time_point t) {
 				_last_shooting_t = t;
 				
 				//set_status(SHOOTING, t);
-				_unit_status = SHOOTING;
+				_unit_status = UNIT_SHOOTING;
 			}
 		}
 	}
@@ -346,12 +363,39 @@ Unit * Team::add_unit(UnitType * type, pt_2d pos, time_point t) {
 	if (type->_floats && pt3d.z < 0.0) {
 		pt3d.z = 0.0;
 	}
-	Unit * unit = new Unit(this, type, pt3d, _elevation, t);
-	//unit->_id = id;
-	_units.push_back(unit);
-	update_fow_unit(unit);
-	return unit;
+
+	Unit * new_unit = NULL;
+	for (auto & unit : _units) {
+		if (unit->_unit_status == UNIT_INACTIVE && unit->_type == type) {
+			new_unit = unit;
+			break;
+		}
+	}
+
+	if (new_unit != NULL) {
+		new_unit->reinit(pt3d, t);
+	}
+	else {
+		new_unit = new Unit(this, type, pt3d, _elevation, t);
+		_units.push_back(new_unit);
+	}
+
+	update_fow_unit(new_unit);
+
+	return new_unit;
 }
+
+
+/*void Team::kill_unit(Unit * unit) {
+	unit->_unit_status = UNIT_DESTROYED;
+
+	for (auto & id_tile : unit->_visible_tiles) {
+		GraphVertex vertex = _fow->get_vertex(id_tile);
+		FowVertexData * data = (FowVertexData *)(vertex._data);
+		data->_changed = true;
+		data->_n_units--;
+	}
+}*/
 
 
 std::vector<Unit *> Team::get_units_in_aabb(AABB_2D * aabb) {
@@ -376,6 +420,20 @@ std::vector<Unit *> Team::get_selected_units() {
 }
 
 
+Unit * Team::get_first_active_unit() {
+	if (empty()) {
+		std::cerr << "Team::get_first_active_unit() : empty\n";
+		return NULL;
+	}
+	for (auto & unit : _units) {
+		if (unit->_unit_status != UNIT_INACTIVE) {
+			return unit;
+		}
+	}
+	return NULL;
+}
+
+
 void Team::remove_unit(Unit * unit) {
 	_units.erase(std::remove_if(_units.begin(), _units.end(), [unit](Unit * u) {
 		return u == unit;
@@ -384,7 +442,7 @@ void Team::remove_unit(Unit * unit) {
 }
 
 
-void Team::clear2delete() {
+/*void Team::clear2delete() {
 	std::vector<Unit * > tmp;
 	for (auto & unit : _units) {
 		if (unit->_delete) {
@@ -406,27 +464,12 @@ void Team::clear2delete() {
 	for (auto & unit : tmp) {
 		delete unit;
 	}
-}
+}*/
 
 
-void Team::clear(bool reinit_fow) {
+void Team::clear() {
 	for (auto & unit : _units) {
-		unit->_delete = true;
-	}
-	clear2delete();
-
-	if (reinit_fow) {
-		_fow->_it_v= _fow->_vertices.begin();
-		while (_fow->_it_v!= _fow->_vertices.end()) {
-			FowVertexData * data = (FowVertexData *)(_fow->_it_v->second._data);
-			data->_n_units = 0;
-			data->_changed = false;
-			_fow->_it_v++;
-		}
-
-		for (uint i=0; i<_fow->_n_ligs * _fow->_n_cols; ++i) {
-			_fow_data[i] = 0.0;
-		}
+		unit->_unit_status = UNIT_DESTROYED;
 	}
 }
 
@@ -438,21 +481,13 @@ void Team::clear_selection() {
 }
 
 
-/*void Team::unit_goto(Unit * unit, pt_3d pt, time_point t) {
-	unit->_instructions.push({pt, t});
-}
-
-
-void Team::selected_units_goto(pt_3d pt, time_point t) {
-	//uint compt = 0;
-	for (auto & unit : _units) {
-		if (unit->_selected) {
-			//unit->_instructions.push({pt, t + std::chrono::milliseconds(500 * compt)});
-			unit_goto(unit, pt, t);
-			//compt++;
-		}
+bool Team::empty() {
+	uint n_units = std::count_if(_units.begin(), _units.end(), [](Unit * unit) { return unit->_unit_status != UNIT_INACTIVE; });
+	if (n_units == 0) {
+		return true;
 	}
-}*/
+	return false;
+}
 
 
 bool Team::is_target_reachable(Unit * unit, Unit * target) {
@@ -473,7 +508,7 @@ void Team::unit_attack(Unit * unit, Unit * target, time_point t) {
 	if (is_target_reachable(unit, target)) {
 		unit->_target = target;
 		//unit->set_status(ATTACKING, t);
-		unit->_unit_status = ATTACKING;
+		unit->_unit_status = UNIT_ATTACKING;
 	}
 }
 
@@ -545,7 +580,7 @@ void Team::update_fow_unit(Unit * unit) {
 
 void Team::update_fow() {
 	for (auto & unit : _units) {
-		if (unit->_gmo_status == GMO_MOVING || unit->_unit_status == WATCHING) {
+		if (unit->_gmo_status == GMO_MOVING || unit->_unit_status == UNIT_WATCHING) {
 			update_fow_unit(unit);
 		}
 	}
@@ -570,6 +605,21 @@ void Team::update_fow() {
 }
 
 
+void Team::clear_fow() {
+	_fow->_it_v= _fow->_vertices.begin();
+	while (_fow->_it_v!= _fow->_vertices.end()) {
+		FowVertexData * data = (FowVertexData *)(_fow->_it_v->second._data);
+		data->_n_units = 0;
+		data->_changed = false;
+		_fow->_it_v++;
+	}
+
+	for (uint i=0; i<_fow->_n_ligs * _fow->_n_cols; ++i) {
+		_fow_data[i] = 0.0;
+	}
+}
+
+
 json Team::get_json() {
 	json result;
 	result["name"] = _name;
@@ -587,7 +637,7 @@ json Team::get_json() {
 
 Unit * Team::get_unit_under_construction(UnitType * unit_type) {
 	for (auto & unit : _units) {
-		if (unit->_type == unit_type && unit->_unit_status == UNDER_CONSTRUCTION) {
+		if (unit->_type == unit_type && unit->_unit_status == UNIT_UNDER_CONSTRUCTION) {
 			return unit;
 		}
 	}

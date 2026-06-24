@@ -311,3 +311,8 @@ void InstancePosRot::set_pos_rot_scale(const mat_4d & mat) {
 /*void InstancePosRot::update_dist2(pt_3d view_eye) {
 	_dist2= (_position.x- view_eye.x)* (_position.x- view_eye.x)+ (_position.y- view_eye.y)* (_position.y- view_eye.y)+ (_position.z- view_eye.z)* (_position.z- view_eye.z);
 }*/
+
+
+void InstancePosRot::set_pos(const pt_3d & position) {
+	set_pos_rot_scale(position, _rotation, _scale);
+}

@@ -114,6 +114,7 @@ public:
 	~GLDrawContext();
 	void set_data(float * data, uint idx_buffer = 0);
 	void clear_data(uint idx_buffer = 0);
+	bool empty(uint idx_buffer = 0);
 	void activate();
 	void deactivate();
 	void draw();

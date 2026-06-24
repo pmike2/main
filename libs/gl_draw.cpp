@@ -635,6 +635,18 @@ void GLDrawContext::clear_data(uint idx_buffer) {
 }
 
 
+bool GLDrawContext::empty(uint idx_buffer) {
+	GLDrawContextBuffer * buffer = _buffers[idx_buffer];
+	if (buffer->_is_instanced && _n_instances == 0) {
+		return true;
+	}
+	else if (_n_pts == 0) {
+		return true;
+	}
+	return false;
+}
+
+
 void GLDrawContext::activate() {
 	if (!_active) {
 		return;
@@ -678,7 +690,7 @@ void GLDrawContext::deactivate() {
 
 
 void GLDrawContext::draw() {
-	if (!_active) {
+	if (!_active || empty()) {
 		return;
 	}
 

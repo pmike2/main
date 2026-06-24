@@ -75,7 +75,7 @@ public:
 	void set_pos_rot_scale(const pt_3d & position, const quat & rotation, const pt_3d & scale);
 	// lent, mieux vaut utiliser l'autre
 	void set_pos_rot_scale(const mat_4d & mat);
-	//void update_dist2(pt_3d view_eye);
+	void set_pos(const pt_3d & position);
 
 
 	pt_3d _position;

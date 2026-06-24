@@ -32,7 +32,7 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	_unit_types_dir(unit_types_dir), _ammo_types_dir(ammo_types_dir), _elements_dir(elements_dir), 
 	_path_resolution(path_resolution), _elevation_resolution(elevation_resolution), _fow_resolution(fow_resolution)
 {
-	bool verbose = true;
+	bool verbose = false;
 
 	_aabb = new AABB_2D(origin, size);
 
@@ -202,7 +202,6 @@ bool Map::attack_unit_check(Unit * attacking_unit, Unit * attacked_unit, bool fo
 
 Unit * Map::add_unit(Team * team, std::string type, pt_2d pos, time_point t) {
 	Unit * unit = team->add_unit(_unit_types[type], pos, t);
-	//add_unit_to_position_grid(unit);
 	_path_finder->init_gmo(unit);
 
 	return unit;
@@ -211,7 +210,7 @@ Unit * Map::add_unit(Team * team, std::string type, pt_2d pos, time_point t) {
 
 void Map::add_first_units2teams(time_point t) {
 	for (auto & team : _teams) {
-		if (!team->_units.empty()) {
+		if (!team->empty()) {
 			continue;
 		}
 
@@ -445,11 +444,7 @@ void Map::selected_units_goto(Team * team, pt_3d pt) {
 void Map::remove_units_in_aabb(AABB_2D * aabb) {
 	std::vector<Unit *> units = get_units_in_aabb(aabb);
 	for (auto & unit : units) {
-		unit->_delete = true;
-		_path_finder->remove_gmo(unit);
-	}
-	for (auto & team : _teams) {
-		team->clear2delete();
+		unit->_unit_status = UNIT_DESTROYED;
 	}
 }
 
@@ -479,7 +474,16 @@ void Map::remove_elements_in_aabb(AABB_2D * aabb) {
 void Map::clear_units() {
 	_path_finder->clear();
 	for (auto & team : _teams) {
-		team->clear(true);
+		team->clear();
+	}
+}
+
+
+void Map::pause_all_units(bool pause) {
+	for (auto & team : _teams) {
+		for (auto & unit : team->_units) {
+			unit->_paused = pause;
+		}
 	}
 }
 
@@ -500,15 +504,6 @@ void Map::clear_elements() {
 			}
 		}
 		_path_finder->_it_v++;
-	}
-}
-
-
-void Map::pause_all_units(bool pause) {
-	for (auto & team : _teams) {
-		for (auto & unit : team->_units) {
-			unit->_paused = pause;
-		}
 	}
 }
 
@@ -793,6 +788,26 @@ void Map::path_find_use_result(time_point t) {
 void Map::anim_unit(Unit * unit, time_point t) {
 	bool verbose = false;
 
+	if (unit->_unit_status == UNIT_INACTIVE) {
+		return;
+	}
+	
+	if (unit->_unit_status == UNIT_DESTROYED) {
+		unit->_unit_status = UNIT_INACTIVE;
+		unit->_gmo_status = GMO_IDLE;
+		unit->_selected = false;
+
+		for (auto & id_tile : unit->_visible_tiles) {
+			GraphVertex vertex = unit->_team->_fow->get_vertex(id_tile);
+			FowVertexData * data = (FowVertexData *)(vertex._data);
+			data->_changed = true;
+			data->_n_units--;
+		}
+
+		_path_finder->remove_gmo(unit);
+		return;
+	}
+
 	if (unit->_gmo_status == GMO_MOVING) {
 		/*if (unit->last_checkpoint_checked()) {
 			//remove_unit_from_position_grid(unit);
@@ -808,46 +823,17 @@ void Map::anim_unit(Unit * unit, time_point t) {
 			advance_unit_in_position_grid(unit);
 		}*/
 	}
-	else if (unit->_unit_status == ATTACKING) {
-		if (unit->_target->_unit_status == DESTROYED || unit->_target->_hit_status == FINAL_HIT) {
-			//unit->set_status(WAITING, t);
-			unit->_unit_status = WATCHING;
+	else if (unit->_unit_status == UNIT_ATTACKING) {
+		if (unit->_target->_unit_status == UNIT_DESTROYED || unit->_target->_hit_status == FINAL_HIT) {
+			unit->_unit_status = UNIT_WATCHING;
 		}
 	}
-	else if (unit->_unit_status == DESTROYED) {
-		unit->_delete = true;
-		_path_finder->remove_gmo(unit);
-		//remove_unit_from_position_grid(unit);
-	}
-	else if (unit->_unit_status == SHOOTING) {
+	else if (unit->_unit_status == UNIT_SHOOTING) {
 		_ammos.push_back(new Ammo(unit->_type->_ammo_type, unit->_position, unit->_target->_position));
-		//unit->set_status(ATTACKING, t);
-		unit->_unit_status = ATTACKING;
+		unit->_unit_status = UNIT_ATTACKING;
 	}
 
 	unit->anim(t);
-
-	/*if (!unit->_instructions.empty()) {
-		Instruction i = unit->_instructions.front();
-		if (i._t <= t) {
-			unit->set_status(COMPUTING_PATH, t);
-			unit->_instructions.pop();
-			// TODO : ou doit se faire la destruction de pfi ?
-			PathFinderInput * pfi = new PathFinderInput();
-			pfi->_unit_type = unit->_type;
-			pfi->_unit_id = unit->_id;
-			pfi->_start = unit->_position;
-			pfi->_goal = i._destination;
-			_path_queue_thr_input.push(pfi);
-
-			if (verbose) {
-				std::cout << "Map::anim_unit : COMPUTING_PATH unit id " << unit->_id << "\n";
-			}
-		}
-	}
-
-	// TODO : à desactiver quand les problèmes de path seront réglés
-	save_teams("../data/maps/last_map/teams.json");*/
 }
 
 
@@ -874,14 +860,14 @@ void Map::ia(time_point t) {
 		}
 
 		for (auto & unit : team->_units) {
-			if (unit->_unit_status == UNDER_CONSTRUCTION) {
+			if (unit->_unit_status == UNIT_INACTIVE || unit->_unit_status == UNIT_UNDER_CONSTRUCTION) {
 				continue;
 			}
 
 			if (unit->_gmo_status == GMO_MOVING) {
 				if (unit->_hit_status != NO_HIT) {
 					_path_finder->stop_gmo(unit);
-					unit->_unit_status = WATCHING;
+					unit->_unit_status = UNIT_WATCHING;
 					if (ia_verbose) {
 						std::cout << "IA unit " << unit->_id << " attacked => MOVING -> WATCHING\n";
 					}
@@ -913,7 +899,7 @@ void Map::ia(time_point t) {
 						}
 					}
 				}*/
-				if (unit->_unit_status == WATCHING) {
+				if (unit->_unit_status == UNIT_WATCHING) {
 					Unit * ennemy_unit = NULL;
 					for (auto & ennemy_team : _teams) {
 						ennemy_unit = team->search_target(unit, ennemy_team);
@@ -942,7 +928,7 @@ void Map::ia(time_point t) {
 						}
 					}
 				}
-				else if (unit->_unit_status == ATTACKING) {
+				else if (unit->_unit_status == UNIT_ATTACKING) {
 					if (!team->is_target_reachable(unit, unit->_target)) {
 						pt_2d destination = pt_2d(unit->_target->_position);
 						if (move_unit_check(unit, destination, true)) {
@@ -952,7 +938,7 @@ void Map::ia(time_point t) {
 							}
 						}
 						else {
-							unit->_unit_status = WATCHING;
+							unit->_unit_status = UNIT_WATCHING;
 							if (ia_verbose) {
 								std::cout << "IA unit " << unit->_id << " target lost => ATTACKING -> WATCHING\n";
 							}
@@ -966,9 +952,12 @@ void Map::ia(time_point t) {
 
 
 void Map::anim(time_point t) {
+	bool verbose = false;
 
-	//path_find_use_result(t);
-
+	// path find -------------------------------------------------
+	if (verbose) {
+		std::cout << "Map anim : path_finder\n";
+	}
 	std::vector<GridMovingObject *> base_gmos;
 	for (auto & team : _teams) {
 		for (auto & unit : team->_units) {
@@ -977,19 +966,26 @@ void Map::anim(time_point t) {
 	}
 	_path_finder->anim_gmos(base_gmos, t);
 
+	// IA ------------------------------------------------------------
+	if (verbose) {
+		std::cout << "Map anim : IA\n";
+	}
 	ia(t);
 
 	// anim par unité -------------------------------------------------
+	if (verbose) {
+		std::cout << "Map anim : path_finder\n";
+	}
 	for (auto & team : _teams) {
 		for (auto & unit : team->_units) {
 			anim_unit(unit, t);
 		}
 	}
 
-	// collisions entre unités --------------------------------------
-	//collisions(t);
-
 	// ammo ---------------------------------------------------------
+	if (verbose) {
+		std::cout << "Map anim : ammo\n";
+	}
 	for (auto & ammo : _ammos) {
 		ammo->anim();
 		if (ammo->_target_hit) {
@@ -1008,9 +1004,11 @@ void Map::anim(time_point t) {
 		return w->_target_hit;
 	}), _ammos.end());
 
-	// maj des teams --------------------------------------------------
+	// maj FOW ---------------------------------------------------------
+	if (verbose) {
+		std::cout << "Map anim : maj FOW\n";
+	}
 	for (auto & team : _teams) {
-		team->clear2delete();
 		team->update_fow();
 	}
 }
@@ -1092,9 +1090,8 @@ void Map::anim(time_point t) {
 void Map::clear() {
 	clear_units();
 	clear_elements();
-
-	_elevation->set_alti_all(1.0);
 	_path_finder->set_vertex("land");
+	_elevation->set_alti_all(1.0);
 	sync2elevation();
 }
 
@@ -1103,7 +1100,7 @@ void Map::clear() {
 void Map::randomize(ElevationRandConfig * rand_config) {
 	clear_units();
 	clear_elements();
-	
+	_path_finder->set_vertex("land");
 	_elevation->randomize(rand_config);
 	sync2elevation();
 
