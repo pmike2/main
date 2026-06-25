@@ -1,0 +1,19 @@
+{
+	"n_min_fragments_per_explosion" : 1,
+	"n_max_fragments_per_explosion" : 1,
+	"opacity_init_min" : 0.5,
+	"opacity_init_max" : 0.5,
+	"opacity_decrement" : 0.01,
+	"opacity_threshold" : 0.01,
+	"bbox_size_init" : 0.2,
+	"impulse_rho_min" : 0.3,
+	"impulse_rho_max" : 0.3,
+	"impulse_theta_min" : 0.0,
+	"impulse_theta_max" : 1.0,
+	"angle_inc_min" : 0.01,
+	"angle_inc_max" : 0.1,
+	"scale_inc_min" : 1.03,
+	"scale_inc_max" : 1.03,
+	"gravity_factor" : 0.01,
+	"drag_factor" : 0.1
+}

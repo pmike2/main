@@ -86,7 +86,7 @@ pt_3d rand_pt_3d(pt_3d pt_min, pt_3d pt_max) {
 }
 
 
-pt_3d rand_pt_3d(number rho_min, number rho_max, number theta_min, number theta_max, number phi_min, number phi_max) {
+pt_3d rand_pt_3d_spherical(number rho_min, number rho_max, number theta_min, number theta_max, number phi_min, number phi_max) {
 	number rho = rand_number(rho_min, rho_max);
 	if (rho < 0.0) {
 		rho = 0.0;

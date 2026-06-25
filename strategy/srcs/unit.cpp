@@ -77,7 +77,7 @@ void Unit::anim(time_point t) {
 	}
 	else if (_hit_status == FINAL_HIT) {
 		_hit += 0.5;
-		if (_hit > 100.0) {
+		if (_hit > 10.0) {
 			//set_status(DESTROYED, t);
 			_unit_status = UNIT_DESTROYED;
 		}

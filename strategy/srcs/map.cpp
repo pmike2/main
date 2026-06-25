@@ -28,7 +28,7 @@ Map::Map() {
 }
 
 
-Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t) :
+Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, std::string explosion_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t) :
 	_unit_types_dir(unit_types_dir), _ammo_types_dir(ammo_types_dir), _elements_dir(elements_dir), 
 	_path_resolution(path_resolution), _elevation_resolution(elevation_resolution), _fow_resolution(fow_resolution)
 {
@@ -54,7 +54,7 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 
 	// ------------------------------------------------
 	if (verbose) {
-		std::cout << "init UnitTypes / AmmoTypes\n";
+		std::cout << "init UnitTypes / AmmoTypes / Explosion\n";
 	}
 	std::vector<std::string> unit_type_json_paths = list_files(_unit_types_dir, "json");
 	for (auto & json_path : unit_type_json_paths) {
@@ -71,6 +71,11 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 
 	for (auto & unit_type : _unit_types) {
 		unit_type.second->_ammo_type = _ammo_types[unit_type.second->_ammo_type_str];
+	}
+
+	_explosion_system = new ExplosionSystem(explosion_dir);
+	for (auto & ammo_type : _ammo_types) {
+		ammo_type.second->_explosion_config = _explosion_system->_configs[ammo_type.second->_explosion_config_str];
 	}
 
 	// ------------------------------------------------
@@ -113,6 +118,8 @@ Map::~Map() {
 	delete _elevation;
 
 	delete _aabb;
+
+	delete _explosion_system;
 }
 
 
@@ -221,7 +228,9 @@ void Map::add_first_units2teams(time_point t) {
 				std::cerr << "Map::add_first_units2teams : impossible de trouver un endroit\n";
 				break;
 			}
-			pt_2d position = rand_pt_2d(_aabb->_pos, _aabb->_pos + _aabb->_size);
+
+			// buffer pour ne pas être sur les bords
+			pt_2d position = rand_pt_2d(_aabb->_pos + 0.1 * _aabb->_size, _aabb->_pos + 0.9 * _aabb->_size);
 			if (add_unit_check(team, "infantery", position, false, false)) {
 				add_unit(team, "infantery", position, t);
 				break;
@@ -238,43 +247,6 @@ void Map::add_river(pt_2d pos) {
 	}
 
 	_path_finder->set_vertex(river->_polygon, "river");
-
-	/*for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-
-		std::vector<uint> id_nodes_buffered;
-
-		AABB_2D * aabb = river->_polygon->_aabb->buffered(unit_type->buffer_size());
-		std::vector<uint> id_nodes_buffered_aabb = _elevation->vertices_in_aabb(aabb);
-		delete aabb;
-		for (auto & id : id_nodes_buffered_aabb) {
-			if (distance_poly_pt(river->_polygon, _elevation->id2pt_2d(id), NULL) < unit_type->buffer_size()) {
-				id_nodes_buffered.push_back(id);
-			}
-		}
-		Polygon2D * polygon_buffered = _elevation->ids2polygon(id_nodes_buffered);
-		if (polygon_buffered == NULL) {
-			std::cerr << "Map::add_river polygon_buffered NULL\n";
-			continue;
-		}
-
-		std::vector<uint_pair> edges = _path_finder->edges_intersecting_polygon(polygon_buffered);
-		for (auto & edge : edges) {
-			uint n_vertices_in_polygon = 0;
-			if (is_pt_inside_poly(pt_2d(_path_finder->_vertices[edge.first]._pos), polygon_buffered)) {
-				n_vertices_in_polygon++;
-			}
-			if (is_pt_inside_poly(pt_2d(_path_finder->_vertices[edge.second]._pos), polygon_buffered)) {
-				n_vertices_in_polygon++;
-			}
-			
-			if (n_vertices_in_polygon > 0) {
-				_path_finder->set_terrain_type(edge.first, edge.second, unit_type, TERRAIN_RIVER);
-			}
-		}
-
-		delete polygon_buffered;
-	}*/
 }
 
 
@@ -285,102 +257,52 @@ void Map::add_lake(pt_2d pos) {
 	}
 
 	_path_finder->set_vertex(lake->_polygon, "lake");
+}
 
-	/*for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
 
-		std::vector<uint> id_nodes_buffered;
+void Map::add_tree(std::string species_name, pt_2d pos) {
+	if (!_elevation->in_boundaries(pos)) {
+		return;
+	}
+	
+	Tree * tree = _elements->add_tree(species_name, pos);
+	if (tree == NULL) {
+		return;
+	}
 
-		if (unit_type->_terrain_weights[TERRAIN_LAKE] > MAX_UNIT_MOVING_WEIGHT) {
-			AABB_2D * aabb = lake->_polygon->_aabb->buffered(unit_type->buffer_size());
-			std::vector<uint> id_nodes_buffered_aabb = _elevation->vertices_in_aabb(aabb);
-			delete aabb;
-			for (auto & id : id_nodes_buffered_aabb) {
-				if (distance_poly_pt(lake->_polygon, _elevation->id2pt_2d(id), NULL) < unit_type->buffer_size()) {
-					id_nodes_buffered.push_back(id);
-				}
-			}
-		}
-		else {
-			AABB_2D * aabb = lake->_polygon->_aabb->buffered(-1.0 * unit_type->buffer_size());
-			if (aabb->_size.x < 0.0 || aabb->_size.y < 0.0) {
-				delete aabb;
-				continue;
-			}
-
-			std::vector<uint> id_nodes_buffered_aabb = _elevation->vertices_in_aabb(aabb);
-			delete aabb;
-			for (auto & id : id_nodes_buffered_aabb) {
-				//if (distance_poly_pt(polygon, _elevation->id2pt_2d(id), NULL) < 0.01) {
-				// PAS GENIAL ...
-				if (is_pt_inside_poly(_elevation->id2pt_2d(id), lake->_polygon)) {
-					id_nodes_buffered.push_back(id);
-				}
-			}
-		}
-
-		Polygon2D * polygon_buffered = _elevation->ids2polygon(id_nodes_buffered);
-		if (polygon_buffered == NULL) {
-			std::cerr << "Map::add_lake polygon_buffered NULL\n";
-			continue;
-		}
-
-		std::vector<uint_pair> edges = _path_finder->edges_intersecting_polygon(polygon_buffered);
-		for (auto & edge : edges) {
-			uint n_vertices_in_polygon = 0;
-			if (is_pt_inside_poly(pt_2d(_path_finder->_vertices[edge.first]._pos), polygon_buffered)) {
-				n_vertices_in_polygon++;
-			}
-			if (is_pt_inside_poly(pt_2d(_path_finder->_vertices[edge.second]._pos), polygon_buffered)) {
-				n_vertices_in_polygon++;
-			}
-			
-			if (n_vertices_in_polygon == 2) {
-				_path_finder->set_terrain_type(edge.first, edge.second, unit_type, TERRAIN_LAKE);
-			}
-			else if (n_vertices_in_polygon == 1) {
-				_path_finder->set_terrain_type(edge.first, edge.second, unit_type, TERRAIN_LAKE_COAST);
-			}
-		}
-
-		delete polygon_buffered;
-	}*/
+	AABB_2D * aabb = tree->_bbox->_aabb->aabb2d();
+	_path_finder->set_vertex(aabb, "tree");
+	delete aabb;
 }
 
 
 void Map::add_trees(std::string species_name, pt_2d pos, uint n_trees, number dispersion) {
 	for (uint j=0; j<n_trees; ++j) {
 		pt_2d pos_tree = rand_gaussian(pos, pt_2d(dispersion));
-		if (!_elevation->in_boundaries(pos_tree)) {
-			continue;
-		}
-		
-		Tree * tree = _elements->add_tree(species_name, pos_tree);
-		if (tree == NULL) {
-			continue;
-		}
-
-		AABB_2D * aabb = tree->_bbox->_aabb->aabb2d();
-		_path_finder->set_vertex(aabb, "tree");
-		delete aabb;
+		add_tree(species_name, pos_tree);
 	}
+}
+
+
+void Map::add_stone(std::string species_name, pt_2d pos) {
+	if (!_elevation->in_boundaries(pos)) {
+		return;
+	}
+	Stone * stone = _elements->add_stone(species_name, pos);
+	if (stone == NULL) {
+		return;
+	}
+
+	AABB_2D * aabb = stone->_bbox->_aabb->aabb2d();
+	_path_finder->set_vertex(aabb, "stone");
+	delete aabb;
 }
 
 
 void Map::add_stones(std::string species_name, pt_2d pos, uint n_stones, number dispersion) {
 	for (uint j=0; j<n_stones; ++j) {
 		pt_2d pos_stone = rand_gaussian(pos, pt_2d(dispersion));
-		if (!_elevation->in_boundaries(pos_stone)) {
-			continue;
-		}
-		Stone * stone = _elements->add_stone(species_name, pos_stone);
-		if (stone == NULL) {
-			continue;
-		}
-
-		AABB_2D * aabb = stone->_bbox->_aabb->aabb2d();
-		_path_finder->set_vertex(aabb, "stone");
-		delete aabb;
+		add_stone(species_name, pos_stone);
 	}
 }
 
@@ -597,194 +519,6 @@ void Map::sync2elevation() {
 }
 
 
-/*void Map::add_element_to_terrain_grid(Element * element) {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-		AABB_2D * aabb_buffered = element->_bbox->_aabb->aabb2d()->buffered(unit_type->buffer_size());
-
-		std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb_buffered);
-		for (auto & e : edges) {
-			_path_finder->set_terrain_type(e.first, e.second, unit_type, TERRAIN_OBSTACLE);
-		}
-	}
-}
-
-
-void Map::remove_element_from_terrain_grid(Element * element) {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-		AABB_2D * aabb_buffered = element->_bbox->_aabb->aabb2d()->buffered(unit_type->buffer_size());
-
-		std::vector<uint_pair> edges = _path_finder->edges_intersecting_aabb(aabb_buffered);
-		for (auto & e : edges) {
-			_path_finder->set_terrain_type(e.first, e.second, unit_type, TERRAIN_GROUND);
-		}
-	}
-}*/
-
-
-/*std::vector<uint_pair> Map::waiting_unit_positions_edges(Unit * unit, UnitType * unit_type) {
-	BBox_2D * bbox = unit->_bbox->bbox2d();
-	BBox_2D * bbox_buffered = bbox->buffered(unit_type->buffer_size());
-	std::vector<uint_pair> edges = _path_finder->edges_intersecting_bbox(bbox_buffered);
-	delete bbox;
-	delete bbox_buffered;
-
-	return edges;
-}
-
-
-void Map::fill_unit_path_edges(Unit * unit) {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-		std::vector<PathInterval *> intervals = unit->_path->get_intervals();
-		
-		for (auto & interval : intervals) {
-			BBox_2D * buffered_bbox = interval->_bbox->buffered(unit_type->buffer_size());
-			std::vector<uint_pair> path_edges = _path_finder->edges_intersecting_bbox(buffered_bbox);
-			interval->_edges[unit_type].insert(interval->_edges[unit_type].end(), path_edges.begin(), path_edges.end());
-			delete buffered_bbox;
-		}
-	}
-}
-
-
-void Map::add_unit_to_position_grid(Unit * unit) {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-		if (unit->_path->empty()) {
-			for (auto & e : waiting_unit_positions_edges(unit, unit_type)) {
-				_path_finder->insert_id(e.first, e.second, unit_type, unit->_id);
-			}
-		}
-		else {
-			for (auto & interval : unit->_path->get_intervals()) {
-				if (!interval->_active) {
-					continue;
-				}
-				for (auto e : interval->_edges[unit_type]) {
-					_path_finder->insert_id(e.first, e.second, unit_type, unit->_id);
-				}
-			}
-		}
-	}
-}
-
-
-void Map::remove_unit_from_position_grid(Unit * unit) {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-		if (unit->_path->empty()) {
-			for (auto & e : waiting_unit_positions_edges(unit, unit_type)) {
-				_path_finder->erase_id(e.first, e.second, unit_type, unit->_id);
-			}
-		}
-		else {
-			for (auto & interval : unit->_path->get_intervals()) {
-				if (!interval->_active) {
-					continue;
-				}
-				for (auto e : interval->_edges[unit_type]) {
-					_path_finder->erase_id(e.first, e.second, unit_type, unit->_id);
-				}
-			}
-		}
-	}
-}
-
-
-void Map::advance_unit_in_position_grid(Unit * unit) {
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-
-		for (auto e : unit->_path->get_current_interval()->_edges[unit_type]) {
-			_path_finder->erase_id(e.first, e.second, unit_type, unit->_id);
-		}
-	}
-	
-	unit->_path->next_checkpoint();
-	
-	for (auto & ut : _unit_types) {
-		UnitType * unit_type = ut.second;
-	
-		for (auto e : unit->_path->get_last_active_interval()->_edges[unit_type]) {
-			_path_finder->insert_id(e.first, e.second, unit_type, unit->_id);
-		}
-	}
-}
-*/
-
-/*void Map::path_find_search() {
-	bool verbose = false;
-
-	PathFinderInput * pfi;
-
-	while (_path_find_thr_running) {
-		_path_find_mtx.lock();
-		if (_path_finder_computing) {
-			_path_find_mtx.unlock();
-			continue;
-		}
-		_path_find_mtx.unlock();
-
-		if (_path_queue_thr_input.next(pfi)) {
-			if (verbose) {
-				std::cout << "Map::path_find_search : new pfi unit id = " << pfi->_unit_id << "\n";
-			}
-
-			_path_find_mtx.lock();
-			_path_finder_computing = true;
-			_path_find_mtx.unlock();
-
-			_path_finder->path_find(pfi, &_path_queue_thr_output);
-		}
-	}
-}
-
-
-void Map::path_find_use_result(time_point t) {
-	const bool verbose = false;
-
-	UnitPath * unit_path;
-	// TODO : ou doit se faire la destruction de unit_path ?
-
-	if (_path_queue_thr_output.next(unit_path)) {
-		if (unit_path->_status == UNIT_PATH_COMPUTING_SUCCESS) {
-			if (verbose) {
-				std::cout << "Map::path_find_use_result : UNIT_PATH_COMPUTING_SUCCESS unit id = " << unit_path->_unit_id << "\n";
-			}
-			Unit * unit = get_unit(unit_path->_unit_id);
-			if (unit != NULL) {
-				remove_unit_from_position_grid(unit);
-				unit->_path->copy_path(unit_path);
-				fill_unit_path_edges(unit);
-				add_unit_to_position_grid(unit);
-				unit->update_alti_path();
-				if (unit->_type->_flies) {
-					unit->set_status(TAKEOFF, t);
-				}
-				else {
-					unit->set_status(MOVING, t);
-				}
-			}
-		}
-		else if (unit_path->_status == UNIT_PATH_COMPUTING_FAILED) {
-			if (verbose) {
-				std::cout << "Map::path_find_use_result : UNIT_PATH_COMPUTING_FAILED unit id = " << unit_path->_unit_id << "\n";
-			}
-			Unit * unit = get_unit(unit_path->_unit_id);
-			if (unit != NULL) {
-				unit->set_status(WAITING, t);
-			}
-		}
-
-		_path_find_mtx.lock();
-		_path_finder_computing = false;
-		_path_find_mtx.unlock();
-	}
-}*/
-
-
 void Map::anim_unit(Unit * unit, time_point t) {
 	bool verbose = false;
 
@@ -982,13 +716,14 @@ void Map::anim(time_point t) {
 		}
 	}
 
-	// ammo ---------------------------------------------------------
+	// ammo / explosion -----------------------------------------------
 	if (verbose) {
 		std::cout << "Map anim : ammo\n";
 	}
 	for (auto & ammo : _ammos) {
 		ammo->anim();
 		if (ammo->_target_hit) {
+			_explosion_system->new_explosion(ammo->_target, t, ammo->_type->_explosion_config);
 			for (auto & team : _teams) {
 				for (auto & unit : team->_units) {
 					//if (pt_in_bbox2d(pt_2d(ammo->_target), unit->_bbox->bbox2d())) {
@@ -1003,6 +738,8 @@ void Map::anim(time_point t) {
 	_ammos.erase(std::remove_if(_ammos.begin(), _ammos.end(), [](Ammo * w) {
 		return w->_target_hit;
 	}), _ammos.end());
+
+	_explosion_system->anim(t);
 
 	// maj FOW ---------------------------------------------------------
 	if (verbose) {
@@ -1150,7 +887,6 @@ void Map::save_fixed(std::string dir_map) {
 	std::filesystem::path map_path = dir_map;
 	std::filesystem::path general_json_path = map_path / "general.json";
 	std::filesystem::path elements_json_path = map_path / "elements.json";
-	std::filesystem::path path_finder_json_path = map_path / "path_finder.json";
 	std::filesystem::path elevation_path = map_path / "elevation.raw";
 
 	if (!std::filesystem::is_directory(map_path)) {
@@ -1208,11 +944,11 @@ void Map::load(std::string dir_map, time_point t) {
 	std::filesystem::path general_json_path = map_path / "general.json";
 	std::filesystem::path elements_json_path = map_path / "elements.json";
 	std::filesystem::path teams_json_path = map_path / "teams.json";
-	std::filesystem::path path_finder_json_path = map_path / "path_finder.json";
 	std::filesystem::path elevation_path = map_path / "elevation.raw";
 
 	clear_units();
 	clear_elements();
+	_path_finder->set_vertex("land");
 
 	_elevation->read(elevation_path.string());
 	sync2elevation();
@@ -1220,27 +956,24 @@ void Map::load(std::string dir_map, time_point t) {
 	std::ifstream elements_ifs(elements_json_path);
 	json elements_js = json::parse(elements_ifs);
 	elements_ifs.close();
-	/*for (auto & element_js : elements_js["elements"]) {
-		ELEMENT_TYPE type = str2element_type(element_js["type"]);
+	for (auto & element_js : elements_js["elements"]) {
+		std::string type = element_js["type"];
 		pt_2d position = pt_2d(element_js["position"][0], element_js["position"][1]);
-		if (type == ELEMENT_STONE) {
+		if (type == "stone") {
 			std::string species_name = element_js["species"];
-			_elements->add_stone(species_name, position);
+			add_stone(species_name, position);
 		}
-		else if (type == ELEMENT_TREE) {
+		else if (type == "tree") {
 			std::string species_name = element_js["species"];
-			_elements->add_tree(species_name, position);
+			add_tree(species_name, position);
 		}
-		else if (type == ELEMENT_LAKE) {
-			_elements->add_lake(position);
+		else if (type == "lake") {
+			add_lake(position);
 		}
-		else if (type == ELEMENT_RIVER) {
-			_elements->add_river(position);
+		else if (type == "river") {
+			add_river(position);
 		}
 	}
-	for (auto & element : _elements->_elements) {
-		add_element_to_terrain_grid(element);
-	}*/
 
 	_teams.clear();
 	std::ifstream teams_ifs(teams_json_path);
@@ -1251,40 +984,8 @@ void Map::load(std::string dir_map, time_point t) {
 		glm::vec3 team_color = glm::vec3(team_js["color"][0], team_js["color"][1], team_js["color"][2]);
 		Team * team = new Team(team_name, team_color, _elevation, _fow_resolution);
 		for (auto & unit_js : team_js["units"]) {
-			Unit * unit = team->add_unit(_unit_types[unit_js["type"]], pt_2d(unit_js["position"][0], unit_js["position"][1]), t);
-			//add_unit_to_position_grid(unit);
-			//unit->set_status(str2unit_status(unit_js["status"]), t);
-			unit->_life = unit_js["life"];
-
-			/*UnitPath * unit_path = new UnitPath();
-
-			json path_js = unit_js["path"];
-			unit_path->_start = pt_3d(path_js["start"][0], path_js["start"][1], path_js["start"][2]);
-			unit_path->_goal = pt_3d(path_js["goal"][0], path_js["goal"][1], path_js["goal"][2]);
-			unit_path->_idx_path = path_js["idx_path"];
-			unit_path->_use_line_of_sight = path_js["use_line_of_sight"];
-			for (auto & node : path_js["nodes"]) {
-				unit_path->_nodes.push_back(node);
-			}
-			for (auto & pt_js : path_js["pts"]) {
-				unit_path->_pts.push_back(pt_3d(pt_js[0], pt_js[1], pt_js[2]));
-			}
-			for (auto & pt_los_js : path_js["pts_los"]) {
-				unit_path->_pts_los.push_back(pt_3d(pt_los_js[0], pt_los_js[1], pt_los_js[2]));
-			}
-			for (auto & interval_js : path_js["intervals"]) {
-				PathInterval * interval = new PathInterval(interval_js["weight"]);
-				interval->_bbox->set(pt_2d(interval_js["bbox"]["center"][0], interval_js["bbox"]["center"][1]), pt_2d(interval_js["bbox"]["half_size"][0], interval_js["bbox"]["half_size"][1]), interval_js["bbox"]["alpha"]);
-				unit_path->_intervals.push_back(interval);
-			}
-			for (auto & interval_los_js : path_js["intervals_los"]) {
-				PathInterval * interval = new PathInterval(interval_los_js["weight"]);
-				interval->_bbox->set(pt_2d(interval_los_js["bbox"]["center"][0], interval_los_js["bbox"]["center"][1]), pt_2d(interval_los_js["bbox"]["half_size"][0], interval_los_js["bbox"]["half_size"][1]), interval_los_js["bbox"]["alpha"]);
-				unit_path->_intervals_los.push_back(interval);
-			}
-
-			unit->_path->copy_path(unit_path);
-			delete unit_path;*/
+			Unit * unit = add_unit(team, unit_js["type"], pt_2d(unit_js["position"][0], unit_js["position"][1]), t);
+			//unit->_life = unit_js["life"];
 		}
 		_teams.push_back(team);
 	}

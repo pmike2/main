@@ -20,6 +20,7 @@ AmmoType::AmmoType(std::string json_path) {
 	_velocity = js["velocity"];
 	_max_distance = js["max_distance"];
 	_explosion_radius = js["explosion_radius"];
+	_explosion_config_str = js["explosion_config_name"];
 	
 	_obj_data = new ObjData(js["obj"]);
 	_obj_data->_use_ambient = false;

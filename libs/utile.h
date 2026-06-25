@@ -34,7 +34,7 @@ pt_2d rand_pt_2d(pt_2d circle_center, number radius_max, number radius_min = 0.0
 
 pt_3d rand_pt_3d(number xmin, number xmax, number ymin, number ymax, number zmin, number zmax);
 pt_3d rand_pt_3d(pt_3d pt_min, pt_3d pt_max);
-pt_3d rand_pt_3d(number rho_min, number rho_max, number theta_min, number theta_max, number phi_min, number phi_max);
+pt_3d rand_pt_3d_spherical(number rho_min, number rho_max, number theta_min, number theta_max, number phi_min, number phi_max);
 
 // renvoie un int aléatoire entre x0 et x1 compris
 int rand_int(int x0, int x1);

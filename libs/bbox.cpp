@@ -135,6 +135,16 @@ std::ostream & operator << (std::ostream & os, const AABB & aabb) {
 
 
 // ------------------------------------------------------------------------------------------------------
+std::vector<std::vector<uint> > const BBox::triangles_idxs = {
+	{0, 2, 3}, {0, 3, 1}, // bottom
+	{5, 7, 6}, {5, 6, 4}, // top
+	{0, 1, 5}, {0, 5, 4}, // left
+	{3, 2, 6}, {3, 6, 7}, // right
+	{0, 4, 2}, {2, 4, 6}, // back
+	{1, 3, 7}, {1, 7, 5} // front
+};
+
+
 BBox::BBox() : _vmin(pt_3d(0.0)), _vmax(pt_3d(0.0)), _radius(0.0) {
 	_aabb= new AABB();
 }
@@ -159,22 +169,16 @@ BBox::~BBox() {
 }
 
 
-void BBox::update_radius() {
-	_radius= abs(_vmin.x);
-	if (abs(_vmax.x)> _radius) _radius= abs(_vmax.x);
-	if (abs(_vmin.y)> _radius) _radius= abs(_vmin.y);
-	if (abs(_vmax.y)> _radius) _radius= abs(_vmax.y);
-	if (abs(_vmin.z)> _radius) _radius= abs(_vmin.z);
-	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);
+void BBox::set_aabb(const pt_3d & vmin, const pt_3d & vmax) {
+	_vmin = vmin;
+	_vmax = vmax;
+	set_model2world(mat_4d(1.0));
+	update_radius();
 }
 
 
 void BBox::set_aabb(AABB * aabb) {
-	_vmin = aabb->_vmin;
-	_vmax = aabb->_vmax;
-	_model2world = mat_4d(1.0);
-	update_radius();
-	set_model2world(_model2world);
+	set_aabb(aabb->_vmin, aabb->_vmax);
 }
 
 
@@ -213,17 +217,19 @@ void BBox::set_model2world(const mat_4d & model2world) {
 		}
 	}
 	_aabb->set_vmin_vmax(vmin, vmax);
-
-	_normals[0] = pt_3d(_model2world * pt_4d(0.0, 0.0, -1.0, 1.0)); // bottom
-	_normals[1] = pt_3d(_model2world * pt_4d(0.0, 0.0, 1.0, 1.0)); // top
-	_normals[2] = pt_3d(_model2world * pt_4d(0.0, -1.0, 0.0, 1.0)); // left
-	_normals[3] = pt_3d(_model2world * pt_4d(0.0, 1.0, 0.0, 1.0)); // right
-	_normals[4] = pt_3d(_model2world * pt_4d(-1.0, 0.0, -1.0, 1.0)); // back
-	_normals[5] = pt_3d(_model2world * pt_4d(1.0, 0.0, -1.0, 1.0)); // front
 }
 
 
-std::vector<std::vector<uint> > BBox::triangles_idxs() {
+void BBox::update_radius() {
+	_radius= abs(_vmin.x);
+	if (abs(_vmax.x)> _radius) _radius= abs(_vmax.x);
+	if (abs(_vmin.y)> _radius) _radius= abs(_vmin.y);
+	if (abs(_vmax.y)> _radius) _radius= abs(_vmax.y);
+	if (abs(_vmin.z)> _radius) _radius= abs(_vmin.z);
+	if (abs(_vmax.z)> _radius) _radius= abs(_vmax.z);
+}
+
+/*std::vector<std::vector<uint> > BBox::triangles_idxs() {
 	std::vector<std::vector<uint> > idx= {
 		{0, 2, 3}, {0, 3, 1}, // bottom
 		{5, 7, 6}, {5, 6, 4}, // top
@@ -233,7 +239,7 @@ std::vector<std::vector<uint> > BBox::triangles_idxs() {
 		{1, 3, 7}, {1, 7, 5} // front
 	};
 	return idx;
-}
+}*/
 
 
 std::vector<pt_3d> BBox::segments() {
@@ -245,6 +251,21 @@ std::vector<pt_3d> BBox::segments() {
 		_pts[0], _pts[2], _pts[2], _pts[6], _pts[6], _pts[4], _pts[4], _pts[0], // back
 		_pts[1], _pts[3], _pts[3], _pts[7], _pts[7], _pts[5], _pts[5], _pts[1], // front
 	};
+}
+
+
+std::vector<pt_3d> BBox::normals() {
+	std::vector<pt_3d> result;
+
+	for (uint i=0; i<6; ++i) {
+		pt_3d u = _pts[triangles_idxs[2 * i][1]] - _pts[triangles_idxs[2 * i][0]];
+		pt_3d v = _pts[triangles_idxs[2 * i][2]] - _pts[triangles_idxs[2 * i][0]];
+		result.push_back(glm::cross(u, v));
+	}
+
+	// la normalisation se fera dans le shader avec normalize()
+	//std::transform(result.cbegin(), result.cend(), result.begin(), [](pt_3d v){ return v / glm::length(v);});*/
+	return result;
 }
 
 
@@ -266,7 +287,7 @@ std::ostream & operator << (std::ostream & os, const BBox & bbox) {
 
 // ---------------------------------------------------------------------------------------------------------------------
 InstancePosRot::InstancePosRot() :
-	_position(pt_3d(0.0)), _rotation(quat(1.0, 0.0, 0.0, 0.0)), _scale(pt_3d(1.0)), _model2world(mat_4d(1.0)),
+	_position(pt_3d(0.0)), _rotation(glm::identity<quat>()), _scale(pt_3d(1.0)), _model2world(mat_4d(1.0)),
 	_selected(false)
 {
 	_bbox= new BBox();
@@ -284,7 +305,7 @@ InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, co
 InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, const pt_3d & scale, AABB * aabb) : 
 	_position(position), _rotation(rotation), _scale(scale), _selected(false)
 {
-	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
+	_model2world= glm::translate(_position) * mat4_cast(_rotation) * glm::scale(_scale);
 	_bbox= new BBox(aabb->_vmin, aabb->_vmax, _model2world);
 }
 
@@ -295,24 +316,22 @@ InstancePosRot::~InstancePosRot() {
 
 
 void InstancePosRot::set_pos_rot_scale(const pt_3d & position, const quat & rotation, const pt_3d & scale) {
-	_position= position;
-	_rotation= rotation;
-	_scale= scale;
-	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
+	_position = position;
+	_rotation = rotation;
+	_scale = scale;
+	_model2world = glm::translate(_position) * mat4_cast(_rotation) * glm::scale(_scale);
 	_bbox->set_model2world(_model2world);
-	//_emprise->_pos= pt_2d(_bbox->_aabb->_vmin);
-	//_emprise->_size= pt_2d(_bbox->_aabb->_vmax- _bbox->_aabb->_vmin);
 }
 
 
 // lent, mieux vaut utiliser l'autre
-void InstancePosRot::set_pos_rot_scale(const mat_4d & mat) {
+/*void InstancePosRot::set_pos_rot_scale(const mat_4d & mat) {
 	pt_3d skew;
 	pt_4d perspective;
 	glm::decompose(mat, _scale, _rotation, _position, skew, perspective);
 	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox->set_model2world(_model2world);
-}
+}*/
 
 
 /*void InstancePosRot::update_dist2(pt_3d view_eye) {

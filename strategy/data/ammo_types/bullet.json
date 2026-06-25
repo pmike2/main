@@ -4,5 +4,6 @@
 	"velocity" : 0.8,
 	"max_distance" : 20.0,
 	"explosion_radius" : 3.0,
-	"obj" : "../data/objs/ammos/bullet/bullet.obj"
+	"obj" : "../data/objs/ammos/bullet/bullet.obj",
+	"explosion_config_name" : "small_explosion"
 }

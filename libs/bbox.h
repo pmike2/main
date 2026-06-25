@@ -48,11 +48,13 @@ public:
 	BBox(const pt_3d & vmin, const pt_3d & vmax, const mat_4d & model2world = mat_4d(1.0));
 	BBox(AABB * aabb);
 	~BBox();
-	void update_radius();
+	void set_aabb(const pt_3d & vmin, const pt_3d & vmax);
 	void set_aabb(AABB * aabb);
 	void set_model2world(const mat_4d & model2world);
-	static std::vector<std::vector<uint> > triangles_idxs();
+	void update_radius();
+	//static std::vector<std::vector<uint> > triangles_idxs();
 	std::vector<pt_3d> segments();
+	std::vector<pt_3d> normals();
 	BBox_2D * bbox2d();
 	friend std::ostream & operator << (std::ostream & os, const BBox & bbox);
 
@@ -62,7 +64,8 @@ public:
 	mat_4d _model2world;
 	pt_3d _pts[8]; // sommets du parallelepipede droit
 	AABB * _aabb;
-	pt_3d _normals[6];
+
+	static std::vector<std::vector<uint> > const triangles_idxs;
 };
 
 
@@ -75,7 +78,7 @@ public:
 	~InstancePosRot();
 	void set_pos_rot_scale(const pt_3d & position, const quat & rotation, const pt_3d & scale);
 	// lent, mieux vaut utiliser l'autre
-	void set_pos_rot_scale(const mat_4d & mat);
+	//void set_pos_rot_scale(const mat_4d & mat);
 	void set_pos(const pt_3d & position);
 
 

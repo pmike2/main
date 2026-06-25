@@ -6,6 +6,8 @@
 #include "typedefs.h"
 #include "obj_parser.h"
 
+#include "explosion.h"
+
 
 struct AmmoType {
 	AmmoType();
@@ -19,6 +21,9 @@ struct AmmoType {
 	number _max_distance;
 	number _explosion_radius;
 	ObjData * _obj_data;
+
+	std::string _explosion_config_str;
+	ExplosionConfig * _explosion_config;
 };
 
 

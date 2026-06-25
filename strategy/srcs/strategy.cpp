@@ -83,16 +83,16 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	if (verbose) {
 		std::cout << "creating map\n";
 	}
-	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION, t);
+	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", "../data/explosions", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION, t);
 
 	if (verbose) {
 		std::cout << "loading map\n";
 	}
 	
-	_map->randomize(_config->_current_rand_config);
+	//_map->randomize(_config->_current_rand_config);
 	//_map->clear();
-	_map->add_first_units2teams(t);
-	//_map->load("../data/maps/last_map", t);
+	//_map->add_first_units2teams(t);
+	_map->load("../data/maps/map1", t);
 
 	zoom2first_unit_of_selected_team();
 
@@ -116,8 +116,6 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	//std::cout << *_gl_draw_manager << "\n";
 
 	_overview = new OverView(_gl_draw_manager);
-
-	_explosion_system = new ExplosionSystem();
 
 	// --------------------------------------------------
 	if (verbose) {
@@ -578,6 +576,10 @@ void Strategy::draw_explosion(ViewSystem * view_system) {
 	context->set_uniform("fow_active", float(_config->_fow_active));
 	context->draw();	
 	context->deactivate();
+
+	/*if (!context->empty()) {
+		context->show_data();
+	}*/
 }
 
 
@@ -701,6 +703,7 @@ void Strategy::anim(time_point t) {
 	update_selection();
 	update_fow_texture();
 	update_construction(t);
+	update_explosion();
 
 	for (auto & unit_type : _map->_unit_types) {
 		update_unit_matrices(unit_type.second);
@@ -1608,7 +1611,7 @@ void Strategy::update_unit_life() {
 	float * ptr = data;
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
-			if (unit->_unit_status == UNIT_DESTROYED || unit->_hit_status == FINAL_HIT && unit->_unit_status != UNIT_INACTIVE) {
+			if (unit->_unit_status == UNIT_DESTROYED || unit->_hit_status == FINAL_HIT || unit->_unit_status == UNIT_INACTIVE) {
 				continue;
 			}
 
@@ -1850,9 +1853,8 @@ void Strategy::update_explosion() {
 	GLDrawContext * context= _gl_draw_manager->get_context("explosion");
 
 	context->_n_pts = 0;
-
-	for (auto & fragment : _explosion_system->_fragments) {
-		if (fragment->_is_alive) {
+	for (uint i=0; i<N_MAX_FRAGMENTS; ++i) {
+		if (_map->_explosion_system->_fragments[i]->_is_alive) {
 			context->_n_pts += 36;
 		}
 	}
@@ -1864,15 +1866,16 @@ void Strategy::update_explosion() {
 	float * data = new float[context->data_size()];
 	float * ptr = data;
 
-	for (auto & fragment : _explosion_system->_fragments) {
+	for (uint i=0; i<N_MAX_FRAGMENTS; ++i) {
+		ExplosionFragment * fragment = _map->_explosion_system->_fragments[i];
 		if (!fragment->_is_alive) {
 			continue;
 		}
 
-		std::vector<std::vector<uint> > indices = fragment->_bbox->triangles_idxs();
-		//for (auto & triangle : indices) {
+		std::vector<pt_3d> norms = fragment->_bbox->normals();
+
 		for (uint i=0; i<12; ++i) {
-			for (auto & j : indices[i]) {
+			for (auto & j : BBox::triangles_idxs[i]) {
 				ptr[0] = float(fragment->_bbox->_pts[j].x);
 				ptr[1] = float(fragment->_bbox->_pts[j].y);
 				ptr[2] = float(fragment->_bbox->_pts[j].z);
@@ -1880,9 +1883,9 @@ void Strategy::update_explosion() {
 				ptr[4] = fragment->_color.g;
 				ptr[5] = fragment->_color.b;
 				ptr[6] = fragment->_opacity;
-				ptr[7] = float(fragment->_bbox->_normals[i / 2].x);
-				ptr[8] = float(fragment->_bbox->_normals[i / 2].y);
-				ptr[9] = float(fragment->_bbox->_normals[i / 2].z);
+				ptr[7] = float(norms[i / 2].x);
+				ptr[8] = float(norms[i / 2].y);
+				ptr[9] = float(norms[i / 2].z);
 				ptr += 10;
 			}
 		}
@@ -1890,6 +1893,8 @@ void Strategy::update_explosion() {
 
 	context->set_data(data);
 	delete[] data;
+
+	//context->show_data();
 }
 
 
@@ -2235,7 +2240,8 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 	}
 
 	if (key == SDLK_SPACE) {
-		std::cout << _map->_path_finder->_inputs.size() << "\n";
+		//std::cout << _map->_path_finder->_inputs.size() << "\n";
+		_map->_explosion_system->_configs["explosion1"]->DEBUG("../data/explosions/explosion1.json");
 		return true;
 	}
 	return false;

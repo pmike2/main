@@ -124,7 +124,6 @@ public:
 	Map * _map;
 	StrategyConfig * _config;
 	OverView * _overview;
-	ExplosionSystem * _explosion_system;
 
 	pt_3d _cursor_world_position;
 	bool _cursor_in_world;

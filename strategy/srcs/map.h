@@ -26,6 +26,7 @@
 #include "elevation.h"
 #include "ammo.h"
 #include "ammo_type.h"
+#include "explosion.h"
 #include "elements/elements.h"
 #include "elements/lake.h"
 #include "elements/river.h"
@@ -35,7 +36,10 @@
 
 struct Map {
 	Map();
-	Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t);
+	Map(
+		std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, std::string explosion_dir, 
+		pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t
+	);
 	~Map();
 	
 	bool fow_check(Team * team, pt_2d pos);
@@ -48,7 +52,9 @@ struct Map {
 	void add_first_units2teams(time_point t);
 	void add_river(pt_2d pos);
 	void add_lake(pt_2d pos);
+	void add_tree(std::string species_name, pt_2d pos);
 	void add_trees(std::string species_name, pt_2d pos, uint n_trees, number dispersion);
+	void add_stone(std::string species_name, pt_2d pos);
 	void add_stones(std::string species_name, pt_2d pos, uint n_stones, number dispersion);
 
 	Unit * get_unit(uint unit_id);
@@ -60,7 +66,6 @@ struct Map {
 	void remove_units_in_aabb(AABB_2D * aabb);
 	void remove_elements_in_aabb(AABB_2D * aabb);
 	void clear_units();
-	//void prune_destroyed_units();
 
 	void pause_all_units(bool pause);
 
@@ -71,17 +76,6 @@ struct Map {
 	void update_terrain_grid_with_elevation();
 	void sync2elevation();
 
-	//void add_element_to_terrain_grid(Element * element);
-	//void remove_element_from_terrain_grid(Element * element);
-	
-	/*std::vector<uint_pair> waiting_unit_positions_edges(Unit * unit, UnitType * unit_type);
-	void fill_unit_path_edges(Unit * unit);
-	void add_unit_to_position_grid(Unit * unit);
-	void remove_unit_from_position_grid(Unit * unit);
-	void advance_unit_in_position_grid(Unit * unit);*/
-
-	/*void path_find_search();
-	void path_find_use_result(time_point t);*/
 	void anim_unit(Unit * unit, time_point t);
 	void ia(time_point t);
 	void anim(time_point t);
@@ -108,6 +102,7 @@ struct Map {
 	Elements * _elements;
 	std::vector<Team *> _teams;
 	std::vector<Ammo *> _ammos;
+	ExplosionSystem * _explosion_system;
 };
 
 
