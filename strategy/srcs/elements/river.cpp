@@ -6,17 +6,14 @@ River::River() {
 }
 
 
-River::River(Elevation * elevation, pt_2d src) : Element(elevation, src), _valid(true) {
-	_type = "river";
-	
+River::River(Elevation * elevation, pt_2d src) : Element(elevation, src, "river") {
 	if (!_elevation->in_boundaries(src)) {
-		std::cerr << "River impossible src hors grille\n";
 		_valid = false;
 		return;
 	}
 
 	if (_elevation->get_alti(src) < 0.1) {
-		std::cerr << "River impossible src alti < eps\n";
+		//std::cerr << "River impossible src alti < eps\n";
 		_valid = false;
 		return;
 	}
@@ -24,7 +21,7 @@ River::River(Elevation * elevation, pt_2d src) : Element(elevation, src), _valid
 	uint id_src = _elevation->pt2id(src);
 	std::vector<uint> lowest_gradient_id_nodes = _elevation->lowest_gradient(id_src);
 	
-	_id_nodes = _elevation->buffered_ids(lowest_gradient_id_nodes, 2);
+	_id_nodes = _elevation->buffered_ids(lowest_gradient_id_nodes, 1);
 
 	_triangles = _elevation->ids2triangles(_id_nodes);
 
@@ -38,14 +35,15 @@ River::River(Elevation * elevation, pt_2d src) : Element(elevation, src), _valid
 	AABB * aabb = new AABB(pt_3d(_polygon->_aabb->_pos.x, _polygon->_aabb->_pos.y, lp.z),
 		pt_3d(_polygon->_aabb->_pos.x + _polygon->_aabb->_size.x, _polygon->_aabb->_pos.y + _polygon->_aabb->_size.y, hp.z));
 	_bbox->set_aabb(aabb);
-	delete aabb;
 
-	/*number EPS = 0.5;
+	number EPS = 1.5;
 	for (auto & id : _id_nodes) {
 		_elevation->set_alti(id, _elevation->get_alti(id) - EPS);
 		_elevation->update_normal(id);
 	}
-	_elevation->update_data(_polygon->_aabb);*/
+	_elevation->update_data(aabb->aabb2d()->buffered(1.0));
+
+	delete aabb;
 
 	_n_pts = 3 * _triangles.size();
 	uint n_attrs_per_pts = 12;
@@ -63,9 +61,9 @@ River::~River() {
 void River::update_data() {
 	const glm::vec4 RIVER_COLOR(0.6, 0.8, 0.9, 0.6);
 	float * ptr = _data;
+
 	for (auto & triangle : _triangles) {
 		std::vector<uint> ids = {std::get<0>(triangle), std::get<1>(triangle), std::get<2>(triangle)};
-		
 		for (uint i=0; i<3; ++i) {
 			pt_2d pt = _elevation->id2pt_2d(ids[i]);
 			pt_3d normal = _elevation->get_normal(ids[i]);

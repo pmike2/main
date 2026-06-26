@@ -1,0 +1,6 @@
+Génération des .obj dans Blender :
+- générer un material par composant du modèle, de type Diffuse BSDF
+- Modifier Viewport Display
+- Choisir la couleur noire si l'on veut que ce composant prenne la couleur de l'équipe
+- Orienter vers x positif puis lors de l'export : choisir Forward Axis = Y, Up Axis = Z
+- cocher Triangulated Mesh

@@ -45,8 +45,12 @@ Stone::Stone() {
 }
 
 
-Stone::Stone(StoneSpecies * species, Elevation * elevation, pt_2d position) : Element(elevation, position), _species(species) {
-	_type = "stone";
+Stone::Stone(StoneSpecies * species, Elevation * elevation, pt_2d position) : Element(elevation, position, "stone"), _species(species) {
+	if (!_elevation->in_boundaries(position)) {
+		_valid = false;
+		return;
+	}
+
 	_hull = new ConvexHull();
 	
 	pt_3d vmin;
@@ -60,8 +64,14 @@ Stone::Stone(StoneSpecies * species, Elevation * elevation, pt_2d position) : El
 	vmax.z = vmin.z + rand_number(_species->_size_min.z, _species->_size_max.z);
 
 	AABB * aabb = new AABB(vmin, vmax);
+	if (!_elevation->in_boundaries(aabb->aabb2d())) {
+		_valid = false;
+		return;
+	}
 	_bbox->set_aabb(aabb);
+	_id_nodes = _elevation->vertices_in_aabb(aabb->aabb2d());
 	delete aabb;
+
 
 	_hull->randomize(STONE_N_POINTS_HULL, vmin, vmax);
 	_hull->compute();

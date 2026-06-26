@@ -23,7 +23,7 @@ Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_
 		type->get_max_square_size()
 	),
 	_team(team), _type(type), _unit_status(UNIT_UNDER_CONSTRUCTION), _paused(false), _elevation(elevation),
-	/*_delete(false),*/ _angle(0.0), _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
+	_angle(0.0), _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
 	_creation_t(t)
 {
 
@@ -31,7 +31,7 @@ Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_
 
 
 Unit::~Unit() {
-	//delete _path;
+	
 }
 
 
@@ -78,17 +78,23 @@ void Unit::anim(time_point t) {
 	else if (_hit_status == FINAL_HIT) {
 		_hit += 0.5;
 		if (_hit > 10.0) {
-			//set_status(DESTROYED, t);
 			_unit_status = UNIT_DESTROYED;
 		}
 		return;
 	}
 	
 	if (_gmo_status == GMO_IDLE) {
+
+		if (_type->_flies) {
+			number elevation_z = _elevation->get_alti(_position);
+			if (_position.z > elevation_z + LANDING_SPEED) {
+				set_pos(_position - pt_3d(0.0, 0.0, LANDING_SPEED));
+			}
+		}
+
 		if (_unit_status == UNIT_UNDER_CONSTRUCTION) {
 			auto d_creation = std::chrono::duration_cast<std::chrono::milliseconds>(t - _creation_t).count();
 			if (d_creation > _type->_creation_duration) {
-				//set_status(WAITING, t);
 				_gmo_status = GMO_IDLE;
 				_unit_status = UNIT_WATCHING;
 			}
@@ -113,25 +119,6 @@ void Unit::anim(time_point t) {
 
 			set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
 		}
-		else if (_unit_status == UNIT_TAKEOFF) {
-			pt_3d next_position = _position + pt_3d(0.0, 0.0, TAKEOFF_SPEED);
-			if (next_position.z > FLY_ALTI) {
-				next_position.z = FLY_ALTI;
-				//set_status(MOVING, t);
-				_gmo_status = GMO_MOVING;
-			}
-			set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
-		}
-		else if (_unit_status == UNIT_LANDING) {
-			pt_3d next_position = _position - pt_3d(0.0, 0.0, LANDING_SPEED);
-			number alti = _elevation->get_alti(pt_2d(_position.x, _position.y));
-			if (next_position.z < alti) {
-				next_position.z = alti;
-				//set_status(WAITING, t);
-				_gmo_status = GMO_IDLE;
-			}
-			set_pos_rot_scale(next_position, _rotation, pt_3d(1.0));
-		}
 		else if (_unit_status == UNIT_ATTACKING) {
 			if (_target == NULL)  {
 				std::cerr << "Unit " << _id << " ATTACKING mais _target == NULL.\n";
@@ -153,48 +140,44 @@ void Unit::anim(time_point t) {
 			set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
 
 			auto d_shooting = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_shooting_t).count();
-			//std::cout << number(d_shooting) << " ; " << _type->_shooting_rate * 1000.0 << "\n";
 			if (number(d_shooting) > _type->_shooting_rate * 1000.0) {
-				//std::cout << "Unit " << _id << " attacks Unit " << _target->_id << "\n";
 				_last_shooting_t = t;
-				
-				//set_status(SHOOTING, t);
 				_unit_status = UNIT_SHOOTING;
 			}
 		}
 	}
 	else if (_gmo_status == GMO_MOVING) {
-
 		set_speed(_type->_max_velocity * (1.0 - _path_cost[_idx_path] / PATH_FIND_OBSTACLE_THRESH));
 
 		pt_3d next_position;
 		next_position.x = _aabb->center().x;
 		next_position.y = _aabb->center().y;
-		next_position.z = _elevation->get_alti(next_position);
+		next_position.z = _position.z;
+
+		number elevation_z = _elevation->get_alti(next_position);
+		
+		if (_type->_flies) {
+			if (_idx_path < _path.size() / 2) {
+				next_position.z += TAKEOFF_SPEED;
+				if (next_position.z > FLY_ALTI) {
+					next_position.z = FLY_ALTI;
+				}
+			}
+			else {
+				next_position.z -= LANDING_SPEED;
+				if (next_position.z < elevation_z) {
+					next_position.z = elevation_z;
+				}
+			}
+		}
+		else {
+			next_position.z = elevation_z;
+		}
+		
 		if (_type->_floats && next_position.z < 0.0) {
 			next_position.z = 0.0;
 		}
 
-		if (_type->_flies) {
-			next_position.z = FLY_ALTI;
-		}
-		
-		/*number velocity_amp = _type->_max_velocity * (1.0 - _path->get_current_interval()->_weight / MAX_UNIT_MOVING_WEIGHT);
-		velocity_amp *= number(d_moving) * 0.0625; // 60fps -> 1 frame == 1000 / 60 ~= 16 ms et 1 / 16 == 0.0625
-		pt_2d direction = glm::normalize(pt_2d(_path->get_current_pt()) - pt_2d(_position));
-		_velocity = velocity_amp * pt_3d(direction.x, direction.y, 0.0);
-
-		pt_3d next_position = _position + _velocity;
-		next_position.z = _elevation->get_alti(next_position);
-		
-		if (_type->_floats && next_position.z < 0.0) {
-			next_position.z = 0.0;
-		}
-
-		if (_type->_flies) {
-			next_position.z = FLY_ALTI;
-		}*/
-		
 		//number next_angle = atan2(_velocity.y, _velocity.x);
 		number next_angle = atan2(_direction.y, _direction.x);
 		// pour ne pas faire des 3/4 de tour quand les 2 angles sont de part et d'autre de l'axe x
@@ -211,22 +194,6 @@ void Unit::anim(time_point t) {
 		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
 	}
 }
-
-
-/*void Unit::set_status(UNIT_STATUS status, time_point t) {
-	_status = status;
-	
-	if (_status == MOVING) {
-		if (_path->empty()) {
-			std::cerr << "Unit::set_status MOVING : path empty\n";
-			set_status(WAITING, t);
-		}
-		_last_moving_t = t;
-	}
-	else if (_status == ATTACKING) {
-		_last_shooting_t = t;
-	}
-}*/
 
 
 void Unit::set_hit_status(UNIT_HIT_STATUS hit_status, time_point t) {
@@ -252,43 +219,11 @@ void Unit::hit(Ammo * ammo, time_point t) {
 	_life -= ammo->_damage;
 	if (_life <= 0.0) {
 		_life = 0.0;
-		//std::cout << "Unit " << _id << " destroyed\n";
 		set_hit_status(FINAL_HIT, t);
 	}
 	else {
 		set_hit_status(HIT_ASCEND, t);
 	}
-}
-
-
-void Unit::update_alti_path() {
-	/*_path->_start.z = _elevation->get_alti(pt_2d(_path->_start.x, _path->_start.y));
-	_path->_goal.z = _elevation->get_alti(pt_2d(_path->_goal.x, _path->_goal.y));
-
-	for (auto & pt : _path->_pts) {
-		if (_type->_floats) {
-			pt.z = 0.0;
-		}
-		else if (_type->_flies) {
-			pt.z = FLY_ALTI;
-		}
-		else {
-			pt.z = _elevation->get_alti(pt_2d(pt.x, pt.y));
-		}
-	}
-	for (auto & pt : _path->_pts_los) {
-		if (_type->_floats) {
-			pt.z = 0.0;
-		}
-		else if (_type->_flies) {
-			pt.z = FLY_ALTI;
-		}
-		else {
-			pt.z = _elevation->get_alti(pt_2d(pt.x, pt.y));
-		}
-	}*/
-
-	// TODO
 }
 
 
@@ -299,10 +234,8 @@ json Unit::get_json() {
 	result["position"] = json::array();
 	result["position"].push_back(_position.x);
 	result["position"].push_back(_position.y);
-	//result["position"].push_back(_position.z);
 	result["status"] = unit_status2str(_unit_status);
 	result["life"] = _life;
-	//result["path"] = _path->get_json();
 	return result;
 }
 
@@ -312,8 +245,6 @@ std::ostream & operator << (std::ostream & os, Unit & unit) {
 	os << " ; type = " << unit._type->_name;
 	os << " ; status = " << unit_status2str(unit._unit_status);
 	os << " ; position = " << glm_to_string(unit._position);
-	//os << " ; velocity = " << glm_to_string(unit._velocity);
-	//os << " ; path = " << *unit._path;
 	return os;
 }
 
@@ -386,18 +317,6 @@ Unit * Team::add_unit(UnitType * type, pt_2d pos, time_point t) {
 }
 
 
-/*void Team::kill_unit(Unit * unit) {
-	unit->_unit_status = UNIT_DESTROYED;
-
-	for (auto & id_tile : unit->_visible_tiles) {
-		GraphVertex vertex = _fow->get_vertex(id_tile);
-		FowVertexData * data = (FowVertexData *)(vertex._data);
-		data->_changed = true;
-		data->_n_units--;
-	}
-}*/
-
-
 std::vector<Unit *> Team::get_units_in_aabb(AABB_2D * aabb) {
 	std::vector<Unit *> result;
 	for (auto & unit : _units) {
@@ -442,31 +361,6 @@ void Team::remove_unit(Unit * unit) {
 }
 
 
-/*void Team::clear2delete() {
-	std::vector<Unit * > tmp;
-	for (auto & unit : _units) {
-		if (unit->_delete) {
-			tmp.push_back(unit);
-
-			for (auto & id_tile : unit->_visible_tiles) {
-				GraphVertex vertex = _fow->get_vertex(id_tile);
-				FowVertexData * data = (FowVertexData *)(vertex._data);
-				data->_changed = true;
-				data->_n_units--;
-			}
-		}
-	}
-
-	_units.erase(std::remove_if(_units.begin(), _units.end(), [](Unit * u) {
-		return u->_delete;
-	}), _units.end());
-
-	for (auto & unit : tmp) {
-		delete unit;
-	}
-}*/
-
-
 void Team::clear() {
 	for (auto & unit : _units) {
 		unit->_unit_status = UNIT_DESTROYED;
@@ -507,7 +401,6 @@ bool Team::is_target_reachable(Unit * unit, Unit * target) {
 void Team::unit_attack(Unit * unit, Unit * target, time_point t) {
 	if (is_target_reachable(unit, target)) {
 		unit->_target = target;
-		//unit->set_status(ATTACKING, t);
 		unit->_unit_status = UNIT_ATTACKING;
 	}
 }
@@ -629,7 +522,9 @@ json Team::get_json() {
 	result["color"].push_back(_color.b);
 	result["units"] = json::array();
 	for (auto & unit : _units) {
-		result["units"].push_back(unit->get_json());
+		if (unit->_unit_status != UNIT_INACTIVE) {
+			result["units"].push_back(unit->get_json());
+		}
 	}
 	return result;
 }

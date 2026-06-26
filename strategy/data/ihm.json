@@ -39,7 +39,8 @@
 				{"name" : "infantery", "key" : "i"},
 				{"name" : "tank", "key" : "t"},
 				{"name" : "helicopter", "key" : "h"},
-				{"name" : "boat", "key" : "b"}
+				{"name" : "boat", "key" : "b"},
+				{"name" : "submarine"}
 			]
 		},
 		{

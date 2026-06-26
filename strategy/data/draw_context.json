@@ -61,6 +61,12 @@
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in", "alpha_in"]}
 			]
+		},
+		"submarine" : {
+			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
+			"buffers" : [
+				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in", "alpha_in"]}
+			]
 		}
 	}
 }

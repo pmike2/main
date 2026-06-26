@@ -38,8 +38,8 @@ Tree * Elements::add_tree(std::string species_name, pt_2d position) {
 
 	Tree * tree = new Tree(_tree_species[species_name], _elevation, position);
 
-	AABB_2D * aabb = tree->_bbox->_aabb->aabb2d();
-	if (!_elevation->in_boundaries(aabb)) {
+	if (!tree->_valid) {
+		delete tree;
 		return NULL;
 	}
 
@@ -56,8 +56,8 @@ Stone * Elements::add_stone(std::string species_name, pt_2d position) {
 
 	Stone * stone = new Stone(_stone_species[species_name], _elevation, position);
 
-	AABB_2D * aabb = stone->_bbox->_aabb->aabb2d();
-	if (!_elevation->in_boundaries(aabb)) {
+	if (!stone->_valid) {
+		delete stone;
 		return NULL;
 	}
 
@@ -68,6 +68,7 @@ Stone * Elements::add_stone(std::string species_name, pt_2d position) {
 
 Lake * Elements::add_lake(pt_2d position) {
 	Lake * lake = new Lake(_elevation, position);
+
 	if (!lake->_valid) {
 		delete lake;
 		return NULL;
@@ -75,7 +76,7 @@ Lake * Elements::add_lake(pt_2d position) {
 
 	if (lake->_polygon == NULL) {
 		delete lake;
-		std::cerr << "Map::add_lake polygon NULL\n";
+		//std::cerr << "Map::add_lake polygon NULL\n";
 		return NULL;
 	}
 
@@ -86,6 +87,7 @@ Lake * Elements::add_lake(pt_2d position) {
 
 River * Elements::add_river(pt_2d position) {
 	River * river = new River(_elevation, position);
+
 	if (!river->_valid) {
 		delete river;
 		return NULL;
@@ -93,7 +95,7 @@ River * Elements::add_river(pt_2d position) {
 
 	if (river->_polygon == NULL) {
 		delete river;
-		std::cerr << "Map::add_river polygon NULL\n";
+		//std::cerr << "Map::add_river polygon NULL\n";
 		return NULL;
 	}
 

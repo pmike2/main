@@ -20,9 +20,7 @@ struct River : public Element {
 	pt_3d highest_pt();
 
 
-	std::vector<uint> _id_nodes;
 	std::vector<std::tuple<uint, uint, uint> > _triangles;
-	bool _valid;
 	Polygon2D * _polygon;
 };
 

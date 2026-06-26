@@ -200,8 +200,12 @@ Tree::Tree() {
 }
 
 
-Tree::Tree(TreeSpecies * species, Elevation * elevation, pt_2d position) : Element(elevation, position), _species(species) {
-	_type = "tree";
+Tree::Tree(TreeSpecies * species, Elevation * elevation, pt_2d position) : Element(elevation, position, "tree"), _species(species) {
+	if (!_elevation->in_boundaries(position)) {
+		_valid = false;
+		return;
+	}
+
 	number radius_base = rand_number(_species->_root_radius_base_min, _species->_root_radius_base_max);
 	number radius_end = radius_base * rand_number(_species->_ratio_base_end_radius_min, _species->_ratio_base_end_radius_max);
 	number r = rand_number(_species->_root_r_min, _species->_root_r_max);
@@ -215,7 +219,12 @@ Tree::Tree(TreeSpecies * species, Elevation * elevation, pt_2d position) : Eleme
 	pt_3d size = rand_pt_3d(_species->_size_min, _species->_size_max);
 	
 	AABB * aabb = new AABB(pt_3d(pt_base.x - 0.5 * size.x, pt_base.y - 0.5 * size.y, pt_base.z), pt_3d(pt_base.x + 0.5 * size.x, pt_base.y + 0.5 * size.y, pt_base.z + size.z));
+	if (!_elevation->in_boundaries(aabb->aabb2d())) {
+		_valid = false;
+		return;
+	}
 	_bbox->set_aabb(aabb);
+	_id_nodes = _elevation->vertices_in_aabb(aabb->aabb2d());
 	delete aabb;
 
 	Branch * root = new Branch(pt_base, radius_base, radius_end, r, theta, phi, n_childrens, idx, _species->_branch_color);

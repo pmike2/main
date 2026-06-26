@@ -8,11 +8,8 @@ Lake::Lake() {
 }
 
 
-Lake::Lake(Elevation * elevation, pt_2d src) : Element(elevation, src), _valid(true) {
-	_type = "lake";
-
+Lake::Lake(Elevation * elevation, pt_2d src) : Element(elevation, src, "lake") {
 	if (!_elevation->in_boundaries(src)) {
-		std::cerr << "Lake impossible src hors grille\n";
 		_valid = false;
 		return;
 	}
@@ -21,7 +18,7 @@ Lake::Lake(Elevation * elevation, pt_2d src) : Element(elevation, src), _valid(t
 	std::vector<uint> id_nodes_src = _elevation->lowest_gradient(id_src);
 	uint id_lowest = id_nodes_src[id_nodes_src.size() - 1];
 	if (_elevation->get_alti(id_lowest) <= 0.0) {
-		std::cerr << "Lake impossible lowest pt alti <= 0.0\n";
+		//std::cerr << "Lake impossible lowest pt alti <= 0.0\n";
 		_valid = false;
 		return;
 	}

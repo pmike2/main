@@ -988,3 +988,20 @@ std::ostream & operator << (std::ostream & os, GraphGrid & g) {
 }
 
 
+// --------------------------------------------------------------------------------------------------
+uint graph_id_convert(GraphGrid * from, GraphGrid * to, uint id) {
+	pt_2d pt = from->id2pt_2d(id);
+	return to->pt2closest_id(pt);
+}
+
+
+std::vector<uint> graph_id_convert(GraphGrid * from, GraphGrid * to, std::vector<uint> ids) {
+	std::vector<uint> result;
+	for (auto & id : ids) {
+		uint id_to = graph_id_convert(from, to, id);
+		if (std::count(result.begin(), result.end(), id_to) == 0) {
+			result.push_back(id_to);
+		}
+	}
+	return result;
+}

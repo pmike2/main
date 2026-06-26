@@ -19,9 +19,10 @@ out vec4 frag_color;
 void main(void) {
 	float dist = length(fs_in.vertex_position);
 	float x = 1.0 * cos(dist + angle);
-	vec3 vertex_normal= fs_in.vertex_normal_init + vec3(0.0, 0.0, 1.0) + vec3(x * fs_in.direction.xy, 0.0);
+	vec3 vertex_normal = fs_in.vertex_normal_init + vec3(0.0, 0.0, 1.0) + vec3(x * fs_in.direction.xy, 0.0);
 
 	vertex_normal = normalize(vertex_normal);
+
 
 	// ambient
 	float ambient_strength= 0.1;

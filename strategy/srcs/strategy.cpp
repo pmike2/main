@@ -213,7 +213,7 @@ void Strategy::set_ihm() {
 	_ihm->get_element("edit_mode", "edit_elevation")->set_callback([this](){_config->_edit_mode = EDIT_ELEVATION;});
 	_ihm->get_element("edit_mode", "erase")->set_callback([this](){_config->_edit_mode = ERASE;});
 
-	for (auto & unit_type : std::vector<std::string>{"infantery", "tank", "helicopter", "boat"}) {
+	for (auto & unit_type : std::vector<std::string>{"infantery", "tank", "helicopter", "boat", "submarine"}) {
 		_ihm->get_element("units", unit_type)->set_callback([this, unit_type](){_config->_add_unit_type = unit_type;});
 	}
 
@@ -2014,6 +2014,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 					_map->add_river(pt_2d(_cursor_world_position));
 					update_river();
 					update_grid();
+					update_elevation();
 				}
 				else if (_config->_element_type == "lake") {
 					_map->add_lake(pt_2d(_cursor_world_position));
@@ -2046,6 +2047,8 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 				
 				update_grid();
 				update_tree_stone();
+				update_river();
+				update_lake();
 				_cursor_hover_unit = NULL;
 				return true;
 			}
@@ -2104,7 +2107,7 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 				_view_system->_new_single_selection= false;
 				for (auto & unit : get_selected_team()->_units) {
 					unit->_selected = false;
-					if (unit->_unit_status == UNIT_UNDER_CONSTRUCTION) {
+					if (unit->_unit_status == UNIT_UNDER_CONSTRUCTION || unit->_unit_status == UNIT_INACTIVE) {
 						continue;
 					}
 					if (_view_system->single_selection_intersects_aabb(unit->_bbox->_aabb, false)) {
@@ -2116,18 +2119,12 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 				_view_system->_new_rect_selection= false;
 				for (auto & unit : get_selected_team()->_units) {
 					unit->_selected = false;
-					if (unit->_unit_status == UNIT_UNDER_CONSTRUCTION) {
+					if (unit->_unit_status == UNIT_UNDER_CONSTRUCTION || unit->_unit_status == UNIT_INACTIVE) {
 						continue;
 					}
-					std::vector<Unit *> selected_units = get_selected_team()->get_selected_units();
-					if (!selected_units.empty() && selected_units[0]->_type != unit->_type) {
-						continue;
-					}
-					BBox * bbox = new BBox(unit->_bbox->_aabb);
-					if (_view_system->rect_selection_intersects_bbox(bbox, false)) {
+					if (_view_system->rect_selection_intersects_bbox(unit->_bbox, false)) {
 						unit->_selected = true;
 					}
-					delete bbox;
 				}
 			}
 			

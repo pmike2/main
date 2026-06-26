@@ -18,10 +18,8 @@ struct Lake : public Element {
 	json get_json();
 
 
-	std::vector<uint> _id_nodes;
 	std::vector<std::tuple<uint, uint, uint> > _triangles;
 	number _alti_lake;
-	bool _valid;
 	Polygon2D * _polygon;
 };
 

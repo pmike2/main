@@ -132,4 +132,8 @@ struct GraphGrid : public Graph {
 	AABB_2D * _aabb;
 };
 
+
+uint graph_id_convert(GraphGrid * from, GraphGrid * to, uint id);
+std::vector<uint> graph_id_convert(GraphGrid * from, GraphGrid * to, std::vector<uint> ids);
+
 #endif

@@ -354,7 +354,6 @@ void PathFinder::goto_gmo(GridMovingObject * gmo, uint id_vertex, bool cancel_if
 		}
 	}
 	_inputs.push_back(new PathFinderInput(gmo, id_vertex));
-	//gmo->_gmo_status = GMO_EXPECTING_PATH;
 }
 
 
@@ -390,12 +389,6 @@ void PathFinder::clear() {
 }
 
 
-void PathFinder::set_vertex(uint v, std::string type) {
-	PathFinderVertexData * vertex_data = get_vertex_data(v);
-	vertex_data->_type = type;
-}
-
-
 void PathFinder::set_vertex(std::string type) {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
@@ -405,19 +398,26 @@ void PathFinder::set_vertex(std::string type) {
 }
 
 
-void PathFinder::set_vertex(AABB_2D * aabb, std::string type) {
-	std::vector<uint> vertices = vertices_in_aabb(aabb);
-	for (auto & v : vertices) {
+void PathFinder::set_vertex(uint v, std::string type) {
+	PathFinderVertexData * vertex_data = get_vertex_data(v);
+	vertex_data->_type = type;
+}
+
+
+void PathFinder::set_vertex(std::vector<uint> v_list, std::string type) {
+	for (auto & v : v_list) {
 		set_vertex(v, type);
 	}
 }
 
 
+void PathFinder::set_vertex(AABB_2D * aabb, std::string type) {
+	set_vertex(vertices_in_aabb(aabb), type);
+}
+
+
 void PathFinder::set_vertex(Polygon2D * polygon, std::string type) {
-	std::vector<uint> vertices = vertices_in_polygon(polygon);
-	for (auto & v : vertices) {
-		set_vertex(v, type);
-	}
+	set_vertex(vertices_in_polygon(polygon), type);
 }
 
 

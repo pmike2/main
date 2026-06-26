@@ -20,5 +20,5 @@ void main(void) {
 		discard;
 	}
 
-	frag_color= vertex_color_bis;
+	frag_color = vertex_color_bis;
 }

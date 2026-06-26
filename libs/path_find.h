@@ -107,6 +107,7 @@ struct PathFinder : public GraphGrid {
 
 	void set_vertex(std::string type);
 	void set_vertex(uint v, std::string type);
+	void set_vertex(std::vector<uint> v_list, std::string type);
 	void set_vertex(AABB_2D * aabb, std::string type);
 	void set_vertex(Polygon2D * polygon, std::string type);
 	void set_vertex(pt_2d center, number size, std::string type);

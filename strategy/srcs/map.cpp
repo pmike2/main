@@ -246,7 +246,7 @@ void Map::add_river(pt_2d pos) {
 		return;
 	}
 
-	_path_finder->set_vertex(river->_polygon, "river");
+	_path_finder->set_vertex(graph_id_convert(_elevation, _path_finder, river->_id_nodes), "river");
 }
 
 
@@ -256,23 +256,17 @@ void Map::add_lake(pt_2d pos) {
 		return;
 	}
 
-	_path_finder->set_vertex(lake->_polygon, "lake");
+	_path_finder->set_vertex(graph_id_convert(_elevation, _path_finder, lake->_id_nodes), "lake");
 }
 
 
 void Map::add_tree(std::string species_name, pt_2d pos) {
-	if (!_elevation->in_boundaries(pos)) {
-		return;
-	}
-	
 	Tree * tree = _elements->add_tree(species_name, pos);
 	if (tree == NULL) {
 		return;
 	}
 
-	AABB_2D * aabb = tree->_bbox->_aabb->aabb2d();
-	_path_finder->set_vertex(aabb, "tree");
-	delete aabb;
+	_path_finder->set_vertex(graph_id_convert(_elevation, _path_finder, tree->_id_nodes), "tree");
 }
 
 
@@ -285,17 +279,12 @@ void Map::add_trees(std::string species_name, pt_2d pos, uint n_trees, number di
 
 
 void Map::add_stone(std::string species_name, pt_2d pos) {
-	if (!_elevation->in_boundaries(pos)) {
-		return;
-	}
 	Stone * stone = _elements->add_stone(species_name, pos);
 	if (stone == NULL) {
 		return;
 	}
 
-	AABB_2D * aabb = stone->_bbox->_aabb->aabb2d();
-	_path_finder->set_vertex(aabb, "stone");
-	delete aabb;
+	_path_finder->set_vertex(graph_id_convert(_elevation, _path_finder, stone->_id_nodes), "stone");
 }
 
 
@@ -371,25 +360,21 @@ void Map::remove_units_in_aabb(AABB_2D * aabb) {
 }
 
 
-// si des éléments se superposent, au niveau grid la suppression ne sera pas nickel...
 void Map::remove_elements_in_aabb(AABB_2D * aabb) {
 	std::vector<Element *> elements = _elements->get_elements_in_aabb(aabb);
 	for (auto & element : elements) {
 		element->_delete = true;
-		//remove_element_from_terrain_grid(element);
+		for (auto & v : graph_id_convert(_elevation, _path_finder, element->_id_nodes)) {
+			pt_3d pt = _path_finder->id2pt_3d(v);
+			if (pt.z < 0.01) {
+				_path_finder->set_vertex(v, "sea");
+			}
+			else {
+				_path_finder->set_vertex(v, "land");
+			}
+		}
 	}
 	_elements->clear2delete();
-
-	std::vector<uint> vertices = _path_finder->vertices_in_aabb(aabb);
-	for (auto & v : vertices) {
-		pt_3d pt = _path_finder->id2pt_3d(v);
-		if (pt.z < 0.01) {
-			_path_finder->set_vertex(v, "sea");
-		}
-		else {
-			_path_finder->set_vertex(v, "land");
-		}
-	}
 }
 
 
@@ -543,30 +528,19 @@ void Map::anim_unit(Unit * unit, time_point t) {
 	}
 
 	if (unit->_gmo_status == GMO_MOVING) {
-		/*if (unit->last_checkpoint_checked()) {
-			//remove_unit_from_position_grid(unit);
-			if (unit->_type->_flies) {
-				//unit->set_status(LANDING, t);
-			}
-			else {
-				//unit->set_status(WAITING, t);
-			}
-			//add_unit_to_position_grid(unit);
-		}
-		else if (unit->checkpoint_checked()) {
-			advance_unit_in_position_grid(unit);
-		}*/
-	}
-	else if (unit->_unit_status == UNIT_ATTACKING) {
-		if (unit->_target->_unit_status == UNIT_DESTROYED || unit->_target->_hit_status == FINAL_HIT) {
-			unit->_unit_status = UNIT_WATCHING;
-		}
-	}
-	else if (unit->_unit_status == UNIT_SHOOTING) {
-		_ammos.push_back(new Ammo(unit->_type->_ammo_type, unit->_position, unit->_target->_position));
-		unit->_unit_status = UNIT_ATTACKING;
-	}
 
+	}
+	else {
+		if (unit->_unit_status == UNIT_ATTACKING) {
+			if (unit->_target->_unit_status == UNIT_DESTROYED || unit->_target->_hit_status == FINAL_HIT) {
+				unit->_unit_status = UNIT_WATCHING;
+			}
+		}
+		else if (unit->_unit_status == UNIT_SHOOTING) {
+			_ammos.push_back(new Ammo(unit->_type->_ammo_type, unit->_position, unit->_target->_position));
+			unit->_unit_status = UNIT_ATTACKING;
+		}
+	}
 	unit->anim(t);
 }
 
@@ -985,7 +959,11 @@ void Map::load(std::string dir_map, time_point t) {
 		Team * team = new Team(team_name, team_color, _elevation, _fow_resolution);
 		for (auto & unit_js : team_js["units"]) {
 			Unit * unit = add_unit(team, unit_js["type"], pt_2d(unit_js["position"][0], unit_js["position"][1]), t);
-			//unit->_life = unit_js["life"];
+			
+			// on les met dans un état d'attente par défaut
+			unit->_life = unit_js["life"];
+			unit->_unit_status = UNIT_WATCHING;
+			unit->_gmo_status = GMO_IDLE;
 		}
 		_teams.push_back(team);
 	}

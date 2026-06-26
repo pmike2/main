@@ -47,8 +47,8 @@ void main() {
 	
 	gl_Position = (1.0 - step(0.3, fow)) * vec4(0.0) + step(0.3, fow) * gl_in[2].gl_Position;
 	gs_out.vertex_position = gs_in[2].vertex_position;
-	gs_out.vertex_normal_init = gs_in[1].vertex_normal_init;
-	gs_out.direction = gs_in[1].direction;
+	gs_out.vertex_normal_init = gs_in[2].vertex_normal_init;
+	gs_out.direction = gs_in[2].direction;
 	gs_out.vertex_diffuse_color = (1.0 - step(0.7, fow)) * mix(gs_in[2].vertex_diffuse_color, vec4(0.5, 0.5, 0.5, gs_in[2].vertex_diffuse_color.a), 0.7) + step(0.7, fow) * gs_in[2].vertex_diffuse_color;
 	EmitVertex();
 	

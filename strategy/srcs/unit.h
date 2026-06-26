@@ -36,7 +36,6 @@ struct Unit : public InstancePosRot, public GridMovingObject {
 	void anim(time_point t);
 	void set_hit_status(UNIT_HIT_STATUS hit_status, time_point t);
 	void hit(Ammo * ammo, time_point t);
-	void update_alti_path();
 	json get_json();
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
 	

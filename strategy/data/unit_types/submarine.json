@@ -1,0 +1,31 @@
+{
+	"type" : "submarine",
+	"max_velocity" : 0.03,
+	"life_init" : 100.0,
+	"regen" : 0.05,
+	"shooting_rate" : 4.0,
+	"vision_distance" : 25.0,
+	"vision_angle" : 0.8,
+	"creation_duration" : 20000,
+	"floats" : false,
+	"flies" : false,
+	"ammo" : "bomb",
+	"vertex_cost" : {
+		"land" : 1000.0,
+		"tree" : 1000.0,
+		"stone" : 1000.0,
+		"sea" : 0.0,
+		"lake" : 0.0,
+		"river" : 1000.0,
+		"sea_coast" : 1000.0,
+		"lake_coast" : 1000.0
+	},
+	"edge_cost" : {
+		"hard_down" : 0.0,
+		"down" : 0.0,
+		"flat" : 0.0,
+		"up" : 0.0,
+		"hard_up" : 0.0
+	},
+	"obj" : "../data/objs/units/submarine/submarine.obj"
+}

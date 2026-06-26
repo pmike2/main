@@ -18,12 +18,6 @@ std::string unit_status2str(UNIT_STATUS mode) {
 	else if (mode == UNIT_UNDER_CONSTRUCTION) {
 		return "UNIT_UNDER_CONSTRUCTION";
 	}
-	else if (mode == UNIT_TAKEOFF) {
-		return "UNIT_TAKEOFF";
-	}
-	else if (mode == UNIT_LANDING) {
-		return "UNIT_LANDING";
-	}
 	else if (mode == UNIT_INACTIVE) {
 		return "UNIT_INACTIVE";
 	}
@@ -47,12 +41,6 @@ UNIT_STATUS str2unit_status(std::string s) {
 	}
 	else if (s == "UNIT_UNDER_CONSTRUCTION") {
 		return UNIT_UNDER_CONSTRUCTION;
-	}
-	else if (s == "UNIT_TAKEOFF") {
-		return UNIT_TAKEOFF;
-	}
-	else if (s == "UNIT_LANDING") {
-		return UNIT_LANDING;
 	}
 	else if (s == "UNIT_INACTIVE") {
 		return UNIT_INACTIVE;
