@@ -75,7 +75,7 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	_cursor_world_position(pt_3d(0.0)), _cursor_in_world(false), _cursor_hover_unit(NULL), _cursor_hover_ihm(false),
 	_fow_ok(false), _add_unit_ok(false), _add_unit_fow_ok(false), _move_unit_ok(false), _attack_unit_ok(false)
 {
-	bool verbose = false;
+	bool verbose = true;
 
 	_config = new StrategyConfig("../data/elevation_rand_config");
 

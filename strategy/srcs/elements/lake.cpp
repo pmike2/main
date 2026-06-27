@@ -8,7 +8,7 @@ Lake::Lake() {
 }
 
 
-Lake::Lake(Elevation * elevation, pt_2d src) : Element(elevation, src, "lake") {
+Lake::Lake(Elevation * elevation, pt_2d src) : Element(elevation, src, "lake"), _polygon(NULL) {
 	if (!_elevation->in_boundaries(src)) {
 		_valid = false;
 		return;
@@ -112,8 +112,9 @@ Lake::Lake(Elevation * elevation, pt_2d src) : Element(elevation, src, "lake") {
 
 
 Lake::~Lake() {
-	delete _data;
-	delete _polygon;
+	if (_polygon != NULL) {
+		delete _polygon;
+	}
 }
 
 

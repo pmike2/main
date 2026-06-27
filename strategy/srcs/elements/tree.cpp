@@ -273,7 +273,6 @@ Tree::~Tree() {
 		delete branch;
 	}
 	_branches.clear();
-	delete _data;
 }
 
 

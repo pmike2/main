@@ -926,6 +926,7 @@ void Map::load(std::string dir_map, time_point t) {
 
 	_elevation->read(elevation_path.string());
 	sync2elevation();
+	
 
 	std::ifstream elements_ifs(elements_json_path);
 	json elements_js = json::parse(elements_ifs);
