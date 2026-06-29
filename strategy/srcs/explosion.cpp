@@ -155,7 +155,7 @@ ExplosionSystem::~ExplosionSystem() {
 }
 
 
-void ExplosionSystem::new_explosion(pt_3d pt, time_point t, ExplosionConfig * config) {
+void ExplosionSystem::new_explosion(pt_3d pt, time_point t, ExplosionConfig * config, number radius) {
 	uint n_fragments = rand_int(config->_n_min_fragments_per_explosion, config->_n_max_fragments_per_explosion);
 	for (uint i=0; i<n_fragments; ++i) {
 		ExplosionFragment * fragment = NULL;
@@ -166,7 +166,8 @@ void ExplosionSystem::new_explosion(pt_3d pt, time_point t, ExplosionConfig * co
 			}
 		}
 		if (fragment != NULL) {
-			fragment->reinit(pt, config);
+			pt_2d origin = rand_pt_2d(pt, radius);
+			fragment->reinit(pt_3d(origin.x, origin.y, pt.z), config);
 		}
 		else {
 			std::cout << "ExplosionSystem saturé\n";

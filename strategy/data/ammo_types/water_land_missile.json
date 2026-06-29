@@ -1,0 +1,11 @@
+{
+	"damage" : 20.0,
+	"rate" : 20.0,
+	"velocity" : 0.3,
+	"max_distance" : 500.0,
+	"explosion_radius" : 20.0,
+	"apogee" : 0.5,
+	"ballistic" : true,
+	"obj" : "../data/objs/ammos/water_land_missile/water_land_missile.obj",
+	"explosion_config_name" : "huge_explosion"
+}

@@ -37,6 +37,11 @@
 				{"instanced" : true, "attrs" : ["model2world_matrix"]}
 			]
 		},
+		"water_land_missile" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
+			"buffers" : [
+				{"instanced" : true, "attrs" : ["model2world_matrix"]}
+			]
+		},
 		
 		"infantery" : {
 			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",

@@ -17,9 +17,13 @@ struct AmmoType {
 
 	std::string _name;
 	number _damage;
+	number _rate;
 	number _velocity;
 	number _max_distance;
 	number _explosion_radius;
+	number _apogee;
+	bool _ballistic;
+
 	ObjData * _obj_data;
 
 	std::string _explosion_config_str;

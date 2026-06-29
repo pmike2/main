@@ -59,7 +59,7 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	std::vector<std::string> unit_type_json_paths = list_files(_unit_types_dir, "json");
 	for (auto & json_path : unit_type_json_paths) {
 		UnitType * unit_type = new UnitType(json_path);
-		_unit_types[basename(json_path)] = unit_type;
+		_unit_types[unit_type->_name] = unit_type;
 		_path_finder->_gmo_types.push_back((GridMovingObjectType *)(unit_type));
 	}
 	
@@ -697,7 +697,7 @@ void Map::anim(time_point t) {
 	for (auto & ammo : _ammos) {
 		ammo->anim();
 		if (ammo->_target_hit) {
-			_explosion_system->new_explosion(ammo->_target, t, ammo->_type->_explosion_config);
+			_explosion_system->new_explosion(ammo->_target, t, ammo->_type->_explosion_config, ammo->_type->_explosion_radius);
 			for (auto & team : _teams) {
 				for (auto & unit : team->_units) {
 					//if (pt_in_bbox2d(pt_2d(ammo->_target), unit->_bbox->bbox2d())) {

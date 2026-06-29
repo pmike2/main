@@ -1,9 +1,11 @@
 {
-	"name" : "bullet",
 	"damage" : 0.5,
+	"rate" : 0.2,
 	"velocity" : 0.8,
 	"max_distance" : 20.0,
 	"explosion_radius" : 3.0,
+	"apogee" : 0.1,
+	"ballistic" : false,
 	"obj" : "../data/objs/ammos/bullet/bullet.obj",
 	"explosion_config_name" : "small_explosion"
 }

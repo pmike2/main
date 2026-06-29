@@ -140,7 +140,7 @@ void Unit::anim(time_point t) {
 			set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
 
 			auto d_shooting = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_shooting_t).count();
-			if (number(d_shooting) > _type->_shooting_rate * 1000.0) {
+			if (number(d_shooting) > _type->_ammo_type->_rate * 1000.0) {
 				_last_shooting_t = t;
 				_unit_status = UNIT_SHOOTING;
 			}
@@ -390,10 +390,14 @@ bool Team::is_target_reachable(Unit * unit, Unit * target) {
 	if (dist > unit->_type->_ammo_type->_max_distance) {
 		return false;
 	}
-	number max_elevation_alti = _elevation->get_max_alti_along_segment(unit->_position, target->_position);
-	if (max_elevation_alti > std::max(unit->_position.z, target->_position.z) + offset_z) {
-		return false;
+
+	if (!unit->_type->_ammo_type->_ballistic) {
+		number max_elevation_alti = _elevation->get_max_alti_along_segment(unit->_position, target->_position);
+		if (max_elevation_alti > std::max(unit->_position.z, target->_position.z) + offset_z) {
+			return false;
+		}
 	}
+
 	return true;
 }
 

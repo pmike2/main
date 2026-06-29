@@ -12,18 +12,35 @@ Ammo::Ammo() {
 
 Ammo::Ammo(AmmoType * type, pt_3d pos, pt_3d target) :
 	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
-	_type(type), _target(target), _target_hit(false), _angle(0.0)
+	_type(type), _target(target), _target_hit(false), _theta(0.0), _pos_ini(pos)
 {
-	number d = glm::length(_target - _position);
-	if (d < 1.0) {
+	_target_dist = glm::length(pt_2d(_target) - pt_2d(_position));
+	if (_target_dist < 1.0) {
 		_target_hit = true;
 		return;
 	}
 
-	_velocity = _type->_velocity * (_target - _position) / d;
-	_angle = atan2(_velocity.y, _velocity.x);
-	quat init_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
-	set_pos_rot_scale(_position, init_quat, pt_3d(1.0));
+	pt_2d p1(0.0, pos.z);
+	pt_2d p2(_target_dist * 0.5, pos.z + _target_dist * _type->_apogee);
+	pt_2d p3(_target_dist, target.z);
+	mat_3d m_parabola = mat_3d(
+		p1.x * p1.x , p2.x * p2.x , p3.x * p3.x ,
+		p1.x, p2.x, p3.x,
+		1.0, 1.0, 1.0
+	);
+	_parabola_coeffs = glm::inverse(m_parabola) * pt_3d(p1.y, p2.y, p3.y);
+
+	_velocity = _type->_velocity * (_target - _position) / _target_dist;
+	
+	number phi = atan2(_velocity.y, _velocity.x);
+	pt_3d phi_axis(0.0, 0.0, 1.0);
+	quat init_quat_1 = glm::angleAxis(phi, phi_axis);
+
+	number theta = atan(2.0 * _parabola_coeffs[0] * 0.0 + _parabola_coeffs[1]);
+	pt_3d theta_axis(_target.y - _pos_ini.y, _pos_ini.x - _target.x, 0.0);
+	quat init_quat_2 = glm::angleAxis(theta, theta_axis / glm::length(theta_axis));
+
+	set_pos_rot_scale(_position, init_quat_2 * init_quat_1, pt_3d(1.0));
 
 	// A revoir
 	
@@ -62,7 +79,7 @@ void Ammo::anim() {
 		return;
 	}
 
-	number d = glm::length(_target - _position);
+	number d = glm::length(pt_2d(_target) - pt_2d(_position));
 	if (d < 1.0) {
 		_target_hit = true;
 		return;
@@ -71,17 +88,31 @@ void Ammo::anim() {
 	_velocity = _type->_velocity * (_target - _position) / d;
 	pt_3d next_position = _position + _velocity;
 
-	number next_angle = atan2(_velocity.y, _velocity.x);
-	// pour ne pas faire des 3/4 de tour quand les 2 angles sont de part et d'autre de l'axe x
+	next_position.z = _parabola_coeffs[0] * (_target_dist - d) * (_target_dist - d) + _parabola_coeffs[1] * (_target_dist - d) + _parabola_coeffs[2];
+
+	/*number next_angle = atan2(_velocity.y, _velocity.x);
 	if (next_angle - _angle > M_PI) {
 		next_angle -= 2.0 * M_PI;
 	}
-	_angle = next_angle;
+	_angle = next_angle;*/
 	
 	// https://en.wikipedia.org/wiki/Slerp
-	const number slerp_speed = 0.05;
+	/*const number slerp_speed = 0.05;
 	quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
 	quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
 
-	set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
+	set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));*/
+
+	//set_pos(next_position);
+
+
+	number phi = atan2(_velocity.y, _velocity.x);
+	pt_3d phi_axis(0.0, 0.0, 1.0);
+	quat init_quat_1 = glm::angleAxis(phi, phi_axis);
+
+	number theta = atan(2.0 * _parabola_coeffs[0] * (_target_dist - d) + _parabola_coeffs[1]);
+	pt_3d theta_axis(_target.y - _pos_ini.y, _pos_ini.x - _target.x, 0.0);
+	quat init_quat_2 = glm::angleAxis(theta, theta_axis / glm::length(theta_axis));
+
+	set_pos_rot_scale(next_position, init_quat_2 * init_quat_1, pt_3d(1.0));
 }

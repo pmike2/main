@@ -28,7 +28,6 @@ struct UnitType : public GridMovingObjectType {
 	number _max_velocity;
 	number _life_init;
 	number _regen;
-	number _shooting_rate;
 	number _vision_distance;
 	number _vision_angle;
 	uint _creation_duration;

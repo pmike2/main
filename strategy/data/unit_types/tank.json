@@ -3,7 +3,6 @@
 	"max_velocity" : 0.05,
 	"life_init" : 200.0,
 	"regen" : 0.05,
-	"shooting_rate" : 3.0,
 	"vision_distance" : 20.0,
 	"vision_angle" : 0.8,
 	"creation_duration" : 15000,

@@ -16,10 +16,14 @@ struct Ammo : public InstancePosRot {
 
 	AmmoType * _type;
 	pt_3d _target;
-	pt_3d _velocity;
-	number _angle;
 	bool _target_hit;
 	number _damage;
+
+	pt_3d _pos_ini;
+	pt_3d _velocity;
+	number _theta;
+	number _target_dist;
+	pt_3d _parabola_coeffs;
 };
 
 

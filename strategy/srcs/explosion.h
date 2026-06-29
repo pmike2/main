@@ -25,7 +25,6 @@ struct ExplosionConfig {
 
 	uint _n_min_fragments_per_explosion;
 	uint _n_max_fragments_per_explosion;
-
 	pt_2d _opacity_init;
 	number _opacity_decrement;
 	number _opacity_threshold;
@@ -66,7 +65,7 @@ struct ExplosionSystem {
 	ExplosionSystem();
 	ExplosionSystem(std::string dir_configs);
 	~ExplosionSystem();
-	void new_explosion(pt_3d pt, time_point t, ExplosionConfig * config);
+	void new_explosion(pt_3d pt, time_point t, ExplosionConfig * config, number radius);
 	void anim(time_point t);
 
 

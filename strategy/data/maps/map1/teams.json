@@ -207,6 +207,36 @@
                     ],
                     "status": "UNIT_WATCHING",
                     "type": "boat"
+                },
+                {
+                    "id": 20,
+                    "life": 200.0,
+                    "position": [
+                        23.02669074288371,
+                        42.31809885857312
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "tank"
+                },
+                {
+                    "id": 21,
+                    "life": 30.0,
+                    "position": [
+                        34.00827236485173,
+                        47.7010387241532
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "infantery"
+                },
+                {
+                    "id": 22,
+                    "life": 30.0,
+                    "position": [
+                        14.734657098031064,
+                        42.48721663319175
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "infantery"
                 }
             ]
         }

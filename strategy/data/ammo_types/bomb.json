@@ -1,9 +1,11 @@
 {
-	"name" : "bomb",
 	"damage" : 10.0,
+	"rate" : 4.0,
 	"velocity" : 0.5,
 	"max_distance" : 50.0,
 	"explosion_radius" : 10.0,
+	"apogee" : 0.3,
+	"ballistic" : false,
 	"obj" : "../data/objs/ammos/bomb/bomb.obj",
 	"explosion_config_name" : "big_explosion"
 }

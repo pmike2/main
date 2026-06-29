@@ -1,5 +1,7 @@
 #include "json.hpp"
 
+#include "utile.h"
+
 #include "ammo_type.h"
 
 using json = nlohmann::json;
@@ -15,12 +17,15 @@ AmmoType::AmmoType(std::string json_path) {
 	json js= json::parse(ifs);
 	ifs.close();
 
-	_name = js["name"];
+	_name = basename(json_path);
 	_damage = js["damage"];
+	_rate = js["rate"];
 	_velocity = js["velocity"];
 	_max_distance = js["max_distance"];
 	_explosion_radius = js["explosion_radius"];
 	_explosion_config_str = js["explosion_config_name"];
+	_apogee = js["apogee"];
+	_ballistic = js["ballistic"];
 	
 	_obj_data = new ObjData(js["obj"]);
 	_obj_data->_use_ambient = false;
