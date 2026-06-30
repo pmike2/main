@@ -7,8 +7,7 @@ River::River() {
 
 
 River::River(Elevation * elevation, pt_2d src) : Element(elevation, src, "river"), _polygon(NULL) {
-	if (!_elevation->in_boundaries(src)) {
-		_valid = false;
+	if (!_valid) {
 		return;
 	}
 

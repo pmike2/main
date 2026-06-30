@@ -706,6 +706,18 @@ std::vector<uint> GraphGrid::vertices_in_polygon(Polygon2D * polygon) {
 }
 
 
+std::vector<uint> GraphGrid::vertices_in_bbox(BBox_2D * bbox) {
+	std::vector<uint> vertices = vertices_in_aabb(bbox->_aabb);
+	std::vector<uint> result;
+	for (auto & v : vertices) {
+		if (pt_in_bbox2d(id2pt_2d(v), bbox)) {
+			result.push_back(v);
+		}
+	}
+	return result;
+}
+
+
 int_pair GraphGrid::next_direction(int_pair u) {
 	if (u.first == 1 && u.second == 0) {
 		return std::make_pair(1, 1);

@@ -35,9 +35,9 @@ struct StrategyConfig {
 	EDIT_MODE _edit_mode;
 	UNIT_ACTION_MODE _unit_action_mode;
 	VISIBLE_GRID_TYPE _visible_grid_type;
-	//std::string _visible_grid_unit_type;
 	std::string _add_unit_type;
 	std::string _element_type;
+	std::string _add_barrier_type;
 	ELEVATION_MODE _elevation_mode;
 	number _elevation_radius;
 	number _elevation_factor;
@@ -45,6 +45,7 @@ struct StrategyConfig {
 	number _trees_dispersion;
 	number _stones_dispersion;
 	number _erase_radius;
+	number _orientation;
 	uint _n_trees;
 	uint _n_stones;
 	uint _selected_team_idx;
@@ -77,6 +78,7 @@ public:
 	void draw_ammo(AmmoType * ammo_type, ViewSystem * view_system);
 	void draw_construction();
 	void draw_explosion(ViewSystem * view_system);
+	void draw_barrier(BarrierType * barrier_type, ViewSystem * view_system);
 	void draw();
 	
 	void anim(time_point t);
@@ -105,6 +107,8 @@ public:
 	void update_fow_texture();
 	void update_construction(time_point t);
 	void update_explosion();
+	void update_barrier_obj(BarrierType * barrier_type);
+	void update_barrier_matrices(BarrierType * barrier_type);
 	void update_all(time_point t);
 	
 	void update_text();
@@ -130,7 +134,7 @@ public:
 	bool _cursor_hover_ihm;
 	Unit * _cursor_hover_unit;
 
-	bool _fow_ok, _add_unit_ok, _add_unit_fow_ok, _move_unit_ok, _attack_unit_ok;
+	bool _fow_ok, _add_unit_ok, _move_unit_ok, _attack_unit_ok, _add_barrier_ok;
 
 	number _angle_lake, _angle_river, _angle_sea;
 };

@@ -201,8 +201,7 @@ Tree::Tree() {
 
 
 Tree::Tree(TreeSpecies * species, Elevation * elevation, pt_2d position) : Element(elevation, position, "tree"), _species(species) {
-	if (!_elevation->in_boundaries(position)) {
-		_valid = false;
+	if (!_valid) {
 		return;
 	}
 

@@ -48,8 +48,7 @@ Stone::Stone() {
 Stone::Stone(StoneSpecies * species, Elevation * elevation, pt_2d position) : 
 	Element(elevation, position, "stone"), _species(species), _hull(NULL)
 {
-	if (!_elevation->in_boundaries(position)) {
-		_valid = false;
+	if (!_valid) {
 		return;
 	}
 

@@ -28,8 +28,9 @@ Map::Map() {
 }
 
 
-Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, std::string explosion_dir, pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t) :
-	_unit_types_dir(unit_types_dir), _ammo_types_dir(ammo_types_dir), _elements_dir(elements_dir), 
+Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, std::string explosion_dir, std::string barrier_types_dir, 
+	pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t) :
+	_unit_types_dir(unit_types_dir), _ammo_types_dir(ammo_types_dir), _elements_dir(elements_dir), _barrier_types_dir(barrier_types_dir),
 	_path_resolution(path_resolution), _elevation_resolution(elevation_resolution), _fow_resolution(fow_resolution)
 {
 	bool verbose = false;
@@ -54,7 +55,7 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 
 	// ------------------------------------------------
 	if (verbose) {
-		std::cout << "init UnitTypes / AmmoTypes / Explosion\n";
+		std::cout << "init UnitTypes / AmmoTypes / BarrierTypes / Explosion\n";
 	}
 	std::vector<std::string> unit_type_json_paths = list_files(_unit_types_dir, "json");
 	for (auto & json_path : unit_type_json_paths) {
@@ -67,6 +68,12 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	for (auto & json_path : ammo_type_json_paths) {
 		AmmoType * ammo_type = new AmmoType(json_path);
 		_ammo_types[ammo_type->_name] = ammo_type;
+	}
+
+	std::vector<std::string> barrier_type_json_paths = list_files(_barrier_types_dir, "json");
+	for (auto & json_path : barrier_type_json_paths) {
+		BarrierType * barrier_type = new BarrierType(json_path);
+		_barrier_types[barrier_type->_name] = barrier_type;
 	}
 
 	for (auto & unit_type : _unit_types) {
@@ -207,6 +214,14 @@ bool Map::attack_unit_check(Unit * attacking_unit, Unit * attacked_unit, bool fo
 }
 
 
+bool Map::add_barrier_check(Team * team, std::string type, pt_2d pos, number orientation, bool fow_active) {
+	if (fow_active && !fow_check(team, pos)) {
+		return false;
+	}
+	return true;
+}
+
+
 Unit * Map::add_unit(Team * team, std::string type, pt_2d pos, time_point t) {
 	Unit * unit = team->add_unit(_unit_types[type], pos, t);
 	_path_finder->init_gmo(unit);
@@ -293,6 +308,13 @@ void Map::add_stones(std::string species_name, pt_2d pos, uint n_stones, number 
 		pt_2d pos_stone = rand_gaussian(pos, pt_2d(dispersion));
 		add_stone(species_name, pos_stone);
 	}
+}
+
+
+void Map::add_barrier(std::string type, pt_2d pos, number orientation) {
+	Barrier * barrier = new Barrier(_barrier_types[type], pos, orientation, _elevation);
+	std::vector<uint> id_nodes = _path_finder->vertices_in_bbox(barrier->_bbox->bbox2d());
+	_path_finder->set_vertex(graph_id_convert(_elevation, _path_finder, id_nodes), "barrier");
 }
 
 

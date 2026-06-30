@@ -113,7 +113,7 @@ ObjData::ObjData(std::string obj_path) :
 		std::istringstream iss(line);
 		std::string s;
 		iss >> s;
-		
+
 		if (s == "newmtl") {
 			if (current_material != NULL) {
 				_materials[current_material->_name] = current_material;
@@ -290,9 +290,6 @@ ObjData::ObjData(std::string obj_path) :
 				}
 			}
 			current_object->_faces.push_back(face);
-			/*if (obj_path == "../data/objs/units/tank/tank_.obj") {
-				std::cout << current_object->_name << " ; " << *face << "\n";
-			}*/
 		}
 	}
 	_objects.push_back(current_object);

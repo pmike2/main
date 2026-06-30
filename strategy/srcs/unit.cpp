@@ -114,7 +114,7 @@ void Unit::anim(time_point t) {
 			_angle = next_angle;
 
 			const number slerp_speed = 0.05;
-			quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
+			quat next_quat = glm::angleAxis(_angle, pt_3d(0.0, 0.0, 1.0));
 			quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
 
 			set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
@@ -127,14 +127,14 @@ void Unit::anim(time_point t) {
 
 			number next_angle = atan2(_target->_position.y - _position.y, _target->_position.x - _position.x);
 			// pour ne pas faire des 3/4 de tour quand les 2 angles sont de part et d'autre de l'axe x
-			if (next_angle - _angle > M_PI) {
+			/*if (next_angle - _angle > M_PI) {
 				next_angle -= 2.0 * M_PI;
 			}
-			_angle = next_angle;
+			_angle = next_angle;*/
 			
 			// https://en.wikipedia.org/wiki/Slerp
 			const number slerp_speed = 0.05;
-			quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
+			quat next_quat = glm::angleAxis(next_angle, pt_3d(0.0, 0.0, 1.0));
 			quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
 
 			set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
@@ -181,14 +181,14 @@ void Unit::anim(time_point t) {
 		//number next_angle = atan2(_velocity.y, _velocity.x);
 		number next_angle = atan2(_direction.y, _direction.x);
 		// pour ne pas faire des 3/4 de tour quand les 2 angles sont de part et d'autre de l'axe x
-		if (next_angle - _angle > M_PI) {
+		/*if (next_angle - _angle > M_PI) {
 			next_angle -= 2.0 * M_PI;
 		}
-		_angle = next_angle;
+		_angle = next_angle;*/
 		
 		// https://en.wikipedia.org/wiki/Slerp
 		const number slerp_speed = 0.05;
-		quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
+		quat next_quat = glm::angleAxis(next_angle, pt_3d(0.0, 0.0, 1.0));
 		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
 
 		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));

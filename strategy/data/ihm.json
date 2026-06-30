@@ -14,7 +14,8 @@
 			"elements" : [
 				{"name" : "select_unit"},
 				{"name" : "action_unit", "groups_visible" : ["unit_action"]},
-				{"name" : "add_unit", "groups_visible" : ["units"]}
+				{"name" : "add_unit", "groups_visible" : ["units"]},
+				{"name" : "add_barrier", "groups_visible" : ["barriers"]}
 			]
 		},
 		{
@@ -41,6 +42,15 @@
 				{"name" : "helicopter", "key" : "h"},
 				{"name" : "boat", "key" : "b"},
 				{"name" : "submarine"}
+			]
+		},
+		{
+			"name" : "barriers",
+			"type" : "radio",
+			"position" : "after:play_mode",
+			"orientation" : "vertical",
+			"elements" : [
+				{"name" : "barrier_basic"}
 			]
 		},
 		{

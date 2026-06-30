@@ -22,9 +22,9 @@ StrategyConfig::StrategyConfig(std::string elevation_rand_dir) {
 	_edit_mode = ADD_ELEMENT;
 	_unit_action_mode = WAIT;
 	_visible_grid_type = ELEVATION;
-	//_visible_grid_unit_type = "infantery";
 	_add_unit_type = "infantery";
 	_element_type = "tree";
+	_add_barrier_type = "barrier_basic";
 	_elevation_mode = ELEVATION_ZERO;
 	_elevation_radius = 0.0;
 	_elevation_factor = 0.0;
@@ -32,6 +32,7 @@ StrategyConfig::StrategyConfig(std::string elevation_rand_dir) {
 	_trees_dispersion = 0.0;
 	_stones_dispersion = 0.0;
 	_erase_radius = 0.0;
+	_orientation = 0.0;
 	_n_trees = 0;
 	_n_stones = 0;
 	_selected_team_idx = 0;
@@ -73,7 +74,7 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system), 
 	_angle_lake(0.0), _angle_river(0.0), _angle_sea(0.0),
 	_cursor_world_position(pt_3d(0.0)), _cursor_in_world(false), _cursor_hover_unit(NULL), _cursor_hover_ihm(false),
-	_fow_ok(false), _add_unit_ok(false), _add_unit_fow_ok(false), _move_unit_ok(false), _attack_unit_ok(false)
+	_fow_ok(false), _add_unit_ok(false), _move_unit_ok(false), _attack_unit_ok(false), _add_barrier_ok(false)
 {
 	bool verbose = true;
 
@@ -83,7 +84,10 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	if (verbose) {
 		std::cout << "creating map\n";
 	}
-	_map = new Map("../data/unit_types", "../data/ammo_types", "../data/elements", "../data/explosions", MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION, t);
+	_map = new Map(
+		"../data/unit_types", "../data/ammo_types", "../data/elements", "../data/explosions", "../data/barrier_types",
+		MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION, t
+	);
 
 	if (verbose) {
 		std::cout << "loading map\n";
@@ -184,6 +188,7 @@ void Strategy::set_ihm() {
 	_ihm->get_element("play_mode", "add_unit")->set_callback([this](){_config->_play_mode = ADD_UNIT;});
 	_ihm->get_element("play_mode", "select_unit")->set_callback([this](){_config->_play_mode = SELECT_UNIT;});
 	_ihm->get_element("play_mode", "action_unit")->set_callback([this](){_config->_play_mode = ACTION_UNIT;});
+	_ihm->get_element("play_mode", "add_barrier")->set_callback([this](){_config->_play_mode = ADD_BARRIER;});
 	
 	_ihm->get_element("unit_action", "wait")->set_callback([this](){
 		_config->_unit_action_mode = WAIT;
@@ -221,6 +226,10 @@ void Strategy::set_ihm() {
 		_ihm->get_element("elements", element_type)->set_callback([this, element_type](){_config->_element_type = element_type;});
 	}
 	
+	for (auto & barrier_type : std::vector<std::string>{"barrier_basic", }) {
+		_ihm->get_element("barriers", barrier_type)->set_callback([this, barrier_type](){_config->_add_barrier_type = barrier_type;});
+	}
+
 	_ihm->get_element("tree_params", "n_trees")->set_callback([this](){
 		GLIHMElement * element = _ihm->get_element("tree_params", "n_trees");
 		GLIHMSlider * slider = (GLIHMSlider *)(element);
@@ -576,10 +585,22 @@ void Strategy::draw_explosion(ViewSystem * view_system) {
 	context->set_uniform("fow_active", float(_config->_fow_active));
 	context->draw();	
 	context->deactivate();
+}
 
-	/*if (!context->empty()) {
-		context->show_data();
-	}*/
+
+void Strategy::draw_barrier(BarrierType * barrier_type, ViewSystem * view_system) {
+	GLDrawContext * context= _gl_draw_manager->get_context(barrier_type->_name);
+	context->activate();
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
+	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(view_system->_eye)));
+	context->set_uniform("size", glm::value_ptr(glm::vec2(_map->_aabb->_size)));
+	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
+	context->set_uniform("idx_team", float(_config->_selected_team_idx));
+	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->draw();
+	context->deactivate();
 }
 
 
@@ -608,6 +629,10 @@ void Strategy::draw() {
 	// environnement
 	draw_elevation(_view_system);
 	draw_tree_stone(_view_system);
+
+	for (auto & barrier_type : _map->_barrier_types) {
+		draw_barrier(barrier_type.second, _view_system);
+	}
 
 	// éléments mobiles
 	for (auto & unit_type : _map->_unit_types) {
@@ -1193,7 +1218,27 @@ void Strategy::update_cursor() {
 	}
 	else if (_config->_play_mode == ADD_UNIT) {
 		aabb = new AABB(*_map->_unit_types[_config->_add_unit_type]->_obj_data->_aabb);
-		if (_add_unit_fow_ok) {
+		if (_fow_ok) {
+			aabb->translate(_cursor_world_position);
+		}
+		else {
+			aabb->translate(pt_3d(_cursor_world_position.x, _cursor_world_position.y, Z_FOW + Z_OFFSET_UNIT));
+		}
+		AABB_2D * aabb_2d = aabb->aabb2d();
+		if (!_map->_elevation->in_boundaries(aabb_2d)) {
+			context->_n_pts = 0;
+			context->_active = false;
+			delete aabb_2d;
+			delete aabb;
+			return;
+		}
+		delete aabb_2d;
+
+		context->_n_pts = 48;
+	}
+	else if (_config->_play_mode == ADD_BARRIER) {
+		aabb = new AABB(*_map->_barrier_types[_config->_add_barrier_type]->_obj_data->_aabb);
+		if (_fow_ok) {
 			aabb->translate(_cursor_world_position);
 		}
 		else {
@@ -1247,7 +1292,7 @@ void Strategy::update_cursor() {
 		delete aabb;
 
 		glm::vec4 add_unit_color;
-		if (_add_unit_ok && _add_unit_fow_ok) {
+		if (_add_unit_ok && _fow_ok) {
 			add_unit_color = glm::vec4(0.0, 0.5, 0.2, 1.0);
 		}
 		else {
@@ -1898,6 +1943,43 @@ void Strategy::update_explosion() {
 }
 
 
+void Strategy::update_barrier_obj(BarrierType * barrier_type) {
+	GLDrawContext * context= _gl_draw_manager->get_context(barrier_type->_name);
+
+	context->_n_pts = barrier_type->_obj_data->_n_pts;
+	context->set_data(barrier_type->_obj_data->_data, 0);
+}
+
+
+void Strategy::update_barrier_matrices(BarrierType * barrier_type) {
+	GLDrawContext * context= _gl_draw_manager->get_context(barrier_type->_name);
+
+	context->_n_instances = 0;
+	for (auto & barrier : _map->_barriers) {
+		if (barrier->_type == barrier_type) {
+			context->_n_instances++;
+		}
+	}
+
+	if (context->empty()) {
+		return;
+	}
+
+	float * data = new float[context->_n_instances * (16 + 3)];
+	float * ptr = data;
+	for (auto & barrier : _map->_barriers) {
+		if (barrier->_type == barrier_type) {
+			const float * unit_data = glm::value_ptr(glm::mat4(barrier->_model2world));
+			std::memcpy(ptr, unit_data, 16 * sizeof(float));
+			ptr += 16;
+		}
+	}
+
+	context->set_data(data, 1);
+	delete[] data;
+}
+
+
 void Strategy::update_all(time_point t) {
 	update_select();
 	update_grid();
@@ -1923,6 +2005,10 @@ void Strategy::update_all(time_point t) {
 	update_fow_texture();
 	update_construction(t);
 	update_explosion();
+	for (auto & barrier_type : _map->_barrier_types) {
+		update_barrier_obj(barrier_type.second);
+		update_barrier_matrices(barrier_type.second);
+	}
 }
 
 
@@ -2071,7 +2157,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 			}
 			
 			else if (_config->_play_mode == ADD_UNIT) {
-				if (_add_unit_ok && _add_unit_fow_ok) {
+				if (_add_unit_ok && _fow_ok) {
 					Unit * unit = _map->add_unit(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position), t);
 					if (_config->_units_paused) {
 						unit->_paused = true;
@@ -2079,6 +2165,13 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 					else {
 						unit->_paused = false;
 					}
+					return true;
+				}
+			}
+
+			else if (_config->_play_mode == ADD_BARRIER) {
+				if (_add_barrier_ok) {
+					_map->add_barrier(_config->_add_barrier_type, pt_2d(_cursor_world_position), _config->_orientation);
 					return true;
 				}
 			}
@@ -2159,17 +2252,17 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 	std::vector<Unit *> selected_units = get_selected_team()->get_selected_units();
 
 	if (_cursor_in_world) {
-		_fow_ok = _map->fow_check(get_selected_team(), pt_2d(_cursor_world_position));
-		
-		_add_unit_ok = _map->add_unit_check(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position), false, true);
-		
 		if (_config->_fow_active) {
-			_add_unit_fow_ok = _map->fow_check(get_selected_team(), pt_2d(_cursor_world_position));
+			_fow_ok = _map->fow_check(get_selected_team(), pt_2d(_cursor_world_position));
 		}
 		else {
-			_add_unit_fow_ok = true;
+			_fow_ok = true;
 		}
+		
+		_add_unit_ok = _map->add_unit_check(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position), _config->_fow_active, true);
 
+		_add_barrier_ok = _map->add_barrier_check(get_selected_team(), _config->_add_barrier_type, pt_2d(_cursor_world_position), _config->_orientation, _config->_fow_active);
+		
 		_move_unit_ok = true;
 		if (selected_units.empty()) {
 			_move_unit_ok = false;
@@ -2219,7 +2312,7 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 	}
 	
 	else {
-		_fow_ok = _add_unit_ok = _add_unit_fow_ok = _move_unit_ok = _attack_unit_ok = false;
+		_fow_ok = _add_unit_ok = _move_unit_ok = _attack_unit_ok = _add_barrier_ok = false;
 		_cursor_hover_unit = NULL;
 	}
 

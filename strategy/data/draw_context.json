@@ -42,6 +42,12 @@
 				{"instanced" : true, "attrs" : ["model2world_matrix"]}
 			]
 		},
+
+		"barrier_basic" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
+			"buffers" : [
+				{"instanced" : true, "attrs" : ["model2world_matrix"]}
+			]
+		},
 		
 		"infantery" : {
 			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",

@@ -17,7 +17,8 @@
 		"lake" : 1000.0,
 		"river" : 1000.0,
 		"sea_coast" : 0.0,
-		"lake_coast" : 0.0
+		"lake_coast" : 0.0,
+		"barrier" : 1000.0
 	},
 	"edge_cost" : {
 		"hard_down" : 500.0,
