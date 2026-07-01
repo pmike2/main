@@ -76,7 +76,7 @@ Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, ti
 	_cursor_world_position(pt_3d(0.0)), _cursor_in_world(false), _cursor_hover_unit(NULL), _cursor_hover_ihm(false),
 	_fow_ok(false), _add_unit_ok(false), _move_unit_ok(false), _attack_unit_ok(false), _add_barrier_ok(false)
 {
-	bool verbose = true;
+	bool verbose = false;
 
 	_config = new StrategyConfig("../data/elevation_rand_config");
 
@@ -358,10 +358,22 @@ void Strategy::set_ihm() {
 			for (auto & unit_type : _map->_unit_types) {
 				_gl_draw_manager->set_active(unit_type.first);
 			}
+			for (auto & ammo_type : _map->_ammo_types) {
+				_gl_draw_manager->set_active(ammo_type.first);
+			}
+			for (auto & barrier_type : _map->_barrier_types) {
+				_gl_draw_manager->set_active(barrier_type.first);
+			}
 		},
 		[this](){
 			for (auto & unit_type : _map->_unit_types) {
 				_gl_draw_manager->set_inactive(unit_type.first);
+			}
+			for (auto & ammo_type : _map->_ammo_types) {
+				_gl_draw_manager->set_inactive(ammo_type.first);
+			}
+			for (auto & barrier_type : _map->_barrier_types) {
+				_gl_draw_manager->set_inactive(barrier_type.first);
 			}
 		}
 	);
@@ -378,13 +390,6 @@ void Strategy::set_ihm() {
 		});
 	}
 	
-	/*for (auto & unit_type_name : std::vector<std::string>{"infantery", "tank", "helicopter", "boat"}) {
-		_ihm->get_element("grid_unit_type", unit_type_name)->set_callback([this, unit_type_name](){
-			_config->_visible_grid_unit_type = unit_type_name;
-			update_grid();
-		});
-	}*/
-
 	_ihm->all_callbacks(); // synchro de l'état de l'ihm avec l'état de strategy
 
 	//std::cout << *_ihm << "\n";
@@ -736,6 +741,9 @@ void Strategy::anim(time_point t) {
 	for (auto & ammo_type : _map->_ammo_types) {
 		update_ammo_matrices(ammo_type.second);
 	}
+	for (auto & barrier_type : _map->_barrier_types) {
+		update_barrier_matrices(barrier_type.second);
+	}
 
 	if (verbose) {
 		std::cout << "anim : end\n";
@@ -792,6 +800,9 @@ glm::vec4 Strategy::get_grid_edge_color(uint from, uint to) {
 		}
 		else if (from_data->_type == "lake_coast" || to_data->_type == "lake_coast" ) {
 			edge_color = glm::vec4(1.0f, 1.0f, 0.5f, 1.0f);
+		}
+		else if (from_data->_type == "barrier" || to_data->_type == "barrier" ) {
+			edge_color = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 		}
 		else if (from_data->_type == "land" || to_data->_type == "land" ) {
 			edge_color = glm::vec4(0.5f, 1.0f, 0.5f, 1.0f);
@@ -946,6 +957,11 @@ void Strategy::update_bbox() {
 		context->_n_pts += 48;
 	}
 
+	// barriers
+	for (auto & barrier : _map->_barriers) {
+		context->_n_pts += 48;
+	}
+
 	if (context->empty()) {
 		return;
 	}
@@ -1020,6 +1036,24 @@ void Strategy::update_bbox() {
 			ptr[4] = element_color.g;
 			ptr[5] = element_color.b;
 			ptr[6] = element_color.a;
+			ptr += 7;
+		}
+	}
+
+	// barriers
+	for (auto & barrier : _map->_barriers) {
+		std::vector<pt_3d> segs = barrier->_bbox->segments();
+
+		glm::vec4 barrier_color(0.5, 0.8, 0.7, 1.0);
+
+		for (uint i=0; i < segs.size(); ++i) {
+			ptr[0] = float(segs[i].x);
+			ptr[1] = float(segs[i].y);
+			ptr[2] = float(segs[i].z + Z_OFFSET_UNIT);
+			ptr[3] = barrier_color.r;
+			ptr[4] = barrier_color.g;
+			ptr[5] = barrier_color.b;
+			ptr[6] = barrier_color.a;
 			ptr += 7;
 		}
 	}
@@ -1212,47 +1246,44 @@ void Strategy::update_cursor() {
 		return;
 	}
 
-	AABB * aabb;
+	std::vector<pt_3d> segs;
+
 	if (_config->_play_mode == SELECT_UNIT && _cursor_hover_unit != NULL) {
 		context->_n_pts = 48;
 	}
-	else if (_config->_play_mode == ADD_UNIT) {
-		aabb = new AABB(*_map->_unit_types[_config->_add_unit_type]->_obj_data->_aabb);
+	else if (_config->_play_mode == ADD_UNIT || _config->_play_mode == ADD_BARRIER) {
+		BBox * bbox;
+		if (_config->_play_mode == ADD_UNIT) {
+			bbox = new BBox(_map->_unit_types[_config->_add_unit_type]->_obj_data->_aabb);
+		}
+		else if (_config->_play_mode == ADD_BARRIER) {
+			bbox = new BBox(_map->_barrier_types[_config->_add_barrier_type]->_obj_data->_aabb);
+		}
+
+		pt_3d origin;
 		if (_fow_ok) {
-			aabb->translate(_cursor_world_position);
+			//aabb->translate(_cursor_world_position);
+			origin = _cursor_world_position;
 		}
 		else {
-			aabb->translate(pt_3d(_cursor_world_position.x, _cursor_world_position.y, Z_FOW + Z_OFFSET_UNIT));
+			//aabb->translate(pt_3d(_cursor_world_position.x, _cursor_world_position.y, Z_FOW + Z_OFFSET_UNIT));
+			origin = pt_3d(_cursor_world_position.x, _cursor_world_position.y, Z_FOW + Z_OFFSET_UNIT);
 		}
-		AABB_2D * aabb_2d = aabb->aabb2d();
+		bbox->set_model2world(glm::translate(origin) * glm::rotate(_config->_orientation, pt_3d(0.0, 0.0, 1.0)));
+
+		AABB_2D * aabb_2d = bbox->_aabb->aabb2d();
+
 		if (!_map->_elevation->in_boundaries(aabb_2d)) {
 			context->_n_pts = 0;
 			context->_active = false;
 			delete aabb_2d;
-			delete aabb;
+			delete bbox;
 			return;
 		}
 		delete aabb_2d;
 
-		context->_n_pts = 48;
-	}
-	else if (_config->_play_mode == ADD_BARRIER) {
-		aabb = new AABB(*_map->_barrier_types[_config->_add_barrier_type]->_obj_data->_aabb);
-		if (_fow_ok) {
-			aabb->translate(_cursor_world_position);
-		}
-		else {
-			aabb->translate(pt_3d(_cursor_world_position.x, _cursor_world_position.y, Z_FOW + Z_OFFSET_UNIT));
-		}
-		AABB_2D * aabb_2d = aabb->aabb2d();
-		if (!_map->_elevation->in_boundaries(aabb_2d)) {
-			context->_n_pts = 0;
-			context->_active = false;
-			delete aabb_2d;
-			delete aabb;
-			return;
-		}
-		delete aabb_2d;
+		segs = bbox->segments();
+		delete bbox;
 
 		context->_n_pts = 48;
 	}
@@ -1287,10 +1318,7 @@ void Strategy::update_cursor() {
 		}
 	}
 	
-	else if (_config->_play_mode == ADD_UNIT) {
-		std::vector<pt_3d> segs = aabb->segments();
-		delete aabb;
-
+	else if (_config->_play_mode == ADD_UNIT || _config->_play_mode == ADD_BARRIER) {
 		glm::vec4 add_unit_color;
 		if (_add_unit_ok && _fow_ok) {
 			add_unit_color = glm::vec4(0.0, 0.5, 0.2, 1.0);
@@ -1961,7 +1989,7 @@ void Strategy::update_barrier_matrices(BarrierType * barrier_type) {
 		}
 	}
 
-	if (context->empty()) {
+	if (context->empty(1)) {
 		return;
 	}
 
@@ -1977,6 +2005,7 @@ void Strategy::update_barrier_matrices(BarrierType * barrier_type) {
 
 	context->set_data(data, 1);
 	delete[] data;
+	//context->show_data(1);
 }
 
 
@@ -1992,19 +2021,19 @@ void Strategy::update_all(time_point t) {
 	update_river();
 	update_lake();
 	update_sea();
-	for (auto & unit_type : _map->_unit_types) {
-		update_unit_obj(unit_type.second);
-		update_unit_matrices(unit_type.second);
-	}
 	update_unit_life();
-	for (auto & ammo_type : _map->_ammo_types) {
-		update_ammo_obj(ammo_type.second);
-		update_ammo_matrices(ammo_type.second);
-	}
 	update_selection();
 	update_fow_texture();
 	update_construction(t);
 	update_explosion();
+	for (auto & unit_type : _map->_unit_types) {
+		update_unit_obj(unit_type.second);
+		update_unit_matrices(unit_type.second);
+	}
+	for (auto & ammo_type : _map->_ammo_types) {
+		update_ammo_obj(ammo_type.second);
+		update_ammo_matrices(ammo_type.second);
+	}
 	for (auto & barrier_type : _map->_barrier_types) {
 		update_barrier_obj(barrier_type.second);
 		update_barrier_matrices(barrier_type.second);
@@ -2172,6 +2201,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 			else if (_config->_play_mode == ADD_BARRIER) {
 				if (_add_barrier_ok) {
 					_map->add_barrier(_config->_add_barrier_type, pt_2d(_cursor_world_position), _config->_orientation);
+					update_grid();
 					return true;
 				}
 			}
@@ -2326,6 +2356,21 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 	}
 
 	if (_ihm->key_down(input_state, key, t)) {
+		return true;
+	}
+
+	if (key == SDLK_a) {
+		_config->_orientation -= 0.1;
+		while (_config->_orientation < 0.0) {
+			_config->_orientation += 2.0 * M_PI;
+		}
+		return true;
+	}
+	else if (key == SDLK_z) {
+		_config->_orientation += 0.1;
+		while (_config->_orientation >= 2.0 * M_PI) {
+			_config->_orientation -= 2.0 * M_PI;
+		}
 		return true;
 	}
 

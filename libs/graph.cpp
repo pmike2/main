@@ -760,7 +760,7 @@ uint GraphGrid::angle(int_pair u, int_pair v) {
 }
 
 
-std::vector<uint> GraphGrid::prune(std::vector<uint> ids) {
+std::vector<uint> GraphGrid::prune(std::vector<uint> ids, uint n_neighbours_min) {
 	std::vector<uint> result;
 	for (auto & id : ids) {
 		uint n_neighbors = 0;
@@ -769,7 +769,7 @@ std::vector<uint> GraphGrid::prune(std::vector<uint> ids) {
 				n_neighbors++;
 			}
 		}
-		if (n_neighbors > 1) {
+		if (n_neighbors >= n_neighbours_min) {
 			result.push_back(id);
 		}
 	}

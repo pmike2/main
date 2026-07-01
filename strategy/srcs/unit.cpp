@@ -189,7 +189,15 @@ void Unit::anim(time_point t) {
 		// https://en.wikipedia.org/wiki/Slerp
 		const number slerp_speed = 0.05;
 		quat next_quat = glm::angleAxis(next_angle, pt_3d(0.0, 0.0, 1.0));
-		quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
+
+		// nécessaire sinon on a des retournements brusques
+		// cf https://gabormakesgames.com/blog_quats_interpolate.html
+		if (glm::dot(_rotation, next_quat) < 0.0) {
+			next_quat = -1.0 * next_quat;
+		}
+		// glm::mix fait le slerp
+		//quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
+		quat interpolated_quat = glm::mix(_rotation, next_quat, slerp_speed);
 
 		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
 	}

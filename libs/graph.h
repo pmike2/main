@@ -109,7 +109,7 @@ struct GraphGrid : public Graph {
 	
 	int_pair next_direction(int_pair u);
 	uint angle(int_pair u, int_pair v);
-	std::vector<uint> prune(std::vector<uint> ids);
+	std::vector<uint> prune(std::vector<uint> ids, uint n_neighbours_min = 2);
 	Polygon2D * ids2polygon(std::vector<uint> ids);
 	Polygon2D * pts2polygon(std::vector<pt_2d> pts);
 

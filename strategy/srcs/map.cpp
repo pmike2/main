@@ -313,8 +313,12 @@ void Map::add_stones(std::string species_name, pt_2d pos, uint n_stones, number 
 
 void Map::add_barrier(std::string type, pt_2d pos, number orientation) {
 	Barrier * barrier = new Barrier(_barrier_types[type], pos, orientation, _elevation);
-	std::vector<uint> id_nodes = _path_finder->vertices_in_bbox(barrier->_bbox->bbox2d());
-	_path_finder->set_vertex(graph_id_convert(_elevation, _path_finder, id_nodes), "barrier");
+	_barriers.push_back(barrier);
+	std::vector<uint> id_nodes = _path_finder->vertices_in_bbox(barrier->_bbox->bbox2d()->buffered(1.0));
+	//id_nodes = _path_finder->buffered_ids(id_nodes, 1); std::cout << id_nodes.size() << "\n";
+	//id_nodes = _path_finder->prune(id_nodes, 6); std::cout << id_nodes.size() << "\n";
+	//id_nodes = _path_finder->prune(id_nodes); std::cout << id_nodes.size() << "\n";
+	_path_finder->set_vertex(id_nodes, "barrier");
 }
 
 
