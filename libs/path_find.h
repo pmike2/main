@@ -93,8 +93,6 @@ struct PathFinder : public GraphGrid {
 	number cost(GridMovingObject * gmo, uint from, uint to);
 	number heuristic(uint i, uint j);
 	void path_find(PathFinderInput * input);
-	//GridMovingObject * add_gmo(std::string gmo_type_name, pt_2d pt, number size);
-	//GridMovingObject * get_gmo(uint id);
 	void init_gmo(GridMovingObject * gmo);
 	void add_gmo_grid(GridMovingObject * gmo);
 	void remove_gmo_grid(GridMovingObject * gmo);
@@ -118,6 +116,7 @@ struct PathFinder : public GraphGrid {
 	void set_edge(pt_2d center, number size, std::string type);
 
 	bool is_vertex_obstacle(std::string type_name, uint id_vertex, GridMovingObject * gmo = NULL);
+	bool is_gmo_expecting_path(GridMovingObject * gmo);
 
 	void randomize_edges(std::vector<std::string> types);
 	void parse_input_queue(time_point t);

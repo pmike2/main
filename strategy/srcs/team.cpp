@@ -125,9 +125,27 @@ bool Team::move_unit_check(Unit * unit, pt_2d pos, bool fow_active) {
 
 
 bool Team::attack_unit_check(Unit * attacking_unit, Unit * attacked_unit, bool fow_active) {
+	if (attacked_unit->_unit_status == UNIT_INACTIVE || attacked_unit->_unit_status == UNIT_DESTROYED || attacked_unit->_unit_status == UNIT_UNDER_CONSTRUCTION) {
+		return false;
+	}
+	
 	if (fow_active && !fow_check(pt_2d(attacked_unit->_position))) {
 		return false;
 	}
+
+	const number offset_z = 0.5;
+	number dist = glm::length(attacking_unit->_position - attacked_unit->_position);
+	if (dist > attacking_unit->_type->_ammo_type->_max_distance) {
+		return false;
+	}
+
+	if (!attacking_unit->_type->_ammo_type->_ballistic) {
+		number max_elevation_alti = _elevation->get_max_alti_along_segment(attacking_unit->_position, attacked_unit->_position);
+		if (max_elevation_alti > std::max(attacking_unit->_position.z, attacked_unit->_position.z) + offset_z) {
+			return false;
+		}
+	}
+
 	return true;
 }
 
@@ -240,13 +258,15 @@ bool Team::empty() {
 void Team::selected_units_goto(pt_3d pt) {
 	for (auto & unit : _units) {
 		if (unit->_selected) {
+			unit->_target = NULL;
+			unit->_unit_status = UNIT_WATCHING;
 			_path_finder->goto_gmo(unit, pt_2d(pt), false);
 		}
 	}
 }
 
 
-bool Team::is_target_reachable(Unit * unit, Unit * target) {
+/*bool Team::is_target_reachable(Unit * unit, Unit * target) {
 	const number offset_z = 0.5;
 	number dist = glm::length(unit->_position - target->_position);
 	if (dist > unit->_type->_ammo_type->_max_distance) {
@@ -261,33 +281,34 @@ bool Team::is_target_reachable(Unit * unit, Unit * target) {
 	}
 
 	return true;
-}
+}*/
 
 
-void Team::unit_attack(Unit * unit, Unit * target, time_point t) {
-	if (is_target_reachable(unit, target)) {
+void Team::unit_attack(Unit * unit, Unit * target, time_point t, bool fow_active) {
+	if (attack_unit_check(unit, target, fow_active)) {
 		unit->_target = target;
 		unit->_unit_status = UNIT_ATTACKING;
+		_path_finder->stop_gmo(unit);
 	}
 }
 
 
-void Team::selected_units_attack(Unit * target, time_point t) {
+void Team::selected_units_attack(Unit * target, time_point t, bool fow_active) {
 	for (auto & unit : _units) {
 		if (unit->_selected) {
-			unit_attack(unit, target, t);
+			unit_attack(unit, target, t, fow_active);
 		}
 	}
 }
 
 
-Unit * Team::search_target(Unit * unit, Team * ennemy_team) {
+Unit * Team::search_target(Unit * unit, Team * ennemy_team, bool fow_active) {
 	if (ennemy_team == this) {
 		return NULL;
 	}
 
 	for (auto & ennemy_unit : ennemy_team->_units) {
-		if (is_target_reachable(unit, ennemy_unit)) {
+		if (attack_unit_check(unit, ennemy_unit, fow_active)) {
 			return ennemy_unit;
 		}
 	}
@@ -301,7 +322,7 @@ void Team::anim_units(time_point t) {
 
 	for (auto & unit : _units) {
 		if (unit->_unit_status == UNIT_INACTIVE) {
-			return;
+			continue;
 		}
 
 		unit->anim(t);
@@ -320,13 +341,14 @@ void Team::anim_units(time_point t) {
 
 			_path_finder->remove_gmo(unit);
 			
-			return;
+			continue;
 		}
 
 		if (unit->_gmo_status == GMO_IDLE) {
 			if (unit->_unit_status == UNIT_ATTACKING) {
 				if (unit->_target->_unit_status == UNIT_DESTROYED || unit->_target->_hit_status == FINAL_HIT) {
 					unit->_unit_status = UNIT_WATCHING;
+					unit->_target = NULL;
 				}
 			}
 		}

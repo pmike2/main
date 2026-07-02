@@ -38,7 +38,6 @@ struct Unit : public InstancePosRot, public GridMovingObject {
 	quat quat_slerp(pt_2d direction_goal);
 	number angle();
 	void anim(time_point t);
-	void set_hit_status(UNIT_HIT_STATUS hit_status, time_point t);
 	void hit(Ammo * ammo, time_point t);
 	json get_json();
 	friend std::ostream & operator << (std::ostream & os, Unit & unit);
@@ -52,7 +51,6 @@ struct Unit : public InstancePosRot, public GridMovingObject {
 	Elevation * _elevation;
 	time_point _last_shooting_t;
 	time_point _creation_t;
-	//number _angle;
 	number _life;
 	number _hit;
 	Unit * _target;

@@ -56,22 +56,20 @@ struct Map {
 	Team * get_team(std::string team_name);
 	uint get_team_idx(std::string team_name);
 	
-	void remove_units_in_aabb(AABB_2D * aabb);
-	void remove_elements_in_aabb(AABB_2D * aabb);
-	void clear_units();
-
 	void pause_all_units(bool pause);
-
-	void clear_elements();
 
 	void update_alti_grid();
 	void update_elevation_grid();
 	void update_terrain_grid_with_elevation();
 	void sync2elevation();
 
-	void ia(time_point t);
-	void anim(time_point t);
+	void ia(time_point t, bool fow_active);
+	void anim(time_point t, bool fow_active);
 	
+	void remove_units_in_aabb(AABB_2D * aabb);
+	void remove_elements_in_aabb(AABB_2D * aabb);
+	void clear_units();
+	void clear_elements();
 	void clear();
 	void randomize(ElevationRandConfig * rand_config);
 	void save_teams(std::string teams_json_path);

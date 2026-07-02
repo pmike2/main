@@ -22,7 +22,7 @@ Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_
 		type->get_max_square_size()
 	),
 	_team(team), _type(type), _unit_status(UNIT_UNDER_CONSTRUCTION), _paused(false), _elevation(elevation),
-	/*_angle(0.0),*/ _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
+	_life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
 	_creation_t(t)
 {
 
@@ -38,7 +38,6 @@ void Unit::reinit(pt_3d pos, time_point t) {
 	set_pos(pos);
 	_aabb->set_center(pt_2d(pos));
 	_unit_status = UNIT_UNDER_CONSTRUCTION;
-	//_angle = 0.0;
 	_life = _type->_life_init; 
 	_hit_status = NO_HIT;
 	_hit = 0.0;
@@ -93,13 +92,16 @@ void Unit::anim(time_point t) {
 	if (_hit_status == HIT_ASCEND) {
 		_hit += 0.4;
 		if (_hit > 0.2 * _hit_ammo->_damage) {
-			set_hit_status(HIT_DESCEND, t);
+			_hit_status = HIT_DESCEND;
+
 		}
 	}
 	else if (_hit_status == HIT_DESCEND) {
 		_hit -= 0.3;
 		if (_hit < 0.0) {
-			set_hit_status(NO_HIT, t);
+			_hit_status = NO_HIT;
+			_hit = 0.0;
+			_hit_ammo = NULL;
 		}
 	}
 	else if (_hit_status == FINAL_HIT) {
@@ -194,22 +196,19 @@ void Unit::anim(time_point t) {
 }
 
 
-void Unit::set_hit_status(UNIT_HIT_STATUS hit_status, time_point t) {
+/*void Unit::set_hit_status(UNIT_HIT_STATUS hit_status, time_point t) {
 	_hit_status = hit_status;
 	if (_hit_status == NO_HIT) {
 		_hit = 0.0;
 		_hit_ammo = NULL;
 	}
 	else if (_hit_status == HIT_ASCEND) {
-		//_last_hit_t = t;
 	}
 	else if (_hit_status == HIT_DESCEND) {
-
 	}
 	else if (_hit_status == FINAL_HIT) {
-		//_last_hit_t = t;
 	}
-}
+}*/
 
 
 void Unit::hit(Ammo * ammo, time_point t) {
@@ -217,10 +216,10 @@ void Unit::hit(Ammo * ammo, time_point t) {
 	_life -= ammo->_damage;
 	if (_life <= 0.0) {
 		_life = 0.0;
-		set_hit_status(FINAL_HIT, t);
+		_hit_status = FINAL_HIT;
 	}
 	else {
-		set_hit_status(HIT_ASCEND, t);
+		_hit_status = HIT_ASCEND;
 	}
 }
 

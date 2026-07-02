@@ -41,6 +41,7 @@ struct Team {
 	Team();
 	Team(std::string name, glm::vec3 color, Elevation * elevation, PathFinder * path_finder, pt_2d fow_resolution);
 	~Team();
+	
 	bool fow_check(pt_2d pos);
 	bool construction_check(UnitType * type);
 	bool add_unit_check(UnitType * type, pt_2d pos, bool fow_active, bool construction_active);
@@ -57,10 +58,9 @@ struct Team {
 	void clear_selection();
 	bool empty();
 	void selected_units_goto(pt_3d pt);
-	bool is_target_reachable(Unit * unit, Unit * target);
-	void unit_attack(Unit * unit, Unit * target, time_point t);
-	void selected_units_attack(Unit * target, time_point t);
-	Unit * search_target(Unit * unit, Team * ennemy_team);
+	void unit_attack(Unit * unit, Unit * target, time_point t, bool fow_active);
+	void selected_units_attack(Unit * target, time_point t, bool fow_active);
+	Unit * search_target(Unit * unit, Team * ennemy_team, bool fow_active);
 	void anim_units(time_point t);
 	void update_fow_unit(Unit * unit);
 	void update_fow();

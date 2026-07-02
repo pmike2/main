@@ -285,7 +285,7 @@ void Strategy::set_ihm() {
 	_ihm->get_element("global_edit", "randomize")->set_callback([this](){
 		_config->_current_rand_config->reload();
 		_map->randomize(_config->_current_rand_config);
-		_map->anim(_ihm->_current_t); // pour que les unit en statut UNIT_DESTROYED soient processées
+		_map->anim(_ihm->_current_t, _config->_fow_active); // pour que les unit en statut UNIT_DESTROYED soient processées
 		for (auto & team : _map->_teams) {
 			team->clear_fow();
 		}
@@ -297,7 +297,7 @@ void Strategy::set_ihm() {
 	
 	_ihm->get_element("global_edit", "clear")->set_callback([this](){
 		_map->clear();
-		_map->anim(_ihm->_current_t); // pour que les unit en statut UNIT_DESTROYED soient processées
+		_map->anim(_ihm->_current_t, _config->_fow_active); // pour que les unit en statut UNIT_DESTROYED soient processées
 		for (auto & team : _map->_teams) {
 			team->clear_fow();
 		}
@@ -717,7 +717,7 @@ void Strategy::anim(time_point t) {
 	if (verbose) {
 		std::cout << "anim : map\n";
 	}
-	_map->anim(t);
+	_map->anim(t, _config->_fow_active);
 
 	if (verbose) {
 		std::cout << "anim : updates\n";
@@ -2179,7 +2179,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 
 			else if (_config->_play_mode == ACTION_UNIT && _config->_unit_action_mode == ATTACK) {
 				if (_attack_unit_ok) {
-					get_selected_team()->selected_units_attack(_cursor_hover_unit, t);
+					get_selected_team()->selected_units_attack(_cursor_hover_unit, t, _config->_fow_active);
 					return true;
 				}
 			}

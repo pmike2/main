@@ -246,67 +246,11 @@ uint Map::get_team_idx(std::string team_name) {
 }
 
 
-void Map::remove_units_in_aabb(AABB_2D * aabb) {
-	for (auto & team : _teams) {
-		std::vector<Unit *> units = team->get_units_in_aabb(aabb);
-		for (auto & unit : units) {
-			unit->_unit_status = UNIT_DESTROYED;
-		}
-	}
-}
-
-
-void Map::remove_elements_in_aabb(AABB_2D * aabb) {
-	std::vector<Element *> elements = _elements->get_elements_in_aabb(aabb);
-	for (auto & element : elements) {
-		element->_delete = true;
-		for (auto & v : graph_id_convert(_elevation, _path_finder, element->_id_nodes)) {
-			pt_3d pt = _path_finder->id2pt_3d(v);
-			if (pt.z < 0.01) {
-				_path_finder->set_vertex(v, "sea");
-			}
-			else {
-				_path_finder->set_vertex(v, "land");
-			}
-		}
-	}
-	_elements->clear2delete();
-}
-
-
-void Map::clear_units() {
-	_path_finder->clear();
-	for (auto & team : _teams) {
-		team->clear();
-	}
-}
-
-
 void Map::pause_all_units(bool pause) {
 	for (auto & team : _teams) {
 		for (auto & unit : team->_units) {
 			unit->_paused = pause;
 		}
-	}
-}
-
-
-void Map::clear_elements() {
-	_elements->clear();
-	
-	_path_finder->_it_v= _path_finder->_vertices.begin();
-	while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
-		PathFinderVertexData * vertex_data = _path_finder->get_vertex_data(_path_finder->_it_v->first);
-		pt_3d & pt = _path_finder->_it_v->second._pos;
-		if (vertex_data->_type == "tree" || vertex_data->_type == "stone" || vertex_data->_type == "river" || vertex_data->_type == "lake") {
-			if (pt.z < 0.01) {
-				vertex_data->_type = "sea";
-			}
-			else {
-				vertex_data->_type = "land";
-			}
-		}
-		_path_finder->_it_v++;
 	}
 }
 
@@ -400,8 +344,8 @@ void Map::sync2elevation() {
 }
 
 
-void Map::ia(time_point t) {
-	bool ia_verbose = false;
+void Map::ia(time_point t, bool fow_active) {
+	bool verbose = false;
 
 	for (auto & team : _teams) {
 		if (!team->_ia) {
@@ -409,14 +353,14 @@ void Map::ia(time_point t) {
 		}
 
 		// construction
-		for (auto & unit_type : std::vector<std::string>{"infantery", "tank", "helicopter", "boat"}) {
+		for (auto & unit_type : _unit_types) {
 			for (uint compt = 0; compt < IA_MAX_CONSTRUCTION_TRY; compt++) {
 				pt_2d pos = rand_pt_2d(_aabb->_pos, _aabb->_pos + _aabb->_size);
-				if (team->add_unit_check(_unit_types[unit_type], pos, true, true)) {
-					if (ia_verbose) {
-						std::cout << "IA construction " << unit_type << "\n";
+				if (team->add_unit_check(unit_type.second, pos, fow_active, true)) {
+					if (verbose) {
+						std::cout << "IA construction " << unit_type.first << "\n";
 					}
-					team->add_unit(_unit_types[unit_type], pos, t);
+					team->add_unit(unit_type.second, pos, t);
 					break;
 				}
 			}
@@ -427,18 +371,18 @@ void Map::ia(time_point t) {
 				continue;
 			}
 
-			if (unit->_gmo_status == GMO_MOVING) {
+			if (unit->_gmo_status == GMO_MOVING || unit->_gmo_status == GMO_WAITING) {
 				if (unit->_hit_status != NO_HIT) {
 					_path_finder->stop_gmo(unit);
 					unit->_unit_status = UNIT_WATCHING;
-					if (ia_verbose) {
+					if (verbose) {
 						std::cout << "IA unit " << unit->_id << " attacked => MOVING -> WATCHING\n";
 					}
 				}
 
 				Unit * ennemy_unit = NULL;
 				for (auto & ennemy_team : _teams) {
-					ennemy_unit = team->search_target(unit, ennemy_team);
+					ennemy_unit = team->search_target(unit, ennemy_team, fow_active);
 					if (ennemy_unit != NULL) {
 						break;
 					}
@@ -446,18 +390,19 @@ void Map::ia(time_point t) {
 				
 				if (ennemy_unit != NULL) {
 					_path_finder->stop_gmo(unit);
-					team->unit_attack(unit, ennemy_unit, t);
-					if (ia_verbose) {
+					team->unit_attack(unit, ennemy_unit, t, fow_active);
+					if (verbose) {
 						std::cout << "IA unit " << unit->_id << " target found => MOVING -> ATTACKING\n";
 					}
 				}
 			}
-			else {
+			
+			else if (unit->_gmo_status == GMO_IDLE) {
 				/*else if (unit->_gmo_status == ) {
 					if (unit->_life > 0.95 * unit->_type->_life_init) {
 						//unit->set_status(WATCHING, t);
 						unit->_unit_status = WATCHING;
-						if (ia_verbose) {
+						if (verbose) {
 							std::cout << "IA unit " << unit->_id << " life OK => WAITING -> WATCHING\n";
 						}
 					}
@@ -465,44 +410,46 @@ void Map::ia(time_point t) {
 				if (unit->_unit_status == UNIT_WATCHING) {
 					Unit * ennemy_unit = NULL;
 					for (auto & ennemy_team : _teams) {
-						ennemy_unit = team->search_target(unit, ennemy_team);
+						ennemy_unit = team->search_target(unit, ennemy_team, fow_active);
 						if (ennemy_unit != NULL) {
 							break;
 						}
 					}
 					
 					if (ennemy_unit != NULL) {
-						team->unit_attack(unit, ennemy_unit, t);
-						if (ia_verbose) {
+						team->unit_attack(unit, ennemy_unit, t, fow_active);
+						if (verbose) {
 							std::cout << "IA unit " << unit->_id << " target found => WATCHING -> ATTACKING\n";
 						}
 					}
 					else {
-						for (uint compt = 0; compt < IA_MAX_MOVING_TRY; compt++) {
-							// recherche sur un disque troué
-							pt_2d destination = rand_pt_2d(unit->_position, unit->_type->_vision_distance, unit->_type->_vision_distance * 0.75);
-							if (team->move_unit_check(unit, destination, true)) {
-								_path_finder->goto_gmo(unit, destination, true);
-								if (ia_verbose) {
-									std::cout << "IA unit " << unit->_id << " no target found => WATCHING -> MOVING\n";
+						if (!_path_finder->is_gmo_expecting_path(unit)) {
+							for (uint compt = 0; compt < IA_MAX_MOVING_TRY; compt++) {
+								// recherche sur un disque troué
+								pt_2d destination = rand_pt_2d(unit->_position, unit->_type->_vision_distance, unit->_type->_vision_distance * 0.75);
+								if (team->move_unit_check(unit, destination, fow_active)) {
+									_path_finder->goto_gmo(unit, destination, true);
+									if (verbose) {
+										std::cout << "IA unit " << unit->_id << " no target found => WATCHING -> MOVING\n";
+									}
+									break;
 								}
-								break;
 							}
 						}
 					}
 				}
 				else if (unit->_unit_status == UNIT_ATTACKING) {
-					if (!team->is_target_reachable(unit, unit->_target)) {
+					if (!team->attack_unit_check(unit, unit->_target, fow_active)) {
+						unit->_unit_status = UNIT_WATCHING;
 						pt_2d destination = pt_2d(unit->_target->_position);
-						if (team->move_unit_check(unit, destination, true)) {
+						if (team->move_unit_check(unit, destination, fow_active) && !_path_finder->is_gmo_expecting_path(unit)) {
 							_path_finder->goto_gmo(unit, destination, true);
-							if (ia_verbose) {
+							if (verbose) {
 								std::cout << "IA unit " << unit->_id << " target unreachable => ATTACKING -> MOVING\n";
 							}
 						}
 						else {
-							unit->_unit_status = UNIT_WATCHING;
-							if (ia_verbose) {
+							if (verbose) {
 								std::cout << "IA unit " << unit->_id << " target lost => ATTACKING -> WATCHING\n";
 							}
 						}
@@ -514,7 +461,7 @@ void Map::ia(time_point t) {
 }
 
 
-void Map::anim(time_point t) {
+void Map::anim(time_point t, bool fow_active) {
 	bool verbose = false;
 
 	// path find -------------------------------------------------
@@ -533,7 +480,7 @@ void Map::anim(time_point t) {
 	if (verbose) {
 		std::cout << "Map anim : IA\n";
 	}
-	ia(t);
+	ia(t, fow_active);
 
 	// anim par unité -------------------------------------------------
 	if (verbose) {
@@ -583,6 +530,62 @@ void Map::anim(time_point t) {
 	}
 	for (auto & team : _teams) {
 		team->update_fow();
+	}
+}
+
+
+void Map::remove_units_in_aabb(AABB_2D * aabb) {
+	for (auto & team : _teams) {
+		std::vector<Unit *> units = team->get_units_in_aabb(aabb);
+		for (auto & unit : units) {
+			unit->_unit_status = UNIT_DESTROYED;
+		}
+	}
+}
+
+
+void Map::remove_elements_in_aabb(AABB_2D * aabb) {
+	std::vector<Element *> elements = _elements->get_elements_in_aabb(aabb);
+	for (auto & element : elements) {
+		element->_delete = true;
+		for (auto & v : graph_id_convert(_elevation, _path_finder, element->_id_nodes)) {
+			pt_3d pt = _path_finder->id2pt_3d(v);
+			if (pt.z < 0.01) {
+				_path_finder->set_vertex(v, "sea");
+			}
+			else {
+				_path_finder->set_vertex(v, "land");
+			}
+		}
+	}
+	_elements->clear2delete();
+}
+
+
+void Map::clear_units() {
+	_path_finder->clear();
+	for (auto & team : _teams) {
+		team->clear();
+	}
+}
+
+
+void Map::clear_elements() {
+	_elements->clear();
+	
+	_path_finder->_it_v= _path_finder->_vertices.begin();
+	while (_path_finder->_it_v!= _path_finder->_vertices.end()) {
+		PathFinderVertexData * vertex_data = _path_finder->get_vertex_data(_path_finder->_it_v->first);
+		pt_3d & pt = _path_finder->_it_v->second._pos;
+		if (vertex_data->_type == "tree" || vertex_data->_type == "stone" || vertex_data->_type == "river" || vertex_data->_type == "lake") {
+			if (pt.z < 0.01) {
+				vertex_data->_type = "sea";
+			}
+			else {
+				vertex_data->_type = "land";
+			}
+		}
+		_path_finder->_it_v++;
 	}
 }
 

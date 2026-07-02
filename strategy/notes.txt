@@ -4,3 +4,65 @@ Génération des .obj dans Blender :
 - Choisir la couleur noire si l'on veut que ce composant prenne la couleur de l'équipe
 - Orienter vers x positif puis lors de l'export : choisir Forward Axis = Y, Up Axis = Z
 - cocher Triangulated Mesh
+
+Blender :
+s (scale), r(rotate), g(translate) puis x, y, z pour faire selon x , y ou z
+
+tab : edit mode
+ctrl + tab : pose mode
+
+shift + a : add
+
+a : select all
+alt + a : deselect all
+
+viewport overlays / turn on wireframe : pour voir les aretes
+
+numpad : change view
+
+rigging : https://www.youtube.com/watch?v=DDeB4tDVCGY
+add armature
+Data / viewport display / in front pour afficher armature devant le reste
+e : extrude bone
+shift + d : duplicate bones
+ctrl + p : make parent
+alt + p : unmake parent (disconnect)
+nommer les jambes bras gauche avec suffix .L, puis click droit symmetrize : crée les .R
+object mode ; select model ; click droit armature : parent / armature defform / automatic weights
+pose mode ; select armature; déplacement rotation se reflète sur le modèle !
+
+dans menu principal à droite de armature : show names -> affiche le nom des bones
+
+weight painting :
+1 - object mode, select armature
+2 - shift click select object
+3 - ctrl tab -> weight paint mode
+barre du haut / weights / assign automatic from bones
+-> permet de repartir de ce qu'on a fait avant avec automatic weights
+brush tool options / auto normalize : pour que la somme des weights fasse tjrs 1
+brush tool symmetry : utile pour bras / jambes
+f : change brush size
+dans menu principal à droite : Vertex Groups : on peut switcher entre les bones pour peindre leur influence sur l'objet sélectionné
+
+rigid rigging :
+fonctionne uniquement quand on a des objets distincts
+1 - object mode, select un objet (par ex la tête)
+2 - shift click armature
+3 - ctrl tab -> pose mode
+4 - select bone
+ctrl - p : set parent to bone -> l'objet est maintenant attaché au bone
+
+animate :
+https://www.youtube.com/watch?v=IAiTYaiZmY0
+
+pose mode
+select bone(s) (a pour all)
+press i : insert keyframe
+move / rotate ; change time mark ; i : insert another keyframe
+maintenant quand on bouge le time mark on a une anim !
+
+bloc timeline en haut à gauche ou droite icone '+' , permet d'afficher plusieurs timelines
+-> dope sheet + timeline bien
+
+dans dopesheet : a : select all, puis x : supprime tous les keyframes
+

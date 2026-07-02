@@ -345,11 +345,12 @@ void PathFinder::update_gmo_grid(GridMovingObject * gmo) {
 
 
 void PathFinder::goto_gmo(GridMovingObject * gmo, uint id_vertex, bool cancel_if_expecting_path) {
-	for(auto it=_inputs.cbegin(); it!=_inputs.cend(); it++) {
+	if (cancel_if_expecting_path && is_gmo_expecting_path(gmo)) {
+		return;
+	}
+	
+	for (auto it=_inputs.cbegin(); it!=_inputs.cend(); it++) {
 		if ((*it)->_gmo == gmo) {
-			if (cancel_if_expecting_path) {
-				return;
-			}
 			(*it)->_valid = false;
 		}
 	}
@@ -470,6 +471,16 @@ bool PathFinder::is_vertex_obstacle(std::string type_name, uint id_vertex, GridM
 	}
 	if (vertex_data->_gmo != NULL && vertex_data->_gmo != gmo) {
 		return true;
+	}
+	return false;
+}
+
+
+bool PathFinder::is_gmo_expecting_path(GridMovingObject * gmo) {
+	for(auto it=_inputs.cbegin(); it!=_inputs.cend(); it++) {
+		if ((*it)->_gmo == gmo) {
+			return true;
+		}
 	}
 	return false;
 }
