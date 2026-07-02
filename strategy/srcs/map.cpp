@@ -95,8 +95,8 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	if (verbose) {
 		std::cout << "init Teams\n";
 	}
-	_teams.push_back(new Team("Team1", glm::vec3(1.0f, 0.0f, 0.0f), _elevation, _fow_resolution));
-	_teams.push_back(new Team("Team2", glm::vec3(0.0f, 0.0f, 1.0f), _elevation, _fow_resolution));
+	_teams.push_back(new Team("Team1", glm::vec3(1.0f, 0.0f, 0.0f), _elevation, _path_finder, _fow_resolution));
+	_teams.push_back(new Team("Team2", glm::vec3(0.0f, 0.0f, 1.0f), _elevation, _path_finder, _fow_resolution));
 }
 
 
@@ -130,106 +130,6 @@ Map::~Map() {
 }
 
 
-bool Map::fow_check(Team * team, pt_2d pos) {
-	if (!point_in_aabb2d(pos, _aabb)) {
-		return false;
-	}
-
-	std::vector<uint> vertices = team->_fow->vertices_in_cell_containing_pt(pos);
-	for (auto & v : vertices) {
-		GraphVertex vertex = team->_fow->get_vertex(v);
-		FowVertexData * data = (FowVertexData *)(vertex._data);
-		if (data->_status == UNDISCOVERED) {
-			return false;
-		}
-	}
-	return true;
-}
-
-
-bool Map::construction_check(Team * team, std::string type) {
-	if (team->get_unit_under_construction(_unit_types[type]) != NULL) {
-		return false;
-	}
-	return true;
-}
-
-
-bool Map::add_unit_check(Team * team, std::string type, pt_2d pos, bool fow_active, bool construction_active) {
-	if (team->_units.size() >= N_MAX_UNITS_PER_TEAM) {
-		return false;
-	}
-
-	if (!point_in_aabb2d(pos, _aabb)) {
-		return false;
-	}
-
-	if (fow_active && !fow_check(team, pos)) {
-		return false;
-	}
-
-	if (construction_active && !construction_check(team, type)) {
-		return false;
-	}
-
-	pt_2d unit_size = _unit_types[type]->get_max_square_size();
-	AABB_2D * aabb = new AABB_2D(pos - 0.5 * unit_size, unit_size);
-	// petit buffer
-	aabb->buffer(1.5);
-	std::vector<uint> vertices = _path_finder->vertices_in_aabb(aabb);
-	delete aabb;
-	for (auto & v : vertices) {
-		if (_path_finder->is_vertex_obstacle(_unit_types[type]->_name, v)) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-
-bool Map::move_unit_check(Unit * unit, pt_2d pos, bool fow_active) {
-	if (fow_active && !fow_check(unit->_team, pos)) {
-		return false;
-	}
-
-	pt_2d unit_size = unit->_type->get_max_square_size();
-	AABB_2D * aabb = new AABB_2D(pos - 0.5 * unit_size, unit_size);
-	std::vector<uint> vertices = _path_finder->vertices_in_aabb(aabb);
-	delete aabb;
-	for (auto & v : vertices) {
-		if (_path_finder->is_vertex_obstacle(unit->_type->_name, v, unit)) {
-			return false;
-		}
-	}
-	return true;
-}
-
-
-bool Map::attack_unit_check(Unit * attacking_unit, Unit * attacked_unit, bool fow_active) {
-	if (fow_active && !fow_check(attacking_unit->_team, pt_2d(attacked_unit->_position))) {
-		return false;
-	}
-	return true;
-}
-
-
-bool Map::add_barrier_check(Team * team, std::string type, pt_2d pos, number orientation, bool fow_active) {
-	if (fow_active && !fow_check(team, pos)) {
-		return false;
-	}
-	return true;
-}
-
-
-Unit * Map::add_unit(Team * team, std::string type, pt_2d pos, time_point t) {
-	Unit * unit = team->add_unit(_unit_types[type], pos, t);
-	_path_finder->init_gmo(unit);
-
-	return unit;
-}
-
-
 void Map::add_first_units2teams(time_point t) {
 	for (auto & team : _teams) {
 		if (!team->empty()) {
@@ -246,8 +146,8 @@ void Map::add_first_units2teams(time_point t) {
 
 			// buffer pour ne pas être sur les bords
 			pt_2d position = rand_pt_2d(_aabb->_pos + 0.1 * _aabb->_size, _aabb->_pos + 0.9 * _aabb->_size);
-			if (add_unit_check(team, "infantery", position, false, false)) {
-				add_unit(team, "infantery", position, t);
+			if (team->add_unit_check(_unit_types["infantery"], position, false, false)) {
+				team->add_unit(_unit_types["infantery"], position, t);
 				break;
 			}
 		}
@@ -322,29 +222,6 @@ void Map::add_barrier(std::string type, pt_2d pos, number orientation) {
 }
 
 
-Unit * Map::get_unit(uint unit_id) {
-	for (auto & team : _teams) {
-		for (auto & unit : team->_units) {
-			if (unit->_id == unit_id) {
-				return unit;
-			}
-		}
-	}
-	std::cerr << "Map::get_unit : unit_id " << unit_id << " non trouvée.\n";
-	return NULL;
-}
-
-
-std::vector<Unit *> Map::get_units_in_aabb(AABB_2D * aabb) {
-	std::vector<Unit *> result;
-	for (auto & team : _teams) {
-		std::vector<Unit *> l_units = team->get_units_in_aabb(aabb);
-		result.insert(result.begin(), l_units.begin(), l_units.end());
-	}
-	return result;
-}
-
-
 Team * Map::get_team(std::string team_name) {
 	for (auto & team : _teams) {
 		if (team->_name == team_name) {
@@ -369,19 +246,12 @@ uint Map::get_team_idx(std::string team_name) {
 }
 
 
-void Map::selected_units_goto(Team * team, pt_3d pt) {
-	for (auto & unit : team->_units) {
-		if (unit->_selected) {
-			_path_finder->goto_gmo(unit, pt_2d(pt), false);
-		}
-	}
-}
-
-
 void Map::remove_units_in_aabb(AABB_2D * aabb) {
-	std::vector<Unit *> units = get_units_in_aabb(aabb);
-	for (auto & unit : units) {
-		unit->_unit_status = UNIT_DESTROYED;
+	for (auto & team : _teams) {
+		std::vector<Unit *> units = team->get_units_in_aabb(aabb);
+		for (auto & unit : units) {
+			unit->_unit_status = UNIT_DESTROYED;
+		}
 	}
 }
 
@@ -530,47 +400,6 @@ void Map::sync2elevation() {
 }
 
 
-void Map::anim_unit(Unit * unit, time_point t) {
-	bool verbose = false;
-
-	if (unit->_unit_status == UNIT_INACTIVE) {
-		return;
-	}
-	
-	if (unit->_unit_status == UNIT_DESTROYED) {
-		unit->_unit_status = UNIT_INACTIVE;
-		unit->_gmo_status = GMO_IDLE;
-		unit->_selected = false;
-
-		for (auto & id_tile : unit->_visible_tiles) {
-			GraphVertex vertex = unit->_team->_fow->get_vertex(id_tile);
-			FowVertexData * data = (FowVertexData *)(vertex._data);
-			data->_changed = true;
-			data->_n_units--;
-		}
-
-		_path_finder->remove_gmo(unit);
-		return;
-	}
-
-	if (unit->_gmo_status == GMO_MOVING) {
-
-	}
-	else {
-		if (unit->_unit_status == UNIT_ATTACKING) {
-			if (unit->_target->_unit_status == UNIT_DESTROYED || unit->_target->_hit_status == FINAL_HIT) {
-				unit->_unit_status = UNIT_WATCHING;
-			}
-		}
-		else if (unit->_unit_status == UNIT_SHOOTING) {
-			_ammos.push_back(new Ammo(unit->_type->_ammo_type, unit->_position, unit->_target->_position));
-			unit->_unit_status = UNIT_ATTACKING;
-		}
-	}
-	unit->anim(t);
-}
-
-
 void Map::ia(time_point t) {
 	bool ia_verbose = false;
 
@@ -583,11 +412,11 @@ void Map::ia(time_point t) {
 		for (auto & unit_type : std::vector<std::string>{"infantery", "tank", "helicopter", "boat"}) {
 			for (uint compt = 0; compt < IA_MAX_CONSTRUCTION_TRY; compt++) {
 				pt_2d pos = rand_pt_2d(_aabb->_pos, _aabb->_pos + _aabb->_size);
-				if (add_unit_check(team, unit_type, pos, true, true)) {
+				if (team->add_unit_check(_unit_types[unit_type], pos, true, true)) {
 					if (ia_verbose) {
 						std::cout << "IA construction " << unit_type << "\n";
 					}
-					add_unit(team, unit_type, pos, t);
+					team->add_unit(_unit_types[unit_type], pos, t);
 					break;
 				}
 			}
@@ -652,7 +481,7 @@ void Map::ia(time_point t) {
 						for (uint compt = 0; compt < IA_MAX_MOVING_TRY; compt++) {
 							// recherche sur un disque troué
 							pt_2d destination = rand_pt_2d(unit->_position, unit->_type->_vision_distance, unit->_type->_vision_distance * 0.75);
-							if (move_unit_check(unit, destination, true)) {
+							if (team->move_unit_check(unit, destination, true)) {
 								_path_finder->goto_gmo(unit, destination, true);
 								if (ia_verbose) {
 									std::cout << "IA unit " << unit->_id << " no target found => WATCHING -> MOVING\n";
@@ -665,7 +494,7 @@ void Map::ia(time_point t) {
 				else if (unit->_unit_status == UNIT_ATTACKING) {
 					if (!team->is_target_reachable(unit, unit->_target)) {
 						pt_2d destination = pt_2d(unit->_target->_position);
-						if (move_unit_check(unit, destination, true)) {
+						if (team->move_unit_check(unit, destination, true)) {
 							_path_finder->goto_gmo(unit, destination, true);
 							if (ia_verbose) {
 								std::cout << "IA unit " << unit->_id << " target unreachable => ATTACKING -> MOVING\n";
@@ -711,22 +540,29 @@ void Map::anim(time_point t) {
 		std::cout << "Map anim : path_finder\n";
 	}
 	for (auto & team : _teams) {
-		for (auto & unit : team->_units) {
-			anim_unit(unit, t);
-		}
+		team->anim_units(t);
 	}
 
 	// ammo / explosion -----------------------------------------------
 	if (verbose) {
 		std::cout << "Map anim : ammo\n";
 	}
+	
+	for (auto & team : _teams) {
+		for (auto & unit : team->_units) {
+			if (unit->_unit_status == UNIT_SHOOTING) {
+				_ammos.push_back(new Ammo(unit->_type->_ammo_type, unit->_position, unit->_target->_position));
+				unit->_unit_status = UNIT_ATTACKING;
+			}
+		}
+	}
+
 	for (auto & ammo : _ammos) {
 		ammo->anim();
 		if (ammo->_target_hit) {
 			_explosion_system->new_explosion(ammo->_target, t, ammo->_type->_explosion_config, ammo->_type->_explosion_radius);
 			for (auto & team : _teams) {
 				for (auto & unit : team->_units) {
-					//if (pt_in_bbox2d(pt_2d(ammo->_target), unit->_bbox->bbox2d())) {
 					if (glm::length(ammo->_target - unit->_bbox->_aabb->center()) < ammo->_type->_explosion_radius) {
 						unit->hit(ammo, t);
 					}
@@ -749,79 +585,6 @@ void Map::anim(time_point t) {
 		team->update_fow();
 	}
 }
-
-
-/*void Map::collisions(time_point t) {
-	bool verbose = false;
-
-	std::vector<Unit *> units;
-	for (auto & team : _teams) {
-		units.insert(units.end(), team->_units.begin(), team->_units.end());
-	}
-	if (units.empty()) {
-		return;
-	}
-
-	for (auto & unit1 : units) {
-		if (unit1->_path->empty()) {
-			continue;
-		}
-
-		bool future_collision = false;
-
-		std::vector<BBox_2D *> bboxs1;
-		for (auto & interval : unit1->_path->get_intervals()) {
-			if (!interval->_active) {
-				continue;
-			}
-			bboxs1.push_back(interval->_bbox);
-		}
-		
-		for (auto & unit2 : units) {
-			if (unit2 == unit1) {
-				continue;
-			}
-
-			std::vector<BBox_2D *> bboxs2;
-			if (unit2->_path->empty()) {
-				bboxs2.push_back(unit2->_bbox->bbox2d());
-			}
-			else {
-				for (auto & interval : unit2->_path->get_intervals()) {
-					if (!interval->_active) {
-						continue;
-					}
-					bboxs2.push_back(interval->_bbox);
-				}
-			}
-
-			for (auto & bbox1 : bboxs1) {
-				for (auto & bbox2 : bboxs2) {
-					//if (aabb2d_intersects_aabb2d(bbox1->_aabb, bbox2->_aabb)) {
-					if (bbox2d_intersects_bbox2d(bbox1, bbox2)) {
-						future_collision = true;
-						break;
-					}
-				}
-				if (future_collision) {
-					break;
-				}
-			}
-
-			if (future_collision) {
-				if (verbose) {
-					std::cout << "unit " << unit1->_id << " will collide " << unit2->_id << " ; -> stop.\n";
-				}
-				
-				//unit1->_instructions.push({unit1->_path->_goal, t + std::chrono::milliseconds(rand_int(2000, 5000))});
-				remove_unit_from_position_grid(unit1);
-				unit1->set_status(WAITING, t);
-				add_unit_to_position_grid(unit1);
-				break;
-			}
-		}
-	}
-}*/
 
 
 void Map::clear() {
@@ -983,9 +746,9 @@ void Map::load(std::string dir_map, time_point t) {
 	for (auto & team_js : teams_js["teams"]) {
 		std::string team_name = team_js["name"];
 		glm::vec3 team_color = glm::vec3(team_js["color"][0], team_js["color"][1], team_js["color"][2]);
-		Team * team = new Team(team_name, team_color, _elevation, _fow_resolution);
+		Team * team = new Team(team_name, team_color, _elevation, _path_finder, _fow_resolution);
 		for (auto & unit_js : team_js["units"]) {
-			Unit * unit = add_unit(team, unit_js["type"], pt_2d(unit_js["position"][0], unit_js["position"][1]), t);
+			Unit * unit = team->add_unit(_unit_types[unit_js["type"]], pt_2d(unit_js["position"][0], unit_js["position"][1]), t);
 			
 			// on les met dans un état d'attente par défaut
 			unit->_life = unit_js["life"];

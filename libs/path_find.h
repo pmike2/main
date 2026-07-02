@@ -23,7 +23,7 @@ const uint WAIT_N_MS = 3000;
 const uint PATH_FIND_N_MS = 50;
 
 
-enum GMO_STATUS {GMO_IDLE, GMO_MOVING, GMO_WAITING/*, GMO_EXPECTING_PATH*/};
+enum GMO_STATUS {GMO_IDLE, GMO_MOVING, GMO_WAITING};
 
 
 struct GridMovingObjectType {

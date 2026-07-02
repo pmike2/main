@@ -11,7 +11,7 @@
 
 
 pt_2d rot(pt_2d v, number alpha) {
-	return pt_2d(v.x* cos(alpha)- v.y* sin(alpha), v.x* sin(alpha)+ v.y* cos(alpha));
+	return pt_2d(v.x * cos(alpha) - v.y * sin(alpha), v.x * sin(alpha) + v.y * cos(alpha));
 }
 
 
@@ -26,17 +26,17 @@ number norm2(pt_2d v) {
 
 
 pt_2d normalized(pt_2d v) {
-	return v/ norm(v);
+	return v / norm(v);
 }
 
 
 number scal(pt_2d u, pt_2d v) {
-	return u.x* v.x+ u.y* v.y;
+	return u.x * v.x + u.y * v.y;
 }
 
 
 number determinant(pt_2d u, pt_2d v) {
-	return u.x* v.y- u.y* v.x;
+	return u.x * v.y - u.y * v.x;
 }
 
 

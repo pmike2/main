@@ -21,9 +21,6 @@ const number THIRD= 1.0/ 3.0;
 const number EPSILON= 1e-6;
 
 
-class Polygon2D;
-
-
 // fonctions basiques
 pt_2d rot(pt_2d v, number alpha);
 number norm(pt_2d v);

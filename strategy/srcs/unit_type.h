@@ -30,6 +30,7 @@ struct UnitType : public GridMovingObjectType {
 	number _regen;
 	number _vision_distance;
 	number _vision_angle;
+	number _slerp_speed;
 	uint _creation_duration;
 	bool _floats;
 	bool _flies;

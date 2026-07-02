@@ -5,6 +5,7 @@
 	"regen" : 0.05,
 	"vision_distance" : 10.0,
 	"vision_angle" : 0.8,
+	"slerp_speed" : 0.1,
 	"creation_duration" : 5000,
 	"floats" : false,
 	"flies" : false,

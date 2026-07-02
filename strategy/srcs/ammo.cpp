@@ -90,22 +90,6 @@ void Ammo::anim() {
 
 	next_position.z = _parabola_coeffs[0] * (_target_dist - d) * (_target_dist - d) + _parabola_coeffs[1] * (_target_dist - d) + _parabola_coeffs[2];
 
-	/*number next_angle = atan2(_velocity.y, _velocity.x);
-	if (next_angle - _angle > M_PI) {
-		next_angle -= 2.0 * M_PI;
-	}
-	_angle = next_angle;*/
-	
-	// https://en.wikipedia.org/wiki/Slerp
-	/*const number slerp_speed = 0.05;
-	quat next_quat = glm::angleAxis(float(_angle), glm::vec3(0.0f, 0.0f, 1.0f));
-	quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
-
-	set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));*/
-
-	//set_pos(next_position);
-
-
 	number phi = atan2(_velocity.y, _velocity.x);
 	pt_3d phi_axis(0.0, 0.0, 1.0);
 	quat init_quat_1 = glm::angleAxis(phi, phi_axis);

@@ -20,6 +20,7 @@
 #include "unit_type.h"
 #include "elevation.h"
 #include "ammo.h"
+#include "team.h"
 
 
 using json = nlohmann::json;
@@ -33,6 +34,9 @@ struct Unit : public InstancePosRot, public GridMovingObject {
 	Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_point t);
 	~Unit();
 	void reinit(pt_3d pos, time_point t);
+	quat quat_slerp(number angle_goal);
+	quat quat_slerp(pt_2d direction_goal);
+	number angle();
 	void anim(time_point t);
 	void set_hit_status(UNIT_HIT_STATUS hit_status, time_point t);
 	void hit(Ammo * ammo, time_point t);
@@ -48,7 +52,7 @@ struct Unit : public InstancePosRot, public GridMovingObject {
 	Elevation * _elevation;
 	time_point _last_shooting_t;
 	time_point _creation_t;
-	number _angle;
+	//number _angle;
 	number _life;
 	number _hit;
 	Unit * _target;
@@ -56,46 +60,5 @@ struct Unit : public InstancePosRot, public GridMovingObject {
 	std::vector<uint> _old_visible_tiles, _visible_tiles;
 };
 
-
-struct FowVertexData {
-	FOW_STATUS _status;
-	uint _n_units;
-	bool _changed;
-};
-
-
-struct Team {
-	Team();
-	Team(std::string name, glm::vec3 color, Elevation * elevation, pt_2d fow_resolution);
-	~Team();
-	Unit * add_unit(UnitType * type, pt_2d pos, time_point t);
-	std::vector<Unit *> get_units_in_aabb(AABB_2D * aabb);
-	std::vector<Unit *> get_selected_units();
-	Unit * get_first_active_unit();
-	void remove_unit(Unit * unit);
-	void clear();
-	void clear_selection();
-	bool empty();
-	bool is_target_reachable(Unit * unit, Unit * target);
-	void unit_attack(Unit * unit, Unit * target, time_point t);
-	void selected_units_attack(Unit * target, time_point t);
-	Unit * search_target(Unit * unit, Team * ennemy_team);
-	void update_fow_unit(Unit * unit);
-	void update_fow();
-	void clear_fow();
-	json get_json();
-	Unit * get_unit_under_construction(UnitType * unit_type);
-	number get_construction_progress(UnitType * unit_type, time_point t);
-	friend std::ostream & operator << (std::ostream & os, Team & team);
-
-
-	Elevation * _elevation;
-	std::string _name;
-	std::vector<Unit *> _units;
-	glm::vec3 _color;
-	bool _ia;
-	GraphGrid * _fow;
-	float * _fow_data; 
-};
 
 #endif

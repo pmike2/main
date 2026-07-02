@@ -77,8 +77,7 @@ public:
 	InstancePosRot(const pt_3d & position, const quat & rotation, const pt_3d & scale, AABB * aabb);
 	~InstancePosRot();
 	void set_pos_rot_scale(const pt_3d & position, const quat & rotation, const pt_3d & scale);
-	// lent, mieux vaut utiliser l'autre
-	//void set_pos_rot_scale(const mat_4d & mat);
+	void set_pos_rot(const pt_3d & position, const quat & rotation);
 	void set_pos(const pt_3d & position);
 
 

@@ -9,7 +9,6 @@
 #include "unit.h"
 
 
-// -------------------------------------------------
 Unit::Unit() {
 
 }
@@ -23,7 +22,7 @@ Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_
 		type->get_max_square_size()
 	),
 	_team(team), _type(type), _unit_status(UNIT_UNDER_CONSTRUCTION), _paused(false), _elevation(elevation),
-	_angle(0.0), _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
+	/*_angle(0.0),*/ _life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
 	_creation_t(t)
 {
 
@@ -39,7 +38,7 @@ void Unit::reinit(pt_3d pos, time_point t) {
 	set_pos(pos);
 	_aabb->set_center(pt_2d(pos));
 	_unit_status = UNIT_UNDER_CONSTRUCTION;
-	_angle = 0.0;
+	//_angle = 0.0;
 	_life = _type->_life_init; 
 	_hit_status = NO_HIT;
 	_hit = 0.0;
@@ -48,6 +47,34 @@ void Unit::reinit(pt_3d pos, time_point t) {
 	_creation_t = t;
 	_old_visible_tiles.clear();
 	_visible_tiles.clear();
+}
+
+
+quat Unit::quat_slerp(number angle_goal) {
+	quat next_quat = glm::angleAxis(angle_goal, pt_3d(0.0, 0.0, 1.0));
+
+	// nécessaire sinon on a des retournements brusques
+	// cf https://gabormakesgames.com/blog_quats_interpolate.html
+	if (glm::dot(_rotation, next_quat) < 0.0) {
+		next_quat = -1.0 * next_quat;
+	}
+
+	// https://en.wikipedia.org/wiki/Slerp
+	// glm::mix fait le slerp
+	//return _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
+	return glm::mix(_rotation, next_quat, _type->_slerp_speed);
+}
+
+
+quat Unit::quat_slerp(pt_2d direction_goal) {
+	number angle_goal = atan2(direction_goal.y, direction_goal.x);
+	return quat_slerp(angle_goal);
+}
+
+
+number Unit::angle() {
+	pt_3d euler = glm::eulerAngles(_rotation);
+	return euler.z;
 }
 
 
@@ -84,7 +111,6 @@ void Unit::anim(time_point t) {
 	}
 	
 	if (_gmo_status == GMO_IDLE) {
-
 		if (_type->_flies) {
 			number elevation_z = _elevation->get_alti(_position);
 			if (_position.z > elevation_z + LANDING_SPEED) {
@@ -107,17 +133,10 @@ void Unit::anim(time_point t) {
 			}
 		}*/
 		else if (_unit_status == UNIT_WATCHING) {
-			number next_angle = _angle + 0.01;
-			if (next_angle - _angle > M_PI) {
-				next_angle -= 2.0 * M_PI;
-			}
-			_angle = next_angle;
-
-			const number slerp_speed = 0.05;
-			quat next_quat = glm::angleAxis(_angle, pt_3d(0.0, 0.0, 1.0));
-			quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
-
-			set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
+			number current_angle = angle();
+			number next_angle = current_angle + 0.1;
+			quat next_quat = quat_slerp(next_angle);
+			set_pos_rot(_position, next_quat);
 		}
 		else if (_unit_status == UNIT_ATTACKING) {
 			if (_target == NULL)  {
@@ -125,22 +144,13 @@ void Unit::anim(time_point t) {
 				return;
 			}
 
-			number next_angle = atan2(_target->_position.y - _position.y, _target->_position.x - _position.x);
-			// pour ne pas faire des 3/4 de tour quand les 2 angles sont de part et d'autre de l'axe x
-			/*if (next_angle - _angle > M_PI) {
-				next_angle -= 2.0 * M_PI;
-			}
-			_angle = next_angle;*/
-			
-			// https://en.wikipedia.org/wiki/Slerp
-			const number slerp_speed = 0.05;
-			quat next_quat = glm::angleAxis(next_angle, pt_3d(0.0, 0.0, 1.0));
-			quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
+			quat next_quat = quat_slerp(_target->_position - _position);
+			set_pos_rot(_position, next_quat);
 
-			set_pos_rot_scale(_position, interpolated_quat, pt_3d(1.0));
-
+			number current_angle = angle();
+			number aligned = abs(cross2d(pt_2d(_target->_position - _position) / norm(_target->_position - _position), pt_2d(cos(current_angle), sin(current_angle))));
 			auto d_shooting = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_shooting_t).count();
-			if (number(d_shooting) > _type->_ammo_type->_rate * 1000.0) {
+			if (aligned < 0.01 && number(d_shooting) > _type->_ammo_type->_rate * 1000.0) {
 				_last_shooting_t = t;
 				_unit_status = UNIT_SHOOTING;
 			}
@@ -178,28 +188,8 @@ void Unit::anim(time_point t) {
 			next_position.z = 0.0;
 		}
 
-		//number next_angle = atan2(_velocity.y, _velocity.x);
-		number next_angle = atan2(_direction.y, _direction.x);
-		// pour ne pas faire des 3/4 de tour quand les 2 angles sont de part et d'autre de l'axe x
-		/*if (next_angle - _angle > M_PI) {
-			next_angle -= 2.0 * M_PI;
-		}
-		_angle = next_angle;*/
-		
-		// https://en.wikipedia.org/wiki/Slerp
-		const number slerp_speed = 0.05;
-		quat next_quat = glm::angleAxis(next_angle, pt_3d(0.0, 0.0, 1.0));
-
-		// nécessaire sinon on a des retournements brusques
-		// cf https://gabormakesgames.com/blog_quats_interpolate.html
-		if (glm::dot(_rotation, next_quat) < 0.0) {
-			next_quat = -1.0 * next_quat;
-		}
-		// glm::mix fait le slerp
-		//quat interpolated_quat = _rotation * glm::pow(glm::inverse(_rotation) * next_quat, slerp_speed);
-		quat interpolated_quat = glm::mix(_rotation, next_quat, slerp_speed);
-
-		set_pos_rot_scale(next_position, interpolated_quat, pt_3d(1.0));
+		quat next_quat = quat_slerp(_direction);
+		set_pos_rot(next_position, next_quat);
 	}
 }
 
@@ -256,317 +246,4 @@ std::ostream & operator << (std::ostream & os, Unit & unit) {
 	return os;
 }
 
-
-// Team ------------------------------------------
-Team::Team() {
-
-}
-
-
-Team::Team(std::string name, glm::vec3 color, Elevation * elevation, pt_2d fow_resolution) : 
-	_name(name), _color(color), _elevation(elevation), _ia(false)
-{
-	uint n_ligs = uint(_elevation->_size.y / fow_resolution.y) + 1;
-	uint n_cols = uint(_elevation->_size.x / fow_resolution.x) + 1;
-	_fow = new GraphGrid(_elevation->_origin, _elevation->_size, n_ligs, n_cols);
-
-	_fow->_it_v= _fow->_vertices.begin();
-	while (_fow->_it_v!= _fow->_vertices.end()) {
-		FowVertexData * data = new FowVertexData();
-		data->_status = UNDISCOVERED;
-		data->_n_units = 0;
-		data->_changed = false;
-		_fow->_it_v->second._data = data;
-		_fow->_it_v++;
-	}
-
-	_fow_data = new float[n_ligs * n_cols];
-	for (uint i=0; i<n_ligs * n_cols; ++i) {
-		_fow_data[i] = 0.0;
-	}
-}
-
-
-Team::~Team() {
-	for (auto & unit : _units) {
-		delete unit;
-	}
-	_units.clear();
-	delete _fow;
-	delete _fow_data;
-}
-
-
-Unit * Team::add_unit(UnitType * type, pt_2d pos, time_point t) {
-	pt_3d pt3d(pos.x, pos.y, _elevation->get_alti(pos));
-	if (type->_floats && pt3d.z < 0.0) {
-		pt3d.z = 0.0;
-	}
-
-	Unit * new_unit = NULL;
-	for (auto & unit : _units) {
-		if (unit->_unit_status == UNIT_INACTIVE && unit->_type == type) {
-			new_unit = unit;
-			break;
-		}
-	}
-
-	if (new_unit != NULL) {
-		new_unit->reinit(pt3d, t);
-	}
-	else {
-		new_unit = new Unit(this, type, pt3d, _elevation, t);
-		_units.push_back(new_unit);
-	}
-
-	update_fow_unit(new_unit);
-
-	return new_unit;
-}
-
-
-std::vector<Unit *> Team::get_units_in_aabb(AABB_2D * aabb) {
-	std::vector<Unit *> result;
-	for (auto & unit : _units) {
-		if (aabb2d_intersects_aabb2d(aabb, unit->_bbox->_aabb->aabb2d())) {
-			result.push_back(unit);
-		}
-	}
-	return result;
-}
-
-
-std::vector<Unit *> Team::get_selected_units() {
-	std::vector<Unit *> result;
-	for (auto & unit : _units) {
-		if (unit->_selected) {
-			result.push_back(unit);
-		}
-	}
-	return result;
-}
-
-
-Unit * Team::get_first_active_unit() {
-	if (empty()) {
-		std::cerr << "Team::get_first_active_unit() : empty\n";
-		return NULL;
-	}
-	for (auto & unit : _units) {
-		if (unit->_unit_status != UNIT_INACTIVE) {
-			return unit;
-		}
-	}
-	return NULL;
-}
-
-
-void Team::remove_unit(Unit * unit) {
-	_units.erase(std::remove_if(_units.begin(), _units.end(), [unit](Unit * u) {
-		return u == unit;
-	}), _units.end());
-	delete unit;
-}
-
-
-void Team::clear() {
-	for (auto & unit : _units) {
-		unit->_unit_status = UNIT_DESTROYED;
-	}
-}
-
-
-void Team::clear_selection() {
-	for (auto & unit : _units) {
-		unit->_selected = false;
-	}
-}
-
-
-bool Team::empty() {
-	uint n_units = std::count_if(_units.begin(), _units.end(), [](Unit * unit) { return unit->_unit_status != UNIT_INACTIVE; });
-	if (n_units == 0) {
-		return true;
-	}
-	return false;
-}
-
-
-bool Team::is_target_reachable(Unit * unit, Unit * target) {
-	const number offset_z = 0.5;
-	number dist = glm::length(unit->_position - target->_position);
-	if (dist > unit->_type->_ammo_type->_max_distance) {
-		return false;
-	}
-
-	if (!unit->_type->_ammo_type->_ballistic) {
-		number max_elevation_alti = _elevation->get_max_alti_along_segment(unit->_position, target->_position);
-		if (max_elevation_alti > std::max(unit->_position.z, target->_position.z) + offset_z) {
-			return false;
-		}
-	}
-
-	return true;
-}
-
-
-void Team::unit_attack(Unit * unit, Unit * target, time_point t) {
-	if (is_target_reachable(unit, target)) {
-		unit->_target = target;
-		unit->_unit_status = UNIT_ATTACKING;
-	}
-}
-
-
-void Team::selected_units_attack(Unit * target, time_point t) {
-	for (auto & unit : _units) {
-		if (unit->_selected) {
-			unit_attack(unit, target, t);
-		}
-	}
-}
-
-
-Unit * Team::search_target(Unit * unit, Team * ennemy_team) {
-	if (ennemy_team == this) {
-		return NULL;
-	}
-
-	for (auto & ennemy_unit : ennemy_team->_units) {
-		if (is_target_reachable(unit, ennemy_unit)) {
-			return ennemy_unit;
-		}
-	}
-
-	return NULL;
-}
-
-
-void Team::update_fow_unit(Unit * unit) {
-	// vertices_in_circle_section et vertices_in_circle sont trop lents...
-
-	//std::vector<uint> vertices_in_front_of_unit = _fow->vertices_in_circle_section(pt_2d(unit->_position), unit->_type->_vision_distance, unit->_angle, unit->_type->_vision_angle);
-	
-	//std::vector<uint> vertices_in_front_of_unit = _fow->vertices_in_circle(pt_2d(unit->_position), unit->_type->_vision_distance);
-	
-	AABB_2D * aabb = new AABB_2D(pt_2d(unit->_position) - pt_2d(unit->_type->_vision_distance), pt_2d(2.0 *  unit->_type->_vision_distance));
-	std::vector<uint> vertices_in_front_of_unit = _fow->vertices_in_aabb(aabb);
-	delete aabb;
-
-	unit->_visible_tiles.clear();
-	unit->_visible_tiles.insert(unit->_visible_tiles.begin(), vertices_in_front_of_unit.begin(), vertices_in_front_of_unit.end());
-	//std::vector<uint> vertices_covering_unit = _fow->vertices_in_aabb(unit->_bbox->_aabb->aabb2d());
-	//unit->_visible_tiles.insert(vertices_covering_unit.begin(), vertices_covering_unit.end());
-
-	std::vector<uint> old_minus_new, new_minus_old;
-	std::sort(unit->_visible_tiles.begin(), unit->_visible_tiles.end());
-	std::sort(unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end());
-	std::set_difference(unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), unit->_visible_tiles.begin(), unit->_visible_tiles.end(), std::inserter(old_minus_new, old_minus_new.begin()));
-	std::set_difference(unit->_visible_tiles.begin(), unit->_visible_tiles.end(), unit->_old_visible_tiles.begin(), unit->_old_visible_tiles.end(), std::inserter(new_minus_old, new_minus_old.begin()));
-	
-	for (auto & id_tile : old_minus_new) {
-		GraphVertex vertex = _fow->get_vertex(id_tile);
-		FowVertexData * data = (FowVertexData *)(vertex._data);
-		data->_changed = true;
-		data->_n_units--;
-	}
-
-	for (auto & id_tile : new_minus_old) {
-		GraphVertex vertex = _fow->get_vertex(id_tile);
-		FowVertexData * data = (FowVertexData *)(vertex._data);
-		data->_changed = true;
-		data->_n_units++;
-	}
-
-	unit->_old_visible_tiles.clear();
-	unit->_old_visible_tiles.insert(unit->_old_visible_tiles.begin(), unit->_visible_tiles.begin(), unit->_visible_tiles.end());
-}
-
-
-void Team::update_fow() {
-	for (auto & unit : _units) {
-		if (unit->_gmo_status == GMO_MOVING || unit->_unit_status == UNIT_WATCHING) {
-			update_fow_unit(unit);
-		}
-	}
-
-	_fow->_it_v= _fow->_vertices.begin();
-	while (_fow->_it_v!= _fow->_vertices.end()) {
-		FowVertexData * data = (FowVertexData *)(_fow->_it_v->second._data);
-		if (data->_changed) {
-			if (data->_n_units == 0) {
-				data->_status = DISCOVERED;
-				_fow_data[_fow->_it_v->first] = 0.5;
-			}
-			else {
-				data->_status = WATCHED;
-				_fow_data[_fow->_it_v->first] = 1.0;
-			}
-
-			data->_changed = false;
-		}
-		_fow->_it_v++;
-	}
-}
-
-
-void Team::clear_fow() {
-	_fow->_it_v= _fow->_vertices.begin();
-	while (_fow->_it_v!= _fow->_vertices.end()) {
-		FowVertexData * data = (FowVertexData *)(_fow->_it_v->second._data);
-		data->_n_units = 0;
-		data->_changed = false;
-		_fow->_it_v++;
-	}
-
-	for (uint i=0; i<_fow->_n_ligs * _fow->_n_cols; ++i) {
-		_fow_data[i] = 0.0;
-	}
-}
-
-
-json Team::get_json() {
-	json result;
-	result["name"] = _name;
-	result["color"] = json::array();
-	result["color"].push_back(_color.r);
-	result["color"].push_back(_color.g);
-	result["color"].push_back(_color.b);
-	result["units"] = json::array();
-	for (auto & unit : _units) {
-		if (unit->_unit_status != UNIT_INACTIVE) {
-			result["units"].push_back(unit->get_json());
-		}
-	}
-	return result;
-}
-
-
-Unit * Team::get_unit_under_construction(UnitType * unit_type) {
-	for (auto & unit : _units) {
-		if (unit->_type == unit_type && unit->_unit_status == UNIT_UNDER_CONSTRUCTION) {
-			return unit;
-		}
-	}
-	return NULL;
-}
-
-
-number Team::get_construction_progress(UnitType * unit_type, time_point t) {
-	Unit * unit = get_unit_under_construction(unit_type);
-	if (unit != NULL) {
-		auto d_creation = std::chrono::duration_cast<std::chrono::milliseconds>(t - unit->_creation_t).count();
-		return number(d_creation) / number(unit_type->_creation_duration);
-	}
-	return 1.0;
-}
-
-
-std::ostream & operator << (std::ostream & os, Team & team) {
-	os << "team name = " << team._name << " ; units =\n";
-	for (auto & unit : team._units) {
-		os << *unit << "\n";
-	}
-	return os;
-}
 

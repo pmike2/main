@@ -1,7 +1,0 @@
-{
-	"name" : "bullet",
-	"damage" : 0.5,
-	"velocity" : 0.8,
-	"max_distance" : 20.0,
-	"obj" : "../data/objs/ammos/bullet/bullet.obj"
-}

@@ -20,7 +20,11 @@ int main() {
 	}
 	delete bbox;*/
 
-	quat const Q = glm::identity<quat>();
+	//quat const Q = glm::identity<quat>();
+
+	quat q = glm::angleAxis(M_PI * 0.5, pt_3d(0.0, 0.0, 1.0));
+	pt_3d euler = glm::eulerAngles(q);
+	std::cout << glm_to_string(euler) << "\n";
 
 
 	return 0;

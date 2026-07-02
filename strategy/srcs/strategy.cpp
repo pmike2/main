@@ -2172,8 +2172,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 		else {
 			if (_config->_play_mode == ACTION_UNIT && _config->_unit_action_mode == MOVE) {
 				if (_move_unit_ok) {
-					//get_selected_team()->selected_units_goto(_cursor_world_position, t);
-					_map->selected_units_goto(get_selected_team(), _cursor_world_position);
+					get_selected_team()->selected_units_goto(_cursor_world_position);
 					return true;
 				}
 			}
@@ -2187,7 +2186,7 @@ bool Strategy::mouse_button_down(InputState * input_state, time_point t) {
 			
 			else if (_config->_play_mode == ADD_UNIT) {
 				if (_add_unit_ok && _fow_ok) {
-					Unit * unit = _map->add_unit(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position), t);
+					Unit * unit = get_selected_team()->add_unit(_map->_unit_types[_config->_add_unit_type], pt_2d(_cursor_world_position), t);
 					if (_config->_units_paused) {
 						unit->_paused = true;
 					}
@@ -2283,15 +2282,15 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 
 	if (_cursor_in_world) {
 		if (_config->_fow_active) {
-			_fow_ok = _map->fow_check(get_selected_team(), pt_2d(_cursor_world_position));
+			_fow_ok = get_selected_team()->fow_check(pt_2d(_cursor_world_position));
 		}
 		else {
 			_fow_ok = true;
 		}
 		
-		_add_unit_ok = _map->add_unit_check(get_selected_team(), _config->_add_unit_type, pt_2d(_cursor_world_position), _config->_fow_active, true);
+		_add_unit_ok = get_selected_team()->add_unit_check(_map->_unit_types[_config->_add_unit_type], pt_2d(_cursor_world_position), _config->_fow_active, true);
 
-		_add_barrier_ok = _map->add_barrier_check(get_selected_team(), _config->_add_barrier_type, pt_2d(_cursor_world_position), _config->_orientation, _config->_fow_active);
+		_add_barrier_ok = get_selected_team()->add_barrier_check(_map->_barrier_types[_config->_add_barrier_type], pt_2d(_cursor_world_position), _config->_orientation, _config->_fow_active);
 		
 		_move_unit_ok = true;
 		if (selected_units.empty()) {
@@ -2299,7 +2298,7 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 		}
 		else {
 			for (auto & unit : selected_units) {
-				if (!_map->move_unit_check(unit, pt_2d(_cursor_world_position), _config->_fow_active)) {
+				if (!get_selected_team()->move_unit_check(unit, pt_2d(_cursor_world_position), _config->_fow_active)) {
 					_move_unit_ok = false;
 					break;
 				}
@@ -2333,7 +2332,7 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 				_attack_unit_ok = false;
 			}
 			for (auto & unit : selected_units) {
-				if (!_map->attack_unit_check(unit, _cursor_hover_unit, _config->_fow_active)) {
+				if (!get_selected_team()->attack_unit_check(unit, _cursor_hover_unit, _config->_fow_active)) {
 					_attack_unit_ok = false;
 					break;
 				}

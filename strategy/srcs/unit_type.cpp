@@ -29,6 +29,7 @@ UnitType::UnitType(std::string json_path) :
 	_regen = js["regen"];
 	_vision_distance = js["vision_distance"];
 	_vision_angle = js["vision_angle"];
+	_slerp_speed = js["slerp_speed"];
 	_creation_duration = js["creation_duration"];
 	_floats = js["floats"];
 	_flies = js["flies"];
