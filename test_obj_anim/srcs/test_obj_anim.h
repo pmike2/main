@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <filesystem>
 
 #include "obj_parser.h"
 #include "gl_draw.h"
@@ -70,7 +71,7 @@ struct AnimatedObj {
 	uint _n_attrs_per_pts;
 	std::map<std::string, AnimatedObjAction *> _actions;
 	std::map<std::string, AnimatedObjBone *> _bones;
-	std::map<ObjObject *, AnimatedObjBone *> _obj2bone;
+	std::map<std::string, AnimatedObjBone *> _obj2bone;
 	std::string _current_action;
 	uint _current_frame;
 	glm::mat4 _matrices[N_MAX_MATRICES];

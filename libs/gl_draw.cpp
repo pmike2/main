@@ -207,6 +207,7 @@ std::vector<GLDrawContextUniform *> active_uniforms(GLuint prog) {
 		glGetActiveUniform(prog, i, maxLen, &written, &size, &type, name);
 		location = glGetUniformLocation(prog, name);
 		GLDrawContextUniform * uniform = new GLDrawContextUniform(std::string(name), location, type, size);
+		std::cout << std::string(name) << "\n";
 		result.push_back(uniform);
 	}
 	free(name);

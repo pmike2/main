@@ -70,7 +70,9 @@ AnimatedObj::AnimatedObj(std::string json_path) : _current_action(""), _current_
 	std::filesystem::path js_path = json_path;
 	std::string obj_filename = js_path.stem().string() + ".obj";
 	std::filesystem::path obj_path = js_path.parent_path() / obj_filename;
+	
 	_obj_data = new ObjData(obj_path.string());
+	//std::cout << *_obj_data << "\n";
 
 	std::ifstream ifs(json_path);
 	json js = json::parse(ifs);
@@ -80,14 +82,16 @@ AnimatedObj::AnimatedObj(std::string json_path) : _current_action(""), _current_
 		std::string bone_name = it.key();
 		// = it.value();
 		_bones[bone_name] = new AnimatedObjBone(bone_name);
+		//std::cout << bone_name << "\n";
 	}
 
 	for (auto & object : js["objects"]) {
 		std::string object_name = object["name"];
 		std::string bone_name = object["bone"];
 
-		ObjObject * obj = _obj_data->get_object(object_name);
-		_obj2bone[obj] = _bones[bone_name];
+		//ObjObject * obj = _obj_data->get_object(object_name);
+		//std::cout << object_name << " ; " << bone_name << " ; " << obj << "\n";
+		_obj2bone[object_name] = _bones[bone_name];
 	}
 
 	for (json::iterator it_action = js["actions"].begin(); it_action != js["actions"].end(); ++it_action) {
@@ -151,13 +155,8 @@ void AnimatedObj::update_data() {
 	float * ptr = _data;
 	for (auto & object : _obj_data->_objects) {
 		
-		AnimatedObjBone * bone = _obj2bone[object];
+		AnimatedObjBone * bone = _obj2bone[object->_name];
 		AnimatedObjTransform * transform = _actions[_current_action]->_frames[_current_frame]->_transforms[bone];
-		
-		std::cout << "ok\n";
-		std::cout << object->_name << "\n";
-		std::cout << transform->_idx << "\n";
-
 
 		for (auto & face : object->_faces) {
 			for (uint i=0; i<3; ++i) {
