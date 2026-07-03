@@ -66,3 +66,5 @@ bloc timeline en haut à gauche ou droite icone '+' , permet d'afficher plusieur
 
 dans dopesheet : a : select all, puis x : supprime tous les keyframes
 
+markers : utiles si on veut mettre plusieurs anims dans un .blend (marcher, courir, ...)
+Marker / add marker pour ajouter un marker, puis on peut le renommer en le sélectionnant puis rename marker

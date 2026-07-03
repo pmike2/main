@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-project(sandbox)
+project(test_obj)
 
 if (CMAKE_HOST_SYSTEM_VERSION VERSION_LESS 19)
 	message("Mojave")
@@ -45,14 +45,19 @@ add_library(lib_bbox_2d STATIC ../libs/bbox_2d.cpp ../libs/bbox_2d.h)
 add_library(lib_polygon_2d STATIC ../libs/polygon_2d.cpp ../libs/polygon_2d.h)
 add_library(lib_geom_2d STATIC ../libs/geom_2d.cpp ../libs/geom_2d.h)
 add_library(lib_triangulation STATIC ../libs/triangulation.cpp ../libs/triangulation.h)
-
 add_library(lib_bbox STATIC ../libs/bbox.cpp ../libs/bbox.h)
 add_library(lib_geom STATIC ../libs/geom.cpp ../libs/geom.h)
+
+add_library(lib_obj_parser STATIC ../libs/obj_parser.cpp ../libs/obj_parser.h)
+
+add_library(lib_test_obj STATIC ./srcs/test_obj.cpp ./srcs/test_obj.h)
 
 add_executable(main ./srcs/main.cpp)
 
 set(EXT_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
-set(LOCAL_LIBS lib_repere lib_gl_utils lib_input_state lib_font lib_utile lib_gl_draw lib_fps_count lib_bbox_2d lib_polygon_2d lib_geom_2d lib_bbox lib_geom lib_triangulation)
+set(GENERIC_LIBS lib_repere lib_gl_utils lib_input_state lib_font lib_utile lib_gl_draw lib_fps_count lib_bbox_2d lib_polygon_2d lib_geom_2d lib_bbox lib_geom lib_triangulation lib_obj_parser)
+set(SPECIFIC_LIBS lib_test_obj)
  
 target_link_libraries(main PUBLIC ${EXT_LIBS})
-target_link_libraries(main PUBLIC ${LOCAL_LIBS})
+target_link_libraries(main PUBLIC ${GENERIC_LIBS})
+target_link_libraries(main PUBLIC ${SPECIFIC_LIBS})

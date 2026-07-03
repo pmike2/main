@@ -16,15 +16,15 @@
 class ScreenGL {
 public:
 	ScreenGL();
-	ScreenGL(int screen_width, int screen_height, number gl_width, number gl_height);
+	ScreenGL(uint screen_width, uint screen_height, number gl_width, number gl_height);
 	~ScreenGL();
-	void screen2gl(int i, int j, number & x, number & y);
-	pt_2d screen2gl(int i, int j);
-	void gl2screen(number x, number y, int & i, int & j);
+	void screen2gl(uint i, uint j, number & x, number & y);
+	pt_2d screen2gl(uint i, uint j);
+	void gl2screen(number x, number y, uint & i, uint & j);
 	friend std::ostream & operator << (std::ostream & os, const ScreenGL & screengl);
 
 
-	int _screen_width, _screen_height;
+	uint _screen_width, _screen_height;
 	number _gl_width, _gl_height;
 };
 

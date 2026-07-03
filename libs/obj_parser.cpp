@@ -408,6 +408,16 @@ ObjObject * ObjData::new_generic_object() {
 }
 
 
+ObjObject * ObjData::get_object(std::string name) {
+	for (auto & obj : _objects) {
+		if (obj->_name == name) {
+			return obj;
+		}
+	}
+	return NULL;
+}
+
+
 std::ostream & operator << (std::ostream & os, ObjData & data) {
 	os << "n_pts = " << data._n_pts << " ; n_attrs_per_pts = " << data._n_attrs_per_pts << "\n";
 	os << "materials =\n";

@@ -12,6 +12,8 @@
 #include "typedefs.h"
 #include "fps_count.h"
 
+#include "test_obj_anim.h"
+
 
 // dimensions écran
 const uint MAIN_WIN_WIDTH = 1280;
@@ -26,6 +28,8 @@ InputState * input_state;
 ViewSystem * view_system;
 GLDrawManager * gl_draw_manager;
 FPSCount * fps_count;
+
+TestObjAnim * test_obj_anim;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
@@ -130,10 +134,12 @@ void init_data() {
 	ScreenGL * screengl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	
 	view_system = new ViewSystem(gl_draw_manager, screengl);
-	view_system->set(pt_3d(10.0, 10.0, 0.0), M_PI * 0.25, M_PI * 0.25, 70.0);
+	view_system->set(pt_3d(0.0, 0.0, 0.0), M_PI * 0.25, M_PI * 0.25, 30.0);
 	//view_system->set_2d(30.0);
 
 	input_state = new InputState();
+
+	test_obj_anim = new TestObjAnim(gl_draw_manager, view_system);
 }
 
 
@@ -141,6 +147,7 @@ void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
 	view_system->draw();
+	test_obj_anim->draw();
 
 	SDL_GL_SwapWindow(window);
 	fps_count->add_frame();
@@ -148,6 +155,7 @@ void draw() {
 
 
 void anim(time_point t) {
+	test_obj_anim->anim();
 }
 
 
@@ -206,6 +214,7 @@ void main_loop() {
 
 
 void clean() {
+	delete test_obj_anim;
 	delete view_system;
 	delete input_state;
 	delete gl_draw_manager;

@@ -740,26 +740,26 @@ void GLDrawContext::set_uniform(std::string uniform_name, float data) {
 }
 
 
-void GLDrawContext::set_uniform(std::string uniform_name, const float * data) {
+void GLDrawContext::set_uniform(std::string uniform_name, const float * data, uint count) {
 	if (!_active) {
 		return;
 	}
 
 	GLDrawContextUniform * uniform = get_uniform(uniform_name);
 	if (uniform->_type == GL_FLOAT_VEC2) {
-		glUniform2fv(uniform->_loc, 1, data);
+		glUniform2fv(uniform->_loc, count, data);
 	}
 	else if (uniform->_type == GL_FLOAT_VEC3) {
-		glUniform3fv(uniform->_loc, 1, data);
+		glUniform3fv(uniform->_loc, count, data);
 	}
 	else if (uniform->_type == GL_FLOAT_VEC4) {
-		glUniform4fv(uniform->_loc, 1, data);
+		glUniform4fv(uniform->_loc, count, data);
 	}
 	else if (uniform->_type == GL_FLOAT_MAT3) {
-		glUniformMatrix3fv(uniform->_loc, 1, false, data);
+		glUniformMatrix3fv(uniform->_loc, count, false, data);
 	}
 	else if (uniform->_type == GL_FLOAT_MAT4) {
-		glUniformMatrix4fv(uniform->_loc, 1, false, data);
+		glUniformMatrix4fv(uniform->_loc, count, false, data);
 	}
 	else {
 		std::cerr << "GLDrawContext::set_uniform : " << uniform_name << " bad type = " << uniform->_type << "\n";
@@ -782,20 +782,20 @@ void GLDrawContext::set_uniform(std::string uniform_name, int data) {
 }
 
 
-void GLDrawContext::set_uniform(std::string uniform_name, const int * data) {
+void GLDrawContext::set_uniform(std::string uniform_name, const int * data, uint count) {
 	if (!_active) {
 		return;
 	}
 
 	GLDrawContextUniform * uniform = get_uniform(uniform_name);
 	if (uniform->_type == GL_INT_VEC2) {
-		glUniform2iv(uniform->_loc, 1, data);
+		glUniform2iv(uniform->_loc, count, data);
 	}
 	else if (uniform->_type == GL_INT_VEC3) {
-		glUniform3iv(uniform->_loc, 1, data);
+		glUniform3iv(uniform->_loc, count, data);
 	}
 	else if (uniform->_type == GL_INT_VEC4) {
-		glUniform4iv(uniform->_loc, 1, data);
+		glUniform4iv(uniform->_loc, count, data);
 	}
 	else {
 		std::cerr << "GLDrawContext::set_uniform : " << uniform_name << " bad type = " << uniform->_type << "\n";
@@ -818,20 +818,20 @@ void GLDrawContext::set_uniform(std::string uniform_name, uint data) {
 }
 
 
-void GLDrawContext::set_uniform(std::string uniform_name, const uint * data) {
+void GLDrawContext::set_uniform(std::string uniform_name, const uint * data, uint count) {
 	if (!_active) {
 		return;
 	}
 
 	GLDrawContextUniform * uniform = get_uniform(uniform_name);
 	if (uniform->_type == GL_UNSIGNED_INT_VEC2) {
-		glUniform2uiv(uniform->_loc, 1, data);
+		glUniform2uiv(uniform->_loc, count, data);
 	}
 	else if (uniform->_type == GL_UNSIGNED_INT_VEC3) {
-		glUniform3uiv(uniform->_loc, 1, data);
+		glUniform3uiv(uniform->_loc, count, data);
 	}
 	else if (uniform->_type == GL_UNSIGNED_INT_VEC4) {
-		glUniform4uiv(uniform->_loc, 1, data);
+		glUniform4uiv(uniform->_loc, count, data);
 	}
 	else {
 		std::cerr << "GLDrawContext::set_uniform : " << uniform_name << " bad type = " << uniform->_type << "\n";

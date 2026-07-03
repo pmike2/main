@@ -70,6 +70,7 @@ struct ObjData {
 	//void set_use(bool use_ambient, bool use_diffuse, bool use_specular, bool use_shininess, bool use_opacity);
 	void update_data();
 	ObjObject * new_generic_object();
+	ObjObject * get_object(std::string name);
 	friend std::ostream & operator << (std::ostream & os, ObjData & data);
 
 

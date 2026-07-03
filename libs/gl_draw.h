@@ -120,11 +120,11 @@ public:
 	void draw();
 	GLDrawContextUniform * get_uniform(std::string uniform_name);
 	void set_uniform(std::string uniform_name, float data);
-	void set_uniform(std::string uniform_name, const float * data);
+	void set_uniform(std::string uniform_name, const float * data, uint count = 1);
 	void set_uniform(std::string uniform_name, int data);
-	void set_uniform(std::string uniform_name, const int * data);
+	void set_uniform(std::string uniform_name, const int * data, uint count = 1);
 	void set_uniform(std::string uniform_name, uint data);
-	void set_uniform(std::string uniform_name, const uint * data);
+	void set_uniform(std::string uniform_name, const uint * data, uint count = 1);
 	uint data_size(uint idx_buffer = 0);
 	void show_data(uint idx_buffer = 0);
 	friend std::ostream & operator << (std::ostream & os, const GLDrawContext & dc);

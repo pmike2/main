@@ -3,30 +3,66 @@ import json
 import bpy
 
 
-# https://docs.blender.org/api/current/bpy.types.Bone.html#bpy.types.Bone
+def matrix2list(m):
+    return [
+        m[0][0], m[0][1], m[0][2], m[0][3],
+        m[1][0], m[1][1], m[1][2], m[1][3],
+        m[2][0], m[2][1], m[2][2], m[2][3],
+        m[3][0], m[3][1], m[3][2], m[3][3],
+    ]
 
 
 def write_some_data(context, filepath, use_some_setting):
     
-    data = {"bones" : [], "objects" : []}
+    data = {"bones" : {}, "objects" : [], "actions" : {}}
     
-    l_bones = bpy.data.armatures[0].bones.items()
+    #l_bones = bpy.data.armatures[0].bones.items()
+    l_bones = bpy.context.object.pose.bones
 
     for bone in l_bones:
-        bone_name = bone[0]
-        bone_obj = bone[1]
+        #bone_name = bone[0]
+        #bone_obj = bone[1]
         
-        parent = bone_obj.parent
+        bone_name = bone.name
+        parent = bone.parent
         if parent is None:
             parent_name = None
         else:
             parent_name = parent.name
-        matrix = bone_obj.matrix
-        matrix_list = []
-        for i in range(3):
-            matrix_list.append([matrix[i][0], matrix[i][1], matrix[i][2]])
         
-        data["bones"].append({"name" : bone_name, "parent" : parent_name, "matrix" : matrix_list})
+        #matrix = bone_obj.matrix
+        #matrix_list = []
+        #for i in range(3):
+        #   matrix_list.append([matrix[i][0], matrix[i][1], matrix[i][2]])
+        
+        data["bones"][bone_name] = {"parent" : parent_name}
+        
+    markers = {}
+    for marker in bpy.context.scene.timeline_markers:
+        marker_name = marker.name
+        marker_frame = marker.frame
+        
+        action = marker_name.split("_")[0]
+        end_or_start = marker_name.split("_")[1]
+        
+        if end_or_start == "start":
+            markers[action] = {"start" : marker_frame}
+        elif end_or_start == "end":
+            markers[action]["end"] = marker_frame
+    
+    for action, marker_dic in markers.items():
+    #for f in range(bpy.context.scene.frame_start, bpy.context.scene.frame_end + 1):
+        
+        data["actions"][action] = []
+        
+        for f in range(marker_dic["start"], marker_dic["end"]):
+            bpy.context.scene.frame_set(f)
+        
+            dic_frame = {}
+            for bone in l_bones:
+                dic_frame[bone.name] = matrix2list(bone.matrix)
+        
+            data["actions"][action].append(dic_frame)
 
 
     l_objects = bpy.data.objects.items()
@@ -39,7 +75,6 @@ def write_some_data(context, filepath, use_some_setting):
         
         data["objects"].append({"name" : obj_name, "bone" : parent_bone_name})
     
-    scene = bpy.data.scenes[0]
     
     
     with open(filepath, 'w') as f:

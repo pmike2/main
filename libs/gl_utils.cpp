@@ -15,7 +15,7 @@ ScreenGL::ScreenGL() {
 }
 
 
-ScreenGL::ScreenGL(int screen_width, int screen_height, number gl_width, number gl_height) : 
+ScreenGL::ScreenGL(uint screen_width, uint screen_height, number gl_width, number gl_height) : 
 	_screen_width(screen_width), _screen_height(screen_height), _gl_width(gl_width), _gl_height(gl_height)
 {
 
@@ -27,22 +27,22 @@ ScreenGL::~ScreenGL() {
 }
 
 
-void ScreenGL::screen2gl(int i, int j, number & x, number & y) {
-	x= ((number)(i)/ (number)(_screen_width)- 0.5f)* _gl_width;
-	y= (0.5f- (number)(j)/ (number)(_screen_height))* _gl_height;
+void ScreenGL::screen2gl(uint i, uint j, number & x, number & y) {
+	x= ((number)(i) / (number)(_screen_width)- 0.5) * _gl_width;
+	y= (0.5 - (number)(j) / (number)(_screen_height)) * _gl_height;
 }
 
 
-pt_2d ScreenGL::screen2gl(int i, int j) {
+pt_2d ScreenGL::screen2gl(uint i, uint j) {
 	number x, y;
 	screen2gl(i, j, x, y);
 	return pt_2d(x, y);
 }
 
 
-void ScreenGL::gl2screen(number x, number y, int & i, int & j) {
-	i= (int)((number)(_screen_width)* (x/ _gl_width+ 0.5));
-	j= (int)((number)(_screen_width)* (y/ _gl_height+ 0.5));
+void ScreenGL::gl2screen(number x, number y, uint & i, uint & j) {
+	i= (uint)((number)(_screen_width) * (x / _gl_width + 0.5));
+	j= (uint)((number)(_screen_width) * (y / _gl_height + 0.5));
 }
 
 
