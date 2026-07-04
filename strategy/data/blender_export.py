@@ -3,6 +3,10 @@ import json
 import bpy
 
 
+# aller voir :
+# https://blender.stackexchange.com/questions/44637/how-can-i-manually-calculate-bpy-types-posebone-matrix-using-blenders-python-ap/121495#121495
+
+
 def matrix2list(m):
     return [
         m[0][0], m[0][1], m[0][2], m[0][3],

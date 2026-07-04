@@ -253,9 +253,9 @@ TestObjAnim::~TestObjAnim() {
 
 
 void TestObjAnim::anim() {
-	//update();
 	_animated_obj->anim();
 	_animated_obj->update_data();
+	update();
 }
 
 
@@ -264,6 +264,7 @@ void TestObjAnim::update() {
 	context->_n_pts = _animated_obj->_obj_data->_n_pts;
 	context->set_data(_animated_obj->_data);
 	//context->show_data();
+	//std::cout << "-------------------\n";
 }
 
 
@@ -274,7 +275,7 @@ void TestObjAnim::draw() {
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
 	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
 	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
-	context->set_uniform("anim_matrices", glm::value_ptr(_animated_obj->_matrices[0]), N_MAX_MATRICES);
+	context->set_uniform("anim_matrices[0]", glm::value_ptr(_animated_obj->_matrices[0]), N_MAX_MATRICES);
 	context->draw();
 	context->deactivate();
 }
