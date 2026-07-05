@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-
+import os
 from pprint import pprint as pp
 import json
 
 N_MAX_FRAMES = 10
 
-json_path_in = "/Users/home/git_dir/main/test_obj_anim/data/test_ini.json"
-json_path_out = "/Users/home/git_dir/main/test_obj_anim/data/test.json"
+dir_script = os.path.dirname(__file__)
+json_path_in = os.path.join(os.path.dirname(dir_script), "data", "test_ini.json")
+json_path_out = os.path.join(os.path.dirname(dir_script), "data", "test.json")
 
 with open(json_path_in) as f:
 	d = json.load(f)
