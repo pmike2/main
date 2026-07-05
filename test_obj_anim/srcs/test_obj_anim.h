@@ -69,12 +69,14 @@ struct AnimatedObj {
 	ObjData * _obj_data;
 	float * _data;
 	uint _n_attrs_per_pts;
+	uint _n_pts;
 	std::map<std::string, AnimatedObjAction *> _actions;
 	std::map<std::string, AnimatedObjBone *> _bones;
 	std::map<std::string, AnimatedObjBone *> _obj2bone;
 	std::string _current_action;
 	uint _current_frame;
-	glm::mat4 _matrices[N_MAX_MATRICES];
+	//glm::mat4 _matrices[N_MAX_MATRICES];
+	float _matrices[N_MAX_MATRICES * 16];
 };
 
 
@@ -85,6 +87,7 @@ struct TestObjAnim {
 	void anim();
 	void update();
 	void draw();
+	bool key_down(InputState * input_state, SDL_Keycode key, time_point t);
 
 	
 	GLDrawManager * _gl_draw_manager;

@@ -68,6 +68,10 @@ void key_down(SDL_Keycode key, time_point t) {
 	if (view_system->key_down(input_state, key, t)) {
 		return;
 	}
+
+	if (test_obj_anim->key_down(input_state, key, t)) {
+		return;
+	}
 }
 
 

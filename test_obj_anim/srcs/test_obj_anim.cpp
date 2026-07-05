@@ -67,11 +67,25 @@ AnimatedObj::AnimatedObj() {
 
 
 AnimatedObj::AnimatedObj(std::string json_path) : _current_action(""), _current_frame(0) {
+	for (uint i=0; i<N_MAX_MATRICES * 16; ++i) {
+		_matrices[0] = 0.0f;
+	}
+
 	std::filesystem::path js_path = json_path;
 	std::string obj_filename = js_path.stem().string() + ".obj";
 	std::filesystem::path obj_path = js_path.parent_path() / obj_filename;
 	
 	_obj_data = new ObjData(obj_path.string());
+	_obj_data->_use_ambient = false;
+	_obj_data->_use_diffuse = true;
+	_obj_data->_use_specular = false;
+	_obj_data->_use_shininess = false;
+	_obj_data->_use_opacity = false;
+	_obj_data->update_data();
+	
+	_n_attrs_per_pts = _obj_data->_n_attrs_per_pts + 1;
+	_n_pts = _obj_data->_n_pts;
+	_data = new float[_n_pts * _n_attrs_per_pts];
 	//std::cout << *_obj_data << "\n";
 
 	std::ifstream ifs(json_path);
@@ -133,7 +147,17 @@ void AnimatedObj::update_matrices() {
 		for (auto & frame : action->_frames) {
 			for (auto & tr : frame->_transforms) {
 				AnimatedObjTransform * transform = tr.second;
-				_matrices[compt] = transform->_mat;
+
+				const float * mat_data = (const float *) glm::value_ptr(transform->_mat);
+				for (uint i=0; i<16; ++i) {
+					_matrices[16 * compt + i] = mat_data[i];
+					//if (compt == 0) {
+						//std::cout << glm::to_string(transform->_mat) << "\n";
+						//std::cout << _matrices[16 * compt + i] << " ; ";
+						//std::cout << mat_data[i] << " ; ";
+					//}
+				}
+				//std::cout << "\n";
 				transform->_idx = compt;
 				compt++;
 				if (compt >= N_MAX_MATRICES) {
@@ -147,16 +171,16 @@ void AnimatedObj::update_matrices() {
 
 
 void AnimatedObj::update_data() {
-	_obj_data->update_data();
-
-	_n_attrs_per_pts = _obj_data->_n_attrs_per_pts + 1;
-	_data = new float[_obj_data->_n_pts * _n_attrs_per_pts];
+	//std::cout << "---------------\n";
+	//std::cout << _current_action << " ; " << _current_frame << "\n";
 
 	float * ptr = _data;
 	for (auto & object : _obj_data->_objects) {
 		
 		AnimatedObjBone * bone = _obj2bone[object->_name];
 		AnimatedObjTransform * transform = _actions[_current_action]->_frames[_current_frame]->_transforms[bone];
+
+		//std::cout << object->_name << " ; " << bone->_name << " ; " << transform->_idx << "\n";
 
 		for (auto & face : object->_faces) {
 			for (uint i=0; i<3; ++i) {
@@ -229,15 +253,6 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system) 
 {
 	_animated_obj = new AnimatedObj("../data/test.json");
-
-	_animated_obj->_obj_data = new ObjData("../data/test.obj");
-	_animated_obj->_obj_data->_use_ambient = false;
-	_animated_obj->_obj_data->_use_diffuse = true;
-	_animated_obj->_obj_data->_use_specular = false;
-	_animated_obj->_obj_data->_use_shininess = false;
-	_animated_obj->_obj_data->_use_opacity = false;
-	//_animated_obj->_obj_data->update_data();
-
 	_animated_obj->update_data();
 	_animated_obj->update_matrices();
 
@@ -261,7 +276,7 @@ void TestObjAnim::anim() {
 
 void TestObjAnim::update() {
 	GLDrawContext * context= _gl_draw_manager->get_context("obj");
-	context->_n_pts = _animated_obj->_obj_data->_n_pts;
+	context->_n_pts = _animated_obj->_n_pts;
 	context->set_data(_animated_obj->_data);
 	//context->show_data();
 	//std::cout << "-------------------\n";
@@ -275,8 +290,24 @@ void TestObjAnim::draw() {
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
 	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
 	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
-	context->set_uniform("anim_matrices[0]", glm::value_ptr(_animated_obj->_matrices[0]), N_MAX_MATRICES);
+	//context->set_uniform("anim_matrices[0]", glm::value_ptr(_animated_obj->_matrices[0]), N_MAX_MATRICES);
+	context->set_uniform("anim_matrices[0]", &_animated_obj->_matrices[0], N_MAX_MATRICES);
 	context->draw();
 	context->deactivate();
 }
 
+
+bool TestObjAnim::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
+	if (key == SDLK_a) {
+		if (_animated_obj->_current_action == "walk") {
+			_animated_obj->_current_action = "shake";
+			_animated_obj->_current_frame = 0;
+		}
+		else if (_animated_obj->_current_action == "shake") {
+			_animated_obj->_current_action = "walk";
+			_animated_obj->_current_frame = 0;
+		}
+		return true;
+	}
+	return false;
+}
