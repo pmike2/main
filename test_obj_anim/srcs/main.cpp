@@ -143,7 +143,8 @@ void init_data() {
 
 	input_state = new InputState();
 
-	test_obj_anim = new TestObjAnim(gl_draw_manager, view_system);
+	time_point now = std::chrono::system_clock::now();
+	test_obj_anim = new TestObjAnim(gl_draw_manager, view_system, now);
 }
 
 
@@ -159,7 +160,7 @@ void draw() {
 
 
 void anim(time_point t) {
-	test_obj_anim->anim();
+	test_obj_anim->anim(t);
 }
 
 

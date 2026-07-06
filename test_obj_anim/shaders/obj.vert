@@ -18,7 +18,8 @@ void main(void) {
 	float x = matrix_idx;
 	mat4 m = anim_matrices[0];
 	vertex_position = vec3(anim_matrices[int(matrix_idx)] * vec4(position_in, 1.0));
-	vertex_normal = vec3(anim_matrices[int(matrix_idx)] * vec4(normalize(normal_in), 1.0));
+	//vertex_normal = vec3(anim_matrices[int(matrix_idx)] * vec4(normalize(normal_in), 1.0));
+	vertex_normal = mat3(anim_matrices[int(matrix_idx)]) * normalize(normal_in);
 
 	//vertex_position = vec3(anim_matrices[0] * vec4(position_in, 1.0));
 	//vertex_normal = vec3(anim_matrices[0] * vec4(normalize(normal_in), 1.0));
