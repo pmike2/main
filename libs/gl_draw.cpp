@@ -577,6 +577,7 @@ GLDrawContext::GLDrawContext(std::string name, GLuint prog, GLenum draw_mode, st
 
 	glBindVertexArray(_vao);
 	
+	// TODO : gérer les matrices 3x3 ?
 	for (auto & buffer : _buffers) {
 		glBindBuffer(GL_ARRAY_BUFFER, buffer->_id);
 		for (auto attr : buffer->_attribs) {
@@ -595,8 +596,16 @@ GLDrawContext::GLDrawContext(std::string name, GLuint prog, GLenum draw_mode, st
 				}
 			}
 			else {
-				glEnableVertexAttribArray(attr->_loc);
-				glVertexAttribPointer(attr->_loc, attr->_size, GL_FLOAT, GL_FALSE, buffer->_n_attrs_per_pts * sizeof(float), (void*)(attr->_offset * sizeof(float)));
+				if (attr->_size == 16) {
+					for (uint i=0; i<4; ++i) {
+						glEnableVertexAttribArray(attr->_loc + i);
+						glVertexAttribPointer(attr->_loc + i, 4, GL_FLOAT, GL_FALSE, buffer->_n_attrs_per_pts * sizeof(float), (void*)((attr->_offset + i * 4) * sizeof(float)));
+					}
+				}
+				else {
+					glEnableVertexAttribArray(attr->_loc);
+					glVertexAttribPointer(attr->_loc, attr->_size, GL_FLOAT, GL_FALSE, buffer->_n_attrs_per_pts * sizeof(float), (void*)(attr->_offset * sizeof(float)));
+				}
 			}
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, 0);

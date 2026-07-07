@@ -52,6 +52,12 @@ fonctionne uniquement quand on a des objets distincts
 4 - select bone
 ctrl - p : set parent to bone -> l'objet est maintenant attaché au bone
 
+cf https://blenderartists.org/t/bone-extrusion-problem/526543
+si un bone ne veut pas bouger et ne fait que des rotations il faut :
+- passer en edit mode
+- sélectionner le bone
+- dans l'onglet à droite icone bone, partie Relations, unclick 'connected'
+
 animate :
 https://www.youtube.com/watch?v=IAiTYaiZmY0
 

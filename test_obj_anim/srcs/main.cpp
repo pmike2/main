@@ -127,6 +127,10 @@ void init_gl() {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	SDL_GL_SwapWindow(window);
+
+	int i;
+	glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &i);
+	std::cout << i << "\n";
 }
 
 
@@ -134,12 +138,12 @@ void init_data() {
 	fps_count = new FPSCount(window);
 
 	GLDrawManager * gl_draw_manager = new GLDrawManager("../data/draw_context.json");
+	//std::cout << *gl_draw_manager << "\n";
 
 	ScreenGL * screengl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	
 	view_system = new ViewSystem(gl_draw_manager, screengl);
 	view_system->set(pt_3d(0.0, 0.0, 0.0), M_PI * 0.25, M_PI * 0.25, 30.0);
-	//view_system->set_2d(30.0);
 
 	input_state = new InputState();
 

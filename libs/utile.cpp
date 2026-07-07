@@ -33,12 +33,29 @@ bool number_equals_epsilon(number x, number y, number threshold) {
 }
 
 
-// renvoie un number aléatoire entre x0 et x1
-number rand_double(number x0, number x1) {
+bool rand_bool() {
+	if (rand() % 2) {
+		return true;
+	}
+	return false;
+}
+
+
+// renvoie un int aléatoire entre x0 et x1 compris
+int rand_int(int x0, int x1) {
 	if (x1> x0)
-		return x0+ (x1- x0)* (number)(rand()% 10000)/ 10000;
+		return x0+ rand()% (x1- x0+ 1);
 	else
-		return x1+ (x0- x1)* (number)(rand()% 10000)/ 10000;
+		return x1+ rand()% (x0- x1+ 1);
+}
+
+
+// renvoie un number aléatoire entre x0 et x1
+double rand_double(double x0, double x1) {
+	if (x1> x0)
+		return x0+ (x1- x0)* (double)(rand()% 10000)/ 10000;
+	else
+		return x1+ (x0- x1)* (double)(rand()% 10000)/ 10000;
 }
 
 
@@ -86,6 +103,7 @@ pt_3d rand_pt_3d(pt_3d pt_min, pt_3d pt_max) {
 }
 
 
+// https://en.wikipedia.org/wiki/Spherical_coordinate_system
 pt_3d rand_pt_3d_spherical(number rho_min, number rho_max, number theta_min, number theta_max, number phi_min, number phi_max) {
 	number rho = rand_number(rho_min, rho_max);
 	if (rho < 0.0) {
@@ -112,20 +130,8 @@ pt_3d rand_pt_3d_spherical(number rho_min, number rho_max, number theta_min, num
 }
 
 
-// renvoie un int aléatoire entre x0 et x1 compris
-int rand_int(int x0, int x1) {
-	if (x1> x0)
-		return x0+ rand()% (x1- x0+ 1);
-	else
-		return x1+ rand()% (x0- x1+ 1);
-}
-
-
-bool rand_bool() {
-	if (rand() % 2) {
-		return true;
-	}
-	return false;
+quat rand_quat() {
+	return glm::angleAxis(rand_number(0.0, M_PI * 2.0), rand_pt_3d_spherical(1.0, 1.0, 0.0, M_PI, 0.0, M_PI * 2.0));
 }
 
 

@@ -20,12 +20,10 @@ bool number_equals_strict(number x, number y);
 // test égalité avec marge
 bool number_equals_epsilon(number x, number y, number threshold=1e-9);
 
-// renvoie un number aléatoire entre x0 et x1
-number rand_double(number x0, number x1);
-
-// renvoie un number aléatoire entre x0 et x1
+bool rand_bool();
+int rand_int(int x0, int x1);
+double rand_double(double x0, double x1);
 float rand_float(float x0, float x1);
-
 number rand_number(number x0, number x1);
 
 pt_2d rand_pt_2d(number xmin, number xmax, number ymin, number ymax);
@@ -36,11 +34,7 @@ pt_3d rand_pt_3d(number xmin, number xmax, number ymin, number ymax, number zmin
 pt_3d rand_pt_3d(pt_3d pt_min, pt_3d pt_max);
 pt_3d rand_pt_3d_spherical(number rho_min, number rho_max, number theta_min, number theta_max, number phi_min, number phi_max);
 
-// renvoie un int aléatoire entre x0 et x1 compris
-int rand_int(int x0, int x1);
-
-// renvoie un booléen aléatoire
-bool rand_bool();
+quat rand_quat();
 
 number rand_gaussian(number mean, number deviation);
 pt_2d rand_gaussian(pt_2d mean, pt_2d deviation);

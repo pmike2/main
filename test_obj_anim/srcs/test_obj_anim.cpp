@@ -3,7 +3,7 @@
 
 
 
-glm::mat4 parse_js_matrix(json js) {
+mat_4d parse_js_matrix(json js) {
 	float mat_values[16];
 	uint col = 0;
 	uint lig = 0;
@@ -25,7 +25,7 @@ AnimatedObjBone::AnimatedObjBone() {
 }
 
 
-AnimatedObjBone::AnimatedObjBone(std::string name, glm::mat4 mat_local, std::string parent_name) :
+AnimatedObjBone::AnimatedObjBone(std::string name, mat_4d mat_local, std::string parent_name) :
 	_name(name), _mat_local(mat_local), _parent(NULL), _parent_name(parent_name)
 {
 
@@ -34,6 +34,14 @@ AnimatedObjBone::AnimatedObjBone(std::string name, glm::mat4 mat_local, std::str
 
 AnimatedObjBone::~AnimatedObjBone() {
 	
+}
+
+
+std::ostream & operator << (std::ostream & os, AnimatedObjBone & bone) {
+	os << "name = " << bone._name;
+	os << " ; matrix_local = " << glm::to_string(bone._mat_local);
+	os << " ; parent = " << bone._parent_name;
+	return os;
 }
 
 
@@ -48,6 +56,13 @@ AnimatedObjTransform::~AnimatedObjTransform() {
 }
 
 
+std::ostream & operator << (std::ostream & os, AnimatedObjTransform & transform) {
+	os << "idx = " << transform._idx;
+	os << " ; mat = " << glm::to_string(transform._mat);
+	return os;
+}
+
+
 // ------------------------------------------------
 AnimatedObjFrame::AnimatedObjFrame() {
 
@@ -56,6 +71,15 @@ AnimatedObjFrame::AnimatedObjFrame() {
 
 AnimatedObjFrame::~AnimatedObjFrame() {
 
+}
+
+
+std::ostream & operator << (std::ostream & os, AnimatedObjFrame & frame) {
+	os << "transforms = ";
+	for (auto & transform : frame._transforms) {
+		os << transform.first->_name << " -> " << *transform.second << "\n";
+	}
+	return os;
 }
 
 
@@ -75,13 +99,23 @@ AnimatedObjAction::~AnimatedObjAction() {
 }
 
 
+std::ostream & operator << (std::ostream & os, AnimatedObjAction & action) {
+	os << "name = " << action._name << "\n";
+	os << "frames = ";
+	for (auto & frame : action._frames) {
+		os << *frame << "\n";
+	}
+	return os;
+}
+
+
 // ------------------------------------------------
-AnimatedObj::AnimatedObj() {
+AnimatedObjModel::AnimatedObjModel() {
 
 }
 
 
-AnimatedObj::AnimatedObj(std::string json_path, time_point t) : _current_action(""), _current_frame(0), _last_anim_t(t) {
+AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 	for (uint i=0; i<N_MAX_MATRICES * 16; ++i) {
 		_matrices[0] = 0.0f;
 	}
@@ -98,10 +132,9 @@ AnimatedObj::AnimatedObj(std::string json_path, time_point t) : _current_action(
 	_obj_data->_use_opacity = false;
 	_obj_data->update_data();
 	
-	_n_attrs_per_pts = _obj_data->_n_attrs_per_pts + 1;
+	/*_n_attrs_per_pts = _obj_data->_n_attrs_per_pts + 1;
 	_n_pts = _obj_data->_n_pts;
-	_data = new float[_n_pts * _n_attrs_per_pts];
-	//std::cout << *_obj_data << "\n";
+	_data = new float[_n_pts * _n_attrs_per_pts];*/
 
 	std::ifstream ifs(json_path);
 	json js = json::parse(ifs);
@@ -110,7 +143,7 @@ AnimatedObj::AnimatedObj(std::string json_path, time_point t) : _current_action(
 	for (json::iterator it = js["bones"].begin(); it != js["bones"].end(); ++it) {
 		std::string bone_name = it.key();
 
-		glm::mat4 mat = parse_js_matrix(it.value()["matrix_local"]);
+		mat_4d mat = parse_js_matrix(it.value()["matrix_local"]);
 
 		if (it.value()["parent"].is_null()) {
 			_bones[bone_name] = new AnimatedObjBone(bone_name, mat);
@@ -130,50 +163,38 @@ AnimatedObj::AnimatedObj(std::string json_path, time_point t) : _current_action(
 	for (auto & object : js["objects"]) {
 		std::string object_name = object["name"];
 		std::string bone_name = object["bone"];
-
-		//ObjObject * obj = _obj_data->get_object(object_name);
-		//std::cout << object_name << " ; " << bone_name << " ; " << obj << "\n";
 		_obj2bone[object_name] = _bones[bone_name];
 	}
 
 	for (json::iterator it_action = js["actions"].begin(); it_action != js["actions"].end(); ++it_action) {
 		std::string action_name = it_action.key();
-		//std::cout << action_name << "\n";
-		if (_current_action == "") {
-			_current_action = action_name;
-		}
 		_actions[action_name] = new AnimatedObjAction(action_name);
 		for (auto & f : it_action.value()) {
 			AnimatedObjFrame * frame = new AnimatedObjFrame();
 			for (json::iterator it_f = f.begin(); it_f != f.end(); ++it_f) {
 				std::string bone_name = it_f.key();
 
-				glm::mat4 mat = parse_js_matrix(it_f.value()["matrix_basis"]);
+				mat_4d mat = parse_js_matrix(it_f.value()["matrix_basis"]);
 
 				AnimatedObjTransform * transform = new AnimatedObjTransform();
 				AnimatedObjBone * bone = _bones[bone_name];
 				transform->_mat = mat;
-
-				/*if (bone->_parent == NULL) {
-					transform->_mat = bone->_mat_local * glm::make_mat4(mat_values) * glm::inverse(bone->_mat_local);
-				}
-				else {
-					transform->_mat = bone->_mat_local * bone->_parent->_mat_local * glm::make_mat4(mat_values) * glm::inverse(bone->_mat_local) * glm::inverse(bone->_parent->_mat_local);
-				}*/
 				frame->_transforms[bone] = transform;
 			}
 			_actions[action_name]->_frames.push_back(frame);
 		}
 	}
+
+	update_matrices();
 }
 
 
-AnimatedObj::~AnimatedObj() {
+AnimatedObjModel::~AnimatedObjModel() {
 
 }
 
 
-void AnimatedObj::update_matrices() {
+void AnimatedObjModel::update_matrices() {
 	uint compt = 0;
 	for (auto & ac : _actions) {
 		AnimatedObjAction * action = ac.second;
@@ -182,35 +203,21 @@ void AnimatedObj::update_matrices() {
 				AnimatedObjBone * bone = tr.first;
 				AnimatedObjTransform * transform = tr.second;
 
-				glm::mat4 m;
-				if (bone->_parent != NULL) {
-					//m = frame->_transforms[bone->_parent]->_mat * m;
-					m = bone->_parent->_mat_local *
-						frame->_transforms[bone->_parent]->_mat *
-						glm::inverse(bone->_parent->_mat_local) *
-						bone->_mat_local * 
-						transform->_mat * 
-						glm::inverse(bone->_mat_local);
-				}
-				else {
-					m = bone->_mat_local * transform->_mat * glm::inverse(bone->_mat_local);
-					//std::cout << glm::to_string(m) << "\n";
-				}
-				//m = bone->_mat_local * m * glm::inverse(bone->_mat_local);
-				//m = glm::inverse(bone->_mat_local) * m * bone->_mat_local;
+				mat_4d m = bone->_mat_local * transform->_mat * glm::inverse(bone->_mat_local);
 
-				//const float * mat_data = (const float *) glm::value_ptr(transform->_mat);
+				AnimatedObjBone * parent = bone->_parent; 
+				while (parent != NULL) {
+					m = parent->_mat_local *
+						frame->_transforms[parent]->_mat *
+						glm::inverse(parent->_mat_local) *
+						m;
+					parent = parent->_parent;
+				}
 
-				const float * mat_data = (const float *) glm::value_ptr(m);
+				const number * mat_data = (const number *) glm::value_ptr(m);
 				for (uint i=0; i<16; ++i) {
-					_matrices[16 * compt + i] = mat_data[i];
-					//if (compt == 0) {
-						//std::cout << glm::to_string(transform->_mat) << "\n";
-						//std::cout << _matrices[16 * compt + i] << " ; ";
-						//std::cout << mat_data[i] << " ; ";
-					//}
+					_matrices[16 * compt + i] = float(mat_data[i]);
 				}
-				//std::cout << "\n";
 				transform->_idx = compt;
 				compt++;
 				if (compt >= N_MAX_MATRICES) {
@@ -220,27 +227,15 @@ void AnimatedObj::update_matrices() {
 			}
 		}
 	}
-
-	/*for (uint i=0; i<N_MAX_MATRICES * 16; ++i) {
-		if (i % 16 == 0) {
-			std::cout << "\n";
-		}
-		std::cout << _matrices[i] << " ; ";
-	}*/
 }
 
 
-void AnimatedObj::update_data() {
-	//std::cout << "---------------\n";
-	//std::cout << _current_action << " ; " << _current_frame << "\n";
-
+/*void AnimatedObjModel::update_data() {
 	float * ptr = _data;
 	for (auto & object : _obj_data->_objects) {
 		
 		AnimatedObjBone * bone = _obj2bone[object->_name];
 		AnimatedObjTransform * transform = _actions[_current_action]->_frames[_current_frame]->_transforms[bone];
-
-		//std::cout << object->_name << " ; " << bone->_name << " ; " << transform->_idx << "\n";
 
 		for (auto & face : object->_faces) {
 			for (uint i=0; i<3; ++i) {
@@ -292,19 +287,56 @@ void AnimatedObj::update_data() {
 			}
 		}
 	}
+}*/
+
+
+std::ostream & operator << (std::ostream & os, AnimatedObjModel & model) {
+	os << "bones =\n";
+	for (auto & bone : model._bones) {
+		std::cout << *bone.second << "\n";
+	}
+	os << "\nobj2bone =\n";
+	for (auto & o2b : model._obj2bone) {
+		std::cout << o2b.first << " -> " << o2b.second->_name << "\n";
+	}
+	os << "\nactions =\n";
+	for (auto & action : model._actions) {
+		std::cout << *action.second << "\n";
+	}
+	return os;
 }
 
 
-void AnimatedObj::anim(time_point t) {
+// ------------------------------------------------
+AnimatedObjInstance::AnimatedObjInstance() {
+
+}
+
+
+AnimatedObjInstance::AnimatedObjInstance(AnimatedObjModel * model, pt_3d pos, time_point t, quat q) :
+	InstancePosRot(pos, q, pt_3d(1.0)),
+	_model(model), _last_anim_t(t), _current_action(model->_actions.begin()->first), _current_frame(0)
+{
+
+}
+
+
+AnimatedObjInstance::~AnimatedObjInstance() {
+
+}
+
+
+void AnimatedObjInstance::anim(time_point t) {
 	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
-	if (dt > 100) {
+	if (dt > 30) {
 		_last_anim_t = t;
 		_current_frame++;
-		if (_current_frame >= _actions[_current_action]->_frames.size()) {
+		if (_current_frame >= _model->_actions[_current_action]->_frames.size()) {
 			_current_frame = 0;
 		}
 	}
 }
+
 
 
 // ------------------------------------------------
@@ -314,55 +346,164 @@ TestObjAnim::TestObjAnim() {
 
 
 TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
-	_gl_draw_manager(gl_draw_manager), _view_system(view_system) 
-{
-	_animated_obj = new AnimatedObj("../data/test.json", t);
-	_animated_obj->update_data();
-	_animated_obj->update_matrices();
+	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _paused(false)
+{	
+	std::vector<std::string> model_names {"test", "test2"};
+	for (auto & model_name : model_names) {
+		_models[model_name] = new AnimatedObjModel("../data/" + model_name + ".json");
+	}
+	
+	/*_instances.push_back(new AnimatedObjInstance(_models["test"], pt_3d(0.0, 0.0, 0.0), t));
+	_instances.push_back(new AnimatedObjInstance(_models["test"], pt_3d(5.0, 0.0, 0.0), t));
+	_instances.push_back(new AnimatedObjInstance(_models["test2"], pt_3d(0.0, 0.0, 5.0), t));
 
-	//std::cout << *_obj_data << "\n";
+	_instances[0]->_current_action = "walk";*/
+
+	for (uint i=0; i<1000; ++i) {
+		int j = rand_int(0, model_names.size() - 1);
+		_instances.push_back(new AnimatedObjInstance(_models[model_names[j]], rand_pt_3d(pt_3d(-10.0), pt_3d(10.0)), t, rand_quat()));
+	}
+
+	//std::cout << *_animated_obj << "\n";
 
 	update();
 }
 
 
 TestObjAnim::~TestObjAnim() {
-	delete _animated_obj;
+	for (auto & instance : _instances) {
+		delete instance;
+	}
+	_instances.clear();
+	for (auto & model : _models) {
+		delete model.second;
+	}
+	_models.clear();
 }
 
 
 void TestObjAnim::anim(time_point t) {
-	_animated_obj->anim(t);
-	_animated_obj->update_data();
+	if (_paused) {
+		return;
+	}
+
+	for (auto & instance : _instances) {
+		instance->anim(t);
+	}
 	update();
 }
 
 
 void TestObjAnim::update() {
-	GLDrawContext * context = _gl_draw_manager->get_context("obj");
-	context->_n_pts = _animated_obj->_n_pts;
-	context->set_data(_animated_obj->_data);
-	//context->show_data();
-	//std::cout << "-------------------\n";
+	for (auto & m : _models) {
+		std::string model_name = m.first;
+		AnimatedObjModel * model = m.second;
+
+		GLDrawContext * context = _gl_draw_manager->get_context(model_name);
+		context->_n_pts = 0;
+		for (auto & instance : _instances) {
+			if (instance->_model == model) {
+				context->_n_pts += model->_obj_data->_n_pts;
+			}
+		}
+
+		uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
+
+		float * data = new float[context->_n_pts * n_attrs_per_pts];
+
+		float * ptr = data;
+		
+		for (auto & instance : _instances) {
+			if (instance->_model != model) {
+				continue;
+			}
+
+			for (auto & object : model->_obj_data->_objects) {
+				
+				AnimatedObjBone * bone = model->_obj2bone[object->_name];
+				AnimatedObjTransform * transform = model->_actions[instance->_current_action]->_frames[instance->_current_frame]->_transforms[bone];
+
+				for (auto & face : object->_faces) {
+					for (uint i=0; i<3; ++i) {
+						pt_3d pt = object->_vertices[face->_vertices_idx[i]];
+						pt_3d normal;
+						if (face->_normal_active) {
+							normal = object->_normals[face->_normals_idx[i]];
+						}
+						else {
+							normal = object->compute_normal(face);
+						}
+
+						ptr[0] = float(pt.x);
+						ptr[1] = float(pt.y);
+						ptr[2] = float(pt.z);
+						ptr[3] = float(normal.x);
+						ptr[4] = float(normal.y);
+						ptr[5] = float(normal.z);
+						ptr += 6;
+
+						if (model->_obj_data->_use_ambient) {
+							ptr[0] = float(face->_material->_ambient.r);
+							ptr[1] = float(face->_material->_ambient.g);
+							ptr[2] = float(face->_material->_ambient.b);
+							ptr += 3;
+						}
+						if (model->_obj_data->_use_diffuse) {
+							ptr[0] = float(face->_material->_diffuse.r);
+							ptr[1] = float(face->_material->_diffuse.g);
+							ptr[2] = float(face->_material->_diffuse.b);
+							ptr += 3;
+						}
+						if (model->_obj_data->_use_specular) {
+							ptr[0] = float(face->_material->_specular.r);
+							ptr[1] = float(face->_material->_specular.g);
+							ptr[2] = float(face->_material->_specular.b);
+							ptr += 3;
+						}
+						if (model->_obj_data->_use_shininess) {
+							ptr[0] = float(face->_material->_shininess);
+							ptr++;
+						}
+						if (model->_obj_data->_use_opacity) {
+							ptr[0] = float(face->_material->_opacity);
+							ptr++;
+						}
+
+						ptr[0] = float(transform->_idx);
+						ptr++;
+
+						const float * instance_mat = glm::value_ptr(glm::mat4(instance->_model2world));
+						std::memcpy(ptr, instance_mat, 16 * sizeof(float));
+						ptr += 16;
+					}
+				}
+			}
+		}
+
+		context->set_data(data);
+		delete[] data;
+	}
+
 }
 
 
 void TestObjAnim::draw() {
-	GLDrawContext * context = _gl_draw_manager->get_context("obj");
-	context->activate();
-	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
-	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
-	context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
-	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
-	//context->set_uniform("anim_matrices[0]", glm::value_ptr(_animated_obj->_matrices[0]), N_MAX_MATRICES);
-	context->set_uniform("anim_matrices[0]", &_animated_obj->_matrices[0], N_MAX_MATRICES);
-	context->draw();
-	context->deactivate();
+	for (auto & model : _models) {
+		GLDrawContext * context = _gl_draw_manager->get_context(model.first);
+		context->activate();
+		context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+		context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
+		context->set_uniform("light_color", glm::value_ptr(LIGHT_COLOR));
+		context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+		context->set_uniform("anim_matrices[0]", &model.second->_matrices[0], N_MAX_MATRICES);
+		context->draw();
+		context->deactivate();
+	}
 }
 
 
 bool TestObjAnim::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
-	if (key == SDLK_a) {
+	/*if (key == SDLK_a) {
 		if (_animated_obj->_current_action == "walk") {
 			_animated_obj->_current_action = "shake";
 			_animated_obj->_current_frame = 0;
@@ -372,6 +513,13 @@ bool TestObjAnim::key_down(InputState * input_state, SDL_Keycode key, time_point
 			_animated_obj->_current_frame = 0;
 		}
 		return true;
+	}*/
+
+	if (key == SDLK_SPACE) {
+		_paused = !_paused;
+
+		GLDrawContext * context = _gl_draw_manager->get_context("test");
+		context->show_data();
 	}
 	return false;
 }

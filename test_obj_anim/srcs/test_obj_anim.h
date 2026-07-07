@@ -1,3 +1,9 @@
+/*
+sur les histoires de matrices :
+https://blender.stackexchange.com/questions/44637/how-can-i-manually-calculate-bpy-types-posebone-matrix-using-blenders-python-ap/121495#121495
+*/
+
+
 #ifndef TEST_OBJ_ANIM_H
 #define TEST_OBJ_ANIM_H
 
@@ -11,6 +17,7 @@
 #include "obj_parser.h"
 #include "gl_draw.h"
 #include "repere.h"
+#include "bbox.h"
 
 
 using json = nlohmann::json;
@@ -22,16 +29,17 @@ const glm::vec3 LIGHT_COLOR(1.0f);
 const uint N_MAX_MATRICES = 100;
 
 
-glm::mat4 parse_js_matrix(json js);
+mat_4d parse_js_matrix(json js);
 
 
 struct AnimatedObjBone {
 	AnimatedObjBone();
-	AnimatedObjBone(std::string name, glm::mat4 mat_local, std::string parent_name = "");
+	AnimatedObjBone(std::string name, mat_4d mat_local, std::string parent_name = "");
 	~AnimatedObjBone();
+	friend std::ostream & operator << (std::ostream & os, AnimatedObjBone & bone);
 
 
-	glm::mat4 _mat_local;
+	mat_4d _mat_local;
 	std::string _name;
 	AnimatedObjBone * _parent;
 	std::string _parent_name;
@@ -41,9 +49,10 @@ struct AnimatedObjBone {
 struct AnimatedObjTransform {
 	AnimatedObjTransform();
 	~AnimatedObjTransform();
+	friend std::ostream & operator << (std::ostream & os, AnimatedObjTransform & transform);
 
 	
-	glm::mat4 _mat;
+	mat_4d _mat;
 	uint _idx;
 };
 
@@ -51,6 +60,7 @@ struct AnimatedObjTransform {
 struct AnimatedObjFrame {
 	AnimatedObjFrame();
 	~AnimatedObjFrame();
+	friend std::ostream & operator << (std::ostream & os, AnimatedObjFrame & frame);
 
 
 	std::map<AnimatedObjBone *, AnimatedObjTransform *> _transforms;
@@ -61,6 +71,7 @@ struct AnimatedObjAction {
 	AnimatedObjAction();
 	AnimatedObjAction(std::string name);
 	~AnimatedObjAction();
+	friend std::ostream & operator << (std::ostream & os, AnimatedObjAction & action);
 
 
 	std::string _name;
@@ -68,26 +79,38 @@ struct AnimatedObjAction {
 };
 
 
-struct AnimatedObj {
-	AnimatedObj();
-	AnimatedObj(std::string json_path, time_point t);
-	~AnimatedObj();
+struct AnimatedObjModel {
+	AnimatedObjModel();
+	AnimatedObjModel(std::string json_path);
+	~AnimatedObjModel();
 	void update_matrices();
-	void update_data();
-	void anim(time_point t);
+	//void update_data();
+	friend std::ostream & operator << (std::ostream & os, AnimatedObjModel & obj);
 
 
 	ObjData * _obj_data;
-	float * _data;
+	/*float * _data;
 	uint _n_attrs_per_pts;
-	uint _n_pts;
-	std::map<std::string, AnimatedObjAction *> _actions;
+	uint _n_pts;*/
+
 	std::map<std::string, AnimatedObjBone *> _bones;
 	std::map<std::string, AnimatedObjBone *> _obj2bone;
+	std::map<std::string, AnimatedObjAction *> _actions;
+
+	float _matrices[N_MAX_MATRICES * 16];
+};
+
+
+struct AnimatedObjInstance : public InstancePosRot {
+	AnimatedObjInstance();
+	AnimatedObjInstance(AnimatedObjModel * model, pt_3d pos, time_point t, quat q = quat(1.0, 0.0, 0.0, 0.0));
+	~AnimatedObjInstance();
+	void anim(time_point t);
+
+
+	AnimatedObjModel * _model;
 	std::string _current_action;
 	uint _current_frame;
-	//glm::mat4 _matrices[N_MAX_MATRICES];
-	float _matrices[N_MAX_MATRICES * 16];
 	time_point _last_anim_t;
 };
 
@@ -104,8 +127,9 @@ struct TestObjAnim {
 	
 	GLDrawManager * _gl_draw_manager;
 	ViewSystem * _view_system;
-	//ObjData * _obj_data;
-	AnimatedObj * _animated_obj;
+	std::map<std::string, AnimatedObjModel *> _models;
+	std::vector<AnimatedObjInstance *> _instances;
+	bool _paused;
 };
 
 
