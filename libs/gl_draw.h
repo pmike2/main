@@ -51,6 +51,11 @@ struct GLDrawTexture {
 };
 
 
+// ===============================================
+// TODO : cf GLDrawTextureBuffer, un pool est-til vraiment utile ?
+// il vaudrait peut-être mieux dans drawmanager::add_texture et set_texture_data préciser le Context, comme pour GLDrawTextureBuffer
+// ===============================================
+
 struct GLDrawTexturePool {
 	GLDrawTexturePool();
 	~GLDrawTexturePool();
@@ -60,6 +65,21 @@ struct GLDrawTexturePool {
 
 
 	std::vector<GLDrawTexture *> _textures;
+};
+
+
+struct GLDrawTextureBuffer {
+	GLDrawTextureBuffer();
+	GLDrawTextureBuffer(std::string name, GLenum internal_format, uint offset);
+	~GLDrawTextureBuffer();
+	void set_data(void * data, uint size);
+
+
+	std::string _name;
+	GLenum _internal_format;
+	uint _offset;
+	uint _tex_id;
+	uint _buf_id;
 };
 
 
@@ -136,6 +156,7 @@ public:
 	std::vector<GLDrawContextUniform *> _uniforms;
 	std::vector<GLDrawContextBuffer *> _buffers;
 	std::vector<GLDrawTexture *> _textures;
+	std::vector<GLDrawTextureBuffer *> _texture_buffers;
 	uint _n_pts;
 	uint _n_instances;
 	bool _active;
@@ -157,12 +178,15 @@ public:
 	void add_texture(std::string name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
 	void set_texture_data(std::string name, void * data, uint depth, int width = -1, int height = -1);
 	void set_texture_data(std::string name, std::vector<std::string> pngs);
+	void add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint offset);
+	void set_texture_buffer_data(std::string context_name, std::string texture_buffer_name, void * data, uint size);
 	void set_verbose(bool verbose);
 	friend std::ostream & operator << (std::ostream & os, const GLDrawManager & gdm);
 
 
 	std::vector<GLDrawContext *> _contexts;
 	GLDrawTexturePool * _texture_pool;
+	//GLDrawTextureBufferPool * _texture_buffer_pool;
 	bool _verbose;
 };
 

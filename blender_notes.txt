@@ -16,6 +16,8 @@ shift + a : add
 a : select all
 alt + a : deselect all
 
+select vertices in edit mode; ctrl + g -> "assign to new group" pour créer un vertex group à partir de ces vertices
+
 viewport overlays / turn on wireframe : pour voir les aretes
 
 numpad : change view
@@ -30,6 +32,9 @@ alt + p : unmake parent (disconnect)
 nommer les jambes bras gauche avec suffix .L, puis click droit symmetrize : crée les .R
 object mode ; select model ; click droit armature : parent / armature defform / automatic weights
 pose mode ; select armature; déplacement rotation se reflète sur le modèle !
+
+on peut aussi créer les vertex group à la main mais il faut que les noms des vertex group correspondent aux noms des bones
+et il faut que le mesh ait un modifier de type armature
 
 dans menu principal à droite de armature : show names -> affiche le nom des bones
 

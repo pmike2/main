@@ -438,6 +438,37 @@ std::ostream & operator << (std::ostream & os, const GLDrawTexturePool & texpool
 
 
 // --------------------------------------------------------
+GLDrawTextureBuffer::GLDrawTextureBuffer() {
+
+}
+
+
+GLDrawTextureBuffer::GLDrawTextureBuffer(std::string name, GLenum internal_format, uint offset) :
+	_name(name), _internal_format(internal_format), _offset(offset)
+{
+	glGenBuffers(1, &_buf_id);
+	glGenTextures(1, &_tex_id);
+}
+
+
+GLDrawTextureBuffer::~GLDrawTextureBuffer() {
+
+}
+
+
+void GLDrawTextureBuffer::set_data(void * data, uint size) {
+	glBindBuffer(GL_TEXTURE_BUFFER, _buf_id);
+	glBufferData(GL_TEXTURE_BUFFER, size, data, GL_STATIC_DRAW);
+
+	glActiveTexture(GL_TEXTURE0 + _offset);
+	glBindTexture(GL_TEXTURE_BUFFER, _tex_id);
+	glActiveTexture(0);
+	glTexBuffer(GL_TEXTURE_BUFFER, _internal_format, _buf_id);
+	glBindBuffer(GL_TEXTURE_BUFFER, 0);
+}
+
+
+// --------------------------------------------------------
 GLDrawContextAttrib::GLDrawContextAttrib() {
 
 }
@@ -685,6 +716,14 @@ void GLDrawContext::activate() {
 		GLDrawContextUniform * uniform = get_uniform(texture->_name);
 		glUniform1i(uniform->_loc, texture->_offset);
 	}
+
+	for (auto & texture_buffer : _texture_buffers) {
+		glActiveTexture(GL_TEXTURE0 + texture_buffer->_offset);
+		glBindTexture(GL_TEXTURE_BUFFER, texture_buffer->_tex_id);
+		glActiveTexture(0);
+		GLDrawContextUniform * uniform = get_uniform(texture_buffer->_name);
+		glUniform1i(uniform->_loc, texture_buffer->_offset);
+	}
 }
 
 
@@ -703,6 +742,12 @@ void GLDrawContext::deactivate() {
 	for (auto & texture : _textures) {
 		glActiveTexture(GL_TEXTURE0 + texture->_offset);
 		glBindTexture(texture->_target, 0);
+		glActiveTexture(0);
+	}
+
+	for (auto & texture_buffer : _texture_buffers) {
+		glActiveTexture(GL_TEXTURE0 + texture_buffer->_offset);
+		glBindTexture(GL_TEXTURE_BUFFER, 0);
 		glActiveTexture(0);
 	}
 }
@@ -1058,6 +1103,7 @@ GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 	}
 
 	_texture_pool = new GLDrawTexturePool();
+	//_texture_buffer_pool = new GLDrawTextureBufferPool();
 }
 
 
@@ -1067,6 +1113,7 @@ GLDrawManager::~GLDrawManager() {
 	}
 	_contexts.clear();
 	delete _texture_pool;
+	//delete _texture_buffer_pool;
 }
 
 
@@ -1166,6 +1213,24 @@ void GLDrawManager::set_texture_data(std::string name, void * data, uint depth, 
 void GLDrawManager::set_texture_data(std::string name, std::vector<std::string> pngs) {
 	GLDrawTexture * texture = _texture_pool->get_texture(name);
 	texture->set_data(pngs);
+}
+
+
+void GLDrawManager::add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint offset) {
+	GLDrawContext * context = get_context(context_name);
+	GLDrawTextureBuffer * texture_buffer = new GLDrawTextureBuffer(texture_buffer_name, internal_format, offset);
+	context->_texture_buffers.push_back(texture_buffer);
+}
+
+
+void GLDrawManager::set_texture_buffer_data(std::string context_name, std::string texture_buffer_name, void * data, uint size) {
+	GLDrawContext * context = get_context(context_name);
+	for (auto & texture_buffer: context->_texture_buffers) {
+		if (texture_buffer->_name == texture_buffer_name) {
+			texture_buffer->set_data(data, size);
+			break;
+		}
+	}
 }
 
 

@@ -8,7 +8,8 @@
 		"font" : {"shader" : "font", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 		"font3d" : {"shader" : "font3d", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 
-		"test" : {"shader" : "obj", "mode" : "GL_TRIANGLES"},
-		"test2" : {"shader" : "obj", "mode" : "GL_TRIANGLES"}
+		"test" : {"shader" : "anim_obj_rigid", "mode" : "GL_TRIANGLES"},
+		"test2" : {"shader" : "anim_obj_rigid", "mode" : "GL_TRIANGLES"},
+		"test3" : {"shader" : "anim_obj_weight", "mode" : "GL_TRIANGLES"}
 	}
 }

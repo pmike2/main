@@ -128,9 +128,9 @@ void init_gl() {
 	
 	SDL_GL_SwapWindow(window);
 
-	int i;
+	/*int i;
 	glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &i);
-	std::cout << i << "\n";
+	std::cout << i << "\n";*/
 }
 
 

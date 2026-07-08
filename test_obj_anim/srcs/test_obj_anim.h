@@ -10,6 +10,7 @@ https://blender.stackexchange.com/questions/44637/how-can-i-manually-calculate-b
 #include <string>
 #include <vector>
 #include <map>
+#include <unordered_map>
 #include <filesystem>
 
 #include "json.hpp"
@@ -23,10 +24,13 @@ https://blender.stackexchange.com/questions/44637/how-can-i-manually-calculate-b
 using json = nlohmann::json;
 
 
+enum ANIMATED_MODEL_MODE {ANIMATED_MODEL_RIGID, ANIMATED_MODEL_WEIGHT};
+
+
 const glm::vec3 LIGHT_POSITION(10.0f, 10.0f, 30.0f);
 const glm::vec3 LIGHT_COLOR(1.0f);
 
-const uint N_MAX_MATRICES = 100;
+//const uint N_MAX_MATRICES = 100;
 
 
 mat_4d parse_js_matrix(json js);
@@ -43,6 +47,7 @@ struct AnimatedObjBone {
 	std::string _name;
 	AnimatedObjBone * _parent;
 	std::string _parent_name;
+	std::unordered_map<uint, number> _weights; // non utilisé dans le cas ANIMATED_MODEL_RIGID
 };
 
 
@@ -63,7 +68,7 @@ struct AnimatedObjFrame {
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjFrame & frame);
 
 
-	std::map<AnimatedObjBone *, AnimatedObjTransform *> _transforms;
+	std::unordered_map<AnimatedObjBone *, AnimatedObjTransform *> _transforms;
 };
 
 
@@ -84,20 +89,20 @@ struct AnimatedObjModel {
 	AnimatedObjModel(std::string json_path);
 	~AnimatedObjModel();
 	void update_matrices();
-	//void update_data();
+	void update_vertices();
+	std::vector<AnimatedObjBone *> bones_influencing_vertex(uint id_vertex);
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjModel & obj);
 
 
+	ANIMATED_MODEL_MODE _mode;
 	ObjData * _obj_data;
-	/*float * _data;
-	uint _n_attrs_per_pts;
-	uint _n_pts;*/
-
-	std::map<std::string, AnimatedObjBone *> _bones;
-	std::map<std::string, AnimatedObjBone *> _obj2bone;
-	std::map<std::string, AnimatedObjAction *> _actions;
-
-	float _matrices[N_MAX_MATRICES * 16];
+	float * _matrices;
+	uint _n_matrices;
+	std::unordered_map<std::string, AnimatedObjBone *> _bones;
+	std::unordered_map<std::string, AnimatedObjAction *> _actions;
+	std::unordered_map<std::string, AnimatedObjBone *> _obj2bone; // non utilisé dans le cas ANIMATED_MODEL_WEIGHT
+	float * _vertex2weight;
+	AnimatedObjBone ** _vertex2bone;
 };
 
 
@@ -127,7 +132,7 @@ struct TestObjAnim {
 	
 	GLDrawManager * _gl_draw_manager;
 	ViewSystem * _view_system;
-	std::map<std::string, AnimatedObjModel *> _models;
+	std::unordered_map<std::string, AnimatedObjModel *> _models;
 	std::vector<AnimatedObjInstance *> _instances;
 	bool _paused;
 };
