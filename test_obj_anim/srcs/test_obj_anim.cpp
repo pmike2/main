@@ -64,6 +64,24 @@ std::ostream & operator << (std::ostream & os, AnimatedObjTransform & transform)
 
 
 // ------------------------------------------------
+AnimatedObjBone2Transform::AnimatedObjBone2Transform() {
+
+}
+
+
+AnimatedObjBone2Transform::AnimatedObjBone2Transform(AnimatedObjBone * bone, AnimatedObjTransform * transform) :
+	_bone(bone), _transform(transform)
+{
+	
+}
+
+
+AnimatedObjBone2Transform::~AnimatedObjBone2Transform() {
+	
+}
+
+
+// ------------------------------------------------
 AnimatedObjFrame::AnimatedObjFrame() {
 	//_transforms.set_empty_key(NULL);
 }
@@ -74,11 +92,21 @@ AnimatedObjFrame::~AnimatedObjFrame() {
 }
 
 
+AnimatedObjTransform * AnimatedObjFrame::get_transform(AnimatedObjBone * bone) {
+	for (auto & tr : _transforms) {
+		if (tr->_bone == bone) {
+			return tr->_transform;
+		}
+	}
+	return NULL;
+}
+
+
 std::ostream & operator << (std::ostream & os, AnimatedObjFrame & frame) {
 	os << "transforms = ";
-	for (auto & transform : frame._transforms) {
-		os << transform.first->_name << " -> " << *transform.second << "\n";
-	}
+	/*for (auto & transform : frame._transforms) {
+		os << transform->_name << " -> " << transform << "\n";
+	}*/
 	return os;
 }
 
@@ -157,7 +185,8 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 	_obj_data->update_data();
 
 	for (auto & object : _obj_data->_objects) {
-		_objects[object->_name] = new AnimatedObjObject(object);
+		//_objects[object->_name] = new AnimatedObjObject(object);
+		_objects.push_back(new AnimatedObjObject(object));
 	}
 
 	std::ifstream ifs(json_path);
@@ -169,13 +198,15 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 
 		mat_4d mat = parse_js_matrix(it.value()["matrix_local"]);
 
+		AnimatedObjBone * bone;
 		if (it.value()["parent"].is_null()) {
-			_bones[bone_name] = new AnimatedObjBone(bone_name, mat);
+			bone = new AnimatedObjBone(bone_name, mat);
 		}
 		else {
 			std::string parent_name = it.value()["parent"];
-			_bones[bone_name] = new AnimatedObjBone(bone_name, mat, parent_name);
+			bone = new AnimatedObjBone(bone_name, mat, parent_name);
 		}
+		_bones.push_back(bone);
 
 		if (!it.value()["weights"].is_null()) {
 			_mode = ANIMATED_MODEL_WEIGHT;
@@ -189,9 +220,11 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 					bool too_many_bones = true;
 					for (uint i=0; i<4; ++i) {
 						uint idx = 4 * vertex_idx + i;
-						if (_objects[obj_name]->_bones[idx] == NULL) {
-							_objects[obj_name]->_bones[idx] = _bones[bone_name];
-							_objects[obj_name]->_weights[idx] = weight;
+						AnimatedObjObject * object = get_animated_object(obj_name);
+						
+						if (object->_bones[idx] == NULL) {
+							object->_bones[idx] = bone;
+							object->_weights[idx] = weight;
 							too_many_bones = false;
 							break;
 						}
@@ -208,22 +241,25 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 	}
 
 	for (auto & b : _bones) {
-		if (b.second->_parent_name != "") {
-			b.second->_parent = _bones[b.second->_parent_name];
+		if (b->_parent_name != "") {
+			b->_parent = get_bone(b->_parent_name);
 		}
 	}
 
 	if (_mode == ANIMATED_MODEL_RIGID) {
-		for (auto & object : js["objects"]) {
-			std::string object_name = object["name"];
-			std::string bone_name = object["bone"];
-			_objects[object_name]->_parent_bone = _bones[bone_name];
+		for (auto & o : js["objects"]) {
+			std::string object_name = o["name"];
+			std::string bone_name = o["bone"];
+			AnimatedObjObject * object = get_animated_object(object_name);
+			AnimatedObjBone * bone = get_bone(bone_name);
+			object->_parent_bone = bone;
 		}
 	}
 
 	for (json::iterator it_action = js["actions"].begin(); it_action != js["actions"].end(); ++it_action) {
 		std::string action_name = it_action.key();
-		_actions[action_name] = new AnimatedObjAction(action_name);
+		//_actions[action_name] = new AnimatedObjAction(action_name);
+		AnimatedObjAction * action = new AnimatedObjAction(action_name);
 		for (auto & f : it_action.value()) {
 			AnimatedObjFrame * frame = new AnimatedObjFrame();
 			for (json::iterator it_f = f.begin(); it_f != f.end(); ++it_f) {
@@ -232,12 +268,15 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 				mat_4d mat = parse_js_matrix(it_f.value()["matrix_basis"]);
 
 				AnimatedObjTransform * transform = new AnimatedObjTransform();
-				AnimatedObjBone * bone = _bones[bone_name];
+				AnimatedObjBone * bone = get_bone(bone_name);
 				transform->_mat = mat;
-				frame->_transforms[bone] = transform;
+				//frame->_transforms[bone] = transform;
+				//frame->_transforms.push_back(std::make_pair(bone, transform));
+				frame->_transforms.push_back(new AnimatedObjBone2Transform(bone, transform));
 			}
-			_actions[action_name]->_frames.push_back(frame);
+			action->_frames.push_back(frame);
 		}
+		_actions.push_back(action);
 	}
 
 	update_matrices();
@@ -246,11 +285,11 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 
 AnimatedObjModel::~AnimatedObjModel() {
 	for (auto & b : _bones) {
-		delete b.second;
+		delete b;
 	}
 	_bones.clear();
 	for (auto & a : _actions) {
-		delete a.second;
+		delete a;
 	}
 	_actions.clear();
 	delete _matrices;
@@ -260,8 +299,7 @@ AnimatedObjModel::~AnimatedObjModel() {
 
 void AnimatedObjModel::update_matrices() {
 	_n_matrices = 0;
-	for (auto & ac : _actions) {
-		AnimatedObjAction * action = ac.second;
+	for (auto & action : _actions) {
 		for (auto & frame : action->_frames) {
 			for (auto & tr : frame->_transforms) {
 				_n_matrices++;
@@ -272,19 +310,19 @@ void AnimatedObjModel::update_matrices() {
 	//std::cout << n_matrices << "\n";
 
 	uint compt = 0;
-	for (auto & ac : _actions) {
-		AnimatedObjAction * action = ac.second;
+	for (auto & action : _actions) {
 		for (auto & frame : action->_frames) {
 			for (auto & tr : frame->_transforms) {
-				AnimatedObjBone * bone = tr.first;
-				AnimatedObjTransform * transform = tr.second;
+				AnimatedObjBone * bone = tr->_bone;
+				AnimatedObjTransform * transform = tr->_transform;
 
 				mat_4d m = bone->_mat_local * transform->_mat * glm::inverse(bone->_mat_local);
 
 				AnimatedObjBone * parent = bone->_parent; 
 				while (parent != NULL) {
 					m = parent->_mat_local *
-						frame->_transforms[parent]->_mat *
+						//frame->_transforms[parent]->_mat *
+						frame->get_transform(parent)->_mat *
 						glm::inverse(parent->_mat_local) *
 						m;
 					parent = parent->_parent;
@@ -302,14 +340,44 @@ void AnimatedObjModel::update_matrices() {
 }
 
 
+AnimatedObjObject * AnimatedObjModel::get_animated_object(std::string obj_name) {
+	for (auto & obj : _objects) {
+		if (obj->_static_object->_name == obj_name) {
+			return obj;
+		}
+	}
+	return NULL;
+}
+
+
+AnimatedObjAction * AnimatedObjModel::get_action(std::string action_name) {
+	for (auto & action : _actions) {
+		if (action->_name == action_name) {
+			return action;
+		}
+	}
+	return NULL;
+}
+
+
+AnimatedObjBone * AnimatedObjModel::get_bone(std::string bone_name) {
+	for (auto & bone : _bones) {
+		if (bone->_name == bone_name) {
+			return bone;
+		}
+	}
+	return NULL;
+}
+
+
 std::ostream & operator << (std::ostream & os, AnimatedObjModel & model) {
 	os << "bones =\n";
 	for (auto & bone : model._bones) {
-		std::cout << *bone.second << "\n";
+		std::cout << *bone << "\n";
 	}
 	os << "\nactions =\n";
 	for (auto & action : model._actions) {
-		std::cout << *action.second << "\n";
+		std::cout << *action << "\n";
 	}
 	return os;
 }
@@ -323,9 +391,10 @@ AnimatedObjInstance::AnimatedObjInstance() {
 
 AnimatedObjInstance::AnimatedObjInstance(AnimatedObjModel * model, pt_3d pos, time_point t, quat q) :
 	InstancePosRot(pos, q, pt_3d(1.0)),
-	_model(model), _last_anim_t(t), _current_action(model->_actions.begin()->first), _current_frame(0)
+	_model(model), _last_anim_t(t), _current_frame_idx(0)
 {
-
+	_current_action = model->_actions[0];
+	_current_frame = _current_action->_frames[_current_frame_idx];
 }
 
 
@@ -338,10 +407,11 @@ void AnimatedObjInstance::anim(time_point t) {
 	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
 	if (dt > 30) {
 		_last_anim_t = t;
-		_current_frame++;
-		if (_current_frame >= _model->_actions[_current_action]->_frames.size()) {
-			_current_frame = 0;
+		_current_frame_idx++;
+		if (_current_frame_idx >= _current_action->_frames.size()) {
+			_current_frame_idx = 0;
 		}
+		_current_frame = _current_action->_frames[_current_frame_idx];
 	}
 }
 
@@ -378,7 +448,7 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 	//_instances[0]->_current_action = "walk";
 
 
-	for (uint i=0; i<200; ++i) {
+	for (uint i=0; i<1000; ++i) {
 		//int j = rand_int(0, model_names.size() - 1);
 		//std::string model_name = model_names[j];
 		std::string model_name = "test3";
@@ -439,15 +509,16 @@ void TestObjAnim::update(AnimatedObjModel * model) {
 			continue;
 		}
 
-		AnimatedObjFrame * frame = model->_actions[instance->_current_action]->_frames[instance->_current_frame];
+		AnimatedObjFrame * frame = instance->_current_frame;
 
 		// ------------------------------------------------------------------------------
 		if (model->_mode == ANIMATED_MODEL_RIGID) {
 			for (auto & o : model->_objects) {
 			
-				ObjObject * object = o.second->_static_object;
-				AnimatedObjBone * bone = o.second->_parent_bone;
-				AnimatedObjTransform * transform = frame->_transforms[bone];
+				ObjObject * object = o->_static_object;
+				AnimatedObjBone * bone = o->_parent_bone;
+				//AnimatedObjTransform * transform = frame->_transforms[bone];
+				AnimatedObjTransform * transform = frame->get_transform(bone);
 
 				for (auto & face : object->_faces) {
 					for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
@@ -510,7 +581,7 @@ void TestObjAnim::update(AnimatedObjModel * model) {
 		else if (model->_mode == ANIMATED_MODEL_WEIGHT) {
 			for (auto & o : model->_objects) {
 				
-				ObjObject * object = o.second->_static_object;
+				ObjObject * object = o->_static_object;
 				
 				for (auto & face : object->_faces) {
 					for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
@@ -559,9 +630,10 @@ void TestObjAnim::update(AnimatedObjModel * model) {
 						}
 
 						for (int i=0; i<4; ++i) {
-							AnimatedObjBone * bone = o.second->_bones[4 * face->_vertices_idx[idx_pt] + i];
+							AnimatedObjBone * bone = o->_bones[4 * face->_vertices_idx[idx_pt] + i];
 							if (bone != NULL) {
-								AnimatedObjTransform * transform = frame->_transforms[bone]; // performance hit
+								//AnimatedObjTransform * transform = frame->_transforms[bone]; // performance hit
+								AnimatedObjTransform * transform = frame->get_transform(bone); // mieux mais pas ouf
 								ptr[0] = float(transform->_idx);
 								//ptr[0] = 1.0f;
 								ptr++;
@@ -573,7 +645,7 @@ void TestObjAnim::update(AnimatedObjModel * model) {
 						}
 						
 						for (int i=0; i<4; ++i) {
-							ptr[0] = o.second->_weights[4 * face->_vertices_idx[idx_pt] + i];
+							ptr[0] = o->_weights[4 * face->_vertices_idx[idx_pt] + i];
 							ptr++;
 						}
 

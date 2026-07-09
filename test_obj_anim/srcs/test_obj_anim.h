@@ -58,13 +58,26 @@ struct AnimatedObjTransform {
 };
 
 
+struct AnimatedObjBone2Transform {
+	AnimatedObjBone2Transform();
+	AnimatedObjBone2Transform(AnimatedObjBone * bone, AnimatedObjTransform * transform);
+	~AnimatedObjBone2Transform();
+
+	AnimatedObjBone * _bone;
+	AnimatedObjTransform * _transform;
+};
+
+
 struct AnimatedObjFrame {
 	AnimatedObjFrame();
 	~AnimatedObjFrame();
+	AnimatedObjTransform * get_transform(AnimatedObjBone * bone);
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjFrame & frame);
 
 
-	map<AnimatedObjBone *, AnimatedObjTransform *> _transforms;
+	//map<AnimatedObjBone *, AnimatedObjTransform *> _transforms;
+	//std::vector<std::pair<AnimatedObjBone *, AnimatedObjTransform *> > _transforms;
+	std::vector<AnimatedObjBone2Transform *> _transforms;
 };
 
 
@@ -98,6 +111,9 @@ struct AnimatedObjModel {
 	AnimatedObjModel(std::string json_path);
 	~AnimatedObjModel();
 	void update_matrices();
+	AnimatedObjObject * get_animated_object(std::string obj_name);
+	AnimatedObjAction * get_action(std::string action_name);
+	AnimatedObjBone * get_bone(std::string bone_name);
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjModel & obj);
 
 
@@ -106,9 +122,12 @@ struct AnimatedObjModel {
 	ObjData * _obj_data;
 	float * _matrices;
 	uint _n_matrices;
-	map<std::string, AnimatedObjBone *> _bones;
-	map<std::string, AnimatedObjAction *> _actions;
-	map<std::string, AnimatedObjObject *> _objects;
+	//map<std::string, AnimatedObjBone *> _bones;
+	std::vector<AnimatedObjBone *> _bones;
+	//map<std::string, AnimatedObjAction *> _actions;
+	std::vector<AnimatedObjAction *> _actions;
+	//map<std::string, AnimatedObjObject *> _objects;
+	std::vector<AnimatedObjObject *> _objects;
 };
 
 
@@ -120,8 +139,9 @@ struct AnimatedObjInstance : public InstancePosRot {
 
 
 	AnimatedObjModel * _model;
-	std::string _current_action;
-	uint _current_frame;
+	AnimatedObjAction * _current_action;
+	AnimatedObjFrame * _current_frame;
+	uint _current_frame_idx;
 	time_point _last_anim_t;
 };
 
