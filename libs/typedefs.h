@@ -3,8 +3,13 @@
 
 #include <utility>
 #include <chrono>
+#include <unordered_map>
 
 #include <glm/glm.hpp>
+
+#include <tsl/robin_map.h>
+#include <sparsehash/sparse_hash_map>
+#include <sparsehash/dense_hash_map>
 
 
 using number = double;
@@ -25,6 +30,20 @@ using uint = unsigned int;
 
 using int_pair = std::pair<int, int>;
 using uint_pair = std::pair<uint, uint>;
+
+
+// + rapide que std::unordered_map ; cf https://github.com/Tessil/robin-map/tree/master
+//template<class X, class Y>
+//using map = std::unordered_map<X, Y>;
+
+template<class X, class Y>
+using map = tsl::robin_map<X, Y>;
+
+//template<class X, class Y>
+//using map = google::sparse_hash_map<X, Y>;
+
+//template<class X, class Y>
+//using map = google::dense_hash_map<X, Y>;
 
 
 #endif

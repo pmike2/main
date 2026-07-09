@@ -9,8 +9,6 @@ https://blender.stackexchange.com/questions/44637/how-can-i-manually-calculate-b
 
 #include <string>
 #include <vector>
-#include <map>
-#include <unordered_map>
 #include <filesystem>
 
 #include "json.hpp"
@@ -19,6 +17,7 @@ https://blender.stackexchange.com/questions/44637/how-can-i-manually-calculate-b
 #include "gl_draw.h"
 #include "repere.h"
 #include "bbox.h"
+#include "typedefs.h"
 
 
 using json = nlohmann::json;
@@ -27,10 +26,8 @@ using json = nlohmann::json;
 enum ANIMATED_MODEL_MODE {ANIMATED_MODEL_RIGID, ANIMATED_MODEL_WEIGHT};
 
 
-const glm::vec3 LIGHT_POSITION(10.0f, 10.0f, 30.0f);
+const glm::vec3 LIGHT_POSITION(0.0f, 0.0f, 0.0f);
 const glm::vec3 LIGHT_COLOR(1.0f);
-
-//const uint N_MAX_MATRICES = 100;
 
 
 mat_4d parse_js_matrix(json js);
@@ -47,7 +44,6 @@ struct AnimatedObjBone {
 	std::string _name;
 	AnimatedObjBone * _parent;
 	std::string _parent_name;
-	std::unordered_map<uint, number> _weights; // non utilisé dans le cas ANIMATED_MODEL_RIGID
 };
 
 
@@ -68,7 +64,7 @@ struct AnimatedObjFrame {
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjFrame & frame);
 
 
-	std::unordered_map<AnimatedObjBone *, AnimatedObjTransform *> _transforms;
+	map<AnimatedObjBone *, AnimatedObjTransform *> _transforms;
 };
 
 
@@ -84,25 +80,35 @@ struct AnimatedObjAction {
 };
 
 
+struct AnimatedObjObject {
+	AnimatedObjObject();
+	AnimatedObjObject(ObjObject * static_object);
+	~AnimatedObjObject();
+
+
+	ObjObject * _static_object;
+	AnimatedObjBone ** _bones; // utilisé dans le cas ANIMATED_MODEL_WEIGHT
+	number * _weights; // utilisé dans le cas ANIMATED_MODEL_WEIGHT
+	AnimatedObjBone * _parent_bone; // utilisé dans le cas ANIMATED_MODEL_RIGID
+};
+
+
 struct AnimatedObjModel {
 	AnimatedObjModel();
 	AnimatedObjModel(std::string json_path);
 	~AnimatedObjModel();
 	void update_matrices();
-	void update_vertices();
-	std::vector<AnimatedObjBone *> bones_influencing_vertex(uint id_vertex);
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjModel & obj);
 
 
+	std::string _name;
 	ANIMATED_MODEL_MODE _mode;
 	ObjData * _obj_data;
 	float * _matrices;
 	uint _n_matrices;
-	std::unordered_map<std::string, AnimatedObjBone *> _bones;
-	std::unordered_map<std::string, AnimatedObjAction *> _actions;
-	std::unordered_map<std::string, AnimatedObjBone *> _obj2bone; // non utilisé dans le cas ANIMATED_MODEL_WEIGHT
-	float * _vertex2weight;
-	AnimatedObjBone ** _vertex2bone;
+	map<std::string, AnimatedObjBone *> _bones;
+	map<std::string, AnimatedObjAction *> _actions;
+	map<std::string, AnimatedObjObject *> _objects;
 };
 
 
@@ -125,14 +131,14 @@ struct TestObjAnim {
 	TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t);
 	~TestObjAnim();
 	void anim(time_point t);
-	void update();
+	void update(AnimatedObjModel * model);
 	void draw();
 	bool key_down(InputState * input_state, SDL_Keycode key, time_point t);
 
 	
 	GLDrawManager * _gl_draw_manager;
 	ViewSystem * _view_system;
-	std::unordered_map<std::string, AnimatedObjModel *> _models;
+	map<std::string, AnimatedObjModel *> _models;
 	std::vector<AnimatedObjInstance *> _instances;
 	bool _paused;
 };

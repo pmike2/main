@@ -41,10 +41,6 @@ std::ostream & operator << (std::ostream & os, AnimatedObjBone & bone) {
 	os << "name = " << bone._name;
 	os << " ; matrix_local = " << glm::to_string(bone._mat_local);
 	os << " ; parent = " << bone._parent_name;
-	os << " ; weights = ";
-	for (auto & w : bone._weights) {
-		os << w.first << " -> " << w.second << " ; ";
-	}
 	return os;
 }
 
@@ -69,7 +65,7 @@ std::ostream & operator << (std::ostream & os, AnimatedObjTransform & transform)
 
 // ------------------------------------------------
 AnimatedObjFrame::AnimatedObjFrame() {
-
+	//_transforms.set_empty_key(NULL);
 }
 
 
@@ -114,15 +110,43 @@ std::ostream & operator << (std::ostream & os, AnimatedObjAction & action) {
 
 
 // ------------------------------------------------
+AnimatedObjObject::AnimatedObjObject() {
+
+}
+
+
+AnimatedObjObject::AnimatedObjObject(ObjObject * static_object) : _static_object(static_object) {
+	uint n_vertices = _static_object->_vertices.size();
+	_bones = new AnimatedObjBone *[n_vertices * 4];
+	_weights = new number[n_vertices * 4];
+	for (uint i=0; i<n_vertices * 4; ++i) {
+		_bones[i] = NULL;
+		_weights[i] = -1.0;
+	}
+}
+
+
+AnimatedObjObject::~AnimatedObjObject() {
+
+}
+
+
+// ------------------------------------------------
 AnimatedObjModel::AnimatedObjModel() {
 
 }
 
 
 AnimatedObjModel::AnimatedObjModel(std::string json_path) {
+	/*_bones.set_empty_key("");
+	_actions.set_empty_key("");
+	_objects.set_empty_key("");*/
+
 	std::filesystem::path js_path = json_path;
 	std::string obj_filename = js_path.stem().string() + ".obj";
 	std::filesystem::path obj_path = js_path.parent_path() / obj_filename;
+
+	_name = js_path.stem().string();
 	
 	_obj_data = new ObjData(obj_path.string());
 	_obj_data->_use_ambient = false;
@@ -132,8 +156,10 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 	_obj_data->_use_opacity = false;
 	_obj_data->update_data();
 
-	_mode = ANIMATED_MODEL_RIGID;
-	
+	for (auto & object : _obj_data->_objects) {
+		_objects[object->_name] = new AnimatedObjObject(object);
+	}
+
 	std::ifstream ifs(json_path);
 	json js = json::parse(ifs);
 	ifs.close();
@@ -154,10 +180,30 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 		if (!it.value()["weights"].is_null()) {
 			_mode = ANIMATED_MODEL_WEIGHT;
 			for (json::iterator it_weight = it.value()["weights"].begin(); it_weight != it.value()["weights"].end(); ++it_weight) {
-				uint vertex_idx = std::stoi(it_weight.key());
-				number weight = it_weight.value();
-				_bones[bone_name]->_weights[vertex_idx] = weight;
+				std::string obj_name = it_weight.key();
+
+				for (json::iterator it_weight_2 = it_weight.value().begin(); it_weight_2 != it_weight.value().end(); ++it_weight_2) {
+					uint vertex_idx = std::stoi(it_weight_2.key());
+					number weight = it_weight_2.value();
+
+					bool too_many_bones = true;
+					for (uint i=0; i<4; ++i) {
+						uint idx = 4 * vertex_idx + i;
+						if (_objects[obj_name]->_bones[idx] == NULL) {
+							_objects[obj_name]->_bones[idx] = _bones[bone_name];
+							_objects[obj_name]->_weights[idx] = weight;
+							too_many_bones = false;
+							break;
+						}
+					}
+					if (too_many_bones) {
+						std::cerr << "trop de bones\n";
+					}
+				}
 			}
+		}
+		else {
+			_mode = ANIMATED_MODEL_RIGID;
 		}
 	}
 
@@ -171,7 +217,7 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 		for (auto & object : js["objects"]) {
 			std::string object_name = object["name"];
 			std::string bone_name = object["bone"];
-			_obj2bone[object_name] = _bones[bone_name];
+			_objects[object_name]->_parent_bone = _bones[bone_name];
 		}
 	}
 
@@ -195,7 +241,6 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 	}
 
 	update_matrices();
-	update_vertices();
 }
 
 
@@ -208,7 +253,6 @@ AnimatedObjModel::~AnimatedObjModel() {
 		delete a.second;
 	}
 	_actions.clear();
-	_obj2bone.clear();
 	delete _matrices;
 	delete _obj_data;
 }
@@ -258,58 +302,10 @@ void AnimatedObjModel::update_matrices() {
 }
 
 
-void AnimatedObjModel::update_vertices() {
-	uint n_vertices = 0;
-	for (auto & object : _obj_data->_objects) {
-		n_vertices += object->_vertices.size();
-	}
-	_vertex2weight = new float[4 * n_vertices];
-	_vertex2bone = new AnimatedObjBone *[4 * n_vertices];
-
-	for (int vertex_idx=0; vertex_idx<n_vertices; ++vertex_idx) {
-		std::vector<AnimatedObjBone *> bones = bones_influencing_vertex(vertex_idx);
-		if (bones.size() > 4) {
-			std::cerr << "trop de bones pour un vertex\n";
-		}
-
-		for (uint i=0; i<4; ++i) {
-			_vertex2weight[4 * vertex_idx + i] = 0.0f;
-		}
-		for (uint i=0; i<bones.size(); ++i) {
-			_vertex2weight[4 * vertex_idx + i] = float(bones[i]->_weights[vertex_idx]);
-		}
-
-		for (uint i=0; i<4; ++i) {
-			if (i< bones.size()) {
-				_vertex2bone[4 * vertex_idx + i] = bones[i];
-			}
-			else {
-				_vertex2bone[4 * vertex_idx + i] = NULL;
-			}
-		}
-	}
-}
-
-
-std::vector<AnimatedObjBone *> AnimatedObjModel::bones_influencing_vertex(uint id_vertex) {
-	std::vector<AnimatedObjBone *> result;
-	for (auto & bone : _bones) {
-		if (bone.second->_weights.count(id_vertex)) {
-			result.push_back(bone.second);
-		}
-	}
-	return result;
-}
-
-
 std::ostream & operator << (std::ostream & os, AnimatedObjModel & model) {
 	os << "bones =\n";
 	for (auto & bone : model._bones) {
 		std::cout << *bone.second << "\n";
-	}
-	os << "\nobj2bone =\n";
-	for (auto & o2b : model._obj2bone) {
-		std::cout << o2b.first << " -> " << o2b.second->_name << "\n";
 	}
 	os << "\nactions =\n";
 	for (auto & action : model._actions) {
@@ -358,15 +354,20 @@ TestObjAnim::TestObjAnim() {
 
 TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _paused(false)
-{	
+{
+	//_models.set_empty_key("");
+
 	std::vector<std::string> model_names {"test", "test2", "test3"};
-	//std::vector<std::string> model_names {"test3"};
 	
 	for (auto & model_name : model_names) {
 		_models[model_name] = new AnimatedObjModel("../data/" + model_name + ".json");
 		//std::cout << *_models[model_name] << "\n";
 		_gl_draw_manager->add_texture_buffer(model_name, "anim_buffer", GL_R32F, 0);
 		_gl_draw_manager->set_texture_buffer_data(model_name, "anim_buffer", _models[model_name]->_matrices, _models[model_name]->_n_matrices * 16 * sizeof(float));
+
+		GLDrawContext * context = _gl_draw_manager->get_context(model_name);
+		context->_n_pts = _models[model_name]->_obj_data->_n_pts;
+		context->set_data(_models[model_name]->_obj_data->_data, 0);
 	}
 	
 	/*_instances.push_back(new AnimatedObjInstance(_models["test"], pt_3d(0.0, 0.0, 0.0), t));
@@ -377,14 +378,17 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 	//_instances[0]->_current_action = "walk";
 
 
-	for (uint i=0; i<1000; ++i) {
-		int j = rand_int(0, model_names.size() - 1);
+	for (uint i=0; i<200; ++i) {
+		//int j = rand_int(0, model_names.size() - 1);
 		//std::string model_name = model_names[j];
 		std::string model_name = "test3";
-		_instances.push_back(new AnimatedObjInstance(_models[model_name], rand_pt_3d(pt_3d(-100.0), pt_3d(100.0)), t, rand_quat()));
+		//std::string model_name = "test";
+		_instances.push_back(new AnimatedObjInstance(_models[model_name], rand_pt_3d(pt_3d(-20.0), pt_3d(20.0)), t, rand_quat()));
 	}
 
-	update();
+	for (auto & model : _models) {
+		update(model.second);
+	}
 }
 
 
@@ -408,210 +412,182 @@ void TestObjAnim::anim(time_point t) {
 	for (auto & instance : _instances) {
 		instance->anim(t);
 	}
-	update();
+
+	for (auto & model : _models) {
+		update(model.second);
+	}
 }
 
 
-void TestObjAnim::update() {
-	for (auto & m : _models) {
-		std::string model_name = m.first;
-		AnimatedObjModel * model = m.second;
-
-		GLDrawContext * context = _gl_draw_manager->get_context(model_name);
-		context->_n_pts = 0;
-		for (auto & instance : _instances) {
-			if (instance->_model == model) {
-				context->_n_pts += model->_obj_data->_n_pts;
-			}
+void TestObjAnim::update(AnimatedObjModel * model) {
+	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
+	context->_n_pts = 0;
+	for (auto & instance : _instances) {
+		if (instance->_model == model) {
+			context->_n_pts += model->_obj_data->_n_pts;
 		}
-
-		uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
-
-		float * data = new float[context->_n_pts * n_attrs_per_pts];
-
-		float * ptr = data;
-		
-		for (auto & instance : _instances) {
-			if (instance->_model != model) {
-				continue;
-			}
-
-			AnimatedObjFrame * frame = model->_actions[instance->_current_action]->_frames[instance->_current_frame];
-
-			// ------------------------------------------------------------------------------
-			if (model->_mode == ANIMATED_MODEL_RIGID) {
-				for (auto & object : model->_obj_data->_objects) {
-				
-					AnimatedObjBone * bone = model->_obj2bone[object->_name];
-					AnimatedObjTransform * transform = frame->_transforms[bone];
-
-					for (auto & face : object->_faces) {
-						for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
-							pt_3d pt = object->_vertices[face->_vertices_idx[idx_pt]];
-							pt_3d normal;
-							if (face->_normal_active) {
-								normal = object->_normals[face->_normals_idx[idx_pt]];
-							}
-							else {
-								normal = object->compute_normal(face);
-							}
-
-							ptr[0] = float(pt.x);
-							ptr[1] = float(pt.y);
-							ptr[2] = float(pt.z);
-							ptr[3] = float(normal.x);
-							ptr[4] = float(normal.y);
-							ptr[5] = float(normal.z);
-							ptr += 6;
-
-							if (model->_obj_data->_use_ambient) {
-								ptr[0] = float(face->_material->_ambient.r);
-								ptr[1] = float(face->_material->_ambient.g);
-								ptr[2] = float(face->_material->_ambient.b);
-								ptr += 3;
-							}
-							if (model->_obj_data->_use_diffuse) {
-								ptr[0] = float(face->_material->_diffuse.r);
-								ptr[1] = float(face->_material->_diffuse.g);
-								ptr[2] = float(face->_material->_diffuse.b);
-								ptr += 3;
-							}
-							if (model->_obj_data->_use_specular) {
-								ptr[0] = float(face->_material->_specular.r);
-								ptr[1] = float(face->_material->_specular.g);
-								ptr[2] = float(face->_material->_specular.b);
-								ptr += 3;
-							}
-							if (model->_obj_data->_use_shininess) {
-								ptr[0] = float(face->_material->_shininess);
-								ptr++;
-							}
-							if (model->_obj_data->_use_opacity) {
-								ptr[0] = float(face->_material->_opacity);
-								ptr++;
-							}
-
-							ptr[0] = float(transform->_idx);
-							ptr++;
-
-							const float * instance_mat = glm::value_ptr(glm::mat4(instance->_model2world));
-							std::memcpy(ptr, instance_mat, 16 * sizeof(float));
-							ptr += 16;
-						}
-					}
-				}
-			}
-
-			// ------------------------------------------------------------
-			else if (model->_mode == ANIMATED_MODEL_WEIGHT) {
-				//uint vertex_idx = 0;
-				for (auto & object : model->_obj_data->_objects) {
-					for (auto & face : object->_faces) {
-						for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
-							pt_3d pt = object->_vertices[face->_vertices_idx[idx_pt]];
-							pt_3d normal;
-							if (face->_normal_active) {
-								normal = object->_normals[face->_normals_idx[idx_pt]];
-							}
-							else {
-								normal = object->compute_normal(face);
-							}
-
-							ptr[0] = float(pt.x);
-							ptr[1] = float(pt.y);
-							ptr[2] = float(pt.z);
-							ptr[3] = float(normal.x);
-							ptr[4] = float(normal.y);
-							ptr[5] = float(normal.z);
-							ptr += 6;
-
-							if (model->_obj_data->_use_ambient) {
-								ptr[0] = float(face->_material->_ambient.r);
-								ptr[1] = float(face->_material->_ambient.g);
-								ptr[2] = float(face->_material->_ambient.b);
-								ptr += 3;
-							}
-							if (model->_obj_data->_use_diffuse) {
-								ptr[0] = float(face->_material->_diffuse.r);
-								ptr[1] = float(face->_material->_diffuse.g);
-								ptr[2] = float(face->_material->_diffuse.b);
-								ptr += 3;
-							}
-							if (model->_obj_data->_use_specular) {
-								ptr[0] = float(face->_material->_specular.r);
-								ptr[1] = float(face->_material->_specular.g);
-								ptr[2] = float(face->_material->_specular.b);
-								ptr += 3;
-							}
-							if (model->_obj_data->_use_shininess) {
-								ptr[0] = float(face->_material->_shininess);
-								ptr++;
-							}
-							if (model->_obj_data->_use_opacity) {
-								ptr[0] = float(face->_material->_opacity);
-								ptr++;
-							}
-
-							/*std::vector<AnimatedObjBone *> bones = model->bones_influencing_vertex(face->_vertices_idx[idx_pt]);
-							if (bones.size() > 4) {
-								std::cerr << "trop de bones pour un vertex\n";
-							}
-							for (uint i=0; i<std::min(int(bones.size()), 4); ++i) {
-								AnimatedObjTransform * transform = model->_actions[instance->_current_action]->_frames[instance->_current_frame]->_transforms[bones[i]];
-								ptr[0] = float(transform->_idx);
-								ptr++;
-							}
-							for (uint i=0; i < 4 - bones.size(); ++i) {
-								ptr[0] = -1.0f;
-								ptr++;
-							}*/
-							
-							for (int i=0; i<4; ++i) {
-								AnimatedObjBone * bone = model->_vertex2bone[4 * face->_vertices_idx[idx_pt] + i];
-								if (bone != NULL) {
-									AnimatedObjTransform * transform = frame->_transforms[bone];
-									ptr[0] = float(transform->_idx);
-									//ptr[0] = 1.0f;
-									ptr++;
-								}
-								else {
-									ptr[0] = -1.0f;
-									ptr++;
-								}
-							}
-							
-							/*for (uint i=0; i<std::min(int(bones.size()), 4); ++i) {
-								ptr[0] = float(bones[i]->_weights[face->_vertices_idx[idx_pt]]);
-								ptr++;
-							}
-							for (uint i=0; i < 4 - bones.size(); ++i) {
-								ptr[0] = -1.0f;
-								ptr++;
-							}*/
-
-							/*for (int k=0; k<8; ++k) {
-								ptr[0] = 0.0f;
-								ptr++;
-							}*/
-
-							for (int i=0; i<4; ++i) {
-								ptr[0] = model->_vertex2weight[4 * face->_vertices_idx[idx_pt] + i];
-								ptr++;
-							}
-
-							const float * instance_mat = glm::value_ptr(glm::mat4(instance->_model2world));
-							std::memcpy(ptr, instance_mat, 16 * sizeof(float));
-							ptr += 16;
-						}
-					}
-				}
-			}
-		}
-
-		context->set_data(data);
-		delete[] data;
 	}
 
+	uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
+
+	float * data = new float[context->_n_pts * n_attrs_per_pts];
+
+	float * ptr = data;
+	
+	for (auto & instance : _instances) {
+		if (instance->_model != model) {
+			continue;
+		}
+
+		AnimatedObjFrame * frame = model->_actions[instance->_current_action]->_frames[instance->_current_frame];
+
+		// ------------------------------------------------------------------------------
+		if (model->_mode == ANIMATED_MODEL_RIGID) {
+			for (auto & o : model->_objects) {
+			
+				ObjObject * object = o.second->_static_object;
+				AnimatedObjBone * bone = o.second->_parent_bone;
+				AnimatedObjTransform * transform = frame->_transforms[bone];
+
+				for (auto & face : object->_faces) {
+					for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
+						pt_3d pt = object->_vertices[face->_vertices_idx[idx_pt]];
+						pt_3d normal;
+						if (face->_normal_active) {
+							normal = object->_normals[face->_normals_idx[idx_pt]];
+						}
+						else {
+							normal = object->compute_normal(face);
+						}
+
+						ptr[0] = float(pt.x);
+						ptr[1] = float(pt.y);
+						ptr[2] = float(pt.z);
+						ptr[3] = float(normal.x);
+						ptr[4] = float(normal.y);
+						ptr[5] = float(normal.z);
+						ptr += 6;
+
+						if (model->_obj_data->_use_ambient) {
+							ptr[0] = float(face->_material->_ambient.r);
+							ptr[1] = float(face->_material->_ambient.g);
+							ptr[2] = float(face->_material->_ambient.b);
+							ptr += 3;
+						}
+						if (model->_obj_data->_use_diffuse) {
+							ptr[0] = float(face->_material->_diffuse.r);
+							ptr[1] = float(face->_material->_diffuse.g);
+							ptr[2] = float(face->_material->_diffuse.b);
+							ptr += 3;
+						}
+						if (model->_obj_data->_use_specular) {
+							ptr[0] = float(face->_material->_specular.r);
+							ptr[1] = float(face->_material->_specular.g);
+							ptr[2] = float(face->_material->_specular.b);
+							ptr += 3;
+						}
+						if (model->_obj_data->_use_shininess) {
+							ptr[0] = float(face->_material->_shininess);
+							ptr++;
+						}
+						if (model->_obj_data->_use_opacity) {
+							ptr[0] = float(face->_material->_opacity);
+							ptr++;
+						}
+
+						ptr[0] = float(transform->_idx);
+						ptr++;
+
+						const float * instance_mat = glm::value_ptr(glm::mat4(instance->_model2world));
+						std::memcpy(ptr, instance_mat, 16 * sizeof(float));
+						ptr += 16;
+					}
+				}
+			}
+		}
+
+		// ------------------------------------------------------------
+		else if (model->_mode == ANIMATED_MODEL_WEIGHT) {
+			for (auto & o : model->_objects) {
+				
+				ObjObject * object = o.second->_static_object;
+				
+				for (auto & face : object->_faces) {
+					for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
+						pt_3d pt = object->_vertices[face->_vertices_idx[idx_pt]];
+						pt_3d normal;
+						if (face->_normal_active) {
+							normal = object->_normals[face->_normals_idx[idx_pt]];
+						}
+						else {
+							normal = object->compute_normal(face);
+						}
+
+						ptr[0] = float(pt.x);
+						ptr[1] = float(pt.y);
+						ptr[2] = float(pt.z);
+						ptr[3] = float(normal.x);
+						ptr[4] = float(normal.y);
+						ptr[5] = float(normal.z);
+						ptr += 6;
+
+						if (model->_obj_data->_use_ambient) {
+							ptr[0] = float(face->_material->_ambient.r);
+							ptr[1] = float(face->_material->_ambient.g);
+							ptr[2] = float(face->_material->_ambient.b);
+							ptr += 3;
+						}
+						if (model->_obj_data->_use_diffuse) {
+							ptr[0] = float(face->_material->_diffuse.r);
+							ptr[1] = float(face->_material->_diffuse.g);
+							ptr[2] = float(face->_material->_diffuse.b);
+							ptr += 3;
+						}
+						if (model->_obj_data->_use_specular) {
+							ptr[0] = float(face->_material->_specular.r);
+							ptr[1] = float(face->_material->_specular.g);
+							ptr[2] = float(face->_material->_specular.b);
+							ptr += 3;
+						}
+						if (model->_obj_data->_use_shininess) {
+							ptr[0] = float(face->_material->_shininess);
+							ptr++;
+						}
+						if (model->_obj_data->_use_opacity) {
+							ptr[0] = float(face->_material->_opacity);
+							ptr++;
+						}
+
+						for (int i=0; i<4; ++i) {
+							AnimatedObjBone * bone = o.second->_bones[4 * face->_vertices_idx[idx_pt] + i];
+							if (bone != NULL) {
+								AnimatedObjTransform * transform = frame->_transforms[bone]; // performance hit
+								ptr[0] = float(transform->_idx);
+								//ptr[0] = 1.0f;
+								ptr++;
+							}
+							else {
+								ptr[0] = -1.0f;
+								ptr++;
+							}
+						}
+						
+						for (int i=0; i<4; ++i) {
+							ptr[0] = o.second->_weights[4 * face->_vertices_idx[idx_pt] + i];
+							ptr++;
+						}
+
+						const float * instance_mat = glm::value_ptr(glm::mat4(instance->_model2world));
+						std::memcpy(ptr, instance_mat, 16 * sizeof(float));
+						ptr += 16;
+					}
+				}
+			}
+		}
+	}
+
+	context->set_data(data);
+	delete[] data;
 }
 
 

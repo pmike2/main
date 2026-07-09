@@ -11,13 +11,10 @@ def matrix2list(m):
 
 
 def write_some_data(context, filepath, use_some_setting):
-    
+
     data = {"bones" : {}, "objects" : [], "actions" : {}}
     
     l_bones = bpy.context.object.pose.bones
-    
-    obj = bpy.data.objects['Cube']
-    obj_verts = obj.data.vertices
     
     for bone in l_bones:
         
@@ -28,15 +25,26 @@ def write_some_data(context, filepath, use_some_setting):
         else:
             parent_name = parent.name
         
-        gidx = obj.vertex_groups[bone.name].index
-        bone_verts = [v for v in obj_verts if gidx in [g.group for g in v.groups]]
         weights = {}
-        for v in bone_verts:
-            for g in v.groups:
-                if g.group == gidx: 
-                    weights[v.index] = g.weight
-                    break
-        
+        for obj in bpy.data.objects:
+            if obj.name == "Armature":
+                continue
+            
+            weights[obj.name] = {}
+            
+            obj_verts = obj.data.vertices
+            
+            if bone.name not in obj.vertex_groups:
+                continue
+
+            gidx = obj.vertex_groups[bone.name].index
+            bone_verts = [v for v in obj_verts if gidx in [g.group for g in v.groups]]
+            for v in bone_verts:
+                for g in v.groups:
+                    if g.group == gidx: 
+                        weights[obj.name][v.index] = g.weight
+                        break
+            
         data["bones"][bone_name] = {
             "parent" : parent_name,
             "matrix_local" : matrix2list(bone.bone.matrix_local),
