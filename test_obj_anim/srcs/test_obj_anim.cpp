@@ -51,6 +51,12 @@ AnimatedObjTransform::AnimatedObjTransform() {
 }
 
 
+AnimatedObjTransform::AnimatedObjTransform(AnimatedObjBone * bone, mat_4d mat) :
+	_bone(bone), _mat(mat)
+{
+
+}
+
 AnimatedObjTransform::~AnimatedObjTransform() {
 
 }
@@ -64,26 +70,8 @@ std::ostream & operator << (std::ostream & os, AnimatedObjTransform & transform)
 
 
 // ------------------------------------------------
-AnimatedObjBone2Transform::AnimatedObjBone2Transform() {
-
-}
-
-
-AnimatedObjBone2Transform::AnimatedObjBone2Transform(AnimatedObjBone * bone, AnimatedObjTransform * transform) :
-	_bone(bone), _transform(transform)
-{
-	
-}
-
-
-AnimatedObjBone2Transform::~AnimatedObjBone2Transform() {
-	
-}
-
-
-// ------------------------------------------------
 AnimatedObjFrame::AnimatedObjFrame() {
-	//_transforms.set_empty_key(NULL);
+
 }
 
 
@@ -95,7 +83,7 @@ AnimatedObjFrame::~AnimatedObjFrame() {
 AnimatedObjTransform * AnimatedObjFrame::get_transform(AnimatedObjBone * bone) {
 	for (auto & tr : _transforms) {
 		if (tr->_bone == bone) {
-			return tr->_transform;
+			return tr;
 		}
 	}
 	return NULL;
@@ -166,10 +154,6 @@ AnimatedObjModel::AnimatedObjModel() {
 
 
 AnimatedObjModel::AnimatedObjModel(std::string json_path) {
-	/*_bones.set_empty_key("");
-	_actions.set_empty_key("");
-	_objects.set_empty_key("");*/
-
 	std::filesystem::path js_path = json_path;
 	std::string obj_filename = js_path.stem().string() + ".obj";
 	std::filesystem::path obj_path = js_path.parent_path() / obj_filename;
@@ -185,7 +169,6 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 	_obj_data->update_data();
 
 	for (auto & object : _obj_data->_objects) {
-		//_objects[object->_name] = new AnimatedObjObject(object);
 		_objects.push_back(new AnimatedObjObject(object));
 	}
 
@@ -258,21 +241,14 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 
 	for (json::iterator it_action = js["actions"].begin(); it_action != js["actions"].end(); ++it_action) {
 		std::string action_name = it_action.key();
-		//_actions[action_name] = new AnimatedObjAction(action_name);
 		AnimatedObjAction * action = new AnimatedObjAction(action_name);
 		for (auto & f : it_action.value()) {
 			AnimatedObjFrame * frame = new AnimatedObjFrame();
 			for (json::iterator it_f = f.begin(); it_f != f.end(); ++it_f) {
 				std::string bone_name = it_f.key();
-
 				mat_4d mat = parse_js_matrix(it_f.value()["matrix_basis"]);
-
-				AnimatedObjTransform * transform = new AnimatedObjTransform();
 				AnimatedObjBone * bone = get_bone(bone_name);
-				transform->_mat = mat;
-				//frame->_transforms[bone] = transform;
-				//frame->_transforms.push_back(std::make_pair(bone, transform));
-				frame->_transforms.push_back(new AnimatedObjBone2Transform(bone, transform));
+				frame->_transforms.push_back(new AnimatedObjTransform(bone, mat));
 			}
 			action->_frames.push_back(frame);
 		}
@@ -312,16 +288,14 @@ void AnimatedObjModel::update_matrices() {
 	uint compt = 0;
 	for (auto & action : _actions) {
 		for (auto & frame : action->_frames) {
-			for (auto & tr : frame->_transforms) {
-				AnimatedObjBone * bone = tr->_bone;
-				AnimatedObjTransform * transform = tr->_transform;
+			for (auto & transform : frame->_transforms) {
+				AnimatedObjBone * bone = transform->_bone;
 
 				mat_4d m = bone->_mat_local * transform->_mat * glm::inverse(bone->_mat_local);
 
 				AnimatedObjBone * parent = bone->_parent; 
 				while (parent != NULL) {
 					m = parent->_mat_local *
-						//frame->_transforms[parent]->_mat *
 						frame->get_transform(parent)->_mat *
 						glm::inverse(parent->_mat_local) *
 						m;
@@ -425,8 +399,6 @@ TestObjAnim::TestObjAnim() {
 TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _paused(false)
 {
-	//_models.set_empty_key("");
-
 	std::vector<std::string> model_names {"test", "test2", "test3"};
 	
 	for (auto & model_name : model_names) {
@@ -517,7 +489,6 @@ void TestObjAnim::update(AnimatedObjModel * model) {
 			
 				ObjObject * object = o->_static_object;
 				AnimatedObjBone * bone = o->_parent_bone;
-				//AnimatedObjTransform * transform = frame->_transforms[bone];
 				AnimatedObjTransform * transform = frame->get_transform(bone);
 
 				for (auto & face : object->_faces) {
@@ -632,7 +603,6 @@ void TestObjAnim::update(AnimatedObjModel * model) {
 						for (int i=0; i<4; ++i) {
 							AnimatedObjBone * bone = o->_bones[4 * face->_vertices_idx[idx_pt] + i];
 							if (bone != NULL) {
-								//AnimatedObjTransform * transform = frame->_transforms[bone]; // performance hit
 								AnimatedObjTransform * transform = frame->get_transform(bone); // mieux mais pas ouf
 								ptr[0] = float(transform->_idx);
 								//ptr[0] = 1.0f;

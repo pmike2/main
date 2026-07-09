@@ -49,22 +49,14 @@ struct AnimatedObjBone {
 
 struct AnimatedObjTransform {
 	AnimatedObjTransform();
+	AnimatedObjTransform(AnimatedObjBone * bone, mat_4d mat);
 	~AnimatedObjTransform();
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjTransform & transform);
 
 	
+	AnimatedObjBone * _bone;
 	mat_4d _mat;
 	uint _idx;
-};
-
-
-struct AnimatedObjBone2Transform {
-	AnimatedObjBone2Transform();
-	AnimatedObjBone2Transform(AnimatedObjBone * bone, AnimatedObjTransform * transform);
-	~AnimatedObjBone2Transform();
-
-	AnimatedObjBone * _bone;
-	AnimatedObjTransform * _transform;
 };
 
 
@@ -75,9 +67,7 @@ struct AnimatedObjFrame {
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjFrame & frame);
 
 
-	//map<AnimatedObjBone *, AnimatedObjTransform *> _transforms;
-	//std::vector<std::pair<AnimatedObjBone *, AnimatedObjTransform *> > _transforms;
-	std::vector<AnimatedObjBone2Transform *> _transforms;
+	std::vector<AnimatedObjTransform *> _transforms;
 };
 
 
@@ -122,11 +112,8 @@ struct AnimatedObjModel {
 	ObjData * _obj_data;
 	float * _matrices;
 	uint _n_matrices;
-	//map<std::string, AnimatedObjBone *> _bones;
 	std::vector<AnimatedObjBone *> _bones;
-	//map<std::string, AnimatedObjAction *> _actions;
 	std::vector<AnimatedObjAction *> _actions;
-	//map<std::string, AnimatedObjObject *> _objects;
 	std::vector<AnimatedObjObject *> _objects;
 };
 
