@@ -76,7 +76,7 @@ AnimatedObjFrame::AnimatedObjFrame() {
 
 
 AnimatedObjFrame::~AnimatedObjFrame() {
-
+	delete _data;
 }
 
 
@@ -92,9 +92,9 @@ AnimatedObjTransform * AnimatedObjFrame::get_transform(AnimatedObjBone * bone) {
 
 std::ostream & operator << (std::ostream & os, AnimatedObjFrame & frame) {
 	os << "transforms = ";
-	/*for (auto & transform : frame._transforms) {
-		os << transform->_name << " -> " << transform << "\n";
-	}*/
+	for (auto & transform : frame._transforms) {
+		os << *transform << "\n";
+	}
 	return os;
 }
 
@@ -256,6 +256,7 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 	}
 
 	update_matrices();
+	update_frames();
 }
 
 
@@ -283,7 +284,6 @@ void AnimatedObjModel::update_matrices() {
 		}
 	}
 	_matrices = new float[_n_matrices * 16];
-	//std::cout << n_matrices << "\n";
 
 	uint compt = 0;
 	for (auto & action : _actions) {
@@ -308,6 +308,66 @@ void AnimatedObjModel::update_matrices() {
 				}
 				transform->_idx = compt;
 				compt++;
+			}
+		}
+	}
+}
+
+
+void AnimatedObjModel::update_frames() {
+	uint n_attrs_per_pts;
+	if (_mode == ANIMATED_MODEL_RIGID) {
+		n_attrs_per_pts = 1;
+	}
+	else if (_mode == ANIMATED_MODEL_WEIGHT) {
+		n_attrs_per_pts = 4 + 4;
+	}
+
+	for (auto & action : _actions) {
+		for (auto & frame : action->_frames) {
+			frame->_data = new float[_obj_data->_n_pts * n_attrs_per_pts];
+			float * ptr = frame->_data;
+
+			if (_mode == ANIMATED_MODEL_RIGID) {
+				for (auto & o : _objects) {
+					ObjObject * object = o->_static_object;
+					AnimatedObjBone * bone = o->_parent_bone;
+					AnimatedObjTransform * transform = frame->get_transform(bone);
+
+					for (auto & face : object->_faces) {
+						for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
+							ptr[0] = float(transform->_idx);
+							ptr++;
+						}
+					}
+				}
+			}
+			else if (_mode == ANIMATED_MODEL_WEIGHT) {
+				for (auto & o : _objects) {
+					ObjObject * object = o->_static_object;
+					
+					for (auto & face : object->_faces) {
+						for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
+							for (int i=0; i<4; ++i) {
+								AnimatedObjBone * bone = o->_bones[4 * face->_vertices_idx[idx_pt] + i];
+								if (bone != NULL) {
+									AnimatedObjTransform * transform = frame->get_transform(bone);
+									ptr[0] = float(transform->_idx);
+									ptr++;
+								}
+								else {
+									ptr[0] = -1.0f;
+									ptr++;
+								}
+							}
+							
+							for (int i=0; i<4; ++i) {
+								ptr[0] = o->_weights[4 * face->_vertices_idx[idx_pt] + i];
+								ptr++;
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -402,14 +462,15 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 	std::vector<std::string> model_names {"test", "test2", "test3"};
 	
 	for (auto & model_name : model_names) {
-		_models[model_name] = new AnimatedObjModel("../data/" + model_name + ".json");
-		//std::cout << *_models[model_name] << "\n";
+		AnimatedObjModel * model = new AnimatedObjModel("../data/" + model_name + ".json");
 		_gl_draw_manager->add_texture_buffer(model_name, "anim_buffer", GL_R32F, 0);
-		_gl_draw_manager->set_texture_buffer_data(model_name, "anim_buffer", _models[model_name]->_matrices, _models[model_name]->_n_matrices * 16 * sizeof(float));
+		_gl_draw_manager->set_texture_buffer_data(model_name, "anim_buffer", model->_matrices, model->_n_matrices * 16 * sizeof(float));
 
 		GLDrawContext * context = _gl_draw_manager->get_context(model_name);
-		context->_n_pts = _models[model_name]->_obj_data->_n_pts;
-		context->set_data(_models[model_name]->_obj_data->_data, 0);
+		context->_n_pts = model->_obj_data->_n_pts;
+		context->set_data(model->_obj_data->_data, 0);
+
+		_models.push_back(model);
 	}
 	
 	/*_instances.push_back(new AnimatedObjInstance(_models["test"], pt_3d(0.0, 0.0, 0.0), t));
@@ -425,11 +486,14 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 		//std::string model_name = model_names[j];
 		std::string model_name = "test3";
 		//std::string model_name = "test";
-		_instances.push_back(new AnimatedObjInstance(_models[model_name], rand_pt_3d(pt_3d(-20.0), pt_3d(20.0)), t, rand_quat()));
+		_instances.push_back(new AnimatedObjInstance(get_model(model_name), rand_pt_3d(pt_3d(-20.0), pt_3d(20.0)), t, rand_quat()));
 	}
 
 	for (auto & model : _models) {
-		update(model.second);
+		update_n_pts(model);
+		update_static_buffer(model);
+		update_animation_buffer(model);
+		update_model2world_buffer(model);
 	}
 }
 
@@ -440,9 +504,19 @@ TestObjAnim::~TestObjAnim() {
 	}
 	_instances.clear();
 	for (auto & model : _models) {
-		delete model.second;
+		delete model;
 	}
 	_models.clear();
+}
+
+
+AnimatedObjModel * TestObjAnim::get_model(std::string model_name) {
+	for (auto & model : _models) {
+		if (model->_name == model_name) {
+			return model;
+		}
+	}
+	return NULL;
 }
 
 
@@ -456,12 +530,15 @@ void TestObjAnim::anim(time_point t) {
 	}
 
 	for (auto & model : _models) {
-		update(model.second);
+		//update_n_pts(model);
+		//update_static_buffer(model);
+		update_animation_buffer(model);
+		update_model2world_buffer(model);
 	}
 }
 
 
-void TestObjAnim::update(AnimatedObjModel * model) {
+void TestObjAnim::update_n_pts(AnimatedObjModel * model) {
 	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
 	context->_n_pts = 0;
 	for (auto & instance : _instances) {
@@ -469,8 +546,14 @@ void TestObjAnim::update(AnimatedObjModel * model) {
 			context->_n_pts += model->_obj_data->_n_pts;
 		}
 	}
+}
 
-	uint n_attrs_per_pts = context->_buffers[0]->_n_attrs_per_pts;
+
+void TestObjAnim::update_static_buffer(AnimatedObjModel * model) {
+	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
+
+	uint n_attrs_per_pts = model->_obj_data->_n_attrs_per_pts;
+	uint n_floats_per_instance = model->_obj_data->_n_pts * n_attrs_per_pts;
 
 	float * data = new float[context->_n_pts * n_attrs_per_pts];
 
@@ -481,161 +564,76 @@ void TestObjAnim::update(AnimatedObjModel * model) {
 			continue;
 		}
 
+		std::memcpy(ptr, model->_obj_data->_data, n_floats_per_instance * sizeof(float));
+		ptr += n_floats_per_instance;
+	}
+
+	context->set_data(data, 0);
+	delete[] data;
+}
+
+
+void TestObjAnim::update_animation_buffer(AnimatedObjModel * model) {
+	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
+
+	uint n_attrs_per_pts;
+	if (model->_mode == ANIMATED_MODEL_RIGID) {
+		n_attrs_per_pts = 1;
+	}
+	else if (model->_mode == ANIMATED_MODEL_WEIGHT) {
+		n_attrs_per_pts = 4 + 4;
+	}
+	uint n_floats_per_instance = model->_obj_data->_n_pts * n_attrs_per_pts;
+
+	float * data = new float[context->_n_pts * n_attrs_per_pts];
+
+	float * ptr = data;
+	
+	for (auto & instance : _instances) {
+		if (instance->_model != model) {
+			continue;
+		}
+		
 		AnimatedObjFrame * frame = instance->_current_frame;
 
-		// ------------------------------------------------------------------------------
-		if (model->_mode == ANIMATED_MODEL_RIGID) {
-			for (auto & o : model->_objects) {
-			
-				ObjObject * object = o->_static_object;
-				AnimatedObjBone * bone = o->_parent_bone;
-				AnimatedObjTransform * transform = frame->get_transform(bone);
+		std::memcpy(ptr, frame->_data, n_floats_per_instance * sizeof(float));
+		ptr += n_floats_per_instance;
+	}
 
-				for (auto & face : object->_faces) {
-					for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
-						pt_3d pt = object->_vertices[face->_vertices_idx[idx_pt]];
-						pt_3d normal;
-						if (face->_normal_active) {
-							normal = object->_normals[face->_normals_idx[idx_pt]];
-						}
-						else {
-							normal = object->compute_normal(face);
-						}
+	context->set_data(data, 1);
+	delete[] data;
+}
 
-						ptr[0] = float(pt.x);
-						ptr[1] = float(pt.y);
-						ptr[2] = float(pt.z);
-						ptr[3] = float(normal.x);
-						ptr[4] = float(normal.y);
-						ptr[5] = float(normal.z);
-						ptr += 6;
 
-						if (model->_obj_data->_use_ambient) {
-							ptr[0] = float(face->_material->_ambient.r);
-							ptr[1] = float(face->_material->_ambient.g);
-							ptr[2] = float(face->_material->_ambient.b);
-							ptr += 3;
-						}
-						if (model->_obj_data->_use_diffuse) {
-							ptr[0] = float(face->_material->_diffuse.r);
-							ptr[1] = float(face->_material->_diffuse.g);
-							ptr[2] = float(face->_material->_diffuse.b);
-							ptr += 3;
-						}
-						if (model->_obj_data->_use_specular) {
-							ptr[0] = float(face->_material->_specular.r);
-							ptr[1] = float(face->_material->_specular.g);
-							ptr[2] = float(face->_material->_specular.b);
-							ptr += 3;
-						}
-						if (model->_obj_data->_use_shininess) {
-							ptr[0] = float(face->_material->_shininess);
-							ptr++;
-						}
-						if (model->_obj_data->_use_opacity) {
-							ptr[0] = float(face->_material->_opacity);
-							ptr++;
-						}
+void TestObjAnim::update_model2world_buffer(AnimatedObjModel * model) {
+	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
 
-						ptr[0] = float(transform->_idx);
-						ptr++;
+	uint n_attrs_per_pts = 16;
 
-						const float * instance_mat = glm::value_ptr(glm::mat4(instance->_model2world));
-						std::memcpy(ptr, instance_mat, 16 * sizeof(float));
-						ptr += 16;
-					}
-				}
-			}
+	float * data = new float[context->_n_pts * n_attrs_per_pts];
+
+	float * ptr = data;
+	
+	for (auto & instance : _instances) {
+		if (instance->_model != model) {
+			continue;
 		}
 
-		// ------------------------------------------------------------
-		else if (model->_mode == ANIMATED_MODEL_WEIGHT) {
-			for (auto & o : model->_objects) {
-				
-				ObjObject * object = o->_static_object;
-				
-				for (auto & face : object->_faces) {
-					for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
-						pt_3d pt = object->_vertices[face->_vertices_idx[idx_pt]];
-						pt_3d normal;
-						if (face->_normal_active) {
-							normal = object->_normals[face->_normals_idx[idx_pt]];
-						}
-						else {
-							normal = object->compute_normal(face);
-						}
-
-						ptr[0] = float(pt.x);
-						ptr[1] = float(pt.y);
-						ptr[2] = float(pt.z);
-						ptr[3] = float(normal.x);
-						ptr[4] = float(normal.y);
-						ptr[5] = float(normal.z);
-						ptr += 6;
-
-						if (model->_obj_data->_use_ambient) {
-							ptr[0] = float(face->_material->_ambient.r);
-							ptr[1] = float(face->_material->_ambient.g);
-							ptr[2] = float(face->_material->_ambient.b);
-							ptr += 3;
-						}
-						if (model->_obj_data->_use_diffuse) {
-							ptr[0] = float(face->_material->_diffuse.r);
-							ptr[1] = float(face->_material->_diffuse.g);
-							ptr[2] = float(face->_material->_diffuse.b);
-							ptr += 3;
-						}
-						if (model->_obj_data->_use_specular) {
-							ptr[0] = float(face->_material->_specular.r);
-							ptr[1] = float(face->_material->_specular.g);
-							ptr[2] = float(face->_material->_specular.b);
-							ptr += 3;
-						}
-						if (model->_obj_data->_use_shininess) {
-							ptr[0] = float(face->_material->_shininess);
-							ptr++;
-						}
-						if (model->_obj_data->_use_opacity) {
-							ptr[0] = float(face->_material->_opacity);
-							ptr++;
-						}
-
-						for (int i=0; i<4; ++i) {
-							AnimatedObjBone * bone = o->_bones[4 * face->_vertices_idx[idx_pt] + i];
-							if (bone != NULL) {
-								AnimatedObjTransform * transform = frame->get_transform(bone); // mieux mais pas ouf
-								ptr[0] = float(transform->_idx);
-								//ptr[0] = 1.0f;
-								ptr++;
-							}
-							else {
-								ptr[0] = -1.0f;
-								ptr++;
-							}
-						}
-						
-						for (int i=0; i<4; ++i) {
-							ptr[0] = o->_weights[4 * face->_vertices_idx[idx_pt] + i];
-							ptr++;
-						}
-
-						const float * instance_mat = glm::value_ptr(glm::mat4(instance->_model2world));
-						std::memcpy(ptr, instance_mat, 16 * sizeof(float));
-						ptr += 16;
-					}
-				}
-			}
+		for (uint i=0; i<model->_obj_data->_n_pts; ++i) {
+			const float * instance_mat = glm::value_ptr(glm::mat4(instance->_model2world));
+			std::memcpy(ptr, instance_mat, 16 * sizeof(float));
+			ptr += 16;
 		}
 	}
 
-	context->set_data(data);
+	context->set_data(data, 2);
 	delete[] data;
 }
 
 
 void TestObjAnim::draw() {
 	for (auto & model : _models) {
-		GLDrawContext * context = _gl_draw_manager->get_context(model.first);
+		GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
 		context->activate();
 		context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 		context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));

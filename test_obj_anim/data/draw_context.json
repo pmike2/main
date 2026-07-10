@@ -8,8 +8,26 @@
 		"font" : {"shader" : "font", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 		"font3d" : {"shader" : "font3d", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 
-		"test" : {"shader" : "anim_obj_rigid", "mode" : "GL_TRIANGLES"},
-		"test2" : {"shader" : "anim_obj_rigid", "mode" : "GL_TRIANGLES"},
-		"test3" : {"shader" : "anim_obj_weight", "mode" : "GL_TRIANGLES"}
+		"test" : {
+			"shader" : "anim_obj_rigid", "mode" : "GL_TRIANGLES",
+			"buffers" : [
+				{"instanced" : false, "attrs" : ["matrix_idx"]},
+				{"instanced" : false, "attrs" : ["model2world_matrix"]}
+			]
+		},
+		"test2" : {
+			"shader" : "anim_obj_rigid", "mode" : "GL_TRIANGLES",
+			"buffers" : [
+				{"instanced" : false, "attrs" : ["matrix_idx"]},
+				{"instanced" : false, "attrs" : ["model2world_matrix"]}
+			]
+		},
+		"test3" : {
+			"shader" : "anim_obj_weight", "mode" : "GL_TRIANGLES",
+			"buffers" : [
+				{"instanced" : false, "attrs" : ["matrix_idx", "matrix_weight"]},
+				{"instanced" : false, "attrs" : ["model2world_matrix"]}
+			]
+		}
 	}
 }

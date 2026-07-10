@@ -68,6 +68,7 @@ struct AnimatedObjFrame {
 
 
 	std::vector<AnimatedObjTransform *> _transforms;
+	float * _data;
 };
 
 
@@ -101,6 +102,7 @@ struct AnimatedObjModel {
 	AnimatedObjModel(std::string json_path);
 	~AnimatedObjModel();
 	void update_matrices();
+	void update_frames();
 	AnimatedObjObject * get_animated_object(std::string obj_name);
 	AnimatedObjAction * get_action(std::string action_name);
 	AnimatedObjBone * get_bone(std::string bone_name);
@@ -137,15 +139,22 @@ struct TestObjAnim {
 	TestObjAnim();
 	TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t);
 	~TestObjAnim();
+	AnimatedObjModel * get_model(std::string model_name);
+
 	void anim(time_point t);
-	void update(AnimatedObjModel * model);
+
+	void update_n_pts(AnimatedObjModel * model);
+	void update_static_buffer(AnimatedObjModel * model);
+	void update_animation_buffer(AnimatedObjModel * model);
+	void update_model2world_buffer(AnimatedObjModel * model);
+
 	void draw();
 	bool key_down(InputState * input_state, SDL_Keycode key, time_point t);
 
 	
 	GLDrawManager * _gl_draw_manager;
 	ViewSystem * _view_system;
-	map<std::string, AnimatedObjModel *> _models;
+	std::vector<AnimatedObjModel *> _models;
 	std::vector<AnimatedObjInstance *> _instances;
 	bool _paused;
 };
