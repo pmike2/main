@@ -1,81 +1,73 @@
-Strategy : Génération des .obj dans Blender :
-- générer un material par composant du modèle, de type Diffuse BSDF
-- Modifier Viewport Display
-- Choisir la couleur noire si l'on veut que ce composant prenne la couleur de l'équipe
-- Orienter vers x positif puis lors de l'export : choisir Forward Axis = Y, Up Axis = Z
-- cocher Triangulated Mesh
+Modelling :
+https://www.youtube.com/watch?v=DiIoWrOlIRw
 
-Blender :
-s (scale), r(rotate), g(translate) puis x, y, z pour faire selon x , y ou z
 
-tab : edit mode
-ctrl + tab : pose mode
+ctrl = cmd pareil
 
-shift + a : add
 
+intersection :  select mesh et Ctrl+F
+shift + middle mouse : strafe
+définir le centre de rotation de la vue : click gauche pour mettre le curseur 3D et View/Align View/Center view to cursor
+alt + home : center to 3D cursor
+center to center of mass, puis alt + G : centre le modèle sur son centre de gravité
+n : properties panel ; permet de régler quand on voie l'image de face / de profil
+numpad 1 / numpad 3 : vues de face / profil
+shift + c : center 3d cursor
+shift + a : fenetre de création de formes
+f : création de face ou edge
+tab : passage en edit mode
+ctrl + tab : sélection vertex / edge / face
+ctrl + r : loopcut ; right-click : reste au centre
+ctrl + b : biseau sur une arete
+z : wireframe mode / solid mode
+b : boxing
+x : delete
+deformer mirror : option clipping permet de n'avoir qu'un seul sommet à la frontière
 a : select all
-alt + a : deselect all
+g : move shape
+o : après une sélection permet de faire du proportional editing avec un cercle d'influence
+g sur 1 vertex + ctrl appuyé -> snap ; choix du type de snap dans le menu en bas
+e : extrude
+i : inset face
+alt + right click : select loop
+s : scale ; x , y , z ensuite pour spécifier l'axe ; 0 ensuite pour aplatir
+alt + s : shrink / fatten
+ctrl + e : menu ; edge slide
+ctrl + left click : extrude
+w : ouvre un menu ;	remove number permet de supprimer les vertices surimposés
+ctrl + j : merge objects
+c : sélection par cercle avec rayon ajustable
+shift + d : duplicate selection
+p : separate by selection
+h : hide selection ; alt + h unhide ; shift + h : hide all except selection
+ctrl + n : recalcul des normales
 
-select vertices in edit mode; ctrl + g -> "assign to new group" pour créer un vertex group à partir de ces vertices
 
-viewport overlays / turn on wireframe : pour voir les aretes
+Texturing :
+https://www.youtube.com/watch?v=JYBPXTful2g
 
-numpad : change view
+ctrl + e menu ; mark seam : sépare les objets le long de la sélection d'edges
+u : unwrap selection
+alt + z : show material color
 
-rigging : https://www.youtube.com/watch?v=DDeB4tDVCGY
-add armature
-Data / viewport display / in front pour afficher armature devant le reste
-e : extrude bone
-shift + d : duplicate bones
-ctrl + p : make parent
-alt + p : unmake parent (disconnect)
-nommer les jambes bras gauche avec suffix .L, puis click droit symmetrize : crée les .R
-object mode ; select model ; click droit armature : parent / armature defform / automatic weights
-pose mode ; select armature; déplacement rotation se reflète sur le modèle !
 
-on peut aussi créer les vertex group à la main mais il faut que les noms des vertex group correspondent aux noms des bones
-et il faut que le mesh ait un modifier de type armature
+Rigging :
+en object mode : Ctrl + tab : passage en pose mode pour manipuler les bones
+dupliquer fenetre : passer en dope sheet window
+action editor
+new action
+click icone 'F' pour sauvegarder
+selectionner LocRot et click sur icone clef pour insérer keyframes
+select all bones avec 'a' puis 'i' pour insérer un keyframe
+copy pose puis paste x-flipped pose permet de copier une version miroir (d'ou l'interet de faire regarder le perso vers Y en bind pose)
+t : permet de choisir le mode d'interpolation
+pour faire une marche : dupliquer puis inverser toutes les poses
+mettre end à 32 et pas 33 si dernier keyframe a position 33
 
-dans menu principal à droite de armature : show names -> affiche le nom des bones
+Reset :
+Select all the bones, in pose mode with A . Then, hit:
+ALT R to reset all rotations,
+ALT G to reset all translations,
+ALT S to reset all scales.
 
-weight painting :
-1 - object mode, select armature
-2 - shift click select object
-3 - ctrl tab -> weight paint mode
-barre du haut / weights / assign automatic from bones
--> permet de repartir de ce qu'on a fait avant avec automatic weights
-brush tool options / auto normalize : pour que la somme des weights fasse tjrs 1
-brush tool symmetry : utile pour bras / jambes
-f : change brush size
-dans menu principal à droite : Vertex Groups : on peut switcher entre les bones pour peindre leur influence sur l'objet sélectionné
-
-rigid rigging :
-fonctionne uniquement quand on a des objets distincts
-1 - object mode, select un objet (par ex la tête)
-2 - shift click armature
-3 - ctrl tab -> pose mode
-4 - select bone
-ctrl - p : set parent to bone -> l'objet est maintenant attaché au bone
-
-cf https://blenderartists.org/t/bone-extrusion-problem/526543
-si un bone ne veut pas bouger et ne fait que des rotations il faut :
-- passer en edit mode
-- sélectionner le bone
-- dans l'onglet à droite icone bone, partie Relations, unclick 'connected'
-
-animate :
-https://www.youtube.com/watch?v=IAiTYaiZmY0
-
-pose mode
-select bone(s) (a pour all)
-press i : insert keyframe
-move / rotate ; change time mark ; i : insert another keyframe
-maintenant quand on bouge le time mark on a une anim !
-
-bloc timeline en haut à gauche ou droite icone '+' , permet d'afficher plusieurs timelines
--> dope sheet + timeline bien
-
-dans dopesheet : a : select all, puis x : supprime tous les keyframes
-
-markers : utiles si on veut mettre plusieurs anims dans un .blend (marcher, courir, ...)
-Marker / add marker pour ajouter un marker, puis on peut le renommer en le sélectionnant puis rename marker
+NLA editor : move strip : G
