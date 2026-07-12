@@ -10,6 +10,7 @@ https://blender.stackexchange.com/questions/44637/how-can-i-manually-calculate-b
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <iterator>
 
 #include "json.hpp"
 
@@ -145,7 +146,9 @@ struct TestObjAnim {
 
 	void update_n_pts(AnimatedObjModel * model);
 	void update_static_buffer(AnimatedObjModel * model);
+	void init_animation_buffer(AnimatedObjModel * model);
 	void update_animation_buffer(AnimatedObjModel * model);
+	void init_model2world_buffer(AnimatedObjModel * model);
 	void update_model2world_buffer(AnimatedObjModel * model);
 
 	void draw();

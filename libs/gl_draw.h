@@ -133,6 +133,7 @@ public:
 	GLDrawContext(std::string name, GLuint prog, GLenum draw_mode, std::vector<GLDrawContextBuffer *> buffers, bool active = true);
 	~GLDrawContext();
 	void set_data(float * data, uint idx_buffer = 0);
+	void set_subdata(float * data, uint offset, uint size, uint idx_buffer = 0);
 	void clear_data(uint idx_buffer = 0);
 	bool empty(uint idx_buffer = 0);
 	void activate();

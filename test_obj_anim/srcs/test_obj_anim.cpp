@@ -466,9 +466,9 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 		_gl_draw_manager->add_texture_buffer(model_name, "anim_buffer", GL_R32F, 0);
 		_gl_draw_manager->set_texture_buffer_data(model_name, "anim_buffer", model->_matrices, model->_n_matrices * 16 * sizeof(float));
 
-		GLDrawContext * context = _gl_draw_manager->get_context(model_name);
-		context->_n_pts = model->_obj_data->_n_pts;
-		context->set_data(model->_obj_data->_data, 0);
+		//GLDrawContext * context = _gl_draw_manager->get_context(model_name);
+		//context->_n_pts = model->_obj_data->_n_pts;
+		//context->set_data(model->_obj_data->_data, 0);
 
 		_models.push_back(model);
 	}
@@ -492,8 +492,10 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 	for (auto & model : _models) {
 		update_n_pts(model);
 		update_static_buffer(model);
-		update_animation_buffer(model);
-		update_model2world_buffer(model);
+		//update_animation_buffer(model);
+		init_animation_buffer(model);
+		//update_model2world_buffer(model);
+		init_model2world_buffer(model);
 	}
 }
 
@@ -556,7 +558,6 @@ void TestObjAnim::update_static_buffer(AnimatedObjModel * model) {
 	uint n_floats_per_instance = model->_obj_data->_n_pts * n_attrs_per_pts;
 
 	float * data = new float[context->_n_pts * n_attrs_per_pts];
-
 	float * ptr = data;
 	
 	for (auto & instance : _instances) {
@@ -573,7 +574,7 @@ void TestObjAnim::update_static_buffer(AnimatedObjModel * model) {
 }
 
 
-void TestObjAnim::update_animation_buffer(AnimatedObjModel * model) {
+void TestObjAnim::init_animation_buffer(AnimatedObjModel * model) {
 	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
 
 	uint n_attrs_per_pts;
@@ -588,7 +589,10 @@ void TestObjAnim::update_animation_buffer(AnimatedObjModel * model) {
 	float * data = new float[context->_n_pts * n_attrs_per_pts];
 
 	float * ptr = data;
-	
+
+	uint offset = 0;
+	uint size = n_floats_per_instance * sizeof(float);
+
 	for (auto & instance : _instances) {
 		if (instance->_model != model) {
 			continue;
@@ -605,7 +609,35 @@ void TestObjAnim::update_animation_buffer(AnimatedObjModel * model) {
 }
 
 
-void TestObjAnim::update_model2world_buffer(AnimatedObjModel * model) {
+void TestObjAnim::update_animation_buffer(AnimatedObjModel * model) {
+	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
+
+	uint n_attrs_per_pts;
+	if (model->_mode == ANIMATED_MODEL_RIGID) {
+		n_attrs_per_pts = 1;
+	}
+	else if (model->_mode == ANIMATED_MODEL_WEIGHT) {
+		n_attrs_per_pts = 4 + 4;
+	}
+	uint n_floats_per_instance = model->_obj_data->_n_pts * n_attrs_per_pts;
+
+	uint offset = 0;
+	uint size = n_floats_per_instance * sizeof(float);
+
+	for (auto & instance : _instances) {
+		if (instance->_model != model) {
+			continue;
+		}
+		
+		AnimatedObjFrame * frame = instance->_current_frame;
+
+		context->set_subdata(frame->_data, offset, size, 1);
+		offset += size;
+	}
+}
+
+
+void TestObjAnim::init_model2world_buffer(AnimatedObjModel * model) {
 	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
 
 	uint n_attrs_per_pts = 16;
@@ -628,6 +660,25 @@ void TestObjAnim::update_model2world_buffer(AnimatedObjModel * model) {
 
 	context->set_data(data, 2);
 	delete[] data;
+}
+
+
+void TestObjAnim::update_model2world_buffer(AnimatedObjModel * model) {
+	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
+
+	uint offset = 0;
+	uint size = 16 * sizeof(float);
+	for (auto & instance : _instances) {
+		if (instance->_model != model) {
+			continue;
+		}
+
+		for (uint i=0; i<model->_obj_data->_n_pts; ++i) {
+			float * instance_mat = (float *)(glm::value_ptr(glm::mat4(instance->_model2world)));
+			context->set_subdata(instance_mat, offset, size, 2);
+			offset += size;
+		}
+	}
 }
 
 

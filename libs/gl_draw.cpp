@@ -674,6 +674,23 @@ void GLDrawContext::set_data(float * data, uint idx_buffer) {
 }
 
 
+void GLDrawContext::set_subdata(float * data, uint offset, uint size, uint idx_buffer) {
+	if (_verbose) {
+		std::cout << "GLDrawContext " << _name << " : set_subdata for buffer " << idx_buffer << "\n";
+	}
+	GLDrawContextBuffer * buffer = _buffers[idx_buffer];
+	glBindBuffer(GL_ARRAY_BUFFER, buffer->_id);
+	if (buffer->_is_instanced) {
+		// TODO
+		std::cerr << "non supporté\n";
+	}
+	else {
+		glBufferSubData(GL_ARRAY_BUFFER, offset, size, data);
+	}
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 void GLDrawContext::clear_data(uint idx_buffer) {
 	if (_verbose) {
 		std::cout << "GLDrawContext " << _name << " : clear_data for buffer " << idx_buffer << "\n";
