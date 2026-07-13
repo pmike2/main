@@ -9,7 +9,7 @@ TestObjAnim::TestObjAnim() {
 TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _paused(false)
 {
-	std::vector<std::string> model_names {"test", "test2", "test3"};
+	std::vector<std::string> model_names {"test", "test2", "test3", "perso"};
 	
 	for (auto & model_name : model_names) {
 		AnimatedObjModel * model = new AnimatedObjModel("../data/" + model_name + ".json");
@@ -31,15 +31,22 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 	//_instances[0]->_current_action = "walk";
 
 
-	for (uint i=0; i<30000; ++i) {
+	for (uint i=0; i<1; ++i) {
 		//int j = rand_int(0, model_names.size() - 1);
 		//std::string model_name = model_names[j];
-		//std::string model_name = "test3";
-		std::string model_name = "test";
+		std::string model_name = "test3";
+		//std::string model_name = "perso";
 
-		uint idx_action = rand_int(0, get_model(model_name)->_actions.size() - 1);
+		//uint idx_action = rand_int(0, get_model(model_name)->_actions.size() - 1);
+		uint idx_action = 0;
 
-		_instances.push_back(new AnimatedObjInstance(get_model(model_name), rand_pt_3d(pt_3d(-20.0), pt_3d(20.0)), t, rand_quat(), get_model(model_name)->_actions[idx_action]->_name));
+		//pt_3d pos = rand_pt_3d(pt_3d(-20.0), pt_3d(20.0));
+		pt_3d pos = pt_3d(float(i) * 1.0, float(i) * 1.0, 0.0);
+
+		//quat q = rand_quat();
+		quat q = quat(1.0, 0.0, 0.0, 0.0);
+
+		_instances.push_back(new AnimatedObjInstance(get_model(model_name), pos, t, q, get_model(model_name)->_actions[idx_action]->_name));
 	}
 
 	for (auto & model : _models) {

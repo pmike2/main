@@ -25,6 +25,12 @@
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
 			]
+		},
+		"perso" : {
+			"shader" : "anim_obj_weight", "mode" : "GL_TRIANGLES",
+			"buffers" : [
+				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
+			]
 		}
 	}
 }

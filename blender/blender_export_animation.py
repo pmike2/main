@@ -5,6 +5,8 @@ Script d'export d'une animation Blender.
 JSON résultant à utiliser dans animated_obj.h
 """
 
+# TODO : forcer la sélection de l'armature au début.
+# sinon on a une erreur
 
 import json
 
