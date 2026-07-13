@@ -52,7 +52,7 @@ struct GLDrawTexture {
 
 
 // ===============================================
-// TODO : cf GLDrawTextureBuffer, un pool est-til vraiment utile ?
+// TODO : cf GLDrawTextureBuffer, un pool est-t'il vraiment utile ?
 // il vaudrait peut-être mieux dans drawmanager::add_texture et set_texture_data préciser le Context, comme pour GLDrawTextureBuffer
 // ===============================================
 

@@ -1,0 +1,146 @@
+#ifndef ANIMATED_OBJ_H
+#define ANIMATED_OBJ_H
+
+#include <string>
+#include <vector>
+#include <filesystem>
+
+#include "json.hpp"
+
+#include "obj_parser.h"
+#include "bbox.h"
+#include "typedefs.h"
+
+
+using json = nlohmann::json;
+
+
+// mode du modèle
+// ANIMATED_MODEL_RIGID = un bone par objet et tous les vertices de l'objet sont affectés par ce bone
+// ANIMATED_MODEL_WEIGHT = jusqu'à 4 bones + weights affectent chaque vertex
+enum ANIMATED_MODEL_MODE {ANIMATED_MODEL_RIGID, ANIMATED_MODEL_WEIGHT};
+
+
+// on doit retrouver ces valeurs dans le vertex shader
+// nombre max de frames par action
+const uint N_MAX_FRAMES_PER_ACTION = 1000;
+// nombre max de sommets par mesh
+const uint N_MAX_VERTICES_PER_MESH = 1000;
+
+
+// json -> mat4
+mat_4d parse_js_matrix(json js);
+
+
+// Bone
+struct AnimatedObjBone {
+	AnimatedObjBone();
+	AnimatedObjBone(std::string name, mat_4d mat_local, std::string parent_name = "");
+	~AnimatedObjBone();
+	friend std::ostream & operator << (std::ostream & os, AnimatedObjBone & bone);
+
+
+	mat_4d _mat_local; // matrice locale de transformation
+	std::string _name; // nom
+	AnimatedObjBone * _parent; // bone parent
+	std::string _parent_name; // nom du bone parent
+};
+
+
+// une Transformation associe une matrice à un Bone
+struct AnimatedObjTransform {
+	AnimatedObjTransform();
+	AnimatedObjTransform(AnimatedObjBone * bone, mat_4d mat);
+	~AnimatedObjTransform();
+	friend std::ostream & operator << (std::ostream & os, AnimatedObjTransform & transform);
+
+	
+	AnimatedObjBone * _bone; // bone associé
+	mat_4d _mat_basis; // matrice de base
+	mat_4d _mat_final; // matrice finale (composé avec la matrice du bone et de ses parents)
+};
+
+
+// un Frame représente une pose d'animation et est composé de transformations (une par Bone)
+struct AnimatedObjFrame {
+	AnimatedObjFrame();
+	~AnimatedObjFrame();
+	AnimatedObjTransform * get_transform(AnimatedObjBone * bone);
+	friend std::ostream & operator << (std::ostream & os, AnimatedObjFrame & frame);
+
+
+	std::vector<AnimatedObjTransform *> _transforms;
+};
+
+
+// une Action est une série de Frames
+struct AnimatedObjAction {
+	AnimatedObjAction();
+	AnimatedObjAction(std::string name);
+	~AnimatedObjAction();
+	friend std::ostream & operator << (std::ostream & os, AnimatedObjAction & action);
+
+
+	std::string _name;
+	std::vector<AnimatedObjFrame *> _frames;
+};
+
+
+// Un AnimatedObjObject est une surcouche à ObjObject que l'on retrouve dans obj_parser.h
+// associe à chaque objet une liste de Bones et de poids (max 4) dans le cas ANIMATED_MODEL_WEIGHT
+// ou directement un Bone dans le cas ANIMATED_MODEL_RIGID
+struct AnimatedObjObject {
+	AnimatedObjObject();
+	AnimatedObjObject(ObjObject * static_object);
+	~AnimatedObjObject();
+
+
+	ObjObject * _static_object;
+	AnimatedObjBone ** _bones; // utilisé dans le cas ANIMATED_MODEL_WEIGHT
+	number * _weights; // utilisé dans le cas ANIMATED_MODEL_WEIGHT
+	AnimatedObjBone * _parent_bone; // utilisé dans le cas ANIMATED_MODEL_RIGID
+};
+
+
+// Un modèle animé associé à un ObjData (obj_parser.h)
+struct AnimatedObjModel {
+	AnimatedObjModel();
+	AnimatedObjModel(std::string json_path);
+	~AnimatedObjModel();
+	void compute_transform_final_matrix(); // calcul des matrices finales des transformations
+	void compute_buffer_texture_data(); // calcul de ce qui sera mis dans le buffer texture
+	AnimatedObjObject * get_animated_object(std::string obj_name);
+	AnimatedObjBone * get_bone(std::string bone_name);
+	friend std::ostream & operator << (std::ostream & os, AnimatedObjModel & obj);
+
+
+	std::string _name;
+	ANIMATED_MODEL_MODE _mode;
+	ObjData * _obj_data;
+	std::vector<AnimatedObjBone *> _bones;
+	std::vector<AnimatedObjAction *> _actions;
+	std::vector<AnimatedObjObject *> _objects;
+
+	uint _buffer_texture_data_size;
+	float * _buffer_texture_data;
+};
+
+
+// une instance d'un modèle
+struct AnimatedObjInstance : public InstancePosRot {
+	AnimatedObjInstance();
+	AnimatedObjInstance(AnimatedObjModel * model, pt_3d pos, time_point t, quat q = quat(1.0, 0.0, 0.0, 0.0), std::string action_name = "");
+	~AnimatedObjInstance();
+	void anim(time_point t);
+	void set_action(std::string action_name);
+	std::string get_action();
+
+
+	AnimatedObjModel * _model;
+	uint _idx_action;
+	uint _idx_frame;
+	time_point _last_anim_t;
+};
+
+
+#endif

@@ -208,11 +208,6 @@ std::vector<GLDrawContextUniform *> active_uniforms(GLuint prog) {
 		location = glGetUniformLocation(prog, name);
 		GLDrawContextUniform * uniform = new GLDrawContextUniform(std::string(name), location, type, size);
 		result.push_back(uniform);
-		
-		//std::cout << std::string(name) << " ; " << location << "\n";
-		//glGetActiveUniform(prog, i, maxLen, &written, &size, &type, name);
-		//std::cout << "debug : " << location_debug << "\n";
-
 	}
 	free(name);
 
@@ -230,12 +225,16 @@ std::vector<GLDrawContextAttrib *> active_attribs(GLuint prog) {
 	glGetProgramiv(prog, GL_ACTIVE_ATTRIBUTES, &n_attribs);
 	name= (GLchar *) malloc(max_length);
 	
-	//std::cout << n_attribs << "\n";
 	for (int i=0; i<n_attribs; ++i) {
 		glGetActiveAttrib(prog, i, max_length, &written, &size, &type, name);
+
+		// il faut les ignorer ; TODO : y-en a t'il d'autres ?
+		if (std::string(name) == "gl_VertexID" || std::string(name) == "gl_InstanceID" ) {
+			continue;
+		}
+
 		location = glGetAttribLocation(prog, name);
 		GLDrawContextAttrib * attrib = new GLDrawContextAttrib(std::string(name), location, size, type);
-		//std::cout << std::string(name) << "\n";
 		result.push_back(attrib);
 	}
 
@@ -568,7 +567,7 @@ std::ostream & operator << (std::ostream & os, const GLDrawContextBuffer & dcb) 
 	os  << " ; is_instanced = " << dcb._is_instanced;
 	os << "\n\t";
 	os << "attribs :\n";
-	for (auto attrib : dcb._attribs) {
+	for (auto & attrib : dcb._attribs) {
 		os << "\t\t" << *attrib << "\n";
 	}
 	return os;
@@ -586,9 +585,6 @@ GLDrawContext::GLDrawContext(std::string name, GLuint prog, GLenum draw_mode, st
 {
 
 	_uniforms = active_uniforms(_prog);
-	/*for (auto u : _uniforms) {
-		std::cout << *u << "\n";
-	}*/
 
 	for (auto & buffer : buffers) {
 		glGenBuffers(1, &buffer->_id);
@@ -841,13 +837,6 @@ void GLDrawContext::set_uniform(std::string uniform_name, const float * data, ui
 	}
 	else if (uniform->_type == GL_FLOAT_MAT4) {
 		glUniformMatrix4fv(uniform->_loc, count, false, data);
-
-		/*if ( uniform_name == "anim_matrices[0]") {
-			for (int i=0;i<16;++i) {
-				std::cout << data[i] << " ; ";
-			}
-			std::cout << "\n";
-		}*/
 	}
 	else {
 		std::cerr << "GLDrawContext::set_uniform : " << uniform_name << " bad type = " << uniform->_type << "\n";
@@ -1012,8 +1001,6 @@ GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 
 	std::map<std::string, GLuint> progs;
 	for (auto & shader : shaders) {
-		//std::cout << shader << "\n";
-
 		std::string vert = shader + ".vert";
 		std::string frag = shader + ".frag";
 		std::string geom = shader + ".geom";
@@ -1031,8 +1018,6 @@ GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 
 		check_gl_error();
 	}
-
-	//check_gl_error();
 
 	for (json::iterator it = js["contexts"].begin(); it != js["contexts"].end(); ++it) {
 		auto & context_name = it.key();
@@ -1120,7 +1105,6 @@ GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 	}
 
 	_texture_pool = new GLDrawTexturePool();
-	//_texture_buffer_pool = new GLDrawTextureBufferPool();
 }
 
 
@@ -1130,7 +1114,6 @@ GLDrawManager::~GLDrawManager() {
 	}
 	_contexts.clear();
 	delete _texture_pool;
-	//delete _texture_buffer_pool;
 }
 
 

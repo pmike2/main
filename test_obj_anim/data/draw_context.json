@@ -11,22 +11,19 @@
 		"test" : {
 			"shader" : "anim_obj_rigid", "mode" : "GL_TRIANGLES",
 			"buffers" : [
-				{"instanced" : false, "attrs" : ["matrix_idx"]},
-				{"instanced" : false, "attrs" : ["model2world_matrix"]}
+				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
 			]
 		},
 		"test2" : {
 			"shader" : "anim_obj_rigid", "mode" : "GL_TRIANGLES",
 			"buffers" : [
-				{"instanced" : false, "attrs" : ["matrix_idx"]},
-				{"instanced" : false, "attrs" : ["model2world_matrix"]}
+				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
 			]
 		},
 		"test3" : {
 			"shader" : "anim_obj_weight", "mode" : "GL_TRIANGLES",
 			"buffers" : [
-				{"instanced" : false, "attrs" : ["matrix_idx", "matrix_weight"]},
-				{"instanced" : false, "attrs" : ["model2world_matrix"]}
+				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
 			]
 		}
 	}

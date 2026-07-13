@@ -49,13 +49,14 @@ add_library(lib_bbox STATIC ../libs/bbox.cpp ../libs/bbox.h)
 add_library(lib_geom STATIC ../libs/geom.cpp ../libs/geom.h)
 
 add_library(lib_obj_parser STATIC ../libs/obj_parser.cpp ../libs/obj_parser.h)
+add_library(lib_animated_obj STATIC ../libs/animated_obj.cpp ../libs/animated_obj.h)
 
 add_library(lib_test_obj_anim STATIC ./srcs/test_obj_anim.cpp ./srcs/test_obj_anim.h)
 
 add_executable(main ./srcs/main.cpp)
 
 set(EXT_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
-set(GENERIC_LIBS lib_repere lib_gl_utils lib_input_state lib_font lib_utile lib_gl_draw lib_fps_count lib_bbox_2d lib_polygon_2d lib_geom_2d lib_bbox lib_geom lib_triangulation lib_obj_parser)
+set(GENERIC_LIBS lib_repere lib_gl_utils lib_input_state lib_font lib_utile lib_gl_draw lib_fps_count lib_bbox_2d lib_polygon_2d lib_geom_2d lib_bbox lib_geom lib_triangulation lib_obj_parser lib_animated_obj)
 set(SPECIFIC_LIBS lib_test_obj_anim)
  
 target_link_libraries(main PUBLIC ${EXT_LIBS})
