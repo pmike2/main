@@ -1,6 +1,35 @@
 #include "test_obj_anim.h"
 
 
+TestInstance::TestInstance() {
+
+}
+
+
+TestInstance::TestInstance(AnimatedObjModel * model, pt_3d pos, time_point t, number angle, std::string action_name) :
+	AnimatedObjInstance(model, pos, t, glm::angleAxis(angle, pt_3d(0.0, 0.0, 1.0)), action_name)
+{
+	_angle = angle;
+	_direction.x = cos(_angle);
+	_direction.y = sin(_angle);
+	_idx_frame = rand_int(0, _model->_actions[_idx_action]->_frames.size() - 1);
+}
+
+
+TestInstance::~TestInstance() {
+
+}
+
+
+void TestInstance::anim_test(time_point t) {
+	anim(t);
+
+	set_pos(_position + 0.05 * pt_3d(_direction.x, _direction.y, 0.0));
+}
+
+
+// ------------------------------------------------------------------
+
 TestObjAnim::TestObjAnim() {
 
 }
@@ -13,6 +42,7 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 	
 	for (auto & model_name : model_names) {
 		AnimatedObjModel * model = new AnimatedObjModel("../data/" + model_name + ".json");
+		//std::cout << *model << "\n";
 		_gl_draw_manager->add_texture_buffer(model_name, "anim_buffer", GL_R32F, 0);
 		_gl_draw_manager->set_texture_buffer_data(model_name, "anim_buffer", model->_buffer_texture_data, model->_buffer_texture_data_size * sizeof(float));
 		// on a plus besoin de ça
@@ -31,22 +61,25 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 	//_instances[0]->_current_action = "walk";
 
 
-	for (uint i=0; i<1; ++i) {
+	uint n_instances = 2000;
+	for (uint i=0; i<n_instances; ++i) {
 		//int j = rand_int(0, model_names.size() - 1);
 		//std::string model_name = model_names[j];
-		std::string model_name = "test3";
-		//std::string model_name = "perso";
-
-		//uint idx_action = rand_int(0, get_model(model_name)->_actions.size() - 1);
-		uint idx_action = 0;
+		//std::string model_name = "test3";
+		std::string model_name = "perso";
 
 		//pt_3d pos = rand_pt_3d(pt_3d(-20.0), pt_3d(20.0));
-		pt_3d pos = pt_3d(float(i) * 1.0, float(i) * 1.0, 0.0);
+		//pt_3d pos = pt_3d(float(i) * 1.0, float(i) * 1.0, 0.0);
+		pt_3d pos = rand_pt_3d(-200.0, 200.0, -200.0, 200.0, 0.0, 0.0);
 
-		//quat q = rand_quat();
-		quat q = quat(1.0, 0.0, 0.0, 0.0);
+		number angle = rand_number(0.0, M_PI * 2.0);
 
-		_instances.push_back(new AnimatedObjInstance(get_model(model_name), pos, t, q, get_model(model_name)->_actions[idx_action]->_name));
+		//uint idx_action = rand_int(0, get_model(model_name)->_actions.size() - 1);
+		//uint idx_action = 0;
+		//std::string action_name = get_model(model_name)->_actions[idx_action]->_name;
+		std::string action_name = "walk";
+
+		_instances.push_back(new TestInstance(get_model(model_name), pos, t, angle, action_name));
 	}
 
 	for (auto & model : _models) {
@@ -84,7 +117,7 @@ void TestObjAnim::anim(time_point t) {
 	}
 
 	for (auto & instance : _instances) {
-		instance->anim(t);
+		instance->anim_test(t);
 	}
 
 	for (auto & model : _models) {
@@ -162,9 +195,6 @@ bool TestObjAnim::key_down(InputState * input_state, SDL_Keycode key, time_point
 
 	if (key == SDLK_SPACE) {
 		_paused = !_paused;
-
-		GLDrawContext * context = _gl_draw_manager->get_context("test3");
-		context->show_data();
 	}
 	return false;
 }

@@ -27,6 +27,9 @@ const uint N_MAX_FRAMES_PER_ACTION = 1000;
 // nombre max de sommets par mesh
 const uint N_MAX_VERTICES_PER_MESH = 1000;
 
+// nombre de milliseconds par frame; par défaut Blender fait du 24 fps ; 1000 / 24 ~= 42
+const uint N_MS_PER_FRAME = 42;
+
 
 // json -> mat4
 mat_4d parse_js_matrix(json js);
@@ -93,6 +96,7 @@ struct AnimatedObjObject {
 	AnimatedObjObject();
 	AnimatedObjObject(ObjObject * static_object);
 	~AnimatedObjObject();
+	friend std::ostream & operator << (std::ostream & os, AnimatedObjObject & obj);
 
 
 	ObjObject * _static_object;
@@ -120,6 +124,7 @@ struct AnimatedObjModel {
 	std::vector<AnimatedObjBone *> _bones;
 	std::vector<AnimatedObjAction *> _actions;
 	std::vector<AnimatedObjObject *> _objects;
+	mat_4d _mat_armature;
 
 	uint _buffer_texture_data_size;
 	float * _buffer_texture_data;

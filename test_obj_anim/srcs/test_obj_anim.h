@@ -18,8 +18,20 @@
 #include "animated_obj.h"
 
 
-const glm::vec3 LIGHT_POSITION(10.0f, 10.0f, 10.0f);
+const glm::vec3 LIGHT_POSITION(1000.0f, 0.0f, 0.0f);
 const glm::vec3 LIGHT_COLOR(1.0f);
+
+
+struct TestInstance : public AnimatedObjInstance {
+	TestInstance();
+	TestInstance(AnimatedObjModel * model, pt_3d pos, time_point t, number angle, std::string action_name = "");
+	~TestInstance();
+	void anim_test(time_point t);
+
+
+	number _angle;
+	pt_2d _direction;
+};
 
 
 struct TestObjAnim {
@@ -40,7 +52,7 @@ struct TestObjAnim {
 	GLDrawManager * _gl_draw_manager;
 	ViewSystem * _view_system;
 	std::vector<AnimatedObjModel *> _models;
-	std::vector<AnimatedObjInstance *> _instances;
+	std::vector<TestInstance *> _instances;
 	bool _paused;
 };
 

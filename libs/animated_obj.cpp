@@ -67,6 +67,7 @@ AnimatedObjTransform::~AnimatedObjTransform() {
 
 
 std::ostream & operator << (std::ostream & os, AnimatedObjTransform & transform) {
+	os << "bone = " << transform._bone->_name;
 	os << " ; mat_basis = " << glm::to_string(transform._mat_basis);
 	os << " ; mat_final = " << glm::to_string(transform._mat_final);
 	return os;
@@ -151,6 +152,20 @@ AnimatedObjObject::~AnimatedObjObject() {
 }
 
 
+std::ostream & operator << (std::ostream & os, AnimatedObjObject & obj) {
+	os << "static_object = " << obj._static_object->_name;
+	os << " ; bones = ";
+	uint n_vertices = obj._static_object->_vertices.size();
+	for (uint i=0; i<n_vertices * 4; ++i) {
+		if (obj._bones[i] != NULL) {
+			os << obj._bones[i]->_name << " -> " << obj._weights[i] << " ; ";
+		}
+	}
+	os << "\n";
+	return os;
+}
+
+
 // ------------------------------------------------
 AnimatedObjModel::AnimatedObjModel() {
 
@@ -183,6 +198,10 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 	json js = json::parse(ifs);
 	ifs.close();
 
+	// armature ; vaut mat4(1.0) si l'origine de l'armature est en (0,0,0)
+	_mat_armature = parse_js_matrix(js["armature"]);
+
+	// bones
 	for (json::iterator it = js["bones"].begin(); it != js["bones"].end(); ++it) {
 		std::string bone_name = it.key();
 
@@ -304,12 +323,21 @@ void AnimatedObjModel::compute_transform_final_matrix() {
 				// et composer avec toutes les transfos des parents
 				AnimatedObjBone * parent = bone->_parent; 
 				while (parent != NULL) {
-					transform->_mat_final = parent->_mat_local *
+					transform->_mat_final = 
+						//_mat_armature * 
+						parent->_mat_local *
 						frame->get_transform(parent)->_mat_basis *
 						glm::inverse(parent->_mat_local) *
-						transform->_mat_final;
-					parent = parent->_parent;
+						transform->_mat_final //*
+						//glm::inverse(_mat_armature)
+					;
+					
+						parent = parent->_parent;
 				}
+
+				// enfin on applique le changement de système lié à la matrice de l'armature
+				// (qui vaut mat4(1.0) si origine de l'armature en (0,0,0))
+				transform->_mat_final = _mat_armature * transform->_mat_final * glm::inverse(_mat_armature);
 			}
 		}
 	}
@@ -419,14 +447,30 @@ AnimatedObjBone * AnimatedObjModel::get_bone(std::string bone_name) {
 
 
 std::ostream & operator << (std::ostream & os, AnimatedObjModel & model) {
+	os << "name = " << model._name;
+	os << " ; buffer_texture_data_size = " << model._buffer_texture_data_size;
+	if (model._mode == ANIMATED_MODEL_RIGID) {
+		os << " ; mode = ANIMATED_MODEL_RIGID\n";
+	}
+	else if (model._mode == ANIMATED_MODEL_WEIGHT) {
+		os << " ; mode = ANIMATED_MODEL_WEIGHT\n";
+	}
+
 	os << "bones =\n";
 	for (auto & bone : model._bones) {
 		std::cout << *bone << "\n";
 	}
-	os << "\nactions =\n";
+	
+	/*os << "\nactions =\n";
 	for (auto & action : model._actions) {
 		std::cout << *action << "\n";
+	}*/
+	
+	os << "\nobjects =\n";
+	for (auto & obj : model._objects) {
+		std::cout << *obj << "\n";
 	}
+	
 	return os;
 }
 
@@ -454,7 +498,7 @@ AnimatedObjInstance::~AnimatedObjInstance() {
 
 void AnimatedObjInstance::anim(time_point t) {
 	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
-	if (dt > 30) {
+	if (dt > N_MS_PER_FRAME) {
 		_last_anim_t = t;
 		_idx_frame++;
 		if (_idx_frame >= _model->_actions[_idx_action]->_frames.size()) {

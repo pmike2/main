@@ -3,10 +3,9 @@ Script d'export d'une animation Blender.
 
 2 modes (weight ou rigid) à choisir via la checkbox au moment de l'export.
 JSON résultant à utiliser dans animated_obj.h
-"""
 
-# TODO : forcer la sélection de l'armature au début.
-# sinon on a une erreur
+voir : https://blender.stackexchange.com/questions/44637/how-can-i-manually-calculate-bpy-types-posebone-matrix-using-blenders-python-ap/121495
+"""
 
 import json
 
@@ -16,6 +15,11 @@ import bpy
 from bpy_extras.io_utils import ExportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
+
+
+# nom par défaut de l'armature
+# TODO : gérer plusieurs armatures ou le fait que l'armature ne s'appelle pas Armature ?
+ARMATURE_DEFAULT_NAME = "Armature"
 
 
 # renvoie les valeurs de la matrice m sous forme de liste de rows
@@ -28,7 +32,13 @@ def matrix2list(m):
 
 def export_weight(filepath):
     """Export de l'animation avec les poids."""
-    data = {"bones" : {}, "objects" : [], "actions" : {}}
+    data = {"armature" : [], "bones" : {}, "actions" : {}}
+
+    # on sélectionne l'armature, sinon erreur au moment de récupérer les bones
+    bpy.context.view_layer.objects.active = bpy.data.objects[ARMATURE_DEFAULT_NAME]
+
+    # matrice de transfo de l'armature ( = mat4(1.0) si l'origine de l'armature est en (0,0,0))
+    data["armature"] = matrix2list(bpy.data.objects[ARMATURE_DEFAULT_NAME].matrix_world)
     
     l_bones = bpy.context.object.pose.bones
     
@@ -45,7 +55,7 @@ def export_weight(filepath):
         # pour chaque objet
         weights = {}
         for obj in bpy.data.objects:
-            if obj.name == "Armature":
+            if obj.name == ARMATURE_DEFAULT_NAME:
                 continue
             
             weights[obj.name] = {}
@@ -123,7 +133,11 @@ def export_weight(filepath):
 
 def export_rigid(filepath):
     """Export de l'animation en rigide."""
-    data = {"bones" : {}, "objects" : [], "actions" : {}}
+    data = {"armature" : [], "bones" : {}, "actions" : {}, "objects" : []}
+
+    bpy.context.view_layer.objects.active = bpy.data.objects[ARMATURE_DEFAULT_NAME]
+
+    data["armature"] = matrix2list(bpy.data.objects[ARMATURE_DEFAULT_NAME].matrix_world)
     
     l_bones = bpy.context.object.pose.bones
 
@@ -171,7 +185,7 @@ def export_rigid(filepath):
     # c'est quelque chose qu'il faut avoir fait dans le projet Blender
     l_objects = bpy.data.objects
     for obj_name, obj in l_objects.items():
-        if obj_name == "Armature":
+        if obj_name == ARMATURE_DEFAULT_NAME:
             continue
         parent_bone_name = obj.parent_bone
         

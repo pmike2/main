@@ -91,3 +91,7 @@ https://www.youtube.com/watch?v=i1GrQJ1u6IE
  -> permet de séparer le mirroir 
  - puis assigner les sommets du mirroir à un nouvel objet
  
+ -----------------------
+ Pour afficher l'orientation des faces, en mode edit , overlays, 'Face orientation'
+ Si une face est rouge c'est mauvais, la sélectionner, puis menu Mesh / Normals / Flip
+ 
