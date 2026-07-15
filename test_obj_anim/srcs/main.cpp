@@ -143,7 +143,7 @@ void init_data() {
 	ScreenGL * screengl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	
 	view_system = new ViewSystem(gl_draw_manager, screengl);
-	view_system->set(pt_3d(0.0, 0.0, 0.0), M_PI * 0.25, M_PI * 0.25, 150.0);
+	view_system->set(pt_3d(0.0, 0.0, 0.0), M_PI * 0.25, M_PI * 0.25, 100.0);
 
 	input_state = new InputState();
 
@@ -164,6 +164,7 @@ void draw() {
 
 
 void anim(time_point t) {
+	view_system->anim(t);
 	test_obj_anim->anim(t);
 }
 

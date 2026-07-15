@@ -1,4 +1,30 @@
 {
+    "armature": [
+        [
+            1.0,
+            0.0,
+            0.0,
+            0.0
+        ],
+        [
+            0.0,
+            1.0,
+            0.0,
+            0.0
+        ],
+        [
+            0.0,
+            0.0,
+            1.0,
+            0.0
+        ],
+        [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+        ]
+    ],
     "bones": {
         "torso": {
             "parent": null,
@@ -146,28 +172,6 @@
             ]
         }
     },
-    "objects": [
-        {
-            "name": "hat",
-            "bone": "hat"
-        },
-        {
-            "name": "head",
-            "bone": "head"
-        },
-        {
-            "name": "left_leg",
-            "bone": "leg.R"
-        },
-        {
-            "name": "right_leg",
-            "bone": "leg.L"
-        },
-        {
-            "name": "torso",
-            "bone": "torso"
-        }
-    ],
     "actions": {
         "walk": [
             {
@@ -8551,5 +8555,28 @@
                 }
             }
         ]
-    }
+    },
+    "objects": [
+        {
+            "name": "hat",
+            "bone": "hat"
+        },
+        {
+            "name": "head",
+            "bone": "head"
+        },
+        {
+            "name": "left_leg",
+            "bone": "leg.R"
+        },
+        {
+            "name": "right_leg",
+            "bone": "leg.L"
+        },
+        {
+            "name": "torso",
+            "bone": "torso"
+        }
+    ],
+    "fps": 24
 }

@@ -137,13 +137,13 @@ AnimatedObjObject::AnimatedObjObject() {
 
 
 AnimatedObjObject::AnimatedObjObject(ObjObject * static_object) : _static_object(static_object) {
-	uint n_vertices = _static_object->_vertices.size();
+	/*uint n_vertices = _static_object->_vertices.size();
 	_bones = new AnimatedObjBone *[n_vertices * 4];
 	_weights = new number[n_vertices * 4];
 	for (uint i=0; i<n_vertices * 4; ++i) {
 		_bones[i] = NULL;
 		_weights[i] = -1.0;
-	}
+	}*/
 }
 
 
@@ -152,16 +152,31 @@ AnimatedObjObject::~AnimatedObjObject() {
 }
 
 
+void AnimatedObjObject::sort_per_weight() {
+	for (auto & it : _weights_per_vertex) {
+		if (it.second.size() > 4) {
+			std::cerr << "objet " << _static_object->_name << " : trop de bones (" << it.second.size() << " > 4), on ne garde que les 4 plus influents\n";
+			std::sort(it.second.begin(), it.second.end(), 
+				[](std::pair<AnimatedObjBone *, number> a, std::pair<AnimatedObjBone *, number> b) {return a.second > b.second;});
+			it.second.erase(it.second.begin() + 4, it.second.begin() + it.second.size());
+
+			// on ajuste le dernier poids pour que la somme fasse 4; est-ce nécessaire ?
+			it.second[3].second = 1.0 - (it.second[0].second + it.second[1].second + it.second[2].second);
+		}
+	}
+}
+
+
 std::ostream & operator << (std::ostream & os, AnimatedObjObject & obj) {
 	os << "static_object = " << obj._static_object->_name;
-	os << " ; bones = ";
+	/*os << " ; bones = ";
 	uint n_vertices = obj._static_object->_vertices.size();
 	for (uint i=0; i<n_vertices * 4; ++i) {
 		if (obj._bones[i] != NULL) {
 			os << obj._bones[i]->_name << " -> " << obj._weights[i] << " ; ";
 		}
 	}
-	os << "\n";
+	os << "\n";*/
 	return os;
 }
 
@@ -198,6 +213,15 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 	json js = json::parse(ifs);
 	ifs.close();
 
+	// fps
+	if (js["fps"].is_null()) {
+		_fps = 24.0; // valeur par défaut de Blender
+	}
+	else {
+		_fps = js["fps"];
+	}
+	_n_ms_per_frame = uint(1000.0 / _fps);
+
 	// armature ; vaut mat4(1.0) si l'origine de l'armature est en (0,0,0)
 	_mat_armature = parse_js_matrix(js["armature"]);
 
@@ -222,26 +246,16 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 			_mode = ANIMATED_MODEL_WEIGHT;
 			for (json::iterator it_weight = it.value()["weights"].begin(); it_weight != it.value()["weights"].end(); ++it_weight) {
 				std::string obj_name = it_weight.key();
+				AnimatedObjObject * object = get_animated_object(obj_name);
 
 				for (json::iterator it_weight_2 = it_weight.value().begin(); it_weight_2 != it_weight.value().end(); ++it_weight_2) {
 					uint vertex_idx = std::stoi(it_weight_2.key());
 					number weight = it_weight_2.value();
 
-					bool too_many_bones = true;
-					for (uint i=0; i<4; ++i) {
-						uint idx = 4 * vertex_idx + i;
-						AnimatedObjObject * object = get_animated_object(obj_name);
-						
-						if (object->_bones[idx] == NULL) {
-							object->_bones[idx] = bone;
-							object->_weights[idx] = weight;
-							too_many_bones = false;
-							break;
-						}
+					if (object->_weights_per_vertex.count(vertex_idx) == 0) {
+						object->_weights_per_vertex[vertex_idx] = std::vector<std::pair<AnimatedObjBone *, number> >{};
 					}
-					if (too_many_bones) {
-						std::cerr << "trop de bones\n";
-					}
+					object->_weights_per_vertex[vertex_idx].push_back(std::make_pair(bone, weight));
 				}
 			}
 		}
@@ -290,6 +304,11 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 		}
 	}
 
+	// tri des poids les plus influents (si > 4)
+	for (auto & object : _objects) {
+		object->sort_per_weight();
+	}
+
 	compute_transform_final_matrix();
 	compute_buffer_texture_data();
 }
@@ -324,12 +343,10 @@ void AnimatedObjModel::compute_transform_final_matrix() {
 				AnimatedObjBone * parent = bone->_parent; 
 				while (parent != NULL) {
 					transform->_mat_final = 
-						//_mat_armature * 
 						parent->_mat_local *
 						frame->get_transform(parent)->_mat_basis *
 						glm::inverse(parent->_mat_local) *
-						transform->_mat_final //*
-						//glm::inverse(_mat_armature)
+						transform->_mat_final
 					;
 					
 						parent = parent->_parent;
@@ -364,21 +381,19 @@ void AnimatedObjModel::compute_buffer_texture_data() {
 					ObjObject * object = o->_static_object;
 					AnimatedObjBone * bone = o->_parent_bone;
 					AnimatedObjTransform * transform = frame->get_transform(bone);
+					const float * mat_data = glm::value_ptr(glm::mat4(transform->_mat_final));
 
 					for (auto & face : object->_faces) {
 						for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
 							// on retrouve ce calcul d'idx dans le vertex shader, avec idx_vertex remplacé par gl_VertexID
-							uint idx = N_MAX_FRAMES_PER_ACTION * N_MAX_VERTICES_PER_MESH * idx_action + N_MAX_VERTICES_PER_MESH * idx_frame + idx_vertex;
+							uint idx_buffer_texture = N_MAX_FRAMES_PER_ACTION * N_MAX_VERTICES_PER_MESH * idx_action + N_MAX_VERTICES_PER_MESH * idx_frame + idx_vertex;
+							float * ptr = _buffer_texture_data + 16 * idx_buffer_texture;
+							std::memcpy(ptr, mat_data, 16 * sizeof(float));
 
 							idx_vertex++;
 							if (idx_vertex >= N_MAX_VERTICES_PER_MESH) {
 								std::cerr << _name << " : dépassement de N_MAX_VERTICES_PER_MESH = " << N_MAX_VERTICES_PER_MESH << "\n";
 								return;
-							}
-
-							const number * mat_data = (const number *) glm::value_ptr(transform->_mat_final);
-							for (uint i=0; i<16; ++i) {
-								_buffer_texture_data[16 * idx + i] = float(mat_data[i]);
 							}
 						}
 					}
@@ -393,29 +408,32 @@ void AnimatedObjModel::compute_buffer_texture_data() {
 					
 					for (auto & face : object->_faces) {
 						for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
-							uint idx = N_MAX_FRAMES_PER_ACTION * N_MAX_VERTICES_PER_MESH * idx_action + N_MAX_VERTICES_PER_MESH * idx_frame + idx_vertex;
+							mat_4d m;
+							if (o->_weights_per_vertex[face->_vertices_idx[idx_pt]].size() > 0) {
+								m = mat_4d(0.0);
+								for (int i=0; i<4; ++i) {
+									if (o->_weights_per_vertex[face->_vertices_idx[idx_pt]].size() - 1 < i) {
+										break;
+									}
+									AnimatedObjBone * bone = o->_weights_per_vertex[face->_vertices_idx[idx_pt]][i].first;
+									number weight = o->_weights_per_vertex[face->_vertices_idx[idx_pt]][i].second;
+									AnimatedObjTransform * transform = frame->get_transform(bone);
+									m += weight * transform->_mat_final;
+								}
+							}
+							else {
+								m = mat_4d(1.0);
+							}
+
+							const float * mat_data = glm::value_ptr(glm::mat4(m));
+							uint idx_buffer_texture = N_MAX_FRAMES_PER_ACTION * N_MAX_VERTICES_PER_MESH * idx_action + N_MAX_VERTICES_PER_MESH * idx_frame + idx_vertex;
+							float * ptr = _buffer_texture_data + 16 * idx_buffer_texture;
+							std::memcpy(ptr, mat_data, 16 * sizeof(float));
 
 							idx_vertex++;
 							if (idx_vertex >= N_MAX_VERTICES_PER_MESH) {
 								std::cerr << _name << " : dépassement de N_MAX_VERTICES_PER_MESH = " << N_MAX_VERTICES_PER_MESH << "\n";
 								return;
-							}
-
-							mat_4d m = mat_4d(0.0);
-							for (int i=0; i<4; ++i) {
-								AnimatedObjBone * bone = o->_bones[4 * face->_vertices_idx[idx_pt] + i];
-								number weight = o->_weights[4 * face->_vertices_idx[idx_pt] + i];
-								if (bone != NULL) {
-									AnimatedObjTransform * transform = frame->get_transform(bone);
-									m += weight * transform->_mat_final;
-								}
-								else {
-									break;
-								}
-							}
-							const number * mat_data = (const number *) glm::value_ptr(m);
-							for (uint i=0; i<16; ++i) {
-								_buffer_texture_data[16 * idx + i] = float(mat_data[i]);
 							}
 						}
 					}
@@ -498,7 +516,7 @@ AnimatedObjInstance::~AnimatedObjInstance() {
 
 void AnimatedObjInstance::anim(time_point t) {
 	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
-	if (dt > N_MS_PER_FRAME) {
+	if (dt > _model->_n_ms_per_frame) {
 		_last_anim_t = t;
 		_idx_frame++;
 		if (_idx_frame >= _model->_actions[_idx_action]->_frames.size()) {

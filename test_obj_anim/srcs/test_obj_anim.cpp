@@ -12,7 +12,8 @@ TestInstance::TestInstance(AnimatedObjModel * model, pt_3d pos, time_point t, nu
 	_angle = angle;
 	_direction.x = cos(_angle);
 	_direction.y = sin(_angle);
-	_idx_frame = rand_int(0, _model->_actions[_idx_action]->_frames.size() - 1);
+	//_idx_frame = rand_int(0, _model->_actions[_idx_action]->_frames.size() - 1);
+	_idx_frame = 0;
 }
 
 
@@ -24,7 +25,7 @@ TestInstance::~TestInstance() {
 void TestInstance::anim_test(time_point t) {
 	anim(t);
 
-	set_pos(_position + 0.05 * pt_3d(_direction.x, _direction.y, 0.0));
+	//set_pos(_position + 0.05 * pt_3d(_direction.x, _direction.y, 0.0));
 }
 
 
@@ -38,7 +39,8 @@ TestObjAnim::TestObjAnim() {
 TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _paused(false)
 {
-	std::vector<std::string> model_names {"test", "test2", "test3", "perso"};
+	//std::vector<std::string> model_names {"test", "test2", "test3", "perso", "perso2"};
+	std::vector<std::string> model_names {"perso2"};
 	
 	for (auto & model_name : model_names) {
 		AnimatedObjModel * model = new AnimatedObjModel("../data/" + model_name + ".json");
@@ -61,23 +63,25 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 	//_instances[0]->_current_action = "walk";
 
 
-	uint n_instances = 2000;
+	uint n_instances = 1;
 	for (uint i=0; i<n_instances; ++i) {
 		//int j = rand_int(0, model_names.size() - 1);
 		//std::string model_name = model_names[j];
-		//std::string model_name = "test3";
-		std::string model_name = "perso";
+		std::string model_name = "perso2";
+		//std::string model_name = "perso";
 
+		pt_3d pos(0.0);
 		//pt_3d pos = rand_pt_3d(pt_3d(-20.0), pt_3d(20.0));
 		//pt_3d pos = pt_3d(float(i) * 1.0, float(i) * 1.0, 0.0);
-		pt_3d pos = rand_pt_3d(-200.0, 200.0, -200.0, 200.0, 0.0, 0.0);
+		//pt_3d pos = rand_pt_3d(-200.0, 200.0, -200.0, 200.0, 0.0, 0.0);
 
-		number angle = rand_number(0.0, M_PI * 2.0);
+		//number angle = rand_number(0.0, M_PI * 2.0);
+		number angle = 0.0;
 
 		//uint idx_action = rand_int(0, get_model(model_name)->_actions.size() - 1);
-		//uint idx_action = 0;
-		//std::string action_name = get_model(model_name)->_actions[idx_action]->_name;
-		std::string action_name = "walk";
+		uint idx_action = 0;
+		std::string action_name = get_model(model_name)->_actions[idx_action]->_name;
+		//std::string action_name = "walk";
 
 		_instances.push_back(new TestInstance(get_model(model_name), pos, t, angle, action_name));
 	}

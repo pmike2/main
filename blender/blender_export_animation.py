@@ -32,7 +32,7 @@ def matrix2list(m):
 
 def export_weight(filepath):
     """Export de l'animation avec les poids."""
-    data = {"armature" : [], "bones" : {}, "actions" : {}}
+    data = {"armature" : [], "bones" : {}, "actions" : {}, "fps" : bpy.context.scene.render.fps}
 
     # on sélectionne l'armature, sinon erreur au moment de récupérer les bones
     bpy.context.view_layer.objects.active = bpy.data.objects[ARMATURE_DEFAULT_NAME]
@@ -133,7 +133,7 @@ def export_weight(filepath):
 
 def export_rigid(filepath):
     """Export de l'animation en rigide."""
-    data = {"armature" : [], "bones" : {}, "actions" : {}, "objects" : []}
+    data = {"armature" : [], "bones" : {}, "actions" : {}, "objects" : [], "fps" : bpy.context.scene.render.fps}
 
     bpy.context.view_layer.objects.active = bpy.data.objects[ARMATURE_DEFAULT_NAME]
 

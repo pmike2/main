@@ -1,7 +1,7 @@
 #version 410
 
-const int N_MAX_FRAMES_PER_ACTION = 1000;
-const int N_MAX_VERTICES = 1000;
+const int N_MAX_FRAMES_PER_ACTION = 50;
+const int N_MAX_VERTICES = 2000;
 
 uniform mat4 world2clip_matrix;
 uniform samplerBuffer anim_buffer;
@@ -26,6 +26,9 @@ void main(void) {
 		texelFetch(anim_buffer, idx + 8).r, texelFetch(anim_buffer, idx + 9).r, texelFetch(anim_buffer, idx + 10).r, texelFetch(anim_buffer, idx + 11).r,
 		texelFetch(anim_buffer, idx + 12).r, texelFetch(anim_buffer, idx + 13).r, texelFetch(anim_buffer, idx + 14).r, texelFetch(anim_buffer, idx + 15).r
 	);
+
+	//anim_matrix = mat4(1.0);
+
 	mat4 m = model2world_matrix * anim_matrix;
 	vec4 p = m * vec4(position_in, 1.0);
 

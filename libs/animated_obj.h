@@ -3,6 +3,8 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <utility>
 #include <filesystem>
 
 #include "json.hpp"
@@ -21,14 +23,11 @@ using json = nlohmann::json;
 enum ANIMATED_MODEL_MODE {ANIMATED_MODEL_RIGID, ANIMATED_MODEL_WEIGHT};
 
 
-// on doit retrouver ces valeurs dans le vertex shader
+// !!! on doit retrouver ces valeurs dans le vertex shader !!!
 // nombre max de frames par action
-const uint N_MAX_FRAMES_PER_ACTION = 1000;
+const uint N_MAX_FRAMES_PER_ACTION = 50;
 // nombre max de sommets par mesh
-const uint N_MAX_VERTICES_PER_MESH = 1000;
-
-// nombre de milliseconds par frame; par défaut Blender fait du 24 fps ; 1000 / 24 ~= 42
-const uint N_MS_PER_FRAME = 42;
+const uint N_MAX_VERTICES_PER_MESH = 2000;
 
 
 // json -> mat4
@@ -72,7 +71,7 @@ struct AnimatedObjFrame {
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjFrame & frame);
 
 
-	std::vector<AnimatedObjTransform *> _transforms;
+	std::vector<AnimatedObjTransform *> _transforms; // transformations
 };
 
 
@@ -84,8 +83,8 @@ struct AnimatedObjAction {
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjAction & action);
 
 
-	std::string _name;
-	std::vector<AnimatedObjFrame *> _frames;
+	std::string _name; // nom
+	std::vector<AnimatedObjFrame *> _frames; // frames
 };
 
 
@@ -96,13 +95,13 @@ struct AnimatedObjObject {
 	AnimatedObjObject();
 	AnimatedObjObject(ObjObject * static_object);
 	~AnimatedObjObject();
+	void sort_per_weight(); // tri des poids
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjObject & obj);
 
 
 	ObjObject * _static_object;
-	AnimatedObjBone ** _bones; // utilisé dans le cas ANIMATED_MODEL_WEIGHT
-	number * _weights; // utilisé dans le cas ANIMATED_MODEL_WEIGHT
 	AnimatedObjBone * _parent_bone; // utilisé dans le cas ANIMATED_MODEL_RIGID
+	std::map<number, std::vector<std::pair<AnimatedObjBone *, number> > > _weights_per_vertex; // utilisé dans le cas ANIMATED_MODEL_WEIGHT
 };
 
 
@@ -118,16 +117,17 @@ struct AnimatedObjModel {
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjModel & obj);
 
 
-	std::string _name;
-	ANIMATED_MODEL_MODE _mode;
-	ObjData * _obj_data;
-	std::vector<AnimatedObjBone *> _bones;
-	std::vector<AnimatedObjAction *> _actions;
-	std::vector<AnimatedObjObject *> _objects;
-	mat_4d _mat_armature;
-
-	uint _buffer_texture_data_size;
-	float * _buffer_texture_data;
+	std::string _name; // nom
+	number _fps; // FPS des animations
+	uint _n_ms_per_frame; // nombre de frames par seconde
+	ANIMATED_MODEL_MODE _mode; // mode = rigide ou avec poids
+	ObjData * _obj_data; // .obj associé
+	std::vector<AnimatedObjBone *> _bones; // bones
+	std::vector<AnimatedObjAction *> _actions; // actions
+	std::vector<AnimatedObjObject *> _objects; // objets
+	mat_4d _mat_armature; // matrice de transformation liée à l'armature
+	uint _buffer_texture_data_size; // taille du buffer texture
+	float * _buffer_texture_data; // buffer texture où sont stockés toutes les matrices de transfo
 };
 
 
@@ -141,10 +141,10 @@ struct AnimatedObjInstance : public InstancePosRot {
 	std::string get_action();
 
 
-	AnimatedObjModel * _model;
-	uint _idx_action;
-	uint _idx_frame;
-	time_point _last_anim_t;
+	AnimatedObjModel * _model; // modèle
+	uint _idx_action; // idx action courante
+	uint _idx_frame; // idx frame courant
+	time_point _last_anim_t; // dernier temps d'animation
 };
 
 

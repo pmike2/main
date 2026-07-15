@@ -5,6 +5,9 @@ Strategy : Génération des .obj dans Blender :
 - Orienter vers x positif puis lors de l'export : choisir Forward Axis = Y, Up Axis = Z
 - cocher Triangulated Mesh
 
+!!!!
+Faire les modèles avec -Y comme direction où le perso regarde, sinon les symétries des bones ne fonctionnent pas
+
 Blender :
 s (scale), r(rotate), g(translate) puis x, y, z pour faire selon x , y ou z
 
@@ -94,4 +97,22 @@ https://www.youtube.com/watch?v=i1GrQJ1u6IE
  -----------------------
  Pour afficher l'orientation des faces, en mode edit , overlays, 'Face orientation'
  Si une face est rouge c'est mauvais, la sélectionner, puis menu Mesh / Normals / Flip
+ 
+
+ -------------
+ n : affiche onglet à droite avec infos de transformation
+
+ alt + a : déselectionne tout
+
+ cmd + right click : lasso de sélection
+
+ alt + z : x-ray mode
+
+ h / alt + h : hide / unhide sélection
+
+ sélection sommets / click droit / subdivide -> subdivision
+
+ modifier shrinkwrap permet de projeter des sommets d'un objet sur un autre objet, on peut également choisir un vertex group
+
+ cmd + a en object mode -> apply all transforms : permet d'appliquer les transformations d'un objet à ses vertices et de reinit les transfos de l'objet
  

@@ -249,7 +249,6 @@ bool ViewSystem::mouse_motion(InputState * input_state, time_point t) {
 
 
 bool ViewSystem::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
-	
 	// TODO : à revoir
 	// changement de type de vue
 	/*if (key== SDLK_v) {
