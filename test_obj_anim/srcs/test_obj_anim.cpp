@@ -24,6 +24,7 @@ TestInstance::~TestInstance() {
 
 void TestInstance::anim_test(time_point t) {
 	anim(t);
+	//std::cout << _idx_action << " ; " << _idx_frame << "\n";
 
 	//set_pos(_position + 0.05 * pt_3d(_direction.x, _direction.y, 0.0));
 }
@@ -39,22 +40,42 @@ TestObjAnim::TestObjAnim() {
 TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _paused(false)
 {
-	//std::vector<std::string> model_names {"test", "test2", "test3", "perso", "perso2"};
-	std::vector<std::string> model_names {"perso2"};
+	std::vector<std::string> model_names {"test", "test2", "test3", "perso", "perso2"};
+	//std::vector<std::string> model_names {"perso"};
+
+	//_gl_draw_manager->set_verbose(true);
 	
 	for (auto & model_name : model_names) {
 		AnimatedObjModel * model = new AnimatedObjModel("../data/" + model_name + ".json");
 		//std::cout << *model << "\n";
+
+		GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
+
 		_gl_draw_manager->add_texture_buffer(model_name, "anim_buffer", GL_R32F, 0);
 		_gl_draw_manager->set_texture_buffer_data(model_name, "anim_buffer", model->_buffer_texture_data, model->_buffer_texture_data_size * sizeof(float));
 		// on a plus besoin de ça
 		delete model->_buffer_texture_data;
+		
+		_gl_draw_manager->add_texture(
+			context->_name, "idx_texture", GL_TEXTURE_2D, 1, 
+				std::map<GLenum, int>{
+				{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
+				{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
+				},
+			GL_RED, glm::uvec3(IDX_TEXTURE_DATA_SIZE, IDX_TEXTURE_DATA_SIZE, 0), GL_RED, GL_FLOAT
+		);
+		_gl_draw_manager->set_texture_data(context->_name, "idx_texture", model->_idx_texture_data);
+
+		//_gl_draw_manager->_texture_pool->get_texture(context->_name, "idx_texture")->export2pgm("../data/test.pgm");
+		//_gl_draw_manager->_texture_pool->get_texture(context->_name, "idx_texture")->print_data();
+		
 		_models.push_back(model);
 
-		//GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
 		//std::cout << *context << "\n";
 	}
-	
+
+	//std::cout << *_gl_draw_manager << "\n";
+
 	//_instances.push_back(new AnimatedObjInstance(get_model("test"), pt_3d(0.0, 0.0, 0.0), t));
 	//_instances.push_back(new AnimatedObjInstance(get_model("test"), pt_3d(5.0, 0.0, 0.0), t));
 	//_instances.push_back(new AnimatedObjInstance(get_model("test2"), pt_3d(0.0, 0.0, 5.0), t));
@@ -79,9 +100,9 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 		number angle = 0.0;
 
 		//uint idx_action = rand_int(0, get_model(model_name)->_actions.size() - 1);
-		uint idx_action = 0;
-		std::string action_name = get_model(model_name)->_actions[idx_action]->_name;
-		//std::string action_name = "walk";
+		//uint idx_action = 0;
+		//std::string action_name = get_model(model_name)->_actions[idx_action]->_name;
+		std::string action_name = "walk";
 
 		_instances.push_back(new TestInstance(get_model(model_name), pos, t, angle, action_name));
 	}

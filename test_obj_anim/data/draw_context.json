@@ -9,31 +9,31 @@
 		"font3d" : {"shader" : "font3d", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 
 		"test" : {
-			"shader" : "anim_obj_rigid", "mode" : "GL_TRIANGLES",
+			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
 			]
 		},
 		"test2" : {
-			"shader" : "anim_obj_rigid", "mode" : "GL_TRIANGLES",
+			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
 			]
 		},
 		"test3" : {
-			"shader" : "anim_obj_weight", "mode" : "GL_TRIANGLES",
+			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
 			]
 		},
 		"perso" : {
-			"shader" : "anim_obj_weight", "mode" : "GL_TRIANGLES",
+			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
 			]
 		},
 		"perso2" : {
-			"shader" : "anim_obj_weight", "mode" : "GL_TRIANGLES",
+			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
 			]

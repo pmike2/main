@@ -17,6 +17,7 @@ const std::string NO_PNG= "NO_PNG";
 
 struct GLDrawContextUniform;
 struct GLDrawContextAttrib;
+struct GLDrawContext;
 
 
 void _check_gl_error(const char * file, int line);
@@ -33,9 +34,10 @@ struct GLDrawTexture {
 	GLDrawTexture();
 	GLDrawTexture(std::string name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
 	~GLDrawTexture();
-	void set_data(void * data, uint depth, int width = -1, int height = -1);
+	void set_data(void * data, int depth = -1, int width = -1, int height = -1);
 	void set_data(std::vector<std::string> pngs);
 	void export2pgm(std::string pgm_path);
+	void print_data();
 	friend std::ostream & operator << (std::ostream & os, const GLDrawTexture & tex);
 
 
@@ -51,22 +53,25 @@ struct GLDrawTexture {
 };
 
 
-// ===============================================
-// TODO : cf GLDrawTextureBuffer, un pool est-t'il vraiment utile ?
-// il vaudrait peut-être mieux dans drawmanager::add_texture et set_texture_data préciser le Context, comme pour GLDrawTextureBuffer
-// ===============================================
-
 struct GLDrawTexturePool {
 	GLDrawTexturePool();
 	~GLDrawTexturePool();
-	GLDrawTexture * get_texture(std::string name);
+	GLDrawTexture * get_texture(std::string texture_name);
+	GLDrawTexture * get_texture(std::string context_name, std::string texture_name);
 	GLDrawTexture * add_texture(std::string name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
+	GLDrawTexture * add_texture(std::string context_name, std::string name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
+	void add_texture2context(std::string context_name, GLDrawTexture * texture);
 	friend std::ostream & operator << (std::ostream & os, const GLDrawTexturePool & texpool);
 
 
 	std::vector<GLDrawTexture *> _textures;
+	std::map<std::string, std::vector<GLDrawTexture *> > _context2textures;
 };
 
+
+// ===============================================
+// TODO : faire un pool de texture buffer comme GLDrawTexturePool 
+// ===============================================
 
 struct GLDrawTextureBuffer {
 	GLDrawTextureBuffer();
@@ -127,10 +132,9 @@ struct GLDrawContextBuffer {
 };
 
 
-class GLDrawContext {
-public:
+struct GLDrawContext {
 	GLDrawContext();
-	GLDrawContext(std::string name, GLuint prog, GLenum draw_mode, std::vector<GLDrawContextBuffer *> buffers, bool active = true);
+	GLDrawContext(std::string name, GLuint prog, GLenum draw_mode, std::vector<GLDrawContextBuffer *> buffers, GLDrawTexturePool * texture_pool, bool active = true);
 	~GLDrawContext();
 	void set_data(float * data, uint idx_buffer = 0);
 	void set_subdata(float * data, uint offset, uint size, uint idx_buffer = 0);
@@ -156,31 +160,38 @@ public:
 	GLuint _vao;
 	std::vector<GLDrawContextUniform *> _uniforms;
 	std::vector<GLDrawContextBuffer *> _buffers;
-	std::vector<GLDrawTexture *> _textures;
+	//std::vector<GLDrawTexture *> _textures;
 	std::vector<GLDrawTextureBuffer *> _texture_buffers;
 	uint _n_pts;
 	uint _n_instances;
 	bool _active;
 	GLenum _draw_mode;
 	bool _verbose;
+	GLDrawTexturePool * _texture_pool;
 };
 
 
-class GLDrawManager {
-public:
+struct GLDrawManager {
 	GLDrawManager();
 	GLDrawManager(std::string json_path);
 	~GLDrawManager();
+	
 	GLDrawContext * get_context(std::string context_name);
 	void set_data(std::string context_name, uint n_pts, float * data);
 	void set_active(std::string context_name);
 	void set_inactive(std::string context_name);
 	void switch_active(std::string context_name);
-	void add_texture(std::string name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
-	void set_texture_data(std::string name, void * data, uint depth, int width = -1, int height = -1);
-	void set_texture_data(std::string name, std::vector<std::string> pngs);
+	
+	void add_texture(std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
+	void add_texture(std::string context_name, std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
+	void set_texture_data(std::string texture_name, void * data, int depth = -1, int width = -1, int height = -1);
+	void set_texture_data(std::string context_name, std::string texture_name, void * data, int depth = -1, int width = -1, int height = -1);
+	void set_texture_data(std::string texture_name, std::vector<std::string> pngs);
+	void set_texture_data(std::string context_name, std::string texture_name, std::vector<std::string> pngs);
+
 	void add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint offset);
 	void set_texture_buffer_data(std::string context_name, std::string texture_buffer_name, void * data, uint size);
+	
 	void set_verbose(bool verbose);
 	friend std::ostream & operator << (std::ostream & os, const GLDrawManager & gdm);
 

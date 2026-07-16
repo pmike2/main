@@ -280,14 +280,14 @@ GLDrawTexture::~GLDrawTexture() {
 
 }
 
-void GLDrawTexture::set_data(void * data, uint depth, int width, int height) {
+void GLDrawTexture::set_data(void * data, int depth, int width, int height) {
 	if (width < 0) {
 		width = _size[0];
 	}
 	if (height < 0) {
 		height = _size[1];
 	}
-	
+
 	glActiveTexture(GL_TEXTURE0 + _offset);
 	glBindTexture(_target, _id);
 	glActiveTexture(0);
@@ -296,8 +296,7 @@ void GLDrawTexture::set_data(void * data, uint depth, int width, int height) {
 		glTexSubImage3D(_target, 0, 0, 0, depth, width, height, 1, _format, _type, data);
 	}
 	else if (_target == GL_TEXTURE_2D) {
-		// TODO
-		std::cerr << "GLDrawTexture::GLDrawTexture : TODO !! _target = GL_TEXTURE_2D\n";
+		glTexSubImage2D(_target, 0, 0, 0, width, height, _format, _type, data);
 	}
 	else {
 		std::cerr << "GLDrawTexture::GLDrawTexture : _target = " << _target << " inconnu\n";
@@ -380,6 +379,41 @@ void GLDrawTexture::export2pgm(std::string pgm_path) {
 }
 
 
+void GLDrawTexture::print_data() {
+	glActiveTexture(GL_TEXTURE0 + _offset);
+	glBindTexture(_target, _id);
+	glActiveTexture(0);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glPixelStorei(GL_PACK_ALIGNMENT, 1);
+
+	if (_target == GL_TEXTURE_2D) {
+		//unsigned char * pixels= new unsigned char[_size[0] * _size[1]];
+		float * pixels= new float[_size[0] * _size[1]];
+		//glGetTexImage(_target, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
+		glGetTexImage(_target, 0, GL_RED, GL_FLOAT, pixels);
+		for (uint row=0; row<_size[0]; row++) {
+			for (uint col=0; col<_size[1]; col++) {
+				std::cout << pixels[row * _size[1] + col] << " ; ";
+			}
+			std::cout << "\n";
+		}
+	/*for (uint i = 0; i<_size[0] * _size[1]; ++i) {
+		std::cout << pixels[i] << " ; ";
+	}*/
+	//std::cout << "\n";
+		delete[] pixels;
+	}
+
+	else {
+		// TODO
+		std::cerr << "GLDrawTexture::print_data() non géré\n";
+	}
+
+	glBindTexture(_target, 0);
+}
+
+
 std::ostream & operator << (std::ostream & os, const GLDrawTexture & tex) {
 	os << "name = " << tex._name << " ; target = " << tex._target;
 	os << " ; id = " << tex._id << " ; offset = " << tex._offset;
@@ -403,28 +437,65 @@ GLDrawTexturePool::~GLDrawTexturePool() {
 }
 
 
-GLDrawTexture * GLDrawTexturePool::get_texture(std::string name) {
+GLDrawTexture * GLDrawTexturePool::get_texture(std::string texture_name) {
 	for (auto & texture : _textures) {
-		if (texture->_name == name) {
+		if (texture->_name == texture_name) {
 			return texture;
 		}
 	}
-	std::cerr << "GLDrawTexturePool::get_texture : " << name << " inexistante\n";
+	std::cerr << "GLDrawTexturePool::get_texture : " << texture_name << " inexistante\n";
 	return NULL;
 }
 
 
-GLDrawTexture * GLDrawTexturePool::add_texture(std::string name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
+GLDrawTexture * GLDrawTexturePool::get_texture(std::string context_name, std::string texture_name) {
+	for (auto & texture : _context2textures[context_name]) {
+		if (texture->_name == texture_name) {
+			return texture;
+		}
+	}
+	std::cerr << "GLDrawTexturePool::get_texture : " << texture_name << " inexistante\n";
+	return NULL;
+}
+
+
+GLDrawTexture * GLDrawTexturePool::add_texture(std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
 	for (auto & texture : _textures) {
-		if (texture->_name == name) {
-			std::cerr << "GLDrawTexturePool::add_texture : " << name << " existe déjà\n";
+		if (texture->_name == texture_name) {
+			std::cerr << "GLDrawTexturePool::add_texture : " << texture_name << " existe déjà\n";
 			return NULL;
 		}
 	}
 
-	GLDrawTexture * texture = new GLDrawTexture(name, target, offset, params, internal_format, size, format, type);
+	GLDrawTexture * texture = new GLDrawTexture(texture_name, target, offset, params, internal_format, size, format, type);
 	_textures.push_back(texture);
+
 	return texture;
+}
+
+
+GLDrawTexture * GLDrawTexturePool::add_texture(std::string context_name, std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
+	for (auto & texture : _context2textures[context_name]) {
+		if (texture->_name == texture_name) {
+			std::cerr << "GLDrawTexturePool::add_texture : " << texture_name << " existe déjà\n";
+			return NULL;
+		}
+	}
+
+	GLDrawTexture * texture = new GLDrawTexture(texture_name, target, offset, params, internal_format, size, format, type);
+	_textures.push_back(texture);
+
+	add_texture2context(context_name, texture);
+
+	return texture;
+}
+
+
+void GLDrawTexturePool::add_texture2context(std::string context_name, GLDrawTexture * texture) {
+	if (_context2textures.count(context_name) == 0) {
+		_context2textures[context_name] = std::vector<GLDrawTexture *>{};
+	}
+	_context2textures[context_name].push_back(texture);
 }
 
 
@@ -580,8 +651,8 @@ GLDrawContext::GLDrawContext() {
 }
 
 
-GLDrawContext::GLDrawContext(std::string name, GLuint prog, GLenum draw_mode, std::vector<GLDrawContextBuffer *> buffers, bool active) :
-	_name(name), _prog(prog), _n_pts(0), _active(active), _n_instances(0), _draw_mode(draw_mode), _verbose(false)
+GLDrawContext::GLDrawContext(std::string name, GLuint prog, GLenum draw_mode, std::vector<GLDrawContextBuffer *> buffers, GLDrawTexturePool * texture_pool, bool active) :
+	_name(name), _prog(prog), _n_pts(0), _active(active), _n_instances(0), _draw_mode(draw_mode), _verbose(false), _texture_pool(texture_pool)
 {
 
 	_uniforms = active_uniforms(_prog);
@@ -722,7 +793,9 @@ void GLDrawContext::activate() {
 	glUseProgram(_prog);
 	glBindVertexArray(_vao);
 
-	for (auto & texture : _textures) {
+	//for (auto & texture : _textures) {
+	for (auto & texture : _texture_pool->_context2textures[_name]) {
+		//std::cout << *texture << "\n";
 		glActiveTexture(GL_TEXTURE0 + texture->_offset);
 		glBindTexture(texture->_target, texture->_id);
 		glActiveTexture(0);
@@ -752,7 +825,8 @@ void GLDrawContext::deactivate() {
 	glBindVertexArray(0);
 	glUseProgram(0);
 
-	for (auto & texture : _textures) {
+	//for (auto & texture : _textures) {
+	for (auto & texture : _texture_pool->_context2textures[_name]) {
 		glActiveTexture(GL_TEXTURE0 + texture->_offset);
 		glBindTexture(texture->_target, 0);
 		glActiveTexture(0);
@@ -999,6 +1073,8 @@ GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 
+	_texture_pool = new GLDrawTexturePool();
+
 	std::map<std::string, GLuint> progs;
 	for (auto & shader : shaders) {
 		std::string vert = shader + ".vert";
@@ -1010,10 +1086,12 @@ GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 		}
 
 		if (file_exists(geom)) {
-			progs[basename(shader)] = create_prog(vert, frag, geom);
+			progs[basename(shader)] = create_prog(vert, frag, geom, false);
+			//progs[basename(shader)] = create_prog(vert, frag, geom);
 		}
 		else {
-			progs[basename(shader)] = create_prog(vert, frag);
+			progs[basename(shader)] = create_prog(vert, frag, "", false);
+			//progs[basename(shader)] = create_prog(vert, frag);
 		}
 
 		check_gl_error();
@@ -1101,10 +1179,9 @@ GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 			active = context_dic["active"];
 		}
 
-		_contexts.push_back(new GLDrawContext(context_name, progs[shader_name], draw_mode, buffers, active));
+		_contexts.push_back(new GLDrawContext(context_name, progs[shader_name], draw_mode, buffers, _texture_pool, active));
+		_texture_pool->_context2textures[context_name] = std::vector<GLDrawTexture *>{};
 	}
-
-	_texture_pool = new GLDrawTexturePool();
 }
 
 
@@ -1190,13 +1267,13 @@ void GLDrawManager::switch_active(std::string context_name) {
 }
 
 
-void GLDrawManager::add_texture(std::string name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
-	GLDrawTexture * texture = _texture_pool->add_texture(name, target, offset, params, internal_format, size, format, type);
-
+// dans ce cas la texture est partagée entre tous les contextes
+void GLDrawManager::add_texture(std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
+	GLDrawTexture * texture = _texture_pool->add_texture(texture_name, target, offset, params, internal_format, size, format, type);
 	for (auto & context : _contexts) {
 		for (auto & uniform : context->_uniforms) {
-			if (uniform->_name == name) {
-				context->_textures.push_back(texture);
+			if (uniform->_name == texture_name) {
+				_texture_pool->add_texture2context(context->_name, texture);
 				break;
 			}
 		}
@@ -1204,14 +1281,31 @@ void GLDrawManager::add_texture(std::string name, GLenum target, uint offset, st
 }
 
 
-void GLDrawManager::set_texture_data(std::string name, void * data, uint depth, int width, int height) {
-	GLDrawTexture * texture = _texture_pool->get_texture(name);
+void GLDrawManager::add_texture(std::string context_name, std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
+	_texture_pool->add_texture(context_name, texture_name, target, offset, params, internal_format, size, format, type);
+}
+
+
+void GLDrawManager::set_texture_data(std::string texture_name, void * data, int depth, int width, int height) {
+	GLDrawTexture * texture = _texture_pool->get_texture(texture_name);
 	texture->set_data(data, depth, width, height);
 }
 
 
-void GLDrawManager::set_texture_data(std::string name, std::vector<std::string> pngs) {
-	GLDrawTexture * texture = _texture_pool->get_texture(name);
+void GLDrawManager::set_texture_data(std::string context_name, std::string texture_name, void * data, int depth, int width, int height) {
+	GLDrawTexture * texture = _texture_pool->get_texture(context_name, texture_name);
+	texture->set_data(data, depth, width, height);
+}
+
+
+void GLDrawManager::set_texture_data(std::string texture_name, std::vector<std::string> pngs) {
+	GLDrawTexture * texture = _texture_pool->get_texture(texture_name);
+	texture->set_data(pngs);
+}
+
+
+void GLDrawManager::set_texture_data(std::string context_name, std::string texture_name, std::vector<std::string> pngs) {
+	GLDrawTexture * texture = _texture_pool->get_texture(context_name, texture_name);
 	texture->set_data(pngs);
 }
 

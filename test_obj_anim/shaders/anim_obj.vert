@@ -1,10 +1,9 @@
 #version 410
 
-const int N_MAX_FRAMES_PER_ACTION = 50;
-const int N_MAX_VERTICES = 2000;
 
 uniform mat4 world2clip_matrix;
-uniform samplerBuffer anim_buffer;
+uniform samplerBuffer anim_buffer; // contient les matrices de transformation (action -> frame -> vertex)
+uniform sampler2D idx_texture; // contient les indices de anim_buffer des débuts des frames
 
 layout(location=0) in vec3 position_in;
 layout(location=1) in vec3 normal_in;
@@ -19,7 +18,8 @@ out vec3 vertex_color;
 
 
 void main(void) {
-	int idx = 16 * (N_MAX_FRAMES_PER_ACTION * N_MAX_VERTICES * int(idx_action) + N_MAX_VERTICES * int(idx_frame) + gl_VertexID);
+	// texelFetch permet de lire les textures avec des coordonnées entières (pas 0.0 - 1.0) et sans interpolation
+	int idx = int(texelFetch(idx_texture, ivec2(int(idx_frame), int(idx_action)), 0).r) + 16 * gl_VertexID;
 	mat4 anim_matrix = mat4(
 		texelFetch(anim_buffer, idx + 0).r, texelFetch(anim_buffer, idx + 1).r, texelFetch(anim_buffer, idx + 2).r, texelFetch(anim_buffer, idx + 3).r,
 		texelFetch(anim_buffer, idx + 4).r, texelFetch(anim_buffer, idx + 5).r, texelFetch(anim_buffer, idx + 6).r, texelFetch(anim_buffer, idx + 7).r,

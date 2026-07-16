@@ -23,11 +23,8 @@ using json = nlohmann::json;
 enum ANIMATED_MODEL_MODE {ANIMATED_MODEL_RIGID, ANIMATED_MODEL_WEIGHT};
 
 
-// !!! on doit retrouver ces valeurs dans le vertex shader !!!
-// nombre max de frames par action
-const uint N_MAX_FRAMES_PER_ACTION = 50;
-// nombre max de sommets par mesh
-const uint N_MAX_VERTICES_PER_MESH = 2000;
+// cette valeur limite à la fois le nombre d'actions ainsi que le nombre de frames par action
+const uint IDX_TEXTURE_DATA_SIZE = 1024;
 
 
 // json -> mat4
@@ -128,6 +125,7 @@ struct AnimatedObjModel {
 	mat_4d _mat_armature; // matrice de transformation liée à l'armature
 	uint _buffer_texture_data_size; // taille du buffer texture
 	float * _buffer_texture_data; // buffer texture où sont stockés toutes les matrices de transfo
+	float _idx_texture_data[IDX_TEXTURE_DATA_SIZE * IDX_TEXTURE_DATA_SIZE];
 };
 
 

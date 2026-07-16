@@ -91,6 +91,7 @@ AnimatedObjTransform * AnimatedObjFrame::get_transform(AnimatedObjBone * bone) {
 			return tr;
 		}
 	}
+	std::cerr << "AnimatedObjFrame::get_transform : bone " << bone->_name << " introuvable\n";
 	return NULL;
 }
 
@@ -137,13 +138,7 @@ AnimatedObjObject::AnimatedObjObject() {
 
 
 AnimatedObjObject::AnimatedObjObject(ObjObject * static_object) : _static_object(static_object) {
-	/*uint n_vertices = _static_object->_vertices.size();
-	_bones = new AnimatedObjBone *[n_vertices * 4];
-	_weights = new number[n_vertices * 4];
-	for (uint i=0; i<n_vertices * 4; ++i) {
-		_bones[i] = NULL;
-		_weights[i] = -1.0;
-	}*/
+
 }
 
 
@@ -169,14 +164,6 @@ void AnimatedObjObject::sort_per_weight() {
 
 std::ostream & operator << (std::ostream & os, AnimatedObjObject & obj) {
 	os << "static_object = " << obj._static_object->_name;
-	/*os << " ; bones = ";
-	uint n_vertices = obj._static_object->_vertices.size();
-	for (uint i=0; i<n_vertices * 4; ++i) {
-		if (obj._bones[i] != NULL) {
-			os << obj._bones[i]->_name << " -> " << obj._weights[i] << " ; ";
-		}
-	}
-	os << "\n";*/
 	return os;
 }
 
@@ -298,10 +285,6 @@ AnimatedObjModel::AnimatedObjModel(std::string json_path) {
 			action->_frames.push_back(frame);
 		}
 		_actions.push_back(action);
-
-		if (action->_frames.size() >= N_MAX_FRAMES_PER_ACTION) {
-			std::cerr << _name << " : dépassement de N_MAX_FRAMES_PER_ACTION = " << N_MAX_FRAMES_PER_ACTION << "\n";
-		}
 	}
 
 	// tri des poids les plus influents (si > 4)
@@ -364,19 +347,35 @@ void AnimatedObjModel::compute_transform_final_matrix() {
 // le gros morceau
 // on remplit un tableau qui sera mis dans un buffer texture avec toutes les matrices finales des transfos
 void AnimatedObjModel::compute_buffer_texture_data() {
-	_buffer_texture_data_size = _actions.size() * N_MAX_FRAMES_PER_ACTION * N_MAX_VERTICES_PER_MESH * 16;
+	_buffer_texture_data_size = 0;
+	for (uint idx_action=0; idx_action<_actions.size(); ++idx_action) {
+		AnimatedObjAction * action = _actions[idx_action];
+		for (uint idx_frame=0; idx_frame<action->_frames.size(); ++idx_frame) {
+			_buffer_texture_data_size += _obj_data->_n_pts * 16;
+		}
+	}
+
 	_buffer_texture_data = new float[_buffer_texture_data_size];
+	for (uint i=0; i<_buffer_texture_data_size; ++i) {
+		_buffer_texture_data[i] = 0.0;
+	}
+
+	for (uint i=0; i<IDX_TEXTURE_DATA_SIZE*IDX_TEXTURE_DATA_SIZE; ++i) {
+		_idx_texture_data[i] = 0;
+	}
 
 	// pour chaque action, pour chaque frame de l'action, pour chaque vertex, on stocke la matrice qui sera appliquée
 	// au vertex dans le shader
+	int idx_buffer_texture = 0;
 	for (uint idx_action=0; idx_action<_actions.size(); ++idx_action) {
 		AnimatedObjAction * action = _actions[idx_action];
 		for (uint idx_frame=0; idx_frame<action->_frames.size(); ++idx_frame) {
 			AnimatedObjFrame * frame = action->_frames[idx_frame];
+
+			_idx_texture_data[idx_action * IDX_TEXTURE_DATA_SIZE + idx_frame] = float(idx_buffer_texture);
 			
 			// dans le cas ANIMATED_MODEL_RIGID tous les vertices d'un objet sont affectés par le même bone : o->_parent_bone
 			if (_mode == ANIMATED_MODEL_RIGID) {
-				uint idx_vertex = 0;
 				for (auto & o : _objects) {
 					ObjObject * object = o->_static_object;
 					AnimatedObjBone * bone = o->_parent_bone;
@@ -385,16 +384,10 @@ void AnimatedObjModel::compute_buffer_texture_data() {
 
 					for (auto & face : object->_faces) {
 						for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
-							// on retrouve ce calcul d'idx dans le vertex shader, avec idx_vertex remplacé par gl_VertexID
-							uint idx_buffer_texture = N_MAX_FRAMES_PER_ACTION * N_MAX_VERTICES_PER_MESH * idx_action + N_MAX_VERTICES_PER_MESH * idx_frame + idx_vertex;
-							float * ptr = _buffer_texture_data + 16 * idx_buffer_texture;
+							float * ptr = _buffer_texture_data + idx_buffer_texture;
 							std::memcpy(ptr, mat_data, 16 * sizeof(float));
 
-							idx_vertex++;
-							if (idx_vertex >= N_MAX_VERTICES_PER_MESH) {
-								std::cerr << _name << " : dépassement de N_MAX_VERTICES_PER_MESH = " << N_MAX_VERTICES_PER_MESH << "\n";
-								return;
-							}
+							idx_buffer_texture += 16;
 						}
 					}
 				}
@@ -402,17 +395,17 @@ void AnimatedObjModel::compute_buffer_texture_data() {
 
 			// dans le cas ANIMATED_MODEL_WEIGHT on calcule la somme pondérée des matrices (max 4) associées au vertex
 			else if (_mode == ANIMATED_MODEL_WEIGHT) {
-				uint idx_vertex = 0;
 				for (auto & o : _objects) {
 					ObjObject * object = o->_static_object;
 					
 					for (auto & face : object->_faces) {
 						for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
 							mat_4d m;
-							if (o->_weights_per_vertex[face->_vertices_idx[idx_pt]].size() > 0) {
+							uint n_bones = o->_weights_per_vertex[face->_vertices_idx[idx_pt]].size();
+							if (n_bones > 0) {
 								m = mat_4d(0.0);
 								for (int i=0; i<4; ++i) {
-									if (o->_weights_per_vertex[face->_vertices_idx[idx_pt]].size() - 1 < i) {
+									if (i > n_bones - 1) {
 										break;
 									}
 									AnimatedObjBone * bone = o->_weights_per_vertex[face->_vertices_idx[idx_pt]][i].first;
@@ -426,21 +419,32 @@ void AnimatedObjModel::compute_buffer_texture_data() {
 							}
 
 							const float * mat_data = glm::value_ptr(glm::mat4(m));
-							uint idx_buffer_texture = N_MAX_FRAMES_PER_ACTION * N_MAX_VERTICES_PER_MESH * idx_action + N_MAX_VERTICES_PER_MESH * idx_frame + idx_vertex;
-							float * ptr = _buffer_texture_data + 16 * idx_buffer_texture;
+							float * ptr = _buffer_texture_data + idx_buffer_texture;
 							std::memcpy(ptr, mat_data, 16 * sizeof(float));
 
-							idx_vertex++;
-							if (idx_vertex >= N_MAX_VERTICES_PER_MESH) {
-								std::cerr << _name << " : dépassement de N_MAX_VERTICES_PER_MESH = " << N_MAX_VERTICES_PER_MESH << "\n";
-								return;
-							}
+							idx_buffer_texture += 16;
 						}
 					}
 				}
 			}
 		}
 	}
+
+	/*for (uint i=0; i<IDX_TEXTURE_DATA_SIZE*IDX_TEXTURE_DATA_SIZE; ++i) {
+		if (i % IDX_TEXTURE_DATA_SIZE == 0) {
+			std::cout << "\n";
+		}
+		std::cout << _idx_texture_data[i] << " ; ";
+	}
+	std::cout << "\n";*/
+
+	/*for (uint i=0; i<_buffer_texture_data_size; ++i) {
+		if (i % 16 == 0) {
+			std::cout << "\n";
+		}
+		std::cout << _buffer_texture_data[i] << " ; ";
+	}
+	std::cout << "\n";*/
 }
 
 
