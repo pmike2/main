@@ -18,7 +18,7 @@
 // dimensions écran
 const uint MAIN_WIN_WIDTH = 1280;
 const uint MAIN_WIN_HEIGHT = 1024;
-const number GL_WIDTH = 15.0;
+const number GL_WIDTH = 50.0;
 const number GL_HEIGHT = GL_WIDTH * (number)(MAIN_WIN_HEIGHT) / (number)(MAIN_WIN_WIDTH);
 
 
@@ -143,7 +143,7 @@ void init_data() {
 	ScreenGL * screengl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	
 	view_system = new ViewSystem(gl_draw_manager, screengl);
-	view_system->set(pt_3d(0.0, 0.0, 0.0), M_PI * 0.25, M_PI * 0.25, 10.0);
+	view_system->set(pt_3d(0.0, 0.0, 0.0), M_PI * 0.25, M_PI * 0.25, 20.0);
 
 	input_state = new InputState();
 

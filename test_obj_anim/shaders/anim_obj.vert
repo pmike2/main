@@ -20,6 +20,8 @@ out vec3 vertex_color;
 void main(void) {
 	// texelFetch permet de lire les textures avec des coordonnées entières (pas 0.0 - 1.0) et sans interpolation
 	int idx = int(texelFetch(idx_texture, ivec2(int(idx_frame), int(idx_action)), 0).r) + 16 * gl_VertexID;
+	//idx = int(texelFetch(idx_texture, ivec2(0, 0), 0).r) + 16 * gl_VertexID;
+	//idx = 16 * gl_VertexID;
 	mat4 anim_matrix = mat4(
 		texelFetch(anim_buffer, idx + 0).r, texelFetch(anim_buffer, idx + 1).r, texelFetch(anim_buffer, idx + 2).r, texelFetch(anim_buffer, idx + 3).r,
 		texelFetch(anim_buffer, idx + 4).r, texelFetch(anim_buffer, idx + 5).r, texelFetch(anim_buffer, idx + 6).r, texelFetch(anim_buffer, idx + 7).r,

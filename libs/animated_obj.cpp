@@ -148,15 +148,30 @@ AnimatedObjObject::~AnimatedObjObject() {
 
 
 void AnimatedObjObject::sort_per_weight() {
+	// tri par poids
+	for (auto & it : _weights_per_vertex) {
+		std::sort(it.second.begin(), it.second.end(), 
+			[](std::pair<AnimatedObjBone *, number> a, std::pair<AnimatedObjBone *, number> b) {return a.second > b.second;});
+	}
+	
+	// suppression des derniers lorsque le nombre de bones est > 4
 	for (auto & it : _weights_per_vertex) {
 		if (it.second.size() > 4) {
-			std::cerr << "objet " << _static_object->_name << " : trop de bones (" << it.second.size() << " > 4), on ne garde que les 4 plus influents\n";
-			std::sort(it.second.begin(), it.second.end(), 
-				[](std::pair<AnimatedObjBone *, number> a, std::pair<AnimatedObjBone *, number> b) {return a.second > b.second;});
+			//std::cerr << "objet " << _static_object->_name << " : trop de bones (" << it.second.size() << " > 4), on ne garde que les 4 plus influents\n";
 			it.second.erase(it.second.begin() + 4, it.second.begin() + it.second.size());
-
-			// on ajuste le dernier poids pour que la somme fasse 4; est-ce nécessaire ?
-			it.second[3].second = 1.0 - (it.second[0].second + it.second[1].second + it.second[2].second);
+		}
+	}
+	
+	// ajustement afin que la somme des poids fasse 1.0
+	// pas sûr que ce soit nécessaire si dans Blender l'outil weight paint est en auto-normalize
+	for (auto & it : _weights_per_vertex) {
+		uint n_bones = it.second.size();
+		if (n_bones > 0) {
+			number weight_sum = 0.0;
+			for (uint i=0; i< n_bones - 1; ++i) {
+				weight_sum += it.second[i].second;
+			}
+			it.second[it.second.size() - 1].second = 1.0 - weight_sum;
 		}
 	}
 }
@@ -430,6 +445,9 @@ void AnimatedObjModel::compute_buffer_texture_data() {
 		}
 	}
 
+	// ------------------------------------------------------------------------------------
+	// pour DEBUG, à conserver
+
 	/*for (uint i=0; i<IDX_TEXTURE_DATA_SIZE*IDX_TEXTURE_DATA_SIZE; ++i) {
 		if (i % IDX_TEXTURE_DATA_SIZE == 0) {
 			std::cout << "\n";
@@ -445,6 +463,27 @@ void AnimatedObjModel::compute_buffer_texture_data() {
 		std::cout << _buffer_texture_data[i] << " ; ";
 	}
 	std::cout << "\n";*/
+
+	/*AnimatedObjAction * action = get_action("walk");
+	AnimatedObjFrame * frame = action->_frames[0];
+	AnimatedObjObject * o = _objects[0];
+	ObjObject * object = o->_static_object;
+	ObjFace * face = object->_faces[0];
+	uint idx_pt = 0;
+	uint n_bones = o->_weights_per_vertex[face->_vertices_idx[idx_pt]].size();
+	mat_4d m = mat_4d(0.0);
+	for (int i=0; i<4; ++i) {
+		if (i > n_bones - 1) {
+			break;
+		}
+		AnimatedObjBone * bone = o->_weights_per_vertex[face->_vertices_idx[idx_pt]][i].first;
+		number weight = o->_weights_per_vertex[face->_vertices_idx[idx_pt]][i].second;
+		AnimatedObjTransform * transform = frame->get_transform(bone);
+		m += weight * transform->_mat_final;
+		std::cout << weight << " ; " << glm::to_string(transform->_mat_final) << "\n";
+	}
+	std::cout << glm::to_string(m) << "\n";*/
+	// ------------------------------------------------------------------------------------
 }
 
 
@@ -454,6 +493,7 @@ AnimatedObjObject * AnimatedObjModel::get_animated_object(std::string obj_name) 
 			return obj;
 		}
 	}
+	std::cerr << "AnimatedObjModel::get_animated_object : " << obj_name << " non trouvé\n";
 	return NULL;
 }
 
@@ -464,6 +504,18 @@ AnimatedObjBone * AnimatedObjModel::get_bone(std::string bone_name) {
 			return bone;
 		}
 	}
+	std::cerr << "AnimatedObjModel::get_bone : " << bone_name << " non trouvé\n";
+	return NULL;
+}
+
+
+AnimatedObjAction * AnimatedObjModel::get_action(std::string action_name) {
+	for (auto & action : _actions) {
+		if (action->_name == action_name) {
+			return action;
+		}
+	}
+	std::cerr << "AnimatedObjModel::get_action : " << action_name << " non trouvé\n";
 	return NULL;
 }
 

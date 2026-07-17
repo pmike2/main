@@ -7,7 +7,8 @@ TestInstance::TestInstance() {
 
 
 TestInstance::TestInstance(AnimatedObjModel * model, pt_3d pos, time_point t, number angle, std::string action_name) :
-	AnimatedObjInstance(model, pos, t, glm::angleAxis(angle, pt_3d(0.0, 0.0, 1.0)), action_name)
+	// par défaut les modèles regardent vers -Y -> rotation de pi / 2
+	AnimatedObjInstance(model, pos, t, glm::angleAxis(angle + M_PI * 0.5, pt_3d(0.0, 0.0, 1.0)), action_name)
 {
 	_angle = angle;
 	_direction.x = cos(_angle);
@@ -24,9 +25,7 @@ TestInstance::~TestInstance() {
 
 void TestInstance::anim_test(time_point t) {
 	anim(t);
-	//std::cout << _idx_action << " ; " << _idx_frame << "\n";
-
-	//set_pos(_position + 0.05 * pt_3d(_direction.x, _direction.y, 0.0));
+	set_pos(_position + 0.03 * pt_3d(_direction.x, _direction.y, 0.0));
 }
 
 
@@ -38,15 +37,16 @@ TestObjAnim::TestObjAnim() {
 
 
 TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
-	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _paused(false)
+	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _paused(true)
 {
 	std::vector<std::string> model_names {"test", "test2", "test3", "perso", "perso2"};
-	//std::vector<std::string> model_names {"perso"};
+	//std::vector<std::string> model_names {"perso2"};
 
 	//_gl_draw_manager->set_verbose(true);
 	
 	for (auto & model_name : model_names) {
 		AnimatedObjModel * model = new AnimatedObjModel("../data/" + model_name + ".json");
+		//model->_n_ms_per_frame = 200;
 		//std::cout << *model << "\n";
 
 		GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
@@ -57,7 +57,7 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 		delete model->_buffer_texture_data;
 		
 		_gl_draw_manager->add_texture(
-			context->_name, "idx_texture", GL_TEXTURE_2D, 1, 
+			context->_name, "idx_texture", GL_TEXTURE_2D, 1,
 				std::map<GLenum, int>{
 				{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
 				{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
@@ -84,20 +84,20 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 	//_instances[0]->_current_action = "walk";
 
 
-	uint n_instances = 1;
+	uint n_instances = 2000;
 	for (uint i=0; i<n_instances; ++i) {
 		//int j = rand_int(0, model_names.size() - 1);
 		//std::string model_name = model_names[j];
 		std::string model_name = "perso2";
 		//std::string model_name = "perso";
 
-		pt_3d pos(0.0);
+		//pt_3d pos(0.0);
 		//pt_3d pos = rand_pt_3d(pt_3d(-20.0), pt_3d(20.0));
 		//pt_3d pos = pt_3d(float(i) * 1.0, float(i) * 1.0, 0.0);
-		//pt_3d pos = rand_pt_3d(-200.0, 200.0, -200.0, 200.0, 0.0, 0.0);
+		pt_3d pos = rand_pt_3d(-100.0, 100.0, -100.0, 100.0, 0.0, 0.0);
 
-		//number angle = rand_number(0.0, M_PI * 2.0);
-		number angle = 0.0;
+		number angle = rand_number(0.0, M_PI * 2.0);
+		//number angle = 0.0;
 
 		//uint idx_action = rand_int(0, get_model(model_name)->_actions.size() - 1);
 		//uint idx_action = 0;
@@ -111,6 +111,9 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 		update_static_buffer(model);
 		update_dynamic_buffer(model);
 	}
+
+	// à activer lors du debug, et à faire quand tout a été mis en place (textures notamment)
+	//_gl_draw_manager->validate();
 }
 
 

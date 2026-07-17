@@ -111,6 +111,7 @@ struct AnimatedObjModel {
 	void compute_buffer_texture_data(); // calcul de ce qui sera mis dans le buffer texture
 	AnimatedObjObject * get_animated_object(std::string obj_name);
 	AnimatedObjBone * get_bone(std::string bone_name);
+	AnimatedObjAction * get_action(std::string action_name);
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjModel & obj);
 
 

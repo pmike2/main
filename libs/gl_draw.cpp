@@ -173,7 +173,7 @@ GLuint load_shader(GLenum type, const char * filename) {
 }
 
 
-GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path, bool check_program) {
+GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path) {
 	GLuint vs= load_shader(GL_VERTEX_SHADER  , vs_path.c_str());
 	GLuint fs= load_shader(GL_FRAGMENT_SHADER, fs_path.c_str());
 	GLuint prog= glCreateProgram();
@@ -184,10 +184,6 @@ GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path
 		glAttachShader(prog, gs);
 	}
 	glLinkProgram(prog);
-
-	if (check_program) {
-		check_gl_program(prog);
-	}
 
 	return prog;
 }
@@ -379,6 +375,7 @@ void GLDrawTexture::export2pgm(std::string pgm_path) {
 }
 
 
+// TODO gérer le cas non GL_FLOAT
 void GLDrawTexture::print_data() {
 	glActiveTexture(GL_TEXTURE0 + _offset);
 	glBindTexture(_target, _id);
@@ -388,9 +385,7 @@ void GLDrawTexture::print_data() {
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 	if (_target == GL_TEXTURE_2D) {
-		//unsigned char * pixels= new unsigned char[_size[0] * _size[1]];
 		float * pixels= new float[_size[0] * _size[1]];
-		//glGetTexImage(_target, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
 		glGetTexImage(_target, 0, GL_RED, GL_FLOAT, pixels);
 		for (uint row=0; row<_size[0]; row++) {
 			for (uint col=0; col<_size[1]; col++) {
@@ -398,10 +393,6 @@ void GLDrawTexture::print_data() {
 			}
 			std::cout << "\n";
 		}
-	/*for (uint i = 0; i<_size[0] * _size[1]; ++i) {
-		std::cout << pixels[i] << " ; ";
-	}*/
-	//std::cout << "\n";
 		delete[] pixels;
 	}
 
@@ -793,9 +784,7 @@ void GLDrawContext::activate() {
 	glUseProgram(_prog);
 	glBindVertexArray(_vao);
 
-	//for (auto & texture : _textures) {
 	for (auto & texture : _texture_pool->_context2textures[_name]) {
-		//std::cout << *texture << "\n";
 		glActiveTexture(GL_TEXTURE0 + texture->_offset);
 		glBindTexture(texture->_target, texture->_id);
 		glActiveTexture(0);
@@ -825,7 +814,6 @@ void GLDrawContext::deactivate() {
 	glBindVertexArray(0);
 	glUseProgram(0);
 
-	//for (auto & texture : _textures) {
 	for (auto & texture : _texture_pool->_context2textures[_name]) {
 		glActiveTexture(GL_TEXTURE0 + texture->_offset);
 		glBindTexture(texture->_target, 0);
@@ -862,6 +850,18 @@ void GLDrawContext::draw() {
 	else {
 		glDrawArrays(_draw_mode, 0, _n_pts);
 	}
+}
+
+
+void GLDrawContext::validate() {
+	if (!_active) {
+		return;
+	}
+	
+	std::cout << "Validation " << _name << "\n";
+	activate();
+	check_gl_program(_prog);
+	deactivate();
 }
 
 
@@ -1086,12 +1086,10 @@ GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 		}
 
 		if (file_exists(geom)) {
-			progs[basename(shader)] = create_prog(vert, frag, geom, false);
-			//progs[basename(shader)] = create_prog(vert, frag, geom);
+			progs[basename(shader)] = create_prog(vert, frag, geom);
 		}
 		else {
-			progs[basename(shader)] = create_prog(vert, frag, "", false);
-			//progs[basename(shader)] = create_prog(vert, frag);
+			progs[basename(shader)] = create_prog(vert, frag);
 		}
 
 		check_gl_error();
@@ -1205,7 +1203,7 @@ GLDrawContext * GLDrawManager::get_context(std::string context_name) {
 }
 
 
-void GLDrawManager::set_data(std::string context_name, uint n_pts, float * data) {
+void GLDrawManager::set_data(std::string context_name, uint n_pts, float * data, uint idx_buffer) {
 	GLDrawContext * context = get_context(context_name);
 	if (context == NULL) {
 		return;
@@ -1216,7 +1214,7 @@ void GLDrawManager::set_data(std::string context_name, uint n_pts, float * data)
 	}
 
 	context->_n_pts = n_pts;
-	context->set_data(data);
+	context->set_data(data, idx_buffer);
 }
 
 
@@ -1263,6 +1261,13 @@ void GLDrawManager::switch_active(std::string context_name) {
 	}
 	else {
 		context->_active = true;
+	}
+}
+
+
+void GLDrawManager::validate() {
+	for (auto & context : _contexts) {
+		context->validate();
 	}
 }
 

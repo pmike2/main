@@ -5,8 +5,6 @@
 		"repere" : {"shader" : "repere", "mode" : "GL_LINES"},
 		"ground" : {"shader" : "repere", "mode" : "GL_TRIANGLES", "active" : false},
 		"box" : {"shader" : "repere", "mode" : "GL_LINES", "active" : false},
-		"font" : {"shader" : "font", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
-		"font3d" : {"shader" : "font3d", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 
 		"test" : {
 			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",

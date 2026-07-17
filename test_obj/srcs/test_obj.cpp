@@ -9,7 +9,8 @@ TestObj::TestObj() {
 TestObj::TestObj(GLDrawManager * gl_draw_manager, ViewSystem * view_system) :
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system) 
 {
-	_obj_data = new ObjData("../data/test.obj");
+	//_obj_data = new ObjData("../data/test.obj");
+	_obj_data = new ObjData("../data/perso2.obj");
 	_obj_data->_use_ambient = false;
 	_obj_data->_use_diffuse = true;
 	_obj_data->_use_specular = false;
