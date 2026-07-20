@@ -4,6 +4,7 @@
 #include <utility>
 #include <chrono>
 #include <unordered_map>
+#include <filesystem>
 
 #include <glm/glm.hpp>
 
@@ -31,6 +32,7 @@ using uint = unsigned int;
 using int_pair = std::pair<int, int>;
 using uint_pair = std::pair<uint, uint>;
 
+using fs = std::filesystem::path;
 
 // + rapide que std::unordered_map ; cf https://github.com/Tessil/robin-map/tree/master
 //template<class X, class Y>

@@ -46,9 +46,17 @@ ctrl + n : recalcul des normales
 Texturing :
 https://www.youtube.com/watch?v=JYBPXTful2g
 
+
+onglet material, click point color -> image texture
+ouvrir un UV editor en haut à droite
+passer en mode edit
+passer en material preview pour voir la texture sur le modèle
+u : unwrap selection ; si on séléctionne une face toute la texture sera appliquée à la face
+
+
 ctrl + e menu ; mark seam : sépare les objets le long de la sélection d'edges
-u : unwrap selection
 alt + z : show material color
+
 
 
 Rigging :

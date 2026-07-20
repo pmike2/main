@@ -8,13 +8,15 @@ uniform sampler2D idx_texture; // contient les indices de anim_buffer des début
 layout(location=0) in vec3 position_in;
 layout(location=1) in vec3 normal_in;
 layout(location=2) in vec3 color_in;
-layout(location=3) in float idx_action;
-layout(location=4) in float idx_frame;
-layout(location=5) in mat4 model2world_matrix;
+layout(location=3) in vec3 tex_coord_in;
+layout(location=4) in float idx_action;
+layout(location=5) in float idx_frame;
+layout(location=6) in mat4 model2world_matrix;
 
 out vec3 vertex_position;
 out vec3 vertex_normal;
 out vec3 vertex_color;
+out vec3 tex_coord;
 
 
 void main(void) {
@@ -37,6 +39,7 @@ void main(void) {
 	vertex_position = vec3(p);
 	vertex_normal = mat3(m) * normalize(normal_in);
 	vertex_color = color_in;
+	tex_coord = tex_coord_in;
 
 	gl_Position = world2clip_matrix * p;
 }

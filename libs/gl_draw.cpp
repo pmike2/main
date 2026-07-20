@@ -173,14 +173,14 @@ GLuint load_shader(GLenum type, const char * filename) {
 }
 
 
-GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path) {
-	GLuint vs= load_shader(GL_VERTEX_SHADER  , vs_path.c_str());
-	GLuint fs= load_shader(GL_FRAGMENT_SHADER, fs_path.c_str());
+GLuint create_prog(fs vs_path, fs fs_path, fs gs_path) {
+	GLuint vs= load_shader(GL_VERTEX_SHADER  , vs_path.string().c_str());
+	GLuint fs= load_shader(GL_FRAGMENT_SHADER, fs_path.string().c_str());
 	GLuint prog= glCreateProgram();
 	glAttachShader(prog, fs);
 	glAttachShader(prog, vs);
 	if (gs_path!= "") {
-		GLuint gs= load_shader(GL_GEOMETRY_SHADER, gs_path.c_str());
+		GLuint gs= load_shader(GL_GEOMETRY_SHADER, gs_path.string().c_str());
 		glAttachShader(prog, gs);
 	}
 	glLinkProgram(prog);
@@ -302,7 +302,31 @@ void GLDrawTexture::set_data(void * data, int depth, int width, int height) {
 }
 
 
-void GLDrawTexture::set_data(std::vector<std::string> pngs) {
+void GLDrawTexture::set_data(fs png) {
+	glActiveTexture(GL_TEXTURE0 + _offset);
+	glBindTexture(_target, _id);
+	glActiveTexture(0);
+
+	if (!std::filesystem::is_regular_file(png)) {
+		std::cerr << "png=" << png << " n'existe pas\n";
+		return;
+	}
+	
+	SDL_Surface * surface = IMG_Load(png.string().c_str());
+	if (!surface) {
+		std::cerr << "IMG_Load error :" << IMG_GetError() << "\n";
+		return;
+	}
+
+	glTexSubImage2D(_target, 0, 0, 0, _size[0], _size[1], _format, _type, surface->pixels);
+
+	SDL_FreeSurface(surface);
+
+	glBindTexture(_target, 0);
+}
+
+
+void GLDrawTexture::set_data(std::vector<fs> pngs) {
 	glActiveTexture(GL_TEXTURE0 + _offset);
 	glBindTexture(_target, _id);
 	glActiveTexture(0);
@@ -313,11 +337,11 @@ void GLDrawTexture::set_data(std::vector<std::string> pngs) {
 			continue;
 		}
 
-		if (!file_exists(pngs[idx_png])) {
+		if (!std::filesystem::is_regular_file(pngs[idx_png])) {
 			std::cerr << "png=" << pngs[idx_png] << " n'existe pas\n";
 			return;
 		}
-		SDL_Surface * surface = IMG_Load(pngs[idx_png].c_str());
+		SDL_Surface * surface = IMG_Load(pngs[idx_png].string().c_str());
 		if (!surface) {
 			std::cerr << "IMG_Load error :" << IMG_GetError() << "\n";
 			return;
@@ -333,7 +357,7 @@ void GLDrawTexture::set_data(std::vector<std::string> pngs) {
 
 
 // TODO : gérer les cas non GL_RED - GL_UNSIGNED_BYTE
-void GLDrawTexture::export2pgm(std::string pgm_path) {
+void GLDrawTexture::export2pgm(fs pgm_path) {
 	glActiveTexture(GL_TEXTURE0 + _offset);
 	glBindTexture(_target, _id);
 	glActiveTexture(0);
@@ -345,7 +369,7 @@ void GLDrawTexture::export2pgm(std::string pgm_path) {
 		unsigned char * pixels= new unsigned char[_size[0] * _size[1]];
 		glGetTexImage(_target, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
 		FILE *f;
-		f= fopen(pgm_path.c_str(), "wb");
+		f= fopen(pgm_path.string().c_str(), "wb");
 		fprintf(f, "P5\n%d %d\n%d\n", _size[0], _size[1], 255);
 		for (uint i=0; i<_size[1]; ++i) {
 			fwrite(pixels+ i* _size[0], 1, _size[0], f);
@@ -359,9 +383,9 @@ void GLDrawTexture::export2pgm(std::string pgm_path) {
 		glGetTexImage(_target, 0, GL_RED, GL_UNSIGNED_BYTE, pixels);
 
 		for (uint d=0; d<_size[2]; ++d) {
-			std::string pgm_path_ = pgm_path+ "/tex_array_"+ std::to_string(d)+ ".pgm";
-			FILE *f;
-			f= fopen(pgm_path_.c_str(), "wb");
+			fs pgm_path_ = pgm_path / ("tex_array_" + std::to_string(d)+ ".pgm");
+			FILE * f;
+			f= fopen(pgm_path_.string().c_str(), "wb");
 			fprintf(f, "P5\n%d %d\n%d\n", _size[0], _size[1], 255);
 			for (uint i=0; i<_size[1]; ++i) {
 				fwrite(pixels + d * _size[0] * _size[1] + i * _size[0], 1, _size[0], f);
@@ -645,7 +669,6 @@ GLDrawContext::GLDrawContext() {
 GLDrawContext::GLDrawContext(std::string name, GLuint prog, GLenum draw_mode, std::vector<GLDrawContextBuffer *> buffers, GLDrawTexturePool * texture_pool, bool active) :
 	_name(name), _prog(prog), _n_pts(0), _active(active), _n_instances(0), _draw_mode(draw_mode), _verbose(false), _texture_pool(texture_pool)
 {
-
 	_uniforms = active_uniforms(_prog);
 
 	for (auto & buffer : buffers) {
@@ -661,6 +684,8 @@ GLDrawContext::GLDrawContext(std::string name, GLuint prog, GLenum draw_mode, st
 		}
 		_buffers.push_back(buffer);
 	}
+
+	_texture_pool->_context2textures[_name] = std::vector<GLDrawTexture *>{};
 
 	glGenVertexArrays(1, &_vao);
 
@@ -1047,24 +1072,24 @@ GLDrawManager::GLDrawManager() {
 }
 
 
-GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
+GLDrawManager::GLDrawManager(fs json_path) : _verbose(false) {
 	std::ifstream ifs(json_path);
-	json js= json::parse(ifs);
+	json js = json::parse(ifs);
 	ifs.close();
 
-	std::vector<std::string> shaders;
+	std::vector<fs> shaders;
 	if (js["add_dir_shaders"] != nullptr) {
 		for (auto & dir_shader : js["add_dir_shaders"]) {
-			std::vector<std::string> l = list_files(dir_shader, "vert");
-			for (auto & shader_path : l) {
-				std::pair<std::string, std::string> p = splitext(shader_path);
-				shaders.push_back(p.first);
+			for (auto & shader_path : std::filesystem::directory_iterator(dir_shader)) {
+				if (shader_path.path().extension() == ".vert") {
+					shaders.push_back(shader_path.path());
+				}
 			}
 		}
 	}
 	if (js["add_shaders"] != nullptr) {
 		for (auto & shader : js["add_shaders"]) {
-			shaders.push_back(shader);
+			shaders.push_back(fs(std::string(shader) + ".vert"));
 		}
 	}
 
@@ -1077,108 +1102,112 @@ GLDrawManager::GLDrawManager(std::string json_path) : _verbose(false) {
 
 	std::map<std::string, GLuint> progs;
 	for (auto & shader : shaders) {
-		std::string vert = shader + ".vert";
-		std::string frag = shader + ".frag";
-		std::string geom = shader + ".geom";
-		if (!file_exists(vert) || !file_exists(frag)) {
+		std::string shader_name = shader.stem();
+		fs vert = shader;
+		fs frag = shader.parent_path() / (shader_name + ".frag");
+		fs geom = shader.parent_path() / (shader_name + ".geom");
+		if (!std::filesystem::is_regular_file(vert) || !std::filesystem::is_regular_file(frag)) {
 			std::cerr << "GLDrawManager : " << vert << " et/ou " << frag << " n'existe pas.\n";
 			return;
 		}
 
-		if (file_exists(geom)) {
-			progs[basename(shader)] = create_prog(vert, frag, geom);
+		if (std::filesystem::is_regular_file(geom)) {
+			progs[shader_name] = create_prog(vert, frag, geom);
 		}
 		else {
-			progs[basename(shader)] = create_prog(vert, frag);
+			progs[shader_name] = create_prog(vert, frag);
 		}
 
 		check_gl_error();
 	}
 
 	for (json::iterator it = js["contexts"].begin(); it != js["contexts"].end(); ++it) {
-		auto & context_name = it.key();
+		auto & context_names = it.key();
 		auto & context_dic = it.value();
 
-		std::string shader_name = context_dic["shader"];
+		// on peut avoir plusieurs noms de contexte séparés par une virgule
+		std::vector<std::string> l_context_names = split(context_names, ",");
+		for (auto & context_name : l_context_names) {
+			std::string shader_name = context_dic["shader"];
 
-		if (progs.count(shader_name) == 0) {
-			std::cerr << "GLDrawManager : " << shader_name << " n'est pas un nom de shader existant.\n";
-			return;
-		}
-
-		GLenum usage = GL_STATIC_DRAW;
-		if (context_dic["usage"] != nullptr) {
-			if (context_dic["usage"] == "GL_STATIC_DRAW") {
-				usage = GL_STATIC_DRAW;
-			}
-			else if (context_dic["usage"] == "GL_DYNAMIC_DRAW") {
-				usage = GL_DYNAMIC_DRAW;
-			}
-			else if (context_dic["usage"] == "GL_STREAM_DRAW") {
-				usage = GL_STREAM_DRAW;
-			}
-			else {
-				std::cerr << "GLDrawManager : usage = " << context_dic["usage"] << " non reconnu.\n";
+			if (progs.count(shader_name) == 0) {
+				std::cerr << "GLDrawManager : " << shader_name << " n'est pas un nom de shader existant.\n";
 				return;
 			}
-		}
 
-		GLenum draw_mode;
-		if (context_dic["mode"] == "GL_LINES") {
-			draw_mode = GL_LINES;
-		}
-		else if (context_dic["mode"] == "GL_TRIANGLES") {
-			draw_mode = GL_TRIANGLES;
-		}
-		else {
-			std::cerr << "GLDrawManager : mode = " << context_dic["mode"] << " non reconnu.\n";
-			return;
-		}
-		
-		std::vector<GLDrawContextAttrib *> attribs = active_attribs(progs[shader_name]);
-		
-		std::vector<GLDrawContextBuffer *> buffers;
-
-		GLDrawContextBuffer * default_buffer = new GLDrawContextBuffer(false, usage);
-		// TODO : faire un usage différent pour chaque buffer ?
-		buffers.push_back(default_buffer);
-
-		if (context_dic["buffers"] != nullptr) {
-			for (auto & buff : context_dic["buffers"]) {
-				bool is_instanced = buff["instanced"];
-				std::vector<std::string> attrs;
-				for (auto & attr : buff["attrs"]) {
-					attrs.push_back(attr);
+			GLenum usage = GL_STATIC_DRAW;
+			if (context_dic["usage"] != nullptr) {
+				if (context_dic["usage"] == "GL_STATIC_DRAW") {
+					usage = GL_STATIC_DRAW;
 				}
-				
-				GLDrawContextBuffer * buffer = new GLDrawContextBuffer(is_instanced, usage);
-				for (auto & attr_name : attrs) {
-					for (auto & attrib : attribs) {
-						if (attrib->_name == attr_name) {
-							attrib->_in_default_buffer = false;
-							buffer->_attribs.push_back(attrib);
-							break;
+				else if (context_dic["usage"] == "GL_DYNAMIC_DRAW") {
+					usage = GL_DYNAMIC_DRAW;
+				}
+				else if (context_dic["usage"] == "GL_STREAM_DRAW") {
+					usage = GL_STREAM_DRAW;
+				}
+				else {
+					std::cerr << "GLDrawManager : usage = " << context_dic["usage"] << " non reconnu.\n";
+					return;
+				}
+			}
+
+			GLenum draw_mode;
+			if (context_dic["mode"] == "GL_LINES") {
+				draw_mode = GL_LINES;
+			}
+			else if (context_dic["mode"] == "GL_TRIANGLES") {
+				draw_mode = GL_TRIANGLES;
+			}
+			else {
+				std::cerr << "GLDrawManager : mode = " << context_dic["mode"] << " non reconnu.\n";
+				return;
+			}
+			
+			std::vector<GLDrawContextAttrib *> attribs = active_attribs(progs[shader_name]);
+			
+			std::vector<GLDrawContextBuffer *> buffers;
+
+			GLDrawContextBuffer * default_buffer = new GLDrawContextBuffer(false, usage);
+			// TODO : faire un usage différent pour chaque buffer ?
+			buffers.push_back(default_buffer);
+
+			if (context_dic["buffers"] != nullptr) {
+				for (auto & buff : context_dic["buffers"]) {
+					bool is_instanced = buff["instanced"];
+					std::vector<std::string> attrs;
+					for (auto & attr : buff["attrs"]) {
+						attrs.push_back(attr);
+					}
+					
+					GLDrawContextBuffer * buffer = new GLDrawContextBuffer(is_instanced, usage);
+					for (auto & attr_name : attrs) {
+						for (auto & attrib : attribs) {
+							if (attrib->_name == attr_name) {
+								attrib->_in_default_buffer = false;
+								buffer->_attribs.push_back(attrib);
+								break;
+							}
 						}
 					}
+					buffers.push_back(buffer);
 				}
-				buffers.push_back(buffer);
 			}
-		}
 
-		// tous les attributs qui n'ont pas été utilisé par un buffer sont attribués au buffer par défaut
-		for (auto & attrib : attribs) {
-			if (attrib->_in_default_buffer) {
-				default_buffer->_attribs.push_back(attrib);
+			// tous les attributs qui n'ont pas été utilisé par un buffer sont attribués au buffer par défaut
+			for (auto & attrib : attribs) {
+				if (attrib->_in_default_buffer) {
+					default_buffer->_attribs.push_back(attrib);
+				}
 			}
-		}
-		
-		bool active = true;
-		if (context_dic["active"] != nullptr) {
-			active = context_dic["active"];
-		}
+			
+			bool active = true;
+			if (context_dic["active"] != nullptr) {
+				active = context_dic["active"];
+			}
 
-		_contexts.push_back(new GLDrawContext(context_name, progs[shader_name], draw_mode, buffers, _texture_pool, active));
-		_texture_pool->_context2textures[context_name] = std::vector<GLDrawTexture *>{};
+			_contexts.push_back(new GLDrawContext(context_name, progs[shader_name], draw_mode, buffers, _texture_pool, active));
+		}
 	}
 }
 
@@ -1303,13 +1332,25 @@ void GLDrawManager::set_texture_data(std::string context_name, std::string textu
 }
 
 
-void GLDrawManager::set_texture_data(std::string texture_name, std::vector<std::string> pngs) {
+void GLDrawManager::set_texture_data(std::string texture_name, fs png) {
+	GLDrawTexture * texture = _texture_pool->get_texture(texture_name);
+	texture->set_data(png);
+}
+
+
+void GLDrawManager::set_texture_data(std::string context_name, std::string texture_name, fs png) {
+	GLDrawTexture * texture = _texture_pool->get_texture(context_name, texture_name);
+	texture->set_data(png);
+}
+
+
+void GLDrawManager::set_texture_data(std::string texture_name, std::vector<fs> pngs) {
 	GLDrawTexture * texture = _texture_pool->get_texture(texture_name);
 	texture->set_data(pngs);
 }
 
 
-void GLDrawManager::set_texture_data(std::string context_name, std::string texture_name, std::vector<std::string> pngs) {
+void GLDrawManager::set_texture_data(std::string context_name, std::string texture_name, std::vector<fs> pngs) {
 	GLDrawTexture * texture = _texture_pool->get_texture(context_name, texture_name);
 	texture->set_data(pngs);
 }

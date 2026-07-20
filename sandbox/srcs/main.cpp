@@ -1,6 +1,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include <iostream>
+#include <string>
 
 #include <glm/gtx/transform.hpp>
 
@@ -22,10 +23,17 @@ int main() {
 
 	//quat const Q = glm::identity<quat>();
 
-	quat q = glm::angleAxis(M_PI * 0.5, pt_3d(0.0, 0.0, 1.0));
+	/*quat q = glm::angleAxis(M_PI * 0.5, pt_3d(0.0, 0.0, 1.0));
 	pt_3d euler = glm::eulerAngles(q);
-	std::cout << glm_to_string(euler) << "\n";
+	std::cout << glm_to_string(euler) << "\n";*/
 
+	//std::string s = "test, test2, test3, perso, perso2";
+	std::string s = "test";
+	std::vector<std::string> l = split(s, ",");
+	for (auto & x : l) {
+		std::cout << "|" << x << "|";
+	}
+	std::cout << "\n";
 
 	return 0;
 }

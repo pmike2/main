@@ -21,17 +21,17 @@ int main() {
 	const uint DELTA_OFFSET = 512;
 	const uint WAV_TXT_NSAMPLES = 10000;
 
-	//std::filesystem::path wav_path = "../data/wav/sine_100.wav";
-	//std::filesystem::path wav_path = "../data/wav/sine_1000.wav";
-	//std::filesystem::path wav_path = "../data/wav/sine_noise.wav";
-	//std::filesystem::path wav_path = "../data/wav/bcl7.wav";
-	//std::filesystem::path wav_path = "../data/wav/record_beat_simple.wav";
-	std::filesystem::path wav_path = "../data/wav/metronome.wav";
+	//fs wav_path = "../data/wav/sine_100.wav";
+	//fs wav_path = "../data/wav/sine_1000.wav";
+	//fs wav_path = "../data/wav/sine_noise.wav";
+	//fs wav_path = "../data/wav/bcl7.wav";
+	//fs wav_path = "../data/wav/record_beat_simple.wav";
+	fs wav_path = "../data/wav/metronome.wav";
 
-	std::filesystem::path parent_path = wav_path.parent_path() / wav_path.stem();
-	std::filesystem::path ffts_path = parent_path / "fft";
-	std::filesystem::path json_path = parent_path / (wav_path.stem().string() + ".json");
-	std::filesystem::path wav_txt_path = parent_path / (wav_path.stem().string() + ".txt");
+	fs parent_path = wav_path.parent_path() / wav_path.stem();
+	fs ffts_path = parent_path / "fft";
+	fs json_path = parent_path / (wav_path.stem().string() + ".json");
+	fs wav_txt_path = parent_path / (wav_path.stem().string() + ".txt");
 
 	std::vector<std::string> cmds = {
 		"rm -rf " + parent_path.string(),
@@ -110,7 +110,7 @@ int main() {
 		p = fftw_plan_dft_1d(BLOCK_SIZE, in, out, FFTW_FORWARD, FFTW_ESTIMATE);
 		fftw_execute(p);
 		
-		std::filesystem::path fft_file_path = ffts_path / (std::to_string(idx_offset) + ".txt");
+		fs fft_file_path = ffts_path / (std::to_string(idx_offset) + ".txt");
 		std::ofstream fft_file(fft_file_path.string());
 		for (uint i=0; i<BLOCK_SIZE / 2; ++i) {
 			number amplitude = sqrt(out[i][0] * out[i][0] + out[i][1] * out[i][1]);

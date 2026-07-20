@@ -4,9 +4,16 @@
 
 
 // Material ---------------------------------------------------------
-Material::Material() :
+Material::Material() {
+
+}
+
+
+Material::Material(std::string name, uint idx) :
+	_name(name), _idx(idx),
 	_ambient(pt_3d(0.0)), _diffuse(pt_3d(0.0)), _specular(pt_3d(0.0)), _emissive(pt_3d(0.0)),
-	_absorbance(0.0), _shininess(0.0), _opacity(0.0)
+	_absorbance(0.0), _shininess(0.0), _opacity(0.0),
+	_ambient_tex_path(""), _diffuse_tex_path(""), _specular_tex_path("")
 {
 
 }
@@ -96,16 +103,19 @@ ObjData::ObjData() : _n_pts(0), _n_attrs_per_pts(0) {
 }
 
 
-ObjData::ObjData(std::string obj_path) :
+ObjData::ObjData(fs obj_path) :
 	_n_pts(0), _n_attrs_per_pts(0),
-	_use_ambient(true), _use_diffuse(true), _use_specular(true), _use_shininess(true), _use_opacity(true)
+	_use_ambient(false), _use_diffuse(false), _use_specular(false), _use_shininess(false), _use_opacity(false), _use_diffuse_texture(false)
 {
 	// lecture .mtl -----------------------------------------
-	std::string mat_path = splitext(obj_path).first + ".mtl";
+	std::string mat_filename = obj_path.stem().string() + ".mtl";
+	fs parent_dir = obj_path.parent_path();
+	fs mat_path = parent_dir / mat_filename;
 
 	//std::cout << obj_path << " ; " << mat_path << "\n";
 
 	Material * current_material = NULL;
+	uint material_idx = 0;
 	
 	std::ifstream mat_file(mat_path);
 	std::string line;
@@ -116,11 +126,11 @@ ObjData::ObjData(std::string obj_path) :
 
 		if (s == "newmtl") {
 			if (current_material != NULL) {
-				_materials[current_material->_name] = current_material;
+				_materials.push_back(current_material);
 			}
 			iss >> s;
-			current_material = new Material();
-			current_material->_name = s;
+			current_material = new Material(s, material_idx);
+			material_idx++;
 		}
 		else if (s == "Ka") {
 			for (uint i=0; i<3; ++i) {
@@ -160,18 +170,18 @@ ObjData::ObjData(std::string obj_path) :
 		}
 		else if (s == "map_Ka") {
 			iss >> s;
-			current_material->_ambient_tex_path = s;
+			current_material->_ambient_tex_path = parent_dir / s;
 		}
 		else if (s == "map_Kd") {
 			iss >> s;
-			current_material->_diffuse_tex_path = s;
+			current_material->_diffuse_tex_path = parent_dir / s;
 		}
 		else if (s == "map_Ks") {
 			iss >> s;
-			current_material->_specular_tex_path = s;
+			current_material->_specular_tex_path = parent_dir / s;
 		}
 	}
-	_materials[current_material->_name] = current_material;
+	_materials.push_back(current_material);
 
 
 	// lecture .obj ------------------------------------
@@ -248,11 +258,7 @@ ObjData::ObjData(std::string obj_path) :
 		}
 		else if (s == "usemtl") {
 			iss >> s;
-			if (_materials.count(s) == 0) {
-				std::cerr << obj_path << " : " << s << " n'est pas un matériau reconnu\n";
-				return;
-			}
-			current_material = _materials[s];
+			current_material = get_material(s);
 		}
 		else if (s == "f") {
 			ObjFace * face = new ObjFace();
@@ -302,7 +308,7 @@ ObjData::ObjData(std::string obj_path) :
 
 ObjData::~ObjData() {
 	for (auto & material : _materials) {
-		delete material.second;
+		delete material;
 	}
 	_materials.clear();
 	for (auto & object : _objects) {
@@ -312,11 +318,6 @@ ObjData::~ObjData() {
 	delete[] _data;
 	delete _aabb;
 }
-
-
-/*void ObjData::set_use(bool use_ambient, bool use_diffuse, bool use_specular, bool use_shininess, bool use_opacity) {
-
-}*/
 
 
 void ObjData::update_data() {
@@ -394,6 +395,13 @@ void ObjData::update_data() {
 					ptr[0] = float(face->_material->_opacity);
 					ptr++;
 				}
+				if (_use_diffuse_texture) {
+					pt_2d tex = object->_texs[face->_textures_idx[i]];
+					ptr[0] = float(tex.x);
+					ptr[1] = float(tex.y);
+					ptr[2] = float(face->_material->_idx);
+					ptr += 3;
+				}
 			}
 		}
 	}
@@ -414,6 +422,18 @@ ObjObject * ObjData::get_object(std::string name) {
 			return obj;
 		}
 	}
+	std::cerr << "ObjData::get_object : " << name << " n'existe pas.\n";
+	return NULL;
+}
+
+
+Material * ObjData::get_material(std::string name) {
+	for (auto & mat : _materials) {
+		if (mat->_name == name) {
+			return mat;
+		}
+	}
+	std::cerr << "ObjData::get_material : " << name << " n'existe pas.\n";
 	return NULL;
 }
 
@@ -422,7 +442,7 @@ std::ostream & operator << (std::ostream & os, ObjData & data) {
 	os << "n_pts = " << data._n_pts << " ; n_attrs_per_pts = " << data._n_attrs_per_pts << "\n";
 	os << "materials =\n";
 	for (auto & mat : data._materials) {
-		os << *mat.second << "\n";
+		os << *mat << "\n";
 	}
 	os << "objects =\n";
 	for (auto & obj : data._objects) {

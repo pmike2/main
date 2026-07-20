@@ -6,31 +6,7 @@
 		"ground" : {"shader" : "repere", "mode" : "GL_TRIANGLES", "active" : false},
 		"box" : {"shader" : "repere", "mode" : "GL_LINES", "active" : false},
 
-		"test" : {
-			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",
-			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
-			]
-		},
-		"test2" : {
-			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",
-			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
-			]
-		},
-		"test3" : {
-			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",
-			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
-			]
-		},
-		"perso" : {
-			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",
-			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}
-			]
-		},
-		"perso2" : {
+		"test, test2, test3, perso, perso2" : {
 			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix", "idx_action", "idx_frame"]}

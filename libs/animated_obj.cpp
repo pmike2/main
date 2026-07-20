@@ -189,20 +189,19 @@ AnimatedObjModel::AnimatedObjModel() {
 }
 
 
-AnimatedObjModel::AnimatedObjModel(std::string json_path) {
-	std::filesystem::path js_path = json_path;
-	std::string obj_filename = js_path.stem().string() + ".obj";
-	std::filesystem::path obj_path = js_path.parent_path() / obj_filename;
+AnimatedObjModel::AnimatedObjModel(fs json_path) {
+	std::string obj_filename = json_path.stem().string() + ".obj";
+	fs obj_path = json_path.parent_path() / obj_filename;
 
-	_name = js_path.stem().string();
-	
+	_name = json_path.stem().string();
 	// set static data
-	_obj_data = new ObjData(obj_path.string());
+	_obj_data = new ObjData(obj_path);
 	_obj_data->_use_ambient = false;
 	_obj_data->_use_diffuse = true;
 	_obj_data->_use_specular = false;
 	_obj_data->_use_shininess = false;
 	_obj_data->_use_opacity = false;
+	_obj_data->_use_diffuse_texture = true;
 	_obj_data->update_data();
 
 	// ajouts des surcouches AnimatedObjObject

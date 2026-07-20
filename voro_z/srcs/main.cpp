@@ -156,6 +156,9 @@ void init() {
 	glBindVertexArray(g_vao);
 
 	std::map<std::string, GLuint> progs;
+
+	// TODO : remplacer par les chemins des shaders dans le dossier local shaders
+
 	progs["repere"]= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
 	progs["select"]= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
 	progs["font"]= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");

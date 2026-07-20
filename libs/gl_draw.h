@@ -29,7 +29,7 @@ char * load_source(const char * filename);
 GLuint load_shader(GLenum type, const char * filename);
 
 // création programme
-GLuint create_prog(std::string vs_path, std::string fs_path, std::string gs_path="");
+GLuint create_prog(fs vs_path, fs fs_path, fs gs_path="");
 
 // récupération des uniforms et des attributs d'un programme
 std::vector<GLDrawContextUniform *> active_uniforms(GLuint prog);
@@ -43,10 +43,11 @@ struct GLDrawTexture {
 	~GLDrawTexture();
 	// set data ; dans le cas GL_TEXTURE_2D depth est ignoré
 	void set_data(void * data, int depth = -1, int width = -1, int height = -1);
+	void set_data(fs png);
 	// set data avec une liste de PNGs, uniquement pour le cas GL_TEXTURE_2D_ARRAY
-	void set_data(std::vector<std::string> pngs);
+	void set_data(std::vector<fs> pngs);
 	// export PGM pour debug
-	void export2pgm(std::string pgm_path);
+	void export2pgm(fs pgm_path);
 	// print pour debug
 	void print_data();
 	friend std::ostream & operator << (std::ostream & os, const GLDrawTexture & tex);
@@ -203,7 +204,7 @@ struct GLDrawContext {
 // classe principale de gestion de dessin OpenGL
 struct GLDrawManager {
 	GLDrawManager();
-	GLDrawManager(std::string json_path);
+	GLDrawManager(fs json_path);
 	~GLDrawManager();
 	
 	GLDrawContext * get_context(std::string context_name); // récupération contexte
@@ -221,9 +222,14 @@ struct GLDrawManager {
 	void set_texture_data(std::string texture_name, void * data, int depth = -1, int width = -1, int height = -1);
 	// set texture data pour une texture spécifique à un contexte
 	void set_texture_data(std::string context_name, std::string texture_name, void * data, int depth = -1, int width = -1, int height = -1);
+
+	// pour un PNG, uniquement valide pour le cas GL_TEXTURE_2D
+	void set_texture_data(std::string texture_name, fs png);
+	void set_texture_data(std::string context_name, std::string texture_name, fs png);
+
 	// la même chose avec des PNGs, uniquement valide pour le cas GL_TEXTURE_2D_ARRAY
-	void set_texture_data(std::string texture_name, std::vector<std::string> pngs);
-	void set_texture_data(std::string context_name, std::string texture_name, std::vector<std::string> pngs);
+	void set_texture_data(std::string texture_name, std::vector<fs> pngs);
+	void set_texture_data(std::string context_name, std::string texture_name, std::vector<fs> pngs);
 
 	// ajout texture buffer
 	void add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint offset);

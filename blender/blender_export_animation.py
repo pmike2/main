@@ -250,7 +250,7 @@ def export_obj(obj_path):
         apply_transform=False,
         export_eval_mode='DAG_EVAL_VIEWPORT',
         export_selected_objects=False,
-        export_uv=False,
+        export_uv=True,
         # on veut les normales
         export_normals=True,
         export_colors=False,
@@ -274,6 +274,9 @@ def export_animation(json_path, mode):
     """Fonction principale."""
     # sauvegarde du projet afin de revenir à un état propre à la fin
     bpy.ops.wm.save_mainfile()
+    
+    # on passe en mode objet
+    bpy.ops.object.mode_set(mode="OBJECT")
     
     # application des modifiers (mirror, shrinkwrap, ...) mais PAS armature
     apply_modifiers()

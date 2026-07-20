@@ -650,10 +650,10 @@ void Map::save_teams(std::string teams_json_path) {
 
 
 void Map::save_fixed(std::string dir_map) {
-	std::filesystem::path map_path = dir_map;
-	std::filesystem::path general_json_path = map_path / "general.json";
-	std::filesystem::path elements_json_path = map_path / "elements.json";
-	std::filesystem::path elevation_path = map_path / "elevation.raw";
+	fs map_path = dir_map;
+	fs general_json_path = map_path / "general.json";
+	fs elements_json_path = map_path / "elements.json";
+	fs elevation_path = map_path / "elevation.raw";
 
 	if (!std::filesystem::is_directory(map_path)) {
 		std::filesystem::create_directory(map_path);
@@ -699,18 +699,18 @@ void Map::save_fixed(std::string dir_map) {
 
 void Map::save(std::string dir_map) {
 	save_fixed(dir_map);
-	std::filesystem::path map_path = dir_map;
-	std::filesystem::path teams_json_path = map_path / "teams.json";
+	fs map_path = dir_map;
+	fs teams_json_path = map_path / "teams.json";
 	save_teams(teams_json_path.string());
 }
 
 
 void Map::load(std::string dir_map, time_point t) {
-	std::filesystem::path map_path = dir_map;
-	std::filesystem::path general_json_path = map_path / "general.json";
-	std::filesystem::path elements_json_path = map_path / "elements.json";
-	std::filesystem::path teams_json_path = map_path / "teams.json";
-	std::filesystem::path elevation_path = map_path / "elevation.raw";
+	fs map_path = dir_map;
+	fs general_json_path = map_path / "general.json";
+	fs elements_json_path = map_path / "elements.json";
+	fs teams_json_path = map_path / "teams.json";
+	fs elevation_path = map_path / "elevation.raw";
 
 	clear_units();
 	clear_elements();

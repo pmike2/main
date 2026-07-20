@@ -53,11 +53,14 @@ uint diff_time_ms(struct timeval * after, struct timeval * before);
 uint diff_time_ms_from_now(struct timeval * begin);
 std::string current_date_time();
 
+// ne plus utiliser ; utiliser filesystem
+/*
 std::vector<std::string> list_files(std::string ch_dir, std::string ext="");
 bool file_exists(const std::string filepath);
 std::string basename(std::string s);
 std::string dirname(std::string s);
 std::pair<std::string, std::string> splitext(std::string s);
+*/
 
 void ltrim(std::string &s);
 void rtrim(std::string &s);

@@ -105,7 +105,7 @@ struct AnimatedObjObject {
 // Un modèle animé associé à un ObjData (obj_parser.h)
 struct AnimatedObjModel {
 	AnimatedObjModel();
-	AnimatedObjModel(std::string json_path);
+	AnimatedObjModel(fs json_path);
 	~AnimatedObjModel();
 	void compute_transform_final_matrix(); // calcul des matrices finales des transformations
 	void compute_buffer_texture_data(); // calcul de ce qui sera mis dans le buffer texture

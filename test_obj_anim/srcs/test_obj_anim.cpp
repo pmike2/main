@@ -39,20 +39,32 @@ TestObjAnim::TestObjAnim() {
 TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
 	_gl_draw_manager(gl_draw_manager), _view_system(view_system), _paused(true)
 {
-	std::vector<std::string> model_names {"test", "test2", "test3", "perso", "perso2"};
-	//std::vector<std::string> model_names {"perso2"};
-
 	//_gl_draw_manager->set_verbose(true);
 	
-	for (auto & model_name : model_names) {
-		AnimatedObjModel * model = new AnimatedObjModel("../data/" + model_name + ".json");
+	fs root_anim_objs = "../data/anim_objs";
+
+	for (auto & anim_obj_dir : std::filesystem::directory_iterator(root_anim_objs)) {
+		if (!anim_obj_dir.is_directory()) {
+			continue;
+		}
+
+		std::string anim_obj_name = anim_obj_dir.path().filename().string();
+
+		if (anim_obj_name != "perso2") {
+			continue;
+		}
+
+		std::string json_name = anim_obj_name + ".json";
+		fs json_path = anim_obj_dir.path() / json_name;
+		//std::cout << json_path << "\n";
+		AnimatedObjModel * model = new AnimatedObjModel(json_path);
 		//model->_n_ms_per_frame = 200;
 		//std::cout << *model << "\n";
 
 		GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
 
-		_gl_draw_manager->add_texture_buffer(model_name, "anim_buffer", GL_R32F, 0);
-		_gl_draw_manager->set_texture_buffer_data(model_name, "anim_buffer", model->_buffer_texture_data, model->_buffer_texture_data_size * sizeof(float));
+		_gl_draw_manager->add_texture_buffer(model->_name, "anim_buffer", GL_R32F, 0);
+		_gl_draw_manager->set_texture_buffer_data(model->_name, "anim_buffer", model->_buffer_texture_data, model->_buffer_texture_data_size * sizeof(float));
 		// on a plus besoin de ça
 		delete model->_buffer_texture_data;
 		
@@ -68,6 +80,22 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 
 		//_gl_draw_manager->_texture_pool->get_texture(context->_name, "idx_texture")->export2pgm("../data/test.pgm");
 		//_gl_draw_manager->_texture_pool->get_texture(context->_name, "idx_texture")->print_data();
+
+		std::vector<fs> diffuse_textures;
+		for (auto & material : model->_obj_data->_materials) {
+			if (material->_diffuse_tex_path != "") {
+				diffuse_textures.push_back(material->_diffuse_tex_path);
+			}
+		}
+		_gl_draw_manager->add_texture(
+			context->_name, "diffuse_texture", GL_TEXTURE_2D_ARRAY, 2,
+				std::map<GLenum, int>{
+				{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
+				{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
+				},
+			GL_RGBA, glm::uvec3(IDX_TEXTURE_DATA_SIZE, IDX_TEXTURE_DATA_SIZE, diffuse_textures.size()), GL_RGBA, GL_UNSIGNED_BYTE
+		);
+		_gl_draw_manager->set_texture_data(context->_name, "diffuse_texture", diffuse_textures);
 		
 		_models.push_back(model);
 

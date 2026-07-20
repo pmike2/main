@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <filesystem>
 
 #include "typedefs.h"
 #include "bbox.h"
@@ -14,11 +15,13 @@
 
 struct Material {
 	Material();
+	Material(std::string name, uint idx);
 	~Material();
 	friend std::ostream & operator << (std::ostream & os, Material & mat);
 
 
 	std::string _name;
+	uint _idx;
 	pt_3d _ambient;
 	pt_3d _diffuse;
 	pt_3d _specular;
@@ -26,9 +29,9 @@ struct Material {
 	number _absorbance; // inutilisé
 	number _shininess;
 	number _opacity;
-	std::string _ambient_tex_path; // inutilisé
-	std::string _diffuse_tex_path; // inutilisé
-	std::string _specular_tex_path; // inutilisé
+	fs _ambient_tex_path; // inutilisé
+	fs _diffuse_tex_path;
+	fs _specular_tex_path; // inutilisé
 };
 
 
@@ -65,22 +68,22 @@ struct ObjObject {
 
 struct ObjData {
 	ObjData();
-	ObjData(std::string obj_path);
+	ObjData(fs obj_path);
 	~ObjData();
-	//void set_use(bool use_ambient, bool use_diffuse, bool use_specular, bool use_shininess, bool use_opacity);
 	void update_data();
 	ObjObject * new_generic_object();
 	ObjObject * get_object(std::string name);
+	Material * get_material(std::string name);
 	friend std::ostream & operator << (std::ostream & os, ObjData & data);
 
 
-	std::map<std::string, Material *> _materials;
+	std::vector<Material *> _materials;
 	std::vector<ObjObject *> _objects;
 	float * _data;
 	uint _n_pts;
 	uint _n_attrs_per_pts;
 	AABB * _aabb;
-	bool _use_ambient, _use_diffuse, _use_specular, _use_shininess, _use_opacity;
+	bool _use_ambient, _use_diffuse, _use_specular, _use_shininess, _use_opacity, _use_diffuse_texture;
 };
 
 

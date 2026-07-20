@@ -9,14 +9,11 @@
 		"font3d" : {"shader" : "font3d", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 		"gl_ihm" : {"shader" : "gl_ihm", "mode" : "GL_TRIANGLES"},
 
-		"debug" : {"shader" : "linear", "mode" : "GL_LINES", "active" : false},
-		"select" : {"shader" : "select", "mode" : "GL_LINES"},
-		"grid" : {"shader" : "linear", "mode" : "GL_LINES", "active" : false},
-		"bbox" : {"shader" : "linear", "mode" : "GL_LINES"},
-		"path" : {"shader" : "dash", "mode" : "GL_LINES"},
-		"selection" : {"shader" : "dash", "mode" : "GL_LINES"},
-		"edit_map" : {"shader" : "dash", "mode" : "GL_LINES"},
-		"cursor" : {"shader" : "dash", "mode" : "GL_LINES"},
+		"debug, grid" : {"shader" : "linear", "mode" : "GL_LINES", "active" : false},
+		"select, bbox" : {"shader" : "select", "mode" : "GL_LINES"},
+		
+		"path, selection, edit_map, cursor" : {"shader" : "dash", "mode" : "GL_LINES"},
+
 		"elevation" : {"shader" : "elevation", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW"},
 		"tree_stone" : {"shader" : "tree_stone", "mode" : "GL_TRIANGLES"},
 		"river" : {"shader" : "river", "mode" : "GL_TRIANGLES"},
@@ -27,53 +24,13 @@
 		"construction" : {"shader" : "construction", "mode" : "GL_TRIANGLES"},
 		"explosion" : {"shader" : "explosion", "mode" : "GL_TRIANGLES"},
 
-		"bomb" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
-			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix"]}
-			]
-		},
-		"bullet" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
-			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix"]}
-			]
-		},
-		"water_land_missile" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
-			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix"]}
-			]
-		},
-
-		"barrier_basic" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
+		"bomb, bullet, water_land_missile, barrier_basic" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix"]}
 			]
 		},
 		
-		"infantery" : {
-			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
-			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in", "alpha_in"]}
-			]
-		},
-		"tank" : {
-			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
-			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in", "alpha_in"]}
-			]
-		},
-		"helicopter" : {
-			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
-			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in", "alpha_in"]}
-			]
-		},
-		"boat" : {
-			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
-			"buffers" : [
-				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in", "alpha_in"]}
-			]
-		},
-		"submarine" : {
+		"infantery, tank, helicopter, boat, submarine" : {
 			"shader" : "unit", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW",
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix", "team_color_in", "hit_in", "alpha_in"]}
