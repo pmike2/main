@@ -22,8 +22,7 @@ const number GL_WIDTH = 15.0;
 const number GL_HEIGHT = GL_WIDTH * (number)(MAIN_WIN_HEIGHT) / (number)(MAIN_WIN_WIDTH);
 
 
-SDL_Window * window;
-SDL_GLContext main_context;
+GLSDL * gl_sdl;
 InputState * input_state;
 ViewSystem * view_system;
 GLDrawManager * gl_draw_manager;
@@ -80,64 +79,17 @@ void key_up(SDL_Keycode key, time_point t) {
 }
 
 
-void init_gl() {
-	srand(time(NULL));
-	
-	SDL_Init(SDL_INIT_EVERYTHING);
-	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 
-	//SDL_ShowCursor(SDL_DISABLE);
-	
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	// pour faire du multisampling (suppression aliasing)
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
-	
-	window = SDL_CreateWindow("basic_opengl", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
-	main_context = SDL_GL_CreateContext(window);
-
-	//gl_versions();
-
-	glClearColor(0.1, 0.1, 0.1, 1.0);
-
-	SDL_GL_SetSwapInterval(1);
-	glClearDepth(1.0f);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LESS);
-	glDepthRange(0.0f, 1.0f);
-	
-	// frontfaces en counterclockwise
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_CLAMP);
-	
-	// pour gérer l'alpha
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
-	SDL_GL_SwapWindow(window);
-}
-
-
-void init_data() {
-	fps_count = new FPSCount(window);
-
+void init() {
+	gl_sdl = new GLSDL("test_obj", MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, true);
+	fps_count = new FPSCount(gl_sdl->_window);
 	GLDrawManager * gl_draw_manager = new GLDrawManager("../data/draw_context.json");
-
 	ScreenGL * screengl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+	input_state = new InputState();
 	
 	view_system = new ViewSystem(gl_draw_manager, screengl);
 	view_system->set(pt_3d(0.0, 0.0, 0.0), M_PI * 0.25, M_PI * 0.25, 30.0);
 	//view_system->set_2d(30.0);
-
-	input_state = new InputState();
 
 	test_obj = new TestObj(gl_draw_manager, view_system);
 }
@@ -149,7 +101,7 @@ void draw() {
 	view_system->draw();
 	test_obj->draw();
 
-	SDL_GL_SwapWindow(window);
+	SDL_GL_SwapWindow(gl_sdl->_window);
 	fps_count->add_frame();
 }
 
@@ -219,16 +171,12 @@ void clean() {
 	delete input_state;
 	delete gl_draw_manager;
 	delete fps_count;
-
-	SDL_GL_DeleteContext(main_context);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
+	delete gl_sdl;
 }
 
 
 int main() {
-	init_gl();
-	init_data();
+	init();
 	main_loop();
 	clean();
 

@@ -337,6 +337,9 @@ void ObjData::update_data() {
 	if (_use_opacity) {
 		_n_attrs_per_pts++;
 	}
+	if (_use_diffuse_texture) {
+		_n_attrs_per_pts += 3;
+	}
 
 	_n_pts = 0;
 	for (auto & object : _objects) {
@@ -398,7 +401,7 @@ void ObjData::update_data() {
 				if (_use_diffuse_texture) {
 					pt_2d tex = object->_texs[face->_textures_idx[i]];
 					ptr[0] = float(tex.x);
-					ptr[1] = float(tex.y);
+					ptr[1] = float(1.0 - tex.y); // attention OpenGL texture y origine en haut
 					ptr[2] = float(face->_material->_idx);
 					ptr += 3;
 				}

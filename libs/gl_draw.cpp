@@ -258,6 +258,10 @@ GLDrawTexture::GLDrawTexture(std::string name, GLenum target, uint offset, std::
 		glTexParameteri(_target, param.first, param.second);
 	}
 
+	// test anisotropic filter
+	//#define GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
+	//glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 16.0);
+
 	if (_target == GL_TEXTURE_2D_ARRAY) {
 		glTexImage3D(_target, 0, _internal_format, _size[0], _size[1], _size[2], 0, _format, _type, NULL);
 	}

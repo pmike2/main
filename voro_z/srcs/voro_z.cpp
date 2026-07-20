@@ -1,3 +1,5 @@
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <algorithm>
 #include <random>
 
@@ -87,30 +89,31 @@ Biome::Biome() {
 }
 
 
-Biome::Biome(BiomeType type, number zmin, number zmax, glm::vec4 color, float uv_factor, std::string diffuse_texture_path, std::string normal_texture_path, std::string parallax_texture_path, float anim_speed) :
+Biome::Biome(BiomeType type, number zmin, number zmax, glm::vec4 color, float uv_factor, fs diffuse_texture_path, fs normal_texture_path, fs parallax_texture_path, float anim_speed) :
 	_type(type), _zmin(zmin), _zmax(zmax), _color(color), _uv_factor(uv_factor), _diffuse_texture_path(diffuse_texture_path), 
 	_normal_texture_path(normal_texture_path), _parallax_texture_path(parallax_texture_path), _anim_speed(anim_speed)
 {
-	if (_diffuse_texture_path.find(".png")!= std::string::npos) {
+	if (std::filesystem::is_regular_file(_diffuse_texture_path)) {
 		_diffuse_pngs.push_back(_diffuse_texture_path);
 	}
 	else {
-		_diffuse_pngs= list_files(_diffuse_texture_path, "png");
+		for (auto & png : std::filesystem::directory_iterator(_diffuse_texture_path)) {
+			if (png.path().extension() == ".png") {
+				_diffuse_pngs.push_back(png.path());
+			}
+		}
 	}
 
-	if (_normal_texture_path.find(".png")!= std::string::npos) {
+	if (std::filesystem::is_regular_file(_normal_texture_path)) {
 		_normal_pngs.push_back(_normal_texture_path);
 	}
 	else {
-		_normal_pngs= list_files(_normal_texture_path, "png");
+		for (auto & png : std::filesystem::directory_iterator(_normal_texture_path)) {
+			if (png.path().extension() == ".png") {
+				_normal_pngs.push_back(png.path());
+			}
+		}
 	}
-
-	/*for (auto png : _diffuse_pngs) {
-		std::cout << "diffuse : " << png << "\n";
-	}
-	for (auto png : _normal_pngs) {
-		std::cout << "normal : " << png << "\n";
-	}*/
 }
 
 
@@ -221,14 +224,11 @@ VoroZ::VoroZ() {
 }
 
 
-VoroZ::VoroZ(std::map<std::string, GLuint> progs) :
-	_draw_mode(NORMAL)
+VoroZ::VoroZ(GLDrawManager * gl_draw_manager, ViewSystem * view_system) :
+	_draw_mode(NORMAL), _gl_draw_manager(gl_draw_manager), _view_system(view_system)
 {
 	init_biome();
-	init_context(progs);
-	init_texture_diffuse();
-	init_texture_normal();
-	init_texture_parallax();
+	init_textures();
 	init_light();
 	init_dcel();
 	update();
@@ -236,52 +236,23 @@ VoroZ::VoroZ(std::map<std::string, GLuint> progs) :
 
 
 VoroZ::~VoroZ() {
-	for (auto context  : _contexts) {
-		delete context.second;
-	}
-	_contexts.clear();
 	delete _dcel;
 	delete _light;
 }
 
 
 void VoroZ::init_biome() {
-	_biomes[WATER]= new Biome(WATER, -10.0, 0.01, glm::vec4(0.1, 0.4, 0.8, 0.5), 0.007, "../data/water/diffuse", "../data/water/normal", "../data/brick_parallax.png", 0.3);
-	_biomes[COAST]= new Biome(COAST, 0.01, 10.0, glm::vec4(0.7, 0.7, 0.4, 0.8), 0.02, "../data/sand.png", "../data/sand_normal.png", "../data/brick_parallax.png", 0.3);
-	_biomes[FOREST]= new Biome(FOREST, 10.0, 100.0, glm::vec4(0.3, 0.8, 0.5, 0.9), 0.02, "../data/grass/diffuse", "../data/grass/normal", "../data/brick_parallax.png", 0.1);
-	_biomes[MOUNTAIN]= new Biome(MOUNTAIN, 100.0, 200.0, glm::vec4(0.8, 0.8, 0.9, 1.0), 0.02, "../data/snow.png", "../data/snow_normal.png", "../data/brick_parallax.png", 0.3);
-	_biomes[DIRT]= new Biome(DIRT, 0.0, 0.0, glm::vec4(0.5, 0.3, 0.2, 1.0), 0.04, "../data/dirt.png", "../data/dirt_normal.png", "../data/brick_parallax.png", 0.3);
+	fs root_textures = "../data/textures";
+	_biomes[WATER]= new Biome(WATER, -10.0, 0.01, glm::vec4(0.1, 0.4, 0.8, 0.5), 0.007, root_textures / "water" / "diffuse", root_textures / "water" / "normal", root_textures / "brick_parallax.png", 0.3);
+	_biomes[COAST]= new Biome(COAST, 0.01, 10.0, glm::vec4(0.7, 0.7, 0.4, 0.8), 0.02, root_textures / "sand.png", root_textures / "sand_normal.png", root_textures / "brick_parallax.png", 0.3);
+	_biomes[FOREST]= new Biome(FOREST, 10.0, 100.0, glm::vec4(0.3, 0.8, 0.5, 0.9), 0.02, root_textures / "grass" / "diffuse", root_textures / "grass" / "normal", root_textures / "brick_parallax.png", 0.1);
+	_biomes[MOUNTAIN]= new Biome(MOUNTAIN, 100.0, 200.0, glm::vec4(0.8, 0.8, 0.9, 1.0), 0.02, root_textures / "snow.png", root_textures / "snow_normal.png", root_textures / "brick_parallax.png", 0.3);
+	_biomes[DIRT]= new Biome(DIRT, 0.0, 0.0, glm::vec4(0.5, 0.3, 0.2, 1.0), 0.04, root_textures / "dirt.png", root_textures / "dirt_normal.png", root_textures / "brick_parallax.png", 0.3);
 }
 
 
-void VoroZ::init_context(std::map<std::string, GLuint> progs) {
-	GLuint buffers[5];
-	glGenBuffers(5, buffers);
-
-	_contexts["simple"]= new GLDrawContext(progs["repere"], buffers[0],
-		std::vector<std::string>{"position_in", "color_in"},
-		std::vector<std::string>{"world2clip_matrix"});
-	
-	_contexts["texture"]= new GLDrawContext(progs["texture"], buffers[1],
-		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_in"},
-		std::vector<std::string>{"world2clip_matrix", "diffuse_texture_array"});
-	
-	_contexts["light"]= new GLDrawContext(progs["light"], buffers[2],
-		std::vector<std::string>{"position_in", "color_in", "normal_in"},
-		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position"});
-
-	_contexts["normal"]= new GLDrawContext(progs["normal"], buffers[3],
-		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_diffuse_in", "current_layer_normal_in", "normal_in", "tangent_in"},
-		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "diffuse_texture_array", "normal_texture_array"});
-
-	_contexts["parallax"]= new GLDrawContext(progs["parallax"], buffers[4],
-		std::vector<std::string>{"position_in", "tex_coord_in", "current_layer_diffuse_in", "current_layer_normal_in", "current_layer_parallax_in", "normal_in", "tangent_in"},
-		std::vector<std::string>{"world2clip_matrix", "light_position", "light_color", "view_position", "diffuse_texture_array", "normal_texture_array", "parallax_texture_array", "height_scale"});
-}
-
-
-void VoroZ::init_texture_diffuse() {
-	glGenTextures(1, &_texture_id_diffuse);
+void VoroZ::init_textures() {
+	/*glGenTextures(1, &_texture_id_diffuse);
 
 	glActiveTexture(GL_TEXTURE0+ 0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id_diffuse);
@@ -326,11 +297,77 @@ void VoroZ::init_texture_diffuse() {
 	glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_WRAP_T    , GL_REPEAT);
 	glActiveTexture(0);
 	
-	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
+	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);*/
+
+	// -------------------------------
+	std::vector<fs> diffuse_textures, normal_textures, parallax_textures;
+
+	// diffuse
+	uint compt= 0;
+	for (auto biome : _biomes) {
+		biome.second->_diffuse_texture_idx_start = compt;
+		biome.second->_diffuse_texture_idx_current = float(compt);
+		for (auto & png : biome.second->_diffuse_pngs) {
+			diffuse_textures.push_back(png);
+			compt++;
+		}
+		biome.second->_diffuse_texture_idx_end = compt- 1;
+	}
+
+	_gl_draw_manager->add_texture(
+		"diffuse_texture_array", GL_TEXTURE_2D_ARRAY, 0,
+			std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
+			{GL_TEXTURE_WRAP_S, GL_REPEAT}, {GL_TEXTURE_WRAP_T, GL_REPEAT}
+			},
+		GL_RGBA, glm::uvec3(1024, 1024, diffuse_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
+	);
+	_gl_draw_manager->set_texture_data("diffuse_texture_array", diffuse_textures);
+
+	// normal
+	compt= 0;
+	for (auto biome : _biomes) {
+		biome.second->_normal_texture_idx_start = compt;
+		biome.second->_normal_texture_idx_current = float(compt);
+		for (auto & png : biome.second->_normal_pngs) {
+			normal_textures.push_back(png);
+			compt++;
+		}
+		biome.second->_normal_texture_idx_end = compt- 1;
+	}
+
+	_gl_draw_manager->add_texture(
+		"normal_texture_array", GL_TEXTURE_2D_ARRAY, 0,
+			std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
+			{GL_TEXTURE_WRAP_S, GL_REPEAT}, {GL_TEXTURE_WRAP_T, GL_REPEAT}
+			},
+		GL_RGBA, glm::uvec3(1024, 1024, normal_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
+	);
+	_gl_draw_manager->set_texture_data("normal_texture_array", normal_textures);
+
+	// parallax
+	compt= 0;
+	for (auto biome : _biomes) {
+		biome.second->_parallax_texture_idx = compt;
+		parallax_textures.push_back(biome.second->_parallax_texture_path);
+		compt++;
+	}
+
+	_gl_draw_manager->add_texture(
+		"parallax_texture_array", GL_TEXTURE_2D_ARRAY, 0,
+			std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
+			{GL_TEXTURE_WRAP_S, GL_REPEAT}, {GL_TEXTURE_WRAP_T, GL_REPEAT}
+			},
+		GL_RGBA, glm::uvec3(1024, 1024, parallax_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
+	);
+	_gl_draw_manager->set_texture_data("parallax_texture_array", parallax_textures);
+
 }
 
 
-void VoroZ::init_texture_normal() {
+/*void VoroZ::init_texture_normal() {
 	glGenTextures(1, &_texture_id_normal);
 
 	glActiveTexture(GL_TEXTURE0+ 1);
@@ -381,10 +418,10 @@ void VoroZ::init_texture_normal() {
 	glActiveTexture(0);
 	
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-}
+}*/
 
 
-void VoroZ::init_texture_parallax() {
+/*void VoroZ::init_texture_parallax() {
 	glGenTextures(1, &_texture_id_parallax);
 
 	glActiveTexture(GL_TEXTURE0+ 2);
@@ -428,7 +465,7 @@ void VoroZ::init_texture_parallax() {
 	glActiveTexture(0);
 	
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
-}
+}*/
 
 
 void VoroZ::init_light() {
@@ -580,30 +617,8 @@ void VoroZ::init_dcel() {
 }
 
 
-void VoroZ::draw_simple(const glm::mat4 & world2clip) {
-	glUseProgram(_contexts["simple"]->_prog);
-	glBindBuffer(GL_ARRAY_BUFFER, _contexts["simple"]->_buffer);
-	
-	glUniformMatrix4fv(_contexts["simple"]->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
-	
-	glEnableVertexAttribArray(_contexts["simple"]->_locs_attrib["position_in"]);
-	glEnableVertexAttribArray(_contexts["simple"]->_locs_attrib["color_in"]);
-
-	glVertexAttribPointer(_contexts["simple"]->_locs_attrib["position_in"], 3, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)0);
-	glVertexAttribPointer(_contexts["simple"]->_locs_attrib["color_in"], 4, GL_FLOAT, GL_FALSE, 7* sizeof(float), (void*)(3* sizeof(float)));
-
-	glDrawArrays(GL_TRIANGLES, 0, _n_pts);
-
-	glDisableVertexAttribArray(_contexts["simple"]->_locs_attrib["position_in"]);
-	glDisableVertexAttribArray(_contexts["simple"]->_locs_attrib["color_in"]);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
-}
-
-
-void VoroZ::draw_texture(const glm::mat4 & world2clip) {
-	glActiveTexture(GL_TEXTURE0+ 0);
+void VoroZ::draw_texture() {
+	/*glActiveTexture(GL_TEXTURE0+ 0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id_diffuse);
 	glActiveTexture(0);
 
@@ -629,12 +644,18 @@ void VoroZ::draw_texture(const glm::mat4 & world2clip) {
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+	glUseProgram(0);*/
+
+	GLDrawContext * context = _gl_draw_manager->get_context("tex");
+	context->activate();
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->draw();
+	context->deactivate();
 }
 
 
-void VoroZ::draw_light(const glm::mat4 & world2clip, const glm::vec3 & camera_position) {
-	glUseProgram(_contexts["light"]->_prog);
+void VoroZ::draw_light() {
+	/*glUseProgram(_contexts["light"]->_prog);
 	glBindBuffer(GL_ARRAY_BUFFER, _contexts["light"]->_buffer);
 	
 	glUniformMatrix4fv(_contexts["light"]->_locs_uniform["world2clip_matrix"], 1, GL_FALSE, glm::value_ptr(world2clip));
@@ -657,12 +678,22 @@ void VoroZ::draw_light(const glm::mat4 & world2clip, const glm::vec3 & camera_po
 	glDisableVertexAttribArray(_contexts["light"]->_locs_attrib["normal_in"]);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+	glUseProgram(0);*/
+
+	GLDrawContext * context = _gl_draw_manager->get_context("light");
+	context->activate();
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(_light->_position));
+	context->set_uniform("light_color", glm::value_ptr(_light->_color));
+	context->set_uniform("light_position", glm::value_ptr(_light->_position));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->draw();
+	context->deactivate();
 }
 
 
-void VoroZ::draw_normal(const glm::mat4 & world2clip, const glm::vec3 & camera_position) {
-	glActiveTexture(GL_TEXTURE0+ 0);
+void VoroZ::draw_normal() {
+	/*glActiveTexture(GL_TEXTURE0+ 0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id_diffuse);
 	glActiveTexture(GL_TEXTURE0+ 1);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id_normal);
@@ -703,12 +734,23 @@ void VoroZ::draw_normal(const glm::mat4 & world2clip, const glm::vec3 & camera_p
 
 	glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glUseProgram(0);
+	glUseProgram(0);*/
+
+	GLDrawContext * context = _gl_draw_manager->get_context("normal");
+	context->activate();
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(_light->_position));
+	context->set_uniform("light_color", glm::value_ptr(_light->_color));
+	context->set_uniform("light_position", glm::value_ptr(_light->_position));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->draw();
+	context->deactivate();
+
 }
 
 
-void VoroZ::draw_parallax(const glm::mat4 & world2clip, const glm::vec3 & camera_position) {
-	glActiveTexture(GL_TEXTURE0+ 0);
+void VoroZ::draw_parallax() {
+	/*glActiveTexture(GL_TEXTURE0+ 0);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id_diffuse);
 	glActiveTexture(GL_TEXTURE0+ 1);
 	glBindTexture(GL_TEXTURE_2D_ARRAY, _texture_id_normal);
@@ -757,25 +799,32 @@ void VoroZ::draw_parallax(const glm::mat4 & world2clip, const glm::vec3 & camera
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glUseProgram(0);
 
-	glActiveTexture(0);
+	glActiveTexture(0);*/
+
+	GLDrawContext * context = _gl_draw_manager->get_context("parallax");
+	context->activate();
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->set_uniform("light_position", glm::value_ptr(_light->_position));
+	context->set_uniform("light_color", glm::value_ptr(_light->_color));
+	context->set_uniform("light_position", glm::value_ptr(_light->_position));
+	context->set_uniform("view_position", glm::value_ptr(glm::vec3(_view_system->_eye)));
+	context->draw();
+	context->deactivate();
 }
 
 
-void VoroZ::draw(const glm::mat4 & world2clip, const glm::vec3 & camera_position) {
-	if (_draw_mode== SIMPLE) {
-		draw_simple(world2clip);
+void VoroZ::draw() {
+	if (_draw_mode == TEXTURE) {
+		draw_texture();
 	}
-	else if (_draw_mode== TEXTURE) {
-		draw_texture(world2clip);
+	else if (_draw_mode == LIGHT) {
+		draw_light();
 	}
-	else if (_draw_mode== LIGHT) {
-		draw_light(world2clip, camera_position);
+	else if (_draw_mode == NORMAL) {
+		draw_normal();
 	}
-	else if (_draw_mode== NORMAL) {
-		draw_normal(world2clip, camera_position);
-	}
-	else if (_draw_mode== PARALLAX) {
-		draw_parallax(world2clip, camera_position);
+	else if (_draw_mode == PARALLAX) {
+		draw_parallax();
 	}
 }
 
@@ -930,31 +979,10 @@ void VoroZ::update_triangle_data() {
 }
 
 
-void VoroZ::update_simple() {
-	uint n_attrs= 7;
-
-	float data[_n_pts* n_attrs];
-
-	for (uint idx_triangle=0; idx_triangle<_triangle_data.size(); ++idx_triangle) {
-		for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 0]= _triangle_data[idx_triangle]->_pts[idx_pt].x;
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 1]= _triangle_data[idx_triangle]->_pts[idx_pt].y;
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 2]= _triangle_data[idx_triangle]->_pts[idx_pt].z;
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 3]= _triangle_data[idx_triangle]->_biome->_color.x;
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 4]= _triangle_data[idx_triangle]->_biome->_color.y;
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 5]= _triangle_data[idx_triangle]->_biome->_color.z;
-			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 6]= _triangle_data[idx_triangle]->_biome->_color.w;
-		}
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, _contexts["simple"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* _n_pts* n_attrs, data, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
-
 void VoroZ::update_texture() {
-	uint n_attrs= 6;
+	GLDrawContext * context= _gl_draw_manager->get_context("tex");
+	context->_n_pts = _n_pts;
+	uint n_attrs = context->_buffers[0]->_n_attrs_per_pts;
 
 	float data[_n_pts* n_attrs];
 
@@ -968,15 +996,14 @@ void VoroZ::update_texture() {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 5]= _triangle_data[idx_triangle]->_biome->_diffuse_texture_idx_current;
 		}
 	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, _contexts["texture"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* _n_pts* n_attrs, data, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	context->set_data(data);
 }
 
 
 void VoroZ::update_light() {
-	uint n_attrs= 10;
+	GLDrawContext * context= _gl_draw_manager->get_context("light");
+	context->_n_pts = _n_pts;
+	uint n_attrs = context->_buffers[0]->_n_attrs_per_pts;
 
 	float data[_n_pts* n_attrs];
 
@@ -994,15 +1021,14 @@ void VoroZ::update_light() {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 9]= _triangle_data[idx_triangle]->_normal.z;
 		}
 	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, _contexts["light"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* _n_pts* n_attrs, data, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	context->set_data(data);
 }
 
 
 void VoroZ::update_normal() {
-	uint n_attrs= 13;
+	GLDrawContext * context= _gl_draw_manager->get_context("normal");
+	context->_n_pts = _n_pts;
+	uint n_attrs = context->_buffers[0]->_n_attrs_per_pts;
 
 	float data[_n_pts* n_attrs];
 
@@ -1023,15 +1049,14 @@ void VoroZ::update_normal() {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 12]= _triangle_data[idx_triangle]->_tangent.z;
 		}
 	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, _contexts["normal"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* _n_pts* n_attrs, data, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	context->set_data(data);
 }
 
 
 void VoroZ::update_parallax() {
-	uint n_attrs= 14;
+	GLDrawContext * context= _gl_draw_manager->get_context("parallax");
+	context->_n_pts = _n_pts;
+	uint n_attrs = context->_buffers[0]->_n_attrs_per_pts;
 
 	float data[_n_pts* n_attrs];
 
@@ -1053,16 +1078,12 @@ void VoroZ::update_parallax() {
 			data[idx_triangle* n_attrs* 3+ idx_pt* n_attrs+ 13]= _triangle_data[idx_triangle]->_tangent.z;
 		}
 	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, _contexts["parallax"]->_buffer);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float)* _n_pts* n_attrs, data, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	context->set_data(data);
 }
 
 
 void VoroZ::update() {
 	update_triangle_data();
-	update_simple();
 	update_texture();
 	update_light();
 	update_normal();
@@ -1112,39 +1133,41 @@ bool VoroZ::key_down(InputState * input_state, SDL_Keycode key) {
 	}
 
 	if (key== SDLK_o) {
-		if (_draw_mode== SIMPLE) {
+		if (_draw_mode== TEXTURE) {
 			_draw_mode= PARALLAX;
-		}
-		else if (_draw_mode== TEXTURE) {
-			_draw_mode= SIMPLE;
+			std::cout << "PARALLAX\n";
 		}
 		else if (_draw_mode== LIGHT) {
 			_draw_mode= TEXTURE;
+			std::cout << "TEXTURE\n";
 		}
 		else if (_draw_mode== NORMAL) {
 			_draw_mode= LIGHT;
+			std::cout << "LIGHT\n";
 		}
 		else if (_draw_mode== PARALLAX) {
 			_draw_mode= NORMAL;
+			std::cout << "NORMAL\n";
 		}
 		return true;
 	}
 
 	if (key== SDLK_p) {
-		if (_draw_mode== SIMPLE) {
-			_draw_mode= TEXTURE;
-		}
-		else if (_draw_mode== TEXTURE) {
+		if (_draw_mode== TEXTURE) {
 			_draw_mode= LIGHT;
+			std::cout << "LIGHT\n";
 		}
 		else if (_draw_mode== LIGHT) {
 			_draw_mode= NORMAL;
+			std::cout << "NORMAL\n";
 		}
 		else if (_draw_mode== NORMAL) {
 			_draw_mode= PARALLAX;
+			std::cout << "PARALLAX\n";
 		}
 		else if (_draw_mode== PARALLAX) {
-			_draw_mode= SIMPLE;
+			_draw_mode= TEXTURE;
+			std::cout << "TEXTURE\n";
 		}
 		return true;
 	}

@@ -1,0 +1,16 @@
+{
+	"add_dir_shaders" : ["../shaders"],
+	"add_shaders" : ["../../shaders/repere", "../../shaders/font", "../../shaders/font3d", "../../shaders/gl_ihm"],
+	"contexts" : {
+		"repere" : {"shader" : "repere", "mode" : "GL_LINES"},
+		"ground" : {"shader" : "repere", "mode" : "GL_TRIANGLES", "active" : false},
+		"box" : {"shader" : "repere", "mode" : "GL_LINES", "active" : false},
+		"font" : {"shader" : "font", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
+		"font3d" : {"shader" : "font3d", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
+
+		"light" : {"shader" : "light", "mode" : "GL_TRIANGLES"},
+		"normal" : {"shader" : "normal", "mode" : "GL_TRIANGLES"},
+		"parallax" : {"shader" : "parallax", "mode" : "GL_TRIANGLES"},
+		"tex" : {"shader" : "tex", "mode" : "GL_TRIANGLES"}
+	}
+}

@@ -1,6 +1,8 @@
 #ifndef VORO_Z_H
 #define VORO_Z_H
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <iostream>
 #include <vector>
 #include <map>
@@ -9,14 +11,17 @@
 
 #include "typedefs.h"
 #include "input_state.h"
-#include "dcel.h"
 #include "gl_utils.h"
+#include "gl_draw.h"
+#include "repere.h"
+
+#include "dcel.h"
 
 
 const int TEX_SIZE= 1024;
 
 typedef enum {WATER, COAST, FOREST, MOUNTAIN, DIRT} BiomeType;
-typedef enum {SIMPLE, TEXTURE, LIGHT, NORMAL, PARALLAX} DrawMode;
+typedef enum {TEXTURE, LIGHT, NORMAL, PARALLAX} DrawMode;
 
 
 glm::vec3 normal(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3);
@@ -29,7 +34,8 @@ class Biome {
 public:
 	Biome();
 	Biome(BiomeType type, number zmin, number zmax, glm::vec4 color, float uv_factor,
-		std::string diffuse_texture_path, std::string normal_texture_path, std::string parallax_texture_path, float anim_speed);
+		fs diffuse_texture_path, fs normal_texture_path,fs parallax_texture_path,
+		float anim_speed);
 	~Biome();
 
 
@@ -38,14 +44,14 @@ public:
 	number _zmax;
 	glm::vec4 _color;
 	float _uv_factor;
-	std::string _diffuse_texture_path, _normal_texture_path, _parallax_texture_path;
+	fs _diffuse_texture_path, _normal_texture_path, _parallax_texture_path;
 	uint _diffuse_texture_idx_start, _diffuse_texture_idx_end;
 	float _diffuse_texture_idx_current;
 	uint _normal_texture_idx_start, _normal_texture_idx_end;
 	float _normal_texture_idx_current;
 	uint  _parallax_texture_idx;
-	std::vector<std::string> _diffuse_pngs;
-	std::vector<std::string> _normal_pngs;
+	std::vector<fs> _diffuse_pngs;
+	std::vector<fs> _normal_pngs;
 	float _anim_speed;
 };
 
@@ -105,26 +111,25 @@ public:
 class VoroZ {
 public:
 	VoroZ();
-	VoroZ(std::map<std::string, GLuint> progs);
+	VoroZ(GLDrawManager * gl_draw_manager, ViewSystem * view_system);
 	~VoroZ();
 
 	void init_biome();
-	void init_context(std::map<std::string, GLuint> progs);
-	void init_texture_diffuse();
+	//void init_context(std::map<std::string, GLuint> progs);
+	/*void init_texture_diffuse();
 	void init_texture_normal();
-	void init_texture_parallax();
+	void init_texture_parallax();*/
+	void init_textures();
 	void init_light();
 	void init_dcel();
 
-	void draw_simple(const glm::mat4 & world2clip);
-	void draw_texture(const glm::mat4 & world2clip);
-	void draw_light(const glm::mat4 & world2clip, const glm::vec3 & camera_position);
-	void draw_normal(const glm::mat4 & world2clip, const glm::vec3 & camera_position);
-	void draw_parallax(const glm::mat4 & world2clip, const glm::vec3 & camera_position);
-	void draw(const glm::mat4 & world2clip, const glm::vec3 & camera_position);
+	void draw_texture();
+	void draw_light();
+	void draw_normal();
+	void draw_parallax();
+	void draw();
 
 	void update_triangle_data();
-	void update_simple();
 	void update_texture();
 	void update_light();
 	void update_normal();
@@ -136,14 +141,16 @@ public:
 	bool key_down(InputState * input_state, SDL_Keycode key);
 
 
-	uint _n_pts;
+	//uint _n_pts;
 	DCEL * _dcel;
 	std::map<BiomeType, Biome *> _biomes;
-	std::map<std::string, GLDrawContext *> _contexts;
-	GLuint _texture_id_diffuse, _texture_id_normal, _texture_id_parallax;
+	GLDrawManager * _gl_draw_manager;
+	ViewSystem * _view_system;
+	//GLuint _texture_id_diffuse, _texture_id_normal, _texture_id_parallax;
 	Light * _light;
 	std::vector<TriangleData *> _triangle_data;
 	DrawMode _draw_mode;
+	uint _n_pts;
 };
 
 

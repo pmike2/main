@@ -90,10 +90,10 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 		_gl_draw_manager->add_texture(
 			context->_name, "diffuse_texture", GL_TEXTURE_2D_ARRAY, 2,
 				std::map<GLenum, int>{
-				{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
+				{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
 				{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
 				},
-			GL_RGBA, glm::uvec3(IDX_TEXTURE_DATA_SIZE, IDX_TEXTURE_DATA_SIZE, diffuse_textures.size()), GL_RGBA, GL_UNSIGNED_BYTE
+			GL_RGBA, glm::uvec3(512, 512, diffuse_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
 		);
 		_gl_draw_manager->set_texture_data(context->_name, "diffuse_texture", diffuse_textures);
 		
@@ -186,6 +186,7 @@ void TestObjAnim::update_static_buffer(AnimatedObjModel * model) {
 	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
 	context->_n_pts = model->_obj_data->_n_pts;
 	context->set_data(model->_obj_data->_data, 0);
+	//context->show_data();
 }
 
 

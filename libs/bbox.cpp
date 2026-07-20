@@ -297,7 +297,7 @@ InstancePosRot::InstancePosRot() :
 InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, const pt_3d & scale) :
 	_position(position), _rotation(rotation), _scale(scale), _selected(false)
 {
-	_model2world= glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
+	_model2world = glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
 	_bbox= new BBox();
 }
 
@@ -305,7 +305,7 @@ InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, co
 InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, const pt_3d & scale, AABB * aabb) : 
 	_position(position), _rotation(rotation), _scale(scale), _selected(false)
 {
-	_model2world= glm::translate(_position) * mat4_cast(_rotation) * glm::scale(_scale);
+	_model2world = glm::translate(_position) * mat4_cast(_rotation) * glm::scale(_scale);
 	_bbox= new BBox(aabb->_vmin, aabb->_vmax, _model2world);
 }
 

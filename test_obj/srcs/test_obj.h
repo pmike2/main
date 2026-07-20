@@ -22,6 +22,8 @@ struct TestObj {
 	GLDrawManager * _gl_draw_manager;
 	ViewSystem * _view_system;
 	ObjData * _obj_data;
+	mat_4d _model2world;
+	number _angle;
 };
 
 

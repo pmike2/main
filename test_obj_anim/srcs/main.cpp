@@ -22,8 +22,7 @@ const number GL_WIDTH = 50.0;
 const number GL_HEIGHT = GL_WIDTH * (number)(MAIN_WIN_HEIGHT) / (number)(MAIN_WIN_WIDTH);
 
 
-SDL_Window * window;
-SDL_GLContext main_context;
+GLSDL * gl_sdl;
 InputState * input_state;
 ViewSystem * view_system;
 GLDrawManager * gl_draw_manager;
@@ -84,58 +83,12 @@ void key_up(SDL_Keycode key, time_point t) {
 }
 
 
-void init_gl() {
+void init() {
 	srand(time(NULL));
-	
-	SDL_Init(SDL_INIT_EVERYTHING);
-	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 
-	//SDL_ShowCursor(SDL_DISABLE);
-	
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	// pour faire du multisampling (suppression aliasing)
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
-	
-	window = SDL_CreateWindow("basic_opengl", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
-	main_context = SDL_GL_CreateContext(window);
+	gl_sdl = new GLSDL("test_obj_anim", MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, true);
 
-	//gl_versions();
-
-	glClearColor(0.1, 0.1, 0.1, 1.0);
-
-	SDL_GL_SetSwapInterval(1);
-	glClearDepth(1.0f);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LESS);
-	glDepthRange(0.0f, 1.0f);
-	
-	// frontfaces en counterclockwise
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_CLAMP);
-	
-	// pour gérer l'alpha
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
-	SDL_GL_SwapWindow(window);
-
-	/*int i;
-	glGetIntegerv(GL_MAX_TEXTURE_BUFFER_SIZE, &i);
-	std::cout << i << "\n";*/
-}
-
-
-void init_data() {
-	fps_count = new FPSCount(window);
+	fps_count = new FPSCount(gl_sdl->_window);
 
 	GLDrawManager * gl_draw_manager = new GLDrawManager("../data/draw_context.json");
 	//std::cout << *gl_draw_manager << "\n";
@@ -158,7 +111,7 @@ void draw() {
 	view_system->draw();
 	test_obj_anim->draw();
 
-	SDL_GL_SwapWindow(window);
+	SDL_GL_SwapWindow(gl_sdl->_window);
 	fps_count->add_frame();
 }
 
@@ -229,16 +182,12 @@ void clean() {
 	delete input_state;
 	delete gl_draw_manager;
 	delete fps_count;
-
-	SDL_GL_DeleteContext(main_context);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
+	delete gl_sdl;
 }
 
 
 int main() {
-	init_gl();
-	init_data();
+	init();
 	main_loop();
 	clean();
 

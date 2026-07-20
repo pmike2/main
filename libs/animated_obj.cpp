@@ -197,7 +197,7 @@ AnimatedObjModel::AnimatedObjModel(fs json_path) {
 	// set static data
 	_obj_data = new ObjData(obj_path);
 	_obj_data->_use_ambient = false;
-	_obj_data->_use_diffuse = true;
+	_obj_data->_use_diffuse = false;
 	_obj_data->_use_specular = false;
 	_obj_data->_use_shininess = false;
 	_obj_data->_use_opacity = false;

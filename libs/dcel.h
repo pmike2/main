@@ -5,13 +5,15 @@ DCEL: https://en.wikipedia.org/wiki/Doubly_connected_edge_list
 #ifndef DCEL_H
 #define DCEL_H
 
+#define GLM_ENABLE_EXPERIMENTAL
+#define GLM_FORCE_RADIANS
+
 #include <iostream>
 #include <string>
 #include <vector>
 #include <utility>
 #include <deque>
 
-#define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 
 #include "typedefs.h"

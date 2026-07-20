@@ -54,6 +54,67 @@ std::ostream & operator << (std::ostream & os, const ScreenGL & screengl) {
 
 
 // -------------------------------------------------------------------------------------------------
+GLSDL::GLSDL() {
+
+}
+
+
+GLSDL::GLSDL(std::string window_title, uint width, uint height, bool multisampling) {
+	SDL_Init(SDL_INIT_EVERYTHING);
+	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
+
+	//SDL_ShowCursor(SDL_DISABLE);
+	
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	// pour faire du multisampling (suppression aliasing)
+	if (multisampling) {
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
+	}
+
+	_window = SDL_CreateWindow(window_title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
+	_main_context = SDL_GL_CreateContext(_window);
+
+	//gl_versions();
+
+	glClearColor(0.1, 0.1, 0.1, 1.0);
+
+	SDL_GL_SetSwapInterval(1);
+	glClearDepth(1.0f);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
+	glDepthFunc(GL_LESS);
+	glDepthRange(0.0f, 1.0f);
+	
+	// frontfaces en counterclockwise
+	glFrontFace(GL_CCW);
+	glCullFace(GL_BACK);
+	glEnable(GL_CULL_FACE);
+	glEnable(GL_DEPTH_CLAMP);
+	
+	// pour gérer l'alpha
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	
+	SDL_GL_SwapWindow(_window);
+}
+
+
+GLSDL::~GLSDL() {
+	SDL_GL_DeleteContext(_main_context);
+	SDL_DestroyWindow(_window);
+	SDL_Quit();
+}
+
+
+
+
+// -------------------------------------------------------------------------------------------------
 void gl_versions() {
 	const GLubyte * renderer= glGetString(GL_RENDERER);
 	const GLubyte * vendor= glGetString(GL_VENDOR);

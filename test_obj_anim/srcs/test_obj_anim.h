@@ -18,7 +18,7 @@
 #include "animated_obj.h"
 
 
-const glm::vec3 LIGHT_POSITION(10.0f, 10.0f, 20.0f);
+const glm::vec3 LIGHT_POSITION(100.0f, 0.0f, 0.0f);
 const glm::vec3 LIGHT_COLOR(1.0f);
 
 

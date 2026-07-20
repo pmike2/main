@@ -12,73 +12,60 @@
 #include "gl_utils.h"
 #include "input_state.h"
 #include "typedefs.h"
+#include "fps_count.h"
+#include "gl_draw.h"
 
 #include "voro_z.h"
 
 
-// en ms; temps entre 2 anims
-const uint DELTA_ANIM= 1;
-
 // dimensions écran
-const int MAIN_WIN_WIDTH= 1280;
-const int MAIN_WIN_HEIGHT= 1024;
-const float MAIN_BCK[]= {0.2f, 0.2f, 0.2f, 1.0f};
+const uint MAIN_WIN_WIDTH = 1280;
+const uint MAIN_WIN_HEIGHT = 1024;
+const number GL_WIDTH = 15.0;
+const number GL_HEIGHT = GL_WIDTH * (number)(MAIN_WIN_HEIGHT) / (number)(MAIN_WIN_WIDTH);
 
-SDL_Window * window= NULL;
-SDL_GLContext main_context;
+GLSDL * gl_sdl;
 InputState * input_state;
-
-bool done= false;
-
-uint val_fps, compt_fps;
-uint tikfps1, tikfps2, tikanim1, tikanim2;
-
-GLuint prog_repere, prog_select, prog_texture, prog_light, prog_normal, prog_parallax;
-GLuint g_vao;
-
-ScreenGL * screen_gl;
+GLDrawManager * gl_draw_manager;
 ViewSystem * view_system;
+FPSCount * fps_count;
 
 VoroZ * voroz;
 
 
-void mouse_motion(int x, int y, int xrel, int yrel) {
+void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
 	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, xrel, yrel, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
 
-	if (view_system->mouse_motion(input_state)) {
+	if (view_system->mouse_motion(input_state, t)) {
 		//return;
 	}
 }
 
 
-void mouse_button_up(int x, int y, unsigned short button) {
+void mouse_button_up(int x, int y, unsigned short button, time_point t) {
 	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
-	if (view_system->mouse_button_up(input_state)) {
+	if (view_system->mouse_button_up(input_state, t)) {
 		return;
 	}
 }
 
 
-void mouse_button_down(int x, int y, unsigned short button) {
+void mouse_button_down(int x, int y, unsigned short button, time_point t) {
 	uint mouse_state= SDL_GetMouseState(NULL, NULL);
 	input_state->update_mouse(x, y, mouse_state & SDL_BUTTON_LMASK, mouse_state & SDL_BUTTON_MMASK, mouse_state & SDL_BUTTON_RMASK);
-	if (view_system->mouse_button_down(input_state)) {
+	if (view_system->mouse_button_down(input_state, t)) {
 		return;
 	}
 
 }
 
 
-void key_down(SDL_Keycode key) {
+void key_down(SDL_Keycode key, time_point t) {
 	input_state->key_down(key);
 
-	if (key== SDLK_ESCAPE) {
-		done= true;
-	}
-
-	if (view_system->key_down(input_state, key)) {
+	if (view_system->key_down(input_state, key, t)) {
 		return;
 	}
 
@@ -89,10 +76,10 @@ void key_down(SDL_Keycode key) {
 }
 
 
-void key_up(SDL_Keycode key) {
+void key_up(SDL_Keycode key, time_point t) {
 	input_state->key_up(key);
 
-	if (view_system->key_up(input_state, key)) {
+	if (view_system->key_up(input_state, key, t)) {
 		return;
 	}
 }
@@ -101,161 +88,74 @@ void key_up(SDL_Keycode key) {
 void init() {
 	srand(time(NULL));
 	
-	SDL_Init(SDL_INIT_EVERYTHING);
-	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
-	
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	// pour faire du multisampling (suppression aliasing)
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
-	
-	window= SDL_CreateWindow("voro_z", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
-	main_context= SDL_GL_CreateContext(window);
-
-	std::cout << "OpenGL version=" << glGetString(GL_VERSION) << std::endl;
-	/*int x= 0;
-	glGetIntegerv(GL_MAX_PATCH_VERTICES, &x); // 32
-	cout << x << endl;*/
-
-	SDL_GL_SetSwapInterval(1);
-	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
-	glClearDepth(1.0f);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LESS);
-	glDepthRange(0.0f, 1.0f);
-	
-	// frontfaces en counterclockwise
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_CLAMP);
-	
-	// pour gérer l'alpha
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	glPointSize(2.0f);
-	
-	SDL_GL_SwapWindow(window);
-	
-	// --------------------------------------------------------------------------
-	/* VAO = vertex array object : tableau d'objets, chaque appel à un objet rappelle un contexte de dessin
-	incluant tous les attribute array setup (glVertexAttribArray), buffer objects used for attribute arrays
-	et GL_ELEMENT_ARRAY_BUFFER eventuellement
-	ici je n'en utilise qu'un pour tout le prog ; à terme peut-être faire plusieurs VAOs
-	*/
-	
-	glGenVertexArrays(1, &g_vao);
-	glBindVertexArray(g_vao);
-
-	std::map<std::string, GLuint> progs;
-
-	// TODO : remplacer par les chemins des shaders dans le dossier local shaders
-
-	progs["repere"]= create_prog("../../shaders/vertexshader_repere.txt", "../../shaders/fragmentshader_basic.txt");
-	progs["select"]= create_prog("../../shaders/vertexshader_select.txt", "../../shaders/fragmentshader_basic.txt");
-	progs["font"]= create_prog("../../shaders/vertexshader_font.txt", "../../shaders/fragmentshader_font.txt");
-	progs["texture"]= create_prog("../../shaders/vertexshader_3d_tex.txt", "../../shaders/fragmentshader_3d_tex.txt");
-	progs["light"]= create_prog("../../shaders/vertexshader_3d_light.txt", "../../shaders/fragmentshader_3d_light.txt");
-	progs["normal"]= create_prog("../../shaders/vertexshader_3d_normal.txt", "../../shaders/fragmentshader_3d_normal.txt");
-	progs["parallax"]= create_prog("../../shaders/vertexshader_3d_parallax.txt", "../../shaders/fragmentshader_3d_parallax.txt");
-
-	check_gl_error();
-	
-	// --------------------------------------------------------------------------
-	screen_gl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, 10.0, 10.0);
-	view_system= new ViewSystem(progs, screen_gl);
-	view_system->_repere->_is_ground= false;
-	view_system->_repere->_is_repere= false;
-	view_system->_repere->_is_box= false;
-	view_system->set(glm::vec3(0.0f, 0.0f, 0.0f), 1.0f, 1.0f, 200.0f);
-
-	// --------------------------------------------------------------------------
+	gl_sdl = new GLSDL("test_obj", MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, true);
+	fps_count = new FPSCount(gl_sdl->_window);
+	GLDrawManager * gl_draw_manager = new GLDrawManager("../data/draw_context.json");
+	ScreenGL * screen_gl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	input_state= new InputState();
 
-	voroz= new VoroZ(progs);
+	view_system = new ViewSystem(gl_draw_manager, screen_gl);
+	view_system->set(pt_3d(0.0, 0.0, 0.0), 1.0, 1.0, 200.0);
 
+	voroz = new VoroZ(gl_draw_manager, view_system);
 }
 
 
 void draw() {
-	compt_fps++;
-
-	glClearColor(MAIN_BCK[0], MAIN_BCK[1], MAIN_BCK[2], MAIN_BCK[3]);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
+
 	view_system->draw();
+	voroz->draw();
 
-	voroz->draw(view_system->_world2clip, view_system->_eye);
-
-	SDL_GL_SwapWindow(window);
+	SDL_GL_SwapWindow(gl_sdl->_window);
+	fps_count->add_frame();
 }
 
 
 void anim() {
-	/*tikanim2= SDL_GetTicks();
-	int tikanim_delta= tikanim2- tikanim1;
-	if (tikanim_delta< DELTA_ANIM)
-		return;
-	
-	tikanim1= SDL_GetTicks();*/
-
 	voroz->anim();
-}
-
-
-void compute_fps() {
-	tikfps2= SDL_GetTicks();
-	if (tikfps2- tikfps1> 1000) {
-		char s_fps[256];
-
-		tikfps1= SDL_GetTicks();
-		val_fps= compt_fps;
-		compt_fps= 0;
-		sprintf(s_fps, "%d", val_fps);
-		SDL_SetWindowTitle(window, s_fps);
-	}
 }
 
 
 void idle() {
 	anim();
 	draw();
-	compute_fps();
+	fps_count->update();
 }
 
 
 void main_loop() {
 	SDL_Event event;
+	bool done = false;
 	
 	while (!done) {
+		time_point now = std::chrono::system_clock::now();
+
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
 				case SDL_MOUSEMOTION:
-					mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel);
+					mouse_motion(event.motion.x, event.motion.y, event.motion.xrel, event.motion.yrel, now);
 					break;
 					
 				case SDL_MOUSEBUTTONUP:
-					mouse_button_up(event.button.x, event.button.y, event.button.button);
+					mouse_button_up(event.button.x, event.button.y, event.button.button, now);
 					break;
 					
 				case SDL_MOUSEBUTTONDOWN:
-					mouse_button_down(event.button.x, event.button.y, event.button.button);
+					mouse_button_down(event.button.x, event.button.y, event.button.button, now);
 					break;
 
 				case SDL_KEYDOWN:
-					key_down(event.key.keysym.sym);
+					if (event.key.keysym.sym == SDLK_ESCAPE) {
+						done = true;
+						break;
+					}
+					key_down(event.key.keysym.sym, now);
 					break;
 					
 				case SDL_KEYUP:
-					key_up(event.key.keysym.sym);
+					key_up(event.key.keysym.sym, now);
 					break;
 					
 				case SDL_QUIT:
@@ -275,23 +175,11 @@ void clean() {
 	delete voroz;
 	delete view_system;
 	delete input_state;
-
-	SDL_GL_DeleteContext(main_context);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
+	delete gl_sdl;
 }
 
 
 int main() {
-	/*glm::vec3 p1(0.0, 0.0, 0.0);
-	glm::vec3 p2(1.0, 0.0, 0.0);
-	glm::vec3 p3(0.0, 1.0, 0.0);
-	glm::vec3 angles= triangle2euler(p1, p2, p3);
-	glm::mat3 m= triangle2mat(p1, p2, p3);
-	std::cout << glm::to_string(angles) << "\n";
-	std::cout << glm::to_string(m) << "\n";*/
-
-
 	init();
 	main_loop();
 	clean();

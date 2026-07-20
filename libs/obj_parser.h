@@ -60,7 +60,7 @@ struct ObjObject {
 	std::string _name;
 	std::vector<pt_3d> _vertices;
 	std::vector<pt_3d> _normals;
-	std::vector<pt_2d> _texs; // inutilisé
+	std::vector<pt_2d> _texs;
 	std::vector<ObjFace *> _faces;
 	bool _smooth_shading; // inutilisé
 };

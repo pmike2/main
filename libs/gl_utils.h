@@ -8,13 +8,13 @@
 
 #include <OpenGL/gl3.h>
 #include <glm/glm.hpp>
+#include <SDL2/SDL.h>
 
 #include "utile.h"
 #include "typedefs.h"
 
 
-class ScreenGL {
-public:
+struct ScreenGL {
 	ScreenGL();
 	ScreenGL(uint screen_width, uint screen_height, number gl_width, number gl_height);
 	~ScreenGL();
@@ -28,6 +28,16 @@ public:
 	number _gl_width, _gl_height;
 };
 
+
+struct GLSDL {
+	GLSDL();
+	GLSDL(std::string window_title, uint width, uint height, bool multisampling);
+	~GLSDL();
+
+
+	SDL_Window * _window;
+	SDL_GLContext _main_context;
+};
 
 void gl_versions();
 
