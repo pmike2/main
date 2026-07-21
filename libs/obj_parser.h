@@ -13,6 +13,10 @@
 #include "bbox.h"
 
 
+enum OBJDATA_DATA_ITEM {OBJDATA_VERTEX, OBJDATA_NORMAL, OBJDATA_TANGENT, OBJDATA_BITANGENT, OBJDATA_AMBIENT_COLOR, OBJDATA_DIFFUSE_COLOR, OBJDATA_SPECULAR_COLOR, 
+	OBJDATA_SHININESS, OBJDATA_OPACITY, OBJDATA_TEXTURE};
+
+
 struct Material {
 	Material();
 	Material(std::string name, uint idx);
@@ -32,6 +36,8 @@ struct Material {
 	fs _ambient_tex_path; // inutilisé
 	fs _diffuse_tex_path;
 	fs _specular_tex_path; // inutilisé
+	fs _normal_tex_path;
+	number _normal_strength; // inutilisé
 };
 
 
@@ -47,13 +53,17 @@ struct ObjFace {
 	Material * _material;
 	bool _texture_active; // inutilisé
 	bool _normal_active;
+
+	pt_3d _normal;
+	pt_3d _tangent;
+	pt_3d _bitangent;
 };
 
 
 struct ObjObject {
 	ObjObject();
 	~ObjObject();
-	pt_3d compute_normal(ObjFace * face);
+	void compute_face_normals_tangents_bitangents();
 	friend std::ostream & operator << (std::ostream & os, ObjObject & obj);
 
 
@@ -70,7 +80,7 @@ struct ObjData {
 	ObjData();
 	ObjData(fs obj_path);
 	~ObjData();
-	void update_data();
+	void update_data(std::vector<OBJDATA_DATA_ITEM> items);
 	ObjObject * new_generic_object();
 	ObjObject * get_object(std::string name);
 	Material * get_material(std::string name);
@@ -83,7 +93,6 @@ struct ObjData {
 	uint _n_pts;
 	uint _n_attrs_per_pts;
 	AABB * _aabb;
-	bool _use_ambient, _use_diffuse, _use_specular, _use_shininess, _use_opacity, _use_diffuse_texture;
 };
 
 

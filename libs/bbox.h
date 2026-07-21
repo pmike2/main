@@ -79,6 +79,7 @@ public:
 	void set_pos_rot_scale(const pt_3d & position, const quat & rotation, const pt_3d & scale);
 	void set_pos_rot(const pt_3d & position, const quat & rotation);
 	void set_pos(const pt_3d & position);
+	void set_rot(const quat & rotation);
 
 
 	pt_3d _position;

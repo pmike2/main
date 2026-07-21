@@ -26,6 +26,7 @@ struct TestInstance : public AnimatedObjInstance {
 	TestInstance();
 	TestInstance(AnimatedObjModel * model, pt_3d pos, time_point t, number angle, std::string action_name = "");
 	~TestInstance();
+	void set_angle(number angle);
 	void anim_test(time_point t);
 
 

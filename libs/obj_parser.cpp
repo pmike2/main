@@ -1,4 +1,8 @@
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/string_cast.hpp>
+
 #include "utile.h"
+#include "geom.h"
 
 #include "obj_parser.h"
 
@@ -13,7 +17,7 @@ Material::Material(std::string name, uint idx) :
 	_name(name), _idx(idx),
 	_ambient(pt_3d(0.0)), _diffuse(pt_3d(0.0)), _specular(pt_3d(0.0)), _emissive(pt_3d(0.0)),
 	_absorbance(0.0), _shininess(0.0), _opacity(0.0),
-	_ambient_tex_path(""), _diffuse_tex_path(""), _specular_tex_path("")
+	_ambient_tex_path(""), _diffuse_tex_path(""), _specular_tex_path(""), _normal_tex_path(""), _normal_strength(0.0)
 {
 
 }
@@ -78,11 +82,22 @@ ObjObject::~ObjObject() {
 }
 
 
-pt_3d ObjObject::compute_normal(ObjFace * face) {
-	pt_3d p1 = _vertices[face->_vertices_idx[0]];
-	pt_3d p2 = _vertices[face->_vertices_idx[1]];
-	pt_3d p3 = _vertices[face->_vertices_idx[2]];
-	return glm::normalize(glm::cross(p2 - p1, p3 - p1));
+void ObjObject::compute_face_normals_tangents_bitangents() {
+	for (auto & face : _faces) {
+		pt_3d p1 = _vertices[face->_vertices_idx[0]];
+		pt_3d p2 = _vertices[face->_vertices_idx[1]];
+		pt_3d p3 = _vertices[face->_vertices_idx[2]];
+		face->_normal = glm::normalize(glm::cross(p2 - p1, p3 - p1));
+
+		pt_2d uv1 = _texs[face->_textures_idx[0]];
+		pt_2d uv2 = _texs[face->_textures_idx[1]];
+		pt_2d uv3 = _texs[face->_textures_idx[2]];
+		face->_tangent = tangent(p1, p2, p3, uv1, uv2, uv3);
+
+		face->_bitangent = glm::cross(face->_normal, face->_tangent);
+
+		//std::cout << glm::to_string(face->_tangent) << " ; " << glm::to_string(face->_bitangent) << " ; " << glm::to_string(face->_normal) << "\n";
+	}
 }
 
 
@@ -104,8 +119,7 @@ ObjData::ObjData() : _n_pts(0), _n_attrs_per_pts(0) {
 
 
 ObjData::ObjData(fs obj_path) :
-	_n_pts(0), _n_attrs_per_pts(0),
-	_use_ambient(false), _use_diffuse(false), _use_specular(false), _use_shininess(false), _use_opacity(false), _use_diffuse_texture(false)
+	_n_pts(0), _n_attrs_per_pts(0)
 {
 	// lecture .mtl -----------------------------------------
 	std::string mat_filename = obj_path.stem().string() + ".mtl";
@@ -179,6 +193,13 @@ ObjData::ObjData(fs obj_path) :
 		else if (s == "map_Ks") {
 			iss >> s;
 			current_material->_specular_tex_path = parent_dir / s;
+		}
+		else if (s == "map_Bump") {
+			iss >> s;
+			iss >> s;
+			current_material->_normal_strength = std::stod(s);
+			iss >> s;
+			current_material->_normal_tex_path = parent_dir / s;
 		}
 	}
 	_materials.push_back(current_material);
@@ -300,6 +321,17 @@ ObjData::ObjData(fs obj_path) :
 	}
 	_objects.push_back(current_object);
 
+	for (auto & obj : _objects) {
+		obj->compute_face_normals_tangents_bitangents();
+	}
+
+	_n_pts = 0;
+	for (auto & object : _objects) {
+		for (auto & face : object->_faces) {
+			_n_pts += 3;
+		}
+	}
+
 	//update_data();
 
 	_aabb = new AABB(vmin, vmax);
@@ -320,34 +352,53 @@ ObjData::~ObjData() {
 }
 
 
-void ObjData::update_data() {
-	_n_attrs_per_pts = 6;
-	if (_use_ambient) {
-		_n_attrs_per_pts += 3;
-	}
-	if (_use_diffuse) {
-		_n_attrs_per_pts += 3;
-	}
-	if (_use_specular) {
-		_n_attrs_per_pts += 3;
-	}
-	if (_use_shininess) {
-		_n_attrs_per_pts++;
-	}
-	if (_use_opacity) {
-		_n_attrs_per_pts++;
-	}
-	if (_use_diffuse_texture) {
-		_n_attrs_per_pts += 3;
+void ObjData::update_data(std::vector<OBJDATA_DATA_ITEM> items) {
+	if (items.empty()) {
+		std::cerr << "ObjData::update_data items vide.\n";
+		return;
 	}
 
-	_n_pts = 0;
-	for (auto & object : _objects) {
-		for (auto & face : object->_faces) {
-			_n_pts += 3;
+	_n_attrs_per_pts = 0;
+	for (auto & item : items) {
+		if (item == OBJDATA_VERTEX) {
+			_n_attrs_per_pts += 3;
+		}
+		else if (item == OBJDATA_NORMAL) {
+			_n_attrs_per_pts += 3;
+		}
+		else if (item == OBJDATA_TANGENT) {
+			_n_attrs_per_pts += 3;
+		}
+		else if (item == OBJDATA_BITANGENT) {
+			_n_attrs_per_pts += 3;
+		}
+		else if (item == OBJDATA_AMBIENT_COLOR) {
+			_n_attrs_per_pts += 3;
+		}
+		else if (item == OBJDATA_DIFFUSE_COLOR) {
+			_n_attrs_per_pts += 3;
+		}
+		else if (item == OBJDATA_SPECULAR_COLOR) {
+			_n_attrs_per_pts += 3;
+		}
+		else if (item == OBJDATA_SHININESS) {
+			_n_attrs_per_pts++;
+		}
+		else if (item == OBJDATA_OPACITY) {
+			_n_attrs_per_pts++;
+		}
+		else if (item == OBJDATA_TEXTURE) {
+			_n_attrs_per_pts += 3;
+		}
+		else {
+			std::cerr << "ObjData::update_data item inconnu.\n";
+			return;
 		}
 	}
-	
+
+	if (_data != NULL) {
+		delete[] _data;
+	}
 	_data = new float[_n_pts * _n_attrs_per_pts];
 
 	float * ptr = _data;
@@ -355,55 +406,74 @@ void ObjData::update_data() {
 		for (auto & face : object->_faces) {
 			for (uint i=0; i<3; ++i) {
 				pt_3d pt = object->_vertices[face->_vertices_idx[i]];
-				pt_3d normal;
+				
+				// finalement on recalcule toujours les normales dans compute_face_normals_tangents_bitangents()
+				/*pt_3d normal;
 				if (face->_normal_active) {
 					normal = object->_normals[face->_normals_idx[i]];
 				}
 				else {
 					normal = object->compute_normal(face);
-				}
+				}*/
 
-				ptr[0] = float(pt.x);
-				ptr[1] = float(pt.y);
-				ptr[2] = float(pt.z);
-				ptr[3] = float(normal.x);
-				ptr[4] = float(normal.y);
-				ptr[5] = float(normal.z);
-				
-				ptr += 6;
-
-				if (_use_ambient) {
-					ptr[0] = float(face->_material->_ambient.r);
-					ptr[1] = float(face->_material->_ambient.g);
-					ptr[2] = float(face->_material->_ambient.b);
-					ptr += 3;
-				}
-				if (_use_diffuse) {
-					ptr[0] = float(face->_material->_diffuse.r);
-					ptr[1] = float(face->_material->_diffuse.g);
-					ptr[2] = float(face->_material->_diffuse.b);
-					ptr += 3;
-				}
-				if (_use_specular) {
-					ptr[0] = float(face->_material->_specular.r);
-					ptr[1] = float(face->_material->_specular.g);
-					ptr[2] = float(face->_material->_specular.b);
-					ptr += 3;
-				}
-				if (_use_shininess) {
-					ptr[0] = float(face->_material->_shininess);
-					ptr++;
-				}
-				if (_use_opacity) {
-					ptr[0] = float(face->_material->_opacity);
-					ptr++;
-				}
-				if (_use_diffuse_texture) {
-					pt_2d tex = object->_texs[face->_textures_idx[i]];
-					ptr[0] = float(tex.x);
-					ptr[1] = float(1.0 - tex.y); // attention OpenGL texture y origine en haut
-					ptr[2] = float(face->_material->_idx);
-					ptr += 3;
+				for (auto & item : items) {
+					if (item == OBJDATA_VERTEX) {
+						ptr[0] = float(pt.x);
+						ptr[1] = float(pt.y);
+						ptr[2] = float(pt.z);
+						ptr += 3;
+					}
+					else if (item == OBJDATA_NORMAL) {
+						ptr[0] = float(face->_normal.x);
+						ptr[1] = float(face->_normal.y);
+						ptr[2] = float(face->_normal.z);
+						ptr += 3;
+					}
+					else if (item == OBJDATA_TANGENT) {
+						ptr[0] = float(face->_tangent.x);
+						ptr[1] = float(face->_tangent.y);
+						ptr[2] = float(face->_tangent.z);
+						ptr += 3;
+					}
+					else if (item == OBJDATA_BITANGENT) {
+						ptr[0] = float(face->_bitangent.x);
+						ptr[1] = float(face->_bitangent.y);
+						ptr[2] = float(face->_bitangent.z);
+						ptr += 3;
+					}
+					else if (item == OBJDATA_AMBIENT_COLOR) {
+						ptr[0] = float(face->_material->_ambient.r);
+						ptr[1] = float(face->_material->_ambient.g);
+						ptr[2] = float(face->_material->_ambient.b);
+						ptr += 3;
+					}
+					else if (item == OBJDATA_DIFFUSE_COLOR) {
+						ptr[0] = float(face->_material->_diffuse.r);
+						ptr[1] = float(face->_material->_diffuse.g);
+						ptr[2] = float(face->_material->_diffuse.b);
+						ptr += 3;
+					}
+					else if (item == OBJDATA_SPECULAR_COLOR) {
+						ptr[0] = float(face->_material->_specular.r);
+						ptr[1] = float(face->_material->_specular.g);
+						ptr[2] = float(face->_material->_specular.b);
+						ptr += 3;
+					}
+					else if (item == OBJDATA_SHININESS) {
+						ptr[0] = float(face->_material->_shininess);
+						ptr++;
+					}
+					else if (item == OBJDATA_OPACITY) {
+						ptr[0] = float(face->_material->_opacity);
+						ptr++;
+					}
+					else if (item == OBJDATA_TEXTURE) {
+						pt_2d tex = object->_texs[face->_textures_idx[i]];
+						ptr[0] = float(tex.x);
+						ptr[1] = float(1.0 - tex.y); // attention OpenGL texture y origine en haut
+						ptr[2] = float(face->_material->_idx);
+						ptr += 3;
+					}
 				}
 			}
 		}

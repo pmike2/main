@@ -1,6 +1,17 @@
 # Blender 5.0.1 MTL File: 'perso2.blend'
 # www.blender.org
 
+newmtl Material
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd texture_steel.png
+map_Bump -bm 1.000000 normal_steel.png
+
 newmtl Material.001
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
@@ -10,6 +21,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd texture_paper.png
+map_Bump -bm 9.999999 normal_paper.png
 
 newmtl Material.002
 Ns 250.000000
@@ -20,6 +32,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd texture_wood.png
+map_Bump -bm 9.999999 normal_wood.png
 
 newmtl Material.003
 Ns 250.000000
@@ -30,6 +43,7 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd texture_weird.png
+map_Bump -bm 10.000000 normal_weird.png
 
 newmtl Material.004
 Ns 250.000000
@@ -40,3 +54,4 @@ Ni 1.500000
 d 1.000000
 illum 2
 map_Kd texture_sand.png
+map_Bump -bm 10.000000 normal_sand.png

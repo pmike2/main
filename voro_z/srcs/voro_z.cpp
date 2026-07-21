@@ -11,6 +11,7 @@
 #include "utile.h"
 #include "voronoi.h"
 #include "dcel.h"
+#include "geom.h"
 
 #include "voro_z.h"
 
@@ -19,7 +20,7 @@
 #define GL_TEXTURE_MAX_ANISOTROPY_EXT 0x84FE
 
 
-glm::vec3 normal(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3) {
+/*glm::vec3 normal(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3) {
 	glm::vec3 v12(p2- p1);
 	glm::vec3 v13(p3- p1);
 
@@ -31,11 +32,11 @@ glm::vec3 normal(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p
 
 	//return result/ sqrt(result.x* result.x+ result.y* result.y+ result.z* result.z);
 	return result;
-}
+}*/
 
 
 // cf https://learnopengl.com/Advanced-Lighting/Normal-Mapping
-glm::vec3 tangent(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3, const glm::vec2 & uv1, const glm::vec2 & uv2, const glm::vec2 & uv3) {
+/*glm::vec3 tangent(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & p3, const glm::vec2 & uv1, const glm::vec2 & uv2, const glm::vec2 & uv3) {
 	glm::vec3 result;
 	glm::vec3 e1= p2- p1;
 	glm::vec3 e2= p3- p1;
@@ -47,7 +48,7 @@ glm::vec3 tangent(const glm::vec3 & p1, const glm::vec3 & p2, const glm::vec3 & 
 	result.z = f * (delta_uv2.y * e1.z - delta_uv1.y * e2.z);
 
 	return result;
-}
+}*/
 
 
 // tentative de transfo d'un triangle vers un triangle plat pour application texture parallaxe

@@ -116,3 +116,13 @@ https://www.youtube.com/watch?v=i1GrQJ1u6IE
 
  cmd + a en object mode -> apply all transforms : permet d'appliquer les transformations d'un objet à ses vertices et de reinit les transfos de l'objet
  
+
+ -------------------
+normal map :
+ouvrir shader editor
+ajouter un noeud normal map (add / displacement / normal map)
+ajouter un noeud texture (add / texture / image texture)
+passer le color space de la texture en 'Non color'
+charger la texture normal (générée par gimp avec filtres / génériques / carte normale)
+connecter la sortie color de la texture normale à l'entrée color de la normal map et la sortie normal de la normal map à l'entrée normal de la BSDF
+jouer avec l'intensité

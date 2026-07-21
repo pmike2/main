@@ -6,7 +6,7 @@
 #include "repere.h"
 
 
-const glm::vec3 LIGHT_POSITION(10.0f, 10.0f, 30.0f);
+const glm::vec3 LIGHT_POSITION(100.0f, 0.0f, 0.0f);
 const glm::vec3 LIGHT_COLOR(1.0f);
 
 
@@ -17,6 +17,7 @@ struct TestObj {
 	void anim();
 	void update();
 	void draw();
+	bool key_down(InputState * input_state, SDL_Keycode key, time_point t);
 
 	
 	GLDrawManager * _gl_draw_manager;
@@ -24,6 +25,7 @@ struct TestObj {
 	ObjData * _obj_data;
 	mat_4d _model2world;
 	number _angle;
+	std::string _current_context_name;
 };
 
 

@@ -7,14 +7,9 @@ TestInstance::TestInstance() {
 
 
 TestInstance::TestInstance(AnimatedObjModel * model, pt_3d pos, time_point t, number angle, std::string action_name) :
-	// par défaut les modèles regardent vers -Y -> rotation de pi / 2
-	AnimatedObjInstance(model, pos, t, glm::angleAxis(angle + M_PI * 0.5, pt_3d(0.0, 0.0, 1.0)), action_name)
+	AnimatedObjInstance(model, pos, t, quat(1.0, 0.0, 0.0, 0.0), action_name)
 {
-	_angle = angle;
-	_direction.x = cos(_angle);
-	_direction.y = sin(_angle);
-	//_idx_frame = rand_int(0, _model->_actions[_idx_action]->_frames.size() - 1);
-	_idx_frame = 0;
+	set_angle(angle);
 }
 
 
@@ -23,9 +18,31 @@ TestInstance::~TestInstance() {
 }
 
 
+void TestInstance::set_angle(number angle) {
+	_angle = angle;
+	_direction.x = cos(_angle);
+	_direction.y = sin(_angle);
+	// par défaut les modèles regardent vers -Y -> rotation de pi / 2
+	set_rot(glm::angleAxis(_angle + M_PI * 0.5, pt_3d(0.0, 0.0, 1.0)));
+}
+
+
 void TestInstance::anim_test(time_point t) {
+	if (rand_int(0, 100) == 0) {
+		if (get_action() == "walk") {
+			set_action("watch");
+		}
+		else {
+			set_angle(rand_number(0.0, 2.0 * M_PI));
+			set_action("walk");
+		}
+	}
+
 	anim(t);
-	set_pos(_position + 0.03 * pt_3d(_direction.x, _direction.y, 0.0));
+
+	if (_model->_actions[_idx_action]->_name == "walk") {
+		set_pos(_position + 0.03 * pt_3d(_direction.x, _direction.y, 0.0));
+	}
 }
 
 
@@ -60,6 +77,7 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 		AnimatedObjModel * model = new AnimatedObjModel(json_path);
 		//model->_n_ms_per_frame = 200;
 		//std::cout << *model << "\n";
+		std::cout << model->_obj_data->_n_pts << "\n";
 
 		GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
 
@@ -81,12 +99,22 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 		//_gl_draw_manager->_texture_pool->get_texture(context->_name, "idx_texture")->export2pgm("../data/test.pgm");
 		//_gl_draw_manager->_texture_pool->get_texture(context->_name, "idx_texture")->print_data();
 
-		std::vector<fs> diffuse_textures;
+		std::vector<fs> diffuse_textures, normal_textures;
 		for (auto & material : model->_obj_data->_materials) {
 			if (material->_diffuse_tex_path != "") {
 				diffuse_textures.push_back(material->_diffuse_tex_path);
 			}
+			else {
+				std::cerr << "Matériau sans diffuse -> ca va être bizarre\n";
+			}
+			if (material->_normal_tex_path != "") {
+				normal_textures.push_back(material->_normal_tex_path);
+			}
+			else {
+				std::cerr << "Matériau sans normal -> ca va être bizarre\n";
+			}
 		}
+
 		_gl_draw_manager->add_texture(
 			context->_name, "diffuse_texture", GL_TEXTURE_2D_ARRAY, 2,
 				std::map<GLenum, int>{
@@ -96,7 +124,17 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 			GL_RGBA, glm::uvec3(512, 512, diffuse_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
 		);
 		_gl_draw_manager->set_texture_data(context->_name, "diffuse_texture", diffuse_textures);
-		
+
+		_gl_draw_manager->add_texture(
+			context->_name, "normal_texture", GL_TEXTURE_2D_ARRAY, 3,
+				std::map<GLenum, int>{
+				{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
+				{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
+				},
+		GL_RGBA, glm::uvec3(512, 512, diffuse_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
+		);
+		_gl_draw_manager->set_texture_data(context->_name, "normal_texture", normal_textures);
+
 		_models.push_back(model);
 
 		//std::cout << *context << "\n";
@@ -127,10 +165,10 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 		number angle = rand_number(0.0, M_PI * 2.0);
 		//number angle = 0.0;
 
-		//uint idx_action = rand_int(0, get_model(model_name)->_actions.size() - 1);
+		uint idx_action = rand_int(0, get_model(model_name)->_actions.size() - 1);
 		//uint idx_action = 0;
-		//std::string action_name = get_model(model_name)->_actions[idx_action]->_name;
-		std::string action_name = "walk";
+		std::string action_name = get_model(model_name)->_actions[idx_action]->_name;
+		//std::string action_name = "walk";
 
 		_instances.push_back(new TestInstance(get_model(model_name), pos, t, angle, action_name));
 	}
@@ -184,6 +222,14 @@ void TestObjAnim::anim(time_point t) {
 
 void TestObjAnim::update_static_buffer(AnimatedObjModel * model) {
 	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
+	
+	if (model->_name == "perso2") {
+		model->_obj_data->update_data(std::vector<OBJDATA_DATA_ITEM>{OBJDATA_VERTEX, OBJDATA_NORMAL, OBJDATA_TANGENT, OBJDATA_BITANGENT, OBJDATA_TEXTURE, OBJDATA_SHININESS});
+	}
+	else {
+		model->_obj_data->update_data(std::vector<OBJDATA_DATA_ITEM>{OBJDATA_VERTEX, OBJDATA_NORMAL, OBJDATA_TEXTURE});
+	}
+
 	context->_n_pts = model->_obj_data->_n_pts;
 	context->set_data(model->_obj_data->_data, 0);
 	//context->show_data();

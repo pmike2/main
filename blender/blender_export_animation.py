@@ -156,7 +156,8 @@ def get_weight_bones():
             # ce qui est unique c'est le couple (objet, v.index)
             for v in bone_verts:
                 for g in v.groups:
-                    if g.group == gidx: 
+                    # seuil pour ne pas considérer les poids trop faibles
+                    if g.group == gidx and g.weight > 0.001:
                         weights[obj.name][v.index] = g.weight
                         break
         

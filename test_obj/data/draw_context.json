@@ -8,6 +8,7 @@
 		"font" : {"shader" : "font", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 		"font3d" : {"shader" : "font3d", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 
-		"obj" : {"shader" : "obj", "mode" : "GL_TRIANGLES"}
+		"obj" : {"shader" : "obj", "mode" : "GL_TRIANGLES"},
+		"obj_normal" : {"shader" : "obj_normal", "mode" : "GL_TRIANGLES"}
 	}
 }

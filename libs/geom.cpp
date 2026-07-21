@@ -266,3 +266,34 @@ bool segment_intersects_aabb(const pt_3d & pt1, const pt_3d & pt2, AABB * aabb) 
 	return true;
 }
 
+
+// calcul normal triangle
+pt_3d normal(const pt_3d & p1, const pt_3d & p2, const pt_3d & p3) {
+	pt_3d v12(p2 - p1);
+	pt_3d v13(p3 - p1);
+
+	pt_3d result(
+		v12.y * v13.z - v12.z * v13.y,
+		v12.z * v13.x - v12.x * v13.z,
+		v12.x * v13.y - v12.y * v13.x
+	);
+
+	return result;
+}
+
+
+// calcul vecteur tangent triangle nécessaire pour normal mapping
+// cf https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+pt_3d tangent(const pt_3d & p1, const pt_3d & p2, const pt_3d & p3, const pt_2d & uv1, const pt_2d & uv2, const pt_2d & uv3) {
+	pt_3d result;
+	pt_3d e1 = p2 - p1;
+	pt_3d e2 = p3 - p1;
+	pt_2d delta_uv1 = uv2 - uv1;
+	pt_2d delta_uv2 = uv3 - uv1;
+	number f = 1.0 / (delta_uv1.x * delta_uv2.y - delta_uv2.x * delta_uv1.y);
+	result.x = f * (delta_uv2.y * e1.x - delta_uv1.y * e2.x);
+	result.y = f * (delta_uv2.y * e1.y - delta_uv1.y * e2.y);
+	result.z = f * (delta_uv2.y * e1.z - delta_uv1.y * e2.z);
+
+	return glm::normalize(result);
+}

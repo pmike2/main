@@ -335,3 +335,8 @@ void InstancePosRot::set_pos_rot(const pt_3d & position, const quat & rotation) 
 void InstancePosRot::set_pos(const pt_3d & position) {
 	set_pos_rot_scale(position, _rotation, _scale);
 }
+
+
+void InstancePosRot::set_rot(const quat & rotation) {
+	set_pos_rot_scale(_position, rotation, _scale);
+}

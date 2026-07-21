@@ -19,6 +19,7 @@ number aabb_distance_pt_2(AABB * aabb, const pt_3d & pt);
 number aabb_distance_pt(AABB * aabb, const pt_3d & pt);
 bool ray_intersects_aabb(pt_3d origin, pt_3d direction, AABB * aabb, number & t_hit);
 bool segment_intersects_aabb(const pt_3d & pt1, const pt_3d & pt2, AABB * aabb);
-
+pt_3d normal(const pt_3d & p1, const pt_3d & p2, const pt_3d & p3);
+pt_3d tangent(const pt_3d & p1, const pt_3d & p2, const pt_3d & p3, const pt_2d & uv1, const pt_2d & uv2, const pt_2d & uv3);
 
 #endif

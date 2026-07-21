@@ -8,7 +8,6 @@ uniform sampler2DArray diffuse_texture;
 
 
 in vec3 vertex_position;
-in vec3 vertex_color;
 in vec3 vertex_normal;
 in vec3 tex_coord;
 
