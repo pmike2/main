@@ -94,33 +94,18 @@ def get_rigid_objects_parent_bones():
     for obj in bpy.data.objects:
         if obj.name == ARMATURE_DEFAULT_NAME:
             continue
+        
         parent_bone_name = obj.parent_bone
+        if parent_bone_name == "":
+            continue
         
         objects.append({"name" : obj.name, "bone" : parent_bone_name})
 
     return objects
 
 
-def get_rigid_bones():
-    """Bones en mode rigide."""
-    bones = {}
-    for bone in bpy.context.object.pose.bones:
-        bone_name = bone.name
-        parent = bone.parent
-        if parent is None:
-            parent_name = None
-        else:
-            parent_name = parent.name
-        
-        bones[bone_name] = {
-            "parent" : parent_name,
-            "matrix_local" : matrix2list(bone.bone.matrix_local)
-        }
-    return bones
-
-
-def get_weight_bones():
-    """Bones en mode weight."""
+def get_bones():
+    """Bones."""
     bones = {}
     for bone in bpy.context.object.pose.bones:
         # récupération du parent
@@ -171,26 +156,13 @@ def get_weight_bones():
     return bones
 
 
-def export_weight(filepath):
-    """Export de l'animation avec les poids."""
+def gen_json(filepath):
+    """Création json."""
     data = {
         "armature" : get_armature_matrix(),
-        "bones" : get_weight_bones(),
+        "bones" : get_bones(),
         "actions" : get_actions(),
-        "fps" : bpy.context.scene.render.fps
-    }
-
-    with open(filepath, 'w') as f:
-        json.dump(data, f, indent=4)
-
-
-def export_rigid(filepath):
-    """Export de l'animation en rigide."""
-    data = {
-        "armature" : get_armature_matrix(),
-        "bones" : get_rigid_bones(),
-        "actions" : get_actions(),
-        "objects" : get_rigid_objects_parent_bones(),
+        "rigid_objects" : get_rigid_objects_parent_bones(),
         "fps" : bpy.context.scene.render.fps
     }
 
@@ -271,7 +243,7 @@ def export_obj(obj_path):
     )
 
 
-def export_animation(json_path, mode):
+def export_animation(json_path):
     """Fonction principale."""
     # sauvegarde du projet afin de revenir à un état propre à la fin
     bpy.ops.wm.save_mainfile()
@@ -290,10 +262,7 @@ def export_animation(json_path, mode):
     bpy.context.view_layer.objects.active = bpy.data.objects[ARMATURE_DEFAULT_NAME]
     
     # export animation
-    if mode == "weight":
-        export_weight(json_path)
-    elif mode == "rigid":
-        export_rigid(json_path)
+    gen_json(json_path)
     
     # un peu bourrin mais permet de revenir à l'état du projet au moment de la sauvegarde donc avant application des modifiers
     bpy.ops.wm.revert_mainfile()
@@ -315,18 +284,8 @@ class ExportAnimation(Operator, ExportHelper):
         maxlen=255,
     )
 
-    mode: EnumProperty(
-        name="mode",
-        description="mode d'animation",
-        items=(
-            ('weight', "weight", "animation par poids"),
-            ('rigid', "rigid", "animation rigide"),
-        ),
-        default='weight',
-    )
-
     def execute(self, context):
-        return export_animation(self.filepath, self.mode)
+        return export_animation(self.filepath)
 
 
 # Only needed if you want to add into a dynamic menu

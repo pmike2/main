@@ -18,9 +18,9 @@ using json = nlohmann::json;
 
 
 // mode du modèle
-// ANIMATED_MODEL_RIGID = un bone par objet et tous les vertices de l'objet sont affectés par ce bone
-// ANIMATED_MODEL_WEIGHT = jusqu'à 4 bones + weights affectent chaque vertex
-enum ANIMATED_MODEL_MODE {ANIMATED_MODEL_RIGID, ANIMATED_MODEL_WEIGHT};
+// ANIMATED_OBJECT_RIGID = un bone par objet et tous les vertices de l'objet sont affectés par ce bone
+// ANIMATED_OBJECT_WEIGHT = jusqu'à 4 bones + weights affectent chaque vertex
+enum ANIMATED_OBJECT_MODE {ANIMATED_OBJECT_RIGID, ANIMATED_OBJECT_WEIGHT};
 
 
 // cette valeur limite à la fois le nombre d'actions ainsi que le nombre de frames par action
@@ -97,6 +97,7 @@ struct AnimatedObjObject {
 
 
 	ObjObject * _static_object;
+	ANIMATED_OBJECT_MODE _mode; // mode = rigide ou avec poids
 	AnimatedObjBone * _parent_bone; // utilisé dans le cas ANIMATED_MODEL_RIGID
 	std::map<number, std::vector<std::pair<AnimatedObjBone *, number> > > _weights_per_vertex; // utilisé dans le cas ANIMATED_MODEL_WEIGHT
 };
@@ -118,7 +119,6 @@ struct AnimatedObjModel {
 	std::string _name; // nom
 	number _fps; // FPS des animations
 	uint _n_ms_per_frame; // nombre de frames par seconde
-	ANIMATED_MODEL_MODE _mode; // mode = rigide ou avec poids
 	ObjData * _obj_data; // .obj associé
 	std::vector<AnimatedObjBone *> _bones; // bones
 	std::vector<AnimatedObjAction *> _actions; // actions

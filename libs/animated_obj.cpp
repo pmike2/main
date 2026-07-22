@@ -137,7 +137,7 @@ AnimatedObjObject::AnimatedObjObject() {
 }
 
 
-AnimatedObjObject::AnimatedObjObject(ObjObject * static_object) : _static_object(static_object) {
+AnimatedObjObject::AnimatedObjObject(ObjObject * static_object) : _static_object(static_object), _mode(ANIMATED_OBJECT_RIGID) {
 
 }
 
@@ -148,6 +148,10 @@ AnimatedObjObject::~AnimatedObjObject() {
 
 
 void AnimatedObjObject::sort_per_weight() {
+	if (_mode == ANIMATED_OBJECT_RIGID) {
+		return;
+	}
+
 	// tri par poids
 	for (auto & it : _weights_per_vertex) {
 		std::sort(it.second.begin(), it.second.end(), 
@@ -179,6 +183,12 @@ void AnimatedObjObject::sort_per_weight() {
 
 std::ostream & operator << (std::ostream & os, AnimatedObjObject & obj) {
 	os << "static_object = " << obj._static_object->_name;
+	if (obj._mode == ANIMATED_OBJECT_RIGID) {
+		os << " ; mode = ANIMATED_OBJECT_RIGID\n";
+	}
+	else if (obj._mode == ANIMATED_OBJECT_WEIGHT) {
+		os << " ; mode = ANIMATED_OBJECT_WEIGHT\n";
+	}
 	return os;
 }
 
@@ -239,10 +249,10 @@ AnimatedObjModel::AnimatedObjModel(fs json_path) {
 
 		// cas ANIMATED_MODEL_WEIGHT -------------------------------------------------
 		if (!it.value()["weights"].is_null()) {
-			_mode = ANIMATED_MODEL_WEIGHT;
 			for (json::iterator it_weight = it.value()["weights"].begin(); it_weight != it.value()["weights"].end(); ++it_weight) {
 				std::string obj_name = it_weight.key();
 				AnimatedObjObject * object = get_animated_object(obj_name);
+				object->_mode = ANIMATED_OBJECT_WEIGHT;
 
 				for (json::iterator it_weight_2 = it_weight.value().begin(); it_weight_2 != it_weight.value().end(); ++it_weight_2) {
 					uint vertex_idx = std::stoi(it_weight_2.key());
@@ -257,7 +267,6 @@ AnimatedObjModel::AnimatedObjModel(fs json_path) {
 		}
 		// cas ANIMATED_MODEL_RIGID -------------------------------------------------
 		else {
-			_mode = ANIMATED_MODEL_RIGID;
 		}
 	}
 
@@ -269,14 +278,13 @@ AnimatedObjModel::AnimatedObjModel(fs json_path) {
 	}
 
 	// dans le cas ANIMATED_MODEL_RIGID on associe un unique os à chaque objet
-	if (_mode == ANIMATED_MODEL_RIGID) {
-		for (auto & o : js["objects"]) {
-			std::string object_name = o["name"];
-			std::string bone_name = o["bone"];
-			AnimatedObjObject * object = get_animated_object(object_name);
-			AnimatedObjBone * bone = get_bone(bone_name);
-			object->_parent_bone = bone;
-		}
+	for (auto & o : js["rigid_objects"]) {
+		std::string object_name = o["name"];
+		std::string bone_name = o["bone"];
+		AnimatedObjObject * object = get_animated_object(object_name);
+		object->_mode = ANIMATED_OBJECT_RIGID;
+		AnimatedObjBone * bone = get_bone(bone_name);
+		object->_parent_bone = bone;
 	}
 
 	// actions
@@ -383,10 +391,11 @@ void AnimatedObjModel::compute_buffer_texture_data() {
 
 			_idx_texture_data[idx_action * IDX_TEXTURE_DATA_SIZE + idx_frame] = float(idx_buffer_texture);
 			
-			// dans le cas ANIMATED_MODEL_RIGID tous les vertices d'un objet sont affectés par le même bone : o->_parent_bone
-			if (_mode == ANIMATED_MODEL_RIGID) {
-				for (auto & o : _objects) {
-					ObjObject * object = o->_static_object;
+			for (auto & o : _objects) {
+				ObjObject * object = o->_static_object;
+
+				// dans le cas ANIMATED_OBJECT_RIGID tous les vertices d'un objet sont affectés par le même bone : o->_parent_bone
+				if (o->_mode == ANIMATED_OBJECT_RIGID) {
 					AnimatedObjBone * bone = o->_parent_bone;
 					AnimatedObjTransform * transform = frame->get_transform(bone);
 					const float * mat_data = glm::value_ptr(glm::mat4(transform->_mat_final));
@@ -400,13 +409,9 @@ void AnimatedObjModel::compute_buffer_texture_data() {
 						}
 					}
 				}
-			}
-
-			// dans le cas ANIMATED_MODEL_WEIGHT on calcule la somme pondérée des matrices (max 4) associées au vertex
-			else if (_mode == ANIMATED_MODEL_WEIGHT) {
-				for (auto & o : _objects) {
-					ObjObject * object = o->_static_object;
-					
+				
+				// dans le cas ANIMATED_OBJECT_WEIGHT on calcule la somme pondérée des matrices (max 4) associées au vertex
+				else if (o->_mode == ANIMATED_OBJECT_WEIGHT) {
 					for (auto & face : object->_faces) {
 						for (uint idx_pt=0; idx_pt<3; ++idx_pt) {
 							mat_4d m;
@@ -517,12 +522,6 @@ AnimatedObjAction * AnimatedObjModel::get_action(std::string action_name) {
 std::ostream & operator << (std::ostream & os, AnimatedObjModel & model) {
 	os << "name = " << model._name;
 	os << " ; buffer_texture_data_size = " << model._buffer_texture_data_size;
-	if (model._mode == ANIMATED_MODEL_RIGID) {
-		os << " ; mode = ANIMATED_MODEL_RIGID\n";
-	}
-	else if (model._mode == ANIMATED_MODEL_WEIGHT) {
-		os << " ; mode = ANIMATED_MODEL_WEIGHT\n";
-	}
 
 	os << "bones =\n";
 	for (auto & bone : model._bones) {

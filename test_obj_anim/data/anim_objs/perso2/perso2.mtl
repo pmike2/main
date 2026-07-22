@@ -55,3 +55,14 @@ d 1.000000
 illum 2
 map_Kd texture_sand.png
 map_Bump -bm 10.000000 normal_sand.png
+
+newmtl Material.006
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd texture_wood.png
+map_Bump -bm 9.999999 normal_wood.png

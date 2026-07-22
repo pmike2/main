@@ -32,7 +32,10 @@ void TestInstance::anim_test(time_point t) {
 		if (get_action() == "walk") {
 			set_action("watch");
 		}
-		else {
+		else if (get_action() == "watch") {
+			set_action("shoot");
+		}
+		else if (get_action() == "shoot") {
 			set_angle(rand_number(0.0, 2.0 * M_PI));
 			set_action("walk");
 		}
@@ -77,7 +80,7 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 		AnimatedObjModel * model = new AnimatedObjModel(json_path);
 		//model->_n_ms_per_frame = 200;
 		//std::cout << *model << "\n";
-		std::cout << model->_obj_data->_n_pts << "\n";
+		//std::cout << model->_obj_data->_n_pts << "\n";
 
 		GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
 
