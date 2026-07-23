@@ -28,16 +28,16 @@ void TestInstance::set_angle(number angle) {
 
 
 void TestInstance::anim_test(time_point t) {
-	if (rand_int(0, 100) == 0) {
+	if (rand_int(0, 1000) == 0) {
 		if (get_action() == "walk") {
-			set_action("watch");
+			set_next_action("watch");
 		}
 		else if (get_action() == "watch") {
-			set_action("shoot");
+			set_next_action("shoot");
 		}
 		else if (get_action() == "shoot") {
 			set_angle(rand_number(0.0, 2.0 * M_PI));
-			set_action("walk");
+			set_next_action("walk");
 		}
 	}
 
@@ -289,11 +289,15 @@ void TestObjAnim::draw() {
 bool TestObjAnim::key_down(InputState * input_state, SDL_Keycode key, time_point t) {
 	if (key == SDLK_a) {
 		for (auto & instance : _instances) {
-			if (instance->get_action() == "move") {
-				instance->set_action("move2");
+			if (instance->get_action() == "walk") {
+				instance->set_next_action("watch");
 			}
-			else if (instance->get_action() == "move2") {
-				instance->set_action("move");
+			else if (instance->get_action() == "watch") {
+				instance->set_next_action("shoot");
+			}
+			else if (instance->get_action() == "shoot") {
+				//instance->set_angle(rand_number(0.0, 2.0 * M_PI));
+				instance->set_next_action("walk");
 			}
 		}
 		return true;

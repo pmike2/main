@@ -82,6 +82,7 @@ struct AnimatedObjAction {
 
 	std::string _name; // nom
 	std::vector<AnimatedObjFrame *> _frames; // frames
+	uint _loop_start_idx, _loop_end_idx;
 };
 
 
@@ -113,6 +114,7 @@ struct AnimatedObjModel {
 	AnimatedObjObject * get_animated_object(std::string obj_name);
 	AnimatedObjBone * get_bone(std::string bone_name);
 	AnimatedObjAction * get_action(std::string action_name);
+	uint get_action_idx(std::string action_name);
 	friend std::ostream & operator << (std::ostream & os, AnimatedObjModel & obj);
 
 
@@ -136,7 +138,7 @@ struct AnimatedObjInstance : public InstancePosRot {
 	AnimatedObjInstance(AnimatedObjModel * model, pt_3d pos, time_point t, quat q = quat(1.0, 0.0, 0.0, 0.0), std::string action_name = "");
 	~AnimatedObjInstance();
 	void anim(time_point t);
-	void set_action(std::string action_name);
+	void set_next_action(std::string action_name);
 	std::string get_action();
 
 
@@ -144,6 +146,7 @@ struct AnimatedObjInstance : public InstancePosRot {
 	uint _idx_action; // idx action courante
 	uint _idx_frame; // idx frame courant
 	time_point _last_anim_t; // dernier temps d'animation
+	std::string _next_action;
 };
 
 

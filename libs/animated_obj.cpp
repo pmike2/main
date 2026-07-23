@@ -290,8 +290,9 @@ AnimatedObjModel::AnimatedObjModel(fs json_path) {
 	// actions
 	for (json::iterator it_action = js["actions"].begin(); it_action != js["actions"].end(); ++it_action) {
 		std::string action_name = it_action.key();
+		json js_action = it_action.value();
 		AnimatedObjAction * action = new AnimatedObjAction(action_name);
-		for (auto & f : it_action.value()) {
+		for (auto & f : js_action["frames"]) {
 			AnimatedObjFrame * frame = new AnimatedObjFrame();
 			for (json::iterator it_f = f.begin(); it_f != f.end(); ++it_f) {
 				std::string bone_name = it_f.key();
@@ -301,6 +302,23 @@ AnimatedObjModel::AnimatedObjModel(fs json_path) {
 			}
 			action->_frames.push_back(frame);
 		}
+
+		if (js_action["loopstart"].is_null()) {
+			action->_loop_start_idx = 0;
+		}
+		else {
+			action->_loop_start_idx = uint(js_action["loopstart"]) - uint(js_action["start"]);
+		}
+
+		if (js_action["loopend"].is_null()) {
+			action->_loop_end_idx = action->_frames.size() - 1;
+		}
+		else {
+			action->_loop_end_idx = uint(js_action["loopend"]) - uint(js_action["start"]);
+		}
+
+		//std::cout << action->_name << " ; " << action->_loop_start_idx << " ; " << action->_loop_end_idx << "\n";
+
 		_actions.push_back(action);
 	}
 
@@ -519,6 +537,17 @@ AnimatedObjAction * AnimatedObjModel::get_action(std::string action_name) {
 }
 
 
+uint AnimatedObjModel::get_action_idx(std::string action_name) {
+	for (uint idx_action=0; idx_action<_actions.size(); ++idx_action) {
+		if (_actions[idx_action]->_name == action_name) {
+			return idx_action;
+		}
+	}
+	std::cerr << action_name << " : Action non trouvée\n";
+	return 0;
+}
+
+
 std::ostream & operator << (std::ostream & os, AnimatedObjModel & model) {
 	os << "name = " << model._name;
 	os << " ; buffer_texture_data_size = " << model._buffer_texture_data_size;
@@ -550,10 +579,11 @@ AnimatedObjInstance::AnimatedObjInstance() {
 
 AnimatedObjInstance::AnimatedObjInstance(AnimatedObjModel * model, pt_3d pos, time_point t, quat q, std::string action_name) :
 	InstancePosRot(pos, q, pt_3d(1.0)),
-	_model(model), _last_anim_t(t), _idx_frame(0), _idx_action(0)
+	_model(model), _last_anim_t(t), _idx_frame(0), _idx_action(0), _next_action("")
 {
 	if (action_name != "") {
-		set_action(action_name);
+		_idx_action = _model->get_action_idx(action_name);
+		_idx_frame = 0;
 	}
 }
 
@@ -564,26 +594,26 @@ AnimatedObjInstance::~AnimatedObjInstance() {
 
 
 void AnimatedObjInstance::anim(time_point t) {
-	auto dt= std::chrono::duration_cast<std::chrono::milliseconds>(t- _last_anim_t).count();
+	auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_anim_t).count();
 	if (dt > _model->_n_ms_per_frame) {
 		_last_anim_t = t;
 		_idx_frame++;
-		if (_idx_frame >= _model->_actions[_idx_action]->_frames.size()) {
+		if (_next_action == "") {
+			if (_idx_frame > _model->_actions[_idx_action]->_loop_end_idx) {
+				_idx_frame = _model->_actions[_idx_action]->_loop_start_idx;
+			}
+		}
+		else if (_idx_frame >= _model->_actions[_idx_action]->_frames.size()) {
+			_idx_action = _model->get_action_idx(_next_action);
 			_idx_frame = 0;
+			_next_action = "";
 		}
 	}
 }
 
 
-void AnimatedObjInstance::set_action(std::string action_name) {
-	for (uint idx_action=0; idx_action<_model->_actions.size(); ++idx_action) {
-		if (_model->_actions[idx_action]->_name == action_name) {
-			_idx_action = idx_action;
-			_idx_frame = 0;
-			return;
-		}
-	}
-	std::cerr << action_name << " : Action non trouvée\n";
+void AnimatedObjInstance::set_next_action(std::string action_name) {
+	_next_action = action_name;
 }
 
 

@@ -1,81 +1,149 @@
-Modelling :
-https://www.youtube.com/watch?v=DiIoWrOlIRw
+add armature
+Data / viewport display / in front pour afficher armature devant le reste
+e : extrude bone
+shift + d : duplicate bones
+ctrl + p : make parent
+alt + p : unmake parent (disconnect)
+nommer les jambes bras gauche avec suffix .L, puis click droit symmetrize : crée les .R
+object mode ; select model ; click droit armature : parent / armature defform / automatic weights
+pose mode ; select armature; déplacement rotation se reflète sur le modèle !
+
+on peut aussi créer les vertex group à la main mais il faut que les noms des vertex group correspondent aux noms des bones
+et il faut que le mesh ait un modifier de type armature
+
+dans menu principal à droite de armature : show names -> affiche le nom des bones
+
+weight painting :
+1 - object mode, select armature
+2 - shift click select object
+3 - ctrl tab -> weight paint mode
+barre du haut / weights / assign automatic from bones
+-> permet de repartir de ce qu'on a fait avant avec automatic weights
+brush tool options / auto normalize : pour que la somme des weights fasse tjrs 1
+brush tool symmetry : utile pour bras / jambes
+f : change brush size
+dans menu principal à droite : Vertex Groups : on peut switcher entre les bones pour peindre leur influence sur l'objet sélectionné
+
+rigid rigging :
+fonctionne uniquement quand on a des objets distincts
+1 - object mode, select un objet (par ex la tête)
+2 - shift click armature
+3 - ctrl tab -> pose mode
+4 - select bone
+ctrl - p : set parent to bone -> l'objet est maintenant attaché au bone
+
+cf https://blenderartists.org/t/bone-extrusion-problem/526543
+si un bone ne veut pas bouger et ne fait que des rotations il faut :
+- passer en edit mode
+- sélectionner le bone
+- dans l'onglet à droite icone bone, partie Relations, unclick 'connected'
+
+animate :
+https://www.youtube.com/watch?v=IAiTYaiZmY0
+
+pose mode
+select bone(s) (a pour all)
+press i : insert keyframe
+move / rotate ; change time mark ; i : insert another keyframe
+maintenant quand on bouge le time mark on a une anim !
+
+bloc timeline en haut à gauche ou droite icone '+' , permet d'afficher plusieurs timelines
+-> dope sheet + timeline bien
+
+dans dopesheet : a : select all, puis x : supprime tous les keyframes
+
+markers : utiles si on veut mettre plusieurs anims dans un .blend (marcher, courir, ...)
+Marker / add marker pour ajouter un marker, puis on peut le renommer en le sélectionnant puis rename marker
 
 
-ctrl = cmd pareil
+-------------------
+Effet miroir :
+https://www.youtube.com/watch?v=i1GrQJ1u6IE
+
+ - déplacer les sommets d'un objet en edit mode (pas en object mode car sinon on déplace également le pt de ref de l'objet)
+ - appliquer le modifier mirror à l'objet
+ - en object mode : onglet modifier fleche du bas pour afficher le menu déroulant du modifier et faire apply
+ -> permet de séparer le mirroir 
+ - puis assigner les sommets du mirroir à un nouvel objet
+ 
+ -----------------------
+ Pour afficher l'orientation des faces, en mode edit , overlays, 'Face orientation'
+ Si une face est rouge c'est mauvais, la sélectionner, puis menu Mesh / Normals / Flip
+ 
+
+ -------------
+ n : affiche onglet à droite avec infos de transformation
+
+ alt + a : déselectionne tout
+
+ cmd + right click : lasso de sélection
+
+ alt + z : x-ray mode
+
+ h / alt + h : hide / unhide sélection
+
+ sélection sommets / click droit / subdivide -> subdivision
+
+ modifier shrinkwrap permet de projeter des sommets d'un objet sur un autre objet, on peut également choisir un vertex group
+
+ cmd + a en object mode -> apply all transforms : permet d'appliquer les transformations d'un objet à ses vertices et de reinit les transfos de l'objet
+ 
+
+ -------------------
+normal map :
+ouvrir shader editor
+ajouter un noeud normal map (add / displacement / normal map)
+ajouter un noeud texture (add / texture / image texture)
+passer le color space de la texture en 'Non color'
+charger la texture normal (générée par gimp avec filtres / génériques / carte normale)
+connecter la sortie color de la texture normale à l'entrée color de la normal map et la sortie normal de la normal map à l'entrée normal de la BSDF
+jouer avec l'intensité
+
+----------------
+on peut mettre plusieurs matériaux pour un objet, puis en edit mode sélectionner des faces et click Assign dans onglet Material
+pour assigner ce mat aux faces
 
 
-intersection :  select mesh et Ctrl+F
-shift + middle mouse : strafe
-définir le centre de rotation de la vue : click gauche pour mettre le curseur 3D et View/Align View/Center view to cursor
-alt + home : center to 3D cursor
-center to center of mass, puis alt + G : centre le modèle sur son centre de gravité
-n : properties panel ; permet de régler quand on voie l'image de face / de profil
-numpad 1 / numpad 3 : vues de face / profil
-shift + c : center 3d cursor
-shift + a : fenetre de création de formes
-f : création de face ou edge
-tab : passage en edit mode
-ctrl + tab : sélection vertex / edge / face
-ctrl + r : loopcut ; right-click : reste au centre
-ctrl + b : biseau sur une arete
-z : wireframe mode / solid mode
-b : boxing
-x : delete
-deformer mirror : option clipping permet de n'avoir qu'un seul sommet à la frontière
-a : select all
-g : move shape
-o : après une sélection permet de faire du proportional editing avec un cercle d'influence
-g sur 1 vertex + ctrl appuyé -> snap ; choix du type de snap dans le menu en bas
-e : extrude
-i : inset face
-alt + right click : select loop
-s : scale ; x , y , z ensuite pour spécifier l'axe ; 0 ensuite pour aplatir
-alt + s : shrink / fatten
-ctrl + e : menu ; edge slide
-ctrl + left click : extrude
-w : ouvre un menu ;	remove number permet de supprimer les vertices surimposés
-ctrl + j : merge objects
-c : sélection par cercle avec rayon ajustable
-shift + d : duplicate selection
-p : separate by selection
-h : hide selection ; alt + h unhide ; shift + h : hide all except selection
-ctrl + n : recalcul des normales
+n : affichage du panneau de droite
+
+cmd + x : dissolve vertices
+shift + d : duplicate
+select objects + m : move to collection
+select objects + shift + click : permet de choisir l'objet actif
+cmd + j : join objects
+shift + rightclick : move cursor origin ; la création d'un mesh se fait sur le cursor origin
+
+icone barre du haut en forme de cible permet de changer le pivot point. (3d cursor par ex) Le défaut est median point
+individual origins permet de faire des rotations autour de chaque centre d'objet
+
+shift quand on fait une rotation ou scale ou translation permet de faire petit à petit
+
+select multiple objects + cmd l : link data / copy modifiers : permet de copier les modifiers de l'objet actif vers les autres
+
+j : join vertices
 
 
-Texturing :
-https://www.youtube.com/watch?v=JYBPXTful2g
+translation d'un vertex : g + g (une 2ème fois) permet de déplacer un vertex le long d'une arête
 
-
-onglet material, click point color -> image texture
-ouvrir un UV editor en haut à droite
-passer en mode edit
-passer en material preview pour voir la texture sur le modèle
-u : unwrap selection ; si on séléctionne une face toute la texture sera appliquée à la face
-
-
-ctrl + e menu ; mark seam : sépare les objets le long de la sélection d'edges
-alt + z : show material color
+k : knife : permet d'ajouter des edges
 
 
 
-Rigging :
-en object mode : Ctrl + tab : passage en pose mode pour manipuler les bones
-dupliquer fenetre : passer en dope sheet window
-action editor
-new action
-click icone 'F' pour sauvegarder
-selectionner LocRot et click sur icone clef pour insérer keyframes
-select all bones avec 'a' puis 'i' pour insérer un keyframe
-copy pose puis paste x-flipped pose permet de copier une version miroir (d'ou l'interet de faire regarder le perso vers Y en bind pose)
-t : permet de choisir le mode d'interpolation
-pour faire une marche : dupliquer puis inverser toutes les poses
-mettre end à 32 et pas 33 si dernier keyframe a position 33
+ctrl + a : apply transformations
 
-Reset :
-Select all the bones, in pose mode with A . Then, hit:
-ALT R to reset all rotations,
-ALT G to reset all translations,
-ALT S to reset all scales.
+on peut créer un objet empty / plain axes et s'en servir comme d'un centre pour le déformer symmétrie
 
-NLA editor : move strip : G
+select edge ou 2 edges opposés + f : fill -> crée une face
+
+ajout lattice ; onglet lattice permet de gérer avec u, v, w la résolution du lattice
+puis sur un objet ajout derfomer lattice que l'on lie avec le lattice créé.
+maintenant quand on déforme le lattice, l'objet est aussi déformé
+
+
+alt + g : clear location (alt r : clear rotation , alt s : clear scale)
+
+icone en haut à droite : auto merge vertices : fusionne les vertices qui se chevauchent
+
+select multiple objects + cmd l : link materials -> tous les objets ont le même matérial que l'objet actif
+
+https://polyhaven.com : site où récupérer des textures et des hdri (sert à éclairer des scènes 3d)

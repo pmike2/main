@@ -26,6 +26,12 @@ ARMATURE_DEFAULT_NAME = "Armature"
 # nom du modifier de type armature par défaut
 ARMATURE_DEFAULT_MODIFIER_NAME = "Armature"
 
+# suffixes des markers
+ACTION_TYPE_START = "start"
+ACTION_TYPE_END = "end"
+ACTION_TYPE_LOOPSTART = "loopstart"
+ACTION_TYPE_LOOPEND = "loopend"
+
 
 def matrix2list(m):
     """Renvoie les valeurs de la matrice m sous forme de liste de rows.
@@ -50,15 +56,16 @@ def get_markers():
         # index frame du marker dans la timeline
         marker_frame = marker.frame
         
-        # attention : il faut nommer les marqueurs d'une action xxx_start / xxx_end
+        # attention : il faut nommer les marqueurs d'une action xxx_start / xxx_end / xxx_loopstart / xxx_loopend
         action = marker_name.split("_")[0]
-        end_or_start = marker_name.split("_")[1]
-        
-        if end_or_start == "start":
-            markers[action] = {"start" : marker_frame}
-        elif end_or_start == "end":
-            markers[action]["end"] = marker_frame
-    
+        action_type = marker_name.split("_")[1]
+        assert action_type in (ACTION_TYPE_START, ACTION_TYPE_END, ACTION_TYPE_LOOPSTART, ACTION_TYPE_LOOPEND), f"action_type {action_type} non supporté"
+
+        if action not in markers.keys():
+            markers[action] = dict.fromkeys([ACTION_TYPE_START, ACTION_TYPE_END, ACTION_TYPE_LOOPSTART, ACTION_TYPE_LOOPEND])
+
+        markers[action][action_type] = marker_frame
+
     return markers
 
 
@@ -68,10 +75,11 @@ def get_actions():
     actions = {}
 
     for action, marker_dic in markers.items():
-        actions[action] = []
-        
+        actions[action] = {"frames" : []}
+        actions[action].update(marker_dic)
+
         # pour chaque frame
-        for f in range(marker_dic["start"], marker_dic["end"] + 1):
+        for f in range(marker_dic[ACTION_TYPE_START], marker_dic[ACTION_TYPE_END] + 1):
             # on se positionne sur ce frame
             bpy.context.scene.frame_set(f)
         
@@ -82,7 +90,7 @@ def get_actions():
                     "matrix_basis" : matrix2list(bone.matrix_basis),
                 }
         
-            actions[action].append(dic_frame)
+            actions[action]["frames"].append(dic_frame)
     
     return actions
 
