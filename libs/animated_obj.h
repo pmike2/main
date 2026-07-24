@@ -26,6 +26,9 @@ enum ANIMATED_OBJECT_MODE {ANIMATED_OBJECT_RIGID, ANIMATED_OBJECT_WEIGHT};
 // cette valeur limite à la fois le nombre d'actions ainsi que le nombre de frames par action
 const uint IDX_TEXTURE_DATA_SIZE = 1024;
 
+// FPS par défaut de Blender
+const number BLENDER_DEFAULT_FPS = 24.0;
+
 
 // json -> mat4
 mat_4d parse_js_matrix(json js);
@@ -82,7 +85,7 @@ struct AnimatedObjAction {
 
 	std::string _name; // nom
 	std::vector<AnimatedObjFrame *> _frames; // frames
-	uint _loop_start_idx, _loop_end_idx;
+	uint _loop_start_idx, _loop_end_idx; // indices des frames à looper
 };
 
 
@@ -111,6 +114,7 @@ struct AnimatedObjModel {
 	~AnimatedObjModel();
 	void compute_transform_final_matrix(); // calcul des matrices finales des transformations
 	void compute_buffer_texture_data(); // calcul de ce qui sera mis dans le buffer texture
+	void clean_texture_datas(); // supprime _buffer_texture_data et _idx_texture_data (à faire quand les textures ont été initialisées pour faire de la place en mémoire)
 	AnimatedObjObject * get_animated_object(std::string obj_name);
 	AnimatedObjBone * get_bone(std::string bone_name);
 	AnimatedObjAction * get_action(std::string action_name);
@@ -127,8 +131,8 @@ struct AnimatedObjModel {
 	std::vector<AnimatedObjObject *> _objects; // objets
 	mat_4d _mat_armature; // matrice de transformation liée à l'armature
 	uint _buffer_texture_data_size; // taille du buffer texture
-	float * _buffer_texture_data; // buffer texture où sont stockés toutes les matrices de transfo
-	float _idx_texture_data[IDX_TEXTURE_DATA_SIZE * IDX_TEXTURE_DATA_SIZE];
+	float * _buffer_texture_data; // data buffer texture où sont stockés toutes les matrices de transfo
+	float * _idx_texture_data; // data texture où sont stockés les index pointant vers le buffer texture pour chaque couple (idx_action, idx_frame)
 };
 
 
@@ -146,7 +150,7 @@ struct AnimatedObjInstance : public InstancePosRot {
 	uint _idx_action; // idx action courante
 	uint _idx_frame; // idx frame courant
 	time_point _last_anim_t; // dernier temps d'animation
-	std::string _next_action;
+	std::string _next_action; // prochaine action à effectuer
 };
 
 

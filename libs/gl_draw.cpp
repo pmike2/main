@@ -247,7 +247,7 @@ GLDrawTexture::GLDrawTexture() {
 
 
 GLDrawTexture::GLDrawTexture(std::string name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) :
-	_name(name), _target(target), _offset(offset), _params(params), _internal_format(internal_format), _size(size), _format(format), _type(type)
+	_name(name), _target(target), _offset(offset), _params(params), _internal_format(internal_format), _size(size), _format(format), _type(type), _is_mipmap(false)
 {
 	glGenTextures(1, &_id);
 	glActiveTexture(GL_TEXTURE0 + _offset);
@@ -256,6 +256,11 @@ GLDrawTexture::GLDrawTexture(std::string name, GLenum target, uint offset, std::
 
 	for (auto & param : _params) {
 		glTexParameteri(_target, param.first, param.second);
+
+		// on veut savoir s'il faudra faire un glGenerateMipmap à la fin du set_data
+		if (param.first == GL_TEXTURE_MIN_FILTER && param.second == GL_LINEAR_MIPMAP_LINEAR) {
+			_is_mipmap = true;
+		}
 	}
 
 	// test anisotropic filter
@@ -302,6 +307,10 @@ void GLDrawTexture::set_data(void * data, int depth, int width, int height) {
 		std::cerr << "GLDrawTexture::GLDrawTexture : _target = " << _target << " inconnu\n";
 	}
 
+	if (_is_mipmap) {
+		glGenerateMipmap(_target);
+	}
+
 	glBindTexture(_target, 0);
 }
 
@@ -325,6 +334,10 @@ void GLDrawTexture::set_data(fs png) {
 	glTexSubImage2D(_target, 0, 0, 0, _size[0], _size[1], _format, _type, surface->pixels);
 
 	SDL_FreeSurface(surface);
+
+	if (_is_mipmap) {
+		glGenerateMipmap(_target);
+	}
 
 	glBindTexture(_target, 0);
 }
@@ -354,6 +367,10 @@ void GLDrawTexture::set_data(std::vector<fs> pngs) {
 		glTexSubImage3D(_target, 0, 0, 0, idx_png, _size[0], _size[1], 1, _format, _type, surface->pixels);
 
 		SDL_FreeSurface(surface);
+	}
+
+	if (_is_mipmap) {
+		glGenerateMipmap(_target);
 	}
 
 	glBindTexture(_target, 0);
@@ -532,8 +549,8 @@ GLDrawTextureBuffer::GLDrawTextureBuffer() {
 }
 
 
-GLDrawTextureBuffer::GLDrawTextureBuffer(std::string name, GLenum internal_format, uint offset) :
-	_name(name), _internal_format(internal_format), _offset(offset)
+GLDrawTextureBuffer::GLDrawTextureBuffer(std::string name, GLenum internal_format, uint offset, uint size) :
+	_name(name), _internal_format(internal_format), _offset(offset), _size(size)
 {
 	glGenBuffers(1, &_buf_id);
 	glGenTextures(1, &_tex_id);
@@ -545,14 +562,16 @@ GLDrawTextureBuffer::~GLDrawTextureBuffer() {
 }
 
 
-void GLDrawTextureBuffer::set_data(void * data, uint size) {
+void GLDrawTextureBuffer::set_data(void * data) {
 	glBindBuffer(GL_TEXTURE_BUFFER, _buf_id);
-	glBufferData(GL_TEXTURE_BUFFER, size, data, GL_STATIC_DRAW);
+	
+	glBufferData(GL_TEXTURE_BUFFER, _size, data, GL_STATIC_DRAW);
 
 	glActiveTexture(GL_TEXTURE0 + _offset);
 	glBindTexture(GL_TEXTURE_BUFFER, _tex_id);
 	glActiveTexture(0);
 	glTexBuffer(GL_TEXTURE_BUFFER, _internal_format, _buf_id);
+	
 	glBindBuffer(GL_TEXTURE_BUFFER, 0);
 }
 
@@ -1360,18 +1379,18 @@ void GLDrawManager::set_texture_data(std::string context_name, std::string textu
 }
 
 
-void GLDrawManager::add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint offset) {
+void GLDrawManager::add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint offset, uint size) {
 	GLDrawContext * context = get_context(context_name);
-	GLDrawTextureBuffer * texture_buffer = new GLDrawTextureBuffer(texture_buffer_name, internal_format, offset);
+	GLDrawTextureBuffer * texture_buffer = new GLDrawTextureBuffer(texture_buffer_name, internal_format, offset, size);
 	context->_texture_buffers.push_back(texture_buffer);
 }
 
 
-void GLDrawManager::set_texture_buffer_data(std::string context_name, std::string texture_buffer_name, void * data, uint size) {
+void GLDrawManager::set_texture_buffer_data(std::string context_name, std::string texture_buffer_name, void * data) {
 	GLDrawContext * context = get_context(context_name);
 	for (auto & texture_buffer: context->_texture_buffers) {
 		if (texture_buffer->_name == texture_buffer_name) {
-			texture_buffer->set_data(data, size);
+			texture_buffer->set_data(data);
 			break;
 		}
 	}

@@ -62,6 +62,7 @@ struct GLDrawTexture {
 	glm::uvec3 _size; // taille
 	GLenum _format; // format
 	GLenum _type; // type
+	bool _is_mipmap;
 };
 
 
@@ -98,9 +99,9 @@ struct GLDrawTexturePool {
 // Texture buffer ; https://wikis.khronos.org/opengl/Buffer_Texture
 struct GLDrawTextureBuffer {
 	GLDrawTextureBuffer();
-	GLDrawTextureBuffer(std::string name, GLenum internal_format, uint offset);
+	GLDrawTextureBuffer(std::string name, GLenum internal_format, uint offset, uint size);
 	~GLDrawTextureBuffer();
-	void set_data(void * data, uint size);
+	void set_data(void * data);
 
 
 	std::string _name; // nom
@@ -108,6 +109,7 @@ struct GLDrawTextureBuffer {
 	uint _offset; // offset
 	uint _tex_id; // id texture
 	uint _buf_id; // id buffer
+	uint _size; // taille buffer en octets
 };
 
 
@@ -232,9 +234,9 @@ struct GLDrawManager {
 	void set_texture_data(std::string context_name, std::string texture_name, std::vector<fs> pngs);
 
 	// ajout texture buffer
-	void add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint offset);
+	void add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint offset, uint size);
 	// set texture buffer data
-	void set_texture_buffer_data(std::string context_name, std::string texture_buffer_name, void * data, uint size);
+	void set_texture_buffer_data(std::string context_name, std::string texture_buffer_name, void * data);
 	
 	// gestion verbosité
 	void set_verbose(bool verbose);

@@ -21,6 +21,8 @@
 const glm::vec3 LIGHT_POSITION(100.0f, 0.0f, 0.0f);
 const glm::vec3 LIGHT_COLOR(1.0f);
 
+const uint TEXTURE_SIZE = 512;
+
 
 struct TestInstance : public AnimatedObjInstance {
 	TestInstance();
@@ -39,6 +41,7 @@ struct TestObjAnim {
 	TestObjAnim();
 	TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t);
 	~TestObjAnim();
+	void add_model(fs json_path);
 	AnimatedObjModel * get_model(std::string model_name);
 
 	void anim(time_point t);

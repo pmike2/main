@@ -33,6 +33,7 @@ include_directories(/usr/local/include)
 include_directories(../libs)
 include_directories(${SDL2_INCLUDE_DIRS} ${SDL2IMAGE_INCLUDE_DIRS})
 
+add_library(lib_view_system STATIC ../libs/view_system.cpp ../libs/view_system.h)
 add_library(lib_repere STATIC ../libs/repere.cpp ../libs/repere.h)
 add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)
 add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h)
@@ -56,7 +57,7 @@ add_library(lib_test_obj_anim STATIC ./srcs/test_obj_anim.cpp ./srcs/test_obj_an
 add_executable(main ./srcs/main.cpp)
 
 set(EXT_LIBS ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
-set(GENERIC_LIBS lib_repere lib_gl_utils lib_input_state lib_font lib_utile lib_gl_draw lib_fps_count lib_bbox_2d lib_polygon_2d lib_geom_2d lib_bbox lib_geom lib_triangulation lib_obj_parser lib_animated_obj)
+set(GENERIC_LIBS lib_view_system lib_repere lib_gl_utils lib_input_state lib_font lib_utile lib_gl_draw lib_fps_count lib_bbox_2d lib_polygon_2d lib_geom_2d lib_bbox lib_geom lib_triangulation lib_obj_parser lib_animated_obj)
 set(SPECIFIC_LIBS lib_test_obj_anim)
  
 target_link_libraries(main PUBLIC ${EXT_LIBS})

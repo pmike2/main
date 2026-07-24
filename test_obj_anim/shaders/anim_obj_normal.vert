@@ -44,7 +44,9 @@ void main(void) {
 	vec3 normal = normalize(normal_matrix * normal_in);
 	
 	vec3 tangent = normalize(normal_matrix * tangent_in);
-	tangent = normalize(tangent - dot(tangent, normal) * normal);
+
+	// pas sur que ce soit utile; fait dans https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+	//tangent = normalize(tangent - dot(tangent, normal) * normal);
 	
 	vec3 bitangent = normalize(normal_matrix * bitangent_in);
 	bitangent = cross(normal, tangent);

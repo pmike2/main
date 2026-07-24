@@ -1,0 +1,262 @@
+<h1 id="blender-notes">Blender notes</h1>
+<hr />
+<h2 id="environnement">Environnement</h2>
+<p><strong>n</strong> : properties panel.<br />
+<strong>tab</strong> : passage en edit mode / object mode.<br />
+<strong>ctrl + tab</strong> : choix plus large de modes ou pose mode si
+armature sélectionnée.<br />
+<strong>o</strong> : active proportional editing avec un cercle
+d’influence ; permet de déformer de façon + continue; on peut ajuster la
+taille du cercle avec la molette.<br />
+<strong>shift + tab</strong> : active / désactive snap. si désactivé
+<strong>g</strong> permet de l’activer temporairement pour le
+déplacement du sommet sélectionné, sinon <strong>g</strong> le désactive
+temporairement. Voir les différents types de snap.<br />
+<strong>&amp;, é, “</strong> (1,2,3 de la barre du haut) : choix vertex
+/ edge / face mode.</p>
+<hr />
+<h2 id="cursor">Cursor</h2>
+<p><strong>shift + c</strong> : center 3d cursor.<br />
+<strong>shift + rightclick</strong> : move cursor origin ; la création
+d’un mesh se fait sur le cursor origin.</p>
+<hr />
+<h2 id="selecting">Selecting</h2>
+<p><strong>select objects + shift + click</strong> : permet de choisir
+l’objet actif (le dernier à avoir été clické).<br />
+<strong>x</strong> : delete sélection.<br />
+<strong>a</strong> : select all.<br />
+<strong>alt + a</strong> : select none.<br />
+<strong>c</strong> : sélection par cercle avec rayon ajustable.<br />
+<strong>cmd + right click</strong> : lasso de sélection.<br />
+<strong>shift + d</strong> : duplicate selection.<br />
+<strong>alt + left click</strong> : select loop.</p>
+<hr />
+<h2 id="visualisation">Visualisation</h2>
+<p><strong>numpad</strong> : vues.<br />
+<strong>‘,’ du numpad</strong> : zoom sur sélection.<br />
+<strong>h</strong> : hide selection ; alt + h unhide ; shift + h : hide
+all except selection.<br />
+<strong>shift + z</strong> : wireframe mode / solid mode ; en wireframe
+la sélection se fait sur tous les sommets / edges / faces
+intersectant.<br />
+<strong>alt + z</strong> : x-ray mode, pareil que shift + z, mais on
+reste shading solid.</p>
+<p><em>viewport overlays / turn on wireframe : pour voir les
+aretes.</em></p>
+<hr />
+<h2 id="modeling">Modeling</h2>
+<h3 id="organiser">Organiser</h3>
+<p><strong>cmd + j</strong> : join selected objects.<br />
+<strong>j</strong> : join vertices.<br />
+<strong>edit mode + p</strong> : separate by selection : met dans un
+nouvel objet la sélection ; separate by loose parts : met dans des
+objets différents tous les mesh qui sont séparés.<br />
+<strong>cmd + g</strong> -&gt; “assign to new group” pour créer un
+vertex group à partir des vertices sélectionnés.<br />
+<strong>m</strong> : move objects to collection.</p>
+<h3 id="créer">Créer</h3>
+<p><strong>shift + a</strong> : fenetre de création de formes.<br />
+<strong>f</strong> : création de face ou edge.<br />
+<strong>cmd + r</strong> : loopcut ; <strong>right-click</strong> :
+reste au centre ; <strong>wheel</strong> : ajoute des cuts.<br />
+<strong>cmd + b</strong> : bevel (biseau) edge (<strong>wheel</strong>
+permet de gérer le nombre de edges).<br />
+<strong>cmd + shift + b</strong> : bevel vertex (<strong>wheel</strong>
+permet de gérer le nombre de sommets).<br />
+<strong>cmd + x</strong> : dissolve vertices.<br />
+<strong>k</strong> : knife : permet d’ajouter des edges.<br />
+<strong>e</strong> : extrude.<br />
+<strong>i</strong> : inset face.</p>
+<p><em>Faire les modèles avec -Y comme direction où le perso regarde,
+sinon les symétries des bones ne fonctionnent pas.</em></p>
+<p><em>Icone en haut à droite : auto merge vertices : fusionne les
+vertices qui se chevauchent.</em></p>
+<h3 id="transformations">Transformations</h3>
+<p><strong>g</strong> : translation.<br />
+<strong>r</strong> : rotation.<br />
+<strong>s</strong> : scale ; <strong>0</strong> pour aplatir.<br />
+<strong>(x , y , ou z)</strong> pour spécifier un axe ; <strong>shift +
+(x , y ou z)</strong> pour ignorer un axe.<br />
+<strong>shift</strong> permet de faire petit à petit.<br />
+<strong>alt + s</strong> : shrink / fatten ; effet différent de
+scale.<br />
+translation d’un vertex : <strong>g + g</strong> (une 2ème fois) permet
+de déplacer un vertex le long d’une arête.<br />
+<strong>alt + g</strong> : clear location; <strong>alt r</strong> :
+clear rotation; <strong>alt s</strong> : clear scale.<br />
+<strong>cmd + a</strong> en object mode -&gt; apply all transforms :
+permet d’appliquer les transformations d’un objet à ses vertices et de
+reinit les transfos de l’objet.<br />
+<strong>cmd + e</strong> : menu -&gt; edge slide : fait glisser un edge
+de part et d’autre de sa face.</p>
+<p><em>Icone barre du haut en forme de cible permet de changer le pivot
+point (3d cursor par ex). Le défaut est median point.</em></p>
+<p><em>Individual origins permet de faire des rotations autour de chaque
+centre d’objet.</em></p>
+<p><em>Icone papillon en mode edit permet de modifier une géométrie avec
+symmétrie.</em></p>
+<p><em>Menu transformation en haut permet de passer de global à local;
+les transformations se font alors par rapport à l’orientation de
+l’objet.</em></p>
+<h3 id="face-orientation">Face orientation</h3>
+<p>Pour afficher l’orientation des faces, en mode edit , overlays, ‘Face
+orientation’.<br />
+Si une face est rouge c’est mauvais, la sélectionner, puis menu Mesh /
+Normals / Flip.</p>
+<hr />
+<h2 id="shapes">Shapes</h2>
+<h3 id="curve-bézier">curve Bézier</h3>
+<p>On peut lui donner de l’épaisseur dans l’onglet Data / geometry /
+Bevel / Depth.<br />
+Puis la transformer en mesh avec <strong>click droit / convert to /
+Mesh</strong>.</p>
+<hr />
+<h2 id="rigging">Rigging</h2>
+<h3 id="affichage">Affichage</h3>
+<p>Data / viewport display / in front pour afficher armature devant le
+reste.<br />
+Menu principal à droite de armature : show names -&gt; affiche le nom
+des bones.</p>
+<h3 id="extrusion">Extrusion</h3>
+<p><strong>e</strong> : extrude bone.<br />
+Quand on extrude à partir du bone entier sélectionné ou de son tip, le
+bone extruded sera l’enfant du bone.<br />
+Quand on extrude à partir de la base d’un bone sans parent, le bone
+extruded n’aura pas de parent non plus.<br />
+Dans l’onglet bone, section relations, on peut déconnecter un bone,
+gérer le parent et d’autres trucs.<br />
+<strong>ctrl + p</strong> : make parent.<br />
+<strong>alt + p</strong> : unmake parent (disconnect).</p>
+<h3 id="copies">Copies</h3>
+<p><strong>shift + d</strong> : duplicate bones.<br />
+nommer les jambes bras gauche avec suffix .L, puis click droit
+symmetrize : crée les .R.</p>
+<h3 id="vertex-groups">Vertex groups</h3>
+<p>object mode ; select model ; click droit armature : parent / armature
+defform / automatic weights -&gt; crée des vertex groups et assigne des
+poids automatiquement.<br />
+on peut aussi créer les vertex group à la main mais il faut que les noms
+des vertex group correspondent aux noms des bones et il faut que le mesh
+ait un modifier de type armature.</p>
+<h3 id="weight-painting">Weight painting</h3>
+<ol type="1">
+<li>object mode, select armature</li>
+<li><strong>shift + click</strong> select object</li>
+<li><strong>ctrl + tab</strong> -&gt; weight paint mode</li>
+</ol>
+<p>barre du haut / weights / assign automatic from bones : permet de
+repartir de ce qu’on a fait avant avec automatic weights.<br />
+brush tool options / auto normalize : pour que la somme des weights
+fasse tjrs 1.<br />
+brush tool symmetry : utile pour bras / jambes.<br />
+<strong>f</strong> : change brush size.<br />
+dans menu principal à droite : Vertex Groups : on peut switcher entre
+les bones pour peindre leur influence sur l’objet sélectionné.</p>
+<h3 id="rigid-rigging">Rigid rigging</h3>
+<p>Fonctionne uniquement quand on a des objets distincts.</p>
+<ol type="1">
+<li>object mode, select un objet (par ex la tête)</li>
+<li><strong>shift click</strong> armature</li>
+<li><strong>ctrl + tab</strong> -&gt; pose mode</li>
+<li>select bone</li>
+<li><strong>ctrl + p</strong> : set parent to bone -&gt; l’objet est
+maintenant attaché au bone</li>
+</ol>
+<hr />
+<h2 id="animating">Animating</h2>
+<p>dupliquer fenetre : dope sheet window + timeline.<br />
+select all bones avec <strong>a</strong> puis <strong>i</strong> pour
+insérer un keyframe.<br />
+copy pose puis paste x-flipped pose permet de copier une version miroir
+(d’ou l’interet de faire regarder le perso vers Y négatif en bind
+pose).<br />
+<strong>t</strong> : permet de choisir le mode d’interpolation.<br />
+pour faire une marche : dupliquer puis inverser toutes les poses.<br />
+<strong>g, s</strong> : translation, scale des keyframes
+sélectionnés.<br />
+<strong>m</strong> : création marker; utile si on veut mettre plusieurs
+anims dans un .blend (marcher, courir, …).<br />
+On peut le renommer un marker en le sélectionnant puis rename
+marker.</p>
+<h3 id="reset">Reset</h3>
+<p><strong>a</strong> : select all bones.<br />
+<strong>alt + r</strong> : reset all rotations.<br />
+<strong>alt + g</strong> : reset all translations.<br />
+<strong>alt + s</strong> : reset all scales.</p>
+<hr />
+<h2 id="deformers">Deformers</h2>
+<p><em>On peut appliquer définitivement les modifiers avec onglet
+modifier fleche du bas pour afficher le menu déroulant du modifier et
+faire apply, mais c’est mieux de ne pas le faire pour conserver plus de
+possibilités.</em></p>
+<p><em>select multiple objects + cmd l : link data / copy modifiers :
+permet de copier les modifiers de l’objet actif vers les
+autres.</em></p>
+<h3 id="mirror">Mirror</h3>
+<p>Option clipping permet de n’avoir qu’un seul sommet à la
+frontière.<br />
+Déplacer les sommets d’un objet en edit mode (pas en object mode car
+sinon on déplace également le pt de ref de l’objet).<br />
+Pour faire un objet symmétrique se placer en vue Front (numpad 1), scale
+0.5 selon x, puis translation 0.5 selon x, puis application deformer
+mirror.<br />
+On peut créer un objet empty / plain axes et s’en servir comme d’un
+centre pour le déformer symmétrie.</p>
+<h3 id="shrinkwrap">Shrinkwrap</h3>
+<p>Permet de projeter des sommets d’un objet sur un autre objet, on peut
+également choisir un vertex group.</p>
+<h3 id="lattice">Lattice</h3>
+<ol type="1">
+<li>ajout lattice ; onglet lattice permet de gérer avec u, v, w la
+résolution du lattice.<br />
+</li>
+<li>sur un objet ajout derfomer lattice que l’on lie avec le lattice
+créé.</li>
+<li>maintenant quand on déforme le lattice, l’objet est aussi
+déformé.</li>
+</ol>
+<h3 id="subdivision">Subdivision</h3>
+<p>Raccourci : <strong>ctrl + (1 - 5 pas numpad)</strong>.<br />
+Ajoute des sommets et adoucie la forme de l’objet.</p>
+<h3 id="solidify">Solidify</h3>
+<p>Ajoute une épaisseur à un mesh.</p>
+<hr />
+<h2 id="materials">Materials</h2>
+<p>on peut mettre plusieurs matériaux pour un objet, puis en edit mode
+sélectionner des faces et click Assign dans onglet Material pour
+assigner ce mat aux faces.<br />
+select multiple objects + <strong>cmd l</strong>: link materials -&gt;
+tous les objets ont le même matérial que l’objet actif.</p>
+<h3 id="texturing">Texturing</h3>
+<p>onglet material, click point color -&gt; image texture.<br />
+ouvrir un UV editor en haut à droite.<br />
+passer en mode edit.<br />
+passer en material preview pour voir la texture sur le modèle.<br />
+<strong>u</strong> : unwrap selection ; si on sélectionne une face toute
+la texture sera appliquée à la face.<br />
+<strong>ctrl + e</strong> : mark seam : sépare les objets le long de la
+sélection d’edges.</p>
+<h3 id="normal-map">Normal map</h3>
+<ol type="1">
+<li>ouvrir shader editor</li>
+<li>ajouter un noeud normal map (add / displacement / normal map)</li>
+<li>ajouter un noeud texture (add / texture / image texture)</li>
+<li>passer le color space de la texture en ‘Non color’</li>
+<li>charger la texture normal (générée par gimp avec filtres /
+génériques / carte normale)</li>
+<li>connecter la sortie color de la texture normale à l’entrée color de
+la normal map et la sortie normal de la normal map à l’entrée normal de
+la BSDF</li>
+<li>jouer avec l’intensité</li>
+</ol>
+<hr />
+<h2 id="références">Références</h2>
+<p><a href="https://polyhaven.com">polyhaven</a> : site où récupérer des
+textures et des hdri (sert à éclairer des scènes 3d).</p>
+<h2 id="note-markdown">Note Markdown</h2>
+<ul>
+<li>Laisser les 2 espaces à la fin des lignes permet un retour à la
+ligne</li>
+<li>Générer le html avec :
+<code>pandoc blender_notes.md -o blender_notes.html</code></li>
+</ul>

@@ -100,7 +100,7 @@ GLSDL::GLSDL(std::string window_title, uint width, uint height, bool multisampli
 	// pour gérer l'alpha
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
+
 	SDL_GL_SwapWindow(_window);
 }
 

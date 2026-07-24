@@ -6,6 +6,7 @@
 #include <SDL2/SDL.h>
 
 #include "repere.h"
+#include "view_system.h"
 #include "utile.h"
 #include "gl_utils.h"
 #include "input_state.h"
@@ -22,9 +23,11 @@ const number GL_WIDTH = 50.0;
 const number GL_HEIGHT = GL_WIDTH * (number)(MAIN_WIN_HEIGHT) / (number)(MAIN_WIN_WIDTH);
 
 
+ScreenGL * screengl;
 GLSDL * gl_sdl;
 InputState * input_state;
 ViewSystem * view_system;
+Repere * repere;
 GLDrawManager * gl_draw_manager;
 FPSCount * fps_count;
 
@@ -68,6 +71,10 @@ void key_down(SDL_Keycode key, time_point t) {
 		return;
 	}
 
+	if (repere->key_down(input_state, key, t)) {
+		return;
+	}
+
 	if (test_obj_anim->key_down(input_state, key, t)) {
 		return;
 	}
@@ -90,13 +97,16 @@ void init() {
 
 	fps_count = new FPSCount(gl_sdl->_window);
 
-	GLDrawManager * gl_draw_manager = new GLDrawManager("../data/draw_context.json");
+	gl_draw_manager = new GLDrawManager("../data/draw_context.json");
 	//std::cout << *gl_draw_manager << "\n";
+	gl_draw_manager->set_active("ground");
 
-	ScreenGL * screengl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+	screengl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	
-	view_system = new ViewSystem(gl_draw_manager, screengl);
+	view_system = new ViewSystem(screengl);
 	view_system->set(pt_3d(0.0, 0.0, 0.0), M_PI * 0.25, M_PI * 0.25, 20.0);
+
+	repere = new Repere(gl_draw_manager, view_system);
 
 	input_state = new InputState();
 
@@ -108,7 +118,7 @@ void init() {
 void draw() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT);
-	view_system->draw();
+	repere->draw();
 	test_obj_anim->draw();
 
 	SDL_GL_SwapWindow(gl_sdl->_window);
@@ -178,8 +188,10 @@ void main_loop() {
 
 void clean() {
 	delete test_obj_anim;
+	delete repere;
 	delete view_system;
 	delete input_state;
+	delete screengl;
 	delete gl_draw_manager;
 	delete fps_count;
 	delete gl_sdl;

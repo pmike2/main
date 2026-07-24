@@ -2,9 +2,7 @@
 	"add_dir_shaders" : ["../shaders"],
 	"add_shaders" : ["../../shaders/repere", "../../shaders/font", "../../shaders/font3d", "../../shaders/gl_ihm"],
 	"contexts" : {
-		"repere" : {"shader" : "repere", "mode" : "GL_LINES"},
-		"ground" : {"shader" : "repere", "mode" : "GL_TRIANGLES", "active" : false},
-		"box" : {"shader" : "repere", "mode" : "GL_LINES", "active" : false},
+		"repere, ground, box" : {"shader" : "repere", "mode" : "GL_LINES", "active" : false},
 
 		"test, test2, test3, perso" : {
 			"shader" : "anim_obj", "mode" : "GL_TRIANGLES",

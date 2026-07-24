@@ -45,7 +45,9 @@ std::ostream & operator << (std::ostream & os, Material & mat) {
 
 
 // Face --------------------------------------------------------------
-ObjFace::ObjFace() : _texture_active(false), _normal_active(false) {
+ObjFace::ObjFace() :
+	_texture_active(false), _normal_active(false), _material(NULL), _normal(pt_3d(0.0)), _tangent(pt_3d(0.0)), _bitangent(pt_3d(0.0)) 
+{
 	for (uint i=0; i<3; ++i) {
 		_vertices_idx[i] = 0;
 		_textures_idx[i] = 0;
@@ -95,8 +97,6 @@ void ObjObject::compute_face_normals_tangents_bitangents() {
 		face->_tangent = tangent(p1, p2, p3, uv1, uv2, uv3);
 
 		face->_bitangent = glm::cross(face->_normal, face->_tangent);
-
-		//std::cout << glm::to_string(face->_tangent) << " ; " << glm::to_string(face->_bitangent) << " ; " << glm::to_string(face->_normal) << "\n";
 	}
 }
 
@@ -508,6 +508,34 @@ Material * ObjData::get_material(std::string name) {
 	}
 	std::cerr << "ObjData::get_material : " << name << " n'existe pas.\n";
 	return NULL;
+}
+
+
+std::vector<fs> ObjData::get_diffuse_textures() {
+	std::vector<fs> diffuse_textures;
+	for (auto & material : _materials) {
+		if (material->_diffuse_tex_path != "") {
+			diffuse_textures.push_back(material->_diffuse_tex_path);
+		}
+		else {
+			std::cerr << "Matériau " << material->_name << " sans diffuse texture\n";
+		}
+	}
+	return diffuse_textures;
+}
+
+
+std::vector<fs> ObjData::get_normal_textures() {
+	std::vector<fs> normal_textures;
+	for (auto & material : _materials) {
+		if (material->_normal_tex_path != "") {
+			normal_textures.push_back(material->_normal_tex_path);
+		}
+		else {
+			std::cerr << "Matériau " << material->_name << " sans normal texture\n";
+		}
+	}
+	return normal_textures;
 }
 
 

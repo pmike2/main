@@ -44,7 +44,7 @@ void TestInstance::anim_test(time_point t) {
 	anim(t);
 
 	if (_model->_actions[_idx_action]->_name == "walk") {
-		set_pos(_position + 0.03 * pt_3d(_direction.x, _direction.y, 0.0));
+		set_pos(_position + 0.02 * pt_3d(_direction.x, _direction.y, 0.0));
 	}
 }
 
@@ -76,71 +76,8 @@ TestObjAnim::TestObjAnim(GLDrawManager * gl_draw_manager, ViewSystem * view_syst
 
 		std::string json_name = anim_obj_name + ".json";
 		fs json_path = anim_obj_dir.path() / json_name;
-		//std::cout << json_path << "\n";
-		AnimatedObjModel * model = new AnimatedObjModel(json_path);
-		//model->_n_ms_per_frame = 200;
-		//std::cout << *model << "\n";
-		//std::cout << model->_obj_data->_n_pts << "\n";
 
-		GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
-
-		_gl_draw_manager->add_texture_buffer(model->_name, "anim_buffer", GL_R32F, 0);
-		_gl_draw_manager->set_texture_buffer_data(model->_name, "anim_buffer", model->_buffer_texture_data, model->_buffer_texture_data_size * sizeof(float));
-		// on a plus besoin de ça
-		delete model->_buffer_texture_data;
-		
-		_gl_draw_manager->add_texture(
-			context->_name, "idx_texture", GL_TEXTURE_2D, 1,
-				std::map<GLenum, int>{
-				{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
-				{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
-				},
-			GL_RED, glm::uvec3(IDX_TEXTURE_DATA_SIZE, IDX_TEXTURE_DATA_SIZE, 0), GL_RED, GL_FLOAT
-		);
-		_gl_draw_manager->set_texture_data(context->_name, "idx_texture", model->_idx_texture_data);
-
-		//_gl_draw_manager->_texture_pool->get_texture(context->_name, "idx_texture")->export2pgm("../data/test.pgm");
-		//_gl_draw_manager->_texture_pool->get_texture(context->_name, "idx_texture")->print_data();
-
-		std::vector<fs> diffuse_textures, normal_textures;
-		for (auto & material : model->_obj_data->_materials) {
-			if (material->_diffuse_tex_path != "") {
-				diffuse_textures.push_back(material->_diffuse_tex_path);
-			}
-			else {
-				std::cerr << "Matériau sans diffuse -> ca va être bizarre\n";
-			}
-			if (material->_normal_tex_path != "") {
-				normal_textures.push_back(material->_normal_tex_path);
-			}
-			else {
-				std::cerr << "Matériau sans normal -> ca va être bizarre\n";
-			}
-		}
-
-		_gl_draw_manager->add_texture(
-			context->_name, "diffuse_texture", GL_TEXTURE_2D_ARRAY, 2,
-				std::map<GLenum, int>{
-				{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
-				{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
-				},
-			GL_RGBA, glm::uvec3(512, 512, diffuse_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
-		);
-		_gl_draw_manager->set_texture_data(context->_name, "diffuse_texture", diffuse_textures);
-
-		_gl_draw_manager->add_texture(
-			context->_name, "normal_texture", GL_TEXTURE_2D_ARRAY, 3,
-				std::map<GLenum, int>{
-				{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
-				{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
-				},
-		GL_RGBA, glm::uvec3(512, 512, diffuse_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
-		);
-		_gl_draw_manager->set_texture_data(context->_name, "normal_texture", normal_textures);
-
-		_models.push_back(model);
-
-		//std::cout << *context << "\n";
+		add_model(json_path);
 	}
 
 	//std::cout << *_gl_draw_manager << "\n";
@@ -195,6 +132,61 @@ TestObjAnim::~TestObjAnim() {
 		delete model;
 	}
 	_models.clear();
+}
+
+
+void TestObjAnim::add_model(fs json_path) {
+	AnimatedObjModel * model = new AnimatedObjModel(json_path);
+	//std::cout << *model << "\n";
+
+	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
+
+	// offsets textures
+	const uint offset_anim_buffer = 0;
+	const uint offset_idx_texture = 1;
+	const uint offset_diffuse_texture = 2;
+	const uint offset_normal_texture = 3;
+
+	_gl_draw_manager->add_texture_buffer(model->_name, "anim_buffer", GL_R32F, offset_anim_buffer, model->_buffer_texture_data_size * sizeof(float));
+	_gl_draw_manager->set_texture_buffer_data(model->_name, "anim_buffer", model->_buffer_texture_data);
+	
+	_gl_draw_manager->add_texture(
+		context->_name, "idx_texture", GL_TEXTURE_2D, offset_idx_texture,
+			std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
+			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER}
+			},
+		GL_RED, glm::uvec3(IDX_TEXTURE_DATA_SIZE, IDX_TEXTURE_DATA_SIZE, 0), GL_RED, GL_FLOAT
+	);
+	_gl_draw_manager->set_texture_data(context->_name, "idx_texture", model->_idx_texture_data);
+
+	// on fait de la place en mémoire maintenant que model->_buffer_texture_data_size et model->_idx_texture_data ont été utilisées
+	model->clean_texture_datas();
+
+	std::vector<fs> diffuse_textures = model->_obj_data->get_diffuse_textures();
+	std::vector<fs> normal_textures = model->_obj_data->get_normal_textures();
+
+	_gl_draw_manager->add_texture(
+		context->_name, "diffuse_texture", GL_TEXTURE_2D_ARRAY, offset_diffuse_texture,
+			std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
+			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER}
+			},
+		GL_RGBA, glm::uvec3(TEXTURE_SIZE, TEXTURE_SIZE, diffuse_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
+	);
+	_gl_draw_manager->set_texture_data(context->_name, "diffuse_texture", diffuse_textures);
+
+	_gl_draw_manager->add_texture(
+		context->_name, "normal_texture", GL_TEXTURE_2D_ARRAY, offset_normal_texture,
+			std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
+			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER}
+			},
+	GL_RGBA, glm::uvec3(TEXTURE_SIZE, TEXTURE_SIZE, diffuse_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
+	);
+	_gl_draw_manager->set_texture_data(context->_name, "normal_texture", normal_textures);
+
+	_models.push_back(model);
 }
 
 

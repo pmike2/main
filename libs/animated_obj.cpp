@@ -199,7 +199,7 @@ AnimatedObjModel::AnimatedObjModel() {
 }
 
 
-AnimatedObjModel::AnimatedObjModel(fs json_path) {
+AnimatedObjModel::AnimatedObjModel(fs json_path) : _buffer_texture_data(NULL), _idx_texture_data(NULL), _buffer_texture_data_size(0) {
 	std::string obj_filename = json_path.stem().string() + ".obj";
 	fs obj_path = json_path.parent_path() / obj_filename;
 
@@ -221,7 +221,7 @@ AnimatedObjModel::AnimatedObjModel(fs json_path) {
 
 	// fps
 	if (js["fps"].is_null()) {
-		_fps = 24.0; // valeur par défaut de Blender
+		_fps = BLENDER_DEFAULT_FPS;
 	}
 	else {
 		_fps = js["fps"];
@@ -317,8 +317,6 @@ AnimatedObjModel::AnimatedObjModel(fs json_path) {
 			action->_loop_end_idx = uint(js_action["loopend"]) - uint(js_action["start"]);
 		}
 
-		//std::cout << action->_name << " ; " << action->_loop_start_idx << " ; " << action->_loop_end_idx << "\n";
-
 		_actions.push_back(action);
 	}
 
@@ -337,11 +335,20 @@ AnimatedObjModel::~AnimatedObjModel() {
 		delete b;
 	}
 	_bones.clear();
+	
 	for (auto & a : _actions) {
 		delete a;
 	}
 	_actions.clear();
+
+	for (auto & obj : _objects) {
+		delete obj;
+	}
+	_objects.clear();
+	
 	delete _obj_data;
+
+	clean_texture_datas();
 }
 
 
@@ -367,7 +374,7 @@ void AnimatedObjModel::compute_transform_final_matrix() {
 						transform->_mat_final
 					;
 					
-						parent = parent->_parent;
+					parent = parent->_parent;
 				}
 
 				// enfin on applique le changement de système lié à la matrice de l'armature
@@ -395,7 +402,8 @@ void AnimatedObjModel::compute_buffer_texture_data() {
 		_buffer_texture_data[i] = 0.0;
 	}
 
-	for (uint i=0; i<IDX_TEXTURE_DATA_SIZE*IDX_TEXTURE_DATA_SIZE; ++i) {
+	_idx_texture_data = new float[IDX_TEXTURE_DATA_SIZE * IDX_TEXTURE_DATA_SIZE];
+	for (uint i=0; i<IDX_TEXTURE_DATA_SIZE * IDX_TEXTURE_DATA_SIZE; ++i) {
 		_idx_texture_data[i] = 0;
 	}
 
@@ -504,6 +512,19 @@ void AnimatedObjModel::compute_buffer_texture_data() {
 }
 
 
+void AnimatedObjModel::clean_texture_datas() {
+	if (_buffer_texture_data != NULL) {
+		delete[] _buffer_texture_data;
+		_buffer_texture_data = NULL;
+	}
+
+	if (_idx_texture_data != NULL) {
+		delete[] _idx_texture_data;
+		_idx_texture_data = NULL;
+	}
+}
+
+
 AnimatedObjObject * AnimatedObjModel::get_animated_object(std::string obj_name) {
 	for (auto & obj : _objects) {
 		if (obj->_static_object->_name == obj_name) {
@@ -583,7 +604,6 @@ AnimatedObjInstance::AnimatedObjInstance(AnimatedObjModel * model, pt_3d pos, ti
 {
 	if (action_name != "") {
 		_idx_action = _model->get_action_idx(action_name);
-		_idx_frame = 0;
 	}
 }
 
@@ -598,11 +618,13 @@ void AnimatedObjInstance::anim(time_point t) {
 	if (dt > _model->_n_ms_per_frame) {
 		_last_anim_t = t;
 		_idx_frame++;
+		// si pas d'action prévue on loope
 		if (_next_action == "") {
 			if (_idx_frame > _model->_actions[_idx_action]->_loop_end_idx) {
 				_idx_frame = _model->_actions[_idx_action]->_loop_start_idx;
 			}
 		}
+		// sinon on attend la fin pour passer à l'action suivante
 		else if (_idx_frame >= _model->_actions[_idx_action]->_frames.size()) {
 			_idx_action = _model->get_action_idx(_next_action);
 			_idx_frame = 0;

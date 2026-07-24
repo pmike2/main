@@ -39,6 +39,7 @@ struct GLSDL {
 	SDL_GLContext _main_context;
 };
 
+
 void gl_versions();
 
 void set_subwindow(const float bkgnd_color[4], int x, int y, int w, int h);
