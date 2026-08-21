@@ -9,8 +9,8 @@
 		"font3d" : {"shader" : "font3d", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 		"gl_ihm" : {"shader" : "gl_ihm", "mode" : "GL_TRIANGLES"},
 
-		"debug, grid" : {"shader" : "linear", "mode" : "GL_LINES", "active" : false},
-		"select, bbox" : {"shader" : "select", "mode" : "GL_LINES"},
+		"debug, grid, bbox" : {"shader" : "linear", "mode" : "GL_LINES", "active" : false},
+		"select" : {"shader" : "select", "mode" : "GL_LINES"},
 		
 		"path, selection, edit_map, cursor" : {"shader" : "dash", "mode" : "GL_LINES"},
 

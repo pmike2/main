@@ -16,11 +16,11 @@ UnitType::UnitType() {
 }
 
 
-UnitType::UnitType(std::string json_path) :
+UnitType::UnitType(fs json_path) :
 	GridMovingObjectType()
 {
 	std::ifstream ifs(json_path);
-	json js= json::parse(ifs);
+	json js = json::parse(ifs);
 	ifs.close();
 
 	_name = js["type"];
@@ -46,12 +46,7 @@ UnitType::UnitType(std::string json_path) :
 	}
 
 	_obj_data = new ObjData(js["obj"]);
-	_obj_data->_use_ambient = false;
-	_obj_data->_use_diffuse = true;
-	_obj_data->_use_specular = false;
-	_obj_data->_use_shininess = false;
-	_obj_data->_use_opacity = false;
-	_obj_data->update_data();
+	_obj_data->update_data(std::vector<OBJDATA_DATA_ITEM>{OBJDATA_VERTEX, OBJDATA_NORMAL, OBJDATA_DIFFUSE_COLOR});
 }
 
 

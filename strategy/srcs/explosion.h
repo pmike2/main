@@ -17,10 +17,10 @@ const uint N_MAX_FRAGMENTS_PER_EXPLOSION = 10;*/
 
 struct ExplosionConfig {
 	ExplosionConfig();
-	ExplosionConfig(std::string json_path);
+	ExplosionConfig(fs json_path);
 	~ExplosionConfig();
 	// a supprimer à terme
-	void DEBUG(std::string json_path);
+	void DEBUG(fs json_path);
 
 
 	uint _n_min_fragments_per_explosion;
@@ -63,7 +63,7 @@ struct ExplosionFragment : public InstancePosRot {
 
 struct ExplosionSystem {
 	ExplosionSystem();
-	ExplosionSystem(std::string dir_configs);
+	ExplosionSystem(fs dir_configs);
 	~ExplosionSystem();
 	void new_explosion(pt_3d pt, time_point t, ExplosionConfig * config, number radius);
 	void anim(time_point t);

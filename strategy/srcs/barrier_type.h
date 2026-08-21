@@ -9,7 +9,7 @@
 
 struct BarrierType {
 	BarrierType();
-	BarrierType(std::string json_path);
+	BarrierType(fs json_path);
 	~BarrierType();
 
 

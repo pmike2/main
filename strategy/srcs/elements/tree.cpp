@@ -16,7 +16,7 @@ TreeSpecies::TreeSpecies() {
 }
 
 
-TreeSpecies::TreeSpecies(std::string json_path) {
+TreeSpecies::TreeSpecies(fs json_path) {
 	std::ifstream ifs(json_path);
 	json js= json::parse(ifs);
 	ifs.close();

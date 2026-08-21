@@ -15,7 +15,7 @@ StoneSpecies::StoneSpecies() {
 }
 
 
-StoneSpecies::StoneSpecies(std::string json_path) {
+StoneSpecies::StoneSpecies(fs json_path) {
 	std::ifstream ifs(json_path);
 	json js= json::parse(ifs);
 	ifs.close();

@@ -22,7 +22,7 @@
 
 struct StrategyConfig {
 	StrategyConfig();
-	StrategyConfig(std::string elevation_rand_dir);
+	StrategyConfig(fs elevation_rand_dir);
 	void set_rand_config(std::string config_name);
 	~StrategyConfig();
 
@@ -57,7 +57,7 @@ struct StrategyConfig {
 class Strategy {
 public:
 	Strategy();
-	Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t);
+	Strategy(ScreenGL * screengl, time_point t);
 	~Strategy();
 
 	Team * get_selected_team();
@@ -124,6 +124,7 @@ public:
 	GLDrawManager * _gl_draw_manager;
 	Font * _font;
 	ViewSystem * _view_system;
+	Repere * _repere;
 	GLIHM * _ihm;
 	Map * _map;
 	StrategyConfig * _config;

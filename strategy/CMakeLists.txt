@@ -36,6 +36,7 @@ include_directories(${GDAL_INCLUDE_DIRS} ${SDL2_INCLUDE_DIRS} ${SDL2IMAGE_INCLUD
 link_directories(/Volumes/Data/usr_local/lib)
 
 add_library(lib_repere STATIC ../libs/repere.cpp ../libs/repere.h)
+add_library(lib_view_system STATIC ../libs/view_system.cpp ../libs/view_system.h)
 add_library(lib_gl_utils STATIC ../libs/gl_utils.cpp ../libs/gl_utils.h)
 add_library(lib_input_state STATIC ../libs/input_state.cpp ../libs/input_state.h)
 add_library(lib_bbox STATIC ../libs/bbox.cpp ../libs/bbox.h)
@@ -78,7 +79,7 @@ add_library(lib_barrier_type STATIC ./srcs/barrier_type.cpp ./srcs/barrier_type.
 add_executable(main ./srcs/main.cpp)
 
 set(EXT_LIBS ${GDAL_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
-set(GENERIC_LIBS lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_repere lib_gl_utils lib_input_state lib_bbox lib_font lib_convex_hull lib_obj_parser lib_gl_ihm lib_gl_draw lib_fps_count lib_path_find)
+set(GENERIC_LIBS lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_repere lib_view_system lib_gl_utils lib_input_state lib_bbox lib_font lib_convex_hull lib_obj_parser lib_gl_ihm lib_gl_draw lib_fps_count lib_path_find)
 set(SPECIFIC_LIBS lib_const lib_elevation lib_map lib_strategy lib_unit_type lib_unit lib_team lib_elements lib_element lib_tree lib_stone lib_lake lib_river lib_ammo lib_ammo_type lib_overview lib_explosion lib_barrier lib_barrier_type)
 
 target_link_libraries(main PUBLIC ${EXT_LIBS})

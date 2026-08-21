@@ -38,7 +38,7 @@ struct GLIHMGroup;
 
 struct GLIHMElement {
 	GLIHMElement();
-	GLIHMElement(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size);
+	GLIHMElement(GLIHMGroup * group, std::string name, fs texture_path, pt_2d position, pt_2d size);
 	virtual ~GLIHMElement();
 	virtual void click(bool verbose, pt_2d pt) = 0;
 	virtual void update_data() = 0;
@@ -50,7 +50,7 @@ struct GLIHMElement {
 
 	GLIHMGroup * _group;
 	std::string _name;
-	std::string _texture_path;
+	fs _texture_path;
 	uint _texture_layer;
 	number _alpha;
 	AABB_2D * _aabb;
@@ -66,7 +66,7 @@ struct GLIHMElement {
 
 struct GLIHMButton : public GLIHMElement {
 	GLIHMButton();
-	GLIHMButton(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size);
+	GLIHMButton(GLIHMGroup * group, std::string name, fs texture_path, pt_2d position, pt_2d size);
 	~GLIHMButton();
 	void click(bool verbose, pt_2d pt);
 	void update_data();
@@ -78,7 +78,7 @@ struct GLIHMButton : public GLIHMElement {
 
 struct GLIHMCheckBox : public GLIHMElement {
 	GLIHMCheckBox();
-	GLIHMCheckBox(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size);
+	GLIHMCheckBox(GLIHMGroup * group, std::string name, fs texture_path, pt_2d position, pt_2d size);
 	~GLIHMCheckBox();
 	void click(bool verbose, pt_2d pt);
 	void update_data();
@@ -89,7 +89,7 @@ struct GLIHMCheckBox : public GLIHMElement {
 
 struct GLIHMRadio : public GLIHMElement {
 	GLIHMRadio();
-	GLIHMRadio(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size);
+	GLIHMRadio(GLIHMGroup * group, std::string name, fs texture_path, pt_2d position, pt_2d size);
 	~GLIHMRadio();
 	void click(bool verbose, pt_2d pt);
 	void update_data();
@@ -100,7 +100,7 @@ struct GLIHMRadio : public GLIHMElement {
 
 struct GLIHMSlider : public GLIHMElement {
 	GLIHMSlider();
-	GLIHMSlider(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size);
+	GLIHMSlider(GLIHMGroup * group, std::string name, fs texture_path, pt_2d position, pt_2d size);
 	~GLIHMSlider();
 	void click(bool verbose, pt_2d pt);
 	void update_data();
@@ -134,7 +134,7 @@ struct GLIHMGroup {
 
 struct GLIHM {
 	GLIHM();
-	GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string json_path);
+	GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, fs json_path);
 	~GLIHM();
 	pt_2d parse_json_position(json json_position, number default_group_margin, pt_2d element_size);
 	GLIHMGroup * add_group(std::string name, GL_IHM_GROUP_TYPE type, GL_IHM_GROUP_ORIENTATION orientation, pt_2d position, pt_2d element_size, number margin);

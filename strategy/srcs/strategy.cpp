@@ -13,7 +13,7 @@ StrategyConfig::StrategyConfig() {
 
 
 // j'initialise pour faire propre mais normalement la plupart de ces valeurs seront écrasées lors de l'appel à ihm->callbacks
-StrategyConfig::StrategyConfig(std::string elevation_rand_dir) {
+StrategyConfig::StrategyConfig(fs elevation_rand_dir) {
 	_edit = false;
 	_show_info = false;
 	_units_paused = false;
@@ -37,9 +37,10 @@ StrategyConfig::StrategyConfig(std::string elevation_rand_dir) {
 	_n_stones = 0;
 	_selected_team_idx = 0;
 
-	std::vector<std::string> jsons = list_files(elevation_rand_dir, "json");
-	for (auto & json_path : jsons) {
-		_rand_configs[basename(json_path)] = new ElevationRandConfig(json_path);
+	for (auto & json_path : std::filesystem::directory_iterator(elevation_rand_dir)) {
+		if (json_path.path().extension() == ".json") {
+			_rand_configs[json_path.path().stem()] = new ElevationRandConfig(json_path);
+		}
 	}
 
 	set_rand_config("default");
@@ -70,13 +71,27 @@ Strategy::Strategy() {
 }
 
 
-Strategy::Strategy(GLDrawManager * gl_draw_manager, ViewSystem * view_system, time_point t) :
-	_gl_draw_manager(gl_draw_manager), _view_system(view_system), 
+Strategy::Strategy(ScreenGL * screengl, time_point t) :
 	_angle_lake(0.0), _angle_river(0.0), _angle_sea(0.0),
 	_cursor_world_position(pt_3d(0.0)), _cursor_in_world(false), _cursor_hover_unit(NULL), _cursor_hover_ihm(false),
 	_fow_ok(false), _add_unit_ok(false), _move_unit_ok(false), _attack_unit_ok(false), _add_barrier_ok(false)
 {
 	bool verbose = false;
+
+	// --------------------------------------------------
+	if (verbose) {
+		std::cout << "init gl_draw_manager / view_system\n";
+	}
+	_gl_draw_manager = new GLDrawManager("../data/draw_context.json");
+
+	_view_system = new ViewSystem(screengl);
+	_view_system->set(pt_3d(10.0, 10.0, 0.0), M_PI * 0.25, M_PI * 0.25, 70.0);
+	//_view_system->set_2d(30.0);
+	_view_system->constraint_theta(M_PI * 0.1, M_PI * 0.4);
+	_view_system->constraint_rho(30.0, 100.0);
+	_view_system->constraint_target(MAP_ORIGIN, MAP_ORIGIN + MAP_SIZE);
+
+	_repere = new Repere(_gl_draw_manager, _view_system);
 
 	_config = new StrategyConfig("../data/elevation_rand_config");
 
@@ -148,6 +163,9 @@ Strategy::~Strategy() {
 	delete _config;
 	delete _ihm;
 	delete _overview;
+	delete _repere;
+	delete _view_system;
+	delete _gl_draw_manager;
 }
 
 
@@ -631,6 +649,8 @@ void Strategy::draw() {
 	glViewport(0, 0, _view_system->_screengl->_screen_width, _view_system->_screengl->_screen_height);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	_repere->draw();
+
 	// environnement
 	draw_elevation(_view_system);
 	draw_tree_stone(_view_system);
@@ -678,7 +698,6 @@ void Strategy::draw() {
 	draw_construction();
 	draw_unit_life();
 	_overview->draw(_view_system);
-	_view_system->draw();
 	glEnable(GL_DEPTH_TEST);
 }
 
@@ -686,24 +705,6 @@ void Strategy::draw() {
 void Strategy::anim(time_point t) {
 	bool verbose = false;
 	
-	/*uint n_units = 0;
-	for (auto & team : _map->_teams) {
-		n_units += team->_units.size();
-	}
-	std::vector<GridMovingObject *> gmos;
-	for (auto it=_map->_path_finder->_inputs.cbegin(); it!=_map->_path_finder->_inputs.cend(); it++) {
-		gmos.push_back((*it)->_gmo);
-	}
-	uint n_mult = 0;
-	for (auto & gmo : gmos) {
-		if (std::count(gmos.begin(), gmos.end(), gmo) > 1) {
-			n_mult++;
-		}
-	}
-
-	std::cout << "n_units = " << n_units << " ; path_finder n inputs = " << _map->_path_finder->_inputs.size() << " ; n_mult = " << n_mult << "\n";
-	*/
-
 	if (verbose) {
 		std::cout << "anim : start\n";
 	}

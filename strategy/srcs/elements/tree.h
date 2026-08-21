@@ -20,7 +20,7 @@
 class TreeSpecies {
 public:
 	TreeSpecies();
-	TreeSpecies(std::string json_path);
+	TreeSpecies(fs json_path);
 	~TreeSpecies();
 
 

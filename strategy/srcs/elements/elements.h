@@ -24,7 +24,7 @@
 class Elements {
 public:
 	Elements();
-	Elements(std::string dir_tree_jsons, std::string dir_stone_jsons, Elevation * elevation);
+	Elements(fs dir_tree_jsons, fs dir_stone_jsons, Elevation * elevation);
 	~Elements();
 	Tree * add_tree(std::string species_name, pt_2d position);
 	Stone * add_stone(std::string species_name, pt_2d position);

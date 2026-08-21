@@ -39,7 +39,7 @@
 struct Map {
 	Map();
 	Map(
-		std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, std::string explosion_dir, std::string barrier_types_dir,
+		fs unit_types_dir, fs ammo_types_dir, fs elements_dir, fs explosion_dir, fs barrier_types_dir,
 		pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t
 	);
 	~Map();
@@ -72,14 +72,14 @@ struct Map {
 	void clear_elements();
 	void clear();
 	void randomize(ElevationRandConfig * rand_config);
-	void save_teams(std::string teams_json_path);
-	void save_fixed(std::string dir_map);
-	void save(std::string dir_map);
-	void load(std::string dir_map, time_point t);
+	void save_teams(fs teams_json_path);
+	void save_fixed(fs map_path);
+	void save(fs map_path);
+	void load(fs map_path, time_point t);
 	friend std::ostream & operator << (std::ostream & os, Map & map);
 
 
-	std::string _unit_types_dir, _ammo_types_dir, _elements_dir, _barrier_types_dir;
+	fs _unit_types_dir, _ammo_types_dir, _elements_dir, _barrier_types_dir;
 	pt_2d _path_resolution, _elevation_resolution, _fow_resolution;
 
 	AABB_2D * _aabb;

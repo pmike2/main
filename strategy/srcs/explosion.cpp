@@ -16,7 +16,7 @@ ExplosionConfig::ExplosionConfig() {
 }
 
 
-ExplosionConfig::ExplosionConfig(std::string json_path) {
+ExplosionConfig::ExplosionConfig(fs json_path) {
 	std::ifstream ifs(json_path);
 	json js= json::parse(ifs);
 	ifs.close();
@@ -41,7 +41,7 @@ ExplosionConfig::~ExplosionConfig() {
 }
 
 
-void ExplosionConfig::DEBUG(std::string json_path) {
+void ExplosionConfig::DEBUG(fs json_path) {
 	std::ifstream ifs(json_path);
 	json js= json::parse(ifs);
 	ifs.close();
@@ -134,15 +134,16 @@ ExplosionSystem::ExplosionSystem() {
 }
 
 
-ExplosionSystem::ExplosionSystem(std::string dir_configs) {
+ExplosionSystem::ExplosionSystem(fs dir_configs) {
 	_fragments = new ExplosionFragment*[N_MAX_FRAGMENTS];
 	for (uint i=0; i<N_MAX_FRAGMENTS; ++i) {
 		_fragments[i] = new ExplosionFragment();
 	}
 
-	std::vector<std::string> config_json_paths = list_files(dir_configs, "json");
-	for (auto & json_path : config_json_paths) {
-		_configs[basename(json_path)] = new ExplosionConfig(json_path);
+	for (auto & json_path : std::filesystem::directory_iterator(dir_configs)) {
+		if (json_path.path().extension() == ".json") {
+			_configs[json_path.path().stem()] = new ExplosionConfig(json_path);
+		}
 	}
 }
 

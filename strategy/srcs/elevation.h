@@ -24,12 +24,12 @@ struct ElevationVertexData {
 
 struct ElevationRandConfig {
 	ElevationRandConfig();
-	ElevationRandConfig(std::string json_path);
+	ElevationRandConfig(fs json_path);
 	~ElevationRandConfig();
 	void reload();
 
 
-	std::string _json_path;
+	fs _json_path;
 	number _alti_offset;
 	uint _gradient_base_size;
 	number _max_factor;
@@ -97,8 +97,8 @@ struct Elevation : public GraphGrid {
 	void update_data(int col_min, int col_max, int lig_min, int lig_max);
 	void update_data(AABB_2D * aabb);
 	
-	void write(std::string path);
-	void read(std::string path);
+	void write(fs path);
+	void read(fs path);
 
 
 	float * _data;

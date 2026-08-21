@@ -18,13 +18,12 @@
 #include "strategy.h"
 
 
-SDL_Window * window;
-SDL_GLContext main_context;
+ScreenGL * screengl;
+GLSDL * gl_sdl;
 InputState * input_state;
-ViewSystem * view_system;
-GLDrawManager * gl_draw_manager;
-Strategy * strategy;
 FPSCount * fps_count;
+
+Strategy * strategy;
 
 
 void mouse_motion(int x, int y, int xrel, int yrel, time_point t) {
@@ -75,76 +74,22 @@ void key_up(SDL_Keycode key, time_point t) {
 }
 
 
-void init_gl() {
+void init() {
 	srand(time(NULL));
-	
-	SDL_Init(SDL_INIT_EVERYTHING);
-	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 
-	//SDL_ShowCursor(SDL_DISABLE);
-	
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1); // 2, 3 font une seg fault
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
-	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 32);
-	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-	// pour faire du multisampling (suppression aliasing)
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
-	SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 16);
-	
-	window = SDL_CreateWindow("strategy", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL);
-	main_context = SDL_GL_CreateContext(window);
-
-	//gl_versions();
-
-	glClearColor(0.1, 0.1, 0.1, 1.0);
-
-	SDL_GL_SetSwapInterval(1);
-	glClearDepth(1.0f);
-	glEnable(GL_DEPTH_TEST);
-	glDepthMask(GL_TRUE);
-	glDepthFunc(GL_LESS);
-	glDepthRange(0.0f, 1.0f);
-	
-	// frontfaces en counterclockwise
-	glFrontFace(GL_CCW);
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-	glEnable(GL_DEPTH_CLAMP);
-	
-	// pour gérer l'alpha
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	
-	SDL_GL_SwapWindow(window);
-}
-
-
-void init_data() {
-	fps_count = new FPSCount(window);
-
-	GLDrawManager * gl_draw_manager = new GLDrawManager("../data/draw_context.json");
-
-	ScreenGL * screengl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
-	
-	view_system = new ViewSystem(gl_draw_manager, screengl);
-	view_system->set(pt_3d(10.0, 10.0, 0.0), M_PI * 0.25, M_PI * 0.25, 70.0);
-	//view_system->set_2d(30.0);
-	view_system->constraint_theta(M_PI * 0.1, M_PI * 0.4);
-	view_system->constraint_rho(30.0, 100.0);
-	view_system->constraint_target(MAP_ORIGIN, MAP_ORIGIN + MAP_SIZE);
-
+	gl_sdl = new GLSDL("strategy", MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, true);
+	screengl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
+	fps_count = new FPSCount(gl_sdl->_window);
 	input_state = new InputState();
 
 	time_point now = std::chrono::system_clock::now();
-	strategy = new Strategy(gl_draw_manager, view_system, now);
+	strategy = new Strategy(screengl, now);
 }
 
 
 void draw() {
 	strategy->draw();
-	SDL_GL_SwapWindow(window);
+	SDL_GL_SwapWindow(gl_sdl->_window);
 	fps_count->add_frame();
 }
 
@@ -210,20 +155,15 @@ void main_loop() {
 
 void clean() {
 	delete strategy;
-	delete view_system;
 	delete input_state;
-	delete gl_draw_manager;
 	delete fps_count;
-
-	SDL_GL_DeleteContext(main_context);
-	SDL_DestroyWindow(window);
-	SDL_Quit();
+	delete screengl;
+	delete gl_sdl;
 }
 
 
 int main() {
-	init_gl();
-	init_data();
+	init();
 	main_loop();
 	clean();
 

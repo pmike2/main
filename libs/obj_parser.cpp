@@ -91,12 +91,15 @@ void ObjObject::compute_face_normals_tangents_bitangents() {
 		pt_3d p3 = _vertices[face->_vertices_idx[2]];
 		face->_normal = glm::normalize(glm::cross(p2 - p1, p3 - p1));
 
-		pt_2d uv1 = _texs[face->_textures_idx[0]];
-		pt_2d uv2 = _texs[face->_textures_idx[1]];
-		pt_2d uv3 = _texs[face->_textures_idx[2]];
-		face->_tangent = tangent(p1, p2, p3, uv1, uv2, uv3);
+		// TODO : comment faire sinon ?
+		if (face->_texture_active) {
+			pt_2d uv1 = _texs[face->_textures_idx[0]];
+			pt_2d uv2 = _texs[face->_textures_idx[1]];
+			pt_2d uv3 = _texs[face->_textures_idx[2]];
+			face->_tangent = tangent(p1, p2, p3, uv1, uv2, uv3);
 
-		face->_bitangent = glm::cross(face->_normal, face->_tangent);
+			face->_bitangent = glm::cross(face->_normal, face->_tangent);
+		}
 	}
 }
 

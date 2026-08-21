@@ -16,7 +16,7 @@ ElevationRandConfig::ElevationRandConfig() {
 }
 
 
-ElevationRandConfig::ElevationRandConfig(std::string json_path) : _json_path(json_path) {
+ElevationRandConfig::ElevationRandConfig(fs json_path) : _json_path(json_path) {
 	reload();
 }
 
@@ -616,7 +616,7 @@ void Elevation::update_data(AABB_2D * aabb) {
 }
 
 
-void Elevation::write(std::string path) {
+void Elevation::write(fs path) {
 	std::ofstream ofs(path);
 
 	_it_v= _vertices.begin();
@@ -627,7 +627,7 @@ void Elevation::write(std::string path) {
 }
 
 
-void Elevation::read(std::string path) {
+void Elevation::read(fs path) {
 	std::ifstream ifs(path);
 	std::string line;
 	while (std::getline(ifs, line)) {

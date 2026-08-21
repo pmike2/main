@@ -64,11 +64,11 @@ OverView::OverView(GLDrawManager * gl_draw_manager) : _gl_draw_manager(gl_draw_m
 
 	// -------------------------------------------
 	// on fait un screen2gl carré ; les valeurs ont été calculées de façon empirique mais on doit pouvoir trouver une formule
-	const float GL_WIDTH= 10.0f;
-	const float GL_HEIGHT= 10.0f;
+	const float GL_WIDTH = 10.0f;
+	const float GL_HEIGHT = 10.0f;
 	const number RHO = 200.0;
-	_screengl= new ScreenGL(_tex_width, _tex_height, GL_WIDTH, GL_HEIGHT);
-	_view_system= new ViewSystem(_gl_draw_manager, _screengl);
+	_screengl = new ScreenGL(_tex_width, _tex_height, GL_WIDTH, GL_HEIGHT);
+	_view_system = new ViewSystem(_screengl);
 	_view_system->set_2d(RHO);
 
 }

@@ -11,7 +11,7 @@
 
 struct AmmoType {
 	AmmoType();
-	AmmoType(std::string json_path);
+	AmmoType(fs json_path);
 	~AmmoType();
 
 

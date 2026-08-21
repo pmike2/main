@@ -12,12 +12,12 @@ AmmoType::AmmoType() {
 }
 
 
-AmmoType::AmmoType(std::string json_path) {
+AmmoType::AmmoType(fs json_path) {
 	std::ifstream ifs(json_path);
 	json js= json::parse(ifs);
 	ifs.close();
 
-	_name = basename(json_path);
+	_name = json_path.stem();
 	_damage = js["damage"];
 	_rate = js["rate"];
 	_velocity = js["velocity"];
@@ -28,12 +28,7 @@ AmmoType::AmmoType(std::string json_path) {
 	_ballistic = js["ballistic"];
 	
 	_obj_data = new ObjData(js["obj"]);
-	_obj_data->_use_ambient = false;
-	_obj_data->_use_diffuse = true;
-	_obj_data->_use_specular = false;
-	_obj_data->_use_shininess = false;
-	_obj_data->_use_opacity = false;
-	_obj_data->update_data();
+	_obj_data->update_data(std::vector<OBJDATA_DATA_ITEM>{OBJDATA_VERTEX, OBJDATA_NORMAL, OBJDATA_DIFFUSE_COLOR});
 }
 
 

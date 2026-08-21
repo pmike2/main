@@ -17,7 +17,7 @@
 
 struct UnitType : public GridMovingObjectType {
 	UnitType();
-	UnitType(std::string json_path);
+	UnitType(fs json_path);
 	~UnitType();
 	pt_2d get_max_square_size();
 	//pt_2d get_size();

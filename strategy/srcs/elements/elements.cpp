@@ -8,14 +8,16 @@ Elements::Elements() {
 }
 
 
-Elements::Elements(std::string dir_tree_jsons, std::string dir_stone_jsons, Elevation * elevation) : _elevation(elevation) {
-	std::vector<std::string> tree_jsons = list_files(dir_tree_jsons, "json");
-	for (auto json_path : tree_jsons) {
-		_tree_species[basename(json_path)] = new TreeSpecies(json_path);
+Elements::Elements(fs dir_tree_jsons, fs dir_stone_jsons, Elevation * elevation) : _elevation(elevation) {
+	for (auto & json_path : std::filesystem::directory_iterator(dir_tree_jsons)) {
+		if (json_path.path().extension() == ".json") {
+			_tree_species[json_path.path().stem()] = new TreeSpecies(json_path);
+		}
 	}
-	std::vector<std::string> stone_jsons = list_files(dir_stone_jsons, "json");
-	for (auto json_path : stone_jsons) {
-		_stone_species[basename(json_path)] = new StoneSpecies(json_path);
+	for (auto & json_path : std::filesystem::directory_iterator(dir_stone_jsons)) {
+		if (json_path.path().extension() == ".json") {
+			_stone_species[json_path.path().stem()] = new StoneSpecies(json_path);
+		}
 	}
 }
 

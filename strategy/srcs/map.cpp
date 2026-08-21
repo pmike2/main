@@ -28,7 +28,7 @@ Map::Map() {
 }
 
 
-Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string elements_dir, std::string explosion_dir, std::string barrier_types_dir, 
+Map::Map(fs unit_types_dir, fs ammo_types_dir, fs elements_dir, fs explosion_dir, fs barrier_types_dir, 
 	pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t) :
 	_unit_types_dir(unit_types_dir), _ammo_types_dir(ammo_types_dir), _elements_dir(elements_dir), _barrier_types_dir(barrier_types_dir),
 	_path_resolution(path_resolution), _elevation_resolution(elevation_resolution), _fow_resolution(fow_resolution)
@@ -57,23 +57,27 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	if (verbose) {
 		std::cout << "init UnitTypes / AmmoTypes / BarrierTypes / Explosion\n";
 	}
-	std::vector<std::string> unit_type_json_paths = list_files(_unit_types_dir, "json");
-	for (auto & json_path : unit_type_json_paths) {
-		UnitType * unit_type = new UnitType(json_path);
-		_unit_types[unit_type->_name] = unit_type;
-		_path_finder->_gmo_types.push_back((GridMovingObjectType *)(unit_type));
+	
+	for (auto & json_path : std::filesystem::directory_iterator(_unit_types_dir)) {
+		if (json_path.path().extension() == ".json") {
+			UnitType * unit_type = new UnitType(json_path);
+			_unit_types[unit_type->_name] = unit_type;
+			_path_finder->_gmo_types.push_back((GridMovingObjectType *)(unit_type));
+		}
 	}
 	
-	std::vector<std::string> ammo_type_json_paths = list_files(_ammo_types_dir, "json");
-	for (auto & json_path : ammo_type_json_paths) {
-		AmmoType * ammo_type = new AmmoType(json_path);
-		_ammo_types[ammo_type->_name] = ammo_type;
+	for (auto & json_path : std::filesystem::directory_iterator(_ammo_types_dir)) {
+		if (json_path.path().extension() == ".json") {
+			AmmoType * ammo_type = new AmmoType(json_path);
+			_ammo_types[ammo_type->_name] = ammo_type;
+		}
 	}
 
-	std::vector<std::string> barrier_type_json_paths = list_files(_barrier_types_dir, "json");
-	for (auto & json_path : barrier_type_json_paths) {
-		BarrierType * barrier_type = new BarrierType(json_path);
-		_barrier_types[barrier_type->_name] = barrier_type;
+	for (auto & json_path : std::filesystem::directory_iterator(_barrier_types_dir)) {
+		if (json_path.path().extension() == ".json") {
+			BarrierType * barrier_type = new BarrierType(json_path);
+			_barrier_types[barrier_type->_name] = barrier_type;
+		}
 	}
 
 	for (auto & unit_type : _unit_types) {
@@ -89,7 +93,7 @@ Map::Map(std::string unit_types_dir, std::string ammo_types_dir, std::string ele
 	if (verbose) {
 		std::cout << "init Elements\n";
 	}
-	_elements = new Elements(_elements_dir + "/tree_species", elements_dir + "/stone_species", _elevation);
+	_elements = new Elements(_elements_dir / "tree_species", elements_dir / "stone_species", _elevation);
 
 	// ------------------------------------------------
 	if (verbose) {
@@ -637,7 +641,7 @@ void Map::randomize(ElevationRandConfig * rand_config) {
 }
 
 
-void Map::save_teams(std::string teams_json_path) {
+void Map::save_teams(fs teams_json_path) {
 	json teams_js;
 	teams_js["teams"] = json::array();
 	for (auto & team : _teams) {
@@ -649,8 +653,7 @@ void Map::save_teams(std::string teams_json_path) {
 }
 
 
-void Map::save_fixed(std::string dir_map) {
-	fs map_path = dir_map;
+void Map::save_fixed(fs map_path) {
 	fs general_json_path = map_path / "general.json";
 	fs elements_json_path = map_path / "elements.json";
 	fs elevation_path = map_path / "elevation.raw";
@@ -697,16 +700,14 @@ void Map::save_fixed(std::string dir_map) {
 }
 
 
-void Map::save(std::string dir_map) {
-	save_fixed(dir_map);
-	fs map_path = dir_map;
+void Map::save(fs map_path) {
+	save_fixed(map_path);
 	fs teams_json_path = map_path / "teams.json";
-	save_teams(teams_json_path.string());
+	save_teams(teams_json_path);
 }
 
 
-void Map::load(std::string dir_map, time_point t) {
-	fs map_path = dir_map;
+void Map::load(fs map_path, time_point t) {
 	fs general_json_path = map_path / "general.json";
 	fs elements_json_path = map_path / "elements.json";
 	fs teams_json_path = map_path / "teams.json";

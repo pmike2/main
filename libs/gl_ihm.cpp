@@ -39,7 +39,7 @@ GLIHMElement::GLIHMElement() {
 }
 
 
-GLIHMElement::GLIHMElement(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size) :
+GLIHMElement::GLIHMElement(GLIHMGroup * group, std::string name, fs texture_path, pt_2d position, pt_2d size) :
 	_group(group), _name(name), _texture_path(texture_path), _alpha(ALPHA_INACTIVE), _active(false), _key(0) {
 	_aabb = new AABB_2D(position, size);
 	_active_callback = [](){};
@@ -106,7 +106,7 @@ GLIHMButton::GLIHMButton() {
 }
 
 
-GLIHMButton::GLIHMButton(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size) :
+GLIHMButton::GLIHMButton(GLIHMGroup * group, std::string name, fs texture_path, pt_2d position, pt_2d size) :
 	GLIHMElement(group, name, texture_path, position, size)//, _available_percent(100.0) 
 {
 
@@ -143,7 +143,7 @@ GLIHMCheckBox::GLIHMCheckBox() {
 }
 
 
-GLIHMCheckBox::GLIHMCheckBox(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size) :
+GLIHMCheckBox::GLIHMCheckBox(GLIHMGroup * group, std::string name, fs texture_path, pt_2d position, pt_2d size) :
 	GLIHMElement(group, name, texture_path, position, size) 
 {
 
@@ -184,7 +184,7 @@ GLIHMRadio::GLIHMRadio() {
 }
 
 
-GLIHMRadio::GLIHMRadio(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size) :
+GLIHMRadio::GLIHMRadio(GLIHMGroup * group, std::string name, fs texture_path, pt_2d position, pt_2d size) :
 	GLIHMElement(group, name, texture_path, position, size) 
 {
 
@@ -225,7 +225,7 @@ GLIHMSlider::GLIHMSlider() {
 }
 
 
-GLIHMSlider::GLIHMSlider(GLIHMGroup * group, std::string name, std::string texture_path, pt_2d position, pt_2d size) :
+GLIHMSlider::GLIHMSlider(GLIHMGroup * group, std::string name, fs texture_path, pt_2d position, pt_2d size) :
 	GLIHMElement(group, name, texture_path, position, size), _min_value(0.0), _max_value(1.0) 
 {
 	
@@ -406,7 +406,7 @@ GLIHM::GLIHM() {
 }
 
 
-GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string json_path) :
+GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, fs json_path) :
 	_gl_draw_manager(gl_draw_manager), _screengl(screengl), _verbose(false) 
 {
 	std::vector<std::pair<GLIHMElement *, std::string> > groups_visible;
@@ -416,7 +416,7 @@ GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string j
 	json js= json::parse(ifs);
 	ifs.close();
 	
-	std::string texture_root = js["texture_root"];
+	fs texture_root = js["texture_root"];
 	uint texture_size = js["texture_size"];
 	std::string texture_slider_background = js["texture_slider_background"];
 	pt_2d default_element_size = pt_2d(js["default_element_size"][0], js["default_element_size"][1]);
@@ -536,12 +536,12 @@ GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, std::string j
 		}
 	}
 
-	std::vector<std::string> pngs;
-	pngs.push_back(texture_root + "/" + texture_slider_background);
+	std::vector<fs> pngs;
+	pngs.push_back(texture_root / texture_slider_background);
 	uint compt = 1;
 	for (auto & group : _groups) {
 		for (auto & element : group->_elements) {
-			pngs.push_back(texture_root + "/" + group->_name + "/" + element->_texture_path);
+			pngs.push_back(texture_root / group->_name / element->_texture_path);
 			element->_texture_layer = compt++;
 		}
 	}

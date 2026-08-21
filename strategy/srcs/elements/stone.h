@@ -20,7 +20,7 @@
 class StoneSpecies {
 public:
 	StoneSpecies();
-	StoneSpecies(std::string json_path);
+	StoneSpecies(fs json_path);
 	~StoneSpecies();
 
 
