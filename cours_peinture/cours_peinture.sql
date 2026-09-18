@@ -163,7 +163,8 @@ CREATE TABLE paiement_modele (
 	id INTEGER,
 	id_modele INTEGER,
 	id_seance INTEGER,
-	intervenant_ou_a37 intervenant_ou_a37_type
+	intervenant_ou_a37 intervenant_ou_a37_type,
+	montant NUMERIC(4, 2)
 );
 
 ALTER TABLE paiement_modele
@@ -172,6 +173,8 @@ ALTER TABLE paiement_modele
 	ALTER id_modele SET NOT NULL,
 	ALTER id_seance SET NOT NULL,
 	ALTER intervenant_ou_a37 SET NOT NULL,
+	ALTER montant SET NOT NULL,
+	ALTER montant SET DEFAULT 40.0,
 	ADD CONSTRAINT paiement_modele_id_modele_id_seance_key UNIQUE(id_modele, id_seance),
 	ADD CONSTRAINT paiement_modele_modele_fk FOREIGN KEY(id_modele) REFERENCES modele(id) ON DELETE CASCADE,
 	ADD CONSTRAINT paiement_modele_seance_fk FOREIGN KEY(id_seance) REFERENCES seance(id) ON DELETE CASCADE;
