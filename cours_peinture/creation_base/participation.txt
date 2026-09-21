@@ -1,0 +1,14 @@
+Date	Type	Modèle payé par		Ghilaine	Denis	Clémentine	Olivier	Sandrine	Frederic	SandrineFille	Danielle
+12/03/26	modèle	A37		découverte	découverte	découverte		découverte	découverte		découverte
+19/03/26	modèle	A37		10 cours	4 cours	10 cours					
+26/03/26	modèle	A37		10 cours	4 cours	10 cours					
+02/04/26	photo			10 cours	4 cours						
+09/04/26	modèle	A37		10 cours	4 cours	10 cours		1 cours			
+16/04/26	photo			10 cours	4 cours	10 cours	4 cours				
+07/05/26	photo			10 cours	4 cours	10 cours		1 cours payé PM		1 cours payé PM	
+21/05/26	photo				4 cours	10 cours	1 cours				
+28/05/26	modèle	PM		10 cours	4 cours	10 cours					
+04/06/26	photo			10 cours	4 cours						
+11/06/26	photo			10 cours	4 cours						
+18/06/26	photo				4 cours	10 cours					
+10/09/26	photo			10 cours		10 cours	10 cours				
