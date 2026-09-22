@@ -106,7 +106,8 @@ ALTER TABLE forfait
 CREATE TABLE seance (
 	id INTEGER,
 	id_cours INTEGER,
-	date DATE
+	date DATE,
+	notes VARCHAR
 );
 
 ALTER TABLE seance
@@ -178,3 +179,21 @@ ALTER TABLE paiement_modele
 	ADD CONSTRAINT paiement_modele_id_modele_id_seance_key UNIQUE(id_modele, id_seance),
 	ADD CONSTRAINT paiement_modele_modele_fk FOREIGN KEY(id_modele) REFERENCES modele(id) ON DELETE CASCADE,
 	ADD CONSTRAINT paiement_modele_seance_fk FOREIGN KEY(id_seance) REFERENCES seance(id) ON DELETE CASCADE;
+
+
+-- paiement_intervenant -------------------------------------------------------------------------
+CREATE TABLE paiement_intervenant (
+	id INTEGER,
+	id_intervenant INTEGER,
+	date DATE,
+	montant NUMERIC(7, 2)
+);
+
+ALTER TABLE paiement_intervenant
+	ALTER id ADD GENERATED ALWAYS AS IDENTITY,
+	ALTER id SET NOT NULL,
+	ALTER id_intervenant SET NOT NULL,
+	ALTER date SET NOT NULL,
+	ALTER montant SET NOT NULL,
+	ADD CONSTRAINT paiement_intervenant_intervenant_fk FOREIGN KEY(id_intervenant) REFERENCES intervenant(id) ON DELETE CASCADE;
+
