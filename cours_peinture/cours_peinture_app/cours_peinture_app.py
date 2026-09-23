@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import datetime
+from decimal import *
 
 import streamlit as st
 import psycopg2
@@ -242,3 +243,10 @@ if selection == "Comptes":
 	row = db.query(req_a372inter)
 	a372inter = row[0]["total"]
 	st.write(f"A37 a payé l'intervenant :yellow[{a372inter}] :material/euro:")
+
+	#benefice_total = eleve2a37 + eleve2inter - (a372model + inter2model)
+	benefice_total = eleve2a37 + eleve2inter
+	st.write(f"Le bénéfice total est :blue[{eleve2a37}] + :green[{eleve2inter}] = :violet[{benefice_total}] :material/euro:")
+
+	a_payer2inter = eleve2a37 - a372model - a372inter - benefice_total * Decimal(pourcentage_a37) / Decimal(100.0)
+	st.write(f"A37 doit régler à l'intervenant :blue[{eleve2a37}] - :red[{a372model}] - :yellow[{a372inter}] - :violet[{benefice_total}] * {pourcentage_a37} % = **{a_payer2inter}  :material/euro:**")
