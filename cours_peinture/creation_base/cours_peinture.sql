@@ -63,7 +63,8 @@ CREATE TABLE cours (
 	intitule VARCHAR,
 	pourcentage_a37 NUMERIC(4, 2),
 	duree INTERVAL,
-	annee DATE
+	annee DATE,
+	description VARCHAR
 );
 
 ALTER TABLE cours
@@ -184,7 +185,7 @@ ALTER TABLE paiement_modele
 -- paiement_intervenant -------------------------------------------------------------------------
 CREATE TABLE paiement_intervenant (
 	id INTEGER,
-	id_intervenant INTEGER,
+	id_cours INTEGER,
 	date DATE,
 	montant NUMERIC(7, 2)
 );
@@ -192,8 +193,8 @@ CREATE TABLE paiement_intervenant (
 ALTER TABLE paiement_intervenant
 	ALTER id ADD GENERATED ALWAYS AS IDENTITY,
 	ALTER id SET NOT NULL,
-	ALTER id_intervenant SET NOT NULL,
+	ALTER id_cours SET NOT NULL,
 	ALTER date SET NOT NULL,
 	ALTER montant SET NOT NULL,
-	ADD CONSTRAINT paiement_intervenant_intervenant_fk FOREIGN KEY(id_intervenant) REFERENCES intervenant(id) ON DELETE CASCADE;
+	ADD CONSTRAINT paiement_intervenant_cours_fk FOREIGN KEY(id_cours) REFERENCES cours(id) ON DELETE CASCADE;
 

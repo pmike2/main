@@ -41,6 +41,9 @@ SELECT id, 'Portrait alla prima', 30.0, '2 hours'::interval, '2026-01-01' FROM i
 INSERT INTO cours(id_intervenant, intitule, pourcentage_a37, duree, annee)
 SELECT id, 'Portrait alla prima', 30.0, '2 hours'::interval, '2027-01-01' FROM intervenant WHERE nom = 'Beau';
 
+INSERT INTO cours(id_intervenant, intitule, pourcentage_a37, duree, annee)
+SELECT id, 'Stage Portrait', 30.0, '3 hours'::interval, '2026-08-29' FROM intervenant WHERE nom = 'Beau';
+
 
 -- forfait ----------------------------------------------------------------------------
 WITH id_cours_2026 AS (
@@ -60,6 +63,15 @@ forfaits_alla_prima AS (
 )
 INSERT INTO forfait(id_cours, nom, n_seances, cout_total)
 SELECT idc.id, fap.nom, fap.n_seances, fap.cout_total FROM id_cours_2027 AS idc CROSS JOIN forfaits_alla_prima AS fap;
+
+WITH id_stage_2026 AS (
+	SELECT id FROM cours WHERE intitule = 'Stage Portrait' AND annee = '2026-08-29'
+),
+forfaits_stage AS (
+	SELECT * FROM (VALUES ('unique', 1, 50.0)) AS t(nom, n_seances, cout_total)
+)
+INSERT INTO forfait(id_cours, nom, n_seances, cout_total)
+SELECT idc.id, fap.nom, fap.n_seances, fap.cout_total FROM id_stage_2026 AS idc CROSS JOIN forfaits_stage AS fap;
 
 
 -- seance ----------------------------------------------------------------------------

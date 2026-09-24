@@ -122,7 +122,7 @@ def insert_paiements():
 
 		["Denis", "4_cours", "2026-06-04", "A37"],
 
-		#["Ghilaine", "10_cours", "2026-09-17", "A37"],
+		#["Olivier", "10_cours", "2026-09-10", "A37"],
 	]
 
 	cours_intitule = "Portrait alla prima"
