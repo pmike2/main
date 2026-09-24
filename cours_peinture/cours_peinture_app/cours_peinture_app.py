@@ -2,6 +2,9 @@
 
 """WebApp cours peinture."""
 
+# dans .streamlit il y a config.toml pour gérer les couleurs entre autre
+# et secrets.toml pour la connexion postgresql
+
 from pathlib import Path
 import datetime
 from decimal import *
