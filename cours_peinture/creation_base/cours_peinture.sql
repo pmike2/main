@@ -1,5 +1,6 @@
 -- types -----------------------------------------------------------------------------
 CREATE TYPE intervenant_ou_a37_type AS ENUM ('INTERVENANT', 'A37');
+CREATE TYPE tarif_fixe_ou_pourcent_type AS ENUM ('TARIF_FIXE', 'TARIF_POURCENT');
 
 
 -- modele -----------------------------------------------------------------------------
@@ -61,7 +62,8 @@ CREATE TABLE cours (
 	id INTEGER,
 	id_intervenant INTEGER,
 	intitule VARCHAR,
-	pourcentage_a37 NUMERIC(4, 2),
+	tarif_a37 NUMERIC(4, 2),
+	tarif_fixe_ou_pourcent tarif_fixe_ou_pourcent_type,
 	duree INTERVAL,
 	annee DATE,
 	description VARCHAR
@@ -72,7 +74,8 @@ ALTER TABLE cours
 	ALTER id SET NOT NULL,
 	ALTER id_intervenant SET NOT NULL,
 	ALTER intitule SET NOT NULL,
-	ALTER pourcentage_a37 SET NOT NULL,
+	ALTER tarif_a37 SET NOT NULL,
+	ALTER tarif_fixe_ou_pourcent SET NOT NULL,
 	ALTER duree SET NOT NULL,
 	ALTER annee SET NOT NULL,
 	ADD CONSTRAINT cours_pkey PRIMARY KEY(id),

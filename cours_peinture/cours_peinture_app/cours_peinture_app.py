@@ -104,9 +104,10 @@ if selection == "Modeles":
 
 if selection == "Cours":
 	st.write("Cours")
-	req = 'SELECT c.id, c.intitule as cours, c.annee, c.duree, c.pourcentage_a37 AS pourcent, c.description, i.nom, i.prenom, i.mail, i.phone FROM cours c JOIN intervenant i ON c.id_intervenant=i.id ORDER BY cours'
+	req = 'SELECT c.id, c.intitule as cours, c.annee, c.duree, c.tarif_a37, c.tarif_fixe_ou_pourcent, c.description, i.nom, i.prenom, i.mail, i.phone FROM cours c JOIN intervenant i ON c.id_intervenant=i.id ORDER BY cours'
 	df = conn.query(req)
-	event = st.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"description" : None, "id" : None, "pourcent" : st.column_config.NumberColumn(format="%d %%")}, width="stretch")
+	#event = st.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"description" : None, "id" : None, "pourcent" : st.column_config.NumberColumn(format="%d %%")}, width="stretch")
+	event = st.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"description" : None, "id" : None}, width="stretch")
 	id_cours = df.loc[event.selection["rows"][0], "id"]
 	description_cours = df.loc[event.selection["rows"][0], "description"]
 
@@ -246,11 +247,14 @@ if selection == "Ajout paiement intervenant":
 
 
 if selection == "Comptes":
-	req = 'SELECT c.id, c.intitule as cours, c.annee, c.pourcentage_a37 FROM cours c ORDER BY cours'
+	req = 'SELECT c.id, c.intitule as cours, c.annee, c.tarif_a37, c.tarif_fixe_ou_pourcent, COUNT(s.id) AS n_seances FROM cours c JOIN seance s ON s.id_cours=c.id GROUP BY c.id ORDER BY c.annee'
 	df = conn.query(req)
-	event_cours = st.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"id" : None, "pourcentage_a37" : st.column_config.NumberColumn(format="%d %%")}, width="stretch")
+	#event_cours = st.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"id" : None, "pourcentage_a37" : st.column_config.NumberColumn(format="%d %%")}, width="stretch")
+	event_cours = st.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"id" : None}, width="stretch")
 	id_cours = df.loc[event_cours.selection["rows"][0], "id"]
-	pourcentage_a37 = df.loc[event_cours.selection["rows"][0], "pourcentage_a37"]
+	tarif_a37 = df.loc[event_cours.selection["rows"][0], "tarif_a37"]
+	tarif_fixe_ou_pourcent = df.loc[event_cours.selection["rows"][0], "tarif_fixe_ou_pourcent"]
+	n_seances = df.loc[event_cours.selection["rows"][0], "n_seances"]
 
 	#req_eleve2a37 = f"SELECT COALESCE(SUM(f.cout_total), 0.0) AS total FROM forfait f JOIN paiement p ON p.id_forfait=f.id JOIN cours c ON f.id_cours=c.id WHERE c.id = {id_cours} AND p.intervenant_ou_a37 = 'A37'"
 	#row = db.query(req_eleve2a37)
@@ -299,12 +303,15 @@ if selection == "Comptes":
 	a372inter = row[0]["total"]
 	st.write(f"A37 a payé l'intervenant :yellow[{a372inter}] :material/euro:")
 
-	#benefice_total = eleve2a37 + eleve2inter - (a372model + inter2model)
-	benefice_total = eleve2a37 + eleve2inter
-	st.write(f"Le bénéfice total est :blue[{eleve2a37}] + :green[{eleve2inter}] = :violet[{benefice_total}] :material/euro:")
+	if tarif_fixe_ou_pourcent == "TARIF_POURCENT":
+		benefice_total = eleve2a37 + eleve2inter
+		st.write(f"Le bénéfice total est :blue[{eleve2a37}] + :green[{eleve2inter}] = :violet[{benefice_total}] :material/euro:")
+		a_payer2inter = eleve2a37 - a372model - a372inter - benefice_total * Decimal(tarif_a37) / Decimal(100.0)
+		st.write(f"A37 doit régler à l'intervenant :blue[{eleve2a37}] - :red[{a372model}] - :yellow[{a372inter}] - :violet[{benefice_total}] * {tarif_a37} % = **{a_payer2inter} :material/euro:**")
 
-	a_payer2inter = eleve2a37 - a372model - a372inter - benefice_total * Decimal(pourcentage_a37) / Decimal(100.0)
-	st.write(f"A37 doit régler à l'intervenant :blue[{eleve2a37}] - :red[{a372model}] - :yellow[{a372inter}] - :violet[{benefice_total}] * {pourcentage_a37} % = **{a_payer2inter} :material/euro:**")
+	elif tarif_fixe_ou_pourcent == "TARIF_FIXE":
+		a_payer2inter = eleve2a37 - a372model - a372inter - Decimal(n_seances * tarif_a37)
+		st.write(f"A37 doit régler à l'intervenant :blue[{eleve2a37}] - :red[{a372model}] - :yellow[{a372inter}] - {n_seances} x {tarif_a37} = **{a_payer2inter} :material/euro:**")
 
 
 if selection == "Méthodologie":
