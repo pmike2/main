@@ -95,6 +95,18 @@ if selection == "Elèves":
 			color = "red"
 		col3.write(f"Reste **:{color}[{value}]** cours pour {key}")
 
+	st.write("Préparation mail")
+	rows_students = db.query("SELECT prenom FROM eleve ORDER BY prenom")
+	selected_students = st.pills("Participants", [x["prenom"] for x in rows_students], selection_mode="multi")
+	mails = []
+	for student in selected_students:
+		req_student = f"SELECT mail FROM eleve WHERE prenom='{student}'"
+		row = db.query(req_student)
+		mails.append(row[0]["mail"])
+
+	# st.code pour avoir le bouton de copie dans le clipboard
+	st.code(";".join(mails))
+
 
 if selection == "Modeles":
 	req = 'SELECT nom, prenom, mail, phone FROM modele ORDER BY nom'
@@ -170,7 +182,6 @@ if selection == "Ajout séance":
 	montant = col4b.number_input("Montant", value=40, icon=":material/euro:", disabled=not is_model)
 
 	rows_students = db.query("SELECT prenom FROM eleve ORDER BY prenom")
-
 	selected_students = st.pills("Participants", [x["prenom"] for x in rows_students], selection_mode="multi")
 
 	if st.button("Ajouter"):
