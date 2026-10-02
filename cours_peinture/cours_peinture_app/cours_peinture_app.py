@@ -116,7 +116,7 @@ if selection == "Modeles":
 
 if selection == "Cours":
 	st.write("Cours")
-	req = 'SELECT c.id, c.intitule as cours, c.annee, c.duree, c.tarif_a37, c.tarif_fixe_ou_pourcent, c.description, i.nom, i.prenom, i.mail, i.phone FROM cours c JOIN intervenant i ON c.id_intervenant=i.id ORDER BY cours'
+	req = 'SELECT c.id, c.intitule as cours, c.annee, c.duree, c.tarif_a37, c.tarif_fixe_ou_pourcent, c.description, i.nom, i.prenom, i.mail, i.phone FROM cours c JOIN intervenant i ON c.id_intervenant=i.id ORDER BY c.annee'
 	df = conn.query(req)
 	#event = st.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"description" : None, "id" : None, "pourcent" : st.column_config.NumberColumn(format="%d %%")}, width="stretch")
 	event = st.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"description" : None, "id" : None}, width="stretch")
@@ -137,7 +137,7 @@ if selection == "Séances":
 	col1, col2 = st.columns(2)
 
 	col1.write("Cours")
-	req = 'SELECT c.id, c.intitule as cours, c.annee FROM cours c ORDER BY cours'
+	req = 'SELECT c.id, c.intitule as cours, c.annee FROM cours c ORDER BY c.annee'
 	df = conn.query(req)
 	event = col1.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"id" : None}, width="stretch")
 	id_cours = df.loc[event.selection["rows"][0], "id"]
@@ -164,7 +164,7 @@ if selection == "Séances":
 if selection == "Ajout séance":
 	col1, col2, col3 = st.columns(3)
 
-	req = "SELECT id, intitule, annee FROM cours"
+	req = "SELECT id, intitule, annee FROM cours ORDER BY annee"
 	df = conn.query(req)
 	event_cours = col1.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"id" : None}, width="stretch")
 	id_cours = df.loc[event_cours.selection["rows"][0], "id"]
@@ -214,7 +214,7 @@ if selection == "Ajout paiement élève":
 
 	col1b, col2b, col3b = st.columns(3)
 
-	req = 'SELECT c.id, c.intitule as cours, c.annee FROM cours c ORDER BY cours'
+	req = 'SELECT c.id, c.intitule as cours, c.annee FROM cours c ORDER BY c.annee'
 	df = conn.query(req)
 	event_cours = col1b.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"id" : None}, width="stretch")
 	id_cours = df.loc[event_cours.selection["rows"][0], "id"]
@@ -238,7 +238,7 @@ if selection == "Ajout paiement élève":
 
 if selection == "Ajout paiement intervenant":
 	#req = 'SELECT id, nom, prenom FROM intervenant ORDER BY nom'
-	req = 'SELECT c.id, c.intitule as cours, c.annee FROM cours c ORDER BY cours'
+	req = 'SELECT c.id, c.intitule as cours, c.annee FROM cours c ORDER BY c.annee'
 	df = conn.query(req)
 	event_cours = st.dataframe(df, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"id" : None}, width="stretch")
 	id_cours = df.loc[event_cours.selection["rows"][0], "id"]
