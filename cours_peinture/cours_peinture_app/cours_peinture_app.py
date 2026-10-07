@@ -224,7 +224,7 @@ if selection == "Ajout paiement élève":
 	event_forfait = col2b.dataframe(df2, hide_index=True, on_select="rerun", selection_mode=["single-row-required"], column_config={"id" : None}, width="stretch")
 	id_forfait = df2.loc[event_forfait.selection["rows"][0], "id"]
 
-	intervenant_ou_a37 = col3b.radio("payé à", ["INTERVENANT", "A37"])
+	intervenant_ou_a37 = col3b.radio("payé à", ["A37", "INTERVENANT"])
 
 	if st.button("Ajouter"):
 		req_insert_paiement = f"INSERT INTO paiement(id_eleve, id_forfait, date, intervenant_ou_a37) SELECT id, {id_forfait}, '{date}', '{intervenant_ou_a37}'::intervenant_ou_a37_type FROM eleve WHERE prenom = '{selected_student}'"

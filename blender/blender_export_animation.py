@@ -1,7 +1,6 @@
 """
 Script d'export d'une animation Blender.
 
-2 modes (weight ou rigid) à choisir via la checkbox au moment de l'export.
 JSON résultant à utiliser dans animated_obj.h
 
 voir : https://blender.stackexchange.com/questions/44637/how-can-i-manually-calculate-bpy-types-posebone-matrix-using-blenders-python-ap/121495

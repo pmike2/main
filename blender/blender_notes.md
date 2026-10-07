@@ -17,6 +17,7 @@
 
 **shift + c** : center 3d cursor.  
 **shift + rightclick** : move cursor origin ; la création d'un mesh se fait sur le cursor origin.  
+**shift + s** : affiche un menu où on peut mettre le cursor au milieu de la sélection (se mettre en edit mode !) ou déplacer la sélection sur le cursor par ex.  
 
 ---
 
@@ -66,6 +67,8 @@
 **k** : knife : permet d'ajouter des edges.  
 **e** : extrude.  
 **i** : inset face.  
+**select edge + click droit / subdivide** : ajoute un vertex au milieu du edge.  
+**select face + click droit / poke face** : crée un vertex au milieu de la face.  
 
 *Faire les modèles avec -Y comme direction où le perso regarde, sinon les symétries des bones ne fonctionnent pas.*
 
@@ -90,7 +93,7 @@ translation d'un vertex : **g + g** (une 2ème fois) permet de déplacer un vert
 
 *Icone papillon en mode edit permet de modifier une géométrie avec symmétrie.*  
 
-*Menu transformation en haut permet de passer de global à local; les transformations se font alors par rapport à l'orientation de l'objet.*  
+*Menu transformation en haut permet de passer de global à local; les transformations se font alors par rapport à l'orientation de l'objet. Il est possible de créer une orientation comme la normale d'une face.*  
 
 ### Face orientation
 
