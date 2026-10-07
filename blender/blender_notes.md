@@ -10,6 +10,7 @@
 **o** : active proportional editing avec un cercle d'influence ; permet de déformer de façon + continue; on peut ajuster la taille du cercle avec la molette.  
 **shift + tab** : active / désactive snap. si désactivé **g** permet de l'activer temporairement pour le déplacement du sommet sélectionné, sinon **g** le désactive temporairement. Voir les différents types de snap.  
 **&, é, "** (1,2,3 de la barre du haut) : choix vertex / edge / face mode.  
+**shift + r** : répète l'action précédente.  
 
 ---
 
