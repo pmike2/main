@@ -32,6 +32,7 @@
 **cmd + right click** : lasso de sélection.  
 **shift + d** : duplicate selection.  
 **alt + left click** : select loop.  
+**l** : linked sélection; A partir d'une sélection, sélectionne les sommets/edges/faces reliés par Matériel ou autre.  
 
 ---
 
