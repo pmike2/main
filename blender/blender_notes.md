@@ -56,7 +56,8 @@
 **j** : join vertices.  
 **edit mode + p** : separate by selection : met dans un nouvel objet la sélection ; separate by loose parts : met dans des objets différents tous les mesh qui sont séparés.  
 **cmd + g** -> "assign to new group" pour créer un vertex group à partir des vertices sélectionnés.  
-**m** : move objects to collection.  
+**m en object mode** : move objects to collection.  
+**m en edit mode** : merge vertices.  
 
 ### Créer
 
