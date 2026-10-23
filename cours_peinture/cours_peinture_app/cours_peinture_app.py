@@ -185,7 +185,7 @@ if selection == "Ajout séance":
 	selected_students = st.pills("Participants", [x["prenom"] for x in rows_students], selection_mode="multi")
 
 	if st.button("Ajouter"):
-		req_insert = f"INSERT INTO seance(id_cours, date, notes) VALUES ({id_cours}, '{date}', '{notes}') RETURNING id"
+		req_insert = f"INSERT INTO seance(id_cours, date, notes) VALUES ({id_cours}, '{date}', $${notes}$$) RETURNING id"
 		row = db.query(req_insert)
 		id_seance = row[0]["id"]
 
