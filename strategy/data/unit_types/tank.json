@@ -28,5 +28,5 @@
 		"up" : 100.0,
 		"hard_up" : 1000.0
 	},
-	"obj" : "../data/objs/units/tank/tank.obj"
+	"model" : "../data/anim_objs/units/tank/tank.json"
 }

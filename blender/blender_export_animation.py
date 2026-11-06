@@ -99,7 +99,7 @@ def get_rigid_objects_parent_bones():
     c'est quelque chose qu'il faut avoir fait dans le projet Blender"""
     objects = []
     for obj in bpy.data.objects:
-        if obj.name == ARMATURE_DEFAULT_NAME:
+        if obj.name == ARMATURE_DEFAULT_NAME or not obj.visible_get():
             continue
         
         parent_bone_name = obj.parent_bone
@@ -126,7 +126,11 @@ def get_bones():
         # pour chaque objet
         weights = {}
         for obj in bpy.data.objects:
-            if obj.name == ARMATURE_DEFAULT_NAME:
+            # ATTENTION, il faut bien mettre en invisible tous les objets non utilisés, pas juste
+            # rendre invisible la collection qui comprend ces objets
+            # TODO : améliorer ça en mettant en invisible de façon récursice toutes les collections / objets
+            # situés dans une collection invisible.
+            if obj.name == ARMATURE_DEFAULT_NAME or not obj.visible_get():
                 continue
             
             weights[obj.name] = {}

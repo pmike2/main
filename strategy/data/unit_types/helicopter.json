@@ -28,5 +28,5 @@
 		"up" : 0.0,
 		"hard_up" : 0.0
 	},
-	"obj" : "../data/objs/units/helicopter/helicopter.obj"
+	"model" : "../data/anim_objs/units/helicopter/helicopter.json"
 }

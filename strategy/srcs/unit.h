@@ -16,6 +16,7 @@
 #include "bbox.h"
 #include "graph.h"
 #include "path_find.h"
+#include "animated_obj.h"
 
 #include "unit_type.h"
 #include "elevation.h"
@@ -29,7 +30,7 @@ using json = nlohmann::json;
 struct Team;
 
 
-struct Unit : public InstancePosRot, public GridMovingObject {
+struct Unit : public GridMovingObject, public AnimatedObjInstance {
 	Unit();
 	Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_point t);
 	~Unit();

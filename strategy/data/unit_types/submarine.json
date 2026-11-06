@@ -28,5 +28,5 @@
 		"up" : 0.0,
 		"hard_up" : 0.0
 	},
-	"obj" : "../data/objs/units/submarine/submarine.obj"
+	"model" : "../data/anim_objs/units/submarine/submarine.json"
 }

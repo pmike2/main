@@ -45,18 +45,17 @@ UnitType::UnitType(fs json_path) :
 		_edge_cost[name] = it.value();
 	}
 
-	_obj_data = new ObjData(js["obj"]);
-	_obj_data->update_data(std::vector<OBJDATA_DATA_ITEM>{OBJDATA_VERTEX, OBJDATA_NORMAL, OBJDATA_DIFFUSE_COLOR});
+	_model = new AnimatedObjModel(js["model"]);
 }
 
 
 UnitType::~UnitType() {
-	delete _obj_data;
+	delete _model;
 }
 
 
 pt_2d UnitType::get_max_square_size() {
-	return pt_2d(std::max(_obj_data->_aabb->_vmax.x - _obj_data->_aabb->_vmin.x, _obj_data->_aabb->_vmax.y - _obj_data->_aabb->_vmin.y));
+	return pt_2d(std::max(_model->_obj_data->_aabb->_vmax.x - _model->_obj_data->_aabb->_vmin.x, _model->_obj_data->_aabb->_vmax.y - _model->_obj_data->_aabb->_vmin.y));
 }
 
 

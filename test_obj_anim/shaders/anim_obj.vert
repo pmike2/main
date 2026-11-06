@@ -3,7 +3,7 @@
 
 uniform mat4 world2clip_matrix;
 uniform samplerBuffer anim_buffer; // contient les matrices de transformation (action -> frame -> vertex)
-uniform sampler2D idx_texture; // contient les indices de anim_buffer des débuts des frames
+uniform sampler2D anim_idx; // contient les indices de anim_buffer des débuts des frames
 
 layout(location=0) in vec3 position_in;
 layout(location=1) in vec3 normal_in;
@@ -19,7 +19,7 @@ out vec3 tex_coord;
 
 void main(void) {
 	// texelFetch permet de lire les textures avec des coordonnées entières (pas 0.0 - 1.0) et sans interpolation
-	int idx = int(texelFetch(idx_texture, ivec2(int(idx_frame), int(idx_action)), 0).r) + 16 * gl_VertexID;
+	int idx = int(texelFetch(anim_idx, ivec2(int(idx_frame), int(idx_action)), 0).r) + 16 * gl_VertexID;
 
 	// récupération de la matrice d'animation à appliquer à ce vertex
 	mat4 anim_matrix = mat4(

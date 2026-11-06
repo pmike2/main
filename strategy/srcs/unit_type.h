@@ -9,6 +9,7 @@
 #include "typedefs.h"
 #include "obj_parser.h"
 #include "path_find.h"
+#include "animated_obj.h"
 
 #include "const.h"
 #include "ammo_type.h"
@@ -34,7 +35,8 @@ struct UnitType : public GridMovingObjectType {
 	uint _creation_duration;
 	bool _floats;
 	bool _flies;
-	ObjData * _obj_data;
+	//ObjData * _obj_data;
+	AnimatedObjModel * _model;
 	AmmoType * _ammo_type;
 	std::string _ammo_type_str;
 };

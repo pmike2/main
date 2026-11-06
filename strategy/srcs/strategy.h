@@ -14,6 +14,7 @@
 #include "repere.h"
 #include "gl_ihm.h"
 #include "gl_draw.h"
+#include "animated_obj.h"
 
 #include "const.h"
 #include "map.h"
@@ -60,6 +61,7 @@ public:
 	Strategy(ScreenGL * screengl, time_point t);
 	~Strategy();
 
+	void add_animated_model(AnimatedObjModel * model);
 	Team * get_selected_team();
 	void zoom2first_unit_of_selected_team();
 	
@@ -98,7 +100,7 @@ public:
 	void update_river();
 	void update_lake();
 	void update_sea();
-	void update_unit_obj(UnitType * unit_type);
+	//void update_unit_obj(UnitType * unit_type);
 	void update_unit_matrices(UnitType * unit_type);
 	void update_unit_life();
 	void update_ammo_obj(AmmoType * ammo_type);

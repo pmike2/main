@@ -51,6 +51,7 @@ add_library(lib_graph STATIC ../libs/graph.cpp ../libs/graph.h)
 add_library(lib_triangulation STATIC ../libs/triangulation.cpp ../libs/triangulation.h)
 add_library(lib_convex_hull STATIC ../libs/convex_hull.cpp ../libs/convex_hull.h)
 add_library(lib_obj_parser STATIC ../libs/obj_parser.cpp ../libs/obj_parser.h)
+add_library(lib_animated_obj STATIC ../libs/animated_obj.cpp ../libs/animated_obj.h)
 add_library(lib_gl_ihm STATIC ../libs/gl_ihm.cpp ../libs/gl_ihm.h)
 add_library(lib_gl_draw STATIC ../libs/gl_draw.cpp ../libs/gl_draw.h)
 add_library(lib_fps_count STATIC ../libs/fps_count.cpp ../libs/fps_count.h)
@@ -79,7 +80,7 @@ add_library(lib_barrier_type STATIC ./srcs/barrier_type.cpp ./srcs/barrier_type.
 add_executable(main ./srcs/main.cpp)
 
 set(EXT_LIBS ${GDAL_LIBRARIES} ${SDL2_LIBRARIES} ${SDL2_IMAGE_LIBRARIES} ${OPENGL_LIBRARIES} ${FREETYPE_LIBRARIES})
-set(GENERIC_LIBS lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_repere lib_view_system lib_gl_utils lib_input_state lib_bbox lib_font lib_convex_hull lib_obj_parser lib_gl_ihm lib_gl_draw lib_fps_count lib_path_find)
+set(GENERIC_LIBS lib_utile lib_geom_2d lib_polygon_2d lib_geom lib_shapefile lib_bbox_2d lib_graph lib_triangulation lib_repere lib_view_system lib_gl_utils lib_input_state lib_bbox lib_font lib_convex_hull lib_obj_parser lib_animated_obj lib_gl_ihm lib_gl_draw lib_fps_count lib_path_find)
 set(SPECIFIC_LIBS lib_const lib_elevation lib_map lib_strategy lib_unit_type lib_unit lib_team lib_elements lib_element lib_tree lib_stone lib_lake lib_river lib_ammo lib_ammo_type lib_overview lib_explosion lib_barrier lib_barrier_type)
 
 target_link_libraries(main PUBLIC ${EXT_LIBS})

@@ -138,6 +138,14 @@ Strategy::Strategy(ScreenGL * screengl, time_point t) :
 
 	// --------------------------------------------------
 	if (verbose) {
+		std::cout << "ajout modèles animés\n";
+	}
+	for (auto & unit_type : _map->_unit_types) {
+		add_animated_model(unit_type.second->_model);
+	}
+
+	// --------------------------------------------------
+	if (verbose) {
 		std::cout << "set_ihm\n";
 	}
 	set_ihm();
@@ -147,6 +155,12 @@ Strategy::Strategy(ScreenGL * screengl, time_point t) :
 		std::cout << "update_all\n";
 	}
 	update_all(t);
+
+	GLDrawContext * context = _gl_draw_manager->get_context("infantery");
+	std::cout << *context << "\n";
+	context->show_data(0);
+	std::cout << "-------------\n";
+	context->show_data(1);
 
 	// --------------------------------------------------
 	if (verbose) {
@@ -166,6 +180,60 @@ Strategy::~Strategy() {
 	delete _repere;
 	delete _view_system;
 	delete _gl_draw_manager;
+}
+
+
+void Strategy::add_animated_model(AnimatedObjModel * model) {
+	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
+
+	// partie statique
+	model->_obj_data->update_data(std::vector<OBJDATA_DATA_ITEM>{OBJDATA_VERTEX, OBJDATA_NORMAL, OBJDATA_TEXTURE});
+	context->_n_pts = model->_obj_data->_n_pts;
+	context->set_data(model->_obj_data->_data, 0);
+
+	// offsets textures
+	const uint offset_anim_buffer = 0;
+	const uint offset_anim_idx = 1;
+	const uint offset_diffuse_texture = 2;
+	const uint offset_normal_texture = 3;
+
+	_gl_draw_manager->add_texture_buffer(model->_name, "anim_buffer", GL_R32F, offset_anim_buffer, model->_buffer_texture_data_size * sizeof(float));
+	_gl_draw_manager->set_texture_buffer_data(model->_name, "anim_buffer", model->_buffer_texture_data);
+	
+	_gl_draw_manager->add_texture(
+		context->_name, "anim_idx", GL_TEXTURE_2D, offset_anim_idx,
+			std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
+			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER}
+			},
+		GL_RED, glm::uvec3(IDX_TEXTURE_DATA_SIZE, IDX_TEXTURE_DATA_SIZE, 0), GL_RED, GL_FLOAT
+	);
+	_gl_draw_manager->set_texture_data(context->_name, "anim_idx", model->_idx_texture_data);
+
+	// on fait de la place en mémoire maintenant que model->_buffer_texture_data_size et model->_idx_texture_data ont été utilisées
+	model->clean_texture_datas();
+
+	std::vector<fs> diffuse_textures = model->_obj_data->get_diffuse_textures();
+	_gl_draw_manager->add_texture(
+		context->_name, "diffuse_texture", GL_TEXTURE_2D_ARRAY, offset_diffuse_texture,
+			std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
+			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER}
+			},
+		GL_RGBA, glm::uvec3(TEXTURE_SIZE, TEXTURE_SIZE, diffuse_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
+	);
+	_gl_draw_manager->set_texture_data(context->_name, "diffuse_texture", diffuse_textures);
+
+	/*std::vector<fs> normal_textures = model->_obj_data->get_normal_textures();
+	_gl_draw_manager->add_texture(
+		context->_name, "normal_texture", GL_TEXTURE_2D_ARRAY, offset_normal_texture,
+			std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
+			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER}
+			},
+	GL_RGBA, glm::uvec3(TEXTURE_SIZE, TEXTURE_SIZE, diffuse_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
+	);
+	_gl_draw_manager->set_texture_data(context->_name, "normal_texture", normal_textures);*/
 }
 
 
@@ -1255,7 +1323,7 @@ void Strategy::update_cursor() {
 	else if (_config->_play_mode == ADD_UNIT || _config->_play_mode == ADD_BARRIER) {
 		BBox * bbox;
 		if (_config->_play_mode == ADD_UNIT) {
-			bbox = new BBox(_map->_unit_types[_config->_add_unit_type]->_obj_data->_aabb);
+			bbox = new BBox(_map->_unit_types[_config->_add_unit_type]->_model->_obj_data->_aabb);
 		}
 		else if (_config->_play_mode == ADD_BARRIER) {
 			bbox = new BBox(_map->_barrier_types[_config->_add_barrier_type]->_obj_data->_aabb);
@@ -1347,7 +1415,7 @@ void Strategy::update_cursor() {
 		
 		if (_attack_unit_ok) {
 			circle_center = pt_2d(_cursor_hover_unit->_position);
-			radius = _cursor_hover_unit->_type->_obj_data->_aabb->_base_radius * 1.5;
+			radius = _cursor_hover_unit->_type->_model->_obj_data->_aabb->_base_radius * 1.5;
 			attack_unit_color = glm::vec4(1.0, 0.0, 0.0, 1.0);
 		}
 		else {
@@ -1604,19 +1672,17 @@ void Strategy::update_sea() {
 }
 
 
-void Strategy::update_unit_obj(UnitType * unit_type) {
+/*void Strategy::update_unit_obj(UnitType * unit_type) {
 	GLDrawContext * context= _gl_draw_manager->get_context(unit_type->_name);
 
 	context->_n_pts = unit_type->_obj_data->_n_pts;
 	context->set_data(unit_type->_obj_data->_data, 0);
-
-	/*if (unit_type->_type == TANK) {
-		context->show_data();
-	}*/
-}
+}*/
 
 
 void Strategy::update_unit_matrices(UnitType * unit_type) {
+	//std::cout << unit_type->_name << "\n";
+
 	GLDrawContext * context= _gl_draw_manager->get_context(unit_type->_name);
 
 	context->_n_instances = 0;
@@ -1628,11 +1694,15 @@ void Strategy::update_unit_matrices(UnitType * unit_type) {
 		}
 	}
 
-	if (context->empty()) {
+	if (context->empty(1)) {
 		return;
 	}
 
-	float * data = new float[context->_n_instances * (16 + 5)];
+	/*if (unit_type->_name == "infantery") {
+		std::cout << context->_n_instances << "\n";
+	}*/
+
+	float * data = new float[context->_n_instances * (16 + 7)];
 	float * ptr = data;
 	for (auto & team : _map->_teams) {
 		for (auto & unit : team->_units) {
@@ -1650,13 +1720,17 @@ void Strategy::update_unit_matrices(UnitType * unit_type) {
 				ptr[2] = team->_color.b;
 				ptr[3] = float(unit->_hit);
 				ptr[4] = unit_alpha;
-				ptr += 5;
+				ptr[5] = float(unit->_idx_action);
+				ptr[6] = float(unit->_idx_frame);
+				ptr += 7;
 			}
 		}
 	}
 
 	context->set_data(data, 1);
 	delete[] data;
+
+	//std::cout << "end\n";
 }
 
 
@@ -1772,7 +1846,7 @@ void Strategy::update_ammo_matrices(AmmoType * ammo_type) {
 		}
 	}
 
-	if (context->empty()) {
+	if (context->empty(1)) {
 		return;
 	}
 
@@ -1813,7 +1887,7 @@ void Strategy::update_selection() {
 			continue;
 		}
 		
-		std::vector<pt_2d> circle_pts = circle_vertices(pt_2d(unit->_position), unit->_type->_obj_data->_aabb->_base_radius * 1.5, SELECTION_N_VERTICES_PER_CIRCLE);
+		std::vector<pt_2d> circle_pts = circle_vertices(pt_2d(unit->_position), unit->_type->_model->_obj_data->_aabb->_base_radius * 1.5, SELECTION_N_VERTICES_PER_CIRCLE);
 		for (uint i=0; i<SELECTION_N_VERTICES_PER_CIRCLE; ++i) {
 			uint j = i + 1;
 			if (j == SELECTION_N_VERTICES_PER_CIRCLE) {
@@ -2028,7 +2102,7 @@ void Strategy::update_all(time_point t) {
 	update_construction(t);
 	update_explosion();
 	for (auto & unit_type : _map->_unit_types) {
-		update_unit_obj(unit_type.second);
+		//update_unit_obj(unit_type.second);
 		update_unit_matrices(unit_type.second);
 	}
 	for (auto & ammo_type : _map->_ammo_types) {

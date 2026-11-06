@@ -15,12 +15,13 @@ Unit::Unit() {
 
 
 Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_point t) : 
-	InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
+	//InstancePosRot(pos, quat(1.0, 0.0, 0.0, 0.0), pt_3d(1.0), type->_obj_data->_aabb),
 	GridMovingObject(
 		type, 
 		pt_2d(pos),
 		type->get_max_square_size()
 	),
+	AnimatedObjInstance(type->_model, pos, t, quat(1.0, 0.0, 0.0, 0.0), "watch"),
 	_team(team), _type(type), _unit_status(UNIT_UNDER_CONSTRUCTION), _paused(false), _elevation(elevation),
 	_life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
 	_creation_t(t)

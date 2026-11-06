@@ -5,7 +5,7 @@ uniform vec3 light_position;
 uniform vec3 view_position;
 
 uniform samplerBuffer anim_buffer; // contient les matrices de transformation (action -> frame -> vertex)
-uniform sampler2D idx_texture; // contient les indices de anim_buffer des débuts des frames
+uniform sampler2D anim_idx; // contient les indices de anim_buffer des débuts des frames
 
 layout(location=0) in vec3 position_in;
 layout(location=1) in vec3 normal_in;
@@ -28,7 +28,7 @@ void main(void) {
 	tex_coord = tex_coord_in;
 	shininess = shininess_in;
 
-	int idx = int(texelFetch(idx_texture, ivec2(int(idx_frame), int(idx_action)), 0).r) + 16 * gl_VertexID;
+	int idx = int(texelFetch(anim_idx, ivec2(int(idx_frame), int(idx_action)), 0).r) + 16 * gl_VertexID;
 	mat4 anim_matrix = mat4(
 		texelFetch(anim_buffer, idx + 0).r, texelFetch(anim_buffer, idx + 1).r, texelFetch(anim_buffer, idx + 2).r, texelFetch(anim_buffer, idx + 3).r,
 		texelFetch(anim_buffer, idx + 4).r, texelFetch(anim_buffer, idx + 5).r, texelFetch(anim_buffer, idx + 6).r, texelFetch(anim_buffer, idx + 7).r,

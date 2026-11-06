@@ -14,6 +14,8 @@ const int MAIN_WIN_HEIGHT= 1024;
 const float GL_WIDTH= 10.0f;
 const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDTH);
 
+const uint TEXTURE_SIZE = 512;
+
 const glm::vec4 SELECTED_UNIT_COLOR(1.0f, 1.0f, 0.0f, 0.7f);
 const glm::vec4 EDIT_MAP_COLOR(0.0f, 1.0f, 1.0f, 1.0f);
 const glm::vec4 SELECT_COLOR(1.0f, 1.0f, 0.0f, 0.5f);

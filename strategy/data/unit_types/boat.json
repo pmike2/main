@@ -28,5 +28,5 @@
 		"up" : 1000.0,
 		"hard_up" : 1000.0
 	},
-	"obj" : "../data/objs/units/boat/boat.obj"
+	"model" : "../data/anim_objs/units/boat/boat.json"
 }

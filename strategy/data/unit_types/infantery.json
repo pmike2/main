@@ -28,5 +28,5 @@
 		"up" : 500.0,
 		"hard_up" : 1000.0
 	},
-	"obj" : "../data/objs/units/infantery/infantery.obj"
+	"model" : "../data/anim_objs/units/infantery/infantery.json"
 }

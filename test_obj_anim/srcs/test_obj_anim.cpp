@@ -143,7 +143,7 @@ void TestObjAnim::add_model(fs json_path) {
 
 	// offsets textures
 	const uint offset_anim_buffer = 0;
-	const uint offset_idx_texture = 1;
+	const uint offset_anim_idx = 1;
 	const uint offset_diffuse_texture = 2;
 	const uint offset_normal_texture = 3;
 
@@ -151,14 +151,14 @@ void TestObjAnim::add_model(fs json_path) {
 	_gl_draw_manager->set_texture_buffer_data(model->_name, "anim_buffer", model->_buffer_texture_data);
 	
 	_gl_draw_manager->add_texture(
-		context->_name, "idx_texture", GL_TEXTURE_2D, offset_idx_texture,
+		context->_name, "anim_idx", GL_TEXTURE_2D, offset_anim_idx,
 			std::map<GLenum, int>{
 			{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
 			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER}
 			},
 		GL_RED, glm::uvec3(IDX_TEXTURE_DATA_SIZE, IDX_TEXTURE_DATA_SIZE, 0), GL_RED, GL_FLOAT
 	);
-	_gl_draw_manager->set_texture_data(context->_name, "idx_texture", model->_idx_texture_data);
+	_gl_draw_manager->set_texture_data(context->_name, "anim_idx", model->_idx_texture_data);
 
 	// on fait de la place en mémoire maintenant que model->_buffer_texture_data_size et model->_idx_texture_data ont été utilisées
 	model->clean_texture_datas();
