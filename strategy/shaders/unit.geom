@@ -43,8 +43,8 @@ void main() {
 	float fow = texture(fow_texture_array, vec3((gs_in[0].vertex_position.x - origin.x) / size.x, (gs_in[0].vertex_position.y - origin.y) / size.y, idx_team)).r;
 	fow = (1.0 - step(0.5, fow_active)) * 1.0 + step(0.5, fow_active) * fow;
 
-	//gl_Position = (1.0 - step(0.7, fow)) * vec4(0.0) + step(0.7, fow) * (gl_in[0].gl_Position + vec4((gs_in[0].hit + 1.0 * (1.0 - gs_in[0].alpha)) * n, 0.0));
-	gl_Position = gl_in[0].gl_Position;
+	gl_Position = (1.0 - step(0.7, fow)) * vec4(0.0) + step(0.7, fow) * (gl_in[0].gl_Position + vec4((gs_in[0].hit + 1.0 * (1.0 - gs_in[0].alpha)) * n, 0.0));
+	//gl_Position = gl_in[0].gl_Position;
 	gs_out.vertex_position = gs_in[0].vertex_position;
 	gs_out.vertex_normal = gs_in[0].vertex_normal;
 	gs_out.tex_coord = gs_in[0].tex_coord;
@@ -53,8 +53,8 @@ void main() {
 	gs_out.alpha = gs_in[0].alpha;
 	EmitVertex();
 	
-	//gl_Position = (1.0 - step(0.7, fow)) * vec4(0.0) + step(0.7, fow) * (gl_in[1].gl_Position + vec4((gs_in[1].hit + 1.0 * (1.0 - gs_in[1].alpha)) * n, 0.0));
-	gl_Position = gl_in[1].gl_Position;
+	gl_Position = (1.0 - step(0.7, fow)) * vec4(0.0) + step(0.7, fow) * (gl_in[1].gl_Position + vec4((gs_in[1].hit + 1.0 * (1.0 - gs_in[1].alpha)) * n, 0.0));
+	//gl_Position = gl_in[1].gl_Position;
 	gs_out.vertex_position = gs_in[1].vertex_position;
 	gs_out.vertex_normal = gs_in[1].vertex_normal;
 	gs_out.tex_coord = gs_in[1].tex_coord;
@@ -63,8 +63,8 @@ void main() {
 	gs_out.alpha = gs_in[1].alpha;
 	EmitVertex();
 	
-	//gl_Position = (1.0 - step(0.7, fow)) * vec4(0.0) + step(0.7, fow) * (gl_in[2].gl_Position + vec4((gs_in[2].hit + 1.0 * (1.0 - gs_in[2].alpha)) * n, 0.0));
-	gl_Position = gl_in[2].gl_Position;
+	gl_Position = (1.0 - step(0.7, fow)) * vec4(0.0) + step(0.7, fow) * (gl_in[2].gl_Position + vec4((gs_in[2].hit + 1.0 * (1.0 - gs_in[2].alpha)) * n, 0.0));
+	//gl_Position = gl_in[2].gl_Position;
 	gs_out.vertex_position = gs_in[2].vertex_position;
 	gs_out.vertex_normal = gs_in[2].vertex_normal;
 	gs_out.tex_coord = gs_in[2].tex_coord;

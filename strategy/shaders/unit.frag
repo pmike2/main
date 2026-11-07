@@ -51,6 +51,6 @@ void main(void) {
 	
 	result = mix(result, vec3(1.0, 0.0, 0.0), fs_in.hit);
 	
-	//frag_color = vec4(result, fs_in.alpha);
-	frag_color = vec4(1.0, 0.0, 0.0, 1.0);
+	frag_color = vec4(result, fs_in.alpha);
+	//frag_color = vec4(1.0, 0.0, 0.0, 1.0);
 }

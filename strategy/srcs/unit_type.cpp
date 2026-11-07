@@ -46,6 +46,7 @@ UnitType::UnitType(fs json_path) :
 	}
 
 	_model = new AnimatedObjModel(js["model"]);
+
 }
 
 

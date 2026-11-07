@@ -62,7 +62,7 @@ struct GLDrawTexture {
 	glm::uvec3 _size; // taille
 	GLenum _format; // format
 	GLenum _type; // type
-	bool _is_mipmap;
+	bool _is_mipmap; // y a t'il du mipmap
 };
 
 
@@ -78,9 +78,9 @@ struct GLDrawTexturePool {
 	// get texture spécifique à un contexte
 	GLDrawTexture * get_texture(std::string context_name, std::string texture_name);
 	// ajout texture
-	GLDrawTexture * add_texture(std::string name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
+	GLDrawTexture * add_texture(std::string name, GLenum target, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
 	// ajout texture spécifique à un contexte
-	GLDrawTexture * add_texture(std::string context_name, std::string name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
+	GLDrawTexture * add_texture(std::string context_name, std::string name, GLenum target, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
 	// ajout d'une texture à contexte
 	void add_texture2context(std::string context_name, GLDrawTexture * texture);
 	
@@ -217,9 +217,9 @@ struct GLDrawManager {
 	void validate(); // valide les contextes ; à faire quand tout (les textures, ...) a été initialisé, à des fins de debug
 	
 	// ajout d'une texture potentiellement partagée parmi les contextes
-	void add_texture(std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
+	void add_texture(std::string texture_name, GLenum target, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
 	// ajout d'une texture pour un contexte spécifique
-	void add_texture(std::string context_name, std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
+	void add_texture(std::string context_name, std::string texture_name, GLenum target, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type);
 	// set texture data pour une texture globale
 	void set_texture_data(std::string texture_name, void * data, int depth = -1, int width = -1, int height = -1);
 	// set texture data pour une texture spécifique à un contexte
@@ -234,7 +234,7 @@ struct GLDrawManager {
 	void set_texture_data(std::string context_name, std::string texture_name, std::vector<fs> pngs);
 
 	// ajout texture buffer
-	void add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint offset, uint size);
+	void add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint size);
 	// set texture buffer data
 	void set_texture_buffer_data(std::string context_name, std::string texture_buffer_name, void * data);
 	

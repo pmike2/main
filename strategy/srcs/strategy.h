@@ -61,6 +61,7 @@ public:
 	Strategy(ScreenGL * screengl, time_point t);
 	~Strategy();
 
+	void add_fow();
 	void add_animated_model(AnimatedObjModel * model);
 	Team * get_selected_team();
 	void zoom2first_unit_of_selected_team();

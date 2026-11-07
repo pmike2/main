@@ -30,7 +30,7 @@ const number Z_OFFSET_ATTACK_UNIT = 0.2;
 const number Z_OFFSET_MOVE_UNIT = 0.2;
 const number Z_FOW = 1.0;
 
-const glm::vec3 LIGHT_POSITION(0.0f, 0.0f, 50.0f);
+const glm::vec3 LIGHT_POSITION(0.0f, 0.0f, 1000.0f);
 const glm::vec3 LIGHT_COLOR(1.0f);
 
 const number PATH_START_CROSS_SIZE = 1.0;
@@ -45,11 +45,11 @@ const uint ATTACK_UNIT_N_VERTICES_PER_CIRCLE = 8;
 const number DEFAULT_ATTACK_UNIT_CIRCLE_RADIUS = 1.0;
 const number MOVE_UNIT_SEGMENT_SIZE = 1.5;
 
-const pt_2d MAP_ORIGIN(-100.0, -100.0);
-const pt_2d MAP_SIZE(200.0, 200.0);
-const pt_2d PATH_RESOLUTION(2.0);
-const pt_2d ELEVATION_RESOLUTION(1.0);
-const pt_2d FOW_RESOLUTION(2.0);
+const pt_2d MAP_ORIGIN(-500.0, -500.0);
+const pt_2d MAP_SIZE(1000.0, 1000.0);
+const pt_2d PATH_RESOLUTION(5.0);
+const pt_2d ELEVATION_RESOLUTION(2.0);
+const pt_2d FOW_RESOLUTION(10.0);
 
 const number RIVER_ANGLE_SPEED = 0.1;
 
@@ -57,8 +57,6 @@ const number LAKE_WAVE_AMPLITUDE = 0.2;
 const number LAKE_WAVE_FREQ = 2.0;
 const number LAKE_ANGLE_SPEED = 0.1;
 
-const pt_2d SEA_ORIGIN(-200.0, -200.0);
-const pt_2d SEA_SIZE(400.0, 400.0);
 const number SEA_WAVE_AMPLITUDE = 0.4;
 const number SEA_WAVE_FREQ = 0.05;
 const number SEA_LEVEL = 0.0;

@@ -225,7 +225,7 @@
 				{"name" : "path"},
 				{"name" : "grid", "groups_visible" : ["grid_type"]},
 				{"name" : "unit_life", "checked" : true},
-				{"name" : "fow", "checked" : true}
+				{"name" : "fow", "checked" : true, "key" : "f"}
 			]
 		},
 		{

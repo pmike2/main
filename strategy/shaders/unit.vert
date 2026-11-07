@@ -40,7 +40,7 @@ void main(void) {
 		texelFetch(anim_buffer, idx + 12).r, texelFetch(anim_buffer, idx + 13).r, texelFetch(anim_buffer, idx + 14).r, texelFetch(anim_buffer, idx + 15).r
 	);
 
-	anim_matrix = mat4(1.0);
+	//anim_matrix = mat4(1.0);
 
 	mat4 m = model2world_matrix * anim_matrix;
 	vec4 p = m * vec4(position_in, 1.0);
@@ -53,4 +53,5 @@ void main(void) {
 	vs_out.alpha = alpha_in;
 
 	gl_Position = world2clip_matrix * p;
+	//gl_Position = world2clip_matrix * model2world_matrix * vec4(position_in, 1.0);
 }

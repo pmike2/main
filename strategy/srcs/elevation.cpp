@@ -426,18 +426,9 @@ void Elevation::randomize(ElevationRandConfig * rand_config) {
 	// https://www.redblobgames.com/maps/Elevation-from-noise/
 	// https://gamedev.stackexchange.com/questions/116205/terracing-mountain-features/188513
 
-	if (rand_config->_alti_offset_active) {
-		for (int col=0; col< _n_cols; ++col) {
-			for (int lig=0; lig< _n_ligs; ++lig) {
-				set_alti(col, lig, rand_config->_alti_offset);
-			}
-		}
-	}
-	else {
-		for (int col=0; col< _n_cols; ++col) {
-			for (int lig=0; lig< _n_ligs; ++lig) {
-				set_alti(col, lig, 0.0);
-			}
+	for (int col=0; col< _n_cols; ++col) {
+		for (int lig=0; lig< _n_ligs; ++lig) {
+			set_alti(col, lig, 0.0);
 		}
 	}
 
@@ -523,6 +514,14 @@ void Elevation::randomize(ElevationRandConfig * rand_config) {
 		delete gradient;
 	}
 
+	if (rand_config->_alti_offset_active) {
+		for (int col=0; col< _n_cols; ++col) {
+			for (int lig=0; lig< _n_ligs; ++lig) {
+				set_alti(col, lig, get_alti(col, lig) + rand_config->_alti_offset);
+			}
+		}
+	}
+
 	// pour qu'il n'y ait pas de z-fight avec sea
 	for (int col=0; col< _n_cols; ++col) {
 		for (int lig=0; lig< _n_ligs; ++lig) {
@@ -541,16 +540,16 @@ glm::vec4 Elevation::alti2color(number alti) {
 	if (alti < 0.01) {
 		return glm::vec4(0.4f, 0.5f, 1.0f, 1.0f);
 	}
-	else if (alti < 0.3) {
+	else if (alti < 1.0) {
 		return glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
 	}
-	else if (alti > 7.0) {
+	else if (alti > 20.0) {
 		return glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 	else  {
-		//return glm::vec4(0.4f, 1.0f, 0.3f, 1.0f);
+		return glm::vec4(0.4f, 1.0f, 0.3f, 1.0f);
 		//return glm::vec4(0.1f + rand_float(0.0f, 0.3f), 0.7f + rand_float(0.0f, 0.3f), 0.0f + rand_float(0.0f, 0.3f), 1.0f);
-		return glm::vec4(0.4f - float(alti) * 0.02f, 1.0f - float(alti) * 0.05f, 0.3f + float(alti) * 0.02f, 1.0f);
+		//return glm::vec4(0.4f - float(alti) * 0.02f, 1.0f - float(alti) * 0.05f, 0.3f + float(alti) * 0.02f, 1.0f);
 	}
 }
 

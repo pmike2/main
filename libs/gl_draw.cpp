@@ -495,7 +495,7 @@ GLDrawTexture * GLDrawTexturePool::get_texture(std::string context_name, std::st
 }
 
 
-GLDrawTexture * GLDrawTexturePool::add_texture(std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
+GLDrawTexture * GLDrawTexturePool::add_texture(std::string texture_name, GLenum target, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
 	for (auto & texture : _textures) {
 		if (texture->_name == texture_name) {
 			std::cerr << "GLDrawTexturePool::add_texture : " << texture_name << " existe déjà\n";
@@ -503,6 +503,7 @@ GLDrawTexture * GLDrawTexturePool::add_texture(std::string texture_name, GLenum 
 		}
 	}
 
+	uint offset = _textures.size();
 	GLDrawTexture * texture = new GLDrawTexture(texture_name, target, offset, params, internal_format, size, format, type);
 	_textures.push_back(texture);
 
@@ -510,7 +511,7 @@ GLDrawTexture * GLDrawTexturePool::add_texture(std::string texture_name, GLenum 
 }
 
 
-GLDrawTexture * GLDrawTexturePool::add_texture(std::string context_name, std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
+GLDrawTexture * GLDrawTexturePool::add_texture(std::string context_name, std::string texture_name, GLenum target, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
 	for (auto & texture : _context2textures[context_name]) {
 		if (texture->_name == texture_name) {
 			std::cerr << "GLDrawTexturePool::add_texture : " << texture_name << " existe déjà\n";
@@ -518,6 +519,7 @@ GLDrawTexture * GLDrawTexturePool::add_texture(std::string context_name, std::st
 		}
 	}
 
+	uint offset = _textures.size();
 	GLDrawTexture * texture = new GLDrawTexture(texture_name, target, offset, params, internal_format, size, format, type);
 	_textures.push_back(texture);
 
@@ -1325,8 +1327,8 @@ void GLDrawManager::validate() {
 
 
 // dans ce cas la texture est partagée entre tous les contextes
-void GLDrawManager::add_texture(std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
-	GLDrawTexture * texture = _texture_pool->add_texture(texture_name, target, offset, params, internal_format, size, format, type);
+void GLDrawManager::add_texture(std::string texture_name, GLenum target, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
+	GLDrawTexture * texture = _texture_pool->add_texture(texture_name, target, params, internal_format, size, format, type);
 	for (auto & context : _contexts) {
 		for (auto & uniform : context->_uniforms) {
 			if (uniform->_name == texture_name) {
@@ -1338,8 +1340,8 @@ void GLDrawManager::add_texture(std::string texture_name, GLenum target, uint of
 }
 
 
-void GLDrawManager::add_texture(std::string context_name, std::string texture_name, GLenum target, uint offset, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
-	_texture_pool->add_texture(context_name, texture_name, target, offset, params, internal_format, size, format, type);
+void GLDrawManager::add_texture(std::string context_name, std::string texture_name, GLenum target, std::map<GLenum, int> params, int internal_format, glm::uvec3 size, GLenum format, GLenum type) {
+	_texture_pool->add_texture(context_name, texture_name, target, params, internal_format, size, format, type);
 }
 
 
@@ -1379,8 +1381,9 @@ void GLDrawManager::set_texture_data(std::string context_name, std::string textu
 }
 
 
-void GLDrawManager::add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint offset, uint size) {
+void GLDrawManager::add_texture_buffer(std::string context_name, std::string texture_buffer_name, GLenum internal_format, uint size) {
 	GLDrawContext * context = get_context(context_name);
+	uint offset = context->_texture_buffers.size();
 	GLDrawTextureBuffer * texture_buffer = new GLDrawTextureBuffer(texture_buffer_name, internal_format, offset, size);
 	context->_texture_buffers.push_back(texture_buffer);
 }

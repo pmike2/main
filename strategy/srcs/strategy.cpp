@@ -108,10 +108,10 @@ Strategy::Strategy(ScreenGL * screengl, time_point t) :
 		std::cout << "loading map\n";
 	}
 	
-	//_map->randomize(_config->_current_rand_config);
+	_map->randomize(_config->_current_rand_config);
 	//_map->clear();
-	//_map->add_first_units2teams(t);
-	_map->load("../data/maps/map1", t);
+	_map->add_first_units2teams(t);
+	//_map->load("../data/maps/map1", t);
 
 	zoom2first_unit_of_selected_team();
 
@@ -121,18 +121,11 @@ Strategy::Strategy(ScreenGL * screengl, time_point t) :
 	}
 
 	_font = new Font(_gl_draw_manager, "../../fonts/Silom.ttf", 48, _view_system->_screengl);
-	_font->_z= 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
+	_font->_z = 100.0f; // pour que l'affichage des infos se fassent par dessus le reste
 
 	_ihm = new GLIHM(_gl_draw_manager, _view_system->_screengl, "../data/ihm.json");
 
-	_gl_draw_manager->add_texture("fow_texture_array", GL_TEXTURE_2D_ARRAY, 0,
-		std::map<GLenum, int>{
-			{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
-			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
-		},
-		GL_RED, glm::uvec3(_map->_teams[0]->_fow->_n_cols, _map->_teams[0]->_fow->_n_ligs, _map->_teams.size()), GL_RED, GL_FLOAT);
-	
-	//std::cout << *_gl_draw_manager << "\n";
+	add_fow();
 
 	_overview = new OverView(_gl_draw_manager);
 
@@ -156,11 +149,11 @@ Strategy::Strategy(ScreenGL * screengl, time_point t) :
 	}
 	update_all(t);
 
-	GLDrawContext * context = _gl_draw_manager->get_context("infantery");
+	/*GLDrawContext * context = _gl_draw_manager->get_context("infantery");
 	std::cout << *context << "\n";
 	context->show_data(0);
 	std::cout << "-------------\n";
-	context->show_data(1);
+	context->show_data(1);*/
 
 	// --------------------------------------------------
 	if (verbose) {
@@ -183,6 +176,16 @@ Strategy::~Strategy() {
 }
 
 
+void Strategy::add_fow() {
+	_gl_draw_manager->add_texture("fow_texture_array", GL_TEXTURE_2D_ARRAY,
+		std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
+			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
+		},
+		GL_RED, glm::uvec3(_map->_teams[0]->_fow->_n_cols, _map->_teams[0]->_fow->_n_ligs, _map->_teams.size()), GL_RED, GL_FLOAT);
+}
+
+
 void Strategy::add_animated_model(AnimatedObjModel * model) {
 	GLDrawContext * context = _gl_draw_manager->get_context(model->_name);
 
@@ -191,17 +194,11 @@ void Strategy::add_animated_model(AnimatedObjModel * model) {
 	context->_n_pts = model->_obj_data->_n_pts;
 	context->set_data(model->_obj_data->_data, 0);
 
-	// offsets textures
-	const uint offset_anim_buffer = 0;
-	const uint offset_anim_idx = 1;
-	const uint offset_diffuse_texture = 2;
-	const uint offset_normal_texture = 3;
-
-	_gl_draw_manager->add_texture_buffer(model->_name, "anim_buffer", GL_R32F, offset_anim_buffer, model->_buffer_texture_data_size * sizeof(float));
+	_gl_draw_manager->add_texture_buffer(model->_name, "anim_buffer", GL_R32F, model->_buffer_texture_data_size * sizeof(float));
 	_gl_draw_manager->set_texture_buffer_data(model->_name, "anim_buffer", model->_buffer_texture_data);
 	
 	_gl_draw_manager->add_texture(
-		context->_name, "anim_idx", GL_TEXTURE_2D, offset_anim_idx,
+		context->_name, "anim_idx", GL_TEXTURE_2D,
 			std::map<GLenum, int>{
 			{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
 			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER}
@@ -215,7 +212,7 @@ void Strategy::add_animated_model(AnimatedObjModel * model) {
 
 	std::vector<fs> diffuse_textures = model->_obj_data->get_diffuse_textures();
 	_gl_draw_manager->add_texture(
-		context->_name, "diffuse_texture", GL_TEXTURE_2D_ARRAY, offset_diffuse_texture,
+		context->_name, "diffuse_texture", GL_TEXTURE_2D_ARRAY,
 			std::map<GLenum, int>{
 			{GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
 			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER}
@@ -226,7 +223,7 @@ void Strategy::add_animated_model(AnimatedObjModel * model) {
 
 	/*std::vector<fs> normal_textures = model->_obj_data->get_normal_textures();
 	_gl_draw_manager->add_texture(
-		context->_name, "normal_texture", GL_TEXTURE_2D_ARRAY, offset_normal_texture,
+		context->_name, "normal_texture", GL_TEXTURE_2D_ARRAY,
 			std::map<GLenum, int>{
 			{GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
 			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER}
@@ -609,6 +606,7 @@ void Strategy::draw_sea(ViewSystem * view_system) {
 
 void Strategy::draw_unit(UnitType * unit_type, ViewSystem * view_system) {
 	GLDrawContext * context= _gl_draw_manager->get_context(unit_type->_name);
+	//std::cout << context->_n_pts << " ; " << context->_n_instances << "\n";
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -1649,6 +1647,8 @@ void Strategy::update_sea() {
 
 	float * data = new float[context->data_size()];
 
+	const pt_2d SEA_ORIGIN(MAP_ORIGIN);
+	const pt_2d SEA_SIZE(MAP_SIZE);
 	std::vector<pt_2d> pts = {
 		pt_2d(SEA_ORIGIN.x, SEA_ORIGIN.y),
 		pt_2d(SEA_ORIGIN.x + SEA_SIZE.x, SEA_ORIGIN.y),

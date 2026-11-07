@@ -122,7 +122,7 @@ ObjData::ObjData() : _n_pts(0), _n_attrs_per_pts(0) {
 
 
 ObjData::ObjData(fs obj_path) :
-	_n_pts(0), _n_attrs_per_pts(0)
+	_n_pts(0), _n_attrs_per_pts(0), _data(NULL)
 {
 	// lecture .mtl -----------------------------------------
 	std::string mat_filename = obj_path.stem().string() + ".mtl";

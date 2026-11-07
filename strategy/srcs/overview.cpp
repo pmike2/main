@@ -7,7 +7,7 @@ OverView::OverView() {
 
 
 OverView::OverView(GLDrawManager * gl_draw_manager) : _gl_draw_manager(gl_draw_manager), _tex_width(OVERVIEW_TEXTURE_SIZE), _tex_height(OVERVIEW_TEXTURE_SIZE) {
-	_gl_draw_manager->add_texture("overview_texture", GL_TEXTURE_2D, 0,
+	_gl_draw_manager->add_texture("overview_texture", GL_TEXTURE_2D,
 		std::map<GLenum, int>{
 			{GL_TEXTURE_MIN_FILTER, GL_NEAREST}, {GL_TEXTURE_MAG_FILTER, GL_NEAREST},
 			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}
@@ -66,7 +66,7 @@ OverView::OverView(GLDrawManager * gl_draw_manager) : _gl_draw_manager(gl_draw_m
 	// on fait un screen2gl carré ; les valeurs ont été calculées de façon empirique mais on doit pouvoir trouver une formule
 	const float GL_WIDTH = 10.0f;
 	const float GL_HEIGHT = 10.0f;
-	const number RHO = 200.0;
+	const number RHO = 500.0;
 	_screengl = new ScreenGL(_tex_width, _tex_height, GL_WIDTH, GL_HEIGHT);
 	_view_system = new ViewSystem(_screengl);
 	_view_system->set_2d(RHO);

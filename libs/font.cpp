@@ -90,7 +90,7 @@ Font::Font(GLDrawManager * gl_draw_manager, std::string font_path, uint font_siz
 	}
 	_tex_size= pow(2, int(ceil(log2(std::max(max_width, max_height)))));
 
-	_gl_draw_manager->add_texture("font_texture_array", GL_TEXTURE_2D_ARRAY, 0,
+	_gl_draw_manager->add_texture("font_texture_array", GL_TEXTURE_2D_ARRAY,
 		std::map<GLenum, int>{
 			{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
 			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}

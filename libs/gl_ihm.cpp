@@ -547,7 +547,7 @@ GLIHM::GLIHM(GLDrawManager * gl_draw_manager, ScreenGL * screengl, fs json_path)
 	}
 
 	// il faut mettre GL_BGRA ici bizarrement
-	_gl_draw_manager->add_texture("ihm_texture_array", GL_TEXTURE_2D_ARRAY, 0,
+	_gl_draw_manager->add_texture("ihm_texture_array", GL_TEXTURE_2D_ARRAY,
 		std::map<GLenum, int>{
 			{GL_TEXTURE_MIN_FILTER, GL_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
 			{GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE}, {GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE}

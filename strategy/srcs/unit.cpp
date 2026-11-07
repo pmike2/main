@@ -21,7 +21,7 @@ Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_
 		pt_2d(pos),
 		type->get_max_square_size()
 	),
-	AnimatedObjInstance(type->_model, pos, t, quat(1.0, 0.0, 0.0, 0.0), "watch"),
+	AnimatedObjInstance(type->_model, pos, t, quat(1.0, 0.0, 0.0, 0.0), "move"),
 	_team(team), _type(type), _unit_status(UNIT_UNDER_CONSTRUCTION), _paused(false), _elevation(elevation),
 	_life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
 	_creation_t(t)
@@ -89,6 +89,8 @@ void Unit::anim(time_point t) {
 	if (_unit_status == UNIT_INACTIVE) {
 		return;
 	}
+
+	AnimatedObjInstance::anim(t);
 
 	if (_hit_status == HIT_ASCEND) {
 		_hit += 0.4;
