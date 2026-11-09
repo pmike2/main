@@ -38,6 +38,7 @@ struct Unit : public GridMovingObject, public AnimatedObjInstance {
 	quat quat_slerp(number angle_goal);
 	quat quat_slerp(pt_2d direction_goal);
 	number angle();
+	void set_status(UNIT_STATUS unit_status);
 	void anim(time_point t);
 	void hit(Ammo * ammo, time_point t);
 	json get_json();

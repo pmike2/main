@@ -62,12 +62,12 @@
             }
         },
         "canon_bone": {
-            "parent": null,
+            "parent": "root_bone",
             "matrix_local": [
                 [
                     -1.0,
                     0.0,
-                    0.0,
+                    -1.5099580252808664e-07,
                     0.0
                 ],
                 [
@@ -77,7 +77,7 @@
                     -6.95503044128418
                 ],
                 [
-                    0.0,
+                    -1.5099580252808664e-07,
                     0.0,
                     1.0,
                     2.513188600540161
@@ -97,7 +97,7 @@
             }
         },
         "propeller_bone": {
-            "parent": null,
+            "parent": "root_bone",
             "matrix_local": [
                 [
                     1.0,
@@ -6351,6 +6351,10 @@
         }
     },
     "rigid_objects": [
+        {
+            "name": "antenna",
+            "bone": "root_bone"
+        },
         {
             "name": "body",
             "bone": "root_bone"

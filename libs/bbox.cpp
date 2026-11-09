@@ -290,7 +290,7 @@ InstancePosRot::InstancePosRot() :
 	_position(pt_3d(0.0)), _rotation(glm::identity<quat>()), _scale(pt_3d(1.0)), _model2world(mat_4d(1.0)),
 	_selected(false)
 {
-	_bbox= new BBox();
+	_bbox = new BBox();
 }
 
 
@@ -298,7 +298,8 @@ InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, co
 	_position(position), _rotation(rotation), _scale(scale), _selected(false)
 {
 	_model2world = glm::translate(_position)* mat4_cast(_rotation)* glm::scale(_scale);
-	_bbox= new BBox();
+	_bbox = new BBox();
+	_bbox->set_model2world(_model2world);
 }
 
 
@@ -306,7 +307,7 @@ InstancePosRot::InstancePosRot(const pt_3d & position, const quat & rotation, co
 	_position(position), _rotation(rotation), _scale(scale), _selected(false)
 {
 	_model2world = glm::translate(_position) * mat4_cast(_rotation) * glm::scale(_scale);
-	_bbox= new BBox(aabb->_vmin, aabb->_vmax, _model2world);
+	_bbox = new BBox(aabb->_vmin, aabb->_vmax, _model2world);
 }
 
 

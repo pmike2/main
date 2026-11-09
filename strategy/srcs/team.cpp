@@ -234,7 +234,7 @@ void Team::remove_unit(Unit * unit) {
 
 void Team::clear() {
 	for (auto & unit : _units) {
-		unit->_unit_status = UNIT_DESTROYED;
+		unit->set_status(UNIT_DESTROYED);
 	}
 }
 
@@ -259,7 +259,7 @@ void Team::selected_units_goto(pt_3d pt) {
 	for (auto & unit : _units) {
 		if (unit->_selected) {
 			unit->_target = NULL;
-			unit->_unit_status = UNIT_WATCHING;
+			unit->set_status(UNIT_WATCHING);
 			_path_finder->goto_gmo(unit, pt_2d(pt), false);
 		}
 	}
@@ -287,7 +287,7 @@ void Team::selected_units_goto(pt_3d pt) {
 void Team::unit_attack(Unit * unit, Unit * target, time_point t, bool fow_active) {
 	if (attack_unit_check(unit, target, fow_active)) {
 		unit->_target = target;
-		unit->_unit_status = UNIT_ATTACKING;
+		unit->set_status(UNIT_ATTACKING);
 		_path_finder->stop_gmo(unit);
 	}
 }
@@ -328,7 +328,7 @@ void Team::anim_units(time_point t) {
 		unit->anim(t);
 
 		if (unit->_unit_status == UNIT_DESTROYED) {
-			unit->_unit_status = UNIT_INACTIVE;
+			unit->set_status(UNIT_INACTIVE);
 			unit->_gmo_status = GMO_IDLE;
 			unit->_selected = false;
 
@@ -342,18 +342,6 @@ void Team::anim_units(time_point t) {
 			_path_finder->remove_gmo(unit);
 			
 			continue;
-		}
-
-		if (unit->_gmo_status == GMO_IDLE) {
-			if (unit->_unit_status == UNIT_ATTACKING) {
-				if (unit->_target->_unit_status == UNIT_DESTROYED || unit->_target->_hit_status == FINAL_HIT) {
-					unit->_unit_status = UNIT_WATCHING;
-					unit->_target = NULL;
-				}
-			}
-		}
-		else if (unit->_gmo_status == GMO_MOVING || unit->_gmo_status == GMO_WAITING) {
-
 		}
 	}
 }

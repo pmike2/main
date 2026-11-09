@@ -21,12 +21,12 @@ Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_
 		pt_2d(pos),
 		type->get_max_square_size()
 	),
-	AnimatedObjInstance(type->_model, pos, t, quat(1.0, 0.0, 0.0, 0.0), "move"),
-	_team(team), _type(type), _unit_status(UNIT_UNDER_CONSTRUCTION), _paused(false), _elevation(elevation),
+	AnimatedObjInstance(type->_model, pos, t, quat(1.0, 0.0, 0.0, 0.0), "watch"),
+	_team(team), _type(type), _paused(false), _elevation(elevation),
 	_life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
 	_creation_t(t)
 {
-
+	set_status(UNIT_UNDER_CONSTRUCTION);
 }
 
 
@@ -38,7 +38,7 @@ Unit::~Unit() {
 void Unit::reinit(pt_3d pos, time_point t) {
 	set_pos(pos);
 	_aabb->set_center(pt_2d(pos));
-	_unit_status = UNIT_UNDER_CONSTRUCTION;
+	set_status(UNIT_UNDER_CONSTRUCTION);
 	_life = _type->_life_init; 
 	_hit_status = NO_HIT;
 	_hit = 0.0;
@@ -78,6 +78,26 @@ number Unit::angle() {
 }
 
 
+void Unit::set_status(UNIT_STATUS unit_status) {
+	_unit_status = unit_status;
+	std::string anim_status = "watch";
+	
+	if (_gmo_status == GMO_IDLE) {
+		if (_unit_status == UNIT_ATTACKING) {
+			anim_status = "shoot";
+		}
+		else if (_unit_status == UNIT_WATCHING) {
+			anim_status = "watch";
+		}
+	}
+	else if (_gmo_status == GMO_MOVING) {
+		anim_status = "move";
+	}
+
+	AnimatedObjInstance::set_next_action(anim_status);
+}
+
+
 void Unit::anim(time_point t) {
 	//auto d_moving = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_moving_t).count();
 	//_last_moving_t = t;
@@ -110,7 +130,7 @@ void Unit::anim(time_point t) {
 	else if (_hit_status == FINAL_HIT) {
 		_hit += 0.5;
 		if (_hit > 10.0) {
-			_unit_status = UNIT_DESTROYED;
+			set_status(UNIT_DESTROYED);
 		}
 		return;
 	}
@@ -127,7 +147,7 @@ void Unit::anim(time_point t) {
 			auto d_creation = std::chrono::duration_cast<std::chrono::milliseconds>(t - _creation_t).count();
 			if (d_creation > _type->_creation_duration) {
 				_gmo_status = GMO_IDLE;
-				_unit_status = UNIT_WATCHING;
+				set_status(UNIT_WATCHING);
 			}
 
 		}
@@ -138,10 +158,10 @@ void Unit::anim(time_point t) {
 			}
 		}*/
 		else if (_unit_status == UNIT_WATCHING) {
-			number current_angle = angle();
+			/*number current_angle = angle();
 			number next_angle = current_angle + 0.1;
 			quat next_quat = quat_slerp(next_angle);
-			set_pos_rot(_position, next_quat);
+			set_pos_rot(_position, next_quat);*/
 		}
 		else if (_unit_status == UNIT_ATTACKING) {
 			if (_target == NULL)  {
@@ -149,18 +169,25 @@ void Unit::anim(time_point t) {
 				return;
 			}
 
-			quat next_quat = quat_slerp(_target->_position - _position);
-			set_pos_rot(_position, next_quat);
+			if (_target->_unit_status == UNIT_DESTROYED || _target->_hit_status == FINAL_HIT) {
+				set_status(UNIT_WATCHING);
+				_target = NULL;
+			}
+			else {
+				quat next_quat = quat_slerp(_target->_position - _position);
+				set_pos_rot(_position, next_quat);
 
-			number current_angle = angle();
-			number aligned = abs(cross2d(pt_2d(_target->_position - _position) / norm(_target->_position - _position), pt_2d(cos(current_angle), sin(current_angle))));
-			auto d_shooting = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_shooting_t).count();
-			if (aligned < 0.01 && number(d_shooting) > _type->_ammo_type->_rate * 1000.0) {
-				_last_shooting_t = t;
-				_unit_status = UNIT_SHOOTING;
+				number current_angle = angle();
+				number aligned = abs(cross2d(pt_2d(_target->_position - _position) / norm(_target->_position - _position), pt_2d(cos(current_angle), sin(current_angle))));
+				auto d_shooting = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_shooting_t).count();
+				if (aligned < 0.01 && number(d_shooting) > _type->_ammo_type->_rate * 1000.0) {
+					_last_shooting_t = t;
+					set_status(UNIT_SHOOTING);
+				}
 			}
 		}
 	}
+	
 	else if (_gmo_status == GMO_MOVING) {
 		set_speed(_type->_max_velocity * (1.0 - _path_cost[_idx_path] / PATH_FIND_OBSTACLE_THRESH));
 

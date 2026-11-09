@@ -538,16 +538,16 @@ void Elevation::randomize(ElevationRandConfig * rand_config) {
 
 glm::vec4 Elevation::alti2color(number alti) {
 	if (alti < 0.01) {
-		return glm::vec4(0.4f, 0.5f, 1.0f, 1.0f);
+		return glm::vec4(0.2f, 0.3f, 0.5f, 1.0f);
 	}
 	else if (alti < 1.0) {
-		return glm::vec4(1.0f, 1.0f, 0.0f, 1.0f);
+		return glm::vec4(0.7f, 0.7f, 0.0f, 1.0f);
 	}
 	else if (alti > 20.0) {
 		return glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 	else  {
-		return glm::vec4(0.4f, 1.0f, 0.3f, 1.0f);
+		return glm::vec4(0.3f, 0.7f, 0.3f, 1.0f);
 		//return glm::vec4(0.1f + rand_float(0.0f, 0.3f), 0.7f + rand_float(0.0f, 0.3f), 0.0f + rand_float(0.0f, 0.3f), 1.0f);
 		//return glm::vec4(0.4f - float(alti) * 0.02f, 1.0f - float(alti) * 0.05f, 0.3f + float(alti) * 0.02f, 1.0f);
 	}
