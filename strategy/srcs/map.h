@@ -95,8 +95,6 @@ struct Map {
 	std::vector<Team *> _teams;
 	std::vector<Ammo *> _ammos;
 	std::vector<Barrier *> _barriers;
-
-	static uint _next_unit_id;
 };
 
 

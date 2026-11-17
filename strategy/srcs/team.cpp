@@ -52,9 +52,11 @@ bool Team::fow_check(pt_2d pos) {
 	if (!point_in_aabb2d(pos, _elevation->_aabb)) {
 		return false;
 	}
-
+std::cout << "--------\n";
+std::cout << glm_to_string(pos) << "\n";
 	std::vector<uint> vertices = _fow->vertices_in_cell_containing_pt(pos);
 	for (auto & v : vertices) {
+		std::cout << glm_to_string(_fow->id2pt_3d(v)) << "\n";
 		GraphVertex vertex = _fow->get_vertex(v);
 		FowVertexData * data = (FowVertexData *)(vertex._data);
 		if (data->_status == UNDISCOVERED) {
@@ -234,7 +236,7 @@ void Team::remove_unit(Unit * unit) {
 
 void Team::clear() {
 	for (auto & unit : _units) {
-		unit->set_status(UNIT_DESTROYED);
+		unit->set_status(GMO_IDLE, UNIT_DESTROYED);
 	}
 }
 
@@ -259,7 +261,7 @@ void Team::selected_units_goto(pt_3d pt) {
 	for (auto & unit : _units) {
 		if (unit->_selected) {
 			unit->_target = NULL;
-			unit->set_status(UNIT_WATCHING);
+			unit->set_status(GMO_IDLE, UNIT_WATCHING);
 			_path_finder->goto_gmo(unit, pt_2d(pt), false);
 		}
 	}
@@ -287,7 +289,7 @@ void Team::selected_units_goto(pt_3d pt) {
 void Team::unit_attack(Unit * unit, Unit * target, time_point t, bool fow_active) {
 	if (attack_unit_check(unit, target, fow_active)) {
 		unit->_target = target;
-		unit->set_status(UNIT_ATTACKING);
+		unit->set_status(GMO_IDLE, UNIT_ATTACKING);
 		_path_finder->stop_gmo(unit);
 	}
 }
@@ -328,7 +330,7 @@ void Team::anim_units(time_point t) {
 		unit->anim(t);
 
 		if (unit->_unit_status == UNIT_DESTROYED) {
-			unit->set_status(UNIT_INACTIVE);
+			unit->set_status(GMO_IDLE, UNIT_INACTIVE);
 			unit->_gmo_status = GMO_IDLE;
 			unit->_selected = false;
 
@@ -343,6 +345,13 @@ void Team::anim_units(time_point t) {
 			
 			continue;
 		}
+	}
+}
+
+
+void Team::sync_units_animation() {
+	for (auto & unit : _units) {
+		unit->sync_animation();
 	}
 }
 

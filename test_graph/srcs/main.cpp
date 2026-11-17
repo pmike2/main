@@ -16,18 +16,23 @@ void test() {
 	p1 = p2;
 	std::cout << p1.first << " ; " << p1.second << "\n";*/
 
-	pt_2d origin(0.0, 0.0);
-	pt_2d size(4.0, 4.0);
-	uint n_ligs = 5;
-	uint n_cols = 5;
+	pt_2d origin(-500.0, -500.0);
+	pt_2d size(1000.0, 1000.0);
+	uint n_ligs = 101;
+	uint n_cols = 101;
 	GraphGrid * grid = new GraphGrid(origin, size, n_ligs, n_cols);
+
+	std::vector<uint> v = grid->vertices_in_cell_containing_pt(pt_2d(-224.822034 , -209.976783));
+	for (auto & x : v) {
+		std::cout << glm_to_string(grid->id2pt_3d(x)) << "\n";
+	}
 	
-	std::vector<pt_2d> pts = {
+	/*std::vector<pt_2d> pts = {
 		pt_2d(0.0, 1.0), pt_2d(1.0, 1.0), pt_2d(2.0, 1.0), pt_2d(2.0, 0.0), pt_2d(3.0, 1.0),
 		pt_2d(3.0, 0.0), pt_2d(3.0, 2.0)
 	};
 	Polygon2D * polygon = grid->pts2polygon(pts);
-	std::cout << *polygon << "\n";
+	std::cout << *polygon << "\n";*/
 
 	/*uint id = 10;
 	uint distance = 2;

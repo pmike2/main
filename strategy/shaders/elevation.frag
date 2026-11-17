@@ -7,7 +7,7 @@ uniform vec3 view_position;
 
 
 in vec3 vertex_position;
-in vec4 vertex_color;
+flat in vec4 vertex_color;
 in vec3 vertex_normal;
 
 

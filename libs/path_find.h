@@ -25,6 +25,8 @@ const uint PATH_FIND_N_MS = 50;
 
 enum GMO_STATUS {GMO_IDLE, GMO_MOVING, GMO_WAITING};
 
+std::string gmo_status2str(GMO_STATUS status);
+
 
 struct GridMovingObjectType {
 	GridMovingObjectType();

@@ -20,8 +20,6 @@
 using json = nlohmann::json;
 
 
-uint Map::_next_unit_id = 1;
-
 
 Map::Map() {
 
@@ -378,7 +376,7 @@ void Map::ia(time_point t, bool fow_active) {
 			if (unit->_gmo_status == GMO_MOVING || unit->_gmo_status == GMO_WAITING) {
 				if (unit->_hit_status != NO_HIT) {
 					_path_finder->stop_gmo(unit);
-					unit->_unit_status = UNIT_WATCHING;
+					unit->set_status(GMO_IDLE, UNIT_WATCHING);
 					if (verbose) {
 						std::cout << "IA unit " << unit->_id << " attacked => MOVING -> WATCHING\n";
 					}
@@ -444,7 +442,7 @@ void Map::ia(time_point t, bool fow_active) {
 				}
 				else if (unit->_unit_status == UNIT_ATTACKING) {
 					if (!team->attack_unit_check(unit, unit->_target, fow_active)) {
-						unit->_unit_status = UNIT_WATCHING;
+						unit->set_status(GMO_IDLE, UNIT_WATCHING);
 						pt_2d destination = pt_2d(unit->_target->_position);
 						if (team->move_unit_check(unit, destination, fow_active) && !_path_finder->is_gmo_expecting_path(unit)) {
 							_path_finder->goto_gmo(unit, destination, true);
@@ -503,7 +501,7 @@ void Map::anim(time_point t, bool fow_active) {
 		for (auto & unit : team->_units) {
 			if (unit->_unit_status == UNIT_SHOOTING) {
 				_ammos.push_back(new Ammo(unit->_type->_ammo_type, unit->_position, unit->_target->_position));
-				unit->_unit_status = UNIT_ATTACKING;
+				unit->set_status(GMO_IDLE, UNIT_ATTACKING);
 			}
 		}
 	}
@@ -535,6 +533,11 @@ void Map::anim(time_point t, bool fow_active) {
 	for (auto & team : _teams) {
 		team->update_fow();
 	}
+
+	// synchro animation -----------------------------------------------
+	for (auto & team : _teams) {
+		team->sync_units_animation();
+	}
 }
 
 
@@ -542,7 +545,7 @@ void Map::remove_units_in_aabb(AABB_2D * aabb) {
 	for (auto & team : _teams) {
 		std::vector<Unit *> units = team->get_units_in_aabb(aabb);
 		for (auto & unit : units) {
-			unit->_unit_status = UNIT_DESTROYED;
+			unit->set_status(GMO_IDLE, UNIT_DESTROYED);
 		}
 	}
 }
@@ -756,8 +759,7 @@ void Map::load(fs map_path, time_point t) {
 			
 			// on les met dans un état d'attente par défaut
 			unit->_life = unit_js["life"];
-			unit->_unit_status = UNIT_WATCHING;
-			unit->_gmo_status = GMO_IDLE;
+			unit->set_status(GMO_IDLE, UNIT_WATCHING);
 		}
 		_teams.push_back(team);
 	}

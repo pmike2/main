@@ -4,6 +4,22 @@
 uint PathFinder::_next_gmo_id = 1;
 
 
+std::string gmo_status2str(GMO_STATUS status) {
+	if (status == GMO_IDLE) {
+		return "GMO_IDLE";
+	}
+	else if (status == GMO_MOVING) {
+		return "GMO_MOVING";
+	}
+	else if (status == GMO_WAITING) {
+		return "GMO_WAITING";
+	}
+	std::cerr << status << " : GMO status reconnu\n";
+	return "UNKNOWN";
+}
+
+
+// GridMovingObjectType -----------------------------------------------------------------------------
 GridMovingObjectType::GridMovingObjectType() : _name("") {
 
 }

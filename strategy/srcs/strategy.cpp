@@ -88,7 +88,7 @@ Strategy::Strategy(ScreenGL * screengl, time_point t) :
 	_view_system->set(pt_3d(10.0, 10.0, 0.0), M_PI * 0.25, M_PI * 0.25, 70.0);
 	//_view_system->set_2d(30.0);
 	_view_system->constraint_theta(M_PI * 0.1, M_PI * 0.4);
-	_view_system->constraint_rho(30.0, 100.0);
+	_view_system->constraint_rho(30.0, 300.0);
 	_view_system->constraint_target(MAP_ORIGIN, MAP_ORIGIN + MAP_SIZE);
 
 	_repere = new Repere(_gl_draw_manager, _view_system);
@@ -276,15 +276,13 @@ void Strategy::set_ihm() {
 	_ihm->get_element("unit_action", "wait")->set_callback([this](){
 		_config->_unit_action_mode = WAIT;
 		for (auto & unit : get_selected_team()->get_selected_units()) {
-			//unit->set_status(WAITING, _ihm->_current_t);
-			unit->_gmo_status = GMO_IDLE;
+			//unit->set_status(GMO_IDLE, UNIT_WATCHING);
 		}
 	});
 	_ihm->get_element("unit_action", "watch")->set_callback([this](){
 		_config->_unit_action_mode = WATCH;
 		for (auto & unit : get_selected_team()->get_selected_units()) {
-			//unit->set_status(WATCHING, _ihm->_current_t);
-			unit->_unit_status = UNIT_WATCHING;
+			unit->set_status(GMO_IDLE, UNIT_WATCHING);
 		}
 	});
 	_ihm->get_element("unit_action", "destroy")->set_callback([this](){
@@ -480,7 +478,7 @@ void Strategy::set_ihm() {
 
 
 void Strategy::draw_select() {
-	GLDrawContext * context= _gl_draw_manager->get_context("select");
+	GLDrawContext * context = _gl_draw_manager->get_context("select");
 	context->activate();
 	// pour que l'affichage du rectangle de sélection se fassent par dessus le reste
 	context->set_uniform("z", -1.0f);
@@ -492,7 +490,7 @@ void Strategy::draw_select() {
 
 
 void Strategy::draw_linear(std::string context_name) {
-	GLDrawContext * context= _gl_draw_manager->get_context(context_name);
+	GLDrawContext * context = _gl_draw_manager->get_context(context_name);
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	context->draw();
@@ -501,7 +499,7 @@ void Strategy::draw_linear(std::string context_name) {
 
 
 void Strategy::draw_dash(std::string context_name, number dash_size, number gap_size, number thickness) {
-	GLDrawContext * context= _gl_draw_manager->get_context(context_name);
+	GLDrawContext * context = _gl_draw_manager->get_context(context_name);
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
 	context->set_uniform("dash_size", float(dash_size));
@@ -515,7 +513,7 @@ void Strategy::draw_dash(std::string context_name, number dash_size, number gap_
 
 
 void Strategy::draw_tree_stone(ViewSystem * view_system) {
-	GLDrawContext * context= _gl_draw_manager->get_context("tree_stone");
+	GLDrawContext * context = _gl_draw_manager->get_context("tree_stone");
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -548,7 +546,7 @@ void Strategy::draw_elevation(ViewSystem * view_system) {
 
 
 void Strategy::draw_lake(ViewSystem * view_system) {
-	GLDrawContext * context= _gl_draw_manager->get_context("lake");
+	GLDrawContext * context = _gl_draw_manager->get_context("lake");
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -567,7 +565,7 @@ void Strategy::draw_lake(ViewSystem * view_system) {
 
 
 void Strategy::draw_river(ViewSystem * view_system) {
-	GLDrawContext * context= _gl_draw_manager->get_context("river");
+	GLDrawContext * context = _gl_draw_manager->get_context("river");
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -584,7 +582,7 @@ void Strategy::draw_river(ViewSystem * view_system) {
 
 
 void Strategy::draw_sea(ViewSystem * view_system) {
-	GLDrawContext * context= _gl_draw_manager->get_context("sea");
+	GLDrawContext * context = _gl_draw_manager->get_context("sea");
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -605,7 +603,7 @@ void Strategy::draw_sea(ViewSystem * view_system) {
 
 
 void Strategy::draw_unit(UnitType * unit_type, ViewSystem * view_system) {
-	GLDrawContext * context= _gl_draw_manager->get_context(unit_type->_name);
+	GLDrawContext * context = _gl_draw_manager->get_context(unit_type->_name);
 	//std::cout << context->_n_pts << " ; " << context->_n_instances << "\n";
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
@@ -622,7 +620,7 @@ void Strategy::draw_unit(UnitType * unit_type, ViewSystem * view_system) {
 
 
 void Strategy::draw_unit_life() {
-	GLDrawContext * context= _gl_draw_manager->get_context("unit_life");
+	GLDrawContext * context = _gl_draw_manager->get_context("unit_life");
 	context->activate();
 	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_camera2clip)));
 	context->set_uniform("size", glm::value_ptr(glm::vec2(_map->_aabb->_size)));
@@ -635,7 +633,7 @@ void Strategy::draw_unit_life() {
 
 
 void Strategy::draw_ammo(AmmoType * ammo_type, ViewSystem * view_system) {
-	GLDrawContext * context= _gl_draw_manager->get_context(ammo_type->_name);
+	GLDrawContext * context = _gl_draw_manager->get_context(ammo_type->_name);
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -651,7 +649,7 @@ void Strategy::draw_ammo(AmmoType * ammo_type, ViewSystem * view_system) {
 
 
 void Strategy::draw_construction() {
-	GLDrawContext * context= _gl_draw_manager->get_context("construction");
+	GLDrawContext * context = _gl_draw_manager->get_context("construction");
 	context->activate();
 	context->set_uniform("camera2clip_matrix", glm::value_ptr(glm::mat4(_ihm->_camera2clip)));
 	context->set_uniform("z", float(Z_IHM));
@@ -661,7 +659,7 @@ void Strategy::draw_construction() {
 
 
 void Strategy::draw_explosion(ViewSystem * view_system) {
-	GLDrawContext * context= _gl_draw_manager->get_context("explosion");
+	GLDrawContext * context = _gl_draw_manager->get_context("explosion");
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -678,7 +676,7 @@ void Strategy::draw_explosion(ViewSystem * view_system) {
 
 
 void Strategy::draw_barrier(BarrierType * barrier_type, ViewSystem * view_system) {
-	GLDrawContext * context= _gl_draw_manager->get_context(barrier_type->_name);
+	GLDrawContext * context = _gl_draw_manager->get_context(barrier_type->_name);
 	context->activate();
 	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(view_system->_world2clip)));
 	context->set_uniform("light_position", glm::value_ptr(LIGHT_POSITION));
@@ -948,14 +946,14 @@ void Strategy::update_select() {
 
 
 void Strategy::update_grid() {
-	GLDrawContext * context= _gl_draw_manager->get_context("grid");
+	GLDrawContext * context = _gl_draw_manager->get_context("grid");
 	
 	context->_n_pts = 0;
 
-	_map->_path_finder->_it_v= _map->_path_finder->_vertices.begin();
-	while (_map->_path_finder->_it_v!= _map->_path_finder->_vertices.end()) {
-		_map->_path_finder->_it_e= _map->_path_finder->_it_v->second._edges.begin();
-		while (_map->_path_finder->_it_e!= _map->_path_finder->_it_v->second._edges.end()) {
+	_map->_path_finder->_it_v = _map->_path_finder->_vertices.begin();
+	while (_map->_path_finder->_it_v != _map->_path_finder->_vertices.end()) {
+		_map->_path_finder->_it_e = _map->_path_finder->_it_v->second._edges.begin();
+		while (_map->_path_finder->_it_e != _map->_path_finder->_it_v->second._edges.end()) {
 			context->_n_pts += 2;
 			_map->_path_finder->_it_e++;
 		}
@@ -2346,6 +2344,7 @@ bool Strategy::mouse_motion(InputState * input_state, time_point t) {
 	}
 
 	_cursor_world_position = _view_system->screen2world_depthbuffer(input_state->_x, input_state->_y);
+	//std::cout << glm_to_string(_cursor_world_position) << "\n";
 	if (_map->_elevation->in_boundaries(pt_2d(_cursor_world_position))) {
 		_cursor_in_world = true;
 	}

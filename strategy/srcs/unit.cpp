@@ -26,7 +26,7 @@ Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_
 	_life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
 	_creation_t(t)
 {
-	set_status(UNIT_UNDER_CONSTRUCTION);
+	set_status(GMO_IDLE, UNIT_UNDER_CONSTRUCTION);
 }
 
 
@@ -38,7 +38,7 @@ Unit::~Unit() {
 void Unit::reinit(pt_3d pos, time_point t) {
 	set_pos(pos);
 	_aabb->set_center(pt_2d(pos));
-	set_status(UNIT_UNDER_CONSTRUCTION);
+	set_status(GMO_IDLE, UNIT_UNDER_CONSTRUCTION);
 	_life = _type->_life_init; 
 	_hit_status = NO_HIT;
 	_hit = 0.0;
@@ -51,7 +51,9 @@ void Unit::reinit(pt_3d pos, time_point t) {
 
 
 quat Unit::quat_slerp(number angle_goal) {
-	quat next_quat = glm::angleAxis(angle_goal, pt_3d(0.0, 0.0, 1.0));
+	// j'ajoute PI / 2 car tous les modèles issus de Blender regardent vers -Y.
+	// il faut ramener le modèle à regarder vers +X lorsque angle rot == 0
+	quat next_quat = glm::angleAxis(angle_goal + M_PI * 0.5, pt_3d(0.0, 0.0, 1.0));
 
 	// nécessaire sinon on a des retournements brusques
 	// cf https://gabormakesgames.com/blog_quats_interpolate.html
@@ -78,23 +80,35 @@ number Unit::angle() {
 }
 
 
-void Unit::set_status(UNIT_STATUS unit_status) {
+void Unit::set_status(GMO_STATUS gmo_status, UNIT_STATUS unit_status) {
+	_gmo_status = gmo_status;
 	_unit_status = unit_status;
-	std::string anim_status = "watch";
-	
-	if (_gmo_status == GMO_IDLE) {
-		if (_unit_status == UNIT_ATTACKING) {
+}
+
+
+void Unit::sync_animation() {
+	bool verbose = true;
+
+	std::string current_anim_status = AnimatedObjInstance::get_action();
+	std::string anim_status = current_anim_status;
+	if (_gmo_status == GMO_MOVING) {
+		anim_status = "move";
+	}
+	else {
+		if (_unit_status == UNIT_ATTACKING || _unit_status == UNIT_SHOOTING) {
 			anim_status = "shoot";
 		}
-		else if (_unit_status == UNIT_WATCHING) {
+		else if (_unit_status == UNIT_WATCHING || _unit_status == UNIT_UNDER_CONSTRUCTION || _unit_status == UNIT_INACTIVE) {
 			anim_status = "watch";
 		}
 	}
-	else if (_gmo_status == GMO_MOVING) {
-		anim_status = "move";
-	}
 
-	AnimatedObjInstance::set_next_action(anim_status);
+	if (_next_action == "" && current_anim_status != anim_status) {
+		if (verbose) {
+			std::cout << "sync_animation unit_id = "<< _id << " : GMO_STATUS = " << gmo_status2str(_gmo_status) << " ; UNIT_STATUS = " << unit_status2str(_unit_status) << " ; ANIM_STATUS = " << current_anim_status << " -> " << anim_status << "\n";
+		}
+		AnimatedObjInstance::set_next_action(anim_status);
+	}
 }
 
 
@@ -130,7 +144,7 @@ void Unit::anim(time_point t) {
 	else if (_hit_status == FINAL_HIT) {
 		_hit += 0.5;
 		if (_hit > 10.0) {
-			set_status(UNIT_DESTROYED);
+			set_status(GMO_IDLE, UNIT_DESTROYED);
 		}
 		return;
 	}
@@ -147,7 +161,7 @@ void Unit::anim(time_point t) {
 			auto d_creation = std::chrono::duration_cast<std::chrono::milliseconds>(t - _creation_t).count();
 			if (d_creation > _type->_creation_duration) {
 				_gmo_status = GMO_IDLE;
-				set_status(UNIT_WATCHING);
+				set_status(GMO_IDLE, UNIT_WATCHING);
 			}
 
 		}
@@ -170,7 +184,7 @@ void Unit::anim(time_point t) {
 			}
 
 			if (_target->_unit_status == UNIT_DESTROYED || _target->_hit_status == FINAL_HIT) {
-				set_status(UNIT_WATCHING);
+				set_status(GMO_IDLE, UNIT_WATCHING);
 				_target = NULL;
 			}
 			else {
@@ -182,7 +196,7 @@ void Unit::anim(time_point t) {
 				auto d_shooting = std::chrono::duration_cast<std::chrono::milliseconds>(t - _last_shooting_t).count();
 				if (aligned < 0.01 && number(d_shooting) > _type->_ammo_type->_rate * 1000.0) {
 					_last_shooting_t = t;
-					set_status(UNIT_SHOOTING);
+					set_status(GMO_IDLE, UNIT_SHOOTING);
 				}
 			}
 		}

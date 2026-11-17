@@ -14,7 +14,7 @@ layout(location=1) in vec4 color_in;
 layout(location=2) in vec3 normal_in;
 
 out vec3 vertex_position;
-out vec4 vertex_color;
+flat out vec4 vertex_color;
 out vec3 vertex_normal;
 
 

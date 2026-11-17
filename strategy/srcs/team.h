@@ -62,6 +62,7 @@ struct Team {
 	void selected_units_attack(Unit * target, time_point t, bool fow_active);
 	Unit * search_target(Unit * unit, Team * ennemy_team, bool fow_active);
 	void anim_units(time_point t);
+	void sync_units_animation();
 	void update_fow_unit(Unit * unit);
 	void update_fow();
 	void clear_fow();
