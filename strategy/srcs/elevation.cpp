@@ -83,7 +83,7 @@ Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : Graph
 	}
 
 	_n_pts = 6 * (_n_ligs - 1) * (_n_cols - 1);
-	_n_attrs_per_pts = 10;
+	_n_attrs_per_pts = 13;
 	_data = new float[_n_pts * _n_attrs_per_pts];
 	//std::cout << _n_pts * _n_attrs_per_pts << "\n";
 }
@@ -566,7 +566,7 @@ void Elevation::update_data(int col_min, int col_max, int lig_min, int lig_max) 
 	for (int lig = lig_min; lig < lig_max; ++lig) {
 		for (int col = col_min; col < col_max; ++col) {
 			// attention on ne peut pas utiliser col_lig2id ici
-			float * ptr = _data + 60 * ((_n_cols - 1) * lig + col);
+			float * ptr = _data + (13 * 6) * ((_n_cols - 1) * lig + col);
 			
 			pt_3d pts[4] = {
 				col_lig2pt_3d(col, lig),
@@ -581,7 +581,13 @@ void Elevation::update_data(int col_min, int col_max, int lig_min, int lig_max) 
 				get_normal(col + 1, lig + 1),
 				get_normal(col, lig + 1)
 			};
-			
+
+			pt_3d tex_coords[4] = {
+				pt_3d(0.0, 1.0, 0.0),
+				pt_3d(1.0, 1.0, 0.0),
+				pt_3d(1.0, 0.0, 0.0),
+				pt_3d(0.0, 0.0, 0.0)
+			};
 
 			for (uint i=0; i<6; ++i) {
 				number alti = pts[idx_tris[i]].z;
@@ -597,8 +603,11 @@ void Elevation::update_data(int col_min, int col_max, int lig_min, int lig_max) 
 				ptr[7] = float(normals[idx_tris[i]].x);
 				ptr[8] = float(normals[idx_tris[i]].y);
 				ptr[9] = float(normals[idx_tris[i]].z);
+				ptr[10] = float(tex_coords[idx_tris[i]].x);
+				ptr[11] = float(tex_coords[idx_tris[i]].y);
+				ptr[12] = float(tex_coords[idx_tris[i]].z);
 
-				ptr += 10;
+				ptr += 13;
 			}
 		}
 	}

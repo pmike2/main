@@ -47,7 +47,7 @@ void main(void) {
 	}
 	vec3 result= ambient * vec3(1.0, 1.0, 1.0) + diffuse * vertex_diffuse_color_modified + specular * vertex_diffuse_color_modified;*/
 
-	vec3 result = (ambient + diffuse + specular) * vec3(sampled);	
+	vec3 result = (ambient + diffuse + specular) * vec3(sampled);
 	
 	result = mix(result, vec3(1.0, 0.0, 0.0), fs_in.hit);
 	

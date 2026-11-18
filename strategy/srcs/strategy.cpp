@@ -93,7 +93,7 @@ Strategy::Strategy(ScreenGL * screengl, time_point t) :
 
 	_repere = new Repere(_gl_draw_manager, _view_system);
 
-	_config = new StrategyConfig("../data/elevation_rand_config");
+	_config = new StrategyConfig("../data/elevation/rand_config");
 
 	// --------------------------------------------------
 	if (verbose) {
@@ -161,6 +161,24 @@ Strategy::Strategy(ScreenGL * screengl, time_point t) :
 	}
 
 	//_gl_draw_manager->set_verbose(true);
+
+	GLDrawContext * context = _gl_draw_manager->get_context("elevation");
+	std::vector<fs> elevation_textures;
+	for (auto & png_path : std::filesystem::directory_iterator("../data/elevation/textures")) {
+		if (png_path.path().extension() == ".png") {
+			elevation_textures.push_back(png_path);
+		}
+	}
+
+	_gl_draw_manager->add_texture(
+		context->_name, "diffuse_texture", GL_TEXTURE_2D_ARRAY,
+			std::map<GLenum, int>{
+			{GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
+			{GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT}, {GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT}
+			},
+		GL_RGBA, glm::uvec3(TEXTURE_SIZE, TEXTURE_SIZE, elevation_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
+	);
+	_gl_draw_manager->set_texture_data(context->_name, "diffuse_texture", elevation_textures);
 }
 
 
@@ -477,6 +495,15 @@ void Strategy::set_ihm() {
 }
 
 
+void Strategy::draw_debug() {
+	GLDrawContext * context = _gl_draw_manager->get_context("debug");
+	context->activate();
+	context->set_uniform("world2clip_matrix", glm::value_ptr(glm::mat4(_view_system->_world2clip)));
+	context->draw();
+	context->deactivate();
+}
+
+
 void Strategy::draw_select() {
 	GLDrawContext * context = _gl_draw_manager->get_context("select");
 	context->activate();
@@ -715,6 +742,8 @@ void Strategy::draw() {
 
 	_repere->draw();
 
+	draw_debug();
+
 	// environnement
 	draw_elevation(_view_system);
 	draw_tree_stone(_view_system);
@@ -787,6 +816,7 @@ void Strategy::anim(time_point t) {
 	if (verbose) {
 		std::cout << "anim : updates\n";
 	}
+	update_debug();
 	update_select();
 	update_bbox();
 	update_path();
@@ -906,6 +936,56 @@ glm::vec4 Strategy::get_path_color(number weight) {
 	else {
 		return glm::vec4(0.0, 1.0, 0.0, 1.0);
 	}
+}
+
+
+void Strategy::update_debug() {
+	GLDrawContext * context= _gl_draw_manager->get_context("debug");
+	
+	context->_n_pts = 0;
+
+	Team * team = get_selected_team();
+	GraphGrid * fow = team->_fow;
+
+	fow->_it_v = fow->_vertices.begin();
+	while (fow->_it_v != fow->_vertices.end()) {
+		context->_n_pts += 1;
+		fow->_it_v++;
+	}
+
+	float * data = new float[context->data_size()];
+	float * ptr = data;
+
+	fow->_it_v = fow->_vertices.begin();
+	while (fow->_it_v != fow->_vertices.end()) {
+		FowVertexData * data = (FowVertexData *)(fow->_it_v->second._data);
+		FOW_STATUS status = data->_status;
+		pt_3d pt = fow->_it_v->second._pos;
+		pt_4d color;
+		if (status == UNDISCOVERED) {
+			color = pt_4d(1.0, 0.0, 0.0, 1.0);
+		}
+		else if (status == DISCOVERED) {
+			color = pt_4d(0.0, 1.0, 0.0, 1.0);
+		}
+		if (status == WATCHED) {
+			color = pt_4d(0.0, 0.0, 1.0, 1.0);
+		}
+
+		ptr[0] = float(pt.x);
+		ptr[1] = float(pt.y);
+		ptr[2] = _map->_elevation->get_alti(pt_2d(pt)) + 0.1f;
+		ptr[3] = float(color.r);
+		ptr[4] = float(color.g);
+		ptr[5] = float(color.b);
+		ptr[6] = float(color.a);
+		ptr += 7;
+
+		fow->_it_v++;
+	}
+
+	context->set_data(data);
+	delete[] data;
 }
 
 
@@ -1523,16 +1603,6 @@ void Strategy::update_cursor() {
 	}
 
 	context->set_data(data);
-}
-
-
-void Strategy::update_debug() {
-	GLDrawContext * context= _gl_draw_manager->get_context("debug");
-	
-	context->_n_pts = 0;
-
-	//context->set_data(data);
-	//delete[] data;
 }
 
 

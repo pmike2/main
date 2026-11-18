@@ -11,9 +11,8 @@ layout(location=1) in vec4 color_in;
 flat out vec4 vertex_color;
 
 
-void main(void)
-{
-	vertex_color= color_in;
+void main(void) {
+	vertex_color = color_in;
 
-	gl_Position= world2clip_matrix* vec4(position_in, 1.0);
+	gl_Position = world2clip_matrix * vec4(position_in, 1.0);
 }

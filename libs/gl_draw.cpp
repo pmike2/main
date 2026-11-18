@@ -1184,6 +1184,9 @@ GLDrawManager::GLDrawManager(fs json_path) : _verbose(false) {
 			else if (context_dic["mode"] == "GL_TRIANGLES") {
 				draw_mode = GL_TRIANGLES;
 			}
+			else if (context_dic["mode"] == "GL_POINTS") {
+				draw_mode = GL_POINTS;
+			}
 			else {
 				std::cerr << "GLDrawManager : mode = " << context_dic["mode"] << " non reconnu.\n";
 				return;
@@ -1358,14 +1361,38 @@ void GLDrawManager::set_texture_data(std::string context_name, std::string textu
 
 
 void GLDrawManager::set_texture_data(std::string texture_name, fs png) {
-	GLDrawTexture * texture = _texture_pool->get_texture(texture_name);
-	texture->set_data(png);
+	// si png est un dossier on récupère tous les pngs du dossier
+	if (std::filesystem::is_directory(png)) {
+		std::vector<fs> pngs;
+		for (auto & png_path : std::filesystem::directory_iterator(png)) {
+			if (png_path.path().extension() == ".png") {
+				pngs.push_back(png_path);
+			}
+		}
+		set_texture_data(texture_name, pngs);
+	}
+	else {
+		GLDrawTexture * texture = _texture_pool->get_texture(texture_name);
+		texture->set_data(png);
+	}
 }
 
 
 void GLDrawManager::set_texture_data(std::string context_name, std::string texture_name, fs png) {
-	GLDrawTexture * texture = _texture_pool->get_texture(context_name, texture_name);
-	texture->set_data(png);
+	// si png est un dossier on récupère tous les pngs du dossier
+	if (std::filesystem::is_directory(png)) {
+		std::vector<fs> pngs;
+		for (auto & png_path : std::filesystem::directory_iterator(png)) {
+			if (png_path.path().extension() == ".png") {
+				pngs.push_back(png_path);
+			}
+		}
+		set_texture_data(context_name, texture_name, pngs);
+	}
+	else {
+		GLDrawTexture * texture = _texture_pool->get_texture(context_name, texture_name);
+		texture->set_data(png);
+	}
 }
 
 

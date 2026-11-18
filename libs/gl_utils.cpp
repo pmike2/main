@@ -59,7 +59,7 @@ GLSDL::GLSDL() {
 }
 
 
-GLSDL::GLSDL(std::string window_title, uint width, uint height, bool multisampling) {
+GLSDL::GLSDL(std::string window_title, uint width, uint height, bool multisampling, float point_size) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 
@@ -100,6 +100,13 @@ GLSDL::GLSDL(std::string window_title, uint width, uint height, bool multisampli
 	// pour gérer l'alpha
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	// taille points
+	glPointSize(point_size);
+
+	// utile lorsque l'on fait du flat shading ; GL_FIRST_VERTEX_CONVENTION est + joli pour strategy/elevation
+	glProvokingVertex(GL_FIRST_VERTEX_CONVENTION);
+	//glProvokingVertex(GL_LAST_VERTEX_CONVENTION);
 
 	SDL_GL_SwapWindow(_window);
 }

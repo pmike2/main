@@ -12,16 +12,19 @@ uniform float fow_active;
 layout(location=0) in vec3 position_in;
 layout(location=1) in vec4 color_in;
 layout(location=2) in vec3 normal_in;
+layout(location=3) in vec3 tex_coord_in;
 
 out vec3 vertex_position;
 flat out vec4 vertex_color;
-out vec3 vertex_normal;
+flat out vec3 vertex_normal;
+out vec3 tex_coord;
 
 
 void main(void) {
 	vertex_position = position_in;
 	vertex_color = color_in;
 	vertex_normal = normalize(normal_in);
+	tex_coord = tex_coord_in;
 
 	float fow = texture(fow_texture_array, vec3((vertex_position.x - origin.x) / size.x, (vertex_position.y - origin.y) / size.y, idx_team)).r;
 	fow = (1.0 - step(0.5, fow_active)) * 1.0 + step(0.5, fow_active) * fow;

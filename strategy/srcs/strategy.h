@@ -68,6 +68,7 @@ public:
 	
 	void set_ihm();
 	
+	void draw_debug();
 	void draw_select();
 	void draw_linear(std::string context_name);
 	void draw_dash(std::string context_name, number dash_size, number gap_size, number thickness);
@@ -89,13 +90,13 @@ public:
 	glm::vec4 get_grid_edge_color(uint from, uint to);
 	glm::vec4 get_path_color(number weight);
 	
+	void update_debug();
 	void update_select();
 	void update_grid();
 	void update_bbox();
 	void update_path();
 	void update_edit_map();
 	void update_cursor();
-	void update_debug();
 	void update_elevation();
 	void update_tree_stone();
 	void update_river();

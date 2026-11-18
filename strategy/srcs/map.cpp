@@ -39,9 +39,9 @@ Map::Map(fs unit_types_dir, fs ammo_types_dir, fs elements_dir, fs explosion_dir
 	if (verbose) {
 		std::cout << "init Path Finder\n";
 	}
-	uint n_ligs = uint(size.y / _path_resolution.y) + 1;
-	uint n_cols = uint(size.x / _path_resolution.x) + 1;
-	_path_finder = new PathFinder(origin, size, n_ligs, n_cols, t);
+	uint n_ligs_path_finder = uint(size.y / _path_resolution.y) + 1;
+	uint n_cols_path_finder = uint(size.x / _path_resolution.x) + 1;
+	_path_finder = new PathFinder(origin, size, n_ligs_path_finder, n_cols_path_finder, t);
 
 	// ------------------------------------------------
 	if (verbose) {

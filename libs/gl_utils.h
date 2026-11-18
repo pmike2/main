@@ -31,7 +31,7 @@ struct ScreenGL {
 
 struct GLSDL {
 	GLSDL();
-	GLSDL(std::string window_title, uint width, uint height, bool multisampling);
+	GLSDL(std::string window_title, uint width, uint height, bool multisampling, float point_size = 1.0f);
 	~GLSDL();
 
 

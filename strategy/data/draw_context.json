@@ -8,11 +8,10 @@
 		"font" : {"shader" : "font", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 		"font3d" : {"shader" : "font3d", "mode" : "GL_TRIANGLES", "usage" : "GL_STREAM_DRAW"},
 		"gl_ihm" : {"shader" : "gl_ihm", "mode" : "GL_TRIANGLES"},
-
-		"debug, grid, bbox" : {"shader" : "linear", "mode" : "GL_LINES", "active" : false},
+		"grid, bbox" : {"shader" : "linear", "mode" : "GL_LINES", "active" : false},
 		"select" : {"shader" : "select", "mode" : "GL_LINES"},
-		
 		"path, selection, edit_map, cursor" : {"shader" : "dash", "mode" : "GL_LINES"},
+		"debug" : {"shader" : "linear", "mode" : "GL_POINTS"},
 
 		"elevation" : {"shader" : "elevation", "mode" : "GL_TRIANGLES", "usage" : "GL_DYNAMIC_DRAW"},
 		"tree_stone" : {"shader" : "tree_stone", "mode" : "GL_TRIANGLES"},
@@ -24,7 +23,8 @@
 		"construction" : {"shader" : "construction", "mode" : "GL_TRIANGLES"},
 		"explosion" : {"shader" : "explosion", "mode" : "GL_TRIANGLES"},
 
-		"bomb, bullet, water_land_missile, barrier_basic" : {"shader" : "ammo", "mode" : "GL_TRIANGLES",
+		"bomb, bullet, water_land_missile, barrier_basic" : {
+			"shader" : "ammo", "mode" : "GL_TRIANGLES",
 			"buffers" : [
 				{"instanced" : true, "attrs" : ["model2world_matrix"]}
 			]

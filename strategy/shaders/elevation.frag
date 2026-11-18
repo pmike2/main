@@ -1,5 +1,6 @@
 #version 410
 
+uniform sampler2DArray diffuse_texture;
 
 uniform vec3 light_position;
 uniform vec3 light_color;
@@ -8,13 +9,15 @@ uniform vec3 view_position;
 
 in vec3 vertex_position;
 flat in vec4 vertex_color;
-in vec3 vertex_normal;
-
+flat in vec3 vertex_normal;
+in vec3 tex_coord;
 
 out vec4 frag_color;
 
 
 void main(void) {
+	vec4 sampled = texture(diffuse_texture, tex_coord);
+	
 	// ambient
 	float ambient_strength = 0.01;
 	vec3 ambient = ambient_strength * light_color;
@@ -31,7 +34,8 @@ void main(void) {
 	float spec = pow(max(dot(view_direction, reflection_direction), 0.0), 32);
 	vec3 specular = specular_strength* spec* light_color;
 	
-	vec3 result= (ambient + diffuse + specular)* vec3(vertex_color);
+	vec3 result= (ambient + diffuse + specular) * vec3(sampled);
+	//vec3 result= (ambient + diffuse + specular) * vec3(vertex_color);
 	//vec3 result = (ambient + diffuse)* vec3(vertex_color);
 	//vec3 result = (specular)* vec3(vertex_color);
 	

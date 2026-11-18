@@ -9,11 +9,11 @@
             "name": "Team1",
             "units": [
                 {
-                    "id": 3,
+                    "id": 7,
                     "life": 30.0,
                     "position": [
-                        -29.75999999999999,
-                        4.720000000000027
+                        -358.72,
+                        -117.51999999999998
                     ],
                     "status": "UNIT_UNDER_CONSTRUCTION",
                     "type": "infantery"
@@ -29,11 +29,11 @@
             "name": "Team2",
             "units": [
                 {
-                    "id": 4,
+                    "id": 8,
                     "life": 30.0,
                     "position": [
-                        87.68,
-                        -370.4
+                        40.56,
+                        -122.39999999999998
                     ],
                     "status": "UNIT_UNDER_CONSTRUCTION",
                     "type": "infantery"

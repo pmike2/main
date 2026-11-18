@@ -87,7 +87,7 @@ void Unit::set_status(GMO_STATUS gmo_status, UNIT_STATUS unit_status) {
 
 
 void Unit::sync_animation() {
-	bool verbose = true;
+	bool verbose = false;
 
 	std::string current_anim_status = AnimatedObjInstance::get_action();
 	std::string anim_status = current_anim_status;
