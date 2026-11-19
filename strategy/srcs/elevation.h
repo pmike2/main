@@ -17,6 +17,21 @@
 #include "const.h"
 
 
+struct Biome {
+	Biome();
+	Biome(std::string name, number zmin, number zmax, fs diffuse_texture_path, uint diffuse_texture_idx);
+	~Biome();
+
+
+	std::string _name;
+	number _zmin;
+	number _zmax;
+	//pt_4d _color;
+	fs _diffuse_texture_path;
+	uint _diffuse_texture_idx;
+};
+
+
 struct ElevationVertexData {
 	pt_3d _normal;
 };
@@ -60,7 +75,7 @@ struct ElevationRandConfig {
 
 struct Elevation : public GraphGrid {
 	Elevation();
-	Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols);
+	Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols, fs biome_dir);
 	~Elevation();
 	
 	number get_alti(uint id);
@@ -92,6 +107,7 @@ struct Elevation : public GraphGrid {
 	void randomize(ElevationRandConfig * rand_config);
 
 	glm::vec4 alti2color(number alti);
+	uint alti2diffuse_texture_idx(number alti);
 	
 	void update_data();
 	void update_data(int col_min, int col_max, int lig_min, int lig_max);
@@ -104,6 +120,7 @@ struct Elevation : public GraphGrid {
 	float * _data;
 	uint _n_pts;
 	uint _n_attrs_per_pts;
+	std::vector<Biome *> _biomes;
 };
 
 

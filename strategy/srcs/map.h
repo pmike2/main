@@ -40,7 +40,7 @@ struct Map {
 	Map();
 	Map(
 		fs unit_types_dir, fs ammo_types_dir, fs elements_dir, fs explosion_dir, fs barrier_types_dir,
-		pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t
+		pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, uint fow_texture_size, time_point t
 	);
 	~Map();
 	
@@ -80,7 +80,8 @@ struct Map {
 
 
 	fs _unit_types_dir, _ammo_types_dir, _elements_dir, _barrier_types_dir;
-	pt_2d _path_resolution, _elevation_resolution, _fow_resolution;
+	pt_2d _path_resolution, _elevation_resolution;
+	uint _fow_texture_size;
 
 	AABB_2D * _aabb;
 	PathFinder * _path_finder;

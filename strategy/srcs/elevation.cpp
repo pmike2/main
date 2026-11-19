@@ -11,6 +11,24 @@
 using json = nlohmann::json;
 
 
+Biome::Biome() {
+
+}
+
+
+Biome::Biome(std::string name, number zmin, number zmax, fs diffuse_texture_path, uint diffuse_texture_idx) :
+	_name(name), _zmin(zmin), _zmax(zmax), _diffuse_texture_path(diffuse_texture_path), _diffuse_texture_idx(diffuse_texture_idx) 
+{
+
+}
+
+
+Biome::~Biome() {
+
+}
+
+
+// -------------------------------------------------------------------------------------
 ElevationRandConfig::ElevationRandConfig() {
 
 }
@@ -72,7 +90,7 @@ Elevation::Elevation() {
 }
 
 
-Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : GraphGrid(origin, size, n_ligs, n_cols)
+Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols, fs biome_dir) : GraphGrid(origin, size, n_ligs, n_cols)
 {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
@@ -86,11 +104,26 @@ Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols) : Graph
 	_n_attrs_per_pts = 13;
 	_data = new float[_n_pts * _n_attrs_per_pts];
 	//std::cout << _n_pts * _n_attrs_per_pts << "\n";
+
+	uint diffuse_texture_idx = 0;
+	for (auto & json_path : std::filesystem::directory_iterator(biome_dir)) {
+		if (json_path.path().extension() == ".json") {
+			std::ifstream ifs(json_path);
+			json js = json::parse(ifs);
+			ifs.close();
+
+			Biome * biome = new Biome(json_path.path().stem(), js["zmin"], js["zmax"], js["diffuse_texture_path"], diffuse_texture_idx++);
+			_biomes.push_back(biome);
+		}
+	}
 }
 
 
 Elevation::~Elevation() {
 	delete[] _data;
+	for (auto & biome : _biomes) {
+		delete biome;
+	}
 }
 
 
@@ -554,6 +587,17 @@ glm::vec4 Elevation::alti2color(number alti) {
 }
 
 
+uint Elevation::alti2diffuse_texture_idx(number alti) {
+	for (auto & biome : _biomes) {
+		if (alti >= biome->_zmin && alti <= biome->_zmax) {
+			return biome->_diffuse_texture_idx;
+		}
+	}
+	std::cerr << "alti2diffuse_texture_idx alti = " << alti << " non trouvée\n";
+	return 0;
+}
+
+
 void Elevation::update_data() {
 	update_data(0, int(_n_cols - 1), 0, int(_n_ligs - 1));
 }
@@ -582,16 +626,18 @@ void Elevation::update_data(int col_min, int col_max, int lig_min, int lig_max) 
 				get_normal(col, lig + 1)
 			};
 
-			pt_3d tex_coords[4] = {
-				pt_3d(0.0, 1.0, 0.0),
-				pt_3d(1.0, 1.0, 0.0),
-				pt_3d(1.0, 0.0, 0.0),
-				pt_3d(0.0, 0.0, 0.0)
+			pt_2d tex_coords[4] = {
+				pt_2d(0.0, 1.0),
+				pt_2d(1.0, 1.0),
+				pt_2d(1.0, 0.0),
+				pt_2d(0.0, 0.0)
 			};
 
 			for (uint i=0; i<6; ++i) {
 				number alti = pts[idx_tris[i]].z;
 				glm::vec4 color = alti2color(alti);
+				uint diffuse_texture_idx = alti2diffuse_texture_idx(alti);
+				//std::cout << diffuse_texture_idx << "\n";
 
 				ptr[0] = float(pts[idx_tris[i]].x);
 				ptr[1] = float(pts[idx_tris[i]].y);
@@ -605,7 +651,7 @@ void Elevation::update_data(int col_min, int col_max, int lig_min, int lig_max) 
 				ptr[9] = float(normals[idx_tris[i]].z);
 				ptr[10] = float(tex_coords[idx_tris[i]].x);
 				ptr[11] = float(tex_coords[idx_tris[i]].y);
-				ptr[12] = float(tex_coords[idx_tris[i]].z);
+				ptr[12] = float(diffuse_texture_idx);
 
 				ptr += 13;
 			}

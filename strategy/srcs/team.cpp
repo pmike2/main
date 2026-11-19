@@ -14,12 +14,17 @@ Team::Team() {
 }
 
 
-Team::Team(std::string name, glm::vec3 color, Elevation * elevation, PathFinder * path_finder, pt_2d fow_resolution) : 
+Team::Team(std::string name, glm::vec3 color, Elevation * elevation, PathFinder * path_finder, uint fow_texture_size) :
 	_name(name), _color(color), _elevation(elevation), _path_finder(path_finder), _ia(false)
 {
-	uint n_ligs = uint(_elevation->_size.y / fow_resolution.y) + 1;
-	uint n_cols = uint(_elevation->_size.x / fow_resolution.x) + 1;
-	_fow = new GraphGrid(_elevation->_origin, _elevation->_size, n_ligs, n_cols);
+	pt_2d fow_resolution = _elevation->_size / number(fow_texture_size);
+	_fow = new GraphGrid(_elevation->_origin + 0.5 * fow_resolution, _elevation->_size - 0.5 * fow_resolution, fow_texture_size - 1, fow_texture_size - 1);
+
+	_fow_data = new float[fow_texture_size * fow_texture_size];
+	for (uint i=0; i<fow_texture_size * fow_texture_size; ++i) {
+		_fow_data[i] = 0.0;
+	}
+
 
 	_fow->_it_v= _fow->_vertices.begin();
 	while (_fow->_it_v!= _fow->_vertices.end()) {
@@ -29,11 +34,6 @@ Team::Team(std::string name, glm::vec3 color, Elevation * elevation, PathFinder 
 		data->_changed = false;
 		_fow->_it_v->second._data = data;
 		_fow->_it_v++;
-	}
-
-	_fow_data = new float[n_ligs * n_cols];
-	for (uint i=0; i<n_ligs * n_cols; ++i) {
-		_fow_data[i] = 0.0;
 	}
 }
 

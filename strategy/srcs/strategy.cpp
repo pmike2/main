@@ -101,7 +101,7 @@ Strategy::Strategy(ScreenGL * screengl, time_point t) :
 	}
 	_map = new Map(
 		"../data/unit_types", "../data/ammo_types", "../data/elements", "../data/explosions", "../data/barrier_types",
-		MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_RESOLUTION, t
+		MAP_ORIGIN, MAP_SIZE, PATH_RESOLUTION, ELEVATION_RESOLUTION, FOW_TEXTURE_SIZE, t
 	);
 
 	if (verbose) {
@@ -163,11 +163,15 @@ Strategy::Strategy(ScreenGL * screengl, time_point t) :
 	//_gl_draw_manager->set_verbose(true);
 
 	GLDrawContext * context = _gl_draw_manager->get_context("elevation");
-	std::vector<fs> elevation_textures;
-	for (auto & png_path : std::filesystem::directory_iterator("../data/elevation/textures")) {
+	std::vector<fs> elevation_diffuse_textures;
+	
+	/*for (auto & png_path : std::filesystem::directory_iterator("../data/elevation/textures")) {
 		if (png_path.path().extension() == ".png") {
 			elevation_textures.push_back(png_path);
 		}
+	}*/
+	for (auto & biome : _map->_elevation->_biomes) {
+		elevation_diffuse_textures.push_back(biome->_diffuse_texture_path);
 	}
 
 	_gl_draw_manager->add_texture(
@@ -176,9 +180,9 @@ Strategy::Strategy(ScreenGL * screengl, time_point t) :
 			{GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR}, {GL_TEXTURE_MAG_FILTER, GL_LINEAR},
 			{GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT}, {GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT}
 			},
-		GL_RGBA, glm::uvec3(TEXTURE_SIZE, TEXTURE_SIZE, elevation_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
+		GL_RGBA, glm::uvec3(TEXTURE_SIZE, TEXTURE_SIZE, elevation_diffuse_textures.size()), GL_BGRA, GL_UNSIGNED_BYTE
 	);
-	_gl_draw_manager->set_texture_data(context->_name, "diffuse_texture", elevation_textures);
+	_gl_draw_manager->set_texture_data(context->_name, "diffuse_texture", elevation_diffuse_textures);
 }
 
 
@@ -742,7 +746,7 @@ void Strategy::draw() {
 
 	_repere->draw();
 
-	draw_debug();
+	//draw_debug();
 
 	// environnement
 	draw_elevation(_view_system);
@@ -816,7 +820,8 @@ void Strategy::anim(time_point t) {
 	if (verbose) {
 		std::cout << "anim : updates\n";
 	}
-	update_debug();
+	
+	//update_debug();
 	update_select();
 	update_bbox();
 	update_path();
@@ -2218,6 +2223,7 @@ void Strategy::update_text() {
 		}
 		//str_terrain += " ; " + std::to_string(data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
 		//str_terrain += " ; " + std::to_string(opposite_data->_delta_elevation[_map->_unit_types[_config->_visible_grid_unit_type]]);
+		str_terrain += " ; " + std::to_string(_map->_elevation->alti2diffuse_texture_idx(_cursor_world_position.z));
 		
 		texts_2d.push_back(Text(str_terrain, glm::vec2(-1.5, 3.0), 0.003, glm::vec4(0.7f, 0.6f, 0.5f, 1.0f)));
 	}

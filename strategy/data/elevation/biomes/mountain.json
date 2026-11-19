@@ -1,0 +1,5 @@
+{
+	"zmin" : 20.0,
+	"zmax" : 20000.0,
+	"diffuse_texture_path" : "../data/elevation/textures/snow.png"
+}

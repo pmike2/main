@@ -1,0 +1,5 @@
+{
+	"zmin" : 0.0,
+	"zmax" : 2.0,
+	"diffuse_texture_path" : "../data/elevation/textures/sand.png"
+}

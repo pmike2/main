@@ -39,7 +39,7 @@ struct FowVertexData {
 
 struct Team {
 	Team();
-	Team(std::string name, glm::vec3 color, Elevation * elevation, PathFinder * path_finder, pt_2d fow_resolution);
+	Team(std::string name, glm::vec3 color, Elevation * elevation, PathFinder * path_finder, uint fow_texture_size);
 	~Team();
 	
 	bool fow_check(pt_2d pos);

@@ -1,0 +1,5 @@
+{
+	"zmin" : -2000.0,
+	"zmax" : 0.0,
+	"diffuse_texture_path" : "../data/elevation/textures/water.png"
+}

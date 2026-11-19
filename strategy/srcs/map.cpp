@@ -27,9 +27,9 @@ Map::Map() {
 
 
 Map::Map(fs unit_types_dir, fs ammo_types_dir, fs elements_dir, fs explosion_dir, fs barrier_types_dir, 
-	pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, pt_2d fow_resolution, time_point t) :
+	pt_2d origin, pt_2d size, pt_2d path_resolution, pt_2d elevation_resolution, uint fow_texture_size, time_point t) :
 	_unit_types_dir(unit_types_dir), _ammo_types_dir(ammo_types_dir), _elements_dir(elements_dir), _barrier_types_dir(barrier_types_dir),
-	_path_resolution(path_resolution), _elevation_resolution(elevation_resolution), _fow_resolution(fow_resolution)
+	_path_resolution(path_resolution), _elevation_resolution(elevation_resolution), _fow_texture_size(fow_texture_size)
 {
 	bool verbose = false;
 
@@ -49,7 +49,7 @@ Map::Map(fs unit_types_dir, fs ammo_types_dir, fs elements_dir, fs explosion_dir
 	}
 	uint n_ligs_elevation = uint(size.y / _elevation_resolution.y) + 1;
 	uint n_cols_elevation = uint(size.x / _elevation_resolution.x) + 1;
-	_elevation = new Elevation(origin, size, n_ligs_elevation, n_cols_elevation);
+	_elevation = new Elevation(origin, size, n_ligs_elevation, n_cols_elevation, fs("../data/elevation/biomes"));
 
 	// ------------------------------------------------
 	if (verbose) {
@@ -97,8 +97,8 @@ Map::Map(fs unit_types_dir, fs ammo_types_dir, fs elements_dir, fs explosion_dir
 	if (verbose) {
 		std::cout << "init Teams\n";
 	}
-	_teams.push_back(new Team("Team1", glm::vec3(1.0f, 0.0f, 0.0f), _elevation, _path_finder, _fow_resolution));
-	_teams.push_back(new Team("Team2", glm::vec3(0.0f, 0.0f, 1.0f), _elevation, _path_finder, _fow_resolution));
+	_teams.push_back(new Team("Team1", glm::vec3(1.0f, 0.0f, 0.0f), _elevation, _path_finder, _fow_texture_size));
+	_teams.push_back(new Team("Team2", glm::vec3(0.0f, 0.0f, 1.0f), _elevation, _path_finder, _fow_texture_size));
 }
 
 
@@ -677,9 +677,7 @@ void Map::save_fixed(fs map_path) {
 	general_js["elevation_resolution"] = json::array();
 	general_js["elevation_resolution"].push_back(_elevation_resolution.x);
 	general_js["elevation_resolution"].push_back(_elevation_resolution.y);
-	general_js["fow_resolution"] = json::array();
-	general_js["fow_resolution"].push_back(_fow_resolution.x);
-	general_js["fow_resolution"].push_back(_fow_resolution.y);
+	general_js["fow_texture_size"] = _fow_texture_size;
 	general_js["origin"] = json::array();
 	general_js["origin"].push_back(_aabb->_pos.x);
 	general_js["origin"].push_back(_aabb->_pos.y);
@@ -753,7 +751,7 @@ void Map::load(fs map_path, time_point t) {
 	for (auto & team_js : teams_js["teams"]) {
 		std::string team_name = team_js["name"];
 		glm::vec3 team_color = glm::vec3(team_js["color"][0], team_js["color"][1], team_js["color"][2]);
-		Team * team = new Team(team_name, team_color, _elevation, _path_finder, _fow_resolution);
+		Team * team = new Team(team_name, team_color, _elevation, _path_finder, _fow_texture_size);
 		for (auto & unit_js : team_js["units"]) {
 			Unit * unit = team->add_unit(_unit_types[unit_js["type"]], pt_2d(unit_js["position"][0], unit_js["position"][1]), t);
 			

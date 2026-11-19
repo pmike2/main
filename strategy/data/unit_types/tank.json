@@ -3,7 +3,7 @@
 	"max_velocity" : 0.05,
 	"life_init" : 200.0,
 	"regen" : 0.05,
-	"vision_distance" : 20.0,
+	"vision_distance" : 30.0,
 	"vision_angle" : 0.8,
 	"slerp_speed" : 0.03,
 	"creation_duration" : 15000,

@@ -49,7 +49,7 @@ const pt_2d MAP_ORIGIN(-500.0, -500.0);
 const pt_2d MAP_SIZE(1000.0, 1000.0);
 const pt_2d PATH_RESOLUTION(5.0);
 const pt_2d ELEVATION_RESOLUTION(2.0);
-const pt_2d FOW_RESOLUTION(10.0);
+const uint FOW_TEXTURE_SIZE = 128;
 
 const number RIVER_ANGLE_SPEED = 0.1;
 

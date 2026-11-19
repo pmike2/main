@@ -1,0 +1,5 @@
+{
+	"zmin" : 2.0,
+	"zmax" : 20.0,
+	"diffuse_texture_path" : "../data/elevation/textures/grass.png"
+}
