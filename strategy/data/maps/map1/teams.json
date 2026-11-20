@@ -12,11 +12,141 @@
                     "id": 1,
                     "life": 30.0,
                     "position": [
-                        -14.399999999999977,
-                        -216.16
+                        -250.08,
+                        -262.0
                     ],
                     "status": "UNIT_WATCHING",
                     "type": "infantery"
+                },
+                {
+                    "id": 3,
+                    "life": 30.0,
+                    "position": [
+                        -254.4936754655006,
+                        -259.3209595399262
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "infantery"
+                },
+                {
+                    "id": 4,
+                    "life": 200.0,
+                    "position": [
+                        -261.7640951385885,
+                        -253.06340271088143
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "tank"
+                },
+                {
+                    "id": 5,
+                    "life": 30.0,
+                    "position": [
+                        -246.58921947592657,
+                        -264.1128995845764
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "infantery"
+                },
+                {
+                    "id": 6,
+                    "life": 50.0,
+                    "position": [
+                        -237.15817361999774,
+                        -264.11538876394144
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "helicopter"
+                },
+                {
+                    "id": 7,
+                    "life": 100.0,
+                    "position": [
+                        -288.5481932038569,
+                        -282.4041008311501
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "boat"
+                },
+                {
+                    "id": 8,
+                    "life": 200.0,
+                    "position": [
+                        -274.28005799483344,
+                        -244.8522342927855
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "tank"
+                },
+                {
+                    "id": 9,
+                    "life": 30.0,
+                    "position": [
+                        -251.80102694767442,
+                        -257.66504528067935
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "infantery"
+                },
+                {
+                    "id": 10,
+                    "life": 100.0,
+                    "position": [
+                        -321.7668384652238,
+                        -278.727046278374
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "boat"
+                },
+                {
+                    "id": 11,
+                    "life": 200.0,
+                    "position": [
+                        -285.53022597989684,
+                        -242.3631840596496
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "tank"
+                },
+                {
+                    "id": 12,
+                    "life": 30.0,
+                    "position": [
+                        -248.5313420858082,
+                        -258.9590999686321
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "infantery"
+                },
+                {
+                    "id": 13,
+                    "life": 50.0,
+                    "position": [
+                        -205.0774602517569,
+                        -279.757694553848
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "helicopter"
+                },
+                {
+                    "id": 14,
+                    "life": 30.0,
+                    "position": [
+                        -258.1335096659453,
+                        -259.6685306386431
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "infantery"
+                },
+                {
+                    "id": 15,
+                    "life": 200.0,
+                    "position": [
+                        -296.7710670036808,
+                        -238.28242913894894
+                    ],
+                    "status": "UNIT_WATCHING",
+                    "type": "tank"
                 }
             ]
         },
@@ -32,8 +162,8 @@
                     "id": 2,
                     "life": 30.0,
                     "position": [
-                        -232.08,
-                        -161.92
+                        -16.0,
+                        40.31999999999999
                     ],
                     "status": "UNIT_WATCHING",
                     "type": "infantery"

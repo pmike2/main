@@ -108,7 +108,7 @@ Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols, fs biom
 	uint diffuse_texture_idx = 0;
 	for (auto & json_path : std::filesystem::directory_iterator(biome_dir)) {
 		if (json_path.path().extension() == ".json") {
-			std::ifstream ifs(json_path);
+			std::ifstream ifs(json_path.path());
 			json js = json::parse(ifs);
 			ifs.close();
 

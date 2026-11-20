@@ -1763,11 +1763,11 @@ void Strategy::update_sea() {
 			for (uint i=0; i<6; ++i) {
 				ptr[0] = float(pts[idxs[i]].x);
 				ptr[1] = float(pts[idxs[i]].y);
-				ptr[1] = float(SEA_LEVEL);
-				ptr[2] = SEA_COLOR.r;
-				ptr[3] = SEA_COLOR.g;
-				ptr[4] = SEA_COLOR.b;
-				ptr[5] = SEA_COLOR.a;
+				ptr[2] = float(SEA_LEVEL);
+				ptr[3] = SEA_COLOR.r;
+				ptr[4] = SEA_COLOR.g;
+				ptr[5] = SEA_COLOR.b;
+				ptr[6] = SEA_COLOR.a;
 				ptr += 7;
 			}
 		}
@@ -1775,6 +1775,8 @@ void Strategy::update_sea() {
 
 	context->set_data(data);
 	delete[] data;
+
+	//context->show_data();
 }
 
 
