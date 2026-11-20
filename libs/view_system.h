@@ -22,9 +22,9 @@
 
 
 // sert à initialiser camera2clip pour fenetres 3D
-const number FRUSTUM_NEAR= 10.0;
-const number FRUSTUM_FAR= 500.0;
-const number FRUSTUM_HALFSIZE= 5.0;
+const number FRUSTUM_NEAR = 10.0;
+const number FRUSTUM_FAR = 1000.0;
+const number FRUSTUM_HALFSIZE = 5.0;
 
 // ajoute une marge a l'ensemble des points contenus dans le champ de vision
 //const number CONTAINS_POINT_TOLERANCE= 20.0;

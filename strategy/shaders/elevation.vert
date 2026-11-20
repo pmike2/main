@@ -17,16 +17,19 @@ layout(location=3) in vec3 tex_coord_in;
 out vec3 vertex_position;
 flat out vec4 vertex_color;
 flat out vec3 vertex_normal;
-out vec3 tex_coord;
+out vec2 tex_coord;
+flat out float tex_idx;
+flat out float fow;
 
 
 void main(void) {
 	vertex_position = position_in;
 	vertex_color = color_in;
 	vertex_normal = normalize(normal_in);
-	tex_coord = tex_coord_in;
+	tex_coord = vec2(tex_coord_in);
+	tex_idx = tex_coord_in.z;
 
-	float fow = texture(fow_texture_array, vec3((vertex_position.x - origin.x) / size.x, (vertex_position.y - origin.y) / size.y, idx_team)).r;
+	fow = texture(fow_texture_array, vec3((vertex_position.x - origin.x) / size.x, (vertex_position.y - origin.y) / size.y, idx_team)).r;
 	fow = (1.0 - step(0.5, fow_active)) * 1.0 + step(0.5, fow_active) * fow;
 
 	vertex_position = position_in;

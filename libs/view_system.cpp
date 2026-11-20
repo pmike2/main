@@ -358,7 +358,7 @@ void ViewSystem::update() {
 	std::cout << "up=" << glm::to_string(_up) << "\n";
 	std::cout << "world2camera=" << glm::to_string(_world2camera) << "\n";*/
 
-	_world2clip= _camera2clip* _world2camera;
+	_world2clip= _camera2clip * _world2camera;
 
 	_center_near= _eye+ _frustum_near* _dir;
 	_center_far = _eye+ _frustum_far * _dir;
@@ -918,9 +918,10 @@ void ViewSystem::update_selection_norms() {
 
 
 bool ViewSystem::pt_2d_intersects_aabb(pt_2d pt, AABB * aabb, bool check_depth) {
-	pt_2d click_world= screen2world(pt, 0.0);
+	pt_2d click_world = screen2world(pt, 0.0);
 	number t_hit;
-	bool intersect= ray_intersects_aabb(_eye, pt_3d(click_world, 0.0)- _eye, aabb, t_hit);
+	//std::cout << glm_to_string(pt) << " ; " << glm_to_string(click_world) << " ; " << *aabb << "\n";
+	bool intersect = ray_intersects_aabb(_eye, pt_3d(click_world, 0.0)- _eye, aabb, t_hit);
 	if (!intersect) {
 		return false;
 	}
@@ -929,12 +930,12 @@ bool ViewSystem::pt_2d_intersects_aabb(pt_2d pt, AABB * aabb, bool check_depth) 
 		return true;
 	}
 
-	glm::uvec2 screen_coords= gl2screen(pt);
+	glm::uvec2 screen_coords = gl2screen(pt);
 	float buffer_depth;
-	// attention au height- y
-	glReadPixels(screen_coords.x, _screengl->_screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
-	number world_depth= depthbuffer2world(number(buffer_depth));
-	if (abs(abs(world_depth)- t_hit)< 40.0) {
+	// attention au height - y
+	glReadPixels(screen_coords.x, _screengl->_screen_height - screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
+	number world_depth = depthbuffer2world(number(buffer_depth));
+	if (abs(abs(world_depth) - t_hit) < 40.0) {
 		return true;
 	}
 
@@ -985,15 +986,15 @@ bool ViewSystem::rect_selection_intersects_bbox(BBox * bbox, bool check_depth) {
 		return true;
 	}
 
-	pt_3d center= 0.5* (bbox->_aabb->_vmin+ bbox->_aabb->_vmax);
-	pt_4d v= _world2clip* pt_4d(center, 1.0);
-	glm::uvec2 screen_coords= gl2screen(pt_2d(v.x/ v.w, v.y/ v.w));
+	pt_3d center = 0.5 * (bbox->_aabb->_vmin + bbox->_aabb->_vmax);
+	pt_4d v = _world2clip * pt_4d(center, 1.0);
+	glm::uvec2 screen_coords = gl2screen(pt_2d(v.x / v.w, v.y / v.w));
 	float buffer_depth;
 	// attention au height- y
-	glReadPixels(screen_coords.x, _screengl->_screen_height- screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
-	number world_depth= depthbuffer2world(number(buffer_depth));
-	number t_hit= glm::distance(center, _eye);
-	if (abs(abs(world_depth)- t_hit)< 40.0) {
+	glReadPixels(screen_coords.x, _screengl->_screen_height - screen_coords.y, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &buffer_depth);
+	number world_depth = depthbuffer2world(number(buffer_depth));
+	number t_hit = glm::distance(center, _eye);
+	if (abs(abs(world_depth) - t_hit)< 40.0) {
 		return true;
 	}
 

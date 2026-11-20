@@ -59,7 +59,7 @@ GLSDL::GLSDL() {
 }
 
 
-GLSDL::GLSDL(std::string window_title, uint width, uint height, bool multisampling, float point_size) {
+GLSDL::GLSDL(std::string window_title, uint width, uint height, bool multisampling, float point_size, glm::vec4 background_color) {
 	SDL_Init(SDL_INIT_EVERYTHING);
 	//IMG_Init(IMG_INIT_JPG|IMG_INIT_PNG|IMG_INIT_TIF);
 
@@ -82,7 +82,7 @@ GLSDL::GLSDL(std::string window_title, uint width, uint height, bool multisampli
 
 	//gl_versions();
 
-	glClearColor(0.1, 0.1, 0.1, 1.0);
+	glClearColor(background_color.r, background_color.g, background_color.b, background_color.a);
 
 	SDL_GL_SetSwapInterval(1);
 	glClearDepth(1.0f);

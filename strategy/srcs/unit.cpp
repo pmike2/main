@@ -24,7 +24,7 @@ Unit::Unit(Team * team, UnitType * type, pt_3d pos, Elevation * elevation, time_
 	AnimatedObjInstance(type->_model, pos, t, quat(1.0, 0.0, 0.0, 0.0), "watch"),
 	_team(team), _type(type), _paused(false), _elevation(elevation),
 	_life(type->_life_init), _hit_status(NO_HIT), _hit(0.0), _target(NULL), _hit_ammo(NULL),
-	_creation_t(t)
+	_creation_t(t), _last_shooting_t(t)
 {
 	set_status(GMO_IDLE, UNIT_UNDER_CONSTRUCTION);
 }
@@ -76,7 +76,9 @@ quat Unit::quat_slerp(pt_2d direction_goal) {
 
 number Unit::angle() {
 	pt_3d euler = glm::eulerAngles(_rotation);
-	return euler.z;
+	// j'ajoute PI / 2 car tous les modèles issus de Blender regardent vers -Y.
+	// il faut ramener le modèle à regarder vers +X lorsque angle rot == 0
+	return euler.z + M_PI * 0.5;
 }
 
 

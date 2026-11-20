@@ -1,10 +1,14 @@
 #version 410
 
 
+uniform sampler2DArray diffuse_texture;
+
 uniform vec3 light_position;
 uniform vec3 light_color;
 uniform vec3 view_position;
-uniform sampler2DArray diffuse_texture;
+uniform float fog_start;
+uniform float fog_end;
+uniform vec4 fog_color;
 
 
 in GS_OUT {
@@ -34,7 +38,7 @@ void main(void) {
 
 	// specular
 	// TODO : mettre en uniform ?
-	const float specular_strength = 0.5;
+	const float specular_strength = 2.5;
 	const float shininess = 32.0;
 	vec3 view_direction = normalize(view_position- fs_in.vertex_position);
 	vec3 reflection_direction = reflect(-light_direction, fs_in.vertex_normal);
@@ -48,9 +52,16 @@ void main(void) {
 	vec3 result= ambient * vec3(1.0, 1.0, 1.0) + diffuse * vertex_diffuse_color_modified + specular * vertex_diffuse_color_modified;*/
 
 	vec3 result = (ambient + diffuse + specular) * vec3(sampled);
+
+	result = mix(result, fs_in.team_color, 0.15);
 	
 	result = mix(result, vec3(1.0, 0.0, 0.0), fs_in.hit);
 	
+	// brouillard
+	float fog_factor = (fog_end - length(view_position - fs_in.vertex_position)) / (fog_end - fog_start);
+	fog_factor = clamp(fog_factor, 0.0, 1.0);
+	result = mix(vec3(fog_color), result, fog_factor);
+
 	frag_color = vec4(result, fs_in.alpha);
 	//frag_color = vec4(1.0, 0.0, 0.0, 1.0);
 }

@@ -12,13 +12,13 @@ layout (triangle_strip, max_vertices = 3) out;
 
 
 in VS_OUT {
-	vec2 vertex_position;
+	vec3 vertex_position;
 	vec4 vertex_diffuse_color;
 } gs_in[];
 
 
 out GS_OUT {
-	vec2 vertex_position;
+	vec3 vertex_position;
 	vec4 vertex_diffuse_color;
 } gs_out;
 

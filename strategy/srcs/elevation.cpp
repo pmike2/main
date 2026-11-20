@@ -90,7 +90,8 @@ Elevation::Elevation() {
 }
 
 
-Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols, fs biome_dir) : GraphGrid(origin, size, n_ligs, n_cols)
+Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols, fs biome_dir) :
+	GraphGrid(origin, size, n_ligs, n_cols)
 {
 	_it_v= _vertices.begin();
 	while (_it_v!= _vertices.end()) {
@@ -103,7 +104,6 @@ Elevation::Elevation(pt_2d origin, pt_2d size, uint n_ligs, uint n_cols, fs biom
 	_n_pts = 6 * (_n_ligs - 1) * (_n_cols - 1);
 	_n_attrs_per_pts = 13;
 	_data = new float[_n_pts * _n_attrs_per_pts];
-	//std::cout << _n_pts * _n_attrs_per_pts << "\n";
 
 	uint diffuse_texture_idx = 0;
 	for (auto & json_path : std::filesystem::directory_iterator(biome_dir)) {
@@ -611,7 +611,14 @@ void Elevation::update_data(int col_min, int col_max, int lig_min, int lig_max) 
 		for (int col = col_min; col < col_max; ++col) {
 			// attention on ne peut pas utiliser col_lig2id ici
 			float * ptr = _data + (13 * 6) * ((_n_cols - 1) * lig + col);
-			
+
+			/*number eps = 0.1;
+			pt_3d pts[4] = {
+				col_lig2pt_3d(col, lig) + pt_3d(eps, eps, 0.0),
+				col_lig2pt_3d(col + 1, lig) + pt_3d(-eps, eps, 0.0),
+				col_lig2pt_3d(col + 1, lig + 1) + pt_3d(-eps, -eps, 0.0),
+				col_lig2pt_3d(col, lig + 1) + pt_3d(eps, -eps, 0.0)
+			};*/
 			pt_3d pts[4] = {
 				col_lig2pt_3d(col, lig),
 				col_lig2pt_3d(col + 1, lig),

@@ -77,7 +77,7 @@ void key_up(SDL_Keycode key, time_point t) {
 void init() {
 	srand(time(NULL));
 
-	gl_sdl = new GLSDL("strategy", MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, true, 5.0f);
+	gl_sdl = new GLSDL("strategy", MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, true, 5.0f, FOG_COLOR);
 	screengl = new ScreenGL(MAIN_WIN_WIDTH, MAIN_WIN_HEIGHT, GL_WIDTH, GL_HEIGHT);
 	fps_count = new FPSCount(gl_sdl->_window);
 	input_state = new InputState();

@@ -599,7 +599,7 @@ AnimatedObjInstance::AnimatedObjInstance() {
 
 
 AnimatedObjInstance::AnimatedObjInstance(AnimatedObjModel * model, pt_3d pos, time_point t, quat q, std::string action_name) :
-	InstancePosRot(pos, q, pt_3d(1.0)),
+	InstancePosRot(pos, q, pt_3d(1.0), model->_obj_data->_aabb),
 	_model(model), _last_anim_t(t), _idx_frame(0), _idx_action(0), _next_action("")
 {
 	if (action_name != "") {

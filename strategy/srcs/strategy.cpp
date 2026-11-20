@@ -554,6 +554,9 @@ void Strategy::draw_tree_stone(ViewSystem * view_system) {
 	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
 	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->set_uniform("fog_start", float(FOG_START));
+	context->set_uniform("fog_end", float(FOG_END));
+	context->set_uniform("fog_color", glm::value_ptr(FOG_COLOR));
 	context->draw();
 	context->deactivate();
 }
@@ -571,6 +574,9 @@ void Strategy::draw_elevation(ViewSystem * view_system) {
 	context->set_uniform("z_fow", float(Z_FOW));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
 	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->set_uniform("fog_start", float(FOG_START));
+	context->set_uniform("fog_end", float(FOG_END));
+	context->set_uniform("fog_color", glm::value_ptr(FOG_COLOR));
 	context->draw();	
 	context->deactivate();
 }
@@ -590,6 +596,9 @@ void Strategy::draw_lake(ViewSystem * view_system) {
 	context->set_uniform("angle", float(_angle_lake));
 	context->set_uniform("amplitude", float(LAKE_WAVE_AMPLITUDE));
 	context->set_uniform("freq", float(LAKE_WAVE_FREQ));
+	context->set_uniform("fog_start", float(FOG_START));
+	context->set_uniform("fog_end", float(FOG_END));
+	context->set_uniform("fog_color", glm::value_ptr(FOG_COLOR));
 	context->draw();
 	context->deactivate();
 }
@@ -607,6 +616,9 @@ void Strategy::draw_river(ViewSystem * view_system) {
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
 	context->set_uniform("fow_active", float(_config->_fow_active));
 	context->set_uniform("angle", float(_angle_river));
+	context->set_uniform("fog_start", float(FOG_START));
+	context->set_uniform("fog_end", float(FOG_END));
+	context->set_uniform("fog_color", glm::value_ptr(FOG_COLOR));
 	context->draw();
 	context->deactivate();
 }
@@ -626,8 +638,10 @@ void Strategy::draw_sea(ViewSystem * view_system) {
 	context->set_uniform("angle", float(_angle_sea));
 	context->set_uniform("amplitude", float(SEA_WAVE_AMPLITUDE));
 	context->set_uniform("freq", float(SEA_WAVE_FREQ));
-	context->set_uniform("sea_level", float(SEA_LEVEL));
 	context->set_uniform("shininess", float(SEA_SHININESS));
+	context->set_uniform("fog_start", float(FOG_START));
+	context->set_uniform("fog_end", float(FOG_END));
+	context->set_uniform("fog_color", glm::value_ptr(FOG_COLOR));
 	context->draw();
 	context->deactivate();
 }
@@ -645,6 +659,9 @@ void Strategy::draw_unit(UnitType * unit_type, ViewSystem * view_system) {
 	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
 	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->set_uniform("fog_start", float(FOG_START));
+	context->set_uniform("fog_end", float(FOG_END));
+	context->set_uniform("fog_color", glm::value_ptr(FOG_COLOR));
 	context->draw();
 	context->deactivate();
 }
@@ -674,6 +691,9 @@ void Strategy::draw_ammo(AmmoType * ammo_type, ViewSystem * view_system) {
 	context->set_uniform("origin", glm::value_ptr(glm::vec2(_map->_aabb->_pos)));
 	context->set_uniform("idx_team", float(_config->_selected_team_idx));
 	context->set_uniform("fow_active", float(_config->_fow_active));
+	context->set_uniform("fog_start", float(FOG_START));
+	context->set_uniform("fog_end", float(FOG_END));
+	context->set_uniform("fog_color", glm::value_ptr(FOG_COLOR));
 	context->draw();
 	context->deactivate();
 }
@@ -801,7 +821,7 @@ void Strategy::draw() {
 
 void Strategy::anim(time_point t) {
 	bool verbose = false;
-	
+
 	if (verbose) {
 		std::cout << "anim : start\n";
 	}
@@ -1597,7 +1617,12 @@ void Strategy::update_cursor() {
 				}
 			}
 			else {
-				ptr[2] = float(Z_FOW);
+				if (_fow_ok) {
+					ptr[2] = float(_map->_elevation->get_alti(l_pts[i]) + Z_OFFSET_MOVE_UNIT);
+				}
+				else {
+					ptr[2] = float(Z_FOW);
+				}
 			}
 			ptr[3] = move_unit_color.r;
 			ptr[4] = move_unit_color.g;
@@ -1716,28 +1741,36 @@ void Strategy::update_lake() {
 void Strategy::update_sea() {
 	GLDrawContext * context= _gl_draw_manager->get_context("sea");
 
-	context->_n_pts = 6;
+	uint ncols = MAP_SIZE.x / SEA_RESOLUTION.x;
+	uint nligs = MAP_SIZE.y / SEA_RESOLUTION.y;
+	context->_n_pts = 6 * nligs * ncols;
 
 	float * data = new float[context->data_size()];
 
-	const pt_2d SEA_ORIGIN(MAP_ORIGIN);
-	const pt_2d SEA_SIZE(MAP_SIZE);
-	std::vector<pt_2d> pts = {
-		pt_2d(SEA_ORIGIN.x, SEA_ORIGIN.y),
-		pt_2d(SEA_ORIGIN.x + SEA_SIZE.x, SEA_ORIGIN.y),
-		pt_2d(SEA_ORIGIN.x + SEA_SIZE.x, SEA_ORIGIN.y + SEA_SIZE.y),
-		pt_2d(SEA_ORIGIN.x, SEA_ORIGIN.y + SEA_SIZE.y)
-	};
 	std::vector<uint> idxs = {0, 1, 2, 0, 2, 3};
 	float * ptr = data;
-	for (uint i=0; i<6; ++i) {
-		ptr[0] = float(pts[idxs[i]].x);
-		ptr[1] = float(pts[idxs[i]].y);
-		ptr[2] = SEA_COLOR.r;
-		ptr[3] = SEA_COLOR.g;
-		ptr[4] = SEA_COLOR.b;
-		ptr[5] = SEA_COLOR.a;
-		ptr += 6;
+
+	for (uint idx_col=0; idx_col<ncols; ++idx_col) {
+		for (uint idx_lig=0; idx_lig<nligs; ++idx_lig) {
+			pt_2d origin = MAP_ORIGIN + pt_2d(number(idx_col) * SEA_RESOLUTION.x, number(idx_lig) * SEA_RESOLUTION.y);
+			std::vector<pt_2d> pts = {
+				origin,
+				origin + pt_2d(SEA_RESOLUTION.x, 0.0),
+				origin + pt_2d(SEA_RESOLUTION.x, SEA_RESOLUTION.y),
+				origin + pt_2d(0.0, SEA_RESOLUTION.y)
+			};
+
+			for (uint i=0; i<6; ++i) {
+				ptr[0] = float(pts[idxs[i]].x);
+				ptr[1] = float(pts[idxs[i]].y);
+				ptr[1] = float(SEA_LEVEL);
+				ptr[2] = SEA_COLOR.r;
+				ptr[3] = SEA_COLOR.g;
+				ptr[4] = SEA_COLOR.b;
+				ptr[5] = SEA_COLOR.a;
+				ptr += 7;
+			}
+		}
 	}
 
 	context->set_data(data);
@@ -2375,7 +2408,7 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 	else {
 		if (_config->_play_mode == SELECT_UNIT) {
 			if (_view_system->_new_single_selection) {
-				_view_system->_new_single_selection= false;
+				_view_system->_new_single_selection = false;
 				for (auto & unit : get_selected_team()->_units) {
 					unit->_selected = false;
 					if (unit->_unit_status == UNIT_UNDER_CONSTRUCTION || unit->_unit_status == UNIT_INACTIVE) {
@@ -2387,7 +2420,7 @@ bool Strategy::mouse_button_up(InputState * input_state, time_point t) {
 				}
 			}
 			else if (_view_system->_new_rect_selection) {
-				_view_system->_new_rect_selection= false;
+				_view_system->_new_rect_selection = false;
 				for (auto & unit : get_selected_team()->_units) {
 					unit->_selected = false;
 					if (unit->_unit_status == UNIT_UNDER_CONSTRUCTION || unit->_unit_status == UNIT_INACTIVE) {
@@ -2525,7 +2558,8 @@ bool Strategy::key_down(InputState * input_state, SDL_Keycode key, time_point t)
 
 	if (key == SDLK_SPACE) {
 		//std::cout << _map->_path_finder->_inputs.size() << "\n";
-		_map->_explosion_system->_configs["explosion1"]->DEBUG("../data/explosions/explosion1.json");
+		//_map->_explosion_system->_configs["explosion1"]->DEBUG("../data/explosions/explosion1.json");
+		std::cout << _fow_ok << " ; " << _move_unit_ok << "\n";
 		return true;
 	}
 	return false;

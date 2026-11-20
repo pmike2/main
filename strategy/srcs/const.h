@@ -9,10 +9,10 @@
 
 
 // dimensions écran
-const int MAIN_WIN_WIDTH= 1280;
-const int MAIN_WIN_HEIGHT= 1024;
-const float GL_WIDTH= 10.0f;
-const float GL_HEIGHT= GL_WIDTH* (float)(MAIN_WIN_HEIGHT)/ (float)(MAIN_WIN_WIDTH);
+const int MAIN_WIN_WIDTH = 1280;
+const int MAIN_WIN_HEIGHT = 1024;
+const float GL_WIDTH = 10.0f;
+const float GL_HEIGHT = GL_WIDTH * (float)(MAIN_WIN_HEIGHT) / (float)(MAIN_WIN_WIDTH);
 
 const uint TEXTURE_SIZE = 512;
 
@@ -32,11 +32,14 @@ const number Z_FOW = 1.0;
 
 const glm::vec3 LIGHT_POSITION(0.0f, 0.0f, 1000.0f);
 const glm::vec3 LIGHT_COLOR(1.0f);
+const glm::vec4 FOG_COLOR(0.5f, 0.5f, 0.5f, 1.0f);
+const number FOG_START = 100.0;
+const number FOG_END = 500.0;
 
 const number PATH_START_CROSS_SIZE = 1.0;
-const glm::vec4 PATH_START_CROSS_COLOR(1.0, 0.0, 1.0, 1.0);
+const glm::vec4 PATH_START_CROSS_COLOR(1.0f, 0.0f, 1.0f, 1.0f);
 const number PATH_GOAL_CROSS_SIZE = 1.0;
-const glm::vec4 PATH_GOAL_CROSS_COLOR(1.0, 0.0, 1.0, 1.0);
+const glm::vec4 PATH_GOAL_CROSS_COLOR(1.0f, 0.0f, 1.0f, 1.0f);
 
 const uint EDIT_MAP_N_VERTICES_PER_CIRCLE = 32;
 const uint SELECTION_N_VERTICES_PER_CIRCLE = 8;
@@ -47,8 +50,9 @@ const number MOVE_UNIT_SEGMENT_SIZE = 1.5;
 
 const pt_2d MAP_ORIGIN(-500.0, -500.0);
 const pt_2d MAP_SIZE(1000.0, 1000.0);
-const pt_2d PATH_RESOLUTION(5.0);
+const pt_2d PATH_RESOLUTION(4.0);
 const pt_2d ELEVATION_RESOLUTION(2.0);
+const pt_2d SEA_RESOLUTION(100.0);
 const uint FOW_TEXTURE_SIZE = 128;
 
 const number RIVER_ANGLE_SPEED = 0.1;
@@ -60,7 +64,7 @@ const number LAKE_ANGLE_SPEED = 0.1;
 const number SEA_WAVE_AMPLITUDE = 0.4;
 const number SEA_WAVE_FREQ = 0.05;
 const number SEA_LEVEL = 0.0;
-const glm::vec4 SEA_COLOR(0.4, 0.8, 0.9, 0.4);
+const glm::vec4 SEA_COLOR(0.4f, 0.8f, 0.9f, 0.4f);
 const number SEA_SHININESS = 10.0;
 const number SEA_ANGLE_SPEED = 0.02;
 
@@ -70,13 +74,6 @@ const uint BRANCH_N_POINTS_PER_CIRCLE = 6;
 const uint N_PTS_PER_BRANCH_SIDE = BRANCH_N_POINTS_PER_CIRCLE * 6;
 const uint N_PTS_PER_BRANCH_BOTTOM = BRANCH_N_POINTS_PER_CIRCLE * 3;
 const uint N_PTS_PER_BRANCH_TOP = BRANCH_N_POINTS_PER_CIRCLE * 3;
-
-//const uint N_ACTIVE_INTERVALS = 3;
-
-//const number EPS_UNIT_TYPE_BUFFER_SIZE = 0.1;
-
-//const number UNIT_DIST_PATH_EPS = 0.5;
-//const number MAX_UNIT_MOVING_WEIGHT = 100.0;
 
 // pas 0.0 pour qu'il n'y ait pas de z-fight avec SEA_LEVEL = 0.0
 const number DEFAULT_ELEVATION = -0.01;

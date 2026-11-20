@@ -18,7 +18,7 @@ Team::Team(std::string name, glm::vec3 color, Elevation * elevation, PathFinder 
 	_name(name), _color(color), _elevation(elevation), _path_finder(path_finder), _ia(false)
 {
 	pt_2d fow_resolution = _elevation->_size / number(fow_texture_size);
-	_fow = new GraphGrid(_elevation->_origin + 0.5 * fow_resolution, _elevation->_size - 0.5 * fow_resolution, fow_texture_size - 1, fow_texture_size - 1);
+	_fow = new GraphGrid(_elevation->_origin + 0.5 * fow_resolution, _elevation->_size - fow_resolution, fow_texture_size - 1, fow_texture_size - 1);
 
 	_fow_data = new float[fow_texture_size * fow_texture_size];
 	for (uint i=0; i<fow_texture_size * fow_texture_size; ++i) {
@@ -52,18 +52,39 @@ bool Team::fow_check(pt_2d pos) {
 	if (!point_in_aabb2d(pos, _elevation->_aabb)) {
 		return false;
 	}
+	
+	std::vector<uint> vertices = _fow->vertices_in_cell_containing_pt(pos);
+
 //std::cout << "--------\n";
 //std::cout << glm_to_string(pos) << "\n";
-	std::vector<uint> vertices = _fow->vertices_in_cell_containing_pt(pos);
+
+	bool tmp = false;
 	for (auto & v : vertices) {
-		//std::cout << glm_to_string(_fow->id2pt_3d(v)) << "\n";
+		//std::cout << glm_to_string(_fow->id2pt_3d(v));
+		
 		GraphVertex vertex = _fow->get_vertex(v);
 		FowVertexData * data = (FowVertexData *)(vertex._data);
-		if (data->_status == UNDISCOVERED) {
-			return false;
+		bool is_discovered = false;
+		if (data->_status != UNDISCOVERED) {
+			//return true;
+			is_discovered = true;
+			tmp = true;
 		}
+		//std::cout << " ; " << is_discovered << "\n";
 	}
-	return true;
+
+	if (tmp) {
+		return true;
+	}
+
+	/*uint v = _fow->pt2id(pos);
+	GraphVertex vertex = _fow->get_vertex(v);
+	FowVertexData * data = (FowVertexData *)(vertex._data);
+	if (data->_status == UNDISCOVERED) {
+		return false;
+	}*/
+
+	return false;
 }
 
 
@@ -117,6 +138,12 @@ bool Team::move_unit_check(Unit * unit, pt_2d pos, bool fow_active) {
 	AABB_2D * aabb = new AABB_2D(pos - 0.5 * unit_size, unit_size);
 	std::vector<uint> vertices = _path_finder->vertices_in_aabb(aabb);
 	delete aabb;
+
+	// si l'emprise est trop petite pour contenir des sommets de _path_finder, on prend les 4 sommets de la cellule comprenant pos
+	if (vertices.empty()) {
+		vertices = _path_finder->vertices_in_cell_containing_pt(pos);
+	}
+
 	for (auto & v : vertices) {
 		if (_path_finder->is_vertex_obstacle(unit->_type->_name, v, unit)) {
 			return false;

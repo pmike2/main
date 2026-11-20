@@ -1,6 +1,13 @@
 #version 410
 
 
+uniform vec3 light_position;
+uniform vec3 light_color;
+uniform vec3 view_position;
+uniform float fog_start;
+uniform float fog_end;
+uniform vec4 fog_color;
+
 in GS_OUT {
 	vec3 vertex_position;
 	vec3 vertex_normal;
@@ -8,10 +15,6 @@ in GS_OUT {
 } fs_in;
 
 out vec4 frag_color;
-
-uniform vec3 light_position;
-uniform vec3 light_color;
-uniform vec3 view_position;
 
 
 void main(void) {
@@ -32,6 +35,11 @@ void main(void) {
 	vec3 specular= specular_strength* spec* light_color;
 	
 	vec3 result= (ambient + diffuse + specular)* fs_in.vertex_diffuse_color;
-	
+
+	// brouillard
+	float fog_factor = (fog_end - length(view_position - fs_in.vertex_position)) / (fog_end - fog_start);
+	fog_factor = clamp(fog_factor, 0.0, 1.0);
+	result = mix(vec3(fog_color), result, fog_factor);
+
 	frag_color= vec4(result, 1.0);
 }

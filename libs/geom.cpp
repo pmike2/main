@@ -218,40 +218,41 @@ number aabb_distance_pt(AABB * aabb, const pt_3d & pt) {
 
 // cf https://gamedev.stackexchange.com/questions/18436/most-efficient-aabb-vs-ray-collision-algorithms
 bool ray_intersects_aabb(pt_3d origin, pt_3d direction, AABB * aabb, number & t_hit) {
-	direction= glm::normalize(direction);
-	if (direction.x== 0.0) {
-		direction.x= 1e-7;
+	direction = glm::normalize(direction);
+	if (direction.x == 0.0) {
+		direction.x = 1e-7;
 	}
-	if (direction.y== 0.0) {
-		direction.y= 1e-7;
+	if (direction.y == 0.0) {
+		direction.y = 1e-7;
 	}
-	if (direction.z== 0.0) {
-		direction.z= 1e-7;
+	if (direction.z == 0.0) {
+		direction.z = 1e-7;
 	}
-	pt_3d dirfrac(1.0/ direction.x, 1.0/ direction.y, 1.0/ direction.z);
-	number t1= (aabb->_vmin.x- origin.x)* dirfrac.x;
-	number t2= (aabb->_vmax.x- origin.x)* dirfrac.x;
-	number t3= (aabb->_vmin.y- origin.y)* dirfrac.y;
-	number t4= (aabb->_vmax.y- origin.y)* dirfrac.y;
-	number t5= (aabb->_vmin.z- origin.z)* dirfrac.z;
-	number t6= (aabb->_vmax.z- origin.z)* dirfrac.z;
 
-	number tmin= std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
-	number tmax= std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
+	pt_3d dirfrac(1.0 / direction.x, 1.0 / direction.y, 1.0 / direction.z);
+	number t1 = (aabb->_vmin.x - origin.x) * dirfrac.x;
+	number t2 = (aabb->_vmax.x - origin.x) * dirfrac.x;
+	number t3 = (aabb->_vmin.y - origin.y) * dirfrac.y;
+	number t4 = (aabb->_vmax.y - origin.y) * dirfrac.y;
+	number t5 = (aabb->_vmin.z - origin.z) * dirfrac.z;
+	number t6 = (aabb->_vmax.z - origin.z) * dirfrac.z;
+
+	number tmin = std::max(std::max(std::min(t1, t2), std::min(t3, t4)), std::min(t5, t6));
+	number tmax = std::min(std::min(std::max(t1, t2), std::max(t3, t4)), std::max(t5, t6));
 
 	// if tmax < 0, ray (line) is intersecting AABB, but the whole AABB is behind us
 	if (tmax < 0) {
-		t_hit= tmax;
+		t_hit = tmax;
 		return false;
 	}
 
 	// if tmin > tmax, ray doesn't intersect AABB
 	if (tmin > tmax) {
-		t_hit= tmax;
+		t_hit = tmax;
 		return false;
 	}
 
-	t_hit= tmin;
+	t_hit = tmin;
 	return true;
 }
 

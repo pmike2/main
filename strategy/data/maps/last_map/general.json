@@ -5,17 +5,14 @@
         2.0,
         2.0
     ],
-    "fow_resolution": [
-        10.0,
-        10.0
-    ],
+    "fow_texture_size": 128,
     "origin": [
         -500.0,
         -500.0
     ],
     "path_resolution": [
-        5.0,
-        5.0
+        4.0,
+        4.0
     ],
     "unit_types_dir": "../data/unit_types"
 }
